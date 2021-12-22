@@ -1,0 +1,636 @@
+make[1]: Entering directory '/home/andrew/workspace/jdk'
+SetupTarget buildtools-langtools  
+ [2] MAKEFILE := ToolsLangtools                                                                    
+SetupTarget interim-langtools  
+ [2] MAKEFILE := CompileInterimLangtools                                                                    
+SetupTarget interim-tzdb  
+ [2] MAKEFILE := CopyInterimTZDB                                                                    
+SetupTarget buildtools-jdk  
+ [2] MAKEFILE := CompileToolsJdk  
+ [3] DEPS := interim-langtools interim-tzdb                                                                  
+SetupTarget buildtools-modules  
+ [2] MAKEFILE := CompileModuleTools                                                                    
+SetupTarget buildtools-hotspot  
+ [2] MAKEFILE := CompileToolsHotspot                                                                    
+SetupTarget generate-exported-symbols  
+ [2] MAKEFILE := BuildStatic  
+ [3] DEPS := java.base-libs jdk.jdwp.agent-libs                                                                  
+SetupTarget hotspot-ide-project  
+ [2] MAKEFILE := ide/visualstudio/hotspot/CreateVSProject  
+ [3] DEPS := hotspot exploded-image  
+ [4] ARGS := -I/home/andrew/workspace/jdk/make/hotspot                                                                
+SetupTarget compile-commands  
+ [2] MAKEFILE := CompileCommands                                                                    
+SetupTarget compile-commands-hotspot  
+ [2] MAKEFILE := CompileCommands                                                                    
+SetupTarget vscode-project  
+ [2] MAKEFILE := ide/vscode/hotspot/CreateVSCodeProject  
+ [3] ARGS := VSCODE_INDEXER=cpptools  
+ [4] DEPS := compile-commands                                                                
+SetupTarget vscode-project-clangd  
+ [2] MAKEFILE := ide/vscode/hotspot/CreateVSCodeProject  
+ [3] ARGS := VSCODE_INDEXER=clangd  
+ [4] DEPS := compile-commands                                                                
+SetupTarget vscode-project-rtags  
+ [2] MAKEFILE := ide/vscode/hotspot/CreateVSCodeProject  
+ [3] ARGS := VSCODE_INDEXER=rtags  
+ [4] DEPS := compile-commands                                                                
+SetupTarget vscode-project-ccls  
+ [2] MAKEFILE := ide/vscode/hotspot/CreateVSCodeProject  
+ [3] ARGS := VSCODE_INDEXER=ccls  
+ [4] DEPS := compile-commands                                                                
+SetupTarget demos-jdk  
+ [2] MAKEFILE := CompileDemos  
+ [3] DEPS := java.base-libs exploded-image buildtools-jdk                                                                  
+SetupTarget test-image-demos-jdk  
+ [2] MAKEFILE := CompileDemos  
+ [3] TARGET := images  
+ [4] DEPS := demos-jdk                                                                
+SetupTarget generate-summary  
+ [2] MAKEFILE := GenerateModuleSummary  
+ [3] DEPS := jmods buildtools-modules runnable-buildjdk                                                                  
+SetupTarget store-source-revision  
+ [2] MAKEFILE := SourceRevision  
+ [3] TARGET := store-source-revision                                                                  
+SetupTarget create-source-revision-tracker  
+ [2] MAKEFILE := SourceRevision  
+ [3] TARGET := create-source-revision-tracker                                                                  
+SetupTarget zip-security  
+ [2] MAKEFILE := ZipSecurity  
+ [3] DEPS := buildtools-jdk java.base-java java.security.jgss-java java.security.jgss-libs                                                                  
+SetupTarget zip-source  
+ [2] MAKEFILE := ZipSource  
+ [3] DEPS := buildtools-jdk gensrc                                                                  
+SetupTarget jrtfs-jar  
+ [2] MAKEFILE := JrtfsJar  
+ [3] DEPS := interim-langtools                                                                  
+SetupTarget jdk-image  
+ [2] MAKEFILE := Images  
+ [3] TARGET := jdk  
+ [4] DEPS := jmods zip-source demos release-file                                                                
+SetupTarget legacy-jre-image  
+ [2] MAKEFILE := Images  
+ [3] TARGET := jre  
+ [4] DEPS := jmods release-file                                                                
+SetupTarget symbols-image  
+ [2] MAKEFILE := Images  
+ [3] TARGET := symbols                                                                  
+SetupTarget static-libs-image  
+ [2] MAKEFILE := StaticLibsImage                                                                    
+SetupTarget mac-jdk-bundle  
+ [2] MAKEFILE := MacBundles  
+ [3] TARGET := jdk-bundle  
+ [4] DEPS := jdk-image                                                                
+SetupTarget mac-legacy-jre-bundle  
+ [2] MAKEFILE := MacBundles  
+ [3] TARGET := jre-bundle  
+ [4] DEPS := legacy-jre-image                                                                
+SetupTarget release-file  
+ [2] MAKEFILE := ReleaseFile  
+ [3] DEPS := create-source-revision-tracker                                                                  
+SetupTarget exploded-image-optimize  
+ [2] MAKEFILE := ExplodedImageOptimize  
+ [3] DEPS := java copy gendata java.base-libs java.base-launchers buildtools-modules                                                                  
+SetupTarget graal-builder-image  
+ [2] MAKEFILE := GraalBuilderImage  
+ [3] DEPS := jdk-image static-libs-image                                                                  
+SetupTarget docs-jdk-api-javadoc  
+ [2] MAKEFILE := Docs  
+ [3] TARGET := docs-jdk-api-javadoc                                                                  
+SetupTarget docs-jdk-api-modulegraph  
+ [2] MAKEFILE := Docs  
+ [3] TARGET := docs-jdk-api-modulegraph  
+ [4] DEPS := buildtools-modules runnable-buildjdk                                                                
+SetupTarget docs-javase-api-javadoc  
+ [2] MAKEFILE := Docs  
+ [3] TARGET := docs-javase-api-javadoc                                                                  
+SetupTarget docs-javase-api-modulegraph  
+ [2] MAKEFILE := Docs  
+ [3] TARGET := docs-javase-api-modulegraph  
+ [4] DEPS := buildtools-modules runnable-buildjdk                                                                
+SetupTarget docs-reference-api-javadoc  
+ [2] MAKEFILE := Docs  
+ [3] TARGET := docs-reference-api-javadoc                                                                  
+SetupTarget docs-reference-api-modulegraph  
+ [2] MAKEFILE := Docs  
+ [3] TARGET := docs-reference-api-modulegraph  
+ [4] DEPS := buildtools-modules runnable-buildjdk                                                                
+SetupTarget docs-jdk-specs  
+ [2] MAKEFILE := Docs  
+ [3] TARGET := docs-jdk-specs  
+ [4] DEPS := buildtools-jdk jdk.jdi-gensrc docs-jdk-index                                                                
+SetupTarget docs-jdk-index  
+ [2] MAKEFILE := Docs  
+ [3] TARGET := docs-jdk-index                                                                  
+SetupTarget docs-zip  
+ [2] MAKEFILE := Docs  
+ [3] TARGET := docs-zip  
+ [4] DEPS := docs-jdk buildtools-jdk                                                                
+SetupTarget docs-specs-zip  
+ [2] MAKEFILE := Docs  
+ [3] TARGET := docs-specs-zip  
+ [4] DEPS := docs-jdk-specs buildtools-jdk                                                                
+SetupTarget update-build-docs  
+ [2] MAKEFILE := UpdateBuildDocs                                                                    
+SetupTarget update-x11wrappers  
+ [2] MAKEFILE := UpdateX11Wrappers  
+ [3] DEPS := java.base-copy buildtools-jdk                                                                  
+SetupTarget create-buildjdk-interim-image  
+ [2] MAKEFILE := Main  
+ [3] TARGET := create-buildjdk-interim-image-helper  
+ [4] ARGS := SPEC=/home/andrew/workspace/jdk/build/linux-x86_64-server-release/buildjdk-spec.gmk HOTSPOT_SPEC=/home/andrew/workspace/jdk/build/linux-x86_64-server-release/buildjdk-spec.gmk CREATING_BUILDJDK=true LOG_PREFIX="[buildjdk] " JAVA_MODULES="java.base java.compiler java.logging jdk.compiler jdk.internal.opt jdk.jdeps jdk.jlink"                                                                
+SetupTarget interim-image  
+ [2] MAKEFILE := InterimImage                                                                    
+SetupTarget generate-link-opt-data  
+ [2] MAKEFILE := GenerateLinkOptData                                                                    
+SetupTarget prepare-test-image  
+ [2] MAKEFILE := TestImage  
+ [3] TARGET := prepare-test-image                                                                  
+SetupTarget build-test-hotspot-jtreg-native  
+ [2] MAKEFILE := test/JtregNativeHotspot  
+ [3] TARGET := build-test-hotspot-jtreg-native  
+ [4] DEPS := buildtools-jdk                                                                
+SetupTarget test-image-hotspot-jtreg-native  
+ [2] MAKEFILE := test/JtregNativeHotspot  
+ [3] TARGET := test-image-hotspot-jtreg-native  
+ [4] DEPS := build-test-hotspot-jtreg-native                                                                
+SetupTarget build-test-jdk-jtreg-native  
+ [2] MAKEFILE := test/JtregNativeJdk  
+ [3] TARGET := build-test-jdk-jtreg-native  
+ [4] DEPS := buildtools-jdk java.base-libs                                                                
+SetupTarget test-image-jdk-jtreg-native  
+ [2] MAKEFILE := test/JtregNativeJdk  
+ [3] TARGET := test-image-jdk-jtreg-native  
+ [4] DEPS := build-test-jdk-jtreg-native                                                                
+SetupTarget build-test-lib-native  
+ [2] MAKEFILE := test/BuildTestLibNative  
+ [3] TARGET := build-test-lib-native  
+ [4] DEPS := buildtools-jdk java.base-libs                                                                
+SetupTarget test-image-lib-native  
+ [2] MAKEFILE := test/BuildTestLibNative  
+ [3] TARGET := test-image-lib-native  
+ [4] DEPS := build-test-lib-native                                                                
+SetupTarget build-test-libtest-jtreg-native  
+ [2] MAKEFILE := test/JtregNativeLibTest  
+ [3] TARGET := build-test-libtest-jtreg-native  
+ [4] DEPS := buildtools-jdk                                                                
+SetupTarget test-image-libtest-jtreg-native  
+ [2] MAKEFILE := test/JtregNativeLibTest  
+ [3] TARGET := test-image-libtest-jtreg-native  
+ [4] DEPS := build-test-libtest-jtreg-native                                                                
+SetupTarget build-test-lib  
+ [2] MAKEFILE := test/BuildTestLib  
+ [3] DEPS := exploded-image                                                                  
+SetupTarget build-microbenchmark  
+ [2] MAKEFILE := test/BuildMicrobenchmark  
+ [3] DEPS := interim-langtools exploded-image                                                                  
+SetupTarget test  
+ [2] MAKEFILE := RunTests  
+ [3] ARGS := TEST=""  
+ [4] DEPS := jdk-image test-image                                                                
+SetupTarget exploded-test  
+ [2] MAKEFILE := RunTests  
+ [3] ARGS := TEST="" JDK_IMAGE_DIR=/home/andrew/workspace/jdk/build/linux-x86_64-server-release/jdk  
+ [4] DEPS := exploded-image test-image                                                                
+SetupTarget product-bundles  
+ [2] MAKEFILE := Bundles  
+ [3] TARGET := product-bundles  
+ [4] DEPS := product-images                                                                
+SetupTarget legacy-bundles  
+ [2] MAKEFILE := Bundles  
+ [3] TARGET := legacy-bundles  
+ [4] DEPS := legacy-images                                                                
+SetupTarget test-bundles  
+ [2] MAKEFILE := Bundles  
+ [3] TARGET := test-bundles  
+ [4] DEPS := test-image                                                                
+SetupTarget docs-jdk-bundles  
+ [2] MAKEFILE := Bundles  
+ [3] TARGET := docs-jdk-bundles  
+ [4] DEPS := docs-image                                                                
+SetupTarget docs-javase-bundles  
+ [2] MAKEFILE := Bundles  
+ [3] TARGET := docs-javase-bundles  
+ [4] DEPS := docs-javase-image                                                                
+SetupTarget docs-reference-bundles  
+ [2] MAKEFILE := Bundles  
+ [3] TARGET := docs-reference-bundles  
+ [4] DEPS := docs-reference-image                                                                
+SetupTarget static-libs-bundles  
+ [2] MAKEFILE := Bundles  
+ [3] TARGET := static-libs-bundles  
+ [4] DEPS := static-libs-image                                                                
+SetupTarget install  
+ [2] MAKEFILE := Install  
+ [3] DEPS := product-images                                                                  
+Generating main target list
+make[1]: Leaving directory '/home/andrew/workspace/jdk'
+Running make as 'make LOG=debug images'
+make[1]: Entering directory '/home/andrew/workspace/jdk'
+/usr/bin/rm -f /home/andrew/workspace/jdk/build/linux-x86_64-server-release/build.log.old 2> /dev/null && /usr/bin/mv /home/andrew/workspace/jdk/build/linux-x86_64-server-release/build.log /home/andrew/workspace/jdk/build/linux-x86_64-server-release/build.log.old 2> /dev/null || true
+printf "Building target 'images' in configuration 'linux-x86_64-server-release'\n" | /usr/bin/tee -a /home/andrew/workspace/jdk/build/linux-x86_64-server-release/build.log
+Building target 'images' in configuration 'linux-x86_64-server-release'
+/usr/bin/rm -f -r /home/andrew/workspace/jdk/build/linux-x86_64-server-release/make-support/failure-logs 2> /dev/null && /usr/bin/mkdir -p /home/andrew/workspace/jdk/build/linux-x86_64-server-release/make-support/failure-logs
+/usr/bin/rm -f /home/andrew/workspace/jdk/build/linux-x86_64-server-release/make-support/exit-with-error 2> /dev/null
+/usr/bin/rm -f -r /home/andrew/workspace/jdk/build/linux-x86_64-server-release/make-support/build-times 2> /dev/null && /usr/bin/mkdir -p /home/andrew/workspace/jdk/build/linux-x86_64-server-release/make-support/build-times && 	/usr/bin/date '+%Y %m %d %H %M %S' | /usr/bin/gawk '{ print $1,$2,$3,$4,$5,$6,($4*3600+$5*60+$6) }' > /home/andrew/workspace/jdk/build/linux-x86_64-server-release/make-support/build-times/build_time_start_TOTAL && /usr/bin/date '+%Y-%m-%d %H:%M:%S' > /home/andrew/workspace/jdk/build/linux-x86_64-server-release/make-support/build-times/build_time_start_TOTAL_human_readable
+/usr/bin/rm -f -r /home/andrew/workspace/jdk/build/linux-x86_64-server-release/make-support/javacservers 2> /dev/null && /usr/bin/mkdir -p /home/andrew/workspace/jdk/build/linux-x86_64-server-release/make-support/javacservers 
+( cd /home/andrew/workspace/jdk && \
+        /usr/bin/nice /usr/bin/make  -r -R -I /home/andrew/workspace/jdk/make/common SPEC=/home/andrew/workspace/jdk/build/linux-x86_64-server-release/spec.gmk MAKE_LOG_FLAGS=""  LOG_LEVEL=debug   LOG_NOFILE=   LOG_CMDLINES=   LOG_REPORT=   LOG_PROFILE_TIMES_LOG=   LOG_PROFILE_TIMES_FILE=  -Onone \
+                     -j 1 \
+            -f make/Main.gmk  \
+            images  > >(/usr/bin/tee -a /home/andrew/workspace/jdk/build/linux-x86_64-server-release/build.log) 2> >(/usr/bin/tee -a /home/andrew/workspace/jdk/build/linux-x86_64-server-release/build.log >&2) && wait || \
+        ( exitcode=$? && \
+        printf "\nERROR: Build failed for target 'images' in configuration 'linux-x86_64-server-release' (exit code $exitcode) \n" \
+            | /usr/bin/tee -a /home/andrew/workspace/jdk/build/linux-x86_64-server-release/build.log && \
+        cd /home/andrew/workspace/jdk && /usr/bin/make  -r -R -I /home/andrew/workspace/jdk/make/common SPEC=/home/andrew/workspace/jdk/build/linux-x86_64-server-release/spec.gmk MAKE_LOG_FLAGS=""  LOG_LEVEL=debug   LOG_NOFILE=   LOG_CMDLINES=   LOG_REPORT=   LOG_PROFILE_TIMES_LOG=   LOG_PROFILE_TIMES_FILE=  -j 1 -f make/Init.gmk \
+            HAS_SPEC=true on-failure ; \
+        exit $exitcode ) )
+make[2]: Entering directory '/home/andrew/workspace/jdk'
+SetupTarget buildtools-langtools  
+ [2] MAKEFILE := ToolsLangtools                                                                    
+SetupTarget interim-langtools  
+ [2] MAKEFILE := CompileInterimLangtools                                                                    
+SetupTarget interim-tzdb  
+ [2] MAKEFILE := CopyInterimTZDB                                                                    
+SetupTarget buildtools-jdk  
+ [2] MAKEFILE := CompileToolsJdk  
+ [3] DEPS := interim-langtools interim-tzdb                                                                  
+SetupTarget buildtools-modules  
+ [2] MAKEFILE := CompileModuleTools                                                                    
+SetupTarget buildtools-hotspot  
+ [2] MAKEFILE := CompileToolsHotspot                                                                    
+SetupTarget generate-exported-symbols  
+ [2] MAKEFILE := BuildStatic  
+ [3] DEPS := java.base-libs jdk.jdwp.agent-libs                                                                  
+SetupTarget hotspot-ide-project  
+ [2] MAKEFILE := ide/visualstudio/hotspot/CreateVSProject  
+ [3] DEPS := hotspot exploded-image  
+ [4] ARGS := -I/home/andrew/workspace/jdk/make/hotspot                                                                
+SetupTarget compile-commands  
+ [2] MAKEFILE := CompileCommands                                                                    
+SetupTarget compile-commands-hotspot  
+ [2] MAKEFILE := CompileCommands                                                                    
+SetupTarget vscode-project  
+ [2] MAKEFILE := ide/vscode/hotspot/CreateVSCodeProject  
+ [3] ARGS := VSCODE_INDEXER=cpptools  
+ [4] DEPS := compile-commands                                                                
+SetupTarget vscode-project-clangd  
+ [2] MAKEFILE := ide/vscode/hotspot/CreateVSCodeProject  
+ [3] ARGS := VSCODE_INDEXER=clangd  
+ [4] DEPS := compile-commands                                                                
+SetupTarget vscode-project-rtags  
+ [2] MAKEFILE := ide/vscode/hotspot/CreateVSCodeProject  
+ [3] ARGS := VSCODE_INDEXER=rtags  
+ [4] DEPS := compile-commands                                                                
+SetupTarget vscode-project-ccls  
+ [2] MAKEFILE := ide/vscode/hotspot/CreateVSCodeProject  
+ [3] ARGS := VSCODE_INDEXER=ccls  
+ [4] DEPS := compile-commands                                                                
+SetupTarget demos-jdk  
+ [2] MAKEFILE := CompileDemos  
+ [3] DEPS := java.base-libs exploded-image buildtools-jdk                                                                  
+SetupTarget test-image-demos-jdk  
+ [2] MAKEFILE := CompileDemos  
+ [3] TARGET := images  
+ [4] DEPS := demos-jdk                                                                
+SetupTarget generate-summary  
+ [2] MAKEFILE := GenerateModuleSummary  
+ [3] DEPS := jmods buildtools-modules runnable-buildjdk                                                                  
+SetupTarget store-source-revision  
+ [2] MAKEFILE := SourceRevision  
+ [3] TARGET := store-source-revision                                                                  
+SetupTarget create-source-revision-tracker  
+ [2] MAKEFILE := SourceRevision  
+ [3] TARGET := create-source-revision-tracker                                                                  
+SetupTarget zip-security  
+ [2] MAKEFILE := ZipSecurity  
+ [3] DEPS := buildtools-jdk java.base-java java.security.jgss-java java.security.jgss-libs                                                                  
+SetupTarget zip-source  
+ [2] MAKEFILE := ZipSource  
+ [3] DEPS := buildtools-jdk gensrc                                                                  
+SetupTarget jrtfs-jar  
+ [2] MAKEFILE := JrtfsJar  
+ [3] DEPS := interim-langtools                                                                  
+SetupTarget jdk-image  
+ [2] MAKEFILE := Images  
+ [3] TARGET := jdk  
+ [4] DEPS := jmods zip-source demos release-file                                                                
+SetupTarget legacy-jre-image  
+ [2] MAKEFILE := Images  
+ [3] TARGET := jre  
+ [4] DEPS := jmods release-file                                                                
+SetupTarget symbols-image  
+ [2] MAKEFILE := Images  
+ [3] TARGET := symbols                                                                  
+SetupTarget static-libs-image  
+ [2] MAKEFILE := StaticLibsImage                                                                    
+SetupTarget mac-jdk-bundle  
+ [2] MAKEFILE := MacBundles  
+ [3] TARGET := jdk-bundle  
+ [4] DEPS := jdk-image                                                                
+SetupTarget mac-legacy-jre-bundle  
+ [2] MAKEFILE := MacBundles  
+ [3] TARGET := jre-bundle  
+ [4] DEPS := legacy-jre-image                                                                
+SetupTarget release-file  
+ [2] MAKEFILE := ReleaseFile  
+ [3] DEPS := create-source-revision-tracker                                                                  
+SetupTarget exploded-image-optimize  
+ [2] MAKEFILE := ExplodedImageOptimize  
+ [3] DEPS := java copy gendata java.base-libs java.base-launchers buildtools-modules                                                                  
+SetupTarget graal-builder-image  
+ [2] MAKEFILE := GraalBuilderImage  
+ [3] DEPS := jdk-image static-libs-image                                                                  
+SetupTarget docs-jdk-api-javadoc  
+ [2] MAKEFILE := Docs  
+ [3] TARGET := docs-jdk-api-javadoc                                                                  
+SetupTarget docs-jdk-api-modulegraph  
+ [2] MAKEFILE := Docs  
+ [3] TARGET := docs-jdk-api-modulegraph  
+ [4] DEPS := buildtools-modules runnable-buildjdk                                                                
+SetupTarget docs-javase-api-javadoc  
+ [2] MAKEFILE := Docs  
+ [3] TARGET := docs-javase-api-javadoc                                                                  
+SetupTarget docs-javase-api-modulegraph  
+ [2] MAKEFILE := Docs  
+ [3] TARGET := docs-javase-api-modulegraph  
+ [4] DEPS := buildtools-modules runnable-buildjdk                                                                
+SetupTarget docs-reference-api-javadoc  
+ [2] MAKEFILE := Docs  
+ [3] TARGET := docs-reference-api-javadoc                                                                  
+SetupTarget docs-reference-api-modulegraph  
+ [2] MAKEFILE := Docs  
+ [3] TARGET := docs-reference-api-modulegraph  
+ [4] DEPS := buildtools-modules runnable-buildjdk                                                                
+SetupTarget docs-jdk-specs  
+ [2] MAKEFILE := Docs  
+ [3] TARGET := docs-jdk-specs  
+ [4] DEPS := buildtools-jdk jdk.jdi-gensrc docs-jdk-index                                                                
+SetupTarget docs-jdk-index  
+ [2] MAKEFILE := Docs  
+ [3] TARGET := docs-jdk-index                                                                  
+SetupTarget docs-zip  
+ [2] MAKEFILE := Docs  
+ [3] TARGET := docs-zip  
+ [4] DEPS := docs-jdk buildtools-jdk                                                                
+SetupTarget docs-specs-zip  
+ [2] MAKEFILE := Docs  
+ [3] TARGET := docs-specs-zip  
+ [4] DEPS := docs-jdk-specs buildtools-jdk                                                                
+SetupTarget update-build-docs  
+ [2] MAKEFILE := UpdateBuildDocs                                                                    
+SetupTarget update-x11wrappers  
+ [2] MAKEFILE := UpdateX11Wrappers  
+ [3] DEPS := java.base-copy buildtools-jdk                                                                  
+SetupTarget create-buildjdk-interim-image  
+ [2] MAKEFILE := Main  
+ [3] TARGET := create-buildjdk-interim-image-helper  
+ [4] ARGS := SPEC=/home/andrew/workspace/jdk/build/linux-x86_64-server-release/buildjdk-spec.gmk HOTSPOT_SPEC=/home/andrew/workspace/jdk/build/linux-x86_64-server-release/buildjdk-spec.gmk CREATING_BUILDJDK=true LOG_PREFIX="[buildjdk] " JAVA_MODULES="java.base java.compiler java.logging jdk.compiler jdk.internal.opt jdk.jdeps jdk.jlink"                                                                
+SetupTarget interim-image  
+ [2] MAKEFILE := InterimImage                                                                    
+SetupTarget generate-link-opt-data  
+ [2] MAKEFILE := GenerateLinkOptData                                                                    
+SetupTarget prepare-test-image  
+ [2] MAKEFILE := TestImage  
+ [3] TARGET := prepare-test-image                                                                  
+SetupTarget build-test-hotspot-jtreg-native  
+ [2] MAKEFILE := test/JtregNativeHotspot  
+ [3] TARGET := build-test-hotspot-jtreg-native  
+ [4] DEPS := buildtools-jdk                                                                
+SetupTarget test-image-hotspot-jtreg-native  
+ [2] MAKEFILE := test/JtregNativeHotspot  
+ [3] TARGET := test-image-hotspot-jtreg-native  
+ [4] DEPS := build-test-hotspot-jtreg-native                                                                
+SetupTarget build-test-jdk-jtreg-native  
+ [2] MAKEFILE := test/JtregNativeJdk  
+ [3] TARGET := build-test-jdk-jtreg-native  
+ [4] DEPS := buildtools-jdk java.base-libs                                                                
+SetupTarget test-image-jdk-jtreg-native  
+ [2] MAKEFILE := test/JtregNativeJdk  
+ [3] TARGET := test-image-jdk-jtreg-native  
+ [4] DEPS := build-test-jdk-jtreg-native                                                                
+SetupTarget build-test-lib-native  
+ [2] MAKEFILE := test/BuildTestLibNative  
+ [3] TARGET := build-test-lib-native  
+ [4] DEPS := buildtools-jdk java.base-libs                                                                
+SetupTarget test-image-lib-native  
+ [2] MAKEFILE := test/BuildTestLibNative  
+ [3] TARGET := test-image-lib-native  
+ [4] DEPS := build-test-lib-native                                                                
+SetupTarget build-test-libtest-jtreg-native  
+ [2] MAKEFILE := test/JtregNativeLibTest  
+ [3] TARGET := build-test-libtest-jtreg-native  
+ [4] DEPS := buildtools-jdk                                                                
+SetupTarget test-image-libtest-jtreg-native  
+ [2] MAKEFILE := test/JtregNativeLibTest  
+ [3] TARGET := test-image-libtest-jtreg-native  
+ [4] DEPS := build-test-libtest-jtreg-native                                                                
+SetupTarget build-test-lib  
+ [2] MAKEFILE := test/BuildTestLib  
+ [3] DEPS := exploded-image                                                                  
+SetupTarget build-microbenchmark  
+ [2] MAKEFILE := test/BuildMicrobenchmark  
+ [3] DEPS := interim-langtools exploded-image                                                                  
+SetupTarget test  
+ [2] MAKEFILE := RunTests  
+ [3] ARGS := TEST=""  
+ [4] DEPS := jdk-image test-image                                                                
+SetupTarget exploded-test  
+ [2] MAKEFILE := RunTests  
+ [3] ARGS := TEST="" JDK_IMAGE_DIR=/home/andrew/workspace/jdk/build/linux-x86_64-server-release/jdk  
+ [4] DEPS := exploded-image test-image                                                                
+SetupTarget product-bundles  
+ [2] MAKEFILE := Bundles  
+ [3] TARGET := product-bundles  
+ [4] DEPS := product-images                                                                
+SetupTarget legacy-bundles  
+ [2] MAKEFILE := Bundles  
+ [3] TARGET := legacy-bundles  
+ [4] DEPS := legacy-images                                                                
+SetupTarget test-bundles  
+ [2] MAKEFILE := Bundles  
+ [3] TARGET := test-bundles  
+ [4] DEPS := test-image                                                                
+SetupTarget docs-jdk-bundles  
+ [2] MAKEFILE := Bundles  
+ [3] TARGET := docs-jdk-bundles  
+ [4] DEPS := docs-image                                                                
+SetupTarget docs-javase-bundles  
+ [2] MAKEFILE := Bundles  
+ [3] TARGET := docs-javase-bundles  
+ [4] DEPS := docs-javase-image                                                                
+SetupTarget docs-reference-bundles  
+ [2] MAKEFILE := Bundles  
+ [3] TARGET := docs-reference-bundles  
+ [4] DEPS := docs-reference-image                                                                
+SetupTarget static-libs-bundles  
+ [2] MAKEFILE := Bundles  
+ [3] TARGET := static-libs-bundles  
+ [4] DEPS := static-libs-image                                                                
+SetupTarget install  
+ [2] MAKEFILE := Install  
+ [3] DEPS := product-images                                                                  
+(cd /home/andrew/workspace/jdk/make && /usr/bin/make  -r -R -I /home/andrew/workspace/jdk/make/common SPEC=/home/andrew/workspace/jdk/build/linux-x86_64-server-release/spec.gmk MAKE_LOG_FLAGS=""  -f ToolsLangtools.gmk  )
+make[3]: Entering directory '/home/andrew/workspace/jdk/make'
+SetupJavaCompilation BUILD_TOOLS_LANGTOOLS  
+ [2] COMPILER := bootjdk  
+ [3] TARGET_RELEASE := -source 17 -target 17 -Xlint:-options  
+ [4] SRC := /home/andrew/workspace/jdk/make/langtools/tools  
+ [5] INCLUDES := compileproperties propertiesparser  
+ [6] COPY := .properties  
+ [7] BIN := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/buildtools/langtools_tools_classes                                                          
+make[3]: Nothing to be done for 'default'.
+make[3]: Leaving directory '/home/andrew/workspace/jdk/make'
+(cd /home/andrew/workspace/jdk/make && /usr/bin/make  -r -R -I /home/andrew/workspace/jdk/make/common SPEC=/home/andrew/workspace/jdk/build/linux-x86_64-server-release/spec.gmk MAKE_LOG_FLAGS=""  -f ModuleWrapper.gmk -I /home/andrew/workspace/jdk/make/common/modules -I/home/andrew/workspace/jdk/make/modules/jdk.compiler MODULE=jdk.compiler MAKEFILE_PREFIX=Gensrc )
+make[3]: Entering directory '/home/andrew/workspace/jdk/make'
+SetupCopyFiles COPY_LIBS_TO_LIB  
+ [2] SRC := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/support/modules_libs/jdk.compiler  
+ [3] DEST := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/jdk/lib  
+ [4] FILES :=                                                                
+SetupCopyFiles LINK_LIBS_TO_LIB  
+ [2] SRC := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/support/modules_libs/jdk.compiler  
+ [3] DEST := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/jdk/lib  
+ [4] FILES :=  
+ [5] MACRO := link-file-relative  
+ [6] LOG_ACTION := Creating symlink                                                            
+SetupCopyFiles COPY_INCLUDE  
+ [2] SRC := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/support/modules_include/jdk.compiler  
+ [3] DEST := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/jdk/include  
+ [4] FILES :=                                                                
+SetupCopyFiles COPY_CMDS  
+ [2] SRC := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/support/modules_cmds/jdk.compiler  
+ [3] DEST := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/jdk/bin  
+ [4] FILES :=                                                                
+SetupCopyFiles COPY_MAN  
+ [2] SRC := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/support/modules_man/jdk.compiler  
+ [3] DEST := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/jdk/man  
+ [4] FILES :=                                                                
+SetupCopyFiles COPY_CONF  
+ [2] SRC := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/support/modules_conf/jdk.compiler  
+ [3] DEST := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/jdk/conf  
+ [4] FILES :=                                                                
+make[3]: Nothing to be done for 'default'.
+make[3]: Leaving directory '/home/andrew/workspace/jdk/make'
+(cd /home/andrew/workspace/jdk/make && /usr/bin/make  -r -R -I /home/andrew/workspace/jdk/make/common SPEC=/home/andrew/workspace/jdk/build/linux-x86_64-server-release/spec.gmk MAKE_LOG_FLAGS=""  -f ModuleWrapper.gmk -I /home/andrew/workspace/jdk/make/common/modules -I/home/andrew/workspace/jdk/make/modules/jdk.javadoc MODULE=jdk.javadoc MAKEFILE_PREFIX=Gensrc )
+make[3]: Entering directory '/home/andrew/workspace/jdk/make'
+SetupCopyFiles COPY_LIBS_TO_LIB  
+ [2] SRC := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/support/modules_libs/jdk.javadoc  
+ [3] DEST := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/jdk/lib  
+ [4] FILES :=                                                                
+SetupCopyFiles LINK_LIBS_TO_LIB  
+ [2] SRC := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/support/modules_libs/jdk.javadoc  
+ [3] DEST := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/jdk/lib  
+ [4] FILES :=  
+ [5] MACRO := link-file-relative  
+ [6] LOG_ACTION := Creating symlink                                                            
+SetupCopyFiles COPY_INCLUDE  
+ [2] SRC := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/support/modules_include/jdk.javadoc  
+ [3] DEST := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/jdk/include  
+ [4] FILES :=                                                                
+SetupCopyFiles COPY_CMDS  
+ [2] SRC := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/support/modules_cmds/jdk.javadoc  
+ [3] DEST := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/jdk/bin  
+ [4] FILES :=                                                                
+SetupCopyFiles COPY_MAN  
+ [2] SRC := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/support/modules_man/jdk.javadoc  
+ [3] DEST := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/jdk/man  
+ [4] FILES :=                                                                
+SetupCopyFiles COPY_CONF  
+ [2] SRC := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/support/modules_conf/jdk.javadoc  
+ [3] DEST := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/jdk/conf  
+ [4] FILES :=                                                                
+make[3]: Nothing to be done for 'default'.
+make[3]: Leaving directory '/home/andrew/workspace/jdk/make'
+(cd /home/andrew/workspace/jdk/make && /usr/bin/make  -r -R -I /home/andrew/workspace/jdk/make/common SPEC=/home/andrew/workspace/jdk/build/linux-x86_64-server-release/spec.gmk MAKE_LOG_FLAGS=""  -f CompileInterimLangtools.gmk  )
+make[3]: Entering directory '/home/andrew/workspace/jdk/make'
+SetupCopyFiles COPY_PREVIEW_FEATURES  
+ [2] FILES := /home/andrew/workspace/jdk/src/java.base/share/classes/jdk/internal/javac/PreviewFeature.java /home/andrew/workspace/jdk/src/java.base/share/classes/jdk/internal/javac/NoPreview.java  
+ [3] DEST := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/buildtools/gensrc/java.base.interim/jdk/internal/javac/                                                                  
+SetupJavaCompilation BUILD_java.compiler.interim  
+ [2] COMPILER := bootjdk  
+ [3] TARGET_RELEASE := -source 17 -target 17 -Xlint:-options  
+ [4] SRC := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/buildtools/gensrc/java.compiler.interim /home/andrew/workspace/jdk/src/java.compiler/share/classes  
+ [5] EXCLUDES := sun javax/tools/snippet-files  
+ [6] EXCLUDE_FILES := /home/andrew/workspace/jdk/src/java.compiler/share/classes/module-info.java Standard.java  
+ [7] EXTRA_FILES := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/buildtools/gensrc/java.compiler.interim/module-info.java  
+ [8] COPY := .gif .png .xml .css .svg .js .js.template .txt javax.tools.JavaCompilerTool  
+ [9] BIN := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/buildtools/interim_langtools_modules/java.compiler.interim  
+ [10] DISABLED_WARNINGS := module options  
+ [11] JAVAC_FLAGS := --module-path /home/andrew/workspace/jdk/build/linux-x86_64-server-release/buildtools/interim_langtools_modules --add-exports java.base/sun.reflect.annotation=jdk.compiler.interim --add-exports java.base/jdk.internal.jmod=jdk.compiler.interim --add-exports java.base/jdk.internal.misc=jdk.compiler.interim --add-exports java.base/sun.invoke.util=jdk.compiler.interim --add-exports java.base/jdk.internal.javac=java.compiler.interim --add-exports java.base/jdk.internal.javac=jdk.compiler.interim --patch-module java.base=/home/andrew/workspace/jdk/build/linux-x86_64-server-release/buildtools/gensrc/java.base.interim --add-exports java.base/jdk.internal.javac=java.compiler.interim ...                                                  
+SetupJavaCompilation BUILD_jdk.compiler.interim  
+ [2] COMPILER := bootjdk  
+ [3] TARGET_RELEASE := -source 17 -target 17 -Xlint:-options  
+ [4] SRC := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/buildtools/gensrc/jdk.compiler.interim /home/andrew/workspace/jdk/build/linux-x86_64-server-release/support/gensrc/jdk.compiler /home/andrew/workspace/jdk/src/jdk.compiler/share/classes  
+ [5] EXCLUDES := sun javax/tools/snippet-files  
+ [6] EXCLUDE_FILES := /home/andrew/workspace/jdk/src/jdk.compiler/share/classes/module-info.java Standard.java  
+ [7] EXTRA_FILES := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/buildtools/gensrc/jdk.compiler.interim/module-info.java  
+ [8] COPY := .gif .png .xml .css .svg .js .js.template .txt javax.tools.JavaCompilerTool  
+ [9] BIN := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/buildtools/interim_langtools_modules/jdk.compiler.interim  
+ [10] DISABLED_WARNINGS := module options  
+ [11] JAVAC_FLAGS := --module-path /home/andrew/workspace/jdk/build/linux-x86_64-server-release/buildtools/interim_langtools_modules --add-exports java.base/sun.reflect.annotation=jdk.compiler.interim --add-exports java.base/jdk.internal.jmod=jdk.compiler.interim --add-exports java.base/jdk.internal.misc=jdk.compiler.interim --add-exports java.base/sun.invoke.util=jdk.compiler.interim --add-exports java.base/jdk.internal.javac=java.compiler.interim --add-exports java.base/jdk.internal.javac=jdk.compiler.interim --patch-module java.base=/home/andrew/workspace/jdk/build/linux-x86_64-server-release/buildtools/gensrc/java.base.interim --add-exports java.base/jdk.internal.javac=java.compiler.interim ...                                                  
+SetupJavaCompilation BUILD_jdk.javadoc.interim  
+ [2] COMPILER := bootjdk  
+ [3] TARGET_RELEASE := -source 17 -target 17 -Xlint:-options  
+ [4] SRC := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/buildtools/gensrc/jdk.javadoc.interim /home/andrew/workspace/jdk/build/linux-x86_64-server-release/support/gensrc/jdk.javadoc /home/andrew/workspace/jdk/src/jdk.javadoc/share/classes  
+ [5] EXCLUDES := sun javax/tools/snippet-files  
+ [6] EXCLUDE_FILES := /home/andrew/workspace/jdk/src/jdk.javadoc/share/classes/module-info.java Standard.java  
+ [7] EXTRA_FILES := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/buildtools/gensrc/jdk.javadoc.interim/module-info.java  
+ [8] COPY := .gif .png .xml .css .svg .js .js.template .txt javax.tools.JavaCompilerTool  
+ [9] BIN := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/buildtools/interim_langtools_modules/jdk.javadoc.interim  
+ [10] DISABLED_WARNINGS := module options  
+ [11] JAVAC_FLAGS := --module-path /home/andrew/workspace/jdk/build/linux-x86_64-server-release/buildtools/interim_langtools_modules --add-exports java.base/sun.reflect.annotation=jdk.compiler.interim --add-exports java.base/jdk.internal.jmod=jdk.compiler.interim --add-exports java.base/jdk.internal.misc=jdk.compiler.interim --add-exports java.base/sun.invoke.util=jdk.compiler.interim --add-exports java.base/jdk.internal.javac=java.compiler.interim --add-exports java.base/jdk.internal.javac=jdk.compiler.interim --patch-module java.base=/home/andrew/workspace/jdk/build/linux-x86_64-server-release/buildtools/gensrc/java.base.interim --add-exports java.base/jdk.internal.javac=java.compiler.interim ...                                                  
+make[3]: Nothing to be done for 'default'.
+make[3]: Leaving directory '/home/andrew/workspace/jdk/make'
+(cd /home/andrew/workspace/jdk/make && /usr/bin/make  -r -R -I /home/andrew/workspace/jdk/make/common SPEC=/home/andrew/workspace/jdk/build/linux-x86_64-server-release/spec.gmk MAKE_LOG_FLAGS=""  -f JrtfsJar.gmk  )
+make[3]: Entering directory '/home/andrew/workspace/jdk/make'
+SetupTextFileProcessing BUILD_JAVA_MANIFEST  
+ [2] SOURCE_FILES := /home/andrew/workspace/jdk/make/data/mainmanifest/manifest.mf  
+ [3] OUTPUT_FILE := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/support/java-main-manifest.mf  
+ [4] REPLACEMENTS := @@VERSION_SPECIFICATION@@ => 19 ; @@VERSION_SHORT@@ => 19-internal ; @@COMPANY_NAME@@ => N/A                                                                
+SetupJavaCompilation BUILD_JRTFS  
+ [2] COMPILER := bootjdk  
+ [3] TARGET_RELEASE := --release 8  
+ [4] SRC := /home/andrew/workspace/jdk/src/java.base/share/classes  
+ [5] EXCLUDE_FILES := module-info.java  
+ [6] INCLUDES := jdk/internal/jimage jdk/internal/jrtfs  
+ [7] BIN := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/support/jrtfs_classes                                                          
+SetupCopyFiles COPY_JIMAGE_SERVICE_PROVIDER  
+ [2] SRC := /home/andrew/workspace/jdk/src/java.base/share/classes  
+ [3] DEST := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/support/jrtfs_classes  
+ [4] FILES := META-INF/services/java.nio.file.spi.FileSystemProvider                                                                
+SetupJarArchive BUILD_JRTFS_JAR  
+ [2] DEPENDENCIES := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/support/jrtfs_classes/_the.BUILD_JRTFS_batch /home/andrew/workspace/jdk/build/linux-x86_64-server-release/support/jrtfs_classes/META-INF/services/java.nio.file.spi.FileSystemProvider  
+ [3] SRCS := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/support/jrtfs_classes  
+ [4] JAR := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/support/modules_libs/java.base/jrt-fs.jar  
+ [5] MANIFEST := /home/andrew/workspace/jdk/build/linux-x86_64-server-release/support/java-main-manifest.mf                                                              
+/usr/bin/cp /home/andrew/workspace/jdk/build/linux-x86_64-server-release/support/java-main-manifest.mf /home/andrew/workspace/jdk/build/linux-x86_64-server-release/support/modules_libs/java.base/_the.jrt-fs.jar_manifest 
+echo Creating support/modules_libs/java.base/jrt-fs.jar 
+Creating support/modules_libs/java.base/jrt-fs.jar
+echo /home/andrew/workspace/jdk-19+2/bin/jar --create  --date 1234456 --file /home/andrew/workspace/jdk/build/linux-x86_64-server-release/support/modules_libs/java.base/jrt-fs.jar --manifest /home/andrew/workspace/jdk/build/linux-x86_64-server-release/support/modules_libs/java.base/_the.jrt-fs.jar_manifest 
+/home/andrew/workspace/jdk-19+2/bin/jar --create --date 1234456 --file /home/andrew/workspace/jdk/build/linux-x86_64-server-release/support/modules_libs/java.base/jrt-fs.jar --manifest /home/andrew/workspace/jdk/build/linux-x86_64-server-release/support/modules_libs/java.base/_the.jrt-fs.jar_manifest
+/home/andrew/workspace/jdk-19+2/bin/jar --create  --date 1234456 --file /home/andrew/workspace/jdk/build/linux-x86_64-server-release/support/modules_libs/java.base/jrt-fs.jar --manifest /home/andrew/workspace/jdk/build/linux-x86_64-server-release/support/modules_libs/java.base/_the.jrt-fs.jar_manifest 
+make[3]: Leaving directory '/home/andrew/workspace/jdk/make'
+make[2]: Leaving directory '/home/andrew/workspace/jdk'
+
+ERROR: Build failed for target 'images' in configuration 'linux-x86_64-server-release' (exit code 2) 
+make[2]: Entering directory '/home/andrew/workspace/jdk'
+[ -f /home/andrew/workspace/jdk/build/linux-x86_64-server-release/make-support/javacservers/server.port ] && echo Stopping sjavac server && /usr/bin/touch /home/andrew/workspace/jdk/build/linux-x86_64-server-release/make-support/javacservers/server.port.stop; true
+/usr/bin/date '+%Y %m %d %H %M %S' | /usr/bin/gawk '{ print $1,$2,$3,$4,$5,$6,($4*3600+$5*60+$6) }' > /home/andrew/workspace/jdk/build/linux-x86_64-server-release/make-support/build-times/build_time_end_TOTAL
+/usr/bin/date '+%Y-%m-%d %H:%M:%S' > /home/andrew/workspace/jdk/build/linux-x86_64-server-release/make-support/build-times/build_time_end_TOTAL_human_readable
+echo `/usr/bin/cat /home/andrew/workspace/jdk/build/linux-x86_64-server-release/make-support/build-times/build_time_start_TOTAL` `/usr/bin/cat /home/andrew/workspace/jdk/build/linux-x86_64-server-release/make-support/build-times/build_time_end_TOTAL` TOTAL | /usr/bin/gawk '{ F=$7; T=$14; if (F > T) { T+=3600*24 }; D=T-F; H=int(D/3600); M=int((D-H*3600)/60); S=D-H*3600-M*60; printf("%02d:%02d:%02d %s\n",H,M,S,$15); }' > /home/andrew/workspace/jdk/build/linux-x86_64-server-release/make-support/build-times/build_time_diff_TOTAL
+printf  -- "----- Build times -------\nStart %s\nEnd   %s\n%s\n%s\n-------------------------\n" "`/usr/bin/cat /home/andrew/workspace/jdk/build/linux-x86_64-server-release/make-support/build-times/build_time_start_TOTAL_human_readable`" "`/usr/bin/cat /home/andrew/workspace/jdk/build/linux-x86_64-server-release/make-support/build-times/build_time_end_TOTAL_human_readable`" "`/usr/bin/ls /home/andrew/workspace/jdk/build/linux-x86_64-server-release/make-support/build-times/build_time_diff_* | /usr/bin/grep -v _TOTAL | /usr/bin/xargs /usr/bin/cat | /usr/bin/sort -k 2`" "`/usr/bin/cat /home/andrew/workspace/jdk/build/linux-x86_64-server-release/make-support/build-times/build_time_diff_TOTAL`" | /usr/bin/tee -a /home/andrew/workspace/jdk/build/linux-x86_64-server-release/build.log
+----- Build times -------
+Start 2021-12-22 10:17:08
+End   2021-12-22 10:17:09
+
+00:00:01 TOTAL
+-------------------------
+if /usr/bin/grep -q "recipe for target .* failed" /home/andrew/workspace/jdk/build/linux-x86_64-server-release/build.log 2> /dev/null; then printf "\n=== Make failed targets repeated here ===\n" ; /usr/bin/grep "recipe for target .* failed" /home/andrew/workspace/jdk/build/linux-x86_64-server-release/build.log ; printf "=== End of repeated output ===\n" ; printf "\nHint: Try searching the build log for the name of the first failed target.\n" ; else printf "\nNo indication of failed target found.\n" ; printf "Hint: Try searching the build log for '] Error'.\n" ; fi 
+
+No indication of failed target found.
+Hint: Try searching the build log for '] Error'.
+printf "Hint: See doc/building.html#troubleshooting for assistance.\n\n"
+Hint: See doc/building.html#troubleshooting for assistance.
+
+make[2]: Leaving directory '/home/andrew/workspace/jdk'
+make[1]: Leaving directory '/home/andrew/workspace/jdk'
