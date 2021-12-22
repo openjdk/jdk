@@ -168,7 +168,8 @@ int LogFileStreamOutput::write_internal(const LogDecorations& decorations, const
 }
 
 int LogFileStreamOutput::write_blocking(const LogDecorations& decorations, const char* msg) {
-  return write_internal(decorations, msg);
+  int written = write_internal(decorations, msg);
+  return flush() ? written : -1;
 }
 
 int LogFileStreamOutput::write(const LogDecorations& decorations, const char* msg) {
