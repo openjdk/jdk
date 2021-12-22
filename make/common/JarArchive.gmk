@@ -219,19 +219,16 @@ define SetupJarArchiveBody
 
   # If reproducible build and the boot jdk jar supports --date
   # then specify the --date using SOURCE_DATE in ISO-8601
-  $1_JAR_SOURCE_DATE :=
+  $1_JAR_OPTIONS :=
   ifeq ($$(ENABLE_REPRODUCIBLE_BUILD), true)
     ifeq ($$(BOOT_JDK_JAR_SUPPORTS_DATE), true)
-      $1_JAR_SOURCE_DATE := --date $(SOURCE_DATE_ISO_8601)
+      $1_JAR_OPTIONS += --date $(SOURCE_DATE_ISO_8601)
     endif
   endif
   ifneq (,$$($1_CHECK_COMPRESS_JAR))
-    $1_JAR_OPTIONS := --no-compress $$($1_JAR_SOURCE_DATE)
-    ifeq ($(COMPRESS_JARS), true)
-      $1_JAR_OPTIONS := $$($1_JAR_SOURCE_DATE)
+    ifneq ($(COMPRESS_JARS), true)
+      $1_JAR_OPTIONS += --no-compress 
     endif
-  else
-    $1_JAR_OPTIONS := $$($1_JAR_SOURCE_DATE)
   endif
 
   # Include all variables of significance in the vardeps file
