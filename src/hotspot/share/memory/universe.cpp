@@ -110,6 +110,11 @@ OopHandle Universe::_delayed_stack_overflow_error_message;
 OopHandle Universe::_preallocated_out_of_memory_error_array;
 volatile jint Universe::_preallocated_out_of_memory_error_avail_count = 0;
 
+// Message details for OOME objects, preallocate these objects since they could be
+// used when throwing OOME, we should try to avoid further allocation in such case
+OopHandle Universe::_msg_metaspace;
+OopHandle Universe::_msg_class_metaspace;
+
 OopHandle Universe::_null_ptr_exception_instance;
 OopHandle Universe::_arithmetic_exception_instance;
 OopHandle Universe::_virtual_machine_error_instance;
@@ -540,16 +545,6 @@ static void reinitialize_itables() {
   ClassLoaderDataGraph::classes_do(&cl);
 }
 
-// Message details for OOME objects
-const char* MSG_JAVA_HEAP         = "Java heap space";
-const char* MSG_C_HEAP            = "C heap space";
-const char* MSG_METASPACE         = "Metaspace";
-const char* MSG_CLASS_METASPACE   = "Compressed class space";
-const char* MSG_ARRAY_SIZE        = "Requested array size exceeds VM limit";
-const char* MSG_GC_OVERHEAD_LIMIT = "GC overhead limit exceeded";
-const char* MSG_REALLOC_OBJECTS   = "Java heap space: failed reallocation of scalar replaced objects";
-const char* MSG_RETRY             = "Java heap space: failed retryable allocation";
-
 bool Universe::on_page_boundary(void* addr) {
   return is_aligned(addr, os::vm_page_size());
 }
@@ -594,14 +589,6 @@ bool Universe::is_out_of_memory_error(oop obj, const char* msg) {
   oop msg_oop = java_lang_Throwable::message(obj);
   const char * msg_str = java_lang_String::as_utf8_string(msg_oop);
   return strcmp(msg, msg_str) == 0;
-}
-
-bool Universe::is_out_of_memory_error_metaspace(oop obj) {
-  return is_out_of_memory_error(obj, MSG_METASPACE);
-}
-
-bool Universe::is_out_of_memory_error_class_metaspace(oop obj) {
-  return is_out_of_memory_error(obj, MSG_CLASS_METASPACE);
 }
 
 // Throw default _out_of_memory_error_retry object as it will never propagate out of the VM
@@ -664,6 +651,14 @@ oop Universe::gen_out_of_memory_error(oop default_err) {
   }
 }
 
+bool Universe::is_out_of_memory_error_metaspace(oop ex_obj) {
+  return java_lang_Throwable::message(ex_obj) == _msg_metaspace.resolve();
+}
+
+bool Universe::is_out_of_memory_error_class_metaspace(oop ex_obj) {
+  return java_lang_Throwable::message(ex_obj) == _msg_class_metaspace.resolve();
+}
+
 // Setup preallocated OutOfMemoryError errors
 void Universe::create_preallocated_out_of_memory_errors(TRAPS) {
   InstanceKlass* ik = vmClasses::OutOfMemoryError_klass();
@@ -676,28 +671,26 @@ void Universe::create_preallocated_out_of_memory_errors(TRAPS) {
   }
   _out_of_memory_errors = OopHandle(vm_global(), oom_array());
 
-  Handle msg = java_lang_String::create_from_str(MSG_JAVA_HEAP, CHECK);
+  Handle msg = java_lang_String::create_from_str("Java heap space", CHECK);
   java_lang_Throwable::set_message(oom_array->obj_at(_oom_java_heap), msg());
-
-  msg = java_lang_String::create_from_str(MSG_C_HEAP, CHECK);
+  msg = java_lang_String::create_from_str("C heap space", CHECK);
   java_lang_Throwable::set_message(oom_array->obj_at(_oom_c_heap), msg());
 
-  msg = java_lang_String::create_from_str(MSG_METASPACE, CHECK);
+  msg = java_lang_String::create_from_str("Metaspace", CHECK);
+  _msg_metaspace = OopHandle(vm_global(), msg());
   java_lang_Throwable::set_message(oom_array->obj_at(_oom_metaspace), msg());
 
-  msg = java_lang_String::create_from_str(MSG_CLASS_METASPACE, CHECK);
+  msg = java_lang_String::create_from_str("Compressed class space", CHECK);
+  _msg_class_metaspace = OopHandle(vm_global(), msg());
   java_lang_Throwable::set_message(oom_array->obj_at(_oom_class_metaspace), msg());
 
-  msg = java_lang_String::create_from_str(MSG_ARRAY_SIZE, CHECK);
+  msg = java_lang_String::create_from_str("Requested array size exceeds VM limit", CHECK);
   java_lang_Throwable::set_message(oom_array->obj_at(_oom_array_size), msg());
-
-  msg = java_lang_String::create_from_str(MSG_GC_OVERHEAD_LIMIT, CHECK);
+  msg = java_lang_String::create_from_str("GC overhead limit exceeded", CHECK);
   java_lang_Throwable::set_message(oom_array->obj_at(_oom_gc_overhead_limit), msg());
-
-  msg = java_lang_String::create_from_str(MSG_REALLOC_OBJECTS, CHECK);
+  msg = java_lang_String::create_from_str("Java heap space: failed reallocation of scalar replaced objects", CHECK);
   java_lang_Throwable::set_message(oom_array->obj_at(_oom_realloc_objects), msg());
-
-  msg = java_lang_String::create_from_str(MSG_RETRY, CHECK);
+  msg = java_lang_String::create_from_str("Java heap space: failed retryable allocation", CHECK);
   java_lang_Throwable::set_message(oom_array->obj_at(_oom_retry), msg());
 
   // Setup the array of errors that have preallocated backtrace
