@@ -217,7 +217,7 @@ define SetupJarArchiveBody
   # Use a slightly shorter name for logging, but with enough path to identify this jar.
   $1_NAME:=$$(subst $$(OUTPUTDIR)/,,$$($1_JAR))
 
-  # If reproducible build and the boot jdk jar supports --date
+  # If reproducible build and the boot jdk jar supports --date option
   # then specify the --date using SOURCE_DATE in ISO-8601
   $1_JAR_OPTIONS :=
   ifeq ($$(ENABLE_REPRODUCIBLE_BUILD), true)
