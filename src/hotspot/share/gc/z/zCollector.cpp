@@ -739,16 +739,19 @@ public:
   }
 };
 
-void ZOldCollector::roots_remap() {
+void ZOldCollector::remap_remembered_sets() {
+  ZGenerationPagesIterator iter(_page_table, ZGenerationId::old, _page_allocator);
+  for (ZPage* page; iter.next(&page);) {
+    // Visit all object fields that potentially pointing into young generation
+    page->oops_do_current_remembered(ZBarrier::load_barrier_on_oop_field);
+  }
+}
+
+void ZOldCollector::remap_roots() {
   SuspendibleThreadSetJoiner sts_joiner;
 
-  {
-    ZGenerationPagesIterator iter(_page_table, ZGenerationId::old, _page_allocator);
-    for (ZPage* page; iter.next(&page);) {
-      // Visit all entries pointing into young gen
-      page->oops_do_current_remembered(ZBarrier::load_barrier_on_oop_field);
-    }
-  }
+  // Remap remembered sets
+  remap_remembered_sets();
 
   sts_joiner.yield();
 

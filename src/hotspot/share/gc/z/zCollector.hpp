@@ -255,7 +255,8 @@ public:
   bool mark_end();
   void relocate_start();
   void relocate();
-  void roots_remap();
+  void remap_roots();
+  void remap_remembered_sets();
 
   int total_collections_at_end() const;
 };

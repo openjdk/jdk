@@ -74,7 +74,7 @@ static const ZStatPhaseConcurrent ZPhaseConcurrentResetRelocationSetOld("Concurr
 static const ZStatPhaseConcurrent ZPhaseConcurrentSelectRelocationSetOld("Concurrent Select Relocation Set (Old)");
 static const ZStatPhasePause      ZPhasePauseRelocateStartOld("Pause Relocate Start (Old)");
 static const ZStatPhaseConcurrent ZPhaseConcurrentRelocatedOld("Concurrent Relocate (Old)");
-static const ZStatPhaseConcurrent ZPhaseConcurrentRootsRemapOld("Concurrent Roots Remap (Old)");
+static const ZStatPhaseConcurrent ZPhaseConcurrentRemapRootsOld("Concurrent Remap Roots (Old)");
 
 static const ZStatSampler         ZSamplerJavaThreads("System", "Java Threads", ZStatUnitThreads);
 
@@ -660,9 +660,9 @@ static void concurrent_relocate_old() {
   old_collector()->relocate();
 }
 
-static void concurrent_roots_remap_old() {
-  ZStatTimerOld timer(ZPhaseConcurrentRootsRemapOld);
-  old_collector()->roots_remap();
+static void concurrent_remap_roots_old() {
+  ZStatTimerOld timer(ZPhaseConcurrentRemapRootsOld);
+  old_collector()->remap_roots();
 }
 
 static void handle_alloc_stalling_for_old() {
@@ -798,8 +798,8 @@ static void collect_old(ConcurrentGCTimer* timer) {
   {
     ZDriverLocker locker;
 
-    // Phase 8: Concurrent Roots Remap
-    concurrent_roots_remap_old();
+    // Phase 8: Concurrent Remap Roots
+    concurrent_remap_roots_old();
 
     abortpoint();
 
