@@ -499,6 +499,12 @@ void Compile::print_compile_messages() {
     tty->print_cr("** Bailout: Recompile without escape analysis          **");
     tty->print_cr("*********************************************************");
   }
+  if (do_iterative_escape_analysis() != DoEscapeAnalysis && PrintOpto) {
+    // Recompiling without iterative escape analysis
+    tty->print_cr("*********************************************************");
+    tty->print_cr("** Bailout: Recompile without iterative escape analysis**");
+    tty->print_cr("*********************************************************");
+  }
   if ((eliminate_boxing() != EliminateAutoBox) && PrintOpto) {
     // Recompiling without boxing elimination
     tty->print_cr("*********************************************************");
@@ -2161,27 +2167,37 @@ void Compile::Optimize() {
       if (major_progress()) print_method(PHASE_PHASEIDEAL_BEFORE_EA, 2);
       if (failing())  return;
     }
-    ConnectionGraph::do_analysis(this, &igvn);
-
-    if (failing())  return;
-
-    // Optimize out fields loads from scalar replaceable allocations.
-    igvn.optimize();
-    print_method(PHASE_ITER_GVN_AFTER_EA, 2);
-
-    if (failing())  return;
-
-    if (congraph() != NULL && macro_count() > 0) {
-      TracePhase tp("macroEliminate", &timers[_t_macroEliminate]);
-      PhaseMacroExpand mexp(igvn);
-      mexp.eliminate_macro_nodes();
-      igvn.set_delay_transform(false);
-
-      igvn.optimize();
-      print_method(PHASE_ITER_GVN_AFTER_ELIMINATION, 2);
+    bool progress;
+    do {
+      ConnectionGraph::do_analysis(this, &igvn);
 
       if (failing())  return;
-    }
+
+      int mcount = macro_count(); // Record number of allocations and locks before IGVN
+
+      // Optimize out fields loads from scalar replaceable allocations.
+      igvn.optimize();
+      print_method(PHASE_ITER_GVN_AFTER_EA, 2);
+
+      if (failing())  return;
+
+      if (congraph() != NULL && macro_count() > 0) {
+        TracePhase tp("macroEliminate", &timers[_t_macroEliminate]);
+        PhaseMacroExpand mexp(igvn);
+        mexp.eliminate_macro_nodes();
+        igvn.set_delay_transform(false);
+
+        igvn.optimize();
+        print_method(PHASE_ITER_GVN_AFTER_ELIMINATION, 2);
+
+        if (failing())  return;
+      }
+      progress = do_iterative_escape_analysis() &&
+                 (macro_count() < mcount) &&
+                 ConnectionGraph::has_candidates(this);
+      // Try again if candidates exist and made progress
+      // by removing some allocations and/or locks.
+    } while (progress);
   }
 
   // Loop transforms on the ideal graph.  Range Check Elimination,
@@ -3742,7 +3758,7 @@ bool Compile::final_graph_reshaping() {
       // 'fall-thru' path, so expected kids is 1 less.
       if (n->is_PCTable() && n->in(0) && n->in(0)->in(0)) {
         if (n->in(0)->in(0)->is_Call()) {
-          CallNode *call = n->in(0)->in(0)->as_Call();
+          CallNode* call = n->in(0)->in(0)->as_Call();
           if (call->entry_point() == OptoRuntime::rethrow_stub()) {
             required_outcnt--;      // Rethrow always has 1 less kid
           } else if (call->req() > TypeFunc::Parms &&
@@ -3751,22 +3767,25 @@ bool Compile::final_graph_reshaping() {
             // detected that the virtual call will always result in a null
             // pointer exception. The fall-through projection of this CatchNode
             // will not be populated.
-            Node *arg0 = call->in(TypeFunc::Parms);
+            Node* arg0 = call->in(TypeFunc::Parms);
             if (arg0->is_Type() &&
                 arg0->as_Type()->type()->higher_equal(TypePtr::NULL_PTR)) {
               required_outcnt--;
             }
-          } else if (call->entry_point() == OptoRuntime::new_array_Java() &&
-                     call->req() > TypeFunc::Parms+1 &&
-                     call->is_CallStaticJava()) {
+          } else if (call->entry_point() == OptoRuntime::new_array_Java() ||
+                     call->entry_point() == OptoRuntime::new_array_nozero_Java()) {
             // Check for negative array length. In such case, the optimizer has
             // detected that the allocation attempt will always result in an
             // exception. There is no fall-through projection of this CatchNode .
-            Node *arg1 = call->in(TypeFunc::Parms+1);
-            if (arg1->is_Type() &&
-                arg1->as_Type()->type()->join(TypeInt::POS)->empty()) {
+            assert(call->is_CallStaticJava(), "static call expected");
+            assert(call->len() > call->req() && call->in(call->req()) != NULL, "no precendent edge");
+            Node* valid_length_test = call->in(call->req());
+            call->rm_prec(call->req());
+            if (valid_length_test->find_int_con(1) == 0) {
               required_outcnt--;
             }
+            assert(n->outcnt() == required_outcnt, "malformed control flow");
+            continue;
           }
         }
       }
@@ -3774,6 +3793,13 @@ bool Compile::final_graph_reshaping() {
       if (n->outcnt() != required_outcnt) {
         record_method_not_compilable("malformed control flow");
         return true;            // Not all targets reachable!
+      }
+    } else if (n->is_PCTable() && n->in(0) && n->in(0)->in(0) && n->in(0)->in(0)->is_Call()) {
+      CallNode* call = n->in(0)->in(0)->as_Call();
+      if (call->entry_point() == OptoRuntime::new_array_Java() ||
+          call->entry_point() == OptoRuntime::new_array_nozero_Java()) {
+        assert(call->len() > call->req() && call->in(call->req()) != NULL, "precedent edge expected");
+        call->rm_prec(call->req());
       }
     }
     // Check that I actually visited all kids.  Unreached kids

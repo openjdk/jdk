@@ -91,8 +91,10 @@ private:
   uint                 _active_workers;
   WorkerTaskDispatcher _dispatcher;
 
+  WorkerThread* create_worker(uint name_suffix);
+
 protected:
-  virtual WorkerThread* create_worker(uint id);
+  virtual void on_create_worker(WorkerThread* worker) {}
 
 public:
   WorkerThreads(const char* name, uint max_workers);
@@ -117,23 +119,19 @@ public:
 };
 
 class WorkerThread : public NamedThread {
+  friend class WorkerTaskDispatcher;
+
 private:
+  static THREAD_LOCAL uint _worker_id;
+
   WorkerTaskDispatcher* const _dispatcher;
-  const uint                  _id;
+
+  static void set_worker_id(uint worker_id) { _worker_id = worker_id; }
 
 public:
-  static WorkerThread* current() {
-    return WorkerThread::cast(Thread::current());
-  }
+  static uint worker_id() { return _worker_id; }
 
-  static WorkerThread* cast(Thread* t) {
-    assert(t->is_Worker_thread(), "incorrect cast to WorkerThread");
-    return static_cast<WorkerThread*>(t);
-  }
-
-  WorkerThread(const char* name_prefix, uint id, WorkerTaskDispatcher* dispatcher);
-
-  uint id() const                        { return _id; }
+  WorkerThread(const char* name_prefix, uint which, WorkerTaskDispatcher* dispatcher);
 
   bool is_Worker_thread() const override { return true; }
   const char* type_name() const override { return "WorkerThread"; }

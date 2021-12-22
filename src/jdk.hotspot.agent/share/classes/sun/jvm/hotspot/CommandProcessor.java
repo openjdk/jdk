@@ -608,6 +608,18 @@ public class CommandProcessor {
                 }
             }
         },
+        // "whatis" is just an alias for "findpc". It's kept around for compatiblity reasons.
+        new Command("whatis", "whatis address", false) {
+            public void doit(Tokens t) {
+                if (t.countTokens() != 1) {
+                    usage();
+                } else {
+                    Address a = VM.getVM().getDebugger().parseAddress(t.nextToken());
+                    PointerLocation loc = PointerFinder.find(a);
+                    loc.printOn(out);
+                }
+            }
+        },
         new Command("symbol", "symbol address", false) {
             public void doit(Tokens t) {
                 if (t.countTokens() != 1) {
