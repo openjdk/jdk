@@ -628,7 +628,7 @@ void InstructionPrinter::do_BlockBegin(BlockBegin* x) {
     return;
   }
 
-  // print values in locals
+  // print values in locals related to phi functions
   ValueStack* state = x->state();
   bool printed_phis_in_locals_header = false;
   do {
@@ -636,7 +636,7 @@ void InstructionPrinter::do_BlockBegin(BlockBegin* x) {
       Value v = state->local_at(i);
       if (v && is_phi_of_block(v, x)) {
         if (!printed_phis_in_locals_header) {
-          output()->cr(); output()->print("Locals:");
+          output()->cr(); output()->print("Values in locals related to phi functions:");
           printed_phis_in_locals_header = true;
         }
         output()->cr(); print_phi(i, v, x);
@@ -649,7 +649,7 @@ void InstructionPrinter::do_BlockBegin(BlockBegin* x) {
     state = state->caller_state();
   } while (state != NULL);
 
-  // print values on stack
+  // print values on stack related to phi functions
   state = x->state();
   bool printed_phis_in_stack_header = false;
   int i = 0;
@@ -658,7 +658,7 @@ void InstructionPrinter::do_BlockBegin(BlockBegin* x) {
     Value v = state->stack_at_inc(i);
     if (v && is_phi_of_block(v, x)) {
       if (!printed_phis_in_stack_header) {
-        output()->cr(); output()->print("Stack:");
+        output()->cr(); output()->print("Values on stack related to phi functions:");
         printed_phis_in_stack_header = true;
       }
       output()->cr(); print_phi(o, v, x);
