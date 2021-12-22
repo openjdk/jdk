@@ -231,19 +231,19 @@ inline HeapWord* HeapRegion::allocate(size_t min_word_size,
   return allocate_impl(min_word_size, desired_word_size, actual_word_size);
 }
 
-inline HeapWord* HeapRegion::bot_threshold_for_addr(const void* addr) {
+inline HeapWord* HeapRegion::bot_threshold_for_addr(const void* addr, bool assert_old) {
   HeapWord* threshold = _bot_part.threshold_for_addr(addr);
   assert(threshold >= addr,
          "threshold must be at or after given address. " PTR_FORMAT " >= " PTR_FORMAT,
          p2i(threshold), p2i(addr));
-  assert(is_old(),
+  assert(!assert_old ||is_old(),
          "Should only calculate BOT threshold for old regions. addr: " PTR_FORMAT " region:" HR_FORMAT,
          p2i(addr), HR_FORMAT_PARAMS(this));
   return threshold;
 }
 
-inline void HeapRegion::update_bot_crossing_threshold(HeapWord** threshold, HeapWord* obj_start, HeapWord* obj_end) {
-  assert(is_old(), "should only do BOT updates for old regions");
+inline void HeapRegion::update_bot_crossing_threshold(HeapWord** threshold, HeapWord* obj_start, HeapWord* obj_end, bool assert_old) {
+  assert(!assert_old ||is_old(), "should only do BOT updates for old regions");
   assert(is_in(obj_start), "obj_start must be in this region: " HR_FORMAT
          " obj_start " PTR_FORMAT " obj_end " PTR_FORMAT " threshold " PTR_FORMAT,
          HR_FORMAT_PARAMS(this),
@@ -251,12 +251,12 @@ inline void HeapRegion::update_bot_crossing_threshold(HeapWord** threshold, Heap
   _bot_part.alloc_block_work(threshold, obj_start, obj_end);
 }
 
-inline void HeapRegion::update_bot_at(HeapWord* obj_start, size_t obj_size) {
-  HeapWord* threshold = bot_threshold_for_addr(obj_start);
+inline void HeapRegion::update_bot_at(HeapWord* obj_start, size_t obj_size, bool assert_old) {
+  HeapWord* threshold = bot_threshold_for_addr(obj_start, assert_old);
   HeapWord* obj_end = obj_start + obj_size;
 
   if (obj_end > threshold) {
-    update_bot_crossing_threshold(&threshold, obj_start, obj_end);
+    update_bot_crossing_threshold(&threshold, obj_start, obj_end, assert_old);
   }
 }
 

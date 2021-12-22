@@ -60,7 +60,8 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
                                            uint n_workers,
                                            size_t young_cset_length,
                                            size_t optional_cset_length,
-                                           G1EvacFailureRegions* evac_failure_regions)
+                                           G1EvacFailureRegions* evac_failure_regions,
+                                           G1RegionMarkStats* evac_failure_mark_stats)
   : _g1h(g1h),
     _task_queue(g1h->task_queue(worker_id)),
     _rdc_local_qset(rdcqs),
@@ -88,7 +89,8 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     EVAC_FAILURE_INJECTOR_ONLY(_evac_failure_inject_counter(0) COMMA)
     _preserved_marks(preserved_marks),
     _evacuation_failed_info(),
-    _evac_failure_regions(evac_failure_regions)
+    _evac_failure_regions(evac_failure_regions),
+    _evac_failure_mark_stats_cache(evac_failure_mark_stats, G1RegionMarkStatsCache::RegionMarkStatsCacheSize)
 {
   // We allocate number of young gen regions in the collection set plus one
   // entries, since entry 0 keeps track of surviving bytes for non-young regions.
@@ -111,6 +113,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
 }
 
 size_t G1ParScanThreadState::flush(size_t* surviving_young_words) {
+  flush_evac_failure_mark_stats_cache();
   _rdc_local_qset.flush();
   flush_numa_stats();
   // Update allocation statistics.
@@ -563,7 +566,8 @@ G1ParScanThreadState* G1ParScanThreadStateSet::state_for_worker(uint worker_id) 
                                _preserved_marks_set->get(worker_id),
                                worker_id, _n_workers,
                                _young_cset_length, _optional_cset_length,
-                               _evac_failure_regions);
+                               _evac_failure_regions,
+                               _evac_failure_live_stats);
   }
   return _states[worker_id];
 }
@@ -598,6 +602,15 @@ void G1ParScanThreadStateSet::flush() {
   _flushed = true;
 }
 
+void G1ParScanThreadStateSet::flush_evac_failure_live_data() {
+  assert(!_flushed, "thread local state from the per thread states should be flushed once");
+
+  for (uint worker_id = 0; worker_id < _n_workers; ++worker_id) {
+    G1ParScanThreadState* pss = _states[worker_id];
+    pss->flush_evac_failure_mark_stats_cache();
+  }
+}
+
 void G1ParScanThreadStateSet::record_unused_optional_region(HeapRegion* hr) {
   for (uint worker_index = 0; worker_index < _n_workers; ++worker_index) {
     G1ParScanThreadState* pss = _states[worker_index];
@@ -622,7 +635,7 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
     // later use it to handle all failed objects.
     _g1h->mark_evac_failure_object(old, _worker_id);
 
-    if (_evac_failure_regions->record(r->hrm_index())) {
+    if (_evac_failure_regions->record(r->hrm_index(), word_sz, &_evac_failure_mark_stats_cache)) {
       _g1h->hr_printer()->evac_failure(r);
     }
 
@@ -694,7 +707,8 @@ G1ParScanThreadStateSet::G1ParScanThreadStateSet(G1CollectedHeap* g1h,
     _optional_cset_length(optional_cset_length),
     _n_workers(n_workers),
     _flushed(false),
-    _evac_failure_regions(evac_failure_regions) {
+    _evac_failure_regions(evac_failure_regions),
+    _evac_failure_live_stats(_evac_failure_regions->live_stats()) {
   for (uint i = 0; i < n_workers; ++i) {
     _states[i] = NULL;
   }

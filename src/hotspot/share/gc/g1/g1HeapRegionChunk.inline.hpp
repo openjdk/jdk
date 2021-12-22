@@ -22,25 +22,31 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1EVACFAILUREREGIONS_INLINE_HPP
-#define SHARE_GC_G1_G1EVACFAILUREREGIONS_INLINE_HPP
+#ifndef SHARE_GC_G1_G1HEAPREGIONCHUNK_INLINE_HPP
+#define SHARE_GC_G1_G1HEAPREGIONCHUNK_INLINE_HPP
 
-#include "gc/g1/g1EvacFailureRegions.hpp"
 #include "gc/g1/g1HeapRegionChunk.hpp"
-#include "runtime/atomic.hpp"
+#include "gc/shared/markBitMap.inline.hpp"
+#include "runtime/prefetch.hpp"
 
-bool G1EvacFailureRegions::record(uint region_idx, size_t word_sz, G1RegionMarkStatsCache* mark_stats_cache) {
-  assert(region_idx < _max_regions, "must be");
-  mark_stats_cache->add_live_words(region_idx, word_sz);
+template<typename ApplyToMarkedClosure>
+inline void G1HeapRegionChunk::apply_to_marked_objects(ApplyToMarkedClosure* closure) {
+  HeapWord* next_addr = _first_obj_in_chunk;
 
-  bool success = _regions_failed_evacuation.par_set_bit(region_idx,
-                                                        memory_order_relaxed);
-  if (success) {
-    size_t offset = Atomic::fetch_and_add(&_evac_failure_regions_cur_length, 1u);
-    _evac_failure_regions[offset] = region_idx;
-    _chunk_claimers[region_idx] = new (NEW_C_HEAP_OBJ(G1HeapRegionChunkClaimer, mtGC)) G1HeapRegionChunkClaimer(region_idx);
+  while (next_addr < _limit) {
+    Prefetch::write(next_addr, PrefetchScanIntervalInBytes);
+    // This explicit is_marked check is a way to avoid
+    // some extra work done by get_next_marked_addr for
+    // the case where next_addr is marked.
+    if (_bitmap->is_marked(next_addr)) {
+      oop current = cast_to_oop(next_addr);
+      next_addr += closure->apply(current);
+    } else {
+      next_addr = _bitmap->get_next_marked_addr(next_addr, _limit);
+    }
   }
-  return success;
+
+  // assert(next_addr == _limit, "Should stop the scan at the limit.");
 }
 
-#endif //SHARE_GC_G1_G1EVACFAILUREREGIONS_INLINE_HPP
+#endif //SHARE_GC_G1_G1HEAPREGIONCHUNK_INLINE_HPP

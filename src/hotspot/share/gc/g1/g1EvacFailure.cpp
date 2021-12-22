@@ -28,6 +28,7 @@
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacFailure.hpp"
 #include "gc/g1/g1EvacFailureRegions.hpp"
+#include "gc/g1/g1HeapRegionChunk.inline.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/heapRegion.hpp"
@@ -41,6 +42,7 @@ class RemoveSelfForwardPtrObjClosure {
   G1CollectedHeap* _g1h;
   G1ConcurrentMark* _cm;
   HeapRegion* _hr;
+  G1HeapRegionChunk* _chunk;
   size_t _marked_words;
   bool _during_concurrent_start;
   uint _worker_id;
@@ -48,15 +50,19 @@ class RemoveSelfForwardPtrObjClosure {
 
 public:
   RemoveSelfForwardPtrObjClosure(HeapRegion* hr,
+                                 G1HeapRegionChunk* chunk,
                                  bool during_concurrent_start,
                                  uint worker_id) :
     _g1h(G1CollectedHeap::heap()),
     _cm(_g1h->concurrent_mark()),
     _hr(hr),
+    _chunk(chunk),
     _marked_words(0),
     _during_concurrent_start(during_concurrent_start),
-    _worker_id(worker_id),
-    _last_forwarded_object_end(hr->bottom()) { }
+    _worker_id(worker_id) {
+    _last_forwarded_object_end = _chunk->include_first_obj_in_region() ?
+                                 _hr->bottom() : _chunk->first_obj_in_chunk();
+  }
 
   size_t marked_bytes() { return _marked_words * HeapWordSize; }
 
@@ -98,7 +104,7 @@ public:
 
     HeapWord* obj_end = obj_addr + obj_size;
     _last_forwarded_object_end = obj_end;
-    _hr->alloc_block_in_bot(obj_addr, obj_end);
+    _hr->update_bot_at(obj_addr, obj_size, false);
     return obj_size;
   }
 
@@ -114,14 +120,15 @@ public:
     if (gap_size >= CollectedHeap::min_fill_size()) {
       CollectedHeap::fill_with_objects(start, gap_size);
 
+      size_t dummy_size = cast_to_oop(start)->size();
       HeapWord* end_first_obj = start + cast_to_oop(start)->size();
-      _hr->alloc_block_in_bot(start, end_first_obj);
+      _hr->update_bot_at(start, dummy_size, false);
       // Fill_with_objects() may have created multiple (i.e. two)
       // objects, as the max_fill_size() is half a region.
       // After updating the BOT for the first object, also update the
       // BOT for the second object to make the BOT complete.
       if (end_first_obj != end) {
-        _hr->alloc_block_in_bot(end_first_obj, end);
+        _hr->update_bot_at(end_first_obj, cast_to_oop(end_first_obj)->size(), false);
 #ifdef ASSERT
         size_t size_second_obj = cast_to_oop(end_first_obj)->size();
         HeapWord* end_of_second_obj = end_first_obj + size_second_obj;
@@ -136,7 +143,44 @@ public:
   }
 
   void zap_remainder() {
-    zap_dead_objects(_last_forwarded_object_end, _hr->top());
+    zap_dead_objects(_last_forwarded_object_end, _chunk->next_obj_in_region());
+    if (_chunk->include_last_obj_in_region()) {
+      // As we have process the self forwardee in parallel,
+      // it's necessary to update the bot threshold explicitly.
+      _hr->update_bot_threshold();
+    }
+  }
+};
+
+class RemoveSelfForwardPtrHRChunkClosure : public G1HeapRegionChunkClosure {
+  G1CollectedHeap* _g1h;
+  uint _worker_id;
+
+  void remove_self_forward_ptr_by_walking_chunk(G1HeapRegionChunk* chunk,
+                                                bool during_concurrent_start) {
+    RemoveSelfForwardPtrObjClosure rspc(chunk->heap_region(),
+                                        chunk,
+                                        during_concurrent_start,
+                                        _worker_id);
+
+    // All objects that failed evacuation has been marked in the prev bitmap.
+    // Use the bitmap to apply the above closure to all failing objects.
+    chunk->apply_to_marked_objects(&rspc);
+    // Need to zap the remainder area of the processed region.
+    if (!chunk->empty()) {
+      rspc.zap_remainder();
+    }
+  }
+
+public:
+  RemoveSelfForwardPtrHRChunkClosure(uint worker_id) :
+    _g1h(G1CollectedHeap::heap()),
+    _worker_id(worker_id) {
+  }
+
+  void do_heap_region_chunk(G1HeapRegionChunk* chunk) override {
+    bool during_concurrent_start = _g1h->collector_state()->in_concurrent_start_gc();
+    remove_self_forward_ptr_by_walking_chunk(chunk, during_concurrent_start);
   }
 };
 
@@ -154,22 +198,6 @@ public:
     _evac_failure_regions(evac_failure_regions) {
   }
 
-  size_t remove_self_forward_ptr_by_walking_hr(HeapRegion* hr,
-                                               bool during_concurrent_start) {
-    RemoveSelfForwardPtrObjClosure rspc(hr,
-                                        during_concurrent_start,
-                                        _worker_id);
-
-    // All objects that failed evacuation has been marked in the prev bitmap.
-    // Use the bitmap to apply the above closure to all failing objects.
-    G1CMBitMap* bitmap = const_cast<G1CMBitMap*>(_g1h->concurrent_mark()->prev_mark_bitmap());
-    hr->apply_to_marked_objects(bitmap, &rspc);
-    // Need to zap the remainder area of the processed region.
-    rspc.zap_remainder();
-
-    return rspc.marked_bytes();
-  }
-
   bool do_heap_region(HeapRegion *hr) {
     assert(!hr->is_pinned(), "Unexpected pinned region at index %u", hr->hrm_index());
     assert(hr->in_collection_set(), "bad CS");
@@ -185,7 +213,7 @@ public:
 
     hr->reset_bot();
 
-    size_t live_bytes = remove_self_forward_ptr_by_walking_hr(hr, during_concurrent_start);
+    size_t live_bytes = _evac_failure_regions->live_bytes_in_region(hr->hrm_index());
 
     hr->rem_set()->clean_strong_code_roots(hr);
     hr->rem_set()->clear_locked(true);
@@ -208,6 +236,10 @@ void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
 
   // Iterate through all regions that failed evacuation during the entire collection.
   _evac_failure_regions->par_iterate(&rsfp_cl, &_hrclaimer, worker_id);
+
+  RemoveSelfForwardPtrHRChunkClosure rsfp_cl_2(worker_id);
+  // Iterate through all chunks in regions that failed evacuation during the entire collection.
+  _evac_failure_regions->par_iterate_chunks(&rsfp_cl_2, worker_id);
 }
 
 uint G1ParRemoveSelfForwardPtrsTask::num_failed_regions() const {

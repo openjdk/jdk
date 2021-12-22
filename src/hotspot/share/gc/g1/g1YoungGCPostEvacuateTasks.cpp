@@ -109,7 +109,7 @@ public:
 
   double worker_cost() const override {
     assert(_evac_failure_regions->evacuation_failed(), "Should not call this if not executed");
-    return _evac_failure_regions->num_regions_failed_evacuation();
+    return _evac_failure_regions->num_regions_failed_evacuation() * G1EvacuationFailureALotWorkerCost;
   }
 
   void do_work(uint worker_id) override {
@@ -122,6 +122,9 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
   G1BatchedTask("Post Evacuate Cleanup 1", G1CollectedHeap::heap()->phase_times())
 {
   bool evacuation_failed = evac_failure_regions->evacuation_failed();
+  if (evacuation_failed) {
+    per_thread_states->flush_evac_failure_live_data();
+  }
 
   add_serial_task(new MergePssTask(per_thread_states));
   add_serial_task(new RecalculateUsedTask(evacuation_failed));
