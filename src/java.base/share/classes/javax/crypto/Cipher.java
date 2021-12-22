@@ -340,7 +340,7 @@ public class Cipher {
                                            "format:" + transformation);
         }
         if ((parts[0] == null) || (parts[0].isEmpty())) {
-            throw new NoSuchAlgorithmException("Invalid transformation:" +
+            throw new NoSuchAlgorithmException("Invalid transformation: " +
                                    "algorithm not specified-"
                                    + transformation);
         }

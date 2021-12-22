@@ -37,14 +37,6 @@ PSVirtualSpace::PSVirtualSpace(ReservedSpace rs, size_t alignment) :
   DEBUG_ONLY(verify());
 }
 
-PSVirtualSpace::PSVirtualSpace(ReservedSpace rs) :
-  _alignment(os::vm_page_size())
-{
-  set_reserved(rs);
-  set_committed(reserved_low_addr(), reserved_low_addr());
-  DEBUG_ONLY(verify());
-}
-
 // Deprecated.
 PSVirtualSpace::PSVirtualSpace():
   _alignment(os::vm_page_size()),
