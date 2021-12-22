@@ -30,8 +30,8 @@ import javax.swing.CellEditor;
 import javax.swing.JTable;
 
 /**
- * This interface defines the method any object that would like to be
- * an editor of values for the {@code JTable} component needs to implement.
+ * This interface must be implemented to provide an editor of cell values
+ * for a {@code JTable}.
  *
  * @author Alan Chung
  */
