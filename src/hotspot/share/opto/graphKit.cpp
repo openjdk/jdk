@@ -3986,7 +3986,7 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
   }
 
   const TypeOopPtr* ary_type = _gvn.type(klass_node)->is_klassptr()->as_instance_type();
-  Node* valid_length_test = C->top();
+  Node* valid_length_test = _gvn.intcon(1);
   if (ary_type->klass()->is_array_klass()) {
     BasicType bt = ary_type->klass()->as_array_klass()->element_type()->basic_type();
     jint max = TypeAryPtr::max_array_length(bt);

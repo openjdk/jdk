@@ -3778,9 +3778,9 @@ bool Compile::final_graph_reshaping() {
             // detected that the allocation attempt will always result in an
             // exception. There is no fall-through projection of this CatchNode .
             assert(call->is_CallStaticJava(), "static call expected");
-            assert(call->len() > call->req() && call->in(call->req()) != NULL, "no precendent edge");
-            Node* valid_length_test = call->in(call->req());
-            call->rm_prec(call->req());
+            assert(call->req() == call->jvms()->endoff() + 1, "missing extra input");
+            Node* valid_length_test = call->in(call->req()-1);
+            call->del_req(call->req()-1);
             if (valid_length_test->find_int_con(1) == 0) {
               required_outcnt--;
             }
@@ -3798,8 +3798,9 @@ bool Compile::final_graph_reshaping() {
       CallNode* call = n->in(0)->in(0)->as_Call();
       if (call->entry_point() == OptoRuntime::new_array_Java() ||
           call->entry_point() == OptoRuntime::new_array_nozero_Java()) {
-        assert(call->len() > call->req() && call->in(call->req()) != NULL, "precedent edge expected");
-        call->rm_prec(call->req());
+        assert(call->is_CallStaticJava(), "static call expected");
+        assert(call->req() == call->jvms()->endoff() + 1, "missing extra input");
+        call->del_req(call->req()-1);
       }
     }
     // Check that I actually visited all kids.  Unreached kids

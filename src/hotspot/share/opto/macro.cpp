@@ -1395,7 +1395,7 @@ void PhaseMacroExpand::expand_allocate_common(
   // allocate node with the call
   call->copy_call_debug_info(&_igvn, alloc);
   if (valid_length_test != NULL) {
-    call->add_prec(valid_length_test);
+    call->add_req(valid_length_test);
   }
   if (expand_fast_path) {
     call->set_cnt(PROB_UNLIKELY_MAG(4));  // Same effect as RC_UNCOMMON.
