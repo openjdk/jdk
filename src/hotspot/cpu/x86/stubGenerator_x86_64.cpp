@@ -4414,9 +4414,8 @@ class StubGenerator: public StubCodeGenerator {
     const Register state = c_rarg5;
     const Address subkeyH_mem(rbp, 2 * wordSize);
     const Register subkeyHtbl = r11;
-    const Address avx512_subkeyH_mem(rbp, 3 * wordSize);
     const Register avx512_subkeyHtbl = r13;
-    const Address counter_mem(rbp, 4 * wordSize);
+    const Address counter_mem(rbp, 3 * wordSize);
     const Register counter = r12;
 #else
     const Address key_mem(rbp, 6 * wordSize);
@@ -4425,9 +4424,8 @@ class StubGenerator: public StubCodeGenerator {
     const Register state = r13;
     const Address subkeyH_mem(rbp, 8 * wordSize);
     const Register subkeyHtbl = r14;
-    const Address avx512_subkeyH_mem(rbp, 9 * wordSize);
     const Register avx512_subkeyHtbl = r12;
-    const Address counter_mem(rbp, 10 * wordSize);
+    const Address counter_mem(rbp, 9 * wordSize);
     const Register counter = rsi;
 #endif
     __ enter();
@@ -4444,10 +4442,19 @@ class StubGenerator: public StubCodeGenerator {
     __ movptr(state, state_mem);
 #endif
     __ movptr(subkeyHtbl, subkeyH_mem);
-    __ movptr(avx512_subkeyHtbl, avx512_subkeyH_mem);
     __ movptr(counter, counter_mem);
+// Save rbp and rsp
+    __ push(rbp);
+    __ movq(rbp, rsp);
+// Align stack
+    __ andq(rsp, -64);
+    __ subptr(rsp, 96 * longSize); // Create space on the stack for htbl entries
+    __ movptr(avx512_subkeyHtbl, rsp);
 
     __ aesgcm_encrypt(in, len, ct, out, key, state, subkeyHtbl, avx512_subkeyHtbl, counter);
+
+    __ movq(rsp, rbp);
+    __ pop(rbp);
 
     // Restore state before leaving routine
 #ifdef _WIN64
@@ -6261,6 +6268,9 @@ address generate_avx_ghash_processBlocks() {
       __ cmpl(length, 63);
       __ jcc(Assembler::lessEqual, L_finalBit);
 
+      __ mov64(rax, 0x0000ffffffffffff);
+      __ kmovql(k2, rax);
+
       __ align32();
       __ BIND(L_process64Loop);
 
@@ -6282,7 +6292,7 @@ address generate_avx_ghash_processBlocks() {
       __ vpmaddwd(merged0, merge_ab_bc0, pack32_op, Assembler::AVX_512bit);
       __ vpermb(merged0, pack24bits, merged0, Assembler::AVX_512bit);
 
-      __ evmovdquq(Address(dest, dp), merged0, Assembler::AVX_512bit);
+      __ evmovdqub(Address(dest, dp), k2, merged0, true, Assembler::AVX_512bit);
 
       __ subl(length, 64);
       __ addptr(source, 64);

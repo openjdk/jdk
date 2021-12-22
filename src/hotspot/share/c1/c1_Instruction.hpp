@@ -137,7 +137,6 @@ class BlockList: public GrowableArray<BlockBegin*> {
 
   void iterate_forward(BlockClosure* closure);
   void iterate_backward(BlockClosure* closure);
-  void blocks_do(void f(BlockBegin*));
   void values_do(ValueVisitor* f);
   void print(bool cfg_only = false, bool live_only = false) PRODUCT_RETURN;
 };
