@@ -1510,12 +1510,15 @@ private:
 
   void kxnorbl(KRegister dst, KRegister src1, KRegister src2);
   void kshiftlbl(KRegister dst, KRegister src, int imm8);
+  void kshiftlql(KRegister dst, KRegister src, int imm8);
   void kshiftrbl(KRegister dst, KRegister src, int imm8);
   void kshiftrwl(KRegister dst, KRegister src, int imm8);
   void kshiftrdl(KRegister dst, KRegister src, int imm8);
   void kshiftrql(KRegister dst, KRegister src, int imm8);
   void ktestq(KRegister src1, KRegister src2);
   void ktestd(KRegister src1, KRegister src2);
+  void kunpckdql(KRegister dst, KRegister src1, KRegister src2);
+
 
   void ktestql(KRegister dst, KRegister src);
   void ktestdl(KRegister dst, KRegister src);
