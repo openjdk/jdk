@@ -125,10 +125,12 @@ public final class LocaleMatcher {
             String range = lr.getRange();
             if (range.equals("*")) {
                 for (String tag : tags) {
+                    // change to lowercase for case-insensitive matching
                     String lowerCaseTag = tag.toLowerCase(Locale.ROOT);
 
                     if (!caseInsensitiveMatch(list, lowerCaseTag)
                             && !shouldIgnoreFilterBasicMatch(zeroRanges, lowerCaseTag)) {
+                        // preserving the case of the input tag
                         list.add(tag);
                     }
                 }
@@ -154,17 +156,6 @@ public final class LocaleMatcher {
         }
 
         return list;
-    }
-
-    /**
-     * Remove duplicate tags from the given {@code tags} by
-     * ignoring case considerations.
-     */
-    private static Collection<String> removeDuplicates(
-            Collection<String> tags) {
-        Set<String> distinctTags = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
-        return tags.stream().filter(x -> distinctTags.add(x))
-                .toList();
     }
 
     /**
@@ -222,10 +213,12 @@ public final class LocaleMatcher {
             String range = lr.getRange();
             if (range.equals("*")) {
                 for (String tag : tags) {
+                    // change to lowercase for case-insensitive matching
                     String lowerCaseTag = tag.toLowerCase(Locale.ROOT);
 
                     if (!caseInsensitiveMatch(list, lowerCaseTag)
                             && !shouldIgnoreFilterExtendedMatch(zeroRanges, lowerCaseTag)) {
+                        // preserving the case of the input tag
                         list.add(tag);
                     }
                 }

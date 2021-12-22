@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7069824 8042360 8032842 8175539 8210443 8242010
+ * @bug 7069824 8042360 8032842 8175539 8210443 8242010 8276302
  * @summary Verify implementation for Locale matching.
  * @run testng/othervm Bug7069824
  */
