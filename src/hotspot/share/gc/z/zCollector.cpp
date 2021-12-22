@@ -298,20 +298,6 @@ void ZCollector::log_phase_switch(Phase from, Phase to) {
 }
 
 void ZCollector::set_phase(Phase new_phase) {
-#if 0
-  const Phase old_phase = _phase;
-
-  assert((new_phase == Phase::Mark && old_phase == Phase::Relocate) ||
-         (new_phase == Phase::MarkComplete && old_phase == Phase::Mark) ||
-         (new_phase == Phase::Relocate && old_phase == Phase::MarkComplete),
-         "Invalid phase change");
-#endif
-
-  if (new_phase == Phase::Mark) {
-    // Increment sequence number
-    _seqnum++;
-  }
-
   log_phase_switch(_phase, new_phase);
 
   _phase = new_phase;
@@ -379,7 +365,10 @@ void ZYoungCollector::mark_start() {
   // Reset allocated/reclaimed/used statistics
   reset_statistics();
 
-    // Enter mark phase
+  // Increment sequence number
+  _seqnum++;
+
+  // Enter mark phase
   set_phase(Phase::Mark);
 
   // Reset marking information and mark roots
@@ -439,7 +428,6 @@ void ZYoungCollector::relocate_start() {
 
   // Enter relocate phase
   set_phase(Phase::Relocate);
-
 
   // Update statistics
   stat_heap()->at_relocate_start(_page_allocator->stats(this));
@@ -517,6 +505,9 @@ void ZOldCollector::mark_start() {
 
   // Reset encountered/dropped/enqueued statistics
   _reference_processor.reset_statistics();
+
+  // Increment sequence number
+  _seqnum++;
 
   // Enter mark phase
   set_phase(Phase::Mark);
