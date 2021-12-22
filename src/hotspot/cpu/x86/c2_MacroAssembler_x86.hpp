@@ -231,6 +231,13 @@ public:
   void vector_mask_operation(int opc, Register dst, XMMRegister mask, XMMRegister xtmp,
                              Register tmp, int masklen, BasicType bt, int vec_enc);
 #endif
+
+  void vector_maskall_operation(KRegister dst, Register src, int mask_len);
+
+#ifndef _LP64
+  void vector_maskall_operation32(KRegister dst, Register src, KRegister ktmp, int mask_len);
+#endif
+
   void string_indexof_char(Register str1, Register cnt1, Register ch, Register result,
                            XMMRegister vec1, XMMRegister vec2, XMMRegister vec3, Register tmp);
 
