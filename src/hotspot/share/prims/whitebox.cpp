@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include <new>
+#include "cds.h"
 #include "cds/cdsConstants.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.inline.hpp"
@@ -1963,11 +1964,21 @@ WB_ENTRY(jboolean, WB_IsSharingEnabled(JNIEnv* env, jobject wb))
 WB_END
 
 WB_ENTRY(jint, WB_GetCDSGenericHeaderMinVersion(JNIEnv* env, jobject wb))
+#if INCLUDE_CDS
   return (jint)CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION;
+#else
+  ShouldNotReachHere();
+  return (jint)-1;
+#endif
 WB_END
 
 WB_ENTRY(jint, WB_GetCDSCurrentVersion(JNIEnv* env, jobject wb))
+#if INCLUDE_CDS
   return (jint)CURRENT_CDS_ARCHIVE_VERSION;
+#else
+  ShouldNotReachHere();
+  return (jint)-1;
+#endif
 WB_END
 
 WB_ENTRY(jboolean, WB_CDSMemoryMappingFailed(JNIEnv* env, jobject wb))
