@@ -236,9 +236,11 @@ AC_DEFUN([UTIL_GET_MATCHING_VALUES],
 # $2: input date/time string
 AC_DEFUN([UTIL_GET_EPOCH_TIMESTAMP],
 [
-  timestamp=$($DATE --utc --date=$2 +"%s" 2> /dev/null)
-  if test "x$timestamp" = x; then
-    # GNU date format did not work, try BSD date options
+  if test "x$IS_GNU_DATE" = xyes; then
+    # GNU date
+    timestamp=$($DATE --utc --date=$2 +"%s" 2> /dev/null)
+  else
+    # BSD date
     timestamp=$($DATE -u -j -f "%F %T" "$2" "+%s" 2> /dev/null)
     if test "x$timestamp" = x; then
       # Perhaps the time was missing

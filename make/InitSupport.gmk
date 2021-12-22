@@ -313,9 +313,9 @@ else # $(HAS_SPEC)=true
       SOURCE_DATE := $$(shell $$(DATE) +"%s")
     endif
     export SOURCE_DATE_EPOCH := $$(SOURCE_DATE)
-    SOURCE_DATE_ISO_8601 := $(shell $(DATE) --utc --date="@$(SOURCE_DATE_EPOCH)" +"%Y-%m-%dT%H:%M:%SZ" 2> /dev/null)
-    ifeq ($(SOURCE_DATE_ISO_8601), )
-      # GNU date format did not work, try BSD date options
+    ifeq ($$(IS_GNU_DATE), yes)
+      SOURCE_DATE_ISO_8601 := $(shell $(DATE) --utc --date="@$(SOURCE_DATE_EPOCH)" +"%Y-%m-%dT%H:%M:%SZ" 2> /dev/null)
+    else
       SOURCE_DATE_ISO_8601 := $(shell $(DATE) -u -j -f "%s" "$(SOURCE_DATE_EPOCH)" +"%Y-%m-%dT%H:%M:%SZ" 2> /dev/null)
     endif
   endef
