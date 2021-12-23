@@ -110,16 +110,13 @@ ZDriverMajor* ZDriver::major() {
   return _major;
 }
 
-class ZDriverLocker : public StackObj {
-public:
-  ZDriverLocker() {
-    ZDriver::lock();
-  }
+ZDriverLocker::ZDriverLocker() {
+  ZDriver::lock();
+}
 
-  ~ZDriverLocker() {
-    ZDriver::unlock();
-  }
-};
+ZDriverLocker::~ZDriverLocker() {
+  ZDriver::unlock();
+}
 
 class ZDriverUnlocker : public StackObj {
 public:

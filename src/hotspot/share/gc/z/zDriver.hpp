@@ -110,4 +110,10 @@ public:
   size_t used_at_start() const;
 };
 
+class ZDriverLocker : public StackObj {
+public:
+  ZDriverLocker();
+  ~ZDriverLocker();
+};
+
 #endif // SHARE_GC_Z_ZDRIVER_HPP
