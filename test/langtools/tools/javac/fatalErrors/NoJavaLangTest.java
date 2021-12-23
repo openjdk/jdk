@@ -50,8 +50,7 @@ public class NoJavaLangTest  {
         "}";
 
     private static final String compilerErrorMessage =
-        "error: Unable to find package java.lang in platform classes\n" +
-        "1 error";
+        "error: Unable to find package java.lang in platform classes";
 
     public static void main(String[] args) throws Exception {
         new NoJavaLangTest().run();
@@ -105,7 +104,7 @@ public class NoJavaLangTest  {
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
 
-        if (!out.trim().equals(expect)) {
+        if (!out.trim().startsWith(expect)) {
             throw new AssertionError("javac generated error output is not correct");
         }
     }
