@@ -85,14 +85,14 @@ class VMThread: public NamedThread {
     guarantee(false, "VMThread deletion must fix the race with VM termination");
   }
 
+  // The ever running loop for the VMThread
+  void loop();
+
  public:
   bool is_running() const { return Atomic::load(&_is_running); }
 
   // Tester
   bool is_VM_thread() const                      { return true; }
-
-  // The ever running loop for the VMThread
-  void loop();
 
   // Called to stop the VM thread
   static void wait_for_vm_thread_exit();
