@@ -53,8 +53,7 @@ public:
 };
 
 //
-// A single VMThread (the primordial thread) spawns all other threads
-// and is itself used by other threads to offload heavy vm operations
+// A single VMThread is used by other threads to offload heavy vm operations
 // like scavenge, garbage_collect etc.
 //
 
@@ -78,7 +77,6 @@ class VMThread: public NamedThread {
   void inner_execute(VM_Operation* op);
   void wait_for_operation();
 
- public:
   // Constructor
   VMThread();
 
@@ -87,6 +85,7 @@ class VMThread: public NamedThread {
     guarantee(false, "VMThread deletion must fix the race with VM termination");
   }
 
+ public:
   bool is_running() const { return Atomic::load(&_is_running); }
 
   // Tester
