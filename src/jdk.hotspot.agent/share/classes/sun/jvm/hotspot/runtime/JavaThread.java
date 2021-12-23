@@ -481,6 +481,25 @@ public class JavaThread extends Thread {
     return access.getLastSP(addr);
   }
 
+  // Print the contents of all registers in the thread's context
+  public void printThreadContextOn(PrintStream out, boolean verbose){
+    ThreadContext tc = getThreadProxy().getContext();
+    for (int r = 0; r < tc.getNumRegisters(); r++) {
+      Address regAddr = tc.getRegisterAsAddress(r);
+      System.out.format("Register(%s): %s", tc.getRegisterName(r), regAddr);
+      if (regAddr == null) {
+        System.out.println();
+      } else {
+        PointerLocation l = PointerFinder.find(regAddr);
+        if (l.isUnknown()) {
+          System.out.println();
+        } else {
+          System.out.print(": ");
+          l.printOn(System.out, false, verbose);
+        }
+      }
+    }
+  }
 
   public void printThreadInfoOn(PrintStream out){
     Oop threadOop = this.getThreadObj();
