@@ -493,10 +493,6 @@ void CollectedHeap::fill_with_dummy_object(HeapWord* start, HeapWord* end, bool 
   CollectedHeap::fill_with_object(start, end, zap);
 }
 
-size_t CollectedHeap::min_dummy_object_size() const {
-  return oopDesc::header_size();
-}
-
 size_t CollectedHeap::tlab_alloc_reserve() const {
   size_t min_size = min_dummy_object_size();
   return min_size > (size_t)MinObjAlignment ? align_object_size(min_size) : 0;

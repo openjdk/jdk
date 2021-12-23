@@ -456,7 +456,6 @@ public interface SegmentAllocator {
      * Returns a native allocator which allocates segments in independent {@linkplain ResourceScope#newImplicitScope() implicit scopes}.
      * Equivalent to (but likely more efficient than) the following code:
      * {@snippet lang=java :
-     * ResourceScope scope = ...
      * SegmentAllocator implicitAllocator = (size, align) -> MemorySegment.allocateNative(size, align, ResourceScope.newImplicitScope());
      * }
      *

@@ -9549,7 +9549,7 @@ instruct long_to_maskLE8_avx(vec dst, rRegL src, rRegL rtmp1, rRegL rtmp2, vec x
   format %{ "long_to_mask_avx $dst, $src\t! using $rtmp1, $rtmp2, $xtmp as TEMP" %}
   ins_encode %{
     int mask_len = Matcher::vector_length(this);
-    int vec_enc  = vector_length_encoding(mask_len*8);
+    int vec_enc  = vector_length_encoding(mask_len);
     __ vector_long_to_maskvec($dst$$XMMRegister, $src$$Register, $rtmp1$$Register,
                               $rtmp2$$Register, xnoreg, mask_len, vec_enc);
   %}
@@ -9565,7 +9565,7 @@ instruct long_to_maskGT8_avx(vec dst, rRegL src, rRegL rtmp1, rRegL rtmp2, vec x
   ins_encode %{
     int mask_len = Matcher::vector_length(this);
     assert(mask_len <= 32, "invalid mask length");
-    int vec_enc  = vector_length_encoding(mask_len*8);
+    int vec_enc  = vector_length_encoding(mask_len);
     __ vector_long_to_maskvec($dst$$XMMRegister, $src$$Register, $rtmp1$$Register,
                               $rtmp2$$Register, $xtmp1$$XMMRegister, mask_len, vec_enc);
   %}
@@ -9577,7 +9577,6 @@ instruct long_to_mask_evex(kReg dst, rRegL src) %{
   match(Set dst (VectorLongToMask src));
   format %{ "long_to_mask_evex $dst, $src\t!" %}
   ins_encode %{
-    int mask_len = Matcher::vector_length(this);
     __ kmov($dst$$KRegister, $src$$Register);
   %}
   ins_pipe( pipe_slow );

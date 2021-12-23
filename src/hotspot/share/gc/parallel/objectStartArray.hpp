@@ -41,6 +41,7 @@ class ObjectStartArray : public CHeapObj<mtGC> {
  private:
   PSVirtualSpace  _virtual_space;
   MemRegion       _reserved_region;
+  // The committed (old-gen heap) virtual space this object-start-array covers.
   MemRegion       _covered_region;
   MemRegion       _blocks_region;
   jbyte*          _raw_base;
