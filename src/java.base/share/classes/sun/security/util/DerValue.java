@@ -33,6 +33,8 @@ import java.io.*;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.util.*;
+import java.nio.*;
+import java.nio.charset.*;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
@@ -768,7 +770,18 @@ public class DerValue {
             throw new IOException("Incorrect string type " + tag + " is not " + expectedTag);
         }
         data.pos = data.end; // Compatibility. Reach end.
-        return new String(buffer, start, end - start, cs);
+
+        try {
+            byte b[] = new byte[end-start];
+            System.arraycopy(buffer, start, b, 0, end-start);
+            CharBuffer cb = cs.newDecoder()
+                .onUnmappableCharacter(CodingErrorAction.REPORT)
+                .onMalformedInput(CodingErrorAction.REPORT)
+                .decode(ByteBuffer.wrap(b));
+            return cb.toString();
+        } catch (IOException e) {
+            throw new IOException("Incorrect string value", e);
+        }
     }
 
     /**
