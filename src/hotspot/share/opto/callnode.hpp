@@ -913,7 +913,6 @@ public:
     KlassNode,                        // type (maybe dynamic) of the obj.
     InitialTest,                      // slow-path test (may be constant)
     ALength,                          // array length (or TOP if none)
-    ValidLengthTest,
     ParmLimit
   };
 
@@ -923,7 +922,6 @@ public:
     fields[KlassNode]   = TypeInstPtr::NOTNULL;
     fields[InitialTest] = TypeInt::BOOL;
     fields[ALength]     = t;  // length (can be a bad length)
-    fields[ValidLengthTest] = TypeInt::BOOL;
 
     const TypeTuple *domain = TypeTuple::make(ParmLimit, fields);
 
@@ -1018,16 +1016,18 @@ public:
 //
 class AllocateArrayNode : public AllocateNode {
 public:
-  AllocateArrayNode(Compile* C, const TypeFunc* atype, Node* ctrl, Node* mem, Node* abio, Node* size, Node* klass_node,
-                    Node* initial_test, Node* count_val, Node* valid_length_test)
+  AllocateArrayNode(Compile* C, const TypeFunc *atype, Node *ctrl, Node *mem, Node *abio,
+                    Node* size, Node* klass_node, Node* initial_test,
+                    Node* count_val
+                    )
     : AllocateNode(C, atype, ctrl, mem, abio, size, klass_node,
                    initial_test)
   {
     init_class_id(Class_AllocateArray);
     set_req(AllocateNode::ALength,        count_val);
-    set_req(AllocateNode::ValidLengthTest, valid_length_test);
   }
   virtual int Opcode() const;
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 
   // Dig the length operand out of a array allocation site.
   Node* Ideal_length() {
