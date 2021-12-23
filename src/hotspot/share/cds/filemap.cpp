@@ -2480,28 +2480,28 @@ void FileMapInfo::stop_sharing_and_unmap(const char* msg) {
 ClassPathEntry** FileMapInfo::_classpath_entries_for_jvmti = NULL;
 
 ClassPathEntry* FileMapInfo::get_classpath_entry_for_jvmti(int i, TRAPS) {
+  if (i == 0) {
+    // index 0 corresponds to the ClassPathImageEntry which is a globally shared object
+    // and should never be deleted.
+    return ClassLoader::get_jrt_entry();
+  }
   ClassPathEntry* ent = _classpath_entries_for_jvmti[i];
   if (ent == NULL) {
-    if (i == 0) {
-      ent = ClassLoader::get_jrt_entry();
-      assert(ent != NULL, "must be");
-    } else {
-      SharedClassPathEntry* scpe = shared_path(i);
-      assert(scpe->is_jar(), "must be"); // other types of scpe will not produce archived classes
+    SharedClassPathEntry* scpe = shared_path(i);
+    assert(scpe->is_jar(), "must be"); // other types of scpe will not produce archived classes
 
-      const char* path = scpe->name();
-      struct stat st;
-      if (os::stat(path, &st) != 0) {
+    const char* path = scpe->name();
+    struct stat st;
+    if (os::stat(path, &st) != 0) {
+      char *msg = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, strlen(path) + 128);
+      jio_snprintf(msg, strlen(path) + 127, "error in finding JAR file %s", path);
+      THROW_MSG_(vmSymbols::java_io_IOException(), msg, NULL);
+    } else {
+      ent = ClassLoader::create_class_path_entry(THREAD, path, &st, false, false);
+      if (ent == NULL) {
         char *msg = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, strlen(path) + 128);
-        jio_snprintf(msg, strlen(path) + 127, "error in finding JAR file %s", path);
+        jio_snprintf(msg, strlen(path) + 127, "error in opening JAR file %s", path);
         THROW_MSG_(vmSymbols::java_io_IOException(), msg, NULL);
-      } else {
-        ent = ClassLoader::create_class_path_entry(THREAD, path, &st, false, false);
-        if (ent == NULL) {
-          char *msg = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, strlen(path) + 128);
-          jio_snprintf(msg, strlen(path) + 127, "error in opening JAR file %s", path);
-          THROW_MSG_(vmSymbols::java_io_IOException(), msg, NULL);
-        }
       }
     }
 

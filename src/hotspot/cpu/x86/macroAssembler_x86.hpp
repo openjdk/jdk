@@ -1117,6 +1117,8 @@ public:
   void vmovdqu(XMMRegister dst, Address src);
   void vmovdqu(XMMRegister dst, XMMRegister src);
   void vmovdqu(XMMRegister dst, AddressLiteral src, Register scratch_reg = rscratch1);
+  void vmovdqu(XMMRegister dst, AddressLiteral src, Register scratch_reg, int vector_len);
+
 
   // AVX512 Unaligned
   void evmovdqu(BasicType type, KRegister kmask, Address dst, XMMRegister src, int vector_len);

@@ -59,6 +59,7 @@ import java.util.Map;
  * @author Laurence P. G. Cable
  * @since 1.2
  */
+@SuppressWarnings("doclint:missing")
 public class      BeanContextSupport extends BeanContextChildSupport
        implements BeanContext,
                   Serializable,

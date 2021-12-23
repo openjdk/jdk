@@ -808,7 +808,7 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
       return;
     }
 
-    HeapWord* scan_end = MIN2(card_start + (num_cards << BOTConstants::LogN_words), top);
+    HeapWord* scan_end = MIN2(card_start + (num_cards << BOTConstants::log_card_size_in_words()), top);
     if (_scanned_to >= scan_end) {
       return;
     }
@@ -1674,7 +1674,7 @@ void G1RemSet::refine_card_concurrently(CardValue* const card_ptr,
 
   // Don't use addr_for(card_ptr + 1) which can ask for
   // a card beyond the heap.
-  HeapWord* end = start + G1CardTable::card_size_in_words;
+  HeapWord* end = start + G1CardTable::card_size_in_words();
   MemRegion dirty_region(start, MIN2(scan_limit, end));
   assert(!dirty_region.is_empty(), "sanity");
 

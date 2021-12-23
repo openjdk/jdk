@@ -60,10 +60,11 @@ public class CheckManPageOptions {
 
     static final PrintStream out = System.err;
 
-    // FIXME: JDK-8274295, JDK-8266666
+    // FIXME: JDK-8274295, JDK-8266666, JDK-8278077
     List<String> MISSING_IN_MAN_PAGE = List.of(
             "--add-script",
             "--legal-notices",
+            "--link-modularity-mismatch",
             "--link-platform-properties",
             "--no-platform-links",
             "--since",

@@ -278,7 +278,6 @@ public class TestSnippetTag extends SnippetTester {
         checkExit(Exit.OK);
         checkLinks();
         final var javaContent = """
-
                 System.out.println(msg);
                 """;
         final var propertiesContent = """

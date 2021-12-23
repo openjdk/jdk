@@ -27,7 +27,7 @@ import java.io.PrintWriter;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * Programmatic entry point to start the simpleserver tool.
+ * Programmatic entry point to start "java -m jdk.httpserver".
  *
  * <p><b> This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own risk.
@@ -56,10 +56,11 @@ public class Main {
      *         are any {@code null} values in the {@code args} array
      */
     public static void main(String... args) {
-        int ec = SimpleFileServerImpl.start(new PrintWriter(System.out, true, UTF_8), args);
-        if (ec != 0)
+        int ec = SimpleFileServerImpl.start(new PrintWriter(System.out, true, UTF_8), "java", args);
+        if (ec != 0) {
             System.exit(ec);
-        // otherwise the server has been started successfully and runs in
-        // another non-daemon thread.
+        }  // otherwise, the server has either been started successfully and
+           // runs in another non-daemon thread, or -h or -version have been
+           // passed and the main thread has exited normally.
     }
 }

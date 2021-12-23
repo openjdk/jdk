@@ -45,7 +45,7 @@ import java.util.List;
  * @test
  * @bug 8203224
  * @summary tests that the correct exceptions are thrown by the events classes
- *          in {code java.awt.desktop} package
+ *          in {@code java.awt.desktop} package
  * @run main/othervm DesktopEventsExceptions
  * @run main/othervm -Djava.awt.headless=true DesktopEventsExceptions
  */

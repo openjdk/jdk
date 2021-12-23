@@ -4059,6 +4059,87 @@ void C2_MacroAssembler::masked_op(int ideal_opc, int mask_len, KRegister dst,
   }
 }
 
+/*
+ * Algorithm for vector D2L and F2I conversions:-
+ * a) Perform vector D2L/F2I cast.
+ * b) Choose fast path if none of the result vector lane contains 0x80000000 value.
+ *    It signifies that source value could be any of the special floating point
+ *    values(NaN,-Inf,Inf,Max,-Min).
+ * c) Set destination to zero if source is NaN value.
+ * d) Replace 0x80000000 with MaxInt if source lane contains a +ve value.
+ */
+
+void C2_MacroAssembler::vector_castD2L_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                                            KRegister ktmp1, KRegister ktmp2, AddressLiteral double_sign_flip,
+                                            Register scratch, int vec_enc) {
+  Label done;
+  evcvttpd2qq(dst, src, vec_enc);
+  evmovdqul(xtmp1, k0, double_sign_flip, false, vec_enc, scratch);
+  evpcmpeqq(ktmp1, xtmp1, dst, vec_enc);
+  kortestwl(ktmp1, ktmp1);
+  jccb(Assembler::equal, done);
+
+  vpxor(xtmp2, xtmp2, xtmp2, vec_enc);
+  evcmppd(ktmp2, k0, src, src, Assembler::UNORD_Q, vec_enc);
+  evmovdquq(dst, ktmp2, xtmp2, true, vec_enc);
+
+  kxorwl(ktmp1, ktmp1, ktmp2);
+  evcmppd(ktmp1, ktmp1, src, xtmp2, Assembler::NLT_UQ, vec_enc);
+  vpternlogq(xtmp2, 0x11, xtmp1, xtmp1, vec_enc);
+  evmovdquq(dst, ktmp1, xtmp2, true, vec_enc);
+  bind(done);
+}
+
+void C2_MacroAssembler::vector_castF2I_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                           XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4,
+                                           AddressLiteral float_sign_flip, Register scratch, int vec_enc) {
+  Label done;
+  vcvttps2dq(dst, src, vec_enc);
+  vmovdqu(xtmp1, float_sign_flip, scratch, vec_enc);
+  vpcmpeqd(xtmp2, dst, xtmp1, vec_enc);
+  vptest(xtmp2, xtmp2, vec_enc);
+  jccb(Assembler::equal, done);
+
+  vpcmpeqd(xtmp4, xtmp4, xtmp4, vec_enc);
+  vpxor(xtmp1, xtmp1, xtmp4, vec_enc);
+
+  vpxor(xtmp4, xtmp4, xtmp4, vec_enc);
+  vcmpps(xtmp3, src, src, Assembler::UNORD_Q, vec_enc);
+  vblendvps(dst, dst, xtmp4, xtmp3, vec_enc);
+
+  // Recompute the mask for remaining special value.
+  vpxor(xtmp2, xtmp2, xtmp3, vec_enc);
+  // Extract SRC values corresponding to TRUE mask lanes.
+  vpand(xtmp4, xtmp2, src, vec_enc);
+  // Flip mask bits so that MSB bit of MASK lanes corresponding to +ve special
+  // values are set.
+  vpxor(xtmp3, xtmp2, xtmp4, vec_enc);
+
+  vblendvps(dst, dst, xtmp1, xtmp3, vec_enc);
+  bind(done);
+}
+
+void C2_MacroAssembler::vector_castF2I_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                                            KRegister ktmp1, KRegister ktmp2, AddressLiteral float_sign_flip,
+                                            Register scratch, int vec_enc) {
+  Label done;
+  vcvttps2dq(dst, src, vec_enc);
+  evmovdqul(xtmp1, k0, float_sign_flip, false, vec_enc, scratch);
+  Assembler::evpcmpeqd(ktmp1, k0, xtmp1, dst, vec_enc);
+  kortestwl(ktmp1, ktmp1);
+  jccb(Assembler::equal, done);
+
+  vpxor(xtmp2, xtmp2, xtmp2, vec_enc);
+  evcmpps(ktmp2, k0, src, src, Assembler::UNORD_Q, vec_enc);
+  evmovdqul(dst, ktmp2, xtmp2, true, vec_enc);
+
+  kxorwl(ktmp1, ktmp1, ktmp2);
+  evcmpps(ktmp1, ktmp1, src, xtmp2, Assembler::NLT_UQ, vec_enc);
+  vpternlogd(xtmp2, 0x11, xtmp1, xtmp1, vec_enc);
+  evmovdqul(dst, ktmp1, xtmp2, true, vec_enc);
+  bind(done);
+}
+
 #ifdef _LP64
 void C2_MacroAssembler::vector_mask_operation_helper(int opc, Register dst, Register tmp, int masklen) {
   switch(opc) {

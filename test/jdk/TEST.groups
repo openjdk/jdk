@@ -518,7 +518,23 @@ needs_g1gc = \
   jdk/jfr/event/gc/objectcount/TestObjectCountAfterGCEventWithG1FullCollection.java \
   jdk/jfr/event/gc/objectcount/TestObjectCountAfterGCEventWithG1ConcurrentMark.java \
   jdk/jfr/event/gc/heapsummary/TestHeapSummaryEventG1.java
-  
+
+#  This set of tests will be executed in an ipv6 only environment
+
+jdk_ipv6_only = \
+    :jdk_net \
+    :jdk_nio_networkchannel
+
+jdk_nio_networkchannel = \
+    java/nio/channels/AsyncCloseAndInterrupt.java \
+    java/nio/channels/AsynchronousServerSocketChannel \
+    java/nio/channels/AsynchronousSocketChannel \
+    java/nio/channels/DatagramChannel \
+    java/nio/channels/ServerSocketChannel \
+    java/nio/channels/SocketChannel \
+    java/nio/channels/Selector \
+    java/nio/channels/etc
+
 jdk_core_manual = \
     :jdk_core_manual_no_input \
     :jdk_core_manual_no_input_security \

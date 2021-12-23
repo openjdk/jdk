@@ -4348,7 +4348,8 @@ public class Attr extends JCTree.Visitor {
                 if (env.info.isSelfCall &&
                         ((sym.name == names._this &&
                         site.tsym == env.enclClass.sym) ||
-                        sym.name == names._super && env.info.constructorArgs)) {
+                        sym.name == names._super && env.info.constructorArgs &&
+                        (sitesym.isInterface() || site.tsym == env.enclClass.sym))) {
                     chk.earlyRefError(tree.pos(), sym);
                 }
             } else {

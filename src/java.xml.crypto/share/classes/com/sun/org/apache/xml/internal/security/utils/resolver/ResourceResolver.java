@@ -122,8 +122,8 @@ public class ResourceResolver {
 
         List<ResourceResolverSpi> resourceResolversToAdd = new ArrayList<>(classNames.size());
         for (String className : classNames) {
-            ResourceResolverSpi resourceResolverSpi = (ResourceResolverSpi)JavaUtils
-                    .newInstanceWithEmptyConstructor(ClassLoaderUtils.loadClass(className, ResourceResolver.class));
+            ResourceResolverSpi resourceResolverSpi = (ResourceResolverSpi)
+                JavaUtils.newInstanceWithEmptyConstructor(ClassLoaderUtils.loadClass(className, ResourceResolver.class));
             resourceResolversToAdd.add(resourceResolverSpi);
         }
         resolverList.addAll(resourceResolversToAdd);
@@ -159,15 +159,6 @@ public class ResourceResolver {
             LOG.debug("check resolvability by class {}", resolver.getClass().getName());
 
             if (resolver.engineCanResolveURI(context)) {
-                // Check to see whether the Resolver is allowed
-                if (context.secureValidation
-                    && (resolver instanceof ResolverLocalFilesystem
-                        || resolver instanceof ResolverDirectHTTP)) {
-                    Object[] exArgs = { resolver.getClass().getName() };
-                    throw new ResourceResolverException(
-                        "signature.Reference.ForbiddenResolver", exArgs, context.uriToResolve, context.baseUri
-                    );
-                }
                 return resolver.engineResolveURI(context);
             }
         }

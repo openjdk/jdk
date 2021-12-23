@@ -240,7 +240,7 @@ TEST_VM_F(G1CardSetContainersTest, basic_cardset_inptr_test) {
   uint const max = (uint)log2i(HeapRegionBounds::max_size());
 
   for (uint i = min; i <= max; i++) {
-    G1CardSetContainersTest::cardset_inlineptr_test(i - CardTable::card_shift);
+    G1CardSetContainersTest::cardset_inlineptr_test(i - CardTable::card_shift());
   }
 }
 
