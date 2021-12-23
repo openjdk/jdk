@@ -946,6 +946,10 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
     _requested_base_address = static_mapinfo->requested_base_address();
     if (dynamic_mapped) {
       FileMapInfo::set_shared_path_table(dynamic_mapinfo);
+      // turn AutoCreateSharedArchive off if successfully mapped
+      if (AutoCreateSharedArchive) {
+        AutoCreateSharedArchive = false;
+      }
     } else {
       FileMapInfo::set_shared_path_table(static_mapinfo);
     }
@@ -976,7 +980,7 @@ FileMapInfo* MetaspaceShared::open_static_archive() {
 }
 
 FileMapInfo* MetaspaceShared::open_dynamic_archive() {
-  if (DynamicDumpSharedSpaces) {
+  if (DynamicDumpSharedSpaces && !AutoCreateSharedArchive) {
     return NULL;
   }
   if (Arguments::GetSharedDynamicArchivePath() == NULL) {
@@ -1018,6 +1022,10 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
     // Ensure that the OS won't be able to allocate new memory spaces between the two
     // archives, or else it would mess up the simple comparision in MetaspaceObj::is_shared().
     assert(static_mapinfo->mapping_end_offset() == dynamic_mapinfo->mapping_base_offset(), "no gap");
+  }
+
+  if (AutoCreateSharedArchive && static_mapinfo != NULL && dynamic_mapinfo == NULL) {
+    warning("AutoCreateSharedArchive will be ignored for static archive");
   }
 
   ReservedSpace total_space_rs, archive_space_rs, class_space_rs;

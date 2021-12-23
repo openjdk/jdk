@@ -341,6 +341,18 @@ public class CDSArchiveUtils {
         return newJsaFile;
     }
 
+    public static File createMagicOnlyFile(String fileName, boolean createStatic) throws Exception {
+        File file = new File(fileName);
+        if (file.exists()) {
+            file.delete();
+        }
+        try (FileOutputStream out = new FileOutputStream(file)) {
+            ByteBuffer buffer = ByteBuffer.allocate(4).putInt(createStatic ? staticMagic: dynamicMagic);
+            out.write(buffer.array(), 0, 4);
+        }
+        return file;
+    }
+
     private static FileChannel getFileChannel(File file, boolean write) throws Exception {
         List<StandardOpenOption> arry = new ArrayList<StandardOpenOption>();
         arry.add(READ);

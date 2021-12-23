@@ -37,7 +37,6 @@ import sun.hotspot.WhiteBox;
 class DynamicArchiveTestBase {
     private static boolean executedIn_run = false;
     private static boolean autoMode = false;  // -Xshare:auto
-
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
     public static interface DynamicArchiveTest {
@@ -94,6 +93,19 @@ class DynamicArchiveTestBase {
     }
     public static String getNewArchiveName(String stem) {
         return TestCommon.getNewArchiveName(stem);
+    }
+
+    /**
+     * Excute a JVM to dump a base archive by
+     *  -Xshare:dump -XX:SharedArchiveFile=baseArchiveName
+     */
+    public static Result dumpBaseArchive(String baseArchiveName, String... cmdLineSuffix)
+        throws Exception
+    {
+        OutputAnalyzer output = TestCommon.dumpBaseArchive(baseArchiveName, cmdLineSuffix);
+        CDSOptions opts = new CDSOptions();
+        opts.setXShareMode("dump");
+        return new Result(opts, output);
     }
 
     /**

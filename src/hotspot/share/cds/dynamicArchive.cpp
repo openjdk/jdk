@@ -410,7 +410,8 @@ void DynamicArchive::dump(const char* archive_name, TRAPS) {
 }
 
 bool DynamicArchive::should_dump_at_vm_exit() {
-  return DynamicDumpSharedSpaces && (ArchiveClassesAtExit != nullptr);
+  return (DynamicDumpSharedSpaces && (ArchiveClassesAtExit != nullptr)) ||
+         (AutoCreateSharedArchive && Arguments::GetSharedDynamicArchivePath() != nullptr);
 }
 
 bool DynamicArchive::validate(FileMapInfo* dynamic_info) {

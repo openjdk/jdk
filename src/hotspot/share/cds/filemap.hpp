@@ -368,6 +368,7 @@ public:
     return _saved_shared_path_table;
   }
 
+  bool validate_archive() const;
   bool init_from_file(int fd);
   static void metaspace_pointers_do(MetaspaceClosure* it, bool use_copy = true);
 

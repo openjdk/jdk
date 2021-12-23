@@ -172,9 +172,16 @@ FileMapInfo::FileMapInfo(bool is_static) {
   if (_is_static) {
     assert(_current_info == NULL, "must be singleton"); // not thread safe
     _current_info = this;
+    _full_path = Arguments::GetSharedArchivePath();
   } else {
     assert(_dynamic_archive_info == NULL, "must be singleton"); // not thread safe
     _dynamic_archive_info = this;
+    _full_path = Arguments::GetSharedDynamicArchivePath();
+  }
+  bool valid = validate_archive();
+  if (!valid && !_is_static && AutoCreateSharedArchive) {
+    // regenerate shared archive at exit
+    DynamicDumpSharedSpaces = true;
   }
   _file_offset = 0;
   _file_open = false;
@@ -188,6 +195,22 @@ FileMapInfo::~FileMapInfo() {
     assert(_dynamic_archive_info == this, "must be singleton"); // not thread safe
     _dynamic_archive_info = NULL;
   }
+  if (_file_open) {
+    os::close(_fd);
+  }
+}
+
+// Do preliminary validation on archive. More checks are in initialization.
+bool FileMapInfo::validate_archive() const {
+  if (!os::file_exists(_full_path)) {
+    return false;
+  }
+  // validate header info
+  if (!check_archive(_full_path, _is_static)) {
+    return false;
+  }
+
+  return true;
 }
 
 void FileMapInfo::populate_header(size_t core_region_alignment) {
@@ -1097,6 +1120,12 @@ public:
       FileMapInfo::fail_continue("Cannot handle shared archive file version %d. Must be at least %d",
                                  gen_header._version, CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION);
       return false;
+    }
+
+    if (gen_header._version !=  CURRENT_CDS_ARCHIVE_VERSION) {
+      auto warning_continue = FileMapInfo::fail_continue;
+      warning_continue("The shared archive file version %d which is not current version %d",
+                                    gen_header._version, CURRENT_CDS_ARCHIVE_VERSION);
     }
 
     size_t filelen = os::lseek(fd, 0, SEEK_END);
@@ -2366,15 +2395,19 @@ bool FileMapInfo::initialize() {
     return false;
   }
 
-  if (!open_for_read()) {
-    return false;
+  if (!open_for_read() || !init_from_file(_fd) || !validate_header()) {
+    if (_is_static) {
+      FileMapInfo::fail_continue("Initialize static archive failed.");
+      return false;
+    } else {
+      FileMapInfo::fail_continue("Initialize dynamic archive failed.");
+      if (AutoCreateSharedArchive) {
+        DynamicDumpSharedSpaces = true;
+      }
+      return false;
+    }
   }
-  if (!init_from_file(_fd)) {
-    return false;
-  }
-  if (!validate_header()) {
-    return false;
-  }
+
   return true;
 }
 
