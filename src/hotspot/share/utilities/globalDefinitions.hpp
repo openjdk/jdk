@@ -654,7 +654,7 @@ struct jlong_accessor {
     memcpy(&(words), &j, sizeof(jlong));
   }
   jlong long_value() const {
-    bit_cast<jlong>(words);
+    return bit_cast<jlong>(words);
   }
 };
 
