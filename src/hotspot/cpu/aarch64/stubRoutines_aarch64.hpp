@@ -72,6 +72,8 @@ class aarch64 {
 
   static address _method_entry_barrier;
 
+  static address _spin_wait;
+
   static bool _completed;
 
  public:
@@ -175,6 +177,10 @@ class aarch64 {
 
   static address method_entry_barrier() {
     return _method_entry_barrier;
+  }
+
+  static address spin_wait() {
+    return _spin_wait;
   }
 
   static bool complete() {

@@ -56,7 +56,7 @@ import java.util.stream.Stream;
  * A memory segment models a contiguous region of memory. A memory segment is associated with both spatial
  * and temporal bounds (e.g. a {@link ResourceScope}). Spatial bounds ensure that memory access operations on a memory segment cannot affect a memory location
  * which falls <em>outside</em> the boundaries of the memory segment being accessed. Temporal bounds ensure that memory access
- * operations on a segment cannot occur after the resource scope associated with a memory segment has been closed (see {@link ResourceScope#close()}).
+ * operations on a segment cannot occur <em>after</em> the resource scope associated with a memory segment has been closed (see {@link ResourceScope#close()}).
  * <p>
  * All implementations of this interface must be <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>;
  * programmers should treat instances that are {@linkplain Object#equals(Object) equal} as interchangeable and should not
@@ -157,7 +157,7 @@ import java.util.stream.Stream;
  * scope, it can only be accessed by the thread which owns the scope.
  * <p>
  * Heap and buffer segments are always associated with a <em>global</em>, shared scope. This scope cannot be closed,
- * and can be considered as <em>always alive</em>.
+ * and segments associated with it can be considered as <em>always alive</em>.
  *
  * <h2>Memory segment views</h2>
  *
@@ -217,11 +217,11 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
      * The returned spliterator splits this segment according to the specified element layout; that is,
      * if the supplied layout has size N, then calling {@link Spliterator#trySplit()} will result in a spliterator serving
      * approximately {@code S/N/2} elements (depending on whether N is even or not), where {@code S} is the size of
-     * this segment. As such, splitting is possible as long as {@code S/N >= 2}. The spliterator returns segments that feature the same
-     * scope as this given segment.
+     * this segment. As such, splitting is possible as long as {@code S/N >= 2}. The spliterator returns segments that
+     * are associated with the same scope as this segment.
      * <p>
-     * The returned spliterator effectively allows to slice this segment into disjoint sub-segments, which can then
-     * be processed in parallel by multiple threads.
+     * The returned spliterator effectively allows to slice this segment into disjoint {@linkplain #asSlice(long, long) slices},
+     * which can then be processed in parallel by multiple threads.
      *
      * @param elementLayout the layout to be used for splitting.
      * @return the element spliterator for this segment
@@ -679,7 +679,7 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
 
     /**
      * Creates a new array memory segment that models the memory associated with a given heap-allocated byte array.
-     * The returned segment's resource scope is set to the {@linkplain ResourceScope#globalScope() global} resource scope.
+     * The returned segment is associated with the {@linkplain ResourceScope#globalScope() global} resource scope.
      *
      * @param arr the primitive array backing the array memory segment.
      * @return a new array memory segment.
@@ -690,7 +690,7 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
 
     /**
      * Creates a new array memory segment that models the memory associated with a given heap-allocated char array.
-     * The returned segment's resource scope is set to the {@linkplain ResourceScope#globalScope() global} resource scope.
+     * The returned segment is associated with the {@linkplain ResourceScope#globalScope() global} resource scope.
      *
      * @param arr the primitive array backing the array memory segment.
      * @return a new array memory segment.
@@ -701,7 +701,7 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
 
     /**
      * Creates a new array memory segment that models the memory associated with a given heap-allocated short array.
-     * The returned segment's resource scope is set to the {@linkplain ResourceScope#globalScope() global} resource scope.
+     * The returned segment is associated with the {@linkplain ResourceScope#globalScope() global} resource scope.
      *
      * @param arr the primitive array backing the array memory segment.
      * @return a new array memory segment.
@@ -712,7 +712,7 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
 
     /**
      * Creates a new array memory segment that models the memory associated with a given heap-allocated int array.
-     * The returned segment's resource scope is set to the {@linkplain ResourceScope#globalScope() global} resource scope.
+     * The returned segment is associated with the {@linkplain ResourceScope#globalScope() global} resource scope.
      *
      * @param arr the primitive array backing the array memory segment.
      * @return a new array memory segment.
@@ -723,7 +723,7 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
 
     /**
      * Creates a new array memory segment that models the memory associated with a given heap-allocated float array.
-     * The returned segment's resource scope is set to the {@linkplain ResourceScope#globalScope() global} resource scope.
+     * The returned segment is associated with the {@linkplain ResourceScope#globalScope() global} resource scope.
      *
      * @param arr the primitive array backing the array memory segment.
      * @return a new array memory segment.
@@ -734,7 +734,7 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
 
     /**
      * Creates a new array memory segment that models the memory associated with a given heap-allocated long array.
-     * The returned segment's resource scope is set to the {@linkplain ResourceScope#globalScope() global} resource scope.
+     * The returned segment is associated with the {@linkplain ResourceScope#globalScope() global} resource scope.
      *
      * @param arr the primitive array backing the array memory segment.
      * @return a new array memory segment.
@@ -745,7 +745,7 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
 
     /**
      * Creates a new array memory segment that models the memory associated with a given heap-allocated double array.
-     * The returned segment's resource scope is set to the {@linkplain ResourceScope#globalScope() global} resource scope.
+     * The returned segment is associated with the {@linkplain ResourceScope#globalScope() global} resource scope.
      *
      * @param arr the primitive array backing the array memory segment.
      * @return a new array memory segment.
