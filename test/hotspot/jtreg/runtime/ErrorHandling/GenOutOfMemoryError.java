@@ -38,6 +38,8 @@ public class GenOutOfMemoryError {
     private void badMethod(int n){
         try {
             System.out.format("bad method was invoked %n", n);
+            // Try to allocate an array the same size as the heap - it will throw OOME without
+            // actually consuming available memory.
             Integer[] array = new Integer[1000 * 1000 * 100];
             array.hashCode();
         } catch (Throwable t){
@@ -55,6 +57,6 @@ public class GenOutOfMemoryError {
         for (int i = 0; i < 7; i++) {
             genOutOfMemoryError.badMethod(i + 1);
         }
-        Asserts.assertTrue(4/*PreallocatedOutOfMemoryErrorCount is default to 4*/ == OOME_HAS_STACK_CNT, "Some OOMEs do not have stacktraces");
+        Asserts.assertTrue(4/*PreallocatedOutOfMemoryErrorCount defaults to 4*/ == OOME_HAS_STACK_CNT, "Some OOMEs do not have stacktraces");
     }
 }
