@@ -308,17 +308,6 @@ static uint select_active_old_worker_threads(const ZDriverRequest& request) {
   }
 }
 
-// Macro to execute a abortion check. Note that we can't abort between
-// pause_relocate_start() and concurrent_relocate(). We need to let
-// concurrent_relocate() call abort_page() on the remaining entries
-// in the relocation set.
-#define abortpoint()                  \
-  do {                                \
-    if (ZAbort::should_abort()) {     \
-      return;                         \
-    }                                 \
-  } while (false)
-
 template <typename T>
 static bool pause() {
   T op;
@@ -443,6 +432,10 @@ static void collect_young(ZYoungType type, ConcurrentGCTimer* timer) {
 
   // Phase 7: Pause Relocate Start
   pause_relocate_start_young();
+
+  // Note that we can't have an abortpoint here. We need
+  // to let concurrent_relocate_young() call abort_page()
+  // on the remaining entries in the relocation set.
 
   // Phase 8: Concurrent Relocate
   concurrent_relocate_young();
@@ -806,6 +799,10 @@ static void collect_old(ConcurrentGCTimer* timer) {
     // Phase 9: Pause Relocate Start
     pause_relocate_start_old();
   }
+
+  // Note that we can't have an abortpoint here. We need
+  // to let concurrent_relocate_old() call abort_page()
+  // on the remaining entries in the relocation set.
 
   // Phase 10: Concurrent Relocate
   concurrent_relocate_old();
