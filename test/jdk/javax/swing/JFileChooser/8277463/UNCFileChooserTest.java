@@ -57,45 +57,43 @@ public class UNCFileChooserTest {
         return osName.startsWith("Windows");
     }
 
-    private static void createInstructionUI() {
-        SwingUtilities.invokeLater(() -> {
-            UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
-            String instructions =
-                    "1. Enter the non-canonical UNC path of the directory to test\n"
-                    + "example: \\\\pc-name\\dir\\..\n"
-                    + "2. An \"Open File\" file chooser dialog pops up\n"
-                    + "3. Check the \"Look in\" Combobox at the top for quickly changing directory is not empty\n"
-                    + "4. Close the file chooser Dialog\n"
-                    + "5. If the \"Look in\" Combobox is not empty then press PASS else press FAIL\n";
-            instructionFrame = new JFrame("InstructionFrame");
-            JTextArea textArea = new JTextArea(instructions);
-            textArea.setEditable(false);
-            final JButton passButton = new JButton("PASS");
-            passButton.addActionListener((e) -> {
-                testPassed = true;
-                instructionFrame.dispose();
-                countDownLatch.countDown();
-            });
-            final JButton failButton = new JButton("FAIL");
-            failButton.addActionListener((e) -> {
-                instructionFrame.dispose();
-                countDownLatch.countDown();
-            });
-
-            JPanel mainPanel = new JPanel(new BorderLayout());
-            mainPanel.add(textArea, BorderLayout.CENTER);
-
-            JPanel buttonPanel = new JPanel(new FlowLayout());
-            buttonPanel.add(passButton);
-            buttonPanel.add(failButton);
-            mainPanel.add(buttonPanel, BorderLayout.SOUTH);
-            instructionFrame.setDefaultCloseOperation(
-                    WindowConstants.DISPOSE_ON_CLOSE);
-            instructionFrame.setBounds(0,0,500,500);
-            instructionFrame.add(mainPanel);
-            instructionFrame.pack();
-            instructionFrame.setVisible(true);
+    private static void createInstructionUI() throws Exception {
+        UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
+        String instructions =
+                "1. Enter the non-canonical UNC path of the directory to test\n"
+                + "example: \\\\pc-name\\dir\\..\n"
+                + "2. An \"Open File\" file chooser dialog pops up\n"
+                + "3. Check the \"Look in\" Combobox at the top for quickly changing directory is not empty\n"
+                + "4. Close the file chooser Dialog\n"
+                + "5. If the \"Look in\" Combobox is not empty then press PASS else press FAIL\n";
+        instructionFrame = new JFrame("InstructionFrame");
+        JTextArea textArea = new JTextArea(instructions);
+        textArea.setEditable(false);
+        final JButton passButton = new JButton("PASS");
+        passButton.addActionListener((e) -> {
+            testPassed = true;
+            instructionFrame.dispose();
+            countDownLatch.countDown();
         });
+        final JButton failButton = new JButton("FAIL");
+        failButton.addActionListener((e) -> {
+            instructionFrame.dispose();
+            countDownLatch.countDown();
+        });
+
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.add(textArea, BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel(new FlowLayout());
+        buttonPanel.add(passButton);
+        buttonPanel.add(failButton);
+        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+        instructionFrame.setDefaultCloseOperation(
+                WindowConstants.DISPOSE_ON_CLOSE);
+        instructionFrame.setBounds(0,0,500,500);
+        instructionFrame.add(mainPanel);
+        instructionFrame.pack();
+        instructionFrame.setVisible(true);
     }
 
     private static void showOpenDialog() throws Exception {
