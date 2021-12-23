@@ -607,7 +607,7 @@ inline double percent_of(T numerator, T denominator) {
 // Special casts
 // Cast floats into same-size integers and vice-versa w/o changing bit-pattern
 template<typename T, typename F>
-T bit_cast(const F& from) noexcept { // replace with the real thing when we can use c++20
+inline T bit_cast(const F& from) noexcept { // replace with the real thing when we can use c++20
   static_assert(sizeof(T) == sizeof(F), "must be of the same size");
   static_assert(std::is_trivially_copyable<T>(), "output type must be trivially copyable");
   static_assert(std::is_trivially_copyable<F>(), "input type must be trivially copyable");
@@ -618,12 +618,12 @@ T bit_cast(const F& from) noexcept { // replace with the real thing when we can 
   return to;
 }
 
-inline jint    jint_cast    (jfloat  x)  { return bit_cast<jint, jfloat>   (x); }
-inline jfloat  jfloat_cast  (jint    x)  { return bit_cast<jfloat, jint>   (x); }
+inline jint    jint_cast    (jfloat  x)  { return bit_cast<jint>   (x); }
+inline jfloat  jfloat_cast  (jint    x)  { return bit_cast<jfloat> (x); }
 
-inline jlong   jlong_cast   (jdouble x)  { return bit_cast<jlong, jdouble> (x); }
-inline julong  julong_cast  (jdouble x)  { return bit_cast<julong, jdouble>(x); }
-inline jdouble jdouble_cast (jlong   x)  { return bit_cast<jdouble, jlong> (x); }
+inline jlong   jlong_cast   (jdouble x)  { return bit_cast<jlong>  (x); }
+inline julong  julong_cast  (jdouble x)  { return bit_cast<julong> (x); }
+inline jdouble jdouble_cast (jlong   x)  { return bit_cast<jdouble>(x); }
 
 inline jint low (jlong value)                    { return jint(value); }
 inline jint high(jlong value)                    { return jint(value >> 32); }
@@ -651,13 +651,10 @@ struct jlong_accessor {
   jlong_accessor() = default;
   jlong_accessor(jlong j) {
     static_assert(sizeof(this->words) == sizeof(jlong), "");
-    memcpy(&(this->words), &j, sizeof(jlong));
+    memcpy(&(words), &j, sizeof(jlong));
   }
   jlong long_value() const {
-    static_assert(sizeof(this->words) == sizeof(jlong), "");
-    jlong val = 0;
-    memcpy(&val, &(this->words), sizeof(jlong));
-    return val;
+    bit_cast<jlong>(words);
   }
 };
 
