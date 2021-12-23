@@ -128,8 +128,8 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
               }
             } else {
               // We might see an Opaque1 from a loop limit check here
-              assert(use->is_If() || use->is_CMove() || use->Opcode() == Op_Opaque1 || use->is_AllocateArray(), "unexpected node type");
-              Node *use_c = (use->is_If() || use->is_AllocateArray()) ? use->in(0) : get_ctrl(use);
+              assert(use->is_If() || use->is_CMove() || use->Opcode() == Op_Opaque1, "unexpected node type");
+              Node *use_c = use->is_If() ? use->in(0) : get_ctrl(use);
               if (use_c == blk1 || use_c == blk2) {
                 assert(use->is_CMove(), "unexpected node type");
                 continue;
@@ -166,15 +166,14 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
                 --j;
               } else {
                 // We might see an Opaque1 from a loop limit check here
-                assert(u->is_If() || u->is_CMove() || u->Opcode() == Op_Opaque1 || u->is_AllocateArray(), "unexpected node type");
-                assert(u->is_AllocateArray() || u->in(1) == bol, "");
-                assert(!u->is_AllocateArray() || u->in(AllocateNode::ValidLengthTest) == bol, "wrong input to AllocateArray");
+                assert(u->is_If() || u->is_CMove() || u->Opcode() == Op_Opaque1, "unexpected node type");
+                assert(u->in(1) == bol, "");
                 // Get control block of either the CMove or the If input
-                Node *u_ctrl = (u->is_If() || u->is_AllocateArray()) ? u->in(0) : get_ctrl(u);
+                Node *u_ctrl = u->is_If() ? u->in(0) : get_ctrl(u);
                 assert((u_ctrl != blk1 && u_ctrl != blk2) || u->is_CMove(), "won't converge");
                 Node *x = bol->clone();
                 register_new_node(x, u_ctrl);
-                _igvn.replace_input_of(u, u->is_AllocateArray() ? AllocateNode::ValidLengthTest : 1, x);
+                _igvn.replace_input_of(u, 1, x);
                 --j;
               }
             }
