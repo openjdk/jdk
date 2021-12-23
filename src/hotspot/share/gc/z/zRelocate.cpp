@@ -31,7 +31,6 @@
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zCollector.inline.hpp"
 #include "gc/z/zForwarding.inline.hpp"
-#include "gc/z/zDriver.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zIndexDistributor.inline.hpp"
 #include "gc/z/zIterator.inline.hpp"

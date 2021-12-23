@@ -27,6 +27,7 @@
 #include "gc/shared/workerThread.hpp"
 #include "gc/z/zGenerationId.hpp"
 #include "gc/z/zLock.hpp"
+#include "gc/z/zStat.hpp"
 
 class ThreadClosure;
 class ZRestartableTask;

@@ -25,14 +25,14 @@
 #define SHARE_GC_Z_ZDRIVER_HPP
 
 #include "gc/shared/concurrentGCThread.hpp"
-#include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/z/zDriverPort.hpp"
-#include "gc/z/zLock.hpp"
 #include "gc/z/zTracer.hpp"
 
 class ZDriverMinor;
 class ZDriverMajor;
+class ZLock;
+class VM_ZOperation;
 
 class ZDriver : public AllStatic {
   friend class ZDriverLocker;
@@ -114,6 +114,12 @@ class ZDriverLocker : public StackObj {
 public:
   ZDriverLocker();
   ~ZDriverLocker();
+};
+
+class ZDriverUnlocker : public StackObj {
+public:
+  ZDriverUnlocker();
+  ~ZDriverUnlocker();
 };
 
 #endif // SHARE_GC_Z_ZDRIVER_HPP

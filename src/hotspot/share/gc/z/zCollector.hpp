@@ -194,6 +194,18 @@ public:
 
   ZYoungType type() const;
 
+  void collect(ZYoungType type, ConcurrentGCTimer* timer);
+
+  void pause_mark_start();
+  void concurrent_mark();
+  bool pause_mark_end();
+  void concurrent_mark_continue();
+  void concurrent_mark_free();
+  void concurrent_reset_relocation_set();
+  void concurrent_select_relocation_set();
+  void pause_relocate_start();
+  void concurrent_relocate();
+
   // Marking
 
   void mark_start();
@@ -240,6 +252,20 @@ private:
 
 public:
   ZOldCollector(ZPageTable* page_table, ZPageAllocator* page_allocator);
+
+  void collect(ConcurrentGCTimer* timer);
+
+  void concurrent_mark();
+  bool pause_mark_end();
+  void concurrent_mark_continue();
+  void concurrent_mark_free();
+  void concurrent_process_non_strong_references();
+  void concurrent_reset_relocation_set();
+  void pause_verify();
+  void concurrent_select_relocation_set();
+  void pause_relocate_start();
+  void concurrent_relocate();
+  void concurrent_remap_roots();
 
   // Reference processing
   ReferenceDiscoverer* reference_discoverer();
