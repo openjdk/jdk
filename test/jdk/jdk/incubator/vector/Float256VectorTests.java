@@ -4974,5 +4974,12 @@ public class Float256VectorTests extends AbstractVectorTest {
         VectorSpecies species = av.species().withShape(vsh);
         assert(species.equals(SPECIES));
     }
+
+    @Test
+    static void MaskAllTrueFloat256VectorTestsSmokeTest() {
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+          Assert.assertEquals(SPECIES.maskAll(true).toLong(), -1L >>> (64 - SPECIES.length()));
+        }
+    }
 }
 
