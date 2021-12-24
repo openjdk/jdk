@@ -4138,6 +4138,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register len = c_rarg3;  // src len (must be multiple of blocksize 16)
     __ enter(); // required for proper stackwalking of RuntimeStub frame
     __ aesecb_encrypt(from, to, key, len);
+    __ vzeroupper();
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
     return start;
@@ -4153,6 +4154,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register len = c_rarg3;  // src len (must be multiple of blocksize 16)
     __ enter(); // required for proper stackwalking of RuntimeStub frame
     __ aesecb_decrypt(from, to, key, len);
+    __ vzeroupper();
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
     return start;
@@ -4452,6 +4454,7 @@ class StubGenerator: public StubCodeGenerator {
     __ movptr(avx512_subkeyHtbl, rsp);
 
     __ aesgcm_encrypt(in, len, ct, out, key, state, subkeyHtbl, avx512_subkeyHtbl, counter);
+    __ vzeroupper();
 
     __ movq(rsp, rbp);
     __ pop(rbp);
@@ -4571,6 +4574,7 @@ class StubGenerator: public StubCodeGenerator {
 #endif
     __ push(rbx);
     __ aesctr_encrypt(from, to, key, counter, len_reg, used, used_addr, saved_encCounter_start);
+    __ vzeroupper();
     // Restore state before leaving routine
     __ pop(rbx);
 #ifdef _WIN64
@@ -5191,6 +5195,7 @@ address generate_cipherBlockChaining_decryptVectorAESCrypt() {
     __ evpxorq(RK14, RK14, RK14, Assembler::AVX_512bit);
 
     __ BIND(Lcbc_exit);
+    __ vzeroupper();
     __ pop(rbx);
 #ifdef _WIN64
     __ movl(rax, len_mem);
@@ -7066,6 +7071,7 @@ address generate_avx_ghash_processBlocks() {
     __ shrdl(tmp4, tmp3);
     __ movl(Address(newArr, nIdx, Address::times_4), tmp4);
     __ BIND(Exit);
+    __ vzeroupper();
     // Restore callee save registers.
     __ pop(tmp5);
 #ifdef _WINDOWS
@@ -7187,6 +7193,7 @@ address generate_avx_ghash_processBlocks() {
     __ movl(Address(newArr, idx, Address::times_4), tmp3);
 
     __ BIND(Exit);
+    __ vzeroupper();
     // Restore callee save registers.
     __ pop(tmp5);
 #ifdef _WINDOWS

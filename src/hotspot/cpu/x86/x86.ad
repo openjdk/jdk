@@ -1827,7 +1827,7 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       }
       break;
     case Op_MaskAll:
-      if (!is_LP64 || !VM_Version::supports_evex()) {
+      if (!VM_Version::supports_evex()) {
         return false;
       }
       if ((vlen > 16 || is_subword_type(bt)) && !VM_Version::supports_avx512bw()) {
@@ -9460,64 +9460,18 @@ instruct evcmp_masked(kReg dst, vec src1, vec src2, immI8 cond, kReg mask, rRegP
   ins_pipe( pipe_slow );
 %}
 
+instruct mask_all_evexI_LE32(kReg dst, rRegI src) %{
+  predicate(Matcher::vector_length(n) <= 32);
+  match(Set dst (MaskAll src));
+  format %{ "mask_all_evexI_LE32 $dst, $src \t" %}
+  ins_encode %{
+    int mask_len = Matcher::vector_length(this);
+    __ vector_maskall_operation($dst$$KRegister, $src$$Register, mask_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 #ifdef _LP64
-instruct mask_all_evexI_imm(kReg dst, immI cnt, rRegL tmp) %{
-  match(Set dst (MaskAll cnt));
-  effect(TEMP_DEF dst, TEMP tmp);
-  format %{ "mask_all_evexI $dst, $cnt \t! using $tmp as TEMP" %}
-  ins_encode %{
-    int vec_len = Matcher::vector_length(this);
-    if (VM_Version::supports_avx512bw()) {
-      __ movq($tmp$$Register, $cnt$$constant);
-      __ kmovql($dst$$KRegister, $tmp$$Register);
-      __ kshiftrql($dst$$KRegister, $dst$$KRegister, 64 - vec_len);
-    } else {
-      assert(vec_len <= 16, "");
-      __ movq($tmp$$Register, $cnt$$constant);
-      __ kmovwl($dst$$KRegister, $tmp$$Register);
-      __ kshiftrwl($dst$$KRegister, $dst$$KRegister, 16 - vec_len);
-    }
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct mask_all_evexI(kReg dst, rRegI src, rRegL tmp) %{
-  match(Set dst (MaskAll src));
-  effect(TEMP_DEF dst, TEMP tmp);
-  format %{ "mask_all_evexI $dst, $src \t! using $tmp as TEMP" %}
-  ins_encode %{
-    int vec_len = Matcher::vector_length(this);
-    if (VM_Version::supports_avx512bw()) {
-      __ movslq($tmp$$Register, $src$$Register);
-      __ kmovql($dst$$KRegister, $tmp$$Register);
-      __ kshiftrql($dst$$KRegister, $dst$$KRegister, 64 - vec_len);
-    } else {
-      assert(vec_len <= 16, "");
-      __ kmovwl($dst$$KRegister, $src$$Register);
-      __ kshiftrwl($dst$$KRegister, $dst$$KRegister, 16 - vec_len);
-    }
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct mask_all_evexL(kReg dst, rRegL src) %{
-  match(Set dst (MaskAll src));
-  effect(TEMP_DEF dst);
-  format %{ "mask_all_evexL $dst, $src \t! mask all operation" %}
-  ins_encode %{
-    int vec_len = Matcher::vector_length(this);
-    if (VM_Version::supports_avx512bw()) {
-      __ kmovql($dst$$KRegister, $src$$Register);
-      __ kshiftrql($dst$$KRegister, $dst$$KRegister, 64 - vec_len);
-    } else {
-      assert(vec_len <= 16, "");
-      __ kmovwl($dst$$KRegister, $src$$Register);
-      __ kshiftrwl($dst$$KRegister, $dst$$KRegister, 16 - vec_len);
-    }
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 instruct mask_not_immLT8(kReg dst, kReg src, rRegI rtmp, kReg ktmp, immI_M1 cnt) %{
   predicate(Matcher::vector_length(n) < 8 && VM_Version::supports_avx512dq());
   match(Set dst (XorVMask src (MaskAll cnt)));
