@@ -128,15 +128,15 @@ source %{
     int length_in_bytes = vlen * type2aelembytes(bt);
     switch (opcode) {
       case Op_MulAddVS2VI:
-      // No multiply reduction instructions
-      case Op_MulReductionVD:
-      case Op_MulReductionVF:
-      case Op_MulReductionVI:
-      case Op_MulReductionVL:
       // Others
       case Op_ExtractC:
       case Op_ExtractUB:
         return false;
+      case Op_MulReductionVD:
+      case Op_MulReductionVF:
+      case Op_MulReductionVI:
+      case Op_MulReductionVL:
+        return vlen >= 2 && length_in_bytes <= 16;
       // Vector API specific
       case Op_VectorLoadShuffle:
       case Op_VectorRearrange:
@@ -151,9 +151,27 @@ source %{
     return 8 <= length_in_bytes && length_in_bytes <= MaxVectorSize && vlen >= 2;
   }
 
+  // If an opcode does not support mask, unpredicated node with VectorBlend node
+  // will be used instead.
   bool masked_op_sve_supported(int opcode, int vlen, BasicType bt) {
-    if (opcode == Op_VectorRearrange) {
+    int length_in_bytes = vlen * type2aelembytes(bt);
+    if (opcode == Op_VectorRearrange ||
+        opcode == Op_MulReductionVD ||
+        opcode == Op_MulReductionVF ||
+        opcode == Op_MulReductionVI ||
+        opcode == Op_MulReductionVL) {
       return false;
+    }
+
+    // These nodes generate lower cost NEON instructions when vector length is
+    // 64 or 128 bits.
+    if (opcode == Op_AddReductionVI || opcode == Op_AddReductionVL) {
+      assert(is_integral_type(bt), "should be");
+      return length_in_bytes > 16;
+    }
+    if ((opcode == Op_MinReductionV || opcode == Op_MaxReductionV) &&
+        (bt == T_BYTE || bt == T_SHORT || bt == T_INT)) {
+      return length_in_bytes > 16;
     }
     return op_sve_supported(opcode, vlen, bt);
   }
@@ -1314,14 +1332,14 @@ dnl REDUCE_I(insn_name, op_name)
 define(`REDUCE_I', `
 instruct reduce_$1I(iRegINoSp dst, iRegIorL2I src1, vReg src2, vRegD tmp) %{
   ifelse($2, AddReductionVI,
-       `predicate(UseSVE > 0 &&
+       `predicate(UseSVE > 0 && MaxVectorSize > 16 &&
             n->in(2)->bottom_type()->is_vect()->length_in_bytes() == MaxVectorSize);',
        `predicate(UseSVE > 0 &&
             n->in(2)->bottom_type()->is_vect()->element_basic_type() != T_LONG &&
             n->in(2)->bottom_type()->is_vect()->length_in_bytes() == MaxVectorSize);')
   match(Set dst ($2 src1 src2));
   effect(TEMP_DEF dst, TEMP tmp);
-  ins_cost(SVE_COST);
+  ins_cost(SVE_COST + 3 * INSN_COST);
   format %{ "sve_reduce_$1I $dst, $src1, $src2\t# $1I reduction (sve) (may extend)" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
@@ -1338,7 +1356,7 @@ dnl REDUCE_L(insn_name, op_name)
 define(`REDUCE_L', `
 instruct reduce_$1L(iRegLNoSp dst, iRegL src1, vReg src2, vRegD tmp) %{
   ifelse($2, AddReductionVL,
-       `predicate(UseSVE > 0 &&
+       `predicate(UseSVE > 0 && MaxVectorSize > 16 &&
             n->in(2)->bottom_type()->is_vect()->length_in_bytes() == MaxVectorSize);',
        `predicate(UseSVE > 0 &&
             n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_LONG &&
@@ -1584,12 +1602,81 @@ instruct reduce_$1_masked_partial($3 src1_dst, vReg src2, pRegGov pg, pRegGov pt
 dnl
 
 // vector add reduction
+
+// Generate lower cost NEON instructions for 64/128 bits vectors.
+instruct reduce_addI_sve_le128bits(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc, vReg vtmp) %{
+  predicate(UseSVE > 0 && n->in(2)->bottom_type()->is_vect()->length_in_bytes() <= 16);
+  match(Set dst (AddReductionVI isrc vsrc));
+  ins_cost(3 * INSN_COST);
+  effect(TEMP_DEF dst, TEMP vtmp);
+  format %{ "neon_add_reduction_integral $dst,  $isrc,  $vsrc\t# add reduction <128 bits (sve)" %}
+  ins_encode %{
+    __ neon_add_reduction_integral(as_Register($dst$$reg), Matcher::vector_element_basic_type(this, $vsrc),
+                                   as_Register($isrc$$reg), as_FloatRegister($vsrc$$reg),
+                                   /* vector_length_in_bytes */ Matcher::vector_length_in_bytes(this, $vsrc),
+                                   as_FloatRegister($vtmp$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_addI_partial(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg vtmp, pRegGov ptmp) %{
+  predicate(UseSVE > 0 &&
+            n->in(2)->bottom_type()->is_vect()->length_in_bytes() > 16 &&
+            n->in(2)->bottom_type()->is_vect()->length_in_bytes() < MaxVectorSize);
+  match(Set dst (AddReductionVI src1 src2));
+  effect(TEMP_DEF dst, TEMP vtmp, TEMP ptmp);
+  ins_cost(2 * SVE_COST);
+  format %{ "sve_reduce_addI $dst, $src1, $src2\t# addI reduction partial (sve) (may extend)" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this, $src2);
+    Assembler::SIMD_RegVariant variant = __ elemType_to_regVariant(bt);
+    __ sve_ptrue_lanecnt(as_PRegister($ptmp$$reg), variant,
+                          Matcher::vector_length(this, $src2));
+    __ sve_reduce_integral(this->ideal_Opcode(), $dst$$Register, bt,
+                           $src1$$Register, as_FloatRegister($src2$$reg),
+                           as_PRegister($ptmp$$reg), as_FloatRegister($vtmp$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+dnl
 REDUCE_I(add, AddReductionVI)
+
+// Generate lower cost NEON instructions for 64/128 bits vectors.
+instruct reduce_addL_sve_128bits(iRegLNoSp dst, iRegL isrc, vReg vsrc, vReg vtmp) %{
+  predicate(UseSVE > 0 && n->in(2)->bottom_type()->is_vect()->length_in_bytes() == 16);
+  match(Set dst (AddReductionVL isrc vsrc));
+  ins_cost(3 * INSN_COST);
+  effect(TEMP_DEF dst, TEMP vtmp);
+  format %{ "neon_add_reduction_integral $dst, $isrc, $vsrc\t# addL reduction 128 bits (sve)"
+  %}
+  ins_encode %{
+    __ neon_add_reduction_integral(as_Register($dst$$reg), T_LONG,
+                                   as_Register($isrc$$reg), as_FloatRegister($vsrc$$reg),
+                                   /* vector_length_in_bytes */ 16, as_FloatRegister($vtmp$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_addL_partial(iRegLNoSp dst, iRegL src1, vReg src2, vRegD vtmp, pRegGov ptmp) %{
+  predicate(UseSVE > 0 &&
+            n->in(2)->bottom_type()->is_vect()->length_in_bytes() > 16 &&
+            n->in(2)->bottom_type()->is_vect()->length_in_bytes() < MaxVectorSize);
+  match(Set dst (AddReductionVL src1 src2));
+  effect(TEMP_DEF dst, TEMP vtmp, TEMP ptmp);
+  ins_cost(2 * SVE_COST);
+  format %{ "sve_reduce_addL $dst, $src1, $src2\t# addL reduction partial (sve)" %}
+  ins_encode %{
+    __ sve_ptrue_lanecnt(as_PRegister($ptmp$$reg), __ D,
+                         Matcher::vector_length(this, $src2));
+    __ sve_reduce_integral(this->ideal_Opcode(), $dst$$Register, T_LONG,
+                           $src1$$Register, as_FloatRegister($src2$$reg),
+                           as_PRegister($ptmp$$reg), as_FloatRegister($vtmp$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
 REDUCE_L(add, AddReductionVL)
 REDUCE_ADDF(addF, AddReductionVF, vRegF, S)
 REDUCE_ADDF(addD, AddReductionVD, vRegD, D)
-REDUCE_I_PARTIAL(add, AddReductionVI)
-REDUCE_L_PARTIAL(add, AddReductionVL)
 REDUCE_ADDF_PARTIAL(addF, AddReductionVF, vRegF, S)
 REDUCE_ADDF_PARTIAL(addD, AddReductionVD, vRegD, D)
 
@@ -1638,13 +1725,12 @@ REDUCE_I_PREDICATE(eor, XorReductionV)
 REDUCE_L_PREDICATE(eor, XorReductionV)
 REDUCE_I_PREDICATE_PARTIAL(eor, XorReductionV)
 REDUCE_L_PREDICATE_PARTIAL(eor, XorReductionV)
-
 dnl
 dnl REDUCE_MAXMIN_I($1,        $2     )
 dnl REDUCE_MAXMIN_I(insn_name, op_name)
 define(`REDUCE_MAXMIN_I', `
 instruct reduce_$1I(iRegINoSp dst, iRegIorL2I src1, vReg src2, vRegD tmp, rFlagsReg cr) %{
-  predicate(UseSVE > 0 &&
+  predicate(UseSVE > 0 && MaxVectorSize > 16 &&
             n->in(2)->bottom_type()->is_vect()->length_in_bytes() == MaxVectorSize &&
             n->in(2)->bottom_type()->is_vect()->element_basic_type() != T_LONG &&
             is_integral_type(n->in(2)->bottom_type()->is_vect()->element_basic_type()));
@@ -1687,6 +1773,7 @@ instruct reduce_$1I_partial(iRegINoSp dst, iRegIorL2I src1, vReg src2, vRegD vtm
                              pRegGov ptmp, rFlagsReg cr) %{
   predicate(UseSVE > 0 &&
             n->in(2)->bottom_type()->is_vect()->length_in_bytes() < MaxVectorSize &&
+            n->in(2)->bottom_type()->is_vect()->length_in_bytes() > 16 &&
             n->in(2)->bottom_type()->is_vect()->element_basic_type() != T_LONG &&
             is_integral_type(n->in(2)->bottom_type()->is_vect()->element_basic_type()));
   match(Set dst ($2 src1 src2));
@@ -1900,11 +1987,35 @@ instruct reduce_$1$2_masked_partial($5 dst, $5 src1, vReg src2, pRegGov pg,
   %}
   ins_pipe(pipe_slow);
 %}')dnl
+define(`REDUCE_MAXMIN_I_128BIT', `
+instruct reduce_$1I_sve_le128bits(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc, vReg vtmp, rFlagsReg cr) %{
+  predicate(UseSVE > 0 &&
+            n->in(2)->bottom_type()->is_vect()->length_in_bytes() <= 16 &&
+            (n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_BYTE ||
+             n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_SHORT ||
+             n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT));
+  match(Set dst (ifelse($1, min, MinReductionV, MaxReductionV) isrc vsrc));
+  effect(TEMP_DEF dst, TEMP vtmp, KILL cr);
+  ins_cost(4 * INSN_COST);
+  format %{ "neon_$1_reduce_integral $dst, $isrc, $vsrc\t# $1I reduction LE 128 bits (sve)" %}
+  ins_encode %{
+    __ neon_minmax_reduction_integral(as_Register($dst$$reg), Matcher::vector_element_basic_type(this, $vsrc),
+                                      as_Register($isrc$$reg), as_FloatRegister($vsrc$$reg),
+                                      /* vector_length_in_bytes */ Matcher::vector_length_in_bytes(this, $vsrc),
+                                      /* is_min */ ifelse($1, min, true, false),
+                                      as_FloatRegister($vtmp$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+
 // vector max reduction
 REDUCE_MAXMIN_I(max, MaxReductionV)
 REDUCE_MAXMIN_L(max, MaxReductionV)
 REDUCE_MAXMIN_I_PARTIAL(max, MaxReductionV)
 REDUCE_MAXMIN_L_PARTIAL(max, MaxReductionV)
+
+// Generate lower cost NEON instructions for 64/128 bits vectors.dnl
+REDUCE_MAXMIN_I_128BIT(max)
 REDUCE_FMINMAX(max, F, T_FLOAT,  S, vRegF)
 REDUCE_FMINMAX_PARTIAL(max, F, T_FLOAT,  S, vRegF)
 REDUCE_FMINMAX(max, D, T_DOUBLE, D, vRegD)
@@ -1925,6 +2036,9 @@ REDUCE_MAXMIN_I(min, MinReductionV)
 REDUCE_MAXMIN_L(min, MinReductionV)
 REDUCE_MAXMIN_I_PARTIAL(min, MinReductionV)
 REDUCE_MAXMIN_L_PARTIAL(min, MinReductionV)
+
+// Generate lower cost NEON instructions for 64/128 bits vectors.dnl
+REDUCE_MAXMIN_I_128BIT(min)
 REDUCE_FMINMAX(min, F, T_FLOAT,  S, vRegF)
 REDUCE_FMINMAX_PARTIAL(min, F, T_FLOAT,  S, vRegF)
 REDUCE_FMINMAX(min, D, T_DOUBLE, D, vRegD)
@@ -1939,6 +2053,139 @@ REDUCE_FMINMAX_PREDICATE(min, F, T_FLOAT,  S, vRegF)
 REDUCE_FMINMAX_PREDICATE(min, D, T_DOUBLE, D, vRegD)
 REDUCE_FMINMAX_PREDICATE_PARTIAL(min, F, T_FLOAT,  S, vRegF)
 REDUCE_FMINMAX_PREDICATE_PARTIAL(min, D, T_DOUBLE, D, vRegD)
+
+// vector mul reduction
+
+// Generate lower cost NEON instructions for 64/128 bits vectors.
+instruct reduce_mul_sve_8B16B(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc, vReg vtmp1, vReg vtmp2) %{
+  predicate(UseSVE > 0 &&
+            (n->in(2)->bottom_type()->is_vect()->length_in_bytes() == 8 ||
+             n->in(2)->bottom_type()->is_vect()->length_in_bytes() == 16) &&
+            n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
+  match(Set dst (MulReductionVI isrc vsrc));
+  ins_cost(12 * INSN_COST);
+  effect(TEMP_DEF dst, TEMP vtmp1, TEMP vtmp2);
+  format %{ "neon_mul_reduction_integral $dst, $isrc, $vsrc\t# mul reduction8B/16B (sve)" %}
+  ins_encode %{
+    __ neon_mul_reduction_integral(as_Register($dst$$reg), T_BYTE, as_Register($isrc$$reg),
+                                   as_FloatRegister($vsrc$$reg),
+                                   /* vector_length_in_bytes */ Matcher::vector_length_in_bytes(this, $vsrc),
+                                   as_FloatRegister($vtmp1$$reg), as_FloatRegister($vtmp2$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_mul_sve_4S(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc, vReg vtmp) %{
+  predicate(UseSVE > 0 &&
+            n->in(2)->bottom_type()->is_vect()->length_in_bytes() == 8 &&
+            n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_SHORT);
+  match(Set dst (MulReductionVI isrc vsrc));
+  ins_cost(8 * INSN_COST);
+  effect(TEMP_DEF dst, TEMP vtmp);
+  format %{ "neon_mul_reduction_integral $dst, $isrc, $vsrc\t# mul reduction4S (sve)" %}
+  ins_encode %{
+    __ neon_mul_reduction_integral(as_Register($dst$$reg), T_SHORT, as_Register($isrc$$reg),
+                                   as_FloatRegister($vsrc$$reg), /* vector_length_in_bytes */ 8,
+                                   as_FloatRegister($vtmp$$reg), fnoreg);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_mul_sve_8S(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc, vReg vtmp1, vReg vtmp2) %{
+  predicate(UseSVE > 0 &&
+            n->in(2)->bottom_type()->is_vect()->length_in_bytes() == 16 &&
+            n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_SHORT);
+  match(Set dst (MulReductionVI isrc vsrc));
+  ins_cost(10 * INSN_COST);
+  effect(TEMP_DEF dst, TEMP vtmp1, TEMP vtmp2);
+  format %{ "neon_mul_reduction_integral $dst, $isrc, $vsrc\t# mul reduction8S (sve)" %}
+  ins_encode %{
+    __ neon_mul_reduction_integral(as_Register($dst$$reg), T_SHORT, as_Register($isrc$$reg),
+                                   as_FloatRegister($vsrc$$reg), /* vector_length_in_bytes */ 16,
+                                   as_FloatRegister($vtmp1$$reg), as_FloatRegister($vtmp2$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_mul_sve_2I(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc) %{
+  predicate(UseSVE > 0 &&
+            n->in(2)->bottom_type()->is_vect()->length_in_bytes() == 8 &&
+            n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT);
+  match(Set dst (MulReductionVI isrc vsrc));
+  ins_cost(4 * INSN_COST);
+  effect(TEMP_DEF dst);
+  format %{ "neon_mul_reduction_integral $dst, $isrc, $vsrc\t# mul reduction2I (sve)" %}
+  ins_encode %{
+    __ neon_mul_reduction_integral(as_Register($dst$$reg), T_INT, as_Register($isrc$$reg),
+                                   as_FloatRegister($vsrc$$reg), /* vector_length_in_bytes */ 8,
+                                   fnoreg, fnoreg);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct reduce_mul_sve_4I(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc, vReg vtmp) %{
+  predicate(UseSVE > 0 &&
+            n->in(2)->bottom_type()->is_vect()->length_in_bytes() == 16 &&
+            n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT);
+  match(Set dst (MulReductionVI isrc vsrc));
+  ins_cost(6 * INSN_COST);
+  effect(TEMP_DEF dst, TEMP vtmp);
+  format %{ "neon_mul_reduction_integral $dst, $isrc, $vsrc\t# mul reduction4I (sve)" %}
+  ins_encode %{
+    __ neon_mul_reduction_integral(as_Register($dst$$reg), T_INT, as_Register($isrc$$reg),
+                                   as_FloatRegister($vsrc$$reg), /* vector_length_in_bytes */ 16,
+                                   as_FloatRegister($vtmp$$reg), fnoreg);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct reduce_mul_sve_2L(iRegLNoSp dst, iRegL isrc, vReg vsrc) %{
+  predicate(UseSVE > 0 &&
+            n->in(2)->bottom_type()->is_vect()->length_in_bytes() == 16);
+  match(Set dst (MulReductionVL isrc vsrc));
+  ins_cost(4 * INSN_COST);
+  effect(TEMP_DEF dst);
+  format %{ "neon_mul_reduction_integral $dst, $isrc, $vsrc\t# mul reduction2L (sve)" %}
+  ins_encode %{
+    __ neon_mul_reduction_integral(as_Register($dst$$reg), T_LONG, as_Register($isrc$$reg),
+                                   as_FloatRegister($vsrc$$reg), /* vector_length_in_bytes */ 16,
+                                   fnoreg, fnoreg);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_mul_sve_2F4F(vRegF dst, vRegF fsrc, vReg vsrc, vReg vtmp) %{
+  predicate(UseSVE > 0 &&
+            (n->in(2)->bottom_type()->is_vect()->length_in_bytes() == 8 ||
+             n->in(2)->bottom_type()->is_vect()->length_in_bytes() == 16));
+  match(Set dst (MulReductionVF fsrc vsrc));
+  ins_cost(7 * INSN_COST);
+  effect(TEMP_DEF dst, TEMP vtmp);
+  format %{ "neon_mul_reduction_fp $dst, $fsrc, $vsrc\t# mul reduction2F/4F (sve)" %}
+  ins_encode %{
+    __ neon_mul_reduction_fp(as_FloatRegister($dst$$reg), T_FLOAT, as_FloatRegister($fsrc$$reg),
+                             as_FloatRegister($vsrc$$reg),
+                             /* vector_length_in_bytes */ Matcher::vector_length_in_bytes(this, $vsrc),
+                             as_FloatRegister($vtmp$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct reduce_mul_sve_2D(vRegD dst, vRegD dsrc, vReg vsrc, vReg vtmp) %{
+  predicate(UseSVE > 0 &&
+            n->in(2)->bottom_type()->is_vect()->length_in_bytes() == 16);
+  match(Set dst (MulReductionVD dsrc vsrc));
+  ins_cost(3 * INSN_COST);
+  effect(TEMP_DEF dst, TEMP vtmp);
+  format %{ "neon_mul_reduction_fp $dst, $dsrc, $vsrc\t# mul reduction2D (sve)" %}
+  ins_encode %{
+    __ neon_mul_reduction_fp(as_FloatRegister($dst$$reg), T_DOUBLE, as_FloatRegister($dsrc$$reg),
+                             as_FloatRegister($vsrc$$reg), /* vector_length_in_bytes */ 16,
+                             as_FloatRegister($vtmp$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 
 // vector Math.rint, floor, ceil
 

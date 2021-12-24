@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -901,6 +901,192 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   bind(DONE);
 
   BLOCK_COMMENT("} string_compare");
+}
+
+// The input vector length is expected to be 8 bytes or 16 bytes.
+// dst and isrc are expected to be different registers.
+void C2_MacroAssembler::neon_add_reduction_integral(Register dst, BasicType bt, Register isrc,
+                                                    FloatRegister vsrc, int vector_length_in_bytes,
+                                                    FloatRegister vtmp) {
+  assert(vector_length_in_bytes == 8 || vector_length_in_bytes == 16, "unsupported");
+  assert_different_registers(dst, isrc);
+  BLOCK_COMMENT("neon_add_reduction_integral {");
+    switch(bt) {
+      case T_BYTE:
+        addv(vtmp, vector_length_in_bytes == 16 ? T16B : T8B, vsrc);
+        smov(dst, vtmp, B, 0);
+        addw(dst, dst, isrc, ext::sxtb);
+        break;
+      case T_SHORT:
+        addv(vtmp, vector_length_in_bytes == 16 ? T8H : T4H, vsrc);
+        smov(dst, vtmp, H, 0);
+        addw(dst, dst, isrc, ext::sxth);
+        break;
+      case T_INT:
+        vector_length_in_bytes == 16 ? addv(vtmp, T4S, vsrc) : addpv(vtmp, T2S, vsrc, vsrc);
+        umov(dst, vtmp, S, 0);
+        addw(dst, dst, isrc);
+        break;
+      case T_LONG:
+        assert(vector_length_in_bytes == 16, "unsupported");
+        addpd(vtmp, vsrc);
+        umov(dst, vtmp, D, 0);
+        add(dst, dst, isrc);
+        break;
+      default:
+        assert(false, "unsupported");
+        ShouldNotReachHere();
+    }
+  BLOCK_COMMENT("} neon_add_reduction_integral");
+}
+
+// The input vector length is expected to be 8 bytes or 16 bytes.
+// vtmp1 and vtmp2 may not be used and are expected to be fnoreg for
+// same cases.
+// Clobbers: rscratch1
+void C2_MacroAssembler::neon_mul_reduction_integral(Register dst, BasicType bt, Register isrc,
+                                                    FloatRegister vsrc, int vector_length_in_bytes,
+                                                    FloatRegister vtmp1, FloatRegister vtmp2) {
+  assert(vector_length_in_bytes == 8 || vector_length_in_bytes == 16, "unsupported");
+  BLOCK_COMMENT("neon_mul_reduction_integral {");
+    switch(bt) {
+      case T_BYTE:
+        if (vector_length_in_bytes == 8) {
+          ins(vtmp1, S, vsrc, 0, 1);
+          mulv(vtmp1, T8B, vtmp1, vsrc);
+        } else {
+          // Multiply the lower half and higher half of vector iteratively.
+          // vtmp1 = vsrc[8:15]
+          ins(vtmp1, D, vsrc, 0, 1);
+          // vtmp1[n] = vsrc[n] * vsrc[n + 8], where n=[0, 7]
+          mulv(vtmp1, T8B, vtmp1, vsrc);
+          // vtmp2 = vtmp1[4:7]
+          ins(vtmp2, S, vtmp1, 0, 1);
+          // vtmp1[n] = vtmp1[n] * vtmp1[n + 4], where n=[0, 3]
+          mulv(vtmp1, T8B, vtmp2, vtmp1);
+        }
+        // vtmp2 = vtmp1[2:3]
+        ins(vtmp2, H, vtmp1, 0, 1);
+        // vtmp2[n] = vtmp1[n] * vtmp1[n + 2], where n=[0, 1]
+        mulv(vtmp2, T8B, vtmp2, vtmp1);
+        // dst = vtmp2[0] * isrc * vtmp2[1]
+        umov(rscratch1, vtmp2, B, 0);
+        mulw(dst, rscratch1, isrc);
+        sxtb(dst, dst);
+        umov(rscratch1, vtmp2, B, 1);
+        mulw(dst, rscratch1, dst);
+        sxtb(dst, dst);
+        break;
+      case T_SHORT:
+        if (vector_length_in_bytes == 8) {
+          assert(vtmp2 == fnoreg, "should be");
+          ins(vtmp1, S, vsrc, 0, 1);
+          mulv(vtmp1, T4H, vtmp1, vsrc);
+        } else {
+          ins(vtmp2, D, vsrc, 0, 1);
+          mulv(vtmp2, T4H, vtmp2, vsrc);
+          ins(vtmp1, S, vtmp2, 0, 1);
+          mulv(vtmp1, T4H, vtmp1, vtmp2);
+        }
+        umov(rscratch1, vtmp1, H, 0);
+        mulw(dst, rscratch1, isrc);
+        sxth(dst, dst);
+        umov(rscratch1, vtmp1, H, 1);
+        mulw(dst, rscratch1, dst);
+        sxth(dst, dst);
+        break;
+      case T_INT:
+        if (vector_length_in_bytes == 8) {
+          assert(vtmp1 == fnoreg && vtmp2 == fnoreg, "should be");
+          vtmp1 = vsrc;
+        } else {
+          assert(vtmp2 == fnoreg, "should be");
+          ins(vtmp1, D, vsrc, 0, 1);
+          mulv(vtmp1, T2S, vtmp1, vsrc);
+        }
+        umov(rscratch1, vtmp1, S, 0);
+        mul(dst, rscratch1, isrc);
+        umov(rscratch1, vtmp1, S, 1);
+        mul(dst, rscratch1, dst);
+        break;
+      case T_LONG:
+        assert(vtmp1 == fnoreg && vtmp2 == fnoreg, "should be");
+        umov(rscratch1, vsrc, D, 0);
+        mul(dst, isrc, rscratch1);
+        umov(rscratch1, vsrc, D, 1);
+        mul(dst, dst, rscratch1);
+        break;
+      default:
+        assert(false, "unsupported");
+        ShouldNotReachHere();
+    }
+  BLOCK_COMMENT("} neon_mul_reduction_integral");
+}
+
+void C2_MacroAssembler::neon_mul_reduction_fp(FloatRegister dst, BasicType bt, FloatRegister fsrc,
+                                              FloatRegister vsrc, int vector_length_in_bytes,
+                                              FloatRegister vtmp) {
+  assert(vector_length_in_bytes == 8 || vector_length_in_bytes == 16, "unsupported");
+  BLOCK_COMMENT("neon_mul_reduction_fp {");
+    switch(bt) {
+      case T_FLOAT:
+        fmuls(dst, fsrc, vsrc);
+        ins(vtmp, S, vsrc, 0, 1);
+        fmuls(dst, dst, vtmp);
+        if (vector_length_in_bytes == 16) {
+          ins(vtmp, S, vsrc, 0, 2);
+          fmuls(dst, dst, vtmp);
+          ins(vtmp, S, vsrc, 0, 3);
+          fmuls(dst, dst, vtmp);
+         }
+        break;
+      case T_DOUBLE:
+        assert(vector_length_in_bytes == 16, "unsupported");
+        fmuld(dst, fsrc, vsrc);
+        ins(vtmp, D, vsrc, 0, 1);
+        fmuld(dst, dst, vtmp);
+        break;
+      default:
+        assert(false, "unsupported");
+        ShouldNotReachHere();
+    }
+  BLOCK_COMMENT("} neon_mul_reduction_fp");
+}
+
+// The input vector length is expected to be 8 bytes or 16 bytes.
+// dst and isrc are expected to be different registers.
+// Clobbers: rflags
+// vtmp will not be used when bt == T_LONG.
+void C2_MacroAssembler::neon_minmax_reduction_integral(Register dst, BasicType bt, Register isrc,
+                                                       FloatRegister vsrc, int vector_length_in_bytes,
+                                                       bool is_min, FloatRegister vtmp) {
+  assert(vector_length_in_bytes == 8 || vector_length_in_bytes == 16, "unsupported");
+  assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported");
+  assert_different_registers(dst, isrc);
+
+  BLOCK_COMMENT("neon_minmax_reduction_integral {");
+    if (bt == T_LONG) {
+      assert(vector_length_in_bytes == 16, "should be");
+      umov(rscratch1, vsrc, D, 0);
+      cmp(isrc, rscratch1);
+      csel(dst, isrc, rscratch1, is_min ? LT : GT);
+      umov(rscratch1, vsrc, D, 1);
+      cmp(dst, rscratch1);
+      csel(dst, dst, rscratch1, is_min ? LT : GT);
+    } else {
+      SIMD_Arrangement size = esize2arrangement((unsigned)type2aelembytes(bt),
+                                                vector_length_in_bytes == 16);
+      if (size == T2S) {
+        assert(bt == T_INT && vector_length_in_bytes == 8, "should be");
+        is_min ? sminp(vtmp, T2S, vsrc, vsrc) : smaxp(vtmp, T2S, vsrc, vsrc);
+      } else {
+        is_min ? sminv(vtmp, size, vsrc) : smaxv(vtmp, size, vsrc);
+      }
+      smov(dst, vtmp, elemType_to_regVariant(bt), 0);
+      cmpw(dst, isrc);
+      cselw(dst, dst, isrc, is_min ? LT : GT);
+    }
+  BLOCK_COMMENT("} neon_minmax_reduction_integral");
 }
 
 void C2_MacroAssembler::neon_compare(FloatRegister dst, BasicType bt, FloatRegister src1,

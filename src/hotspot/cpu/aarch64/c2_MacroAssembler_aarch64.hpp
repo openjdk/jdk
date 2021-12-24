@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,19 @@
   // Compress the least significant bit of each byte to the rightmost and clear
   // the higher garbage bits.
   void bytemask_compress(Register dst);
+
+  void neon_add_reduction_integral(Register dst, BasicType bt, Register isrc, FloatRegister vsrc,
+                                   int vector_length_in_bytes, FloatRegister vtmp);
+
+  void neon_mul_reduction_integral(Register dst, BasicType bt, Register isrc,
+                                   FloatRegister vsrc, int vector_length_in_bytes,
+                                   FloatRegister vtmp1, FloatRegister vtmp2);
+
+  void neon_mul_reduction_fp(FloatRegister dst, BasicType bt, FloatRegister fsrc,
+                             FloatRegister vsrc, int vector_length_in_bytes, FloatRegister vtmp);
+
+  void neon_minmax_reduction_integral(Register dst, BasicType bt, Register isrc, FloatRegister vsrc,
+                                      int vector_length_in_bytes, bool is_min, FloatRegister vtmp);
 
   // Pack the lowest-numbered bit of each mask element in src into a long value
   // in dst, at most the first 64 lane elements.
