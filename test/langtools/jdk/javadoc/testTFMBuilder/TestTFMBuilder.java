@@ -50,7 +50,7 @@ import javadoc.tester.TestJavaFileManagerBuilder;
 import toolbox.ToolBox;
 
 /**
- * Tests the {@link TestJavaFileManagerBuilder class}.
+ * Tests the {@link TestJavaFileManagerBuilder} class.
  *
  */
 // The use of the contraction TFMBuilder is deliberate, to avoid using
