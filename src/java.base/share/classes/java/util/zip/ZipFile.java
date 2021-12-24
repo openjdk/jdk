@@ -1498,7 +1498,7 @@ public class ZipFile implements ZipConstants, Closeable {
                 }
                 // read in the CEN and END
                 if (end.cenlen + ENDHDR >= Integer.MAX_VALUE) {
-                    zerror("invalid END header (too large central directory size)");
+                    zerror("invalid END header (central directory size too large)");
                 }
                 cen = this.cen = new byte[(int)(end.cenlen + ENDHDR)];
                 if (readFullyAt(cen, 0, cen.length, cenpos) != end.cenlen + ENDHDR) {
