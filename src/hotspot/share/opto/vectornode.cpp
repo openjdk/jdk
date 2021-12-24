@@ -299,7 +299,7 @@ bool VectorNode::is_muladds2i(Node* n) {
   return false;
 }
 
-bool VectorNode::is_vpopcntq(Node* n) {
+bool VectorNode::is_vpopcnt_long(Node* n) {
   if (n->Opcode() == Op_PopCountL) {
     return true;
   }

@@ -2946,8 +2946,8 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) {
     return true;
   }
 
-  if (VectorNode::is_vpopcntq(use)) {
-    // VPOPCNTQ takes longs and produces ints - hence the special checks
+  if (VectorNode::is_vpopcnt_long(use)) {
+    // VPOPCNT_LONG takes long and produces int - hence the special checks
     // on alignment and size.
     if (u_pk->size() != d_pk->size()) {
       return false;
