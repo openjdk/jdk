@@ -187,7 +187,7 @@ public class TransferTo {
     }
 
     private static InputStreamProvider byteArrayInput() {
-        return bytes -> new ByteArrayInputStream(bytes);
+        return bytes -> new BufferedInputStream(new ByteArrayInputStream(bytes));
     }
 
     private static OutputStreamProvider byteArrayOutput() {
