@@ -88,6 +88,10 @@
   void sve_reduce_integral(int opc, Register dst, BasicType bt, Register src1,
                            FloatRegister src2, PRegister pg, FloatRegister tmp);
 
+  // Set elements of the dst predicate to true if the element number is
+  // in the range of [0, lane_cnt), or to false otherwise.
+  void sve_ptrue_lanecnt(PRegister dst, SIMD_RegVariant size, int lane_cnt);
+
   // Generate predicate through whilelo, by comparing ZR with an unsigned
   // immediate. rscratch1 will be clobbered.
   inline void sve_whilelo_zr_imm(PRegister pd, SIMD_RegVariant size, uint imm) {
