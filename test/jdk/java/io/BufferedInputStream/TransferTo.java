@@ -74,13 +74,7 @@ public class TransferTo {
 
     private static final int ITERATIONS = 10;
 
-    private static final int NUM_WRITES = 3*1024;
-    private static final int BYTES_PER_WRITE = 1024*1024;
-    private static final long BYTES_WRITTEN = (long) NUM_WRITES*BYTES_PER_WRITE;
-
     private static final Random RND = RandomFactory.getRandom();
-
-    private static final Path CWD = Path.of(".");
 
     /*
      * Testing API compliance: input stream must throw NullPointerException
