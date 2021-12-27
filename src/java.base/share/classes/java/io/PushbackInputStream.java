@@ -53,7 +53,9 @@ import jdk.internal.misc.InternalLock;
  * @since   1.0
  */
 public class PushbackInputStream extends FilterInputStream {
-    private final InternalLock closeLock;
+
+    // initialized to null when BufferedInputStream is sub-classed
+    private final InternalLock lock;
 
     /**
      * The pushback buffer.
@@ -101,9 +103,9 @@ public class PushbackInputStream extends FilterInputStream {
 
         // use monitors when PushbackInputStream is sub-classed
         if (getClass() == PushbackInputStream.class) {
-            closeLock = InternalLock.newLockOrNull();
+            lock = InternalLock.newLockOrNull();
         } else {
-            closeLock = null;
+            lock = null;
         }
     }
 
@@ -384,12 +386,12 @@ public class PushbackInputStream extends FilterInputStream {
      * @throws     IOException  if an I/O error occurs.
      */
     public void close() throws IOException {
-        if (closeLock != null) {
-            closeLock.lock();
+        if (lock != null) {
+            lock.lock();
             try {
                 implClose();
             } finally {
-                closeLock.unlock();
+                lock.unlock();
             }
         } else {
             synchronized (this) {
@@ -405,4 +407,31 @@ public class PushbackInputStream extends FilterInputStream {
             buf = null;
         }
     }
+
+    @Override
+    public long transferTo(OutputStream out) throws IOException {
+        Objects.requireNonNull(out, "out");
+        ensureOpen();
+        if (lock != null) {
+            lock.lock();
+            try {
+                return implTransferTo(out);
+            } finally {
+                lock.unlock();
+            }
+        } else {
+            synchronized (this) {
+                return implTransferTo(out);
+            }
+        }
+    }
+
+    private long implTransferTo(OutputStream out) throws IOException {
+        if (getClass() == PushbackInputStream.class && ((buf.length - pos) <= 0)) {
+            return in.transferTo(out);
+        } else {
+            return super.transferTo(out);
+        }
+    }
+
 }
