@@ -773,6 +773,12 @@ public:
 
   // Estimate the number of nodes resulting from control and data flow merge.
   uint est_loop_flow_merge_sz() const;
+
+  // Check if the number of residual iterations is large with unroll_cnt.
+  // Return true if the residual iterations are more than 10% of the trip count.
+  bool is_residual_iters_large(int unroll_cnt, CountedLoopNode *cl) const {
+    return (unroll_cnt - 1) * (100.0 / LoopPercentProfileLimit) > cl->profile_trip_cnt();
+  }
 };
 
 // -----------------------------PhaseIdealLoop---------------------------------
