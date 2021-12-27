@@ -620,7 +620,7 @@ void LIRGenerator::monitor_exit(LIR_Opr object, LIR_Opr lock, LIR_Opr new_hdr, L
   // setup registers
   LIR_Opr hdr = lock;
   lock = new_hdr;
-  CodeStub* slow_path = new MonitorExitStub(lock, UseFastLocking, monitor_no);
+  CodeStub* slow_path = new MonitorExitStub(lock, !UseHeavyMonitors, monitor_no);
   __ load_stack_address_monitor(monitor_no, lock);
   __ unlock_object(hdr, object, lock, scratch, slow_path);
 }
@@ -963,6 +963,14 @@ void LIRGenerator::move_to_phi(PhiResolver* resolver, Value cur_val, Value sux_v
   Phi* phi = sux_val->as_Phi();
   // cur_val can be null without phi being null in conjunction with inlining
   if (phi != NULL && cur_val != NULL && cur_val != phi && !phi->is_illegal()) {
+    if (phi->is_local()) {
+      for (int i = 0; i < phi->operand_count(); i++) {
+        Value op = phi->operand_at(i);
+        if (op != NULL && op->type()->is_illegal()) {
+          bailout("illegal phi operand");
+        }
+      }
+    }
     Phi* cur_phi = cur_val->as_Phi();
     if (cur_phi != NULL && cur_phi->is_illegal()) {
       // Phi and local would need to get invalidated
@@ -1231,13 +1239,17 @@ void LIRGenerator::do_isInstance(Intrinsic* x) {
   __ move(call_result, result);
 }
 
+void LIRGenerator::load_klass(LIR_Opr obj, LIR_Opr klass, CodeEmitInfo* null_check_info) {
+  __ load_klass(obj, klass, null_check_info);
+}
+
 // Example: object.getClass ()
 void LIRGenerator::do_getClass(Intrinsic* x) {
   assert(x->number_of_arguments() == 1, "wrong type");
 
   LIRItem rcvr(x->argument_at(0), this);
   rcvr.load_item();
-  LIR_Opr temp = new_register(T_METADATA);
+  LIR_Opr temp = new_register(T_ADDRESS);
   LIR_Opr result = rlock_result(x);
 
   // need to perform the null check on the rcvr
@@ -1246,10 +1258,9 @@ void LIRGenerator::do_getClass(Intrinsic* x) {
     info = state_for(x);
   }
 
-  // FIXME T_ADDRESS should actually be T_METADATA but it can't because the
-  // meaning of these two is mixed up (see JDK-8026837).
-  __ move(new LIR_Address(rcvr.result(), oopDesc::klass_offset_in_bytes(), T_ADDRESS), temp, info);
-  __ move_wide(new LIR_Address(temp, in_bytes(Klass::java_mirror_offset()), T_ADDRESS), temp);
+  LIR_Opr klass = new_register(T_METADATA);
+  load_klass(rcvr.result(), klass, info);
+  __ move_wide(new LIR_Address(klass, in_bytes(Klass::java_mirror_offset()), T_ADDRESS), temp);
   // mirror = ((OopHandle)mirror)->resolve();
   access_load(IN_NATIVE, T_OBJECT,
               LIR_OprFact::address(new LIR_Address(temp, T_OBJECT)), result);
@@ -1322,7 +1333,7 @@ void LIRGenerator::do_getObjectSize(Intrinsic* x) {
   value.load_item();
 
   LIR_Opr klass = new_register(T_METADATA);
-  __ move(new LIR_Address(value.result(), oopDesc::klass_offset_in_bytes(), T_ADDRESS), klass, NULL);
+  load_klass(value.result(), klass, NULL);
   LIR_Opr layout = new_register(T_INT);
   __ move(new LIR_Address(klass, in_bytes(Klass::layout_helper_offset()), T_INT), layout);
 
@@ -3572,7 +3583,7 @@ LIR_Opr LIRGenerator::mask_boolean(LIR_Opr array, LIR_Opr value, CodeEmitInfo*& 
     __ logical_and(value, LIR_OprFact::intConst(1), value_fixed);
   }
   LIR_Opr klass = new_register(T_METADATA);
-  __ move(new LIR_Address(array, oopDesc::klass_offset_in_bytes(), T_ADDRESS), klass, null_check_info);
+  load_klass(array, klass, null_check_info);
   null_check_info = NULL;
   LIR_Opr layout = new_register(T_INT);
   __ move(new LIR_Address(klass, in_bytes(Klass::layout_helper_offset()), T_INT), layout);

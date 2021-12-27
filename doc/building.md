@@ -1518,7 +1518,7 @@ non-determinism and make a larger part of the build reproducible:
 
   * Turn on build system support for reproducible builds
 
-Add the flag `--enable-reproducible-builds` to your `configure` command line.
+Add the flag `--enable-reproducible-build` to your `configure` command line.
 This will turn on support for reproducible builds where it could otherwise be
 lacking.
 

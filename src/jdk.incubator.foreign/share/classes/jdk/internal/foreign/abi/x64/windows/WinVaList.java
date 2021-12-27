@@ -26,7 +26,7 @@
 package jdk.internal.foreign.abi.x64.windows;
 
 import jdk.incubator.foreign.*;
-import jdk.incubator.foreign.CLinker.VaList;
+import jdk.internal.foreign.Scoped;
 import jdk.internal.foreign.ResourceScopeImpl;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.foreign.abi.SharedUtils.SimpleVaArg;
@@ -55,10 +55,10 @@ import static jdk.internal.foreign.PlatformLayouts.Win64.C_POINTER;
 //            ? **(t**)((ap += sizeof(__int64)) - sizeof(__int64))             \
 //            :  *(t* )((ap += sizeof(__int64)) - sizeof(__int64)))
 //
-public non-sealed class WinVaList implements VaList {
+public non-sealed class WinVaList implements VaList, Scoped {
     public static final Class<?> CARRIER = MemoryAddress.class;
     private static final long VA_SLOT_SIZE_BYTES = 8;
-    private static final VarHandle VH_address = MemoryHandles.asAddressVarHandle(C_POINTER.varHandle(long.class));
+    private static final VarHandle VH_address = C_POINTER.varHandle();
 
     private static final VaList EMPTY = new SharedUtils.EmptyVaList(MemoryAddress.NULL);
 
@@ -75,34 +75,29 @@ public non-sealed class WinVaList implements VaList {
     }
 
     @Override
-    public int vargAsInt(MemoryLayout layout) {
+    public int nextVarg(ValueLayout.OfInt layout) {
         return (int) read(int.class, layout);
     }
 
     @Override
-    public long vargAsLong(MemoryLayout layout) {
+    public long nextVarg(ValueLayout.OfLong layout) {
         return (long) read(long.class, layout);
     }
 
     @Override
-    public double vargAsDouble(MemoryLayout layout) {
+    public double nextVarg(ValueLayout.OfDouble layout) {
         return (double) read(double.class, layout);
     }
 
     @Override
-    public MemoryAddress vargAsAddress(MemoryLayout layout) {
+    public MemoryAddress nextVarg(ValueLayout.OfAddress layout) {
         return (MemoryAddress) read(MemoryAddress.class, layout);
     }
 
     @Override
-    public MemorySegment vargAsSegment(MemoryLayout layout, SegmentAllocator allocator) {
+    public MemorySegment nextVarg(GroupLayout layout, SegmentAllocator allocator) {
         Objects.requireNonNull(allocator);
         return (MemorySegment) read(MemorySegment.class, layout, allocator);
-    }
-
-    @Override
-    public MemorySegment vargAsSegment(MemoryLayout layout, ResourceScope scope) {
-        return vargAsSegment(layout, SegmentAllocator.ofScope(scope));
     }
 
     private Object read(Class<?> carrier, MemoryLayout layout) {
@@ -111,27 +106,23 @@ public non-sealed class WinVaList implements VaList {
 
     private Object read(Class<?> carrier, MemoryLayout layout, SegmentAllocator allocator) {
         Objects.requireNonNull(layout);
-        SharedUtils.checkCompatibleType(carrier, layout, Windowsx64Linker.ADDRESS_SIZE);
         Object res;
         if (carrier == MemorySegment.class) {
-            TypeClass typeClass = TypeClass.typeClassFor(layout);
+            TypeClass typeClass = TypeClass.typeClassFor(layout, false);
             res = switch (typeClass) {
                 case STRUCT_REFERENCE -> {
                     MemoryAddress structAddr = (MemoryAddress) VH_address.get(segment);
-                    MemorySegment struct = structAddr.asSegment(layout.byteSize(), scope());
+                    MemorySegment struct = MemorySegment.ofAddress(structAddr, layout.byteSize(), scope());
                     MemorySegment seg = allocator.allocate(layout);
                     seg.copyFrom(struct);
                     yield seg;
                 }
-                case STRUCT_REGISTER -> {
-                    MemorySegment struct = allocator.allocate(layout);
-                    struct.copyFrom(segment.asSlice(0L, layout.byteSize()));
-                    yield struct;
-                }
+                case STRUCT_REGISTER ->
+                    allocator.allocate(layout).copyFrom(segment.asSlice(0, layout.byteSize()));
                 default -> throw new IllegalStateException("Unexpected TypeClass: " + typeClass);
             };
         } else {
-            VarHandle reader = SharedUtils.vhPrimitiveOrAddress(carrier, layout);
+            VarHandle reader = layout.varHandle();
             res = reader.get(segment);
         }
         segment = segment.asSlice(VA_SLOT_SIZE_BYTES);
@@ -141,12 +132,13 @@ public non-sealed class WinVaList implements VaList {
     @Override
     public void skip(MemoryLayout... layouts) {
         Objects.requireNonNull(layouts);
+        ((ResourceScopeImpl)scope).checkValidStateSlow();
         Stream.of(layouts).forEach(Objects::requireNonNull);
         segment = segment.asSlice(layouts.length * VA_SLOT_SIZE_BYTES);
     }
 
     static WinVaList ofAddress(MemoryAddress addr, ResourceScope scope) {
-        MemorySegment segment = addr.asSegment(Long.MAX_VALUE, scope);
+        MemorySegment segment = MemorySegment.ofAddress(addr, Long.MAX_VALUE, scope);
         return new WinVaList(segment, scope);
     }
 
@@ -183,33 +175,32 @@ public non-sealed class WinVaList implements VaList {
         private Builder arg(Class<?> carrier, MemoryLayout layout, Object value) {
             Objects.requireNonNull(layout);
             Objects.requireNonNull(value);
-            SharedUtils.checkCompatibleType(carrier, layout, Windowsx64Linker.ADDRESS_SIZE);
             args.add(new SimpleVaArg(carrier, layout, value));
             return this;
         }
 
         @Override
-        public Builder vargFromInt(ValueLayout layout, int value) {
+        public Builder addVarg(ValueLayout.OfInt layout, int value) {
             return arg(int.class, layout, value);
         }
 
         @Override
-        public Builder vargFromLong(ValueLayout layout, long value) {
+        public Builder addVarg(ValueLayout.OfLong layout, long value) {
             return arg(long.class, layout, value);
         }
 
         @Override
-        public Builder vargFromDouble(ValueLayout layout, double value) {
+        public Builder addVarg(ValueLayout.OfDouble layout, double value) {
             return arg(double.class, layout, value);
         }
 
         @Override
-        public Builder vargFromAddress(ValueLayout layout, Addressable value) {
+        public Builder addVarg(ValueLayout.OfAddress layout, Addressable value) {
             return arg(MemoryAddress.class, layout, value.address());
         }
 
         @Override
-        public Builder vargFromSegment(GroupLayout layout, MemorySegment value) {
+        public Builder addVarg(GroupLayout layout, MemorySegment value) {
             return arg(MemorySegment.class, layout, value);
         }
 
@@ -217,7 +208,7 @@ public non-sealed class WinVaList implements VaList {
             if (args.isEmpty()) {
                 return EMPTY;
             }
-            SegmentAllocator allocator = SegmentAllocator.arenaAllocator(scope);
+            SegmentAllocator allocator = SegmentAllocator.newNativeArena(scope);
             MemorySegment segment = allocator.allocate(VA_SLOT_SIZE_BYTES * args.size());
             List<MemorySegment> attachedSegments = new ArrayList<>();
             attachedSegments.add(segment);
@@ -226,7 +217,7 @@ public non-sealed class WinVaList implements VaList {
             for (SimpleVaArg arg : args) {
                 if (arg.carrier == MemorySegment.class) {
                     MemorySegment msArg = ((MemorySegment) arg.value);
-                    TypeClass typeClass = TypeClass.typeClassFor(arg.layout);
+                    TypeClass typeClass = TypeClass.typeClassFor(arg.layout, false);
                     switch (typeClass) {
                         case STRUCT_REFERENCE -> {
                             MemorySegment copy = allocator.allocate(arg.layout);
@@ -234,10 +225,8 @@ public non-sealed class WinVaList implements VaList {
                             attachedSegments.add(copy);
                             VH_address.set(cursor, copy.address());
                         }
-                        case STRUCT_REGISTER -> {
-                            MemorySegment slice = cursor.asSlice(0, VA_SLOT_SIZE_BYTES);
-                            slice.copyFrom(msArg);
-                        }
+                        case STRUCT_REGISTER ->
+                            cursor.copyFrom(msArg.asSlice(0, VA_SLOT_SIZE_BYTES));
                         default -> throw new IllegalStateException("Unexpected TypeClass: " + typeClass);
                     }
                 } else {

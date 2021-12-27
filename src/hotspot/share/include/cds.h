@@ -38,7 +38,8 @@
 #define NUM_CDS_REGIONS 7 // this must be the same as MetaspaceShared::n_regions
 #define CDS_ARCHIVE_MAGIC 0xf00baba2
 #define CDS_DYNAMIC_ARCHIVE_MAGIC 0xf00baba8
-#define CURRENT_CDS_ARCHIVE_VERSION 12
+#define CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION 13
+#define CURRENT_CDS_ARCHIVE_VERSION 13
 
 typedef struct CDSFileMapRegion {
   int     _crc;               // CRC checksum of this region.
@@ -59,12 +60,13 @@ typedef struct CDSFileMapRegion {
   char*   _mapped_base;       // Actually mapped address (NULL if this region is not mapped).
 } CDSFileMapRegion;
 
-// This portion of the archive file header must remain unchanged for _version >= 12.
+// This portion of the archive file header must remain unchanged for
+// _version >= CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION (12).
 // This makes it possible to read important information from a CDS archive created by
 // a different version of HotSpot, so that we can automatically regenerate the archive as necessary.
 typedef struct GenericCDSFileMapHeader {
   unsigned int _magic;                    // identification of file type
-  int          _crc;                      // header crc checksum
+  int          _crc;                      // header crc checksum, start from _base_archive_name_offset
   int          _version;                  // CURRENT_CDS_ARCHIVE_VERSION of the jdk that dumped the this archive
   unsigned int _header_size;              // total size of the header, in bytes
   unsigned int _base_archive_name_offset; // offset where the base archive name is stored

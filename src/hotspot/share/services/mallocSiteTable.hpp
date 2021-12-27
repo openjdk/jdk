@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,55 +114,12 @@ class MallocSiteTable : AllStatic {
     table_size = (table_base_size * NMT_TrackingStackDepth - 1)
   };
 
-
-  // This is a very special lock, that allows multiple shared accesses (sharedLock), but
-  // once exclusive access (exclusiveLock) is requested, all shared accesses are
-  // rejected forever.
-  class AccessLock : public StackObj {
-    enum LockState {
-      NoLock,
-      SharedLock,
-      ExclusiveLock
-    };
-
-   private:
-    // A very large negative number. The only possibility to "overflow"
-    // this number is when there are more than -min_jint threads in
-    // this process, which is not going to happen in foreseeable future.
-    const static int _MAGIC_ = min_jint;
-
-    LockState      _lock_state;
-    volatile int*  _lock;
-   public:
-    AccessLock(volatile int* lock) :
-      _lock_state(NoLock), _lock(lock) {
-    }
-
-    ~AccessLock() {
-      if (_lock_state == SharedLock) {
-        Atomic::dec(_lock);
-      }
-    }
-    // Acquire shared lock.
-    // Return true if shared access is granted.
-    inline bool sharedLock() {
-      jint res = Atomic::add(_lock, 1);
-      if (res < 0) {
-        Atomic::dec(_lock);
-        return false;
-      }
-      _lock_state = SharedLock;
-      return true;
-    }
-    // Acquire exclusive lock
-    void exclusiveLock();
- };
+  // The table must not be wider than the maximum value the bucket_idx field
+  // in the malloc header can hold.
+  STATIC_ASSERT(table_size <= MAX_MALLOCSITE_TABLE_SIZE);
 
  public:
   static bool initialize();
-  static void shutdown();
-
-  NOT_PRODUCT(static int access_peak_count() { return _peak_count; })
 
   // Number of hash buckets
   static inline int hash_buckets()      { return (int)table_size; }
@@ -171,14 +128,10 @@ class MallocSiteTable : AllStatic {
   // acquired before access the entry.
   static inline bool access_stack(NativeCallStack& stack, size_t bucket_idx,
     size_t pos_idx) {
-    AccessLock locker(&_access_count);
-    if (locker.sharedLock()) {
-      NOT_PRODUCT(_peak_count = MAX2(_peak_count, _access_count);)
-      MallocSite* site = malloc_site(bucket_idx, pos_idx);
-      if (site != NULL) {
-        stack = *site->call_stack();
-        return true;
-      }
+    MallocSite* site = malloc_site(bucket_idx, pos_idx);
+    if (site != NULL) {
+      stack = *site->call_stack();
+      return true;
     }
     return false;
   }
@@ -192,27 +145,18 @@ class MallocSiteTable : AllStatic {
   //  2. overflow hash bucket
   static inline bool allocation_at(const NativeCallStack& stack, size_t size,
     size_t* bucket_idx, size_t* pos_idx, MEMFLAGS flags) {
-    AccessLock locker(&_access_count);
-    if (locker.sharedLock()) {
-      NOT_PRODUCT(_peak_count = MAX2(_peak_count, _access_count);)
-      MallocSite* site = lookup_or_add(stack, bucket_idx, pos_idx, flags);
-      if (site != NULL) site->allocate(size);
-      return site != NULL;
-    }
-    return false;
+    MallocSite* site = lookup_or_add(stack, bucket_idx, pos_idx, flags);
+    if (site != NULL) site->allocate(size);
+    return site != NULL;
   }
 
   // Record memory deallocation. bucket_idx and pos_idx indicate where the allocation
   // information was recorded.
   static inline bool deallocation_at(size_t size, size_t bucket_idx, size_t pos_idx) {
-    AccessLock locker(&_access_count);
-    if (locker.sharedLock()) {
-      NOT_PRODUCT(_peak_count = MAX2(_peak_count, _access_count);)
-      MallocSite* site = malloc_site(bucket_idx, pos_idx);
-      if (site != NULL) {
-        site->deallocate(size);
-        return true;
-      }
+    MallocSite* site = malloc_site(bucket_idx, pos_idx);
+    if (site != NULL) {
+      site->deallocate(size);
+      return true;
     }
     return false;
   }
@@ -248,17 +192,11 @@ class MallocSiteTable : AllStatic {
   }
 
  private:
-  // Counter for counting concurrent access
-  static volatile int                _access_count;
-
   // The callsite hashtable. It has to be a static table,
   // since malloc call can come from C runtime linker.
   static MallocSiteHashtableEntry*        _table[table_size];
   static const NativeCallStack*           _hash_entry_allocation_stack;
   static const MallocSiteHashtableEntry*  _hash_entry_allocation_site;
-
-
-  NOT_PRODUCT(static int     _peak_count;)
 };
 
 #endif // INCLUDE_NMT

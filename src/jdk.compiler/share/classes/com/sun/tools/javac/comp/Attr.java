@@ -1680,7 +1680,8 @@ public class Attr extends JCTree.Visitor {
             // Attribute all cases and
             // check that there are no duplicate case labels or default clauses.
             Set<Object> labels = new HashSet<>(); // The set of case labels.
-            List<Type> coveredTypes = List.nil();
+            List<Type> coveredTypesForPatterns = List.nil();
+            List<Type> coveredTypesForConstants = List.nil();
             boolean hasDefault = false;           // Is there a default label?
             boolean hasTotalPattern = false;      // Is there a total pattern?
             boolean hasNullPattern = false;       // Is there a null pattern?
@@ -1718,7 +1719,7 @@ public class Attr extends JCTree.Visitor {
                             } else if (!labels.add(sym)) {
                                 log.error(pat.pos(), Errors.DuplicateCaseLabel);
                             } else {
-                                checkCaseLabelDominated(pat.pos(), coveredTypes, sym.type);
+                                checkCaseLabelDominated(pat.pos(), coveredTypesForConstants, sym.type);
                             }
                         } else if (errorEnumSwitch) {
                             //error recovery: the selector is erroneous, and all the case labels
@@ -1751,7 +1752,7 @@ public class Attr extends JCTree.Visitor {
                                 } else if (!labels.add(pattype.constValue())) {
                                     log.error(c.pos(), Errors.DuplicateCaseLabel);
                                 } else {
-                                    checkCaseLabelDominated(pat.pos(), coveredTypes, types.boxedTypeOrType(pattype));
+                                    checkCaseLabelDominated(pat.pos(), coveredTypesForConstants, types.boxedTypeOrType(pattype));
                                 }
                             }
                         }
@@ -1784,9 +1785,12 @@ public class Attr extends JCTree.Visitor {
                             }
                             hasTotalPattern = true;
                         }
-                        checkCaseLabelDominated(pat.pos(), coveredTypes, patternType);
-                        if (primary.unconditional() && !patternType.isErroneous()) {
-                            coveredTypes = coveredTypes.prepend(patternType);
+                        checkCaseLabelDominated(pat.pos(), coveredTypesForPatterns, patternType);
+                        if (!patternType.isErroneous()) {
+                            coveredTypesForConstants = coveredTypesForConstants.prepend(patternType);
+                            if (primary.unconditional()) {
+                                coveredTypesForPatterns = coveredTypesForPatterns.prepend(patternType);
+                            }
                         }
                     }
                     currentBindings = matchBindingsComputer.switchCase(pat, currentBindings, matchBindings);
@@ -3950,14 +3954,14 @@ public class Attr extends JCTree.Visitor {
             : chk.checkNonVoid(tree.arg.pos(), attribExpr(tree.arg, env));
 
         // Find operator.
-        Symbol operator = tree.operator = operators.resolveUnary(tree, tree.getTag(), argtype);
+        OperatorSymbol operator = tree.operator = operators.resolveUnary(tree, tree.getTag(), argtype);
         Type owntype = types.createErrorType(tree.type);
         if (operator != operators.noOpSymbol &&
                 !argtype.isErroneous()) {
             owntype = (tree.getTag().isIncOrDecUnaryOp())
                 ? tree.arg.type
                 : operator.type.getReturnType();
-            int opc = ((OperatorSymbol)operator).opcode;
+            int opc = operator.opcode;
 
             // If the argument is constant, fold it.
             if (argtype.constValue() != null) {
@@ -4004,13 +4008,13 @@ public class Attr extends JCTree.Visitor {
         matchBindings = matchBindingsComputer.binary(tree, lhsBindings, matchBindings);
 
         // Find operator.
-        Symbol operator = tree.operator = operators.resolveBinary(tree, tree.getTag(), left, right);
+        OperatorSymbol operator = tree.operator = operators.resolveBinary(tree, tree.getTag(), left, right);
         Type owntype = types.createErrorType(tree.type);
         if (operator != operators.noOpSymbol &&
                 !left.isErroneous() &&
                 !right.isErroneous()) {
             owntype = operator.type.getReturnType();
-            int opc = ((OperatorSymbol)operator).opcode;
+            int opc = operator.opcode;
             // If both arguments are constants, fold them.
             if (left.constValue() != null && right.constValue() != null) {
                 Type ctype = cfolder.fold2(opc, left, right);
@@ -4344,7 +4348,8 @@ public class Attr extends JCTree.Visitor {
                 if (env.info.isSelfCall &&
                         ((sym.name == names._this &&
                         site.tsym == env.enclClass.sym) ||
-                        sym.name == names._super && env.info.constructorArgs)) {
+                        sym.name == names._super && env.info.constructorArgs &&
+                        (sitesym.isInterface() || site.tsym == env.enclClass.sym))) {
                     chk.earlyRefError(tree.pos(), sym);
                 }
             } else {
@@ -5494,11 +5499,11 @@ public class Attr extends JCTree.Visitor {
                     c.owner.kind != PCK &&
                     ((c.flags() & STATIC) == 0 || c.name == names.empty) &&
                     (TreeInfo.flags(l.head) & (STATIC | INTERFACE)) != 0) {
-                Symbol sym = null;
+                VarSymbol sym = null;
                 if (l.head.hasTag(VARDEF)) sym = ((JCVariableDecl) l.head).sym;
                 if (sym == null ||
                         sym.kind != VAR ||
-                        ((VarSymbol) sym).getConstValue() == null)
+                        sym.getConstValue() == null)
                     log.error(l.head.pos(), Errors.IclsCantHaveStaticDecl(c));
             }
         }

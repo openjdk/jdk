@@ -2185,7 +2185,7 @@ const RegMask* Matcher::predicate_reg_mask(void) {
   return NULL;
 }
 
-const TypeVect* Matcher::predicate_reg_type(const Type* elemTy, int length) {
+const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) {
   return NULL;
 }
 
@@ -5953,7 +5953,7 @@ instruct loadConN_hi(iRegNdst dst, immN src) %{
   format %{ "LIS     $dst, $src \t// narrow oop hi" %}
   size(4);
   ins_encode %{
-    __ lis($dst$$Register, (int)(short)(($src$$constant >> 16) & 0xffff));
+    __ lis($dst$$Register, 0); // Will get patched.
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -5966,11 +5966,9 @@ instruct loadConN_lo(iRegNdst dst, iRegNsrc src1, immN src2) %{
   format %{ "ORI     $dst, $src1, $src2 \t// narrow oop lo" %}
   size(4);
   ins_encode %{
-    assert(__ oop_recorder() != NULL, "this assembler needs an OopRecorder");
-    int oop_index = __ oop_recorder()->find_index((jobject)$src2$$constant);
-    RelocationHolder rspec = oop_Relocation::spec(oop_index);
-    __ relocate(rspec, 1);
-    __ ori($dst$$Register, $src1$$Register, $src2$$constant & 0xffff);
+    AddressLiteral addrlit = __ constant_oop_address((jobject)$src2$$constant);
+    __ relocate(addrlit.rspec(), /*compressed format*/ 1);
+    __ ori($dst$$Register, $src1$$Register, 0); // Will get patched.
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -6085,12 +6083,9 @@ instruct loadConNKlass_lo(iRegNdst dst, immNKlass_NM src1, iRegNsrc src2) %{
   format %{ "ORI     $dst, $src1, $src2 \t// narrow klass lo" %}
   size(4);
   ins_encode %{
-    intptr_t Csrc = CompressedKlassPointers::encode((Klass *)$src1$$constant);
-    assert(__ oop_recorder() != NULL, "this assembler needs an OopRecorder");
-    int klass_index = __ oop_recorder()->find_index((Klass *)$src1$$constant);
-    RelocationHolder rspec = metadata_Relocation::spec(klass_index);
-
-    __ relocate(rspec, 1);
+    // Notify OOP recorder (don't need the relocation)
+    AddressLiteral md = __ constant_metadata_address((Klass*)$src1$$constant);
+    intptr_t Csrc = CompressedKlassPointers::encode((Klass*)md.value());
     __ ori($dst$$Register, $src2$$Register, Csrc & 0xffff);
   %}
   ins_pipe(pipe_class_default);
@@ -12806,30 +12801,26 @@ instruct encode_iso_array(rarg1RegP src, rarg2RegP dst, iRegIsrc len, iRegIdst r
   effect(TEMP_DEF result, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5,
          USE_KILL src, USE_KILL dst, KILL ctr, KILL cr0);
   ins_cost(300);
-  format %{ "Encode array $src,$dst,$len -> $result \t// KILL $tmp1, $tmp2, $tmp3, $tmp4, $tmp5" %}
+  format %{ "Encode iso array $src,$dst,$len -> $result \t// KILL $tmp1, $tmp2, $tmp3, $tmp4, $tmp5" %}
   ins_encode %{
-    Label Lslow, Lfailure1, Lfailure2, Ldone;
-    __ string_compress_16($src$$Register, $dst$$Register, $len$$Register, $tmp1$$Register,
-                          $tmp2$$Register, $tmp3$$Register, $tmp4$$Register, $tmp5$$Register, Lfailure1);
-    __ rldicl_($result$$Register, $len$$Register, 0, 64-3); // Remaining characters.
-    __ beq(CCR0, Ldone);
-    __ bind(Lslow);
-    __ string_compress($src$$Register, $dst$$Register, $result$$Register, $tmp2$$Register, Lfailure2);
-    __ li($result$$Register, 0);
-    __ b(Ldone);
+    __ encode_iso_array($src$$Register, $dst$$Register, $len$$Register, $tmp1$$Register, $tmp2$$Register,
+                        $tmp3$$Register, $tmp4$$Register, $tmp5$$Register, $result$$Register, false);
+  %}
+  ins_pipe(pipe_class_default);
+%}
 
-    __ bind(Lfailure1);
-    __ mr($result$$Register, $len$$Register);
-    __ mfctr($tmp1$$Register);
-    __ rldimi_($result$$Register, $tmp1$$Register, 3, 0); // Remaining characters.
-    __ beq(CCR0, Ldone);
-    __ b(Lslow);
-
-    __ bind(Lfailure2);
-    __ mfctr($result$$Register); // Remaining characters.
-
-    __ bind(Ldone);
-    __ subf($result$$Register, $result$$Register, $len$$Register);
+// encode char[] to byte[] in ASCII
+instruct encode_ascii_array(rarg1RegP src, rarg2RegP dst, iRegIsrc len, iRegIdst result, iRegLdst tmp1,
+                          iRegLdst tmp2, iRegLdst tmp3, iRegLdst tmp4, iRegLdst tmp5, regCTR ctr, flagsRegCR0 cr0) %{
+  predicate(((EncodeISOArrayNode*)n)->is_ascii());
+  match(Set result (EncodeISOArray src (Binary dst len)));
+  effect(TEMP_DEF result, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5,
+         USE_KILL src, USE_KILL dst, KILL ctr, KILL cr0);
+  ins_cost(300);
+  format %{ "Encode ascii array $src,$dst,$len -> $result \t// KILL $tmp1, $tmp2, $tmp3, $tmp4, $tmp5" %}
+  ins_encode %{
+    __ encode_iso_array($src$$Register, $dst$$Register, $len$$Register, $tmp1$$Register, $tmp2$$Register,
+                        $tmp3$$Register, $tmp4$$Register, $tmp5$$Register, $result$$Register, true);
   %}
   ins_pipe(pipe_class_default);
 %}

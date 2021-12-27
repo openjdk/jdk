@@ -1654,9 +1654,11 @@ void ciEnv::dump_replay_data_helper(outputStream* out) {
 
   GrowableArray<ciMetadata*>* objects = _factory->get_ci_metadata();
   out->print_cr("# %d ciObject found", objects->length());
+
   // The very first entry is the InstanceKlass of the root method of the current compilation in order to get the right
   // protection domain to load subsequent classes during replay compilation.
-  out->print_cr("instanceKlass %s", CURRENT_ENV->replay_name(task()->method()->method_holder()));
+  ciInstanceKlass::dump_replay_instanceKlass(out, task()->method()->method_holder());
+
   for (int i = 0; i < objects->length(); i++) {
     objects->at(i)->dump_replay_data(out);
   }

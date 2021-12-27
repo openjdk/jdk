@@ -52,8 +52,8 @@ public class EnumTypeChanges {
     String statementEnum(EnumTypeChangesEnum e) {
         switch (e) {
             case A -> { return "A"; }
-            case EnumTypeChangesEnum e1 && false -> throw new AssertionError();
             case B -> { return "B"; }
+            case EnumTypeChangesEnum e1 && false -> throw new AssertionError();
             default -> { return "D"; }
         }
     }
@@ -61,8 +61,8 @@ public class EnumTypeChanges {
     String expressionEnum(EnumTypeChangesEnum e) {
         return switch (e) {
             case A -> "A";
-            case EnumTypeChangesEnum e1 && false -> throw new AssertionError();
             case B -> "B";
+            case EnumTypeChangesEnum e1 && false -> throw new AssertionError();
             default -> "D";
         };
     }

@@ -251,7 +251,7 @@ public abstract class RemoteObject implements Remote, java.io.Serializable {
      * written by {@link java.io.ObjectOutput#writeInt(int)}
      *
      * <li>the data written as a result of calling
-     * {link java.rmi.server.ObjID#write(java.io.ObjectOutput)}
+     * {@link java.rmi.server.ObjID#write(java.io.ObjectOutput)}
      * on the <code>ObjID</code> instance contained in the reference
      *
      * <li>the boolean value <code>false</code>,
@@ -275,7 +275,7 @@ public abstract class RemoteObject implements Remote, java.io.Serializable {
      * written by {@link java.io.ObjectOutput#writeInt(int)}
      *
      * <li>the data written as a result of calling
-     * {link java.rmi.server.ObjID#write(java.io.ObjectOutput)}
+     * {@link java.rmi.server.ObjID#write(java.io.ObjectOutput)}
      * on the <code>ObjID</code> instance contained in the reference
      *
      * <li>the boolean value <code>false</code>,
@@ -304,7 +304,7 @@ public abstract class RemoteObject implements Remote, java.io.Serializable {
      * <code>writeObject</code> on the stream instance
      *
      * <li>the data written as a result of calling
-     * {link java.rmi.server.ObjID#write(java.io.ObjectOutput)}
+     * {@link java.rmi.server.ObjID#write(java.io.ObjectOutput)}
      * on the <code>ObjID</code> instance contained in the reference
      *
      * <li>the boolean value <code>false</code>,

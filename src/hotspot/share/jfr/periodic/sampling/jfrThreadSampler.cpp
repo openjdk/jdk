@@ -27,8 +27,10 @@
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/periodic/sampling/jfrCallTrace.hpp"
 #include "jfr/periodic/sampling/jfrThreadSampler.hpp"
+#include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdLoadBarrier.inline.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
+#include "jfr/recorder/storage/jfrBuffer.hpp"
 #include "jfr/support/jfrThreadId.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrTime.hpp"
@@ -323,9 +325,14 @@ class JfrThreadSampler : public NonJavaThread {
   JavaThread* _last_thread_native;
   size_t _interval_java;
   size_t _interval_native;
+  const size_t _min_size; // for enqueue buffer monitoring
+  const size_t _renew_size;
   int _cur_index;
   const u4 _max_frames;
   volatile bool _disenrolled;
+
+  const JfrBuffer* get_enqueue_buffer();
+  const JfrBuffer* renew_if_full(const JfrBuffer* enqueue_buffer);
 
   JavaThread* next_thread(ThreadsList* t_list, JavaThread* first_sampled, JavaThread* current);
   void task_stacktrace(JfrSampleType type, JavaThread** last_thread);
@@ -396,6 +403,8 @@ JfrThreadSampler::JfrThreadSampler(size_t interval_java, size_t interval_native,
   _last_thread_native(NULL),
   _interval_java(interval_java),
   _interval_native(interval_native),
+  _min_size(JfrOptionSet::stackdepth() * sizeof(intptr_t)),
+  _renew_size(_min_size * 2),
   _cur_index(-1),
   _max_frames(max_frames),
   _disenrolled(true) {
@@ -520,6 +529,15 @@ void JfrThreadSampler::post_run() {
   delete this;
 }
 
+const JfrBuffer* JfrThreadSampler::get_enqueue_buffer() {
+  const JfrBuffer* buffer = JfrTraceIdLoadBarrier::get_enqueue_buffer(this);
+  return buffer != nullptr ? renew_if_full(buffer) : JfrTraceIdLoadBarrier::renew_enqueue_buffer(_renew_size, this);
+}
+
+const JfrBuffer* JfrThreadSampler::renew_if_full(const JfrBuffer* enqueue_buffer) {
+  assert(enqueue_buffer != nullptr, "invariant");
+  return enqueue_buffer->free_size() < _min_size ? JfrTraceIdLoadBarrier::renew_enqueue_buffer(_renew_size, this) : enqueue_buffer;
+}
 
 void JfrThreadSampler::task_stacktrace(JfrSampleType type, JavaThread** last_thread) {
   ResourceMark rm;
@@ -530,7 +548,6 @@ void JfrThreadSampler::task_stacktrace(JfrSampleType type, JavaThread** last_thr
   const uint sample_limit = JAVA_SAMPLE == type ? MAX_NR_OF_JAVA_SAMPLES : MAX_NR_OF_NATIVE_SAMPLES;
   uint num_samples = 0;
   JavaThread* start = NULL;
-
   {
     elapsedTimer sample_time;
     sample_time.start();
@@ -541,6 +558,15 @@ void JfrThreadSampler::task_stacktrace(JfrSampleType type, JavaThread** last_thr
       // In cases where the last sampled thread is NULL or not-NULL but stale, find_index() returns -1.
       _cur_index = tlh.list()->find_index_of_JavaThread(*last_thread);
       JavaThread* current = _cur_index != -1 ? *last_thread : NULL;
+
+      // Explicitly monitor the available space of the thread-local buffer used by the load barrier
+      // for enqueuing klasses as part of tagging methods. We do this because if space becomes sparse,
+      // we cannot rely on the implicit allocation of a new buffer as part of the regular tag mechanism.
+      // If the free list is empty, a malloc could result, and the problem with that is that the thread
+      // we have suspended could be the holder of the malloc lock. Instead, the buffer is pre-emptively
+      // renewed before thread suspension.
+      const JfrBuffer* enqueue_buffer = get_enqueue_buffer();
+      assert(enqueue_buffer != nullptr, "invariant");
 
       while (num_samples < sample_limit) {
         current = next_thread(tlh.list(), start, current);
@@ -553,9 +579,11 @@ void JfrThreadSampler::task_stacktrace(JfrSampleType type, JavaThread** last_thr
         if (current->is_Compiler_thread()) {
           continue;
         }
+        assert(enqueue_buffer->free_size() >= _min_size, "invariant");
         if (sample_task.do_sample_thread(current, _frames, _max_frames, type)) {
           num_samples++;
         }
+        enqueue_buffer = renew_if_full(enqueue_buffer);
       }
       *last_thread = current;  // remember the thread we last attempted to sample
     }

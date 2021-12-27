@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8192920 8204588 8246774 8248843 8268869
+ * @bug 8192920 8204588 8246774 8248843 8268869 8235876
  * @summary Test source launcher
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -627,6 +627,20 @@ public class SourceLauncherTest extends TestRunner {
         Result r = run(base.resolve("NoRecompile.java"), Collections.emptyList(), Collections.emptyList());
         if (r.stdErr.contains("recompile with")) {
             error("Unexpected recompile suggestions in error output: " + r.stdErr);
+        }
+    }
+
+    @Test
+    public void testNoOptionsWarnings(Path base) throws IOException {
+        tb.writeJavaFiles(base, "public class Main { public static void main(String... args) {}}");
+        String log = new JavaTask(tb)
+                .vmOptions("--source", "7")
+                .className(base.resolve("Main.java").toString())
+                .run(Task.Expect.SUCCESS)
+                .getOutput(Task.OutputKind.STDERR);
+
+        if (log.contains("warning: [options]")) {
+            error("Unexpected options warning in error output: " + log);
         }
     }
 

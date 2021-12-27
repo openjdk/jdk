@@ -869,15 +869,16 @@ class methodHandle;
                                         "Ljdk/internal/vm/vector/VectorSupport$Vector;")                                                       \
    do_name(vector_ternary_op_name,     "ternaryOp")                                                                                            \
                                                                                                                                                \
-  do_intrinsic(_VectorBroadcastCoerced, jdk_internal_vm_vector_VectorSupport, vector_broadcast_coerced_name, vector_broadcast_coerced_sig, F_S)\
-   do_signature(vector_broadcast_coerced_sig, "(Ljava/lang/Class;"                                                                             \
+  do_intrinsic(_VectorFromBitsCoerced, jdk_internal_vm_vector_VectorSupport, vector_frombits_coerced_name, vector_frombits_coerced_sig, F_S)   \
+   do_signature(vector_frombits_coerced_sig, "(Ljava/lang/Class;"                                                                              \
                                                "Ljava/lang/Class;"                                                                             \
                                                "I"                                                                                             \
                                                "J"                                                                                             \
+                                               "I"                                                                                             \
                                                "Ljdk/internal/vm/vector/VectorSupport$VectorSpecies;"                                          \
-                                               "Ljdk/internal/vm/vector/VectorSupport$BroadcastOperation;)"                                    \
+                                               "Ljdk/internal/vm/vector/VectorSupport$FromBitsCoercedOperation;)"                              \
                                                "Ljdk/internal/vm/vector/VectorSupport$VectorPayload;")                                         \
-   do_name(vector_broadcast_coerced_name, "broadcastCoerced")                                                                                  \
+   do_name(vector_frombits_coerced_name, "fromBitsCoerced")                                                                                    \
                                                                                                                                                \
   do_intrinsic(_VectorShuffleIota, jdk_internal_vm_vector_VectorSupport, vector_shuffle_step_iota_name, vector_shuffle_step_iota_sig, F_S)     \
    do_signature(vector_shuffle_step_iota_sig, "(Ljava/lang/Class;"                                                                             \

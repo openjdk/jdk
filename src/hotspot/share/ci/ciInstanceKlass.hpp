@@ -293,6 +293,9 @@ public:
   // Dump the current state of this klass for compilation replay.
   virtual void dump_replay_data(outputStream* out);
 
+  static void dump_replay_instanceKlass(outputStream* out, InstanceKlass* ik);
+
+
   // Return stable class name suitable for replay file.
   const char *replay_name() const;
 

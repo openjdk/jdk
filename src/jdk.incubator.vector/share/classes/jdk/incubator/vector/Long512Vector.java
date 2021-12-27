@@ -731,9 +731,9 @@ final class Long512Vector extends LongVector {
         @ForceInline
         /*package-private*/
         static Long512Mask maskAll(boolean bit) {
-            return VectorSupport.broadcastCoerced(Long512Mask.class, long.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
-                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+            return VectorSupport.fromBitsCoerced(Long512Mask.class, long.class, VLENGTH,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
+                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final Long512Mask  TRUE_MASK = new Long512Mask(true);
         private static final Long512Mask FALSE_MASK = new Long512Mask(false);

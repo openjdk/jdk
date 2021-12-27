@@ -3094,8 +3094,7 @@ class StubGenerator: public StubCodeGenerator {
   // key = c_rarg4
   // state = c_rarg5 - GHASH.state
   // subkeyHtbl = c_rarg6 - powers of H
-  // subkeyHtbl_48_entries = c_rarg7 (not used)
-  // counter = [sp, #0] pointer to 16 bytes of CTR
+  // counter = c_rarg7 - 16 bytes of CTR
   // return - number of processed bytes
   address generate_galoisCounterMode_AESCrypt() {
     address ghash_polynomial = __ pc();
@@ -3121,10 +3120,7 @@ class StubGenerator: public StubCodeGenerator {
 
     const Register subkeyHtbl = c_rarg6;
 
-    // Pointer to CTR is passed on the stack before the (fp, lr) pair.
-    const Address counter_mem(sp, 2 * wordSize);
     const Register counter = c_rarg7;
-    __ ldr(counter, counter_mem);
 
     const Register keylen = r10;
     // Save state before entering routine
@@ -3208,6 +3204,194 @@ class StubGenerator: public StubCodeGenerator {
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(lr);
      return start;
+  }
+
+  // Arguments:
+  //
+  // Inputs:
+  //   c_rarg0   - byte[]  source+offset
+  //   c_rarg1   - int[]   SHA.state
+  //   c_rarg2   - int     offset
+  //   c_rarg3   - int     limit
+  //
+  address generate_md5_implCompress(bool multi_block, const char *name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    address start = __ pc();
+
+    Register buf       = c_rarg0;
+    Register state     = c_rarg1;
+    Register ofs       = c_rarg2;
+    Register limit     = c_rarg3;
+    Register a         = r4;
+    Register b         = r5;
+    Register c         = r6;
+    Register d         = r7;
+    Register rscratch3 = r10;
+    Register rscratch4 = r11;
+
+    Label keys;
+    Label md5_loop;
+
+    __ BIND(md5_loop);
+
+    // Save hash values for addition after rounds
+    __ ldrw(a, Address(state,  0));
+    __ ldrw(b, Address(state,  4));
+    __ ldrw(c, Address(state,  8));
+    __ ldrw(d, Address(state, 12));
+
+#define FF(r1, r2, r3, r4, k, s, t)              \
+    __ eorw(rscratch3, r3, r4);                  \
+    __ movw(rscratch2, t);                       \
+    __ andw(rscratch3, rscratch3, r2);           \
+    __ addw(rscratch4, r1, rscratch2);           \
+    __ ldrw(rscratch1, Address(buf, k*4));       \
+    __ eorw(rscratch3, rscratch3, r4);           \
+    __ addw(rscratch3, rscratch3, rscratch1);    \
+    __ addw(rscratch3, rscratch3, rscratch4);    \
+    __ rorw(rscratch2, rscratch3, 32 - s);       \
+    __ addw(r1, rscratch2, r2);
+
+#define GG(r1, r2, r3, r4, k, s, t)              \
+    __ eorw(rscratch2, r2, r3);                  \
+    __ ldrw(rscratch1, Address(buf, k*4));       \
+    __ andw(rscratch3, rscratch2, r4);           \
+    __ movw(rscratch2, t);                       \
+    __ eorw(rscratch3, rscratch3, r3);           \
+    __ addw(rscratch4, r1, rscratch2);           \
+    __ addw(rscratch3, rscratch3, rscratch1);    \
+    __ addw(rscratch3, rscratch3, rscratch4);    \
+    __ rorw(rscratch2, rscratch3, 32 - s);       \
+    __ addw(r1, rscratch2, r2);
+
+#define HH(r1, r2, r3, r4, k, s, t)              \
+    __ eorw(rscratch3, r3, r4);                  \
+    __ movw(rscratch2, t);                       \
+    __ addw(rscratch4, r1, rscratch2);           \
+    __ ldrw(rscratch1, Address(buf, k*4));       \
+    __ eorw(rscratch3, rscratch3, r2);           \
+    __ addw(rscratch3, rscratch3, rscratch1);    \
+    __ addw(rscratch3, rscratch3, rscratch4);    \
+    __ rorw(rscratch2, rscratch3, 32 - s);       \
+    __ addw(r1, rscratch2, r2);
+
+#define II(r1, r2, r3, r4, k, s, t)              \
+    __ movw(rscratch3, t);                       \
+    __ ornw(rscratch2, r2, r4);                  \
+    __ addw(rscratch4, r1, rscratch3);           \
+    __ ldrw(rscratch1, Address(buf, k*4));       \
+    __ eorw(rscratch3, rscratch2, r3);           \
+    __ addw(rscratch3, rscratch3, rscratch1);    \
+    __ addw(rscratch3, rscratch3, rscratch4);    \
+    __ rorw(rscratch2, rscratch3, 32 - s);       \
+    __ addw(r1, rscratch2, r2);
+
+    // Round 1
+    FF(a, b, c, d,  0,  7, 0xd76aa478)
+    FF(d, a, b, c,  1, 12, 0xe8c7b756)
+    FF(c, d, a, b,  2, 17, 0x242070db)
+    FF(b, c, d, a,  3, 22, 0xc1bdceee)
+    FF(a, b, c, d,  4,  7, 0xf57c0faf)
+    FF(d, a, b, c,  5, 12, 0x4787c62a)
+    FF(c, d, a, b,  6, 17, 0xa8304613)
+    FF(b, c, d, a,  7, 22, 0xfd469501)
+    FF(a, b, c, d,  8,  7, 0x698098d8)
+    FF(d, a, b, c,  9, 12, 0x8b44f7af)
+    FF(c, d, a, b, 10, 17, 0xffff5bb1)
+    FF(b, c, d, a, 11, 22, 0x895cd7be)
+    FF(a, b, c, d, 12,  7, 0x6b901122)
+    FF(d, a, b, c, 13, 12, 0xfd987193)
+    FF(c, d, a, b, 14, 17, 0xa679438e)
+    FF(b, c, d, a, 15, 22, 0x49b40821)
+
+    // Round 2
+    GG(a, b, c, d,  1,  5, 0xf61e2562)
+    GG(d, a, b, c,  6,  9, 0xc040b340)
+    GG(c, d, a, b, 11, 14, 0x265e5a51)
+    GG(b, c, d, a,  0, 20, 0xe9b6c7aa)
+    GG(a, b, c, d,  5,  5, 0xd62f105d)
+    GG(d, a, b, c, 10,  9, 0x02441453)
+    GG(c, d, a, b, 15, 14, 0xd8a1e681)
+    GG(b, c, d, a,  4, 20, 0xe7d3fbc8)
+    GG(a, b, c, d,  9,  5, 0x21e1cde6)
+    GG(d, a, b, c, 14,  9, 0xc33707d6)
+    GG(c, d, a, b,  3, 14, 0xf4d50d87)
+    GG(b, c, d, a,  8, 20, 0x455a14ed)
+    GG(a, b, c, d, 13,  5, 0xa9e3e905)
+    GG(d, a, b, c,  2,  9, 0xfcefa3f8)
+    GG(c, d, a, b,  7, 14, 0x676f02d9)
+    GG(b, c, d, a, 12, 20, 0x8d2a4c8a)
+
+    // Round 3
+    HH(a, b, c, d,  5,  4, 0xfffa3942)
+    HH(d, a, b, c,  8, 11, 0x8771f681)
+    HH(c, d, a, b, 11, 16, 0x6d9d6122)
+    HH(b, c, d, a, 14, 23, 0xfde5380c)
+    HH(a, b, c, d,  1,  4, 0xa4beea44)
+    HH(d, a, b, c,  4, 11, 0x4bdecfa9)
+    HH(c, d, a, b,  7, 16, 0xf6bb4b60)
+    HH(b, c, d, a, 10, 23, 0xbebfbc70)
+    HH(a, b, c, d, 13,  4, 0x289b7ec6)
+    HH(d, a, b, c,  0, 11, 0xeaa127fa)
+    HH(c, d, a, b,  3, 16, 0xd4ef3085)
+    HH(b, c, d, a,  6, 23, 0x04881d05)
+    HH(a, b, c, d,  9,  4, 0xd9d4d039)
+    HH(d, a, b, c, 12, 11, 0xe6db99e5)
+    HH(c, d, a, b, 15, 16, 0x1fa27cf8)
+    HH(b, c, d, a,  2, 23, 0xc4ac5665)
+
+    // Round 4
+    II(a, b, c, d,  0,  6, 0xf4292244)
+    II(d, a, b, c,  7, 10, 0x432aff97)
+    II(c, d, a, b, 14, 15, 0xab9423a7)
+    II(b, c, d, a,  5, 21, 0xfc93a039)
+    II(a, b, c, d, 12,  6, 0x655b59c3)
+    II(d, a, b, c,  3, 10, 0x8f0ccc92)
+    II(c, d, a, b, 10, 15, 0xffeff47d)
+    II(b, c, d, a,  1, 21, 0x85845dd1)
+    II(a, b, c, d,  8,  6, 0x6fa87e4f)
+    II(d, a, b, c, 15, 10, 0xfe2ce6e0)
+    II(c, d, a, b,  6, 15, 0xa3014314)
+    II(b, c, d, a, 13, 21, 0x4e0811a1)
+    II(a, b, c, d,  4,  6, 0xf7537e82)
+    II(d, a, b, c, 11, 10, 0xbd3af235)
+    II(c, d, a, b,  2, 15, 0x2ad7d2bb)
+    II(b, c, d, a,  9, 21, 0xeb86d391)
+
+#undef FF
+#undef GG
+#undef HH
+#undef II
+
+    // write hash values back in the correct order
+    __ ldrw(rscratch1, Address(state,  0));
+    __ addw(rscratch1, rscratch1, a);
+    __ strw(rscratch1, Address(state,  0));
+
+    __ ldrw(rscratch2, Address(state,  4));
+    __ addw(rscratch2, rscratch2, b);
+    __ strw(rscratch2, Address(state,  4));
+
+    __ ldrw(rscratch3, Address(state,  8));
+    __ addw(rscratch3, rscratch3, c);
+    __ strw(rscratch3, Address(state,  8));
+
+    __ ldrw(rscratch4, Address(state, 12));
+    __ addw(rscratch4, rscratch4, d);
+    __ strw(rscratch4, Address(state, 12));
+
+    if (multi_block) {
+      __ add(buf, buf, 64);
+      __ add(ofs, ofs, 64);
+      __ cmp(ofs, limit);
+      __ br(Assembler::LE, md5_loop);
+      __ mov(c_rarg0, ofs); // return ofs
+    }
+
+    __ ret(lr);
+
+    return start;
   }
 
   // Arguments:
@@ -6209,6 +6393,18 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // Support for spin waits.
+  address generate_spin_wait() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "spin_wait");
+    address start = __ pc();
+
+    __ spin_wait();
+    __ ret(lr);
+
+    return start;
+  }
+
 #ifdef LINUX
 
   // ARMv8.1 LSE versions of the atomic stubs used by Atomic::PlatformXX.
@@ -7501,6 +7697,10 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_galoisCounterMode_AESCrypt = generate_galoisCounterMode_AESCrypt();
     }
 
+    if (UseMD5Intrinsics) {
+      StubRoutines::_md5_implCompress      = generate_md5_implCompress(false,    "md5_implCompress");
+      StubRoutines::_md5_implCompressMB    = generate_md5_implCompress(true,     "md5_implCompressMB");
+    }
     if (UseSHA1Intrinsics) {
       StubRoutines::_sha1_implCompress     = generate_sha1_implCompress(false,   "sha1_implCompress");
       StubRoutines::_sha1_implCompressMB   = generate_sha1_implCompress(true,    "sha1_implCompressMB");
@@ -7522,6 +7722,8 @@ class StubGenerator: public StubCodeGenerator {
     if (UseAdler32Intrinsics) {
       StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
     }
+
+    StubRoutines::aarch64::_spin_wait = generate_spin_wait();
 
 #ifdef LINUX
 

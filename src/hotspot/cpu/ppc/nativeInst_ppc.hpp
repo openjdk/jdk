@@ -257,7 +257,7 @@ class NativeMovConstReg: public NativeInstruction {
   // Patch the code stream and oop pool.
   void set_data(intptr_t x);
 
-  // Patch narrow oop constants. Use this also for narrow klass.
+  // Patch narrow oop constants.
   void set_narrow_oop(narrowOop data, CodeBlob *code = NULL);
 
   void verify() NOT_DEBUG_RETURN;

@@ -1,5 +1,5 @@
 /*
- * Copyright Amazon.com Inc. or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,8 @@ public class TestOnSpinWaitAArch64DefaultFlags {
         final String cpuModel = cpuFeatures.get(0);
 
         if (isCPUModelNeoverseN1(cpuModel)) {
-            checkFinalFlagsEqualTo(ProcessTools.createJavaProcessBuilder("-XX:+PrintFlagsFinal", "-version"), "isb", "1");
+            checkFinalFlagsEqualTo(ProcessTools.createJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintFlagsFinal", "-version"),
+                "isb", "1");
             checkFinalFlagsEqualTo(ProcessTools.createJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions", "-XX:OnSpinWaitInstCount=2", "-XX:+PrintFlagsFinal", "-version"),
                 "isb", "2");
         } else {

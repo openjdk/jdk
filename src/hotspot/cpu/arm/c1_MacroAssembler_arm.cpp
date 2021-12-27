@@ -69,8 +69,8 @@ void C1_MacroAssembler::remove_frame(int frame_size_in_bytes) {
   raw_pop(FP, LR);
 }
 
-void C1_MacroAssembler::verified_entry() {
-  if (C1Breakpoint) {
+void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
+  if (breakAtEntry) {
     breakpoint();
   }
 }
