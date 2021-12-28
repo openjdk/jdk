@@ -182,6 +182,7 @@ FileMapInfo::FileMapInfo(bool is_static) {
   if (!valid && !_is_static && AutoCreateSharedArchive) {
     // regenerate shared archive at exit
     DynamicDumpSharedSpaces = true;
+    ArchiveClassesAtExit = _full_path;
   }
   _file_offset = 0;
   _file_open = false;
@@ -202,6 +203,8 @@ FileMapInfo::~FileMapInfo() {
 
 // Do preliminary validation on archive. More checks are in initialization.
 bool FileMapInfo::validate_archive() const {
+  // in case file name is NULL, os::file_exists will return false but
+  // check_archive will fail due to os::open crash on NULL.
   if (!os::file_exists(_full_path)) {
     return false;
   }
@@ -2403,6 +2406,7 @@ bool FileMapInfo::initialize() {
       FileMapInfo::fail_continue("Initialize dynamic archive failed.");
       if (AutoCreateSharedArchive) {
         DynamicDumpSharedSpaces = true;
+        ArchiveClassesAtExit = Arguments::GetSharedDynamicArchivePath();
       }
       return false;
     }
