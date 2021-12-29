@@ -620,7 +620,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      * The call has no effect if the item cannot be found in the queue
      * by referential equality.
      *
-     * @param x the item to sift up
+     * @param x the item to sift down
      */
     public void siftDown(E x) {
         final Object[] es = queue;
