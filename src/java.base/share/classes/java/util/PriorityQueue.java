@@ -589,6 +589,50 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     }
 
     /**
+     * Relocates item x to its proper place in the queue, IF its priority
+     * has been raised since it was added to this queue.
+     *
+     * The call has no effect if the item's priority has not changed or
+     * has been lowered since it was added to this queue.
+     *
+     * The call has no effect if the item cannot be found in the queue
+     * by referential equality.
+     *
+     * @param x the item to sift up
+     */
+    public void siftUp(E x) {
+        final Object[] es = queue;
+        for (int i = 0, n = size; i < n; i++) {
+            if (x == es[i]) {
+                siftUp(i, x);
+                break;
+            }
+        }
+    }
+
+    /**
+     * Relocates item x to its proper place in the queue, IF its priority
+     * has been lowered since it was added to this queue.
+     *
+     * The call has no effect if the item's priority has not changed or
+     * has been raised since it was added to this queue.
+     *
+     * The call has no effect if the item cannot be found in the queue
+     * by referential equality.
+     *
+     * @param x the item to sift up
+     */
+    public void siftDown(E x) {
+        final Object[] es = queue;
+        for (int i = 0, n = size; i < n; i++) {
+            if (x == es[i]) {
+                siftDown(i, x);
+                break;
+            }
+        }
+    }
+
+    /**
      * Removes the ith element from queue.
      *
      * Normally this method leaves the elements at up to i-1,
