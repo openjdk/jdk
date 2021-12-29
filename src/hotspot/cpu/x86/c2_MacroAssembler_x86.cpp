@@ -4312,3 +4312,30 @@ void C2_MacroAssembler::vector_mask_operation(int opc, Register dst, XMMRegister
   vector_mask_operation_helper(opc, dst, tmp, masklen);
 }
 #endif
+
+void C2_MacroAssembler::vector_maskall_operation(KRegister dst, Register src, int mask_len) {
+  if (VM_Version::supports_avx512bw()) {
+    if (mask_len > 32) {
+      kmovql(dst, src);
+    } else {
+      kmovdl(dst, src);
+      if (mask_len != 32) {
+        kshiftrdl(dst, dst, 32 - mask_len);
+      }
+    }
+  } else {
+    assert(mask_len <= 16, "");
+    kmovwl(dst, src);
+    if (mask_len != 16) {
+      kshiftrwl(dst, dst, 16 - mask_len);
+    }
+  }
+}
+
+#ifndef _LP64
+void C2_MacroAssembler::vector_maskall_operation32(KRegister dst, Register src, KRegister tmp, int mask_len) {
+  assert(VM_Version::supports_avx512bw(), "");
+  kmovdl(tmp, src);
+  kunpckdql(dst, tmp, tmp);
+}
+#endif

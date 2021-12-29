@@ -1541,6 +1541,31 @@ and its committed regions.
 .RE
 .RE
 .TP
+.B \f[CB]\-XX:+NeverActAsServerClassMachine\f[R]
+Enable the "Client VM emulation" mode which only uses the C1 JIT
+compiler, a 32Mb CodeCache and the Serial GC.
+The maximum amount of memory that the JVM may use (controlled by the
+\f[CB]\-XX:MaxRAM=n\f[R] flag) is set to 1GB by default.
+The string "emulated\-client" is added to the JVM version string.
+.RS
+.PP
+By default the flag is set to \f[CB]true\f[R] only on Windows in 32\-bit
+mode and \f[CB]false\f[R] in all other cases.
+.PP
+The "Client VM emulation" mode will not be enabled if any of the
+following flags are used on the command line:
+.IP
+.nf
+\f[CB]
+\-XX:{+|\-}TieredCompilation
+\-XX:CompilationMode=mode
+\-XX:TieredStopAtLevel=n
+\-XX:{+|\-}EnableJVMCI
+\-XX:{+|\-}UseJVMCICompiler
+\f[R]
+.fi
+.RE
+.TP
 .B \f[CB]\-XX:ObjectAlignmentInBytes=\f[R]\f[I]alignment\f[R]
 Sets the memory alignment of Java objects (in bytes).
 By default, the value is set to 8 bytes.
