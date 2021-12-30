@@ -909,8 +909,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
       future_unroll_cnt > LoopUnrollMin &&
       is_residual_iters_large(future_unroll_cnt, cl) &&
       1.2 * cl->node_count_before_unroll() < (double)_body.size()) {
-    if (UseSuperWord && (cl->slp_max_unroll() == 0) &&
-        !is_residual_iters_large(cl->unrolled_count(), cl)) {
+    if ((cl->slp_max_unroll() == 0) && !is_residual_iters_large(cl->unrolled_count(), cl)) {
       // cl->slp_max_unroll() = 0 means that the previous slp analysis never passed.
       // slp analysis may fail due to the loop IR is too complicated especially during the early stage
       // of loop unrolling analysis. But after several rounds of loop unrolling and other optimizations,
