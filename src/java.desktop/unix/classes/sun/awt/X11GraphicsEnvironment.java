@@ -67,7 +67,7 @@ public final class X11GraphicsEnvironment extends SunGraphicsEnvironment {
                 System.loadLibrary("awt");
 
                 /*
-                 * Note: The MToolkit object depends on the static initializer
+                 * Note: The XToolkit object depends on the static initializer
                  * of X11GraphicsEnvironment to initialize the connection to
                  * the X11 server.
                  */
