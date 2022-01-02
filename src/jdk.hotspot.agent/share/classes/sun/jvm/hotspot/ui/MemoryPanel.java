@@ -131,13 +131,12 @@ public class MemoryPanel extends JPanel {
           } else {
             switch (column) {
             case 0: {
-              String col1;
-              String col2 = unmappedAddrString;
-              String col3 = "";
               BigInteger bigaddr = startVal.add(new BigInteger(Integer.toString((row * addressSize))));
               Address addr = bigIntToAddress(bigaddr);
 
-              col1 = bigIntToHexString(bigaddr);
+              String col1 = bigIntToHexString(bigaddr);
+              String col2 = unmappedAddrString;
+              String col3 = "";
 
               if (addr != null) {
                 try {
