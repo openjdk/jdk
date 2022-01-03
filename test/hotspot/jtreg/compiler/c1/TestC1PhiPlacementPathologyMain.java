@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Huawei and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,22 +19,22 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_G1_G1EVACFAILUREOBJECTSSET_INLINE_HPP
-#define SHARE_GC_G1_G1EVACFAILUREOBJECTSSET_INLINE_HPP
+/*
+ * @test
+ * @bug 8277447
+ * @summary Test a pathological case for phi placement with an irreducible loop of a particular shape.
+ *
+ * @compile TestC1PhiPlacementPathology.jasm
+ * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,TestC1PhiPlacementPathology::test
+ *                   -XX:CompilationMode=quick-only -XX:-UseOnStackReplacement TestC1PhiPlacementPathologyMain
+ */
 
-#include "gc/g1/g1EvacFailureObjectsSet.hpp"
-#include "gc/g1/g1CollectedHeap.hpp"
-#include "gc/g1/g1SegmentedArray.inline.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
-
-void G1EvacFailureObjectsSet::record(oop obj) {
-  assert(obj != NULL, "must be");
-  assert(_region_idx == G1CollectedHeap::heap()->heap_region_containing(obj)->hrm_index(), "must be");
-  OffsetInRegion* e = _offsets.allocate();
-  *e = to_offset(obj);
+public class TestC1PhiPlacementPathologyMain {
+    public static void main(String[] args) {
+        for (int i = 0; i < 11000; i++) {
+            TestC1PhiPlacementPathology.test(0);
+        }
+    }
 }
-
-#endif //SHARE_GC_G1_G1EVACFAILUREOBJECTSSET_INLINE_HPP
