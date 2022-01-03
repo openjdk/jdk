@@ -613,6 +613,13 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
       const TypeOopPtr* val_type = TypeOopPtr::make_from_klass(env()->String_klass());
       Node *store = access_store_at(ex_node, adr, adr_typ, null(), val_type, T_OBJECT, IN_HEAP);
 
+      if (!method()->has_exception_handlers()) {
+        // We don't need to preserve the stack if there's no handler as the entire frame is going to be popped anyway.
+        // This prevents issues with exception handling and late inlining.
+        set_sp(0);
+        clean_stack(0);
+      }
+
       add_exception_state(make_exception_state(ex_node));
       return;
     }
@@ -2487,8 +2494,7 @@ Node* GraphKit::make_runtime_call(int flags,
                                   Node* parm0, Node* parm1,
                                   Node* parm2, Node* parm3,
                                   Node* parm4, Node* parm5,
-                                  Node* parm6, Node* parm7,
-                                  Node* parm8) {
+                                  Node* parm6, Node* parm7) {
   assert(call_addr != NULL, "must not call NULL targets");
 
   // Slow-path call
@@ -2535,8 +2541,7 @@ Node* GraphKit::make_runtime_call(int flags,
   if (parm5 != NULL) { call->init_req(TypeFunc::Parms+5, parm5);
   if (parm6 != NULL) { call->init_req(TypeFunc::Parms+6, parm6);
   if (parm7 != NULL) { call->init_req(TypeFunc::Parms+7, parm7);
-  if (parm8 != NULL) { call->init_req(TypeFunc::Parms+8, parm8);
-  /* close each nested if ===> */  } } } } } } } } }
+  /* close each nested if ===> */  } } } } } } } }
   assert(call->in(call->req()-1) != NULL, "must initialize all parms");
 
   if (!is_leaf) {

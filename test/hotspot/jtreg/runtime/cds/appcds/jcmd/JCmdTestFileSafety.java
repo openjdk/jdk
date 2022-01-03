@@ -38,6 +38,9 @@
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.attribute.FileTime;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.Platform;
@@ -61,6 +64,13 @@ public class JCmdTestFileSafety extends JCmdTestDumpBase {
         }
     }
 
+    private static void removeFile(String fileName) throws Exception {
+        File file = new File(fileName);
+        if (file.exists()) {
+            file.delete();
+        }
+    }
+
     static void test() throws Exception {
         buildJars();
 
@@ -75,6 +85,8 @@ public class JCmdTestFileSafety extends JCmdTestDumpBase {
         }
         outputDirFile.setWritable(true);
         String localFileName = subDir + File.separator + "MyStaticDump.jsa";
+        removeFile(localFileName);
+
         setIsStatic(true/*static*/);
         // Set target dir not writable, do static dump
         print2ln(test_count++ + " Set target dir not writable, do static dump");
@@ -82,10 +94,16 @@ public class JCmdTestFileSafety extends JCmdTestDumpBase {
         app = createLingeredApp("-cp", allJars);
         pid = app.getPid();
         test(localFileName, pid, noBoot,  EXPECT_PASS);
+        checkFileExistence(localFileName, true/*exist*/);
+        FileTime ft1 = Files.getLastModifiedTime(Paths.get(localFileName));
         outputDirFile.setWritable(false);
         test(localFileName, pid, noBoot,  EXPECT_FAIL);
+        FileTime ft2 = Files.getLastModifiedTime(Paths.get(localFileName));
+        if (!ft2.equals(ft1)) {
+            throw new RuntimeException("Archive file " + localFileName + " should not be updated");
+        }
+        removeFile(localFileName);
         outputDirFile.setWritable(true);
-        checkFileExistence(localFileName, true/*exist*/);
 
         // Illegal character in file name
         localFileName = "mystatic:.jsa";
@@ -103,18 +121,17 @@ public class JCmdTestFileSafety extends JCmdTestDumpBase {
         pid = app.getPid();
         localFileName = subDir + File.separator + "MyDynamicDump.jsa";
         test(localFileName, pid, noBoot,  EXPECT_PASS);
-        app.stopApp();
-        // cannot dynamically dump twice, restart
-        app = createLingeredApp("-cp", allJars, "-XX:+RecordDynamicDumpInfo");
-        pid = app.getPid();
+        checkFileExistence(localFileName, true/*exist*/);
+        ft1 = Files.getLastModifiedTime(Paths.get(localFileName));
         outputDirFile.setWritable(false);
         test(localFileName, pid, noBoot,  EXPECT_FAIL);
-        outputDirFile.setWritable(true);
+        ft2 = Files.getLastModifiedTime(Paths.get(localFileName));
+        if (!ft2.equals(ft1)) {
+            throw new RuntimeException("Archive file " + localFileName + " should not be updated");
+        }
         app.stopApp();
-        // MyDynamicDump.jsa should exist
-        checkFileExistence(localFileName, true);
-        File rmFile = new File(localFileName);
-        rmFile.delete();
+        removeFile(localFileName);
+        outputDirFile.setWritable(true);
         outputDirFile.delete();
     }
 
