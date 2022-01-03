@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,8 +71,7 @@ public class SADebugDTest {
         }
     }
 
-    private static boolean checkOutput(final String line, final int rmiPort) {
-        boolean useRmiPort = rmiPort != -1;
+    private static boolean checkOutput(final String line, final boolean useRmiPort, final int rmiPort) {
         if (!useRmiPort && line.contains(GOLDEN)) {
             testResult = true;
         } else if (useRmiPort && line.contains(RMI_CONNECTOR_IS_BOUND + rmiPort)) {
@@ -119,7 +118,7 @@ public class SADebugDTest {
 
                 // The startProcess will block until the 'golden' string appears in either process' stdout or stderr
                 // In case of timeout startProcess kills the debugd process
-                Process debugd = startProcess("debugd", pb, null, l -> checkOutput(l, rmiPort), 20, TimeUnit.SECONDS);
+                Process debugd = startProcess("debugd", pb, null, l -> checkOutput(l, useRmiPort, rmiPort), 20, TimeUnit.SECONDS);
 
                 // If we are here, this means we have received the golden line and the test has passed
                 // The debugd remains running, we have to kill it
