@@ -34,18 +34,22 @@ import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.LocalDateTime;
 
 /**
  * Generate a zip file in a "reproducible" manner from the input zip file.
  * Standard zip tools rely on OS file list querying whose ordering can vary
  * by platform architecture, this class ensures the zip entries are ordered
- * and also supports SOURCE_DATE_EPOCH timestamps.
+ * and also supports SOURCE_DATE_EPOCH timestamps which will set the ZipEntry
+ * local time in UTC.
  */
 public class MakeZipReproducible {
     String input_file = null;
     String fname = null;
     String zname = "";
-    long   timestamp = -1L;
+    LocalDateTime timestamp = null;
     boolean verbose = false;
 
     // Keep a sorted Set of ZipEntrys to be processed, so that the zip is reproducible
@@ -117,7 +121,9 @@ public class MakeZipReproducible {
                         break;
                     case 't':
                         // SOURCE_DATE_EPOCH timestamp specified
-                        timestamp = Long.parseLong(args[++count]) * 1000;
+                        long epochSeconds = Long.parseLong(args[++count]);
+                        Instant instant = Instant.ofEpochSecond(epochSeconds);
+                        timestamp = LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
                         break;
                     case 'v':
                         verbose = true;
@@ -194,8 +200,8 @@ public class MakeZipReproducible {
         }
 
         // Set to specified timestamp if set otherwise leave as original lastModified time
-        if (timestamp != -1L) {
-            entry.setTime(timestamp);
+        if (timestamp != null) {
+            entry.setTimeLocal(timestamp);
         }
 
         zos.putNextEntry(entry);
