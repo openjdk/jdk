@@ -849,7 +849,7 @@ final class CompilerToVM {
     /**
      * @see HotSpotJVMCIRuntime#translate(Object)
      */
-    native long translate(Object obj);
+    native long translate(Object obj, boolean callPostTranslation);
 
     /**
      * @see HotSpotJVMCIRuntime#unhand(Class, long)
