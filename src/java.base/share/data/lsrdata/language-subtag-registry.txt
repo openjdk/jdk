@@ -1,4 +1,4 @@
-File-Date: 2021-08-06
+File-Date: 2021-12-29
 %%
 Type: language
 Subtag: aa
@@ -44793,6 +44793,11 @@ Description: Katakana
 Added: 2005-10-16
 %%
 Type: script
+Subtag: Kawi
+Description: Kawi
+Added: 2021-12-24
+%%
+Type: script
 Subtag: Khar
 Description: Kharoshthi
 Added: 2005-10-16
@@ -45010,6 +45015,11 @@ Subtag: Mymr
 Description: Myanmar
 Description: Burmese
 Added: 2005-10-16
+%%
+Type: script
+Subtag: Nagm
+Description: Nag Mundari
+Added: 2021-12-24
 %%
 Type: script
 Subtag: Nand
@@ -45288,6 +45298,11 @@ Type: script
 Subtag: Sund
 Description: Sundanese
 Added: 2006-07-21
+%%
+Type: script
+Subtag: Sunu
+Description: Sunuwar
+Added: 2021-12-24
 %%
 Type: script
 Subtag: Sylo
