@@ -181,13 +181,17 @@ void CE_Eliminator::block_do(BlockBegin* block) {
   }
 
 #ifdef ASSERT
+#define __DO_DELAYED_VERIFICATION
+#endif // ASSERT
+
+#ifdef __DO_DELAYED_VERIFICATION
   BlockList blocks_to_verify_later;
   blocks_to_verify_later.append(block);
   blocks_to_verify_later.append(t_block);
   blocks_to_verify_later.append(f_block);
   blocks_to_verify_later.append(sux);
   _hir->expand_with_neighborhood(blocks_to_verify_later);
-#endif // ASSERT
+#endif // __DO_DELAYED_VERIFICATION
 
   // 2) substitute conditional expression
   //    with an IfOp followed by a Goto
@@ -257,7 +261,13 @@ void CE_Eliminator::block_do(BlockBegin* block) {
     tty->print_cr("%d. IfOp in B%d", ifop_count(), block->block_id());
   }
 
-  DEBUG_ONLY(_hir->verify_local(blocks_to_verify_later));
+#ifdef __DO_DELAYED_VERIFICATION
+  _hir->verify_local(blocks_to_verify_later);
+#endif // __DO_DELAYED_VERIFICATION
+
+#ifdef ASSERT
+#undef __DO_DELAYED_VERIFICATION
+#endif // ASSERT
 }
 
 Value CE_Eliminator::make_ifop(Value x, Instruction::Condition cond, Value y, Value tval, Value fval) {
