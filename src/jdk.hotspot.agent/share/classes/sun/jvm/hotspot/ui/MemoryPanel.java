@@ -104,7 +104,7 @@ public class MemoryPanel extends JPanel {
           return numVisibleRows;
         }
         public int getColumnCount() {
-            return isAnnotated ? 1 : 2;
+          return isAnnotated ? 1 : 2;
         }
         public Object getValueAt(int row, int column) {
           // When not annotated, we just display the address followed by its contents in two
