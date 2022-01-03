@@ -356,8 +356,10 @@ public class TypeEnter implements Completer {
 
                 // Import-on-demand java.lang.
                 PackageSymbol javaLang = syms.enterPackage(syms.java_base, names.java_lang);
-                if (javaLang.members().isEmpty() && !javaLang.exists())
-                    throw new FatalError(diags.fragment(Fragments.FatalErrNoJavaLang));
+                if (javaLang.members().isEmpty() && !javaLang.exists()) {
+                    log.error(Errors.NoJavaLang);
+                    throw new Abort();
+                }
                 importAll(make.at(tree.pos()).Import(make.QualIdent(javaLang), false), javaLang, env);
 
                 JCModuleDecl decl = tree.getModuleDecl();

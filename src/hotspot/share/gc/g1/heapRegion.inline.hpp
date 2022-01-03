@@ -30,7 +30,6 @@
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
-#include "gc/g1/g1EvacFailureObjectsSet.inline.hpp"
 #include "gc/g1/g1Predictions.hpp"
 #include "gc/g1/g1SegmentedArray.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -104,12 +103,8 @@ inline bool HeapRegion::is_obj_dead_with_size(const oop obj, const G1CMBitMap* c
 }
 
 inline bool HeapRegion::block_is_obj(const HeapWord* p) const {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-
-  if (!this->is_in(p)) {
-    assert(is_continues_humongous(), "This case can only happen for humongous regions");
-    return (p == humongous_start_region()->bottom());
-  }
+  assert(p >= bottom() && p < top(), "precondition");
+  assert(!is_continues_humongous(), "p must point to block-start");
   // When class unloading is enabled it is not safe to only consider top() to conclude if the
   // given pointer is a valid object. The situation can occur both for class unloading in a
   // Full GC and during a concurrent cycle.
@@ -118,9 +113,9 @@ inline bool HeapRegion::block_is_obj(const HeapWord* p) const {
   // During a concurrent cycle class unloading is done after marking is complete and objects
   // for the unloaded classes will be stale until the regions are collected.
   if (ClassUnloading) {
-    return !g1h->is_obj_dead(cast_to_oop(p), this);
+    return !G1CollectedHeap::heap()->is_obj_dead(cast_to_oop(p), this);
   }
-  return p < top();
+  return true;
 }
 
 inline size_t HeapRegion::block_size_using_bitmap(const HeapWord* addr, const G1CMBitMap* const prev_bitmap) const {
@@ -441,10 +436,6 @@ inline void HeapRegion::record_surv_words_in_group(size_t words_survived) {
   assert(has_valid_age_in_surv_rate(), "pre-condition");
   int age_in_group = age_in_surv_rate_group();
   _surv_rate_group->record_surviving_words(age_in_group, words_survived);
-}
-
-inline void HeapRegion::record_evac_failure_obj(oop obj) {
-  _evac_failure_objs.record(obj);
 }
 
 #endif // SHARE_GC_G1_HEAPREGION_INLINE_HPP

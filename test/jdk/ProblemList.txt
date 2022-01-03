@@ -646,8 +646,6 @@ javax/net/ssl/DTLS/CipherSuite.java                             8202059 macosx-x
 
 sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-all
 
-sun/security/pkcs11/KeyStore/SecretKeysBasic.java                 8209398 generic-all
-
 security/infra/java/security/cert/CertPathValidator/certification/ActalisCA.java  8224768 generic-all
 
 sun/security/smartcardio/TestChannel.java                       8039280 generic-all
@@ -748,7 +746,7 @@ javax/swing/JMenu/4515762/bug4515762.java 8276074 macosx-all
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8225012 windows-all,macosx-all
 sanity/client/SwingSet/src/ScrollPaneDemoTest.java 8225013 linux-all
 sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
-javax/swing/JTree/4908142/bug4908142.java 8278348 macosx-aarch64
+javax/swing/JTree/4908142/bug4908142.java 8278348 macosx-all
 
 ############################################################################
 
@@ -824,7 +822,7 @@ jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209 generic-
 jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-all
 jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
-jdk/jfr/api/consumer/streaming/TestLatestEvent.java             8268297 windows-x64
+jdk/jfr/event/oldobject/TestLargeRootSet.java                   8276333 macosx-x64,windows-x64
 
 ############################################################################
 
@@ -833,9 +831,6 @@ jdk/jfr/api/consumer/streaming/TestLatestEvent.java             8268297 windows-
 ############################################################################
 
 # jdk_jpackage
-
-tools/jpackage/share/IconTest.java 8278233 macosx-x64
-tools/jpackage/share/MultiNameTwoPhaseTest.java 8278233 macosx-x64
 
 ############################################################################
 
