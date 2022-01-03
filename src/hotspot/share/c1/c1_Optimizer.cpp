@@ -265,9 +265,6 @@ void CE_Eliminator::block_do(BlockBegin* block) {
   _hir->verify_local(blocks_to_verify_later);
 #endif // __DO_DELAYED_VERIFICATION
 
-#ifdef ASSERT
-#undef __DO_DELAYED_VERIFICATION
-#endif // ASSERT
 }
 
 Value CE_Eliminator::make_ifop(Value x, Instruction::Condition cond, Value y, Value tval, Value fval) {
@@ -518,6 +515,10 @@ class BlockMerger: public BlockClosure {
     while (try_merge(block)) ;
   }
 };
+
+#ifdef ASSERT
+#undef __DO_DELAYED_VERIFICATION
+#endif // ASSERT
 
 
 void Optimizer::eliminate_blocks() {
