@@ -43,8 +43,6 @@ private:
   void inc_needs_attention();
   void dec_needs_attention();
 
-  bool is_enabled() const;
-
 public:
   ZRelocateQueue();
 
