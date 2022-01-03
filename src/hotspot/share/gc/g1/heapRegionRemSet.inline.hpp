@@ -1,0 +1,167 @@
+/*
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+#ifndef SHARE_VM_GC_G1_HEAPREGIONREMSET_INLINE_HPP
+#define SHARE_VM_GC_G1_HEAPREGIONREMSET_INLINE_HPP
+
+#include "gc/g1/heapRegionRemSet.hpp"
+
+#include "gc/g1/g1CardSet.inline.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/heapRegion.inline.hpp"
+#include "runtime/atomic.hpp"
+#include "utilities/bitMap.inline.hpp"
+
+void HeapRegionRemSet::set_state_empty() {
+  guarantee(SafepointSynchronize::is_at_safepoint() || !is_tracked(),
+            "Should only set to Untracked during safepoint but is %s.", get_state_str());
+  if (_state == Untracked) {
+    return;
+  }
+  clear_fcc();
+  _state = Untracked;
+}
+
+void HeapRegionRemSet::set_state_updating() {
+  guarantee(SafepointSynchronize::is_at_safepoint() && !is_tracked(),
+            "Should only set to Updating from Untracked during safepoint but is %s", get_state_str());
+  clear_fcc();
+  _state = Updating;
+}
+
+void HeapRegionRemSet::set_state_complete() {
+  clear_fcc();
+  _state = Complete;
+}
+
+template <typename Closure>
+class G1ContainerCardsOrRanges {
+  Closure& _iter;
+  uint _region_idx;
+  uint _offset;
+
+public:
+  G1ContainerCardsOrRanges(Closure& iter, uint region_idx, uint offset) : _iter(iter), _region_idx(region_idx), _offset(offset) { }
+
+  bool start_iterate(uint tag) {
+    return _iter.start_iterate(tag, _region_idx);
+  }
+
+  void operator()(uint card_idx) {
+    _iter.do_card(card_idx + _offset);
+  }
+
+  void operator()(uint card_idx, uint length) {
+    _iter.do_card_range(card_idx + _offset, length);
+  }
+};
+
+template <typename Closure, template <typename> class CardOrRanges>
+class G1HeapRegionRemSetMergeCardIterator : public G1CardSet::G1CardSetPtrIterator {
+  G1CardSet* _card_set;
+  Closure& _iter;
+  uint _log_card_regions_per_region;
+  uint _card_regions_per_region_mask;
+  uint _log_card_region_size;
+
+public:
+
+  G1HeapRegionRemSetMergeCardIterator(G1CardSet* card_set,
+                                      Closure& iter,
+                                      uint log_card_regions_per_region,
+                                      uint log_card_region_size) :
+    _card_set(card_set),
+    _iter(iter),
+    _log_card_regions_per_region(log_card_regions_per_region),
+    _card_regions_per_region_mask((1 << log_card_regions_per_region) - 1),
+    _log_card_region_size(log_card_region_size) {
+  }
+
+  void do_cardsetptr(uint card_region_idx, size_t num_occupied, G1CardSet::CardSetPtr card_set) override {
+    CardOrRanges<Closure> cl(_iter,
+                             card_region_idx >> _log_card_regions_per_region,
+                             (card_region_idx & _card_regions_per_region_mask) << _log_card_region_size);
+    _card_set->iterate_cards_or_ranges_in_container(card_set, cl);
+  }
+};
+
+template <class CardOrRangeVisitor>
+inline void HeapRegionRemSet::iterate_for_merge(CardOrRangeVisitor& cl) {
+  G1HeapRegionRemSetMergeCardIterator<CardOrRangeVisitor, G1ContainerCardsOrRanges> cl2(&_card_set,
+                                                                                        cl,
+                                                                                        _card_set.config()->log2_card_region_per_heap_region(),
+                                                                                        _card_set.config()->log2_cards_per_card_region());
+  _card_set.iterate_containers(&cl2, true /* at_safepoint */);
+}
+
+void HeapRegionRemSet::split_card(OopOrNarrowOopStar from, uint& card_region, uint& card_within_region) const {
+  size_t offset = pointer_delta(from, _heap_base_address, 1);
+  card_region = (uint)(offset >> _split_card_shift);
+  card_within_region = (uint)((offset & _split_card_mask) >> CardTable::card_shift);
+  assert(card_within_region < ((uint)1 << G1CardSetContainer::LogCardsPerRegionLimit), "must be");
+}
+
+void HeapRegionRemSet::add_reference(OopOrNarrowOopStar from, uint tid) {
+  RemSetState state = _state;
+  if (state == Untracked) {
+    return;
+  }
+
+  uint cur_idx = _hr->hrm_index();
+  uintptr_t from_card = uintptr_t(from) >> CardTable::card_shift;
+
+  if (G1FromCardCache::contains_or_replace(tid, cur_idx, from_card)) {
+    // We can't check whether the card is in the remembered set - the card container
+    // may be coarsened just now.
+    //assert(contains_reference(from), "We just found " PTR_FORMAT " in the FromCardCache", p2i(from));
+   return;
+  }
+
+  uint card_region;
+  uint card_within_region;
+
+  split_card(from, card_region, card_within_region);
+
+  _card_set.add_card(card_region, card_within_region);
+}
+
+bool HeapRegionRemSet::contains_reference(OopOrNarrowOopStar from) {
+  uint card_region;
+  uint card_within_region;
+
+  split_card(from, card_region, card_within_region);
+
+  return _card_set.contains_card(card_region, card_within_region);
+}
+
+void HeapRegionRemSet::print_info(outputStream* st, OopOrNarrowOopStar from) {
+  uint card_region;
+  uint card_within_region;
+
+  split_card(from, card_region, card_within_region);
+
+  _card_set.print_info(st, card_region, card_within_region);
+}
+
+#endif // SHARE_VM_GC_G1_HEAPREGIONREMSET_INLINE_HPP

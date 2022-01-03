@@ -1,0 +1,43 @@
+#
+# Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# Versions and download locations for dependencies used by pre-submit testing.
+
+BOOT_JDK_VERSION=17
+JTREG_VERSION=6.1
+JTREG_BUILD=1
+GTEST_VERSION=1.8.1
+
+LINUX_X64_BOOT_JDK_FILENAME=openjdk-17.0.1_linux-x64_bin.tar.gz
+LINUX_X64_BOOT_JDK_URL=https://download.java.net/java/GA/jdk17.0.1/2a2082e5a09d4267845be086888add4f/12/GPL/openjdk-17.0.1_linux-x64_bin.tar.gz
+LINUX_X64_BOOT_JDK_SHA256=1c0a73cbb863aad579b967316bf17673b8f98a9bb938602a140ba2e5c38f880a
+
+WINDOWS_X64_BOOT_JDK_FILENAME=openjdk-17.0.1_windows-x64_bin.zip
+WINDOWS_X64_BOOT_JDK_URL=https://download.java.net/java/GA/jdk17.0.1/2a2082e5a09d4267845be086888add4f/12/GPL/openjdk-17.0.1_windows-x64_bin.zip
+WINDOWS_X64_BOOT_JDK_SHA256=329900a6673b237b502bdcf77bc334da34bc91355c5fd2d457fc00f53fd71ef1
+
+MACOS_X64_BOOT_JDK_FILENAME=openjdk-17.0.1_macos-x64_bin.tar.gz
+MACOS_X64_BOOT_JDK_URL=https://download.java.net/java/GA/jdk17.0.1/2a2082e5a09d4267845be086888add4f/12/GPL/openjdk-17.0.1_macos-x64_bin.tar.gz
+MACOS_X64_BOOT_JDK_SHA256=6ccb35800e723cabe15af60e67099d1a07c111d2d3208aa75523614dde68bee1
