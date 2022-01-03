@@ -1648,8 +1648,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
      */
     private static IOException newIOException(String message,
                                               Throwable cause) {
-        final IOException x = new IOException(message);
-        return EnvHelp.initCause(x,cause);
+        return new IOException(message, cause);
     }
 
     /**

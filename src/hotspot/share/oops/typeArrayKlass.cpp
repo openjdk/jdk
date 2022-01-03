@@ -90,7 +90,7 @@ typeArrayOop TypeArrayKlass::allocate_common(int length, bool do_zero, TRAPS) {
   assert(log2_element_size() >= 0, "bad scale");
   check_array_allocation_length(length, max_length(), CHECK_NULL);
   size_t size = typeArrayOopDesc::object_size(layout_helper(), length);
-  return (typeArrayOop)Universe::heap()->array_allocate(this, (int)size, length,
+  return (typeArrayOop)Universe::heap()->array_allocate(this, size, length,
                                                         do_zero, CHECK_NULL);
 }
 
@@ -227,7 +227,7 @@ Klass* TypeArrayKlass::array_klass_or_null() {
   return array_klass_or_null(dimension() +  1);
 }
 
-int TypeArrayKlass::oop_size(oop obj) const {
+size_t TypeArrayKlass::oop_size(oop obj) const {
   assert(obj->is_typeArray(),"must be a type array");
   typeArrayOop t = typeArrayOop(obj);
   return t->object_size(this);

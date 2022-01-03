@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,9 +134,9 @@ JDWP "Java(tm) Debug Wire Protocol"
         "<ul>"
         "<li>All event requests are cancelled. "
         "<li>All threads suspended by the thread-level "
-        "<a href=\"#JDWP_ThreadReference_Resume\">resume</a> command "
+        "<a href=\"#JDWP_ThreadReference_Suspend\">suspend</a> command "
         "or the VM-level "
-        "<a href=\"#JDWP_VirtualMachine_Resume\">resume</a> command "
+        "<a href=\"#JDWP_VirtualMachine_Suspend\">suspend</a> command "
         "are resumed as many times as necessary for them to run. "
         "<li>Garbage collection is re-enabled in all cases where it was "
         "<a href=\"#JDWP_ObjectReference_DisableCollection\">disabled</a> "

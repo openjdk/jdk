@@ -76,6 +76,7 @@ public class Navigation {
     private Content userHeader;
     private final String rowListTitle;
     private final Content searchLabel;
+    private final String searchPlaceholder;
     private SubNavLinks subNavLinks;
 
     public enum PageMode {
@@ -131,6 +132,7 @@ public class Navigation {
         this.links = new Links(path);
         this.rowListTitle = configuration.getDocResources().getText("doclet.Navigation");
         this.searchLabel = contents.getContent("doclet.search");
+        this.searchPlaceholder = configuration.getDocResources().getText("doclet.search_placeholder");
     }
 
     public Navigation setNavLinkModule(Content navLinkModule) {
@@ -350,21 +352,28 @@ public class Navigation {
      * Adds the summary links to the sub-navigation.
      *
      * @param tree the content tree to which the sub-navigation will added
+     * @param nested whether to create a flat or nested list
      */
-    private void addSummaryLinks(Content tree) {
+    private void addSummaryLinks(Content tree, boolean nested) {
         switch (documentedPage) {
             case MODULE, PACKAGE, CLASS, HELP -> {
                 List<? extends Content> listContents = subNavLinks.getSubNavLinks()
                         .stream().map(HtmlTree::LI).toList();
                 if (!listContents.isEmpty()) {
-                    tree.add(HtmlTree.LI(switch (documentedPage) {
+                Content label = switch (documentedPage) {
                         case MODULE -> contents.moduleSubNavLabel;
                         case PACKAGE -> contents.packageSubNavLabel;
                         case CLASS -> contents.summaryLabel;
                         case HELP -> contents.helpSubNavLabel;
                         default -> Text.EMPTY;
-                    }).add(Entity.NO_BREAK_SPACE));
-                    addListToNav(listContents, tree);
+                    };
+                    if (nested) {
+                        tree.add(HtmlTree.LI(HtmlTree.P(label))
+                                .add(new HtmlTree(TagName.UL).add(listContents)));
+                    } else {
+                        tree.add(HtmlTree.LI(label).add(Entity.NO_BREAK_SPACE));
+                        addListToNav(listContents, tree);
+                    }
                 }
             }
         }
@@ -374,30 +383,27 @@ public class Navigation {
      * Adds the detail links to sub-navigation.
      *
      * @param tree the content tree to which the links will be added
+     * @param nested whether to create a flat or nested list
      */
-    private void addDetailLinks(Content tree) {
+    private void addDetailLinks(Content tree, boolean nested) {
         if (documentedPage == PageMode.CLASS) {
             List<Content> listContents = new ArrayList<>();
             VisibleMemberTable vmt = configuration.getVisibleMemberTable((TypeElement) element);
-            if (element.getKind() == ElementKind.ANNOTATION_TYPE) {
-                // Handle annotation interfaces separately as required and optional elements
-                // share a combined details section.
-                addTypeDetailLink(FIELDS, !vmt.getVisibleMembers(FIELDS).isEmpty(), listContents);
-                boolean hasAnnotationElements =
-                        !vmt.getVisibleMembers(ANNOTATION_TYPE_MEMBER_OPTIONAL).isEmpty()
-                                || !vmt.getVisibleMembers(ANNOTATION_TYPE_MEMBER_REQUIRED).isEmpty();
-                addTypeDetailLink(ANNOTATION_TYPE_MEMBER_REQUIRED, hasAnnotationElements, listContents);
-            } else {
-                Set<VisibleMemberTable.Kind> detailSet = VisibleMemberTable.Kind.forDetailsOf(element.getKind());
-                for (VisibleMemberTable.Kind kind : detailSet) {
-                    addTypeDetailLink(kind, !vmt.getVisibleMembers(kind).isEmpty(), listContents);
-                }
+            Set<VisibleMemberTable.Kind> detailSet = VisibleMemberTable.Kind.forDetailsOf(element.getKind());
+            for (VisibleMemberTable.Kind kind : detailSet) {
+                addTypeDetailLink(kind, !vmt.getVisibleMembers(kind).isEmpty(), listContents);
             }
             if (!listContents.isEmpty()) {
-                Content li = HtmlTree.LI(contents.detailLabel);
-                li.add(Entity.NO_BREAK_SPACE);
-                tree.add(li);
-                addListToNav(listContents, tree);
+                if (nested) {
+                    Content li = HtmlTree.LI(HtmlTree.P(contents.detailLabel));
+                    li.add(new HtmlTree(TagName.UL).add(listContents));
+                    tree.add(li);
+                } else {
+                    Content li = HtmlTree.LI(contents.detailLabel);
+                    li.add(Entity.NO_BREAK_SPACE);
+                    tree.add(li);
+                    addListToNav(listContents, tree);
+                }
             }
         }
     }
@@ -416,10 +422,8 @@ public class Navigation {
             case FIELDS -> links.createLink(HtmlIds.FIELD_DETAIL, contents.navField, link);
             case METHODS -> links.createLink(HtmlIds.METHOD_DETAIL, contents.navMethod, link);
             case PROPERTIES -> links.createLink(HtmlIds.PROPERTY_DETAIL, contents.navProperty, link);
-            case ANNOTATION_TYPE_MEMBER_REQUIRED,
-                 ANNOTATION_TYPE_MEMBER_OPTIONAL ->
-                    links.createLink(HtmlIds.ANNOTATION_TYPE_ELEMENT_DETAIL,
-                            contents.navAnnotationTypeMember, link);
+            case ANNOTATION_TYPE_MEMBER -> links.createLink(HtmlIds.ANNOTATION_TYPE_ELEMENT_DETAIL,
+                    contents.navAnnotationTypeMember, link);
             default -> Text.EMPTY;
         });
     }
@@ -581,10 +585,11 @@ public class Navigation {
     }
 
     private void addSearch(Content tree) {
-        String search = "search";
         String reset = "reset";
-        HtmlTree inputText = HtmlTree.INPUT("text", HtmlIds.SEARCH_INPUT, search);
-        HtmlTree inputReset = HtmlTree.INPUT(reset, HtmlIds.RESET_BUTTON, reset);
+        HtmlTree inputText = HtmlTree.INPUT("text", HtmlIds.SEARCH_INPUT)
+                .put(HtmlAttr.PLACEHOLDER, searchPlaceholder);
+        HtmlTree inputReset = HtmlTree.INPUT(reset, HtmlIds.RESET_BUTTON)
+                .put(HtmlAttr.VALUE, reset);
         HtmlTree searchDiv = HtmlTree.DIV(HtmlStyle.navListSearch,
                 HtmlTree.LABEL(HtmlIds.SEARCH_INPUT.name(), searchLabel));
         searchDiv.add(inputText);
@@ -605,9 +610,17 @@ public class Navigation {
 
         HtmlTree navDiv = new HtmlTree(TagName.DIV);
         Content skipNavLinks = contents.getContent("doclet.Skip_navigation_links");
+        String toggleNavLinks = configuration.getDocResources().getText("doclet.Toggle_navigation_links");
         tree.add(MarkerComments.START_OF_TOP_NAVBAR);
         navDiv.setStyle(HtmlStyle.topNav)
                 .setId(HtmlIds.NAVBAR_TOP)
+                .add(new HtmlTree(TagName.BUTTON).setId(HtmlIds.NAVBAR_TOGGLE_BUTTON)
+                        .put(HtmlAttr.ARIA_CONTROLS, HtmlIds.NAVBAR_TOP.name())
+                        .put(HtmlAttr.ARIA_EXPANDED, String.valueOf(false))
+                        .put(HtmlAttr.ARIA_LABEL, toggleNavLinks)
+                        .add(HtmlTree.SPAN(HtmlStyle.navBarToggleIcon, HtmlTree.EMPTY))
+                        .add(HtmlTree.SPAN(HtmlStyle.navBarToggleIcon, HtmlTree.EMPTY))
+                        .add(HtmlTree.SPAN(HtmlStyle.navBarToggleIcon, HtmlTree.EMPTY)))
                 .add(HtmlTree.DIV(HtmlStyle.skipNav,
                         links.createLink(HtmlIds.SKIP_NAVBAR_TOP, skipNavLinks,
                                 skipNavLinks.toString())));
@@ -622,18 +635,22 @@ public class Navigation {
                 .put(HtmlAttr.TITLE, rowListTitle);
         addMainNavLinks(navList);
         navDiv.add(navList);
+        HtmlTree ulNavSummaryRight = new HtmlTree(TagName.UL).setStyle(HtmlStyle.subNavListSmall);
+        addSummaryLinks(ulNavSummaryRight, true);
+        addDetailLinks(ulNavSummaryRight, true);
+        navDiv.add(ulNavSummaryRight);
         tree.add(navDiv);
 
         HtmlTree subDiv = new HtmlTree(TagName.DIV).setStyle(HtmlStyle.subNav);
 
-        HtmlTree div = new HtmlTree(TagName.DIV);
+        HtmlTree div = new HtmlTree(TagName.DIV).setId(HtmlIds.NAVBAR_SUB_LIST);
         // Add the summary links if present.
         HtmlTree ulNavSummary = new HtmlTree(TagName.UL).setStyle(HtmlStyle.subNavList);
-        addSummaryLinks(ulNavSummary);
+        addSummaryLinks(ulNavSummary, false);
         div.add(ulNavSummary);
         // Add the detail links if present.
         HtmlTree ulNavDetail = new HtmlTree(TagName.UL).setStyle(HtmlStyle.subNavList);
-        addDetailLinks(ulNavDetail);
+        addDetailLinks(ulNavDetail, false);
         div.add(ulNavDetail);
         subDiv.add(div);
 

@@ -411,7 +411,7 @@ public final class Duration
                     try {
                         return create(negate, daysAsSecs, hoursAsSecs, minsAsSecs, seconds, nanos);
                     } catch (ArithmeticException ex) {
-                        throw (DateTimeParseException) new DateTimeParseException("Text cannot be parsed to a Duration: overflow", text, 0).initCause(ex);
+                        throw new DateTimeParseException("Text cannot be parsed to a Duration: overflow", text, 0, ex);
                     }
                 }
             }
@@ -432,7 +432,7 @@ public final class Duration
             long val = Long.parseLong(text, start, end, 10);
             return Math.multiplyExact(val, multiplier);
         } catch (NumberFormatException | ArithmeticException ex) {
-            throw (DateTimeParseException) new DateTimeParseException("Text cannot be parsed to a Duration: " + errorText, text, 0).initCause(ex);
+            throw new DateTimeParseException("Text cannot be parsed to a Duration: " + errorText, text, 0, ex);
         }
     }
 
@@ -451,7 +451,7 @@ public final class Duration
             }
             return fraction * negate;
         } catch (NumberFormatException | ArithmeticException ex) {
-            throw (DateTimeParseException) new DateTimeParseException("Text cannot be parsed to a Duration: fraction", text, 0).initCause(ex);
+            throw new DateTimeParseException("Text cannot be parsed to a Duration: fraction", text, 0, ex);
         }
     }
 

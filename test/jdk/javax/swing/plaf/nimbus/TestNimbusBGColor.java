@@ -25,7 +25,7 @@
  * @bug 8058704 6789980
  * @key headful
  * @summary  Verifies if Nimbus honor JTextPane and JEditorPane background color
- * @run main TestNimbusBGColor
+ * @run main/othervm -Dsun.java2d.uiScale=1 TestNimbusBGColor
  */
 import java.awt.Color;
 import java.awt.Dimension;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -39,6 +39,7 @@ public class XPathException extends TransformerException
 
   /** The home of the expression that caused the error.
    *  @serial  */
+  @SuppressWarnings("serial") // Type of field is not Serializable
   Object m_styleNode = null;
 
   /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,9 @@
 package javax.crypto;
 
 import java.security.*;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.Vector;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.io.Serializable;
@@ -307,7 +307,7 @@ implements Serializable {
      */
     private CryptoPermission[] getMinimum(PermissionCollection thisPc,
                                           PermissionCollection thatPc) {
-        Vector<CryptoPermission> permVector = new Vector<>(2);
+        ArrayList<CryptoPermission> permList = new ArrayList<>(2);
 
         Enumeration<Permission> thisPcPermissions = thisPc.elements();
 
@@ -334,18 +334,16 @@ implements Serializable {
                     (CryptoPermission)thatPcPermissions.nextElement();
 
                 if (thatCp.implies(thisCp)) {
-                    permVector.addElement(thisCp);
+                    permList.add(thisCp);
                     break;
                 }
                 if (thisCp.implies(thatCp)) {
-                    permVector.addElement(thatCp);
+                    permList.add(thatCp);
                 }
             }
         }
 
-        CryptoPermission[] ret = new CryptoPermission[permVector.size()];
-        permVector.copyInto(ret);
-        return ret;
+        return permList.toArray(new CryptoPermission[0]);
     }
 
     /**
@@ -363,7 +361,7 @@ implements Serializable {
      */
     private CryptoPermission[] getMinimum(int maxKeySize,
                                           PermissionCollection pc) {
-        Vector<CryptoPermission> permVector = new Vector<>(1);
+        ArrayList<CryptoPermission> permList = new ArrayList<>(1);
 
         Enumeration<Permission> enum_ = pc.elements();
 
@@ -371,16 +369,16 @@ implements Serializable {
             CryptoPermission cp =
                 (CryptoPermission)enum_.nextElement();
             if (cp.getMaxKeySize() <= maxKeySize) {
-                permVector.addElement(cp);
+                permList.add(cp);
             } else {
                 if (cp.getCheckParam()) {
-                    permVector.addElement(
+                    permList.add(
                            new CryptoPermission(cp.getAlgorithm(),
                                                 maxKeySize,
                                                 cp.getAlgorithmParameterSpec(),
                                                 cp.getExemptionMechanism()));
                 } else {
-                    permVector.addElement(
+                    permList.add(
                            new CryptoPermission(cp.getAlgorithm(),
                                                 maxKeySize,
                                                 cp.getExemptionMechanism()));
@@ -388,9 +386,7 @@ implements Serializable {
             }
         }
 
-        CryptoPermission[] ret = new CryptoPermission[permVector.size()];
-        permVector.copyInto(ret);
-        return ret;
+        return permList.toArray(new CryptoPermission[0]);
     }
 
     /**

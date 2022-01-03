@@ -361,13 +361,13 @@ final class DirectAudioDevice extends AbstractMixer {
         protected final int deviceID;
         protected long id;
         protected int waitTime;
-        protected volatile boolean flushing = false;
+        protected volatile boolean flushing;
         protected final boolean isSource;         // true for SourceDataLine, false for TargetDataLine
         protected volatile long bytePosition;
-        protected volatile boolean doIO = false;     // true in between start() and stop() calls
-        protected volatile boolean stoppedWritten = false; // true if a write occurred in stopped state
-        protected volatile boolean drained = false; // set to true when drain function returns, set to false in write()
-        protected boolean monitoring = false;
+        protected volatile boolean doIO;     // true in between start() and stop() calls
+        protected volatile boolean stoppedWritten; // true if a write occurred in stopped state
+        protected volatile boolean drained; // set to true when drain function returns, set to false in write()
+        protected boolean monitoring;
 
         // if native needs to manually swap samples/convert sign, this
         // is set to the framesize
@@ -379,7 +379,7 @@ final class DirectAudioDevice extends AbstractMixer {
         private final Balance balanceControl = new Balance();
         private final Pan panControl = new Pan();
         private float leftGain, rightGain;
-        protected volatile boolean noService = false; // do not run the nService method
+        protected volatile boolean noService; // do not run the nService method
 
         // Guards all native calls.
         protected final Object lockNative = new Object();
@@ -975,7 +975,7 @@ final class DirectAudioDevice extends AbstractMixer {
             implements Clip, Runnable, AutoClosingClip {
 
         private volatile Thread thread;
-        private volatile byte[] audioData = null;
+        private volatile byte[] audioData;
         private volatile int frameSize;         // size of one frame in bytes
         private volatile int m_lengthInFrames;
         private volatile int loopCount;

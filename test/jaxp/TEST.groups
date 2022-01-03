@@ -32,5 +32,8 @@ tier2 = \
 # No tier 3 tests.
 tier3 = 
 
+# No tier 4 tests.
+tier4 =
+
 jaxp_all = \
     javax/xml/jaxp

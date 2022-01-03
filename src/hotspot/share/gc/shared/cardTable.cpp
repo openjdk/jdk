@@ -25,6 +25,8 @@
 #include "precompiled.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/virtualspace.hpp"
@@ -32,6 +34,32 @@
 #include "runtime/os.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
+#if INCLUDE_PARALLELGC
+#include "gc/parallel/objectStartArray.hpp"
+#endif
+
+uint CardTable::_card_shift = 0;
+uint CardTable::_card_size = 0;
+uint CardTable::_card_size_in_words = 0;
+
+void CardTable::initialize_card_size() {
+  assert(UseG1GC || UseParallelGC || UseSerialGC,
+         "Initialize card size should only be called by card based collectors.");
+
+  _card_size = GCCardSizeInBytes;
+  _card_shift = log2i_exact(_card_size);
+  _card_size_in_words = _card_size / sizeof(HeapWord);
+
+  // Set blockOffsetTable size based on card table entry size
+  BOTConstants::initialize_bot_size(_card_shift);
+
+#if INCLUDE_PARALLELGC
+  // Set ObjectStartArray block size based on card table entry size
+  ObjectStartArray::initialize_block_size(_card_shift);
+#endif
+
+  log_info_p(gc, init)("CardTable entry size: " UINT32_FORMAT,  _card_size);
+}
 
 size_t CardTable::compute_byte_map_size() {
   assert(_guard_index == cards_required(_whole_heap.word_size()) - 1,
@@ -54,10 +82,8 @@ CardTable::CardTable(MemRegion whole_heap) :
   _committed(MemRegion::create_array(_max_covered_regions, mtGC)),
   _guard_region()
 {
-  assert((uintptr_t(_whole_heap.start())  & (card_size - 1))  == 0, "heap must start at card boundary");
-  assert((uintptr_t(_whole_heap.end()) & (card_size - 1))  == 0, "heap must end at card boundary");
-
-  assert(card_size <= 512, "card_size must be less than 512"); // why?
+  assert((uintptr_t(_whole_heap.start())  & (_card_size - 1))  == 0, "heap must start at card boundary");
+  assert((uintptr_t(_whole_heap.end()) & (_card_size - 1))  == 0, "heap must end at card boundary");
 }
 
 CardTable::~CardTable() {
@@ -94,7 +120,7 @@ void CardTable::initialize() {
   //
   //   _byte_map = _byte_map_base + (uintptr_t(low_bound) >> card_shift)
   _byte_map = (CardValue*) heap_rs.base();
-  _byte_map_base = _byte_map - (uintptr_t(low_bound) >> card_shift);
+  _byte_map_base = _byte_map - (uintptr_t(low_bound) >> _card_shift);
   assert(byte_for(low_bound) == &_byte_map[0], "Checking start of map");
   assert(byte_for(high_bound-1) <= &_byte_map[_last_valid_index], "Checking end of map");
 
@@ -387,7 +413,7 @@ void CardTable::dirty_card_iterate(MemRegion mr, MemRegionClosure* cl) {
                next_entry <= limit && *next_entry == dirty_card;
                dirty_cards++, next_entry++);
           MemRegion cur_cards(addr_for(cur_entry),
-                              dirty_cards*card_size_in_words);
+                              dirty_cards*_card_size_in_words);
           cl->do_MemRegion(cur_cards);
         }
       }
@@ -413,7 +439,7 @@ MemRegion CardTable::dirty_card_range_after_reset(MemRegion mr,
                next_entry <= limit && *next_entry == dirty_card;
                dirty_cards++, next_entry++);
           MemRegion cur_cards(addr_for(cur_entry),
-                              dirty_cards*card_size_in_words);
+                              dirty_cards * _card_size_in_words);
           if (reset) {
             for (size_t i = 0; i < dirty_cards; i++) {
               cur_entry[i] = reset_val;
@@ -428,7 +454,8 @@ MemRegion CardTable::dirty_card_range_after_reset(MemRegion mr,
 }
 
 uintx CardTable::ct_max_alignment_constraint() {
-  return card_size * os::vm_page_size();
+  // Calculate maximum alignment using GCCardSizeInBytes as card_size hasn't been set yet
+  return GCCardSizeInBytes * os::vm_page_size();
 }
 
 void CardTable::verify_guard() {
@@ -466,7 +493,7 @@ void CardTable::verify_region(MemRegion mr, CardValue val, bool val_equals) {
       }
       log_error(gc, verify)("==   card " PTR_FORMAT " [" PTR_FORMAT "," PTR_FORMAT "], val: %d",
                             p2i(curr), p2i(addr_for(curr)),
-                            p2i((HeapWord*) (((size_t) addr_for(curr)) + card_size)),
+                            p2i((HeapWord*) (((size_t) addr_for(curr)) + _card_size)),
                             (int) curr_val);
     }
   }

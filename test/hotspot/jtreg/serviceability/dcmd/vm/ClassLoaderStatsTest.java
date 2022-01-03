@@ -62,7 +62,6 @@ public class ClassLoaderStatsTest {
     //                                                                  1       256       131   + hidden classes
     // 0x0000000000000000  0x0000000000000000  0x00007f00e852d190    1607   4628480   3931216  <boot class loader>
     //                                                                 38    124928     85856   + hidden classes
-    // 0x00000008003b5508  0x0000000000000000  0x00007f001c2d4760       1      6144      4040  jdk.internal.reflect.DelegatingClassLoader
     // 0x000000080037f468  0x000000080037ee80  0x00007f00e868e3f0     228   1368064   1286672  jdk.internal.loader.ClassLoaders$AppClassLoader
     // ...
 

@@ -606,10 +606,10 @@ class HTMLCodec extends InputStream {
             //to avoid HTML and BODY tags doubling
             String stContext = new String(bytes);
             String stUpContext = stContext.toUpperCase();
-            if( -1 == stUpContext.indexOf("<HTML") ) {
+            if (!stUpContext.contains("<HTML")) {
                 htmlPrefix = "<HTML>";
                 htmlSuffix = "</HTML>";
-                if( -1 == stUpContext.indexOf("<BODY") ) {
+                if (!stUpContext.contains("<BODY")) {
                     htmlPrefix = htmlPrefix +"<BODY>";
                     htmlSuffix = "</BODY>" + htmlSuffix;
                 };

@@ -148,6 +148,7 @@
   static const bool int_in_long = false;
 #endif
 
+
   // Does the CPU supports vector variable shift instructions?
   static bool supports_vector_variable_shifts(void) {
     return (UseAVX >= 2);
@@ -191,5 +192,8 @@
   static constexpr bool convL2FSupported(void) {
       return true;
   }
+
+  // Implements a variant of EncodeISOArrayNode that encode ASCII only
+  static const bool supports_encode_ascii_array = true;
 
 #endif // CPU_X86_MATCHER_X86_HPP

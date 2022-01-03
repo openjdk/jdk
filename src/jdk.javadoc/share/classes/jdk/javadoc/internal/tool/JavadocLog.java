@@ -45,13 +45,15 @@ import javax.tools.FileObject;
 import javax.tools.ForwardingFileObject;
 import javax.tools.JavaFileObject;
 
+import jdk.javadoc.doclet.Reporter;
+
 import com.sun.source.doctree.CommentTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DocTypeTree;
 import com.sun.source.doctree.ReferenceTree;
 import com.sun.source.doctree.TextTree;
+import com.sun.tools.javac.tree.DCTree.DCDocComment;
 import com.sun.tools.javac.tree.DCTree;
-import jdk.javadoc.doclet.Reporter;
 
 import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.util.Context.Factory;
@@ -278,12 +280,13 @@ public class JavadocLog extends Log implements Reporter {
         DiagnosticSource ds = getDiagnosticSource(path);
 
         DCTree.DCDocComment docComment = (DCTree.DCDocComment) path.getDocComment();
-        DCTree tree = (DCTree) path.getLeaf();
+        DCTree docTree = (DCTree) path.getLeaf();
         // note: it is important to evaluate the offsets in the context of the position
         // within the comment text, and not in the context of the overall source text
-        int sStart = (int) tree.getSourcePosition(docComment, start);
-        int sPos = (int) tree.getSourcePosition(docComment, pos);
-        int sEnd = (int) tree.getSourcePosition(docComment, end);
+        int dtStart = docTree.getStartPosition();
+        int sStart = docComment.getSourcePosition(dtStart + start);
+        int sPos = docComment.getSourcePosition(dtStart + pos);
+        int sEnd = docComment.getSourcePosition(dtStart + end);
         DiagnosticPosition dp = createDiagnosticPosition(null, sStart, sPos, sEnd);
 
         report(dt, flags, ds, dp, message);
@@ -292,7 +295,7 @@ public class JavadocLog extends Log implements Reporter {
     private int getSourcePos(DocTreePath path, int offset) {
         DCTree.DCDocComment docComment = (DCTree.DCDocComment) path.getDocComment();
         DCTree tree = (DCTree) path.getLeaf();
-        return (int) tree.getSourcePosition(docComment, offset);
+        return docComment.getSourcePosition(tree.getStartPosition() + offset);
     }
 
     @Override  // Reporter
@@ -566,11 +569,9 @@ public class JavadocLog extends Log implements Reporter {
      * @return the diagnostic position
      */
     private DiagnosticPosition getDiagnosticPosition(DocTreePath path) {
-        DocSourcePositions posns = getSourcePositions();
-        CompilationUnitTree compUnit = path.getTreePath().getCompilationUnit();
-        int start = (int) posns.getStartPosition(compUnit, path.getDocComment(), path.getLeaf());
-        int end = (int) posns.getEndPosition(compUnit, path.getDocComment(), path.getLeaf());
-        return createDiagnosticPosition(null, start, start, end);
+        DCDocComment dc = (DCDocComment) path.getDocComment();
+        DCTree dcTree = (DCTree) path.getLeaf();
+        return dcTree.pos(dc);
     }
 
     /**
@@ -657,7 +658,7 @@ public class JavadocLog extends Log implements Reporter {
     }
 
     /**
-     * Returns the diagnostic source for an documentation tree node.
+     * Returns the diagnostic source for a documentation tree node.
      *
      * @param path the path for the documentation tree node
      * @return the diagnostic source

@@ -39,7 +39,7 @@
 #include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
 
-class AbstractGangTask;
+class WorkerTask;
 class G1CMBitMap;
 class G1FullGCMarker;
 class G1FullGCScope;
@@ -134,7 +134,7 @@ private:
   void restore_marks();
   void verify_after_marking();
 
-  void run_task(AbstractGangTask* task);
+  void run_task(WorkerTask* task);
 };
 
 

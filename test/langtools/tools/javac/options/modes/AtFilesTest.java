@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8044859
+ * @bug 8044859 8272728
  * @summary test support for at-files
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -33,6 +33,7 @@
  * @run main AtFilesTest
  */
 
+import com.sun.tools.javac.main.Main;
 import java.io.IOException;
 
 public class AtFilesTest extends OptionModesTester {
@@ -59,5 +60,17 @@ public class AtFilesTest extends OptionModesTester {
 
         runParse(opts, files)
                 .checkIllegalArgumentException();
+    }
+
+    @Test
+    void testAtFilesMustNotContainOptionJ() throws IOException {
+        writeFile("args", "-J-verbose");
+
+        String[] opts = { "@args", "-version" };
+        String[] files = { };
+
+        runMain(opts, files)
+            .checkResult(Main.Result.CMDERR.exitCode)
+            .checkLog(Log.DIRECT, "-J-verbose");
     }
 }

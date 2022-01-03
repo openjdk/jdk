@@ -64,6 +64,8 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
     private int iterCount;
     private byte[] key;
 
+    @SuppressWarnings("serial") // Type of field is not Serializable;
+                                // see writeReplace method
     private Mac prf;
 
     private static byte[] getPasswordBytes(char[] passwd) {
@@ -119,9 +121,7 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
             this.key = deriveKey(prf, passwdBytes, salt, iterCount, keyLength);
         } catch (NoSuchAlgorithmException nsae) {
             // not gonna happen; re-throw just in case
-            InvalidKeySpecException ike = new InvalidKeySpecException();
-            ike.initCause(nsae);
-            throw ike;
+            throw new InvalidKeySpecException(nsae);
         } finally {
             Arrays.fill(passwdBytes, (byte) 0x00);
 

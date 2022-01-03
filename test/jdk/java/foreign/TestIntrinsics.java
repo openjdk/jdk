@@ -40,19 +40,18 @@ import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.List;
 
-import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
+import jdk.incubator.foreign.NativeSymbol;
 import jdk.incubator.foreign.SymbolLookup;
 import org.testng.annotations.*;
 
 import static java.lang.invoke.MethodType.methodType;
-import static jdk.incubator.foreign.CLinker.*;
-import static jdk.incubator.foreign.FunctionDescriptor.TRIVIAL_ATTRIBUTE_NAME;
+import static jdk.incubator.foreign.ValueLayout.JAVA_CHAR;
 import static org.testng.Assert.assertEquals;
 
-public class TestIntrinsics {
+public class TestIntrinsics extends NativeTestHelper {
 
-    static final CLinker abi = CLinker.getInstance();
+    static final CLinker abi = CLinker.systemCLinker();
     static {
         System.loadLibrary("Intrinsics");
     }
@@ -88,52 +87,48 @@ public class TestIntrinsics {
         }
 
         AddIdentity addIdentity = (name, carrier, layout, arg) -> {
-            MemoryAddress ma = LOOKUP.lookup(name).get();
+            NativeSymbol ma = LOOKUP.lookup(name).get();
             MethodType mt = methodType(carrier, carrier);
             FunctionDescriptor fd = FunctionDescriptor.of(layout, layout);
 
-            tests.add(abi.downcallHandle(ma, mt, fd), arg, arg);
-            tests.add(abi.downcallHandle(ma, mt, fd.withAttribute(TRIVIAL_ATTRIBUTE_NAME, true)), arg, arg);
-            tests.add(abi.downcallHandle(mt, fd), arg, ma, arg);
+            tests.add(abi.downcallHandle(ma, fd), arg, arg);
+            tests.add(abi.downcallHandle(fd), arg, ma, arg);
         };
 
         { // empty
-            MemoryAddress ma = LOOKUP.lookup("empty").get();
+            NativeSymbol ma = LOOKUP.lookup("empty").get();
             MethodType mt = methodType(void.class);
             FunctionDescriptor fd = FunctionDescriptor.ofVoid();
-            tests.add(abi.downcallHandle(ma, mt, fd), null);
-            tests.add(abi.downcallHandle(ma, mt, fd.withAttribute(TRIVIAL_ATTRIBUTE_NAME, true)), null);
+            tests.add(abi.downcallHandle(ma, fd), null);
         }
 
-        addIdentity.add("identity_char",   byte.class,   C_CHAR,   (byte) 10);
-        addIdentity.add("identity_short",  short.class,  C_SHORT, (short) 10);
-        addIdentity.add("identity_int",    int.class,    C_INT,           10);
-        addIdentity.add("identity_long",   long.class,   C_LONG_LONG,     10L);
-        addIdentity.add("identity_float",  float.class,  C_FLOAT,         10F);
-        addIdentity.add("identity_double", double.class, C_DOUBLE,        10D);
+        addIdentity.add("identity_bool",   boolean.class, C_BOOL,   true);
+        addIdentity.add("identity_char",   byte.class,    C_CHAR,   (byte) 10);
+        addIdentity.add("identity_short",  short.class,   C_SHORT, (short) 10);
+        addIdentity.add("identity_int",    int.class,     C_INT,           10);
+        addIdentity.add("identity_long",   long.class,    C_LONG_LONG,     10L);
+        addIdentity.add("identity_float",  float.class,   C_FLOAT,         10F);
+        addIdentity.add("identity_double", double.class,  C_DOUBLE,        10D);
 
         { // identity_va
-            MemoryAddress ma = LOOKUP.lookup("identity_va").get();
+            NativeSymbol ma = LOOKUP.lookup("identity_va").get();
             MethodType mt = methodType(int.class, int.class, double.class, int.class, float.class, long.class);
-            FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_INT, asVarArg(C_DOUBLE),
-                    asVarArg(C_INT), asVarArg(C_FLOAT), asVarArg(C_LONG_LONG));
-            tests.add(abi.downcallHandle(ma, mt, fd), 1, 1, 10D, 2, 3F, 4L);
-            tests.add(abi.downcallHandle(ma, mt, fd.withAttribute(TRIVIAL_ATTRIBUTE_NAME, true)), 1, 1, 10D, 2, 3F, 4L);
+            FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_INT).asVariadic(C_DOUBLE, C_INT, C_FLOAT, C_LONG_LONG);
+            tests.add(abi.downcallHandle(ma, fd), 1, 1, 10D, 2, 3F, 4L);
         }
 
         { // high_arity
             MethodType baseMT = methodType(void.class, int.class, double.class, long.class, float.class, byte.class,
                     short.class, char.class);
             FunctionDescriptor baseFD = FunctionDescriptor.ofVoid(C_INT, C_DOUBLE, C_LONG_LONG, C_FLOAT, C_CHAR,
-                    C_SHORT, C_SHORT);
+                    C_SHORT, JAVA_CHAR);
             Object[] args = {1, 10D, 2L, 3F, (byte) 0, (short) 13, 'a'};
             for (int i = 0; i < args.length; i++) {
-                MemoryAddress ma = LOOKUP.lookup("invoke_high_arity" + i).get();
+                NativeSymbol ma = LOOKUP.lookup("invoke_high_arity" + i).get();
                 MethodType mt = baseMT.changeReturnType(baseMT.parameterType(i));
-                FunctionDescriptor fd = baseFD.withReturnLayout(baseFD.argumentLayouts().get(i));
+                FunctionDescriptor fd = baseFD.changeReturnLayout(baseFD.argumentLayouts().get(i));
                 Object expected = args[i];
-                tests.add(abi.downcallHandle(ma, mt, fd), expected, args);
-                tests.add(abi.downcallHandle(ma, mt, fd.withAttribute(TRIVIAL_ATTRIBUTE_NAME, true)), expected, args);
+                tests.add(abi.downcallHandle(ma, fd), expected, args);
             }
         }
 

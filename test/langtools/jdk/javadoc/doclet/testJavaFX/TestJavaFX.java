@@ -456,7 +456,7 @@ public class TestJavaFX extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput(Output.OUT, false,
-                "warning",
+                ": warning:",
                 "no comment");
     }
 }

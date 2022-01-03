@@ -54,6 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import jdk.internal.module.Checks;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
 import jdk.internal.platform.Metrics;
@@ -840,5 +841,29 @@ public final class Utils {
 
     public static long timeToNanos(Instant timestamp) {
         return timestamp.getEpochSecond() * 1_000_000_000L + timestamp.getNano();
+    }
+
+    public static String validTypeName(String typeName, String defaultTypeName) {
+        if (Checks.isClassName(typeName)) {
+            return typeName;
+        } else {
+            Logger.log(LogTag.JFR, LogLevel.WARN, "@Name ignored, not a valid Java type name.");
+            return defaultTypeName;
+        }
+    }
+
+    public static String validJavaIdentifier(String identifier, String defaultIdentifier) {
+        if (Checks.isJavaIdentifier(identifier)) {
+            return identifier;
+        } else {
+            Logger.log(LogTag.JFR, LogLevel.WARN, "@Name ignored, not a valid Java identifier.");
+            return defaultIdentifier;
+        }
+    }
+
+    public static void ensureJavaIdentifier(String name) {
+        if (!Checks.isJavaIdentifier(name)) {
+            throw new IllegalArgumentException("'" + name + "' is not a valid Java identifier");
+        }
     }
 }

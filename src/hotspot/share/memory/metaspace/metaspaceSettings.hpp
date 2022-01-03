@@ -42,13 +42,12 @@ class Settings : public AllStatic {
 
   // The default size of a VirtualSpaceNode, unless created with an explicitly specified size.
   //  Must be a multiple of the root chunk size.
-  // Increasing this value decreases the number of mappings used for metadata,
-  //  at the cost of increased virtual size used for Metaspace (or, at least,
-  //  coarser growth steps). Matters mostly for 32bit platforms due to limited
-  //  address space.
-  // The default of two root chunks has been chosen on a whim but seems to work out okay
-  //  (coming to a mapping size of 8m per node).
-  static const size_t _virtual_space_node_default_word_size = chunklevel::MAX_CHUNK_WORD_SIZE * 2;
+  // This value only affects the process virtual size, and there only the granularity with which it
+  //  increases. Matters mostly for 32bit platforms due to limited address space.
+  // Note that this only affects the non-class metaspace. Class space ignores this size (it is one
+  //  single large mapping).
+  static const size_t _virtual_space_node_default_word_size =
+      chunklevel::MAX_CHUNK_WORD_SIZE * NOT_LP64(2) LP64_ONLY(16); // 8MB (32-bit) / 64MB (64-bit)
 
   // Alignment of the base address of a virtual space node
   static const size_t _virtual_space_node_reserve_alignment_words = chunklevel::MAX_CHUNK_WORD_SIZE;
@@ -69,14 +68,6 @@ class Settings : public AllStatic {
   // If true, metablock allocations are guarded and periodically checked.
   DEBUG_ONLY(static bool _use_allocation_guard;)
 
-  // This enables or disables premature deallocation of metaspace allocated blocks. Using
-  //  Metaspace::deallocate(), blocks can be returned prematurely (before the associated
-  //  Arena dies, e.g. after class unloading) and can be reused by the arena.
-  //  If disabled, those blocks will not be reused until the Arena dies.
-  // Note that premature deallocation is rare under normal circumstances.
-  // By default deallocation handling is enabled.
-  DEBUG_ONLY(static bool _handle_deallocations;)
-
 public:
 
   static size_t commit_granule_bytes()                        { return _commit_granule_bytes; }
@@ -87,7 +78,6 @@ public:
   static bool enlarge_chunks_in_place()                       { return _enlarge_chunks_in_place; }
   static bool uncommit_free_chunks()                          { return _uncommit_free_chunks; }
   static bool use_allocation_guard()                          { return DEBUG_ONLY(_use_allocation_guard) NOT_DEBUG(false); }
-  static bool handle_deallocations()                          { return DEBUG_ONLY(_handle_deallocations) NOT_DEBUG(true); }
 
   static void ergo_initialize();
 

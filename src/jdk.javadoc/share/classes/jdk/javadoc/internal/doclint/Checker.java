@@ -629,6 +629,12 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     @Override @DefinedBy(Api.COMPILER_TREE) @SuppressWarnings("fallthrough")
     public Void visitAttribute(AttributeTree tree, Void ignore) {
+        // for now, ensure we're in an HTML StartElementTree;
+        // in time, we might check uses of attributes in other tree nodes
+        if (getParentKind() != DocTree.Kind.START_ELEMENT) {
+            return null;
+        }
+
         HtmlTag currTag = tagStack.peek().tag;
         if (currTag != null && currTag.elemKind != ElemKind.HTML4) {
             Name name = tree.getName();
@@ -1156,6 +1162,10 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     // <editor-fold defaultstate="collapsed" desc="Utility methods">
 
+    private DocTree.Kind getParentKind() {
+        return getCurrentPath().getParentPath().getLeaf().getKind();
+    }
+
     private boolean isCheckedException(TypeMirror t) {
         return !(env.types.isAssignable(t, env.java_lang_Error)
                 || env.types.isAssignable(t, env.java_lang_RuntimeException));
@@ -1226,13 +1236,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     }
 
     boolean hasNonWhitespace(TextTree tree) {
-        String s = tree.getBody();
-        for (int i = 0; i < s.length(); i++) {
-            Character c = s.charAt(i);
-            if (!Character.isWhitespace(s.charAt(i)))
-                return true;
-        }
-        return false;
+        return !tree.getBody().isBlank();
     }
 
     // </editor-fold>

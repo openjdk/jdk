@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ public class LWWindowPeer
     private volatile int windowState = Frame.NORMAL;
 
     // check that the mouse is over the window
-    private volatile boolean isMouseOver = false;
+    private volatile boolean isMouseOver;
 
     // A peer where the last mouse event came to. Used by cursor manager to
     // find the component under cursor

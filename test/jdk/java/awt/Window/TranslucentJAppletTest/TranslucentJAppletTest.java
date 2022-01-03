@@ -27,7 +27,7 @@
  * @bug 6683728
  * @summary Tests that a JApplet in a translucent JFrame works properly
  * @compile -XDignore.symbol.file=true TranslucentJAppletTest.java
- * @run main TranslucentJAppletTest
+ * @run main/othervm -Dsun.java2d.uiScale=1 TranslucentJAppletTest
  */
 
 import java.awt.*;

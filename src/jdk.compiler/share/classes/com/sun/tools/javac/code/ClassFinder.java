@@ -250,22 +250,29 @@ public class ClassFinder {
             supplementaryFlags = new HashMap<>();
         }
 
-        Long flags = supplementaryFlags.get(c.packge());
+        PackageSymbol packge = c.packge();
+
+        Long flags = supplementaryFlags.get(packge);
         if (flags == null) {
             long newFlags = 0;
             try {
-                JRTIndex.CtSym ctSym = jrtIndex.getCtSym(c.packge().flatName());
-                Profile minProfile = Profile.DEFAULT;
-                if (ctSym.proprietary)
+                ModuleSymbol owningModule = packge.modle;
+                if (owningModule == syms.noModule) {
+                    JRTIndex.CtSym ctSym = jrtIndex.getCtSym(packge.flatName());
+                    Profile minProfile = Profile.DEFAULT;
+                    if (ctSym.proprietary)
+                        newFlags |= PROPRIETARY;
+                    if (ctSym.minProfile != null)
+                        minProfile = Profile.lookup(ctSym.minProfile);
+                    if (profile != Profile.DEFAULT && minProfile.value > profile.value) {
+                        newFlags |= NOT_IN_PROFILE;
+                    }
+                } else if (owningModule.name == names.jdk_unsupported) {
                     newFlags |= PROPRIETARY;
-                if (ctSym.minProfile != null)
-                    minProfile = Profile.lookup(ctSym.minProfile);
-                if (profile != Profile.DEFAULT && minProfile.value > profile.value) {
-                    newFlags |= NOT_IN_PROFILE;
                 }
             } catch (IOException ignore) {
             }
-            supplementaryFlags.put(c.packge(), flags = newFlags);
+            supplementaryFlags.put(packge, flags = newFlags);
         }
         return flags;
     }

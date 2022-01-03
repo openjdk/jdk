@@ -32,9 +32,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntFunction;
 
-import jdk.incubator.foreign.MemoryLayouts;
 import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.ResourceScope;
+import jdk.incubator.foreign.ValueLayout;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static java.lang.System.out;
@@ -43,7 +43,7 @@ import static org.testng.Assert.assertThrows;
 
 public class TestMismatch {
 
-    final static VarHandle BYTE_HANDLE = MemoryLayouts.JAVA_BYTE.varHandle(byte.class);
+    final static VarHandle BYTE_HANDLE = ValueLayout.JAVA_BYTE.varHandle();
 
     // stores a increasing sequence of values into the memory of the given segment
     static MemorySegment initializeSegment(MemorySegment segment) {
@@ -112,7 +112,7 @@ public class TestMismatch {
     @Test
     public void testLarge() {
         // skip if not on 64 bits
-        if (MemoryLayouts.ADDRESS.byteSize() > 32) {
+        if (ValueLayout.ADDRESS.byteSize() > 32) {
             try (ResourceScope scope = ResourceScope.newConfinedScope()) {
                 var s1 = MemorySegment.allocateNative((long) Integer.MAX_VALUE + 10L, 8, scope);
                 var s2 = MemorySegment.allocateNative((long) Integer.MAX_VALUE + 10L, 8, scope);

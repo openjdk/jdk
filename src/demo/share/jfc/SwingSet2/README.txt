@@ -10,12 +10,6 @@ TO RUN SWINGSET2 AS AN APPLICATION
   java -jar SwingSet2.jar
 
 
-=============================
-TO RUN SWINGSET2 AS AN APPLET
-=============================
-
-  appletviewer SwingSet2.html
-
 =========================
 TO MODIFY/BUILD SWINGSET2
 =========================
@@ -40,8 +34,8 @@ documentation) or you can specify the splash screen image on the command line:
 java -splash:resources/images/splash.png SwingSet2
 
 
-Note: These instructions assume that this installation's versions of the java,
-appletviewer, and javac commands are in your path.  If they aren't, then you should
+Note: These instructions assume that this installation's versions of the java
+and javac commands are in your path.  If they aren't, then you should
 either specify the complete path to the commands or update your PATH environment
 variable as described in the installation instructions for the
 Java(TM) SE Development Kit.

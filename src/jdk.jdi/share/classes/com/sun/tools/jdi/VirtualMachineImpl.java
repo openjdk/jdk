@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@ import com.sun.jdi.ByteType;
 import com.sun.jdi.ByteValue;
 import com.sun.jdi.CharType;
 import com.sun.jdi.CharValue;
-import com.sun.jdi.ClassLoaderReference;
 import com.sun.jdi.ClassNotLoadedException;
 import com.sun.jdi.DoubleType;
 import com.sun.jdi.DoubleValue;
@@ -125,7 +124,7 @@ class VirtualMachineImpl extends MirrorImpl
     // "objectsByID" protected by "synchronized(this)".
     private final Map<Long, SoftObjectReference> objectsByID = new HashMap<>();
     private final ReferenceQueue<ObjectReferenceImpl> referenceQueue = new ReferenceQueue<>();
-    static private final int DISPOSE_THRESHOLD = 50;
+    private static final int DISPOSE_THRESHOLD = 50;
     private final List<SoftObjectReference> batchedDisposeRequests =
             Collections.synchronizedList(new ArrayList<>(DISPOSE_THRESHOLD + 10));
 
@@ -1179,9 +1178,7 @@ class VirtualMachineImpl extends MirrorImpl
 
     Type findBootType(String signature) throws ClassNotLoadedException {
         List<ReferenceType> types = retrieveClassesBySignature(signature);
-        Iterator<ReferenceType> iter = types.iterator();
-        while (iter.hasNext()) {
-            ReferenceType type = iter.next();
+        for (ReferenceType type : types) {
             if (type.classLoader() == null) {
                 return type;
             }
@@ -1551,7 +1548,7 @@ class VirtualMachineImpl extends MirrorImpl
         return threadGroupForJDI;
     }
 
-   static private class SoftObjectReference extends SoftReference<ObjectReferenceImpl> {
+   private static class SoftObjectReference extends SoftReference<ObjectReferenceImpl> {
        int count;
        Long key;
 

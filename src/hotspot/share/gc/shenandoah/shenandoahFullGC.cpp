@@ -28,6 +28,7 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
@@ -59,7 +60,6 @@
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
-#include "gc/shared/workgroup.hpp"
 
 ShenandoahFullGC::ShenandoahFullGC() :
   _gc_timer(ShenandoahHeap::heap()->gc_timer()),
@@ -363,7 +363,7 @@ public:
   }
 };
 
-class ShenandoahPrepareForCompactionTask : public AbstractGangTask {
+class ShenandoahPrepareForCompactionTask : public WorkerTask {
 private:
   PreservedMarksSet*        const _preserved_marks;
   ShenandoahHeap*           const _heap;
@@ -371,7 +371,7 @@ private:
 
 public:
   ShenandoahPrepareForCompactionTask(PreservedMarksSet *preserved_marks, ShenandoahHeapRegionSet **worker_slices) :
-    AbstractGangTask("Shenandoah Prepare For Compaction"),
+    WorkerTask("Shenandoah Prepare For Compaction"),
     _preserved_marks(preserved_marks),
     _heap(ShenandoahHeap::heap()), _worker_slices(worker_slices) {
   }
@@ -757,14 +757,14 @@ public:
   }
 };
 
-class ShenandoahAdjustPointersTask : public AbstractGangTask {
+class ShenandoahAdjustPointersTask : public WorkerTask {
 private:
   ShenandoahHeap*          const _heap;
   ShenandoahRegionIterator       _regions;
 
 public:
   ShenandoahAdjustPointersTask() :
-    AbstractGangTask("Shenandoah Adjust Pointers"),
+    WorkerTask("Shenandoah Adjust Pointers"),
     _heap(ShenandoahHeap::heap()) {
   }
 
@@ -781,13 +781,13 @@ public:
   }
 };
 
-class ShenandoahAdjustRootPointersTask : public AbstractGangTask {
+class ShenandoahAdjustRootPointersTask : public WorkerTask {
 private:
   ShenandoahRootAdjuster* _rp;
   PreservedMarksSet* _preserved_marks;
 public:
   ShenandoahAdjustRootPointersTask(ShenandoahRootAdjuster* rp, PreservedMarksSet* preserved_marks) :
-    AbstractGangTask("Shenandoah Adjust Root Pointers"),
+    WorkerTask("Shenandoah Adjust Root Pointers"),
     _rp(rp),
     _preserved_marks(preserved_marks) {}
 
@@ -805,7 +805,7 @@ void ShenandoahFullGC::phase3_update_references() {
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
-  WorkGang* workers = heap->workers();
+  WorkerThreads* workers = heap->workers();
   uint nworkers = workers->active_workers();
   {
 #if COMPILER2_OR_JVMCI
@@ -834,7 +834,7 @@ public:
 
   void do_object(oop p) {
     assert(_heap->complete_marking_context()->is_marked(p), "must be marked");
-    size_t size = (size_t)p->size();
+    size_t size = p->size();
     if (p->is_forwarded()) {
       HeapWord* compact_from = cast_from_oop<HeapWord*>(p);
       HeapWord* compact_to = cast_from_oop<HeapWord*>(p->forwardee());
@@ -845,14 +845,14 @@ public:
   }
 };
 
-class ShenandoahCompactObjectsTask : public AbstractGangTask {
+class ShenandoahCompactObjectsTask : public WorkerTask {
 private:
   ShenandoahHeap* const _heap;
   ShenandoahHeapRegionSet** const _worker_slices;
 
 public:
   ShenandoahCompactObjectsTask(ShenandoahHeapRegionSet** worker_slices) :
-    AbstractGangTask("Shenandoah Compact Objects"),
+    WorkerTask("Shenandoah Compact Objects"),
     _heap(ShenandoahHeap::heap()),
     _worker_slices(worker_slices) {
   }
@@ -995,13 +995,13 @@ void ShenandoahFullGC::compact_humongous_objects() {
 // cannot be iterated over using oop->size(). The only way to safely iterate over those is using
 // a valid marking bitmap and valid TAMS pointer. This class only resets marking
 // bitmaps for un-pinned regions, and later we only reset TAMS for unpinned regions.
-class ShenandoahMCResetCompleteBitmapTask : public AbstractGangTask {
+class ShenandoahMCResetCompleteBitmapTask : public WorkerTask {
 private:
   ShenandoahRegionIterator _regions;
 
 public:
   ShenandoahMCResetCompleteBitmapTask() :
-    AbstractGangTask("Shenandoah Reset Bitmap") {
+    WorkerTask("Shenandoah Reset Bitmap") {
   }
 
   void work(uint worker_id) {

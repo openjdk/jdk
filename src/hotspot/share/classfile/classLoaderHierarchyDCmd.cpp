@@ -31,7 +31,6 @@
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/safepoint.hpp"
-#include "oops/reflectionAccessorImplKlassHelper.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
@@ -172,7 +171,7 @@ class LoaderTreeNode : public ResourceObj {
 
     branchtracker.print(st);
 
-    // e.g. "+--- jdk.internal.reflect.DelegatingClassLoader"
+    // e.g. +-- "app", jdk.internal.loader.ClassLoaders$AppClassLoader
     st->print("+%.*s", BranchTracker::twig_len, "----------");
     if (_cld->is_the_null_class_loader_data()) {
       st->print(" <bootstrap>");
@@ -232,14 +231,6 @@ class LoaderTreeNode : public ResourceObj {
               st->print("%*s ", indentation, "");
             }
             st->print("%s", lci->_klass->external_name());
-
-            // Special treatment for generated core reflection accessor classes: print invocation target.
-            if (ReflectionAccessorImplKlassHelper::is_generated_accessor(lci->_klass)) {
-              st->print(" (invokes: ");
-              ReflectionAccessorImplKlassHelper::print_invocation_target(st, lci->_klass);
-              st->print(")");
-            }
-
             st->cr();
           }
           branchtracker.print(st);

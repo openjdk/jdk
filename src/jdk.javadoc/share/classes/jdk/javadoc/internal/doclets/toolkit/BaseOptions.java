@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -166,6 +167,20 @@ public abstract class BaseOptions {
     private final List<Utils.Pair<String, String>> linkOfflineList = new ArrayList<>();
 
     /**
+     * An enum of policies for handling modularity mismatches in external documentation.
+     */
+    public enum ModularityMismatchPolicy {
+        INFO,
+        WARN
+    }
+
+    /**
+     * Argument for command-line option {@code --link-modularity-mismatch}.
+     * Describes how to handle external documentation with non-matching modularity.
+     */
+    private ModularityMismatchPolicy linkModularityMismatch = ModularityMismatchPolicy.WARN;
+
+    /**
      * Location of alternative platform link properties file.
      */
     private String linkPlatformProperties;
@@ -282,6 +297,12 @@ public abstract class BaseOptions {
      */
     private String tagletPath = null;
 
+    /**
+     * Argument for command-line option {@code --snippet-path}.
+     * The path for external snippets.
+     */
+    private String snippetPath = null;
+
     //</editor-fold>
 
     private final BaseConfiguration config;
@@ -397,6 +418,23 @@ public abstract class BaseOptions {
                     }
                 },
 
+                new Option(resources, "--link-modularity-mismatch", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        String s = args.get(0);
+                        switch (s) {
+                            case "warn", "info" ->
+                                    linkModularityMismatch = ModularityMismatchPolicy.valueOf(s.toUpperCase(Locale.ROOT));
+                            default -> {
+                                reporter.print(ERROR, resources.getText(
+                                        "doclet.Option_invalid", s, "--link-modularity-mismatch"));
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                },
+
                 new Option(resources, "--link-platform-properties", 1) {
                     @Override
                     public boolean process(String opt, List<String> args) {
@@ -458,16 +496,13 @@ public abstract class BaseOptions {
                     public boolean process(String opt,  List<String> args) {
                         String o = args.get(0);
                         switch (o) {
-                            case "summary":
-                                summarizeOverriddenMethods = true;
-                                break;
-                            case "detail":
-                                summarizeOverriddenMethods = false;
-                                break;
-                            default:
+                            case "summary" -> summarizeOverriddenMethods = true;
+                            case "detail"  -> summarizeOverriddenMethods = false;
+                            default -> {
                                 reporter.print(ERROR,
                                         resources.getText("doclet.Option_invalid",o, "--override-methods"));
                                 return false;
+                            }
                         }
                         return true;
                     }
@@ -550,6 +585,14 @@ public abstract class BaseOptions {
                     @Override
                     public boolean process(String opt, List<String> args) {
                         tagletPath = args.get(0);
+                        return true;
+                    }
+                },
+
+                new Option(resources, "--snippet-path", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        snippetPath = args.get(0);
                         return true;
                     }
                 },
@@ -814,6 +857,14 @@ public abstract class BaseOptions {
     }
 
     /**
+     * Argument for command-line option {@code --link-modularity-mismatch}.
+     * Describes how to handle external documentation with non-matching modularity.
+     */
+    public ModularityMismatchPolicy linkModularityMismatch() {
+        return linkModularityMismatch;
+    }
+
+    /**
      * Argument for command-line option {@code --link-platform-properties}.
      */
     String linkPlatformProperties() {
@@ -960,6 +1011,14 @@ public abstract class BaseOptions {
      */
     public String tagletPath() {
         return tagletPath;
+    }
+
+    /**
+     * Argument for command-line option {@code --snippet-path}.
+     * The path for external snippets.
+     */
+    public String snippetPath() {
+        return snippetPath;
     }
 
     protected abstract static class Option implements Doclet.Option, Comparable<Option> {

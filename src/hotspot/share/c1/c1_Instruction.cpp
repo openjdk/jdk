@@ -524,39 +524,21 @@ Constant::CompareResult Constant::compare(Instruction::Condition cond, Value rig
 
 // Implementation of BlockBegin
 
-void BlockBegin::set_end(BlockEnd* end) {
-  assert(end != NULL, "should not reset block end to NULL");
-  if (end == _end) {
-    return;
+void BlockBegin::set_end(BlockEnd* new_end) { // Assumes that no predecessor of new_end still has it as its successor
+  assert(new_end != NULL, "Should not reset block new_end to NULL");
+  if (new_end == _end) return;
+
+  // Remove this block as predecessor of its current successors
+  if (_end != NULL)
+  for (int i = 0; i < number_of_sux(); i++) {
+    sux_at(i)->remove_predecessor(this);
   }
-  clear_end();
 
-  // Set the new end
-  _end = end;
+  _end = new_end;
 
-  _successors.clear();
-  // Now reset successors list based on BlockEnd
-  for (int i = 0; i < end->number_of_sux(); i++) {
-    BlockBegin* sux = end->sux_at(i);
-    _successors.append(sux);
-    sux->_predecessors.append(this);
-  }
-  _end->set_begin(this);
-}
-
-
-void BlockBegin::clear_end() {
-  // Must make the predecessors/successors match up with the
-  // BlockEnd's notion.
-  if (_end != NULL) {
-    // disconnect from the old end
-    _end->set_begin(NULL);
-
-    // disconnect this block from it's current successors
-    for (int i = 0; i < _successors.length(); i++) {
-      _successors.at(i)->remove_predecessor(this);
-    }
-    _end = NULL;
+  // Add this block as predecessor of its new successors
+  for (int i = 0; i < number_of_sux(); i++) {
+    sux_at(i)->add_predecessor(this);
   }
 }
 
@@ -575,23 +557,13 @@ void BlockBegin::disconnect_edge(BlockBegin* from, BlockBegin* to) {
       if (index >= 0) {
         sux->_predecessors.remove_at(index);
       }
-      from->_successors.remove_at(s);
+      from->end()->remove_sux_at(s);
     } else {
       s++;
     }
   }
 }
 
-
-void BlockBegin::disconnect_from_graph() {
-  // disconnect this block from all other blocks
-  for (int p = 0; p < number_of_preds(); p++) {
-    pred_at(p)->remove_successor(this);
-  }
-  for (int s = 0; s < number_of_sux(); s++) {
-    sux_at(s)->remove_predecessor(this);
-  }
-}
 
 void BlockBegin::substitute_sux(BlockBegin* old_sux, BlockBegin* new_sux) {
   // modify predecessors before substituting successors
@@ -666,14 +638,6 @@ BlockBegin* BlockBegin::insert_block_between(BlockBegin* sux) {
   }
   assert(assigned == true, "should have assigned at least once");
   return new_sux;
-}
-
-
-void BlockBegin::remove_successor(BlockBegin* pred) {
-  int idx;
-  while ((idx = _successors.find(pred)) >= 0) {
-    _successors.remove_at(idx);
-  }
 }
 
 
@@ -837,6 +801,11 @@ bool BlockBegin::try_merge(ValueStack* new_state) {
           existing_state->invalidate_local(index);
           TRACE_PHI(tty->print_cr("invalidating local %d because of type mismatch", index));
         }
+
+        if (existing_value != new_state->local_at(index) && existing_value->as_Phi() == NULL) {
+          TRACE_PHI(tty->print_cr("required phi for local %d is missing, irreducible loop?", index));
+          return false; // BAILOUT in caller
+        }
       }
 
 #ifdef ASSERT
@@ -926,11 +895,6 @@ void BlockList::iterate_backward(BlockClosure* closure) {
 }
 
 
-void BlockList::blocks_do(void f(BlockBegin*)) {
-  for (int i = length() - 1; i >= 0; i--) f(at(i));
-}
-
-
 void BlockList::values_do(ValueVisitor* f) {
   for (int i = length() - 1; i >= 0; i--) at(i)->block_values_do(f);
 }
@@ -953,25 +917,9 @@ void BlockList::print(bool cfg_only, bool live_only) {
 
 // Implementation of BlockEnd
 
-void BlockEnd::set_begin(BlockBegin* begin) {
-  BlockList* sux = NULL;
-  if (begin != NULL) {
-    sux = begin->successors();
-  } else if (this->begin() != NULL) {
-    // copy our sux list
-    BlockList* sux = new BlockList(this->begin()->number_of_sux());
-    for (int i = 0; i < this->begin()->number_of_sux(); i++) {
-      sux->append(this->begin()->sux_at(i));
-    }
-  }
-  _sux = sux;
-}
-
-
 void BlockEnd::substitute_sux(BlockBegin* old_sux, BlockBegin* new_sux) {
   substitute(*_sux, old_sux, new_sux);
 }
-
 
 // Implementation of Phi
 

@@ -156,11 +156,8 @@ ifeq ($(call isTargetOsType, unix), true)
         TARGETS += $(LIB_OUTPUTDIR)/$1/$(call SHARED_LIBRARY,jsig)
       endef
 
-      # The subdir is the same as the variant for client, minimal or zero, for all
-      # others it's server.
-      VARIANT_SUBDIRS := $(filter client minimal zero, $(JVM_VARIANTS)) \
-          $(if $(filter-out client minimal zero, $(JVM_VARIANTS)), server)
-      $(foreach v, $(VARIANT_SUBDIRS), $(eval $(call CreateSymlinks,$v)))
+      # The subdir is the same as the variant
+      $(foreach v, $(JVM_VARIANTS), $(eval $(call CreateSymlinks,$v)))
     endif
     ############################################################################
 

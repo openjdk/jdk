@@ -337,6 +337,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
   for(i = 0; i < expressions()->size(); i++) {
     StackValue *value = expressions()->at(i);
     intptr_t*   addr  = iframe()->interpreter_frame_expression_stack_at(i);
+    assert(!is_bottom_frame || !(caller->is_compiled_caller() && addr >= caller->unextended_sp()), "overwriting caller frame!");
     switch(value->type()) {
       case T_INT:
         *addr = value->get_int();
@@ -375,6 +376,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
   for(i = 0; i < locals()->size(); i++) {
     StackValue *value = locals()->at(i);
     intptr_t* addr  = iframe()->interpreter_frame_local_at(i);
+    assert(!is_bottom_frame || !(caller->is_compiled_caller() && addr >= caller->unextended_sp()), "overwriting caller frame!");
     switch(value->type()) {
       case T_INT:
         *addr = value->get_int();

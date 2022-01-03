@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,11 @@ public:
 
   virtual void safepoint_synchronize_begin();
   virtual void safepoint_synchronize_end();
+
+  // Support for loading objects from CDS archive into the heap
+  bool can_load_archived_objects() const { return true; }
+  HeapWord* allocate_loaded_archive_space(size_t size);
+  void complete_loaded_archive_space(MemRegion archive_space);
 };
 
 #endif // SHARE_GC_SERIAL_SERIALHEAP_HPP

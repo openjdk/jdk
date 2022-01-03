@@ -26,8 +26,9 @@ package transform;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -43,7 +44,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import static jaxp.library.JAXPTestUtilities.compareWithGold;
-import static jaxp.library.JAXPTestUtilities.compareStringWithGold;
+import static jaxp.library.JAXPTestUtilities.compareLinesWithGold;
 import org.testng.Assert;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
@@ -64,10 +65,11 @@ public class SurrogateTest {
     public void toHTMLTest() throws Exception {
         String out = "SurrogateTest1out.html";
         String expected = TEST_SRC + File.separator + "SurrogateTest1.html";
+        String xml = TEST_SRC + File.separator + "SurrogateTest1.xml";
         String xsl = TEST_SRC + File.separator + "SurrogateTest1.xsl";
 
         try (FileInputStream tFis = new FileInputStream(xsl);
-            InputStream fis = this.getClass().getResourceAsStream("SurrogateTest1.xml");
+            InputStream fis = new FileInputStream(xml);
             FileOutputStream fos = new FileOutputStream(out)) {
 
             Source tSrc = new StreamSource(tFis);
@@ -79,7 +81,7 @@ public class SurrogateTest {
             Result res = new StreamResult(fos);
             t.transform(src, res);
         }
-        compareWithGold(expected, out);
+        Assert.assertTrue(compareWithGold(expected, out));
     }
 
     @Test
@@ -90,15 +92,15 @@ public class SurrogateTest {
         SAXParser sp = spf.newSAXParser();
         TestHandler th = new TestHandler();
         sp.parse(xmlFile, th);
-        compareStringWithGold(TEST_SRC + File.separator + "SurrogateTest2.txt", th.sb.toString());
+        Assert.assertTrue(compareLinesWithGold(TEST_SRC + File.separator + "SurrogateTest2.txt", th.lines));
     }
 
     private static class TestHandler extends DefaultHandler {
-        private StringBuilder sb = new StringBuilder();
+        private List<String> lines = new ArrayList<>();
 
         @Override
         public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
-            sb.append( localName + "@attr:" + attributes.getValue("attr") + '\n');
+            lines.add( localName + "@attr:" + attributes.getValue("attr"));
         }
     }
 }

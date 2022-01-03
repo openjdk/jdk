@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ jfieldID iac_addressID;
 jfieldID iac_familyID;
 jfieldID iac_hostNameID;
 jfieldID iac_origHostNameID;
-jfieldID ia_preferIPv6AddressID;
 
 static int ia_initialized = 0;
 
@@ -61,8 +60,6 @@ Java_java_net_InetAddress_init(JNIEnv *env, jclass cls) {
         CHECK_NULL(iac_class);
         ia_holderID = (*env)->GetFieldID(env, ia_class, "holder", "Ljava/net/InetAddress$InetAddressHolder;");
         CHECK_NULL(ia_holderID);
-        ia_preferIPv6AddressID = (*env)->GetStaticFieldID(env, ia_class, "preferIPv6Address", "I");
-        CHECK_NULL(ia_preferIPv6AddressID);
 
         iac_addressID = (*env)->GetFieldID(env, iac_class, "address", "I");
         CHECK_NULL(iac_addressID);
@@ -74,4 +71,13 @@ Java_java_net_InetAddress_init(JNIEnv *env, jclass cls) {
         CHECK_NULL(iac_origHostNameID);
         ia_initialized = 1;
     }
+}
+
+/*
+ * Class:     java_net_InetAddress
+ * Method:    isIPv4Available
+ */
+JNIEXPORT jboolean JNICALL
+Java_java_net_InetAddress_isIPv4Available(JNIEnv *env, jclass clazz) {
+    return ipv4_available();
 }

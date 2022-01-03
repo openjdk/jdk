@@ -40,7 +40,6 @@ extern Mutex*   Module_lock;                     // a lock on module and package
 extern Mutex*   CompiledIC_lock;                 // a lock used to guard compiled IC patching and access
 extern Mutex*   InlineCacheBuffer_lock;          // a lock used to guard the InlineCacheBuffer
 extern Mutex*   VMStatistic_lock;                // a lock used to guard statistics count increment
-extern Mutex*   JNIHandleBlockFreeList_lock;     // a lock on the JNI handle block free list
 extern Mutex*   JmethodIdCreation_lock;          // a lock on creating JNI method identifiers
 extern Mutex*   JfieldIdCreation_lock;           // a lock on creating JNI static field identifiers
 extern Monitor* JNICritical_lock;                // a lock used while entering and exiting JNI critical regions, allows GC to sometimes get in
@@ -54,7 +53,7 @@ extern Mutex*   VtableStubs_lock;                // a lock on the VtableStubs
 extern Mutex*   SymbolArena_lock;                // a lock on the symbol table arena
 extern Monitor* StringDedup_lock;                // a lock on the string deduplication facility
 extern Mutex*   StringDedupIntern_lock;          // a lock on StringTable notification of StringDedup
-extern Monitor* CodeCache_lock;                  // a lock on the CodeCache, rank is special
+extern Monitor* CodeCache_lock;                  // a lock on the CodeCache
 extern Monitor* CodeSweeper_lock;                // a lock used by the sweeper only for wait notify
 extern Mutex*   MethodData_lock;                 // a lock on installation of method data
 extern Mutex*   TouchedMethodLog_lock;           // a lock on allocation of LogExecutedMethods info
@@ -140,7 +139,8 @@ extern Monitor* JfrThreadSampler_lock;           // used to suspend/resume JFR t
 extern Mutex*   UnsafeJlong_lock;                // provides Unsafe atomic updates to jlongs on platforms that don't support cx8
 #endif
 
-extern Mutex*   Metaspace_lock;            // protects Metaspace virtualspace and chunk expansions
+extern Mutex*   Metaspace_lock;                  // protects Metaspace virtualspace and chunk expansions
+extern Monitor* MetaspaceCritical_lock;          // synchronizes failed metaspace allocations that risk throwing metaspace OOM
 extern Mutex*   ClassLoaderDataGraph_lock;       // protects CLDG list, needed for concurrent unloading
 
 
@@ -196,8 +196,6 @@ class MutexLocker: public StackObj {
     _mutex(mutex) {
     bool no_safepoint_check = flag == Mutex::_no_safepoint_check_flag;
     if (_mutex != NULL) {
-      assert(_mutex->rank() > Mutex::special || no_safepoint_check,
-             "Mutexes with rank special or lower should not do safepoint checks");
       if (no_safepoint_check) {
         _mutex->lock_without_safepoint_check();
       } else {
@@ -210,8 +208,6 @@ class MutexLocker: public StackObj {
     _mutex(mutex) {
     bool no_safepoint_check = flag == Mutex::_no_safepoint_check_flag;
     if (_mutex != NULL) {
-      assert(_mutex->rank() > Mutex::special || no_safepoint_check,
-             "Mutexes with rank special or lower should not do safepoint checks");
       if (no_safepoint_check) {
         _mutex->lock_without_safepoint_check(thread);
       } else {

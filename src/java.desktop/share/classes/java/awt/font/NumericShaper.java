@@ -119,21 +119,20 @@ import jdk.internal.access.SharedSecrets;
  * <tbody>
  *   <tr>
  *     <th scope="rowgroup" rowspan="2">Arabic
- *     <td>{@link NumericShaper#ARABIC NumericShaper.ARABIC}
+ *     <th scope="row">{@link NumericShaper#ARABIC NumericShaper.ARABIC}
  *     <br>
  *     {@link NumericShaper#EASTERN_ARABIC NumericShaper.EASTERN_ARABIC}
  *     <td>{@link NumericShaper#EASTERN_ARABIC NumericShaper.EASTERN_ARABIC}
- *   </tr>
  *   <tr>
- *     <td>{@link NumericShaper.Range#ARABIC}
+ *     <th scope="row">{@link NumericShaper.Range#ARABIC}
  *     <br>
  *     {@link NumericShaper.Range#EASTERN_ARABIC}
  *     <td>{@link NumericShaper.Range#EASTERN_ARABIC}
  * </tbody>
  * <tbody>
  *   <tr>
- *     <th scope="row">Tai Tham
- *     <td>{@link NumericShaper.Range#TAI_THAM_HORA}
+ *     <th scope="rowgroup">Tai Tham
+ *     <th scope="row">{@link NumericShaper.Range#TAI_THAM_HORA}
  *     <br>
  *     {@link NumericShaper.Range#TAI_THAM_THAM}
  *     <td>{@link NumericShaper.Range#TAI_THAM_THAM}
@@ -1364,7 +1363,7 @@ public final class NumericShaper implements java.io.Serializable {
 
     // use a binary search with a cache
 
-    private transient volatile int stCache = 0;
+    private transient volatile int stCache;
 
     private boolean isStrongDirectional(char c) {
         int cachedIndex = stCache;
@@ -1534,12 +1533,7 @@ public final class NumericShaper implements java.io.Serializable {
         rangeArray = rangeSet.toArray(new Range[rangeSet.size()]);
         if (rangeArray.length > BSEARCH_THRESHOLD) {
             // sort rangeArray for binary search
-            Arrays.sort(rangeArray,
-                        new Comparator<Range>() {
-                            public int compare(Range s1, Range s2) {
-                                return s1.base > s2.base ? 1 : s1.base == s2.base ? 0 : -1;
-                            }
-                        });
+            Arrays.sort(rangeArray, Comparator.comparingInt(s -> s.base));
         }
     }
 

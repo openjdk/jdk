@@ -8319,7 +8319,8 @@ CurrencyNames//azn=Azerbaijan Manat
 # bug #8193552
 CurrencyNames//mru=Mauritanian Ouguiya
 
-# bug #8208746
+# bug #8208746, #8274658
+CurrencyNames//ved=Venezuelan Bol\u00edvar Soberano
 CurrencyNames//ves=Venezuelan Bol\u00edvar Soberano
 
 # bug #8206879

@@ -118,7 +118,7 @@ class Generation: public CHeapObj<mtGC> {
   };
 
   // allocate and initialize ("weak") refs processing support
-  virtual void ref_processor_init();
+  void ref_processor_init();
   void set_ref_processor(ReferenceProcessor* rp) {
     assert(_ref_processor == NULL, "clobbering existing _ref_processor");
     _ref_processor = rp;

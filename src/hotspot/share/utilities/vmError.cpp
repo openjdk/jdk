@@ -87,6 +87,7 @@ Thread*           VMError::_thread;
 address           VMError::_pc;
 void*             VMError::_siginfo;
 void*             VMError::_context;
+bool              VMError::_print_native_stack_used = false;
 const char*       VMError::_filename;
 int               VMError::_lineno;
 size_t            VMError::_size;
@@ -241,6 +242,108 @@ void VMError::print_stack_trace(outputStream* st, JavaThread* jt,
 #endif // ZERO
 }
 
+/**
+ * Adds `value` to `list` iff it's not already present and there is sufficient
+ * capacity (i.e. length(list) < `list_capacity`). The length of the list
+ * is the index of the first nullptr entry or `list_capacity` if there are
+ * no nullptr entries.
+ *
+ * @ return true if the value was added, false otherwise
+ */
+static bool add_if_absent(address value, address* list, int list_capacity) {
+  for (int i = 0; i < list_capacity; i++) {
+    if (list[i] == value) {
+      return false;
+    }
+    if (list[i] == nullptr) {
+      list[i] = value;
+      if (i + 1 < list_capacity) {
+        list[i + 1] = nullptr;
+      }
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Prints the VM generated code unit, if any, containing `pc` if it has not already
+ * been printed. If the code unit is an InterpreterCodelet or StubCodeDesc, it is
+ * only printed if `is_crash_pc` is true.
+ *
+ * @param printed array of code units that have already been printed (delimited by NULL entry)
+ * @param printed_capacity the capacity of `printed`
+ * @return true if the code unit was printed, false otherwise
+ */
+static bool print_code(outputStream* st, Thread* thread, address pc, bool is_crash_pc,
+                       address* printed, int printed_capacity) {
+  if (Interpreter::contains(pc)) {
+    if (is_crash_pc) {
+      // The interpreter CodeBlob is very large so try to print the codelet instead.
+      InterpreterCodelet* codelet = Interpreter::codelet_containing(pc);
+      if (codelet != nullptr) {
+        if (add_if_absent((address) codelet, printed, printed_capacity)) {
+          codelet->print_on(st);
+          Disassembler::decode(codelet->code_begin(), codelet->code_end(), st);
+          return true;
+        }
+      }
+    }
+  } else {
+    StubCodeDesc* desc = StubCodeDesc::desc_for(pc);
+    if (desc != nullptr) {
+      if (is_crash_pc) {
+        if (add_if_absent((address) desc, printed, printed_capacity)) {
+          desc->print_on(st);
+          Disassembler::decode(desc->begin(), desc->end(), st);
+          return true;
+        }
+      }
+    } else if (thread != nullptr) {
+      CodeBlob* cb = CodeCache::find_blob(pc);
+      if (cb != nullptr && add_if_absent((address) cb, printed, printed_capacity)) {
+        // Disassembling nmethod will incur resource memory allocation,
+        // only do so when thread is valid.
+        ResourceMark rm(thread);
+        Disassembler::decode(cb, st);
+        st->cr();
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * Gets the caller frame of `fr`.
+ *
+ * @returns an invalid frame (i.e. fr.pc() === 0) if the caller cannot be obtained
+ */
+static frame next_frame(frame fr, Thread* t) {
+  // Compiled code may use EBP register on x86 so it looks like
+  // non-walkable C frame. Use frame.sender() for java frames.
+  frame invalid;
+  if (t != nullptr && t->is_Java_thread()) {
+    // Catch very first native frame by using stack address.
+    // For JavaThread stack_base and stack_size should be set.
+    if (!t->is_in_full_stack((address)(fr.real_fp() + 1))) {
+      return invalid;
+    }
+    if (fr.is_java_frame() || fr.is_native_frame() || fr.is_runtime_frame()) {
+      RegisterMap map(JavaThread::cast(t), false); // No update
+      return fr.sender(&map);
+    } else {
+      // is_first_C_frame() does only simple checks for frame pointer,
+      // it will pass if java compiled code has a pointer in EBP.
+      if (os::is_first_C_frame(&fr)) return invalid;
+      return os::get_sender_for_C_frame(&fr);
+    }
+  } else {
+    if (os::is_first_C_frame(&fr)) return invalid;
+    return os::get_sender_for_C_frame(&fr);
+  }
+}
+
 void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, char* buf, int buf_size) {
 
   // see if it's a valid frame
@@ -258,26 +361,9 @@ void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, char* bu
         }
       }
       st->cr();
-      // Compiled code may use EBP register on x86 so it looks like
-      // non-walkable C frame. Use frame.sender() for java frames.
-      if (t && t->is_Java_thread()) {
-        // Catch very first native frame by using stack address.
-        // For JavaThread stack_base and stack_size should be set.
-        if (!t->is_in_full_stack((address)(fr.real_fp() + 1))) {
-          break;
-        }
-        if (fr.is_java_frame() || fr.is_native_frame() || fr.is_runtime_frame()) {
-          RegisterMap map(JavaThread::cast(t), false); // No update
-          fr = fr.sender(&map);
-        } else {
-          // is_first_C_frame() does only simple checks for frame pointer,
-          // it will pass if java compiled code has a pointer in EBP.
-          if (os::is_first_C_frame(&fr)) break;
-          fr = os::get_sender_for_C_frame(&fr);
-        }
-      } else {
-        if (os::is_first_C_frame(&fr)) break;
-        fr = os::get_sender_for_C_frame(&fr);
+      fr = next_frame(fr, t);
+      if (fr.pc() == nullptr) {
+        break;
       }
     }
 
@@ -747,6 +833,7 @@ void VMError::report(outputStream* st, bool _verbose) {
                            : os::current_frame();
 
        print_native_stack(st, fr, _thread, buf, sizeof(buf));
+       _print_native_stack_used = true;
      }
    }
 
@@ -821,29 +908,46 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-  STEP("printing code blob if possible")
+  STEP("printing code blobs if possible")
 
      if (_verbose && _context) {
-       CodeBlob* cb = CodeCache::find_blob(_pc);
-       if (cb != NULL) {
-         if (Interpreter::contains(_pc)) {
-           // The interpreter CodeBlob is very large so try to print the codelet instead.
-           InterpreterCodelet* codelet = Interpreter::codelet_containing(_pc);
-           if (codelet != NULL) {
-             codelet->print_on(st);
-             Disassembler::decode(codelet->code_begin(), codelet->code_end(), st);
+       const int printed_capacity = max_error_log_print_code;
+       address printed[printed_capacity];
+       printed[0] = nullptr;
+       int printed_len = 0;
+       // Even though ErrorLogPrintCodeLimit is ranged checked
+       // during argument parsing, there's no way to prevent it
+       // subsequently (i.e., after parsing) being set to a
+       // value outside the range.
+       int limit = MIN2(ErrorLogPrintCodeLimit, printed_capacity);
+       if (limit > 0) {
+         // Scan the native stack
+         if (!_print_native_stack_used) {
+           // Only try to print code of the crashing frame since
+           // the native stack cannot be walked with next_frame.
+           if (print_code(st, _thread, _pc, true, printed, printed_capacity)) {
+             printed_len++;
            }
          } else {
-           StubCodeDesc* desc = StubCodeDesc::desc_for(_pc);
-           if (desc != NULL) {
-             desc->print_on(st);
-             Disassembler::decode(desc->begin(), desc->end(), st);
-           } else if (_thread != NULL) {
-             // Disassembling nmethod will incur resource memory allocation,
-             // only do so when thread is valid.
-             ResourceMark rm(_thread);
-             Disassembler::decode(cb, st);
-             st->cr();
+           frame fr = os::fetch_frame_from_context(_context);
+           while (printed_len < limit && fr.pc() != nullptr) {
+             if (print_code(st, _thread, fr.pc(), fr.pc() == _pc, printed, printed_capacity)) {
+               printed_len++;
+             }
+             fr = next_frame(fr, _thread);
+           }
+         }
+
+         // Scan the Java stack
+         if (_thread != nullptr && _thread->is_Java_thread()) {
+           JavaThread* jt = JavaThread::cast(_thread);
+           if (jt->has_last_Java_frame()) {
+             for (StackFrameStream sfs(jt, true /* update */, true /* process_frames */); printed_len < limit && !sfs.is_done(); sfs.next()) {
+               address pc = sfs.current()->pc();
+               if (print_code(st, _thread, pc, pc == _pc, printed, printed_capacity)) {
+                 printed_len++;
+               }
+             }
            }
          }
        }
@@ -1684,7 +1788,7 @@ void VM_ReportJavaOutOfMemory::doit() {
 #endif
     tty->print_cr("\"%s\"...", cmd);
 
-    if (os::fork_and_exec(cmd, true) < 0) {
+    if (os::fork_and_exec(cmd) < 0) {
       tty->print_cr("os::fork_and_exec failed: %s (%s=%d)",
                      os::strerror(errno), os::errno_name(errno), errno);
     }

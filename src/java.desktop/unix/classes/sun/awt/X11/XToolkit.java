@@ -624,9 +624,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             }
         }
         if (dispatchers != null) {
-            Iterator<XEventDispatcher> iter = dispatchers.iterator();
-            while (iter.hasNext()) {
-                XEventDispatcher disp = iter.next();
+            for (XEventDispatcher disp : dispatchers) {
                 disp.dispatchEvent(ev);
             }
         }
@@ -1661,9 +1659,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             return;
         }
 
-        Iterator<Map.Entry<String, Object>> i = updatedSettings.entrySet().iterator();
-        while (i.hasNext()) {
-            Map.Entry<String, Object> e = i.next();
+        for (Map.Entry<String, Object> e : updatedSettings.entrySet()) {
             String name = e.getKey();
 
             name = "gnome." + name;
@@ -1992,9 +1988,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         while (time.compareTo(currentTime) <= 0) {
             java.util.List<Runnable> tasks = timeoutTasks.remove(time);
 
-            for (Iterator<Runnable> iter = tasks.iterator(); iter.hasNext();) {
-                Runnable task = iter.next();
-
+            for (Runnable task : tasks) {
                 if (timeoutTaskLog.isLoggable(PlatformLogger.Level.FINER)) {
                     timeoutTaskLog.finer("XToolkit.callTimeoutTasks(): current time={0}" +
                                          ";  about to run task={1}", Long.valueOf(currentTime), task);

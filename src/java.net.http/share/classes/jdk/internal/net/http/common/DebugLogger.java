@@ -46,19 +46,19 @@ import java.util.function.Supplier;
  */
 final class DebugLogger implements Logger {
     // deliberately not in the same subtree than standard loggers.
-    final static String HTTP_NAME  = "jdk.internal.httpclient.debug";
-    final static String WS_NAME  = "jdk.internal.httpclient.websocket.debug";
-    final static String HPACK_NAME = "jdk.internal.httpclient.hpack.debug";
-    final static System.Logger HTTP = System.getLogger(HTTP_NAME);
-    final static System.Logger WS = System.getLogger(WS_NAME);
-    final static System.Logger HPACK = System.getLogger(HPACK_NAME);
+    static final String HTTP_NAME  = "jdk.internal.httpclient.debug";
+    static final String WS_NAME  = "jdk.internal.httpclient.websocket.debug";
+    static final String HPACK_NAME = "jdk.internal.httpclient.hpack.debug";
+    static final System.Logger HTTP = System.getLogger(HTTP_NAME);
+    static final System.Logger WS = System.getLogger(WS_NAME);
+    static final System.Logger HPACK = System.getLogger(HPACK_NAME);
     private static final DebugLogger NO_HTTP_LOGGER =
             new DebugLogger(HTTP, "HTTP"::toString, Level.OFF, Level.OFF);
     private static final DebugLogger NO_WS_LOGGER =
             new DebugLogger(HTTP, "WS"::toString, Level.OFF, Level.OFF);
     private static final DebugLogger NO_HPACK_LOGGER =
             new DebugLogger(HTTP, "HPACK"::toString, Level.OFF, Level.OFF);
-    final static long START_NANOS = System.nanoTime();
+    static final long START_NANOS = System.nanoTime();
 
     private final Supplier<String> dbgTag;
     private final Level errLevel;

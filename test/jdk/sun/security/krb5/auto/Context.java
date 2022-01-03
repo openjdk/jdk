@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@ import com.sun.security.auth.module.Krb5LoginModule;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -55,6 +53,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.security.Principal;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionException;
 
 /**
  * Context of a JGSS subject, encapsulating Subject and GSSContext.
@@ -100,9 +100,9 @@ public class Context {
         Context out = new Context();
         out.s = s;
         try {
-            out.cred = Subject.doAs(s, new PrivilegedExceptionAction<GSSCredential>() {
+            out.cred = Subject.callAs(s, new Callable<GSSCredential>() {
                 @Override
-                public GSSCredential run() throws Exception {
+                public GSSCredential call() throws Exception {
                     GSSCredential cred = x.getDelegCred();
                     if (cred == null && x.getCredDelegState() ||
                             cred != null && !x.getCredDelegState()) {
@@ -111,8 +111,8 @@ public class Context {
                     return cred;
                 }
             });
-        } catch (PrivilegedActionException pae) {
-            throw pae.getException();
+        } catch (CompletionException ce) {
+            throw (Exception) ce.getCause();
         }
         out.name = name + " as " + out.cred.getName().toString();
         return out;
@@ -339,15 +339,15 @@ public class Context {
      */
     public byte[] doAs(final Action action, final byte[] in) throws Exception {
         try {
-            return Subject.doAs(s, new PrivilegedExceptionAction<byte[]>() {
+            return Subject.callAs(s, new Callable<byte[]>() {
 
                 @Override
-                public byte[] run() throws Exception {
+                public byte[] call() throws Exception {
                     return action.run(Context.this, in);
                 }
             });
-        } catch (PrivilegedActionException pae) {
-            throw pae.getException();
+        } catch (CompletionException ce) {
+            throw (Exception) ce.getCause();
         }
     }
 
@@ -612,9 +612,9 @@ public class Context {
 
     public Context impersonate(final String someone) throws Exception {
         try {
-            GSSCredential creds = Subject.doAs(s, new PrivilegedExceptionAction<GSSCredential>() {
+            GSSCredential creds = Subject.callAs(s, new Callable<GSSCredential>() {
                 @Override
-                public GSSCredential run() throws Exception {
+                public GSSCredential call() throws Exception {
                     GSSManager m = GSSManager.getInstance();
                     GSSName other = m.createName(someone, GSSName.NT_USER_NAME);
                     if (Context.this.cred == null) {
@@ -631,8 +631,8 @@ public class Context {
             out.cred = creds;
             out.name = name + " as " + out.cred.getName().toString();
             return out;
-        } catch (PrivilegedActionException pae) {
-            Exception e = pae.getException();
+        } catch (CompletionException ce) {
+            Exception e = (Exception) ce.getCause();
             if (e instanceof InvocationTargetException) {
                 throw (Exception)((InvocationTargetException) e).getTargetException();
             } else {

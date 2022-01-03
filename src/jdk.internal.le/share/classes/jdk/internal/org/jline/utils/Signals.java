@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, the original author or authors.
+ * Copyright (c) 2002-2020, the original author or authors.
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -9,6 +9,7 @@
 package jdk.internal.org.jline.utils;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import java.util.Objects;
 
@@ -91,8 +92,12 @@ public final class Signals {
         Object signal;
         try {
             signal = constructor.newInstance(name);
-        } catch (IllegalArgumentException e) {
-            Log.trace(() -> "Ignoring unsupported signal " + name);
+        } catch (InvocationTargetException e) {
+            if (e.getCause() instanceof IllegalArgumentException) {
+                Log.trace(() -> "Ignoring unsupported signal " + name);
+            } else {
+                Log.debug("Error registering handler for signal ", name, e);
+            }
             return null;
         }
         Class<?> signalHandlerClass = Class.forName("sun.misc.SignalHandler");

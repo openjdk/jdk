@@ -59,7 +59,7 @@ public class IRNode {
     public static final String ALLOC_ARRAY_OF = COMPOSITE_PREFIX + "(.*precise \\[.*" + IS_REPLACED + ":.*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*|.*LGHI.*)\\R)*.*(?i:call,static).*wrapper for: _new_array_Java" + END;
 
     public static final String CHECKCAST_ARRAY = "(((?i:cmp|CLFI|CLR).*precise \\[.*:|.*(?i:mov|or).*precise \\[.*:.*\\R.*(cmp|CMP|CLR))" + END;
-    public static final String CHECKCAST_ARRAY_OF = COMPOSITE_PREFIX + "(((?i:cmp|CLFI|CLR).*precise \\[.*" + IS_REPLACED + ":|.*(?i:mov|or).*precise klass \\[.*" + IS_REPLACED + ";:.*\\R.*(cmp|CMP|CLR))" + END;
+    public static final String CHECKCAST_ARRAY_OF = COMPOSITE_PREFIX + "(((?i:cmp|CLFI|CLR).*precise \\[.*" + IS_REPLACED + ":|.*(?i:mov|or).*precise \\[.*" + IS_REPLACED + ":.*\\R.*(cmp|CMP|CLR))" + END;
     // Does not work on s390 (a rule containing this regex will be skipped on s390).
     public static final String CHECKCAST_ARRAYCOPY = "(.*((?i:call_leaf_nofp,runtime)|CALL,\\s?runtime leaf nofp|BCTRL.*.leaf call).*checkcast_arraycopy.*" + END;
 
@@ -114,9 +114,10 @@ public class IRNode {
     public static final String COUNTEDLOOP = START + "CountedLoop\\b" + MID + END;
     public static final String COUNTEDLOOP_MAIN = START + "CountedLoop\\b" + MID + "main" + END;
 
-    public static final String CALL = START + "CallStaticJava" + MID + END;
-    public static final String DYNAMIC_CALL_OF_METHOD = COMPOSITE_PREFIX + START + "CallDynamicJava" + MID + IS_REPLACED + END;
-    public static final String STATIC_CALL_OF_METHOD = COMPOSITE_PREFIX + START + "CallStaticJava" + MID + IS_REPLACED + END;
+    public static final String CALL = START + "Call.*Java" + MID + END;
+    public static final String CALL_OF_METHOD = COMPOSITE_PREFIX + START + "Call.*Java" + MID + IS_REPLACED + " " +  END;
+    public static final String DYNAMIC_CALL_OF_METHOD = COMPOSITE_PREFIX + START + "CallDynamicJava" + MID + IS_REPLACED + " " + END;
+    public static final String STATIC_CALL_OF_METHOD = COMPOSITE_PREFIX + START + "CallStaticJava" + MID + IS_REPLACED + " " +  END;
     public static final String TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*reason" + END;
     public static final String PREDICATE_TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*predicate" + END;
     public static final String UNSTABLE_IF_TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*unstable_if" + END;
@@ -125,11 +126,30 @@ public class IRNode {
     public static final String NULL_ASSERT_TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*null_assert" + END;
     public static final String RANGE_CHECK_TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*range_check" + END;
     public static final String UNHANDLED_TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*unhandled" + END;
+    public static final String INTRINSIC_TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*intrinsic" + END;
     // Does not work for VM builds without JVMCI like x86_32 (a rule containing this regex will be skipped without having JVMCI built).
     public static final String INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*intrinsic_or_type_checked_inlining" + END;
 
     public static final String SCOPE_OBJECT = "(.*# ScObj.*" + END;
     public static final String MEMBAR = START + "MemBar" + MID + END;
+
+    public static final String AND_I = START + "AndI" + MID + END;
+    public static final String AND_L = START + "AndL" + MID + END;
+    public static final String LSHIFT_I = START + "LShiftI" + MID + END;
+    public static final String LSHIFT_L = START + "LShiftL" + MID + END;
+    public static final String ADD_I = START + "AddI" + MID + END;
+    public static final String ADD_L = START + "AddL" + MID + END;
+    public static final String SUB_I = START + "SubI" + MID + END;
+    public static final String SUB_L = START + "SubL" + MID + END;
+    public static final String CONV_I2L = START + "ConvI2L" + MID + END;
+
+    public static final String VECTOR_CAST_B2X = START + "VectorCastB2X" + MID + END;
+    public static final String VECTOR_CAST_S2X = START + "VectorCastS2X" + MID + END;
+    public static final String VECTOR_CAST_I2X = START + "VectorCastI2X" + MID + END;
+    public static final String VECTOR_CAST_L2X = START + "VectorCastL2X" + MID + END;
+    public static final String VECTOR_CAST_F2X = START + "VectorCastF2X" + MID + END;
+    public static final String VECTOR_CAST_D2X = START + "VectorCastD2X" + MID + END;
+    public static final String VECTOR_REINTERPRET = START + "VectorReinterpret" + MID + END;
 
     /**
      * Called by {@link IRMatcher} to merge special composite nodes together with additional user-defined input.

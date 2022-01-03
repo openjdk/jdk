@@ -42,8 +42,7 @@ import jdk.test.lib.jfr.SimpleEvent;
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib
- * @run main/othervm -Xint  -XX:+UseInterpreter -Dinterpreted=true  jdk.jfr.api.consumer.TestRecordedFrame
- * @run main/othervm/timeout=180 -Xcomp -XX:-UseInterpreter -Dinterpreted=false jdk.jfr.api.consumer.TestRecordedFrame
+ * @run main/othervm jdk.jfr.api.consumer.TestRecordedFrame
  */
 public final class TestRecordedFrame {
 
@@ -86,10 +85,6 @@ public final class TestRecordedFrame {
                     Asserts.assertTrue(types.contains(type));
                     // Line number
                     Asserts.assertEquals(getLineNumber("main"), frame.getLineNumber());
-                    // Interpreted
-                    boolean isInterpreted = "Interpreted".equals(type);
-                    boolean expectedInterpreted = "true".equals(System.getProperty("interpreted"));
-                    Asserts.assertEquals(isInterpreted, expectedInterpreted);
                     // BCI
                     int bci = frame.getBytecodeIndex();
                     System.out.println("bci: " + bci);

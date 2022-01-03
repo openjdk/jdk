@@ -237,7 +237,7 @@ bool RegMask::is_valid_reg(OptoReg::Name reg, const int size) const {
 // HIGHEST register number in the set, or BAD if no sets.
 // Works also for size 1.
 OptoReg::Name RegMask::find_first_set(LRG &lrg, const int size) const {
-  if (lrg.is_scalable()) {
+  if (lrg.is_scalable() && lrg._is_vector) {
     // For scalable vector register, regmask is SlotsPerVecA bits aligned.
     assert(is_aligned_sets(SlotsPerVecA), "mask is not aligned, adjacent sets");
   } else {

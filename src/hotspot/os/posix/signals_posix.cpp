@@ -1145,7 +1145,11 @@ void os::print_siginfo(outputStream* os, const void* si0) {
     os->print(", si_addr: " PTR_FORMAT, p2i(si->si_addr));
 #ifdef SIGPOLL
   } else if (sig == SIGPOLL) {
-    os->print(", si_band: %ld", si->si_band);
+    // siginfo_t.si_band is defined as "long", and it is so in most
+    // implementations. But SPARC64 glibc has a bug: si_band is "int".
+    // Cast si_band to "long" to prevent format specifier mismatch.
+    // See: https://sourceware.org/bugzilla/show_bug.cgi?id=23821
+    os->print(", si_band: %ld", (long) si->si_band);
 #endif
   }
 }

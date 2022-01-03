@@ -29,6 +29,7 @@ import jdk.test.lib.process.ProcessTools;
 
 /*
  * @test
+ * @key stress randomness
  * @bug 8252219 8256535
  * @requires vm.compiler2.enabled
  * @summary Tests that using a stress option without -XX:StressSeed=N generates

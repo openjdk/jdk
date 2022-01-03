@@ -2561,7 +2561,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * overridden by system properties
      */
     private ForkJoinPool(byte forCommonPoolOnly) {
-        int parallelism = Runtime.getRuntime().availableProcessors() - 1;
+        int parallelism = Math.max(1, Runtime.getRuntime().availableProcessors() - 1);
         ForkJoinWorkerThreadFactory fac = null;
         UncaughtExceptionHandler handler = null;
         try {  // ignore exceptions in accessing/parsing properties
@@ -2778,6 +2778,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         @SuppressWarnings("serial") // Conditionally serializable
         volatile E result;
         final AtomicInteger count;  // in case all throw
+        @SuppressWarnings("serial")
         final ForkJoinPool pool;    // to check shutdown while collecting
         InvokeAnyRoot(int n, ForkJoinPool p) {
             pool = p;

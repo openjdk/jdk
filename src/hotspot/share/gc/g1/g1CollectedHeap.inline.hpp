@@ -29,9 +29,11 @@
 
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
+#include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacFailureRegions.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RemSet.hpp"
+#include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
@@ -39,6 +41,12 @@
 #include "gc/shared/taskqueue.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/bitMap.inline.hpp"
+
+inline bool G1STWIsAliveClosure::do_object_b(oop p) {
+  // An object is reachable if it is outside the collection set,
+  // or is inside and copied.
+  return !_g1h->is_in_cset(p) || p->is_forwarded();
+}
 
 G1GCPhaseTimes* G1CollectedHeap::phase_times() const {
   return _policy->phase_times();
@@ -183,8 +191,12 @@ void G1CollectedHeap::register_humongous_region_with_region_attr(uint index) {
   _region_attr.set_humongous(index, region_at(index)->rem_set()->is_tracked());
 }
 
+void G1CollectedHeap::register_new_survivor_region_with_region_attr(HeapRegion* r) {
+  _region_attr.set_new_survivor_region(r->hrm_index());
+}
+
 void G1CollectedHeap::register_region_with_region_attr(HeapRegion* r) {
-  _region_attr.set_has_remset(r->hrm_index(), r->rem_set()->is_tracked());
+  _region_attr.set_remset_is_tracked(r->hrm_index(), r->rem_set()->is_tracked());
 }
 
 void G1CollectedHeap::register_old_region_with_region_attr(HeapRegion* r) {
@@ -196,10 +208,6 @@ void G1CollectedHeap::register_optional_region_with_region_attr(HeapRegion* r) {
   _region_attr.set_optional(r->hrm_index(), r->rem_set()->is_tracked());
 }
 
-bool G1CollectedHeap::evacuation_failed() const {
-  return _evac_failure_regions.num_regions_failed_evacuation() > 0;
-}
-
 inline bool G1CollectedHeap::is_in_young(const oop obj) {
   if (obj == NULL) {
     return false;
@@ -207,11 +215,22 @@ inline bool G1CollectedHeap::is_in_young(const oop obj) {
   return heap_region_containing(obj)->is_young();
 }
 
+inline bool G1CollectedHeap::is_obj_dead(const oop obj, const HeapRegion* hr) const {
+  return hr->is_obj_dead(obj, _cm->prev_mark_bitmap());
+}
+
 inline bool G1CollectedHeap::is_obj_dead(const oop obj) const {
   if (obj == NULL) {
     return false;
   }
   return is_obj_dead(obj, heap_region_containing(obj));
+}
+
+inline bool G1CollectedHeap::is_obj_ill(const oop obj, const HeapRegion* hr) const {
+  return
+    !hr->obj_allocated_since_next_marking(obj) &&
+    !is_marked_next(obj) &&
+    !hr->is_closed_archive();
 }
 
 inline bool G1CollectedHeap::is_obj_ill(const oop obj) const {
@@ -227,6 +246,13 @@ inline bool G1CollectedHeap::is_obj_dead_full(const oop obj, const HeapRegion* h
 
 inline bool G1CollectedHeap::is_obj_dead_full(const oop obj) const {
     return is_obj_dead_full(obj, heap_region_containing(obj));
+}
+
+inline void G1CollectedHeap::mark_evac_failure_object(const oop obj, uint worker_id) const {
+    // All objects failing evacuation are live. What we'll do is
+    // that we'll update the prev marking info so that they are
+    // all under PTAMS and explicitly marked.
+    _cm->par_mark_in_prev_bitmap(obj);
 }
 
 inline void G1CollectedHeap::set_humongous_reclaim_candidate(uint region, bool value) {

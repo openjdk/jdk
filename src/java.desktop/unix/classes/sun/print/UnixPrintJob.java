@@ -128,7 +128,7 @@ public class UnixPrintJob implements CancelablePrintJob {
         mDestType = UnixPrintJob.DESTPRINTER;
         JobSheets js = (JobSheets)(service.
                                       getDefaultAttributeValue(JobSheets.class));
-        if (js != null && js.equals(JobSheets.NONE)) {
+        if (JobSheets.NONE.equals(js)) {
             mNoJobSheet = true;
         }
     }
@@ -366,8 +366,7 @@ public class UnixPrintJob implements CancelablePrintJob {
                  }
              }
 
-             if (customTray != null &&
-                 customTray instanceof CustomMediaTray) {
+             if (customTray != null) {
                  String choice = customTray.getChoiceName();
                  if (choice != null) {
                      mOptions += " InputSlot="+choice;

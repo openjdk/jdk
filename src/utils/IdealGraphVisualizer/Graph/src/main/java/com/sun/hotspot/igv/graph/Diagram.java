@@ -284,7 +284,7 @@ public class Diagram {
         System.out.println("Number of connections: " + connections.size());
 
         List<Figure> figuresSorted = new ArrayList<>(tmpFigures);
-        Collections.sort(figuresSorted, new Comparator<Figure>() {
+        figuresSorted.sort(new Comparator<Figure>() {
 
             @Override
             public int compare(Figure a, Figure b) {

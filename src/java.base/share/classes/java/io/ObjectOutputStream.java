@@ -32,6 +32,7 @@ import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -83,9 +84,10 @@ import sun.reflect.misc.ReflectUtil;
  *      oos.close();
  * </pre>
  *
- * <p>Classes that require special handling during the serialization and
- * deserialization process must implement special methods with these exact
- * signatures:
+ * <p>Serializable classes that require special handling during the
+ * serialization and deserialization process should implement methods
+ * with the following signatures:
+ *
  * <br>
  * <pre>
  * private void readObject(java.io.ObjectInputStream stream)
@@ -95,6 +97,12 @@ import sun.reflect.misc.ReflectUtil;
  * private void readObjectNoData()
  *     throws ObjectStreamException;
  * </pre>
+ *
+ * <p>The method name, modifiers, return type, and number and type of
+ * parameters must match exactly for the method to be used by
+ * serialization or deserialization. The methods should only be
+ * declared to throw checked exceptions consistent with these
+ * signatures.
  *
  * <p>The writeObject method is responsible for writing the state of the object
  * for its particular class so that the corresponding readObject method can
@@ -711,10 +719,7 @@ public class ObjectOutputStream
         if (buf == null) {
             throw new NullPointerException();
         }
-        int endoff = off + len;
-        if (off < 0 || len < 0 || endoff > buf.length || endoff < 0) {
-            throw new IndexOutOfBoundsException();
-        }
+        Objects.checkFromIndexSize(off, len, buf.length);
         bout.write(buf, off, len, false);
     }
 
