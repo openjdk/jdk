@@ -407,11 +407,11 @@ class BlockMerger: public BlockClosure {
     assert(sux_state->caller_state() == end_state->caller_state(), "caller not equal");
 #endif
 
-#ifdef ASSERT
+#ifdef __DO_DELAYED_VERIFICATION
     BlockList blocks_to_verify_later;
     blocks_to_verify_later.append(block);
     _hir->expand_with_neighborhood(blocks_to_verify_later);
-#endif // ASSERT
+#endif // __DO_DELAYED_VERIFICATION
 
     // find instruction before end & append first instruction of sux block
     Instruction* prev = end->prev();
@@ -422,7 +422,9 @@ class BlockMerger: public BlockClosure {
 
     // disconnect this block from all other blocks
     disconnect_from_graph(sux);
-    DEBUG_ONLY(blocks_to_verify_later.remove(sux)); // Sux is not part of graph anymore
+#ifdef __DO_DELAYED_VERIFICATION
+    blocks_to_verify_later.remove(sux); // Sux is not part of graph anymore
+#endif // __DO_DELAYED_VERIFICATION
     block->set_end(sux->end());
 
     // TODO Should this be done in set_end universally?
@@ -447,7 +449,9 @@ class BlockMerger: public BlockClosure {
                     _merge_count, block->block_id(), sux->block_id(), sux->state()->stack_size());
     }
 
-    DEBUG_ONLY(_hir->verify_local(blocks_to_verify_later));
+#ifdef __DO_DELAYED_VERIFICATION
+    _hir->verify_local(blocks_to_verify_later);
+#endif // __DO_DELAYED_VERIFICATION
 
     If* if_ = block->end()->as_If();
     if (if_) {
@@ -497,7 +501,9 @@ class BlockMerger: public BlockClosure {
                 tty->print_cr("%d. replaced If and IfOp at end of B%d with single If", _merge_count, block->block_id());
               }
 
-              DEBUG_ONLY(_hir->verify_local(blocks_to_verify_later));
+#ifdef __DO_DELAYED_VERIFICATION
+              _hir->verify_local(blocks_to_verify_later);
+#endif // __DO_DELAYED_VERIFICATION
             }
           }
         }
