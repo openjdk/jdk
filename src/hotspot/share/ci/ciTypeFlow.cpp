@@ -2202,10 +2202,10 @@ bool ciTypeFlow::can_trap(ciBytecodeStream& str) {
 // ciTypeFlow::clone_loop_heads
 //
 // Clone the loop heads
-bool ciTypeFlow::clone_loop_heads(Loop* lp, StateVector* temp_vector, JsrSet* temp_set) {
+bool ciTypeFlow::clone_loop_heads(StateVector* temp_vector, JsrSet* temp_set) {
   bool rslt = false;
   for (PreorderLoops iter(loop_tree_root()); !iter.done(); iter.next()) {
-    lp = iter.current();
+    Loop* lp = iter.current();
     Block* head = lp->head();
     if (lp == loop_tree_root() ||
         lp->is_irreducible() ||
@@ -2450,6 +2450,73 @@ void ciTypeFlow::PreorderLoops::next() {
   }
 }
 
+// If the tail is a branch to the head, retrieve how many times that path was taken from profiling
+static int profiled_count(ciMethod* m, ciTypeFlow::Loop* loop) {
+  ciMethodData* methodData = m->method_data();
+  if (!methodData->is_mature()) {
+    return 0;
+  }
+  ciTypeFlow::Block* tail = loop->tail();
+  if (tail->control() == -1) {
+    return 0;
+  }
+
+  ciProfileData* data = methodData->bci_to_data(tail->control());
+  assert(data != NULL, "some profile data expected at branch");
+
+  if (!data->is_JumpData()) {
+    return 0;
+  }
+
+  ciBytecodeStream iter(m);
+  iter.reset_to_bci(tail->control());
+
+  bool is_an_if = false;
+  switch (iter.next()) {
+    case Bytecodes::_ifeq:
+    case Bytecodes::_ifne:
+    case Bytecodes::_iflt:
+    case Bytecodes::_ifge:
+    case Bytecodes::_ifgt:
+    case Bytecodes::_ifle:
+    case Bytecodes::_if_icmpeq:
+    case Bytecodes::_if_icmpne:
+    case Bytecodes::_if_icmplt:
+    case Bytecodes::_if_icmpge:
+    case Bytecodes::_if_icmpgt:
+    case Bytecodes::_if_icmple:
+    case Bytecodes::_if_acmpeq:
+    case Bytecodes::_if_acmpne:
+    case Bytecodes::_ifnull:
+    case Bytecodes::_ifnonnull:
+      is_an_if = true;
+      break;
+    case Bytecodes::_goto:
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+
+  GrowableArray<ciTypeFlow::Block*>* succs = tail->successors();
+
+  if (!is_an_if) {
+    assert((iter.get_dest() == loop->head()->start()) == (succs->at(ciTypeFlow::GOTO_TARGET) == loop->head()), "branch should lead to loop head");
+    if (succs->at(ciTypeFlow::GOTO_TARGET) == loop->head()) {
+      return m->scale_count(data->as_JumpData()->taken());
+    }
+  } else {
+    assert((iter.get_dest() == loop->head()->start()) == (succs->at(ciTypeFlow::IF_TAKEN) == loop->head()), "bytecode and CFG not consistent");
+    assert((succs->at(ciTypeFlow::IF_NOT_TAKEN) == loop->head()) == (tail->limit() == loop->head()->start()), "bytecode and CFG not consistent");
+    if (succs->at(ciTypeFlow::IF_TAKEN) == loop->head()) {
+      return m->scale_count(data->as_JumpData()->taken());
+    } else if (succs->at(ciTypeFlow::IF_NOT_TAKEN) == loop->head()) {
+      return m->scale_count(data->as_BranchData()->not_taken());
+    }
+  }
+
+  return 0;
+}
+
 // ------------------------------------------------------------------
 // ciTypeFlow::Loop::sorted_merge
 //
@@ -2459,20 +2526,26 @@ void ciTypeFlow::PreorderLoops::next() {
 // Sort is (looking from leaf towards the root)
 //  descending on primary key: loop head's pre_order, and
 //  ascending  on secondary key: loop tail's pre_order.
-ciTypeFlow::Loop* ciTypeFlow::Loop::sorted_merge(Loop* lp) {
+ciTypeFlow::Loop* ciTypeFlow::Loop::sorted_merge(Loop* lp, ciMethod* method) {
   Loop* leaf = this;
   Loop* prev = NULL;
   Loop* current = leaf;
   while (lp != NULL) {
     int lp_pre_order = lp->head()->pre_order();
+    int lp_count = profiled_count(method, lp);
     // Find insertion point for "lp"
     while (current != NULL) {
       if (current == lp)
         return leaf; // Already in list
       if (current->head()->pre_order() < lp_pre_order)
         break;
-      if (current->head()->pre_order() == lp_pre_order &&
-          current->tail()->pre_order() > lp->tail()->pre_order()) {
+      int current_count = profiled_count(method, current);
+      // In the case of a shared head, make the most frequent head/tail (as reported by profiling) the inner loop
+      if (current->head() == lp->head() && current_count < lp_count) {
+        break;
+      } else if (current->head()->pre_order() == lp_pre_order &&
+                 (current->head() != lp->head() || current_count == lp_count) &&
+                 current->tail()->pre_order() > lp->tail()->pre_order()) {
         break;
       }
       prev = current;
@@ -2546,7 +2619,7 @@ void ciTypeFlow::build_loop_tree(Block* blk) {
     }
 
     // Merge loop tree branch for all successors.
-    innermost = innermost == NULL ? lp : innermost->sorted_merge(lp);
+    innermost = innermost == NULL ? lp : innermost->sorted_merge(lp, method());
 
   } // end loop
 
@@ -2732,7 +2805,7 @@ void ciTypeFlow::flow_types() {
       env()->comp_level() >= CompLevel_full_optimization) {
       // Loop optimizations are not performed on Tier1 compiles.
 
-    bool changed = clone_loop_heads(loop_tree_root(), temp_vector, temp_set);
+    bool changed = clone_loop_heads(temp_vector, temp_set);
 
     // If some loop heads were cloned, recompute postorder and loop tree
     if (changed) {

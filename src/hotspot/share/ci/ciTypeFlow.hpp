@@ -746,7 +746,7 @@ public:
 
     // Merge the branch lp into this branch, sorting on the loop head
     // pre_orders. Returns the new branch.
-    Loop* sorted_merge(Loop* lp);
+    Loop* sorted_merge(Loop* lp, ciMethod* method);
 
     // Mark non-single entry to loop
     void set_irreducible(Block* entry) {
@@ -795,7 +795,7 @@ private:
   bool can_trap(ciBytecodeStream& str);
 
   // Clone the loop heads. Returns true if any cloning occurred.
-  bool clone_loop_heads(Loop* lp, StateVector* temp_vector, JsrSet* temp_set);
+  bool clone_loop_heads(StateVector* temp_vector, JsrSet* temp_set);
 
   // Clone lp's head and replace tail's successors with clone.
   Block* clone_loop_head(Loop* lp, StateVector* temp_vector, JsrSet* temp_set);
