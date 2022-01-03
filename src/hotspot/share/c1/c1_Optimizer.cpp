@@ -520,7 +520,6 @@ class BlockMerger: public BlockClosure {
 #undef __DO_DELAYED_VERIFICATION
 #endif // ASSERT
 
-
 void Optimizer::eliminate_blocks() {
   // merge blocks if possible
   BlockMerger bm(ir());
