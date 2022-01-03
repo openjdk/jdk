@@ -730,7 +730,13 @@ public abstract class Curve {
     }
 
     public static int orderof(double x1, double x2) {
-      return Double.compare(x1, x2);
+        if (x1 < x2) {
+             return -1;
+         }
+         if (x1 > x2) {
+             return 1;
+         }
+         return 0;
     }
 
     public static long signeddiffbits(double y1, double y2) {

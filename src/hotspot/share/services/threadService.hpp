@@ -247,7 +247,8 @@ public:
   ThreadStackTrace* get_stack_trace()     { return _stack_trace; }
   ThreadConcurrentLocks* get_concurrent_locks()     { return _concurrent_locks; }
 
-  void        dump_stack_at_safepoint(int max_depth, bool with_locked_monitors);
+  void        dump_stack_at_safepoint(int max_depth, bool with_locked_monitors,
+                                      ObjectMonitorsHashtable* table);
   void        set_concurrent_locks(ThreadConcurrentLocks* l) { _concurrent_locks = l; }
   void        metadata_do(void f(Metadata*));
 };
@@ -270,7 +271,7 @@ class ThreadStackTrace : public CHeapObj<mtInternal> {
   int             get_stack_depth()     { return _depth; }
 
   void            add_stack_frame(javaVFrame* jvf);
-  void            dump_stack_at_safepoint(int max_depth);
+  void            dump_stack_at_safepoint(int max_depth, ObjectMonitorsHashtable* table);
   Handle          allocate_fill_stack_trace_element_array(TRAPS);
   void            metadata_do(void f(Metadata*));
   GrowableArray<OopHandle>* jni_locked_monitors() { return _jni_locked_monitors; }
