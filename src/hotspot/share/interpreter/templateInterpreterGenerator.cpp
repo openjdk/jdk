@@ -201,7 +201,9 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(java_lang_math_fmaF )
   method_entry(java_lang_math_fmaD )
   method_entry(java_lang_ref_reference_get)
-
+#ifdef AMD64
+  method_entry(java_lang_Thread_currentThread)
+#endif
   AbstractInterpreter::initialize_method_handle_entries();
 
   // all native method kinds (must be one contiguous block)
@@ -431,6 +433,11 @@ address TemplateInterpreterGenerator::generate_method_entry(
                                            : // fall thru
   case Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer
                                            : entry_point = generate_CRC32C_updateBytes_entry(kind); break;
+#ifdef AMD64
+  case Interpreter::java_lang_Thread_currentThread
+                                           : entry_point = generate_currentThread(); break;
+#endif
+
 #ifdef IA32
   // On x86_32 platforms, a special entry is generated for the following four methods.
   // On other platforms the normal entry is used to enter these methods.

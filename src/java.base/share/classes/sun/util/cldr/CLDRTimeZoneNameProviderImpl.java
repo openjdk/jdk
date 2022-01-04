@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,8 +151,8 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
 
         // Check parent locales first
         if (!exists(names, index)) {
-            CLDRLocaleProviderAdapter clpa = (CLDRLocaleProviderAdapter)LocaleProviderAdapter.forType(Type.CLDR);
-            var cands = clpa.getCandidateLocales("", locale);
+            var cands = ((CLDRLocaleProviderAdapter)LocaleProviderAdapter.forType(Type.CLDR))
+                    .getCandidateLocales("", locale);
             for (int i = 1; i < cands.size() ; i++) {
                 String[] parentNames = super.getDisplayNameArray(id, cands.get(i));
                 if (parentNames != null && !parentNames[index].isEmpty()) {
@@ -160,11 +160,6 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
                     return;
                 }
             }
-        }
-
-        // Region Fallback
-        if (regionFormatFallback(names, index, locale)) {
-            return;
         }
 
         // Type Fallback
@@ -183,6 +178,11 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
                 names[index] = compatNames[index];
                 return;
             }
+        }
+
+        // Region Fallback
+        if (regionFormatFallback(names, index, locale)) {
+            return;
         }
 
         // last resort
@@ -230,6 +230,11 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
     }
 
     private boolean regionFormatFallback(String[] names, int index, Locale l) {
+        if (index % 2 == 0) {
+            // ignore short names
+            return false;
+        }
+
         String id = names[INDEX_TZID];
         LocaleResources lr = LocaleProviderAdapter.forType(Type.CLDR).getLocaleResources(l);
         ResourceBundle fd = lr.getJavaTimeFormatData();

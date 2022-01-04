@@ -31,7 +31,7 @@
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/cdsProtectionDomain.hpp"
-#include "cds/dumpTimeClassInfo.hpp"
+#include "cds/dumpTimeClassInfo.inline.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "cds/runTimeClassInfo.hpp"
 #include "classfile/classFileStream.hpp"
@@ -185,6 +185,11 @@ InstanceKlass* SystemDictionaryShared::acquire_class_for_current_thread(
 void SystemDictionaryShared::start_dumping() {
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
   _dump_in_progress = true;
+}
+
+void SystemDictionaryShared::stop_dumping() {
+  assert_lock_strong(DumpTimeTable_lock);
+  _dump_in_progress = false;
 }
 
 DumpTimeClassInfo* SystemDictionaryShared::find_or_allocate_info_for(InstanceKlass* k) {
@@ -1528,6 +1533,7 @@ void SystemDictionaryShared::print_table_statistics(outputStream* st) {
 }
 
 bool SystemDictionaryShared::is_dumptime_table_empty() {
+  assert_lock_strong(DumpTimeTable_lock);
   if (_dumptime_table == NULL) {
     return true;
   }
