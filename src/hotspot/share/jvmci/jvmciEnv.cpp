@@ -281,13 +281,13 @@ void JVMCIEnv::describe_pending_exception(bool clear) {
 // Shared code for translating an exception from HotSpot to libjvmci or vice versa.
 class ExceptionTranslation: public StackObj {
  protected:
-  JVMCIEnv*  _from_env; // can be nullptr
-  JVMCIEnv*  _to_env;   // never nullptr
+  JVMCIEnv*  _from_env; // Source of translation. Can be nullptr.
+  JVMCIEnv*  _to_env;   // Destination of translation. Never nullptr.
 
   ExceptionTranslation(JVMCIEnv* from_env, JVMCIEnv* to_env) : _from_env(from_env), _to_env(to_env) {}
 
   // Encodes the exception in `_from_env` into `buffer`.
-  // Where N is the number of bytes needed for the encoding, returns N if N >= `buffer_size`
+  // Where N is the number of bytes needed for the encoding, returns N if N <= `buffer_size`
   // and the encoding was written to `buffer` otherwise returns -N.
   virtual int encode(JavaThread* THREAD, Klass* runtimeKlass, jlong buffer, int buffer_size) = 0;
 
