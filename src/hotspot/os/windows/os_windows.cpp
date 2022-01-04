@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,6 +101,8 @@
 #include <psapi.h>
 #include <mmsystem.h>
 #include <winsock2.h>
+
+PRAGMA_PERMIT_FORBIDDEN_C_FUNCTION(close); // prevents compiler warnings for all functions
 
 // for timer info max values which include all bits
 #define ALL_64_BITS CONST64(-1)

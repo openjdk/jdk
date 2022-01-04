@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,7 +239,7 @@ static int SCANF_ARGS(2, 0) vread_statdata(const char* procfile, _SCANFMT_ const
   int n;
   char buf[2048];
 
-  if ((f = fopen(procfile, "r")) == NULL) {
+  if ((f = os::fopen(procfile, "r")) == NULL) {
     return -1;
   }
 
@@ -615,7 +615,7 @@ bool SystemProcessInterface::SystemProcesses::ProcessIterator::is_dir(const char
   struct stat mystat;
   int ret_val = 0;
 
-  ret_val = stat(name, &mystat);
+  ret_val = os::stat(name, &mystat);
   if (ret_val < 0) {
     return false;
   }
@@ -662,7 +662,7 @@ void SystemProcessInterface::SystemProcesses::ProcessIterator::get_exe_name() {
 
   jio_snprintf(buffer, PATH_MAX, "/proc/%s/stat", _entry->d_name);
   buffer[PATH_MAX - 1] = '\0';
-  if ((fp = fopen(buffer, "r")) != NULL) {
+  if ((fp = os::fopen(buffer, "r")) != NULL) {
     if (fgets(buffer, PATH_MAX, fp) != NULL) {
       char* start, *end;
       // exe-name is between the first pair of ( and )
@@ -690,7 +690,7 @@ char* SystemProcessInterface::SystemProcesses::ProcessIterator::get_cmdline() {
 
   jio_snprintf(buffer, PATH_MAX, "/proc/%s/cmdline", _entry->d_name);
   buffer[PATH_MAX - 1] = '\0';
-  if ((fp = fopen(buffer, "r")) != NULL) {
+  if ((fp = os::fopen(buffer, "r")) != NULL) {
     size_t size = 0;
     char   dummy;
 

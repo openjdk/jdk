@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,7 +166,7 @@ extern "C" {
     if (s != -1) {
       BsdAttachListener::set_listener(-1);
       ::shutdown(s, SHUT_RDWR);
-      ::close(s);
+      os::close(s);
     }
     if (BsdAttachListener::has_path()) {
       ::unlink(BsdAttachListener::path());
@@ -198,7 +198,7 @@ int BsdAttachListener::init() {
   }
 
   // create the listener socket
-  listener = ::socket(PF_UNIX, SOCK_STREAM, 0);
+  listener = os::socket(PF_UNIX, SOCK_STREAM, 0);
   if (listener == -1) {
     return -1;
   }
@@ -211,7 +211,7 @@ int BsdAttachListener::init() {
   ::unlink(initial_path);
   int res = ::bind(listener, (struct sockaddr*)&addr, sizeof(addr));
   if (res == -1) {
-    ::close(listener);
+    os::close(listener);
     return -1;
   }
 
@@ -230,7 +230,7 @@ int BsdAttachListener::init() {
     }
   }
   if (res == -1) {
-    ::close(listener);
+    os::close(listener);
     ::unlink(initial_path);
     return -1;
   }
@@ -360,21 +360,21 @@ BsdAttachOperation* BsdAttachListener::dequeue() {
     gid_t pgid;
     if (::getpeereid(s, &puid, &pgid) != 0) {
       log_debug(attach)("Failed to get peer id");
-      ::close(s);
+      os::close(s);
       continue;
     }
 
     if (!os::Posix::matches_effective_uid_and_gid_or_root(puid, pgid)) {
       log_debug(attach)("euid/egid check failed (%d/%d vs %d/%d)", puid, pgid,
               geteuid(), getegid());
-      ::close(s);
+      os::close(s);
       continue;
     }
 
     // peer credential look okay so we read the request
     BsdAttachOperation* op = read_request(s);
     if (op == NULL) {
-      ::close(s);
+      os::close(s);
       continue;
     } else {
       return op;
@@ -421,7 +421,7 @@ void BsdAttachOperation::complete(jint result, bufferedStream* st) {
   }
 
   // done
-  ::close(this->socket());
+  os::close(this->socket());
 
   delete this;
 }
@@ -473,7 +473,7 @@ int AttachListener::pd_init() {
 bool AttachListener::check_socket_file() {
   int ret;
   struct stat st;
-  ret = stat(BsdAttachListener::path(), &st);
+  ret = os::stat(BsdAttachListener::path(), &st);
   if (ret == -1) { // need to restart attach listener.
     log_debug(attach)("Socket file %s does not exist - Restart Attach Listener",
                       BsdAttachListener::path());

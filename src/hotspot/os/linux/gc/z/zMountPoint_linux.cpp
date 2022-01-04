@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@
 
 // Mount information, see proc(5) for more details.
 #define PROC_SELF_MOUNTINFO        "/proc/self/mountinfo"
+
+PRAGMA_PERMIT_FORBIDDEN_C_FUNCTION(fopen);
 
 ZMountPoint::ZMountPoint(const char* filesystem, const char** preferred_mountpoints) {
   if (AllocateHeapAt != NULL) {

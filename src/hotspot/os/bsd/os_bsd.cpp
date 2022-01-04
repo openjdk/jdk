@@ -107,6 +107,8 @@
   #define MAP_ANONYMOUS MAP_ANON
 #endif
 
+PRAGMA_PERMIT_FORBIDDEN_C_FUNCTION(close); // prevents compiler warnings for all functions
+
 #define MAX_PATH    (2 * K)
 
 // for timer info max values which include all bits

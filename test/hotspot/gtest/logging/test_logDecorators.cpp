@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 #include "jvm.h"
 #include "logging/logDecorators.hpp"
 #include "unittest.hpp"
+
+PRAGMA_PERMIT_FORBIDDEN_C_FUNCTION(strdup);
 
 static LogDecorators::Decorator decorator_array[] = {
 #define DECORATOR(name, abbr) LogDecorators::name##_decorator,

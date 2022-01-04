@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,6 +149,8 @@ enum CoredumpFilterBit {
   LARGEPAGES_BIT = 1 << 6,
   DAX_SHARED_BIT = 1 << 8
 };
+
+PRAGMA_PERMIT_FORBIDDEN_C_FUNCTION(closedir);  // prevents compiler warning for all functions
 
 ////////////////////////////////////////////////////////////////////////////////
 // global variables

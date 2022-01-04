@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -318,7 +318,7 @@ void Abstract_VM_Version::insert_features_names(char* buf, size_t buflen, const 
 
 bool Abstract_VM_Version::print_matching_lines_from_file(const char* filename, outputStream* st, const char* keywords_to_match[]) {
   char line[500];
-  FILE* fp = fopen(filename, "r");
+  FILE* fp = os::fopen(filename, "r");
   if (fp == NULL) {
     return false;
   }

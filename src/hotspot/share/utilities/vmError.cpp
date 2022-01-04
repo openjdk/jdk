@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1654,7 +1654,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     _current_step_info = "";
 
     if (fd_log > 3) {
-      close(fd_log);
+      os::close(fd_log);
       fd_log = -1;
     }
 

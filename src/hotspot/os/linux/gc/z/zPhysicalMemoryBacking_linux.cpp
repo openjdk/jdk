@@ -130,7 +130,7 @@ ZPhysicalMemoryBacking::ZPhysicalMemoryBacking(size_t max_capacity) :
   }
 
   // Truncate backing file
-  while (ftruncate(_fd, max_capacity) == -1) {
+  while (os::ftruncate(_fd, max_capacity) == -1) {
     if (errno != EINTR) {
       ZErrno err;
       log_error_p(gc)("Failed to truncate backing file (%s)", err.to_string());
@@ -329,7 +329,7 @@ void ZPhysicalMemoryBacking::warn_available_space(size_t max_capacity) const {
 
 void ZPhysicalMemoryBacking::warn_max_map_count(size_t max_capacity) const {
   const char* const filename = ZFILENAME_PROC_MAX_MAP_COUNT;
-  FILE* const file = fopen(filename, "r");
+  FILE* const file = os::fopen(filename, "r");
   if (file == NULL) {
     // Failed to open file, skip check
     log_debug_p(gc, init)("Failed to open %s", filename);
