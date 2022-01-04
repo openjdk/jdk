@@ -27,6 +27,7 @@
  * @summary Enhance macro logic optimization for masked logic operations.
  * @modules jdk.incubator.vector
  * @requires vm.compiler2.enabled
+ * @requires os.simpleArch == "x64"
  * @library /test/lib /
  * @run driver compiler.vectorapi.TestMaskedMacroLogicVector
  */

@@ -9735,9 +9735,7 @@ void Assembler::evpternlogd(XMMRegister dst, int imm8, KRegister mask, XMMRegist
     attributes.reset_is_clear_context();
   }
   int encode = vex_prefix_and_encode(dst->encoding(), src2->encoding(), src3->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
-  emit_int8(0x25);
-  emit_int8((unsigned char)(0xC0 | encode));
-  emit_int8(imm8);
+  emit_int24(0x25, (unsigned char)(0xC0 | encode), imm8);
 }
 
 void Assembler::evpternlogd(XMMRegister dst, int imm8, KRegister mask, XMMRegister src2, Address src3, bool merge, int vector_len) {
@@ -9768,9 +9766,7 @@ void Assembler::evpternlogq(XMMRegister dst, int imm8, KRegister mask, XMMRegist
     attributes.reset_is_clear_context();
   }
   int encode = vex_prefix_and_encode(dst->encoding(), src2->encoding(), src3->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
-  emit_int8(0x25);
-  emit_int8((unsigned char)(0xC0 | encode));
-  emit_int8(imm8);
+  emit_int24(0x25, (unsigned char)(0xC0 | encode), imm8);
 }
 
 void Assembler::evpternlogq(XMMRegister dst, int imm8, KRegister mask, XMMRegister src2, Address src3, bool merge, int vector_len) {
