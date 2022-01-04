@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -2543,12 +2543,12 @@ static inline GrowableArray<jvalue>* vreplicate_imm(BasicType bt, T con, int len
   GrowableArray<jvalue>* val = new GrowableArray<jvalue>(len);
   jvalue ele;
   switch (bt) {
-    case T_BYTE:   ele.b = (jbyte)con;  break;
-    case T_SHORT:  ele.s = (jshort)con; break;
-    case T_INT:    ele.i = con;         break;
-    case T_LONG:   ele.j = con;         break;
-    case T_FLOAT:  ele.f = con;         break;
-    case T_DOUBLE: ele.d = con;         break;
+    case T_BYTE:   ele.b = con; break;
+    case T_SHORT:  ele.s = con; break;
+    case T_INT:    ele.i = con; break;
+    case T_LONG:   ele.j = con; break;
+    case T_FLOAT:  ele.f = con; break;
+    case T_DOUBLE: ele.d = con; break;
     default: ShouldNotReachHere();
   }
   for (int i = 0; i < len; i++) {
