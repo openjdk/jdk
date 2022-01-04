@@ -52,6 +52,8 @@ module jdk.jlink {
     requires jdk.internal.opt;
     requires jdk.jdeps;
 
+    exports jdk.tools.jlink.plugin to jdk.jfr;
+
     uses jdk.tools.jlink.plugin.Plugin;
 
     provides java.util.spi.ToolProvider with
@@ -78,5 +80,4 @@ module jdk.jlink {
         jdk.tools.jlink.internal.plugins.VendorVMBugURLPlugin,
         jdk.tools.jlink.internal.plugins.VendorVersionPlugin,
         jdk.tools.jlink.internal.plugins.CDSPlugin;
-
 }

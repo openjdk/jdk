@@ -30,8 +30,15 @@
  * @since 9
  */
 module jdk.jfr {
+
+    requires static jdk.jlink;
+
     exports jdk.jfr;
     exports jdk.jfr.consumer;
+
+    uses jdk.tools.jlink.plugin.Plugin;
+
+    provides jdk.tools.jlink.plugin.Plugin with jdk.jfr.internal.startup.ArchivePlugin;
 
     exports jdk.jfr.internal.management to jdk.management.jfr;
 }

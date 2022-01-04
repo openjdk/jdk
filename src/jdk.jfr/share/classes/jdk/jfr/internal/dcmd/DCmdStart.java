@@ -50,7 +50,7 @@ import jdk.jfr.internal.Type;
 import jdk.jfr.internal.jfc.JFC;
 import jdk.jfr.internal.jfc.model.JFCModel;
 import jdk.jfr.internal.jfc.model.XmlInput;
-
+import jdk.jfr.internal.startup.Archive;
 /**
  * JFR.start
  *
@@ -96,12 +96,15 @@ final class DCmdStart extends AbstractDCmd {
         if (settings.length == 1 && settings[0].length() == 0) {
             throw new DCmdException("No settings specified. Use settings=none to start without any settings");
         }
-
-        LinkedHashMap<String, String> s;
-        if (parser.hasExtendedOptions()) {
-           s = configureExtended(settings, parser);
+        Map<String, String> s;
+        if (list == null) {
+            s = Archive.DEFAULT_SETTINGS;
         } else {
-           s = configureStandard(settings);
+            if (parser.hasExtendedOptions()) {
+                s = configureExtended(settings, parser);
+            } else {
+                s = configureStandard(settings);
+            }
         }
 
         OldObjectSample.updateSettingPathToGcRoots(s, pathToGcRoots);
