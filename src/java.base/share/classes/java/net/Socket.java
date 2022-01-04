@@ -918,7 +918,6 @@ public class Socket implements java.io.Closeable {
      * @see SecurityManager#checkConnect
      * @since 1.4
      */
-
     public SocketAddress getLocalSocketAddress() {
         if (!isBound())
             return null;
@@ -1036,7 +1035,6 @@ public class Socket implements java.io.Closeable {
         public int available() throws IOException {
             return in.available();
         }
-
         @Override
         public void close() throws IOException {
             parent.close();
