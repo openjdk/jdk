@@ -32,19 +32,31 @@
 #include "gc/z/zWorkers.hpp"
 #include "runtime/java.hpp"
 
+static const char* workers_name(ZGenerationId id) {
+  return (id == ZGenerationId::young) ? "ZWorkerYoung" : "ZWorkerOld";
+}
+
+static const char* generation_name(ZGenerationId id) {
+  return (id == ZGenerationId::young) ? "Young" : "Old";
+}
+
+static uint max_workers() {
+  return UseDynamicNumberOfGCThreads ? ConcGCThreads : MAX2(ConcGCThreads, ParallelGCThreads);
+}
+
 ZWorkers::ZWorkers(ZGenerationId id, ZStatWorkers* stats) :
-    _workers(id == ZGenerationId::young ? "ZWorkerYoung" : "ZWorkerOld",
-             UseDynamicNumberOfGCThreads ? ConcGCThreads : MAX2(ConcGCThreads, ParallelGCThreads)),
-    _generation_name(id == ZGenerationId::young ? "young" : "old"),
-    _thread_resize_lock(),
-    _resize_workers_request(),
-    _stats(stats),
-    _is_active(false) {
+    _workers(workers_name(id),
+             max_workers()),
+    _generation_name(generation_name(id)),
+    _resize_lock(),
+    _requested_nworkers(0),
+    _is_active(false),
+    _stats(stats) {
 
   if (UseDynamicNumberOfGCThreads) {
-    log_info_p(gc, init)("GC Workers: %u (dynamic)", _workers.max_workers());
+    log_info_p(gc, init)("GC Workers for %s Generation: %u (dynamic)", _generation_name, _workers.max_workers());
   } else {
-    log_info_p(gc, init)("GC Workers: %u/%u (static)", ConcGCThreads, _workers.max_workers());
+    log_info_p(gc, init)("GC Workers for %s Generation: %u/%u (static)", _generation_name, ConcGCThreads, _workers.max_workers());
   }
 
   // Initialize worker threads
@@ -60,49 +72,63 @@ uint ZWorkers::active_workers() const {
 }
 
 void ZWorkers::set_active_workers(uint nworkers) {
-  log_info(gc, task)("Using %u workers for %s generation", nworkers, _generation_name);
-  ZLocker<ZLock> locker(&_thread_resize_lock);
+  log_info(gc, task)("Using %u Workers for %s Generation", nworkers, _generation_name);
+  ZLocker<ZLock> locker(&_resize_lock);
   _workers.set_active_workers(nworkers);
 }
 
 void ZWorkers::set_active() {
-  ZLocker<ZLock> locker(&_thread_resize_lock);
+  ZLocker<ZLock> locker(&_resize_lock);
   _is_active = true;
-  _resize_workers_request = 0;
+  _requested_nworkers = 0;
 }
 
 void ZWorkers::set_inactive() {
-  ZLocker<ZLock> locker(&_thread_resize_lock);
+  ZLocker<ZLock> locker(&_resize_lock);
   _is_active = false;
 }
 
 void ZWorkers::run(ZTask* task) {
-  log_debug(gc, task)("Executing Task: %s, Active Workers: %u", task->name(), active_workers());
+  log_debug(gc, task)("Executing %s using %s with %u workers", task->name(), _workers.name(), active_workers());
 
   {
-    ZLocker<ZLock> locker(&_thread_resize_lock);
+    ZLocker<ZLock> locker(&_resize_lock);
     _stats->at_start(active_workers());
   }
+
   _workers.run_task(task->worker_task());
+
   {
-    ZLocker<ZLock> locker(&_thread_resize_lock);
+    ZLocker<ZLock> locker(&_resize_lock);
     _stats->at_end();
   }
 }
 
 void ZWorkers::run(ZRestartableTask* task) {
-  do {
+  for (;;) {
+    // Run task
     run(static_cast<ZTask*>(task));
-  } while (try_resize_workers(task, this));
+
+    ZLocker<ZLock> locker(&_resize_lock);
+    if (_requested_nworkers == 0) {
+      // Task completed
+      return;
+    }
+
+    // Restart task with requested number of active workers
+    _workers.set_active_workers(_requested_nworkers);
+    task->resize_workers(active_workers());
+    _requested_nworkers = 0;
+  }
 }
 
 void ZWorkers::run_all(ZTask* task) {
-  // Save number of active workers
+  // Get and set number of active workers
   const uint prev_active_workers = _workers.active_workers();
+  _workers.set_active_workers(_workers.max_workers());
 
   // Execute task using all workers
-  _workers.set_active_workers(_workers.max_workers());
-  log_debug(gc, task)("Executing Task: %s, Active Workers: %u", task->name(), active_workers());
+  log_debug(gc, task)("Executing %s using %s with %u workers", task->name(), _workers.name(), active_workers());
   _workers.run_task(task->worker_task());
 
   // Restore number of active workers
@@ -114,7 +140,7 @@ void ZWorkers::threads_do(ThreadClosure* tc) const {
 }
 
 ZWorkerResizeStats ZWorkers::resize_stats(ZStatCycle* stat_cycle) {
-  ZLocker<ZLock> locker(&_thread_resize_lock);
+  ZLocker<ZLock> locker(&_resize_lock);
 
   if (!_is_active) {
     // If the workers are not active, it isn't safe to read stats
@@ -127,14 +153,10 @@ ZWorkerResizeStats ZWorkers::resize_stats(ZStatCycle* stat_cycle) {
     };
   }
 
-  double parallel_gc_duration_passed = _stats->accumulated_duration();
-  double parallel_gc_time_passed = _stats->accumulated_time();
-  double duration_since_start = stat_cycle->duration_since_start();
-  double gc_duration_passed = duration_since_start;
-
-  double serial_gc_time_passed = gc_duration_passed - parallel_gc_duration_passed;
-
-  uint active_nworkers = active_workers();
+  const double parallel_gc_duration_passed = _stats->accumulated_duration();
+  const double parallel_gc_time_passed = _stats->accumulated_time();
+  const double serial_gc_time_passed = stat_cycle->duration_since_start() - parallel_gc_duration_passed;
+  const uint active_nworkers = active_workers();
 
   return {
     _is_active: true,
@@ -145,27 +167,15 @@ ZWorkerResizeStats ZWorkers::resize_stats(ZStatCycle* stat_cycle) {
 }
 
 void ZWorkers::request_resize_workers(uint nworkers) {
-  ZLocker<ZLock> locker(&_thread_resize_lock);
-  if (_resize_workers_request == nworkers) {
+  ZLocker<ZLock> locker(&_resize_lock);
+
+  if (_requested_nworkers == nworkers) {
     // Already requested
     return;
   }
-  log_info(gc, director)("Request worker resize for %s generation to: %d",
-                         _generation_name, nworkers);
-  _resize_workers_request = nworkers;
-}
 
-bool ZWorkers::try_resize_workers(ZRestartableTask* task, ZWorkers* workers) {
-  ZLocker<ZLock> locker(&_thread_resize_lock);
-  uint requested_nworkers = _resize_workers_request;
-  _resize_workers_request = 0;
-  if (requested_nworkers != 0) {
-    // The task has gotten a request to restart with a different thread count
-    log_info(gc, task)("Resizing to %u workers for %s generation",
-                       requested_nworkers, _generation_name);
-    _workers.set_active_workers(requested_nworkers);
-    task->resize_workers(active_workers());
-    return true;
-  }
-  return false;
+  log_info(gc, task)("Adjusting Workers for %s Generation: %u -> %u",
+                     _generation_name, _workers.active_workers(), nworkers);
+
+  _requested_nworkers = nworkers;
 }

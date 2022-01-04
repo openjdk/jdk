@@ -45,11 +45,11 @@ struct ZWorkerResizeStats {
 class ZWorkers {
 private:
   WorkerThreads       _workers;
-  const char*         _generation_name;
-  ZLock               _thread_resize_lock;
-  volatile uint       _resize_workers_request;
-  ZStatWorkers* const _stats;
+  const char* const   _generation_name;
+  ZLock               _resize_lock;
+  volatile uint       _requested_nworkers;
   bool                _is_active;
+  ZStatWorkers* const _stats;
 
 public:
   ZWorkers(ZGenerationId id, ZStatWorkers* stats);
@@ -69,7 +69,6 @@ public:
   ZWorkerResizeStats resize_stats(ZStatCycle* stat_cycle);
   void request_resize_workers(uint nworkers);
 
-  bool try_resize_workers(ZRestartableTask* task, ZWorkers* workers);
   bool should_worker_resize();
 };
 
