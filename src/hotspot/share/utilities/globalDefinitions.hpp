@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -650,8 +650,8 @@ struct jlong_accessor {
 
   jlong_accessor() = default;
   jlong_accessor(jlong j) {
-    static_assert(sizeof(this->words) == sizeof(jlong), "");
-    memcpy(&(words), &j, sizeof(jlong));
+    static_assert(sizeof(words) == sizeof(jlong), "");
+    memcpy(&words, &j, sizeof(jlong));
   }
   jlong long_value() const {
     return bit_cast<jlong>(words);
