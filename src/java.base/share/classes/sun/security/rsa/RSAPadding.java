@@ -270,7 +270,7 @@ public final class RSAPadding {
      */
     public byte[] unpad(byte[] padded) throws BadPaddingException {
         if (padded.length != paddedSize) {
-            throw new BadPaddingException("Decryption error." +
+            throw new BadPaddingException("Decryption error. " +
                 "The padded array length (" + padded.length +
                 ") is not the specified padded size (" + paddedSize + ")");
         }
