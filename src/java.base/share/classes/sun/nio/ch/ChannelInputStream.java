@@ -50,9 +50,12 @@ class ChannelInputStream extends InputStream {
 
     private final ReadableByteChannel ch;
     private ByteBuffer bb;
-    private byte[] bs;    // cached byte array
+    private byte[] bs;       // Invoker's previous array
     private byte[] b1;
 
+    /**
+     * Initialize a ChannelInputStream that reads from the given channel.
+     */
     ChannelInputStream(ReadableByteChannel ch) {
         this.ch = ch;
     }
@@ -260,17 +263,17 @@ class ChannelInputStream extends InputStream {
      * If the writeable byte channel is a selectable channel then it must be in
      * blocking mode.
      */
-    private static long transfer(FileChannel src, WritableByteChannel target)
+    private static long transfer(FileChannel fc, WritableByteChannel target)
         throws IOException
     {
-        long initialPos = src.position();
+        long initialPos = fc.position();
         long pos = initialPos;
         try {
-            while (pos < src.size()) {
-                pos += src.transferTo(pos, Long.MAX_VALUE, target);
+            while (pos < fc.size()) {
+                pos += fc.transferTo(pos, Long.MAX_VALUE, target);
             }
         } finally {
-            src.position(pos);
+            fc.position(pos);
         }
         return pos - initialPos;
     }

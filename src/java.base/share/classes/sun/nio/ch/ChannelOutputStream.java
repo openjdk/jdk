@@ -42,11 +42,11 @@ import java.util.Objects;
 class ChannelOutputStream extends OutputStream {
     private final WritableByteChannel ch;
     private ByteBuffer bb;
-    private byte[] bs;       // cached byte array
+    private byte[] bs;       // Invoker's previous array
     private byte[] b1;
 
     /**
-     * @param ch The channel wrapped by this stream.
+     * Initialize a ChannelOutputStream that writes to the given channel.
      */
     ChannelOutputStream(WritableByteChannel ch) {
         this.ch = ch;

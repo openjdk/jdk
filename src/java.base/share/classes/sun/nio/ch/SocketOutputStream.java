@@ -33,10 +33,16 @@ import java.io.OutputStream;
 class SocketOutputStream extends OutputStream {
     private final SocketChannelImpl sc;
 
+    /**
+     * Initialize a SocketOutputStream that writes to the given socket channel.
+     */
     SocketOutputStream(SocketChannelImpl sc) {
         this.sc = sc;
     }
 
+    /**
+     * Returns the socket channel.
+     */
     SocketChannelImpl channel() {
         return sc;
     }

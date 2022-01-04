@@ -36,11 +36,19 @@ class SocketInputStream extends InputStream {
     private final SocketChannelImpl sc;
     private final IntSupplier timeoutSupplier;
 
+    /**
+     * Initialize a SocketInputStream that reads from the given socket channel.
+     * @param sc the socket channel
+     * @param timeoutSupplier supplies the read timeout, in milliseconds
+     */
     SocketInputStream(SocketChannelImpl sc, IntSupplier timeoutSupplier) {
         this.sc = sc;
         this.timeoutSupplier = timeoutSupplier;
     }
 
+    /**
+     * Initialize a SocketInputStream that reads from the given socket channel.
+     */
     SocketInputStream(SocketChannelImpl sc) {
         this(sc, () -> 0);
     }

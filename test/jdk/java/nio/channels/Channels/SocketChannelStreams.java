@@ -434,7 +434,7 @@ public class SocketChannelStreams {
     private void write(SocketChannel sc, int b) throws IOException {
         sc.socket().getOutputStream().write(b);
     }
-    
+
     /**
      * Writes the given data to the socket channel after a delay.
      */
