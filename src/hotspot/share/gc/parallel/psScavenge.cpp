@@ -70,7 +70,6 @@
 #include "services/memoryService.hpp"
 #include "utilities/stack.inline.hpp"
 
-HeapWord*                     PSScavenge::_to_space_top_before_gc = NULL;
 SpanSubjectToDiscoveryClosure PSScavenge::_span_based_discoverer;
 ReferenceProcessor*           PSScavenge::_ref_processor = NULL;
 PSCardTable*                  PSScavenge::_card_table = NULL;
@@ -442,8 +441,6 @@ bool PSScavenge::invoke_no_policy() {
     assert(young_gen->to_space()->is_empty(),
            "Attempt to scavenge with live objects in to_space");
     young_gen->to_space()->clear(SpaceDecorator::Mangle);
-
-    save_to_space_top_before_gc();
 
 #if COMPILER2_OR_JVMCI
     DerivedPointerTable::clear();
