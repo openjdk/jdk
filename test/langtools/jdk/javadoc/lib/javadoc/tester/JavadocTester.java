@@ -58,6 +58,7 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import javax.tools.StandardJavaFileManager;
 
 
 /**
@@ -245,6 +246,7 @@ public abstract class JavadocTester {
     private boolean automaticCheckLinks = true;
     private boolean automaticCheckUniqueOUT = true;
     private boolean useStandardStreams = false;
+    private StandardJavaFileManager fileManager = null;
 
     /** The current subtest number. Incremented when checking(...) is called. */
     private int numTestsRun = 0;
@@ -371,9 +373,17 @@ public abstract class JavadocTester {
         StreamOutput sysErr = new StreamOutput(System.err, System::setErr);
 
         try {
-            exitCode = useStandardStreams
-                    ? jdk.javadoc.internal.tool.Main.execute(args)              // use sysOut, sysErr
-                    : jdk.javadoc.internal.tool.Main.execute(args, outOut.pw);  // default
+            jdk.javadoc.internal.tool.Main main = new jdk.javadoc.internal.tool.Main();
+            if (useStandardStreams) {
+                // use sysOut, sysErr
+            } else {
+                // default: use single explicit stream
+                main.setStreams(outOut.pw, outOut.pw);
+            }
+            if (fileManager != null) {
+                main.setFileManager(fileManager);
+            }
+            exitCode = main.run(args).exitCode;
         } finally {
             outputMap.put(Output.STDOUT, sysOut.close());
             outputMap.put(Output.STDERR, sysErr.close());
@@ -440,6 +450,15 @@ public abstract class JavadocTester {
      */
     public void setUseStandardStreams(boolean b) {
         useStandardStreams = b;
+    }
+
+    /**
+     * Sets the file manager to use for subsequent invocations of javadoc.
+     * If {@code null}, a default file manager will be created and used
+     * for each invocation.
+     */
+    public void setFileManager(StandardJavaFileManager fm) {
+        fileManager = fm;
     }
 
     /**

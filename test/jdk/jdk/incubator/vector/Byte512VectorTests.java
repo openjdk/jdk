@@ -24,7 +24,7 @@
 /*
  * @test
  * @modules jdk.incubator.vector
- * @run testng/othervm -ea -esa -Xbatch -XX:-TieredCompilation Byte512VectorTests
+ * @run testng/othervm/timeout=240 -ea -esa -Xbatch -XX:-TieredCompilation Byte512VectorTests
  */
 
 // -- This file was mechanically generated: Do not edit! -- //
@@ -5616,6 +5616,13 @@ public class Byte512VectorTests extends AbstractVectorTest {
         VectorShape vsh = av.shape();
         VectorSpecies species = av.species().withShape(vsh);
         assert(species.equals(SPECIES));
+    }
+
+    @Test
+    static void MaskAllTrueByte512VectorTestsSmokeTest() {
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+          Assert.assertEquals(SPECIES.maskAll(true).toLong(), -1L >>> (64 - SPECIES.length()));
+        }
     }
 }
 
