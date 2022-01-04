@@ -28,6 +28,7 @@
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacFailure.hpp"
 #include "gc/g1/g1EvacFailureRegions.hpp"
+#include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/heapRegion.hpp"
@@ -146,12 +147,15 @@ class RemoveSelfForwardPtrHRClosure: public HeapRegionClosure {
 
   G1EvacFailureRegions* _evac_failure_regions;
 
+  G1GCPhaseTimes* _phase_times;
+
 public:
   RemoveSelfForwardPtrHRClosure(uint worker_id,
                                 G1EvacFailureRegions* evac_failure_regions) :
     _g1h(G1CollectedHeap::heap()),
     _worker_id(worker_id),
-    _evac_failure_regions(evac_failure_regions) {
+    _evac_failure_regions(evac_failure_regions),
+    _phase_times(G1CollectedHeap::heap()->phase_times()) {
   }
 
   size_t remove_self_forward_ptr_by_walking_hr(HeapRegion* hr,
@@ -184,6 +188,11 @@ public:
                                            during_concurrent_mark);
 
     hr->reset_bot();
+
+    _phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,
+                                                   _worker_id,
+                                                   1,
+                                                   G1GCPhaseTimes::RestoreRetainedRegionsNum);
 
     size_t live_bytes = remove_self_forward_ptr_by_walking_hr(hr, during_concurrent_start);
 
