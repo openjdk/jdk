@@ -757,9 +757,9 @@ final class Short256Vector extends ShortVector {
         @ForceInline
         /*package-private*/
         static Short256Mask maskAll(boolean bit) {
-            return VectorSupport.broadcastCoerced(Short256Mask.class, short.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
-                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+            return VectorSupport.fromBitsCoerced(Short256Mask.class, short.class, VLENGTH,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
+                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final Short256Mask  TRUE_MASK = new Short256Mask(true);
         private static final Short256Mask FALSE_MASK = new Short256Mask(false);

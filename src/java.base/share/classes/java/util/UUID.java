@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -512,10 +512,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
     public int compareTo(UUID val) {
         // The ordering is intentionally set up so that the UUIDs
         // can simply be numerically compared as two numbers
-        return (this.mostSigBits < val.mostSigBits ? -1 :
-                (this.mostSigBits > val.mostSigBits ? 1 :
-                 (this.leastSigBits < val.leastSigBits ? -1 :
-                  (this.leastSigBits > val.leastSigBits ? 1 :
-                   0))));
+        int mostSigBits = Long.compare(this.mostSigBits, val.mostSigBits);
+        return mostSigBits != 0 ? mostSigBits : Long.compare(this.leastSigBits, val.leastSigBits);
     }
 }

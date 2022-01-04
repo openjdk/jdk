@@ -76,9 +76,13 @@ public class SigningPackageTest {
     private static void verifyAppImageInDMG(JPackageCommand cmd) {
         MacHelper.withExplodedDmg(cmd, dmgImage -> {
             Path launcherPath = dmgImage.resolve(Path.of("Contents", "MacOS", cmd.name()));
-            SigningBase.verifyCodesign(launcherPath, true);
-            SigningBase.verifyCodesign(dmgImage, true);
-            SigningBase.verifySpctl(dmgImage, "exec");
+            // We will be called with all folders in DMG since JDK-8263155, but
+            // we only need to verify app.
+            if (dmgImage.endsWith(cmd.name() + ".app")) {
+                SigningBase.verifyCodesign(launcherPath, true);
+                SigningBase.verifyCodesign(dmgImage, true);
+                SigningBase.verifySpctl(dmgImage, "exec");
+            }
         });
     }
 

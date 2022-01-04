@@ -67,14 +67,6 @@
   intptr_t thread_identifier() const   { return (intptr_t)_pthread_id; }
 #endif
 
-#ifdef ASSERT
-  // We expect no reposition failures so kill vm if we get one.
-  //
-  bool valid_reposition_failure() {
-    return false;
-  }
-#endif // ASSERT
-
   pthread_t pthread_id() const {
     return _pthread_id;
   }

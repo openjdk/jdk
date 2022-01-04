@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -504,13 +504,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
      * @return < 0 if o1 < o2, 0 if the same, > 0 if o1 > o2
      */
     final int compare(MarkData o1, MarkData o2) {
-        if (o1.index < o2.index) {
-            return -1;
-        } else if (o1.index > o2.index) {
-            return 1;
-        } else {
-            return 0;
-        }
+      return Integer.compare(o1.index, o2.index);
     }
 
     /**

@@ -786,7 +786,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   assert(thread->osthread() == NULL, "caller responsible");
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread(NULL, NULL);
+  OSThread* osthread = new OSThread();
   if (osthread == NULL) {
     return false;
   }
@@ -915,7 +915,7 @@ bool os::create_attached_thread(JavaThread* thread) {
 #endif
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread(NULL, NULL);
+  OSThread* osthread = new OSThread();
 
   if (osthread == NULL) {
     return false;

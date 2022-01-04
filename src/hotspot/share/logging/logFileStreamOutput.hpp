@@ -46,7 +46,6 @@ class LogFileStreamOutput : public LogOutput {
   bool                _fold_multilines;
   bool                _write_error_is_shown;
 
-  int write_internal(const char* msg);
  protected:
   FILE*               _stream;
   size_t              _decorator_padding[LogDecorators::Count];
@@ -58,12 +57,15 @@ class LogFileStreamOutput : public LogOutput {
   }
 
   int write_decorations(const LogDecorations& decorations);
+  int write_internal(const LogDecorations& decorations, const char* msg);
   bool flush();
 
  public:
   virtual bool set_option(const char* key, const char* value, outputStream* errstream);
   virtual int write(const LogDecorations& decorations, const char* msg);
   virtual int write(LogMessageBuffer::Iterator msg_iterator);
+  // Write API used by AsyncLogWriter
+  virtual int write_blocking(const LogDecorations& decorations, const char* msg);
   virtual void describe(outputStream* out);
 };
 

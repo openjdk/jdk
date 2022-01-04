@@ -268,9 +268,8 @@ inline bool G1CMTask::deal_with_reference(T* p) {
   return make_reference_grey(obj);
 }
 
-inline void G1ConcurrentMark::mark_in_prev_bitmap(oop p) {
-  assert(!_prev_mark_bitmap->is_marked(p), "sanity");
- _prev_mark_bitmap->mark(p);
+inline void G1ConcurrentMark::par_mark_in_prev_bitmap(oop p) {
+  _prev_mark_bitmap->par_mark(p);
 }
 
 bool G1ConcurrentMark::is_marked_in_prev_bitmap(oop p) const {
