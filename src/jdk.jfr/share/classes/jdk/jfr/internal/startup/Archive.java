@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,33 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jfr.internal.startup;
+
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.util.Map;
 
 /**
- * Defines the API for JDK Flight Recorder.
- *
- * @moduleGraph
- * @since 9
+ * Purpose of this class is to provide access to artifacts generated at build
+ * time.
  */
-module jdk.jfr {
+public class Archive {
 
-    requires static jdk.jlink;
+    static {
+        try {
+            String name = "/jdk/jfr/internal/startup/archive.bin";
+            try (var is = Archive.class.getResourceAsStream(name)) {
+                if (is == null) {
+                    throw new InternalError("Could not find generated JFR startup archive at: " + name);
+                }
+                try (var dais = new DataInputStream(is)) {
+                    DEFAULT_SETTINGS = ArchiveReader.readSettings(dais);
+                }
+            }
+        } catch (IOException e) {
+            throw new InternalError("Could not read data from generated JFR startup archive: " + e.getMessage(), e);
+        }
+    }
 
-    exports jdk.jfr;
-    exports jdk.jfr.consumer;
-
-    exports jdk.jfr.internal.management to jdk.management.jfr;
-    exports jdk.jfr.internal.startup to jdk.jlink;
+    public final static Map<String, String> DEFAULT_SETTINGS;
 }

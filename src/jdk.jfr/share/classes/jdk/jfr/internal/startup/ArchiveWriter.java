@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,37 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jfr.internal.startup;
+
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.text.ParseException;
+import java.util.Map;
+
+import jdk.jfr.Configuration;
 
 /**
- * Defines the API for JDK Flight Recorder.
- *
- * @moduleGraph
- * @since 9
+ * Class responsible for serializing data at build-time
  */
-module jdk.jfr {
+public class ArchiveWriter {
 
-    requires static jdk.jlink;
+    // Called by JFR jlink plugin
+    public static byte[] write() throws Exception {
+        try (var baos = new ByteArrayOutputStream(); var daos = new DataOutputStream(baos)) {
+            writeSettings(daos, "default");
+            daos.flush();
+            return baos.toByteArray();
+        }
+    }
 
-    exports jdk.jfr;
-    exports jdk.jfr.consumer;
-
-    exports jdk.jfr.internal.management to jdk.management.jfr;
-    exports jdk.jfr.internal.startup to jdk.jlink;
+    private static void writeSettings(DataOutputStream daos, String name) throws IOException, ParseException {
+        Configuration c = Configuration.getConfiguration(name);
+        Map<String, String> settings = c.getSettings();
+        daos.writeInt(settings.size());
+        for (var entry : settings.entrySet()) {
+            daos.writeUTF(entry.getKey());
+            daos.writeUTF(entry.getValue());
+        }
+    }
 }

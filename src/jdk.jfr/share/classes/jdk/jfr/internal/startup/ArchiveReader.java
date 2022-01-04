@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,25 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jfr.internal.startup;
 
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 /**
- * Defines the API for JDK Flight Recorder.
- *
- * @moduleGraph
- * @since 9
+ * Class responsible for deserializing data generated at build time. 
  */
-module jdk.jfr {
+public class ArchiveReader {
 
-    requires static jdk.jlink;
-
-    exports jdk.jfr;
-    exports jdk.jfr.consumer;
-
-    exports jdk.jfr.internal.management to jdk.management.jfr;
-    exports jdk.jfr.internal.startup to jdk.jlink;
+    public static Map<String, String> readSettings(DataInputStream dais) throws IOException {
+        int count = dais.readInt();
+        Map<String, String> settings = new LinkedHashMap<>(count);
+        for (int i = 0; i < count; i++) {
+            String key = dais.readUTF();
+            String value = dais.readUTF();
+            settings.put(key, value);
+        }
+        return settings;
+    }
 }
