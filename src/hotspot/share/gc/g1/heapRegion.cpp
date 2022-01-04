@@ -790,7 +790,7 @@ void HeapRegion::mangle_unused_area() {
 #endif
 
 void HeapRegion::initialize_bot_threshold() {
-  _bot_part.initialize_threshold();
+  _bot_part.reset_bot();
 }
 
 void HeapRegion::alloc_block_in_bot(HeapWord* start, HeapWord* end) {

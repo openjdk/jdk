@@ -478,15 +478,12 @@ public class StyleSheet extends StyleContext {
      * @since 1.3
      */
     public void importStyleSheet(URL url) {
-        try {
-            InputStream is;
-
-            is = url.openStream();
-            Reader r = new BufferedReader(new InputStreamReader(is));
+        try (InputStream is = url.openStream();
+             InputStreamReader isr = new InputStreamReader(is);
+             Reader r = new BufferedReader(isr))
+        {
             CssParser parser = new CssParser();
             parser.parse(url, r, false, true);
-            r.close();
-            is.close();
         } catch (Throwable e) {
             // on error we simply have no styles... the html
             // will look mighty wrong but still function.
