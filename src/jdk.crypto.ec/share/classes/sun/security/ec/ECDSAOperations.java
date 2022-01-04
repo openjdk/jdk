@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import sun.security.util.ArrayUtil;
 import sun.security.util.math.*;
 import static sun.security.ec.ECOperations.IntermediateValueException;
 
+import java.math.BigInteger;
 import java.security.ProviderException;
 import java.security.spec.*;
 import java.util.Arrays;
@@ -200,7 +201,8 @@ public class ECDSAOperations {
 
         IntegerFieldModuloP field = ecOps.getField();
         IntegerFieldModuloP orderField = ecOps.getOrderField();
-        int length = (orderField.getSize().bitLength() + 7) / 8;
+        BigInteger mod = orderField.getSize();
+        int length = (mod.bitLength() + 7) / 8;
 
         byte[] r;
         byte[] s;
@@ -216,6 +218,13 @@ public class ECDSAOperations {
             s = new byte[length];
             System.arraycopy(sig, 0, r, length - encodeLength, encodeLength);
             System.arraycopy(sig, encodeLength, s, length - encodeLength, encodeLength);
+        }
+
+        BigInteger rb = new BigInteger(1, r);
+        BigInteger sb = new BigInteger(1, s);
+        if (rb.signum() == 0 || sb.signum() == 0
+                || rb.compareTo(mod) >= 0 || sb.compareTo(mod) >= 0) {
+            return false;
         }
 
         ArrayUtil.reverse(r);
