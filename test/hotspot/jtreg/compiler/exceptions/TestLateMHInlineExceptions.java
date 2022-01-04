@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8275638
+ * @bug 8275638 8278966
  * @summary GraphKit::combine_exception_states fails with "matching stack sizes" assert
  *
  * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:CompileCommand=dontinline,TestLateMHInlineExceptions::m
@@ -55,18 +55,37 @@ public class TestLateMHInlineExceptions {
             }
             test4(test);
             test4(null);
+            test5(test);
+            try {
+                test5(null);
+            } catch (NullPointerException npe) {
+            }
+            test6(test);
+            try {
+                test6(null);
+            } catch (NullPointerException npe) {
+            }
         }
     }
 
     void m() {
     }
 
+    static void nothing(Throwable t) {
+    }
+
     static final MethodHandle mh;
+    static final MethodHandle mh_nothing;
+    static final MethodHandle mh2;
+    static final MethodHandle mh3;
 
     static {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
         try {
             mh = lookup.findVirtual(TestLateMHInlineExceptions.class, "m", MethodType.methodType(void.class));
+            mh_nothing = lookup.findStatic(TestLateMHInlineExceptions.class, "nothing", MethodType.methodType(void.class, Throwable.class));
+            mh2 = MethodHandles.tryFinally(mh, mh_nothing);
+            mh3 = MethodHandles.catchException(mh, Throwable.class, mh_nothing);
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
             throw new RuntimeException("Method handle lookup failed");
@@ -101,5 +120,13 @@ public class TestLateMHInlineExceptions {
             inlined(test);
         } catch (NullPointerException npe) {
         }
+    }
+
+    private static void test5(TestLateMHInlineExceptions test) throws Throwable {
+        mh2.invokeExact(test);
+    }
+
+    private static void test6(TestLateMHInlineExceptions test) throws Throwable {
+        mh3.invokeExact(test);
     }
 }
