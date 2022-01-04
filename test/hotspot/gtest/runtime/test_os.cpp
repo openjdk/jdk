@@ -360,6 +360,19 @@ TEST_VM(os, jio_snprintf) {
 //  (from multiple calls to os::reserve_memory)
 static address reserve_multiple(int num_stripes, size_t stripe_len) {
   assert(is_aligned(stripe_len, os::vm_allocation_granularity()), "Sanity");
+
+#ifdef __APPLE__
+  // Workaround: try reserving memory with executable=true
+  // to figure out if that's supported on this macOS version
+  const bool executable = true;
+  size_t test_len = 128;
+  address p_test = (address)os::reserve_memory(test_len, executable);
+  bool exec_supported = (p_test != NULL);
+  if (exec_supported) {
+    os::release_memory((char*)p_test, test_len);
+  }
+#endif
+
   size_t total_range_len = num_stripes * stripe_len;
   // Reserve a large contiguous area to get the address space...
   address p = (address)os::reserve_memory(total_range_len);
@@ -371,7 +384,11 @@ static address reserve_multiple(int num_stripes, size_t stripe_len) {
     address q = p + (stripe * stripe_len);
     // Commit, alternatingly with or without exec permission,
     //  to prevent kernel from folding these mappings.
+#ifdef __APPLE__
+    const bool executable = exec_supported? (stripe % 2 == 0) : false;
+#else
     const bool executable = stripe % 2 == 0;
+#endif
     q = (address)os::attempt_reserve_memory_at((char*)q, stripe_len, executable);
     EXPECT_NE(q, (address)NULL);
     EXPECT_TRUE(os::commit_memory((char*)q, stripe_len, executable));
@@ -413,11 +430,7 @@ struct NUMASwitcher {
 #endif
 
 #ifndef _AIX // JDK-8257041
-#if defined(__APPLE__) && !defined(AARCH64)  // See JDK-8267341.
-  TEST_VM(os, DISABLED_release_multi_mappings) {
-#else
   TEST_VM(os, release_multi_mappings) {
-#endif
 
   // With NMT enabled, this will trigger JDK-8263464. For now disable the test if NMT=on.
   if (MemTracker::tracking_level() > NMT_off) {
