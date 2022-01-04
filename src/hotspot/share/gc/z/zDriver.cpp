@@ -97,42 +97,6 @@ static ZOldCollector* old_collector() {
   return ZCollector::old();
 }
 
-static uint select_active_worker_threads_dynamic(GCCause::Cause cause, uint nworkers) {
-  // Use requested number of worker threads
-  return nworkers;
-}
-
-static uint select_active_worker_threads_static(GCCause::Cause cause, uint nworkers) {
-  // Boost number of worker threads if implied by the GC cause
-  if (cause == GCCause::_wb_full_gc ||
-      cause == GCCause::_java_lang_system_gc ||
-      cause == GCCause::_metadata_GC_clear_soft_refs ||
-      cause == GCCause::_z_allocation_stall) {
-    // Boost
-    const uint boosted_nworkers = MAX2(nworkers, ParallelGCThreads);
-    return boosted_nworkers;
-  }
-
-  // Use requested number of worker threads
-  return nworkers;
-}
-
-static uint select_active_young_worker_threads(const ZDriverRequest& request) {
-  if (UseDynamicNumberOfGCThreads) {
-    return select_active_worker_threads_dynamic(request.cause(), request.young_nworkers());
-  } else {
-    return select_active_worker_threads_static(request.cause(), request.young_nworkers());
-  }
-}
-
-static uint select_active_old_worker_threads(const ZDriverRequest& request) {
-  if (UseDynamicNumberOfGCThreads) {
-    return select_active_worker_threads_dynamic(request.cause(), request.old_nworkers());
-  } else {
-    return select_active_worker_threads_static(request.cause(), request.old_nworkers());
-  }
-}
-
 ZDriverMinor::ZDriverMinor() :
     _port(),
     _gc_timer(),
@@ -192,9 +156,8 @@ public:
       _gc_cause_setter(collected_heap(), _gc_cause),
       _stat_timer(ZPhaseCollectionMinor, gc_timer),
       _tracer(true /* minor */) {
-    // Select number of young worker threads to use
-    const uint young_nworkers = select_active_young_worker_threads(request);
-    young_collector()->set_active_workers(young_nworkers);
+    // Select number of worker threads to use
+    young_collector()->set_active_workers(request.young_nworkers());
   }
 };
 
@@ -385,13 +348,9 @@ public:
     const bool clear = should_clear_soft_references(request.cause());
     old_collector()->set_soft_reference_policy(clear);
 
-    // Select number of young worker threads to use
-    const uint young_nworkers = select_active_young_worker_threads(request);
-    young_collector()->set_active_workers(young_nworkers);
-
-    // Select number of old worker threads to use
-    const uint old_nworkers = select_active_old_worker_threads(request);
-    old_collector()->set_active_workers(old_nworkers);
+    // Select number of worker threads to use
+    young_collector()->set_active_workers(request.young_nworkers());
+    old_collector()->set_active_workers(request.old_nworkers());
   }
 
   ~ZDriverScopeMajor() {

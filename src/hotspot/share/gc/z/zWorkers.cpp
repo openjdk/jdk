@@ -40,24 +40,19 @@ static const char* generation_name(ZGenerationId id) {
   return (id == ZGenerationId::young) ? "Young" : "Old";
 }
 
-static uint max_workers() {
-  return UseDynamicNumberOfGCThreads ? ConcGCThreads : MAX2(ConcGCThreads, ParallelGCThreads);
-}
-
 ZWorkers::ZWorkers(ZGenerationId id, ZStatWorkers* stats) :
     _workers(workers_name(id),
-             max_workers()),
+             ConcGCThreads),
     _generation_name(generation_name(id)),
     _resize_lock(),
     _requested_nworkers(0),
     _is_active(false),
     _stats(stats) {
 
-  if (UseDynamicNumberOfGCThreads) {
-    log_info_p(gc, init)("GC Workers for %s Generation: %u (dynamic)", _generation_name, _workers.max_workers());
-  } else {
-    log_info_p(gc, init)("GC Workers for %s Generation: %u/%u (static)", _generation_name, ConcGCThreads, _workers.max_workers());
-  }
+  log_info_p(gc, init)("GC Workers for %s Generation: %u (%s)",
+                       _generation_name,
+                       _workers.max_workers(),
+                       UseDynamicNumberOfGCThreads ? "dynamic" : "static");
 
   // Initialize worker threads
   _workers.initialize_workers();
