@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,10 @@ import java.util.concurrent.TimeUnit;
 /**
  * Tests transformation from "(x + x) << c" to "x << (c + 1)".
  * <p>
- * This benchmark needs to be run with
- * {@code JAVA_OPTIONS=-Djmh.blackhole.mode=COMPILER} to force using
- * compiler mode blackhole.
+ * This benchmark needs to be run with {@code
+ * JAVA_OPTIONS=-Djmh.blackhole.mode=COMPILER} to force using compiler
+ * mode blackhole, which is enabled by default and thus not necessary
+ * since JMH 1.34.
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
