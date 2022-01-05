@@ -440,7 +440,7 @@ public class PSStreamPrintService extends StreamPrintService
             if (flavor != null &&
                 !(flavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE) ||
                 flavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE))) {
-                return false;
+                return attr == SheetCollate.UNCOLLATED;
             }
         } else if (attr.getCategory() == Sides.class) {
             if (flavor != null &&
