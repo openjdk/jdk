@@ -374,7 +374,6 @@ Node* PhaseIdealLoop::remix_address_expressions_add_left_shift(Node* n, IdealLoo
     Node* add = n->in(1);
     Node* add_ctrl = get_ctrl(add);
     IdealLoopTree *add_loop = get_loop(add_ctrl);
-    //assert( n_loop == add_loop, "" );
     if (n_loop != add_loop) {
       return NULL;  // happens w/ evil ZKM loops
     }
