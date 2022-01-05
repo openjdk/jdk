@@ -353,12 +353,12 @@ Node *PhaseIdealLoop::has_local_phi_input( Node *n ) {
   return n_ctrl;
 }
 
-Node* PhaseIdealLoop::remix_address_expressions_helper(Node* n, IdealLoopTree* n_loop, Node* n_ctrl, BasicType bt) {
+// Replace expressions like ((V+I) << 2) with (V<<2 + I<<2).
+Node* PhaseIdealLoop::remix_address_expressions_add_left_shift(Node* n, IdealLoopTree* n_loop, Node* n_ctrl, BasicType bt) {
+  assert(bt == T_INT || bt == T_LONG, "only for integers");
   int n_op = n->Opcode();
 
-  // Replace expressions like ((V+I) << 2) with (V<<2 + I<<2).
   if (n->Opcode() == Op_LShift(bt)) {
-    assert(n_op == Op_LShiftI || n_op == Op_LShiftL, "");
     // Scale is loop invariant
     Node* scale = n->in(2);
     Node* scale_ctrl = get_ctrl(scale);
@@ -375,7 +375,9 @@ Node* PhaseIdealLoop::remix_address_expressions_helper(Node* n, IdealLoopTree* n
     Node* add_ctrl = get_ctrl(add);
     IdealLoopTree *add_loop = get_loop(add_ctrl);
     //assert( n_loop == add_loop, "" );
-    if (n_loop != add_loop) return NULL;  // happens w/ evil ZKM loops
+    if (n_loop != add_loop) {
+      return NULL;  // happens w/ evil ZKM loops
+    }
 
     // Convert I-V into I+ (0-V); same for V-I
     if (add->Opcode() == Op_Sub(bt) &&
@@ -397,16 +399,13 @@ Node* PhaseIdealLoop::remix_address_expressions_helper(Node* n, IdealLoopTree* n
     Node *add_invar = add->in(2);
     Node *add_invar_ctrl = get_ctrl(add_invar);
     IdealLoopTree *add_invar_loop = get_loop(add_invar_ctrl);
-    if (add_var_loop == n_loop) {
-    } else if (add_invar_loop == n_loop) {
+    if (add_invar_loop == n_loop) {
       // Swap to find the invariant part
       add_invar = add_var;
       add_invar_ctrl = add_var_ctrl;
       add_invar_loop = add_var_loop;
       add_var = add->in(2);
-      Node *add_var_ctrl = get_ctrl(add_var);
-      IdealLoopTree *add_var_loop = get_loop(add_var_ctrl);
-    } else {                     // Else neither input is loop invariant
+    } else if (add_var_loop != n_loop) { // Else neither input is loop invariant
       return NULL;
     }
     if (n_loop == add_invar_loop || !add_invar_loop->is_member(n_loop)) {
@@ -465,17 +464,16 @@ Node *PhaseIdealLoop::remix_address_expressions(Node *n) {
     return NULL;                // No loop-invariant inputs
   }
 
+  Node* res = remix_address_expressions_add_left_shift(n, n_loop, n_ctrl, T_INT);
+  if (res != NULL) {
+    return res;
+  }
+  res = remix_address_expressions_add_left_shift(n, n_loop, n_ctrl, T_LONG);
+  if (res != NULL) {
+    return res;
+  }
+
   int n_op = n->Opcode();
-
-  Node* res = remix_address_expressions_helper(n, n_loop, n_ctrl, T_INT);
-  if (res != NULL) {
-    return res;
-  }
-  res = remix_address_expressions_helper(n, n_loop, n_ctrl, T_LONG);
-  if (res != NULL) {
-    return res;
-  }
-
   // Replace (I+V) with (V+I)
   if (n_op == Op_AddI ||
       n_op == Op_AddL ||
