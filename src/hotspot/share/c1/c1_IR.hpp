@@ -339,11 +339,9 @@ class IR: public CompilationResourceObj {
   static void print(BlockBegin* start, bool cfg_only, bool live_only = false) PRODUCT_RETURN;
   void print(bool cfg_only, bool live_only = false)                           PRODUCT_RETURN;
 
-#ifdef ASSERT
-  void expand_with_neighborhood(BlockList& blocks);
-  void verify_local(BlockList&);
-  void verify();
-#endif // ASSERT
+  void expand_with_neighborhood(BlockList& blocks)                          NOT_DEBUG_RETURN;
+  void verify_local(BlockList&)                                             NOT_DEBUG_RETURN;
+  void verify()                                                             NOT_DEBUG_RETURN;
 };
 
 
