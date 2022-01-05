@@ -1204,8 +1204,6 @@ private:
   void initialize_impl                           (TRAPS);
   void initialize_super_interfaces               (TRAPS);
   void eager_initialize_impl                     ();
-  /* jni_id_for_impl for jfieldID only */
-  JNIid* jni_id_for_impl                         (int offset);
 
   // find a local method (returns NULL if not found)
   Method* find_method_impl(const Symbol* name,
