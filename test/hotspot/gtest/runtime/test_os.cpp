@@ -364,7 +364,7 @@ static address reserve_multiple(int num_stripes, size_t stripe_len) {
 #ifdef __APPLE__
   // Workaround: try reserving memory with executable=true
   // to figure out if that's supported on this macOS version
-  const bool executable = true;
+  bool executable = true;
   size_t test_len = 128;
   address p_test = (address)os::reserve_memory(test_len, executable);
   bool exec_supported = (p_test != NULL);
@@ -385,7 +385,7 @@ static address reserve_multiple(int num_stripes, size_t stripe_len) {
     // Commit, alternatingly with or without exec permission,
     //  to prevent kernel from folding these mappings.
 #ifdef __APPLE__
-    const bool executable = exec_supported? (stripe % 2 == 0) : false;
+    const bool executable = exec_supported ? (stripe % 2 == 0) : false;
 #else
     const bool executable = stripe % 2 == 0;
 #endif
