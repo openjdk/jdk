@@ -64,7 +64,7 @@ public class bug6364882 {
             + "</body></html>";
 
     private static final int WIDTH = 580;
-    private static final int HEIGHT = 600;
+    private static final int HEIGHT = 300;
 
     public static final String IMAGE_FILENAME = "editorPane.png";
 
@@ -84,11 +84,18 @@ public class bug6364882 {
             createUI(showFrame);
 
             BufferedImage image = paintToImage();
-            errors = checkJustification();
 
-            if (errors.size() > 0 || saveImage) {
-                saveImage(image);
-                dumpViews();
+            boolean exceptionThrown = false;
+            try {
+                errors = checkJustification();
+            } catch (Throwable t) {
+                exceptionThrown = true;
+                throw t;
+            } finally {
+                if (exceptionThrown || errors.size() > 0 || saveImage) {
+                    saveImage(image);
+                    dumpViews();
+                }
             }
         });
 
@@ -133,57 +140,62 @@ public class bug6364882 {
                    : "blockView doesn't have 2 child views";
             final View bodyView = blockView.getView(1);
             final View paragraphView = bodyView.getView(0);
-            // Expected to have 6 rows in the paragraph
-            assert paragraphView.getViewCount() == 6
-                   : "paragraph doesn't have 6 rows of text";
+
+            final int rowCount = paragraphView.getViewCount();
+            if (rowCount < 4) {
+                errors.add(new Error("Less than 4 lines of text: no justified lines"));
+                return errors;
+            }
 
             final Rectangle bounds = editorPane.getBounds();
+            final int rightMargin = bounds.width - 15;
 
-            // Three rows should be justified
-            final int oneX = getEndOfLineX(paragraphView.getView(0), bounds);
-            if (oneX < bounds.width - 15) {
-                errors.add(new Error("Text is not justified at line " + 0 + ": "
-                                     + oneX + " < " + (bounds.width - 15)));
+            // First lines should be justified
+            int lineNo = 0;
+            final int oneX = getEndOfLineX(paragraphView.getView(lineNo++), bounds);
+            if (oneX < rightMargin) {
+                errors.add(new Error("Text is not justified at line " + lineNo + ": "
+                                     + oneX + " < " + rightMargin));
             }
-            for (int i = 1; i < 2; i++) {
-                int lineX = getEndOfLineX(paragraphView.getView(i),
+            // Justified lines should have the same width
+            while (lineNo < rowCount - 3) {
+                int lineX = getEndOfLineX(paragraphView.getView(lineNo++),
                                           bounds);
                 if (oneX != lineX) {
-                    errors.add(new Error("Text is not justified at line " + i
+                    errors.add(new Error("Text is not justified at line " + lineNo
                                          + ": " + oneX + " != " + lineX));
                 }
             }
 
-            // Fourth row should not be justified
-            final int fourX = getEndOfLineX(paragraphView.getView(3), bounds);
-            if (oneX == fourX) {
-                errors.add(new Error("Fourth line is justified: "
-                                     + oneX + " vs " + fourX));
+            // The last line of the wrapped text, before the first <br>,
+            // should not be justified
+            final int twoX = getEndOfLineX(paragraphView.getView(lineNo++), bounds);
+            if (oneX == twoX) {
+                errors.add(new Error("Line " + lineNo + " is justified: "
+                                     + oneX + " vs " + twoX));
             }
-            if (fourX > (bounds.width - bounds.width / 4)) {
-                errors.add(new Error("Fourth line is justified: "
-                                     + fourX + " > "
-                                     + (bounds.width - bounds.width / 4)));
+            if (twoX > rightMargin) {
+                errors.add(new Error("Line " + lineNo + " is justified: "
+                                     + twoX + " > " + rightMargin));
             }
 
-            // Fifth and sixth lines should not be justified
-            final int fiveX = getEndOfLineX(paragraphView.getView(4), bounds);
-            if (oneX == fiveX) {
-                errors.add(new Error("Fifth line is justified: "
-                                     + oneX + "==" + fiveX));
+            // The next two lines are created by line break <br>
+            // They should not be justified and should be of the same width
+            final int threeX = getEndOfLineX(paragraphView.getView(lineNo++), bounds);
+            if (oneX == threeX) {
+                errors.add(new Error("Line " + lineNo + " is justified: "
+                                     + oneX + " == " + threeX));
             }
-            if (fiveX > bounds.width / 2) {
-                errors.add(new Error("Fifth line is justified: "
-                                     + fiveX + " > " + (bounds.width / 2)));
+            if (threeX > bounds.width / 2) {
+                errors.add(new Error("Line " + lineNo + " is justified: "
+                                     + threeX + " > " + (bounds.width / 2)));
             }
-            if (fiveX > fourX) {
-                errors.add(new Error("Fifth line is justified: "
-                                     + fiveX + " > " + fourX));
-            }
-            final int sixX = getEndOfLineX(paragraphView.getView(5), bounds);
-            if (fiveX != sixX) {
-                errors.add(new Error("Fifth and sixth lines aren't of  the "
-                                     + "same width: " + fiveX + " != " + sixX));
+
+            final int lastX = getEndOfLineX(paragraphView.getView(lineNo), bounds);
+            if (threeX != lastX) {
+                errors.add(new Error("Line " + lineNo + " and " + (lineNo + 1)
+                                     + " have different width: "
+                                     + threeX + " != " + lastX));
             }
 
             return errors;
@@ -218,7 +230,8 @@ public class bug6364882 {
         try {
             ImageIO.write(image, "png", new File(IMAGE_FILENAME));
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            // Don't propagate the exception
+            e.printStackTrace();
         }
     }
 
@@ -228,7 +241,7 @@ public class bug6364882 {
     }
 
     private static void dumpViews(final View view, final String indent) {
-        System.out.println(indent + view.getClass().getName() + ": "
+        System.err.println(indent + view.getClass().getName() + ": "
                            + view.getStartOffset() + ", " + view.getEndOffset()
                            + "; span: " + view.getPreferredSpan(View.X_AXIS));
         final String nestedIndent = indent + "    ";
