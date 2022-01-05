@@ -255,7 +255,7 @@ class ChannelInputStream extends InputStream {
     }
 
     /**
-     * Transfers all bytes a channel's file to a target writeable byte channel.
+     * Transfers all bytes from a channel's file to a target writeable byte channel.
      * If the writeable byte channel is a selectable channel then it must be in
      * blocking mode.
      */
