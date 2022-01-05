@@ -2404,8 +2404,8 @@ void FileMapHeader::set_as_offset(char* p, size_t *offset) {
 
 int FileMapHeader::compute_crc() {
   char* start = (char*)this;
-  // start computing from the field after _crc to end of base archive name.
-  char* buf = (char*)&(_generic_header._crc) + sizeof(_generic_header._crc);
+  // start computing from the field after _header_size to end of base archive name.
+  char* buf = (char*)&(_generic_header._header_size) + sizeof(_generic_header._header_size);
   size_t sz = header_size() - (buf - start);
   int crc = ClassLoader::crc32(0, buf, (jint)sz);
   return crc;

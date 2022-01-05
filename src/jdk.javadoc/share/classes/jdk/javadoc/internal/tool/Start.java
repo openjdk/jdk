@@ -36,6 +36,7 @@ import java.util.Comparator;
 import java.util.IllformedLocaleException;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -520,7 +521,21 @@ public class Start {
         }
 
         if (fileManager instanceof BaseFileManager bfm) {
+            // standard file manager: use direct support for handling options
             bfm.handleOptions(options.fileManagerOptions());
+        } else {
+            // unrecognized file manager:
+            for (Map.Entry<com.sun.tools.javac.main.Option, String> e: options.fileManagerOptions().entrySet()) {
+                String optName = e.getKey().getPrimaryName();
+                String optValue = e.getValue();
+                try {
+                    if (!fileManager.handleOption(optName, List.of(optValue).iterator())) {
+                        log.error("main.unknown.option.for.filemanager", optName);
+                    }
+                } catch (IllegalArgumentException ex) {
+                    log.error("main.bad.arg.for.filemanager.option", optName, ex.getMessage());
+                }
+            }
         }
 
         String mr = com.sun.tools.javac.main.Option.MULTIRELEASE.primaryName;
