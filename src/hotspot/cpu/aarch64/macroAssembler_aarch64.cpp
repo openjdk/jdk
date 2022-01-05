@@ -4938,7 +4938,7 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value)
 // NOTE: Attempts to use 'ld2' (and 'umaxv' in the ISO part) has proven to
 //       degrade performance (on Ampere Altra - Neoverse N1), to an extent
 //       beyond the acceptable, even though the footprint would be smaller.
-//       Using 'umaxv' in the ASCII-case is considered acceptable and does
+//       Using 'umaxv' in the ASCII-case comes with a small penalty but does
 //       avoid additional bloat.
 //
 void MacroAssembler::encode_iso_array(Register src, Register dst,
