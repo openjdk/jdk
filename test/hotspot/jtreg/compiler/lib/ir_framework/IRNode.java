@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,6 +141,8 @@ public class IRNode {
     public static final String ADD_L = START + "AddL" + MID + END;
     public static final String SUB_I = START + "SubI" + MID + END;
     public static final String SUB_L = START + "SubL" + MID + END;
+    public static final String MUL_I = START + "MulI" + MID + END;
+    public static final String MUL_L = START + "MulL" + MID + END;
     public static final String CONV_I2L = START + "ConvI2L" + MID + END;
 
     public static final String VECTOR_CAST_B2X = START + "VectorCastB2X" + MID + END;
