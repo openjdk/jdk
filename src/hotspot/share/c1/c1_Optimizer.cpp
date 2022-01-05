@@ -181,17 +181,17 @@ void CE_Eliminator::block_do(BlockBegin* block) {
   }
 
 #ifdef ASSERT
-#define __DO_DELAYED_VERIFICATION
+#define DO_DELAYED_VERIFICATION
 #endif // ASSERT
 
-#ifdef __DO_DELAYED_VERIFICATION
+#ifdef DO_DELAYED_VERIFICATION
   BlockList blocks_to_verify_later;
   blocks_to_verify_later.append(block);
   blocks_to_verify_later.append(t_block);
   blocks_to_verify_later.append(f_block);
   blocks_to_verify_later.append(sux);
   _hir->expand_with_neighborhood(blocks_to_verify_later);
-#endif // __DO_DELAYED_VERIFICATION
+#endif // DO_DELAYED_VERIFICATION
 
   // 2) substitute conditional expression
   //    with an IfOp followed by a Goto
@@ -261,9 +261,9 @@ void CE_Eliminator::block_do(BlockBegin* block) {
     tty->print_cr("%d. IfOp in B%d", ifop_count(), block->block_id());
   }
 
-#ifdef __DO_DELAYED_VERIFICATION
+#ifdef DO_DELAYED_VERIFICATION
   _hir->verify_local(blocks_to_verify_later);
-#endif // __DO_DELAYED_VERIFICATION
+#endif // DO_DELAYED_VERIFICATION
 
 }
 
@@ -404,11 +404,11 @@ class BlockMerger: public BlockClosure {
     assert(sux_state->caller_state() == end_state->caller_state(), "caller not equal");
 #endif
 
-#ifdef __DO_DELAYED_VERIFICATION
+#ifdef DO_DELAYED_VERIFICATION
     BlockList blocks_to_verify_later;
     blocks_to_verify_later.append(block);
     _hir->expand_with_neighborhood(blocks_to_verify_later);
-#endif // __DO_DELAYED_VERIFICATION
+#endif // DO_DELAYED_VERIFICATION
 
     // find instruction before end & append first instruction of sux block
     Instruction* prev = end->prev();
@@ -419,9 +419,9 @@ class BlockMerger: public BlockClosure {
 
     // disconnect this block from all other blocks
     disconnect_from_graph(sux);
-#ifdef __DO_DELAYED_VERIFICATION
+#ifdef DO_DELAYED_VERIFICATION
     blocks_to_verify_later.remove(sux); // Sux is not part of graph anymore
-#endif // __DO_DELAYED_VERIFICATION
+#endif // DO_DELAYED_VERIFICATION
     block->set_end(sux->end());
 
     // TODO Should this be done in set_end universally?
@@ -446,9 +446,9 @@ class BlockMerger: public BlockClosure {
                     _merge_count, block->block_id(), sux->block_id(), sux->state()->stack_size());
     }
 
-#ifdef __DO_DELAYED_VERIFICATION
+#ifdef DO_DELAYED_VERIFICATION
     _hir->verify_local(blocks_to_verify_later);
-#endif // __DO_DELAYED_VERIFICATION
+#endif // DO_DELAYED_VERIFICATION
 
     If* if_ = block->end()->as_If();
     if (if_) {
@@ -498,9 +498,9 @@ class BlockMerger: public BlockClosure {
                 tty->print_cr("%d. replaced If and IfOp at end of B%d with single If", _merge_count, block->block_id());
               }
 
-#ifdef __DO_DELAYED_VERIFICATION
+#ifdef DO_DELAYED_VERIFICATION
               _hir->verify_local(blocks_to_verify_later);
-#endif // __DO_DELAYED_VERIFICATION
+#endif // DO_DELAYED_VERIFICATION
             }
           }
         }
@@ -517,7 +517,7 @@ class BlockMerger: public BlockClosure {
 };
 
 #ifdef ASSERT
-#undef __DO_DELAYED_VERIFICATION
+#undef DO_DELAYED_VERIFICATION
 #endif // ASSERT
 
 void Optimizer::eliminate_blocks() {
