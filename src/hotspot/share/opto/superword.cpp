@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include <iostream>
 #include "precompiled.hpp"
 #include "compiler/compileLog.hpp"
 #include "libadt/vectset.hpp"

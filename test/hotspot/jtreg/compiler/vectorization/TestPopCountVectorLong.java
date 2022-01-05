@@ -24,12 +24,14 @@
 /**
 * @test
 * @summary Test vectorization of popcount for Long
-* @run main/othervm -XX:+UsePopCountInstruction compiler.vectorization.TestPopCountVectorLong
-* @run main/othervm -XX:+UsePopCountInstruction -XX:MaxVectorSize=8 compiler.vectorization.TestPopCountVectorLong
+* @library /test/lib /
+* @run driver compiler.vectorization.TestPopCountVectorLong
 */
 
 package compiler.vectorization;
+import compiler.lib.ir_framework.*;
 import java.util.Random;
+
 
 public class TestPopCountVectorLong {
     private long[] input;
@@ -38,19 +40,7 @@ public class TestPopCountVectorLong {
     private Random rng;
 
     public static void main(String args[]) {
-        TestPopCountVectorLong test = new TestPopCountVectorLong();
-
-        for (int i = 0; i < 10_000; ++i) {
-          test.vectorizeBitCount();
-        }
-        System.out.println("Checking popcount result");
-        test.checkResult();
-
-        for (int i = 0; i < 10_000; ++i) {
-          test.vectorizeBitCount();
-        }
-        System.out.println("Checking popcount result");
-        test.checkResult();
+        TestFramework.run(TestPopCountVectorLong.class);
     }
 
     public TestPopCountVectorLong() {
@@ -62,10 +52,14 @@ public class TestPopCountVectorLong {
         }
     }
 
+    @Test // needs to be run in (fast) debug mode
+    @Warmup(10000)
+    @IR(counts = {"PopCountVL", "9"}) //9 PopCountVL nodes are generated for a long[] of LEN=1024
     public void vectorizeBitCount() {
         for (int i = 0; i < LEN; ++i) {
             output[i] = Long.bitCount(input[i]);
         }
+        checkResult();
     }
 
     public void checkResult() {
