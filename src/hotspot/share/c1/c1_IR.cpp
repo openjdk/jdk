@@ -1262,7 +1262,6 @@ void IR::print(bool cfg_only, bool live_only) {
 }
 #endif // PRODUCT
 
-
 #ifdef ASSERT
 class EndNotNullValidator : public BlockClosure {
  public:
@@ -1270,8 +1269,6 @@ class EndNotNullValidator : public BlockClosure {
     assert(block->end() != NULL, "Expect block end to exist.");
   }
 };
-
-typedef GrowableArray<BlockList*> BlockListList;
 
 class XentryFlagValidator : public BlockClosure {
  public:
@@ -1284,6 +1281,8 @@ class XentryFlagValidator : public BlockClosure {
     }
   }
 };
+
+typedef GrowableArray<BlockList*> BlockListList;
 
 // Validation goals:
 // - code() length == blocks length
