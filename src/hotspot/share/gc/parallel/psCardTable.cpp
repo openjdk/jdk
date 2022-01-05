@@ -165,7 +165,6 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
                                              uint stripe_number,
                                              uint stripe_total) {
   int ssize = 128; // Naked constant!  Work unit = 64k.
-  int dirty_card_count = 0;
 
   // It is a waste to get here if empty.
   assert(sp->bottom() < sp->top(), "Should not be called if empty");
@@ -194,16 +193,6 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
     // Note! ending cards are exclusive!
     HeapWord* slice_start = addr_for(worker_start_card);
     HeapWord* slice_end = MIN2((HeapWord*) sp_top, addr_for(worker_end_card));
-
-#ifdef ASSERT
-    if (GCWorkerDelayMillis > 0) {
-      // Delay 1 worker so that it proceeds after all the work
-      // has been completed.
-      if (stripe_number < 2) {
-        os::naked_sleep(GCWorkerDelayMillis);
-      }
-    }
-#endif
 
     // If there are not objects starting within the chunk, skip it.
     if (!start_array->object_starts_in_range(slice_start, slice_end)) {

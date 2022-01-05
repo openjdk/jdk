@@ -215,8 +215,21 @@ AC_DEFUN([FLAGS_SETUP_SYSROOT_FLAGS],
       $1SYSROOT_CFLAGS="--sysroot=[$]$1SYSROOT"
       $1SYSROOT_LDFLAGS="--sysroot=[$]$1SYSROOT"
     elif test "x$TOOLCHAIN_TYPE" = xclang; then
-      $1SYSROOT_CFLAGS="-isysroot [$]$1SYSROOT"
-      $1SYSROOT_LDFLAGS="-isysroot [$]$1SYSROOT"
+      if test "x$OPENJDK_TARGET_OS" = "xlinux"; then
+        # -isysroot has no effect on linux
+        # https://bugs.llvm.org/show_bug.cgi?id=11503
+        $1SYSROOT_CFLAGS="--sysroot=[$]$1SYSROOT"
+        $1SYSROOT_LDFLAGS="--sysroot=[$]$1SYSROOT"
+        if test -d "$DEVKIT_TOOLCHAIN_PATH"; then
+          # In devkits, gcc is not located in the sysroot.
+          # use --gcc-toolchain to let clang find the gcc installation.
+          $1SYSROOT_CFLAGS="[$]$1SYSROOT_CFLAGS --gcc-toolchain=$DEVKIT_TOOLCHAIN_PATH/.."
+          $1SYSROOT_LDFLAGS="[$]$1SYSROOT_LDFLAGS --gcc-toolchain=$DEVKIT_TOOLCHAIN_PATH/.."
+        fi
+      else
+        $1SYSROOT_CFLAGS="-isysroot [$]$1SYSROOT"
+        $1SYSROOT_LDFLAGS="-isysroot [$]$1SYSROOT"
+      fi
     fi
   fi
 
