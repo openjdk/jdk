@@ -70,7 +70,7 @@ public class StreamServiceAttributeTest {
             throw new RuntimeException("Inconsistent support reported");
         }
     }
- 
+
     private static void test(StreamPrintService sps,
                              Class<? extends Attribute> ac) {
         if (!sps.isAttributeCategorySupported(ac)) {
