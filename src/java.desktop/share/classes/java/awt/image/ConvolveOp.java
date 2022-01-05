@@ -168,8 +168,7 @@ public class ConvolveOp implements BufferedImageOp, RasterOp {
         BufferedImage origDst = dst;
 
         // Can't convolve an IndexColorModel.  Need to expand it
-        if (srcCM instanceof IndexColorModel) {
-            IndexColorModel icm = (IndexColorModel) srcCM;
+        if (srcCM instanceof IndexColorModel icm) {
             src = icm.convertToIntDiscrete(src.getRaster(), false);
             srcCM = src.getColorModel();
         }

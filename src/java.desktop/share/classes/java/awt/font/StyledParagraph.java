@@ -437,8 +437,8 @@ final class StyledParagraph {
 
         try {
             if (value != null) {
-                if (value instanceof Annotation) {
-                    value = ((Annotation)value).getValue();
+                if (value instanceof Annotation annotation) {
+                    value = annotation.getValue();
                 }
 
                 InputMethodHighlight hl;

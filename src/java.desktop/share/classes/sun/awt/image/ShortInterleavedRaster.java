@@ -150,9 +150,7 @@ public class ShortInterleavedRaster extends ShortComponentRaster {
             for (int i = 0; i < getNumDataElements(); i++) {
                 dataOffsets[i] += xOffset*pixelStride+yOffset*scanlineStride;
             }
-        } else if (sampleModel instanceof SinglePixelPackedSampleModel) {
-            SinglePixelPackedSampleModel sppsm =
-                    (SinglePixelPackedSampleModel)sampleModel;
+        } else if (sampleModel instanceof SinglePixelPackedSampleModel sppsm) {
             this.scanlineStride = sppsm.getScanlineStride();
             this.pixelStride    = 1;
             this.dataOffsets = new int[1];

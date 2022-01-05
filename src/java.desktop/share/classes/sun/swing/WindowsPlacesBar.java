@@ -114,9 +114,8 @@ public class WindowsPlacesBar extends JToolBar
                 folderName = folderName.substring(index + 1);
             }
             Icon icon;
-            if (files[i] instanceof ShellFolder) {
+            if (files[i] instanceof ShellFolder sf) {
                 // We want a large icon, fsv only gives us a small.
-                ShellFolder sf = (ShellFolder)files[i];
                 Image image = sf.getIcon(true);
 
                 if (image == null) {

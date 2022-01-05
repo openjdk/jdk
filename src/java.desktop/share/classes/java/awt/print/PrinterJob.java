@@ -423,16 +423,14 @@ public abstract class PrinterJob {
             Object mpaVals =
                 service.getSupportedAttributeValues(MediaPrintableArea.class,
                                                     null, attributes);
-            if (mpaVals instanceof MediaPrintableArea[] &&
-                ((MediaPrintableArea[])mpaVals).length > 0) {
-                mpa = ((MediaPrintableArea[])mpaVals)[0];
+            if (mpaVals instanceof MediaPrintableArea[] mpas && mpas.length > 0) {
+                mpa = mpas[0];
             }
         }
 
         if (media != null &&
             service.isAttributeValueSupported(media, null, attributes)) {
-            if (media instanceof MediaSizeName) {
-                MediaSizeName msn = (MediaSizeName)media;
+            if (media instanceof MediaSizeName msn) {
                 MediaSize msz = MediaSize.getMediaSizeForName(msn);
                 if (msz != null) {
                     double inch = 72.0;

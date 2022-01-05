@@ -219,14 +219,14 @@ public class SystemTray {
      */
     public static boolean isSupported() {
         Toolkit toolkit = Toolkit.getDefaultToolkit();
-        if (toolkit instanceof SunToolkit) {
+        if (toolkit instanceof SunToolkit stk) {
             // connecting tray to native resource
             initializeSystemTrayIfNeeded();
-            return ((SunToolkit)toolkit).isTraySupported();
-        } else if (toolkit instanceof HeadlessToolkit) {
+            return (stk.isTraySupported());
+        } else if (toolkit instanceof HeadlessToolkit htk) {
             // skip initialization as the init routine
             // throws HeadlessException
-            return ((HeadlessToolkit)toolkit).isTraySupported();
+            return htk.isTraySupported();
         } else {
             return false;
         }
@@ -501,10 +501,10 @@ public class SystemTray {
     synchronized void addNotify() {
         if (peer == null) {
             Toolkit toolkit = Toolkit.getDefaultToolkit();
-            if (toolkit instanceof SunToolkit) {
-                peer = ((SunToolkit)Toolkit.getDefaultToolkit()).createSystemTray(this);
-            } else if (toolkit instanceof HeadlessToolkit) {
-                peer = ((HeadlessToolkit)Toolkit.getDefaultToolkit()).createSystemTray(this);
+            if (toolkit instanceof SunToolkit stk) {
+                peer = stk.createSystemTray(this);
+            } else if (toolkit instanceof HeadlessToolkit htk) {
+                peer = htk.createSystemTray(this);
             }
         }
     }

@@ -398,7 +398,7 @@ public final class FontUtilities {
         FontUIResource fuir = new FontUIResource(font);
         Font2D font2D = FontUtilities.getFont2D(font);
 
-        if (!(font2D instanceof PhysicalFont)) {
+        if (!(font2D instanceof PhysicalFont physicalFont)) {
             /* Swing should only be calling this when a font is obtained
              * from desktop properties, so should generally be a physical font,
              * an exception might be for names like "MS Serif" which are
@@ -416,7 +416,6 @@ public final class FontUtilities {
         if (!(dialog instanceof CompositeFont dialog2D)) {
             return fuir;
         }
-        PhysicalFont physicalFont = (PhysicalFont)font2D;
         ConcurrentHashMap<PhysicalFont, CompositeFont> compMap = compMapRef.get();
         if (compMap == null) { // Its been collected.
             compMap = new ConcurrentHashMap<PhysicalFont, CompositeFont>();
@@ -480,15 +479,11 @@ public final class FontUtilities {
             mapped = "sansserif";
         }
 
-        FontUIResource fuir;
-        FontManager fm = FontManagerFactory.getInstance();
-        if (fm instanceof SunFontManager) {
-            SunFontManager sfm = (SunFontManager) fm;
-            fuir = sfm.getFontConfigFUIR(mapped, style, size);
+        if (FontManagerFactory.getInstance() instanceof SunFontManager sfm) {
+            return sfm.getFontConfigFUIR(mapped, style, size);
         } else {
-            fuir = new FontUIResource(mapped, style, size);
+            return new FontUIResource(mapped, style, size);
         }
-        return fuir;
     }
 
 
@@ -500,10 +495,7 @@ public final class FontUtilities {
      * fonts GDI handles differently.
      */
     public static boolean textLayoutIsCompatible(Font font) {
-
-        Font2D font2D = getFont2D(font);
-        if (font2D instanceof TrueTypeFont) {
-            TrueTypeFont ttf = (TrueTypeFont) font2D;
+        if (getFont2D(font) instanceof TrueTypeFont ttf) {
             return
                 ttf.getDirectoryEntry(TrueTypeFont.GSUBTag) == null ||
                 ttf.getDirectoryEntry(TrueTypeFont.GPOSTag) != null;

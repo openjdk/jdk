@@ -557,10 +557,10 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
 
         if (currentDirectory != null) {
             JComponent cb = getDirectoryComboBox();
-            if (cb instanceof JComboBox) {
-                ComboBoxModel<?> model = ((JComboBox)cb).getModel();
-                if (model instanceof DirectoryComboBoxModel) {
-                    ((DirectoryComboBoxModel)model).addItem(currentDirectory);
+            if (cb instanceof JComboBox<?> comboBox) {
+                ComboBoxModel<?> model = comboBox.getModel();
+                if (model instanceof DirectoryComboBoxModel dcbm) {
+                    dcbm.addItem(currentDirectory);
                 }
             }
 
@@ -861,10 +861,8 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
 
         public void actionPerformed(ActionEvent e) {
             directoryComboBox.hidePopup();
-            JComponent cb = getDirectoryComboBox();
-            if (cb instanceof JComboBox) {
-                File f = (File)((JComboBox)cb).getSelectedItem();
-                getFileChooser().setCurrentDirectory(f);
+            if (getDirectoryComboBox() instanceof JComboBox<?> comboBox) {
+                getFileChooser().setCurrentDirectory((File) comboBox.getSelectedItem());
             }
         }
     }

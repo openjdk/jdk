@@ -105,10 +105,12 @@ public class AreaAveragingScaleFilter extends ReplicateScaleFilter {
 
     private int[] calcRow() {
         float origmult = ((float) srcWidth) * srcHeight;
-        if (!(outpixbuf instanceof int[])) {
-            outpixbuf = new int[destWidth];
+        int[] outpix;
+        if (outpixbuf instanceof int[] ints) {
+            outpix = ints;
+        } else {
+            outpix = new int[destWidth];
         }
-        int[] outpix = (int[]) outpixbuf;
         for (int x = 0; x < destWidth; x++) {
             float mult = origmult;
             int a = Math.round(alphas[x] / mult);
@@ -171,8 +173,8 @@ public class AreaAveragingScaleFilter extends ReplicateScaleFilter {
                 if (sxrem == 0) {
                     sxrem = destWidth;
                     int rgb;
-                    if (pixels instanceof byte[]) {
-                        rgb = ((byte[]) pixels)[off + sx] & 0xff;
+                    if (pixels instanceof byte[] bytes) {
+                        rgb = bytes[off + sx] & 0xff;
                     } else {
                         rgb = ((int[]) pixels)[off + sx];
                     }

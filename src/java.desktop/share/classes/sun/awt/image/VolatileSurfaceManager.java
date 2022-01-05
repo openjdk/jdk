@@ -108,8 +108,8 @@ public abstract class VolatileSurfaceManager
             GraphicsEnvironment.getLocalGraphicsEnvironment();
         // We could have a HeadlessGE at this point, so double-check before
         // assuming anything.
-        if (ge instanceof SunGraphicsEnvironment) {
-            ((SunGraphicsEnvironment)ge).addDisplayChangedListener(this);
+        if (ge instanceof SunGraphicsEnvironment sge) {
+            sge.addDisplayChangedListener(this);
         }
     }
 

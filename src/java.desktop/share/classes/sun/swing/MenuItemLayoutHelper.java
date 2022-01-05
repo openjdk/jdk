@@ -214,8 +214,8 @@ public class MenuItemLayoutHelper {
         int minimumTextOffset = 0;
         Object minimumTextOffsetObject =
                 UIManager.get(propertyPrefix + ".minimumTextOffset");
-        if (minimumTextOffsetObject instanceof Integer) {
-            minimumTextOffset = (Integer) minimumTextOffsetObject;
+        if (minimumTextOffsetObject instanceof Integer i) {
+            minimumTextOffset = i;
         }
         return minimumTextOffset;
     }
@@ -224,8 +224,8 @@ public class MenuItemLayoutHelper {
         int afterCheckIconGap = gap;
         Object afterCheckIconGapObject =
                 UIManager.get(propertyPrefix + ".afterCheckIconGap");
-        if (afterCheckIconGapObject instanceof Integer) {
-            afterCheckIconGap = (Integer) afterCheckIconGapObject;
+        if (afterCheckIconGapObject instanceof Integer i) {
+            afterCheckIconGap = i;
         }
         return afterCheckIconGap;
     }
@@ -242,8 +242,8 @@ public class MenuItemLayoutHelper {
         int checkIconOffset = gap;
         Object checkIconOffsetObject =
                 UIManager.get(propertyPrefix + ".checkIconOffset");
-        if (checkIconOffsetObject instanceof Integer) {
-            checkIconOffset = (Integer) checkIconOffsetObject;
+        if (checkIconOffsetObject instanceof Integer i) {
+            checkIconOffset = i;
         }
         return checkIconOffset;
     }
@@ -802,11 +802,9 @@ public class MenuItemLayoutHelper {
      * Otherwise returns null.
      */
     public static JComponent getMenuItemParent(JMenuItem menuItem) {
-        Container parent = menuItem.getParent();
-        if ((parent instanceof JComponent) &&
-             (!(menuItem instanceof JMenu) ||
-               !((JMenu)menuItem).isTopLevelMenu())) {
-            return (JComponent) parent;
+        if ((menuItem.getParent() instanceof JComponent component) &&
+             (!(menuItem instanceof JMenu menu) || !menu.isTopLevelMenu())) {
+            return component;
         } else {
             return null;
         }
@@ -1116,12 +1114,7 @@ public class MenuItemLayoutHelper {
      * level menu (on the menubar).
      */
     public static boolean useCheckAndArrow(JMenuItem menuItem) {
-        boolean b = true;
-        if ((menuItem instanceof JMenu) &&
-                (((JMenu) menuItem).isTopLevelMenu())) {
-            b = false;
-        }
-        return b;
+        return !(menuItem instanceof JMenu menu && menu.isTopLevelMenu());
     }
 
     public static class LayoutResult {

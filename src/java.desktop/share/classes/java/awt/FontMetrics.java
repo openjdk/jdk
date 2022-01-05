@@ -663,8 +663,8 @@ public abstract class FontMetrics implements java.io.Serializable {
     }
 
     private FontRenderContext myFRC(Graphics context) {
-        if (context instanceof Graphics2D) {
-            return ((Graphics2D)context).getFontRenderContext();
+        if (context instanceof Graphics2D g) {
+            return g.getFontRenderContext();
         }
         return DEFAULT_FRC;
     }

@@ -365,11 +365,8 @@ public abstract class SunDragSourceContextPeer implements DragSourceContextPeer 
      * startDrag was called.
      */
     public static boolean checkEvent(AWTEvent event) {
-        if (discardingMouseEvents && event instanceof MouseEvent) {
-            MouseEvent mouseEvent = (MouseEvent)event;
-            if (!(mouseEvent instanceof SunDropTargetEvent)) {
-                return false;
-            }
+        if (discardingMouseEvents && event instanceof MouseEvent mouseEvent) {
+            return mouseEvent instanceof SunDropTargetEvent;
         }
         return true;
     }

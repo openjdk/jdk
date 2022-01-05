@@ -599,8 +599,8 @@ public class XMLEncoder extends Encoder implements AutoCloseable {
             return;
         }
 
-        if (value instanceof Class) {
-            writeln("<class>" + ((Class)value).getName() + "</class>");
+        if (value instanceof Class<?> c) {
+            writeln("<class>" + c.getName() + "</class>");
             return;
         }
 
@@ -614,8 +614,7 @@ public class XMLEncoder extends Encoder implements AutoCloseable {
                                                 "methodName") + " should not be null");
             }
 
-            if (isArgument && target instanceof Field && methodName.equals("get")) {
-                Field f = (Field) target;
+            if (isArgument && target instanceof Field f && methodName.equals("get")) {
                 if (Modifier.isStatic(f.getModifiers())) {
                     writeln("<object class=" + quote(f.getDeclaringClass().getName()) +
                             " field=" + quote(f.getName()) + "/>");
@@ -644,8 +643,8 @@ public class XMLEncoder extends Encoder implements AutoCloseable {
                 return;
             }
 
-        } else if (value instanceof String) {
-            writeln(createString((String) value));
+        } else if (value instanceof String s) {
+            writeln(createString(s));
             return;
         }
 

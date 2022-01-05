@@ -167,9 +167,7 @@ class SequencedEvent extends AWTEvent implements ActiveEvent {
 
             if (getFirst() != this) {
                 if (EventQueue.isDispatchThread()) {
-                    if (Thread.currentThread() instanceof EventDispatchThread) {
-                        EventDispatchThread edt = (EventDispatchThread)
-                                Thread.currentThread();
+                    if (Thread.currentThread() instanceof EventDispatchThread edt) {
                         edt.pumpEventsForFilter(() -> !SequencedEvent.this.isFirstOrDisposed(),
                                 new SequencedEventsFilter(this));
                     } else {
@@ -213,11 +211,11 @@ class SequencedEvent extends AWTEvent implements ActiveEvent {
     /**
      * true only if event exists and nested source appContext is disposed.
      */
-    private static final boolean isOwnerAppContextDisposed(SequencedEvent se) {
+    private static boolean isOwnerAppContextDisposed(SequencedEvent se) {
         if (se != null) {
             Object target = se.nested.getSource();
-            if (target instanceof Component) {
-                return ((Component)target).appContext.isDisposed();
+            if (target instanceof Component component) {
+                return component.appContext.isDisposed();
             }
         }
         return false;

@@ -454,15 +454,15 @@ public final class SunGraphics2D
      * or whether that shape must be "kept" unmodified.
      */
     Shape intersectShapes(Shape s1, Shape s2, boolean keep1, boolean keep2) {
-        if (s1 instanceof Rectangle && s2 instanceof Rectangle) {
-            return ((Rectangle) s1).intersection((Rectangle) s2);
+        if (s1 instanceof Rectangle r1 && s2 instanceof Rectangle r2) {
+            return r1.intersection(r2);
+        } else if (s1 instanceof Rectangle2D r2d) {
+            return intersectRectShape(r2d, s2, keep1, keep2);
+        } else if (s2 instanceof Rectangle2D r2d) {
+            return intersectRectShape(r2d, s1, keep2, keep1);
+        } else {
+            return intersectByArea(s1, s2, keep1, keep2);
         }
-        if (s1 instanceof Rectangle2D) {
-            return intersectRectShape((Rectangle2D) s1, s2, keep1, keep2);
-        } else if (s2 instanceof Rectangle2D) {
-            return intersectRectShape((Rectangle2D) s2, s1, keep2, keep1);
-        }
-        return intersectByArea(s1, s2, keep1, keep2);
     }
 
     /*
@@ -474,8 +474,7 @@ public final class SunGraphics2D
      */
     Shape intersectRectShape(Rectangle2D r, Shape s,
                              boolean keep1, boolean keep2) {
-        if (s instanceof Rectangle2D) {
-            Rectangle2D r2 = (Rectangle2D) s;
+        if (s instanceof Rectangle2D r2) {
             Rectangle2D outrect;
             if (!keep1) {
                 outrect = r;
@@ -525,17 +524,17 @@ public final class SunGraphics2D
 
         // First see if we can find an overwriteable source shape
         // to use as our destination area to avoid duplication.
-        if (!keep1 && (s1 instanceof Area)) {
-            a1 = (Area) s1;
-        } else if (!keep2 && (s2 instanceof Area)) {
-            a1 = (Area) s2;
+        if (!keep1 && s1 instanceof Area area) {
+            a1 = area;
+        } else if (!keep2 && s2 instanceof Area area) {
+            a1 = area;
             s2 = s1;
         } else {
             a1 = new Area(s1);
         }
 
-        if (s2 instanceof Area) {
-            a2 = (Area) s2;
+        if (s2 instanceof Area area) {
+            a2 = area;
         } else {
             a2 = new Area(s2);
         }
@@ -945,8 +944,7 @@ public final class SunGraphics2D
         }
         int newCompState;
         CompositeType newCompType;
-        if (comp instanceof AlphaComposite) {
-            AlphaComposite alphacomp = (AlphaComposite) comp;
+        if (comp instanceof AlphaComposite alphacomp) {
             newCompType = CompositeType.forAlphaComposite(alphacomp);
             if (newCompType == CompositeType.SrcOverNoEa) {
                 if (paintState == PAINT_OPAQUECOLOR ||
@@ -1002,8 +1000,8 @@ public final class SunGraphics2D
      * @see TexturePaint
      */
     public void setPaint(Paint paint) {
-        if (paint instanceof Color) {
-            setColor((Color) paint);
+        if (paint instanceof Color color) {
+            setColor(color);
             return;
         }
         if (paint == null || this.paint == paint) {
@@ -1164,8 +1162,8 @@ public final class SunGraphics2D
         }
         int saveStrokeState = strokeState;
         stroke = s;
-        if (s instanceof BasicStroke) {
-            validateBasicStroke((BasicStroke) s);
+        if (s instanceof BasicStroke stroke) {
+            validateBasicStroke(stroke);
         } else {
             strokeState = STROKE_CUSTOM;
         }
@@ -1195,11 +1193,10 @@ public final class SunGraphics2D
             throw new IllegalArgumentException
                 (hintValue+" is not compatible with "+hintKey);
         }
-        if (hintKey instanceof SunHints.Key) {
+        if (hintKey instanceof SunHints.Key sunKey) {
             boolean stateChanged;
             boolean textStateChanged = false;
             boolean recognized = true;
-            SunHints.Key sunKey = (SunHints.Key) hintKey;
             int newHint;
             if (sunKey == SunHints.KEY_TEXT_ANTIALIAS_LCD_CONTRAST) {
                 newHint = ((Integer)hintValue).intValue();
@@ -1824,8 +1821,8 @@ public final class SunGraphics2D
     public Rectangle getClipBounds(Rectangle r) {
         if (clipState != CLIP_DEVICE) {
             if (transformState <= TRANSFORM_INT_TRANSLATE) {
-                if (usrClip instanceof Rectangle) {
-                    r.setBounds((Rectangle) usrClip);
+                if (usrClip instanceof Rectangle rect) {
+                    r.setBounds(rect);
                 } else {
                     r.setFrame(usrClip.getBounds2D());
                 }
@@ -1903,9 +1900,9 @@ public final class SunGraphics2D
         if (usrClip == null) {
             clipState = CLIP_DEVICE;
             clipRegion = devClip;
-        } else if (usrClip instanceof Rectangle2D) {
+        } else if (usrClip instanceof Rectangle2D rect) {
             clipState = CLIP_RECTANGULAR;
-            clipRegion = devClip.getIntersection((Rectangle2D) usrClip);
+            clipRegion = devClip.getIntersection(rect);
         } else {
             PathIterator cpi = usrClip.getPathIterator(null);
             int[] box = new int[4];
@@ -1970,8 +1967,7 @@ public final class SunGraphics2D
             r.translate(tx, ty);
             return r;
         }
-        if (s instanceof Rectangle2D) {
-            Rectangle2D rect = (Rectangle2D) s;
+        if (s instanceof Rectangle2D rect) {
             return new Rectangle2D.Double(rect.getX() + tx,
                                           rect.getY() + ty,
                                           rect.getWidth(),
@@ -1991,10 +1987,9 @@ public final class SunGraphics2D
             return null;
         }
 
-        if (clip instanceof Rectangle2D &&
+        if (clip instanceof Rectangle2D rect &&
             (tx.getType() & NON_RECTILINEAR_TRANSFORM_MASK) == 0)
         {
-            Rectangle2D rect = (Rectangle2D) clip;
             double[] matrix = new double[4];
             matrix[0] = rect.getX();
             matrix[1] = rect.getY();
@@ -2459,9 +2454,8 @@ public final class SunGraphics2D
             if (paintState <= PAINT_ALPHACOLOR) {
                 validateColor();
             }
-            if (composite instanceof XORComposite) {
-                Color c = ((XORComposite) composite).getXorColor();
-                setComposite(new XORComposite(c, surfaceData));
+            if (composite instanceof XORComposite xorComposite) {
+                setComposite(new XORComposite(xorComposite.getXorColor(), surfaceData));
             }
             validatePipe();
         } finally {
@@ -2662,9 +2656,8 @@ public final class SunGraphics2D
         }
 
         // BufferedImage case: use a simple drawImage call
-        if (img instanceof BufferedImage) {
-            BufferedImage bufImg = (BufferedImage)img;
-            drawImage(bufImg,xform,null);
+        if (img instanceof BufferedImage bufImg) {
+            drawImage(bufImg, xform, null);
             return;
         }
 
@@ -2836,8 +2829,8 @@ public final class SunGraphics2D
 
                 // Create a WritableRaster containing the tile
                 WritableRaster wRaster = null;
-                if (raster instanceof WritableRaster) {
-                    wRaster = (WritableRaster)raster;
+                if (raster instanceof WritableRaster writableRaster) {
+                    wRaster = writableRaster;
                 } else {
                     // Create a WritableRaster in the same coordinate system
                     // as the original raster.
@@ -3124,13 +3117,12 @@ public final class SunGraphics2D
                     invalidateTransform();
                 }
                 return result;
-            } else if (img instanceof MultiResolutionImage) {
+            } else if (img instanceof MultiResolutionImage mrImage) {
                 // get scaled destination image size
 
                 int width = img.getWidth(observer);
                 int height = img.getHeight(observer);
 
-                MultiResolutionImage mrImage = (MultiResolutionImage) img;
                 Image resolutionVariant = getResolutionVariant(mrImage, width, height,
                                                                dx1, dy1, dx2, dy2,
                                                                sx1, sy1, sx2, sy2,
@@ -3305,8 +3297,7 @@ public final class SunGraphics2D
         Image resolutionVariant
                 = img.getResolutionVariant(destImageWidth, destImageHeight);
 
-        if (resolutionVariant instanceof ToolkitImage
-                && ((ToolkitImage) resolutionVariant).hasError()) {
+        if (resolutionVariant instanceof ToolkitImage tki && tki.hasError()) {
             return null;
         }
 

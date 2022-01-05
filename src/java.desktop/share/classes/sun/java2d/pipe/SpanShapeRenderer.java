@@ -100,21 +100,20 @@ public abstract class SpanShapeRenderer implements ShapeDrawPipe {
          AffineTransform.TYPE_GENERAL_ROTATION);
 
     public void fill(SunGraphics2D sg, Shape s) {
-        if (s instanceof Rectangle2D &&
+        if (s instanceof Rectangle2D rect &&
             (sg.transform.getType() & NON_RECTILINEAR_TRANSFORM_MASK) == 0)
         {
-            renderRect(sg, (Rectangle2D) s);
-            return;
-        }
-
-        Region clipRegion = sg.getCompClip();
-        ShapeSpanIterator sr = LoopPipe.getFillSSI(sg);
-        try {
-            sr.setOutputArea(clipRegion);
-            sr.appendPath(s.getPathIterator(sg.transform));
-            renderSpans(sg, clipRegion, s, sr);
-        } finally {
-            sr.dispose();
+            renderRect(sg, rect);
+        } else {
+            Region clipRegion = sg.getCompClip();
+            ShapeSpanIterator sr = LoopPipe.getFillSSI(sg);
+            try {
+                sr.setOutputArea(clipRegion);
+                sr.appendPath(s.getPathIterator(sg.transform));
+                renderSpans(sg, clipRegion, s, sr);
+            } finally {
+                sr.dispose();
+            }
         }
     }
 

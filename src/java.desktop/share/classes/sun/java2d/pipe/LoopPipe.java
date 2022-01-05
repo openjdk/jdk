@@ -170,8 +170,8 @@ public class LoopPipe
             int transX;
             int transY;
             if (sg2d.transformState <= SunGraphics2D.TRANSFORM_INT_TRANSLATE) {
-                if (s instanceof Path2D.Float) {
-                    p2df = (Path2D.Float)s;
+                if (s instanceof Path2D.Float f) {
+                    p2df = f;
                 } else {
                     p2df = new Path2D.Float(s);
                 }
@@ -288,8 +288,8 @@ public class LoopPipe
             int transX;
             int transY;
             if (sg2d.transformState <= SunGraphics2D.TRANSFORM_INT_TRANSLATE) {
-                if (s instanceof Path2D.Float) {
-                    p2df = (Path2D.Float)s;
+                if (s instanceof Path2D.Float f) {
+                    p2df = f;
                 } else {
                     p2df = new Path2D.Float(s);
                 }

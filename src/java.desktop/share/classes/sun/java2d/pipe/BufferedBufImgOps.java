@@ -46,12 +46,12 @@ public class BufferedBufImgOps {
                                       BufferedImage srcImg,
                                       BufferedImageOp biop)
     {
-        if (biop instanceof ConvolveOp) {
-            enableConvolveOp(rq, srcData, (ConvolveOp)biop);
-        } else if (biop instanceof RescaleOp) {
-            enableRescaleOp(rq, srcData, srcImg, (RescaleOp)biop);
-        } else if (biop instanceof LookupOp) {
-            enableLookupOp(rq, srcData, srcImg, (LookupOp)biop);
+        if (biop instanceof ConvolveOp convolveOp) {
+            enableConvolveOp(rq, srcData, convolveOp);
+        } else if (biop instanceof RescaleOp rescaleOp) {
+            enableRescaleOp(rq, srcData, srcImg, rescaleOp);
+        } else if (biop instanceof LookupOp lookupOp) {
+            enableLookupOp(rq, srcData, srcImg, lookupOp);
         } else {
             throw new InternalError("Unknown BufferedImageOp");
         }
@@ -296,8 +296,8 @@ public class BufferedBufImgOps {
         // enforce that.  Also, our native code only works with
         // arrays no larger than 256 elements, so check both of
         // these restrictions here.
-        if (table instanceof ByteLookupTable) {
-            byte[][] data = ((ByteLookupTable)table).getTable();
+        if (table instanceof ByteLookupTable blt) {
+            byte[][] data = blt.getTable();
             for (int i = 1; i < data.length; i++) {
                 if (data[i].length > 256 ||
                     data[i].length != data[i-1].length)
@@ -305,8 +305,8 @@ public class BufferedBufImgOps {
                     return false;
                 }
             }
-        } else if (table instanceof ShortLookupTable) {
-            short[][] data = ((ShortLookupTable)table).getTable();
+        } else if (table instanceof ShortLookupTable slt) {
+            short[][] data = slt.getTable();
             for (int i = 1; i < data.length; i++) {
                 if (data[i].length > 256 ||
                     data[i].length != data[i-1].length)
@@ -338,8 +338,8 @@ public class BufferedBufImgOps {
         int bytesPerElem;
         boolean shortData;
 
-        if (table instanceof ShortLookupTable) {
-            short[][] data = ((ShortLookupTable)table).getTable();
+        if (table instanceof ShortLookupTable slt) {
+            short[][] data = slt.getTable();
             bandLength = data[0].length;
             bytesPerElem = 2;
             shortData = true;

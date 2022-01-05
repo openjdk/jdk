@@ -96,16 +96,17 @@ class OGLUtilities {
         rq.lock();
         try {
             if (g != null) {
-                if (!(g instanceof SunGraphics2D)) {
+                if (g instanceof SunGraphics2D g2d) {
+                    SurfaceData sData = g2d.surfaceData;
+                    if (sData instanceof OGLSurfaceData surfaceData) {
+                        // make a context current to the destination surface
+                        OGLContext.validateContext(surfaceData);
+                    } else {
+                        return false;
+                    }
+                } else {
                     return false;
                 }
-                SurfaceData sData = ((SunGraphics2D)g).surfaceData;
-                if (!(sData instanceof OGLSurfaceData)) {
-                    return false;
-                }
-
-                // make a context current to the destination surface
-                OGLContext.validateContext((OGLSurfaceData)sData);
             }
 
             // invoke the given runnable on the QFT
@@ -148,7 +149,7 @@ class OGLUtilities {
         invokeWithOGLSharedContextCurrent(GraphicsConfiguration config,
                                           Runnable r)
     {
-        if (!(config instanceof OGLGraphicsConfig)) {
+        if (!(config instanceof OGLGraphicsConfig oglConfig)) {
             return false;
         }
 
@@ -156,7 +157,7 @@ class OGLUtilities {
         rq.lock();
         try {
             // make the "shared" context current for the given GraphicsConfig
-            OGLContext.setScratchSurface((OGLGraphicsConfig)config);
+            OGLContext.setScratchSurface(oglConfig);
 
             // invoke the given runnable on the QFT
             rq.flushAndInvokeNow(r);
@@ -195,11 +196,10 @@ class OGLUtilities {
                                            int componentWidth,
                                            int componentHeight)
     {
-        if (!(g instanceof SunGraphics2D)) {
+        if (!(g instanceof SunGraphics2D sg2d)) {
             return null;
         }
 
-        SunGraphics2D sg2d = (SunGraphics2D)g;
         SurfaceData sData = sg2d.surfaceData;
 
         // this is the upper-left origin of the region to be painted,
@@ -236,11 +236,10 @@ class OGLUtilities {
      * given Graphics object is invalid or the clip region is non-rectangular
      */
     public static Rectangle getOGLScissorBox(Graphics g) {
-        if (!(g instanceof SunGraphics2D)) {
+        if (!(g instanceof SunGraphics2D sg2d)) {
             return null;
         }
 
-        SunGraphics2D sg2d = (SunGraphics2D)g;
         SurfaceData sData = sg2d.surfaceData;
         Region r = sg2d.getCompClip();
         if (!r.isRectangular()) {
@@ -281,10 +280,11 @@ class OGLUtilities {
      * Graphics object, or null if the given Graphics object is invalid
      */
     public static Object getOGLSurfaceIdentifier(Graphics g) {
-        if (!(g instanceof SunGraphics2D)) {
+        if (g instanceof SunGraphics2D g2d) {
+            return g2d.surfaceData;
+        } else {
             return null;
         }
-        return ((SunGraphics2D)g).surfaceData;
     }
 
     /**
@@ -300,14 +300,11 @@ class OGLUtilities {
      * {@code OGLUtilities.UNDEFINED}
      */
     public static int getOGLSurfaceType(Graphics g) {
-        if (!(g instanceof SunGraphics2D)) {
-            return UNDEFINED;
+        if (g instanceof SunGraphics2D g2d && g2d.surfaceData instanceof OGLSurfaceData ogl) {
+            return ogl.getType();
         }
-        SurfaceData sData = ((SunGraphics2D)g).surfaceData;
-        if (!(sData instanceof OGLSurfaceData)) {
-            return UNDEFINED;
-        }
-        return ((OGLSurfaceData)sData).getType();
+
+        return UNDEFINED;
     }
 
     /**
@@ -325,13 +322,13 @@ class OGLUtilities {
      * is not backed by an OpenGL texture, this method will return zero.
      */
     public static int getOGLTextureType(Graphics g) {
-        if (!(g instanceof SunGraphics2D)) {
-            return 0;
+        if (g instanceof SunGraphics2D g2d) {
+            SurfaceData sData = g2d.surfaceData;
+            if (sData instanceof OGLSurfaceData ogl) {
+                return ogl.getTextureTarget();
+            }
         }
-        SurfaceData sData = ((SunGraphics2D)g).surfaceData;
-        if (!(sData instanceof OGLSurfaceData)) {
-            return 0;
-        }
-        return ((OGLSurfaceData)sData).getTextureTarget();
+
+        return 0;
     }
 }

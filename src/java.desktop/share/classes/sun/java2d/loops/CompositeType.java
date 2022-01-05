@@ -282,10 +282,11 @@ public final class CompositeType {
     }
 
     public boolean equals(Object o) {
-        if (o instanceof CompositeType) {
-            return (((CompositeType) o).uniqueID == this.uniqueID);
+        if (o instanceof CompositeType compositeType) {
+            return compositeType.uniqueID == this.uniqueID;
+        } else {
+            return false;
         }
-        return false;
     }
 
     public String toString() {

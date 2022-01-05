@@ -186,10 +186,10 @@ public class InputMethodContext
         // to the input window. Note that that component is not necessarily the
         // current client component, since we may have switched clients while
         // the event was in the queue.
-        if (event instanceof InputMethodEvent) {
+        if (event instanceof InputMethodEvent ime) {
             if (((Component) event.getSource()).getInputMethodRequests() == null
                     || (useBelowTheSpotInput() && !dispatchingCommittedText)) {
-                getCompositionAreaHandler(true).processInputMethodEvent((InputMethodEvent) event);
+                getCompositionAreaHandler(true).processInputMethodEvent(ime);
             }
         } else {
             // make sure we don't dispatch our own key events back to the input method
@@ -351,10 +351,8 @@ public class InputMethodContext
         if (isSwing) {
             return new InputMethodJFrame(title, context);
         } else {
-            Toolkit toolkit = Toolkit.getDefaultToolkit();
-            if (toolkit instanceof InputMethodSupport) {
-                return ((InputMethodSupport)toolkit).createInputMethodWindow(
-                    title, context);
+            if (Toolkit.getDefaultToolkit() instanceof InputMethodSupport ims) {
+                return ims.createInputMethodWindow(title, context);
             }
         }
         throw new InternalError("Input methods must be supported");

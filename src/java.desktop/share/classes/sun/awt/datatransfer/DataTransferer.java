@@ -186,8 +186,8 @@ public abstract class DataTransferer {
      * Converts a FlavorMap to a FlavorTable.
      */
     public static FlavorTable adaptFlavorMap(final FlavorMap map) {
-        if (map instanceof FlavorTable) {
-            return (FlavorTable)map;
+        if (map instanceof FlavorTable flavorTable) {
+            return flavorTable;
         }
 
         return new FlavorTable() {
@@ -933,16 +933,14 @@ search:
             //      between two components is executed quickly.
             // and JDK-8065098:  JColorChooser no longer supports drag and drop
             //      between two JVM instances
-            if (!(obj instanceof InputStream)) {
+            if (!(obj instanceof InputStream is)) {
                 return new byte[0];
             }
 
             try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-                try (InputStream is = (InputStream)obj) {
-                    is.mark(Integer.MAX_VALUE);
-                    is.transferTo(bos);
-                    is.reset();
-                }
+                is.mark(Integer.MAX_VALUE);
+                is.transferTo(bos);
+                is.reset();
 
                 if (DataFlavorUtil.isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
                     String sourceEncoding = DataFlavorUtil.getTextCharset(flavor);
@@ -1071,15 +1069,13 @@ search:
     // It is important do not use user's successors
     // of File class.
     private File castToFile(Object fileObject) throws IOException {
-        String filePath = null;
-        if (fileObject instanceof File) {
-            filePath = ((File)fileObject).getCanonicalPath();
-        } else if (fileObject instanceof String) {
-           filePath = (String) fileObject;
+        if (fileObject instanceof File file) {
+            return new File(file.getCanonicalPath());
+        } else if (fileObject instanceof String s) {
+           return new File(s);
         } else {
            return null;
         }
-        return new File(filePath);
     }
 
     private static final String[] DEPLOYMENT_CACHE_PROPERTIES = {
@@ -1710,10 +1706,10 @@ search:
                                   " an image to " + mimeType);
         }
 
-        if (image instanceof RenderedImage) {
+        if (image instanceof RenderedImage renderedImage) {
             // Try to encode the original image.
             try {
-                return imageToStandardBytesImpl((RenderedImage)image, mimeType);
+                return imageToStandardBytesImpl(renderedImage, mimeType);
             } catch (IOException ioe) {
                 originalIOE = ioe;
             }
@@ -1722,8 +1718,8 @@ search:
         // Retry with a BufferedImage.
         int width = 0;
         int height = 0;
-        if (image instanceof ToolkitImage) {
-            ImageRepresentation ir = ((ToolkitImage)image).getImageRep();
+        if (image instanceof ToolkitImage tki) {
+            ImageRepresentation ir = tki.getImageRep();
             ir.reconstruct(ImageObserver.ALLBITS);
             width = ir.getWidth();
             height = ir.getHeight();
@@ -1828,10 +1824,8 @@ search:
         InputStream str1 = null;
         InputStream str2 = null;
 
-        if (obj1 instanceof byte[]) {
-            byte[] arr1 = (byte[])obj1;
-            if (obj2 instanceof byte[]) {
-                byte[] arr2 = (byte[])obj2;
+        if (obj1 instanceof byte[] arr1) {
+            if (obj2 instanceof byte[] arr2) {
                 byte[] ret = new byte[arr1.length + arr2.length];
                 System.arraycopy(arr1, 0, ret, 0, arr1.length);
                 System.arraycopy(arr2, 0, ret, arr1.length, arr2.length);
@@ -1842,8 +1836,8 @@ search:
             }
         } else {
             str1 = (InputStream)obj1;
-            if (obj2 instanceof byte[]) {
-                str2 = new ByteArrayInputStream((byte[])obj2);
+            if (obj2 instanceof byte[] arr2) {
+                str2 = new ByteArrayInputStream(arr2);
             } else {
                 str2 = (InputStream)obj2;
             }

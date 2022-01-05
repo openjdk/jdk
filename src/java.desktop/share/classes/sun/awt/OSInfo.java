@@ -177,7 +177,7 @@ public class OSInfo {
         }
 
         public boolean equals(Object obj) {
-            return obj instanceof WindowsVersion && compareTo((WindowsVersion) obj) == 0;
+            return obj instanceof WindowsVersion w && compareTo(w) == 0;
         }
 
         public int hashCode() {

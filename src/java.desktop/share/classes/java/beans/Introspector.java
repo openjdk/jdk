@@ -545,8 +545,7 @@ public class Introspector {
             boolean cls = true;
             if (read != null) cls = cls && read.getGenericReturnType() instanceof Class;
             if (write != null) cls = cls && write.getGenericParameterTypes()[0] instanceof Class;
-            if (pd instanceof IndexedPropertyDescriptor) {
-                IndexedPropertyDescriptor ipd = (IndexedPropertyDescriptor) pd;
+            if (pd instanceof IndexedPropertyDescriptor ipd) {
                 Method readI = ipd.getIndexedReadMethod();
                 Method writeI = ipd.getIndexedWriteMethod();
                 if (readI != null) cls = cls && readI.getGenericReturnType() instanceof Class;
@@ -1329,9 +1328,8 @@ class GenericBeanInfo extends SimpleBeanInfo {
             properties = new PropertyDescriptor[len];
             for (int i = 0; i < len; i++) {
                 PropertyDescriptor oldp = old.properties[i];
-                if (oldp instanceof IndexedPropertyDescriptor) {
-                    properties[i] = new IndexedPropertyDescriptor(
-                                        (IndexedPropertyDescriptor) oldp);
+                if (oldp instanceof IndexedPropertyDescriptor ipd) {
+                    properties[i] = new IndexedPropertyDescriptor(ipd);
                 } else {
                     properties[i] = new PropertyDescriptor(oldp);
                 }

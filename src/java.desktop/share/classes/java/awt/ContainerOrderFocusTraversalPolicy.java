@@ -141,9 +141,7 @@ public class ContainerOrderFocusTraversalPolicy extends FocusTraversalPolicy
         Component[] components = container.getComponents();
         for (int i = 0; i < components.length; i++) {
             Component comp = components[i];
-            if (comp instanceof Container) {
-                Container cont = (Container)comp;
-
+            if (comp instanceof Container cont) {
                 if (!cont.isFocusCycleRoot() && !cont.isFocusTraversalPolicyProvider()) {
                     enumerateCycle(cont, cycle);
                     continue;
@@ -178,9 +176,7 @@ public class ContainerOrderFocusTraversalPolicy extends FocusTraversalPolicy
     private Component getComponentDownCycle(Component comp, int traversalDirection) {
         Component retComp = null;
 
-        if (comp instanceof Container) {
-            Container cont = (Container)comp;
-
+        if (comp instanceof Container cont) {
             if (cont.isFocusCycleRoot()) {
                 if (getImplicitDownCycleTraversal()) {
                     retComp = cont.getFocusTraversalPolicy().getDefaultComponent(cont);
@@ -523,8 +519,7 @@ public class ContainerOrderFocusTraversalPolicy extends FocusTraversalPolicy
                 Component comp = cycle.get(i);
                 if (accept(comp)) {
                     return comp;
-                } else if (comp instanceof Container && comp != aContainer) {
-                    Container cont = (Container)comp;
+                } else if (comp instanceof Container cont && comp != aContainer) {
                     if (cont.isFocusTraversalPolicyProvider()) {
                         Component retComp = cont.getFocusTraversalPolicy().getLastComponent(cont);
                         if (retComp != null) {

@@ -821,21 +821,6 @@ public final class AlphaComposite implements Composite {
      * {@code AlphaComposite}; {@code false} otherwise.
      */
     public boolean equals(Object obj) {
-        if (!(obj instanceof AlphaComposite)) {
-            return false;
-        }
-
-        AlphaComposite ac = (AlphaComposite) obj;
-
-        if (rule != ac.rule) {
-            return false;
-        }
-
-        if (extraAlpha != ac.extraAlpha) {
-            return false;
-        }
-
-        return true;
+        return obj instanceof AlphaComposite ac && ac.rule == rule && ac.extraAlpha == extraAlpha;
     }
-
 }

@@ -109,19 +109,19 @@ public class FontFamily {
     }
 
     private boolean isFromSameSource(Font2D font) {
-        if (!(font instanceof FileFont)) {
+        if (!(font instanceof FileFont newFont)) {
             return false;
         }
 
         FileFont existingFont = null;
-        if (plain instanceof FileFont) {
-            existingFont = (FileFont)plain;
-        } else if (bold instanceof FileFont) {
-            existingFont = (FileFont)bold;
-        } else if (italic instanceof FileFont) {
-             existingFont = (FileFont)italic;
-        } else if (bolditalic instanceof FileFont) {
-             existingFont = (FileFont)bolditalic;
+        if (plain instanceof FileFont fileFont) {
+            existingFont = fileFont;
+        } else if (bold instanceof FileFont fileFont) {
+            existingFont = fileFont;
+        } else if (italic instanceof FileFont fileFont) {
+             existingFont = fileFont;
+        } else if (bolditalic instanceof FileFont fileFont) {
+             existingFont = fileFont;
         }
         // A family isn't created until there's a font.
         // So if we didn't find a file font it means this
@@ -131,7 +131,6 @@ public class FontFamily {
         }
         File existDir = (new File(existingFont.platName)).getParentFile();
 
-        FileFont newFont = (FileFont)font;
         File newDir = (new File(newFont.platName)).getParentFile();
         if (existDir != null) {
             try {

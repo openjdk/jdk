@@ -133,9 +133,8 @@ public class Robot {
 
     private void init(GraphicsDevice screen) throws AWTException {
         checkRobotAllowed();
-        Toolkit toolkit = Toolkit.getDefaultToolkit();
-        if (toolkit instanceof ComponentFactory) {
-            peer = ((ComponentFactory)toolkit).createRobot(screen);
+        if (Toolkit.getDefaultToolkit() instanceof ComponentFactory componentFactory) {
+            peer = componentFactory.createRobot(screen);
         }
         initLegalButtonMask();
     }
@@ -145,9 +144,10 @@ public class Robot {
         if (LEGAL_BUTTON_MASK != 0) return;
 
         int tmpMask = 0;
-        if (Toolkit.getDefaultToolkit().areExtraMouseButtonsEnabled()){
-            if (Toolkit.getDefaultToolkit() instanceof SunToolkit) {
-                final int buttonsNumber = ((SunToolkit)(Toolkit.getDefaultToolkit())).getNumberOfButtons();
+        Toolkit defaultToolkit = Toolkit.getDefaultToolkit();
+        if (defaultToolkit.areExtraMouseButtonsEnabled()){
+            if (defaultToolkit instanceof SunToolkit stk) {
+                final int buttonsNumber = stk.getNumberOfButtons();
                 for (int i = 0; i < buttonsNumber; i++){
                     tmpMask |= InputEvent.getMaskForButton(i+1);
                 }

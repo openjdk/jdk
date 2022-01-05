@@ -163,34 +163,35 @@ public class PopupMenu extends Menu {
         if (localParent == null) {
             throw new NullPointerException("parent is null");
         }
-        if (!(localParent instanceof Component)) {
-            throw new IllegalArgumentException(
-                "PopupMenus with non-Component parents cannot be shown");
-        }
-        Component compParent = (Component)localParent;
-        //Fixed 6278745: Incorrect exception throwing in PopupMenu.show() method
-        //Exception was not thrown if compParent was not equal to origin and
-        //was not Container
-        if (compParent != origin) {
-            if (compParent instanceof Container) {
-                if (!((Container)compParent).isAncestorOf(origin)) {
+
+        if (localParent instanceof Component compParent) {
+            //Fixed 6278745: Incorrect exception throwing in PopupMenu.show() method
+            //Exception was not thrown if compParent was not equal to origin and
+            //was not Container
+            if (compParent != origin) {
+                if (compParent instanceof Container container) {
+                    if (!container.isAncestorOf(origin)) {
+                        throw new IllegalArgumentException("origin not in parent's hierarchy");
+                    }
+                } else {
                     throw new IllegalArgumentException("origin not in parent's hierarchy");
                 }
-            } else {
-                throw new IllegalArgumentException("origin not in parent's hierarchy");
             }
-        }
-        if (compParent.peer == null || !compParent.isShowing()) {
-            throw new RuntimeException("parent not showing on screen");
-        }
-        if (peer == null) {
-            addNotify();
-        }
-        synchronized (getTreeLock()) {
-            if (peer != null) {
-                ((PopupMenuPeer)peer).show(
-                    new Event(origin, 0, Event.MOUSE_DOWN, x, y, 0, 0));
+            if (compParent.peer == null || !compParent.isShowing()) {
+                throw new RuntimeException("parent not showing on screen");
             }
+            if (peer == null) {
+                addNotify();
+            }
+            synchronized (getTreeLock()) {
+                if (peer != null) {
+                    ((PopupMenuPeer) peer).show(
+                            new Event(origin, 0, Event.MOUSE_DOWN, x, y, 0, 0));
+                }
+            }
+        } else {
+            throw new IllegalArgumentException(
+                    "PopupMenus with non-Component parents cannot be shown");
         }
     }
 

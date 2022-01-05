@@ -1290,12 +1290,13 @@ public class RenderingHints
      * is equal to this {@code RenderingHints}.
      */
     public boolean equals(Object o) {
-        if (o instanceof RenderingHints) {
-            return hintmap.equals(((RenderingHints) o).hintmap);
+        if (o instanceof RenderingHints hints) {
+            return hintmap.equals(hints.hintmap);
         } else if (o instanceof Map) {
             return hintmap.equals(o);
+        } else {
+            return false;
         }
-        return false;
     }
 
     /**

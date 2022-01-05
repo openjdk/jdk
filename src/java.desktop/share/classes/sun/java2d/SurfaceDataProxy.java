@@ -331,8 +331,8 @@ public abstract class SurfaceDataProxy
         // assuming anything.
         // Also, no point in listening to display change events if
         // the image is never going to be accelerated.
-        if (ge instanceof SunGraphicsEnvironment) {
-            ((SunGraphicsEnvironment)ge).addDisplayChangedListener(this);
+        if (ge instanceof SunGraphicsEnvironment sge) {
+            sge.addDisplayChangedListener(this);
         }
     }
 

@@ -95,16 +95,13 @@ public class OGLDrawImage extends DrawImage {
                                BufferedImageOp op, int x, int y)
     {
         if (op != null) {
-            if (op instanceof AffineTransformOp) {
-                AffineTransformOp atop = (AffineTransformOp) op;
+            if (op instanceof AffineTransformOp atop) {
                 transformImage(sg, img, x, y,
                                atop.getTransform(),
                                atop.getInterpolationType());
                 return;
-            } else {
-                if (OGLBufImgOps.renderImageWithOp(sg, img, op, x, y)) {
-                    return;
-                }
+            } else if (OGLBufImgOps.renderImageWithOp(sg, img, op, x, y)) {
+                return;
             }
             img = op.filter(img, null);
         }

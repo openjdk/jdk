@@ -484,8 +484,8 @@ public class Font implements java.io.Serializable
     private FontPeer getFontPeer() {
         if(peer == null) {
             Toolkit tk = Toolkit.getDefaultToolkit();
-            if (tk instanceof ComponentFactory) {
-                peer = ((ComponentFactory) tk).getFontPeer(name, style);
+            if (tk instanceof ComponentFactory componentFactory) {
+                peer = componentFactory.getFontPeer(name, style);
             }
         }
         return peer;
@@ -859,9 +859,9 @@ public class Font implements java.io.Serializable
         // 2) attributes, but no FONT
 
         // avoid turning the attributemap into a regular map for no reason
-        if (attributes instanceof AttributeMap &&
-            ((AttributeMap)attributes).getValues() != null) {
-            AttributeValues values = ((AttributeMap)attributes).getValues();
+        if (attributes instanceof AttributeMap attributeMap &&
+            attributeMap.getValues() != null) {
+            AttributeValues values = attributeMap.getValues();
             if (values.isNonDefault(EFONT)) {
                 Font font = values.getFont();
                 if (!values.anyDefined(SECONDARY_MASK)) {
@@ -1192,15 +1192,14 @@ public class Font implements java.io.Serializable
                 }
             }
         } catch (Throwable t) {
-            if (t instanceof FontFormatException) {
-                throw (FontFormatException)t;
+            if (t instanceof FontFormatException e) {
+                throw e;
             }
-            if (t instanceof IOException) {
-                throw (IOException)t;
+            if (t instanceof IOException e) {
+                throw e;
             }
-            Throwable cause = t.getCause();
-            if (cause instanceof FontFormatException) {
-                throw (FontFormatException)cause;
+            if (t.getCause() instanceof FontFormatException e) {
+                throw e;
             }
             throw new IOException("Problem reading font data.");
         }
@@ -1841,8 +1840,7 @@ public class Font implements java.io.Serializable
             return true;
         }
 
-        if (obj instanceof Font) {
-            Font font = (Font)obj;
+        if (obj instanceof Font font) {
             if (size == font.size &&
                 style == font.style &&
                 nonIdentityTx == font.nonIdentityTx &&

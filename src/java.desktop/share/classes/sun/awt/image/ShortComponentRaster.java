@@ -164,8 +164,7 @@ public class ShortComponentRaster extends SunWritableRaster {
         }
         int dbOffset = dataBuffer.getOffset();
 
-        if (sampleModel instanceof ComponentSampleModel) {
-            ComponentSampleModel csm = (ComponentSampleModel)sampleModel;
+        if (sampleModel instanceof ComponentSampleModel csm) {
             this.type = IntegerComponentRaster.TYPE_USHORT_SAMPLES;
             this.scanlineStride = csm.getScanlineStride();
             this.pixelStride = csm.getPixelStride();
@@ -176,9 +175,7 @@ public class ShortComponentRaster extends SunWritableRaster {
                 dataOffsets[i] += dbOffset +
                     xOffset*pixelStride+yOffset*scanlineStride;
             }
-        } else if (sampleModel instanceof SinglePixelPackedSampleModel) {
-            SinglePixelPackedSampleModel sppsm =
-                    (SinglePixelPackedSampleModel)sampleModel;
+        } else if (sampleModel instanceof SinglePixelPackedSampleModel sppsm) {
             this.type = IntegerComponentRaster.TYPE_USHORT_PACKED_SAMPLES;
             this.scanlineStride = sppsm.getScanlineStride();
             this.pixelStride    = 1;

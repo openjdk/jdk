@@ -493,22 +493,20 @@ public abstract class DataBuffer {
     }
 
     static int[] toIntArray(Object obj) {
-        if (obj instanceof int[]) {
-            return (int[])obj;
+        if (obj instanceof int[] ints) {
+            return ints;
         } else if (obj == null) {
             return null;
-        } else if (obj instanceof short[]) {
-            short[] sdata = (short[])obj;
-            int[] idata = new int[sdata.length];
-            for (int i = 0; i < sdata.length; i++) {
-                idata[i] = (int)sdata[i] & 0xffff;
+        } else if (obj instanceof short[] shorts) {
+            int[] idata = new int[shorts.length];
+            for (int i = 0; i < shorts.length; i++) {
+                idata[i] = (int)shorts[i] & 0xffff;
             }
             return idata;
-        } else if (obj instanceof byte[]) {
-            byte[] bdata = (byte[])obj;
-            int[] idata = new int[bdata.length];
-            for (int i = 0; i < bdata.length; i++) {
-                idata[i] = 0xff & (int)bdata[i];
+        } else if (obj instanceof byte[] bytes) {
+            int[] idata = new int[bytes.length];
+            for (int i = 0; i < bytes.length; i++) {
+                idata[i] = 0xff & (int)bytes[i];
             }
             return idata;
         }

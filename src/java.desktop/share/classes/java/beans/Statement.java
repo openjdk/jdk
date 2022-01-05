@@ -232,7 +232,7 @@ public class Statement {
         }
 
         AccessibleObject m = null;
-        if (target instanceof Class) {
+        if (target instanceof Class<?> c) {
             /*
             For class methods, simluate the effect of a meta class
             by taking the union of the static methods of the
@@ -247,8 +247,8 @@ public class Statement {
                 methodName = "newInstance";
             }
             // Provide a short form for array instantiation by faking an nary-constructor.
-            if (methodName.equals("newInstance") && ((Class)target).isArray()) {
-                Object result = Array.newInstance(((Class)target).getComponentType(), arguments.length);
+            if (methodName.equals("newInstance") && c.isArray()) {
+                Object result = Array.newInstance(c.getComponentType(), arguments.length);
                 for(int i = 0; i < arguments.length; i++) {
                     Array.set(result, i, arguments[i]);
                 }
@@ -265,14 +265,14 @@ public class Statement {
                     return ((String)arguments[0]).charAt(0);
                 }
                 try {
-                    m = ConstructorFinder.findConstructor((Class)target, argClasses);
+                    m = ConstructorFinder.findConstructor(c, argClasses);
                 }
                 catch (NoSuchMethodException exception) {
                     m = null;
                 }
             }
             if (m == null && target != Class.class) {
-                m = getMethod((Class)target, methodName, argClasses);
+                m = getMethod(c, methodName, argClasses);
             }
             if (m == null) {
                 m = getMethod(Class.class, methodName, argClasses);
@@ -302,11 +302,10 @@ public class Statement {
         }
         if (m != null) {
             try {
-                if (m instanceof Method) {
-                    return MethodUtil.invoke((Method)m, target, arguments);
-                }
-                else {
-                    return ((Constructor)m).newInstance(arguments);
+                if (m instanceof Method method) {
+                    return MethodUtil.invoke(method, target, arguments);
+                } else {
+                    return ((Constructor<?>)m).newInstance(arguments);
                 }
             }
             catch (IllegalAccessException iae) {
@@ -315,11 +314,9 @@ public class Statement {
                                     iae);
             }
             catch (InvocationTargetException ite) {
-                Throwable te = ite.getCause();
-                if (te instanceof Exception) {
-                    throw (Exception)te;
-                }
-                else {
+                if (ite.getCause() instanceof Exception e) {
+                    throw e;
+                } else {
                     throw ite;
                 }
             }

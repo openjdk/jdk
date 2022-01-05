@@ -441,13 +441,11 @@ public class IndexedPropertyDescriptor extends PropertyDescriptor {
         Method tr = null;
         Method tw = null;
 
-        if (x instanceof IndexedPropertyDescriptor) {
-            IndexedPropertyDescriptor ix = (IndexedPropertyDescriptor) x;
+        if (x instanceof IndexedPropertyDescriptor ix) {
             tr = ix.getIndexedReadMethod();
             tw = ix.getIndexedWriteMethod();
         }
-        if (y instanceof IndexedPropertyDescriptor) {
-            IndexedPropertyDescriptor iy = (IndexedPropertyDescriptor) y;
+        if (y instanceof IndexedPropertyDescriptor iy) {
             Method yr = iy.getIndexedReadMethod();
             if (isAssignable(tr, yr)) {
                 tr = yr;

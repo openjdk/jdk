@@ -273,11 +273,11 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
             this.scaleFactorX = scaleFactorX;
             this.scaleFactorY = scaleFactorY;
 
-            if(isVisible()) {
+            if (isVisible()) {
                 final Object peer =
                         AWTAccessor.getComponentAccessor().getPeer(this);
-                if (peer instanceof DisplayChangedListener) {
-                    ((DisplayChangedListener) peer).displayChanged();
+                if (peer instanceof DisplayChangedListener listener) {
+                    listener.displayChanged();
                 }
                 repaint();
             }
@@ -288,8 +288,8 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
     public void addNotify() {
         super.addNotify();
         final Object peer = AWTAccessor.getComponentAccessor().getPeer(this);
-        if (peer instanceof DisplayChangedListener) {
-            ((DisplayChangedListener) peer).displayChanged();
+        if (peer instanceof DisplayChangedListener listener) {
+            listener.displayChanged();
         }
     }
 
@@ -531,8 +531,8 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
     //Called by reflection by SwingNode
     public void overrideNativeWindowHandle(long handle, Runnable closeWindow) {
         final Object peer = AWTAccessor.getComponentAccessor().getPeer(this);
-        if (peer instanceof OverrideNativeWindowHandle) {
-            ((OverrideNativeWindowHandle) peer).overrideWindowHandle(handle);
+        if (peer instanceof OverrideNativeWindowHandle nwh) {
+            nwh.overrideWindowHandle(handle);
         }
         if (closeWindow != null) {
             closeWindow.run();

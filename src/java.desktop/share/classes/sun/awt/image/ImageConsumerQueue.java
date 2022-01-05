@@ -69,8 +69,7 @@ class ImageConsumerQueue {
         consumer = ic;
         interested = true;
         // ImageReps do their own security at access time.
-        if (ic instanceof ImageRepresentation) {
-            ImageRepresentation ir = (ImageRepresentation) ic;
+        if (ic instanceof ImageRepresentation ir) {
             if (ir.image.source != src) {
                 throw new SecurityException("ImageRep added to wrong image source");
             }

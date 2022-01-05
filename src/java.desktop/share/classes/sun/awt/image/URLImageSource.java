@@ -135,8 +135,8 @@ public class URLImageSource extends InputStreamImageSource {
                     is.close();
                 } catch (IOException e2) {
                 }
-            } else if (c instanceof HttpURLConnection) {
-                ((HttpURLConnection)c).disconnect();
+            } else if (c instanceof HttpURLConnection urlConnection) {
+                urlConnection.disconnect();
             }
             return null;
         }
@@ -153,8 +153,8 @@ public class URLImageSource extends InputStreamImageSource {
                     is.close();
                 } catch (IOException e) {
                 }
-            } else if (c instanceof HttpURLConnection) {
-                ((HttpURLConnection)c).disconnect();
+            } else if (c instanceof HttpURLConnection urlConnection) {
+                urlConnection.disconnect();
             }
         }
         return id;

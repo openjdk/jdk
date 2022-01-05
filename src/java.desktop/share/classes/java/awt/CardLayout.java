@@ -213,8 +213,8 @@ public class CardLayout implements LayoutManager2,
           if (constraints == null){
               constraints = "";
           }
-        if (constraints instanceof String) {
-            addLayoutComponent((String)constraints, comp);
+        if (constraints instanceof String c) {
+            addLayoutComponent(c, comp);
         } else {
             throw new IllegalArgumentException("cannot add to layout: constraint must be a string");
         }

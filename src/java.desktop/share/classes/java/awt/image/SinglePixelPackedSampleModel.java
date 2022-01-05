@@ -754,19 +754,19 @@ public class SinglePixelPackedSampleModel extends SampleModel
     }
 
     public boolean equals(Object o) {
-        if (!(o instanceof SinglePixelPackedSampleModel that)) {
+        if (o instanceof SinglePixelPackedSampleModel that) {
+            return this.width == that.width &&
+                this.height == that.height &&
+                this.numBands == that.numBands &&
+                this.dataType == that.dataType &&
+                Arrays.equals(this.bitMasks, that.bitMasks) &&
+                Arrays.equals(this.bitOffsets, that.bitOffsets) &&
+                Arrays.equals(this.bitSizes, that.bitSizes) &&
+                this.maxBitSize == that.maxBitSize &&
+                this.scanlineStride == that.scanlineStride;
+        } else {
             return false;
         }
-
-        return this.width == that.width &&
-            this.height == that.height &&
-            this.numBands == that.numBands &&
-            this.dataType == that.dataType &&
-            Arrays.equals(this.bitMasks, that.bitMasks) &&
-            Arrays.equals(this.bitOffsets, that.bitOffsets) &&
-            Arrays.equals(this.bitSizes, that.bitSizes) &&
-            this.maxBitSize == that.maxBitSize &&
-            this.scanlineStride == that.scanlineStride;
     }
 
     // If we implement equals() we must also implement hashCode

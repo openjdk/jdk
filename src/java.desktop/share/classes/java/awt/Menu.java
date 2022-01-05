@@ -492,8 +492,8 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
         int nitems = getItemCount();
         for (int i = 0 ; i < nitems ; i++) {
             MenuItem mi = getItem(i);
-            if (mi instanceof Menu) {
-                Enumeration<MenuShortcut> e = ((Menu)mi).shortcuts();
+            if (mi instanceof Menu menu) {
+                Enumeration<MenuShortcut> e = menu.shortcuts();
                 while (e.hasMoreElements()) {
                     shortcuts.addElement(e.nextElement());
                 }

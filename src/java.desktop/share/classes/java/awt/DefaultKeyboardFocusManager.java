@@ -248,8 +248,8 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
             KeyboardFocusManager manager =
                 KeyboardFocusManager.getCurrentKeyboardFocusManager();
             DefaultKeyboardFocusManager defaultManager =
-                (manager instanceof DefaultKeyboardFocusManager)
-                ? (DefaultKeyboardFocusManager)manager
+                (manager instanceof DefaultKeyboardFocusManager focusManager)
+                ? focusManager
                 : null;
 
             if (defaultManager != null) {
@@ -292,9 +292,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
             }
             SunToolkit.postEvent(targetAppContext, se);
             if (EventQueue.isDispatchThread()) {
-                if (Thread.currentThread() instanceof EventDispatchThread) {
-                    EventDispatchThread edt = (EventDispatchThread)
-                            Thread.currentThread();
+                if (Thread.currentThread() instanceof EventDispatchThread edt) {
                     edt.pumpEvents(SentEvent.ID, new Conditional() {
                         public boolean evaluate() {
                             return !se.dispatched && !targetAppContext.isDisposed();
@@ -351,26 +349,25 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
      * the focus window events are reposted to the end of the event queue. See 6981400.
      */
     private boolean repostIfFollowsKeyEvents(WindowEvent e) {
-        if (!(e instanceof TimedWindowEvent)) {
-            return false;
-        }
-        TimedWindowEvent we = (TimedWindowEvent)e;
-        long time = we.getWhen();
-        synchronized (this) {
-            KeyEvent ke = enqueuedKeyEvents.isEmpty() ? null : enqueuedKeyEvents.getFirst();
-            if (ke != null && time >= ke.getWhen()) {
-                TypeAheadMarker marker = typeAheadMarkers.isEmpty() ? null : typeAheadMarkers.getFirst();
-                if (marker != null) {
-                    Window toplevel = marker.untilFocused.getContainingWindow();
-                    // Check that the component awaiting focus belongs to
-                    // the current focused window. See 8015454.
-                    if (toplevel != null && toplevel.isFocused()) {
-                        SunToolkit.postEvent(AppContext.getAppContext(), new SequencedEvent(e));
-                        return true;
+        if (e instanceof TimedWindowEvent we) {
+            long time = we.getWhen();
+            synchronized (this) {
+                KeyEvent ke = enqueuedKeyEvents.isEmpty() ? null : enqueuedKeyEvents.getFirst();
+                if (ke != null && time >= ke.getWhen()) {
+                    TypeAheadMarker marker = typeAheadMarkers.isEmpty() ? null : typeAheadMarkers.getFirst();
+                    if (marker != null) {
+                        Window toplevel = marker.untilFocused.getContainingWindow();
+                        // Check that the component awaiting focus belongs to
+                        // the current focused window. See 8015454.
+                        if (toplevel != null && toplevel.isFocused()) {
+                            SunToolkit.postEvent(AppContext.getAppContext(), new SequencedEvent(e));
+                            return true;
+                        }
                     }
                 }
             }
         }
+
         return false;
     }
 
@@ -1248,8 +1245,8 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                 return;
             }
 
-            if (!((focusedComponent instanceof Container) &&
-                  ((Container)focusedComponent).isFocusCycleRoot())) {
+            if (!((focusedComponent instanceof Container container) &&
+                  container.isFocusCycleRoot())) {
                 return;
             }
 

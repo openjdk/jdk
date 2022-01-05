@@ -417,11 +417,11 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
                     value = stateData.get(key);
                 }
             }
-            if (value instanceof UIDefaults.LazyValue) {
+            if (value instanceof UIDefaults.LazyValue lazyValue) {
                 synchronized(stateData) {
                     stateData.put(key, PENDING);
                 }
-                value = ((UIDefaults.LazyValue)value).createValue(null);
+                value = lazyValue.createValue(null);
                 synchronized(stateData) {
                     stateData.put(key, value);
                     stateData.notifyAll();

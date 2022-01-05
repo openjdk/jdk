@@ -95,8 +95,8 @@ public class RenderableImageOp implements RenderableImage {
             int i = 0;
             while (i < paramBlock.getNumSources()) {
                 Object o = paramBlock.getSource(i);
-                if (o instanceof RenderableImage) {
-                    sources.add((RenderableImage)o);
+                if (o instanceof RenderableImage renderableImage) {
+                    sources.add(renderableImage);
                     i++;
                 } else {
                     break;

@@ -126,7 +126,7 @@ public class ContainerEvent extends ComponentEvent {
      * {@code Container}.
      */
     public Container getContainer() {
-        return (source instanceof Container) ? (Container)source : null;
+        return source instanceof Container container ? container : null;
     }
 
     /**

@@ -219,8 +219,8 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
     public void displayChanged() {
         // notify screens in device array to do display update stuff
         for (GraphicsDevice gd : getScreenDevices()) {
-            if (gd instanceof DisplayChangedListener) {
-                ((DisplayChangedListener) gd).displayChanged();
+            if (gd instanceof DisplayChangedListener dcl) {
+                dcl.displayChanged();
             }
         }
 

@@ -412,9 +412,8 @@ public class Container extends Component {
     @Deprecated
     public Insets insets() {
         ComponentPeer peer = this.peer;
-        if (peer instanceof ContainerPeer) {
-            ContainerPeer cpeer = (ContainerPeer)peer;
-            return (Insets)cpeer.getInsets().clone();
+        if (peer instanceof ContainerPeer cpeer) {
+            return (Insets) cpeer.getInsets().clone();
         }
         return new Insets(0, 0, 0, 0);
     }
@@ -632,8 +631,8 @@ public class Container extends Component {
         }
         if (isFocusCycleRoot()) {
             FocusTraversalPolicy policy = getFocusTraversalPolicy();
-            if (policy instanceof DefaultFocusTraversalPolicy) {
-                if (!((DefaultFocusTraversalPolicy)policy).accept(focusOwnerCandidate)) {
+            if (policy instanceof DefaultFocusTraversalPolicy focusTraversalPolicy) {
+                if (!focusTraversalPolicy.accept(focusOwnerCandidate)) {
                     return false;
                 }
             }
@@ -823,8 +822,8 @@ public class Container extends Component {
             if (comp.isLightweight()) {
                 // If components is lightweight check if it is container
                 // If it is container it might contain heavyweight children we need to reparent
-                if (comp instanceof Container) {
-                    reparentTraverse(parentPeer, (Container)comp);
+                if (comp instanceof Container container) {
+                    reparentTraverse(parentPeer, container);
                 }
             } else {
                 // Q: Need to update NativeInLightFixer?
@@ -846,9 +845,9 @@ public class Container extends Component {
         }
         if (comp.isLightweight()) {
             // If component is lightweight container we need to reparent all its explicit  heavyweight children
-            if (comp instanceof Container) {
+            if (comp instanceof Container container) {
                 // Traverse component's tree till depth-first until encountering heavyweight component
-                reparentTraverse((ContainerPeer)peer, (Container)comp);
+                reparentTraverse((ContainerPeer)peer, container);
             }
         } else {
             comp.peer.reparent((ContainerPeer) peer);
@@ -909,8 +908,8 @@ public class Container extends Component {
         if (curParent != this) {
             /* Notify the layout manager of the added component. */
             if (layoutMgr != null) {
-                if (layoutMgr instanceof LayoutManager2) {
-                    ((LayoutManager2)layoutMgr).addLayoutComponent(comp, null);
+                if (layoutMgr instanceof LayoutManager2 lm) {
+                    lm.addLayoutComponent(comp, null);
                 } else {
                     layoutMgr.addLayoutComponent(null, comp);
                 }
@@ -1152,10 +1151,10 @@ public class Container extends Component {
 
             /* Notify the layout manager of the added component. */
             if (layoutMgr != null) {
-                if (layoutMgr instanceof LayoutManager2) {
-                    ((LayoutManager2)layoutMgr).addLayoutComponent(comp, constraints);
-                } else if (constraints instanceof String) {
-                    layoutMgr.addLayoutComponent((String)constraints, comp);
+                if (layoutMgr instanceof LayoutManager2 lm) {
+                    lm.addLayoutComponent(comp, constraints);
+                } else if (constraints instanceof String c) {
+                    layoutMgr.addLayoutComponent(c, comp);
                 }
             }
             if (containerListener != null ||
@@ -1610,8 +1609,7 @@ public class Container extends Component {
     @Override
     public void invalidate() {
         LayoutManager layoutMgr = this.layoutMgr;
-        if (layoutMgr instanceof LayoutManager2) {
-            LayoutManager2 lm = (LayoutManager2) layoutMgr;
+        if (layoutMgr instanceof LayoutManager2 lm) {
             lm.invalidateLayout(this);
         }
         super.invalidate();
@@ -1651,8 +1649,8 @@ public class Container extends Component {
                     && peer != null)
             {
                 ContainerPeer p = null;
-                if (peer instanceof ContainerPeer) {
-                    p = (ContainerPeer) peer;
+                if (peer instanceof ContainerPeer containerPeer) {
+                    p = containerPeer;
                 }
                 if (p != null) {
                     p.beginValidate();
@@ -1718,8 +1716,8 @@ public class Container extends Component {
     protected void validateTree() {
         checkTreeLock();
         if (!isValid() || descendUnconditionallyWhenValidating) {
-            if (peer instanceof ContainerPeer) {
-                ((ContainerPeer)peer).beginLayout();
+            if (peer instanceof ContainerPeer containerPeer) {
+                containerPeer.beginLayout();
             }
             if (!isValid()) {
                 doLayout();
@@ -1736,8 +1734,8 @@ public class Container extends Component {
                     comp.validate();
                 }
             }
-            if (peer instanceof ContainerPeer) {
-                ((ContainerPeer)peer).endLayout();
+            if (peer instanceof ContainerPeer containerPeer) {
+                containerPeer.endLayout();
             }
         }
         super.validate();
@@ -1751,8 +1749,8 @@ public class Container extends Component {
         synchronized (getTreeLock()) {
             for (int i = 0; i < component.size(); i++) {
                 Component comp = component.get(i);
-                if (comp instanceof Container) {
-                    ((Container)comp).invalidateTree();
+                if (comp instanceof Container container) {
+                    container.invalidateTree();
                 }
                 else {
                     comp.invalidateIfValid();
@@ -1917,9 +1915,8 @@ public class Container extends Component {
         Dimension dim = maxSize;
         if (dim == null || !(isMaximumSizeSet() || isValid())) {
             synchronized (getTreeLock()) {
-               if (layoutMgr instanceof LayoutManager2) {
-                    LayoutManager2 lm = (LayoutManager2) layoutMgr;
-                    maxSize = lm.maximumLayoutSize(this);
+               if (layoutMgr instanceof LayoutManager2 lm) {
+                   maxSize = lm.maximumLayoutSize(this);
                } else {
                     maxSize = super.getMaximumSize();
                }
@@ -1943,9 +1940,8 @@ public class Container extends Component {
      */
     public float getAlignmentX() {
         float xAlign;
-        if (layoutMgr instanceof LayoutManager2) {
+        if (layoutMgr instanceof LayoutManager2 lm) {
             synchronized (getTreeLock()) {
-                LayoutManager2 lm = (LayoutManager2) layoutMgr;
                 xAlign = lm.getLayoutAlignmentX(this);
             }
         } else {
@@ -1963,9 +1959,8 @@ public class Container extends Component {
      */
     public float getAlignmentY() {
         float yAlign;
-        if (layoutMgr instanceof LayoutManager2) {
+        if (layoutMgr instanceof LayoutManager2 lm) {
             synchronized (getTreeLock()) {
-                LayoutManager2 lm = (LayoutManager2) layoutMgr;
                 yAlign = lm.getLayoutAlignmentY(this);
             }
         } else {
@@ -2259,11 +2254,11 @@ public class Container extends Component {
      * @param e the event
      */
     protected void processEvent(AWTEvent e) {
-        if (e instanceof ContainerEvent) {
-            processContainerEvent((ContainerEvent)e);
-            return;
+        if (e instanceof ContainerEvent containerEvent) {
+            processContainerEvent(containerEvent);
+        } else {
+            super.processEvent(e);
         }
-        super.processEvent(e);
     }
 
     /**
@@ -2437,8 +2432,7 @@ public class Container extends Component {
 
                     // found a component that intersects the point, see if there
                     // is a deeper possibility.
-                    if (comp instanceof Container) {
-                        Container child = (Container) comp;
+                    if (comp instanceof Container child) {
                         Component deeper = child.getMouseEventTarget(
                                 x - child.x,
                                 y - child.y,
@@ -2735,9 +2729,8 @@ public class Container extends Component {
      */
     private static Component getChildAt(Component comp, int x, int y,
                                         boolean ignoreEnabled) {
-        if (comp instanceof Container) {
-            comp = ((Container) comp).findComponentAtImpl(x, y,
-                                                          ignoreEnabled);
+        if (comp instanceof Container container) {
+            comp = container.findComponentAtImpl(x, y, ignoreEnabled);
         } else {
             comp = comp.getComponentAt(x, y);
         }
@@ -3778,8 +3771,8 @@ public class Container extends Component {
 
         try {
             Object policy = s.readObject();
-            if (policy instanceof FocusTraversalPolicy) {
-                focusTraversalPolicy = (FocusTraversalPolicy)policy;
+            if (policy instanceof FocusTraversalPolicy ftp) {
+                focusTraversalPolicy = ftp;
             }
         } catch (java.io.OptionalDataException e) {
             // JDK 1.1/1.2/1.3 instances will not have this optional data.
@@ -3951,8 +3944,7 @@ public class Container extends Component {
      */
     Accessible getAccessibleAt(Point p) {
         synchronized (getTreeLock()) {
-            if (this instanceof Accessible) {
-                Accessible a = (Accessible)this;
+            if (this instanceof Accessible a) {
                 AccessibleContext ac = a.getAccessibleContext();
                 if (ac != null) {
                     AccessibleComponent acmp;
@@ -3993,8 +3985,8 @@ public class Container extends Component {
                         }
                     }
                 }
-                if (ret instanceof Accessible) {
-                    return (Accessible) ret;
+                if (ret instanceof Accessible a) {
+                    return a;
                 }
             }
             return null;
@@ -4032,9 +4024,9 @@ public class Container extends Component {
             Component[] children = this.getComponents();
             int count = 0;
             for (int j = 0; j < children.length; j++) {
-                if (children[j] instanceof Accessible) {
+                if (children[j] instanceof Accessible child) {
                     if (count == i) {
-                        return (Accessible) children[j];
+                        return child;
                     } else {
                         count++;
                     }
@@ -4057,9 +4049,9 @@ public class Container extends Component {
             int addHW = 0;
             int addLW = 0;
 
-            if (c instanceof Container) {
-                addLW = ((Container)c).numOfLWComponents;
-                addHW = ((Container)c).numOfHWComponents;
+            if (c instanceof Container container) {
+                addLW = container.numOfLWComponents;
+                addHW = container.numOfHWComponents;
             }
             if (c.isLightweight()) {
                 addLW++;
@@ -4085,9 +4077,9 @@ public class Container extends Component {
             int subHW = 0;
             int subLW = 0;
 
-            if (c instanceof Container) {
-                subLW = ((Container)c).numOfLWComponents;
-                subHW = ((Container)c).numOfHWComponents;
+            if (c instanceof Container container) {
+                subLW = container.numOfLWComponents;
+                subHW = container.numOfHWComponents;
             }
             if (c.isLightweight()) {
                 subLW++;
@@ -4170,9 +4162,9 @@ public class Container extends Component {
             Component comp = getComponent(index);
             if (!comp.isLightweight()) {
                 comp.subtractAndApplyShape(shape);
-            } else if (comp instanceof Container &&
-                    ((Container)comp).hasHeavyweightDescendants() && comp.isShowing()) {
-                ((Container)comp).recursiveSubtractAndApplyShape(shape);
+            } else if (comp instanceof Container container &&
+                    container.hasHeavyweightDescendants() && comp.isShowing()) {
+                container.recursiveSubtractAndApplyShape(shape);
             }
         }
     }
@@ -4205,9 +4197,9 @@ public class Container extends Component {
             if (!comp.isLightweight()) {
                 comp.applyCurrentShape();
             }
-            if (comp instanceof Container &&
-                    ((Container)comp).hasHeavyweightDescendants()) {
-                ((Container)comp).recursiveApplyCurrentShape();
+            if (comp instanceof Container container &&
+                    container.hasHeavyweightDescendants()) {
+                container.recursiveApplyCurrentShape();
             }
         }
     }
@@ -4220,8 +4212,8 @@ public class Container extends Component {
         for (int index = 0; index < getComponentCount(); index++) {
             Component comp = getComponent(index);
             if (comp.isLightweight()) {
-                if  (comp instanceof Container) {
-                    ((Container)comp).recursiveShowHeavyweightChildren();
+                if  (comp instanceof Container container) {
+                    container.recursiveShowHeavyweightChildren();
                 }
             } else {
                 if (comp.isVisible()) {
@@ -4242,8 +4234,8 @@ public class Container extends Component {
         for (int index = 0; index < getComponentCount(); index++) {
             Component comp = getComponent(index);
             if (comp.isLightweight()) {
-                if  (comp instanceof Container) {
-                    ((Container)comp).recursiveHideHeavyweightChildren();
+                if  (comp instanceof Container container) {
+                    container.recursiveHideHeavyweightChildren();
                 }
             } else {
                 if (comp.isVisible()) {
@@ -4261,8 +4253,8 @@ public class Container extends Component {
         for (int index = 0; index < getComponentCount(); index++) {
             Component comp = getComponent(index);
             if (comp.isLightweight()) {
-                if  (comp instanceof Container &&
-                        ((Container)comp).hasHeavyweightDescendants())
+                if  (comp instanceof Container container &&
+                        container.hasHeavyweightDescendants())
                 {
                     final Point newOrigin = new Point(origin);
                     newOrigin.translate(comp.getX(), comp.getY());
@@ -4505,14 +4497,10 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
          * Dispatch SunDropTargetEvents regardless of eventMask value.
          * Do not update cursor on dispatching SunDropTargetEvents.
          */
-        if (e instanceof SunDropTargetEvent) {
-
-            SunDropTargetEvent sdde = (SunDropTargetEvent) e;
+        if (e instanceof SunDropTargetEvent sdde) {
             ret = processDropTargetEvent(sdde);
-
         } else {
-            if (e instanceof MouseEvent && (eventMask & MOUSE_MASK) != 0) {
-                MouseEvent me = (MouseEvent) e;
+            if (e instanceof MouseEvent me && (eventMask & MOUSE_MASK) != 0) {
                 ret = processMouseEvent(me);
             }
 
@@ -4891,12 +4879,12 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
         }
         MouseEvent retargeted;
         if (component != null) {
-            if (e instanceof SunDropTargetEvent) {
+            if (e instanceof SunDropTargetEvent sunDropTargetEvent) {
                 retargeted = new SunDropTargetEvent(target,
                                                     id,
                                                     x,
                                                     y,
-                                                    ((SunDropTargetEvent)e).getDispatcher());
+                                                    sunDropTargetEvent.getDispatcher());
             } else if (id == MouseEvent.MOUSE_WHEEL) {
                 retargeted = new MouseWheelEvent(target,
                                       id,

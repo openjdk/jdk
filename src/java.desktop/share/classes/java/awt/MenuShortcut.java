@@ -164,10 +164,7 @@ public class MenuShortcut implements java.io.Serializable
      * @since 1.2
      */
     public boolean equals(Object obj) {
-        if (obj instanceof MenuShortcut) {
-            return equals( (MenuShortcut) obj );
-        }
-        return false;
+        return obj instanceof MenuShortcut shortcut && equals(shortcut);
     }
 
     /**

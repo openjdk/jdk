@@ -336,12 +336,10 @@ public abstract class SunToolkit extends Toolkit
      */
     private static boolean setAppContext(Object target,
                                          AppContext context) {
-        if (target instanceof Component) {
-            AWTAccessor.getComponentAccessor().
-                setAppContext((Component)target, context);
-        } else if (target instanceof MenuComponent) {
-            AWTAccessor.getMenuComponentAccessor().
-                setAppContext((MenuComponent)target, context);
+        if (target instanceof Component component) {
+            AWTAccessor.getComponentAccessor().setAppContext(component, context);
+        } else if (target instanceof MenuComponent menuComponent) {
+            AWTAccessor.getMenuComponentAccessor().setAppContext(menuComponent, context);
         } else {
             return false;
         }
@@ -353,12 +351,10 @@ public abstract class SunToolkit extends Toolkit
      * Component or MenuComponent this returns null.
      */
     private static AppContext getAppContext(Object target) {
-        if (target instanceof Component) {
-            return AWTAccessor.getComponentAccessor().
-                       getAppContext((Component)target);
-        } else if (target instanceof MenuComponent) {
-            return AWTAccessor.getMenuComponentAccessor().
-                       getAppContext((MenuComponent)target);
+        if (target instanceof Component component) {
+            return AWTAccessor.getComponentAccessor().getAppContext(component);
+        } else if (target instanceof MenuComponent menuComponent) {
+            return AWTAccessor.getMenuComponentAccessor().getAppContext(menuComponent);
         } else {
             return null;
         }
@@ -448,11 +444,10 @@ public abstract class SunToolkit extends Toolkit
         if (sea != null && sea.isSequencedEvent(event)) {
             AWTEvent nested = sea.getNested(event);
             if (nested.getID() == WindowEvent.WINDOW_LOST_FOCUS &&
-                nested instanceof TimedWindowEvent)
+                nested instanceof TimedWindowEvent twe)
             {
-                TimedWindowEvent twe = (TimedWindowEvent)nested;
                 ((SunToolkit)Toolkit.getDefaultToolkit()).
-                    setWindowDeactivationTime((Window)twe.getSource(), twe.getWhen());
+                    setWindowDeactivationTime((Window) twe.getSource(), twe.getWhen());
             }
         }
 
@@ -793,18 +788,17 @@ public abstract class SunToolkit extends Toolkit
 
     @Override
     public int checkImage(Image img, int w, int h, ImageObserver o) {
-        if (!(img instanceof ToolkitImage)) {
+        if (img instanceof ToolkitImage tki) {
+            int repbits;
+            if (w == 0 || h == 0) {
+                repbits = ImageObserver.ALLBITS;
+            } else {
+                repbits = tki.getImageRep().check(o);
+            }
+            return (tki.check(o) | repbits) & checkResolutionVariant(img, w, h, o);
+        } else {
             return ImageObserver.ALLBITS;
         }
-
-        ToolkitImage tkimg = (ToolkitImage)img;
-        int repbits;
-        if (w == 0 || h == 0) {
-            repbits = ImageObserver.ALLBITS;
-        } else {
-            repbits = tkimg.getImageRep().check(o);
-        }
-        return (tkimg.check(o) | repbits) & checkResolutionVariant(img, w, h, o);
     }
 
     @Override
@@ -814,11 +808,10 @@ public abstract class SunToolkit extends Toolkit
         }
 
         // Must be a ToolkitImage
-        if (!(img instanceof ToolkitImage)) {
+        if (!(img instanceof ToolkitImage tkimg)) {
             return true;
         }
 
-        ToolkitImage tkimg = (ToolkitImage)img;
         if (tkimg.hasError()) {
             if (o != null) {
                 o.imageUpdate(img, ImageObserver.ERROR|ImageObserver.ABORT,
@@ -826,8 +819,8 @@ public abstract class SunToolkit extends Toolkit
             }
             return false;
         }
-        ImageRepresentation ir = tkimg.getImageRep();
-        return ir.prepare(o) & prepareResolutionVariant(img, w, h, o);
+
+        return tkimg.getImageRep().prepare(o) & prepareResolutionVariant(img, w, h, o);
     }
 
     private int checkResolutionVariant(Image img, int w, int h, ImageObserver o) {
@@ -859,11 +852,9 @@ public abstract class SunToolkit extends Toolkit
     }
 
     private static ToolkitImage getResolutionVariant(Image image) {
-        if (image instanceof MultiResolutionToolkitImage) {
-            Image resolutionVariant = ((MultiResolutionToolkitImage) image).
-                    getResolutionVariant();
-            if (resolutionVariant instanceof ToolkitImage) {
-                return (ToolkitImage) resolutionVariant;
+        if (image instanceof MultiResolutionToolkitImage mtki) {
+            if (mtki.getResolutionVariant() instanceof ToolkitImage tki) {
+                return tki;
             }
         }
         return null;
@@ -933,8 +924,8 @@ public abstract class SunToolkit extends Toolkit
         }
         java.util.List<Image> multiResAndnormalImages = new ArrayList<>(imageList.size());
         for (Image image : imageList) {
-            if ((image instanceof MultiResolutionImage)) {
-                Image im = ((MultiResolutionImage) image).getResolutionVariant(width, height);
+            if (image instanceof MultiResolutionImage mri) {
+                Image im = mri.getResolutionVariant(width, height);
                 multiResAndnormalImages.add(im);
             } else {
                 multiResAndnormalImages.add(image);
@@ -954,9 +945,8 @@ public abstract class SunToolkit extends Toolkit
             if (im == null) {
                 continue;
             }
-            if (im instanceof ToolkitImage) {
-                ImageRepresentation ir = ((ToolkitImage)im).getImageRep();
-                ir.reconstruct(ImageObserver.ALLBITS);
+            if (im instanceof ToolkitImage tki) {
+                tki.getImageRep().reconstruct(ImageObserver.ALLBITS);
             }
             int iw;
             int ih;
@@ -1208,10 +1198,10 @@ public abstract class SunToolkit extends Toolkit
         }
 
         Toolkit tk = Toolkit.getDefaultToolkit();
-        if (tk instanceof SunToolkit) {
+        if (tk instanceof SunToolkit stk) {
             // SunToolkit descendants should override this method to specify
             // concrete behavior
-            return ((SunToolkit)tk).needsXEmbedImpl();
+            return stk.needsXEmbedImpl();
         } else {
             // Non-SunToolkit doubtly might support XEmbed
             return false;
@@ -1710,9 +1700,8 @@ public abstract class SunToolkit extends Toolkit
                  * logic, then notify any listeners of any change.
                  */
                 checkedSystemAAFontSettings = false;
-                Toolkit tk = Toolkit.getDefaultToolkit();
-                if (tk instanceof SunToolkit) {
-                     ((SunToolkit)tk).fireDesktopFontPropertyChanges();
+                if (Toolkit.getDefaultToolkit() instanceof SunToolkit stk) {
+                     stk.fireDesktopFontPropertyChanges();
                 }
             }
         }
@@ -1801,9 +1790,8 @@ public abstract class SunToolkit extends Toolkit
     public static RenderingHints getDesktopFontHints() {
         if (useSystemAAFontSettings()) {
              Toolkit tk = Toolkit.getDefaultToolkit();
-             if (tk instanceof SunToolkit) {
-                 RenderingHints map = ((SunToolkit)tk).getDesktopAAHints();
-                 return map;
+             if (tk instanceof SunToolkit stk) {
+                 return stk.getDesktopAAHints();
              } else { /* Headless Toolkit */
                  return null;
              }
@@ -2027,8 +2015,8 @@ public abstract class SunToolkit extends Toolkit
 
     protected static LightweightFrame getLightweightFrame(Component c) {
         for (; c != null; c = c.getParent()) {
-            if (c instanceof LightweightFrame) {
-                return (LightweightFrame)c;
+            if (c instanceof LightweightFrame frame) {
+                return frame;
             }
             if (c instanceof Window) {
                 // Don't traverse owner windows

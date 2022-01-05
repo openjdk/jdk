@@ -1510,11 +1510,10 @@ public class ServiceDialog extends JDialog implements ActionListener {
          * to re-establish the previous entries.
          */
         public void updateMargins(Object source) {
-            if (!(source instanceof JFormattedTextField)) {
+            if (!(source instanceof JFormattedTextField tf)) {
                 return;
             } else {
-                JFormattedTextField tf = (JFormattedTextField)source;
-                Float val = (Float)tf.getValue();
+                Float val = (Float) tf.getValue();
                 if (val == null) {
                     return;
                 }
@@ -1632,10 +1631,8 @@ public class ServiceDialog extends JDialog implements ActionListener {
                     psCurrent.getSupportedAttributeValues(mpaCategory,
                                                           docFlavor,
                                                           tmpASet);
-                if (values instanceof MediaPrintableArea[] &&
-                    ((MediaPrintableArea[])values).length > 0) {
-                    mpaMax = ((MediaPrintableArea[])values)[0];
-
+                if (values instanceof MediaPrintableArea[] mpas && mpas.length > 0) {
+                    mpaMax = mpas[0];
                 }
             }
             if (mpaMax == null) {
@@ -1717,12 +1714,10 @@ public class ServiceDialog extends JDialog implements ActionListener {
                     psCurrent.getSupportedAttributeValues(mpaCategory,
                                                           docFlavor,
                                                           tmpASet);
-                if (values instanceof MediaPrintableArea[] &&
-                    ((MediaPrintableArea[])values).length > 0) {
-                    mpaMax = ((MediaPrintableArea[])values)[0];
-
-                } else if (values instanceof MediaPrintableArea) {
-                    mpaMax = (MediaPrintableArea)values;
+                if (values instanceof MediaPrintableArea[] mpas && mpas.length > 0) {
+                    mpaMax = mpas[0];
+                } else if (values instanceof MediaPrintableArea mpa1) {
+                    mpaMax = mpa1;
                 }
             }
             if (mpaMax == null) {
@@ -1983,9 +1978,8 @@ public class ServiceDialog extends JDialog implements ActionListener {
                        Media m = (Media)asCurrent.get(Media.class);
                        if (m == null || m instanceof MediaTray) {
                            asCurrent.add(newTray);
-                       } else if (m instanceof MediaSizeName) {
-                           MediaSizeName msn = (MediaSizeName)m;
-                           Media def = (Media)psCurrent.getDefaultAttributeValue(Media.class);
+                       } else if (m instanceof MediaSizeName msn) {
+                           Media def = (Media) psCurrent.getDefaultAttributeValue(Media.class);
                            if (def instanceof MediaSizeName && def.equals(msn)) {
                                asCurrent.add(newTray);
                            } else {
@@ -2037,18 +2031,14 @@ public class ServiceDialog extends JDialog implements ActionListener {
                                                           docFlavor,
                                                           asCurrent);
 
-                if (values instanceof Media[]) {
-                    Media[] media = (Media[])values;
-
-                    for (int i = 0; i < media.length; i++) {
-                        Media medium = media[i];
-
-                        if (medium instanceof MediaSizeName) {
-                            sizes.add((MediaSizeName)medium);
-                            cbSize.addItem(getMediaName(medium.toString()));
-                        } else if (medium instanceof MediaTray) {
-                            sources.add((MediaTray)medium);
-                            cbSource.addItem(getMediaName(medium.toString()));
+                if (values instanceof Media[] media) {
+                    for (Media medium : media) {
+                        if (medium instanceof MediaSizeName msn) {
+                            sizes.add(msn);
+                            cbSize.addItem(getMediaName(msn.toString()));
+                        } else if (medium instanceof MediaTray msn) {
+                            sources.add(msn);
+                            cbSource.addItem(getMediaName(msn.toString()));
                         }
                     }
                 }
@@ -2091,11 +2081,9 @@ public class ServiceDialog extends JDialog implements ActionListener {
                     }
                 }
                 if (medium != null) {
-                    if (medium instanceof MediaSizeName) {
-                        MediaSizeName ms = (MediaSizeName)medium;
+                    if (medium instanceof MediaSizeName ms) {
                         cbSize.setSelectedIndex(sizes.indexOf(ms));
-                    } else if (medium instanceof MediaTray) {
-                        MediaTray mt = (MediaTray)medium;
+                    } else if (medium instanceof MediaTray mt) {
                         cbSource.setSelectedIndex(sources.indexOf(mt) + 1);
                     }
                 } else {
@@ -2104,12 +2092,8 @@ public class ServiceDialog extends JDialog implements ActionListener {
                 }
 
                 SunAlternateMedia alt = (SunAlternateMedia)asCurrent.get(amCategory);
-                if (alt != null) {
-                    Media md = alt.getMedia();
-                    if (md instanceof MediaTray) {
-                        MediaTray mt = (MediaTray)md;
-                        cbSource.setSelectedIndex(sources.indexOf(mt) + 1);
-                    }
+                if (alt != null && alt.getMedia() instanceof MediaTray mt) {
+                    cbSource.setSelectedIndex(sources.indexOf(mt) + 1);
                 }
 
                 int selIndex = cbSize.getSelectedIndex();
@@ -2220,13 +2204,8 @@ public class ServiceDialog extends JDialog implements ActionListener {
                                                           docFlavor,
                                                           asCurrent);
 
-                if (values instanceof OrientationRequested[]) {
-                    OrientationRequested[] ovalues =
-                        (OrientationRequested[])values;
-
-                    for (int i = 0; i < ovalues.length; i++) {
-                        OrientationRequested value = ovalues[i];
-
+                if (values instanceof OrientationRequested[] ovalues) {
+                    for (OrientationRequested value : ovalues) {
                         if (value == OrientationRequested.PORTRAIT) {
                             pSupported = true;
                         } else if (value == OrientationRequested.LANDSCAPE) {
@@ -2259,9 +2238,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
                         psCurrent.getSupportedAttributeValues(orCategory,
                                                               docFlavor,
                                                               asCurrent);
-                    if (values instanceof OrientationRequested[]) {
-                        OrientationRequested[] orValues =
-                                            (OrientationRequested[])values;
+                    if (values instanceof OrientationRequested[] orValues) {
                         if (orValues.length > 1) {
                             // get the first in the list
                             or = orValues[0];
@@ -2396,12 +2373,8 @@ public class ServiceDialog extends JDialog implements ActionListener {
                                                           docFlavor,
                                                           asCurrent);
 
-                if (values instanceof Chromaticity[]) {
-                    Chromaticity[] cvalues = (Chromaticity[])values;
-
-                    for (int i = 0; i < cvalues.length; i++) {
-                        Chromaticity value = cvalues[i];
-
+                if (values instanceof Chromaticity[] cvalues) {
+                    for (Chromaticity value : cvalues) {
                         if (value == Chromaticity.MONOCHROME) {
                             monoSupported = true;
                         } else if (value == Chromaticity.COLOR) {
@@ -2493,12 +2466,8 @@ public class ServiceDialog extends JDialog implements ActionListener {
                                                           docFlavor,
                                                           asCurrent);
 
-                if (values instanceof PrintQuality[]) {
-                    PrintQuality[] qvalues = (PrintQuality[])values;
-
-                    for (int i = 0; i < qvalues.length; i++) {
-                        PrintQuality value = qvalues[i];
-
+                if (values instanceof PrintQuality[] qvalues) {
+                    for (PrintQuality value : qvalues) {
                         if (value == PrintQuality.DRAFT) {
                             draftSupported = true;
                         } else if (value == PrintQuality.NORMAL) {
@@ -2598,12 +2567,8 @@ public class ServiceDialog extends JDialog implements ActionListener {
                                                           docFlavor,
                                                           asCurrent);
 
-                if (values instanceof Sides[]) {
-                    Sides[] svalues = (Sides[])values;
-
-                    for (int i = 0; i < svalues.length; i++) {
-                        Sides value = svalues[i];
-
+                if (values instanceof Sides[] svalues) {
+                    for (Sides value : svalues) {
                         if (value == Sides.ONE_SIDED) {
                             osSupported = true;
                         } else if (value == Sides.TUMBLE) {

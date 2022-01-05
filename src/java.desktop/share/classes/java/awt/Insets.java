@@ -136,8 +136,7 @@ public class Insets implements Cloneable, java.io.Serializable {
      * @since       1.1
      */
     public boolean equals(Object obj) {
-        if (obj instanceof Insets) {
-            Insets insets = (Insets)obj;
+        if (obj instanceof Insets insets) {
             return ((top == insets.top) && (left == insets.left) &&
                     (bottom == insets.bottom) && (right == insets.right));
         }

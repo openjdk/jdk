@@ -272,8 +272,7 @@ public abstract class Path2D implements Shape, Cloneable {
          * @since 1.6
          */
         public Float(Shape s, AffineTransform at) {
-            if (s instanceof Path2D) {
-                Path2D p2d = (Path2D) s;
+            if (s instanceof Path2D p2d) {
                 setWindingRule(p2d.windingRule);
                 this.numTypes = p2d.numTypes;
                 // trim arrays:
@@ -1174,8 +1173,7 @@ public abstract class Path2D implements Shape, Cloneable {
          * @since 1.6
          */
         public Double(Shape s, AffineTransform at) {
-            if (s instanceof Path2D) {
-                Path2D p2d = (Path2D) s;
+            if (s instanceof Path2D p2d) {
                 setWindingRule(p2d.windingRule);
                 this.numTypes = p2d.numTypes;
                 // trim arrays:

@@ -102,12 +102,9 @@ class ExecutableInputMethodManager extends InputMethodManager
     ExecutableInputMethodManager() {
 
         // set up host adapter locator
-        Toolkit toolkit = Toolkit.getDefaultToolkit();
         try {
-            if (toolkit instanceof InputMethodSupport) {
-                InputMethodDescriptor hostAdapterDescriptor =
-                    ((InputMethodSupport)toolkit)
-                    .getInputMethodAdapterDescriptor();
+            if (Toolkit.getDefaultToolkit() instanceof InputMethodSupport ims) {
+                InputMethodDescriptor hostAdapterDescriptor = ims.getInputMethodAdapterDescriptor();
                 if (hostAdapterDescriptor != null) {
                     hostAdapterLocator = new InputMethodLocator(hostAdapterDescriptor, null, null);
                 }
@@ -416,9 +413,8 @@ class ExecutableInputMethodManager extends InputMethodManager
     }
 
     Locale getDefaultKeyboardLocale() {
-        Toolkit toolkit = Toolkit.getDefaultToolkit();
-        if (toolkit instanceof InputMethodSupport) {
-            return ((InputMethodSupport)toolkit).getDefaultKeyboardLocale();
+        if (Toolkit.getDefaultToolkit() instanceof InputMethodSupport ims) {
+            return ims.getDefaultKeyboardLocale();
         } else {
             return Locale.getDefault();
         }

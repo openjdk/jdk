@@ -401,15 +401,15 @@ public final class GlyphLayout {
         int lang = -1; // default for now
 
         Font2D font2D = FontUtilities.getFont2D(font);
-        if (font2D instanceof FontSubstitution) {
-            font2D = ((FontSubstitution)font2D).getCompositeFont2D();
+        if (font2D instanceof FontSubstitution substitution) {
+            font2D = substitution.getCompositeFont2D();
         }
 
         _textRecord.init(text, offset, lim, min, max);
         int start = offset;
-        if (font2D instanceof CompositeFont) {
+        if (font2D instanceof CompositeFont composite) {
             _scriptRuns.init(text, offset, count); // ??? how to handle 'common' chars
-            _fontRuns.init((CompositeFont)font2D, text, offset, lim);
+            _fontRuns.init(composite, text, offset, lim);
             while (_scriptRuns.next()) {
                 int limit = _scriptRuns.getScriptLimit();
                 int script = _scriptRuns.getScriptCode();
@@ -421,8 +421,8 @@ public final class GlyphLayout {
                      * its consistent with the way NativeFonts delegate
                      * in other cases too.
                      */
-                    if (pfont instanceof NativeFont) {
-                        pfont = ((NativeFont)pfont).getDelegateFont();
+                    if (pfont instanceof NativeFont nativeFont) {
+                        pfont = nativeFont.getDelegateFont();
                     }
                     int gmask = _fontRuns.getGlyphMask();
                     int pos = _fontRuns.getPos();

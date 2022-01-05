@@ -170,8 +170,7 @@ public class ImagingLib {
                 // Right now the native code doesn't support offsets
                 return null;
             }
-            if (table instanceof ByteLookupTable) {
-                ByteLookupTable bt = (ByteLookupTable) table;
+            if (table instanceof ByteLookupTable bt) {
                 if (lookupByteRaster(src, dst, bt.getTable()) > 0) {
                     retRaster = dst;
                 }
@@ -235,8 +234,7 @@ public class ImagingLib {
                 // Right now the native code doesn't support offsets
                 return null;
             }
-            if (table instanceof ByteLookupTable) {
-                ByteLookupTable bt = (ByteLookupTable) table;
+            if (table instanceof ByteLookupTable bt) {
                 if (lookupByteBI(src, dst, bt.getTable()) > 0) {
                     retBI = dst;
                 }

@@ -89,8 +89,8 @@ public abstract class KeyboardFocusManagerPeerImpl implements KeyboardFocusManag
             acceptFocusOnClick = true;
 
         // PANEL, empty only, accepts focus on click
-        } else if (component instanceof Panel) {
-            acceptFocusOnClick = (((Panel)component).getComponentCount() == 0);
+        } else if (component instanceof Panel panel) {
+            acceptFocusOnClick = panel.getComponentCount() == 0;
 
 
         // Other components

@@ -738,16 +738,14 @@ public class Raster {
                                             bandOffsets);
         switch(dataType) {
         case DataBuffer.TYPE_BYTE:
-            if (dataBuffer instanceof DataBufferByte) {
-                return new ByteInterleavedRaster(csm,
-                        (DataBufferByte) dataBuffer, location);
+            if (dataBuffer instanceof DataBufferByte dbb) {
+                return new ByteInterleavedRaster(csm, dbb, location);
             }
             break;
 
         case DataBuffer.TYPE_USHORT:
-            if (dataBuffer instanceof DataBufferUShort) {
-                return new ShortInterleavedRaster(csm,
-                        (DataBufferUShort) dataBuffer, location);
+            if (dataBuffer instanceof DataBufferUShort dbus) {
+                return new ShortInterleavedRaster(csm, dbus, location);
             }
             break;
 
@@ -843,16 +841,14 @@ public class Raster {
 
         switch(dataType) {
         case DataBuffer.TYPE_BYTE:
-            if (dataBuffer instanceof DataBufferByte) {
-                return new ByteBandedRaster(bsm,
-                        (DataBufferByte) dataBuffer, location);
+            if (dataBuffer instanceof DataBufferByte dbb) {
+                return new ByteBandedRaster(bsm, dbb, location);
             }
             break;
 
         case DataBuffer.TYPE_USHORT:
-            if (dataBuffer instanceof DataBufferUShort) {
-                return new ShortBandedRaster(bsm,
-                        (DataBufferUShort) dataBuffer, location);
+            if (dataBuffer instanceof DataBufferUShort dbus) {
+                return new ShortBandedRaster(bsm, dbus, location);
             }
             break;
 
@@ -918,23 +914,20 @@ public class Raster {
 
         switch(dataType) {
         case DataBuffer.TYPE_BYTE:
-            if (dataBuffer instanceof DataBufferByte) {
-                return new ByteInterleavedRaster(sppsm,
-                        (DataBufferByte) dataBuffer, location);
+            if (dataBuffer instanceof DataBufferByte dbb) {
+                return new ByteInterleavedRaster(sppsm, dbb, location);
             }
             break;
 
         case DataBuffer.TYPE_USHORT:
-            if (dataBuffer instanceof DataBufferUShort) {
-                return new ShortInterleavedRaster(sppsm,
-                        (DataBufferUShort) dataBuffer, location);
+            if (dataBuffer instanceof DataBufferUShort dbus) {
+                return new ShortInterleavedRaster(sppsm, dbus, location);
             }
             break;
 
         case DataBuffer.TYPE_INT:
-            if (dataBuffer instanceof DataBufferInt) {
-                return new IntegerInterleavedRaster(sppsm,
-                        (DataBufferInt) dataBuffer, location);
+            if (dataBuffer instanceof DataBufferInt dbi) {
+                return new IntegerInterleavedRaster(sppsm, dbi, location);
             }
             break;
 
@@ -1004,10 +997,10 @@ public class Raster {
         MultiPixelPackedSampleModel mppsm =
                 new MultiPixelPackedSampleModel(dataType, w, h, bitsPerPixel);
 
-        if (dataBuffer instanceof DataBufferByte &&
+        if (dataBuffer instanceof DataBufferByte dbb &&
             (bitsPerPixel == 1 || bitsPerPixel == 2 || bitsPerPixel == 4))
         {
-            return new BytePackedRaster(mppsm, (DataBufferByte) dataBuffer, location);
+            return new BytePackedRaster(mppsm, dbb, location);
         } else {
             return new SunWritableRaster(mppsm, dataBuffer, location);
         }
@@ -1051,48 +1044,43 @@ public class Raster {
         if (sm instanceof PixelInterleavedSampleModel) {
             switch(dataType) {
             case DataBuffer.TYPE_BYTE:
-                if (db instanceof DataBufferByte) {
-                    return new ByteInterleavedRaster(sm,
-                            (DataBufferByte) db, location);
+                if (db instanceof DataBufferByte dbb) {
+                    return new ByteInterleavedRaster(sm, dbb, location);
                 }
                 break;
 
             case DataBuffer.TYPE_USHORT:
-                if (db instanceof DataBufferUShort) {
-                    return new ShortInterleavedRaster(sm,
-                            (DataBufferUShort) db, location);
+                if (db instanceof DataBufferUShort dbus) {
+                    return new ShortInterleavedRaster(sm, dbus, location);
                 }
                 break;
             }
         } else if (sm instanceof SinglePixelPackedSampleModel) {
             switch(dataType) {
             case DataBuffer.TYPE_BYTE:
-                if (db instanceof DataBufferByte) {
-                    return new ByteInterleavedRaster(sm,
-                            (DataBufferByte) db, location);
+                if (db instanceof DataBufferByte dbb) {
+                    return new ByteInterleavedRaster(sm, dbb, location);
                 }
                 break;
 
             case DataBuffer.TYPE_USHORT:
-                if (db instanceof DataBufferUShort) {
-                    return new ShortInterleavedRaster(sm,
-                            (DataBufferUShort) db, location);
+                if (db instanceof DataBufferUShort dbus) {
+                    return new ShortInterleavedRaster(sm, dbus, location);
                 }
                 break;
 
             case DataBuffer.TYPE_INT:
-                if (db instanceof DataBufferInt) {
-                    return new IntegerInterleavedRaster(sm,
-                            (DataBufferInt) db, location);
+                if (db instanceof DataBufferInt dbi) {
+                    return new IntegerInterleavedRaster(sm, dbi, location);
                 }
                 break;
             }
         } else if (sm instanceof MultiPixelPackedSampleModel &&
                    dataType == DataBuffer.TYPE_BYTE &&
-                   db instanceof DataBufferByte &&
+                   db instanceof DataBufferByte dbb &&
                    sm.getSampleSize(0) < 8)
         {
-            return new BytePackedRaster(sm, (DataBufferByte) db, location);
+            return new BytePackedRaster(sm, dbb, location);
         }
 
         // we couldn't do anything special - do the generic thing
@@ -1159,48 +1147,43 @@ public class Raster {
         if (sm instanceof PixelInterleavedSampleModel) {
             switch(dataType) {
             case DataBuffer.TYPE_BYTE:
-                if (db instanceof DataBufferByte) {
-                    return new ByteInterleavedRaster(sm,
-                            (DataBufferByte) db, location);
+                if (db instanceof DataBufferByte dbb) {
+                    return new ByteInterleavedRaster(sm, dbb, location);
                 }
                 break;
 
             case DataBuffer.TYPE_USHORT:
-                if (db instanceof DataBufferUShort) {
-                    return new ShortInterleavedRaster(sm,
-                            (DataBufferUShort) db, location);
+                if (db instanceof DataBufferUShort dbus) {
+                    return new ShortInterleavedRaster(sm, dbus, location);
                 }
                 break;
             }
         } else if (sm instanceof SinglePixelPackedSampleModel) {
             switch(dataType) {
             case DataBuffer.TYPE_BYTE:
-                if (db instanceof DataBufferByte) {
-                    return new ByteInterleavedRaster(sm,
-                            (DataBufferByte) db, location);
+                if (db instanceof DataBufferByte dbb) {
+                    return new ByteInterleavedRaster(sm, dbb, location);
                 }
                 break;
 
             case DataBuffer.TYPE_USHORT:
-                if (db instanceof DataBufferUShort) {
-                    return new ShortInterleavedRaster(sm,
-                            (DataBufferUShort) db, location);
+                if (db instanceof DataBufferUShort dbus) {
+                    return new ShortInterleavedRaster(sm, dbus, location);
                 }
                 break;
 
             case DataBuffer.TYPE_INT:
-                if (db instanceof DataBufferInt) {
-                    return new IntegerInterleavedRaster(sm,
-                            (DataBufferInt) db, location);
+                if (db instanceof DataBufferInt dbi) {
+                    return new IntegerInterleavedRaster(sm, dbi, location);
                 }
                 break;
             }
         } else if (sm instanceof MultiPixelPackedSampleModel &&
                    dataType == DataBuffer.TYPE_BYTE &&
-                   db instanceof DataBufferByte &&
+                   db instanceof DataBufferByte dbb &&
                    sm.getSampleSize(0) < 8)
         {
-            return new BytePackedRaster(sm, (DataBufferByte) db, location);
+            return new BytePackedRaster(sm, dbb, location);
         }
 
         // we couldn't do anything special - do the generic thing

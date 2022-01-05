@@ -1368,12 +1368,11 @@ public abstract class RasterPrinterJob extends PrinterJob {
             (MediaPrintableArea)attributes.get(MediaPrintableArea.class);
 
         if ((orientReq != null || media != null || mpa != null) &&
-            getPageable() instanceof OpenBook) {
+            getPageable() instanceof OpenBook pageable) {
 
             /* We could almost(!) use PrinterJob.getPageFormat() except
              * here we need to start with the PageFormat from the OpenBook :
              */
-            Pageable pageable = getPageable();
             Printable printable = pageable.getPrintable(0);
             PageFormat pf = (PageFormat)pageable.getPageFormat(0).clone();
             Paper paper = pf.getPaper();
@@ -1387,9 +1386,8 @@ public abstract class RasterPrinterJob extends PrinterJob {
                 Object mpaVals = service.
                     getSupportedAttributeValues(MediaPrintableArea.class,
                                                 null, attributes);
-                if (mpaVals instanceof MediaPrintableArea[] &&
-                    ((MediaPrintableArea[])mpaVals).length > 0) {
-                    mpa = ((MediaPrintableArea[])mpaVals)[0];
+                if (mpaVals instanceof MediaPrintableArea[] mpas && mpas.length > 0) {
+                    mpa = mpas[0];
                 }
             }
 
@@ -1408,8 +1406,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
 
             if (isSupportedValue(media, attributes) ||
                 (!fidelity && media != null)) {
-                if (media instanceof MediaSizeName) {
-                    MediaSizeName msn = (MediaSizeName)media;
+                if (media instanceof MediaSizeName msn) {
                     MediaSize msz = MediaSize.getMediaSizeForName(msn);
                     if (msz != null) {
                         float paperWid =  msz.getX(MediaSize.INCH) * 72.0f;
@@ -1549,8 +1546,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
             noJobSheet = true;
         }
 
-        if ((psvc instanceof SunPrinterJobService) &&
-            ((SunPrinterJobService)psvc).usesClass(getClass())) {
+        if (psvc instanceof SunPrinterJobService service && service.usesClass(getClass())) {
             setAttributes(attributes);
             // throw exception for invalid destination
             if (destinationAttr != null) {
@@ -1785,9 +1781,8 @@ public abstract class RasterPrinterJob extends PrinterJob {
             media =
                 (Media)service.getDefaultAttributeValue(Media.class);
 
-            if (media instanceof MediaSizeName &&
-               ((size = MediaSize.getMediaSizeForName((MediaSizeName)media)) !=
-                null)) {
+            if (media instanceof MediaSizeName msn &&
+               ((size = MediaSize.getMediaSizeForName(msn)) != null)) {
                 w =  size.getX(MediaSize.INCH) * ptsPerInch;
                 h =  size.getY(MediaSize.INCH) * ptsPerInch;
                 newPaper.setSize(w, h);

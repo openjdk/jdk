@@ -949,60 +949,60 @@ public final class JobAttributes implements Cloneable {
      *          above criteria.
      */
     public boolean equals(Object obj) {
-        if (!(obj instanceof JobAttributes)) {
-            return false;
-        }
-        JobAttributes rhs = (JobAttributes)obj;
+        if (obj instanceof JobAttributes rhs) {
 
-        if (fileName == null) {
-            if (rhs.fileName != null) {
-                return false;
-            }
-        } else {
-            if (!fileName.equals(rhs.fileName)) {
-                return false;
-            }
-        }
-
-        if (pageRanges == null) {
-            if (rhs.pageRanges != null) {
-                return false;
-            }
-        } else {
-            if (rhs.pageRanges == null ||
-                    pageRanges.length != rhs.pageRanges.length) {
-                return false;
-            }
-            for (int i = 0; i < pageRanges.length; i++) {
-                if (pageRanges[i][0] != rhs.pageRanges[i][0] ||
-                    pageRanges[i][1] != rhs.pageRanges[i][1]) {
+            if (fileName == null) {
+                if (rhs.fileName != null) {
+                    return false;
+                }
+            } else {
+                if (!fileName.equals(rhs.fileName)) {
                     return false;
                 }
             }
-        }
 
-        if (printer == null) {
-            if (rhs.printer != null) {
-                return false;
+            if (pageRanges == null) {
+                if (rhs.pageRanges != null) {
+                    return false;
+                }
+            } else {
+                if (rhs.pageRanges == null ||
+                        pageRanges.length != rhs.pageRanges.length) {
+                    return false;
+                }
+                for (int i = 0; i < pageRanges.length; i++) {
+                    if (pageRanges[i][0] != rhs.pageRanges[i][0] ||
+                            pageRanges[i][1] != rhs.pageRanges[i][1]) {
+                        return false;
+                    }
+                }
             }
+
+            if (printer == null) {
+                if (rhs.printer != null) {
+                    return false;
+                }
+            } else {
+                if (!printer.equals(rhs.printer)) {
+                    return false;
+                }
+            }
+
+            return (copies == rhs.copies &&
+                    defaultSelection == rhs.defaultSelection &&
+                    destination == rhs.destination &&
+                    dialog == rhs.dialog &&
+                    fromPage == rhs.fromPage &&
+                    maxPage == rhs.maxPage &&
+                    minPage == rhs.minPage &&
+                    multipleDocumentHandling == rhs.multipleDocumentHandling &&
+                    prFirst == rhs.prFirst &&
+                    prLast == rhs.prLast &&
+                    sides == rhs.sides &&
+                    toPage == rhs.toPage);
         } else {
-            if (!printer.equals(rhs.printer)) {
-                return false;
-            }
+            return false;
         }
-
-        return (copies == rhs.copies &&
-                defaultSelection == rhs.defaultSelection &&
-                destination == rhs.destination &&
-                dialog == rhs.dialog &&
-                fromPage == rhs.fromPage &&
-                maxPage == rhs.maxPage &&
-                minPage == rhs.minPage &&
-                multipleDocumentHandling == rhs.multipleDocumentHandling &&
-                prFirst == rhs.prFirst &&
-                prLast == rhs.prLast &&
-                sides == rhs.sides &&
-                toPage == rhs.toPage);
     }
 
     /**

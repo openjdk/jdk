@@ -488,9 +488,7 @@ public class EventHandler implements InvocationHandler {
             }
             catch (InvocationTargetException ex) {
                 Throwable th = ex.getCause();
-                throw (th instanceof RuntimeException)
-                        ? (RuntimeException) th
-                        : new RuntimeException(th);
+                throw th instanceof RuntimeException e ? e : new RuntimeException(th);
             }
         }
         return null;

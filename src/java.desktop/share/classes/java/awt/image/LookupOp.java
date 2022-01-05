@@ -292,15 +292,11 @@ public class LookupOp implements BufferedImageOp, RasterOp {
         }
 
         // Optimize for cases we know about
-        if (ltable instanceof ByteLookupTable) {
-            byteFilter ((ByteLookupTable) ltable, src, dst,
-                        width, height, numBands);
-        }
-        else if (ltable instanceof ShortLookupTable) {
-            shortFilter ((ShortLookupTable) ltable, src, dst, width,
-                         height, numBands);
-        }
-        else {
+        if (ltable instanceof ByteLookupTable blt) {
+            byteFilter(blt, src, dst, width, height, numBands);
+        } else if (ltable instanceof ShortLookupTable slt) {
+            shortFilter(slt, src, dst, width, height, numBands);
+        } else {
             // Not one we recognize so do it slowly
             int sminX = src.getMinX();
             int sY = src.getMinY();

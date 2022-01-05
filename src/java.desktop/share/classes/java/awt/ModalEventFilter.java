@@ -57,8 +57,7 @@ abstract class ModalEventFilter implements EventFilter {
             if (o instanceof sun.awt.ModalExclude) {
                 // Exclude this object from modality and
                 // continue to pump it's events.
-            } else if (o instanceof Component) {
-                Component c = (Component)o;
+            } else if (o instanceof Component c) {
                 while ((c != null) && !(c instanceof Window)) {
                     c = c.getParent_NoClientCode();
                 }

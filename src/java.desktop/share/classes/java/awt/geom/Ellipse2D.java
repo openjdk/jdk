@@ -454,14 +454,13 @@ public abstract class Ellipse2D extends RectangularShape {
     public boolean equals(Object obj) {
         if (obj == this) {
             return true;
-        }
-        if (obj instanceof Ellipse2D) {
-            Ellipse2D e2d = (Ellipse2D) obj;
+        } else if (obj instanceof Ellipse2D e2d) {
             return ((getX() == e2d.getX()) &&
                     (getY() == e2d.getY()) &&
                     (getWidth() == e2d.getWidth()) &&
                     (getHeight() == e2d.getHeight()));
+        } else {
+            return false;
         }
-        return false;
     }
 }

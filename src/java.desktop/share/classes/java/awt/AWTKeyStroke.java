@@ -636,8 +636,7 @@ public class AWTKeyStroke implements Serializable {
      * @return true if the objects are identical
      */
     public final boolean equals(Object anObject) {
-        if (anObject instanceof AWTKeyStroke) {
-            AWTKeyStroke ks = (AWTKeyStroke)anObject;
+        if (anObject instanceof AWTKeyStroke ks) {
             return (ks.keyChar == keyChar && ks.keyCode == keyCode &&
                     ks.onKeyRelease == onKeyRelease &&
                     ks.modifiers == modifiers);

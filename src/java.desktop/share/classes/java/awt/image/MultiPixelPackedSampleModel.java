@@ -655,20 +655,20 @@ public class MultiPixelPackedSampleModel extends SampleModel
     }
 
     public boolean equals(Object o) {
-        if (!(o instanceof MultiPixelPackedSampleModel that)) {
+        if (o instanceof MultiPixelPackedSampleModel that) {
+            return this.width == that.width &&
+                this.height == that.height &&
+                this.numBands == that.numBands &&
+                this.dataType == that.dataType &&
+                this.pixelBitStride == that.pixelBitStride &&
+                this.bitMask == that.bitMask &&
+                this.pixelsPerDataElement == that.pixelsPerDataElement &&
+                this.dataElementSize == that.dataElementSize &&
+                this.dataBitOffset == that.dataBitOffset &&
+                this.scanlineStride == that.scanlineStride;
+        } else {
             return false;
         }
-
-        return this.width == that.width &&
-            this.height == that.height &&
-            this.numBands == that.numBands &&
-            this.dataType == that.dataType &&
-            this.pixelBitStride == that.pixelBitStride &&
-            this.bitMask == that.bitMask &&
-            this.pixelsPerDataElement == that.pixelsPerDataElement &&
-            this.dataElementSize == that.dataElementSize &&
-            this.dataBitOffset == that.dataBitOffset &&
-            this.scanlineStride == that.scanlineStride;
     }
 
     // If we implement equals() we must also implement hashCode

@@ -181,10 +181,10 @@ public class PrintingStatus {
                 throw new RuntimeException(e);
             } catch(InvocationTargetException e) {
                 Throwable cause = e.getCause();
-                if (cause instanceof RuntimeException) {
-                   throw (RuntimeException) cause;
-                } else if (cause instanceof Error) {
-                   throw (Error) cause;
+                if (cause instanceof RuntimeException ex) {
+                   throw ex;
+                } else if (cause instanceof Error ex) {
+                   throw ex;
                 } else {
                    throw new RuntimeException(cause);
                 }
@@ -305,12 +305,12 @@ public class PrintingStatus {
      */
     static int getInt(Object key, int defaultValue) {
         Object value = UIManager.get(key);
-        if (value instanceof Integer) {
-            return ((Integer) value).intValue();
+        if (value instanceof Integer i) {
+            return i;
         }
-        if (value instanceof String) {
+        if (value instanceof String s) {
             try {
-                return Integer.parseInt((String) value);
+                return Integer.parseInt(s);
             } catch(NumberFormatException nfe) {
             }
         }

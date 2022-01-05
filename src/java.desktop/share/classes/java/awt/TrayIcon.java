@@ -698,10 +698,10 @@ public class TrayIcon {
         synchronized (this) {
             if (peer == null) {
                 Toolkit toolkit = Toolkit.getDefaultToolkit();
-                if (toolkit instanceof SunToolkit) {
-                    peer = ((SunToolkit)Toolkit.getDefaultToolkit()).createTrayIcon(this);
-                } else if (toolkit instanceof HeadlessToolkit) {
-                    peer = ((HeadlessToolkit)Toolkit.getDefaultToolkit()).createTrayIcon(this);
+                if (toolkit instanceof SunToolkit stk) {
+                    peer = stk.createTrayIcon(this);
+                } else if (toolkit instanceof HeadlessToolkit htk) {
+                    peer = htk.createTrayIcon(this);
                 }
             }
         }
@@ -737,21 +737,21 @@ public class TrayIcon {
     }
 
     void processEvent(AWTEvent e) {
-        if (e instanceof MouseEvent) {
+        if (e instanceof MouseEvent mouseEvent) {
             switch(e.getID()) {
             case MouseEvent.MOUSE_PRESSED:
             case MouseEvent.MOUSE_RELEASED:
             case MouseEvent.MOUSE_CLICKED:
-                processMouseEvent((MouseEvent)e);
+                processMouseEvent(mouseEvent);
                 break;
             case MouseEvent.MOUSE_MOVED:
-                processMouseMotionEvent((MouseEvent)e);
+                processMouseMotionEvent(mouseEvent);
                 break;
             default:
                 return;
             }
-        } else if (e instanceof ActionEvent) {
-            processActionEvent((ActionEvent)e);
+        } else if (e instanceof ActionEvent actionEvent) {
+            processActionEvent(actionEvent);
         }
     }
 

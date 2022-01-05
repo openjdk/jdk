@@ -269,10 +269,8 @@ public class Desktop {
      * Suppresses default constructor for noninstantiability.
      */
     private Desktop() {
-        Toolkit defaultToolkit = Toolkit.getDefaultToolkit();
-        // same cast as in isDesktopSupported()
-        if (defaultToolkit instanceof SunToolkit) {
-            peer = ((SunToolkit) defaultToolkit).createDesktopPeer(this);
+        if (Toolkit.getDefaultToolkit() instanceof SunToolkit stk) {
+            peer = stk.createDesktopPeer(this);
         }
     }
 
@@ -326,11 +324,7 @@ public class Desktop {
      * @see #getDesktop()
      */
     public static boolean isDesktopSupported(){
-        Toolkit defaultToolkit = Toolkit.getDefaultToolkit();
-        if (defaultToolkit instanceof SunToolkit) {
-            return ((SunToolkit)defaultToolkit).isDesktopSupported();
-        }
-        return false;
+        return Toolkit.getDefaultToolkit() instanceof SunToolkit stk && stk.isDesktopSupported();
     }
 
     /**

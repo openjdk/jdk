@@ -339,26 +339,28 @@ public final class SplashScreen {
         if (image == null) {
             throw new IllegalStateException("no overlay image available");
         }
+
         DataBuffer buf = image.getRaster().getDataBuffer();
-        if (!(buf instanceof DataBufferInt)) {
-            throw new AssertionError("Overlay image DataBuffer is of invalid type == "+buf.getClass().getName());
-        }
-        int numBanks = buf.getNumBanks();
-        if (numBanks!=1) {
-            throw new AssertionError("Invalid number of banks =="+numBanks+" in overlay image DataBuffer");
-        }
-        if (!(image.getSampleModel() instanceof SinglePixelPackedSampleModel)) {
-            throw new AssertionError("Overlay image has invalid sample model == "+image.getSampleModel().getClass().getName());
-        }
-        SinglePixelPackedSampleModel sm = (SinglePixelPackedSampleModel)image.getSampleModel();
-        int scanlineStride = sm.getScanlineStride();
-        Rectangle rect = image.getRaster().getBounds();
-        // Note that we steal the data array here, but just for reading
-        // so we do not need to mark the DataBuffer dirty...
-        int[] data = SunWritableRaster.stealData((DataBufferInt)buf, 0);
-        synchronized(SplashScreen.class) {
-            checkVisible();
-            _update(splashPtr, data, rect.x, rect.y, rect.width, rect.height, scanlineStride);
+        if (buf instanceof DataBufferInt dbi) {
+            int numBanks = buf.getNumBanks();
+            if (numBanks != 1) {
+                throw new AssertionError("Invalid number of banks ==" + numBanks + " in overlay image DataBuffer");
+            }
+
+            if (image.getSampleModel() instanceof SinglePixelPackedSampleModel sm) {
+                Rectangle rect = image.getRaster().getBounds();
+                // Note that we steal the data array here, but just for reading
+                // so we do not need to mark the DataBuffer dirty...
+                int[] data = SunWritableRaster.stealData(dbi, 0);
+                synchronized (SplashScreen.class) {
+                    checkVisible();
+                    _update(splashPtr, data, rect.x, rect.y, rect.width, rect.height, sm.getScanlineStride());
+                }
+            } else {
+                throw new AssertionError("Overlay image has invalid sample model == " + image.getSampleModel().getClass().getName());
+            }
+        } else {
+            throw new AssertionError("Overlay image DataBuffer is of invalid type == " + buf.getClass().getName());
         }
     }
 

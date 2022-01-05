@@ -722,8 +722,8 @@ public abstract class PathGraphics extends ProxyGraphics2D {
 
         /* Build the needed maps for this font in a synchronized block */
         synchronized (fontMap) {
-            if (font2D instanceof CompositeFont) {
-                cf = (CompositeFont)font2D;
+            if (font2D instanceof CompositeFont compositeFont) {
+                cf = compositeFont;
                 int numSlots = cf.getNumSlots();
                 mapArray = (char[][])fontMap.get(font2D.handle);
                 if (mapArray == null) {
@@ -1126,18 +1126,18 @@ public abstract class PathGraphics extends ProxyGraphics2D {
     /* Obtain a BI from known implementations of java.awt.Image
      */
     protected BufferedImage getBufferedImage(Image img) {
-        if (img instanceof BufferedImage) {
+        if (img instanceof BufferedImage bufferedImage) {
             // Otherwise we expect a BufferedImage to behave as a standard BI
-            return (BufferedImage)img;
-        } else if (img instanceof ToolkitImage) {
+            return bufferedImage;
+        } else if (img instanceof ToolkitImage tki) {
             // This can be null if the image isn't loaded yet.
             // This is fine as in that case our caller will return
             // as it will only draw a fully loaded image
-            return ((ToolkitImage)img).getBufferedImage();
-        } else if (img instanceof VolatileImage) {
+            return tki.getBufferedImage();
+        } else if (img instanceof VolatileImage volatileImage) {
             // VI needs to make a new BI: this is unavoidable but
             // I don't expect VI's to be "huge" in any case.
-            return ((VolatileImage)img).getSnapshot();
+            return volatileImage.getSnapshot();
         } else {
             // may be null or may be some non-standard Image which
             // shouldn't happen as Image is implemented by the platform
@@ -1174,13 +1174,10 @@ public abstract class PathGraphics extends ProxyGraphics2D {
                 bufferedImage.getType()==BufferedImage.TYPE_INT_ARGB_PRE) {
                 DataBuffer db =  bufferedImage.getRaster().getDataBuffer();
                 SampleModel sm = bufferedImage.getRaster().getSampleModel();
-                if (db instanceof DataBufferInt &&
-                    sm instanceof SinglePixelPackedSampleModel) {
-                    SinglePixelPackedSampleModel psm =
-                        (SinglePixelPackedSampleModel)sm;
+                if (db instanceof DataBufferInt dbi &&
+                    sm instanceof SinglePixelPackedSampleModel psm) {
                     // Stealing the data array for reading only...
-                    int[] int_data =
-                        SunWritableRaster.stealData((DataBufferInt) db, 0);
+                    int[] int_data = SunWritableRaster.stealData(dbi, 0);
                     int x = bufferedImage.getMinX();
                     int y = bufferedImage.getMinY();
                     int w = bufferedImage.getWidth();
@@ -1226,13 +1223,10 @@ public abstract class PathGraphics extends ProxyGraphics2D {
                                        int srcWidth, int srcHeight) {
 
         ColorModel colorModel = bufferedImage.getColorModel();
-        IndexColorModel icm;
         int [] pixels;
 
-        if (!(colorModel instanceof IndexColorModel)) {
+        if (!(colorModel instanceof IndexColorModel icm)) {
             return false;
-        } else {
-            icm = (IndexColorModel)colorModel;
         }
 
         if (colorModel.getTransparency() != ColorModel.BITMASK) {
@@ -1878,8 +1872,8 @@ public abstract class PathGraphics extends ProxyGraphics2D {
             return;
         }
 
-        if (img instanceof BufferedImage) {
-            bufferedImage = (BufferedImage) img;
+        if (img instanceof BufferedImage image) {
+            bufferedImage = image;
         } else {
             bufferedImage = new BufferedImage(srcWidth, srcHeight,
                                               BufferedImage.TYPE_INT_ARGB);
@@ -1893,24 +1887,13 @@ public abstract class PathGraphics extends ProxyGraphics2D {
     }
 
     protected boolean isCompositing(Composite composite) {
-
-        boolean isCompositing = false;
-
-        if (composite instanceof AlphaComposite) {
-            AlphaComposite alphaComposite = (AlphaComposite) composite;
-            float alpha = alphaComposite.getAlpha();
+        if (composite instanceof AlphaComposite alphaComposite) {
             int rule = alphaComposite.getRule();
-
-            if (alpha != 1.0
+            return alphaComposite.getAlpha() != 1.0
                     || (rule != AlphaComposite.SRC
-                        && rule != AlphaComposite.SRC_OVER))
-            {
-                isCompositing = true;
-            }
-
+                    && rule != AlphaComposite.SRC_OVER);
         } else {
-            isCompositing = true;
+            return true;
         }
-        return isCompositing;
     }
 }

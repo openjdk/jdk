@@ -176,8 +176,8 @@ public class Type1Font extends FileFont {
                 Disposer.addObjectRecord(bufferRef, ref);
                 bufferRef = null;
             }
-            if (t instanceof FontFormatException) {
-                throw (FontFormatException)t;
+            if (t instanceof FontFormatException e) {
+                throw e;
             } else {
                 throw new FontFormatException("Unexpected runtime exception.");
             }

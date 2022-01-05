@@ -3922,14 +3922,12 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      * @since 1.2
      */
     public boolean equals(Object obj) {
-        if (!(obj instanceof AffineTransform)) {
+        if (obj instanceof AffineTransform a) {
+            return ((m00 == a.m00) && (m01 == a.m01) && (m02 == a.m02) &&
+                    (m10 == a.m10) && (m11 == a.m11) && (m12 == a.m12));
+        } else {
             return false;
         }
-
-        AffineTransform a = (AffineTransform)obj;
-
-        return ((m00 == a.m00) && (m01 == a.m01) && (m02 == a.m02) &&
-                (m10 == a.m10) && (m11 == a.m11) && (m12 == a.m12));
     }
 
     /* Serialization support.  A readObject method is neccessary because

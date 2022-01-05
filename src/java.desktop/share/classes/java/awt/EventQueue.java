@@ -305,8 +305,7 @@ public class EventQueue {
     }
 
     private static int getPriority(AWTEvent theEvent) {
-        if (theEvent instanceof PeerEvent) {
-            PeerEvent peerEvent = (PeerEvent)theEvent;
+        if (theEvent instanceof PeerEvent peerEvent) {
             if ((peerEvent.getFlags() & PeerEvent.ULTIMATE_PRIORITY_EVENT) != 0) {
                 return ULTIMATE_PRIORITY;
             }
@@ -460,8 +459,8 @@ public class EventQueue {
         if (!(e.getSource() instanceof Component)) {
             return false;
         }
-        if (e instanceof PeerEvent) {
-            return coalescePeerEvent((PeerEvent)e);
+        if (e instanceof PeerEvent peerEvent) {
+            return coalescePeerEvent(peerEvent);
         }
         // The worst case
         if (((Component)e.getSource()).isCoalescingEnabled()
@@ -469,19 +468,18 @@ public class EventQueue {
         {
             return true;
         }
-        if (e instanceof PaintEvent) {
-            return coalescePaintEvent((PaintEvent)e);
+        if (e instanceof PaintEvent paintEvent) {
+            return coalescePaintEvent(paintEvent);
         }
-        if (e instanceof MouseEvent) {
-            return coalesceMouseEvent((MouseEvent)e);
+        if (e instanceof MouseEvent mouseEvent) {
+            return coalesceMouseEvent(mouseEvent);
         }
         return false;
     }
 
     private void cacheEQItem(EventQueueItem entry) {
         int index = eventToCacheIndex(entry.event);
-        if (index != -1 && entry.event.getSource() instanceof Component) {
-            Component source = (Component)entry.event.getSource();
+        if (index != -1 && entry.event.getSource() instanceof Component source) {
             if (source.eventCache == null) {
                 source.eventCache = new EventQueueItem[CACHE_LENGTH];
             }
@@ -491,8 +489,7 @@ public class EventQueue {
 
     private void uncacheEQItem(EventQueueItem entry) {
         int index = eventToCacheIndex(entry.event);
-        if (index != -1 && entry.event.getSource() instanceof Component) {
-            Component source = (Component)entry.event.getSource();
+        if (index != -1 && entry.event.getSource() instanceof Component source) {
             if (source.eventCache == null) {
                 return;
             }
@@ -753,13 +750,14 @@ public class EventQueue {
 
     @SuppressWarnings("removal")
     private static AccessControlContext getAccessControlContextFrom(Object src) {
-        return src instanceof Component ?
-            ((Component)src).getAccessControlContext() :
-            src instanceof MenuComponent ?
-                ((MenuComponent)src).getAccessControlContext() :
-                src instanceof TrayIcon ?
-                    ((TrayIcon)src).getAccessControlContext() :
-                    null;
+        if (src instanceof Component component) {
+            return component.getAccessControlContext();
+        } else if (src instanceof MenuComponent menuComponent) {
+            return menuComponent.getAccessControlContext();
+        } else if (src instanceof TrayIcon trayIcon) {
+            return trayIcon.getAccessControlContext();
+        }
+        return null;
     }
 
     /**
@@ -767,17 +765,17 @@ public class EventQueue {
      */
     private void dispatchEventImpl(final AWTEvent event, final Object src) {
         event.isPosted = true;
-        if (event instanceof ActiveEvent) {
+        if (event instanceof ActiveEvent activeEvent) {
             // This could become the sole method of dispatching in time.
             setCurrentEventAndMostRecentTimeImpl(event);
-            ((ActiveEvent)event).dispatch();
-        } else if (src instanceof Component) {
-            ((Component)src).dispatchEvent(event);
+            activeEvent.dispatch();
+        } else if (src instanceof Component component) {
+            component.dispatchEvent(event);
             event.dispatched();
-        } else if (src instanceof MenuComponent) {
-            ((MenuComponent)src).dispatchEvent(event);
-        } else if (src instanceof TrayIcon) {
-            ((TrayIcon)src).dispatchEvent(event);
+        } else if (src instanceof MenuComponent menuComponent) {
+            menuComponent.dispatchEvent(event);
+        } else if (src instanceof TrayIcon trayIcon) {
+            trayIcon.dispatchEvent(event);
         } else if (src instanceof AWTAutoShutdown) {
             if (noEvents()) {
                 dispatchThread.stopDispatching();
@@ -1213,18 +1211,18 @@ public class EventQueue {
                                   || entry.event instanceof KeyEvent
                                   || entry.event instanceof InputMethodEvent)))
                     {
-                        if (entry.event instanceof SequencedEvent) {
-                            ((SequencedEvent)entry.event).dispose();
+                        if (entry.event instanceof SequencedEvent sequencedEvent) {
+                            sequencedEvent.dispose();
                         }
-                        if (entry.event instanceof SentEvent) {
-                            ((SentEvent)entry.event).dispose();
+                        if (entry.event instanceof SentEvent sentEvent) {
+                            sentEvent.dispose();
                         }
-                        if (entry.event instanceof InvocationEvent) {
+                        if (entry.event instanceof InvocationEvent invocationEvent) {
                             AWTAccessor.getInvocationEventAccessor()
-                                    .dispose((InvocationEvent)entry.event);
+                                    .dispose(invocationEvent);
                         }
-                        if (entry.event instanceof SunDropTargetEvent) {
-                            ((SunDropTargetEvent)entry.event).dispose();
+                        if (entry.event instanceof SunDropTargetEvent targetEvent) {
+                            targetEvent.dispose();
                         }
                         if (prev == null) {
                             queues[i].head = entry.next;
@@ -1274,20 +1272,16 @@ public class EventQueue {
             // In tiger, we will probably give timestamps to all events, so this
             // will no longer be an issue.
             long mostRecentEventTime2 = Long.MIN_VALUE;
-            if (e instanceof InputEvent) {
-                InputEvent ie = (InputEvent)e;
+            if (e instanceof InputEvent ie) {
                 mostRecentEventTime2 = ie.getWhen();
                 if (e instanceof KeyEvent) {
                     mostRecentKeyEventTime = ie.getWhen();
                 }
-            } else if (e instanceof InputMethodEvent) {
-                InputMethodEvent ime = (InputMethodEvent)e;
+            } else if (e instanceof InputMethodEvent ime) {
                 mostRecentEventTime2 = ime.getWhen();
-            } else if (e instanceof ActionEvent) {
-                ActionEvent ae = (ActionEvent)e;
+            } else if (e instanceof ActionEvent ae) {
                 mostRecentEventTime2 = ae.getWhen();
-            } else if (e instanceof InvocationEvent) {
-                InvocationEvent ie = (InvocationEvent)e;
+            } else if (e instanceof InvocationEvent ie) {
                 mostRecentEventTime2 = ie.getWhen();
             }
             mostRecentEventTime = Math.max(mostRecentEventTime, mostRecentEventTime2);

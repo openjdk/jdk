@@ -110,12 +110,9 @@ public class VetoableChangeSupport implements Serializable {
         if (listener == null) {
             return;
         }
-        if (listener instanceof VetoableChangeListenerProxy) {
-            VetoableChangeListenerProxy proxy =
-                    (VetoableChangeListenerProxy)listener;
+        if (listener instanceof VetoableChangeListenerProxy proxy) {
             // Call two argument add method.
-            addVetoableChangeListener(proxy.getPropertyName(),
-                                      proxy.getListener());
+            addVetoableChangeListener(proxy.getPropertyName(), proxy.getListener());
         } else {
             this.map.add(null, listener);
         }
@@ -136,12 +133,9 @@ public class VetoableChangeSupport implements Serializable {
         if (listener == null) {
             return;
         }
-        if (listener instanceof VetoableChangeListenerProxy) {
-            VetoableChangeListenerProxy proxy =
-                    (VetoableChangeListenerProxy)listener;
+        if (listener instanceof VetoableChangeListenerProxy proxy) {
             // Call two argument remove method.
-            removeVetoableChangeListener(proxy.getPropertyName(),
-                                         proxy.getListener());
+            removeVetoableChangeListener(proxy.getPropertyName(), proxy.getListener());
         } else {
             this.map.remove(null, listener);
         }
@@ -556,8 +550,8 @@ public class VetoableChangeSupport implements Serializable {
          * {@inheritDoc}
          */
         public VetoableChangeListener extract(VetoableChangeListener listener) {
-            while (listener instanceof VetoableChangeListenerProxy) {
-                listener = ((VetoableChangeListenerProxy) listener).getListener();
+            while (listener instanceof VetoableChangeListenerProxy vclp) {
+                listener = vclp.getListener();
             }
             return listener;
         }

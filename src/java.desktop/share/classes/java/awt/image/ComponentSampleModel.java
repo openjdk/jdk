@@ -1185,19 +1185,19 @@ public class ComponentSampleModel extends SampleModel
     }
 
     public boolean equals(Object o) {
-        if (!(o instanceof ComponentSampleModel that)) {
+        if (o instanceof ComponentSampleModel that) {
+            return this.width == that.width &&
+                this.height == that.height &&
+                this.numBands == that.numBands &&
+                this.dataType == that.dataType &&
+                Arrays.equals(this.bandOffsets, that.bandOffsets) &&
+                Arrays.equals(this.bankIndices, that.bankIndices) &&
+                this.numBanks == that.numBanks &&
+                this.scanlineStride == that.scanlineStride &&
+                this.pixelStride == that.pixelStride;
+        } else {
             return false;
         }
-
-        return this.width == that.width &&
-            this.height == that.height &&
-            this.numBands == that.numBands &&
-            this.dataType == that.dataType &&
-            Arrays.equals(this.bandOffsets, that.bandOffsets) &&
-            Arrays.equals(this.bankIndices, that.bankIndices) &&
-            this.numBanks == that.numBanks &&
-            this.scanlineStride == that.scanlineStride &&
-            this.pixelStride == that.pixelStride;
     }
 
     // If we implement equals() we must also implement hashCode

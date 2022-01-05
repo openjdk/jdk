@@ -94,8 +94,8 @@ public class SunWritableRaster extends WritableRaster {
     }
 
     public static void markDirty(WritableRaster wr) {
-        if (wr instanceof SunWritableRaster) {
-            ((SunWritableRaster) wr).markDirty();
+        if (wr instanceof SunWritableRaster swr) {
+            swr.markDirty();
         } else {
             markDirty(wr.getDataBuffer());
         }

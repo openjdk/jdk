@@ -173,13 +173,12 @@ public class BufImgSurfaceData extends SurfaceData {
             {
                 Raster raster = bufImg.getRaster();
                 int numBands = raster.getNumBands();
-                if (raster instanceof IntegerComponentRaster &&
+                if (raster instanceof IntegerComponentRaster icr &&
                     raster.getNumDataElements() == 1 &&
-                    ((IntegerComponentRaster)raster).getPixelStride() == 1)
+                    icr.getPixelStride() == 1)
                 {
                     SurfaceType sType = SurfaceType.AnyInt;
-                    if (cm instanceof DirectColorModel) {
-                        DirectColorModel dcm = (DirectColorModel) cm;
+                    if (cm instanceof DirectColorModel dcm) {
                         int aMask = dcm.getAlphaMask();
                         int rMask = dcm.getRedMask();
                         int gMask = dcm.getGreenMask();
@@ -204,14 +203,13 @@ public class BufImgSurfaceData extends SurfaceData {
                     }
                     sData = createDataIC(bufImg, sType, scaleX, scaleY);
                     break;
-                } else if (raster instanceof ShortComponentRaster &&
+                } else if (raster instanceof ShortComponentRaster scr &&
                            raster.getNumDataElements() == 1 &&
-                           ((ShortComponentRaster)raster).getPixelStride() == 1)
+                           scr.getPixelStride() == 1)
                 {
                     SurfaceType sType = SurfaceType.AnyShort;
                     IndexColorModel icm = null;
-                    if (cm instanceof DirectColorModel) {
-                        DirectColorModel dcm = (DirectColorModel) cm;
+                    if (cm instanceof DirectColorModel dcm) {
                         int aMask = dcm.getAlphaMask();
                         int rMask = dcm.getRedMask();
                         int gMask = dcm.getGreenMask();
@@ -312,9 +310,7 @@ public class BufImgSurfaceData extends SurfaceData {
             new BufImgSurfaceData(bcRaster.getDataBuffer(), bImg, sType,
                                   scaleX, scaleY);
         ColorModel cm = bImg.getColorModel();
-        IndexColorModel icm = ((cm instanceof IndexColorModel)
-                               ? (IndexColorModel) cm
-                               : null);
+        IndexColorModel icm = cm instanceof IndexColorModel colorModel ? colorModel : null;
         bisd.initRaster(bcRaster.getDataStorage(),
                         bcRaster.getDataOffset(primaryBank), 0,
                         bcRaster.getWidth(),
@@ -335,9 +331,7 @@ public class BufImgSurfaceData extends SurfaceData {
             new BufImgSurfaceData(bpRaster.getDataBuffer(), bImg, sType,
                                   scaleX, scaleY);
         ColorModel cm = bImg.getColorModel();
-        IndexColorModel icm = ((cm instanceof IndexColorModel)
-                               ? (IndexColorModel) cm
-                               : null);
+        IndexColorModel icm = cm instanceof IndexColorModel colorModel ? colorModel : null;
         bisd.initRaster(bpRaster.getDataStorage(),
                         bpRaster.getDataBitOffset() / 8,
                         bpRaster.getDataBitOffset() & 7,

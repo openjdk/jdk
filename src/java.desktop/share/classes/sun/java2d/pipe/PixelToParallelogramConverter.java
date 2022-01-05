@@ -119,11 +119,10 @@ public class PixelToParallelogramConverter extends PixelToShapeConverter
     public void draw(SunGraphics2D sg2d, Shape s) {
         if (sg2d.strokeState < SunGraphics2D.STROKE_CUSTOM) {
             BasicStroke bs = ((BasicStroke) sg2d.stroke);
-            if (s instanceof Rectangle2D) {
+            if (s instanceof Rectangle2D r2d) {
                 if (bs.getLineJoin() == BasicStroke.JOIN_MITER &&
                     bs.getDashArray() == null)
                 {
-                    Rectangle2D r2d = (Rectangle2D) s;
                     double w = r2d.getWidth();
                     double h = r2d.getHeight();
                     double x = r2d.getX();
@@ -134,8 +133,7 @@ public class PixelToParallelogramConverter extends PixelToShapeConverter
                     }
                     return;
                 }
-            } else if (s instanceof Line2D) {
-                Line2D l2d = (Line2D) s;
+            } else if (s instanceof Line2D l2d) {
                 if (drawGeneralLine(sg2d,
                                     l2d.getX1(), l2d.getY1(),
                                     l2d.getX2(), l2d.getY2()))
@@ -149,8 +147,7 @@ public class PixelToParallelogramConverter extends PixelToShapeConverter
     }
 
     public void fill(SunGraphics2D sg2d, Shape s) {
-        if (s instanceof Rectangle2D) {
-            Rectangle2D r2d = (Rectangle2D) s;
+        if (s instanceof Rectangle2D r2d) {
             double w = r2d.getWidth();
             double h = r2d.getHeight();
             if (w > 0 && h > 0) {
@@ -158,10 +155,9 @@ public class PixelToParallelogramConverter extends PixelToShapeConverter
                 double y = r2d.getY();
                 fillRectangle(sg2d, x, y, w, h);
             }
-            return;
+        } else {
+            outpipe.fill(sg2d, s);
         }
-
-        outpipe.fill(sg2d, s);
     }
 
     static double len(double x, double y) {
@@ -231,7 +227,7 @@ public class PixelToParallelogramConverter extends PixelToShapeConverter
         }
         if (sg2d.strokeHint != SunHints.INTVAL_STROKE_PURE) {
             if (sg2d.strokeState == SunGraphics2D.STROKE_THIN &&
-                outrenderer instanceof PixelDrawPipe)
+                outrenderer instanceof PixelDrawPipe drawPipe)
             {
                 // PixelDrawPipes will add sg2d.transXY so we need to factor
                 // that out...
@@ -239,7 +235,7 @@ public class PixelToParallelogramConverter extends PixelToShapeConverter
                 int iy1 = (int) Math.floor(y1 - sg2d.transY);
                 int ix2 = (int) Math.floor(x2 - sg2d.transX);
                 int iy2 = (int) Math.floor(y2 - sg2d.transY);
-                ((PixelDrawPipe)outrenderer).drawLine(sg2d, ix1, iy1, ix2, iy2);
+                drawPipe.drawLine(sg2d, ix1, iy1, ix2, iy2);
                 return true;
             }
             x1 = normalize(x1);

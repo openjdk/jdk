@@ -453,11 +453,10 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
     public Font2DHandle getNewComposite(String family, int style,
                                         Font2DHandle handle) {
 
-        if (!(handle.font2D instanceof CompositeFont)) {
+        if (!(handle.font2D instanceof CompositeFont oldComp)) {
             return handle;
         }
 
-        CompositeFont oldComp = (CompositeFont)handle.font2D;
         PhysicalFont oldFont = oldComp.getSlotFont(0);
 
         if (family == null) {
@@ -659,10 +658,8 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                  * more complete (larger) one.
                  */
                 if (oldFont.getRank() == rank) {
-                    if (oldFont instanceof TrueTypeFont &&
-                        newFont instanceof TrueTypeFont) {
-                        TrueTypeFont oldTTFont = (TrueTypeFont)oldFont;
-                        TrueTypeFont newTTFont = (TrueTypeFont)newFont;
+                    if (oldFont instanceof TrueTypeFont oldTTFont &&
+                        newFont instanceof TrueTypeFont newTTFont) {
                         if (oldTTFont.fileSize >= newTTFont.fileSize) {
                             return oldFont;
                         }
@@ -1014,8 +1011,8 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
             // findFont2D will load all fonts
             Font2D font2d = findFont2D(defaultFontName, Font.PLAIN, NO_FALLBACK);
             if (font2d != null) {
-                if (font2d instanceof PhysicalFont) {
-                    defaultPhysicalFont = (PhysicalFont)font2d;
+                if (font2d instanceof PhysicalFont physicalFont) {
+                    defaultPhysicalFont = physicalFont;
                 } else {
                     if (FontUtilities.isLogging()) {
                         FontUtilities.logWarning("Font returned by findFont2D for default font name " +
@@ -2318,14 +2315,13 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
      * make sense for a Composite to be "bad".
      */
     public synchronized void deRegisterBadFont(Font2D font2D) {
-        if (!(font2D instanceof PhysicalFont)) {
-            /* We should never reach here, but just in case */
-            return;
-        } else {
+        if (font2D instanceof PhysicalFont physicalFont) {
             if (FontUtilities.isLogging()) {
                 FontUtilities.logSevere("Deregister bad font: " + font2D);
             }
-            replaceFont((PhysicalFont)font2D, getDefaultPhysicalFont());
+            replaceFont(physicalFont, getDefaultPhysicalFont());
+        } else {
+            /* We should never reach here, but just in case */
         }
     }
 
@@ -2436,8 +2432,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         localeFullNamesToFont = new HashMap<>();
         Font2D[] fonts = getRegisteredFonts();
         for (int i=0; i<fonts.length; i++) {
-            if (fonts[i] instanceof TrueTypeFont) {
-                TrueTypeFont ttf = (TrueTypeFont)fonts[i];
+            if (fonts[i] instanceof TrueTypeFont ttf) {
                 String[] fullNames = ttf.getAllFullNames();
                 for (int n=0; n<fullNames.length; n++) {
                     localeFullNamesToFont.put(fullNames[n], ttf);

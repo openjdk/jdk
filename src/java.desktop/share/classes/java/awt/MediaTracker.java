@@ -828,8 +828,8 @@ public class MediaTracker implements java.io.Serializable {
         MediaEntry prev = null;
         while (cur != null) {
             MediaEntry next = cur.next;
-            if (cur.getID() == id && cur instanceof ImageMediaEntry
-                && ((ImageMediaEntry) cur).matches(image, width, height))
+            if (cur.getID() == id && cur instanceof ImageMediaEntry ime
+                && ime.matches(image, width, height))
             {
                 if (prev == null) {
                     head = next;
@@ -849,10 +849,7 @@ public class MediaTracker implements java.io.Serializable {
     }
 
     private static Image getResolutionVariant(Image image) {
-        if (image instanceof MultiResolutionToolkitImage) {
-            return ((MultiResolutionToolkitImage) image).getResolutionVariant();
-        }
-        return null;
+        return image instanceof MultiResolutionToolkitImage tki ? tki.getResolutionVariant() : null;
     }
 }
 

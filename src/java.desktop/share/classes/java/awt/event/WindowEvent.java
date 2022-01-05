@@ -314,7 +314,7 @@ public class WindowEvent extends ComponentEvent {
      * @return the Window object that originated the event
      */
     public Window getWindow() {
-        return (source instanceof Window) ? (Window)source : null;
+        return source instanceof Window window ? window : null;
     }
 
     /**

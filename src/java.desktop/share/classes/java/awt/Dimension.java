@@ -207,11 +207,7 @@ public class Dimension extends Dimension2D implements java.io.Serializable {
      * Checks whether two dimension objects have equal values.
      */
     public boolean equals(Object obj) {
-        if (obj instanceof Dimension) {
-            Dimension d = (Dimension)obj;
-            return (width == d.width) && (height == d.height);
-        }
-        return false;
+        return obj instanceof Dimension d && (width == d.width) && (height == d.height);
     }
 
     /**

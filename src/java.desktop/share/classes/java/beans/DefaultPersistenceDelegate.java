@@ -197,8 +197,7 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
             if (!Objects.equals(newValue, out.get(oldValue))) {
                 // Search for a static constant with this value;
                 Object e = (Object[])pd.getValue("enumerationValues");
-                if (e instanceof Object[] && Array.getLength(e) % 3 == 0) {
-                    Object[] a = (Object[])e;
+                if (e instanceof Object[] a && Array.getLength(e) % 3 == 0) {
                     for(int i = 0; i < a.length; i = i + 3) {
                         try {
                            Field f = type.getField((String)a[i]);

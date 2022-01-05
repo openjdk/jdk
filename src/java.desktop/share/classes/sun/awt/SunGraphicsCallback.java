@@ -39,8 +39,8 @@ public abstract class SunGraphicsCallback {
     public abstract void run(Component comp, Graphics cg);
 
     protected void constrainGraphics(Graphics g, Rectangle bounds) {
-        if (g instanceof ConstrainableGraphics) {
-            ((ConstrainableGraphics)g).constrain(bounds.x, bounds.y, bounds.width, bounds.height);
+        if (g instanceof ConstrainableGraphics cg) {
+            cg.constrain(bounds.x, bounds.y, bounds.width, bounds.height);
         } else {
             g.translate(bounds.x, bounds.y);
         }
@@ -69,8 +69,8 @@ public abstract class SunGraphicsCallback {
                 constrainGraphics(cg, bounds);
                 cg.setFont(comp.getFont());
                 cg.setColor(comp.getForeground());
-                if (cg instanceof Graphics2D) {
-                    ((Graphics2D)cg).setBackground(comp.getBackground());
+                if (cg instanceof Graphics2D g2d) {
+                    g2d.setBackground(comp.getBackground());
                 }
                 run(comp, cg);
             } finally {
@@ -124,9 +124,8 @@ public abstract class SunGraphicsCallback {
         public void run(Component comp, Graphics cg) {
             if (!comp.isLightweight()) {
                 comp.paintAll(cg);
-            } else if (comp instanceof Container) {
-                runComponents(((Container)comp).getComponents(), cg,
-                              LIGHTWEIGHTS | HEAVYWEIGHTS);
+            } else if (comp instanceof Container container) {
+                runComponents(container.getComponents(), cg,LIGHTWEIGHTS | HEAVYWEIGHTS);
             }
         }
         public static PaintHeavyweightComponentsCallback getInstance() {
@@ -143,9 +142,8 @@ public abstract class SunGraphicsCallback {
         public void run(Component comp, Graphics cg) {
             if (!comp.isLightweight()) {
                 comp.printAll(cg);
-            } else if (comp instanceof Container) {
-                runComponents(((Container)comp).getComponents(), cg,
-                              LIGHTWEIGHTS | HEAVYWEIGHTS);
+            } else if (comp instanceof Container container) {
+                runComponents(container.getComponents(), cg, LIGHTWEIGHTS | HEAVYWEIGHTS);
             }
         }
         public static PrintHeavyweightComponentsCallback getInstance() {

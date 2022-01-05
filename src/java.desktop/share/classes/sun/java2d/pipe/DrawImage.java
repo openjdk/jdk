@@ -830,11 +830,12 @@ public class DrawImage implements DrawImagePipe
     }
 
     protected BufferedImage getBufferedImage(Image img) {
-        if (img instanceof BufferedImage) {
-            return (BufferedImage)img;
+        if (img instanceof BufferedImage bufferedImage) {
+            return bufferedImage;
+        } else {
+            // Must be VolatileImage; get BufferedImage representation
+            return ((VolatileImage) img).getSnapshot();
         }
-        // Must be VolatileImage; get BufferedImage representation
-        return ((VolatileImage)img).getSnapshot();
     }
 
     /*
@@ -866,9 +867,8 @@ public class DrawImage implements DrawImagePipe
         }
 
         if (sg.renderHint != SunHints.INTVAL_RENDER_QUALITY) {
-            if (cm instanceof IndexColorModel) {
+            if (cm instanceof IndexColorModel icm) {
                 Raster raster = bImg.getRaster();
-                IndexColorModel icm = (IndexColorModel) cm;
                 // Just need to make sure that we have a transparent pixel
                 if (needTrans && cm.getTransparency() == Transparency.OPAQUE) {
                     // Fix 4221407
@@ -1037,15 +1037,13 @@ public class DrawImage implements DrawImagePipe
                              int x, int y,
                              Color bgColor,
                              ImageObserver observer) {
-        if (!(img instanceof ToolkitImage)) {
-            return copyImage(sg, img, x, y, bgColor);
-        } else {
-            ToolkitImage sunimg = (ToolkitImage)img;
-            if (!imageReady(sunimg, observer)) {
+        if (img instanceof ToolkitImage tki) {
+            if (!imageReady(tki, observer)) {
                 return false;
             }
-            ImageRepresentation ir = sunimg.getImageRep();
-            return ir.drawToBufImage(sg, sunimg, x, y, bgColor, observer);
+            return tki.getImageRep().drawToBufImage(sg, tki, x, y, bgColor, observer);
+        } else {
+            return copyImage(sg, img, x, y, bgColor);
         }
     }
 
@@ -1053,18 +1051,16 @@ public class DrawImage implements DrawImagePipe
                              int dx, int dy, int sx, int sy, int w, int h,
                              Color bgColor,
                              ImageObserver observer) {
-        if (!(img instanceof ToolkitImage)) {
-            return copyImage(sg, img, dx, dy, sx, sy, w, h, bgColor);
-        } else {
-            ToolkitImage sunimg = (ToolkitImage)img;
-            if (!imageReady(sunimg, observer)) {
+        if (img instanceof ToolkitImage tki) {
+            if (!imageReady(tki, observer)) {
                 return false;
             }
-            ImageRepresentation ir = sunimg.getImageRep();
-            return ir.drawToBufImage(sg, sunimg,
+            return tki.getImageRep().drawToBufImage(sg, tki,
                                      dx, dy, (dx + w), (dy + h),
                                      sx, sy, (sx + w), (sy + h),
                                      bgColor, observer);
+        } else {
+            return copyImage(sg, img, dx, dy, sx, sy, w, h, bgColor);
         }
     }
 
@@ -1073,16 +1069,14 @@ public class DrawImage implements DrawImagePipe
                                 int width, int height,
                                 Color bgColor,
                                 ImageObserver observer) {
-        if (!(img instanceof ToolkitImage)) {
-            return scaleImage(sg, img, x, y, width, height, bgColor);
-        } else {
-            ToolkitImage sunimg = (ToolkitImage)img;
-            if (!imageReady(sunimg, observer)) {
+        if (img instanceof ToolkitImage tki) {
+            if (!imageReady(tki, observer)) {
                 return false;
             }
-            ImageRepresentation ir = sunimg.getImageRep();
-            return ir.drawToBufImage(sg, sunimg, x, y, width, height, bgColor,
-                                     observer);
+            return tki.getImageRep().drawToBufImage(sg, tki, x, y,
+                    width, height, bgColor, observer);
+        } else {
+            return scaleImage(sg, img, x, y, width, height, bgColor);
         }
     }
 
@@ -1091,33 +1085,29 @@ public class DrawImage implements DrawImagePipe
                               int sx1, int sy1, int sx2, int sy2,
                               Color bgColor,
                               ImageObserver observer) {
-        if (!(img instanceof ToolkitImage)) {
-            return scaleImage(sg, img, dx1, dy1, dx2, dy2,
-                              sx1, sy1, sx2, sy2, bgColor);
-        } else {
-            ToolkitImage sunimg = (ToolkitImage)img;
-            if (!imageReady(sunimg, observer)) {
+        if (img instanceof ToolkitImage tki) {
+            if (!imageReady(tki, observer)) {
                 return false;
             }
-            ImageRepresentation ir = sunimg.getImageRep();
-            return ir.drawToBufImage(sg, sunimg, dx1, dy1, dx2, dy2,
+            return tki.getImageRep().drawToBufImage(sg, tki, dx1, dy1, dx2, dy2,
                                      sx1, sy1, sx2, sy2, bgColor, observer);
+        } else {
+            return scaleImage(sg, img, dx1, dy1, dx2, dy2,
+                              sx1, sy1, sx2, sy2, bgColor);
         }
     }
 
     public boolean transformImage(SunGraphics2D sg, Image img,
                                   AffineTransform atfm,
                                   ImageObserver observer) {
-        if (!(img instanceof ToolkitImage)) {
-            transformImage(sg, img, 0, 0, atfm, sg.interpolationType);
-            return true;
-        } else {
-            ToolkitImage sunimg = (ToolkitImage)img;
-            if (!imageReady(sunimg, observer)) {
+        if (img instanceof ToolkitImage tki) {
+            if (!imageReady(tki, observer)) {
                 return false;
             }
-            ImageRepresentation ir = sunimg.getImageRep();
-            return ir.drawToBufImage(sg, sunimg, atfm, observer);
+            return tki.getImageRep().drawToBufImage(sg, tki, atfm, observer);
+        } else {
+            transformImage(sg, img, 0, 0, atfm, sg.interpolationType);
+            return true;
         }
     }
 
@@ -1125,8 +1115,7 @@ public class DrawImage implements DrawImagePipe
                                BufferedImageOp op, int x, int y)
     {
         if (op != null) {
-            if (op instanceof AffineTransformOp) {
-                AffineTransformOp atop = (AffineTransformOp) op;
+            if (op instanceof AffineTransformOp atop) {
                 transformImage(sg, img, x, y,
                                atop.getTransform(),
                                atop.getInterpolationType());

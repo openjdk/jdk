@@ -554,15 +554,13 @@ public abstract class SynthFileChooserUI extends BasicFileChooserUI implements
 
         public void paintBorder(Component c, Graphics g, int x, int y,
                                 int width, int height) {
-            if (!(c instanceof JComponent)) {
-                return;
-            }
-            JComponent jc = (JComponent)c;
-            SynthContext context = getContext(jc);
-            SynthStyle style = context.getStyle();
-            if (style != null) {
-                style.getPainter(context).paintFileChooserBorder(
-                      context, g, x, y, width, height);
+            if (c instanceof JComponent component) {
+                SynthContext context = getContext(component);
+                SynthStyle style = context.getStyle();
+                if (style != null) {
+                    style.getPainter(context).paintFileChooserBorder(
+                            context, g, x, y, width, height);
+                }
             }
         }
 

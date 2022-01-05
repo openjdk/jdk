@@ -979,8 +979,8 @@ public class AWTEventMulticaster implements
     protected static EventListener removeInternal(EventListener l, EventListener oldl) {
         if (l == oldl || l == null) {
             return null;
-        } else if (l instanceof AWTEventMulticaster) {
-            return ((AWTEventMulticaster)l).remove(oldl);
+        } else if (l instanceof AWTEventMulticaster multicaster) {
+            return multicaster.remove(oldl);
         } else {
             return l;           // it's not here
         }
@@ -996,16 +996,16 @@ public class AWTEventMulticaster implements
     * @throws IOException if serialization fails
     */
     protected void saveInternal(ObjectOutputStream s, String k) throws IOException {
-        if (a instanceof AWTEventMulticaster) {
-            ((AWTEventMulticaster)a).saveInternal(s, k);
+        if (a instanceof AWTEventMulticaster multicaster) {
+            multicaster.saveInternal(s, k);
         }
         else if (a instanceof Serializable) {
             s.writeObject(k);
             s.writeObject(a);
         }
 
-        if (b instanceof AWTEventMulticaster) {
-            ((AWTEventMulticaster)b).saveInternal(s, k);
+        if (b instanceof AWTEventMulticaster multicaster) {
+            multicaster.saveInternal(s, k);
         }
         else if (b instanceof Serializable) {
             s.writeObject(k);
@@ -1024,11 +1024,9 @@ public class AWTEventMulticaster implements
     protected static void save(ObjectOutputStream s, String k, EventListener l) throws IOException {
       if (l == null) {
           return;
-      }
-      else if (l instanceof AWTEventMulticaster) {
-          ((AWTEventMulticaster)l).saveInternal(s, k);
-      }
-      else if (l instanceof Serializable) {
+      } else if (l instanceof AWTEventMulticaster multicaster) {
+          multicaster.saveInternal(s, k);
+      } else if (l instanceof Serializable) {
            s.writeObject(k);
            s.writeObject(l);
       }
@@ -1041,12 +1039,10 @@ public class AWTEventMulticaster implements
      * are counted.  Method modified to fix bug 4513402.  -bchristi
      */
     private static int getListenerCount(EventListener l, Class<?> listenerType) {
-        if (l instanceof AWTEventMulticaster) {
-            AWTEventMulticaster mc = (AWTEventMulticaster)l;
-            return getListenerCount(mc.a, listenerType) +
-             getListenerCount(mc.b, listenerType);
-        }
-        else {
+        if (l instanceof AWTEventMulticaster multicaster) {
+            return getListenerCount(multicaster.a, listenerType) +
+             getListenerCount(multicaster.b, listenerType);
+        } else {
             // Only count listeners of correct type
             return listenerType.isInstance(l) ? 1 : 0;
         }
@@ -1060,17 +1056,14 @@ public class AWTEventMulticaster implements
      * type.  -bchristi
      */
     private static int populateListenerArray(EventListener[] a, EventListener l, int index) {
-        if (l instanceof AWTEventMulticaster) {
-            AWTEventMulticaster mc = (AWTEventMulticaster)l;
-            int lhs = populateListenerArray(a, mc.a, index);
-            return populateListenerArray(a, mc.b, lhs);
-        }
-        else if (a.getClass().getComponentType().isInstance(l)) {
+        if (l instanceof AWTEventMulticaster multicaster) {
+            int lhs = populateListenerArray(a, multicaster.a, index);
+            return populateListenerArray(a, multicaster.b, lhs);
+        } else if (a.getClass().getComponentType().isInstance(l)) {
             a[index] = l;
             return index + 1;
-        }
-        // Skip nulls, instances of wrong class
-        else {
+        } else {
+            // Skip nulls, instances of wrong class
             return index;
         }
     }

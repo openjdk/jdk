@@ -115,8 +115,8 @@ public class ImageFilter implements ImageConsumer, Cloneable {
         Object o = p.get("filters");
         if (o == null) {
             p.put("filters", toString());
-        } else if (o instanceof String) {
-            p.put("filters", ((String) o)+toString());
+        } else if (o instanceof String s) {
+            p.put("filters", s + this);
         }
         consumer.setProperties(p);
     }

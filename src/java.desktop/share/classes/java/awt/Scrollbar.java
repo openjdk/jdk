@@ -1106,11 +1106,11 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      * @since        1.1
      */
     protected void processEvent(AWTEvent e) {
-        if (e instanceof AdjustmentEvent) {
-            processAdjustmentEvent((AdjustmentEvent)e);
-            return;
+        if (e instanceof AdjustmentEvent adjustmentEvent) {
+            processAdjustmentEvent(adjustmentEvent);
+        } else {
+            super.processEvent(e);
         }
-        super.processEvent(e);
     }
 
     /**
@@ -1340,8 +1340,8 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
          * @return True if the value was set.
          */
         public boolean setCurrentAccessibleValue(Number n) {
-            if (n instanceof Integer) {
-                setValue(n.intValue());
+            if (n instanceof Integer i) {
+                setValue(i);
                 return true;
             } else {
                 return false;

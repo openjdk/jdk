@@ -120,8 +120,8 @@ public class Area implements Shape, Cloneable {
      * @since 1.2
      */
     public Area(Shape s) {
-        if (s instanceof Area) {
-            curves = ((Area) s).curves;
+        if (s instanceof Area area) {
+            curves = area.curves;
         } else {
             curves = pathToCurves(s.getPathIterator(null));
         }

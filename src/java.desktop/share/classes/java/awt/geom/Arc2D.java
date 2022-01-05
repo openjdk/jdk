@@ -1478,9 +1478,7 @@ public abstract class Arc2D extends RectangularShape {
     public boolean equals(Object obj) {
         if (obj == this) {
             return true;
-        }
-        if (obj instanceof Arc2D) {
-            Arc2D a2d = (Arc2D) obj;
+        } else if (obj instanceof Arc2D a2d) {
             return ((getX() == a2d.getX()) &&
                     (getY() == a2d.getY()) &&
                     (getWidth() == a2d.getWidth()) &&
@@ -1488,7 +1486,8 @@ public abstract class Arc2D extends RectangularShape {
                     (getAngleStart() == a2d.getAngleStart()) &&
                     (getAngleExtent() == a2d.getAngleExtent()) &&
                     (getArcType() == a2d.getArcType()));
+        } else {
+            return false;
         }
-        return false;
     }
 }

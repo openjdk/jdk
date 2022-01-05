@@ -155,18 +155,17 @@ static final class ProxyPersistenceDelegate extends PersistenceDelegate {
         // This unappealing hack is not required but makes the
         // representation of EventHandlers much more concise.
         java.lang.reflect.InvocationHandler ih = java.lang.reflect.Proxy.getInvocationHandler(p);
-        if (ih instanceof EventHandler) {
-            EventHandler eh = (EventHandler)ih;
+        if (ih instanceof EventHandler handler) {
             Vector<Object> args = new Vector<>();
             args.add(type.getInterfaces()[0]);
-            args.add(eh.getTarget());
-            args.add(eh.getAction());
-            if (eh.getEventPropertyName() != null) {
-                args.add(eh.getEventPropertyName());
+            args.add(handler.getTarget());
+            args.add(handler.getAction());
+            if (handler.getEventPropertyName() != null) {
+                args.add(handler.getEventPropertyName());
             }
-            if (eh.getListenerMethodName() != null) {
+            if (handler.getListenerMethodName() != null) {
                 args.setSize(4);
-                args.add(eh.getListenerMethodName());
+                args.add(handler.getListenerMethodName());
             }
             return new Expression(oldInstance,
                                   EventHandler.class,
@@ -312,10 +311,12 @@ static final class java_sql_Timestamp_PersistenceDelegate extends java_util_Date
             return (Integer)getNanosMethod.invoke(obj);
         } catch (InvocationTargetException e) {
             Throwable cause = e.getCause();
-            if (cause instanceof RuntimeException)
-                throw (RuntimeException)cause;
-            if (cause instanceof Error)
-                throw (Error)cause;
+            if (cause instanceof RuntimeException ex) {
+                throw ex;
+            }
+            if (cause instanceof Error ex) {
+                throw ex;
+            }
             throw new AssertionError(e);
         } catch (IllegalAccessException iae) {
             throw new AssertionError(iae);
@@ -681,8 +682,7 @@ static final class java_awt_Font_PersistenceDelegate extends PersistenceDelegate
                     style |= Font.ITALIC;
                 }
             } else if (key == TextAttribute.SIZE) {
-                if (value instanceof Number) {
-                    Number number = (Number) value;
+                if (value instanceof Number number) {
                     size = number.intValue();
                     if (size == number.floatValue()) {
                         count++;
@@ -857,13 +857,9 @@ static final class java_awt_Container_PersistenceDelegate extends DefaultPersist
         java.awt.Container newC = (java.awt.Container)newInstance;
         java.awt.Component[] newChildren = (newC == null) ? new java.awt.Component[0] : newC.getComponents();
 
-        BorderLayout layout = ( oldC.getLayout() instanceof BorderLayout )
-                ? ( BorderLayout )oldC.getLayout()
-                : null;
+        BorderLayout layout = oldC.getLayout() instanceof BorderLayout borderLayout ? borderLayout : null;
 
-        JLayeredPane oldLayeredPane = (oldInstance instanceof JLayeredPane)
-                ? (JLayeredPane) oldInstance
-                : null;
+        JLayeredPane oldLayeredPane = (oldInstance instanceof JLayeredPane layeredPane) ? layeredPane : null;
 
         // Pending. Assume all the new children are unaltered.
         for(int i = newChildren.length; i < oldChildren.length; i++) {

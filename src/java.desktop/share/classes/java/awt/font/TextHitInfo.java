@@ -145,7 +145,7 @@ public final class TextHitInfo {
      * equals this {@code TextHitInfo}; {@code false} otherwise.
      */
     public boolean equals(Object obj) {
-        return (obj instanceof TextHitInfo) && equals((TextHitInfo)obj);
+        return obj instanceof TextHitInfo textHitInfo && equals(textHitInfo);
     }
 
     /**

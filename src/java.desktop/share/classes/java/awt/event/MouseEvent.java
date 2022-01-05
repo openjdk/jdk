@@ -399,9 +399,8 @@ public class MouseEvent extends InputEvent {
         if (!GraphicsEnvironment.isHeadless()) {
             initIDs();
         }
-        final Toolkit tk = Toolkit.getDefaultToolkit();
-        if (tk instanceof SunToolkit) {
-            cachedNumberOfButtons = ((SunToolkit)tk).getNumberOfButtons();
+        if (Toolkit.getDefaultToolkit() instanceof SunToolkit stk) {
+            cachedNumberOfButtons = stk.getNumberOfButtons();
         } else {
             //It's expected that some toolkits (Headless,
             //whatever besides SunToolkit) could also operate.

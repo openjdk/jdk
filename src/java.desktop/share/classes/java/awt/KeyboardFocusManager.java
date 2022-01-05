@@ -2147,8 +2147,8 @@ public abstract class KeyboardFocusManager
      */
     public final void downFocusCycle() {
         Component focusOwner = getFocusOwner();
-        if (focusOwner instanceof Container) {
-            downFocusCycle((Container)focusOwner);
+        if (focusOwner instanceof Container container) {
+            downFocusCycle(container);
         }
     }
 
@@ -2355,10 +2355,10 @@ public abstract class KeyboardFocusManager
         } finally {
             clearingCurrentLightweightRequests = clearing;
         }
-        if (caughtEx instanceof RuntimeException) {
-            throw (RuntimeException)caughtEx;
-        } else if (caughtEx instanceof Error) {
-            throw (Error)caughtEx;
+        if (caughtEx instanceof RuntimeException e) {
+            throw e;
+        } else if (caughtEx instanceof Error e) {
+            throw e;
         }
         return result;
     }
@@ -2705,10 +2705,10 @@ public abstract class KeyboardFocusManager
             localLightweightRequests = null;
             allowSyncFocusRequests = true;
         }
-        if (caughtEx instanceof RuntimeException) {
-            throw (RuntimeException)caughtEx;
-        } else if (caughtEx instanceof Error) {
-            throw (Error)caughtEx;
+        if (caughtEx instanceof RuntimeException e) {
+            throw e;
+        } else if (caughtEx instanceof Error e) {
+            throw e;
         }
     }
 

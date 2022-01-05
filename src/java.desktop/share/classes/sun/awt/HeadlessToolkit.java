@@ -67,8 +67,8 @@ public final class HeadlessToolkit extends Toolkit
 
     public HeadlessToolkit(Toolkit tk) {
         this.tk = tk;
-        if (tk instanceof ComponentFactory) {
-            componentFactory = (ComponentFactory)tk;
+        if (tk instanceof ComponentFactory cf) {
+            componentFactory = cf;
         }
     }
 

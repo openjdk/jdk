@@ -825,8 +825,7 @@ public abstract class FontConfiguration {
                     return;
                 }
             }
-        } else if (val instanceof String[]) {
-            String[] fontLangs = (String[])val;
+        } else if (val instanceof String[] fontLangs) {
             for (int l=0; l<fontLangs.length;l++) {
                 for (int i=0; i<seq.length;i++) {
                     if (seq[i].equals(fontLangs[l])) {

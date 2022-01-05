@@ -214,12 +214,10 @@ public final class FontDesignMetrics extends FontMetrics {
         }
 
         public boolean equals(Object key) {
-            if (!(key instanceof MetricsKey)) {
-                return false;
+            if (key instanceof MetricsKey metricsKey) {
+                return font.equals(metricsKey.font) && frc.equals(metricsKey.frc);
             }
-            return
-                font.equals(((MetricsKey)key).font) &&
-                frc.equals(((MetricsKey)key).frc);
+            return false;
         }
 
         public int hashCode() {

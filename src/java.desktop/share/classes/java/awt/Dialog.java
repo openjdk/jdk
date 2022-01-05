@@ -1108,17 +1108,13 @@ public class Dialog extends Window {
     }
 
     final void modalityPushed() {
-        Toolkit tk = Toolkit.getDefaultToolkit();
-        if (tk instanceof SunToolkit) {
-            SunToolkit stk = (SunToolkit)tk;
+        if (Toolkit.getDefaultToolkit() instanceof SunToolkit stk) {
             stk.notifyModalityPushed(this);
         }
     }
 
     final void modalityPopped() {
-        Toolkit tk = Toolkit.getDefaultToolkit();
-        if (tk instanceof SunToolkit) {
-            SunToolkit stk = (SunToolkit)tk;
+        if (Toolkit.getDefaultToolkit() instanceof SunToolkit stk) {
             stk.notifyModalityPopped(this);
         }
     }
@@ -1422,8 +1418,7 @@ public class Dialog extends Window {
         IdentityArrayList<Window> unblockedWindows = Window.getAllUnblockedWindows();
         for (Window w : unblockedWindows) {
             if (shouldBlock(w) && !blockersHierarchies.contains(w)) {
-                if ((w instanceof Dialog) && ((Dialog)w).isModal_NoClientCode()) {
-                    Dialog wd = (Dialog)w;
+                if ((w instanceof Dialog wd) && wd.isModal_NoClientCode()) {
                     if (wd.shouldBlock(this) && (modalDialogs.indexOf(wd) > modalDialogs.indexOf(this))) {
                         continue;
                     }
@@ -1458,9 +1453,8 @@ public class Dialog extends Window {
         // by another dialogs
         for (int i = 0; i < blockedWindowsCount; i++) {
             Window w = save.get(i);
-            if ((w instanceof Dialog) && ((Dialog)w).isModal_NoClientCode()) {
-                Dialog d = (Dialog)w;
-                d.modalShow();
+            if ((w instanceof Dialog wd) && wd.isModal_NoClientCode()) {
+                wd.modalShow();
             } else {
                 checkShouldBeBlocked(w);
             }
@@ -1485,7 +1479,7 @@ public class Dialog extends Window {
         {
             return false;
         }
-        if ((w instanceof Dialog) && ((Dialog)w).isInHide) {
+        if ((w instanceof Dialog wd) && wd.isInHide) {
             return false;
         }
         // check if w is from children hierarchy

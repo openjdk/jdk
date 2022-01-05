@@ -122,9 +122,7 @@ public abstract class CachedPainter {
         ImageCache cache = getCache(key);
         Image image = cache.getImage(key, config, w, h, args);
         int attempts = 0;
-        VolatileImage volatileImage = (image instanceof VolatileImage)
-                ? (VolatileImage) image
-                : null;
+        VolatileImage volatileImage = image instanceof VolatileImage v ? v : null;
         do {
             boolean draw = false;
             if (volatileImage != null) {
@@ -160,9 +158,7 @@ public abstract class CachedPainter {
                 image = createImage(c, w, h, config, args);
                 cache.setImage(key, config, w, h, args, image);
                 draw = true;
-                volatileImage = (image instanceof VolatileImage)
-                        ? (VolatileImage) image
-                        : null;
+                volatileImage = image instanceof VolatileImage v ? v : null;
             }
             if (draw) {
                 // Render to the Image
@@ -209,8 +205,8 @@ public abstract class CachedPainter {
             cache.setImage(key, config, w, h, args, image);
         }
 
-        if (image instanceof PainterMultiResolutionCachedImage) {
-            ((PainterMultiResolutionCachedImage) image).setParams(c, args);
+        if (image instanceof PainterMultiResolutionCachedImage cachedImage) {
+            cachedImage.setParams(c, args);
         }
 
         // Render to the passed in Graphics

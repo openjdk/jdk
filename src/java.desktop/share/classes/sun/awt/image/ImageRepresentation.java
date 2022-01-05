@@ -94,8 +94,8 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
                                forceCMhint) {
         image = im;
 
-        if (image.getSource() instanceof InputStreamImageSource) {
-            src = (InputStreamImageSource) image.getSource();
+        if (image.getSource() instanceof InputStreamImageSource i) {
+            src = i;
         }
 
         setColorModel(cmodel);
@@ -208,15 +208,13 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
         srcModel = model;
 
         // Check to see if model is INT_RGB
-        if (model instanceof IndexColorModel) {
+        if (model instanceof IndexColorModel icm) {
             if (model.getTransparency() == Transparency.TRANSLUCENT) {
                 // REMIND:
                 // Probably need to composite anyway so force ARGB
                 cmodel = ColorModel.getRGBdefault();
                 srcLUT = null;
-            }
-            else {
-                IndexColorModel icm = (IndexColorModel) model;
+            } else {
                 numSrcLUT = icm.getMapSize();
                 srcLUT = new int[Math.max(numSrcLUT, 256)];
                 icm.getRGBs(srcLUT);
@@ -228,10 +226,8 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
             if (cmodel == null) {
                 cmodel = model;
                 srcLUT   = null;
-            }
-            else if (model instanceof DirectColorModel) {
+            } else if (model instanceof DirectColorModel dcm) {
                 // If it is INT_RGB or INT_ARGB, use the model
-                DirectColorModel dcm = (DirectColorModel) model;
                 if ((dcm.getRedMask() == 0xff0000) &&
                     (dcm.getGreenMask() == 0xff00) &&
                     (dcm.getBlueMask()  == 0x00ff)) {
@@ -266,8 +262,7 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
                (type == BufferedImage.TYPE_INT_ARGB_PRE)) {
             isDefaultBI = true;
         }
-        else if (cmodel instanceof DirectColorModel) {
-            DirectColorModel dcm = (DirectColorModel) cmodel;
+        else if (cmodel instanceof DirectColorModel dcm) {
             if (dcm.getRedMask() == 0xff0000 &&
                 dcm.getGreenMask() == 0xff00 &&
                 dcm.getBlueMask()  == 0xff) {
@@ -286,10 +281,9 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
         // since we modify the data in it.
         int[] newpixels = SunWritableRaster.stealData(dbi, 0);
         if (cmodel instanceof IndexColorModel &&
-            biRaster instanceof ByteComponentRaster &&
+            biRaster instanceof ByteComponentRaster bct &&
             biRaster.getNumDataElements() == 1)
         {
-            ByteComponentRaster bct = (ByteComponentRaster) biRaster;
             byte[] data = bct.getDataStorage();
             int coff = bct.getDataOffset(0);
             for (int i=0; i < size; i++) {
@@ -420,11 +414,9 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
             }
 
             if (isSameCM && (cmodel != model) && (srcLUT != null) &&
-                (model instanceof IndexColorModel) &&
-                (biRaster instanceof ByteComponentRaster))
+                (model instanceof IndexColorModel icm) &&
+                (biRaster instanceof ByteComponentRaster bct))
             {
-                IndexColorModel icm = (IndexColorModel) model;
-                ByteComponentRaster bct = (ByteComponentRaster) biRaster;
                 int numlut = numSrcLUT;
                 if (!setDiffICM(x, y, w, h, srcLUT, srcLUTtransIndex,
                                numSrcLUT, icm,
@@ -460,10 +452,10 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
                 int pixel;
                 IntegerComponentRaster iraster =
                                           (IntegerComponentRaster) biRaster;
-                if (srcLUT != null && model instanceof IndexColorModel) {
+                if (srcLUT != null && model instanceof IndexColorModel icm) {
                     if (model != srcModel) {
                         // Fill in the new lut
-                        ((IndexColorModel)model).getRGBs(srcLUT);
+                        icm.getRGBs(srcLUT);
                         srcModel = model;
                     }
 
@@ -506,9 +498,8 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
                 }
             }
             else if ((cmodel == model) &&
-                     (biRaster instanceof ByteComponentRaster) &&
+                     (biRaster instanceof ByteComponentRaster bt) &&
                      (biRaster.getNumDataElements() == 1)){
-                ByteComponentRaster bt = (ByteComponentRaster) biRaster;
                 if (off == 0 && scansize == w) {
                     bt.putByteData(x, y, w, h, pix);
                 }
@@ -569,10 +560,7 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
                 convertToRGB();
             }
 
-            if ((model == cmodel) &&
-                (biRaster instanceof IntegerComponentRaster)) {
-                IntegerComponentRaster iraster =
-                                         (IntegerComponentRaster) biRaster;
+            if (model == cmodel && biRaster instanceof IntegerComponentRaster iraster) {
 
                 if (off == 0 && scansize == w) {
                     iraster.setDataElements(x, y, w, h, pix);

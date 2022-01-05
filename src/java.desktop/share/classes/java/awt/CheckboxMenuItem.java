@@ -363,11 +363,11 @@ public class CheckboxMenuItem extends MenuItem implements ItemSelectable, Access
      * @since        1.1
      */
     protected void processEvent(AWTEvent e) {
-        if (e instanceof ItemEvent) {
-            processItemEvent((ItemEvent)e);
-            return;
+        if (e instanceof ItemEvent itemEvent) {
+            processItemEvent(itemEvent);
+        } else {
+            super.processEvent(e);
         }
-        super.processEvent(e);
     }
 
     /**

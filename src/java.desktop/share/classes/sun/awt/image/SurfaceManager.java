@@ -202,9 +202,8 @@ public abstract class SurfaceManager {
                 tmpGc = GraphicsEnvironment.getLocalGraphicsEnvironment().
                     getDefaultScreenDevice().getDefaultConfiguration();
             }
-            if (tmpGc instanceof ProxiedGraphicsConfig) {
-                Object proxyKey =
-                    ((ProxiedGraphicsConfig) tmpGc).getProxyKey();
+            if (tmpGc instanceof ProxiedGraphicsConfig pgc) {
+                Object proxyKey = pgc.getProxyKey();
                 if (proxyKey != null) {
                     SurfaceDataProxy sdp =
                         (SurfaceDataProxy) getCacheData(proxyKey);
@@ -248,9 +247,8 @@ public abstract class SurfaceManager {
         if (cacheMap != null) {
             Iterator<Object> i = cacheMap.values().iterator();
             while (i.hasNext()) {
-                Object o = i.next();
-                if (o instanceof FlushableCacheData) {
-                    if (((FlushableCacheData) o).flush(deaccelerate)) {
+                if (i.next() instanceof FlushableCacheData fcd) {
+                    if (fcd.flush(deaccelerate)) {
                         i.remove();
                     }
                 }

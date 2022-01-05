@@ -1455,8 +1455,8 @@ public class IndexColorModel extends ColorModel {
 
         for (int y=0; y < h; y++, rY++) {
             obj = raster.getDataElements(rX, rY, w, 1, obj);
-            if (obj instanceof int[]) {
-                data = (int[])obj;
+            if (obj instanceof int[] ints) {
+                data = ints;
             } else {
                 data = DataBuffer.toIntArray(obj);
             }
@@ -1536,12 +1536,10 @@ public class IndexColorModel extends ColorModel {
      */
     @Override
     public boolean equals(Object obj) {
-
-        if (!(obj instanceof IndexColorModel)) {
+        if (!(obj instanceof IndexColorModel cm)) {
             return false;
         }
 
-        IndexColorModel cm = (IndexColorModel) obj;
         if (supportsAlpha != cm.hasAlpha() ||
             isAlphaPremultiplied != cm.isAlphaPremultiplied() ||
             pixel_bits != cm.getPixelSize() ||

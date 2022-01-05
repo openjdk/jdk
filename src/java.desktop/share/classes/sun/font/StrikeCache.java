@@ -288,8 +288,7 @@ public final class StrikeCache {
         if (!GraphicsEnvironment.isHeadless()) {
             GraphicsConfiguration gc =
                 ge.getDefaultScreenDevice().getDefaultConfiguration();
-            if (gc instanceof AccelGraphicsConfig) {
-                AccelGraphicsConfig agc = (AccelGraphicsConfig)gc;
+            if (gc instanceof AccelGraphicsConfig agc) {
                 BufferedContext bc = agc.getContext();
                 if (bc != null) {
                     rq = bc.getRenderQueue();

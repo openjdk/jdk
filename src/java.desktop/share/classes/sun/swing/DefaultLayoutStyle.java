@@ -206,8 +206,8 @@ public class DefaultLayoutStyle extends LayoutStyle {
         }
         if (key != null) {
             Object oIcon = UIManager.get(key);
-            if (oIcon instanceof Icon) {
-                return (Icon)oIcon;
+            if (oIcon instanceof Icon i) {
+                return i;
             }
         }
         return null;

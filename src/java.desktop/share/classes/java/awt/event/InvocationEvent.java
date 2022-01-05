@@ -308,8 +308,8 @@ public class InvocationEvent extends AWTEvent implements ActiveEvent {
                     runnable.run();
                 }
                 catch (Throwable t) {
-                    if (t instanceof Exception) {
-                        exception = (Exception) t;
+                    if (t instanceof Exception e) {
+                        exception = e;
                     }
                     throwable = t;
                 }

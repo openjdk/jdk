@@ -198,9 +198,9 @@ public abstract class MenuComponent implements java.io.Serializable {
     }
 
     final ComponentFactory getComponentFactory() {
-        final Toolkit toolkit = Toolkit.getDefaultToolkit();
-        if (toolkit instanceof ComponentFactory) {
-            return (ComponentFactory) toolkit;
+        Toolkit toolkit = Toolkit.getDefaultToolkit();
+        if (toolkit instanceof ComponentFactory componentFactory) {
+            return componentFactory;
         }
         throw new AWTError("UI components are unsupported by: " + toolkit);
     }
@@ -285,10 +285,10 @@ public abstract class MenuComponent implements java.io.Serializable {
         // MenuContainer.
         Object parent = this.parent;
         if (parent != null) {
-            if (parent instanceof Component) {
-                font = ((Component)parent).getFont_NoClientCode();
-            } else if (parent instanceof MenuComponent) {
-                font = ((MenuComponent)parent).getFont_NoClientCode();
+            if (parent instanceof Component component) {
+                font = component.getFont_NoClientCode();
+            } else if (parent instanceof MenuComponent menuComponent) {
+                font = menuComponent.getFont_NoClientCode();
             }
         }
         return font;
@@ -612,8 +612,8 @@ public abstract class MenuComponent implements java.io.Serializable {
                 return accessibleParent;
             } else {
                 MenuContainer parent = MenuComponent.this.getParent();
-                if (parent instanceof Accessible) {
-                    return (Accessible) parent;
+                if (parent instanceof Accessible accessibleParent) {
+                    return accessibleParent;
                 }
             }
             return null;
@@ -658,8 +658,8 @@ public abstract class MenuComponent implements java.io.Serializable {
          */
         public java.util.Locale getLocale() {
             MenuContainer parent = MenuComponent.this.getParent();
-            if (parent instanceof Component)
-                return ((Component)parent).getLocale();
+            if (parent instanceof Component component)
+                return component.getLocale();
             else
                 return java.util.Locale.getDefault();
         }
@@ -1063,12 +1063,12 @@ public abstract class MenuComponent implements java.io.Serializable {
      */
     int getAccessibleIndexInParent() {
         MenuContainer localParent = parent;
-        if (!(localParent instanceof MenuComponent)) {
+        if (localParent instanceof MenuComponent lpm) {
+            return lpm.getAccessibleChildIndex(this);
+        } else {
             // MenuComponents only have accessible index when inside MenuComponents
             return -1;
         }
-        MenuComponent localParentMenu = (MenuComponent)localParent;
-        return localParentMenu.getAccessibleChildIndex(this);
     }
 
     /**

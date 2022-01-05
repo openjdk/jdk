@@ -80,10 +80,7 @@ public class SunHints {
          * for this Key.
          */
         public boolean isCompatibleValue(Object val) {
-            if (val instanceof Value) {
-                return ((Value)val).isCompatibleKey(this);
-            }
-            return false;
+            return val instanceof Value value && value.isCompatibleKey(this);
         }
     }
 
@@ -497,13 +494,8 @@ public class SunHints {
          * for this Key. The allowable range is 100 to 250.
          */
         public final boolean isCompatibleValue(Object val) {
-            if (val instanceof Integer) {
-                int ival = ((Integer)val).intValue();
-                return ival >= 100 && ival <= 250;
-            }
-            return false;
+            return val instanceof Integer i && i >= 100 && i <= 250;
         }
-
     }
 
     /**

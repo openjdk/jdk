@@ -52,16 +52,16 @@ class OGLBufImgOps extends BufferedBufImgOps {
     {
         // Validate the provided BufferedImage (make sure it is one that
         // is supported, and that its properties are acceleratable)
-        if (biop instanceof ConvolveOp) {
-            if (!isConvolveOpValid((ConvolveOp)biop)) {
+        if (biop instanceof ConvolveOp convolveOp) {
+            if (!isConvolveOpValid(convolveOp)) {
                 return false;
             }
-        } else if (biop instanceof RescaleOp) {
-            if (!isRescaleOpValid((RescaleOp)biop, img)) {
+        } else if (biop instanceof RescaleOp rescaleOp) {
+            if (!isRescaleOpValid(rescaleOp, img)) {
                 return false;
             }
-        } else if (biop instanceof LookupOp) {
-            if (!isLookupOpValid((LookupOp)biop, img)) {
+        } else if (biop instanceof LookupOp lookupOp) {
+            if (!isLookupOpValid(lookupOp, img)) {
                 return false;
             }
         } else {

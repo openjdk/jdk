@@ -266,17 +266,17 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
 
         Object ret = getNativeData(format);
 
-        if (ret instanceof byte[]) {
+        if (ret instanceof byte[] bytes) {
             try {
                 return DataTransferer.getInstance().
-                    translateBytes((byte[])ret, df, format, this);
+                    translateBytes(bytes, df, format, this);
             } catch (IOException e) {
                 throw new InvalidDnDOperationException(e.getMessage());
             }
-        } else if (ret instanceof InputStream) {
+        } else if (ret instanceof InputStream stream) {
             try {
                 return DataTransferer.getInstance().
-                    translateStream((InputStream)ret, df, format, this);
+                    translateStream(stream, df, format, this);
             } catch (IOException e) {
                 throw new InvalidDnDOperationException(e.getMessage());
             }

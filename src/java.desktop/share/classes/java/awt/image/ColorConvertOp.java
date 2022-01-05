@@ -112,20 +112,18 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
      *        the color conversion, or {@code null}
      * @throws NullPointerException if cspace is null
      */
-    public ColorConvertOp (ColorSpace cspace, RenderingHints hints)
-    {
+    public ColorConvertOp (ColorSpace cspace, RenderingHints hints) {
         if (cspace == null) {
             throw new NullPointerException("ColorSpace cannot be null");
         }
-        if (cspace instanceof ICC_ColorSpace) {
-            profileList = new ICC_Profile [1];    /* 1 profile in the list */
 
-            profileList [0] = ((ICC_ColorSpace) cspace).getProfile();
+        if (cspace instanceof ICC_ColorSpace icc) {
+            /* 1 profile in the list */
+            profileList = new ICC_Profile[]{ icc.getProfile() };
+        } else {
+            CSList = new ColorSpace[]{ cspace }; /* non-ICC case: 1 ColorSpace in list */
         }
-        else {
-            CSList = new ColorSpace[1]; /* non-ICC case: 1 ColorSpace in list */
-            CSList[0] = cspace;
-        }
+
         this.hints  = hints;
     }
 
@@ -153,20 +151,18 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
         if ((srcCspace == null) || (dstCspace == null)) {
             throw new NullPointerException("ColorSpaces cannot be null");
         }
-        if ((srcCspace instanceof ICC_ColorSpace) &&
-            (dstCspace instanceof ICC_ColorSpace)) {
-            profileList = new ICC_Profile [2];    /* 2 profiles in the list */
 
-            profileList [0] = ((ICC_ColorSpace) srcCspace).getProfile();
-            profileList [1] = ((ICC_ColorSpace) dstCspace).getProfile();
+        if ((srcCspace instanceof ICC_ColorSpace srcICC) &&
+            (dstCspace instanceof ICC_ColorSpace dstICC)) {
+            /* 2 profiles in the list */
+            profileList = new ICC_Profile[]{ srcICC.getProfile(), dstICC.getProfile() };
 
             getMinMaxValsFromColorSpaces(srcCspace, dstCspace);
         } else {
             /* non-ICC case: 2 ColorSpaces in list */
-            CSList = new ColorSpace[2];
-            CSList[0] = srcCspace;
-            CSList[1] = dstCspace;
+            CSList = new ColorSpace[]{ srcCspace, dstCspace };
         }
+
         this.hints  = hints;
     }
 
@@ -250,8 +246,7 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
         ColorSpace srcColorSpace, destColorSpace;
         BufferedImage savdest = null;
 
-        if (src.getColorModel() instanceof IndexColorModel) {
-            IndexColorModel icm = (IndexColorModel) src.getColorModel();
+        if (src.getColorModel() instanceof IndexColorModel icm) {
             src = icm.convertToIntDiscrete(src.getRaster(), true);
         }
         srcColorSpace = src.getColorModel().getColorSpace();
@@ -779,19 +774,19 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
             /* possible non-ICC src, some profiles, possible non-ICC dst */
             boolean nonICCSrc, nonICCDst;
             ICC_Profile srcProfile, dstProfile;
-            if (!(srcColorSpace instanceof ICC_ColorSpace)) {
+            if (srcColorSpace instanceof ICC_ColorSpace icc) {
+                nonICCSrc = false;
+                srcProfile = icc.getProfile();
+            } else {
                 nonICCSrc = true;
                 srcProfile = ciespace.getProfile();
-            } else {
-                nonICCSrc = false;
-                srcProfile = ((ICC_ColorSpace) srcColorSpace).getProfile();
             }
-            if (!(dstColorSpace instanceof ICC_ColorSpace)) {
+            if (dstColorSpace instanceof ICC_ColorSpace icc) {
+                nonICCDst = false;
+                dstProfile = icc.getProfile();
+            } else {
                 nonICCDst = true;
                 dstProfile = ciespace.getProfile();
-            } else {
-                nonICCDst = false;
-                dstProfile = ((ICC_ColorSpace) dstColorSpace).getProfile();
             }
             /* make a new transform if needed */
             if ((thisTransform == null) || (thisSrcProfile != srcProfile) ||

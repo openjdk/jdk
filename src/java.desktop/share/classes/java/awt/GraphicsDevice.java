@@ -527,11 +527,7 @@ public abstract class GraphicsDevice {
      * shaping (due to the bugs in the windowing system).
      */
     static boolean isWindowShapingSupported() {
-        Toolkit curToolkit = Toolkit.getDefaultToolkit();
-        if (!(curToolkit instanceof SunToolkit)) {
-            return false;
-        }
-        return ((SunToolkit)curToolkit).isWindowShapingSupported();
+        return Toolkit.getDefaultToolkit() instanceof SunToolkit stk && stk.isWindowShapingSupported();
     }
 
     /**
@@ -542,11 +538,7 @@ public abstract class GraphicsDevice {
      * translucency (due to the bugs in the windowing system).
      */
     static boolean isWindowOpacitySupported() {
-        Toolkit curToolkit = Toolkit.getDefaultToolkit();
-        if (!(curToolkit instanceof SunToolkit)) {
-            return false;
-        }
-        return ((SunToolkit)curToolkit).isWindowOpacitySupported();
+        return Toolkit.getDefaultToolkit() instanceof SunToolkit stk && stk.isWindowOpacitySupported();
     }
 
     boolean isWindowPerpixelTranslucencySupported() {
@@ -559,15 +551,16 @@ public abstract class GraphicsDevice {
          *        GraphicsConfiguration
          */
         Toolkit curToolkit = Toolkit.getDefaultToolkit();
-        if (!(curToolkit instanceof SunToolkit)) {
-            return false;
-        }
-        if (!((SunToolkit)curToolkit).isWindowTranslucencySupported()) {
-            return false;
-        }
+        if (curToolkit instanceof SunToolkit sunToolkit) {
+            if (!sunToolkit.isWindowTranslucencySupported()) {
+                return false;
+            }
 
-        // TODO: cache translucency capable GC
-        return getTranslucencyCapableGC() != null;
+            // TODO: cache translucency capable GC
+            return getTranslucencyCapableGC() != null;
+        } else {
+            return false;
+        }
     }
 
     GraphicsConfiguration getTranslucencyCapableGC() {

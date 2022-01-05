@@ -65,16 +65,11 @@ public final class AAShapePipe
 
     @Override
     public void draw(SunGraphics2D sg, Shape s) {
-        final BasicStroke bs;
-
-        if (sg.stroke instanceof BasicStroke) {
-            bs = (BasicStroke) sg.stroke;
+        if (sg.stroke instanceof BasicStroke basicStroke) {
+            renderPath(sg, s, basicStroke);
         } else {
-            s = sg.stroke.createStrokedShape(s);
-            bs = null;
+            renderPath(sg, sg.stroke.createStrokedShape(s), null);
         }
-
-        renderPath(sg, s, bs);
     }
 
     @Override

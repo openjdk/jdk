@@ -85,8 +85,8 @@ public class MouseInfo {
         Toolkit toolkit = Toolkit.getDefaultToolkit();
         Point point = new Point(0, 0);
         int deviceNum = 0;
-        if (toolkit instanceof ComponentFactory) {
-            deviceNum = ((ComponentFactory) toolkit).getMouseInfoPeer().fillPointWithCoords(point);
+        if (toolkit instanceof ComponentFactory componentFactory) {
+            deviceNum = componentFactory.getMouseInfoPeer().fillPointWithCoords(point);
         }
 
         GraphicsDevice[] gds = GraphicsEnvironment.getLocalGraphicsEnvironment().
@@ -135,8 +135,8 @@ public class MouseInfo {
         }
         Object prop = Toolkit.getDefaultToolkit().
                               getDesktopProperty("awt.mouse.numButtons");
-        if (prop instanceof Integer) {
-            return ((Integer)prop).intValue();
+        if (prop instanceof Integer i) {
+            return i;
         }
 
         // This should never happen.

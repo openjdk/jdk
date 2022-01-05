@@ -201,10 +201,10 @@ class WeakIdentityHashMap<K, V> implements Map<K, V> {
 
         @Override
         public boolean equals(Object o) {
-            if(this == o) {
+            if (this == o) {
                 return true;
-            } else if( o instanceof WeakKey ) {
-                return get() == ((WeakKey)o).get();
+            } else if (o instanceof WeakKey<?> key) {
+                return get() == key.get();
             } else {
                 return false;
             }
@@ -215,6 +215,4 @@ class WeakIdentityHashMap<K, V> implements Map<K, V> {
             return hash;
         }
     }
-
-
 }

@@ -630,11 +630,11 @@ public class TextField extends TextComponent {
      * @since      1.1
      */
     protected void processEvent(AWTEvent e) {
-        if (e instanceof ActionEvent) {
-            processActionEvent((ActionEvent)e);
-            return;
+        if (e instanceof ActionEvent actionEvent) {
+            processActionEvent(actionEvent);
+        } else {
+            super.processEvent(e);
         }
-        super.processEvent(e);
     }
 
     /**

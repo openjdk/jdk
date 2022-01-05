@@ -1330,20 +1330,18 @@ public final class PageAttributes implements Cloneable {
      *          above criteria.
      */
     public boolean equals(Object obj) {
-        if (!(obj instanceof PageAttributes)) {
+        if (obj instanceof PageAttributes rhs) {
+            return (color == rhs.color &&
+                    media == rhs.media &&
+                    orientationRequested == rhs.orientationRequested &&
+                    origin == rhs.origin &&
+                    printQuality == rhs.printQuality &&
+                    printerResolution[0] == rhs.printerResolution[0] &&
+                    printerResolution[1] == rhs.printerResolution[1] &&
+                    printerResolution[2] == rhs.printerResolution[2]);
+        } else {
             return false;
         }
-
-        PageAttributes rhs = (PageAttributes)obj;
-
-        return (color == rhs.color &&
-                media == rhs.media &&
-                orientationRequested == rhs.orientationRequested &&
-                origin == rhs.origin &&
-                printQuality == rhs.printQuality &&
-                printerResolution[0] == rhs.printerResolution[0] &&
-                printerResolution[1] == rhs.printerResolution[1] &&
-                printerResolution[2] == rhs.printerResolution[2]);
     }
 
     /**

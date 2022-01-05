@@ -1156,8 +1156,8 @@ public class Frame extends Window implements MenuContainer {
         Frame[] frames = new Frame[frameCount];
         int c = 0;
         for (Window w : allWindows) {
-            if (w instanceof Frame) {
-                frames[c++] = (Frame)w;
+            if (w instanceof Frame f) {
+                frames[c++] = f;
             }
         }
 

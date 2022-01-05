@@ -98,8 +98,8 @@ public class GeneralCompositePipe implements CompositePipe {
 
         SurfaceData sd = sg.getSurfaceData();
         dstRaster = sd.getRaster(x, y, w, h);
-        if (dstRaster instanceof WritableRaster && atile == null) {
-            dstOut = (WritableRaster) dstRaster;
+        if (dstRaster instanceof WritableRaster writableRaster && atile == null) {
+            dstOut = writableRaster;
             dstOut = dstOut.createWritableChild(x, y, w, h, 0, 0, null);
             dstIn = dstOut;
         } else {
@@ -110,8 +110,8 @@ public class GeneralCompositePipe implements CompositePipe {
         compCtxt.compose(srcRaster, dstIn, dstOut);
 
         if (dstRaster != dstOut && dstOut.getParent() != dstRaster) {
-            if (dstRaster instanceof WritableRaster && atile == null) {
-                ((WritableRaster) dstRaster).setDataElements(x, y, dstOut);
+            if (dstRaster instanceof WritableRaster writableRaster && atile == null) {
+                writableRaster.setDataElements(x, y, dstOut);
             } else {
                 ColorModel cm = sg.getDeviceColorModel();
                 BufferedImage resImg =

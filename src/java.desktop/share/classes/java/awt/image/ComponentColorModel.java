@@ -427,13 +427,12 @@ public class ComponentColorModel extends ColorModel {
                 fromsRGB8LUT16 = ColorModel.getsRGB8ToLinearRGB16LUT();
             }
         } else if ((colorSpaceType == ColorSpace.TYPE_GRAY) &&
-                   (colorSpace instanceof ICC_ColorSpace) &&
+                   (colorSpace instanceof ICC_ColorSpace ics) &&
                    (colorSpace.getMinValue(0) == 0.0f) &&
                    (colorSpace.getMaxValue(0) == 1.0f)) {
             // Note that a normalized range of 0.0 - 1.0 for the gray
             // component is required, because usage of these LUTs makes
             // that assumption.
-            ICC_ColorSpace ics = (ICC_ColorSpace) colorSpace;
             is_ICCGray_stdScale = true;
             nonStdScale = false;
             fromsRGB8LUT16 = ColorModel.getsRGB8ToLinearRGB16LUT();
@@ -1750,8 +1749,8 @@ public class ComponentColorModel extends ColorModel {
                 IllegalArgumentException(
                     "This ColorModel does not support the unnormalized form");
         }
-        if (pixel instanceof int[]) {
-            intpixel = (int[])pixel;
+        if (pixel instanceof int[] ints) {
+            intpixel = ints;
         } else {
             intpixel = DataBuffer.toIntArray(pixel);
             if (intpixel == null) {
@@ -2939,27 +2938,25 @@ public class ComponentColorModel extends ColorModel {
      */
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof ComponentColorModel)) {
+        if (obj instanceof ComponentColorModel cm) {
+            if (supportsAlpha != cm.hasAlpha() ||
+                    isAlphaPremultiplied != cm.isAlphaPremultiplied() ||
+                    pixel_bits != cm.getPixelSize() ||
+                    transparency != cm.getTransparency() ||
+                    numComponents != cm.getNumComponents() ||
+                    (!(colorSpace.equals(cm.colorSpace))) ||
+                    transferType != cm.transferType) {
+                return false;
+            }
+
+            if (!(Arrays.equals(nBits, cm.getComponentSize()))) {
+                return false;
+            }
+
+            return true;
+        } else {
             return false;
         }
-
-        ComponentColorModel cm = (ComponentColorModel) obj;
-        if (supportsAlpha != cm.hasAlpha() ||
-            isAlphaPremultiplied != cm.isAlphaPremultiplied() ||
-            pixel_bits != cm.getPixelSize() ||
-            transparency != cm.getTransparency() ||
-            numComponents != cm.getNumComponents() ||
-            (!(colorSpace.equals(cm.colorSpace))) ||
-            transferType != cm.transferType)
-        {
-            return false;
-        }
-
-        if (!(Arrays.equals(nBits, cm.getComponentSize()))) {
-            return false;
-        }
-
-        return true;
     }
 
     /**

@@ -110,12 +110,9 @@ public class PropertyChangeSupport implements Serializable {
         if (listener == null) {
             return;
         }
-        if (listener instanceof PropertyChangeListenerProxy) {
-            PropertyChangeListenerProxy proxy =
-                   (PropertyChangeListenerProxy)listener;
+        if (listener instanceof PropertyChangeListenerProxy proxy) {
             // Call two argument add method.
-            addPropertyChangeListener(proxy.getPropertyName(),
-                                      proxy.getListener());
+            addPropertyChangeListener(proxy.getPropertyName(), proxy.getListener());
         } else {
             this.map.add(null, listener);
         }
@@ -136,12 +133,9 @@ public class PropertyChangeSupport implements Serializable {
         if (listener == null) {
             return;
         }
-        if (listener instanceof PropertyChangeListenerProxy) {
-            PropertyChangeListenerProxy proxy =
-                    (PropertyChangeListenerProxy)listener;
+        if (listener instanceof PropertyChangeListenerProxy proxy) {
             // Call two argument remove method.
-            removePropertyChangeListener(proxy.getPropertyName(),
-                                         proxy.getListener());
+            removePropertyChangeListener(proxy.getPropertyName(), proxy.getListener());
         } else {
             this.map.remove(null, listener);
         }
@@ -567,8 +561,8 @@ public class PropertyChangeSupport implements Serializable {
          * {@inheritDoc}
          */
         public PropertyChangeListener extract(PropertyChangeListener listener) {
-            while (listener instanceof PropertyChangeListenerProxy) {
-                listener = ((PropertyChangeListenerProxy) listener).getListener();
+            while (listener instanceof PropertyChangeListenerProxy pclp) {
+                listener = pclp.getListener();
             }
             return listener;
         }

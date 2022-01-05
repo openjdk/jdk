@@ -167,15 +167,14 @@ public class SwingUtilities2 {
     private static final StringBuilder SKIP_CLICK_COUNT =
         new StringBuilder("skipClickCount");
 
-    @SuppressWarnings("unchecked")
     public static void putAATextInfo(boolean lafCondition,
             Map<Object, Object> map) {
         SunToolkit.setAAFontSettingsCondition(lafCondition);
-        Toolkit tk = Toolkit.getDefaultToolkit();
-        Object desktopHints = tk.getDesktopProperty(SunToolkit.DESKTOPFONTHINTS);
+        Object desktopHints = Toolkit
+                .getDefaultToolkit()
+                .getDesktopProperty(SunToolkit.DESKTOPFONTHINTS);
 
-        if (desktopHints instanceof Map) {
-            Map<Object, Object> hints = (Map<Object, Object>) desktopHints;
+        if (desktopHints instanceof Map<?, ?> hints) {
             Object aaHint = hints.get(KEY_TEXT_ANTIALIASING);
             if (aaHint == null
                     || aaHint == VALUE_TEXT_ANTIALIAS_OFF
@@ -534,8 +533,8 @@ public class SwingUtilities2 {
                     }
                     /* Use alternate print color if specified */
                     Color col = g2d.getColor();
-                    if (col instanceof PrintColorUIResource) {
-                        g2d.setColor(((PrintColorUIResource)col).getPrintColor());
+                    if (col instanceof PrintColorUIResource resource) {
+                        g2d.setColor(resource.getPrintColor());
                     }
 
                     layout.draw(g2d, x, y);
@@ -548,8 +547,7 @@ public class SwingUtilities2 {
         }
 
         // If we get here we're not printing
-        if (g instanceof Graphics2D) {
-            Graphics2D g2 = (Graphics2D)g;
+        if (g instanceof Graphics2D g2) {
 
             boolean needsTextLayout = ((c != null) &&
                 (c.getClientProperty(TextAttribute.NUMERIC_SHAPING) != null));
@@ -716,7 +714,7 @@ public class SwingUtilities2 {
         int index = list.locationToIndex(point);
         if (index != -1) {
             Object bySize = list.getClientProperty("List.isFileList");
-            if (bySize instanceof Boolean && ((Boolean)bySize).booleanValue() &&
+            if (bySize instanceof Boolean b && b &&
                 !pointIsInActualBounds(list, index, point)) {
                 index = -1;
             }
@@ -878,8 +876,8 @@ public class SwingUtilities2 {
 
                         /* Use alternate print color if specified */
                         Color col = g2d.getColor();
-                        if (col instanceof PrintColorUIResource) {
-                            g2d.setColor(((PrintColorUIResource)col).getPrintColor());
+                        if (col instanceof PrintColorUIResource resource) {
+                            g2d.setColor(resource.getPrintColor());
                         }
 
                         layout.draw(g2d,x,y);
@@ -897,12 +895,11 @@ public class SwingUtilities2 {
                             ? null
                             : c.getClientProperty(KEY_TEXT_ANTIALIASING);
 
-        if (!(g instanceof Graphics2D)) {
+        if (!(g instanceof Graphics2D g2)) {
             g.drawChars(data, offset, length, (int) x, (int) y);
             return nextX;
         }
 
-        Graphics2D g2 = (Graphics2D) g;
         if (aaHint != null) {
 
             Object oldContrast = null;
@@ -1003,8 +1000,8 @@ public class SwingUtilities2 {
 
         if (isPrinting) {
             /* Use alternate print color if specified */
-            if (col instanceof PrintColorUIResource) {
-                g.setColor(((PrintColorUIResource)col).getPrintColor());
+            if (col instanceof PrintColorUIResource resource) {
+                g.setColor(resource.getPrintColor());
             }
         }
 
@@ -1191,10 +1188,10 @@ public class SwingUtilities2 {
      * returns null if can not derive it.
      */
     public static Graphics2D getGraphics2D(Graphics g) {
-        if (g instanceof Graphics2D) {
-            return (Graphics2D) g;
-        } else if (g instanceof ProxyPrintGraphics) {
-            return (Graphics2D)(((ProxyPrintGraphics)g).getGraphics());
+        if (g instanceof Graphics2D g2d) {
+            return g2d;
+        } else if (g instanceof ProxyPrintGraphics ppg) {
+            return (Graphics2D) ppg.getGraphics();
         } else {
             return null;
         }
@@ -1300,11 +1297,11 @@ public class SwingUtilities2 {
 
         @Override
         public boolean equals(Object obj) {
-            if (!(obj instanceof KeyPair)) {
+            if (obj instanceof KeyPair that) {
+                return this.key1.equals(that.key1) && this.key2.equals(that.key2);
+            } else {
                 return false;
             }
-            KeyPair that = (KeyPair) obj;
-            return this.key1.equals(that.key1) && this.key2.equals(that.key2);
         }
 
         @Override
@@ -1440,12 +1437,11 @@ public class SwingUtilities2 {
             if (entry == this) {
                 return true;
             }
-            if (!(entry instanceof LSBCacheEntry)) {
-                return false;
+            if (entry instanceof LSBCacheEntry oEntry) {
+                return (font.equals(oEntry.font) &&
+                        frc.equals(oEntry.frc));
             }
-            LSBCacheEntry oEntry = (LSBCacheEntry) entry;
-            return (font.equals(oEntry.font) &&
-                    frc.equals(oEntry.frc));
+            return false;
         }
 
         public int hashCode() {
@@ -1524,8 +1520,7 @@ public class SwingUtilities2 {
     @SuppressWarnings("deprecation")
     private static boolean isAccessClipboardGesture(InputEvent ie) {
         boolean allowedGesture = false;
-        if (ie instanceof KeyEvent) { //we can validate only keyboard gestures
-            KeyEvent ke = (KeyEvent)ie;
+        if (ie instanceof KeyEvent ke) { //we can validate only keyboard gestures
             int keyCode = ke.getKeyCode();
             int keyModifiers = ke.getModifiers();
             switch(keyCode) {
@@ -1566,10 +1561,10 @@ public class SwingUtilities2 {
              * Checking event permissions makes sense only for event
              * dispathing thread
              */
-            if (e instanceof InputEvent
-                && (! checkGesture || isAccessClipboardGesture((InputEvent)e))) {
+            if (e instanceof InputEvent inputEvent
+                && (! checkGesture || isAccessClipboardGesture(inputEvent))) {
                 return AWTAccessor.getInputEventAccessor().
-                        canAccessSystemClipboard((InputEvent) e);
+                        canAccessSystemClipboard(inputEvent);
             } else {
                 return false;
             }
@@ -1767,14 +1762,7 @@ public class SwingUtilities2 {
      * appear capable of performing gamma correction needed for LCD text.
      */
     public static boolean isLocalDisplay() {
-        boolean isLocal;
-        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        if (ge instanceof SunGraphicsEnvironment) {
-            isLocal = ((SunGraphicsEnvironment) ge).isDisplayLocal();
-        } else {
-            isLocal = true;
-        }
-        return isLocal;
+        return !(GraphicsEnvironment.getLocalGraphicsEnvironment() instanceof SunGraphicsEnvironment sge) || sge.isDisplayLocal();
     }
 
     /**
@@ -1836,25 +1824,25 @@ public class SwingUtilities2 {
     public static int getUIDefaultsInt(Object key, Locale l, int defaultValue) {
         Object value = UIManager.get(key, l);
 
-        if (value instanceof Integer) {
-            return ((Integer)value).intValue();
-        }
-        if (value instanceof String) {
+        if (value instanceof Integer i) {
+            return i;
+        } else if (value instanceof String s) {
             try {
-                return Integer.parseInt((String)value);
+                return Integer.parseInt(s);
             } catch (NumberFormatException nfe) {}
         }
-        return defaultValue;
+            return defaultValue;
     }
 
     // At this point we need this method here. But we assume that there
     // will be a common method for this purpose in the future releases.
     public static Component compositeRequestFocus(Component component) {
-        if (component instanceof Container) {
-            Container container = (Container)component;
+        if (component instanceof Container container) {
             if (container.isFocusCycleRoot()) {
-                FocusTraversalPolicy policy = container.getFocusTraversalPolicy();
-                Component comp = policy.getDefaultComponent(container);
+                Component comp = container
+                        .getFocusTraversalPolicy()
+                        .getDefaultComponent(container);
+
                 if (comp!=null) {
                     comp.requestFocus();
                     return comp;
@@ -1862,8 +1850,9 @@ public class SwingUtilities2 {
             }
             Container rootAncestor = container.getFocusCycleRootAncestor();
             if (rootAncestor!=null) {
-                FocusTraversalPolicy policy = rootAncestor.getFocusTraversalPolicy();
-                Component comp = policy.getComponentAfter(rootAncestor, container);
+                Component comp = rootAncestor
+                        .getFocusTraversalPolicy()
+                        .getComponentAfter(rootAncestor, container);
 
                 if (comp!=null && SwingUtilities.isDescendingFrom(comp, container)) {
                     comp.requestFocus();
@@ -1889,14 +1878,13 @@ public class SwingUtilities2 {
             if (comp.isFocusTraversable()) {
                 SwingUtilities2.compositeRequestFocus(comp);
                 return true;
-            } else if (comp instanceof JComponent
-                       && ((JComponent)comp).requestDefaultFocus()) {
-
-                 return true;
+            } else {
+                return comp instanceof JComponent component
+                        && component.requestDefaultFocus();
             }
+        } else {
+            return false;
         }
-
-        return false;
     }
 
     /**
@@ -1951,10 +1939,9 @@ public class SwingUtilities2 {
      * clicks to skip before starting selection.
      */
     public static void setSkipClickCount(Component comp, int count) {
-        if (comp instanceof JTextComponent
-                && ((JTextComponent) comp).getCaret() instanceof DefaultCaret) {
-
-            ((JTextComponent) comp).putClientProperty(SKIP_CLICK_COUNT, count);
+        if (comp instanceof JTextComponent component
+                && component.getCaret() instanceof DefaultCaret) {
+            component.putClientProperty(SKIP_CLICK_COUNT, count);
         }
     }
 
@@ -2195,9 +2182,8 @@ public class SwingUtilities2 {
 
     @SuppressWarnings("deprecation")
     public static int getSystemMnemonicKeyMask() {
-        Toolkit toolkit = Toolkit.getDefaultToolkit();
-        if (toolkit instanceof SunToolkit) {
-            return ((SunToolkit) toolkit).getFocusAcceleratorKeyMask();
+        if (Toolkit.getDefaultToolkit() instanceof SunToolkit stk) {
+            return stk.getFocusAcceleratorKeyMask();
         }
         return InputEvent.ALT_MASK;
     }
@@ -2221,11 +2207,11 @@ public class SwingUtilities2 {
     }
 
     public static boolean isScaledGraphics(Graphics g) {
-        if (g instanceof Graphics2D) {
-            AffineTransform tx = ((Graphics2D) g).getTransform();
-            return (tx.getType() & ~(TYPE_TRANSLATION | TYPE_FLIP)) != 0;
+        if (g instanceof Graphics2D g2d) {
+            return (g2d.getTransform().getType() & ~(TYPE_TRANSLATION | TYPE_FLIP)) != 0;
+        } else {
+            return false;
         }
-        return false;
     }
 
     /**
@@ -2286,13 +2272,11 @@ public class SwingUtilities2 {
      *         property in other case.
      */
     public static boolean getBoolean(JComponent component, String key) {
-        Object clientProperty = component.getClientProperty(key);
-
-        if (clientProperty instanceof Boolean) {
-            return Boolean.TRUE.equals(clientProperty);
+        if (component.getClientProperty(key) instanceof Boolean b) {
+            return b;
+        } else {
+            return UIManager.getBoolean(key);
         }
-
-        return UIManager.getBoolean(key);
     }
 
     /**

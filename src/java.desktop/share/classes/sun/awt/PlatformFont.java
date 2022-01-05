@@ -56,10 +56,10 @@ public abstract class PlatformFont implements FontPeer {
     protected static int FONTCACHEMASK = PlatformFont.FONTCACHESIZE - 1;
     protected static String osVersion;
 
-    public PlatformFont(String name, int style){
+    public PlatformFont(String name, int style) {
         SunFontManager sfm = SunFontManager.getInstance();
-        if (sfm instanceof FontSupport) {
-            fontConfig = ((FontSupport)sfm).getFontConfiguration();
+        if (sfm != null) {
+            fontConfig = sfm.getFontConfiguration();
         }
         if (fontConfig == null) {
             return;

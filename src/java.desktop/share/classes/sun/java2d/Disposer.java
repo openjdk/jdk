@@ -127,8 +127,8 @@ public class Disposer implements Runnable {
      * @see DisposerRecord
      */
     synchronized void add(Object target, DisposerRecord rec) {
-        if (target instanceof DisposerTarget) {
-            target = ((DisposerTarget)target).getDisposerReferent();
+        if (target instanceof DisposerTarget disposer) {
+            target = disposer.getDisposerReferent();
         }
         java.lang.ref.Reference<Object> ref;
         if (refType == PHANTOM) {

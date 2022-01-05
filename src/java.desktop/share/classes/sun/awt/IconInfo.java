@@ -92,8 +92,8 @@ public class IconInfo {
 
     public IconInfo(Image image) {
         this.image = image;
-        if (image instanceof ToolkitImage) {
-            ImageRepresentation ir = ((ToolkitImage)image).getImageRep();
+        if (image instanceof ToolkitImage tki) {
+            ImageRepresentation ir = tki.getImageRep();
             ir.reconstruct(ImageObserver.ALLBITS);
             this.width = ir.getWidth();
             this.height = ir.getHeight();

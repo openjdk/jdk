@@ -192,11 +192,10 @@ public class DragSourceContext
                              Image dragImage, Point offset, Transferable t,
                              DragSourceListener dsl) {
         Toolkit toolkit = Toolkit.getDefaultToolkit();
-        if (!(toolkit instanceof ComponentFactory)) {
+        if (!(toolkit instanceof ComponentFactory componentFactory)) {
             throw new AWTError("Unsupported toolkit: " + toolkit);
         }
-        DragSourceContextPeer dscp = ((ComponentFactory) toolkit).
-                createDragSourceContextPeer(trigger);
+        DragSourceContextPeer dscp = componentFactory.createDragSourceContextPeer(trigger);
 
         if (dscp == null) {
             throw new NullPointerException("DragSourceContextPeer");

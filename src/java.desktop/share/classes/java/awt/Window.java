@@ -63,6 +63,7 @@ import javax.accessibility.AccessibleContext;
 import javax.accessibility.AccessibleRole;
 import javax.accessibility.AccessibleState;
 import javax.accessibility.AccessibleStateSet;
+import javax.swing.*;
 
 import sun.awt.AWTAccessor;
 import sun.awt.AWTPermissions;
@@ -2032,7 +2033,7 @@ public class Window extends Container implements Accessible {
      * @param e the event
      */
     protected void processEvent(AWTEvent e) {
-        if (e instanceof WindowEvent) {
+        if (e instanceof WindowEvent windowEvent) {
             switch (e.getID()) {
                 case WindowEvent.WINDOW_OPENED:
                 case WindowEvent.WINDOW_CLOSING:
@@ -2041,14 +2042,14 @@ public class Window extends Container implements Accessible {
                 case WindowEvent.WINDOW_DEICONIFIED:
                 case WindowEvent.WINDOW_ACTIVATED:
                 case WindowEvent.WINDOW_DEACTIVATED:
-                    processWindowEvent((WindowEvent)e);
+                    processWindowEvent(windowEvent);
                     break;
                 case WindowEvent.WINDOW_GAINED_FOCUS:
                 case WindowEvent.WINDOW_LOST_FOCUS:
-                    processWindowFocusEvent((WindowEvent)e);
+                    processWindowFocusEvent(windowEvent);
                     break;
                 case WindowEvent.WINDOW_STATE_CHANGED:
-                    processWindowStateEvent((WindowEvent)e);
+                    processWindowStateEvent(windowEvent);
                     break;
             }
             return;
@@ -3084,8 +3085,8 @@ public class Window extends Container implements Accessible {
             icons = new ArrayList<Image>(); //Frame.readObject() assumes
                                             //pre1.6 version if icons is null.
             while (obj != null) {
-                if (obj instanceof Image) {
-                    icons.add((Image)obj);
+                if (obj instanceof Image image) {
+                    icons.add(image);
                 }
                 obj = s.readObject();
             }
@@ -3947,10 +3948,10 @@ public class Window extends Container implements Accessible {
         if (!isOpaque()) {
             Graphics gg = g.create();
             try {
-                if (gg instanceof Graphics2D) {
-                    gg.setColor(getBackground());
-                    ((Graphics2D)gg).setComposite(AlphaComposite.getInstance(AlphaComposite.SRC));
-                    gg.fillRect(0, 0, getWidth(), getHeight());
+                if (gg instanceof Graphics2D g2d) {
+                    g2d.setColor(getBackground());
+                    g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC));
+                    g2d.fillRect(0, 0, getWidth(), getHeight());
                 }
             } finally {
                 gg.dispose();
@@ -3967,8 +3968,7 @@ public class Window extends Container implements Accessible {
             javax.swing.JRootPane root = rpc.getRootPane();
             javax.swing.JLayeredPane lp = root.getLayeredPane();
             Container c = root.getContentPane();
-            javax.swing.JComponent content =
-                (c instanceof javax.swing.JComponent) ? (javax.swing.JComponent)c : null;
+            JComponent content = c instanceof JComponent jComponent ? jComponent : null;
             lp.setOpaque(isOpaque);
             root.setOpaque(isOpaque);
             if (content != null) {

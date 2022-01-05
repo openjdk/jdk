@@ -228,19 +228,17 @@ public class DesktopProperty implements UIDefaults.ActiveValue {
      */
     protected Object configureValue(Object value) {
         if (value != null) {
-            if (value instanceof Color) {
-                return new ColorUIResource((Color)value);
-            }
-            else if (value instanceof Font) {
-                return new FontUIResource((Font)value);
-            }
-            else if (value instanceof UIDefaults.LazyValue) {
-                value = ((UIDefaults.LazyValue)value).createValue(null);
-            }
-            else if (value instanceof UIDefaults.ActiveValue) {
-                value = ((UIDefaults.ActiveValue)value).createValue(null);
+            if (value instanceof Color color) {
+                return new ColorUIResource(color);
+            } else if (value instanceof Font font) {
+                return new FontUIResource(font);
+            } else if (value instanceof UIDefaults.LazyValue lazyValue) {
+                value = lazyValue.createValue(null);
+            } else if (value instanceof UIDefaults.ActiveValue activeValue) {
+                value = activeValue.createValue(null);
             }
         }
+
         return value;
     }
 

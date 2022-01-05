@@ -164,9 +164,7 @@ public class BytePackedRaster extends SunWritableRaster {
         }
         int dbOffset = dataBuffer.getOffset();
 
-        if (sampleModel instanceof MultiPixelPackedSampleModel) {
-            MultiPixelPackedSampleModel mppsm =
-                (MultiPixelPackedSampleModel)sampleModel;
+        if (sampleModel instanceof MultiPixelPackedSampleModel mppsm) {
             this.type = IntegerComponentRaster.TYPE_BYTE_BINARY_SAMPLES;
             pixelBitStride = mppsm.getPixelBitStride();
             if (pixelBitStride != 1 &&
@@ -798,8 +796,8 @@ public class BytePackedRaster extends SunWritableRaster {
      */
     public void setRect(int dx, int dy, Raster srcRaster) {
         // Check if we can use fast code
-        if (!(srcRaster instanceof BytePackedRaster) ||
-            ((BytePackedRaster)srcRaster).pixelBitStride != pixelBitStride) {
+        if (!(srcRaster instanceof BytePackedRaster bpr) ||
+            bpr.pixelBitStride != pixelBitStride) {
             super.setRect(dx, dy, srcRaster);
             return;
         }
@@ -833,8 +831,7 @@ public class BytePackedRaster extends SunWritableRaster {
 
         setDataElements(dstOffX, dstOffY,
                         srcOffX, srcOffY,
-                        width, height,
-                        (BytePackedRaster)srcRaster);
+                        width, height, bpr);
     }
 
     /**

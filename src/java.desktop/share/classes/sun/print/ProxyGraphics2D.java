@@ -1151,8 +1151,7 @@ public class ProxyGraphics2D extends Graphics2D implements PrinterGraphics {
              * we are about to create by, if possible, making
              * it the same depth as the original image.
              */
-            if (img instanceof BufferedImage) {
-                BufferedImage bufImage = (BufferedImage) img;
+            if (img instanceof BufferedImage bufImage) {
                 imageType = bufImage.getType();
             } else {
                 imageType = BufferedImage.TYPE_INT_ARGB;

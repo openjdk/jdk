@@ -812,8 +812,8 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
 
         currentGraphics = graphicsToBeDrawn.pop();
 
-        if (currentGraphics instanceof PeekGraphics) {
-            ( (PeekGraphics) currentGraphics).setAWTDrawingOnly();
+        if (currentGraphics instanceof PeekGraphics peekGraphics) {
+            peekGraphics.setAWTDrawingOnly();
             graphicsDrawn.append(currentGraphics);
             currentGraphics = graphicsToBeDrawn.pop();
         }

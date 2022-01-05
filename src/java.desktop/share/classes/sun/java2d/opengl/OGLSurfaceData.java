@@ -410,12 +410,11 @@ public abstract class OGLSurfaceData extends SurfaceData
     }
 
     private boolean canHandleComposite(Composite c) {
-        if (c instanceof AlphaComposite) {
-            AlphaComposite ac = (AlphaComposite)c;
-
+        if (c instanceof AlphaComposite ac) {
             return ac.getRule() == AlphaComposite.SRC_OVER && ac.getAlpha() >= 1f;
+        } else {
+            return false;
         }
-        return false;
     }
 
     public void validatePipe(SunGraphics2D sg2d) {

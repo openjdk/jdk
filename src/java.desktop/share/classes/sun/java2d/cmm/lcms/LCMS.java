@@ -54,10 +54,11 @@ final class LCMS implements PCMM {
     }
 
     private static LCMSProfile getLcmsProfile(Profile p) {
-        if (p instanceof LCMSProfile) {
-            return (LCMSProfile)p;
+        if (p instanceof LCMSProfile profile) {
+            return profile;
+        } else {
+            throw new CMMException("Invalid profile: " + p);
         }
-        throw new CMMException("Invalid profile: " + p);
     }
 
     /**

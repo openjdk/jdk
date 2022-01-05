@@ -1532,9 +1532,8 @@ public abstract class Toolkit {
         // better to override this method but it is declared final.
         // "this instanceof" syntax defeats polymorphism.
         // --mm, 03/03/00
-        if (this instanceof HeadlessToolkit) {
-            return ((HeadlessToolkit)this).getUnderlyingToolkit()
-                .getDesktopProperty(propertyName);
+        if (this instanceof HeadlessToolkit htk) {
+            return htk.getUnderlyingToolkit().getDesktopProperty(propertyName);
         }
 
         if (desktopProperties.isEmpty()) {
@@ -1559,8 +1558,8 @@ public abstract class Toolkit {
         }
 
         /* for property "awt.font.desktophints" */
-        if (value instanceof RenderingHints) {
-            value = ((RenderingHints)value).clone();
+        if (value instanceof RenderingHints hints) {
+            value = hints.clone();
         }
 
         return value;
@@ -1578,9 +1577,8 @@ public abstract class Toolkit {
         // better to override this method but it is declared final.
         // "this instanceof" syntax defeats polymorphism.
         // --mm, 03/03/00
-        if (this instanceof HeadlessToolkit) {
-            ((HeadlessToolkit)this).getUnderlyingToolkit()
-                .setDesktopProperty(name, newValue);
+        if (this instanceof HeadlessToolkit htk) {
+            htk.getUnderlyingToolkit().setDesktopProperty(name, newValue);
             return;
         }
         Object oldValue;
@@ -1762,8 +1760,8 @@ public abstract class Toolkit {
         }
         // if user passed in a AWTEventListenerProxy object, extract
         // the listener
-        if (l instanceof AWTEventListenerProxy) {
-            localL = ((AWTEventListenerProxy)l).getListener();
+        if (l instanceof AWTEventListenerProxy proxy) {
+            localL = proxy.getListener();
         }
         return localL;
     }
@@ -2030,9 +2028,8 @@ public abstract class Toolkit {
         // better to override this method but it is declared package private.
         // "this instanceof" syntax defeats polymorphism.
         // --mm, 03/03/00
-        if (this instanceof HeadlessToolkit) {
-            ((HeadlessToolkit)this).getUnderlyingToolkit()
-                .notifyAWTEventListeners(theEvent);
+        if (this instanceof HeadlessToolkit htk) {
+            htk.getUnderlyingToolkit().notifyAWTEventListeners(theEvent);
             return;
         }
 

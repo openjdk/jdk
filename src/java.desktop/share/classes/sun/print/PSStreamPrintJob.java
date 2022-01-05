@@ -171,15 +171,15 @@ public class PSStreamPrintJob implements CancelablePrintJob {
                 reader = null;
             }
         }
-        else if (data instanceof InputStream) {
+        else if (data instanceof InputStream is) {
             try {
-                ((InputStream)data).close();
+                is.close();
             } catch (IOException e) {
             }
         }
-        else if (data instanceof Reader) {
+        else if (data instanceof Reader reader) {
             try {
-                ((Reader)data).close();
+                reader.close();
             } catch (IOException e) {
             }
         }
@@ -477,9 +477,8 @@ public class PSStreamPrintJob implements CancelablePrintJob {
             } else {
                 String str = "JPS Job:" + doc;
                 try {
-                    Object printData = doc.getPrintData();
-                    if (printData instanceof URL) {
-                        str = ((URL)(doc.getPrintData())).toString();
+                    if (doc.getPrintData() instanceof URL url) {
+                        str = url.toString();
                     }
                 } catch (IOException e) {
                 }
@@ -523,10 +522,9 @@ public class PSStreamPrintJob implements CancelablePrintJob {
             } else if (category == Copies.class) {
                 copies = ((Copies)attr).getValue();
             } else if (category == Media.class) {
-                if (attr instanceof MediaSizeName &&
+                if (attr instanceof MediaSizeName msn &&
                     service.isAttributeValueSupported(attr, null, null)) {
-                    mediaSize =
-                        MediaSize.getMediaSizeForName((MediaSizeName)attr);
+                    mediaSize = MediaSize.getMediaSizeForName(msn);
                 }
             } else if (category == OrientationRequested.class) {
                 orient = (OrientationRequested)attr;

@@ -277,8 +277,8 @@ public class StandardGlyphVector extends GlyphVector {
                 return new StandardGlyphVector(gv, frc);
             }
         }
-        if (gv instanceof StandardGlyphVector) {
-            return (StandardGlyphVector)gv;
+        if (gv instanceof StandardGlyphVector standardVector) {
+            return standardVector;
         }
         return new StandardGlyphVector(gv, gv.getFontRenderContext());
     }
@@ -1107,8 +1107,8 @@ public class StandardGlyphVector extends GlyphVector {
 
     private void initFontData() {
         font2D = FontUtilities.getFont2D(font);
-        if (font2D instanceof FontSubstitution) {
-           font2D = ((FontSubstitution)font2D).getCompositeFont2D();
+        if (font2D instanceof FontSubstitution substitution) {
+           font2D = substitution.getCompositeFont2D();
         }
         float s = font.getSize2D();
         if (font.isTransformed()) {
@@ -1730,8 +1730,8 @@ public class StandardGlyphVector extends GlyphVector {
             // if we've invalidated the font but its an extra precaution.
         // do we want the CompFont from CFont here ?
         Font2D f2d = sgv.font2D;
-        if (f2d instanceof FontSubstitution) {
-           f2d = ((FontSubstitution)f2d).getCompositeFont2D();
+        if (f2d instanceof FontSubstitution substitution) {
+           f2d = substitution.getCompositeFont2D();
         }
             FontStrike strike = f2d.handle.font2D.getStrike(desc);  // !!! getStrike(desc, false)
 

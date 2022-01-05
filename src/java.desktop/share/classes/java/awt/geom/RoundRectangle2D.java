@@ -669,16 +669,15 @@ public abstract class RoundRectangle2D extends RectangularShape {
     public boolean equals(Object obj) {
         if (obj == this) {
             return true;
-        }
-        if (obj instanceof RoundRectangle2D) {
-            RoundRectangle2D rr2d = (RoundRectangle2D) obj;
+        } else if (obj instanceof RoundRectangle2D rr2d) {
             return ((getX() == rr2d.getX()) &&
                     (getY() == rr2d.getY()) &&
                     (getWidth() == rr2d.getWidth()) &&
                     (getHeight() == rr2d.getHeight()) &&
                     (getArcWidth() == rr2d.getArcWidth()) &&
                     (getArcHeight() == rr2d.getArcHeight()));
+        } else {
+            return false;
         }
-        return false;
     }
 }

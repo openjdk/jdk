@@ -692,8 +692,8 @@ java.io.Serializable {
      *            is not a {@code GridBagConstraint}
      */
     public void addLayoutComponent(Component comp, Object constraints) {
-        if (constraints instanceof GridBagConstraints) {
-            setConstraints(comp, (GridBagConstraints)constraints);
+        if (constraints instanceof GridBagConstraints gbc) {
+            setConstraints(comp, gbc);
         } else if (constraints != null) {
             throw new IllegalArgumentException("cannot add to layout: constraints must be a GridBagConstraint");
         }

@@ -65,8 +65,8 @@ public class ToolkitImage extends Image {
      */
     public ToolkitImage(ImageProducer is) {
         source = is;
-        if (is instanceof InputStreamImageSource) {
-            src = (InputStreamImageSource) is;
+        if (is instanceof InputStreamImageSource isis) {
+            src = isis;
         }
     }
 

@@ -261,9 +261,7 @@ public final class Region {
                                      Shape s, AffineTransform at)
     {
         // Optimize for empty shapes to avoid involving the SpanIterator
-        if (s instanceof RectangularShape &&
-                ((RectangularShape)s).isEmpty())
-        {
+        if (s instanceof RectangularShape shape && shape.isEmpty()) {
             return EMPTY_REGION;
         }
 
@@ -594,11 +592,11 @@ public final class Region {
      * may be this same object if no clipping occurs.
      */
     public Region getIntersection(final Rectangle2D r) {
-        if (r instanceof Rectangle) {
-            return getIntersection((Rectangle) r);
+        if (r instanceof Rectangle rect) {
+            return getIntersection(rect);
+        } else {
+            return getIntersectionXYXY(r.getMinX(), r.getMinY(), r.getMaxX(), r.getMaxY());
         }
-        return getIntersectionXYXY(r.getMinX(), r.getMinY(), r.getMaxX(),
-                                   r.getMaxY());
     }
 
     /**
@@ -1373,10 +1371,9 @@ public final class Region {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Region)) {
+        if (!(o instanceof Region r)) {
             return false;
         }
-        Region r = (Region) o;
         if (this.isEmpty()) {
             return r.isEmpty();
         } else if (r.isEmpty()) {

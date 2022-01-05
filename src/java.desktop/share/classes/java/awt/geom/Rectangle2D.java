@@ -920,14 +920,13 @@ public abstract class Rectangle2D extends RectangularShape {
     public boolean equals(Object obj) {
         if (obj == this) {
             return true;
-        }
-        if (obj instanceof Rectangle2D) {
-            Rectangle2D r2d = (Rectangle2D) obj;
+        } else if (obj instanceof Rectangle2D r2d) {
             return ((getX() == r2d.getX()) &&
                     (getY() == r2d.getY()) &&
                     (getWidth() == r2d.getWidth()) &&
                     (getHeight() == r2d.getHeight()));
+        } else {
+            return false;
         }
-        return false;
     }
 }

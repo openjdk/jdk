@@ -217,10 +217,9 @@ final class Order1 extends Curve {
     }
 
     public int compareTo(Curve other, double[] yrange) {
-        if (!(other instanceof Order1)) {
+        if (!(other instanceof Order1 c1)) {
             return super.compareTo(other, yrange);
         }
-        Order1 c1 = (Order1) other;
         if (yrange[1] <= yrange[0]) {
             throw new InternalError("yrange already screwed up...");
         }

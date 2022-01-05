@@ -146,8 +146,8 @@ public abstract class InputStreamImageSource implements ImageProducer,
 
     private void errorConsumer(ImageConsumerQueue cq, boolean needReload) {
         cq.consumer.imageComplete(ImageConsumer.IMAGEERROR);
-        if ( needReload && cq.consumer instanceof ImageRepresentation) {
-            ((ImageRepresentation)cq.consumer).image.flush();
+        if ( needReload && cq.consumer instanceof ImageRepresentation ir) {
+            ir.image.flush();
         }
         removeConsumer(cq.consumer);
     }

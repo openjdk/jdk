@@ -200,9 +200,9 @@ public abstract class BufferedContext {
             throw new InvalidPipeException("bounds changed or surface lost");
         }
 
-        if (paint instanceof Color) {
+        if (paint instanceof Color color) {
             // REMIND: not 30-bit friendly
-            int newRGB = ((Color)paint).getRGB();
+            int newRGB = color.getRGB();
             if (isValidatedPaintJustAColor) {
                 if (newRGB != validatedRGB) {
                     validatedRGB = newRGB;
@@ -386,15 +386,14 @@ public abstract class BufferedContext {
 
     private void setComposite(Composite comp, int flags) {
         // assert rq.lock.isHeldByCurrentThread();
-        if (comp instanceof AlphaComposite) {
-            AlphaComposite ac = (AlphaComposite)comp;
+        if (comp instanceof AlphaComposite composite) {
             rq.ensureCapacity(16);
             buf.putInt(SET_ALPHA_COMPOSITE);
-            buf.putInt(ac.getRule());
-            buf.putFloat(ac.getAlpha());
+            buf.putInt(composite.getRule());
+            buf.putFloat(composite.getAlpha());
             buf.putInt(flags);
-        } else if (comp instanceof XORComposite) {
-            int xorPixel = ((XORComposite)comp).getXorPixel();
+        } else if (comp instanceof XORComposite composite) {
+            int xorPixel = composite.getXorPixel();
             rq.ensureCapacity(8);
             buf.putInt(SET_XOR_COMPOSITE);
             buf.putInt(xorPixel);

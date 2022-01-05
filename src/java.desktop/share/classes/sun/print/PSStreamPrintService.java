@@ -421,8 +421,8 @@ public class PSStreamPrintService extends StreamPrintService
         else if (attr.getCategory() == Copies.class) {
             return isSupportedCopies((Copies)attr);
         } else if (attr.getCategory() == Media.class &&
-                   attr instanceof MediaSizeName) {
-            return isSupportedMedia((MediaSizeName)attr);
+                   attr instanceof MediaSizeName msn) {
+            return isSupportedMedia(msn);
         } else if (attr.getCategory() == OrientationRequested.class) {
             if (attr == OrientationRequested.REVERSE_PORTRAIT ||
                 (flavor != null) &&
@@ -499,8 +499,8 @@ public class PSStreamPrintService extends StreamPrintService
      */
     public boolean equals(Object obj) {
         return (obj == this ||
-                 (obj instanceof PSStreamPrintService &&
-                 ((PSStreamPrintService)obj).getName().equals(getName())));
+                 (obj instanceof PSStreamPrintService service &&
+                 service.getName().equals(getName())));
     }
 
    public int hashCode() {

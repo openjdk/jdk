@@ -153,11 +153,9 @@ public class TextComponent extends Component implements Accessible {
         if (checkForEnableIM) {
             checkForEnableIM = false;
             try {
-                Toolkit toolkit = Toolkit.getDefaultToolkit();
                 boolean shouldEnable = false;
-                if (toolkit instanceof InputMethodSupport) {
-                    shouldEnable = ((InputMethodSupport)toolkit)
-                      .enableInputMethodsForTextComponent();
+                if (Toolkit.getDefaultToolkit() instanceof InputMethodSupport ims) {
+                    shouldEnable = ims.enableInputMethodsForTextComponent();
                 }
                 enableInputMethods(shouldEnable);
             } catch (Exception e) {
@@ -685,11 +683,11 @@ public class TextComponent extends Component implements Accessible {
      * @param e the event
      */
     protected void processEvent(AWTEvent e) {
-        if (e instanceof TextEvent) {
-            processTextEvent((TextEvent)e);
-            return;
+        if (e instanceof TextEvent textEvent) {
+            processTextEvent(textEvent);
+        } else {
+            super.processEvent(e);
         }
-        super.processEvent(e);
     }
 
     /**

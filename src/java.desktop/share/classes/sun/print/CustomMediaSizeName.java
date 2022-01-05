@@ -126,9 +126,9 @@ class CustomMediaSizeName extends MediaSizeName {
 
         int size =0;
         MediaSizeName[] msn = new MediaSizeName[media.length];
-        for (int i=0; i<media.length; i++) {
-            if (media[i] instanceof MediaSizeName) {
-                msn[size++] = (MediaSizeName)media[i];
+        for (Media value : media) {
+            if (value instanceof MediaSizeName mediaSizeName) {
+                msn[size++] = mediaSizeName;
             }
         }
 

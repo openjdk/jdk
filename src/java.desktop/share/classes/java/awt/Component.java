@@ -1263,8 +1263,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
     final ComponentFactory getComponentFactory() {
         final Toolkit toolkit = getToolkit();
-        if (toolkit instanceof ComponentFactory) {
-            return (ComponentFactory) toolkit;
+        if (toolkit instanceof ComponentFactory factory) {
+            return factory;
         }
         throw new AWTError("UI components are unsupported by: " + toolkit);
     }
@@ -1384,20 +1384,22 @@ public abstract class Component implements ImageObserver, MenuContainer,
         if (!isShowing()) {
             return null;
         }
-        Window win = getContainingWindow();
         Toolkit toolkit = Toolkit.getDefaultToolkit();
-        if (!(toolkit instanceof ComponentFactory)) {
+        if (toolkit instanceof ComponentFactory componentFactory) {
+            Window win = getContainingWindow();
+            if (!componentFactory.getMouseInfoPeer().isWindowUnderMouse(win)) {
+                return null;
+            }
+
+            final boolean INCLUDE_DISABLED = true;
+            Point relativeToWindow = win.pointRelativeToComponent(pi.getLocation());
+            Component inTheSameWindow = win.findComponentAt(relativeToWindow.x,
+                    relativeToWindow.y,
+                    INCLUDE_DISABLED);
+            return inTheSameWindow;
+        } else {
             return null;
         }
-        if (!((ComponentFactory) toolkit).getMouseInfoPeer().isWindowUnderMouse(win)) {
-            return null;
-        }
-        final boolean INCLUDE_DISABLED = true;
-        Point relativeToWindow = win.pointRelativeToComponent(pi.getLocation());
-        Component inTheSameWindow = win.findComponentAt(relativeToWindow.x,
-                                                        relativeToWindow.y,
-                                                        INCLUDE_DISABLED);
-        return inTheSameWindow;
     }
 
     /**
@@ -2450,17 +2452,16 @@ public abstract class Component implements ImageObserver, MenuContainer,
                     Toolkit.getEventQueue().postEvent(e);
                 }
             } else {
-                if (this instanceof Container && ((Container)this).countComponents() > 0) {
+                if (this instanceof Container container && container.countComponents() > 0) {
                     boolean enabledOnToolkit =
                         Toolkit.enabledOnToolkit(AWTEvent.HIERARCHY_BOUNDS_EVENT_MASK);
                     if (resized) {
-
-                        ((Container)this).createChildHierarchyEvents(
-                                                                     HierarchyEvent.ANCESTOR_RESIZED, 0, enabledOnToolkit);
+                        container.createChildHierarchyEvents(
+                                                             HierarchyEvent.ANCESTOR_RESIZED, 0, enabledOnToolkit);
                     }
                     if (moved) {
-                        ((Container)this).createChildHierarchyEvents(
-                                                                     HierarchyEvent.ANCESTOR_MOVED, 0, enabledOnToolkit);
+                        container.createChildHierarchyEvents(
+                                                             HierarchyEvent.ANCESTOR_MOVED, 0, enabledOnToolkit);
                     }
                 }
                 }
@@ -3122,8 +3123,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
             if (parent == null) return null;
             Graphics g = parent.getGraphics();
             if (g == null) return null;
-            if (g instanceof ConstrainableGraphics) {
-                ((ConstrainableGraphics) g).constrain(x, y, width, height);
+            if (g instanceof ConstrainableGraphics constrainableGraphics) {
+                constrainableGraphics.constrain(x, y, width, height);
             } else {
                 g.translate(x,y);
                 g.setClip(0, 0, width, height);
@@ -3146,8 +3147,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
             if (parent == null) return null;
             Graphics g = parent.getGraphics_NoClientCode();
             if (g == null) return null;
-            if (g instanceof ConstrainableGraphics) {
-                ((ConstrainableGraphics) g).constrain(x, y, width, height);
+            if (g instanceof ConstrainableGraphics constrainableGraphics) {
+                constrainableGraphics.constrain(x, y, width, height);
             } else {
                 g.translate(x,y);
                 g.setClip(0, 0, width, height);
@@ -3555,9 +3556,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     private Insets getInsets_NoClientCode() {
-        ComponentPeer peer = this.peer;
-        if (peer instanceof ContainerPeer) {
-            return (Insets)((ContainerPeer)peer).getInsets().clone();
+        if (peer instanceof ContainerPeer containerPeer) {
+            return (Insets) containerPeer.getInsets().clone();
         }
         return new Insets(0, 0, 0, 0);
     }
@@ -3651,12 +3651,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @since 1.0
      */
     public Image createImage(int width, int height) {
-        ComponentPeer peer = this.peer;
         if (peer instanceof LightweightPeer) {
-            if (parent != null) { return parent.createImage(width, height); }
-            else { return null;}
+            return parent == null ? null : parent.createImage(width, height);
         } else {
-            return (peer != null) ? peer.createImage(width, height) : null;
+            return peer == null ? null : peer.createImage(width, height);
         }
     }
 
@@ -3676,15 +3674,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @since 1.4
      */
     public VolatileImage createVolatileImage(int width, int height) {
-        ComponentPeer peer = this.peer;
         if (peer instanceof LightweightPeer) {
-            if (parent != null) {
-                return parent.createVolatileImage(width, height);
-            }
-            else { return null;}
+            return parent == null ? null : parent.createVolatileImage(width, height);
         } else {
-            return (peer != null) ?
-                peer.createVolatileImage(width, height) : null;
+            return peer == null ? null : peer.createVolatileImage(width, height);
         }
     }
 
@@ -3962,11 +3955,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
      */
     Image getBackBuffer() {
         if (bufferStrategy != null) {
-            if (bufferStrategy instanceof BltBufferStrategy) {
-                BltBufferStrategy bltBS = (BltBufferStrategy)bufferStrategy;
+            if (bufferStrategy instanceof BltBufferStrategy bltBS) {
                 return bltBS.getBackBuffer();
-            } else if (bufferStrategy instanceof FlipBufferStrategy) {
-                FlipBufferStrategy flipBS = (FlipBufferStrategy)bufferStrategy;
+            } else if (bufferStrategy instanceof FlipBufferStrategy flipBS) {
                 return flipBS.getBackBuffer();
             }
         }
@@ -4099,9 +4090,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 // ... then recreate the backbuffers
             }
 
-            if (caps instanceof ExtendedBufferCapabilities) {
-                ExtendedBufferCapabilities ebc =
-                    (ExtendedBufferCapabilities)caps;
+            if (caps instanceof ExtendedBufferCapabilities ebc) {
                 if (ebc.getVSync() == VSYNC_ON) {
                     // if this buffer strategy is not allowed to be v-synced,
                     // change the caps that we pass to the peer but keep on
@@ -4125,8 +4114,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
         private void updateInternalBuffers() {
             // get the images associated with the draw buffer
             drawBuffer = getBackBuffer();
-            if (drawBuffer instanceof VolatileImage) {
-                drawVBuffer = (VolatileImage)drawBuffer;
+            if (drawBuffer instanceof VolatileImage volatileImage) {
+                drawVBuffer = volatileImage;
             } else {
                 drawVBuffer = null;
             }
@@ -4208,8 +4197,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
          * @return the buffering capabilities of this strategy
          */
         public BufferCapabilities getCapabilities() {
-            if (caps instanceof ProxyCapabilities) {
-                return ((ProxyCapabilities)caps).orig;
+            if (caps instanceof ProxyCapabilities proxyCaps) {
+                return proxyCaps.orig;
             } else {
                 return caps;
             }
@@ -4852,8 +4841,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
          *    before we notify AWTEventListeners.
          */
 
-        if (e instanceof SunDropTargetEvent) {
-            ((SunDropTargetEvent)e).dispatch();
+        if (e instanceof SunDropTargetEvent dropTargetEvent) {
+            dropTargetEvent.dispatch();
             return;
         }
 
@@ -4902,10 +4891,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
          *    KeyboardFocusManager to process it.
          */
         if (!e.isConsumed()) {
-            if (e instanceof java.awt.event.KeyEvent) {
+            if (e instanceof KeyEvent keyEvent) {
                 KeyboardFocusManager.getCurrentKeyboardFocusManager().
-                    processKeyEvent(this, (KeyEvent)e);
-                if (e.isConsumed()) {
+                    processKeyEvent(this, keyEvent);
+                if (keyEvent.isConsumed()) {
                     return;
                 }
             }
@@ -5054,9 +5043,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
         }
 
         if (SunToolkit.isTouchKeyboardAutoShowEnabled() &&
-            (toolkit instanceof SunToolkit) &&
+            (toolkit instanceof SunToolkit stk) &&
             ((e instanceof MouseEvent) || (e instanceof FocusEvent))) {
-            ((SunToolkit)toolkit).showOrHideTouchKeyboard(this, e);
+            (stk).showOrHideTouchKeyboard(this, e);
         }
     } // dispatchEventImpl()
 
@@ -5097,11 +5086,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 newX += anc.getX();
                 newY += anc.getY();
 
-                if (!(anc instanceof Window)) {
-                    anc = anc.getParent();
-                }
-                else {
+                if (anc instanceof Window) {
                     break;
+                } else {
+                    anc = anc.getParent();
                 }
             }
 
@@ -6368,42 +6356,41 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @since     1.1
      */
     protected void processEvent(AWTEvent e) {
-        if (e instanceof FocusEvent) {
-            processFocusEvent((FocusEvent)e);
-
-        } else if (e instanceof MouseEvent) {
-            switch(e.getID()) {
+        if (e instanceof FocusEvent focusEvent) {
+            processFocusEvent(focusEvent);
+        } else if (e instanceof MouseEvent mouseEvent) {
+            switch (mouseEvent.getID()) {
               case MouseEvent.MOUSE_PRESSED:
               case MouseEvent.MOUSE_RELEASED:
               case MouseEvent.MOUSE_CLICKED:
               case MouseEvent.MOUSE_ENTERED:
               case MouseEvent.MOUSE_EXITED:
-                  processMouseEvent((MouseEvent)e);
+                  processMouseEvent(mouseEvent);
                   break;
               case MouseEvent.MOUSE_MOVED:
               case MouseEvent.MOUSE_DRAGGED:
-                  processMouseMotionEvent((MouseEvent)e);
+                  processMouseMotionEvent(mouseEvent);
                   break;
               case MouseEvent.MOUSE_WHEEL:
                   processMouseWheelEvent((MouseWheelEvent)e);
                   break;
             }
 
-        } else if (e instanceof KeyEvent) {
-            processKeyEvent((KeyEvent)e);
+        } else if (e instanceof KeyEvent keyEvent) {
+            processKeyEvent(keyEvent);
 
-        } else if (e instanceof ComponentEvent) {
-            processComponentEvent((ComponentEvent)e);
-        } else if (e instanceof InputMethodEvent) {
-            processInputMethodEvent((InputMethodEvent)e);
-        } else if (e instanceof HierarchyEvent) {
+        } else if (e instanceof ComponentEvent componentEvent) {
+            processComponentEvent(componentEvent);
+        } else if (e instanceof InputMethodEvent inputMethodEvent) {
+            processInputMethodEvent(inputMethodEvent);
+        } else if (e instanceof HierarchyEvent hierarchyEvent) {
             switch (e.getID()) {
               case HierarchyEvent.HIERARCHY_CHANGED:
-                  processHierarchyEvent((HierarchyEvent)e);
+                  processHierarchyEvent(hierarchyEvent);
                   break;
               case HierarchyEvent.ANCESTOR_MOVED:
               case HierarchyEvent.ANCESTOR_RESIZED:
-                  processHierarchyBoundsEvent((HierarchyEvent)e);
+                  processHierarchyBoundsEvent(hierarchyEvent);
                   break;
             }
         }
@@ -7139,8 +7126,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
             if (p != null) {
                 boolean isLightweight = isLightweight();
 
-                if (bufferStrategy instanceof FlipBufferStrategy) {
-                    ((FlipBufferStrategy)bufferStrategy).invalidate();
+                if (bufferStrategy instanceof FlipBufferStrategy flipBufferStrategy) {
+                    flipBufferStrategy.invalidate();
                 }
 
                 if (dropTarget != null) dropTarget.removeNotify();
@@ -7915,11 +7902,11 @@ public abstract class Component implements ImageObserver, MenuContainer,
     {
         // 1) Check if the event being dispatched is a system-generated mouse event.
         AWTEvent currentEvent = EventQueue.getCurrentEvent();
-        if (currentEvent instanceof MouseEvent &&
+        if (currentEvent instanceof MouseEvent mouseEvent &&
             SunToolkit.isSystemGenerated(currentEvent))
         {
             // 2) Sanity check: if the mouse event component source belongs to the same containing window.
-            Component source = ((MouseEvent)currentEvent).getComponent();
+            Component source = mouseEvent.getComponent();
             if (source == null || source.getContainingWindow() == getContainingWindow()) {
                 focusLog.finest("requesting focus by mouse event \"in window\"");
 
@@ -8876,25 +8863,24 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * the Swing package private method {@code compWriteObjectNotify}.
      */
     private void doSwingSerialization() {
-        if (!(this instanceof JComponent)) {
-            return;
-        }
-        @SuppressWarnings("deprecation")
-        Package swingPackage = Package.getPackage("javax.swing");
-        // For Swing serialization to correctly work Swing needs to
-        // be notified before Component does it's serialization.  This
-        // hack accommodates this.
-        //
-        // Swing classes MUST be loaded by the bootstrap class loader,
-        // otherwise we don't consider them.
-        for (Class<?> klass = Component.this.getClass(); klass != null;
-                   klass = klass.getSuperclass()) {
-            if (klass.getPackage() == swingPackage &&
-                      klass.getClassLoader() == null) {
+        if (this instanceof JComponent component) {
+            @SuppressWarnings("deprecation")
+            Package swingPackage = Package.getPackage("javax.swing");
+            // For Swing serialization to correctly work Swing needs to
+            // be notified before Component does it's serialization.  This
+            // hack accommodates this.
+            //
+            // Swing classes MUST be loaded by the bootstrap class loader,
+            // otherwise we don't consider them.
+            for (Class<?> klass = Component.this.getClass(); klass != null;
+                 klass = klass.getSuperclass()) {
+                if (klass.getPackage() == swingPackage &&
+                        klass.getClassLoader() == null) {
 
-                SwingAccessor.getJComponentAccessor()
-                        .compWriteObjectNotify((JComponent) this);
-                return;
+                    SwingAccessor.getJComponentAccessor()
+                            .compWriteObjectNotify(component);
+                    return;
+                }
             }
         }
     }
@@ -9532,9 +9518,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
             if (accessibleParent != null) {
                 return accessibleParent;
             } else {
-                Container parent = getParent();
-                if (parent instanceof Accessible) {
-                    return (Accessible) parent;
+                if (getParent() instanceof Accessible parent) {
+                    return parent;
                 }
             }
             return null;
@@ -9983,7 +9968,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 states.add(AccessibleState.FOCUSED);
             }
             if (this instanceof Accessible) {
-                AccessibleContext ac = ((Accessible) this).getAccessibleContext();
+                AccessibleContext ac = this.getAccessibleContext();
                 if (ac != null) {
                     Accessible ap = ac.getAccessibleParent();
                     if (ap != null) {

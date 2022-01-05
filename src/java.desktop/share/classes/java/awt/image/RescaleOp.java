@@ -324,15 +324,13 @@ public class RescaleOp implements BufferedImageOp, RasterOp {
             }
         }
 
-      if (dstSM instanceof ComponentSampleModel) {
-           ComponentSampleModel dsm = (ComponentSampleModel)dstSM;
-           if (dsm.getPixelStride() != dst.getNumBands()) {
+      if (dstSM instanceof ComponentSampleModel dsm) {
+          if (dsm.getPixelStride() != dst.getNumBands()) {
                return false;
            }
         }
-        if (srcSM instanceof ComponentSampleModel) {
-           ComponentSampleModel csm = (ComponentSampleModel)srcSM;
-           if (csm.getPixelStride() != src.getNumBands()) {
+        if (srcSM instanceof ComponentSampleModel csm) {
+            if (csm.getPixelStride() != src.getNumBands()) {
                return false;
            }
         }

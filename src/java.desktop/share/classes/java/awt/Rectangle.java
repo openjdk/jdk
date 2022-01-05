@@ -1161,8 +1161,8 @@ public class Rectangle extends Rectangle2D
      * @since 1.2
      */
     public Rectangle2D createIntersection(Rectangle2D r) {
-        if (r instanceof Rectangle) {
-            return intersection((Rectangle) r);
+        if (r instanceof Rectangle rect) {
+            return intersection(rect);
         }
         Rectangle2D dest = new Rectangle2D.Double();
         Rectangle2D.intersect(this, r, dest);
@@ -1174,8 +1174,8 @@ public class Rectangle extends Rectangle2D
      * @since 1.2
      */
     public Rectangle2D createUnion(Rectangle2D r) {
-        if (r instanceof Rectangle) {
-            return union((Rectangle) r);
+        if (r instanceof Rectangle rect) {
+            return union(rect);
         }
         Rectangle2D dest = new Rectangle2D.Double();
         Rectangle2D.union(this, r, dest);
@@ -1195,14 +1195,14 @@ public class Rectangle extends Rectangle2D
      *            {@code false} otherwise.
      */
     public boolean equals(Object obj) {
-        if (obj instanceof Rectangle) {
-            Rectangle r = (Rectangle)obj;
+        if (obj instanceof Rectangle r) {
             return ((x == r.x) &&
                     (y == r.y) &&
                     (width == r.width) &&
                     (height == r.height));
+        } else {
+            return super.equals(obj);
         }
-        return super.equals(obj);
     }
 
     /**

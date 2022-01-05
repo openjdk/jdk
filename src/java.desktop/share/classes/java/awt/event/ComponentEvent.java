@@ -130,7 +130,7 @@ public class ComponentEvent extends AWTEvent {
      * {@code Component}.
      */
     public Component getComponent() {
-        return (source instanceof Component) ? (Component)source : null;
+        return source instanceof Component component ? component : null;
     }
 
     /**

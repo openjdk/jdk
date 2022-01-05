@@ -325,7 +325,7 @@ public abstract class PackedColorModel extends ColorModel {
      * @see SampleModel
      */
     public boolean isCompatibleSampleModel(SampleModel sm) {
-        if (! (sm instanceof SinglePixelPackedSampleModel)) {
+        if (!(sm instanceof SinglePixelPackedSampleModel sppsm)) {
             return false;
         }
 
@@ -339,7 +339,6 @@ public abstract class PackedColorModel extends ColorModel {
             return false;
         }
 
-        SinglePixelPackedSampleModel sppsm = (SinglePixelPackedSampleModel) sm;
         // Now compare the specific masks
         int[] bitMasks = sppsm.getBitMasks();
         if (bitMasks.length != maskArray.length) {
@@ -397,11 +396,9 @@ public abstract class PackedColorModel extends ColorModel {
      */
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof PackedColorModel)) {
+        if (!(obj instanceof PackedColorModel cm)) {
             return false;
         }
-
-        PackedColorModel cm = (PackedColorModel) obj;
 
         if (supportsAlpha != cm.hasAlpha() ||
             isAlphaPremultiplied != cm.isAlphaPremultiplied() ||

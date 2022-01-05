@@ -144,11 +144,7 @@ public final class DisplayMode {
      */
     @Override
     public boolean equals(Object dm) {
-        if (dm instanceof DisplayMode) {
-            return equals((DisplayMode)dm);
-        } else {
-            return false;
-        }
+        return dm instanceof DisplayMode displayMode && equals(displayMode);
     }
 
     /**

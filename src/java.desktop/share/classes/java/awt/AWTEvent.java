@@ -387,10 +387,10 @@ public abstract class AWTEvent extends EventObject {
      */
     public String toString() {
         String srcName = null;
-        if (source instanceof Component) {
-            srcName = ((Component)source).getName();
-        } else if (source instanceof MenuComponent) {
-            srcName = ((MenuComponent)source).getName();
+        if (source instanceof Component component) {
+            srcName = component.getName();
+        } else if (source instanceof MenuComponent menuComponent) {
+            srcName = menuComponent.getName();
         }
         return getClass().getName() + "[" + paramString() + "] on " +
             (srcName != null? srcName : source);
@@ -580,21 +580,20 @@ public abstract class AWTEvent extends EventObject {
     void copyPrivateDataInto(AWTEvent that) {
         that.bdata = this.bdata;
         // Copy canAccessSystemClipboard value from this into that.
-        if (this instanceof InputEvent && that instanceof InputEvent) {
-
+        if (this instanceof InputEvent thisEvent && that instanceof InputEvent thatEvent) {
             AWTAccessor.InputEventAccessor accessor
                     = AWTAccessor.getInputEventAccessor();
 
-            boolean b = accessor.canAccessSystemClipboard((InputEvent) this);
-            accessor.setCanAccessSystemClipboard((InputEvent) that, b);
+            boolean b = accessor.canAccessSystemClipboard(thisEvent);
+            accessor.setCanAccessSystemClipboard(thatEvent, b);
         }
         that.isSystemGenerated = this.isSystemGenerated;
     }
 
     void dispatched() {
-        if (this instanceof InputEvent) {
+        if (this instanceof InputEvent inputEvent) {
             AWTAccessor.getInputEventAccessor().
-                    setCanAccessSystemClipboard((InputEvent) this, false);
+                    setCanAccessSystemClipboard(inputEvent, false);
         }
     }
 } // class AWTEvent

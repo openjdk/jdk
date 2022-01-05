@@ -167,9 +167,8 @@ public class PeekMetrics {
      * with the supplied {@code Paint}.
      */
     private void checkPaint(Paint paint) {
-
-        if (paint instanceof Color) {
-            if (((Color)paint).getAlpha() < 255) {
+        if (paint instanceof Color color) {
+            if (color.getAlpha() < 255) {
                 mHasNonSolidColors = true;
             }
         } else {
@@ -182,23 +181,15 @@ public class PeekMetrics {
      * with the supplied {@code Composite}.
      */
     private void checkAlpha(Composite composite) {
-
-        if (composite instanceof AlphaComposite) {
-            AlphaComposite alphaComposite = (AlphaComposite) composite;
-            float alpha = alphaComposite.getAlpha();
+        if (composite instanceof AlphaComposite alphaComposite) {
             int rule = alphaComposite.getRule();
-
-            if (alpha != 1.0
+            if (alphaComposite.getAlpha() != 1.0
                     || (rule != AlphaComposite.SRC
                         && rule != AlphaComposite.SRC_OVER)) {
-
                 mHasCompositing = true;
             }
-
         } else {
             mHasCompositing = true;
         }
-
     }
-
 }

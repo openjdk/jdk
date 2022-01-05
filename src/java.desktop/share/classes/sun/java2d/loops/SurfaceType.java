@@ -446,10 +446,11 @@ public final class SurfaceType {
     }
 
     public boolean equals(Object o) {
-        if (o instanceof SurfaceType) {
-            return (((SurfaceType) o).uniqueID == this.uniqueID);
+        if (o instanceof SurfaceType surfaceType) {
+            return surfaceType.uniqueID == this.uniqueID;
+        } else {
+            return false;
         }
-        return false;
     }
 
     public String toString() {

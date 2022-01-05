@@ -177,9 +177,7 @@ public class IntegerComponentRaster extends SunWritableRaster {
         }
         this.data = stealData(dataBuffer, 0);
 
-        if (sampleModel instanceof SinglePixelPackedSampleModel) {
-            SinglePixelPackedSampleModel sppsm =
-                    (SinglePixelPackedSampleModel)sampleModel;
+        if (sampleModel instanceof SinglePixelPackedSampleModel sppsm) {
             int[] boffsets = sppsm.getBitOffsets();
             boolean notByteBoundary = false;
             for (int i=1; i < boffsets.length; i++) {
@@ -322,8 +320,8 @@ public class IntegerComponentRaster extends SunWritableRaster {
                 ("Coordinate out of bounds!");
         }
         int[] outData;
-        if (obj instanceof int[]) {
-            outData = (int[])obj;
+        if (obj instanceof int[] ints) {
+            outData = ints;
         } else {
             outData = new int[numDataElements*w*h];
         }
@@ -426,9 +424,8 @@ public class IntegerComponentRaster extends SunWritableRaster {
         int srcOffY = inRaster.getMinY();
         int[] tdata = null;
 
-        if (inRaster instanceof IntegerComponentRaster &&
+        if (inRaster instanceof IntegerComponentRaster ict &&
             (pixelStride == 1) && (numDataElements == 1)) {
-            IntegerComponentRaster ict = (IntegerComponentRaster) inRaster;
             if (ict.getNumDataElements() != 1) {
                 throw new ArrayIndexOutOfBoundsException("Number of bands"+
                                                          " does not match");

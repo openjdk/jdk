@@ -420,14 +420,14 @@ public class MenuItem extends MenuComponent implements Accessible {
         }
         MenuContainer container = getParent_NoClientCode();
         do {
-            if (!(container instanceof Menu)) {
+            if (container instanceof Menu menu) {
+                if (!menu.isEnabled()) {
+                    return false;
+                }
+                container = menu.getParent_NoClientCode();
+            } else {
                 return true;
             }
-            Menu menu = (Menu)container;
-            if (!menu.isEnabled()) {
-                return false;
-            }
-            container = menu.getParent_NoClientCode();
         } while (container != null);
         return true;
     }
@@ -647,8 +647,8 @@ public class MenuItem extends MenuComponent implements Accessible {
      * @since       1.1
      */
     protected void processEvent(AWTEvent e) {
-        if (e instanceof ActionEvent) {
-            processActionEvent((ActionEvent)e);
+        if (e instanceof ActionEvent actionEvent) {
+            processActionEvent(actionEvent);
         }
     }
 

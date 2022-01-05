@@ -228,8 +228,8 @@ public class InputContext extends java.awt.im.InputContext
 
         // Ignore focus events that relate to the InputMethodWindow of this context.
         // This is a workaround.  Should be removed after 4452384 is fixed.
-        if (event instanceof FocusEvent) {
-            Component opposite = ((FocusEvent)event).getOppositeComponent();
+        if (event instanceof FocusEvent focusEvent) {
+            Component opposite = focusEvent.getOppositeComponent();
             if ((opposite != null) &&
                 (getComponentWindow(opposite) instanceof InputMethodWindow) &&
                 (opposite.getInputContext() == this)) {
@@ -327,8 +327,8 @@ public class InputContext extends java.awt.im.InputContext
                 }
 
                 awtFocussedComponent = source;
-                if (inputMethod instanceof InputMethodAdapter) {
-                    ((InputMethodAdapter) inputMethod).setAWTFocussedComponent(source);
+                if (inputMethod instanceof InputMethodAdapter ima) {
+                    ima.setAWTFocussedComponent(source);
                 }
 
                 // it's possible that the input method is still active because
@@ -380,18 +380,18 @@ public class InputContext extends java.awt.im.InputContext
 
         if (inputMethod != null) {
             if (previousInputMethod != inputMethod &&
-                    previousInputMethod instanceof InputMethodAdapter) {
+                    previousInputMethod instanceof InputMethodAdapter ima) {
                 // let the host adapter pass through the input events for the
                 // new input method
-                ((InputMethodAdapter) previousInputMethod).stopListening();
+                ima.stopListening();
             }
             previousInputMethod = null;
 
             if (log.isLoggable(PlatformLogger.Level.FINE)) {
                 log.fine("Current client component " + currentClientComponent);
             }
-            if (inputMethod instanceof InputMethodAdapter) {
-                ((InputMethodAdapter) inputMethod).setClientComponent(currentClientComponent);
+            if (inputMethod instanceof InputMethodAdapter ima) {
+                ima.setClientComponent(currentClientComponent);
             }
             inputMethod.activate();
             isInputMethodActive = true;
@@ -426,8 +426,8 @@ public class InputContext extends java.awt.im.InputContext
         while (true) {
             if (component == null) {
                 return null;
-            } else if (component instanceof Window) {
-                return (Window) component;
+            } else if (component instanceof Window window) {
+                return window;
             } else {
                 component = component.getParent();
             }
@@ -459,8 +459,8 @@ public class InputContext extends java.awt.im.InputContext
                 }
 
                 awtFocussedComponent = null;
-                if (inputMethod instanceof InputMethodAdapter) {
-                    ((InputMethodAdapter) inputMethod).setAWTFocussedComponent(null);
+                if (inputMethod instanceof InputMethodAdapter ima) {
+                    ima.setAWTFocussedComponent(null);
                 }
 
                 // hides the composition area if currently it is visible
@@ -544,8 +544,8 @@ public class InputContext extends java.awt.im.InputContext
                 }
                 endComposition();
                 deactivateInputMethod(false);
-                if (inputMethod instanceof InputMethodAdapter) {
-                    ((InputMethodAdapter) inputMethod).setClientComponent(null);
+                if (inputMethod instanceof InputMethodAdapter ima) {
+                    ima.setClientComponent(null);
                 }
                 if (null == currentClientComponent.getInputMethodRequests())
                     wasCompositionEnabledSupported = false;
@@ -584,8 +584,8 @@ public class InputContext extends java.awt.im.InputContext
         // activate the new input method if the old one was active
         if (wasInputMethodActive) {
             inputMethod = getInputMethodInstance();
-            if (inputMethod instanceof InputMethodAdapter) {
-                ((InputMethodAdapter) inputMethod).setAWTFocussedComponent(awtFocussedComponent);
+            if (inputMethod instanceof InputMethodAdapter ima) {
+                ima.setAWTFocussedComponent(awtFocussedComponent);
             }
             activateInputMethod(true);
         }
@@ -640,8 +640,8 @@ public class InputContext extends java.awt.im.InputContext
                 removeClientWindowListeners();
             }
             currentClientComponent = null;
-            if (inputMethod instanceof InputMethodAdapter) {
-                ((InputMethodAdapter) inputMethod).setClientComponent(null);
+            if (inputMethod instanceof InputMethodAdapter ima) {
+                ima.setClientComponent(null);
             }
 
             // removeNotify() can be issued from a thread other than the event dispatch
@@ -759,10 +759,9 @@ public class InputContext extends java.awt.im.InputContext
         }
 
         String inputMethodInfo = null;
-        if (inputMethod instanceof InputMethodAdapter) {
+        if (inputMethod instanceof InputMethodAdapter ima) {
             // returns the information about the host native input method.
-            inputMethodInfo = ((InputMethodAdapter)inputMethod).
-                getNativeInputMethodInfo();
+            inputMethodInfo = ima.getNativeInputMethodInfo();
         }
 
         // extracts the information from the InputMethodDescriptor
@@ -847,8 +846,8 @@ public class InputContext extends java.awt.im.InputContext
                     enableClientWindowNotification(inputMethodInstance, state.booleanValue());
                 }
                 ((InputMethodContext) this).setInputMethodSupportsBelowTheSpot(
-                        (!(inputMethodInstance instanceof InputMethodAdapter)) ||
-                        ((InputMethodAdapter) inputMethodInstance).supportsBelowTheSpot());
+                        !(inputMethodInstance instanceof InputMethodAdapter ima) ||
+                        ima.supportsBelowTheSpot());
                 return inputMethodInstance;
             }
         }
@@ -883,8 +882,8 @@ public class InputContext extends java.awt.im.InputContext
             inputMethodCreationFailed = true;
         }
         ((InputMethodContext) this).setInputMethodSupportsBelowTheSpot(
-                (!(inputMethodInstance instanceof InputMethodAdapter)) ||
-                ((InputMethodAdapter) inputMethodInstance).supportsBelowTheSpot());
+                !(inputMethodInstance instanceof InputMethodAdapter ima) ||
+                ima.supportsBelowTheSpot());
         return inputMethodInstance;
     }
 
@@ -959,7 +958,7 @@ public class InputContext extends java.awt.im.InputContext
 
         // if the window is invisible or iconified, send null to the input method.
         if (!window.isVisible() ||
-            ((window instanceof Frame) && ((Frame)window).getState() == Frame.ICONIFIED)) {
+            ((window instanceof Frame frame) && frame.getState() == Frame.ICONIFIED)) {
             clientWindowLocation = null;
             inputMethod.notifyClientWindowChange(null);
             return;

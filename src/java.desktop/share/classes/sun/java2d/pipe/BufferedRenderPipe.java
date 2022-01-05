@@ -509,18 +509,15 @@ public abstract class BufferedRenderPipe
 
     public void draw(SunGraphics2D sg2d, Shape s) {
         if (sg2d.strokeState == SunGraphics2D.STROKE_THIN) {
-            if (s instanceof Polygon) {
-                if (sg2d.transformState < SunGraphics2D.TRANSFORM_TRANSLATESCALE) {
-                    Polygon p = (Polygon)s;
-                    drawPolygon(sg2d, p.xpoints, p.ypoints, p.npoints);
-                    return;
-                }
+            if (s instanceof Polygon p && sg2d.transformState < SunGraphics2D.TRANSFORM_TRANSLATESCALE) {
+                drawPolygon(sg2d, p.xpoints, p.ypoints, p.npoints);
+                return;
             }
             Path2D.Float p2df;
             int transx, transy;
             if (sg2d.transformState <= SunGraphics2D.TRANSFORM_INT_TRANSLATE) {
-                if (s instanceof Path2D.Float) {
-                    p2df = (Path2D.Float)s;
+                if (s instanceof Path2D.Float f) {
+                    p2df = f;
                 } else {
                     p2df = new Path2D.Float(s);
                 }

@@ -409,40 +409,39 @@ public class BasicStroke implements Stroke {
     *            {@code false} otherwise.
     */
     public boolean equals(Object obj) {
-        if (!(obj instanceof BasicStroke)) {
-            return false;
-        }
-
-        BasicStroke bs = (BasicStroke) obj;
-        if (width != bs.width) {
-            return false;
-        }
-
-        if (join != bs.join) {
-            return false;
-        }
-
-        if (cap != bs.cap) {
-            return false;
-        }
-
-        if (miterlimit != bs.miterlimit) {
-            return false;
-        }
-
-        if (dash != null) {
-            if (dash_phase != bs.dash_phase) {
+        if (obj instanceof BasicStroke bs) {
+            if (width != bs.width) {
                 return false;
             }
 
-            if (!java.util.Arrays.equals(dash, bs.dash)) {
+            if (join != bs.join) {
                 return false;
             }
-        }
-        else if (bs.dash != null) {
+
+            if (cap != bs.cap) {
+                return false;
+            }
+
+            if (miterlimit != bs.miterlimit) {
+                return false;
+            }
+
+            if (dash != null) {
+                if (dash_phase != bs.dash_phase) {
+                    return false;
+                }
+
+                if (!java.util.Arrays.equals(dash, bs.dash)) {
+                    return false;
+                }
+            }
+            else if (bs.dash != null) {
+                return false;
+            }
+
+            return true;
+        } else {
             return false;
         }
-
-        return true;
     }
 }

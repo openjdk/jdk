@@ -249,8 +249,8 @@ public final class GraphicsPrimitiveMgr {
         int index = Arrays.binarySearch(devCollection, spec, primFinder);
         if (index >= 0) {
             GraphicsPrimitive prim = devCollection[index];
-            if (prim instanceof GraphicsPrimitiveProxy) {
-                prim = ((GraphicsPrimitiveProxy) prim).instantiate();
+            if (prim instanceof GraphicsPrimitiveProxy proxy) {
+                prim = proxy.instantiate();
                 devCollection[index] = prim;
                 if (debugTrace) {
                     writeLog("Instantiated graphics primitive " + prim);
@@ -293,8 +293,8 @@ public final class GraphicsPrimitiveMgr {
         GraphicsPrimitive[] prims = primitives;
         for (int j = 0; j < prims.length; j++) {
             GraphicsPrimitive p = prims[j];
-            if (p instanceof GraphicsPrimitiveProxy) {
-                GraphicsPrimitive r = ((GraphicsPrimitiveProxy) p).instantiate();
+            if (p instanceof GraphicsPrimitiveProxy proxy) {
+                GraphicsPrimitive r = proxy.instantiate();
                 if (!r.getSignature().equals(p.getSignature()) ||
                     r.getUniqueID() != p.getUniqueID()) {
                     System.out.println("r.getSignature == "+r.getSignature());

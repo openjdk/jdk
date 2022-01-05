@@ -102,8 +102,8 @@ public class SunCompositeContext implements CompositeContext {
         // create a SurfaceData from a BufferedImage then we need to
         // make a WritableRaster since it is needed to construct a
         // BufferedImage.
-        if (src1 instanceof WritableRaster) {
-            src = (WritableRaster) src1;
+        if (src1 instanceof WritableRaster raster) {
+            src = raster;
         } else {
             src = src1.createCompatibleWritableRaster();
             src.setDataElements(0, 0, src1);

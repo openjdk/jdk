@@ -219,8 +219,8 @@ class DnDEventMulticaster extends AWTEventMulticaster
     protected static EventListener removeInternal(EventListener l, EventListener oldl) {
         if (l == oldl || l == null) {
             return null;
-        } else if (l instanceof DnDEventMulticaster) {
-            return ((DnDEventMulticaster)l).remove(oldl);
+        } else if (l instanceof DnDEventMulticaster multicaster) {
+            return multicaster.remove(oldl);
         } else {
             return l;           // it's not here
         }

@@ -191,9 +191,8 @@ public class Taskbar {
     }
 
     private Taskbar() {
-        Toolkit defaultToolkit = Toolkit.getDefaultToolkit();
-        if (defaultToolkit instanceof SunToolkit) {
-            peer = ((SunToolkit) defaultToolkit).createTaskbarPeer(this);
+        if (Toolkit.getDefaultToolkit() instanceof SunToolkit stk) {
+            peer = stk.createTaskbarPeer(this);
         }
     }
 
@@ -239,11 +238,11 @@ public class Taskbar {
      * @see #getTaskbar()
      */
     public static boolean isTaskbarSupported(){
-        Toolkit defaultToolkit = Toolkit.getDefaultToolkit();
-        if (defaultToolkit instanceof SunToolkit) {
-            return ((SunToolkit)defaultToolkit).isTaskbarSupported();
+        if (Toolkit.getDefaultToolkit() instanceof SunToolkit stk) {
+            return stk.isTaskbarSupported();
+        } else {
+            return false;
         }
-        return false;
     }
 
     /**

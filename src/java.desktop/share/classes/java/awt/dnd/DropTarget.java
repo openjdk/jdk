@@ -510,9 +510,9 @@ public class DropTarget implements DropTargetListener, Serializable {
             peer = acc.getPeer(c);
         }
 
-        if (peer instanceof DropTargetPeer) {
-            nativePeer = (DropTargetPeer) peer;
-            ((DropTargetPeer)peer).addDropTarget(this);
+        if (peer instanceof DropTargetPeer dropTargetPeer) {
+            nativePeer = dropTargetPeer;
+            dropTargetPeer.addDropTarget(this);
         } else {
             nativePeer = null;
         }
@@ -793,9 +793,9 @@ public class DropTarget implements DropTargetListener, Serializable {
      */
 
     protected void initializeAutoscrolling(Point p) {
-        if (!(component instanceof Autoscroll)) return;
-
-        autoScroller = createDropTargetAutoScroller(component, p);
+        if (component instanceof Autoscroll) {
+            autoScroller = createDropTargetAutoScroller(component, p);
+        }
     }
 
     /**

@@ -101,8 +101,7 @@ class ShellFolderManager {
     private static File checkFile(File f, @SuppressWarnings("removal") SecurityManager sm) {
         try {
             sm.checkRead(f.getPath());
-            if (f instanceof ShellFolder) {
-                ShellFolder sf = (ShellFolder)f;
+            if (f instanceof ShellFolder sf) {
                 if (sf.isLink()) {
                     sm.checkRead(sf.getLinkLocation().getPath());
                 }
@@ -133,7 +132,7 @@ class ShellFolderManager {
     }
 
     public boolean isFileSystemRoot(File dir) {
-        if (dir instanceof ShellFolder && !((ShellFolder) dir).isFileSystem()) {
+        if (dir instanceof ShellFolder shellFolder && !shellFolder.isFileSystem()) {
             return false;
         }
         return (dir.getParentFile() == null);

@@ -212,8 +212,8 @@ class JInputMethodPopupMenu extends InputMethodPopupMenu {
         menuItem.setActionCommand(command);
         menuItem.addActionListener(this);
         menuItem.setEnabled(command != null);
-        if (targetMenu instanceof JMenu) {
-            ((JMenu)targetMenu).add(menuItem);
+        if (targetMenu instanceof JMenu menu) {
+            menu.add(menuItem);
         } else {
             ((JPopupMenu)targetMenu).add(menuItem);
         }

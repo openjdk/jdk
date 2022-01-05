@@ -255,8 +255,8 @@ public abstract class ShellFolder extends File {
      * @exception FileNotFoundException if file does not exist
      */
     public static ShellFolder getShellFolder(File file) throws FileNotFoundException {
-        if (file instanceof ShellFolder) {
-            return (ShellFolder)file;
+        if (file instanceof ShellFolder shellFolder) {
+            return shellFolder;
         }
 
         if (!Files.exists(Paths.get(file.getPath()), LinkOption.NOFOLLOW_LINKS)) {
@@ -340,8 +340,8 @@ public abstract class ShellFolder extends File {
                     }
                 }
 
-                if (commonParent instanceof ShellFolder) {
-                    ((ShellFolder) commonParent).sortChildren(files);
+                if (commonParent instanceof ShellFolder shellFolder) {
+                    shellFolder.sortChildren(files);
                 } else {
                     files.sort(FILE_COMPARATOR);
                 }
@@ -449,8 +449,8 @@ public abstract class ShellFolder extends File {
     public static ShellFolderColumnInfo[] getFolderColumns(File dir) {
         ShellFolderColumnInfo[] columns = null;
 
-        if (dir instanceof ShellFolder) {
-            columns = ((ShellFolder) dir).getFolderColumns();
+        if (dir instanceof ShellFolder shellFolder) {
+            columns = shellFolder.getFolderColumns();
         }
 
         if (columns == null) {
@@ -475,8 +475,8 @@ public abstract class ShellFolder extends File {
     }
 
     public static Object getFolderColumnValue(File file, int column) {
-        if (file instanceof ShellFolder) {
-            Object value = ((ShellFolder)file).getFolderColumnValue(column);
+        if (file instanceof ShellFolder shellFolder) {
+            Object value = shellFolder.getFolderColumnValue(column);
             if (value != null) {
                 return value;
             }
@@ -533,17 +533,17 @@ public abstract class ShellFolder extends File {
         try {
             return invoker.invoke(task);
         } catch (Exception e) {
-            if (e instanceof RuntimeException) {
+            if (e instanceof RuntimeException ex) {
                 // Rethrow unchecked exceptions
-                throw (RuntimeException) e;
+                throw ex;
             }
 
-            if (e instanceof InterruptedException) {
+            if (e instanceof InterruptedException ex) {
                 // Set isInterrupted flag for current thread
                 Thread.currentThread().interrupt();
 
                 // Rethrow InterruptedException
-                throw (InterruptedException) e;
+                throw ex;
             }
 
             if (exceptionClass.isInstance(e)) {
@@ -598,14 +598,14 @@ public abstract class ShellFolder extends File {
             ShellFolder sf1 = null;
             ShellFolder sf2 = null;
 
-            if (f1 instanceof ShellFolder) {
-                sf1 = (ShellFolder) f1;
+            if (f1 instanceof ShellFolder sf) {
+                sf1 = sf;
                 if (sf1.isFileSystem()) {
                     sf1 = null;
                 }
             }
-            if (f2 instanceof ShellFolder) {
-                sf2 = (ShellFolder) f2;
+            if (f2 instanceof ShellFolder sf) {
+                sf2 = sf;
                 if (sf2.isFileSystem()) {
                     sf2 = null;
                 }

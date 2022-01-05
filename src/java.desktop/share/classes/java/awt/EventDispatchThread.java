@@ -132,13 +132,11 @@ class EventDispatchThread extends Thread {
         }
         synchronized (eventFilters) {
             if (!eventFilters.contains(filter)) {
-                if (filter instanceof ModalEventFilter) {
-                    ModalEventFilter newFilter = (ModalEventFilter)filter;
+                if (filter instanceof ModalEventFilter newFilter) {
                     int k = 0;
                     for (k = 0; k < eventFilters.size(); k++) {
                         EventFilter f = eventFilters.get(k);
-                        if (f instanceof ModalEventFilter) {
-                            ModalEventFilter cf = (ModalEventFilter)f;
+                        if (f instanceof ModalEventFilter cf) {
                             if (cf.compareTo(newFilter) > 0) {
                                 break;
                             }
@@ -263,8 +261,7 @@ class EventDispatchThread extends Thread {
                         // Exclude this object from modality and
                         // continue to pump it's events.
                         return FilterAction.ACCEPT;
-                    } else if (o instanceof Component) {
-                        Component c = (Component) o;
+                    } else if (o instanceof Component c) {
                         // 5.0u3 modal exclusion
                         boolean modalExcluded = false;
                         if (modalComponent instanceof Container) {

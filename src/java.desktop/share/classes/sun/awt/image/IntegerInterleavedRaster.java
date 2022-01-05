@@ -132,9 +132,7 @@ public class IntegerInterleavedRaster extends IntegerComponentRaster {
 
         this.data = stealData(dataBuffer, 0);
 
-        if (sampleModel instanceof SinglePixelPackedSampleModel) {
-            SinglePixelPackedSampleModel sppsm =
-                    (SinglePixelPackedSampleModel)sampleModel;
+        if (sampleModel instanceof SinglePixelPackedSampleModel sppsm) {
             this.scanlineStride = sppsm.getScanlineStride();
             this.pixelStride    = 1;
             this.dataOffsets = new int[1];
@@ -262,8 +260,8 @@ public class IntegerInterleavedRaster extends IntegerComponentRaster {
                 ("Coordinate out of bounds!");
         }
         int[] outData;
-        if (obj instanceof int[]) {
-            outData = (int[])obj;
+        if (obj instanceof int[] ints) {
+            outData = ints;
         } else {
             outData = new int[w*h];
         }
@@ -357,9 +355,7 @@ public class IntegerInterleavedRaster extends IntegerComponentRaster {
         int srcOffY = inRaster.getMinY();
         int[] tdata = null;
 
-        if (inRaster instanceof IntegerInterleavedRaster) {
-            IntegerInterleavedRaster ict = (IntegerInterleavedRaster) inRaster;
-
+        if (inRaster instanceof IntegerInterleavedRaster ict) {
             // Extract the raster parameters
             tdata    = ict.getDataStorage();
             int tss  = ict.getScanlineStride();

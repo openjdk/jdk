@@ -201,9 +201,7 @@ final class LCMSImageLayout {
                  * but it would be good to improve it when it is used from here.
                  * See "createImageLayout(image.getRaster())" below.
                  */
-                if (!cm.hasAlpha() && cm instanceof ComponentColorModel) {
-                    ComponentColorModel ccm = (ComponentColorModel) cm;
-
+                if (!cm.hasAlpha() && cm instanceof ComponentColorModel ccm) {
                     // verify whether the component size is fine
                     int[] cs = ccm.getComponentSize();
                     for (int s : cs) {
@@ -389,11 +387,8 @@ final class LCMSImageLayout {
     }
     public static LCMSImageLayout createImageLayout(Raster r) {
         LCMSImageLayout l = new LCMSImageLayout();
-        if (r instanceof ByteComponentRaster &&
-                r.getSampleModel() instanceof ComponentSampleModel) {
-            ByteComponentRaster br = (ByteComponentRaster)r;
-
-            ComponentSampleModel csm = (ComponentSampleModel)r.getSampleModel();
+        if (r instanceof ByteComponentRaster br &&
+                r.getSampleModel() instanceof ComponentSampleModel csm) {
 
             l.pixelType = CHANNELS_SH(br.getNumBands()) | BYTES_SH(1);
 

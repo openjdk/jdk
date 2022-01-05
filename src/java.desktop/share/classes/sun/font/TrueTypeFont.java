@@ -220,8 +220,8 @@ public class TrueTypeFont extends FileFont {
             }
         } catch (Throwable t) {
             close();
-            if (t instanceof FontFormatException) {
-                throw (FontFormatException)t;
+            if (t instanceof FontFormatException e) {
+                throw e;
             } else {
                 throw new FontFormatException("Unexpected runtime exception.");
             }
@@ -257,9 +257,8 @@ public class TrueTypeFont extends FileFont {
                 disposerRecord.channel = raf.getChannel();
                 fileSize = (int)disposerRecord.channel.size();
                 if (usePool) {
-                    FontManager fm = FontManagerFactory.getInstance();
-                    if (fm instanceof SunFontManager) {
-                        ((SunFontManager) fm).addToPool(this);
+                    if (FontManagerFactory.getInstance() instanceof SunFontManager sfm) {
+                        sfm.addToPool(this);
                     }
                 }
             } catch (PrivilegedActionException e) {
@@ -527,8 +526,8 @@ public class TrueTypeFont extends FileFont {
             if (FontUtilities.isLogging()) {
                 FontUtilities.logSevere(e.toString());
             }
-            if (e instanceof FontFormatException) {
-                throw (FontFormatException)e;
+            if (e instanceof FontFormatException ex) {
+                throw ex;
             } else {
                 throw new FontFormatException(e.toString());
             }

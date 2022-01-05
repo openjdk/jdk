@@ -150,11 +150,11 @@ public class TextComponentPrintable implements CountingPrintable {
             final MessageFormat headerFormat,
             final MessageFormat footerFormat) {
 
-        if (textComponent instanceof JEditorPane
+        if (textComponent instanceof JEditorPane editorPane
                 && isFrameSetDocument(textComponent.getDocument())) {
             //for document with frames we create one printable per
             //frame and merge them with the CompoundPrintable.
-            List<JEditorPane> frames = getFrames((JEditorPane) textComponent);
+            List<JEditorPane> frames = getFrames(editorPane);
             List<CountingPrintable> printables =
                 new ArrayList<CountingPrintable>();
             for (JEditorPane frame : frames) {
@@ -175,15 +175,8 @@ public class TextComponentPrintable implements CountingPrintable {
      * @param document the {@code Document} to check
      * @return {@code true} if the {@code document} has frames
      */
-    private static boolean isFrameSetDocument(final Document document) {
-        boolean ret = false;
-        if (document instanceof HTMLDocument) {
-            HTMLDocument htmlDocument = (HTMLDocument)document;
-            if (htmlDocument.getIterator(HTML.Tag.FRAME).isValid()) {
-                ret = true;
-            }
-        }
-        return ret;
+    private static boolean isFrameSetDocument(Document document) {
+        return document instanceof HTMLDocument htmlDocument && htmlDocument.getIterator(HTML.Tag.FRAME).isValid();
     }
 
 
@@ -218,12 +211,10 @@ public class TextComponentPrintable implements CountingPrintable {
     private static void getFrames(final Container container, List<JEditorPane> list) {
         for (Component c : container.getComponents()) {
             if (c instanceof FrameEditorPaneTag
-                && c instanceof JEditorPane ) { //it should be always JEditorPane
-                list.add((JEditorPane) c);
-            } else {
-                if (c instanceof Container) {
-                    getFrames((Container) c, list);
-                }
+                && c instanceof JEditorPane editorPane) { //it should be always JEditorPane
+                list.add(editorPane);
+            } else if (c instanceof Container container1) {
+                getFrames(container1, list);
             }
         }
     }
@@ -252,8 +243,8 @@ public class TextComponentPrintable implements CountingPrintable {
             try {
                 SwingUtilities.invokeAndWait(doCreateFrames);
             } catch (Exception e) {
-                if (e instanceof RuntimeException) {
-                    throw (RuntimeException) e;
+                if (e instanceof RuntimeException ex) {
+                    throw ex;
                 } else {
                     throw new RuntimeException(e);
                 }
@@ -314,13 +305,13 @@ public class TextComponentPrintable implements CountingPrintable {
                 throw new RuntimeException(e);
             } catch (ExecutionException e) {
                 Throwable cause = e.getCause();
-                if (cause instanceof Error) {
-                    throw (Error) cause;
+                if (cause instanceof Error ex) {
+                    throw ex;
+                } else if (cause instanceof RuntimeException ex) {
+                    throw ex;
+                } else {
+                    throw new AssertionError(cause);
                 }
-                if (cause instanceof RuntimeException) {
-                    throw (RuntimeException) cause;
-                }
-                throw new AssertionError(cause);
             }
         }
     }
@@ -329,13 +320,12 @@ public class TextComponentPrintable implements CountingPrintable {
         assert SwingUtilities.isEventDispatchThread();
 
         JTextComponent ret = null;
-        if (textComponent instanceof JPasswordField) {
+        if (textComponent instanceof JPasswordField passwordField) {
             ret =
                 new JPasswordField() {
                     {
-                        setEchoChar(((JPasswordField) textComponent).getEchoChar());
-                        setHorizontalAlignment(
-                            ((JTextField) textComponent).getHorizontalAlignment());
+                        setEchoChar(passwordField.getEchoChar());
+                        setHorizontalAlignment(passwordField.getHorizontalAlignment());
                     }
                     @Override
                     public FontMetrics getFontMetrics(Font font) {
@@ -344,12 +334,11 @@ public class TextComponentPrintable implements CountingPrintable {
                             : FontDesignMetrics.getMetrics(font, frc.get());
                     }
                 };
-        } else if (textComponent instanceof JTextField) {
+        } else if (textComponent instanceof JTextField textField) {
             ret =
                 new JTextField() {
                     {
-                        setHorizontalAlignment(
-                            ((JTextField) textComponent).getHorizontalAlignment());
+                        setHorizontalAlignment(textField.getHorizontalAlignment());
                     }
                     @Override
                     public FontMetrics getFontMetrics(Font font) {
@@ -358,11 +347,10 @@ public class TextComponentPrintable implements CountingPrintable {
                             : FontDesignMetrics.getMetrics(font, frc.get());
                     }
                 };
-        } else if (textComponent instanceof JTextArea) {
+        } else if (textComponent instanceof JTextArea textArea) {
             ret =
                 new JTextArea() {
                     {
-                        JTextArea textArea = (JTextArea) textComponent;
                         setLineWrap(textArea.getLineWrap());
                         setWrapStyleWord(textArea.getWrapStyleWord());
                         setTabSize(textArea.getTabSize());
@@ -374,7 +362,7 @@ public class TextComponentPrintable implements CountingPrintable {
                             : FontDesignMetrics.getMetrics(font, frc.get());
                     }
                 };
-        } else if (textComponent instanceof JTextPane) {
+        } else if (textComponent instanceof JTextPane textPane) {
             ret =
                 new JTextPane() {
                     @Override
@@ -386,13 +374,13 @@ public class TextComponentPrintable implements CountingPrintable {
                     @Override
                     public EditorKit getEditorKit() {
                         if (getDocument() == textComponent.getDocument()) {
-                            return ((JTextPane) textComponent).getEditorKit();
+                            return textPane.getEditorKit();
                         } else {
                             return super.getEditorKit();
                         }
                     }
                 };
-        } else if (textComponent instanceof JEditorPane) {
+        } else if (textComponent instanceof JEditorPane editorPane) {
             ret =
                 new JEditorPane() {
                     @Override
@@ -404,7 +392,7 @@ public class TextComponentPrintable implements CountingPrintable {
                     @Override
                     public EditorKit getEditorKit() {
                         if (getDocument() == textComponent.getDocument()) {
-                            return ((JEditorPane) textComponent).getEditorKit();
+                            return editorPane.getEditorKit();
                         } else {
                             return super.getEditorKit();
                         }
@@ -464,8 +452,8 @@ public class TextComponentPrintable implements CountingPrintable {
             final PageFormat pf,
             final int pageIndex) throws PrinterException {
         if (!isLayouted) {
-            if (graphics instanceof Graphics2D) {
-                frc.set(((Graphics2D)graphics).getFontRenderContext());
+            if (graphics instanceof Graphics2D g2d) {
+                frc.set(g2d.getFontRenderContext());
             }
             layout((int)Math.floor(pf.getImageableWidth()));
             calculateRowsMetrics();
@@ -486,12 +474,12 @@ public class TextComponentPrintable implements CountingPrintable {
                 throw new RuntimeException(e);
             } catch (ExecutionException e) {
                 Throwable cause = e.getCause();
-                if (cause instanceof PrinterException) {
-                    throw (PrinterException)cause;
-                } else if (cause instanceof RuntimeException) {
-                    throw (RuntimeException) cause;
-                } else if (cause instanceof Error) {
-                    throw (Error) cause;
+                if (cause instanceof PrinterException ex) {
+                    throw ex;
+                } else if (cause instanceof RuntimeException ex) {
+                    throw ex;
+                } else if (cause instanceof Error ex) {
+                    throw ex;
                 } else {
                     throw new RuntimeException(cause);
                 }
@@ -579,9 +567,9 @@ public class TextComponentPrintable implements CountingPrintable {
     private void releaseReadLock() {
         assert ! SwingUtilities.isEventDispatchThread();
         Document document = textComponentToPrint.getDocument();
-        if (document instanceof AbstractDocument) {
+        if (document instanceof AbstractDocument abstractDocument) {
             try {
-                ((AbstractDocument) document).readUnlock();
+                abstractDocument.readUnlock();
                 needReadLock = true;
             } catch (Error ignore) {
                 // readUnlock() might throw StateInvariantError
@@ -658,10 +646,10 @@ public class TextComponentPrintable implements CountingPrintable {
                 throw new RuntimeException(e);
             } catch (ExecutionException e) {
                 Throwable cause = e.getCause();
-                if (cause instanceof RuntimeException) {
-                    throw (RuntimeException) cause;
-                } else if (cause instanceof Error) {
-                    throw (Error) cause;
+                if (cause instanceof RuntimeException ex) {
+                    throw ex;
+                } else if (cause instanceof Error ex) {
+                    throw ex;
                 } else {
                     throw new RuntimeException(cause);
                 }
@@ -824,11 +812,7 @@ public class TextComponentPrintable implements CountingPrintable {
 
         @Override
         public boolean equals(Object obj) {
-            if (obj instanceof IntegerSegment) {
-                return compareTo((IntegerSegment) obj) == 0;
-            } else {
-                return false;
-            }
+            return obj instanceof IntegerSegment integerSegment && compareTo(integerSegment) == 0;
         }
 
         @Override

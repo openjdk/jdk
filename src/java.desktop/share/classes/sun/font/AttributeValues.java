@@ -311,9 +311,9 @@ public final class AttributeValues implements Cloneable {
 
     public AttributeValues merge(Map<? extends Attribute, ?>map,
                                  int mask) {
-        if (map instanceof AttributeMap &&
-            ((AttributeMap) map).getValues() != null) {
-            merge(((AttributeMap)map).getValues(), mask);
+        if (map instanceof AttributeMap attributeMap &&
+            attributeMap.getValues() != null) {
+            merge(attributeMap.getValues(), mask);
         } else if (map != null && !map.isEmpty()) {
             for (Map.Entry<? extends Attribute, ?> e: map.entrySet()) {
                 try {
@@ -634,8 +634,7 @@ public final class AttributeValues implements Cloneable {
         case EPOSTURE: posture = ((Number)o).floatValue(); break;
         case ESIZE: size = ((Number)o).floatValue(); break;
         case ETRANSFORM: {
-            if (o instanceof TransformAttribute) {
-                TransformAttribute ta = (TransformAttribute)o;
+            if (o instanceof TransformAttribute ta) {
                 if (ta.isIdentity()) {
                     transform = null;
                 } else {
@@ -663,11 +662,10 @@ public final class AttributeValues implements Cloneable {
         case EBIDI_EMBEDDING: bidiEmbedding = (byte)((Integer)o).intValue(); break;
         case EJUSTIFICATION: justification = ((Number)o).floatValue(); break;
         case EINPUT_METHOD_HIGHLIGHT: {
-            if (o instanceof Annotation) {
-                Annotation at = (Annotation)o;
-                imHighlight = (InputMethodHighlight)at.getValue();
+            if (o instanceof Annotation at) {
+                imHighlight = at.getValue();
             } else {
-                imHighlight = (InputMethodHighlight)o;
+                imHighlight = o;
             }
         } break;
         case EINPUT_METHOD_UNDERLINE: imUnderline = (byte)((Integer)o).intValue();
@@ -759,12 +757,11 @@ public final class AttributeValues implements Cloneable {
     // Plan to remove these.
     public static float getJustification(Map<?, ?> map) {
         if (map != null) {
-            if (map instanceof AttributeMap &&
-                ((AttributeMap) map).getValues() != null) {
-                return ((AttributeMap)map).getValues().justification;
+            if (map instanceof AttributeMap attributeMap &&
+                attributeMap.getValues() != null) {
+                return attributeMap.getValues().justification;
             }
-            Object obj = map.get(TextAttribute.JUSTIFICATION);
-            if (obj instanceof Number number) {
+            if (map.get(TextAttribute.JUSTIFICATION) instanceof Number number) {
                 return max(0, min(1, number.floatValue()));
             }
         }
@@ -773,12 +770,11 @@ public final class AttributeValues implements Cloneable {
 
     public static NumericShaper getNumericShaping(Map<?, ?> map) {
         if (map != null) {
-            if (map instanceof AttributeMap &&
-                ((AttributeMap) map).getValues() != null) {
-                return ((AttributeMap)map).getValues().numericShaping;
+            if (map instanceof AttributeMap attributeMap &&
+                attributeMap.getValues() != null) {
+                return attributeMap.getValues().numericShaping;
             }
-            Object obj = map.get(TextAttribute.NUMERIC_SHAPING);
-            if (obj instanceof NumericShaper shaper) {
+            if (map.get(TextAttribute.NUMERIC_SHAPING) instanceof NumericShaper shaper) {
                 return shaper;
             }
         }
@@ -791,9 +787,9 @@ public final class AttributeValues implements Cloneable {
      */
     public AttributeValues applyIMHighlight() {
         if (imHighlight != null) {
-            InputMethodHighlight hl = null;
-            if (imHighlight instanceof InputMethodHighlight) {
-                hl = (InputMethodHighlight)imHighlight;
+            InputMethodHighlight hl;
+            if (imHighlight instanceof InputMethodHighlight highlight) {
+                hl = highlight;
             } else {
                 hl = (InputMethodHighlight)((Annotation)imHighlight).getValue();
             }
@@ -816,9 +812,9 @@ public final class AttributeValues implements Cloneable {
     public static AffineTransform getBaselineTransform(Map<?, ?> map) {
         if (map != null) {
             AttributeValues av = null;
-            if (map instanceof AttributeMap &&
-                ((AttributeMap) map).getValues() != null) {
-                av = ((AttributeMap)map).getValues();
+            if (map instanceof AttributeMap attributeMap &&
+                attributeMap.getValues() != null) {
+                av = attributeMap.getValues();
             } else if (map.get(TextAttribute.TRANSFORM) != null) {
                 av = AttributeValues.fromMap((Map<Attribute, ?>)map); // yuck
             }
@@ -833,9 +829,9 @@ public final class AttributeValues implements Cloneable {
     public static AffineTransform getCharTransform(Map<?, ?> map) {
         if (map != null) {
             AttributeValues av = null;
-            if (map instanceof AttributeMap &&
-                ((AttributeMap) map).getValues() != null) {
-                av = ((AttributeMap)map).getValues();
+            if (map instanceof AttributeMap attributeMap &&
+                attributeMap.getValues() != null) {
+                av = attributeMap.getValues();
             } else if (map.get(TextAttribute.TRANSFORM) != null) {
                 av = AttributeValues.fromMap((Map<Attribute, ?>)map); // yuck
             }

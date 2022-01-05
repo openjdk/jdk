@@ -93,11 +93,9 @@ class NameGenerator {
     public String instanceName(Object instance) {
         if (instance == null) {
             return "null";
-        }
-        if (instance instanceof Class) {
-            return unqualifiedClassName((Class)instance);
-        }
-        else {
+        } else if (instance instanceof Class<?> c) {
+            return unqualifiedClassName(c);
+        } else {
             String result = valueToName.get(instance);
             if (result != null) {
                 return result;

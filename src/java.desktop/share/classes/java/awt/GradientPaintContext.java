@@ -169,8 +169,7 @@ class GradientPaintContext implements PaintContext {
         int db = ((rgb2      ) & 0xff) - b1;
         if (a1 == 0xff && da == 0) {
             model = xrgbmodel;
-            if (cm instanceof DirectColorModel) {
-                DirectColorModel dcm = (DirectColorModel) cm;
+            if (cm instanceof DirectColorModel dcm) {
                 int tmp = dcm.getAlphaMask();
                 if ((tmp == 0 || tmp == 0xff) &&
                     dcm.getRedMask() == 0xff &&

@@ -117,8 +117,8 @@ public abstract class RGBImageFilter extends ImageFilter {
      * @see ColorModel#getRGBdefault
      */
     public void setColorModel(ColorModel model) {
-        if (canFilterIndexColorModel && (model instanceof IndexColorModel)) {
-            ColorModel newcm = filterIndexColorModel((IndexColorModel)model);
+        if (canFilterIndexColorModel && model instanceof IndexColorModel icm) {
+            ColorModel newcm = filterIndexColorModel(icm);
             substituteColorModel(model, newcm);
             consumer.setColorModel(newcm);
         } else {

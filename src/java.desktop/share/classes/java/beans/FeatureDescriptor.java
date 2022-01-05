@@ -313,10 +313,7 @@ public class FeatureDescriptor {
      *         {@code false} otherwise
      */
     boolean isTransient() {
-        Object value = getValue(TRANSIENT);
-        return (value instanceof Boolean)
-                ? (Boolean) value
-                : false;
+        return getValue(TRANSIENT) instanceof Boolean b ? b : false;
     }
 
     // Package private methods for recreating the weak/soft referent

@@ -1117,31 +1117,25 @@ public class DirectColorModel extends PackedColorModel {
         }
         switch (transferType) {
             case DataBuffer.TYPE_BYTE:
-               if (obj instanceof byte[]) {
-                   byte[] bdata = (byte[])obj;
-                   bdata[0] = (byte)(pixel&0xff);
-                   return bdata;
+               if (obj instanceof byte[] bytes) {
+                   bytes[0] = (byte) (pixel&0xff);
+                   return bytes;
                } else {
-                   byte[] bdata = {(byte)(pixel&0xff)};
-                   return bdata;
+                   return new byte[]{ (byte) (pixel&0xff) };
                }
             case DataBuffer.TYPE_USHORT:
-               if (obj instanceof short[]) {
-                   short[] sdata = (short[])obj;
-                   sdata[0] = (short)(pixel&0xffff);
-                   return sdata;
+               if (obj instanceof short[] shorts) {
+                   shorts[0] = (short) (pixel&0xffff);
+                   return shorts;
                } else {
-                   short[] sdata = {(short)(pixel&0xffff)};
-                   return sdata;
+                   return new short[]{ (short) (pixel&0xffff) };
                }
             case DataBuffer.TYPE_INT:
-               if (obj instanceof int[]) {
-                   int[] idata = (int[])obj;
-                   idata[0] = pixel;
-                   return idata;
+               if (obj instanceof int[] ints) {
+                   ints[0] = pixel;
+                   return ints;
                } else {
-                   int[] idata = {pixel};
-                   return idata;
+                   return new int[]{ pixel };
                }
             default:
                throw new ClassCastException("This method has not been "+
@@ -1351,26 +1345,22 @@ public class DirectColorModel extends PackedColorModel {
       * with this {@code ColorModel}; {@code false} otherwise.
       */
     public boolean isCompatibleRaster(Raster raster) {
-        SampleModel sm = raster.getSampleModel();
-        SinglePixelPackedSampleModel spsm;
-        if (sm instanceof SinglePixelPackedSampleModel) {
-            spsm = (SinglePixelPackedSampleModel) sm;
-        }
-        else {
-            return false;
-        }
-        if (spsm.getNumBands() != getNumComponents()) {
-            return false;
-        }
-
-        int[] bitMasks = spsm.getBitMasks();
-        for (int i=0; i<numComponents; i++) {
-            if (bitMasks[i] != maskArray[i]) {
+        if (raster.getSampleModel() instanceof SinglePixelPackedSampleModel spsm) {
+            if (spsm.getNumBands() != getNumComponents()) {
                 return false;
             }
-        }
 
-        return (raster.getTransferType() == transferType);
+            int[] bitMasks = spsm.getBitMasks();
+            for (int i=0; i<numComponents; i++) {
+                if (bitMasks[i] != maskArray[i]) {
+                    return false;
+                }
+            }
+
+            return (raster.getTransferType() == transferType);
+        } else {
+            return false;
+        }
     }
 
     private void setFields() {

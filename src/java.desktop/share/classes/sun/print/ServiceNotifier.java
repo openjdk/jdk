@@ -124,9 +124,8 @@ class ServiceNotifier extends Thread {
                }
                long startTime = System.currentTimeMillis();
                if (listeners != null) {
-                    if (service instanceof AttributeUpdater) {
-                       psa =
-                          ((AttributeUpdater)service).getUpdatedAttributes();
+                    if (service instanceof AttributeUpdater attributeUpdater) {
+                       psa = attributeUpdater.getUpdatedAttributes();
                     } else {
                        psa = service.getAttributes();
                     }

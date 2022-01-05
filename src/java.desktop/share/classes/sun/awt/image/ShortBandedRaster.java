@@ -132,8 +132,7 @@ public class ShortBandedRaster extends SunWritableRaster {
         this.maxX = minX + width;
         this.maxY = minY + height;
 
-        if (sampleModel instanceof BandedSampleModel) {
-            BandedSampleModel bsm = (BandedSampleModel)sampleModel;
+        if (sampleModel instanceof BandedSampleModel bsm) {
             this.scanlineStride = bsm.getScanlineStride();
             int[] bankIndices = bsm.getBankIndices();
             int[] bandOffsets = bsm.getBandOffsets();
