@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1284,6 +1284,9 @@ public:
   void vpbroadcastw(XMMRegister dst, XMMRegister src, int vector_len);
   void vpbroadcastw(XMMRegister dst, Address src, int vector_len) { Assembler::vpbroadcastw(dst, src, vector_len); }
 
+  using Assembler::vbroadcastsd;
+  void vbroadcastsd(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = rscratch1);
+
   void vpcmpeqb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   void vpcmpeqw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
@@ -1310,7 +1313,7 @@ public:
   void evpbroadcast(BasicType type, XMMRegister dst, Register src, int vector_len);
 
   // Emit comparison instruction for the specified comparison predicate.
-  void vpcmpCCW(XMMRegister dst, XMMRegister nds, XMMRegister src, ComparisonPredicate cond, Width width, int vector_len, Register scratch_reg);
+  void vpcmpCCW(XMMRegister dst, XMMRegister nds, XMMRegister src, XMMRegister xtmp, ComparisonPredicate cond, Width width, int vector_len);
   void vpcmpCC(XMMRegister dst, XMMRegister nds, XMMRegister src, int cond_encoding, Width width, int vector_len);
 
   void vpmovzxbw(XMMRegister dst, Address src, int vector_len);

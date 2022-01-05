@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,12 +145,6 @@ public:
   void load_vector_mask(KRegister dst, XMMRegister src, XMMRegister xtmp, Register tmp, bool novlbwdq, int vlen_enc);
 
   void load_iota_indices(XMMRegister dst, Register scratch, int vlen_in_bytes);
-
-  // vector compare
-  void vpcmpu(BasicType typ, XMMRegister dst, XMMRegister src1, XMMRegister src2, ComparisonPredicate comparison, int vlen_in_bytes,
-              XMMRegister vtmp1, XMMRegister vtmp2, Register scratch);
-  void vpcmpu32(BasicType typ, XMMRegister dst, XMMRegister src1, XMMRegister src2, ComparisonPredicate comparison, int vlen_in_bytes,
-                XMMRegister vtmp1, XMMRegister vtmp2, XMMRegister vtmp3, Register scratch);
 
   // Reductions for vectors of bytes, shorts, ints, longs, floats, and doubles.
 
