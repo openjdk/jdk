@@ -239,10 +239,6 @@ class ChannelInputStream extends InputStream {
             if (out instanceof ChannelOutputStream cos) {
                 WritableByteChannel wbc = cos.channel();
 
-                if (wbc instanceof FileChannel target) {
-                    return transfer(fc, target);
-                }
-
                 if (wbc instanceof SelectableChannel sc) {
                     synchronized (sc.blockingLock()) {
                         if (!sc.isBlocking())
