@@ -57,9 +57,6 @@
   // No support for generic vector operands.
   static const bool supports_generic_vector_operands = false;
 
-  // No support for 48 extra htbl entries in aes-gcm intrinsic
-  static const int htbl_entries = -1;
-
   static constexpr bool isSimpleConstant64(jlong value) {
     // Probably always true, even if a temp register is required.
     return true;

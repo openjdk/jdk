@@ -755,10 +755,8 @@ public final class SoftSynthesizer implements AudioSynthesizer,
                     InputStream is = AccessController.doPrivileged(action);
                     if(is == null) continue;
                     Soundbank sbk;
-                    try {
+                    try (is) {
                         sbk = MidiSystem.getSoundbank(new BufferedInputStream(is));
-                    } finally {
-                        is.close();
                     }
                     if (sbk != null) {
                         defaultSoundBank = sbk;
@@ -802,9 +800,8 @@ public final class SoftSynthesizer implements AudioSynthesizer,
                             return null;
                         });
                 if (out != null) {
-                    try {
+                    try (out) {
                         ((SF2Soundbank) defaultSoundBank).save(out);
-                        out.close();
                     } catch (final IOException ignored) {
                     }
                 }

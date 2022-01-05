@@ -1610,9 +1610,7 @@ int os::PlatformEvent::park(jlong millis) {
       status = pthread_cond_timedwait(_cond, _mutex, &abst);
       assert_status(status == 0 || status == ETIMEDOUT,
                     status, "cond_timedwait");
-      // OS-level "spurious wakeups" are ignored unless the archaic
-      // FilterSpuriousWakeups is set false. That flag should be obsoleted.
-      if (!FilterSpuriousWakeups) break;
+      // OS-level "spurious wakeups" are ignored
       if (status == ETIMEDOUT) break;
     }
     --_nParked;

@@ -124,8 +124,18 @@ public final class LocaleMatcher {
         for (LanguageRange lr : nonZeroRanges) {
             String range = lr.getRange();
             if (range.equals("*")) {
-                tags = removeTagsMatchingBasicZeroRange(zeroRanges, tags);
-                return new ArrayList<String>(tags);
+                for (String tag : tags) {
+                    // change to lowercase for case-insensitive matching
+                    String lowerCaseTag = tag.toLowerCase(Locale.ROOT);
+
+                    if (!caseInsensitiveMatch(list, lowerCaseTag)
+                            && !shouldIgnoreFilterBasicMatch(zeroRanges, lowerCaseTag)) {
+                        // preserving the case of the input tag
+                        list.add(tag);
+                    }
+                }
+
+                break;
             } else {
                 for (String tag : tags) {
                     // change to lowercase for case-insensitive matching
@@ -146,44 +156,6 @@ public final class LocaleMatcher {
         }
 
         return list;
-    }
-
-    /**
-     * Removes the tag(s) which are falling in the basic exclusion range(s) i.e
-     * range(s) with q=0 and returns the updated collection. If the basic
-     * language ranges contains '*' as one of its non zero range then instead of
-     * returning all the tags, remove those which are matching the range with
-     * quality weight q=0.
-     */
-    private static Collection<String> removeTagsMatchingBasicZeroRange(
-            List<LanguageRange> zeroRange, Collection<String> tags) {
-        if (zeroRange.isEmpty()) {
-            tags = removeDuplicates(tags);
-            return tags;
-        }
-
-        List<String> matchingTags = new ArrayList<>();
-        for (String tag : tags) {
-            // change to lowercase for case-insensitive matching
-            String lowerCaseTag = tag.toLowerCase(Locale.ROOT);
-            if (!shouldIgnoreFilterBasicMatch(zeroRange, lowerCaseTag)
-                    && !caseInsensitiveMatch(matchingTags, lowerCaseTag)) {
-                matchingTags.add(tag); // preserving the case of the input tag
-            }
-        }
-
-        return matchingTags;
-    }
-
-    /**
-     * Remove duplicate tags from the given {@code tags} by
-     * ignoring case considerations.
-     */
-    private static Collection<String> removeDuplicates(
-            Collection<String> tags) {
-        Set<String> distinctTags = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
-        return tags.stream().filter(x -> distinctTags.add(x))
-                .toList();
     }
 
     /**
@@ -240,8 +212,18 @@ public final class LocaleMatcher {
         for (LanguageRange lr : nonZeroRanges) {
             String range = lr.getRange();
             if (range.equals("*")) {
-                tags = removeTagsMatchingExtendedZeroRange(zeroRanges, tags);
-                return new ArrayList<String>(tags);
+                for (String tag : tags) {
+                    // change to lowercase for case-insensitive matching
+                    String lowerCaseTag = tag.toLowerCase(Locale.ROOT);
+
+                    if (!caseInsensitiveMatch(list, lowerCaseTag)
+                            && !shouldIgnoreFilterExtendedMatch(zeroRanges, lowerCaseTag)) {
+                        // preserving the case of the input tag
+                        list.add(tag);
+                    }
+                }
+
+                break;
             }
             String[] rangeSubtags = range.split("-");
             for (String tag : tags) {
@@ -265,33 +247,6 @@ public final class LocaleMatcher {
         }
 
         return list;
-    }
-
-    /**
-     * Removes the tag(s) which are falling in the extended exclusion range(s)
-     * i.e range(s) with q=0 and returns the updated collection. If the extended
-     * language ranges contains '*' as one of its non zero range then instead of
-     * returning all the tags, remove those which are matching the range with
-     * quality weight q=0.
-     */
-    private static Collection<String> removeTagsMatchingExtendedZeroRange(
-            List<LanguageRange> zeroRange, Collection<String> tags) {
-        if (zeroRange.isEmpty()) {
-            tags = removeDuplicates(tags);
-            return tags;
-        }
-
-        List<String> matchingTags = new ArrayList<>();
-        for (String tag : tags) {
-            // change to lowercase for case-insensitive matching
-            String lowerCaseTag = tag.toLowerCase(Locale.ROOT);
-            if (!shouldIgnoreFilterExtendedMatch(zeroRange, lowerCaseTag)
-                    && !caseInsensitiveMatch(matchingTags, lowerCaseTag)) {
-                matchingTags.add(tag); // preserve the case of the input tag
-            }
-        }
-
-        return matchingTags;
     }
 
     /**
