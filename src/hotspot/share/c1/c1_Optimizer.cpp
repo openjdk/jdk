@@ -182,6 +182,12 @@ void CE_Eliminator::block_do(BlockBegin* block) {
 
 #ifdef ASSERT
 #define DO_DELAYED_VERIFICATION
+  /*
+   * We need to verify the internal representation after modifying it.
+   * Verifying only the blocks that have been tampered with is cheaper than verifying the whole graph, but we must
+   * capture blocks_to_verify_later before making the changes, since they might not be reachable afterwards.
+   * DO_DELAYED_VERIFICATION ensures that the code for this is either enabled in full, or not at all.
+   */
 #endif // ASSERT
 
 #ifdef DO_DELAYED_VERIFICATION
