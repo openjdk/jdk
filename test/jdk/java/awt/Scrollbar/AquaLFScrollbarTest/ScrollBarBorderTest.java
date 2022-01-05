@@ -82,6 +82,18 @@ public class ScrollBarBorderTest {
         });
     }
 
+    private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
+        try {
+            UIManager.setLookAndFeel(laf.getClassName());
+            System.out.println(laf.getName());
+        } catch (UnsupportedLookAndFeelException ignored){
+            System.out.println("Unsupported LookAndFeel: " + laf.getClassName());
+        } catch (ClassNotFoundException | InstantiationException |
+                IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void test() throws Exception {
         createAndShowGUI();
         BufferedImage image = new BufferedImage(panel.getWidth(),panel.getHeight(),TYPE_INT_ARGB);
@@ -95,7 +107,7 @@ public class ScrollBarBorderTest {
         graphics2D2.dispose();
 
         for (int i = 450; i < image.getWidth(); i++) {
-            for (int j = 50; j < image.getHeight(); j++) {
+            for (int j = 70; j < image.getHeight(); j++) {
                 int c1 = image.getRGB(i,j);
                 int c2 = image2.getRGB(i,j);
                 if(c1 != c2) {
@@ -118,8 +130,15 @@ public class ScrollBarBorderTest {
 
     public static void main(String[] args) throws Exception {
         ScrollBarBorderTest borderTest = new ScrollBarBorderTest();
-        borderTest.test();
-        borderTest.done();
+
+        for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
+            try {
+                SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
+                borderTest.test();
+            } finally {
+                borderTest.done();
+            }
+        }
     }
 
     // custom border
