@@ -36,7 +36,6 @@ import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -143,7 +142,7 @@ public final class PlatformRecorder {
         return Collections.unmodifiableList(new ArrayList<PlatformRecording>(recordings));
     }
 
-    public synchronized static void addListener(FlightRecorderListener changeListener) {
+    public static synchronized void addListener(FlightRecorderListener changeListener) {
         @SuppressWarnings("removal")
         AccessControlContext context = AccessController.getContext();
         SecureRecorderListener sl = new SecureRecorderListener(context, changeListener);
@@ -157,7 +156,7 @@ public final class PlatformRecorder {
         }
     }
 
-    public synchronized static boolean removeListener(FlightRecorderListener changeListener) {
+    public static synchronized boolean removeListener(FlightRecorderListener changeListener) {
         for (SecureRecorderListener s : new ArrayList<>(changeListeners)) {
             if (s.getChangeListener() == changeListener) {
                 changeListeners.remove(s);
@@ -437,7 +436,7 @@ public final class PlatformRecorder {
             }
             // n*log(n), should be able to do n*log(k) with a priority queue,
             // where k = number of recordings, n = number of chunks
-            Collections.sort(chunks, RepositoryChunk.END_TIME_COMPARATOR);
+            chunks.sort(RepositoryChunk.END_TIME_COMPARATOR);
             return chunks;
         }
 

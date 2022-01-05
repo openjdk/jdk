@@ -22,7 +22,7 @@
  * questions.
  */
 
-#import "CommonComponentAccessibility.h"
+#import "ComponentWrapperAccessibility.h"
 
-@interface ListRowAccessibility : CommonComponentAccessibility <NSAccessibilityRow>
+@interface ListRowAccessibility : ComponentWrapperAccessibility <NSAccessibilityRow>
 @end

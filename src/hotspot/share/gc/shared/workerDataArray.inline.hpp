@@ -31,14 +31,12 @@
 #include "utilities/ostream.hpp"
 
 template <typename T>
-WorkerDataArray<T>::WorkerDataArray(const char* short_name, const char* title, uint length, bool is_serial) :
+WorkerDataArray<T>::WorkerDataArray(const char* short_name, const char* title, uint length) :
  _data(NULL),
  _length(length),
  _short_name(short_name),
- _title(title),
- _is_serial(is_serial) {
+ _title(title) {
   assert(length > 0, "Must have some workers to store data for");
-  assert(!is_serial || length == 1, "Serial phase must only have a single entry.");
   _data = NEW_C_HEAP_ARRAY(T, _length, mtGC);
   for (uint i = 0; i < MaxThreadWorkItems; i++) {
     _thread_work_items[i] = NULL;
@@ -158,39 +156,31 @@ void WorkerDataArray<T>::set_all(T value) {
 
 template <class T>
 void WorkerDataArray<T>::print_summary_on(outputStream* out, bool print_sum) const {
-  if (_is_serial) {
-    out->print("%s:", title());
-  } else {
-    out->print("%-30s", title());
-  }
+  out->print("%-30s", title());
 
   uint start = 0;
   while (start < _length && get(start) == uninitialized()) {
     start++;
   }
   if (start < _length) {
-    if (_is_serial) {
-      WDAPrinter::summary(out, get(0));
-    } else {
-      T min = get(start);
-      T max = min;
-      T sum = 0;
-      uint contributing_threads = 0;
-      for (uint i = start; i < _length; ++i) {
-        T value = get(i);
-        if (value != uninitialized()) {
-          max = MAX2(max, value);
-          min = MIN2(min, value);
-          sum += value;
-          contributing_threads++;
-        }
+    T min = get(start);
+    T max = min;
+    T sum = 0;
+    uint contributing_threads = 0;
+    for (uint i = start; i < _length; ++i) {
+      T value = get(i);
+      if (value != uninitialized()) {
+        max = MAX2(max, value);
+        min = MIN2(min, value);
+        sum += value;
+        contributing_threads++;
       }
-      T diff = max - min;
-      assert(contributing_threads != 0, "Must be since we found a used value for the start index");
-      double avg = sum / (double) contributing_threads;
-      WDAPrinter::summary(out, min, avg, max, diff, sum, print_sum);
-      out->print_cr(", Workers: %d", contributing_threads);
     }
+    T diff = max - min;
+    assert(contributing_threads != 0, "Must be since we found a used value for the start index");
+    double avg = sum / (double) contributing_threads;
+    WDAPrinter::summary(out, min, avg, max, diff, sum, print_sum);
+    out->print_cr(", Workers: %d", contributing_threads);
   } else {
     // No data for this phase.
     out->print_cr(" skipped");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -361,6 +361,15 @@ public class XMLStreamWriterImpl implements XMLStreamWriter {
     }
 
     /**
+     * Writes character reference in hex format.
+     */
+    private void writeCharRef(int codePoint) throws XMLStreamException {
+        _writer.write(ENCODING_PREFIX);
+        _writer.write(Integer.toHexString(codePoint));
+        _writer.write(SEMICOLON);
+    }
+
+    /**
      * Writes XML content to underlying writer. Escapes characters unless
      * escaping character feature is turned off.
      */
@@ -383,10 +392,15 @@ public class XMLStreamWriterImpl implements XMLStreamWriter {
             if (!_writer.canEncode(ch)) {
                 _writer.write(content, startWritePos, index - startWritePos);
 
-                // Escape this char as underlying encoder cannot handle it
-                _writer.write(ENCODING_PREFIX);
-                _writer.write(Integer.toHexString(ch));
-                _writer.write(SEMICOLON);
+                // Check if current and next characters forms a surrogate pair
+                // and escape it to avoid generation of invalid xml content
+                if ( index != end - 1 && Character.isSurrogatePair(ch, content[index+1])) {
+                    writeCharRef(Character.toCodePoint(ch, content[index+1]));
+                    index++;
+                } else {
+                    writeCharRef(ch);
+                }
+
                 startWritePos = index + 1;
                 continue;
             }
@@ -455,10 +469,15 @@ public class XMLStreamWriterImpl implements XMLStreamWriter {
             if (!_writer.canEncode(ch)) {
                 _writer.write(content, startWritePos, index - startWritePos);
 
-                // Escape this char as underlying encoder cannot handle it
-                _writer.write(ENCODING_PREFIX);
-                _writer.write(Integer.toHexString(ch));
-                _writer.write(SEMICOLON);
+                // Check if current and next characters forms a surrogate pair
+                // and escape it to avoid generation of invalid xml content
+                if ( index != end - 1 && Character.isSurrogatePair(ch, content.charAt(index+1))) {
+                    writeCharRef(Character.toCodePoint(ch, content.charAt(index+1)));
+                    index++;
+                } else {
+                    writeCharRef(ch);
+                }
+
                 startWritePos = index + 1;
                 continue;
             }

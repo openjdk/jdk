@@ -50,8 +50,8 @@ public class CertPathConstraintsParameters implements ConstraintsParameters {
     private final Date date;
     // The variant or usage of this certificate
     private final String variant;
-    // The certificate being checked (may be null if a CRL or OCSPResponse is
-    // being checked)
+    // The certificate being checked (may be null if a raw public key, a CRL
+    // or an OCSPResponse is being checked)
     private final X509Certificate cert;
 
     public CertPathConstraintsParameters(X509Certificate cert,
@@ -60,8 +60,8 @@ public class CertPathConstraintsParameters implements ConstraintsParameters {
     }
 
     public CertPathConstraintsParameters(Key key, String variant,
-            TrustAnchor anchor) {
-        this(key, variant, anchor, null, null);
+            TrustAnchor anchor, Date date) {
+        this(key, variant, anchor, date, null);
     }
 
     private CertPathConstraintsParameters(Key key, String variant,

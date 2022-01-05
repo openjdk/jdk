@@ -32,16 +32,31 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+
 /**
  * @test
- * @bug 8271718 8273135
+ * @bug 8271718 8273135 8275344
  * @summary Verifies MT safety of color transformation while profile is changed
+ * @library /test/lib
+ * @run main/othervm MTTransformReplacedProfile
+ * @run main/othervm MTTransformReplacedProfile checkJNI
  */
 public final class MTTransformReplacedProfile {
 
     private static volatile long endtime;
 
     public static void main(String[] args) throws Exception {
+        if (args.length > 0 && args[0].equals("checkJNI")) {
+            ProcessBuilder pb = ProcessTools.createTestJvm(
+                    "-Xcheck:jni", MTTransformReplacedProfile.class.getName());
+            OutputAnalyzer oa = ProcessTools.executeProcess(pb);
+            oa.stderrShouldBeEmpty();
+            oa.stdoutShouldBeEmpty();
+            oa.shouldHaveExitValue(0);
+            return;
+        }
         ICC_Profile[] profiles = {
                 ICC_Profile.getInstance(ColorSpace.CS_sRGB),
                 ICC_Profile.getInstance(ColorSpace.CS_LINEAR_RGB),

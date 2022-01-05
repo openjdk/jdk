@@ -193,7 +193,7 @@ public abstract class AbstractAction implements Action, Cloneable, Serializable
             // to change enabled, it would be possible for stack
             // overflow in the case where a developer implemented setEnabled
             // in terms of putValue.
-            if (newValue == null || !(newValue instanceof Boolean)) {
+            if (!(newValue instanceof Boolean)) {
                 newValue = false;
             }
             oldValue = enabled;

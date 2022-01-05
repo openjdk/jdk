@@ -67,12 +67,12 @@ public class TestSanity {
         testFramework = new TestFramework();
         testFramework.addScenarios(sDefault).addScenarios(s1, s2).start();
         testFramework = new TestFramework();
-        testFramework.addHelperClasses(HelperA.class).addScenarios(sDefault).addFlags("-XX:+UseSuperWord").start();
+        testFramework.addHelperClasses(HelperA.class).addScenarios(sDefault).addFlags("-XX:+UseTLAB").start();
         testFramework = new TestFramework();
-        testFramework.addHelperClasses(HelperA.class).addFlags("-XX:+UseSuperWord", "-XX:+UseCompiler").addScenarios(sDefault)
+        testFramework.addHelperClasses(HelperA.class).addFlags("-XX:+UseTLAB", "-XX:+UseCompiler").addScenarios(sDefault)
                      .addHelperClasses(HelperB.class, HelperC.class).addScenarios(s1, s2).addFlags("-XX:+TieredCompilation").start();
         testFramework = new TestFramework();
-        testFramework.addHelperClasses(HelperA.class).addFlags("-XX:+UseSuperWord", "-XX:+UseCompiler").addScenarios(sDefault)
+        testFramework.addHelperClasses(HelperA.class).addFlags("-XX:+UseTLAB", "-XX:+UseCompiler").addScenarios(sDefault)
                      .addHelperClasses(HelperB.class, HelperC.class).addScenarios(s1, s2).setDefaultWarmup(200)
                      .addFlags("-XX:+TieredCompilation").start();
     }

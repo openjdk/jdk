@@ -56,7 +56,7 @@ import com.sun.tools.javac.util.Context;
 public class JRTIndex {
     /** Get a shared instance of the cache. */
     private static JRTIndex sharedInstance;
-    public synchronized static JRTIndex getSharedInstance() {
+    public static synchronized JRTIndex getSharedInstance() {
         if (sharedInstance == null) {
             try {
                 sharedInstance = new JRTIndex();

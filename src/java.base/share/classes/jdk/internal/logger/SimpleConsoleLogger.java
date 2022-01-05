@@ -437,7 +437,7 @@ public class SimpleConsoleLogger extends LoggerConfiguration
                 getSimpleFormat(DEFAULT_FORMAT_PROP_KEY, null);
 
         // Make it easier to wrap Logger...
-        static private final String[] skips;
+        private static final String[] skips;
         static {
             String additionalPkgs =
                     GetPropertyAction.privilegedGetProperty("jdk.logger.packages");

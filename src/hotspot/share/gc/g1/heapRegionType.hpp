@@ -58,8 +58,8 @@ private:
   // 01000 0 [16] Old Mask
   //
   // 10000 0 [32] Archive Mask
-  // 11100 0 [56] Open Archive
-  // 11100 1 [57] Closed Archive
+  // 10100 0 [40] Open Archive
+  // 10100 1 [41] Closed Archive
   //
   typedef enum {
     FreeTag               = 0,

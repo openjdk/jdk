@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -93,8 +93,9 @@ struct ModuleData {
 
     HINSTANCE hModule;
 
-    /* The pointer to the PKCS#11 functions of this module. */
+    /* The pointers to the PKCS#11 functions of this module. */
     CK_FUNCTION_LIST_PTR ckFunctionListPtr;
+    CK_FUNCTION_LIST_3_0_PTR ckFunctionList30Ptr;
 
     /* Reference to the object to use for mutex handling. NULL, if not used. */
     jobject applicationMutexHandler;

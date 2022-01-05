@@ -304,19 +304,19 @@ public:
     setup_policy(always_clear);
   }
 
-  // "Preclean" all the discovered reference lists by removing references that
-  // are active (e.g. due to the mutator calling enqueue()) or with NULL or
-  // strongly reachable referents.
-  // The first argument is a predicate on an oop that indicates
-  // its (strong) reachability and the fourth is a closure that
-  // may be used to incrementalize or abort the precleaning process.
-  // The caller is responsible for taking care of potential
-  // interference with concurrent operations on these lists
-  // (or predicates involved) by other threads.
+  // "Preclean" all the discovered reference lists by removing references whose
+  // referents are NULL or strongly reachable (`is_alive` returns true).
+  // Note: when a referent is strongly reachable, we assume it's already marked
+  // through, so this method doesn't perform (and doesn't need to) any marking
+  // work at all. Currently, this assumption holds because G1 uses SATB and the
+  // marking status of an object is *not* updated when `Reference.get()` is
+  // called.
+  // `yield` is a closure that may be used to incrementalize or abort the
+  // precleaning process. The caller is responsible for taking care of
+  // potential interference with concurrent operations on these lists (or
+  // predicates involved) by other threads.
   void preclean_discovered_references(BoolObjectClosure* is_alive,
-                                      OopClosure*        keep_alive,
                                       EnqueueDiscoveredFieldClosure* enqueue,
-                                      VoidClosure*       complete_gc,
                                       YieldClosure*      yield,
                                       GCTimer*           gc_timer);
 
@@ -331,9 +331,7 @@ private:
   // Returns whether the operation should be aborted.
   bool preclean_discovered_reflist(DiscoveredList&    refs_list,
                                    BoolObjectClosure* is_alive,
-                                   OopClosure*        keep_alive,
                                    EnqueueDiscoveredFieldClosure* enqueue,
-                                   VoidClosure*       complete_gc,
                                    YieldClosure*      yield);
 
   // round-robin mod _num_queues (not: _not_ mod _max_num_queues)
@@ -376,7 +374,7 @@ public:
   // Default parameters give you a vanilla reference processor.
   ReferenceProcessor(BoolObjectClosure* is_subject_to_discovery,
                      uint mt_processing_degree = 1,
-                     bool mt_discovery  = false, uint mt_discovery_degree  = 1,
+                     uint mt_discovery_degree  = 1,
                      bool concurrent_discovery = false,
                      BoolObjectClosure* is_alive_non_header = NULL);
 
@@ -422,9 +420,6 @@ public:
 
   // Discover a Reference object, using appropriate discovery criteria
   virtual bool discover_reference(oop obj, ReferenceType rt);
-
-  // Has discovered references that need handling
-  bool has_discovered_references();
 
   // Process references found during GC (called by the garbage collector)
   ReferenceProcessorStats

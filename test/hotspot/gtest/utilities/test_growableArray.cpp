@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -452,14 +452,14 @@ TEST_VM_F(GrowableArrayTest, where) {
   {
     ResourceMark rm;
     GrowableArray<int> a(0);
-    ASSERT_TRUE(a.allocated_on_stack());
+    ASSERT_TRUE(a.allocated_on_stack_or_embedded());
     ASSERT_TRUE(elements_on_stack(&a));
   }
 
   // Stack/CHeap allocated
   {
     GrowableArray<int> a(0, mtTest);
-    ASSERT_TRUE(a.allocated_on_stack());
+    ASSERT_TRUE(a.allocated_on_stack_or_embedded());
     ASSERT_TRUE(elements_on_C_heap(&a));
   }
 
@@ -467,7 +467,7 @@ TEST_VM_F(GrowableArrayTest, where) {
   {
     Arena arena(mtTest);
     GrowableArray<int> a(&arena, 0, 0, 0);
-    ASSERT_TRUE(a.allocated_on_stack());
+    ASSERT_TRUE(a.allocated_on_stack_or_embedded());
     ASSERT_TRUE(elements_on_arena(&a));
   }
 
@@ -475,14 +475,14 @@ TEST_VM_F(GrowableArrayTest, where) {
   {
     ResourceMark rm;
     WithEmbeddedArray w(0);
-    ASSERT_TRUE(w._a.allocated_on_stack());
+    ASSERT_TRUE(w._a.allocated_on_stack_or_embedded());
     ASSERT_TRUE(elements_on_stack(&w._a));
   }
 
   // Embedded/CHeap allocated
   {
     WithEmbeddedArray w(0, mtTest);
-    ASSERT_TRUE(w._a.allocated_on_stack());
+    ASSERT_TRUE(w._a.allocated_on_stack_or_embedded());
     ASSERT_TRUE(elements_on_C_heap(&w._a));
   }
 
@@ -490,7 +490,7 @@ TEST_VM_F(GrowableArrayTest, where) {
   {
     Arena arena(mtTest);
     WithEmbeddedArray w(&arena, 0);
-    ASSERT_TRUE(w._a.allocated_on_stack());
+    ASSERT_TRUE(w._a.allocated_on_stack_or_embedded());
     ASSERT_TRUE(elements_on_arena(&w._a));
   }
 }
@@ -518,7 +518,7 @@ TEST(GrowableArrayCHeap, sanity) {
   {
     GrowableArrayCHeap<int, mtTest> a(0);
 #ifdef ASSERT
-    ASSERT_TRUE(a.allocated_on_stack());
+    ASSERT_TRUE(a.allocated_on_stack_or_embedded());
 #endif
     ASSERT_TRUE(a.is_empty());
 

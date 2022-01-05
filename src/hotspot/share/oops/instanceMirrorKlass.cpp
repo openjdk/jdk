@@ -38,7 +38,7 @@
 
 int InstanceMirrorKlass::_offset_of_static_fields = 0;
 
-int InstanceMirrorKlass::instance_size(Klass* k) {
+size_t InstanceMirrorKlass::instance_size(Klass* k) {
   if (k != NULL && k->is_instance_klass()) {
     return align_object_size(size_helper() + InstanceKlass::cast(k)->static_field_size());
   }
@@ -47,15 +47,15 @@ int InstanceMirrorKlass::instance_size(Klass* k) {
 
 instanceOop InstanceMirrorKlass::allocate_instance(Klass* k, TRAPS) {
   // Query before forming handle.
-  int size = instance_size(k);
-  assert(size > 0, "total object size must be positive: %d", size);
+  size_t size = instance_size(k);
+  assert(size > 0, "total object size must be non-zero: " SIZE_FORMAT, size);
 
   // Since mirrors can be variable sized because of the static fields, store
   // the size in the mirror itself.
   return (instanceOop)Universe::heap()->class_allocate(this, size, THREAD);
 }
 
-int InstanceMirrorKlass::oop_size(oop obj) const {
+size_t InstanceMirrorKlass::oop_size(oop obj) const {
   return java_lang_Class::oop_size(obj);
 }
 

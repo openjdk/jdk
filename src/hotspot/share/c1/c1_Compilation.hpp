@@ -49,11 +49,9 @@ class CodeEmitInfo;
 class ciEnv;
 class ciMethod;
 class ValueStack;
-class LIR_OprDesc;
 class C1_MacroAssembler;
 class CFGPrinter;
 class CFGPrinterOutput;
-typedef LIR_OprDesc* LIR_Opr;
 
 typedef GrowableArray<BasicType> BasicTypeArray;
 typedef GrowableArray<BasicType> BasicTypeList;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,6 +132,26 @@ public class IRNode {
 
     public static final String SCOPE_OBJECT = "(.*# ScObj.*" + END;
     public static final String MEMBAR = START + "MemBar" + MID + END;
+
+    public static final String AND_I = START + "AndI" + MID + END;
+    public static final String AND_L = START + "AndL" + MID + END;
+    public static final String LSHIFT_I = START + "LShiftI" + MID + END;
+    public static final String LSHIFT_L = START + "LShiftL" + MID + END;
+    public static final String ADD_I = START + "AddI" + MID + END;
+    public static final String ADD_L = START + "AddL" + MID + END;
+    public static final String SUB_I = START + "SubI" + MID + END;
+    public static final String SUB_L = START + "SubL" + MID + END;
+    public static final String MUL_I = START + "MulI" + MID + END;
+    public static final String MUL_L = START + "MulL" + MID + END;
+    public static final String CONV_I2L = START + "ConvI2L" + MID + END;
+
+    public static final String VECTOR_CAST_B2X = START + "VectorCastB2X" + MID + END;
+    public static final String VECTOR_CAST_S2X = START + "VectorCastS2X" + MID + END;
+    public static final String VECTOR_CAST_I2X = START + "VectorCastI2X" + MID + END;
+    public static final String VECTOR_CAST_L2X = START + "VectorCastL2X" + MID + END;
+    public static final String VECTOR_CAST_F2X = START + "VectorCastF2X" + MID + END;
+    public static final String VECTOR_CAST_D2X = START + "VectorCastD2X" + MID + END;
+    public static final String VECTOR_REINTERPRET = START + "VectorReinterpret" + MID + END;
 
     /**
      * Called by {@link IRMatcher} to merge special composite nodes together with additional user-defined input.

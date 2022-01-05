@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  */
 
 import java.io.FileOutputStream;
-import java.security.PrivilegedExceptionAction;
+import java.util.concurrent.Callable;
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosKey;
 import javax.security.auth.kerberos.KerberosPrincipal;
@@ -59,8 +59,8 @@ public class KrbCredSubKey {
         subj.getPrincipals().add(kp);
         subj.getPrivateCredentials().add(kk);
 
-        Subject.doAs(subj, new PrivilegedExceptionAction() {
-            public Object run() throws Exception {
+        Subject.callAs(subj, new Callable<>() {
+            public Object call() throws Exception {
                 GSSManager man = GSSManager.getInstance();
                 GSSContext ctxt = man.createContext(man.createCredential(
                         null, GSSCredential.INDEFINITE_LIFETIME,

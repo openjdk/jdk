@@ -31,12 +31,15 @@
  * @requires (os.family == "windows" | os.family == "mac")
  */
 
-import javax.swing.JTable;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableModel;
 
-import java.awt.FlowLayout;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -94,6 +97,65 @@ public class AccessibleJTableTest extends AccessibleComponentTest {
         super.createUI(panel, "AccessibleJTableTest");
     }
 
+    public void  createUIWithChangingContent() {
+        INSTRUCTIONS = "INSTRUCTIONS:\n"
+                + "Check a11y of dynamic JTable.\n\n"
+                + "Turn screen reader on, and Tab to the table.\n"
+                + "Add and remove rows and columns using the appropriate buttons and try to move around the table\n\n"
+                + "If you hear changes in the table - ctrl+tab further and press PASS, otherwise press FAIL.\n";
+
+        JTable table = new JTable(new TestTableModel(3, 3));
+
+                JPanel panel = new JPanel();
+        panel.setLayout(new FlowLayout());
+        JScrollPane scrollPane = new JScrollPane(table);
+        panel.add(scrollPane);
+
+        JPanel buttonPanel = new JPanel(new GridLayout());
+        JButton addRow = new JButton("Add row");
+        addRow.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                table.setModel(new TestTableModel(table.getModel().getRowCount() + 1, table.getModel().getColumnCount()));
+            }
+        });
+
+        JButton addColumn = new JButton("Add column");
+        addColumn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                table.setModel(new TestTableModel(table.getModel().getRowCount(), table.getModel().getColumnCount() + 1));
+            }
+        });
+
+        JButton removeRow = new JButton("Remove row");
+        removeRow.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                table.setModel(new TestTableModel(table.getModel().getRowCount() - 1, table.getModel().getColumnCount()));
+            }
+        });
+
+        JButton removeColumn = new JButton("Remove column");
+        removeColumn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                table.setModel(new TestTableModel(table.getModel().getRowCount(), table.getModel().getColumnCount() - 1));
+            }
+        });
+
+        buttonPanel.add(addRow);
+        buttonPanel.add(addColumn);
+        buttonPanel.add(removeRow);
+        buttonPanel.add(removeColumn);
+
+        panel.add(buttonPanel);
+
+        panel.setFocusable(false);
+        exceptionString = "AccessibleJTable test failed!";
+        super.createUI(panel, "AccessibleJTableTest");
+    }
+
     public static void main(String[] args) throws Exception {
         AccessibleJTableTest test = new AccessibleJTableTest();
 
@@ -109,6 +171,40 @@ public class AccessibleJTableTest extends AccessibleComponentTest {
         countDownLatch.await(15, TimeUnit.MINUTES);
         if (!testResult) {
             throw new RuntimeException(exceptionString);
+        }
+
+        countDownLatch = test.createCountDownLatch();
+        SwingUtilities.invokeAndWait(test::createUIWithChangingContent);
+        countDownLatch.await(15, TimeUnit.MINUTES);
+        if (!testResult) {
+            throw new RuntimeException(exceptionString);
+        }
+
+    }
+
+    private static class TestTableModel extends AbstractTableModel {
+        private final int rows;
+        private final int cols;
+
+        TestTableModel(final int r, final int c) {
+            super();
+            rows = r;
+            cols = c;
+        }
+
+        @Override
+        public int getRowCount() {
+            return rows >= 0 ? rows : 0;
+        }
+
+        @Override
+        public int getColumnCount() {
+            return cols >= 0 ? cols : 0;
+        }
+
+        @Override
+        public Object getValueAt(int rowIndex, int columnIndex) {
+            return String.valueOf((rowIndex + 1) * (columnIndex + 1));
         }
     }
 }

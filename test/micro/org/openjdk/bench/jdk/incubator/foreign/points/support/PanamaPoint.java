@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,46 +22,45 @@
  */
 package org.openjdk.bench.jdk.incubator.foreign.points.support;
 
+import jdk.incubator.foreign.Addressable;
+import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.SymbolLookup;
 import jdk.incubator.foreign.MemoryAddress;
+import jdk.incubator.foreign.SymbolLookup;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.ResourceScope;
+import org.openjdk.bench.jdk.incubator.foreign.CLayouts;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.VarHandle;
 
 import static java.lang.invoke.MethodType.methodType;
 import static jdk.incubator.foreign.MemoryLayout.PathElement.groupElement;
-import static jdk.incubator.foreign.CLinker.*;
 
-public class PanamaPoint implements AutoCloseable {
+public class PanamaPoint extends CLayouts implements AutoCloseable {
 
     public static final MemoryLayout LAYOUT = MemoryLayout.structLayout(
         C_INT.withName("x"),
         C_INT.withName("y")
     );
 
-    private static final VarHandle VH_x = LAYOUT.varHandle(int.class, groupElement("x"));
-    private static final VarHandle VH_y = LAYOUT.varHandle(int.class, groupElement("y"));
+    private static final VarHandle VH_x = LAYOUT.varHandle(groupElement("x"));
+    private static final VarHandle VH_y = LAYOUT.varHandle(groupElement("y"));
     private static final MethodHandle MH_distance;
     private static final MethodHandle MH_distance_ptrs;
 
     static {
-        CLinker abi = CLinker.getInstance();
+        CLinker abi = CLinker.systemCLinker();
         System.loadLibrary("Point");
         SymbolLookup lookup = SymbolLookup.loaderLookup();
         MH_distance = abi.downcallHandle(
             lookup.lookup("distance").get(),
-            methodType(double.class, MemorySegment.class, MemorySegment.class),
-            FunctionDescriptor.of(C_DOUBLE, LAYOUT, LAYOUT)
+                FunctionDescriptor.of(C_DOUBLE, LAYOUT, LAYOUT)
         );
         MH_distance_ptrs = abi.downcallHandle(
-            lookup.lookup("distance_ptrs").get(),
-            methodType(double.class, MemoryAddress.class, MemoryAddress.class),
-            FunctionDescriptor.of(C_DOUBLE, C_POINTER, C_POINTER)
+                lookup.lookup("distance_ptrs").get(),
+                FunctionDescriptor.of(C_DOUBLE, C_POINTER, C_POINTER)
         );
     }
 
@@ -107,7 +106,7 @@ public class PanamaPoint implements AutoCloseable {
 
     public double distanceToPtrs(PanamaPoint other) {
         try {
-            return (double) MH_distance_ptrs.invokeExact(segment.address(), other.segment.address());
+            return (double) MH_distance_ptrs.invokeExact((Addressable)segment, (Addressable)other.segment);
         } catch (Throwable throwable) {
             throw new InternalError(throwable);
         }

@@ -143,13 +143,13 @@ bool oopDesc::is_a(Klass* k) const {
   return klass()->is_subtype_of(k);
 }
 
-int oopDesc::size()  {
+size_t oopDesc::size()  {
   return size_given_klass(klass());
 }
 
-int oopDesc::size_given_klass(Klass* klass)  {
+size_t oopDesc::size_given_klass(Klass* klass)  {
   int lh = klass->layout_helper();
-  int s;
+  size_t s;
 
   // lh is now a value computed at class initialization that may hint
   // at the size.  For instances, this is positive and equal to the
@@ -182,7 +182,7 @@ int oopDesc::size_given_klass(Klass* klass)  {
       // This code could be simplified, but by keeping array_header_in_bytes
       // in units of bytes and doing it this way we can round up just once,
       // skipping the intermediate round to HeapWordSize.
-      s = (int)(align_up(size_in_bytes, MinObjAlignmentInBytes) / HeapWordSize);
+      s = align_up(size_in_bytes, MinObjAlignmentInBytes) / HeapWordSize;
 
       // UseParallelGC and UseG1GC can change the length field
       // of an "old copy" of an object array in the young gen so it indicates
@@ -198,8 +198,8 @@ int oopDesc::size_given_klass(Klass* klass)  {
     }
   }
 
-  assert(s > 0, "Oop size must be greater than zero, not %d", s);
-  assert(is_object_aligned(s), "Oop size is not properly aligned: %d", s);
+  assert(s > 0, "Oop size must be greater than zero, not " SIZE_FORMAT, s);
+  assert(is_object_aligned(s), "Oop size is not properly aligned: " SIZE_FORMAT, s);
   return s;
 }
 
@@ -289,12 +289,13 @@ oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order orde
 // The forwardee is used when copying during scavenge and mark-sweep.
 // It does need to clear the low two locking- and GC-related bits.
 oop oopDesc::forwardee() const {
+  assert(is_forwarded(), "only decode when actually forwarded");
   return cast_to_oop(mark().decode_pointer());
 }
 
 // The following method needs to be MT safe.
 uint oopDesc::age() const {
-  assert(!is_forwarded(), "Attempt to read age from forwarded mark");
+  assert(!mark().is_marked(), "Attempt to read age from forwarded mark");
   if (has_displaced_mark()) {
     return displaced_mark().age();
   } else {
@@ -303,7 +304,7 @@ uint oopDesc::age() const {
 }
 
 void oopDesc::incr_age() {
-  assert(!is_forwarded(), "Attempt to increment age of forwarded mark");
+  assert(!mark().is_marked(), "Attempt to increment age of forwarded mark");
   if (has_displaced_mark()) {
     set_displaced_mark(displaced_mark().incr_age());
   } else {
@@ -322,17 +323,17 @@ void oopDesc::oop_iterate(OopClosureType* cl, MemRegion mr) {
 }
 
 template <typename OopClosureType>
-int oopDesc::oop_iterate_size(OopClosureType* cl) {
+size_t oopDesc::oop_iterate_size(OopClosureType* cl) {
   Klass* k = klass();
-  int size = size_given_klass(k);
+  size_t size = size_given_klass(k);
   OopIteratorClosureDispatch::oop_oop_iterate(cl, this, k);
   return size;
 }
 
 template <typename OopClosureType>
-int oopDesc::oop_iterate_size(OopClosureType* cl, MemRegion mr) {
+size_t oopDesc::oop_iterate_size(OopClosureType* cl, MemRegion mr) {
   Klass* k = klass();
-  int size = size_given_klass(k);
+  size_t size = size_given_klass(k);
   OopIteratorClosureDispatch::oop_oop_iterate(cl, this, k, mr);
   return size;
 }

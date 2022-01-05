@@ -538,18 +538,19 @@ void StringTable::rehash_table() {
 }
 
 // Statistics
-static int literal_size(oop obj) {
-  // NOTE: this would over-count if (pre-JDK8)
-  // java_lang_Class::has_offset_field() is true and the String.value array is
-  // shared by several Strings. However, starting from JDK8, the String.value
-  // array is not shared anymore.
+static size_t literal_size(oop obj) {
   if (obj == NULL) {
     return 0;
-  } else if (obj->klass() == vmClasses::String_klass()) {
-    return (obj->size() + java_lang_String::value(obj)->size()) * HeapWordSize;
-  } else {
-    return obj->size();
   }
+
+  size_t word_size = obj->size();
+
+  if (obj->klass() == vmClasses::String_klass()) {
+    // This may overcount if String.value arrays are shared.
+    word_size += java_lang_String::value(obj)->size();
+  }
+
+  return word_size * HeapWordSize;
 }
 
 struct SizeFunc : StackObj {

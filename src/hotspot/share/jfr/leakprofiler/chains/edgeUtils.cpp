@@ -48,9 +48,10 @@ static int field_offset(const Edge& edge, const oop ref_owner) {
   assert(ref_owner->is_instance(), "invariant");
   UnifiedOopRef reference = edge.reference();
   assert(!reference.is_null(), "invariant");
-  const int offset = (int)(reference.addr<uintptr_t>() - cast_from_oop<uintptr_t>(ref_owner));
+  const size_t offset = (reference.addr<uintptr_t>() - cast_from_oop<uintptr_t>(ref_owner));
   assert(offset < ref_owner->size() * HeapWordSize, "invariant");
-  return offset;
+  assert(offset <= size_t(INT_MAX), "invariant");
+  return (int)offset;
 }
 
 const Symbol* EdgeUtils::field_name(const Edge& edge, jshort* modifiers) {

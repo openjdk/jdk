@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,12 +203,7 @@ public final class GarbageUtils {
           *
           * It is Important that the impl is not inlined.
           */
-
-         public static int eatMemory(ExecutionController stresser, GarbageProducer gp, long initialFactor, long minMemoryChunk, long factor, OOM_TYPE type) {
-            try {
-               // Using a methodhandle invoke of eatMemoryImpl to prevent inlining of it
-               MethodHandles.Lookup lookup = MethodHandles.lookup();
-               MethodType mt = MethodType.methodType(
+          private static MethodType mt = MethodType.methodType(
                      int.class,
                      ExecutionController.class,
                      GarbageProducer.class,
@@ -216,6 +211,11 @@ public final class GarbageUtils {
                      long.class,
                      long.class,
                      OOM_TYPE.class);
+
+         public static int eatMemory(ExecutionController stresser, GarbageProducer gp, long initialFactor, long minMemoryChunk, long factor, OOM_TYPE type) {
+            try {
+               // Using a methodhandle invoke of eatMemoryImpl to prevent inlining of it
+               MethodHandles.Lookup lookup = MethodHandles.lookup();
                MethodHandle eat = lookup.findStatic(GarbageUtils.class, "eatMemoryImpl", mt);
                return (int) eat.invoke(stresser, gp, initialFactor, minMemoryChunk, factor, type);
             } catch (OutOfMemoryError e) {

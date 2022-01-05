@@ -85,7 +85,9 @@ void errorHandler(cmsContext ContextID, cmsUInt32Number errorCode,
     errMsg[count] = 0;
 
     (*javaVM)->AttachCurrentThread(javaVM, (void**)&env, NULL);
-    JNU_ThrowByName(env, "java/awt/color/CMMException", errMsg);
+    if (!(*env)->ExceptionCheck(env)) { // errorHandler may throw it before
+        JNU_ThrowByName(env, "java/awt/color/CMMException", errMsg);
+    }
 }
 
 JNIEXPORT jint JNICALL DEF_JNI_OnLoad(JavaVM *jvm, void *reserved) {
@@ -111,6 +113,26 @@ void LCMS_freeTransform(JNIEnv *env, jlong ID)
     cmsHTRANSFORM sTrans = jlong_to_ptr(ID);
     /* Passed ID is always valid native ref so there is no check for zero */
     cmsDeleteTransform(sTrans);
+}
+
+/*
+ * Throw an IllegalArgumentException and init the cause.
+ */
+static void ThrowIllegalArgumentException(JNIEnv *env, const char *msg) {
+    jthrowable cause = (*env)->ExceptionOccurred(env);
+    if (cause != NULL) {
+        (*env)->ExceptionClear(env);
+    }
+    jstring str = JNU_NewStringPlatform(env, msg);
+    if (str != NULL) {
+        jobject iae = JNU_NewObjectByName(env,
+                                "java/lang/IllegalArgumentException",
+                                "(Ljava/lang/String;Ljava/lang/Throwable;)V",
+                                str, cause);
+        if (iae != NULL) {
+            (*env)->Throw(env, iae);
+        }
+    }
 }
 
 /*
@@ -185,7 +207,7 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_createNativeTransform
     if (sTrans == NULL) {
         J2dRlsTraceLn(J2D_TRACE_ERROR, "LCMS_createNativeTransform: "
                                        "sTrans == NULL");
-        if ((*env)->ExceptionOccurred(env) == NULL) {
+        if (!(*env)->ExceptionCheck(env)) { // errorHandler may throw it
             JNU_ThrowByName(env, "java/awt/color/CMMException",
                             "Cannot get color transform");
         }
@@ -214,7 +236,7 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_loadProfileNative
     cmsHPROFILE pf;
 
     if (JNU_IsNull(env, data)) {
-        JNU_ThrowIllegalArgumentException(env, "Invalid profile data");
+        ThrowIllegalArgumentException(env, "Invalid profile data");
         return 0L;
     }
 
@@ -232,7 +254,7 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_loadProfileNative
     (*env)->ReleaseByteArrayElements (env, data, dataArray, 0);
 
     if (pf == NULL) {
-        JNU_ThrowIllegalArgumentException(env, "Invalid profile data");
+        ThrowIllegalArgumentException(env, "Invalid profile data");
     } else {
         /* Sanity check: try to save the profile in order
          * to force basic validation.
@@ -241,8 +263,7 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_loadProfileNative
         if (!cmsSaveProfileToMem(pf, NULL, &pfSize) ||
             pfSize < sizeof(cmsICCHeader))
         {
-            JNU_ThrowIllegalArgumentException(env, "Invalid profile data");
-
+            ThrowIllegalArgumentException(env, "Invalid profile data");
             cmsCloseProfile(pf);
             pf = NULL;
         }
@@ -276,8 +297,10 @@ JNIEXPORT jbyteArray JNICALL Java_sun_java2d_cmm_lcms_LCMS_getProfileDataNative
 
     // determine actual profile size
     if (!cmsSaveProfileToMem(sProf->pf, NULL, &pfSize)) {
-        JNU_ThrowByName(env, "java/awt/color/CMMException",
-                        "Can not access specified profile.");
+        if (!(*env)->ExceptionCheck(env)) { // errorHandler may throw it
+            JNU_ThrowByName(env, "java/awt/color/CMMException",
+                            "Can not access specified profile.");
+        }
         return NULL;
     }
 
@@ -298,8 +321,10 @@ JNIEXPORT jbyteArray JNICALL Java_sun_java2d_cmm_lcms_LCMS_getProfileDataNative
     (*env)->ReleaseByteArrayElements(env, data, dataArray, 0);
 
     if (!status) {
-        JNU_ThrowByName(env, "java/awt/color/CMMException",
-                        "Can not access specified profile.");
+        if (!(*env)->ExceptionCheck(env)) { // errorHandler may throw it
+            JNU_ThrowByName(env, "java/awt/color/CMMException",
+                            "Can not access specified profile.");
+        }
         return NULL;
     }
     return data;
@@ -354,8 +379,10 @@ JNIEXPORT jbyteArray JNICALL Java_sun_java2d_cmm_lcms_LCMS_getTagNative
         (*env)->ReleaseByteArrayElements (env, data, dataArray, 0);
 
         if (!status) {
-            JNU_ThrowByName(env, "java/awt/color/CMMException",
-                            "ICC Profile header not found");
+            if (!(*env)->ExceptionCheck(env)) { // errorHandler may throw it
+                JNU_ThrowByName(env, "java/awt/color/CMMException",
+                                "ICC Profile header not found");
+            }
             return NULL;
         }
 
@@ -365,8 +392,10 @@ JNIEXPORT jbyteArray JNICALL Java_sun_java2d_cmm_lcms_LCMS_getTagNative
     if (cmsIsTag(sProf->pf, sig.cms)) {
         tagSize = cmsReadRawTag(sProf->pf, sig.cms, NULL, 0);
     } else {
-        JNU_ThrowByName(env, "java/awt/color/CMMException",
-                        "ICC profile tag not found");
+        if (!(*env)->ExceptionCheck(env)) { // errorHandler may throw it
+            JNU_ThrowByName(env, "java/awt/color/CMMException",
+                            "ICC profile tag not found");
+        }
         return NULL;
     }
 
@@ -389,8 +418,10 @@ JNIEXPORT jbyteArray JNICALL Java_sun_java2d_cmm_lcms_LCMS_getTagNative
     (*env)->ReleaseByteArrayElements (env, data, dataArray, 0);
 
     if (bufSize != tagSize) {
-        JNU_ThrowByName(env, "java/awt/color/CMMException",
-                        "Can not get tag data.");
+        if (!(*env)->ExceptionCheck(env)) { // errorHandler may throw it
+            JNU_ThrowByName(env, "java/awt/color/CMMException",
+                            "Can not get tag data.");
+        }
         return NULL;
     }
     return data;
@@ -415,7 +446,7 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_setTagDataNative
     sig.j = tagSig;
 
     if (JNU_IsNull(env, data)) {
-        JNU_ThrowIllegalArgumentException(env, "Can not write tag data.");
+        ThrowIllegalArgumentException(env, "Can not write tag data.");
         return;
     }
 
@@ -443,7 +474,7 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_setTagDataNative
     (*env)->ReleaseByteArrayElements(env, data, dataArray, 0);
 
     if (!status) {
-        JNU_ThrowIllegalArgumentException(env, "Can not write tag data.");
+        ThrowIllegalArgumentException(env, "Can not write tag data.");
     } else if (pfReplace != NULL) {
         cmsCloseProfile(sProf->pf);
         sProf->pf = pfReplace;
@@ -554,7 +585,7 @@ JNIEXPORT jobject JNICALL Java_sun_java2d_cmm_lcms_LCMS_getProfileID
         return NULL;
     }
     jobject cmmProfile = (*env)->CallObjectMethod(env, pf, mid);
-    if ((*env)->ExceptionOccurred(env)) {
+    if ((*env)->ExceptionCheck(env)) {
         return NULL;
     }
     jclass lcmsPCls = (*env)->FindClass(env, "sun/java2d/cmm/lcms/LCMSProfile");

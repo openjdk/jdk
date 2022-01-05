@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@ public class HostIdentifier {
      * by the string.
      */
     private URI canonicalize(String uriString) throws URISyntaxException {
-        if ((uriString == null) || (uriString.compareTo("localhost") == 0)) {
+        if (uriString == null || uriString.equals("localhost")) {
             uriString = "//localhost";
             return new URI(uriString);
         }
@@ -247,7 +247,7 @@ public class HostIdentifier {
         String authority = vmid.getAuthority();
 
         // check for 'file:' VmIdentifiers and handled as a special case.
-        if ((scheme != null) && (scheme.compareTo("file") == 0)) {
+        if ("file".equals(scheme)) {
             try {
                 uri = new URI("file://localhost");
             } catch (URISyntaxException e) { };
@@ -343,7 +343,7 @@ public class HostIdentifier {
         String host = vmid.getHost();
         String authority = vmid.getAuthority();
 
-        if ((scheme != null) && (scheme.compareTo("file") == 0)) {
+        if ("file".equals(scheme)) {
             // don't attempt to resolve a file based VmIdentifier.
             return vmid;
         }
@@ -507,10 +507,10 @@ public class HostIdentifier {
         String query = getQuery();
         if (query != null) {
             String[] queryArgs = query.split("\\+");
-            for (int i = 0; i < queryArgs.length; i++) {
-                if (queryArgs[i].startsWith("mode=")) {
-                    int index = queryArgs[i].indexOf('=');
-                    return queryArgs[i].substring(index+1);
+            for (String queryArg : queryArgs) {
+                if (queryArg.startsWith("mode=")) {
+                    int index = queryArg.indexOf('=');
+                    return queryArg.substring(index + 1);
                 }
             }
         }

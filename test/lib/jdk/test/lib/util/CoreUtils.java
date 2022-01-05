@@ -107,8 +107,10 @@ public class CoreUtils {
         // Find the core file
         String coreFileLocation = parseCoreFileLocationFromOutput(crashOutputString);
         if (coreFileLocation != null) {
-            System.out.println("Found core file: " + coreFileLocation);
-            Asserts.assertGT(new File(coreFileLocation).length(), 0L, "Unexpected core size");
+            long coreFileSize = new File(coreFileLocation).length();
+            System.out.println("Found core file " + coreFileLocation +
+                               ", size = " + coreFileSize / 1024 / 1024 + "mb");
+            Asserts.assertGT(coreFileSize, 0L, "Unexpected core size");
 
             // Make sure the core file is moved into the cwd if not already there.
             Path corePath = Paths.get(coreFileLocation);

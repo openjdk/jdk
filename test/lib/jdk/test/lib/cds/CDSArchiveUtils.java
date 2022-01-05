@@ -45,12 +45,15 @@ import sun.hotspot.WhiteBox;
 
 // This class performs operations on shared archive file
 public class CDSArchiveUtils {
+    // Minimum supported CDS file header version
+    private static int genericHeaderMinVersion;    // CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION
+    private static int currentCDSArchiveVersion;   // CURRENT_CDS_ARCHIVE_VERSION
     // offsets
     private static int offsetMagic;                // offset of GenericCDSFileMapHeader::_magic
     private static int offsetCrc;                  // offset of GenericCDSFileMapHeader::_crc
     private static int offsetVersion;              // offset of GenericCDSFileMapHeader::_version
     private static int offsetHeaderSize;           // offset of GenericCDSFileMapHeader::_header_size
-    private static int offsetBaseArchivePathOffset;// offset of GenericCDSFileMapHeader::_base_archive_path_offset
+    private static int offsetBaseArchiveNameOffset;// offset of GenericCDSFileMapHeader::_base_archive_name_offset
     private static int offsetBaseArchiveNameSize;  // offset of GenericCDSFileMapHeader::_base_archive_name_size
     private static int offsetJvmIdent;             // offset of FileMapHeader::_jvm_ident
     private static int spOffsetCrc;                // offset of CDSFileMapRegion::_crc
@@ -82,12 +85,15 @@ public class CDSArchiveUtils {
         WhiteBox wb;
         try {
             wb = WhiteBox.getWhiteBox();
+            // genericHeaderMinVersion
+            genericHeaderMinVersion = wb.getCDSGenericHeaderMinVersion();
+            currentCDSArchiveVersion = wb.getCurrentCDSVersion();
             // offsets
             offsetMagic = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_magic");
             offsetCrc = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_crc");
             offsetVersion = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_version");
             offsetHeaderSize = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_header_size");
-            offsetBaseArchivePathOffset = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_base_archive_path_offset");
+            offsetBaseArchiveNameOffset = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_base_archive_name_offset");
             offsetBaseArchiveNameSize = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_base_archive_name_size");
             offsetJvmIdent = wb.getCDSOffsetForName("FileMapHeader::_jvm_ident");
             spOffsetCrc = wb.getCDSOffsetForName("CDSFileMapRegion::_crc");
@@ -116,12 +122,16 @@ public class CDSArchiveUtils {
     }
 
     // accessors
+    // minimum supported file header version
+    public static int getGenericHeaderMinVersion()  { return genericHeaderMinVersion;     }
+    // current CDS version
+    public static int getCurrentCDSArchiveVersion() { return currentCDSArchiveVersion;    }
     // offsets
     public static int offsetMagic()                 { return offsetMagic;                 }
     public static int offsetCrc()                   { return offsetCrc;                   }
     public static int offsetVersion()               { return offsetVersion;               }
     public static int offsetHeaderSize()            { return offsetHeaderSize;            }
-    public static int offsetBaseArchivePathOffset() { return offsetBaseArchivePathOffset; }
+    public static int offsetBaseArchiveNameOffset() { return offsetBaseArchiveNameOffset; }
     public static int offsetBaseArchiveNameSize()   { return offsetBaseArchiveNameSize;   }
     public static int offsetJvmIdent()              { return offsetJvmIdent;              }
     public static int spOffsetCrc()                 { return spOffsetCrc;                 }
@@ -148,8 +158,8 @@ public class CDSArchiveUtils {
         return alignUpWithAlignment(size);
     }
 
-    public static int baseArchivePathOffset(File jsaFile) throws Exception {
-        return (int)readInt(jsaFile, offsetBaseArchivePathOffset, 4);
+    public static int baseArchiveNameOffset(File jsaFile) throws Exception {
+        return (int)readInt(jsaFile, offsetBaseArchiveNameOffset, 4);
     }
 
     public static int baseArchiveNameSize(File jsaFile) throws Exception {
@@ -158,8 +168,8 @@ public class CDSArchiveUtils {
 
     public static String baseArchiveName(File jsaFile) throws Exception {
         int size = baseArchiveNameSize(jsaFile);
-        int baseArchivePathOffset = (int)readInt(jsaFile, offsetBaseArchivePathOffset, 4);
-        return readString(jsaFile, baseArchivePathOffset, size - 1); // exclude terminating '\0'
+        int baseArchiveNameOffset = (int)readInt(jsaFile, offsetBaseArchiveNameOffset, 4);
+        return readString(jsaFile, baseArchiveNameOffset, size - 1); // exclude terminating '\0'
     }
 
     private static long alignUpWithAlignment(long l) {

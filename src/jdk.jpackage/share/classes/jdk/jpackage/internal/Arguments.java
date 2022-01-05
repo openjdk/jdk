@@ -179,6 +179,11 @@ public class Arguments {
             setOptionValue("resource-dir", resourceDir);
         }),
 
+        DMG_CONTENT ("mac-dmg-content", OptionCategories.PROPERTY, () -> {
+            List<String> content = getArgumentList(popArg());
+            content.forEach(a -> setOptionValue("mac-dmg-content", a));
+        }),
+
         ARGUMENTS ("arguments", OptionCategories.PROPERTY, () -> {
             List<String> arguments = getArgumentList(popArg());
             setOptionValue("arguments", arguments);
@@ -624,6 +629,11 @@ public class Arguments {
                         CLIOptions.PREDEFINED_RUNTIME_IMAGE.getIdWithPrefix(),
                         CLIOptions.JLINK_OPTIONS.getIdWithPrefix());
             }
+        }
+        if (allOptions.contains(CLIOptions.DMG_CONTENT)
+                && !("dmg".equals(type))) {
+            throw new PackagerException("ERR_InvalidTypeOption",
+                    CLIOptions.DMG_CONTENT.getIdWithPrefix(), ptype);
         }
         if (hasMainJar && hasMainModule) {
             throw new PackagerException("ERR_BothMainJarAndModule");

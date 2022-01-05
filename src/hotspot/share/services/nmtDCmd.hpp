@@ -42,7 +42,6 @@ class NMTDCmd: public DCmdWithParser {
   DCmdArgument<bool>  _baseline;
   DCmdArgument<bool>  _summary_diff;
   DCmdArgument<bool>  _detail_diff;
-  DCmdArgument<bool>  _shutdown;
   DCmdArgument<bool>  _statistics;
   DCmdArgument<char*> _scale;
 

@@ -71,7 +71,7 @@ public final class ProviderList {
     static final ProviderList EMPTY = new ProviderList(PC0, true);
 
     // list of all jdk.security.provider.preferred entries
-    static private PreferredList preferredPropList = null;
+    private static PreferredList preferredPropList = null;
 
     // dummy provider object to use during initialization
     // used to avoid explicit null checks in various places

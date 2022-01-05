@@ -36,7 +36,6 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.HashSet;
 import java.util.Objects;
 import java.util.Map;
 import java.util.Set;
@@ -56,7 +55,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * will fail.
  */
 public final class NativeLibraries {
-
+    private static final boolean loadLibraryOnlyIfPresent = ClassLoaderHelper.loadLibraryOnlyIfPresent();
     private final Map<String, NativeLibraryImpl> libraries = new ConcurrentHashMap<>();
     private final ClassLoader loader;
     // caller, if non-null, is the fromClass parameter for NativeLibraries::loadLibrary
@@ -145,7 +144,8 @@ public final class NativeLibraries {
     }
 
     /*
-     * Load a native library from the given file.  Returns null if file does not exist.
+     * Load a native library from the given file.  Returns null if the given
+     * library is determined to be non-loadable, which is system-dependent.
      *
      * @param fromClass the caller class calling System::loadLibrary
      * @param file the path of the native library
@@ -158,14 +158,17 @@ public final class NativeLibraries {
         boolean isBuiltin = (name != null);
         if (!isBuiltin) {
             name = AccessController.doPrivileged(new PrivilegedAction<>() {
-                public String run() {
-                    try {
-                        return file.exists() ? file.getCanonicalPath() : null;
-                    } catch (IOException e) {
-                        return null;
+                    public String run() {
+                        try {
+                            if (loadLibraryOnlyIfPresent && !file.exists()) {
+                                return null;
+                            }
+                            return file.getCanonicalPath();
+                        } catch (IOException e) {
+                            return null;
+                        }
                     }
-                }
-            });
+                });
             if (name == null) {
                 return null;
             }
@@ -389,7 +392,7 @@ public final class NativeLibraries {
                 throw new InternalError("Native library " + name + " has been loaded");
             }
 
-            return load(this, name, isBuiltin, isJNI);
+            return load(this, name, isBuiltin, isJNI, loadLibraryOnlyIfPresent);
         }
     }
 
@@ -575,7 +578,9 @@ public final class NativeLibraries {
 
     // JNI FindClass expects the caller class if invoked from JNI_OnLoad
     // and JNI_OnUnload is NativeLibrary class
-    private static native boolean load(NativeLibraryImpl impl, String name, boolean isBuiltin, boolean isJNI);
+    private static native boolean load(NativeLibraryImpl impl, String name,
+                                       boolean isBuiltin, boolean isJNI,
+                                       boolean throwExceptionIfFail);
     private static native void unload(String name, boolean isBuiltin, boolean isJNI, long handle);
     private static native String findBuiltinLib(String name);
     private static native long findEntry0(NativeLibraryImpl lib, String name);
