@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ void GCLogPrecious::vwrite_and_debug(LogTargetHandle log,
   {
     MutexLocker locker(_lock, Mutex::_no_safepoint_check_flag);
     vwrite_inner(log, format, args);
-    DEBUG_ONLY(debug_message = os::strdup(_temp->base()));
+    DEBUG_ONLY(debug_message = strdup(_temp->base()));
   }
 
   // report error outside lock scope, since report_vm_error will call print_on_error

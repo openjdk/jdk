@@ -27,12 +27,6 @@
 
 // Macros related to control of compiler warnings.
 
-#if __GNUC__ >= 9
-#include <dirent.h>
-#include <sys/socket.h>
-#include <stdio.h>
-#endif
-
 #include "utilities/macros.hpp"
 
 #include COMPILER_HEADER(utilities/compilerWarnings)
@@ -76,7 +70,13 @@
 #define PRAGMA_NONNULL_IGNORED
 #endif
 
+#endif // SHARE_UTILITIES_COMPILERWARNINGS_HPP
+
 #if __GNUC__ >= 9
+
+#include <dirent.h>
+#include <sys/socket.h>
+#include <stdio.h>
 
 #define FORBID_C_FUNCTION(signature, alternative) \
   extern "C" signature __attribute__((__warning__(alternative)))
@@ -102,7 +102,6 @@ FORBID_C_FUNCTION(ssize_t recv(int, void*, size_t, int),       "use os::recv");
 FORBID_C_FUNCTION(int stat(const char*, struct stat*),         "use os::stat");
 FORBID_C_FUNCTION(ssize_t send(int, const void*, size_t, int), "use os::send");
 FORBID_C_FUNCTION(int socket(int, int, int),                   "use os::socket");
-FORBID_C_FUNCTION(char *strdup(const char*),                   "use os::strdup");
 FORBID_C_FUNCTION(char* strerror(int),                         "use os::strerror");
 FORBID_C_FUNCTION(ssize_t write(int, const void*, size_t),     "use os::write");
 
@@ -114,5 +113,3 @@ FORBID_C_FUNCTION(char *strtok(char*, const char*),            "use strtok_r");
 #define PRAGMA_PERMIT_FORBIDDEN_C_FUNCTION(name)
 
 #endif // __GNUC__ >= 9
-
-#endif // SHARE_UTILITIES_COMPILERWARNINGS_HPP

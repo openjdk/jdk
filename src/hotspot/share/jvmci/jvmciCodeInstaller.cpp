@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -508,7 +508,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
     if (stubName.is_null()) {
       JVMCI_ERROR_OK("stub should have a name");
     }
-    char* name = os::strdup(jvmci_env()->as_utf8_string(stubName));
+    char* name = strdup(jvmci_env()->as_utf8_string(stubName));
     cb = RuntimeStub::new_runtime_stub(name,
                                        &buffer,
                                        _offsets.value(CodeOffsets::Frame_Complete),
