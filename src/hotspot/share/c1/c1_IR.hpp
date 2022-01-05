@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -338,9 +338,12 @@ class IR: public CompilationResourceObj {
   // debugging
   static void print(BlockBegin* start, bool cfg_only, bool live_only = false) PRODUCT_RETURN;
   void print(bool cfg_only, bool live_only = false)                           PRODUCT_RETURN;
-  void expand_with_neighborhood(BlockList& blocks)                            PRODUCT_RETURN;
-  void verify_local(BlockList&)                                               PRODUCT_RETURN;
-  void verify()                                                               PRODUCT_RETURN;
+
+#ifdef ASSERT
+  void expand_with_neighborhood(BlockList& blocks);
+  void verify_local(BlockList&);
+  void verify();
+#endif // ASSERT
 };
 
 
