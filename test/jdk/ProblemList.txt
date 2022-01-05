@@ -607,6 +607,8 @@ java/nio/channels/DatagramChannel/Unref.java                    8233519 generic-
 
 java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc64
 
+java/nio/channels/DatagramChannel/ManySourcesAndTargets.java    8264385 macosx-aarch64
+
 ############################################################################
 
 # jdk_rmi
@@ -672,6 +674,7 @@ javax/security/auth/kerberos/KerberosTixDateTest.java           8039280 generic-
 sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java 8039280 generic-all
 sun/security/provider/PolicyParser/ExtDirsChange.java           8039280 generic-all
 sun/security/provider/PolicyParser/PrincipalExpansionError.java 8039280 generic-all
+sun/security/ssl/SSLSessionImpl/NoInvalidateSocketException.java 8277970 linux-all,macosx-x64
 
 ############################################################################
 
