@@ -37,14 +37,6 @@ PSVirtualSpace::PSVirtualSpace(ReservedSpace rs, size_t alignment) :
   DEBUG_ONLY(verify());
 }
 
-PSVirtualSpace::PSVirtualSpace(ReservedSpace rs) :
-  _alignment(os::vm_page_size())
-{
-  set_reserved(rs);
-  set_committed(reserved_low_addr(), reserved_low_addr());
-  DEBUG_ONLY(verify());
-}
-
 // Deprecated.
 PSVirtualSpace::PSVirtualSpace():
   _alignment(os::vm_page_size()),
@@ -64,11 +56,6 @@ void PSVirtualSpace::initialize(ReservedSpace rs) {
 
 PSVirtualSpace::~PSVirtualSpace() {
   release();
-}
-
-bool PSVirtualSpace::contains(void* p) const {
-  char* const cp = (char*)p;
-  return cp >= committed_low_addr() && cp < committed_high_addr();
 }
 
 void PSVirtualSpace::release() {
@@ -143,13 +130,9 @@ void PSVirtualSpace::verify() const {
          "bad reserved addrs");
   assert(committed_low_addr() <= committed_high_addr(), "bad committed addrs");
 
-  if (grows_up()) {
-    assert(reserved_low_addr() == committed_low_addr(), "bad low addrs");
-    assert(reserved_high_addr() >= committed_high_addr(), "bad high addrs");
-  } else {
-    assert(reserved_high_addr() == committed_high_addr(), "bad high addrs");
-    assert(reserved_low_addr() <= committed_low_addr(), "bad low addrs");
-  }
+  // committed addr grows up
+  assert(reserved_low_addr() == committed_low_addr(), "bad low addrs");
+  assert(reserved_high_addr() >= committed_high_addr(), "bad high addrs");
 }
 
 #endif // #ifndef PRODUCT

@@ -86,7 +86,7 @@
  * <h3><a id="safety"></a>Safety</h3>
  *
  * This API provides strong safety guarantees when it comes to memory access. First, when dereferencing a memory segment,
- * the access coordinates are validated (upon access), to make sure that access does not occur at an address which resides
+ * the access coordinates are validated (upon access), to make sure that access does not occur at any address which resides
  * <em>outside</em> the boundaries of the memory segment used by the dereference operation. We call this guarantee <em>spatial safety</em>;
  * in other words, access to memory segments is bounds-checked, in the same way as array access is, as described in
  * Section {@jls 15.10.4} of <cite>The Java Language Specification</cite>.
@@ -99,10 +99,10 @@
  * <h2>Foreign function access</h2>
  * The key abstractions introduced to support foreign function access are {@link jdk.incubator.foreign.SymbolLookup},
  * {@link jdk.incubator.foreign.MemoryAddress} and {@link jdk.incubator.foreign.CLinker}.
- * The first is used to lookup symbols inside native libraries; the second is used to model native addresses (more on that later),
+ * The first is used to look up symbols inside native libraries; the second is used to model native addresses (more on that later),
  * while the third provides linking capabilities which allows modelling foreign functions as {@link java.lang.invoke.MethodHandle} instances,
  * so that clients can perform foreign function calls directly in Java, without the need for intermediate layers of native
- * code (as it's the case with the <a href="{@docRoot}/../specs/jni/index.html">Java Native Interface (JNI)</a>).
+ * code (as is the case with the <a href="{@docRoot}/../specs/jni/index.html">Java Native Interface (JNI)</a>).
  * <p>
  * For example, to compute the length of a string using the C standard library function {@code strlen} on a Linux x64 platform,
  * we can use the following code:
@@ -122,7 +122,7 @@
  * }
  *
  * Here, we obtain a {@linkplain jdk.incubator.foreign.CLinker#systemCLinker() linker instance} and we use it
- * to {@linkplain jdk.incubator.foreign.CLinker#lookup(java.lang.String) lookup} the {@code strlen} symbol in the
+ * to {@linkplain jdk.incubator.foreign.CLinker#lookup(java.lang.String) look up} the {@code strlen} symbol in the
  * standard C library; a <em>downcall method handle</em> targeting said symbol is subsequently
  * {@linkplain jdk.incubator.foreign.CLinker#downcallHandle(jdk.incubator.foreign.FunctionDescriptor) obtained}.
  * To complete the linking successfully, we must provide a {@link jdk.incubator.foreign.FunctionDescriptor} instance,
@@ -138,9 +138,9 @@
  * <h3>Foreign addresses</h3>
  *
  * When a memory segment is created from Java code, the segment properties (spatial bounds, temporal bounds and confinement)
- * are fully known at segment creation. But when interacting with native libraries, clients will often receive <em>raw</em> pointers;
- * such pointers have no spatial bounds (example: does the C type {@code char*} refer to a single {@code char} value,
- * or an array of {@code char} values, of given size?), no notion of temporal bounds, nor thread-confinement.
+ * are fully known at segment creation. But when interacting with native libraries, clients will often receive <em>raw</em> pointers.
+ * Such pointers have no spatial bounds. For example, the C type {@code char*} can refer to a single {@code char} value,
+ * or an array of {@code char} values, of given size. Nor do said pointers have any notion of temporal bounds or thread-confinement.
  * <p>
  * Raw pointers are modelled using the {@link jdk.incubator.foreign.MemoryAddress} class. When clients receive a
  * memory address instance from a foreign function call, they can perform memory dereference on it directly,
@@ -167,7 +167,7 @@
  * }
  *
  * <h3>Upcalls</h3>
- * The {@link jdk.incubator.foreign.CLinker} interface also allows to turn an existing method handle (which might point
+ * The {@link jdk.incubator.foreign.CLinker} interface also allows clients to turn an existing method handle (which might point
  * to a Java method) into a memory address, so that Java code can effectively be passed to other foreign functions.
  * For instance, we can write a method that compares two integer values, as follows:
  *
@@ -193,7 +193,7 @@
  * As before, we need to create a {@link jdk.incubator.foreign.FunctionDescriptor} instance, this time describing the signature
  * of the function pointer we want to create. The descriptor can be used to
  * {@linkplain jdk.incubator.foreign.CLinker#upcallType(jdk.incubator.foreign.FunctionDescriptor) derive} a method type
- * that can be used to lookup the method handle for {@code IntComparator.intCompare}.
+ * that can be used to look up the method handle for {@code IntComparator.intCompare}.
  * <p>
  * Now that we have a method handle instance, we can turn it into a fresh function pointer,
  * using the {@link jdk.incubator.foreign.CLinker} interface, as follows:

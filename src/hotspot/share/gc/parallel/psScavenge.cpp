@@ -71,7 +71,6 @@
 #include "utilities/stack.inline.hpp"
 
 HeapWord*                     PSScavenge::_to_space_top_before_gc = NULL;
-int                           PSScavenge::_consecutive_skipped_scavenges = 0;
 SpanSubjectToDiscoveryClosure PSScavenge::_span_based_discoverer;
 ReferenceProcessor*           PSScavenge::_ref_processor = NULL;
 PSCardTable*                  PSScavenge::_card_table = NULL;
@@ -729,7 +728,6 @@ bool PSScavenge::should_attempt_scavenge() {
 
   // Do not attempt to promote unless to_space is empty
   if (!young_gen->to_space()->is_empty()) {
-    _consecutive_skipped_scavenges++;
     if (UsePerfData) {
       counters->update_scavenge_skipped(to_space_not_empty);
     }
@@ -753,10 +751,7 @@ bool PSScavenge::should_attempt_scavenge() {
     log_trace(ergo)(" padded_promoted_average is greater than maximum promotion = " SIZE_FORMAT, young_gen->used_in_bytes());
   }
 
-  if (result) {
-    _consecutive_skipped_scavenges = 0;
-  } else {
-    _consecutive_skipped_scavenges++;
+  if (!result) {
     if (UsePerfData) {
       counters->update_scavenge_skipped(promoted_too_large);
     }
