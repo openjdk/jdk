@@ -202,7 +202,7 @@ final class Grapheme {
                 return ZWJ;
             if (cp >= 0x0600 && cp <= 0x0605 ||
                 cp == 0x06DD || cp == 0x070F ||
-                cp >= 0x0890 && cp <= 0x0891 ||
+                cp == 0x0890 || cp == 0x0891 ||
                 cp == 0x08E2 || cp == 0x110BD || cp == 0x110CD)
                 return PREPEND;
             return CONTROL;
