@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1201,13 +1201,14 @@ bool ReductionNode::implemented(int opc, uint vlen, BasicType bt) {
 }
 
 MacroLogicVNode* MacroLogicVNode::make(PhaseGVN& gvn, Node* in1, Node* in2, Node* in3,
-                                       uint truth_table, const TypeVect* vt) {
+                                       Node* mask, uint truth_table, const TypeVect* vt) {
   assert(truth_table <= 0xFF, "invalid");
   assert(in1->bottom_type()->is_vect()->length_in_bytes() == vt->length_in_bytes(), "mismatch");
   assert(in2->bottom_type()->is_vect()->length_in_bytes() == vt->length_in_bytes(), "mismatch");
   assert(in3->bottom_type()->is_vect()->length_in_bytes() == vt->length_in_bytes(), "mismatch");
+  assert(!mask || mask->bottom_type()->isa_vectmask(), "predicated register type expected");
   Node* fn = gvn.intcon(truth_table);
-  return new MacroLogicVNode(in1, in2, in3, fn, vt);
+  return new MacroLogicVNode(in1, in2, in3, fn, mask, vt);
 }
 
 Node* VectorNode::degenerate_vector_rotate(Node* src, Node* cnt, bool is_rotate_left,

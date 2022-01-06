@@ -1888,6 +1888,12 @@ const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, Bas
     case Op_FmaVD:
       return true;
 
+    case Op_MacroLogicV:
+      if(bt != T_INT && bt != T_LONG) {
+        return false;
+      }
+      return true;
+
     // Binary masked operations
     case Op_AddVB:
     case Op_AddVS:
@@ -9560,6 +9566,29 @@ instruct mask_opers_evex(kReg dst, kReg src1, kReg src2, kReg kscratch) %{
   ins_pipe( pipe_slow );
 %}
 
+instruct vternlog_reg_masked(vec dst, vec src2, vec src3, immU8 func, kReg mask) %{
+  match(Set dst (MacroLogicV dst (Binary src2 (Binary src3 (Binary func mask)))));
+  format %{ "vternlog_masked $dst,$src2,$src3,$func,$mask\t! vternlog masked operation" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ evpternlog($dst$$XMMRegister, $func$$constant, $mask$$KRegister,
+                  $src2$$XMMRegister, $src3$$XMMRegister, true, bt, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vternlogd_mem_masked(vec dst, vec src2, memory src3, immU8 func, kReg mask) %{
+  match(Set dst (MacroLogicV dst (Binary src2 (Binary src3 (Binary func mask)))));
+  format %{ "vternlog_masked $dst,$src2,$src3,$func,$mask\t! vternlog masked operation" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ evpternlog($dst$$XMMRegister, $func$$constant, $mask$$KRegister,
+                  $src2$$XMMRegister, $src3$$Address, true, bt, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
 
 instruct castMM(kReg dst)
 %{
