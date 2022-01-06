@@ -146,16 +146,12 @@ class SymbolPredicate {
   }
 };
 
-template <bool leakp>
 class MethodUsedPredicate {
   bool _current_epoch;
 public:
   MethodUsedPredicate(bool current_epoch) : _current_epoch(current_epoch) {}
   bool operator()(const Klass* klass) {
-    if (_current_epoch) {
-      return leakp ? IS_LEAKP(klass) : METHOD_USED_THIS_EPOCH(klass);
-    }
-    return  leakp ? IS_LEAKP(klass) : METHOD_USED_PREVIOUS_EPOCH(klass);
+    return _current_epoch ? METHOD_USED_THIS_EPOCH(klass) : METHOD_USED_PREVIOUS_EPOCH(klass);
   }
 };
 

@@ -143,16 +143,6 @@ RefProcBalanceQueuesTimeTracker::~RefProcBalanceQueuesTimeTracker() {
   phase_times()->set_balance_queues_time_ms(_phase_number, elapsed);
 }
 
-RefProcPhaseTimeTracker::RefProcPhaseTimeTracker(ReferenceProcessor::RefProcPhases phase_number,
-                                                       ReferenceProcessorPhaseTimes* phase_times) :
-  RefProcPhaseTimeBaseTracker(phase_enum_2_phase_string(phase_number), phase_number, phase_times) {
-}
-
-RefProcPhaseTimeTracker::~RefProcPhaseTimeTracker() {
-  double elapsed = elapsed_time();
-  phase_times()->set_phase_time_ms(_phase_number, elapsed);
-}
-
 RefProcTotalPhaseTimesTracker::RefProcTotalPhaseTimesTracker(ReferenceProcessor::RefProcPhases phase_number,
                                                              ReferenceProcessorPhaseTimes* phase_times) :
   RefProcPhaseTimeBaseTracker(phase_enum_2_phase_string(phase_number), phase_number, phase_times) {
