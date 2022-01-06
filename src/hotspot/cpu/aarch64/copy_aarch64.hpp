@@ -28,8 +28,6 @@
 
 #include OS_CPU_HEADER(copy)
 
-#ifndef _WINDOWS
-
 static void pd_fill_to_words(HeapWord* tohw, size_t count, juint value) {
   julong* to = (julong*) tohw;
   julong  v  = ((julong) value << 32) | value;
@@ -53,6 +51,8 @@ static void pd_zero_to_words(HeapWord* tohw, size_t count) {
 static void pd_zero_to_bytes(void* to, size_t count) {
   (void)memset(to, 0, count);
 }
+
+#ifndef _WINDOWS
 
 #define COPY_SMALL(from, to, count)                                     \
 {                                                                       \
