@@ -102,7 +102,6 @@ private:
   ShenandoahCodeRootsIterator   _coderoots_iterator;
 public:
   ShenandoahCodeCacheRoots(ShenandoahPhaseTimings::Phase phase);
-  ~ShenandoahCodeCacheRoots();
 
   void code_blobs_do(CodeBlobClosure* blob_cl, uint worker_id);
 };
