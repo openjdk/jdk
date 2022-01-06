@@ -7323,7 +7323,7 @@ instruct evcmpFD(kReg dst, vec src1, vec src2, immI8 cond) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vcmp_pri(legVec dst, legVec src1, legVec src2, immI8 cond) %{
+instruct vcmp_direct(legVec dst, legVec src1, legVec src2, immI8 cond) %{
   predicate(n->bottom_type()->isa_vectmask() == NULL &&
             !is_unsigned_booltest_pred(n->in(2)->get_int()) &&
             Matcher::vector_length_in_bytes(n->in(1)->in(1)) >=  4 && // src1
@@ -7343,7 +7343,7 @@ instruct vcmp_pri(legVec dst, legVec src1, legVec src2, immI8 cond) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vcmp_sec(legVec dst, legVec src1, legVec src2, immI8 cond, legVec xtmp) %{
+instruct vcmp_negate(legVec dst, legVec src1, legVec src2, immI8 cond, legVec xtmp) %{
   predicate(n->bottom_type()->isa_vectmask() == NULL &&
             !is_unsigned_booltest_pred(n->in(2)->get_int()) &&
             Matcher::vector_length_in_bytes(n->in(1)->in(1)) >=  4 && // src1
@@ -7387,7 +7387,7 @@ instruct vcmpu(legVec dst, legVec src1, legVec src2, immI8 cond, legVec xtmp, rR
   ins_pipe( pipe_slow );
 %}
 
-instruct vcmpu64(vec dst, vec src1, vec src2, immI8 cond, rRegP scratch, kReg ktmp) %{
+instruct vcmp64(vec dst, vec src1, vec src2, immI8 cond, rRegP scratch, kReg ktmp) %{
   predicate((n->bottom_type()->isa_vectmask() == NULL &&
              Matcher::vector_length_in_bytes(n->in(1)->in(1)) == 64) && // src1
              is_integral_type(Matcher::vector_element_basic_type(n->in(1)->in(1)))); // src1
