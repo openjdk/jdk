@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8273322
+ * @key randomness
  * @summary Enhance macro logic optimization for masked logic operations.
  * @modules jdk.incubator.vector
  * @requires vm.compiler2.enabled
