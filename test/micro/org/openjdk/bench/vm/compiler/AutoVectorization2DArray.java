@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 @OutputTimeUnit(TimeUnit.SECONDS)
 @State(Scope.Thread)
 @Fork(value=1)
-public class AutoVectorization {
+public class AutoVectorization2DArray {
     @Param({"16", "32", "64"})
     private int LEN;
 

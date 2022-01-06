@@ -30,10 +30,10 @@ import compiler.lib.ir_framework.*;
  * @bug 8279258
  * @summary Auto-vectorization enhancement for two-dimensional array operations
  * @library /test/lib /
- * @run driver compiler.c2.irTests.TestAutoVectorization
+ * @run driver compiler.c2.irTests.TestAutoVectorization2DArray
  */
 
-public class TestAutoVectorization {
+public class TestAutoVectorization2DArray {
     final private static int NUM = 64;
 
     private static double[][] a = new double[NUM][NUM];
