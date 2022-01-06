@@ -243,6 +243,7 @@ int write__klass(JfrCheckpointWriter* writer, const void* k) {
 int write__klass__leakp(JfrCheckpointWriter* writer, const void* k) {
   assert(k != NULL, "invariant");
   KlassPtr klass = (KlassPtr)k;
+  CLEAR_LEAKP(klass);
   return write_klass(writer, klass, true);
 }
 
@@ -848,7 +849,7 @@ class MethodIteratorHost {
  private:
   MethodCallback _method_cb;
   KlassCallback _klass_cb;
-  MethodUsedPredicate<leakp> _method_used_predicate;
+  MethodUsedPredicate _method_used_predicate;
   MethodFlagPredicate<leakp> _method_flag_predicate;
  public:
   MethodIteratorHost(JfrCheckpointWriter* writer,
