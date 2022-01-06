@@ -689,6 +689,7 @@ public:
 
   // Stack frame creation/removal
   void enter();
+  void enter_subframe();
   void leave();
 
   // ROP Protection

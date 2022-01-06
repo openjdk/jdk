@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -798,7 +798,6 @@ void TemplateInterpreterGenerator::lock_method() {
 //      rcpool: cp cache
 //      stack_pointer: previous sp
 void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
-  __ protect_return_address();
   // initialize fixed part of activation frame
   if (native_call) {
     __ sub(esp, sp, 14 *  wordSize);
@@ -833,6 +832,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ ldr(rcpool, Address(rcpool, ConstantPool::cache_offset_in_bytes()));
   __ stp(rlocals, rcpool, Address(sp, 2 * wordSize));
 
+  __ protect_return_address();
   __ stp(rfp, lr, Address(sp, 10 * wordSize));
   __ lea(rfp, Address(sp, 10 * wordSize));
 

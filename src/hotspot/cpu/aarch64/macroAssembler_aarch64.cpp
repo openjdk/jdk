@@ -1137,6 +1137,7 @@ void MacroAssembler::verify_oop(Register reg, const char* s) {
   }
   BLOCK_COMMENT("verify_oop {");
 
+  strip_return_address(); // This might happen within a stack frame.
   protect_return_address();
   stp(r0, rscratch1, Address(pre(sp, -2 * wordSize)));
   stp(rscratch2, lr, Address(pre(sp, -2 * wordSize)));
@@ -1168,6 +1169,7 @@ void MacroAssembler::verify_oop_addr(Address addr, const char* s) {
   }
   BLOCK_COMMENT("verify_oop_addr {");
 
+  strip_return_address(); // This might happen within a stack frame.
   protect_return_address();
   stp(r0, rscratch1, Address(pre(sp, -2 * wordSize)));
   stp(rscratch2, lr, Address(pre(sp, -2 * wordSize)));
@@ -5285,6 +5287,15 @@ void MacroAssembler::enter()
   protect_return_address();
   stp(rfp, lr, Address(pre(sp, -2 * wordSize)));
   mov(rfp, sp);
+}
+
+// Create an additional frame for a function.
+void MacroAssembler::enter_subframe()
+{
+  // Addresses can only be signed once, so strip it first. PAC safe because the value is not
+  // coming from memory.
+  strip_return_address();
+  enter();
 }
 
 void MacroAssembler::leave()
