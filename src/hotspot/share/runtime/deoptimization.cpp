@@ -165,9 +165,6 @@ JRT_BLOCK_ENTRY(Deoptimization::UnrollBlock*, Deoptimization::fetch_unroll_info(
   // handler. Note this fact before we start generating temporary frames
   // that can confuse an asynchronous stack walker. This counter is
   // decremented at the end of unpack_frames().
-  if (TraceDeoptimization) {
-    tty->print_cr("Deoptimizing thread " INTPTR_FORMAT, p2i(current));
-  }
   current->inc_in_deopt_handler();
 
   if (exec_mode == Unpack_exception) {
@@ -727,15 +724,6 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
   // Since the frame to unpack is the top frame of this thread, the vframe_array_head
   // must point to the vframeArray for the unpack frame.
   vframeArray* array = thread->vframe_array_head();
-
-  if (TraceDeoptimization) {
-    tty->print_cr("DEOPT UNPACKING thread " INTPTR_FORMAT " vframeArray " INTPTR_FORMAT " mode %d",
-                  p2i(thread), p2i(array), exec_mode);
-    tty->cr();
-  }
-  Events::log_deopt_message(thread, "DEOPT UNPACKING pc=" INTPTR_FORMAT " sp=" INTPTR_FORMAT " mode %d",
-              p2i(stub_frame.pc()), p2i(stub_frame.sp()), exec_mode);
-
   UnrollBlock* info = array->unroll_block();
 
   // We set the last_Java frame. But the stack isn't really parsable here. So we
@@ -1519,14 +1507,14 @@ vframeArray* Deoptimization::create_vframeArray(JavaThread* thread, frame fr, Re
   if (TraceDeoptimization) {
     ResourceMark rm;
     stringStream st;
-    st.print("DEOPT PACKING thread " INTPTR_FORMAT " ", p2i(thread));
+    //st.print_cr("DEOPT PACKING thread " INTPTR_FORMAT " ", p2i(thread));
+    st.print_cr("DEOPT PACKING thread=" INTPTR_FORMAT " vframeArray=" INTPTR_FORMAT, p2i(thread), p2i(array));
+    st.print("   ");
     fr.print_on(&st);
-    st.print_cr("     Virtual frames (innermost first):");
+    st.print_cr("   Virtual frames (innermost/newest first):");
     for (int index = 0; index < chunk->length(); index++) {
       compiledVFrame* vf = chunk->at(index);
-      st.print("       %2d - ", index);
-      st.print("(" INTPTR_FORMAT ")", p2i(vf));
-      int bci = chunk->at(index)->raw_bci();
+      int bci = vf->raw_bci();
       const char* code_name;
       if (bci == SynchronizationEntryBCI) {
         code_name = "sync entry";
@@ -1534,11 +1522,13 @@ vframeArray* Deoptimization::create_vframeArray(JavaThread* thread, frame fr, Re
         Bytecodes::Code code = vf->method()->code_at(bci);
         code_name = Bytecodes::name(code);
       }
+
+      st.print("      VFrame %d (" INTPTR_FORMAT ")", index, p2i(vf));
+      st.print(" - %s", vf->method()->name_and_sig_as_C_string());
       st.print(" - %s", code_name);
-      st.print_cr(" @ bci %d ", bci);
+      st.print_cr(" @ bci=%d ", bci);
     }
     tty->print_raw(st.as_string());
-    tty->print_cr("     Created vframeArray " INTPTR_FORMAT, p2i(array));
     tty->cr();
   }
 
@@ -1807,6 +1797,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
   // handler. Note this fact before we start generating temporary frames
   // that can confuse an asynchronous stack walker. This counter is
   // decremented at the end of unpack_frames().
+
   current->inc_in_deopt_handler();
 
 #if INCLUDE_JVMCI
@@ -1844,7 +1835,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
 
     bool is_receiver_constraint_failure = COMPILER2_PRESENT(VerifyReceiverTypes &&) (reason == Deoptimization::Reason_receiver_constraint);
 
-    if (TraceDeoptimization || is_receiver_constraint_failure) {
+    if (is_receiver_constraint_failure) {
       tty->print_cr("  bci=%d pc=" INTPTR_FORMAT ", relative_pc=" INTPTR_FORMAT ", method=%s" JVMCI_ONLY(", debug_id=%d"), trap_scope->bci(), p2i(fr.pc()), fr.pc() - nm->code_begin(), trap_scope->method()->name_and_sig_as_C_string()
 #if INCLUDE_JVMCI
           , debug_id
@@ -1955,18 +1946,23 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
         xtty->end_head();
       }
       if (TraceDeoptimization) {  // make noise on the tty
-        tty->print("Uncommon trap occurred in");
-        nm->method()->print_short_name(tty);
-        tty->print(" compiler=%s compile_id=%d", nm->compiler_name(), nm->compile_id());
+        stringStream st;
+        st.print("UNCOMMON TRAP method=%s", trap_scope->method()->name_and_sig_as_C_string());
+        st.print("  bci=%d pc=" INTPTR_FORMAT ", relative_pc=" INTPTR_FORMAT JVMCI_ONLY(", debug_id=%d"), trap_scope->bci(), p2i(fr.pc()), fr.pc() - nm->code_begin()
+#if INCLUDE_JVMCI
+            , debug_id
+#endif
+        );
+        st.print(" compiler=%s compile_id=%d", nm->compiler_name(), nm->compile_id());
 #if INCLUDE_JVMCI
         if (nm->is_nmethod()) {
           const char* installed_code_name = nm->as_nmethod()->jvmci_name();
           if (installed_code_name != NULL) {
-            tty->print(" (JVMCI: installed code name=%s) ", installed_code_name);
+            st.print(" (JVMCI: installed code name=%s) ", installed_code_name);
           }
         }
 #endif
-        tty->print(" (@" INTPTR_FORMAT ") thread=" UINTX_FORMAT " reason=%s action=%s unloaded_class_index=%d" JVMCI_ONLY(" debug_id=%d"),
+        st.print(" (@" INTPTR_FORMAT ") thread=" UINTX_FORMAT " reason=%s action=%s unloaded_class_index=%d" JVMCI_ONLY(" debug_id=%d"),
                    p2i(fr.pc()),
                    os::current_thread_id(),
                    trap_reason_name(reason),
@@ -1977,10 +1973,11 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
 #endif
                    );
         if (class_name != NULL) {
-          tty->print(unresolved ? " unresolved class: " : " symbol: ");
-          class_name->print_symbol_on(tty);
+          st.print(unresolved ? " unresolved class: " : " symbol: ");
+          class_name->print_symbol_on(&st);
         }
-        tty->cr();
+        st.cr();
+        tty->print_raw(st.as_string());
       }
       if (xtty != NULL) {
         // Log the precise location of the trap.
@@ -2358,9 +2355,6 @@ Deoptimization::UnrollBlock* Deoptimization::uncommon_trap(JavaThread* current, 
   // Enable WXWrite: current function is called from methods compiled by C2 directly
   MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, current));
 
-  if (TraceDeoptimization) {
-    tty->print("Uncommon trap ");
-  }
   // Still in Java no safepoints
   {
     // This enters VM and may safepoint

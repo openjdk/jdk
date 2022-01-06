@@ -324,21 +324,11 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     }
   }
 
-  if (TraceDeoptimization) {
-    method()->print_value();
-    Bytecodes::Code code = Bytecodes::java_code_at(method(), bcp);
-    int bci = method()->bci_from(bcp);
-    tty->print(" - %s", Bytecodes::name(code));
-    tty->print(" @ bci %d ", bci);
-    tty->print_cr("sp = " PTR_FORMAT, p2i(iframe()->sp()));
-  }
-
 #ifndef PRODUCT
   if (PrintDeoptimizationDetails) {
     tty->print_cr("Expressions size: %d", expressions()->size());
   }
 #endif // !PRODUCT
-
 
   // Unpack expression stack
   // If this is an intermediate frame (i.e. not top frame) then this
@@ -575,6 +565,7 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
 
   // Find the skeletal interpreter frames to unpack into
   JavaThread* current = JavaThread::current();
+
   RegisterMap map(current, false);
   // Get the youngest frame we will unpack (last to be unpacked)
   frame me = unpack_frame.sender(&map);
@@ -583,6 +574,18 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
     *element(index)->iframe() = me;
     // Get the caller frame (possibly skeletal)
     me = me.sender(&map);
+  }
+
+  Events::log_deopt_message(current, "DEOPT UNPACKING pc=" INTPTR_FORMAT " sp=" INTPTR_FORMAT " mode %d",
+                            p2i(unpack_frame.pc()), p2i(unpack_frame.sp()), exec_mode);
+
+  if (TraceDeoptimization) {
+    ResourceMark rm;
+    stringStream st;
+    st.print_cr("DEOPT UNPACKING thread=" INTPTR_FORMAT " vframeArray=" INTPTR_FORMAT " mode=%d",
+               p2i(current), p2i(this), exec_mode);
+    st.print_cr("   Virtual frames (outermost/oldest first):");
+    tty->print_raw(st.as_string());
   }
 
   // Do the unpacking of interpreter frames; the frame at index 0 represents the top activation, so it has no callee
@@ -604,6 +607,24 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
       callee_parameters = callee->size_of_parameters() + (has_member_arg ? 1 : 0);
       callee_locals     = callee->max_locals();
     }
+    if (TraceDeoptimization) {
+      ResourceMark rm;
+      stringStream st;
+      st.print("      VFrame %d (" INTPTR_FORMAT ")", index, p2i(elem));
+      st.print(" - %s", elem->method()->name_and_sig_as_C_string());
+      int bci = elem->raw_bci();
+      const char* code_name;
+      if (bci == SynchronizationEntryBCI) {
+        code_name = "sync entry";
+      } else {
+        Bytecodes::Code code = elem->method()->code_at(bci);
+        code_name = Bytecodes::name(code);
+      }
+      st.print(" - %s", code_name);
+      st.print(" @ bci=%d ", bci);
+      st.print_cr("sp=" PTR_FORMAT, p2i(elem->iframe()->sp()));
+      tty->print_raw(st.as_string());
+    }
     elem->unpack_on_stack(caller_actual_parameters,
                           callee_parameters,
                           callee_locals,
@@ -618,6 +639,9 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
     caller_actual_parameters = callee_parameters;
   }
   deallocate_monitor_chunks();
+  if (TraceDeoptimization) {
+    tty->cr();
+  }
 }
 
 void vframeArray::deallocate_monitor_chunks() {

@@ -459,17 +459,17 @@ void frame::print_value_on(outputStream* st, JavaThread *thread) const {
     }
   }
 
+#ifndef PRODUCT
   if (_cb != NULL) {
     st->print("     ");
     _cb->print_value_on(st);
-#ifndef PRODUCT
     if (end == NULL) {
       begin = _cb->code_begin();
       end   = _cb->code_end();
     }
-#endif
   }
-  NOT_PRODUCT(if (WizardMode && Verbose) Disassembler::decode(begin, end);)
+  if (WizardMode && Verbose) Disassembler::decode(begin, end);
+#endif
 }
 
 
