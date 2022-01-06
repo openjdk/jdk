@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,35 +22,38 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package sun.nio.ch;
 
-package java.lang.invoke;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 
 /**
- * Base class for memory access var handle implementations.
+ * Factory methods for input/output streams based on channels.
  */
-abstract class MemoryAccessVarHandleBase extends VarHandle {
+public class Streams {
+    private Streams() { }
 
-    /** endianness **/
-    final boolean be;
-
-    /** access size (in bytes, computed from var handle carrier type) **/
-    final long length;
-
-    /** alignment constraint (in bytes, expressed as a bit mask) **/
-    final long alignmentMask;
-
-    /** if true, only the base part of the address will be checked for alignment **/
-    final boolean skipAlignmentMaskCheck;
-
-    MemoryAccessVarHandleBase(VarForm form, boolean skipAlignmentMaskCheck, boolean be, long length, long alignmentMask, boolean exact) {
-        super(form, exact);
-        this.skipAlignmentMaskCheck = skipAlignmentMaskCheck;
-        this.be = be;
-        this.length = length;
-        this.alignmentMask = alignmentMask;
+    /**
+     * Return an input stream that reads bytes from the given channel.
+     */
+    public static InputStream of(ReadableByteChannel ch) {
+        if (ch instanceof SocketChannelImpl sc) {
+            return new SocketInputStream(sc);
+        } else {
+            return new ChannelInputStream(ch);
+        }
     }
 
-    static IllegalArgumentException newIllegalArgumentExceptionForMisalignedAccess(long address) {
-        return new IllegalArgumentException("Misaligned access at address: " + address);
+    /**
+     * Return an output stream that writes bytes to the given channel.
+     */
+    public static OutputStream of(WritableByteChannel ch) {
+        if (ch instanceof SocketChannelImpl sc) {
+            return new SocketOutputStream(sc);
+        } else {
+            return new ChannelOutputStream(ch);
+        }
     }
 }

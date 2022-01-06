@@ -146,14 +146,6 @@ public:
   ~RefProcBalanceQueuesTimeTracker();
 };
 
-// Updates phase time at ReferenceProcessorPhaseTimes and save it into GCTimer.
-class RefProcPhaseTimeTracker : public RefProcPhaseTimeBaseTracker {
-public:
-  RefProcPhaseTimeTracker(ReferenceProcessor::RefProcPhases phase_number,
-                          ReferenceProcessorPhaseTimes* phase_times);
-  ~RefProcPhaseTimeTracker();
-};
-
 // Highest level time tracker.
 class RefProcTotalPhaseTimesTracker : public RefProcPhaseTimeBaseTracker {
 public:
