@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1783,17 +1783,9 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       }
       break;
     case Op_VectorCastB2X:
-      if (size_in_bits == 256 && UseAVX < 2) {
-        return false; // Implementation limitation
-      }
-      break;
     case Op_VectorCastS2X:
-      if (is_integral_type(bt) && size_in_bits == 256 && UseAVX < 2) {
-        return false;
-      }
-      break;
     case Op_VectorCastI2X:
-      if (is_integral_type(bt) && size_in_bits == 256 && UseAVX < 2) {
+      if (bt != T_DOUBLE && size_in_bits == 256 && UseAVX < 2) {
         return false;
       }
       break;
@@ -6914,11 +6906,12 @@ instruct vcastBtoX(vec dst, vec src) %{
       case T_LONG:
         __ vpmovsxbq($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
         break;
-      case T_DOUBLE:
-        __ vpmovsxbd($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
+      case T_DOUBLE: {
+        int mid_vlen_enc = (vlen_enc == Assembler::AVX_512bit) ? Assembler::AVX_256bit : Assembler::AVX_128bit;
+        __ vpmovsxbd($dst$$XMMRegister, $src$$XMMRegister, mid_vlen_enc);
         __ vcvtdq2pd($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
         break;
-
+      }
       default: assert(false, "%s", type2name(to_elem_bt));
     }
   %}
@@ -6985,10 +6978,12 @@ instruct vcastStoX_evex(vec dst, vec src) %{
       case T_LONG:
         __ vpmovsxwq($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
         break;
-      case T_DOUBLE:
-        __ vpmovsxwd($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
+      case T_DOUBLE: {
+        int mid_vlen_enc = (vlen_enc == Assembler::AVX_512bit) ? Assembler::AVX_256bit : Assembler::AVX_128bit;
+        __ vpmovsxwd($dst$$XMMRegister, $src$$XMMRegister, mid_vlen_enc);
         __ vcvtdq2pd($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
         break;
+      }
       default:
         ShouldNotReachHere();
     }
