@@ -352,7 +352,7 @@ TEST_VM(os, jio_snprintf) {
 }
 
 #ifdef __APPLE__
-static inline bool can_alloc_executable_memory(void) {
+static inline bool can_reserve_executable_memory(void) {
   bool executable = true;
   size_t len = 128;
   char* p = os::reserve_memory(len, executable);
@@ -377,7 +377,7 @@ static address reserve_multiple(int num_stripes, size_t stripe_len) {
 #ifdef __APPLE__
   // Workaround: try reserving memory with executable flag set to True
   // to figure out if such operation is supported on this macOS version
-  const bool exec_supported = can_alloc_executable_memory();
+  const bool exec_supported = can_reserve_executable_memory();
 #endif
 
   size_t total_range_len = num_stripes * stripe_len;
