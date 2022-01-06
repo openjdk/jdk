@@ -351,6 +351,19 @@ TEST_VM(os, jio_snprintf) {
   test_snprintf(jio_snprintf, false);
 }
 
+#ifdef __APPLE__
+static inline bool can_alloc_executable_memory(void) {
+  bool executable = true;
+  size_t len = 128;
+  char* p = os::reserve_memory(len, executable);
+  bool exec_supported = (p != NULL);
+  if (exec_supported) {
+    os::release_memory(p, len);
+  }
+  return exec_supported;
+}
+#endif
+
 // Test that os::release_memory() can deal with areas containing multiple mappings.
 #define PRINT_MAPPINGS(s) { tty->print_cr("%s", s); os::print_memory_mappings((char*)p, total_range_len, tty); }
 //#define PRINT_MAPPINGS
@@ -362,15 +375,9 @@ static address reserve_multiple(int num_stripes, size_t stripe_len) {
   assert(is_aligned(stripe_len, os::vm_allocation_granularity()), "Sanity");
 
 #ifdef __APPLE__
-  // Workaround: try reserving memory with executable=true
-  // to figure out if that's supported on this macOS version
-  bool executable = true;
-  size_t test_len = 128;
-  address p_test = (address)os::reserve_memory(test_len, executable);
-  bool exec_supported = (p_test != NULL);
-  if (exec_supported) {
-    os::release_memory((char*)p_test, test_len);
-  }
+  // Workaround: try reserving memory with executable flag set to True
+  // to figure out if such operation is supported on this macOS version
+  const bool exec_supported = can_alloc_executable_memory();
 #endif
 
   size_t total_range_len = num_stripes * stripe_len;
