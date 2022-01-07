@@ -33,7 +33,6 @@
 // Split Node 'n' through merge point.
 RegionNode* PhaseIdealLoop::split_thru_region(Node* n, RegionNode* region) {
   assert(n->is_CFG(), "");
-  assert(region->is_Region(), "");
   RegionNode* r = new RegionNode(region->req());
   IdealLoopTree* loop = get_loop(n);
   for (uint i = 1; i < region->req(); i++) {
