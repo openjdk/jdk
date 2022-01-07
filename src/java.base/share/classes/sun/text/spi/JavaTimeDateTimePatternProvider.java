@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
 
 package sun.text.spi;
 
+import java.time.DateTimeException;
 import java.util.Locale;
-import java.util.Optional;
 import java.util.spi.LocaleServiceProvider;
 
 /**
@@ -70,8 +70,12 @@ public abstract class JavaTimeDateTimePatternProvider extends LocaleServiceProvi
      * "iso8601"
      * @param locale {@code locale}, non-null
      * @throws IllegalArgumentException if the skeleton is invalid
+     * @throws DateTimeException if the formatter for the given {@code skeleton} is not available
      * @return  formatting pattern {@code String}
      * @since 19
      */
-    public abstract String getJavaTimeDateTimePattern(String skeleton, String calType, Locale locale);
+    public String getJavaTimeDateTimePattern(String skeleton, String calType, Locale locale) {
+        // default implementation throws exception
+        throw new DateTimeException("Formatter is not available for this skeleton: " + skeleton);
+    }
 }

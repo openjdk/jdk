@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1427,14 +1427,15 @@ public final class DateTimeFormatterBuilder {
     /**
      * Appends a localized pattern to the formatter using the specified skeleton,
      * locale, and chronology. Skeleton is based on CLDR's
-     * <a href="http://cldr.unicode.org/translation/date-time-1/date-time-patterns#TOC-Additional-Date-Time-Formats">
-     * Additional Date-Time Formats</a>.
+     * <a href="https://www.unicode.org/reports/tr35/tr35-dates.html#availableFormats_appendItems">
+     * availableFormats</a>.
      * For example, {@code yMMM} will format 2011-12-03 as 'Dec 2011' in US locale.
      * @param skeleton the skeleton to use, not null
      * @param locale the locale to use, not null
      * @param chrono the chronology to use, not null
      * @return this, for chaining, not null
      * @throws IllegalArgumentException if the skeleton is invalid
+     * @throws DateTimeException if the formatter for the given {@code skeleton} is not available
      * @see #appendPattern(String)
      * @since 19
      */

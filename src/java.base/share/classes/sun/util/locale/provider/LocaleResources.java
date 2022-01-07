@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -545,6 +545,7 @@ public class LocaleResources {
      *
      * @param requestedSkeleton requested skeleton
      * @param calType calendar type
+     * @throws IllegalArgumentException if the input skeleton is invalid
      * @return format pattern string for this locale, null if not found
      */
     public String getSkeletonPattern(String requestedSkeleton, String calType) {
@@ -552,6 +553,11 @@ public class LocaleResources {
 
         // input skeleton substitution
         final String skeleton = substituteInputSkeletons(requestedSkeleton);
+
+        // validity check
+        if (!validSkeletons.contains(skeleton)) {
+            throw new IllegalArgumentException("Input skeleton is invalid: " + requestedSkeleton);
+        }
 
         // Expand it with possible inferred skeleton stream based on its priority
         var inferred = possibleInferred(skeleton);

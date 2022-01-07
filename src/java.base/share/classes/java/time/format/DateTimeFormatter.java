@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -722,8 +722,8 @@ public final class DateTimeFormatter {
     /**
      * Creates a locale specific formatter using the specified Skeleton for the default locale. Skeleton
      * is based on CLDR's
-     * <a href="http://cldr.unicode.org/translation/date-time-1/date-time-patterns#TOC-Additional-Date-Time-Formats">
-     * Additional Date-Time Formats</a>.
+     * <a href="https://www.unicode.org/reports/tr35/tr35-dates.html#availableFormats_appendItems">
+     * availableFormats</a>.
      * For example, {@code yMMM} will format 2020-06-16 as 'Jun 2020' in US locale.
      * <p>
      * The formatter will use the {@link Locale#getDefault(Locale.Category) default FORMAT locale} and
@@ -735,6 +735,7 @@ public final class DateTimeFormatter {
      * @param skeleton the skeleton to use, not null
      * @return the formatter based on the skeleton, not null
      * @throws IllegalArgumentException if the skeleton is invalid
+     * @throws DateTimeException if the formatter for the given {@code skeleton} is not available
      * @see #ofPattern(String)
      * @since 19
      */
@@ -745,8 +746,8 @@ public final class DateTimeFormatter {
     /**
      * Creates a locale specific formatter using the specified Skeleton and locale. Skeleton
      * is based on CLDR's
-     * <a href="http://cldr.unicode.org/translation/date-time-1/date-time-patterns#TOC-Additional-Date-Time-Formats">
-     * Additional Date-Time Formats</a>.
+     * <a href="https://www.unicode.org/reports/tr35/tr35-dates.html#availableFormats_appendItems">
+     * availableFormats</a>.
      * For example, {@code yMMM} will format 2020-06-16 as 'Jun 2020' in US locale.
      * <p>
      * The formatter will use the specified locale and
@@ -759,12 +760,11 @@ public final class DateTimeFormatter {
      * @param locale the locale to use, not null
      * @return the formatter based on the skeleton, not null
      * @throws IllegalArgumentException if the skeleton is invalid
+     * @throws DateTimeException if the formatter for the given {@code skeleton} is not available
      * @see #ofPattern(String, Locale)
      * @since 19
      */
     public static DateTimeFormatter ofSkeleton(String skeleton, Locale locale) {
-        Objects.requireNonNull(skeleton, "skeleton");
-        Objects.requireNonNull(locale, "locale");
         Chronology chrono = Chronology.ofLocale(locale);
         return new DateTimeFormatterBuilder().appendSkeleton(skeleton, locale, chrono)
                 .toFormatter(ResolverStyle.SMART, chrono)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package sun.util.locale.provider;
 
+import java.time.DateTimeException;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
@@ -82,7 +83,7 @@ public class JavaTimeDateTimePatternImpl extends JavaTimeDateTimePatternProvider
                 .findFirst()
                 .or(() -> calType.equals("generic") ? Optional.empty():
                         Optional.of(getJavaTimeDateTimePattern(skeleton, "generic", locale)))
-                .orElseThrow(() -> new IllegalArgumentException("Skeleton pattern \"" + skeleton +
+                .orElseThrow(() -> new DateTimeException("Skeleton pattern \"" + skeleton +
                         "\" cannot be resolved in the locale \"" + locale + "\""));
     }
 
