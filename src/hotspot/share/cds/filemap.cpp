@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -273,7 +273,6 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
 
   if (!DynamicDumpSharedSpaces) {
     set_shared_path_table(info->_shared_path_table);
-    CDS_JAVA_HEAP_ONLY(_heap_obj_roots = CompressedOops::encode(HeapShared::roots());)
   }
 }
 
@@ -2097,7 +2096,6 @@ void FileMapInfo::map_heap_regions_impl() {
                          /*is_open_archive=*/ true,
                          &open_heap_regions, &num_open_heap_regions)) {
       HeapShared::set_open_regions_mapped();
-      HeapShared::set_roots(header()->heap_obj_roots());
     }
   }
 }
