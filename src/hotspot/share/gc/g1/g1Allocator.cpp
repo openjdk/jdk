@@ -299,8 +299,12 @@ G1PLABAllocator::G1PLABAllocator(G1Allocator* allocator) :
     _direct_allocated[state] = 0;
     uint length = alloc_buffers_length(state);
     _alloc_buffers[state] = NEW_C_HEAP_ARRAY(PLAB*, length, mtGC);
+    size_t word_sz = _g1h->desired_plab_sz(state);
     for (uint node_index = 0; node_index < length; node_index++) {
-      _alloc_buffers[state][node_index] = new PLAB(_g1h->desired_plab_sz(state));
+      // Specialized PLABs for old that handle BOT updates for object allocations.
+      _alloc_buffers[state][node_index] = (state == G1HeapRegionAttr::Old)
+                                        ? new G1BotUpdatingPLAB(word_sz)
+                                        : new PLAB(word_sz);
     }
   }
 }
@@ -360,6 +364,7 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(G1HeapRegionAttr dest,
   // Try direct allocation.
   HeapWord* result = _allocator->par_allocate_during_gc(dest, word_sz, node_index);
   if (result != NULL) {
+    update_bot_for_direct_allocation(dest, result, word_sz);
     _direct_allocated[dest.type()] += word_sz;
   }
   return result;
@@ -475,7 +480,6 @@ HeapWord* G1ArchiveAllocator::archive_mem_allocate(size_t word_size) {
       // Non-zero space; need to insert the filler
       size_t fill_size = free_words;
       CollectedHeap::fill_with_object(old_top, fill_size);
-      _summary_bytes_used += fill_size * HeapWordSize;
     }
     // Set the current chunk as "full"
     _allocation_region->set_top(_max);
@@ -495,7 +499,6 @@ HeapWord* G1ArchiveAllocator::archive_mem_allocate(size_t word_size) {
   }
   assert(pointer_delta(_max, old_top) >= word_size, "enough space left");
   _allocation_region->set_top(old_top + word_size);
-  _summary_bytes_used += word_size * HeapWordSize;
 
   return old_top;
 }

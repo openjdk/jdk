@@ -301,7 +301,7 @@ public class Dialog extends Window {
      * @see #hideAndDisposeHandler()
      * @see #shouldBlock()
      */
-    transient volatile boolean isInHide = false;
+    transient volatile boolean isInHide;
 
     /*
      * Indicates that this dialog is being disposed. This flag is set to true at
@@ -312,7 +312,7 @@ public class Dialog extends Window {
      * @see #hideAndDisposeHandler()
      * @see #doDispose()
      */
-    transient volatile boolean isInDispose = false;
+    transient volatile boolean isInDispose;
 
     private static final String base = "dialog";
     private static int nameCounter = 0;

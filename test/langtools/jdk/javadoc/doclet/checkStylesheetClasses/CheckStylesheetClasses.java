@@ -112,7 +112,7 @@ public class CheckStylesheetClasses {
         // summary and details tables; styles for these may be present in the stylesheet
         // using constructs like these:
         //      .summary section[class$="-summary"], .details section[class$="-details"],
-        htmlStyleNames.removeIf(s -> s.endsWith("-details"));
+        htmlStyleNames.removeIf(s -> s.endsWith("-details") && !styleSheetNames.contains(s));
         htmlStyleNames.removeIf(s -> s.endsWith("-summary") && !styleSheetNames.contains(s));
 
         // signature classes
@@ -137,23 +137,13 @@ public class CheckStylesheetClasses {
         // used in search.js; may be worth documenting in HtmlStyle
         removeAll(styleSheetNames, "result-highlight", "result-item",
                 "search-tag-desc-result", "search-tag-holder-result",
-                "ui-autocomplete", "ui-autocomplete-category",
-                "watermark");
+                "ui-autocomplete", "ui-autocomplete-category", "expanded");
 
         // snippet-related
         removeAll(styleSheetNames, "bold", "highlighted", "italic");
 
         // very JDK specific
         styleSheetNames.remove("module-graph");
-
-        // apparently unused
-        // "tab" is commented implying it is in the header/footer, but
-        // (a) it is a poorly chosen name
-        // (b) it does not seem to be used in make/Docs.gmk or anywhere else
-        removeAll(styleSheetNames, "all-classes-container", "all-packages-container",
-                "clear", "constant-values-container", "deprecated-content", "expanded",
-                "footer", "hidden", "override-specify-label", "serialized-class-details",
-                "tab", "table-sub-heading-color");
 
         boolean ok = check(htmlStyleNames, "HtmlStyle", styleSheetNames, "stylesheet")
                     & check(styleSheetNames, "stylesheet", htmlStyleNames, "HtmlStyle");

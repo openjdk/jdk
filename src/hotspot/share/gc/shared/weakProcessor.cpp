@@ -125,6 +125,6 @@ void WeakProcessor::Task::report_num_dead() {
   _storage_states.report_num_dead();
 }
 
-void WeakProcessor::GangTask::work(uint worker_id) {
+void WeakProcessor::WeakOopsDoTask::work(uint worker_id) {
   _erased_do_work(this, worker_id);
 }

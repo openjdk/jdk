@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,21 @@ inline bool is_Register() {
 inline bool is_FloatRegister() {
   return value() >= ConcreteRegisterImpl::max_gpr &&
          value() < ConcreteRegisterImpl::max_fpr;
+}
+
+inline bool is_VectorRegister() {
+  return value() >= ConcreteRegisterImpl::max_fpr &&
+         value() < ConcreteRegisterImpl::max_vsr;
+}
+
+inline bool is_ConditionRegister() {
+  return value() >= ConcreteRegisterImpl::max_vsr &&
+         value() < ConcreteRegisterImpl::max_cnd;
+}
+
+inline bool is_SpecialRegister() {
+  return value() >= ConcreteRegisterImpl::max_cnd &&
+         value() < ConcreteRegisterImpl::max_spr;
 }
 
 inline Register as_Register() {

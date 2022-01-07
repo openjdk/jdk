@@ -26,10 +26,12 @@
 package java.lang.reflect;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.VM;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.ConstructorAccessor;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Stable;
 import sun.reflect.annotation.TypeAnnotation;
 import sun.reflect.annotation.TypeAnnotationParser;
 import sun.reflect.generics.repository.ConstructorRepository;
@@ -62,17 +64,17 @@ import java.util.StringJoiner;
  * @since 1.1
  */
 public final class Constructor<T> extends Executable {
-    private Class<T>            clazz;
-    private int                 slot;
-    private Class<?>[]          parameterTypes;
-    private Class<?>[]          exceptionTypes;
-    private int                 modifiers;
+    private final Class<T>            clazz;
+    private final int                 slot;
+    private final Class<?>[]          parameterTypes;
+    private final Class<?>[]          exceptionTypes;
+    private final int                 modifiers;
     // Generics and annotations support
-    private transient String    signature;
+    private final transient String    signature;
     // generic info repository; lazily initialized
     private transient ConstructorRepository genericInfo;
-    private byte[]              annotations;
-    private byte[]              parameterAnnotations;
+    private final byte[]              annotations;
+    private final byte[]              parameterAnnotations;
 
     // Generics infrastructure
     // Accessor for factory
@@ -94,7 +96,8 @@ public final class Constructor<T> extends Executable {
         return genericInfo; //return cached repository
     }
 
-    private volatile ConstructorAccessor constructorAccessor;
+    @Stable
+    private ConstructorAccessor constructorAccessor;
     // For sharing of ConstructorAccessors. This branching structure
     // is currently only two levels deep (i.e., one root Constructor
     // and potentially many Constructor objects pointing to it.)
@@ -488,10 +491,7 @@ public final class Constructor<T> extends Executable {
         if (checkAccess)
             checkAccess(caller, clazz, clazz, modifiers);
 
-        if ((clazz.getModifiers() & Modifier.ENUM) != 0)
-            throw new IllegalArgumentException("Cannot reflectively create enum objects");
-
-        ConstructorAccessor ca = constructorAccessor;   // read volatile
+        ConstructorAccessor ca = constructorAccessor;   // read @Stable
         if (ca == null) {
             ca = acquireConstructorAccessor();
         }
@@ -530,16 +530,23 @@ public final class Constructor<T> extends Executable {
     // synchronization will probably make the implementation more
     // scalable.
     private ConstructorAccessor acquireConstructorAccessor() {
+
         // First check to see if one has been created yet, and take it
         // if so.
-        ConstructorAccessor tmp = null;
-        if (root != null) tmp = root.getConstructorAccessor();
+        Constructor<?> root = this.root;
+        ConstructorAccessor tmp = root == null ? null : root.getConstructorAccessor();
         if (tmp != null) {
             constructorAccessor = tmp;
         } else {
             // Otherwise fabricate one and propagate it up to the root
+            // Ensure the declaring class is not an Enum class.
+            if ((clazz.getModifiers() & Modifier.ENUM) != 0)
+                throw new IllegalArgumentException("Cannot reflectively create enum objects");
+
             tmp = reflectionFactory.newConstructorAccessor(this);
-            setConstructorAccessor(tmp);
+            // set the constructor accessor only if it's not using native implementation
+            if (VM.isJavaLangInvokeInited())
+                setConstructorAccessor(tmp);
         }
 
         return tmp;
@@ -556,6 +563,7 @@ public final class Constructor<T> extends Executable {
     void setConstructorAccessor(ConstructorAccessor accessor) {
         constructorAccessor = accessor;
         // Propagate up
+        Constructor<?> root = this.root;
         if (root != null) {
             root.setConstructorAccessor(accessor);
         }

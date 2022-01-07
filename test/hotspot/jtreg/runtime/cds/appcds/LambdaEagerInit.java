@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,6 +109,7 @@ public class LambdaEagerInit {
     static void testDefaultArchiveWithEagerInitializationEnabled() throws Exception {
         // run with default CDS archive with the -Djdk.internal.lambda.disableEagerInitialization=true property
         CDSOptions runOpts = (new CDSOptions())
+            .setXShareMode("auto")
             .addPrefix("-cp", appJar, testProperty,  "-Xlog:class+load,cds=debug")
             .setUseSystemArchive(true)
             .setUseVersion(false)
@@ -122,13 +123,16 @@ public class LambdaEagerInit {
     static void testDefaultArchiveWithEagerInitializationDisabled() throws Exception {
         // run with default CDS archive without the -Djdk.internal.lambda.disableEagerInitialization=true property
         CDSOptions runOpts = (new CDSOptions())
+            .setXShareMode("auto")
             .addPrefix("-cp", appJar, "-Xlog:class+load,cds=debug")
             .setUseSystemArchive(true)
             .setUseVersion(false)
-            .addSuffix(mainClass);
+            .addSuffix("-showversion", mainClass);
         OutputAnalyzer output = CDSTestUtils.runWithArchive(runOpts);
-        output.shouldMatch(lambdaLoadedFromArchive)
-              .shouldMatch(cdsLoadedLambdaProxy)
-              .shouldHaveExitValue(0);
+        if (output.getStderr().contains("sharing")) {
+            output.shouldMatch(lambdaLoadedFromArchive)
+                  .shouldMatch(cdsLoadedLambdaProxy);
+        }
+        output.shouldHaveExitValue(0);
     }
 }

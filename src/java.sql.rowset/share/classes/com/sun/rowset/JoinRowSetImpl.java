@@ -108,6 +108,7 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
      * object to leverage the properties and methods of a <code>WebRowSet</code>
      * object.
      */
+    @SuppressWarnings("serial")
     private WebRowSet wrs;
 
 

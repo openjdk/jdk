@@ -302,7 +302,7 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_nozero_C(Klass* array_type, int len
   if ((len > 0) && (result != NULL) &&
       is_deoptimized_caller_frame(current)) {
     // Zero array here if the caller is deoptimized.
-    int size = TypeArrayKlass::cast(array_type)->oop_size(result);
+    const size_t size = TypeArrayKlass::cast(array_type)->oop_size(result);
     BasicType elem_type = TypeArrayKlass::cast(array_type)->element_type();
     const size_t hs = arrayOopDesc::header_size(elem_type);
     // Align to next 8 bytes to avoid trashing arrays's length.
@@ -958,7 +958,7 @@ const TypeFunc* OptoRuntime::counterMode_aescrypt_Type() {
 //for counterMode calls of aescrypt encrypt/decrypt, four pointers and a length, returning int
 const TypeFunc* OptoRuntime::galoisCounterMode_aescrypt_Type() {
   // create input type (domain)
-  int num_args = 9;
+  int num_args = 8;
   int argcnt = num_args;
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
@@ -969,7 +969,6 @@ const TypeFunc* OptoRuntime::galoisCounterMode_aescrypt_Type() {
   fields[argp++] = TypePtr::NOTNULL; // byte[] key from AESCrypt obj
   fields[argp++] = TypePtr::NOTNULL; // long[] state from GHASH obj
   fields[argp++] = TypePtr::NOTNULL; // long[] subkeyHtbl from GHASH obj
-  fields[argp++] = TypePtr::NOTNULL; // long[] avx512_subkeyHtbl newly created
   fields[argp++] = TypePtr::NOTNULL; // byte[] counter from GCTR obj
 
   assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
@@ -1280,6 +1279,11 @@ static void trace_exception(outputStream* st, oop exception_oop, address excepti
 // directly from compiled code. Compiled code will call the C++ method following.
 // We can't allow async exception to be installed during  exception processing.
 JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* current, nmethod* &nm))
+  // The frame we rethrow the exception to might not have been processed by the GC yet.
+  // The stack watermark barrier takes care of detecting that and ensuring the frame
+  // has updated oops.
+  StackWatermarkSet::after_unwind(current);
+
   // Do not confuse exception_oop with pending_exception. The exception_oop
   // is only used to pass arguments into the method. Not for general
   // exception handling.  DO NOT CHANGE IT to use pending_exception, since
@@ -1422,7 +1426,7 @@ address OptoRuntime::handle_exception_C(JavaThread* current) {
   // deoptimized frame
 
   if (nm != NULL) {
-    RegisterMap map(current, false);
+    RegisterMap map(current, false /* update_map */, false /* process_frames */);
     frame caller = current->last_frame().sender(&map);
 #ifdef ASSERT
     assert(caller.is_compiled_frame(), "must be");
@@ -1460,11 +1464,6 @@ address OptoRuntime::rethrow_C(oopDesc* exception, JavaThread* thread, address r
 
   // Enable WXWrite: the function called directly by compiled code.
   MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
-
-  // The frame we rethrow the exception to might not have been processed by the GC yet.
-  // The stack watermark barrier takes care of detecting that and ensuring the frame
-  // has updated oops.
-  StackWatermarkSet::after_unwind(thread);
 
 #ifndef PRODUCT
   SharedRuntime::_rethrow_ctr++;               // count rethrows

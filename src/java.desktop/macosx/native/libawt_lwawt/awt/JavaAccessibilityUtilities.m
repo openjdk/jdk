@@ -51,6 +51,7 @@ static jclass sjc_CAccessibility = NULL;
 
 NSSize getAxComponentSize(JNIEnv *env, jobject axComponent, jobject component)
 {
+    GET_CACCESSIBILITY_CLASS_RETURN(NSZeroSize);
     DECLARE_CLASS_RETURN(jc_Dimension, "java/awt/Dimension", NSZeroSize);
     DECLARE_FIELD_RETURN(jf_width, jc_Dimension, "width", "I", NSZeroSize);
     DECLARE_FIELD_RETURN(jf_height, jc_Dimension, "height", "I", NSZeroSize);

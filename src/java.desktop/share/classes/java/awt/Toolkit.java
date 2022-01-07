@@ -413,12 +413,10 @@ public abstract class Toolkit {
                     File propsFile = new File(
                       System.getProperty("user.home") +
                       sep + ".accessibility.properties");
-                    FileInputStream in =
-                        new FileInputStream(propsFile);
-
-                    // Inputstream has been buffered in Properties class
-                    properties.load(in);
-                    in.close();
+                    try (FileInputStream in = new FileInputStream(propsFile)) {
+                        // Inputstream has been buffered in Properties class
+                        properties.load(in);
+                    }
                 } catch (Exception e) {
                     // Per-user accessibility properties file does not exist
                 }
@@ -431,12 +429,10 @@ public abstract class Toolkit {
                         File propsFile = new File(
                             System.getProperty("java.home") + sep + "conf" +
                             sep + "accessibility.properties");
-                        FileInputStream in =
-                            new FileInputStream(propsFile);
-
-                        // Inputstream has been buffered in Properties class
-                        properties.load(in);
-                        in.close();
+                        try (FileInputStream in = new FileInputStream(propsFile)) {
+                            // Inputstream has been buffered in Properties class
+                            properties.load(in);
+                        }
                     } catch (Exception e) {
                         // System-wide accessibility properties file does
                         // not exist;
@@ -2090,7 +2086,7 @@ public abstract class Toolkit {
         }
     }
 
-    private class SelectiveAWTEventListener implements AWTEventListener {
+    private static class SelectiveAWTEventListener implements AWTEventListener {
         AWTEventListener listener;
         private long eventMask;
         // This array contains the number of times to call the eventlistener

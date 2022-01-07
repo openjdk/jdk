@@ -75,7 +75,7 @@ ReferenceProcessor* G1FullCollector::reference_processor() {
 
 uint G1FullCollector::calc_active_workers() {
   G1CollectedHeap* heap = G1CollectedHeap::heap();
-  uint max_worker_count = heap->workers()->total_workers();
+  uint max_worker_count = heap->workers()->max_workers();
   // Only calculate number of workers if UseDynamicNumberOfGCThreads
   // is enabled, otherwise use max.
   if (!UseDynamicNumberOfGCThreads) {
@@ -102,7 +102,7 @@ uint G1FullCollector::calc_active_workers() {
   log_debug(gc, task)("Requesting %u active workers for full compaction (waste limited workers: %u, "
                       "adaptive workers: %u, used limited workers: %u)",
                       worker_count, heap_waste_worker_limit, active_worker_limit, used_worker_limit);
-  worker_count = heap->workers()->update_active_workers(worker_count);
+  worker_count = heap->workers()->set_active_workers(worker_count);
   log_info(gc, task)("Using %u workers of %u for full compaction", worker_count, max_worker_count);
 
   return worker_count;
@@ -332,7 +332,7 @@ void G1FullCollector::restore_marks() {
   _preserved_marks_set.reclaim();
 }
 
-void G1FullCollector::run_task(AbstractGangTask* task) {
+void G1FullCollector::run_task(WorkerTask* task) {
   _heap->workers()->run_task(task, _num_workers);
 }
 

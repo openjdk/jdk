@@ -27,7 +27,6 @@ package java.io;
 
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.StaticProperty;
-import sun.security.action.GetBooleanAction;
 
 import java.lang.reflect.InvocationTargetException;
 import java.security.AccessController;
@@ -523,8 +522,15 @@ public interface ObjectInputFilter {
      * {@systemProperty jdk.serialFilter}, its value is used to configure the filter.
      * If the system property is not defined, and the {@link java.security.Security} property
      * {@code jdk.serialFilter} is defined then it is used to configure the filter.
-     * Otherwise, the filter is not configured during initialization and
-     * can be set with {@link #setSerialFilter(ObjectInputFilter) Config.setSerialFilter}.
+     * The filter is created as if {@link #createFilter(String) createFilter} is called,
+     * if the filter string is invalid the initialization fails and subsequent attempts to
+     * {@linkplain Config#getSerialFilter() get the filter}, {@linkplain Config#setSerialFilter set a filter},
+     * or create an {@linkplain ObjectInputStream#ObjectInputStream(InputStream) ObjectInputStream}
+     * throw {@link IllegalStateException}. Deserialization is not possible with an
+     * invalid serial filter.
+     * If the system property {@code jdk.serialFilter} or the {@link java.security.Security}
+     * property {@code jdk.serialFilter} is not set the filter can be set with
+     * {@link #setSerialFilter(ObjectInputFilter) Config.setSerialFilter}.
      * Setting the {@code jdk.serialFilter} with {@link System#setProperty(String, String)
      * System.setProperty} <em>does not set the filter</em>.
      * The syntax for the property value is the same as for the
@@ -543,9 +549,12 @@ public interface ObjectInputFilter {
      * <p>The class must be public, must have a public zero-argument constructor, implement the
      * {@link BinaryOperator {@literal BinaryOperator<ObjectInputFilter>}} interface, provide its implementation and
      * be accessible via the {@linkplain ClassLoader#getSystemClassLoader() application class loader}.
-     * If the filter factory constructor is not invoked successfully, an {@link ExceptionInInitializerError}
-     * is thrown and subsequent use of the filter factory for deserialization fails with
-     * {@link IllegalStateException}.
+     * If the filter factory constructor is not invoked successfully subsequent attempts to
+     * {@linkplain Config#getSerialFilterFactory() get the factory},
+     * {@linkplain Config#setSerialFilterFactory(BinaryOperator) set the factory}, or create an
+     * {@link ObjectInputStream#ObjectInputStream(InputStream) ObjectInputStream}
+     * throw {@link IllegalStateException}. Deserialization is not possible with an
+     * invalid serial filter factory.
      * The filter factory configured using the system or security property during initialization
      * can NOT be replaced with {@link #setSerialFilterFactory(BinaryOperator) Config.setSerialFilterFactory}.
      * This ensures that a filter factory set on the command line is not overridden accidentally
@@ -561,7 +570,7 @@ public interface ObjectInputFilter {
         /**
          * Lock object for filter and filter factory.
          */
-        private final static Object serialFilterLock = new Object();
+        private static final Object serialFilterLock = new Object();
 
         /**
          * The property name for the filter.
@@ -581,10 +590,20 @@ public interface ObjectInputFilter {
         private static volatile ObjectInputFilter serialFilter;
 
         /**
+         * Saved message if the jdk.serialFilter property is invalid.
+         */
+        private static final String invalidFilterMessage;
+
+        /**
          * Current serial filter factory.
          * @see Config#setSerialFilterFactory(BinaryOperator)
          */
         private static volatile BinaryOperator<ObjectInputFilter> serialFilterFactory;
+
+        /**
+         * Saved message if the jdk.serialFilterFactory property is invalid.
+         */
+        private static final String invalidFactoryMessage;
 
         /**
          * Boolean to indicate that the filter factory can not be set or replaced.
@@ -628,21 +647,24 @@ public interface ObjectInputFilter {
                         Security.getProperty(SERIAL_FILTER_PROPNAME));
 
             // Initialize the static filter if the jdk.serialFilter is present
-            ObjectInputFilter filter = null;
+            String filterMessage = null;
             if (filterString != null) {
                 configLog.log(DEBUG,
                         "Creating deserialization filter from {0}", filterString);
                 try {
-                    filter = createFilter(filterString);
+                    serialFilter = createFilter(filterString);
                 } catch (RuntimeException re) {
                     configLog.log(ERROR,
-                            "Error configuring filter: {0}", re);
+                            "Error configuring filter: {0}", (Object) re);
+                    // serialFilter remains null
+                    filterMessage = "Invalid jdk.serialFilter: " +  re.getMessage();
                 }
             }
-            serialFilter = filter;
+            invalidFilterMessage = filterMessage;
 
             // Initialize the filter factory if the jdk.serialFilterFactory is defined
             // otherwise use the builtin filter factory.
+            String factoryMessage = null;
             if (factoryClassName == null) {
                 serialFilterFactory = new BuiltinFilterFactory();
             } else {
@@ -667,10 +689,13 @@ public interface ObjectInputFilter {
                     Throwable th = (ex instanceof InvocationTargetException ite) ? ite.getCause() : ex;
                     configLog.log(ERROR,
                             "Error configuring filter factory: {0}", (Object)th);
-                    // Do not continue if configuration not initialized
-                    throw new ExceptionInInitializerError(th);
+                    // Configuration not initialized
+                    // serialFilterFactory remains null and filterFactoryNoReplace == true;
+                    factoryMessage = "invalid jdk.serialFilterFactory: " +
+                            factoryClassName + ": " + th.getClass().getName() + ": " + th.getMessage();
                 }
             }
+            invalidFactoryMessage = factoryMessage;
             // Setup shared secrets for RegistryImpl to use.
             SharedSecrets.setJavaObjectInputFilterAccess(Config::createFilter2);
         }
@@ -692,8 +717,14 @@ public interface ObjectInputFilter {
          * Returns the static JVM-wide deserialization filter or {@code null} if not configured.
          *
          * @return the static JVM-wide deserialization filter or {@code null} if not configured
+         * @throws IllegalStateException if the initialization of the filter from the
+         *      system property {@code jdk.serialFilter} or
+         *      the security property {@code jdk.serialFilter} fails.
          */
         public static ObjectInputFilter getSerialFilter() {
+            if (invalidFilterMessage != null) {
+                throw new IllegalStateException(invalidFilterMessage);
+            }
             return serialFilter;
         }
 
@@ -703,7 +734,9 @@ public interface ObjectInputFilter {
          * @param filter the deserialization filter to set as the JVM-wide filter; not null
          * @throws SecurityException if there is security manager and the
          *       {@code SerializablePermission("serialFilter")} is not granted
-         * @throws IllegalStateException if the filter has already been set
+         * @throws IllegalStateException if the filter has already been set or the initialization
+         *       of the filter from the system property {@code jdk.serialFilter} or
+         *       the security property {@code jdk.serialFilter} fails.
          */
         public static void setSerialFilter(ObjectInputFilter filter) {
             Objects.requireNonNull(filter, "filter");
@@ -711,6 +744,9 @@ public interface ObjectInputFilter {
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkPermission(ObjectStreamConstants.SERIAL_FILTER_PERMISSION);
+            }
+            if (invalidFilterMessage != null) {
+                throw new IllegalStateException(invalidFilterMessage);
             }
             synchronized (serialFilterLock) {
                 if (serialFilter != null) {
@@ -745,8 +781,10 @@ public interface ObjectInputFilter {
          * @since 17
          */
         public static BinaryOperator<ObjectInputFilter> getSerialFilterFactory() {
-            if (serialFilterFactory == null)
-                throw new IllegalStateException("Serial filter factory initialization incomplete");
+            if (serialFilterFactory == null) {
+                // If initializing the factory failed or not yet complete, throw with the message
+                throw new IllegalStateException(invalidFilterFactoryMessage());
+            }
             return serialFilterFactory;
         }
 
@@ -808,13 +846,24 @@ public interface ObjectInputFilter {
             }
             if (filterFactoryNoReplace.getAndSet(true)) {
                 final String msg = serialFilterFactory != null
-                        ? serialFilterFactory.getClass().getName()
-                        : "initialization incomplete";
-                throw new IllegalStateException("Cannot replace filter factory: " + msg);
+                        ? "Cannot replace filter factory: " + serialFilterFactory.getClass().getName()
+                        : invalidFilterFactoryMessage();
+                throw new IllegalStateException(msg);
             }
             configLog.log(DEBUG,
                     "Setting deserialization filter factory to {0}", filterFactory.getClass().getName());
             serialFilterFactory = filterFactory;
+        }
+
+        /*
+         * Return message for an invalid filter factory configuration saved from the static init.
+         * It can be called before the static initializer is complete and has set the message/null.
+         */
+        private static String invalidFilterFactoryMessage() {
+            assert serialFilterFactory == null;     // undefined if a filter factory has been set
+            return (invalidFactoryMessage != null)
+                ? invalidFactoryMessage
+                : "Serial filter factory initialization incomplete";
         }
 
         /**
@@ -904,7 +953,7 @@ public interface ObjectInputFilter {
          * used for all ObjectInputStreams that do not set their own filters.
          *
          */
-        final static class Global implements ObjectInputFilter {
+        static final class Global implements ObjectInputFilter {
             /**
              * The pattern used to create the filter.
              */

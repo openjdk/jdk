@@ -160,10 +160,7 @@ public class TestStylesheet extends JavadocTester {
                     .col-first a:link, .col-first a:visited,
                     .col-second a:link, .col-second a:visited,
                     .col-constructor-name a:link, .col-constructor-name a:visited,
-                    .col-summary-item-name a:link, .col-summary-item-name a:visited,
-                    .constant-values-container a:link, .constant-values-container a:visited,
-                    .all-classes-container a:link, .all-classes-container a:visited,
-                    .all-packages-container a:link, .all-packages-container a:visited {
+                    .col-summary-item-name a:link, .col-summary-item-name a:visited {
                         font-weight:bold;
                     }""",
                 """
@@ -194,8 +191,9 @@ public class TestStylesheet extends JavadocTester {
                         font-size:0;
                     }""",
                 """
-                    .watermark {
-                        color:#545454;
+                    ::placeholder {
+                        color:#909090;
+                        opacity: 1;
                     }""");
 
         checkOutput("pkg/A.html", true,
@@ -381,7 +379,7 @@ public class TestStylesheet extends JavadocTester {
         checking("Check CSS class names");
         CSSClassChecker c = new CSSClassChecker(out, this::readFile, styles);
         try {
-            c.checkDirectory(outputDir.toPath());
+            c.checkDirectory(outputDir);
             c.report();
             int errors = c.getErrorCount();
             if (errors == 0) {

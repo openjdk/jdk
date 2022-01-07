@@ -253,7 +253,6 @@ public final class JstatdTest {
     private String[] getJstatdCmd() throws Exception {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jstatd");
         launcher.addVMArg("-XX:+UsePerfData");
-        launcher.addVMArg("-Djava.security.manager=allow");
         String testSrc = System.getProperty("test.src");
         File policy = new File(testSrc, "all.policy");
         assertTrue(policy.exists() && policy.isFile(),

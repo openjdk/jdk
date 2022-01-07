@@ -91,7 +91,7 @@ public class TransferableProxy implements Transferable {
                                                      oos.getClassLoaderMap());
                 data = ois.readObject();
             } catch (ClassNotFoundException cnfe) {
-                throw (IOException)new IOException().initCause(cnfe);
+                throw new IOException(cnfe);
             }
         }
 

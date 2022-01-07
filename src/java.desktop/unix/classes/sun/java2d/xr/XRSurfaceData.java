@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,12 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.ColorModel;
 import java.awt.image.DirectColorModel;
 import java.awt.image.Raster;
+
 import sun.awt.SunHints;
 import sun.awt.SunToolkit;
 import sun.awt.X11ComponentPeer;
 import sun.awt.image.PixelConverter;
+import sun.font.FontManagerNativeLibrary;
 import sun.java2d.InvalidPipeException;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceData;
@@ -55,7 +57,6 @@ import sun.java2d.pipe.ShapeDrawPipe;
 import sun.java2d.pipe.TextPipe;
 import sun.java2d.pipe.ValidatePipe;
 import sun.java2d.x11.XSurfaceData;
-import sun.font.FontManagerNativeLibrary;
 
 public abstract class XRSurfaceData extends XSurfaceData {
     X11ComponentPeer peer;
@@ -207,9 +208,8 @@ public abstract class XRSurfaceData extends XSurfaceData {
 
     protected MaskFill getMaskFill(SunGraphics2D sg2d) {
         AlphaComposite aComp = null;
-        if(sg2d.composite != null
-                && sg2d.composite instanceof AlphaComposite) {
-            aComp = (AlphaComposite) sg2d.composite;
+        if (sg2d.composite instanceof AlphaComposite alphaComposite) {
+            aComp = alphaComposite;
         }
 
         boolean supportedPaint = sg2d.paintState <= SunGraphics2D.PAINT_ALPHACOLOR
@@ -277,7 +277,7 @@ public abstract class XRSurfaceData extends XSurfaceData {
         }
 
         return new XRPixmapSurfaceData
-            (gc, width, height, image, getSurfaceType(gc, transparency),
+            (gc, width, height, image, getPixmapSurfaceType(transparency),
              cm, drawable, transparency,
              XRUtils.getPictureFormatForTransparency(transparency), depth, isTexture);
     }
@@ -396,8 +396,7 @@ public abstract class XRSurfaceData extends XSurfaceData {
      * Returns the XRender SurfaceType which is able to fullfill the specified
      * transparency requirement.
      */
-    public static SurfaceType getSurfaceType(XRGraphicsConfig gc,
-                                             int transparency) {
+    public static SurfaceType getPixmapSurfaceType(int transparency) {
         SurfaceType sType = null;
 
         switch (transparency) {

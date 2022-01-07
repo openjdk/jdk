@@ -32,7 +32,7 @@
 #define LOG_TEST_STRING_LITERAL "a (hopefully) unique log message for testing"
 
 static const char* invalid_selection_substr[] = {
-  "=", "+", " ", "+=", "+=*", "*+", " +", "**", "++", ".", ",", ",," ",+",
+  "=", "+", " ", "+=", "+=*", "*+", " +", "**", "++", ".", ",", ",,", ",+",
   " *", "all+", "all*", "+all", "+all=Warning", "==Info", "=InfoWarning",
   "BadTag+", "logging++", "logging*+", ",=", "gc+gc+"
 };

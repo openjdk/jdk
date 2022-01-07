@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@
 bool HeapShared::_closed_regions_mapped = false;
 bool HeapShared::_open_regions_mapped = false;
 bool HeapShared::_is_loaded = false;
+bool HeapShared::_disable_writing = false;
 address   HeapShared::_narrow_oop_base;
 int       HeapShared::_narrow_oop_shift;
 DumpedInternedStrings *HeapShared::_dumped_interned_strings = NULL;
@@ -127,7 +128,6 @@ const static int num_fmg_open_archive_subgraph_entry_fields =
   sizeof(fmg_open_archive_subgraph_entry_fields) / sizeof(ArchivableStaticFieldInfo);
 
 GrowableArrayCHeap<oop, mtClassShared>* HeapShared::_pending_roots = NULL;
-narrowOop HeapShared::_roots_narrow;
 OopHandle HeapShared::_roots;
 
 #ifdef ASSERT
@@ -151,7 +151,6 @@ void HeapShared::fixup_regions() {
     fill_failed_loaded_region();
   }
   if (is_fully_available()) {
-    _roots = OopHandle(Universe::vm_global(), decode_from_archive(_roots_narrow));
     if (!MetaspaceShared::use_full_module_graph()) {
       // Need to remove all the archived java.lang.Module objects from HeapShared::roots().
       ClassLoaderDataShared::clear_archived_oops();
@@ -233,12 +232,6 @@ objArrayOop HeapShared::roots() {
   objArrayOop roots = (objArrayOop)_roots.resolve();
   assert(roots != NULL, "should have been initialized");
   return roots;
-}
-
-void HeapShared::set_roots(narrowOop roots) {
-  assert(UseSharedSpaces, "runtime only");
-  assert(is_fully_available(), "must be");
-  _roots_narrow = roots;
 }
 
 // Returns an objArray that contains all the roots of the archived objects
@@ -429,7 +422,7 @@ void HeapShared::copy_open_objects(GrowableArray<MemRegion>* open_regions) {
 // Copy _pending_archive_roots into an objArray
 void HeapShared::copy_roots() {
   int length = _pending_roots != NULL ? _pending_roots->length() : 0;
-  int size = objArrayOopDesc::object_size(length);
+  size_t size = objArrayOopDesc::object_size(length);
   Klass* k = Universe::objectArrayKlassObj(); // already relocated to point to archived klass
   HeapWord* mem = G1CollectedHeap::heap()->archive_mem_allocate(size);
 
@@ -448,7 +441,7 @@ void HeapShared::copy_roots() {
   for (int i = 0; i < length; i++) {
     roots()->obj_at_put(i, _pending_roots->at(i));
   }
-  log_info(cds)("archived obj roots[%d] = %d words, klass = %p, obj = %p", length, size, k, mem);
+  log_info(cds)("archived obj roots[%d] = " SIZE_FORMAT " words, klass = %p, obj = %p", length, size, k, mem);
 }
 
 void HeapShared::init_narrow_oop_decoding(address base, int shift) {
@@ -669,7 +662,23 @@ void HeapShared::write_subgraph_info_table() {
   writer.dump(&_run_time_subgraph_info_table, "subgraphs");
 }
 
-void HeapShared::serialize_subgraph_info_table_header(SerializeClosure* soc) {
+void HeapShared::serialize(SerializeClosure* soc) {
+  oop roots_oop = NULL;
+
+  if (soc->reading()) {
+    soc->do_oop(&roots_oop); // read from archive
+    assert(oopDesc::is_oop_or_null(roots_oop), "is oop");
+    // Create an OopHandle only if we have actually mapped or loaded the roots
+    if (roots_oop != NULL) {
+      assert(HeapShared::is_fully_available(), "must be");
+      _roots = OopHandle(Universe::vm_global(), roots_oop);
+    }
+  } else {
+    // writing
+    roots_oop = roots();
+    soc->do_oop(&roots_oop); // write to archive
+  }
+
   _run_time_subgraph_info_table.serialize_header(soc);
 }
 
@@ -912,7 +921,7 @@ class WalkOopAndArchiveClosure: public BasicOopIterateClosure {
 
       if (!_record_klasses_only && log_is_enabled(Debug, cds, heap)) {
         ResourceMark rm;
-        log_debug(cds, heap)("(%d) %s[" SIZE_FORMAT "] ==> " PTR_FORMAT " size %d %s", _level,
+        log_debug(cds, heap)("(%d) %s[" SIZE_FORMAT "] ==> " PTR_FORMAT " size " SIZE_FORMAT " %s", _level,
                              _orig_referencing_obj->klass()->external_name(), field_delta,
                              p2i(obj), obj->size() * HeapWordSize, obj->klass()->external_name());
         LogTarget(Trace, cds, heap) log;
@@ -1023,7 +1032,7 @@ oop HeapShared::archive_reachable_objects_from(int level,
       ResourceMark rm;
       log_error(cds, heap)(
         "Cannot archive the sub-graph referenced from %s object ("
-        PTR_FORMAT ") size %d, skipped.",
+        PTR_FORMAT ") size " SIZE_FORMAT ", skipped.",
         orig_obj->klass()->external_name(), p2i(orig_obj), orig_obj->size() * HeapWordSize);
       if (level == 1) {
         // Don't archive a subgraph root that's too big. For archives static fields, that's OK
@@ -1586,7 +1595,7 @@ class PatchLoadedRegionPointers: public BitMapClosure {
 };
 
 int HeapShared::init_loaded_regions(FileMapInfo* mapinfo, LoadedArchiveHeapRegion* loaded_regions,
-                                    uintptr_t* buffer_ret) {
+                                    MemRegion& archive_space) {
   size_t total_bytes = 0;
   int num_loaded_regions = 0;
   for (int i = MetaspaceShared::first_archive_heap_region;
@@ -1604,12 +1613,16 @@ int HeapShared::init_loaded_regions(FileMapInfo* mapinfo, LoadedArchiveHeapRegio
   }
 
   assert(is_aligned(total_bytes, HeapWordSize), "must be");
-  uintptr_t buffer = (uintptr_t)
-    Universe::heap()->allocate_loaded_archive_space(total_bytes / HeapWordSize);
-  _loaded_heap_bottom = buffer;
-  _loaded_heap_top    = buffer + total_bytes;
+  size_t word_size = total_bytes / HeapWordSize;
+  HeapWord* buffer = Universe::heap()->allocate_loaded_archive_space(word_size);
+  if (buffer == nullptr) {
+    return 0;
+  }
 
-  *buffer_ret = buffer;
+  archive_space = MemRegion(buffer, word_size);
+  _loaded_heap_bottom = (uintptr_t)archive_space.start();
+  _loaded_heap_top    = _loaded_heap_bottom + total_bytes;
+
   return num_loaded_regions;
 }
 
@@ -1638,15 +1651,17 @@ bool HeapShared::load_regions(FileMapInfo* mapinfo, LoadedArchiveHeapRegion* loa
     LoadedArchiveHeapRegion* ri = &loaded_regions[i];
     FileMapRegion* r = mapinfo->space_at(ri->_region_index);
 
-    if (!mapinfo->read_region(ri->_region_index, (char*)load_address, r->used())) {
+    if (!mapinfo->read_region(ri->_region_index, (char*)load_address, r->used(), /* do_commit = */ false)) {
       // There's no easy way to free the buffer, so we will fill it with zero later
       // in fill_failed_loaded_region(), and it will eventually be GC'ed.
       log_warning(cds)("Loading of heap region %d has failed. Archived objects are disabled", i);
       _loading_failed = true;
       return false;
     }
-    log_info(cds)("Loaded heap    region #%d at base " INTPTR_FORMAT " size = " SIZE_FORMAT_W(8) " bytes, delta = " INTX_FORMAT,
-                  ri->_region_index, load_address, ri->_region_size, ri->_runtime_offset);
+    log_info(cds)("Loaded heap    region #%d at base " INTPTR_FORMAT " top " INTPTR_FORMAT
+                  " size " SIZE_FORMAT_W(6) " delta " INTX_FORMAT,
+                  ri->_region_index, load_address, load_address + ri->_region_size,
+                  ri->_region_size, ri->_runtime_offset);
 
     uintptr_t oopmap = bitmap_base + r->oopmap_offset();
     BitMapView bm((BitMap::bm_word_t*)oopmap, r->oopmap_size_in_bits());
@@ -1675,16 +1690,19 @@ bool HeapShared::load_heap_regions(FileMapInfo* mapinfo) {
   LoadedArchiveHeapRegion loaded_regions[MetaspaceShared::max_num_heap_regions];
   memset(loaded_regions, 0, sizeof(loaded_regions));
 
-  uintptr_t buffer;
-  int num_loaded_regions = init_loaded_regions(mapinfo, loaded_regions, &buffer);
-  sort_loaded_regions(loaded_regions, num_loaded_regions, buffer);
-  if (!load_regions(mapinfo, loaded_regions, num_loaded_regions, buffer)) {
+  MemRegion archive_space;
+  int num_loaded_regions = init_loaded_regions(mapinfo, loaded_regions, archive_space);
+  if (num_loaded_regions <= 0) {
+    return false;
+  }
+  sort_loaded_regions(loaded_regions, num_loaded_regions, (uintptr_t)archive_space.start());
+  if (!load_regions(mapinfo, loaded_regions, num_loaded_regions, (uintptr_t)archive_space.start())) {
+    assert(_loading_failed, "must be");
     return false;
   }
 
   init_loaded_heap_relocation(loaded_regions, num_loaded_regions);
   _is_loaded = true;
-  set_roots(mapinfo->heap_obj_roots());
 
   return true;
 }
@@ -1711,7 +1729,15 @@ class VerifyLoadedHeapEmbeddedPointers: public BasicOopIterateClosure {
   }
 };
 
-void HeapShared::verify_loaded_heap() {
+void HeapShared::finish_initialization() {
+  if (is_loaded()) {
+    HeapWord* bottom = (HeapWord*)_loaded_heap_bottom;
+    HeapWord* top    = (HeapWord*)_loaded_heap_top;
+
+    MemRegion archive_space = MemRegion(bottom, top);
+    Universe::heap()->complete_loaded_archive_space(archive_space);
+  }
+
   if (VerifyArchivedFields <= 0 || !is_loaded()) {
     return;
   }
@@ -1739,9 +1765,12 @@ void HeapShared::verify_loaded_heap() {
 
 void HeapShared::fill_failed_loaded_region() {
   assert(_loading_failed, "must be");
-  HeapWord* bottom = (HeapWord*)_loaded_heap_bottom;
-  HeapWord* top = (HeapWord*)_loaded_heap_top;
-  Universe::heap()->fill_with_objects(bottom, top - bottom);
+  if (_loaded_heap_bottom != 0) {
+    assert(_loaded_heap_top != 0, "must be");
+    HeapWord* bottom = (HeapWord*)_loaded_heap_bottom;
+    HeapWord* top = (HeapWord*)_loaded_heap_top;
+    Universe::heap()->fill_with_objects(bottom, top - bottom);
+  }
 }
 
 #endif // INCLUDE_CDS_JAVA_HEAP

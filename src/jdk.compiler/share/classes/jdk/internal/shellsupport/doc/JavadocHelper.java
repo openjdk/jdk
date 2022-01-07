@@ -495,7 +495,7 @@ public abstract class JavadocHelper implements AutoCloseable {
                             //if there is a newline immediately behind this tree, insert behind
                             //the newline:
                             long endPos = sp.getEndPosition(null, dcTree, tree);
-                            if (endPos >= 0) {
+                            if (endPos >= offset) {
                                 if (endPos - offset + 1 < docComment.length() &&
                                     docComment.charAt((int) (endPos - offset + 1)) == '\n') {
                                     endPos++;

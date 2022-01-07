@@ -317,14 +317,12 @@ class AccessibleHTML implements Accessible {
          */
         public AccessibleStateSet getAccessibleStateSet() {
             AccessibleStateSet states = new AccessibleStateSet();
-            Component comp = getTextComponent();
+            JTextComponent comp = getTextComponent();
 
             if (comp.isEnabled()) {
                 states.add(AccessibleState.ENABLED);
             }
-            if (comp instanceof JTextComponent &&
-                ((JTextComponent)comp).isEditable()) {
-
+            if (comp.isEditable()) {
                 states.add(AccessibleState.EDITABLE);
                 states.add(AccessibleState.FOCUSABLE);
             }
@@ -372,8 +370,8 @@ class AccessibleHTML implements Accessible {
          */
         public Accessible getAccessibleChild(int i) {
             ElementInfo childInfo = elementInfo.getChild(i);
-            if (childInfo != null && childInfo instanceof Accessible) {
-                return (Accessible)childInfo;
+            if (childInfo instanceof Accessible accessibleChild) {
+                return accessibleChild;
             } else {
                 return null;
             }
@@ -742,11 +740,9 @@ class AccessibleHTML implements Accessible {
          * @see AccessibleStateSet
          */
         public boolean isFocusTraversable() {
-            Component comp = getTextComponent();
-            if (comp instanceof JTextComponent) {
-                if (((JTextComponent)comp).isEditable()) {
-                    return true;
-                }
+            JTextComponent comp = getTextComponent();
+            if (comp != null && comp.isEditable()) {
+                return true;
             }
             return false;
         }
@@ -763,8 +759,8 @@ class AccessibleHTML implements Accessible {
                 return;
             }
 
-            Component comp = getTextComponent();
-            if (comp instanceof JTextComponent) {
+            JTextComponent comp = getTextComponent();
+            if (comp != null) {
 
                 comp.requestFocusInWindow();
 
@@ -772,7 +768,7 @@ class AccessibleHTML implements Accessible {
                     if (elementInfo.validateIfNecessary()) {
                         // set the caret position to the start of this component
                         Element elem = elementInfo.getElement();
-                        ((JTextComponent)comp).setCaretPosition(elem.getStartOffset());
+                        comp.setCaretPosition(elem.getStartOffset());
 
                         // fire a AccessibleState.FOCUSED property change event
                         AccessibleContext ac = editor.getAccessibleContext();
@@ -1216,9 +1212,8 @@ class AccessibleHTML implements Accessible {
             private String getText(int offset, int length)
                 throws BadLocationException {
 
-                if (model != null && model instanceof StyledDocument) {
-                    StyledDocument doc = (StyledDocument)model;
-                    return model.getText(offset, length);
+                if (model instanceof StyledDocument doc) {
+                    return doc.getText(offset, length);
                 } else {
                     return null;
                 }

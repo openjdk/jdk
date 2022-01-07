@@ -22,18 +22,19 @@
  */
 
 import java.io.IOException;
-import java.lang.ref.Cleaner;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-import jdk.incubator.foreign.MemoryAccess;
+
 import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.ResourceScope;
 import jdk.test.lib.RandomFactory;
 import org.testng.annotations.*;
+
+import static jdk.incubator.foreign.ValueLayout.JAVA_BYTE;
 import static org.testng.Assert.*;
 
 /**
@@ -51,7 +52,7 @@ public class AbstractChannelsTest {
     }
 
     static ResourceScope closeableScopeOrNull(ResourceScope scope) {
-        if (scope.isImplicit())
+        if (scope == ResourceScope.globalScope())
             return null;
         return scope;
     }
@@ -75,7 +76,7 @@ public class AbstractChannelsTest {
     static ByteBuffer segmentBufferOfSize(ResourceScope scope, int size) {
         var segment = MemorySegment.allocateNative(size, 1, scope);
         for (int i = 0; i < size; i++) {
-            MemoryAccess.setByteAtOffset(segment, i, ((byte)RANDOM.nextInt()));
+            segment.set(JAVA_BYTE, i, ((byte)RANDOM.nextInt()));
         }
         return segment.asByteBuffer();
     }
@@ -129,7 +130,6 @@ public class AbstractChannelsTest {
     public static Object[][] confinedScopes() {
         return new Object[][] {
                 { ScopeSupplier.NEW_CONFINED          },
-                { ScopeSupplier.NEW_CONFINED_EXPLICIT },
         };
     }
 
@@ -137,7 +137,6 @@ public class AbstractChannelsTest {
     public static Object[][] sharedScopes() {
         return new Object[][] {
                 { ScopeSupplier.NEW_SHARED          },
-                { ScopeSupplier.NEW_SHARED_EXPLICIT },
         };
     }
 
@@ -151,7 +150,6 @@ public class AbstractChannelsTest {
     @DataProvider(name = "implicitScopes")
     public static Object[][] implicitScopes() {
         return new Object[][] {
-                { ScopeSupplier.NEW_IMPLICIT },
                 { ScopeSupplier.GLOBAL       },
         };
     }
@@ -174,26 +172,20 @@ public class AbstractChannelsTest {
     public static Object[][] sharedScopesAndTimeouts() {
         return new Object[][] {
                 { ScopeSupplier.NEW_SHARED          ,  0 },
-                { ScopeSupplier.NEW_SHARED_EXPLICIT ,  0 },
                 { ScopeSupplier.NEW_SHARED          , 30 },
-                { ScopeSupplier.NEW_SHARED_EXPLICIT , 30 },
         };
     }
 
     static class ScopeSupplier implements Supplier<ResourceScope> {
 
         static final Supplier<ResourceScope> NEW_CONFINED =
-                new ScopeSupplier(() -> ResourceScope.newConfinedScope(), "newConfinedScope()");
-        static final Supplier<ResourceScope> NEW_CONFINED_EXPLICIT =
-                new ScopeSupplier(() -> ResourceScope.newConfinedScope(Cleaner.create()), "newConfinedScope(Cleaner)");
+                new ScopeSupplier(ResourceScope::newConfinedScope, "newConfinedScope()");
         static final Supplier<ResourceScope> NEW_SHARED =
-                new ScopeSupplier(() -> ResourceScope.newSharedScope(), "newSharedScope()");
-        static final Supplier<ResourceScope> NEW_SHARED_EXPLICIT =
-                new ScopeSupplier(() -> ResourceScope.newSharedScope(Cleaner.create()), "newSharedScope(Cleaner)");
+                new ScopeSupplier(ResourceScope::newSharedScope, "newSharedScope()");
         static final Supplier<ResourceScope> NEW_IMPLICIT =
-                new ScopeSupplier(() -> ResourceScope.newImplicitScope(), "newImplicitScope()");
+                new ScopeSupplier(ResourceScope::newImplicitScope, "newImplicitScope()");
         static final Supplier<ResourceScope> GLOBAL =
-                new ScopeSupplier(() -> ResourceScope.globalScope(), "globalScope()");
+                new ScopeSupplier(ResourceScope::globalScope, "globalScope()");
 
         private final Supplier<ResourceScope> supplier;
         private final String str;

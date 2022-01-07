@@ -220,7 +220,7 @@ public class File
      * string for convenience.  This string contains a single character, namely
      * {@link #separatorChar}.
      */
-    public static final String separator = "" + separatorChar;
+    public static final String separator = String.valueOf(separatorChar);
 
     /**
      * The system-dependent path-separator character.  This field is
@@ -239,7 +239,7 @@ public class File
      * for convenience.  This string contains a single character, namely
      * {@link #pathSeparatorChar}.
      */
-    public static final String pathSeparator = "" + pathSeparatorChar;
+    public static final String pathSeparator = String.valueOf(pathSeparatorChar);
 
 
     /* -- Constructors -- */

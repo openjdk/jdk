@@ -582,17 +582,12 @@ public final class Console implements Flushable
                 csname = GetPropertyAction.privilegedGetProperty("sun.stdout.encoding");
             }
             if (csname != null) {
-                try {
-                    cs = Charset.forName(csname);
-                } catch (Exception ignored) { }
+                cs = Charset.forName(csname, null);
             }
         }
         if (cs == null) {
-            try {
-                cs = Charset.forName(StaticProperty.nativeEncoding());
-            } catch (Exception ignored) {
-                cs = Charset.defaultCharset();
-            }
+            cs = Charset.forName(StaticProperty.nativeEncoding(),
+                    Charset.defaultCharset());
         }
 
         CHARSET = cs;

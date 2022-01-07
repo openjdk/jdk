@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -308,9 +308,7 @@ public class HTMLWriter extends AbstractWriter {
             // If an instance of an UNKNOWN Tag, or an instance of a
             // tag that is only visible during editing
             //
-            if (nameTag != null && endTag != null &&
-                (endTag instanceof String) &&
-                endTag.equals("true")) {
+            if (nameTag != null && "true".equals(endTag)) {
                 outputEndTag = true;
             }
 
@@ -732,8 +730,8 @@ public class HTMLWriter extends AbstractWriter {
                 write('<');
                 write(tag.toString());
                 Object o = attr.getAttribute(tag);
-                if (o != null && o instanceof AttributeSet) {
-                    writeAttributes((AttributeSet)o);
+                if (o instanceof AttributeSet as) {
+                    writeAttributes(as);
                 }
                 write('>');
                 tags.addElement(tag);
@@ -813,8 +811,8 @@ public class HTMLWriter extends AbstractWriter {
                 write('<');
                 write(t.toString());
                 Object o = tagValues.elementAt(i);
-                if (o != null && o instanceof AttributeSet) {
-                    writeAttributes((AttributeSet)o);
+                if (o instanceof AttributeSet as) {
+                    writeAttributes(as);
                 }
                 write('>');
             }
@@ -1074,23 +1072,23 @@ public class HTMLWriter extends AbstractWriter {
                     }
                 } else if (key == CSS.Attribute.FONT_STYLE) {
                     String s = from.getAttribute(key).toString();
-                    if (s.indexOf("italic") >= 0) {
+                    if (s.contains("italic")) {
                         addAttribute(to, HTML.Tag.I, SimpleAttributeSet.EMPTY);
                     }
                 } else if (key == CSS.Attribute.TEXT_DECORATION) {
                     String decor = from.getAttribute(key).toString();
-                    if (decor.indexOf("underline") >= 0) {
+                    if (decor.contains("underline")) {
                         addAttribute(to, HTML.Tag.U, SimpleAttributeSet.EMPTY);
                     }
-                    if (decor.indexOf("line-through") >= 0) {
+                    if (decor.contains("line-through")) {
                         addAttribute(to, HTML.Tag.STRIKE, SimpleAttributeSet.EMPTY);
                     }
                 } else if (key == CSS.Attribute.VERTICAL_ALIGN) {
                     String vAlign = from.getAttribute(key).toString();
-                    if (vAlign.indexOf("sup") >= 0) {
+                    if (vAlign.contains("sup")) {
                         addAttribute(to, HTML.Tag.SUP, SimpleAttributeSet.EMPTY);
                     }
-                    if (vAlign.indexOf("sub") >= 0) {
+                    if (vAlign.contains("sub")) {
                         addAttribute(to, HTML.Tag.SUB, SimpleAttributeSet.EMPTY);
                     }
                 } else if (key == CSS.Attribute.TEXT_ALIGN) {

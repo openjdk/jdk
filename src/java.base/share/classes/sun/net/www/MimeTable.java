@@ -24,6 +24,7 @@
  */
 
 package sun.net.www;
+
 import jdk.internal.util.StaticProperty;
 
 import java.io.*;
@@ -89,7 +90,7 @@ public class MimeTable implements FileNameMap {
      */
     public static FileNameMap loadTable() {
         MimeTable mt = getDefaultTable();
-        return (FileNameMap)mt;
+        return mt;
     }
 
     public synchronized int getSize() {

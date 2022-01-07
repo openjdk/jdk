@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/thread.inline.hpp"
-#include "vm_version_ext_x86.hpp"
+#include "vm_version_x86.hpp"
 
 // The following header contains the implementations of rdtsc()
 #include OS_CPU_HEADER_INLINE(os)
@@ -101,9 +101,9 @@ static jlong initialize_frequency() {
 
   // if platform supports invariant tsc,
   // apply higher resolution and granularity for conversion calculations
-  if (VM_Version_Ext::supports_tscinv_ext()) {
+  if (VM_Version::supports_tscinv_ext()) {
     // for invariant tsc platforms, take the maximum qualified cpu frequency
-    tsc_freq = (double)VM_Version_Ext::maximum_qualified_cpu_frequency();
+    tsc_freq = (double)VM_Version::maximum_qualified_cpu_frequency();
     os_to_tsc_conv_factor = tsc_freq / os_freq;
   } else {
     // use measurements to estimate
@@ -171,7 +171,7 @@ static bool ergonomics() {
 }
 
 bool Rdtsc::is_supported() {
-  return VM_Version_Ext::supports_tscinv_ext();
+  return VM_Version::supports_tscinv_ext();
 }
 
 bool Rdtsc::is_elapsed_counter_enabled() {
@@ -198,7 +198,7 @@ bool Rdtsc::initialize() {
   static bool initialized = false;
   if (!initialized) {
     assert(!rdtsc_elapsed_counter_enabled, "invariant");
-    VM_Version_Ext::initialize();
+    VM_Version::initialize_tsc();
     assert(0 == tsc_frequency, "invariant");
     assert(0 == _epoch, "invariant");
     bool result = initialize_elapsed_counter(); // init hw

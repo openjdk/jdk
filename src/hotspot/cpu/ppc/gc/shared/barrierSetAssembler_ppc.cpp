@@ -111,16 +111,28 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
   }
 }
 
+// Generic implementation. GCs can provide an optimized one.
 void BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value,
                                           Register tmp1, Register tmp2,
                                           MacroAssembler::PreservationLevel preservation_level) {
-  Label done;
+  Label done, not_weak, verify;
   __ cmpdi(CCR0, value, 0);
   __ beq(CCR0, done);         // Use NULL as-is.
 
-  __ clrrdi(tmp1, value, JNIHandles::weak_tag_size);
-  __ ld(value, 0, tmp1);      // Resolve (untagged) jobject.
+  __ andi_(tmp1, value, JNIHandles::weak_tag_mask);
+  __ beq(CCR0, not_weak);     // Test for jweak tag.
 
+  // Resolve (untagged) jobject.
+  __ clrrdi(value, value, JNIHandles::weak_tag_size);
+  load_at(masm, IN_NATIVE | ON_PHANTOM_OOP_REF, T_OBJECT,
+          value, (intptr_t)0, value, tmp1, tmp2, preservation_level);
+  __ b(verify);
+
+  __ bind(not_weak);
+  load_at(masm, IN_NATIVE, T_OBJECT,
+          value, (intptr_t)0, value, tmp1, tmp2, preservation_level);
+
+  __ bind(verify);
   __ verify_oop(value, FILE_AND_LINE);
   __ bind(done);
 }
@@ -139,6 +151,8 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register t
 
   assert_different_registers(tmp, R0);
 
+  __ block_comment("nmethod_entry_barrier (nmethod_entry_barrier) {");
+
   // Load stub address using toc (fixed instruction size, unlike load_const_optimized)
   __ calculate_address_from_global_toc(tmp, StubRoutines::ppc::nmethod_entry_barrier(),
                                        true, true, false); // 2 instructions
@@ -155,6 +169,8 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register t
 
   // Oops may have been changed; exploiting isync semantics (used as acquire) to make those updates observable.
   __ isync();
+
+  __ block_comment("} nmethod_entry_barrier (nmethod_entry_barrier)");
 }
 
 void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler *masm, Register tmp1, Register tmp2, Register tmp3) {
@@ -164,6 +180,8 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler *masm, Register tmp1,
   }
 
   assert_different_registers(tmp1, tmp2, tmp3);
+
+  __ block_comment("c2i_entry_barrier (c2i_entry_barrier) {");
 
   Register tmp1_class_loader_data = tmp1;
 
@@ -178,7 +196,7 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler *masm, Register tmp1,
   __ ld(tmp1_class_loader_data, in_bytes(InstanceKlass::class_loader_data_offset()), tmp1);
 
   // Fast path: If class loader is strong, the holder cannot be unloaded.
-  __ ld(tmp2, in_bytes(ClassLoaderData::keep_alive_offset()), tmp1_class_loader_data);
+  __ lwz(tmp2, in_bytes(ClassLoaderData::keep_alive_offset()), tmp1_class_loader_data);
   __ cmpdi(CCR0, tmp2, 0);
   __ bne(CCR0, skip_barrier);
 
@@ -195,4 +213,6 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler *masm, Register tmp1,
   __ bctr();
 
   __ bind(skip_barrier);
+
+  __ block_comment("} c2i_entry_barrier (c2i_entry_barrier)");
 }

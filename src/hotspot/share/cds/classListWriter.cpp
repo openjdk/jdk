@@ -59,6 +59,11 @@ void ClassListWriter::write(const InstanceKlass* k, const ClassFileStream* cfs) 
     return;
   }
 
+  // filter out java/lang/invoke/BoundMethodHandle$Species....
+  if (cfs != NULL && strcmp(cfs->source(), "_ClassSpecializer_generateConcreteSpeciesCode") == 0) {
+    return;
+  }
+
   ClassListWriter w;
   write_to_stream(k, w.stream(), cfs);
 }

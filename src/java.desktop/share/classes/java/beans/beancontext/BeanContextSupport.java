@@ -59,6 +59,7 @@ import java.util.Map;
  * @author Laurence P. G. Cable
  * @since 1.2
  */
+@SuppressWarnings("doclint:missing")
 public class      BeanContextSupport extends BeanContextChildSupport
        implements BeanContext,
                   Serializable,
@@ -771,17 +772,15 @@ public class      BeanContextSupport extends BeanContextChildSupport
         }
 
         synchronized(children) {
-            for (Iterator<Object> i = children.keySet().iterator(); i.hasNext();) {
-                Object c = i.next();
-
+            for (Object c : children.keySet()) {
                 try {
-                        return ((Visibility)c).needsGui();
-                    } catch (ClassCastException cce) {
-                        // do nothing ...
-                    }
+                    return ((Visibility)c).needsGui();
+                } catch (ClassCastException cce) {
+                    // do nothing ...
+                }
 
-                    if (c instanceof Container || c instanceof Component)
-                        return true;
+                if (c instanceof Container || c instanceof Component)
+                    return true;
             }
         }
 
@@ -798,11 +797,11 @@ public class      BeanContextSupport extends BeanContextChildSupport
 
             // lets also tell the Children that can that they may not use their GUI's
             synchronized(children) {
-                for (Iterator<Object> i = children.keySet().iterator(); i.hasNext();) {
-                    Visibility v = getChildVisibility(i.next());
+                for (Object c : children.keySet()) {
+                    Visibility v = getChildVisibility(c);
 
                     if (v != null) v.dontUseGui();
-               }
+                }
             }
         }
     }
@@ -817,8 +816,8 @@ public class      BeanContextSupport extends BeanContextChildSupport
 
             // lets also tell the Children that can that they may use their GUI's
             synchronized(children) {
-                for (Iterator<Object> i = children.keySet().iterator(); i.hasNext();) {
-                    Visibility v = getChildVisibility(i.next());
+                for (Object c : children.keySet()) {
+                    Visibility v = getChildVisibility(c);
 
                     if (v != null) v.okToUseGui();
                 }

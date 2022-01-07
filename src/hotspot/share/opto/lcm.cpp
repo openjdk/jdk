@@ -702,8 +702,9 @@ void PhaseCFG::adjust_register_pressure(Node* n, Block* block, intptr_t* recalc_
         case Op_StoreP:
         case Op_StoreN:
         case Op_StoreVector:
-        case Op_StoreVectorScatter:
         case Op_StoreVectorMasked:
+        case Op_StoreVectorScatter:
+        case Op_StoreVectorScatterMasked:
         case Op_StoreNKlass:
           for (uint k = 1; k < m->req(); k++) {
             Node *in = m->in(k);

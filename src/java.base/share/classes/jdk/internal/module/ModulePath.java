@@ -551,7 +551,7 @@ public class ModulePath implements ModuleFinder {
                     if (!cn.isEmpty()) {
                         String pn = packageName(cn);
                         if (!packages.contains(pn)) {
-                            String msg = "Provider class " + cn + " not in module";
+                            String msg = "Provider class " + cn + " not in JAR file " + fn;
                             throw new InvalidModuleDescriptorException(msg);
                         }
                         providerClasses.add(cn);

@@ -27,7 +27,7 @@
 
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/heapRegionManager.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class G1CollectedHeap;
@@ -35,7 +35,7 @@ class G1EvacFailureRegions;
 
 // Task to fixup self-forwarding pointers
 // installed as a result of an evacuation failure.
-class G1ParRemoveSelfForwardPtrsTask: public AbstractGangTask {
+class G1ParRemoveSelfForwardPtrsTask: public WorkerTask {
 protected:
   G1CollectedHeap* _g1h;
   HeapRegionClaimer _hrclaimer;

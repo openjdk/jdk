@@ -126,31 +126,13 @@ GrowableArray<Klass*>* ArrayKlass::compute_secondary_supers(int num_extra_slots,
 
 objArrayOop ArrayKlass::allocate_arrayArray(int n, int length, TRAPS) {
   check_array_allocation_length(length, arrayOopDesc::max_array_length(T_ARRAY), CHECK_NULL);
-  int size = objArrayOopDesc::object_size(length);
+  size_t size = objArrayOopDesc::object_size(length);
   Klass* k = array_klass(n+dimension(), CHECK_NULL);
   ArrayKlass* ak = ArrayKlass::cast(k);
   objArrayOop o = (objArrayOop)Universe::heap()->array_allocate(ak, size, length,
                                                                 /* do_zero */ true, CHECK_NULL);
   // initialization to NULL not necessary, area already cleared
   return o;
-}
-
-void ArrayKlass::array_klasses_do(void f(Klass* k, TRAPS), TRAPS) {
-  Klass* k = this;
-  // Iterate over this array klass and all higher dimensions
-  while (k != NULL) {
-    f(k, CHECK);
-    k = ArrayKlass::cast(k)->higher_dimension();
-  }
-}
-
-void ArrayKlass::array_klasses_do(void f(Klass* k)) {
-  Klass* k = this;
-  // Iterate over this array klass and all higher dimensions
-  while (k != NULL) {
-    f(k);
-    k = ArrayKlass::cast(k)->higher_dimension();
-  }
 }
 
 jint ArrayKlass::compute_modifier_flags() const {

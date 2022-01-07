@@ -997,7 +997,6 @@ const Type *Type::filter_helper(const Type *kills, bool include_speculative) con
 }
 
 //------------------------------xdual------------------------------------------
-
 const Type *Type::xdual() const {
   // Note: the base() accessor asserts the sanity of _base.
   assert(_type_info[base()].dual_type != Bad, "implement with v-call");
@@ -1412,6 +1411,30 @@ const TypeInteger* TypeInteger::bottom(BasicType bt) {
   }
   assert(bt == T_LONG, "basic type not an int or long");
   return TypeLong::LONG;
+}
+
+const TypeInteger* TypeInteger::zero(BasicType bt) {
+  if (bt == T_INT) {
+    return TypeInt::ZERO;
+  }
+  assert(bt == T_LONG, "basic type not an int or long");
+  return TypeLong::ZERO;
+}
+
+const TypeInteger* TypeInteger::one(BasicType bt) {
+  if (bt == T_INT) {
+    return TypeInt::ONE;
+  }
+  assert(bt == T_LONG, "basic type not an int or long");
+  return TypeLong::ONE;
+}
+
+const TypeInteger* TypeInteger::minus_1(BasicType bt) {
+  if (bt == T_INT) {
+    return TypeInt::MINUS_1;
+  }
+  assert(bt == T_LONG, "basic type not an int or long");
+  return TypeLong::MINUS_1;
 }
 
 //=============================================================================
@@ -2359,7 +2382,10 @@ const TypeVect *TypeVect::VECTZ = NULL; // 512-bit vectors
 const TypeVect *TypeVect::VECTMASK = NULL; // predicate/mask vector
 
 //------------------------------make-------------------------------------------
-const TypeVect* TypeVect::make(const Type *elem, uint length) {
+const TypeVect* TypeVect::make(const Type *elem, uint length, bool is_mask) {
+  if (is_mask) {
+    return makemask(elem, length);
+  }
   BasicType elem_bt = elem->array_element_basic_type();
   assert(is_java_primitive(elem_bt), "only primitive types in vector");
   assert(Matcher::vector_size_supported(elem_bt, length), "length in range");
@@ -2385,9 +2411,10 @@ const TypeVect* TypeVect::make(const Type *elem, uint length) {
 }
 
 const TypeVect *TypeVect::makemask(const Type* elem, uint length) {
-  if (Matcher::has_predicated_vectors()) {
-    const TypeVect* mtype = Matcher::predicate_reg_type(elem, length);
-    return (TypeVect*)(const_cast<TypeVect*>(mtype))->hashcons();
+  BasicType elem_bt = elem->array_element_basic_type();
+  if (Matcher::has_predicated_vectors() &&
+      Matcher::match_rule_supported_vector_masked(Op_VectorLoadMask, length, elem_bt)) {
+    return TypeVectMask::make(elem, length);
   } else {
     return make(elem, length);
   }
@@ -2499,6 +2526,15 @@ bool TypeVectMask::eq(const Type *t) const {
 
 const Type *TypeVectMask::xdual() const {
   return new TypeVectMask(element_type()->dual(), length());
+}
+
+const TypeVectMask *TypeVectMask::make(const BasicType elem_bt, uint length) {
+  return make(get_const_basic_type(elem_bt), length);
+}
+
+const TypeVectMask *TypeVectMask::make(const Type* elem, uint length) {
+  const TypeVectMask* mtype = Matcher::predicate_reg_type(elem, length);
+  return (TypeVectMask*) const_cast<TypeVectMask*>(mtype)->hashcons();
 }
 
 //=============================================================================

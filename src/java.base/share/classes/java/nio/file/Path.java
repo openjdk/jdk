@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -911,7 +911,7 @@ public interface Path
      * {@code getName(index)}, where {@code index} ranges from zero to
      * {@code getNameCount() - 1}, inclusive.
      *
-     * @return  an iterator over the name elements of this path.
+     * @return  an iterator over the name elements of this path
      */
     @Override
     default Iterator<Path> iterator() {

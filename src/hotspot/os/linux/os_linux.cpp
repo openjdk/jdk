@@ -786,7 +786,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   assert(thread->osthread() == NULL, "caller responsible");
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread(NULL, NULL);
+  OSThread* osthread = new OSThread();
   if (osthread == NULL) {
     return false;
   }
@@ -915,7 +915,7 @@ bool os::create_attached_thread(JavaThread* thread) {
 #endif
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread(NULL, NULL);
+  OSThread* osthread = new OSThread();
 
   if (osthread == NULL) {
     return false;
@@ -1779,15 +1779,6 @@ void * os::Linux::dll_load_in_vmthread(const char *filename, char *ebuf,
   }
 
   return result;
-}
-
-void* os::dll_lookup(void* handle, const char* name) {
-  void* res = dlsym(handle, name);
-  return res;
-}
-
-void* os::get_default_process_handle() {
-  return (void*)::dlopen(NULL, RTLD_LAZY);
 }
 
 static bool _print_ascii_file(const char* filename, outputStream* st, const char* hdr = NULL) {

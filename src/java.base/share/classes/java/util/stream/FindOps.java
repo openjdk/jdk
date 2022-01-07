@@ -162,7 +162,7 @@ final class FindOps {
     }
 
     /**
-     * Implementation of @{code TerminalSink} that implements the find
+     * Implementation of {@code TerminalSink} that implements the find
      * functionality, requesting cancellation when something has been found
      *
      * @param <T> The type of input element

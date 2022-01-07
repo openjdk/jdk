@@ -439,7 +439,7 @@ void ZHeap::object_iterate(ObjectClosure* cl, bool visit_weaks) {
   iter.object_iterate(cl, 0 /* worker_id */);
 }
 
-ParallelObjectIterator* ZHeap::parallel_object_iterator(uint nworkers, bool visit_weaks) {
+ParallelObjectIteratorImpl* ZHeap::parallel_object_iterator(uint nworkers, bool visit_weaks) {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
   return new ZHeapIterator(nworkers, visit_weaks);
 }

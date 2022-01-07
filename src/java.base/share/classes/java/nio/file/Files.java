@@ -1552,7 +1552,7 @@ public final class Files {
      * <ul>
      * <li> The two paths locate the {@linkplain #isSameFile(Path, Path) same file},
      *      even if two {@linkplain Path#equals(Object) equal} paths locate a file
-     *      does not exist, or </li>
+     *      that does not exist, or </li>
      * <li> The two files are the same size, and every byte in the first file
      *      is identical to the corresponding byte in the second file. </li>
      * </ul>
@@ -1561,7 +1561,7 @@ public final class Files {
      * returned by this method is:
      * <ul>
      * <li> The position of the first mismatched byte, or </li>
-     * <li> The size of the smaller file (in bytes) when the files are different
+     * <li> The size of the smaller file (in bytes) when the files are of different
      *      sizes and every byte of the smaller file is identical to the
      *      corresponding byte of the larger file. </li>
      * </ul>
@@ -2514,6 +2514,7 @@ public final class Files {
      *          read access to the file.
      *
      * @see #notExists
+     * @see FileSystemProvider#checkAccess
      */
     public static boolean exists(Path path, LinkOption... options) {
         if (options.length == 0) {
@@ -3110,7 +3111,7 @@ public final class Files {
      * @throws  DirectoryNotEmptyException
      *          the {@code REPLACE_EXISTING} option is specified but the file
      *          cannot be replaced because it is a non-empty directory
-     *          <i>(optional specific exception)</i>     *
+     *          <i>(optional specific exception)</i>
      * @throws  UnsupportedOperationException
      *          if {@code options} contains a copy option that is not supported
      * @throws  SecurityException

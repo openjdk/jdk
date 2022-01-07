@@ -237,6 +237,7 @@ class CompilationPolicy : AllStatic {
   // m must be compiled before executing it
   static bool must_be_compiled(const methodHandle& m, int comp_level = CompLevel_any);
 public:
+  static int min_invocations() { return Tier4MinInvocationThreshold; }
   static int c1_count() { return _c1_count; }
   static int c2_count() { return _c2_count; }
   static int compiler_count(CompLevel comp_level);

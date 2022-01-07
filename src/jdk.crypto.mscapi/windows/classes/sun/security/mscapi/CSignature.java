@@ -743,7 +743,7 @@ abstract class CSignature extends SignatureSpi {
      * Sign hash using CNG API with HCRYPTKEY.
      * @param type 0 no padding, 1, pkcs1, 2, pss
      */
-    native static byte[] signCngHash(
+    static native byte[] signCngHash(
             int type, byte[] hash,
             int hashSize, int saltLength, String hashAlgorithm,
             long hCryptProv, long nCryptKey)
@@ -753,7 +753,7 @@ abstract class CSignature extends SignatureSpi {
      * Verify a signed hash using CNG API with HCRYPTKEY.
      * @param type 0 no padding, 1, pkcs1, 2, pss
      */
-    private native static boolean verifyCngSignedHash(
+    private static native boolean verifyCngSignedHash(
             int type, byte[] hash, int hashSize,
             byte[] signature, int signatureSize,
             int saltLength, String hashAlgorithm,
@@ -845,14 +845,14 @@ abstract class CSignature extends SignatureSpi {
      * Sign hash using Microsoft Crypto API with HCRYPTKEY.
      * The returned data is in little-endian.
      */
-    private native static byte[] signHash(boolean noHashOID, byte[] hash,
+    private static native byte[] signHash(boolean noHashOID, byte[] hash,
         int hashSize, String hashAlgorithm, long hCryptProv, long hCryptKey)
             throws SignatureException;
 
     /**
      * Verify a signed hash using Microsoft Crypto API with HCRYPTKEY.
      */
-    private native static boolean verifySignedHash(byte[] hash, int hashSize,
+    private static native boolean verifySignedHash(byte[] hash, int hashSize,
         String hashAlgorithm, byte[] signature, int signatureSize,
         long hCryptProv, long hCryptKey) throws SignatureException;
 
