@@ -2553,7 +2553,7 @@ void SuperWord::output() {
                  opc == Op_AbsF || opc == Op_AbsD ||
                  opc == Op_AbsI || opc == Op_AbsL ||
                  opc == Op_NegF || opc == Op_NegD ||
-                 opc == Op_PopCountI || Op_PopCountL) {
+                 opc == Op_PopCountI || opc == Op_PopCountL) {
         assert(n->req() == 2, "only one input expected");
         Node* in = vector_opd(p, 1);
         vn = VectorNode::make(opc, in, NULL, vlen, velt_basic_type(n));
