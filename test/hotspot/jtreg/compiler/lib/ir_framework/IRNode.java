@@ -74,6 +74,7 @@ public class IRNode {
     public static final String STORE_D = START + "StoreD" + MID + END;
     public static final String STORE_P = START + "StoreP" + MID + END;
     public static final String STORE_N = START + "StoreN" + MID + END;
+    public static final String STORE_VECTOR = START + "StoreVector" + MID + END;
     public static final String STORE_OF_CLASS = COMPOSITE_PREFIX + START + "Store(B|C|S|I|L|F|D|P|N)" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
     public static final String STORE_B_OF_CLASS = COMPOSITE_PREFIX + START + "StoreB" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
     public static final String STORE_C_OF_CLASS = COMPOSITE_PREFIX + START + "StoreC" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
@@ -96,6 +97,7 @@ public class IRNode {
     public static final String LOAD_D = START + "LoadD" + MID + END;
     public static final String LOAD_P = START + "LoadP" + MID + END;
     public static final String LOAD_N = START + "LoadN" + MID + END;
+    public static final String LOAD_VECTOR = START + "LoadVector" + MID + END;
     public static final String LOAD_OF_CLASS = COMPOSITE_PREFIX + START + "Load(B|UB|S|US|I|L|F|D|P|N)" + MID + "@\\S*"+  IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
     public static final String LOAD_B_OF_CLASS = COMPOSITE_PREFIX + START + "LoadB" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
     public static final String LOAD_UB_OF_CLASS = COMPOSITE_PREFIX + START + "LoadUB" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
@@ -139,6 +141,7 @@ public class IRNode {
     public static final String LSHIFT_L = START + "LShiftL" + MID + END;
     public static final String ADD_I = START + "AddI" + MID + END;
     public static final String ADD_L = START + "AddL" + MID + END;
+    public static final String ADD_VD = START + "AddVD" + MID + END;
     public static final String SUB_I = START + "SubI" + MID + END;
     public static final String SUB_L = START + "SubL" + MID + END;
     public static final String MUL_I = START + "MulI" + MID + END;

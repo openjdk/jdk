@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,35 +22,44 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package sun.nio.ch;
 
-package java.lang.invoke;
+import java.io.IOException;
+import java.io.OutputStream;
 
 /**
- * Base class for memory access var handle implementations.
+ * An OutputStream that writes bytes to a socket channel.
  */
-abstract class MemoryAccessVarHandleBase extends VarHandle {
+class SocketOutputStream extends OutputStream {
+    private final SocketChannelImpl sc;
 
-    /** endianness **/
-    final boolean be;
-
-    /** access size (in bytes, computed from var handle carrier type) **/
-    final long length;
-
-    /** alignment constraint (in bytes, expressed as a bit mask) **/
-    final long alignmentMask;
-
-    /** if true, only the base part of the address will be checked for alignment **/
-    final boolean skipAlignmentMaskCheck;
-
-    MemoryAccessVarHandleBase(VarForm form, boolean skipAlignmentMaskCheck, boolean be, long length, long alignmentMask, boolean exact) {
-        super(form, exact);
-        this.skipAlignmentMaskCheck = skipAlignmentMaskCheck;
-        this.be = be;
-        this.length = length;
-        this.alignmentMask = alignmentMask;
+    /**
+     * Initialize a SocketOutputStream that writes to the given socket channel.
+     */
+    SocketOutputStream(SocketChannelImpl sc) {
+        this.sc = sc;
     }
 
-    static IllegalArgumentException newIllegalArgumentExceptionForMisalignedAccess(long address) {
-        return new IllegalArgumentException("Misaligned access at address: " + address);
+    /**
+     * Returns the socket channel.
+     */
+    SocketChannelImpl channel() {
+        return sc;
+    }
+
+    @Override
+    public void write(int b) throws IOException {
+        byte[] a = new byte[]{(byte) b};
+        write(a, 0, 1);
+    }
+
+    @Override
+    public void write(byte[] b, int off, int len) throws IOException {
+        sc.blockingWriteFully(b, off, len);
+    }
+
+    @Override
+    public void close() throws IOException {
+        sc.close();
     }
 }
