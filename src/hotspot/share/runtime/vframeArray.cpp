@@ -583,7 +583,7 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
     ResourceMark rm;
     stringStream st;
     st.print_cr("DEOPT UNPACKING thread=" INTPTR_FORMAT " vframeArray=" INTPTR_FORMAT " mode=%d",
-               p2i(current), p2i(this), exec_mode);
+                p2i(current), p2i(this), exec_mode);
     st.print_cr("   Virtual frames (outermost/oldest first):");
     tty->print_raw(st.as_string());
   }

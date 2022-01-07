@@ -1507,7 +1507,6 @@ vframeArray* Deoptimization::create_vframeArray(JavaThread* thread, frame fr, Re
   if (TraceDeoptimization) {
     ResourceMark rm;
     stringStream st;
-    //st.print_cr("DEOPT PACKING thread " INTPTR_FORMAT " ", p2i(thread));
     st.print_cr("DEOPT PACKING thread=" INTPTR_FORMAT " vframeArray=" INTPTR_FORMAT, p2i(thread), p2i(array));
     st.print("   ");
     fr.print_on(&st);
