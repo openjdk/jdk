@@ -1188,7 +1188,7 @@ class StubGenerator: public StubCodeGenerator {
     if (UseUnalignedLoadStores) {
       Label L_end;
       __ BIND(L_loop);
-      if (UseAVX >= 2) {
+      if (UseAVX >= 1) {
         __ vmovdqu(xmm0, Address(end_from, qword_count, Address::times_8, -56));
         __ vmovdqu(Address(end_to, qword_count, Address::times_8, -56), xmm0);
         __ vmovdqu(xmm1, Address(end_from, qword_count, Address::times_8, -24));
@@ -1210,7 +1210,7 @@ class StubGenerator: public StubCodeGenerator {
       __ subptr(qword_count, 4);  // sub(8) and add(4)
       __ jccb(Assembler::greater, L_end);
       // Copy trailing 32 bytes
-      if (UseAVX >= 2) {
+      if (UseAVX >= 1) {
         __ vmovdqu(xmm0, Address(end_from, qword_count, Address::times_8, -24));
         __ vmovdqu(Address(end_to, qword_count, Address::times_8, -24), xmm0);
       } else {
@@ -1260,7 +1260,7 @@ class StubGenerator: public StubCodeGenerator {
     if (UseUnalignedLoadStores) {
       Label L_end;
       __ BIND(L_loop);
-      if (UseAVX >= 2) {
+      if (UseAVX >= 1) {
         __ vmovdqu(xmm0, Address(from, qword_count, Address::times_8, 32));
         __ vmovdqu(Address(dest, qword_count, Address::times_8, 32), xmm0);
         __ vmovdqu(xmm1, Address(from, qword_count, Address::times_8,  0));
@@ -1283,7 +1283,7 @@ class StubGenerator: public StubCodeGenerator {
       __ addptr(qword_count, 4);  // add(8) and sub(4)
       __ jccb(Assembler::less, L_end);
       // Copy trailing 32 bytes
-      if (UseAVX >= 2) {
+      if (UseAVX >= 1) {
         __ vmovdqu(xmm0, Address(from, qword_count, Address::times_8, 0));
         __ vmovdqu(Address(dest, qword_count, Address::times_8, 0), xmm0);
       } else {
