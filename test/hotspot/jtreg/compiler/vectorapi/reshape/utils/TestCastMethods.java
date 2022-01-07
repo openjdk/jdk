@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,7 @@ import static compiler.vectorapi.reshape.utils.VectorReshapeHelper.*;
 import static compiler.vectorapi.reshape.utils.VectorSpeciesPair.makePair;
 
 /**
- * The cast intrinsics implemented on each platform, commented out tests are the ones that are
- * supposed to work but currently don't.
+ * The cast intrinsics implemented on each platform.
  */
 public class TestCastMethods {
     public static final List<VectorSpeciesPair> AVX1_CAST_TESTS = List.of(
@@ -39,7 +38,7 @@ public class TestCastMethods {
             makePair(BSPEC64, SSPEC128),
             makePair(BSPEC64, ISPEC128),
             makePair(BSPEC64, FSPEC128),
-//            makePair(BSPEC64, DSPEC256),
+            makePair(BSPEC64, DSPEC256),
             makePair(SSPEC64, BSPEC64),
             makePair(SSPEC128, BSPEC64),
             makePair(SSPEC64, ISPEC64),
@@ -48,7 +47,7 @@ public class TestCastMethods {
             makePair(SSPEC64, FSPEC64),
             makePair(SSPEC64, FSPEC128),
             makePair(SSPEC64, DSPEC128),
-//            makePair(SSPEC64, DSPEC256),
+            makePair(SSPEC64, DSPEC256),
             makePair(ISPEC128, BSPEC64),
             makePair(ISPEC64, SSPEC64),
             makePair(ISPEC128, SSPEC64),
