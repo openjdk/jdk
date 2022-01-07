@@ -131,7 +131,7 @@ public class TestLongRangeCheck {
         Method m = newClassLoader().loadClass("TestLongRangeCheck").getDeclaredMethod(method, long.class, long.class, long.class, long.class);
         m.invoke(null, start, stop, length, offset0);
         compile(m);
-        
+
         m.invoke(null, start, stop, length, offset0);
         assertIsCompiled(m);
         try {
