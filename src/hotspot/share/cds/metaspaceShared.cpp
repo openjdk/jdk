@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -956,6 +956,12 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
   } else {
     set_shared_metaspace_range(NULL, NULL, NULL);
     UseSharedSpaces = false;
+    if (AutoCreateSharedArchive) {
+      AutoCreateSharedArchive = false;
+    }
+    if (DynamicDumpSharedSpaces) {
+      DynamicDumpSharedSpaces = false;
+    }
     FileMapInfo::fail_continue("Unable to map shared spaces");
     if (PrintSharedArchiveAndExit) {
       vm_exit_during_initialization("Unable to use shared archive.");
@@ -1022,10 +1028,6 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
     // Ensure that the OS won't be able to allocate new memory spaces between the two
     // archives, or else it would mess up the simple comparision in MetaspaceObj::is_shared().
     assert(static_mapinfo->mapping_end_offset() == dynamic_mapinfo->mapping_base_offset(), "no gap");
-  }
-
-  if (AutoCreateSharedArchive && static_mapinfo != NULL && dynamic_mapinfo == NULL) {
-    warning("AutoCreateSharedArchive will be ignored for static archive");
   }
 
   ReservedSpace total_space_rs, archive_space_rs, class_space_rs;

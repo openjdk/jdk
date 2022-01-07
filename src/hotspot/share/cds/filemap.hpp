@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -359,7 +359,6 @@ private:
 public:
   static bool get_base_archive_name_from_header(const char* archive_name,
                                                 char** base_archive_name);
-  static bool check_archive(const char* archive_name, bool is_static);
   static SharedPathTable shared_path_table() {
     return _shared_path_table;
   }
@@ -368,7 +367,6 @@ public:
     return _saved_shared_path_table;
   }
 
-  bool validate_archive() const;
   bool init_from_file(int fd);
   static void metaspace_pointers_do(MetaspaceClosure* it, bool use_copy = true);
 

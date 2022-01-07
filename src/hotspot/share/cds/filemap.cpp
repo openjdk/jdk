@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,12 +178,6 @@ FileMapInfo::FileMapInfo(bool is_static) {
     _dynamic_archive_info = this;
     _full_path = Arguments::GetSharedDynamicArchivePath();
   }
-  bool valid = validate_archive();
-  if (!valid && !_is_static && AutoCreateSharedArchive) {
-    // regenerate shared archive at exit
-    DynamicDumpSharedSpaces = true;
-    ArchiveClassesAtExit = _full_path;
-  }
   _file_offset = 0;
   _file_open = false;
 }
@@ -199,21 +193,6 @@ FileMapInfo::~FileMapInfo() {
   if (_file_open) {
     os::close(_fd);
   }
-}
-
-// Do preliminary validation on archive. More checks are in initialization.
-bool FileMapInfo::validate_archive() const {
-  // in case file name is NULL, os::file_exists will return false but
-  // check_archive will fail due to os::open crash on NULL.
-  if (!os::file_exists(_full_path)) {
-    return false;
-  }
-  // validate header info
-  if (!check_archive(_full_path, _is_static)) {
-    return false;
-  }
-
-  return true;
 }
 
 void FileMapInfo::populate_header(size_t core_region_alignment) {
@@ -1076,11 +1055,20 @@ void FileMapInfo::validate_non_existent_class_paths() {
 class FileHeaderHelper {
   int _fd;
   bool _is_valid;
+  bool _is_static;
   GenericCDSFileMapHeader* _header;
+  const char* _archive_name;
   const char* _base_archive_name;
 
 public:
-  FileHeaderHelper() : _fd(-1), _is_valid(false), _header(nullptr), _base_archive_name(nullptr) {}
+  FileHeaderHelper(const char* archive_name, bool is_static) {
+    _fd = -1;
+    _is_valid = false;
+    _header = nullptr;
+    _base_archive_name = nullptr;
+    _archive_name = archive_name;
+    _is_static = is_static;
+  }
 
   ~FileHeaderHelper() {
     if (_fd != -1) {
@@ -1088,11 +1076,11 @@ public:
     }
   }
 
-  bool initialize(const char* archive_name) {
-    log_info(cds)("Opening shared archive: %s", archive_name);
-    _fd = os::open(archive_name, O_RDONLY | O_BINARY, 0);
+  bool initialize() {
+    assert(_archive_name != nullptr, "Archive name is NULL");
+    _fd = os::open(_archive_name, O_RDONLY | O_BINARY, 0);
     if (_fd < 0) {
-      FileMapInfo::fail_continue("Specified shared archive not found (%s)", archive_name);
+      FileMapInfo::fail_continue("Specified shared archive not found (%s)", _archive_name);
       return false;
     }
     return initialize(_fd);
@@ -1100,9 +1088,8 @@ public:
 
   // for an already opened file, do not set _fd
   bool initialize(int fd) {
-    assert(fd != -1, "Archive should be opened");
-
-
+    assert(_archive_name != nullptr, "Archive name is NULL");
+    assert(fd != -1, "Archive must be opened already");
     // First read the generic header so we know the exact size of the actual header.
     GenericCDSFileMapHeader gen_header;
     size_t size = sizeof(GenericCDSFileMapHeader);
@@ -1126,8 +1113,7 @@ public:
     }
 
     if (gen_header._version !=  CURRENT_CDS_ARCHIVE_VERSION) {
-      auto warning_continue = FileMapInfo::fail_continue;
-      warning_continue("The shared archive file version %d which is not current version %d",
+      FileMapInfo::fail_continue("The shared archive file version %d which is not current version %d",
                                     gen_header._version, CURRENT_CDS_ARCHIVE_VERSION);
     }
 
@@ -1236,28 +1222,6 @@ public:
   }
 };
 
-bool FileMapInfo::check_archive(const char* archive_name, bool is_static) {
-  FileHeaderHelper file_helper;
-  if (!file_helper.initialize(archive_name)) {
-    // Any errors are reported by fail_continue().
-    return false;
-  }
-
-  GenericCDSFileMapHeader* header = file_helper.get_generic_file_header();
-  if (is_static) {
-    if (header->_magic != CDS_ARCHIVE_MAGIC) {
-      fail_continue("Not a base shared archive: %s", archive_name);
-      return false;
-    }
-  } else {
-    if (header->_magic != CDS_DYNAMIC_ARCHIVE_MAGIC) {
-      fail_continue("Not a top shared archive: %s", archive_name);
-      return false;
-    }
-  }
-  return true;
-}
-
 // Return value:
 // false:
 //      <archive_name> is not a valid archive. *base_archive_name is set to null.
@@ -1267,15 +1231,18 @@ bool FileMapInfo::check_archive(const char* archive_name, bool is_static) {
 //      <archive_name> is a valid dynamic archive.
 bool FileMapInfo::get_base_archive_name_from_header(const char* archive_name,
                                                     char** base_archive_name) {
-  FileHeaderHelper file_helper;
+  FileHeaderHelper file_helper(archive_name, false);
   *base_archive_name = NULL;
 
-  if (!file_helper.initialize(archive_name)) {
+  if (!file_helper.initialize()) {
     return false;
   }
   GenericCDSFileMapHeader* header = file_helper.get_generic_file_header();
   if (header->_magic != CDS_DYNAMIC_ARCHIVE_MAGIC) {
     assert(header->_magic == CDS_ARCHIVE_MAGIC, "must be");
+    if (AutoCreateSharedArchive) {
+      warning("AutoCreateSharedArchive is ignored because %s is a static archive", archive_name);
+    }
     return true;
   }
 
@@ -1292,12 +1259,24 @@ bool FileMapInfo::get_base_archive_name_from_header(const char* archive_name,
 // Read the FileMapInfo information from the file.
 
 bool FileMapInfo::init_from_file(int fd) {
-  FileHeaderHelper file_helper;
+  FileHeaderHelper file_helper(_full_path, _is_static);
   if (!file_helper.initialize(fd)) {
     fail_continue("Unable to read the file header.");
     return false;
   }
   GenericCDSFileMapHeader* gen_header = file_helper.get_generic_file_header();
+
+  if (_is_static) {
+    if (gen_header->_magic != CDS_ARCHIVE_MAGIC) {
+      FileMapInfo::fail_continue("Not a base shared archive: %s", _full_path);
+      return false;
+    }
+  } else {
+    if (gen_header->_magic != CDS_DYNAMIC_ARCHIVE_MAGIC) {
+      FileMapInfo::fail_continue("Not a top shared archive: %s", _full_path);
+      return false;
+    }
+  }
 
   unsigned int expected_magic = is_static() ? CDS_ARCHIVE_MAGIC : CDS_DYNAMIC_ARCHIVE_MAGIC;
   if (gen_header->_magic != expected_magic) {

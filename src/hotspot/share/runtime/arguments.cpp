@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3142,11 +3142,11 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
 
   if (AutoCreateSharedArchive) {
     if (SharedArchiveFile == NULL) {
-      log_info(cds)("-XX:+AutoCreateSharedArchive must work with a valid SharedArchiveFile");
+      log_warning(cds)("-XX:+AutoCreateSharedArchive requires -XX:SharedArchiveFile");
       return JNI_ERR;
     }
     if (ArchiveClassesAtExit != NULL) {
-      log_info(cds)("-XX:+AutoCreateSharedArchive does not work with ArchiveClassesAtExit");
+      log_warning(cds)("-XX:+AutoCreateSharedArchive does not work with ArchiveClassesAtExit");
       return JNI_ERR;
     }
   }
