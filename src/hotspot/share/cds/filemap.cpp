@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1614,8 +1614,8 @@ size_t FileMapInfo::write_heap_regions(GrowableArray<MemRegion>* regions,
 
 void FileMapInfo::write_bytes(const void* buffer, size_t nbytes) {
   assert(_file_open, "must be");
-  size_t n = os::write(_fd, buffer, (unsigned int)nbytes);
-  if (n != nbytes) {
+  ssize_t n = os::write(_fd, buffer, (unsigned int)nbytes);
+  if (n < 0 || (size_t)n != nbytes) {
     // If the shared archive is corrupted, close it and remove it.
     close();
     remove(_full_path);
