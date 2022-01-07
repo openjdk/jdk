@@ -1586,7 +1586,7 @@ bool LibraryCallKit::inline_string_char_access(bool is_store) {
   if (is_store) {
     access_store_at(value, adr, TypeAryPtr::BYTES, ch, TypeInt::CHAR, T_CHAR, IN_HEAP | MO_UNORDERED | C2_MISMATCHED);
   } else {
-    ch = access_load_at(value, adr, TypeAryPtr::BYTES, TypeInt::CHAR, T_CHAR, IN_HEAP | MO_UNORDERED | C2_MISMATCHED | C2_CONTROL_DEPENDENT_LOAD);
+    ch = access_load_at(value, adr, TypeAryPtr::BYTES, TypeInt::CHAR, T_CHAR, IN_HEAP | MO_UNORDERED | C2_MISMATCHED | C2_CONTROL_DEPENDENT_LOAD | C2_UNKNOWN_CONTROL_LOAD);
     set_result(ch);
   }
   return true;
