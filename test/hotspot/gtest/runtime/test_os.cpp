@@ -375,8 +375,8 @@ static address reserve_multiple(int num_stripes, size_t stripe_len) {
   assert(is_aligned(stripe_len, os::vm_allocation_granularity()), "Sanity");
 
 #ifdef __APPLE__
-  // Workaround: try reserving memory with executable flag set to True
-  // to figure out if such operation is supported on this macOS version
+  // Workaround: try reserving executable memory to figure out
+  // if such operation is supported on this macOS version
   const bool exec_supported = can_reserve_executable_memory();
 #endif
 
