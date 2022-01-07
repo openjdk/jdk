@@ -32,10 +32,15 @@
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI -XX:-SegmentedCodeCache -Xmixed
- *                   compiler.codecache.OverflowCodeCacheTest
+ *                   -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,null::*
+ *                   -XX:-SegmentedCodeCache
+ *                   compiler.codecache.OverflowCodeCacheTest CompilationDisabled
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI -XX:+SegmentedCodeCache -Xmixed
+ *                   -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,null::*
+ *                   -XX:+SegmentedCodeCache
+ *                   compiler.codecache.OverflowCodeCacheTest CompilationDisabled
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI -XX:-SegmentedCodeCache -Xmixed
  *                   compiler.codecache.OverflowCodeCacheTest
  */
 
@@ -58,8 +63,10 @@ class Helper {
 
 public class OverflowCodeCacheTest {
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
+    private static boolean COMPILATION_DISABLED = false;
 
     public static void main(String[] args) {
+        COMPILATION_DISABLED = args.length > 0;
         EnumSet<BlobType> blobTypes = BlobType.getAvailable();
         for (BlobType type : blobTypes) {
             new OverflowCodeCacheTest(type).test();
@@ -94,7 +101,7 @@ public class OverflowCodeCacheTest {
                 }
             }
             /* now, remember compilationActivityMode to check it later, after freeing, since we
-               possibly have no free cache for futher work */
+               possibly have no free cache for further work */
             compilationActivityMode = WHITE_BOX.getCompilationActivityMode();
 
             // Use smallest allocation size to make sure all of the available space
@@ -125,8 +132,12 @@ public class OverflowCodeCacheTest {
                 helper.method(0, 0, 0, null);
             }
         }
-        Asserts.assertNotEquals(compilationActivityMode, 1 /* run_compilation*/,
-                "Compilation must be disabled when CodeCache(CodeHeap) overflows");
+        // Only check this if compilation is disabled, otherwise the sweeper might have
+        // freed enough nmethods to allow for re-enabling compilation.
+        if (COMPILATION_DISABLED) {
+            Asserts.assertNotEquals(compilationActivityMode, 1 /* run_compilation*/,
+                    "Compilation must be disabled when CodeCache(CodeHeap) overflows");
+        }
     }
 
     private long getHeapSize() {
