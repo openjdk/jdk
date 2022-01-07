@@ -31,7 +31,7 @@
 
 //------------------------------split_thru_region------------------------------
 // Split Node 'n' through merge point.
-RegionNode* PhaseIdealLoop::split_thru_region(Node* n, Node* region) {
+RegionNode* PhaseIdealLoop::split_thru_region(Node* n, RegionNode* region) {
   assert(n->is_CFG(), "");
   assert(region->is_Region(), "");
   RegionNode* r = new RegionNode(region->req());
@@ -443,7 +443,7 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
   }
 
   C->set_major_progress();
-  Node *region = iff->in(0);
+  RegionNode *region = iff->in(0)->as_Region();
   Node *region_dom = idom(region);
 
   // We are going to clone this test (and the control flow with it) up through
@@ -492,7 +492,7 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
 
   // Now we have no instructions in the block containing the IF.
   // Split the IF.
-  Node *new_iff = split_thru_region( iff, region );
+  RegionNode *new_iff = split_thru_region(iff, region);
 
   // Replace both uses of 'new_iff' with Regions merging True/False
   // paths.  This makes 'new_iff' go dead.

@@ -1467,7 +1467,7 @@ public:
   void dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip = false, bool exclude_loop_predicate = false);
 
   // Split Node 'n' through merge point
-  RegionNode* split_thru_region(Node* n, Node* region);
+  RegionNode* split_thru_region(Node* n, RegionNode* region);
   // Split Node 'n' through merge point if there is enough win.
   Node *split_thru_phi( Node *n, Node *region, int policy );
   // Found an If getting its condition-code input from a Phi in the
