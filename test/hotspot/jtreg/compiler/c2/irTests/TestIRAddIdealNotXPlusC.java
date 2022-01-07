@@ -28,6 +28,7 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
+ * @bug 8279607
  * @summary Test that transformation from ~x + c to (c - 1) - x works
  *          as intended.
  * @library /test/lib /
