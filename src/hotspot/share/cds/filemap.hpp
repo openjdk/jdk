@@ -372,7 +372,7 @@ public:
 
   void log_paths(const char* msg, int start_idx, int end_idx);
 
-  FileMapInfo(bool is_static);
+  FileMapInfo(const char* full_apth, bool is_static);
   ~FileMapInfo();
 
   // Accessors
@@ -445,7 +445,7 @@ public:
   // File manipulation.
   bool  initialize() NOT_CDS_RETURN_(false);
   bool  open_for_read();
-  void  open_for_write(const char* path = NULL);
+  void  open_for_write();
   void  write_header();
   void  write_region(int region, char* base, size_t size,
                      bool read_only, bool allow_exec);

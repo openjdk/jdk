@@ -556,7 +556,9 @@ void VM_PopulateDumpSharedSpace::doit() {
   builder.relocate_to_requested();
 
   // Write the archive file
-  FileMapInfo* mapinfo = new FileMapInfo(true);
+  const char* static_archive = Arguments::GetSharedArchivePath();
+  assert(static_archive != nullptr, "SharedArchiveFile not set?");
+  FileMapInfo* mapinfo = new FileMapInfo(static_archive, true);
   mapinfo->populate_header(MetaspaceShared::core_region_alignment());
   mapinfo->set_serialized_data(serialized_data);
   mapinfo->set_cloned_vtables(cloned_vtables);
@@ -977,7 +979,9 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
 }
 
 FileMapInfo* MetaspaceShared::open_static_archive() {
-  FileMapInfo* mapinfo = new FileMapInfo(true);
+  const char* static_archive = Arguments::GetSharedArchivePath();
+  assert(static_archive != nullptr, "SharedArchivePath is NULL");
+  FileMapInfo* mapinfo = new FileMapInfo(static_archive, true);
   if (!mapinfo->initialize()) {
     delete(mapinfo);
     return NULL;
@@ -986,14 +990,15 @@ FileMapInfo* MetaspaceShared::open_static_archive() {
 }
 
 FileMapInfo* MetaspaceShared::open_dynamic_archive() {
-  if (DynamicDumpSharedSpaces && !AutoCreateSharedArchive) {
+  if (DynamicDumpSharedSpaces) {
     return NULL;
   }
-  if (Arguments::GetSharedDynamicArchivePath() == NULL) {
+  const char* dynamic_archive = Arguments::GetSharedDynamicArchivePath();
+  if (dynamic_archive == nullptr) {
     return NULL;
   }
 
-  FileMapInfo* mapinfo = new FileMapInfo(false);
+  FileMapInfo* mapinfo = new FileMapInfo(dynamic_archive, false);
   if (!mapinfo->initialize()) {
     delete(mapinfo);
     return NULL;

@@ -166,17 +166,16 @@ template <int N> static void get_header_version(char (&header_version) [N]) {
   assert(header_version[JVM_IDENT_MAX-1] == 0, "must be");
 }
 
-FileMapInfo::FileMapInfo(bool is_static) {
+FileMapInfo::FileMapInfo(const char* full_path, bool is_static) {
   memset((void*)this, 0, sizeof(FileMapInfo));
+  _full_path = full_path;
   _is_static = is_static;
   if (_is_static) {
     assert(_current_info == NULL, "must be singleton"); // not thread safe
     _current_info = this;
-    _full_path = Arguments::GetSharedArchivePath();
   } else {
     assert(_dynamic_archive_info == NULL, "must be singleton"); // not thread safe
     _dynamic_archive_info = this;
-    _full_path = Arguments::GetSharedDynamicArchivePath();
   }
   _file_offset = 0;
   _file_open = false;
@@ -1278,14 +1277,6 @@ bool FileMapInfo::init_from_file(int fd) {
     }
   }
 
-  unsigned int expected_magic = is_static() ? CDS_ARCHIVE_MAGIC : CDS_DYNAMIC_ARCHIVE_MAGIC;
-  if (gen_header->_magic != expected_magic) {
-    log_info(cds)("_magic expected: 0x%08x", expected_magic);
-    log_info(cds)("         actual: 0x%08x", gen_header->_magic);
-    FileMapInfo::fail_continue("The shared archive file has a bad magic number.");
-    return false;
-  }
-
   _header = (FileMapHeader*)os::malloc(gen_header->_header_size, mtInternal);
   lseek(fd, 0, SEEK_SET); // reset to begin of the archive
   size_t size = gen_header->_header_size;
@@ -1360,11 +1351,6 @@ bool FileMapInfo::open_for_read() {
   if (_file_open) {
     return true;
   }
-  if (is_static()) {
-    _full_path = Arguments::GetSharedArchivePath();
-  } else {
-    _full_path = Arguments::GetSharedDynamicArchivePath();
-  }
   log_info(cds)("trying to map %s", _full_path);
   int fd = os::open(_full_path, O_RDONLY | O_BINARY, 0);
   if (fd < 0) {
@@ -1386,12 +1372,7 @@ bool FileMapInfo::open_for_read() {
 
 // Write the FileMapInfo information to the file.
 
-void FileMapInfo::open_for_write(const char* path) {
-  if (path == NULL) {
-    _full_path = Arguments::GetSharedArchivePath();
-  } else {
-    _full_path = path;
-  }
+void FileMapInfo::open_for_write() {
   LogMessage(cds) msg;
   if (msg.is_info()) {
     msg.info("Dumping shared data to file: ");

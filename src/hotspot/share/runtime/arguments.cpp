@@ -3564,9 +3564,9 @@ void Arguments::init_shared_archive_paths() {
           // If +AutoCreateSharedArchive and the specified shared archive does not exist,
           // regenerate the dynamic archive base on default archive.
           if (AutoCreateSharedArchive && !os::file_exists(SharedArchiveFile)) {
-            SharedDynamicArchivePath = const_cast<char *>(SharedArchiveFile);
-            SharedArchivePath = get_default_shared_archive_path();
             DynamicDumpSharedSpaces = true;
+            ArchiveClassesAtExit = const_cast<char *>(SharedArchiveFile);
+            SharedArchivePath = get_default_shared_archive_path();
           } else {
             no_shared_spaces("invalid archive");
           }
@@ -3599,7 +3599,7 @@ void Arguments::init_shared_archive_paths() {
         }
       }
 
-      if (ArchiveClassesAtExit != nullptr && os::same_files(SharedArchiveFile, ArchiveClassesAtExit)) {
+      if (!AutoCreateSharedArchive && ArchiveClassesAtExit != nullptr && os::same_files(SharedArchiveFile, ArchiveClassesAtExit)) {
           vm_exit_during_initialization(
             "Cannot have the same archive file specified for -XX:SharedArchiveFile and -XX:ArchiveClassesAtExit",
             SharedArchiveFile);
