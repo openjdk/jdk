@@ -22,18 +22,20 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.internal.util.random;
+
 import java.util.Random;
 import java.util.random.RandomGenerator;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
-@SuppressWarnings("serial")
+
 /**
  * Class used to wrap a {@link java.util.random.RandomGenerator} to {@link java.util.Random}
- * 
- *
  */
+
+@SuppressWarnings("serial")
 public class RandomWrapper extends Random implements RandomGenerator {
     private final RandomGenerator randomToWrap;
     

@@ -140,8 +140,8 @@ public interface RandomGenerator {
         return of("L32X64MixRandom");
     }
     /**
-     * Returns a wrapper to use the Random class
-     * @return java.util.Random
+     * Returns a wrapper to use {@link java.util.Random}
+     * @return {@link java.util.Random}
      */
     default Random asRandom() {
 	return RandomWrapper.wrapRandom(this);
