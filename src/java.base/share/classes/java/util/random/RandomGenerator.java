@@ -137,6 +137,13 @@ public interface RandomGenerator {
     static RandomGenerator getDefault() {
         return of("L32X64MixRandom");
     }
+    /**
+     * Returns a wrapper to use the Random class
+     * @return java.util.Random
+     */
+    default Random asRandom() {
+	return (Random) new RandomWrapper(this);
+    }
 
     /**
      * Return true if the implementation of RandomGenerator (algorithm) has been
