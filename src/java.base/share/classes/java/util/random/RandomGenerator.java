@@ -28,9 +28,11 @@ package java.util.random;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Objects;
+import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import jdk.internal.util.random.RandomSupport;
 import jdk.internal.util.random.RandomSupport.*;
+import jdk.internal.util.random.RandomWrapper;
 
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
