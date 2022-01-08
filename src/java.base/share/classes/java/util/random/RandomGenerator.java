@@ -144,7 +144,7 @@ public interface RandomGenerator {
      * @return java.util.Random
      */
     default Random asRandom() {
-	return (Random) new RandomWrapper(this);
+	return RandomWrapper.wrapRandom(this);
     }
 
     /**
