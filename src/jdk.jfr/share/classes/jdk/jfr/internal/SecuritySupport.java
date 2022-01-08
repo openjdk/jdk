@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -267,18 +267,14 @@ public final class SecuritySupport {
 
     public static List<SafePath> getPredefinedJFCFiles() {
         List<SafePath> list = new ArrayList<>();
-        try {
-            Iterator<Path> pathIterator = doPrivilegedIOWithReturn(() -> {
-                return Files.newDirectoryStream(JFC_DIRECTORY.toPath(), "*").iterator();
-            });
-            while (pathIterator.hasNext()) {
-                Path path = pathIterator.next();
-                if (path.toString().endsWith(".jfc")) {
+        try (var ds = doPrivilegedIOWithReturn(() -> Files.newDirectoryStream(JFC_DIRECTORY.toPath(), "*.jfc"))) {
+            for (Path path : ds) {
+                if (!Files.isDirectory(path)) {
                     list.add(new SafePath(path));
                 }
             }
-        } catch (IOException ioe) {
-            Logger.log(LogTag.JFR, LogLevel.WARN, "Could not access .jfc-files in " + JFC_DIRECTORY + ", " + ioe.getMessage());
+        } catch (Exception e) {
+            Logger.log(LogTag.JFR, LogLevel.WARN, "Could not access .jfc-files in " + JFC_DIRECTORY + ", " + e.getMessage());
         }
         return list;
     }
