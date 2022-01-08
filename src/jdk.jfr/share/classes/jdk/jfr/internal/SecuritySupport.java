@@ -269,12 +269,13 @@ public final class SecuritySupport {
         List<SafePath> list = new ArrayList<>();
         try (var ds = doPrivilegedIOWithReturn(() -> Files.newDirectoryStream(JFC_DIRECTORY.toPath(), "*.jfc"))) {
             for (Path path : ds) {
-                if (!Files.isDirectory(path)) {
-                    list.add(new SafePath(path));
+                SafePath s = new SafePath(path);
+                if (!SecuritySupport.isDirectory(s)) {
+                    list.add(s);
                 }
             }
-        } catch (Exception e) {
-            Logger.log(LogTag.JFR, LogLevel.WARN, "Could not access .jfc-files in " + JFC_DIRECTORY + ", " + e.getMessage());
+        } catch (IOException ioe) {
+            Logger.log(LogTag.JFR, LogLevel.WARN, "Could not access .jfc-files in " + JFC_DIRECTORY + ", " + ioe.getMessage());
         }
         return list;
     }
