@@ -10,7 +10,7 @@ import java.util.stream.LongStream;
  * 
  *
  */
-public class RandomWrapper extends Random {
+public class RandomWrapper extends Random implements RandomGenerator {
     private final RandomGenerator randomToWrap;
     
     public RandomWrapper(RandomGenerator randomToWrap) {
