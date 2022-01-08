@@ -233,8 +233,6 @@ IP_ADAPTER_ADDRESSES *getAdapter (JNIEnv *env,  jint index) {
     return ret;
 }
 
-static int ipinflen = 2048;
-
 /*
  */
 int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
@@ -242,7 +240,7 @@ int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
     int ret, flags;
     MIB_IPADDRTABLE *tableP;
     IP_ADAPTER_ADDRESSES *ptr, *adapters=NULL;
-    ULONG len=ipinflen, count=0;
+    ULONG count=0;
     netif *nif=NULL, *dup_nif, *last=NULL, *loopif=NULL, *curr;
     int tun=0, net=0;
 
@@ -380,6 +378,7 @@ int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
                         nif->name = malloc (strlen(newname)+1);
                         nif->displayName = malloc (wcslen(ptr->FriendlyName)*2+2);
                         if (nif->name == 0 || nif->displayName == 0) {
+                                free(nif);
                                 goto err;
                         }
                         strcpy (nif->name, newname);
@@ -392,7 +391,11 @@ int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
                         nif->ipv6Index = ptr->Ipv6IfIndex;
                         nif->hasIpv6Address = TRUE;
 
-                        last->next = nif;
+                        if (last) {
+                                last->next = nif;
+                        } else {
+                                *netifPP = nif;
+                        }
                         last = nif;
                         count++;
                         c = getAddrsFromAdapter(ptr, &nif->addrs);
