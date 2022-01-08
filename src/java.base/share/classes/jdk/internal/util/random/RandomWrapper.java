@@ -13,8 +13,16 @@ import java.util.stream.LongStream;
 public class RandomWrapper extends Random implements RandomGenerator {
     private final RandomGenerator randomToWrap;
     
-    public RandomWrapper(RandomGenerator randomToWrap) {
+    private RandomWrapper(RandomGenerator randomToWrap) {
 	this.randomToWrap = randomToWrap;
+    }
+    
+    public static Random wrapRandom(RandomGenerator random) {
+	//Check to see if its not wrapping another Random instance
+	if(random instanceof Random)
+	    return (Random) random;
+	
+	return (Random) new RandomWrapper(random);
     }
     
     /**
