@@ -32,129 +32,131 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
 /**
- * Class used to wrap a {@link java.util.random.RandomGenerator} to {@link java.util.Random}
+ * Class used to wrap a {@link java.util.random.RandomGenerator} to
+ * {@link java.util.Random}
  */
 
 @SuppressWarnings("serial")
 public class RandomWrapper extends Random implements RandomGenerator {
     private final RandomGenerator randomToWrap;
-    
+
     private RandomWrapper(RandomGenerator randomToWrap) {
-	this.randomToWrap = randomToWrap;
+        this.randomToWrap = randomToWrap;
     }
-    
+
     public static Random wrapRandom(RandomGenerator random) {
-	//Check to see if its not wrapping another Random instance
-	if(random instanceof Random)
-	    return (Random) random;
-	
-	return (Random) new RandomWrapper(random);
+        // Check to see if its not wrapping another Random instance
+        if (random instanceof Random)
+            return (Random) random;
+
+        return new RandomWrapper(random);
     }
-    
+
     /**
-     * setSeed does not exist in {@link java.util.random.RandomGenerator} so can't use it
+     * setSeed does not exist in {@link java.util.random.RandomGenerator} so can't
+     * use it
      */
     @Override
     public synchronized void setSeed(long seed) {
     }
-    
+
     @Override
     public void nextBytes(byte[] bytes) {
-	this.randomToWrap.nextBytes(bytes);
+        this.randomToWrap.nextBytes(bytes);
     }
-    
+
     @Override
     public int nextInt() {
-	return this.randomToWrap.nextInt();
+        return this.randomToWrap.nextInt();
     }
-    
+
     @Override
     public int nextInt(int bound) {
-	return this.randomToWrap.nextInt(bound);
+        return this.randomToWrap.nextInt(bound);
     }
-    
+
     @Override
     public long nextLong() {
-	return this.randomToWrap.nextLong();
+        return this.randomToWrap.nextLong();
     }
-    
+
     @Override
     public boolean nextBoolean() {
-	return this.randomToWrap.nextBoolean();
+        return this.randomToWrap.nextBoolean();
     }
- 
+
     @Override
     public float nextFloat() {
-	return this.randomToWrap.nextFloat();
+        return this.randomToWrap.nextFloat();
     }
-    
+
     @Override
     public double nextDouble() {
-	return this.randomToWrap.nextDouble();
+        return this.randomToWrap.nextDouble();
     }
-    
+
     @Override
     public synchronized double nextGaussian() {
-	return this.randomToWrap.nextGaussian();
+        return this.randomToWrap.nextGaussian();
     }
-    
+
     @Override
     public IntStream ints(long streamSize) {
-	return this.randomToWrap.ints(streamSize);
+        return this.randomToWrap.ints(streamSize);
     }
-    
+
     @Override
     public IntStream ints() {
-	return this.randomToWrap.ints();
+        return this.randomToWrap.ints();
     }
-    
+
     @Override
     public IntStream ints(long streamSize, int randomNumberOrigin, int randomNumberBound) {
-	return this.randomToWrap.ints(streamSize, randomNumberOrigin, randomNumberBound);
+        return this.randomToWrap.ints(streamSize, randomNumberOrigin, randomNumberBound);
     }
-    
+
     @Override
     public IntStream ints(int randomNumberOrigin, int randomNumberBound) {
-	return this.randomToWrap.ints(randomNumberOrigin,randomNumberBound);
+        return this.randomToWrap.ints(randomNumberOrigin, randomNumberBound);
     }
-    
+
     @Override
     public LongStream longs(long streamSize) {
-	return this.randomToWrap.longs(streamSize);
+        return this.randomToWrap.longs(streamSize);
     }
-    
+
     @Override
     public LongStream longs() {
-	return this.randomToWrap.longs();
+        return this.randomToWrap.longs();
     }
-    
+
     @Override
     public LongStream longs(long streamSize, long randomNumberOrigin, long randomNumberBound) {
-	return this.randomToWrap.longs(streamSize, randomNumberOrigin, randomNumberBound);
+        return this.randomToWrap.longs(streamSize, randomNumberOrigin, randomNumberBound);
     }
-    
+
     @Override
     public LongStream longs(long randomNumberOrigin, long randomNumberBound) {
-	return this.randomToWrap.longs(randomNumberOrigin, randomNumberBound);
+        return this.randomToWrap.longs(randomNumberOrigin, randomNumberBound);
     }
-    
+
     @Override
     public DoubleStream doubles(long streamSize) {
-	return this.randomToWrap.doubles(streamSize);
+        return this.randomToWrap.doubles(streamSize);
     }
-    
+
     @Override
     public DoubleStream doubles() {
-	return this.randomToWrap.doubles();
+        return this.randomToWrap.doubles();
     }
-    
+
     @Override
     public DoubleStream doubles(long streamSize, double randomNumberOrigin, double randomNumberBound) {
-	return this.randomToWrap.doubles(streamSize, randomNumberOrigin, randomNumberBound);
+        return this.randomToWrap.doubles(streamSize, randomNumberOrigin, randomNumberBound);
     }
-    
+
     @Override
     public DoubleStream doubles(double randomNumberOrigin, double randomNumberBound) {
-	return this.randomToWrap.doubles(randomNumberOrigin,randomNumberBound);
+        return this.randomToWrap.doubles(randomNumberOrigin, randomNumberBound);
     }
 }
