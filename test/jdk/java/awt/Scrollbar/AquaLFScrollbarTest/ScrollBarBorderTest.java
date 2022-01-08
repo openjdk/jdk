@@ -21,15 +21,23 @@
  * questions.
  */
 
-import javax.swing.*;
-import javax.swing.border.Border;
-import javax.swing.border.EmptyBorder;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Insets;
 import java.awt.image.BufferedImage;
-import java.nio.Buffer;
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import javax.imageio.ImageIO;
+import javax.swing.JScrollBar;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.border.Border;
 
 import static java.awt.image.BufferedImage.TYPE_INT_ARGB;
-import static java.awt.image.BufferedImage.TYPE_INT_RGB;
 
 /*
  * @test
@@ -38,49 +46,10 @@ import static java.awt.image.BufferedImage.TYPE_INT_RGB;
  * @run main ScrollBarBorderTest
  */
 public class ScrollBarBorderTest {
-
-    // On macOS 10.12.6 using the Mac look and feel (com.apple.laf.AquaLookAndFeel)
-    // the scroll bar ignores the custom border and allows the scroll thumb to move
-    // beneath the border. Run with:
-    // java ScrollBarBorderTest
-
-    // If run using any other look and feel (e.g. Metal) then the right side of
-    // the scroll bar stops at the border as expected. Run with:
-    // java -Dswing.defaultlaf=javax.swing.plaf.metal.MetalLookAndFeel ScrollBarBorderTest
-
-    // Java version: 1.8.0_151
-
     private static JScrollBar scrollBar;
-    private static JPanel panel;
-    private static JFrame frame;
-
-    public void createAndShowGUI() throws Exception {
-        SwingUtilities.invokeAndWait(new Runnable() {
-            @Override
-            public void run() {
-                // create scroll bar
-                scrollBar = new JScrollBar(Scrollbar.HORIZONTAL);
-                scrollBar.setBorder(new CustomBorder());
-
-                // create panel
-                panel = new JPanel();
-                panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-                panel.setBorder(new EmptyBorder(20, 20, 20, 20));
-                panel.setSize(200,90);
-                panel.add(new JLabel(UIManager.getLookAndFeel().toString()));
-                panel.add(Box.createVerticalStrut(20));
-                panel.add(scrollBar);
-
-                // create frame
-                frame = new JFrame("ScrollBarBorderTest");
-                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                frame.getContentPane().add(panel);
-                frame.pack();
-
-                frame.setVisible(true);
-            }
-        });
-    }
+    public static final int BORDER_WIDTH = 150;
+    public static final int WIDTH = BORDER_WIDTH + 200;
+    public static final int HEIGHT = 20;
 
     private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
         try {
@@ -94,49 +63,59 @@ public class ScrollBarBorderTest {
         }
     }
 
-    public void test() throws Exception {
-        createAndShowGUI();
-        BufferedImage image = new BufferedImage(panel.getWidth(),panel.getHeight(),TYPE_INT_ARGB);
-        Graphics2D graphics2D = image.createGraphics();
-        panel.paint(graphics2D);
+    public static void test() {
+        // create scroll bar
+        scrollBar = new JScrollBar(JScrollBar.HORIZONTAL);
+        scrollBar.setBorder(new CustomBorder());
+        scrollBar.setSize(WIDTH, HEIGHT);
+
+        // paint image with thumb set to default value
+        BufferedImage image1 = new BufferedImage(WIDTH, HEIGHT, TYPE_INT_ARGB);
+        Graphics2D graphics2D = image1.createGraphics();
+        scrollBar.paint(graphics2D);
         graphics2D.dispose();
+
+        // paint image with thumb set to max value
         scrollBar.setValue(Integer.MAX_VALUE);
-        BufferedImage image2 = new BufferedImage(panel.getWidth(),panel.getHeight(),TYPE_INT_ARGB);
+        BufferedImage image2 = new BufferedImage(WIDTH, HEIGHT, TYPE_INT_ARGB);
         Graphics2D graphics2D2 = image2.createGraphics();
-        panel.paint(graphics2D2);
+        scrollBar.paint(graphics2D2);
         graphics2D2.dispose();
 
-        for (int i = 450; i < image.getWidth(); i++) {
-            for (int j = 70; j < image.getHeight(); j++) {
-                int c1 = image.getRGB(i,j);
+        // check border for thumb
+        for (int i = WIDTH - BORDER_WIDTH; i < WIDTH; i++) {
+            for (int j = 0; j < HEIGHT; j++) {
+                int c1 = image1.getRGB(i,j);
                 int c2 = image2.getRGB(i,j);
                 if(c1 != c2) {
-                    System.out.println(i + " " + j + " " + "Color1: " + c1);
-                    System.out.println(i + " " + j + " " + "Color2: " + c2);
-                    throw new RuntimeException();
+                    System.out.println(i + " " + j + " " + "Color1: "
+                                       + Integer.toHexString(c1));
+                    System.out.println(i + " " + j + " " + "Color2: "
+                                       + Integer.toHexString(c2));
+                    saveImage(image1, "image1.png");
+                    saveImage(image2, "image2.png");
+                    throw new RuntimeException("Border has a thumb in it");
                 }
             }
         }
     }
 
-    public void done() throws Exception {
-        SwingUtilities.invokeAndWait(new Runnable() {
-            @Override
-            public void run() {
-                frame.dispose();
-            }
-        });
+    private static void saveImage(BufferedImage image, String filename) {
+        try {
+            ImageIO.write(image, "png", new File(filename));
+        } catch (IOException e) {
+            // Don't propagate the exception
+            e.printStackTrace();
+        }
     }
 
     public static void main(String[] args) throws Exception {
-        ScrollBarBorderTest borderTest = new ScrollBarBorderTest();
-
         for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
             try {
                 SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
-                borderTest.test();
-            } finally {
-                borderTest.done();
+                SwingUtilities.invokeAndWait(ScrollBarBorderTest::test);
+            } catch (InvocationTargetException e) {
+                throw new RuntimeException("Border has a thumb in it");
             }
         }
     }
@@ -145,7 +124,7 @@ public class ScrollBarBorderTest {
     private static class CustomBorder implements Border {
         public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
             g.setColor(new Color(255, 0, 0, 100));
-            g.fillRect(width - 150, y, width, height);
+            g.fillRect(width - BORDER_WIDTH, y, width, height);
         }
 
         public Insets getBorderInsets(Component c) {
