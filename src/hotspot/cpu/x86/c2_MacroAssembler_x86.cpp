@@ -4074,7 +4074,7 @@ void C2_MacroAssembler::masked_op(int ideal_opc, int mask_len, KRegister dst,
 #ifdef _LP64
 /*
  * Convert long vectors to floating-point vectors on non-AVX512dq
- * The fast path downcasts the vector to an int vectors to perform the
+ * The fast path downcasts the vector to an int vector to perform the
  * cast; the slow path, where some elements can't be cast losslessly to
  * int, tries to convert elements one by one.
  */
@@ -4082,6 +4082,7 @@ void C2_MacroAssembler::vector_castL2FD(XMMRegister dst, XMMRegister src, XMMReg
                                         Register tmp, KRegister ktmp, BasicType bt, int vlen, int vec_enc) {
   Label slow_path;
   Label done;
+  assert((ktmp == knoreg) != (vlen == 8), "");
 
   if (vec_enc == AVX_128bit) {
     vpshufd(xtmp1, src, 0x08, vec_enc);
