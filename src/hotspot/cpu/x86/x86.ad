@@ -1789,6 +1789,13 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false;
       }
       break;
+#ifndef _LP64
+    case Op_VectorCastL2X:
+      if (is_floating_point_type(bt) && !VM_Version::supports_avx512dq()) {
+        return false;
+      }
+      break;
+#endif
     case Op_VectorCastD2X:
       if (is_subword_type(bt) || bt == T_INT) {
         return false;
@@ -7115,6 +7122,8 @@ instruct vcastLtoBS(vec dst, vec src, rRegP scratch) %{
   ins_pipe( pipe_slow );
 %}
 
+#ifdef _LP64
+
 instruct vcastLtoFD_avx(vec dst, vec src, vec xtmp1, vec xtmp2, rRegL tmp) %{
   predicate(is_floating_point_type(Matcher::vector_element_basic_type(n)) &&
             Matcher::vector_length_in_bytes(n->in(1)) <= 32);
@@ -7148,10 +7157,12 @@ instruct vcastLtoFD_evex(vec dst, vec src, vec xtmp1, vec xtmp2, rRegL tmp, kReg
   ins_pipe( pipe_slow );
 %}
 
+#endif // _LP64
+
 instruct vcastLtoX_evex(vec dst, vec src) %{
-  predicate(UseAVX > 2 && is_subword_type(Matcher::vector_element_basic_type(n)) ||
+  predicate((UseAVX > 2 && is_subword_type(Matcher::vector_element_basic_type(n))) ||
             Matcher::vector_element_basic_type(n) == T_INT ||
-            UseAVX > 2 && VM_Version::supports_avx512dq() && is_floating_point_type(Matcher::vector_element_basic_type(n)));
+            (UseAVX > 2 && VM_Version::supports_avx512dq() && is_floating_point_type(Matcher::vector_element_basic_type(n))));
   match(Set dst (VectorCastL2X src));
   format %{ "vector_cast_l2x  $dst,$src\t!" %}
   ins_encode %{
