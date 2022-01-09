@@ -300,6 +300,9 @@ public:
   void masked_op(int ideal_opc, int mask_len, KRegister dst,
                  KRegister src1, KRegister src2);
 
+  void vector_castL2FD(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                       Register tmp, KRegister ktmp, BasicType bt, int vlen, int vec_enc);
+
   void vector_castF2I_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
                           XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4,
                           AddressLiteral float_sign_flip, Register scratch, int vec_enc);

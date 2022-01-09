@@ -4071,6 +4071,88 @@ void C2_MacroAssembler::masked_op(int ideal_opc, int mask_len, KRegister dst,
   }
 }
 
+void C2_MacroAssembler::vector_castL2FD(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                                        Register tmp, KRegister ktmp, BasicType bt, int vlen, int vec_enc) {
+  Label slow_path;
+  Label done;
+
+  if (vec_enc == AVX_128bit) {
+    vpshufd(xtmp1, src, 0x08, vec_enc);
+  } else if (UseAVX > 2) {
+    evpmovqd(xtmp1, src, VM_Version::supports_avx512vl() ? vec_enc : AVX_512bit);
+  } else {
+    vpshufd(xtmp1, src, 0x08, vec_enc);
+    vpermpd(xtmp1, xtmp1, 0x08, vec_enc);
+  }
+
+  vpmovsxdq(xtmp2, xtmp1, vec_enc);
+  if (vec_enc == AVX_512bit) {
+    evpcmp(T_LONG, ktmp, k0, xtmp1, xtmp2, Assembler::eq, vec_enc);
+    kortest(vlen, ktmp, ktmp);
+  } else {
+    vallones(dst, vec_enc);
+    vpcmpeqq(xtmp2, xtmp1, xtmp2, vec_enc);
+    vptest(xtmp2, dst);
+  }
+  jccb(Assembler::aboveEqual, slow_path);
+
+  // fast path
+  if (bt == T_FLOAT) {
+    vcvtdq2ps(dst, xtmp1, vec_enc == AVX_512bit ? AVX_256bit : AVX_128bit);
+  } else {
+    vcvtdq2pd(dst, xtmp1, vec_enc);
+  }
+  jmp(done);
+
+  bind(slow_path);
+  int dst_eles_per_lane = 128 / type2aelembytes(bt);
+  int dst_lane_num = vlen / dst_eles_per_lane;
+  for (int dst_lane = 0; dst_lane < dst_lane_num; dst_lane++) {
+    for (int dst_ele = dst_eles_per_lane - 1; dst_ele >= 0; dst_ele--) {
+      int index = dst_lane * dst_eles_per_lane + dst_ele;
+      int src_lane = index / 2;
+      int src_ele = index % 2;
+      XMMRegister src_tmp;
+      if (src_lane == 0) {
+        src_tmp = src;
+      } else {
+        src_tmp = xtmp1;
+        if (src_ele == 1) {
+          if (vec_enc == AVX_512bit) {
+            vextractf32x4(xtmp1, src, src_lane);
+          } else {
+            vextractf128(xtmp1, src, src_lane);
+          }
+        }
+      }
+      if (src_ele == 0) {
+        movq(tmp, src_tmp);
+      } else {
+        extract(T_LONG, tmp, src_tmp, src_ele);
+      }
+
+      XMMRegister dst_tmp = (dst_lane == 0 ? dst : xtmp2);
+      if (bt == T_FLOAT) {
+        cvtsi2ssq(dst_tmp, tmp);
+      } else {
+        cvtsi2sdq(dst_tmp, tmp);
+      }
+      if (dst_ele == 0) {
+        if (dst_lane != 0) {
+          if (bt == T_DOUBLE && vec_enc == AVX_512bit) {
+            vinsertf32x4(dst, dst, xtmp2, dst_lane);
+          } else {
+            vinsertf128(dst, dst, xtmp2, dst_lane);
+          }
+        }
+      } else {
+        vpshufd(dst_tmp, dst_tmp, 0x90, AVX_128bit);
+      }
+    }
+  }
+  bind(done);
+}
+
 /*
  * Algorithm for vector D2L and F2I conversions:-
  * a) Perform vector D2L/F2I cast.

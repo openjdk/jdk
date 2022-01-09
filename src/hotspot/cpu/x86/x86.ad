@@ -1789,13 +1789,6 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false;
       }
       break;
-    case Op_VectorCastL2X:
-      if (is_integral_type(bt) && size_in_bits == 256 && UseAVX < 2) {
-        return false;
-      } else if (!is_integral_type(bt) && !VM_Version::supports_avx512dq()) {
-        return false;
-      }
-      break;
     case Op_VectorCastD2X:
       if (is_subword_type(bt) || bt == T_INT) {
         return false;
@@ -7116,11 +7109,43 @@ instruct vcastLtoBS(vec dst, vec src, rRegP scratch) %{
   ins_pipe( pipe_slow );
 %}
 
+instruct vcastLtoFD_avx(vec dst, vec src, vec xtmp1, vec xtmp2, rRegL tmp) %{
+  predicate(is_floating_point_type(Matcher::vector_element_basic_type(n)) &&
+            Matcher::vector_length_in_bytes(n->in(1)) <= 32);
+  match(Set dst (VectorCastL2X src));
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP tmp);
+  format %{ "vector_cast_l2x  $dst,$src\t! using $xtmp1, $xtmp2 and $tmp as TEMP" %}
+  ins_encode %{
+    BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
+    int vlen = Matcher::vector_length(this);
+    int vlen_enc = vector_length_encoding(this, $src);
+    __ vector_castL2FD($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister,
+                       $tmp$$Register, knoreg, to_elem_bt, vlen, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vcastLtoFD_evex(vec dst, vec src, vec xtmp1, vec xtmp2, rRegL tmp, kReg ktmp) %{
+  predicate(is_floating_point_type(Matcher::vector_element_basic_type(n)) &&
+            Matcher::vector_length_in_bytes(n->in(1)) == 64 &&
+            !VM_Version::supports_avx512dq());
+  match(Set dst (VectorCastL2X src));
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP tmp, TEMP ktmp);
+  format %{ "vector_cast_l2x  $dst,$src\t! using $xtmp1, $xtmp2, $tmp and $ktmp as TEMP" %}
+  ins_encode %{
+    BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
+    int vlen = Matcher::vector_length(this);
+    int vlen_enc = vector_length_encoding(this, $src);
+    __ vector_castL2FD($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister,
+                       $tmp$$Register, $ktmp$$KRegister, to_elem_bt, vlen, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct vcastLtoX_evex(vec dst, vec src) %{
-  predicate(UseAVX > 2 ||
-            (Matcher::vector_element_basic_type(n) == T_INT ||
-             Matcher::vector_element_basic_type(n) == T_FLOAT ||
-             Matcher::vector_element_basic_type(n) == T_DOUBLE));
+  predicate(UseAVX > 2 && is_subword_type(Matcher::vector_element_basic_type(n)) ||
+            Matcher::vector_element_basic_type(n) == T_INT ||
+            UseAVX > 2 && VM_Version::supports_avx512dq() && is_floating_point_type(Matcher::vector_element_basic_type(n)));
   match(Set dst (VectorCastL2X src));
   format %{ "vector_cast_l2x  $dst,$src\t!" %}
   ins_encode %{
@@ -7162,11 +7187,9 @@ instruct vcastLtoX_evex(vec dst, vec src) %{
         }
         break;
       case T_FLOAT:
-        assert(UseAVX > 2 && VM_Version::supports_avx512dq(), "required");
         __ evcvtqq2ps($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
         break;
       case T_DOUBLE:
-        assert(UseAVX > 2 && VM_Version::supports_avx512dq(), "required");
         __ evcvtqq2pd($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
         break;
 
