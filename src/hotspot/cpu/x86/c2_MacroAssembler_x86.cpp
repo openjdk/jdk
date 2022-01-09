@@ -4071,6 +4071,7 @@ void C2_MacroAssembler::masked_op(int ideal_opc, int mask_len, KRegister dst,
   }
 }
 
+#ifdef _LP64
 /*
  * Convert long vectors to floating-point vectors on non-AVX512dq
  * The fast path downcasts the vector to an int vectors to perform the
@@ -4158,6 +4159,7 @@ void C2_MacroAssembler::vector_castL2FD(XMMRegister dst, XMMRegister src, XMMReg
   }
   bind(done);
 }
+#endif // _LP64
 
 /*
  * Algorithm for vector D2L and F2I conversions:-
