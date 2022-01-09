@@ -4071,6 +4071,12 @@ void C2_MacroAssembler::masked_op(int ideal_opc, int mask_len, KRegister dst,
   }
 }
 
+/*
+ * Convert long vectors to floating-point vectors on non-AVX512dq
+ * The fast path downcasts the vector to an int vectors to perform the
+ * cast; the slow path, where some elements can't be cast losslessly to
+ * int, tries to convert elements one by one.
+ */
 void C2_MacroAssembler::vector_castL2FD(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
                                         Register tmp, KRegister ktmp, BasicType bt, int vlen, int vec_enc) {
   Label slow_path;
@@ -4091,10 +4097,10 @@ void C2_MacroAssembler::vector_castL2FD(XMMRegister dst, XMMRegister src, XMMReg
     kortest(vlen, ktmp, ktmp);
   } else {
     vallones(dst, vec_enc);
-    vpcmpeqq(xtmp2, xtmp1, xtmp2, vec_enc);
-    vptest(xtmp2, dst);
+    vpcmpeqq(xtmp2, src, xtmp2, vec_enc);
+    vptest(xtmp2, dst, vec_enc);
   }
-  jccb(Assembler::aboveEqual, slow_path);
+  jccb(Assembler::carryClear, slow_path);
 
   // fast path
   if (bt == T_FLOAT) {
@@ -4105,7 +4111,7 @@ void C2_MacroAssembler::vector_castL2FD(XMMRegister dst, XMMRegister src, XMMReg
   jmp(done);
 
   bind(slow_path);
-  int dst_eles_per_lane = 128 / type2aelembytes(bt);
+  int dst_eles_per_lane = MIN2(vlen, 16 / type2aelembytes(bt));
   int dst_lane_num = vlen / dst_eles_per_lane;
   for (int dst_lane = 0; dst_lane < dst_lane_num; dst_lane++) {
     for (int dst_ele = dst_eles_per_lane - 1; dst_ele >= 0; dst_ele--) {
@@ -4146,7 +4152,7 @@ void C2_MacroAssembler::vector_castL2FD(XMMRegister dst, XMMRegister src, XMMReg
           }
         }
       } else {
-        vpshufd(dst_tmp, dst_tmp, 0x90, AVX_128bit);
+        vpshufd(dst_tmp, dst_tmp, bt == T_FLOAT ? 0x90 : 0x40, AVX_128bit);
       }
     }
   }

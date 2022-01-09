@@ -58,6 +58,8 @@ public class TestCastMethods {
             makePair(ISPEC128, DSPEC256),
             makePair(LSPEC128, SSPEC64),
             makePair(LSPEC128, ISPEC64),
+            makePair(LSPEC128, FSPEC64),
+            makePair(LSPEC128, DSPEC128),
             makePair(FSPEC64, ISPEC64),
             makePair(FSPEC128, ISPEC128),
             makePair(FSPEC64, DSPEC128),
@@ -82,6 +84,8 @@ public class TestCastMethods {
             makePair(LSPEC256, BSPEC64),
             makePair(LSPEC256, SSPEC64),
             makePair(LSPEC256, ISPEC128),
+            makePair(LSPEC256, FSPEC128),
+            makePair(LSPEC256, DSPEC256),
             makePair(FSPEC256, ISPEC256)
     )).toList();
 
@@ -102,6 +106,8 @@ public class TestCastMethods {
             makePair(LSPEC512, BSPEC64),
             makePair(LSPEC512, SSPEC128),
             makePair(LSPEC512, ISPEC256),
+            makePair(LSPEC512, FSPEC256),
+            makePair(LSPEC512, DSPEC512),
             makePair(FSPEC512, ISPEC512),
             makePair(FSPEC256, DSPEC512),
             makePair(DSPEC512, FSPEC256)
@@ -113,9 +119,6 @@ public class TestCastMethods {
     )).toList();
 
     public static final List<VectorSpeciesPair> AVX512DQ_CAST_TESTS = Stream.concat(AVX512_CAST_TESTS.stream(), Stream.of(
-            makePair(LSPEC128, DSPEC128),
-            makePair(LSPEC256, DSPEC256),
-            makePair(LSPEC512, DSPEC512),
             makePair(DSPEC128, LSPEC128),
             makePair(DSPEC256, LSPEC256),
             makePair(DSPEC512, LSPEC512)

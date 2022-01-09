@@ -123,7 +123,13 @@ public class VectorReshapeHelper {
                     case "byte"   -> UnsafeUtils.putByte(input, ibase, i, (byte)random.nextInt());
                     case "short"  -> UnsafeUtils.putShort(input, ibase, i, (short)random.nextInt());
                     case "int"    -> UnsafeUtils.putInt(input, ibase, i, random.nextInt());
-                    case "long"   -> UnsafeUtils.putLong(input, ibase, i, random.nextLong());
+                    case "long"   -> {
+                        if (normalArray) {
+                            UnsafeUtils.putLong(input, ibase, i, random.nextInt());
+                        } else {
+                            UnsafeUtils.putLong(input, ibase, i, random.nextLong());
+                        }
+                    }
                     case "float"  -> {
                         if (normalArray || random.nextBoolean()) {
                             UnsafeUtils.putFloat(input, ibase, i, random.nextFloat(Byte.MIN_VALUE, Byte.MAX_VALUE));
