@@ -2702,6 +2702,15 @@ void MacroAssembler::movss(XMMRegister dst, AddressLiteral src) {
   }
 }
 
+void MacroAssembler::vmovddup(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
+  if (reachable(src)) {
+    Assembler::vmovddup(dst, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    Assembler::vmovddup(dst, Address(rscratch, 0), vector_len);
+  }
+}
+
 void MacroAssembler::mulsd(XMMRegister dst, AddressLiteral src) {
   if (reachable(src)) {
     Assembler::mulsd(dst, as_Address(src));

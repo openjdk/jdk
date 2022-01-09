@@ -7379,7 +7379,11 @@ instruct vcmpu(legVec dst, legVec src1, legVec src2, immI8 cond, legVec xtmp, rR
     Assembler::ComparisonPredicate cmp = booltest_pred_to_comparison_pred($cond$$constant);
     Assembler::Width ww = widthForType(Matcher::vector_element_basic_type(this, $src1));
 
-    __ vbroadcastsd($xtmp$$XMMRegister, flip_bit, Assembler::AVX_256bit, $scratch$$Register);
+    if (vlen_enc == Assembler::AVX_128bit) {
+      __ vmovddup($xtmp$$XMMRegister, flip_bit, vlen_enc, $scratch$$Register);
+    } else {
+      __ vbroadcastsd($xtmp$$XMMRegister, flip_bit, vlen_enc, $scratch$$Register);
+    }
     __ vpxor($dst$$XMMRegister, $xtmp$$XMMRegister, $src1$$XMMRegister, vlen_enc);
     __ vpxor($xtmp$$XMMRegister, $xtmp$$XMMRegister, $src2$$XMMRegister, vlen_enc);
     __ vpcmpCCW($dst$$XMMRegister, $dst$$XMMRegister, $xtmp$$XMMRegister, $xtmp$$XMMRegister, cmp, ww, vlen_enc);
