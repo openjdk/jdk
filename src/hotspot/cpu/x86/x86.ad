@@ -7189,7 +7189,7 @@ instruct vcastLtoFD_evex(vec dst, vec src, vec xtmp1, vec xtmp2, rRegL tmp, kReg
 instruct vcastLtoX_evex(vec dst, vec src) %{
   predicate((is_subword_type(Matcher::vector_element_basic_type(n)) && UseAVX > 2) ||
             Matcher::vector_element_basic_type(n) == T_INT ||
-            (is_floating_point_type(Matcher::vector_element_basic_type(n))) && UseAVX > 2 && VM_Version::supports_avx512dq());
+            (is_floating_point_type(Matcher::vector_element_basic_type(n)) && UseAVX > 2 && VM_Version::supports_avx512dq()));
   match(Set dst (VectorCastL2X src));
   format %{ "vector_cast_l2x  $dst,$src\t!" %}
   ins_encode %{
