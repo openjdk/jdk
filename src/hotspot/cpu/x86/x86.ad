@@ -1782,13 +1782,6 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false; // Implementation limitation
       }
       break;
-    case Op_VectorCastB2X:
-    case Op_VectorCastS2X:
-    case Op_VectorCastI2X:
-      if (bt != T_DOUBLE && size_in_bits == 256 && UseAVX < 2) {
-        return false;
-      }
-      break;
 #ifndef _LP64
     case Op_VectorCastL2X:
       if (is_floating_point_type(bt) && !VM_Version::supports_avx512dq()) {
@@ -6990,6 +6983,39 @@ instruct vcastStoX_evex(vec dst, vec src) %{
         __ vcvtdq2pd($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
         break;
       }
+      default:
+        ShouldNotReachHere();
+    }
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vcastBStoF(vec dst, vec src, vec xtmp) %{
+  predicate(UseAVX == 1 &&
+            is_subword_type(Matcher::vector_element_basic_type(n->in(1))) &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT &&
+            Matcher::vector_length_in_bytes(n) == 32);
+  match(Set dst (VectorCastB2X src));
+  match(Set dst (VectorCastS2X src));
+  format %{ "vector_cast_bs2x $dst,$src\t! using $xtmp as TEMP" %}
+  effect(TEMP dst, TEMP xtmp);
+  ins_encode %{
+    BasicType elem_bt = Matcher::vector_element_basic_type(this, $src);
+    switch (elem_bt) {
+      case T_BYTE:
+        __ pmovsxbd($dst$$XMMRegister, $src$$XMMRegister);
+        __ pshufd($xtmp$$XMMRegister, $src$$XMMRegister, 0x01);
+        __ pmovsxbd($xtmp$$XMMRegister, $xtmp$$XMMRegister);
+        __ vinsertf128_high($dst$$XMMRegister, $xtmp$$XMMRegister);
+        __ vcvtdq2ps($dst$$XMMRegister, $dst$$XMMRegister, Assembler::AVX_256bit);
+        break;
+      case T_SHORT:
+        __ pmovsxwd($dst$$XMMRegister, $src$$XMMRegister);
+        __ pshufd($xtmp$$XMMRegister, $src$$XMMRegister, 0x0E);
+        __ pmovsxwd($xtmp$$XMMRegister, $xtmp$$XMMRegister);
+        __ vinsertf128_high($dst$$XMMRegister, $xtmp$$XMMRegister);
+        __ vcvtdq2ps($dst$$XMMRegister, $dst$$XMMRegister, Assembler::AVX_256bit);
+        break;
       default:
         ShouldNotReachHere();
     }
