@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 /**
- * Class responsible for deserializing data generated at build time. 
+ * Class responsible for deserializing data generated at build time.
  */
 public class ArchiveReader {
 

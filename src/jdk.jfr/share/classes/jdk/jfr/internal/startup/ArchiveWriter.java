@@ -33,7 +33,7 @@ import java.util.Map;
 import jdk.jfr.Configuration;
 
 /**
- * Class responsible for serializing data at build-time
+ * Class responsible for serializing data at build time.
  */
 public class ArchiveWriter {
 
