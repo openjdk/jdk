@@ -1489,8 +1489,14 @@ public:
   void vpxor(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register scratch_reg = rscratch1);
 
   // Simple version for AVX2 256bit vectors
-  void vpxor(XMMRegister dst, XMMRegister src) { Assembler::vpxor(dst, dst, src, true); }
-  void vpxor(XMMRegister dst, Address src) { Assembler::vpxor(dst, dst, src, true); }
+  void vpxor(XMMRegister dst, XMMRegister src) {
+    assert(UseAVX >= 2, "Only with AVX2");
+    Assembler::vpxor(dst, dst, src, 1);
+  }
+  void vpxor(XMMRegister dst, Address src) {
+    assert(UseAVX >= 2, "Only with AVX2");
+    Assembler::vpxor(dst, dst, src, 1);
+  }
 
   void vpermd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) { Assembler::vpermd(dst, nds, src, vector_len); }
   void vpermd(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register scratch_reg);
