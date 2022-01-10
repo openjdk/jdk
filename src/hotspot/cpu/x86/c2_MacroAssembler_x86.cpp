@@ -4144,7 +4144,7 @@ void C2_MacroAssembler::vector_castL2FD(XMMRegister dst, XMMRegister src, XMMReg
 
   bind(slow_path);
 
-#ifdef __LP64
+#ifdef _LP64
   int dst_eles_per_lane = MIN2(vlen, 16 / type2aelembytes(bt));
   int dst_lane_num = vlen / dst_eles_per_lane;
   for (int dst_lane = 0; dst_lane < dst_lane_num; dst_lane++) {
@@ -4190,7 +4190,7 @@ void C2_MacroAssembler::vector_castL2FD(XMMRegister dst, XMMRegister src, XMMReg
       }
     }
   }
-#else // __LP64
+#else // _LP64
   int src_vlen_in_bytes = vlen * type2aelembytes(T_LONG);
   int dst_vlen_in_bytes = vlen * type2aelembytes(bt);
   assert(src_vlen_in_bytes + dst_vlen_in_bytes <= 128, "red zone");
@@ -4206,7 +4206,7 @@ void C2_MacroAssembler::vector_castL2FD(XMMRegister dst, XMMRegister src, XMMReg
     }
   }
   load_vector(dst, Address(rsp, -src_vlen_in_bytes - dst_vlen_in_bytes), dst_vlen_in_bytes);
-#endif // __LP64
+#endif // _LP64
 
   bind(done);
 }
