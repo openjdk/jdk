@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2375,7 +2375,6 @@ bool Compile::has_vbox_nodes() {
 
 static bool is_vector_unary_bitwise_op(Node* n) {
   return n->Opcode() == Op_XorV &&
-         n->req() == 2 &&
          VectorNode::is_vector_bitwise_not_pattern(n);
 }
 
@@ -2383,7 +2382,7 @@ static bool is_vector_binary_bitwise_op(Node* n) {
   switch (n->Opcode()) {
     case Op_AndV:
     case Op_OrV:
-      return n->req() == 2;
+      return true;
 
     case Op_XorV:
       return !is_vector_unary_bitwise_op(n);
@@ -2415,11 +2414,12 @@ static bool is_vector_bitwise_cone_root(Node* n) {
   return true;
 }
 
-static uint collect_unique_inputs(Node* n, Unique_Node_List& partition, Unique_Node_List& inputs) {
+static uint collect_unique_inputs(Node* n, Unique_Node_List& inputs) {
   uint cnt = 0;
   if (is_vector_bitwise_op(n)) {
+    uint inp_cnt = n->is_predicated_vector() ? n->req()-1 : n->req();
     if (VectorNode::is_vector_bitwise_not_pattern(n)) {
-      for (uint i = 1; i < n->req(); i++) {
+      for (uint i = 1; i < inp_cnt; i++) {
         Node* in = n->in(i);
         bool skip = VectorNode::is_all_ones_vector(in);
         if (!skip && !inputs.member(in)) {
@@ -2429,9 +2429,9 @@ static uint collect_unique_inputs(Node* n, Unique_Node_List& partition, Unique_N
       }
       assert(cnt <= 1, "not unary");
     } else {
-      uint last_req = n->req();
+      uint last_req = inp_cnt;
       if (is_vector_ternary_bitwise_op(n)) {
-        last_req = n->req() - 1; // skip last input
+        last_req = inp_cnt - 1; // skip last input
       }
       for (uint i = 1; i < last_req; i++) {
         Node* def = n->in(i);
@@ -2441,7 +2441,6 @@ static uint collect_unique_inputs(Node* n, Unique_Node_List& partition, Unique_N
         }
       }
     }
-    partition.push(n);
   } else { // not a bitwise operations
     if (!inputs.member(n)) {
       inputs.push(n);
@@ -2476,7 +2475,10 @@ Node* Compile::xform_to_MacroLogicV(PhaseIterGVN& igvn,
   Node* in3 = (inputs.size() == 3 ? inputs.at(2) : in2);
 
   uint func = compute_truth_table(partition, inputs);
-  return igvn.transform(MacroLogicVNode::make(igvn, in3, in2, in1, func, vt));
+
+  Node* pn = partition.at(partition.size() - 1);
+  Node* mask = pn->is_predicated_vector() ? pn->in(pn->req()-1) : NULL;
+  return igvn.transform(MacroLogicVNode::make(igvn, in1, in2, in3, mask, func, vt));
 }
 
 static uint extract_bit(uint func, uint pos) {
@@ -2556,11 +2558,11 @@ uint Compile::compute_truth_table(Unique_Node_List& partition, Unique_Node_List&
 
   // Populate precomputed functions for inputs.
   // Each input corresponds to one column of 3 input truth-table.
-  uint input_funcs[] = { 0xAA,   // (_, _, a) -> a
+  uint input_funcs[] = { 0xAA,   // (_, _, c) -> c
                          0xCC,   // (_, b, _) -> b
-                         0xF0 }; // (c, _, _) -> c
+                         0xF0 }; // (a, _, _) -> a
   for (uint i = 0; i < inputs.size(); i++) {
-    eval_map.put(inputs.at(i), input_funcs[i]);
+    eval_map.put(inputs.at(i), input_funcs[2-i]);
   }
 
   for (uint i = 0; i < partition.size(); i++) {
@@ -2603,6 +2605,14 @@ uint Compile::compute_truth_table(Unique_Node_List& partition, Unique_Node_List&
   return res;
 }
 
+// Criteria under which nodes gets packed into a macro logic node:-
+//  1) Parent and both child nodes are all unmasked or masked with
+//     same predicates.
+//  2) Masked parent can be packed with left child if it is predicated
+//     and both have same predicates.
+//  3) Masked parent can be packed with right child if its un-predicated
+//     or has matching predication condition.
+//  4) An unmasked parent can be packed with an unmasked child.
 bool Compile::compute_logic_cone(Node* n, Unique_Node_List& partition, Unique_Node_List& inputs) {
   assert(partition.size() == 0, "not empty");
   assert(inputs.size() == 0, "not empty");
@@ -2612,44 +2622,71 @@ bool Compile::compute_logic_cone(Node* n, Unique_Node_List& partition, Unique_No
 
   bool is_unary_op = is_vector_unary_bitwise_op(n);
   if (is_unary_op) {
-    assert(collect_unique_inputs(n, partition, inputs) == 1, "not unary");
+    assert(collect_unique_inputs(n, inputs) == 1, "not unary");
     return false; // too few inputs
   }
 
-  assert(is_vector_binary_bitwise_op(n), "not binary");
-  Node* in1 = n->in(1);
-  Node* in2 = n->in(2);
+  bool pack_left_child = true;
+  bool pack_right_child = true;
 
-  int in1_unique_inputs_cnt = collect_unique_inputs(in1, partition, inputs);
-  int in2_unique_inputs_cnt = collect_unique_inputs(in2, partition, inputs);
-  partition.push(n);
+  bool left_child_LOP = is_vector_bitwise_op(n->in(1));
+  bool right_child_LOP = is_vector_bitwise_op(n->in(2));
 
-  // Too many inputs?
-  if (inputs.size() > 3) {
-    partition.clear();
-    inputs.clear();
-    { // Recompute in2 inputs
-      Unique_Node_List not_used;
-      in2_unique_inputs_cnt = collect_unique_inputs(in2, not_used, not_used);
+  int left_child_input_cnt = 0;
+  int right_child_input_cnt = 0;
+
+  bool parent_is_predicated = n->is_predicated_vector();
+  bool left_child_predicated = n->in(1)->is_predicated_vector();
+  bool right_child_predicated = n->in(2)->is_predicated_vector();
+
+  Node* parent_pred = parent_is_predicated ? n->in(n->req()-1) : NULL;
+  Node* left_child_pred = left_child_predicated ? n->in(1)->in(n->in(1)->req()-1) : NULL;
+  Node* right_child_pred = right_child_predicated ? n->in(1)->in(n->in(1)->req()-1) : NULL;
+
+  do {
+    if (pack_left_child && left_child_LOP &&
+        ((!parent_is_predicated && !left_child_predicated) ||
+        ((parent_is_predicated && left_child_predicated &&
+          parent_pred == left_child_pred)))) {
+       partition.push(n->in(1));
+       left_child_input_cnt = collect_unique_inputs(n->in(1), inputs);
+    } else {
+       inputs.push(n->in(1));
+       left_child_input_cnt = 1;
     }
-    // Pick the node with minimum number of inputs.
-    if (in1_unique_inputs_cnt >= 3 && in2_unique_inputs_cnt >= 3) {
-      return false; // still too many inputs
+
+    if (pack_right_child && right_child_LOP &&
+        (!right_child_predicated ||
+         (right_child_predicated && parent_is_predicated &&
+          parent_pred == right_child_pred))) {
+       partition.push(n->in(2));
+       right_child_input_cnt = collect_unique_inputs(n->in(2), inputs);
+    } else {
+       inputs.push(n->in(2));
+       right_child_input_cnt = 1;
     }
-    // Recompute partition & inputs.
-    Node* child       = (in1_unique_inputs_cnt < in2_unique_inputs_cnt ? in1 : in2);
-    collect_unique_inputs(child, partition, inputs);
 
-    Node* other_input = (in1_unique_inputs_cnt < in2_unique_inputs_cnt ? in2 : in1);
-    inputs.push(other_input);
+    if (inputs.size() > 3) {
+      assert(partition.size() > 0, "");
+      inputs.clear();
+      partition.clear();
+      if (left_child_input_cnt > right_child_input_cnt) {
+        pack_left_child = false;
+      } else {
+        pack_right_child = false;
+      }
+    } else {
+      break;
+    }
+  } while(true);
 
+  if(partition.size()) {
     partition.push(n);
   }
 
   return (partition.size() == 2 || partition.size() == 3) &&
          (inputs.size()    == 2 || inputs.size()    == 3);
 }
-
 
 void Compile::process_logic_cone_root(PhaseIterGVN &igvn, Node *n, VectorSet &visited) {
   assert(is_vector_bitwise_op(n), "not a root");
@@ -2670,8 +2707,19 @@ void Compile::process_logic_cone_root(PhaseIterGVN &igvn, Node *n, VectorSet &vi
   Unique_Node_List inputs;
   if (compute_logic_cone(n, partition, inputs)) {
     const TypeVect* vt = n->bottom_type()->is_vect();
-    Node* macro_logic = xform_to_MacroLogicV(igvn, vt, partition, inputs);
-    igvn.replace_node(n, macro_logic);
+    Node* pn = partition.at(partition.size() - 1);
+    Node* mask = pn->is_predicated_vector() ? pn->in(pn->req()-1) : NULL;
+    if (mask == NULL ||
+        Matcher::match_rule_supported_vector_masked(Op_MacroLogicV, vt->length(), vt->element_basic_type())) {
+      Node* macro_logic = xform_to_MacroLogicV(igvn, vt, partition, inputs);
+#ifdef ASSERT
+      if (TraceNewVectors) {
+        tty->print("new Vector node: ");
+        macro_logic->dump();
+      }
+#endif
+      igvn.replace_node(n, macro_logic);
+    }
   }
 }
 

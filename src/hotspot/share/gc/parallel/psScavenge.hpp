@@ -53,14 +53,6 @@ class PSScavenge: AllStatic {
    full_follows_scavenge
  };
 
-  // Saved value of to_space->top(), used to prevent objects in to_space from
-  // being rescanned.
-  static HeapWord* _to_space_top_before_gc;
-
-  // Number of consecutive attempts to scavenge that were skipped
-  static int                _consecutive_skipped_scavenges;
-
-
  protected:
   // Flags/counters
   static SpanSubjectToDiscoveryClosure _span_based_discoverer;
@@ -84,9 +76,6 @@ class PSScavenge: AllStatic {
 
   static bool should_attempt_scavenge();
 
-  static HeapWord* to_space_top_before_gc() { return _to_space_top_before_gc; }
-  static inline void save_to_space_top_before_gc();
-
   // Private accessors
   static PSCardTable* const card_table()           { assert(_card_table != NULL, "Sanity"); return _card_table; }
   static const ParallelScavengeTracer* gc_tracer() { return &_gc_tracer; }
@@ -95,8 +84,6 @@ class PSScavenge: AllStatic {
   // Accessors
   static uint             tenuring_threshold()  { return _tenuring_threshold; }
   static elapsedTimer*    accumulated_time()    { return &_accumulated_time; }
-  static int              consecutive_skipped_scavenges()
-    { return _consecutive_skipped_scavenges; }
 
   // Performance Counters
   static CollectorCounters* counters()           { return _counters; }
