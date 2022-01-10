@@ -54,7 +54,6 @@ import java.util.TooManyListenersException;
  * @author Laurence P. G. Cable
  * @since 1.2
  */
-@SuppressWarnings("doclint:missing")
 public class      BeanContextServicesSupport extends BeanContextSupport
        implements BeanContextServices {
 
@@ -148,7 +147,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
 
     /************************************************************************/
 
-    /*
+    /**
      * protected nested class containing per child information, an instance
      * of which is associated with each child in the "children" hashtable.
      * subclasses can extend this class to include their own per-child state.
@@ -782,7 +781,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
 
     /************************************************************************/
 
-    /*
+    /**
      * a nested subclass used to represent a proxy for serviceClasses delegated
      * to an enclosing BeanContext.
      */

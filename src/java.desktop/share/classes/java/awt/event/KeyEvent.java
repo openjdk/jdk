@@ -151,7 +151,6 @@ import sun.awt.AWTAccessor;
  *
  * @since 1.1
  */
-@SuppressWarnings("doclint:missing")
 public class KeyEvent extends InputEvent {
 
     /**
@@ -650,53 +649,142 @@ public class KeyEvent extends InputEvent {
     public static final int VK_KP_RIGHT       = 0xE3;
 
     /* For European keyboards */
-    /** @since 1.2 */
+    /**
+     * Constant for the DEAD_GRAVE function key.
+     * @since 1.2
+     */
     public static final int VK_DEAD_GRAVE               = 0x80;
-    /** @since 1.2 */
+
+    /**
+     * Constant for the DEAD_ACUTE function key.
+     * @since 1.2
+     */
     public static final int VK_DEAD_ACUTE               = 0x81;
-    /** @since 1.2 */
+
+    /**
+     * Constant for the DEAD_CIRCUMFLEX function key.
+     * @since 1.2
+     */
     public static final int VK_DEAD_CIRCUMFLEX          = 0x82;
-    /** @since 1.2 */
+
+    /**
+     * Constant for the DEAD_TILDE function key.
+     * @since 1.2
+     */
     public static final int VK_DEAD_TILDE               = 0x83;
-    /** @since 1.2 */
+
+    /**
+     * Constant for the DEAD_MACRON function key.
+     * @since 1.2
+     */
     public static final int VK_DEAD_MACRON              = 0x84;
-    /** @since 1.2 */
+
+    /**
+     * Constant for the DEAD_BREVE function key.
+     * @since 1.2
+     */
     public static final int VK_DEAD_BREVE               = 0x85;
-    /** @since 1.2 */
+
+    /**
+     * Constant for the DEAD_ABOVEDOT function key.
+     * @since 1.2
+     */
     public static final int VK_DEAD_ABOVEDOT            = 0x86;
-    /** @since 1.2 */
+
+    /**
+     * Constant for the DEAD_DIAERESIS function key.
+     * @since 1.2
+     */
     public static final int VK_DEAD_DIAERESIS           = 0x87;
-    /** @since 1.2 */
+
+    /**
+     * Constant for the DEAD_ABOVERING function key.
+     * @since 1.2
+     */
     public static final int VK_DEAD_ABOVERING           = 0x88;
-    /** @since 1.2 */
+
+    /**
+     * Constant for the DEAD_DOUBLEACUTE function key.
+     * @since 1.2
+     */
     public static final int VK_DEAD_DOUBLEACUTE         = 0x89;
-    /** @since 1.2 */
+
+    /**
+     * Constant for the DEAD_CARON function key.
+     * @since 1.2
+     */
     public static final int VK_DEAD_CARON               = 0x8a;
-    /** @since 1.2 */
+
+    /**
+     * Constant for the DEAD_CEDILLA function key.
+     * @since 1.2
+     */
     public static final int VK_DEAD_CEDILLA             = 0x8b;
-    /** @since 1.2 */
+
+    /**
+     * Constant for the DEAD_OGONEK function key.
+     * @since 1.2
+     */
     public static final int VK_DEAD_OGONEK              = 0x8c;
-    /** @since 1.2 */
+
+    /**
+     * Constant for the DEAD_IOTA function key.
+     * @since 1.2
+     */
     public static final int VK_DEAD_IOTA                = 0x8d;
-    /** @since 1.2 */
+
+    /**
+     * Constant for the DEAD_VOICED_SOUND function key.
+     * @since 1.2
+     */
     public static final int VK_DEAD_VOICED_SOUND        = 0x8e;
-    /** @since 1.2 */
+
+    /**
+     * Constant for the DEAD_SEMIVOICED_SOUND function key.
+     * @since 1.2
+     */
     public static final int VK_DEAD_SEMIVOICED_SOUND    = 0x8f;
 
-    /** @since 1.2 */
+    /**
+     * Constant for the "&amp;" function key.
+     * @since 1.2
+     */
     public static final int VK_AMPERSAND                = 0x96;
-    /** @since 1.2 */
+
+    /**
+     * Constant for the "*" function key.
+     * @since 1.2
+     */
     public static final int VK_ASTERISK                 = 0x97;
-    /** @since 1.2 */
+
+    /**
+     * Constant for the """" function key.
+     * @since 1.2
+     */
     public static final int VK_QUOTEDBL                 = 0x98;
-    /** @since 1.2 */
+
+    /**
+     * Constant for the "&lt;" function key.
+     * @since 1.2
+     */
     public static final int VK_LESS                     = 0x99;
 
-    /** @since 1.2 */
+    /**
+     * Constant for the "&gt;" function key.
+     * @since 1.2
+     */
     public static final int VK_GREATER                  = 0xa0;
-    /** @since 1.2 */
+
+    /**
+     * Constant for the BRACELEFT function key.
+     * @since 1.2
+     */
     public static final int VK_BRACELEFT                = 0xa1;
-    /** @since 1.2 */
+
+    /**
+     * Constant for the BRACERIGHT function key.
+     * @since 1.2
+     */
     public static final int VK_BRACERIGHT               = 0xa2;
 
     /**
@@ -926,21 +1014,52 @@ public class KeyEvent extends InputEvent {
     public static final int VK_INPUT_METHOD_ON_OFF      = 0x0107;
 
     /* for Sun keyboards */
-    /** @since 1.2 */
+    /**
+     * Constant for the "CUT" key.
+     * @since 1.2
+     */
     public static final int VK_CUT                      = 0xFFD1;
-    /** @since 1.2 */
+
+    /**
+     * Constant for the "COPY" key.
+     * @since 1.2
+     */
     public static final int VK_COPY                     = 0xFFCD;
-    /** @since 1.2 */
+
+    /**
+     * Constant for the "PASTE" key.
+     * @since 1.2
+     */
     public static final int VK_PASTE                    = 0xFFCF;
-    /** @since 1.2 */
+
+    /**
+     * Constant for the "UNDO" key.
+     * @since 1.2
+     */
     public static final int VK_UNDO                     = 0xFFCB;
-    /** @since 1.2 */
+
+    /**
+     * Constant for the "AGAIN" key.
+     * @since 1.2
+     */
     public static final int VK_AGAIN                    = 0xFFC9;
-    /** @since 1.2 */
+
+    /**
+     * Constant for the "FIND" key.
+     * @since 1.2
+     */
     public static final int VK_FIND                     = 0xFFD0;
-    /** @since 1.2 */
+
+    /**
+     * Constant for the "PROPS" key.
+     * @since 1.2
+     */
     public static final int VK_PROPS                    = 0xFFCA;
-    /** @since 1.2 */
+
+    /**
+     * Constant for the "STOP" key.
+     * @since 1.2
+     */
     public static final int VK_STOP                     = 0xFFC8;
 
     /**

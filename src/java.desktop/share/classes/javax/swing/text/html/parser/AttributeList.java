@@ -44,8 +44,7 @@ import java.io.*;
  * @author      Arthur Van Hoff
  *
  */
-@SuppressWarnings({"serial", // Same-version serialization only
-                   "doclint:missing"})
+@SuppressWarnings({"serial"}) // Same-version serialization only
 public final
 class AttributeList implements DTDConstants, Serializable {
 
@@ -111,6 +110,8 @@ class AttributeList implements DTDConstants, Serializable {
     }
 
     /**
+     * Return the attribute name.
+     *
      * @return attribute name
      */
     public String getName() {
@@ -118,6 +119,8 @@ class AttributeList implements DTDConstants, Serializable {
     }
 
     /**
+     * Return the attribute type.
+     *
      * @return attribute type
      * @see DTDConstants
      */
@@ -126,6 +129,8 @@ class AttributeList implements DTDConstants, Serializable {
     }
 
     /**
+     * Return attribute modifier.
+     *
      * @return attribute modifier
      * @see DTDConstants
      */
@@ -134,6 +139,8 @@ class AttributeList implements DTDConstants, Serializable {
     }
 
     /**
+     * Return possible attribute values.
+     *
      * @return possible attribute values
      */
     public Enumeration<?> getValues() {
@@ -141,6 +148,8 @@ class AttributeList implements DTDConstants, Serializable {
     }
 
     /**
+     * Return default attribute value.
+     *
      * @return default attribute value
      */
     public String getValue() {
@@ -148,6 +157,8 @@ class AttributeList implements DTDConstants, Serializable {
     }
 
     /**
+     * Return the next attribute in the list.
+     *
      * @return the next attribute in the list
      */
     public AttributeList getNext() {

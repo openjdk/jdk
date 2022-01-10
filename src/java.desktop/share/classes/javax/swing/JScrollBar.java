@@ -83,8 +83,7 @@ import javax.swing.plaf.ScrollBarUI;
  */
 @JavaBean(defaultProperty = "UI", description = "A component that helps determine the visible content range of an area.")
 @SwingContainer(false)
-@SuppressWarnings({"serial",  // Same-version serialization only
-                   "doclint:missing"})
+@SuppressWarnings({"serial"})  // Same-version serialization only
 public class JScrollBar extends JComponent implements Adjustable, Accessible
 {
     /**
@@ -109,18 +108,26 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
 
 
     /**
+     * Orientation for this scrollBar
+     *
      * @see #setOrientation
      */
     protected int orientation;
 
 
     /**
+     * Amount to change the scrollbar's value by,
+     * given a unit up/down request.
+     *
      * @see #setUnitIncrement
      */
     protected int unitIncrement;
 
 
     /**
+     * Amount to change the scrollbar's value by,
+     * given a block (usually "page") up/down request.
+     *
      * @see #setBlockIncrement
      */
     protected int blockIncrement;
