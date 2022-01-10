@@ -277,7 +277,6 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
 
   if (!DynamicDumpSharedSpaces) {
     set_shared_path_table(info->_shared_path_table);
-    CDS_JAVA_HEAP_ONLY(_heap_obj_roots = CompressedOops::encode(HeapShared::roots());)
   }
 }
 
@@ -1606,8 +1605,8 @@ size_t FileMapInfo::write_heap_regions(GrowableArray<MemRegion>* regions,
 
 void FileMapInfo::write_bytes(const void* buffer, size_t nbytes) {
   assert(_file_open, "must be");
-  size_t n = os::write(_fd, buffer, (unsigned int)nbytes);
-  if (n != nbytes) {
+  ssize_t n = os::write(_fd, buffer, (unsigned int)nbytes);
+  if (n < 0 || (size_t)n != nbytes) {
     // If the shared archive is corrupted, close it and remove it.
     close();
     remove(_full_path);
@@ -2089,7 +2088,6 @@ void FileMapInfo::map_heap_regions_impl() {
                          /*is_open_archive=*/ true,
                          &open_heap_regions, &num_open_heap_regions)) {
       HeapShared::set_open_regions_mapped();
-      HeapShared::set_roots(header()->heap_obj_roots());
     }
   }
 }

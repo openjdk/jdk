@@ -209,7 +209,6 @@ void ShenandoahRootAdjuster::roots_do(uint worker_id, OopClosure* oops) {
                                               static_cast<CodeBlobToOopClosure*>(&blobs_and_disarm_Cl) :
                                               static_cast<CodeBlobToOopClosure*>(&code_blob_cl);
   CLDToOopClosure adjust_cld_closure(oops, ClassLoaderData::_claim_strong);
-  AlwaysTrueClosure always_true;
 
   // Process light-weight/limited parallel roots then
   _vm_roots.oops_do(oops, worker_id);

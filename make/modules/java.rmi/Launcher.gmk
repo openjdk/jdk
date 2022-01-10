@@ -27,4 +27,5 @@ include LauncherCommon.gmk
 
 $(eval $(call SetupBuildLauncher, rmiregistry, \
     MAIN_CLASS := sun.rmi.registry.RegistryImpl, \
+    JAVA_ARGS := -Djava.security.manager=allow, \
 ))

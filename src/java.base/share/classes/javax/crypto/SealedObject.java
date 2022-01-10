@@ -292,12 +292,9 @@ public class SealedObject implements Serializable {
         throws IOException, ClassNotFoundException, IllegalBlockSizeException,
             BadPaddingException
     {
-        ObjectInput a = getExtObjectInputStream(c);
-        try {
+        try (ObjectInput a = getExtObjectInputStream(c)) {
             Object obj = a.readObject();
             return obj;
-        } finally {
-            a.close();
         }
     }
 
@@ -412,12 +409,9 @@ public class SealedObject implements Serializable {
             throw new RuntimeException(iape.getMessage());
         }
 
-        ObjectInput a = getExtObjectInputStream(c);
-        try {
+        try (ObjectInput a = getExtObjectInputStream(c)) {
             Object obj = a.readObject();
             return obj;
-        } finally {
-            a.close();
         }
     }
 

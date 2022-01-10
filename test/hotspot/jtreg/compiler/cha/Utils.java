@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.concurrent.Callable;
@@ -45,6 +46,7 @@ import static jdk.test.lib.Asserts.assertTrue;
 
 public class Utils {
     public static final Unsafe U = Unsafe.getUnsafe();
+    public static final WhiteBox WB = WhiteBox.getWhiteBox();
 
     interface Test<T> {
         void call(T o);
@@ -99,8 +101,6 @@ public class Utils {
     }
 
     public static abstract class ATest<T> implements Test<T> {
-        public static final WhiteBox WB = WhiteBox.getWhiteBox();
-
         public static final Object CORRECT = new Object();
         public static final Object WRONG   = new Object();
 
@@ -117,7 +117,7 @@ public class Utils {
         }
 
         @DontInline
-        public abstract Object test(T i);
+        public abstract Object test(T i) throws Throwable;
 
         public abstract void checkInvalidReceiver();
 
@@ -132,7 +132,6 @@ public class Utils {
                 }
             }));
         }
-
 
         public void compile(Runnable r) {
             while (!WB.isMethodCompiled(TEST)) {
@@ -161,19 +160,35 @@ public class Utils {
 
         @Override
         public void call(T i) {
-            assertTrue(test(i) != WRONG);
+            try {
+                assertTrue(test(i) != WRONG);
+            } catch (Throwable e) {
+                throw new InternalError(e);
+            }
+        }
+
+        public static <T> T compute(Callable<T> c) {
+            try {
+                return c.call();
+            } catch (Exception e) {
+                throw new Error(e);
+            }
+        }
+
+        public static MethodHandle findVirtualHelper(Class<?> refc, String name, Class<?> returnType, MethodHandles.Lookup lookup) {
+            return compute(() -> lookup.findVirtual(refc, name, MethodType.methodType(returnType)));
         }
     }
 
     @Retention(value = RetentionPolicy.RUNTIME)
     public @interface TestCase {}
 
-    static void run(Class<?> test) {
+    static void run(Class<?> test, Class<?> enclosed) {
         try {
-            for (Method m : test.getDeclaredMethods()) {
+            for (Method m : test.getMethods()) {
                 if (m.isAnnotationPresent(TestCase.class)) {
                     System.out.println(m.toString());
-                    ClassLoader cl = new MyClassLoader(test);
+                    ClassLoader cl = new MyClassLoader(enclosed);
                     Class<?> c = cl.loadClass(test.getName());
                     c.getMethod(m.getName()).invoke(c.getDeclaredConstructor().newInstance());
                 }
@@ -181,6 +196,10 @@ public class Utils {
         } catch (Exception e) {
             throw new Error(e);
         }
+    }
+
+    static void run(Class<?> test) {
+        run(test, test);
     }
 
     static class ObjectToStringHelper {
@@ -303,7 +322,7 @@ public class Utils {
         try {
             r.run();
             throw new AssertionError("Exception not thrown: " + expectedException.getName());
-        } catch(Throwable e) {
+        } catch (Throwable e) {
             if (expectedException == e.getClass()) {
                 // success: proper exception is thrown
             } else {
@@ -317,14 +336,6 @@ public class Utils {
             MethodHandle mh = MethodHandles.identity(Object.class);
             return MethodHandles.explicitCastArguments(mh, mh.type().changeReturnType(cls));
         } catch (Throwable e) {
-            throw new Error(e);
-        }
-    }
-
-    static <T> T compute(Callable<T> c) {
-        try {
-            return c.call();
-        } catch (Exception e) {
             throw new Error(e);
         }
     }

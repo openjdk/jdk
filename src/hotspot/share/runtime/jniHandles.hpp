@@ -117,8 +117,6 @@ class JNIHandles : AllStatic {
   // Garbage collection support(global handles only, local handles are traversed from thread)
   // Traversal of regular global handles
   static void oops_do(OopClosure* f);
-  // Traversal of weak global handles. Unreachable oops are cleared.
-  static void weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f);
   // Traversal of weak global handles.
   static void weak_oops_do(OopClosure* f);
 

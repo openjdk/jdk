@@ -71,8 +71,6 @@ class CardGeneration: public Generation {
 
   virtual void compute_new_size();
 
-  virtual void clear_remembered_set();
-
   virtual void invalidate_remembered_set();
 
   virtual void prepare_for_verify();

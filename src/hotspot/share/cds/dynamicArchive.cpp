@@ -115,6 +115,12 @@ public:
     MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
     SystemDictionaryShared::check_excluded_classes();
 
+    if (SystemDictionaryShared::is_dumptime_table_empty()) {
+      log_warning(cds, dynamic)("There is no class to be included in the dynamic archive.");
+      SystemDictionaryShared::stop_dumping();
+      return;
+    }
+
     // save dumptime tables
     SystemDictionaryShared::clone_dumptime_tables();
 
@@ -171,6 +177,7 @@ public:
 
     assert(_num_dump_regions_used == _total_dump_regions, "must be");
     verify_universe("After CDS dynamic dump");
+    SystemDictionaryShared::stop_dumping();
   }
 
   virtual void iterate_roots(MetaspaceClosure* it, bool is_relocating_pointers) {
@@ -342,10 +349,6 @@ public:
   VMOp_Type type() const { return VMOp_PopulateDumpSharedSpace; }
   void doit() {
     ResourceMark rm;
-    if (SystemDictionaryShared::is_dumptime_table_empty()) {
-      log_warning(cds, dynamic)("There is no class to be included in the dynamic archive.");
-      return;
-    }
     if (AllowArchivingWithJavaAgent) {
       warning("This archive was created with AllowArchivingWithJavaAgent. It should be used "
               "for testing purposes only and should not be used in a production environment");
