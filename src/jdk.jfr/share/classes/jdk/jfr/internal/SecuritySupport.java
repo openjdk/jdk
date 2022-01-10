@@ -33,7 +33,6 @@ import java.io.RandomAccessFile;
 import java.io.Reader;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ReflectPermission;
 import java.nio.channels.FileChannel;
@@ -357,10 +356,6 @@ public final class SecuritySupport {
         doPrivileged(() -> thread.setUncaughtExceptionHandler(eh), new RuntimePermission("modifyThread"));
     }
 
-    static void moveReplace(SafePath from, SafePath to) throws IOException {
-        doPrivilegedIOWithReturn(() -> Files.move(from.toPath(), to.toPath()));
-    }
-
     static void clearDirectory(SafePath safePath) throws IOException {
         doPriviligedIO(() -> Files.walkFileTree(safePath.toPath(), new DirectoryCleaner()));
     }
@@ -407,10 +402,6 @@ public final class SecuritySupport {
         return doPrivilegedIOWithReturn(() -> Files.isWritable(safePath.toPath()));
     }
 
-    static void deleteOnExit(SafePath safePath) {
-        doPrivileged(() -> safePath.toPath().toFile().deleteOnExit());
-    }
-
     static ReadableByteChannel newFileChannelToRead(SafePath safePath) throws IOException {
         return doPrivilegedIOWithReturn(() -> FileChannel.open(safePath.toPath(), StandardOpenOption.READ));
     }
@@ -421,10 +412,6 @@ public final class SecuritySupport {
 
     public static Reader newFileReader(SafePath safePath) throws FileNotFoundException, IOException {
         return doPrivilegedIOWithReturn(() -> Files.newBufferedReader(safePath.toPath()));
-    }
-
-    static void touch(SafePath path) throws IOException {
-        doPriviligedIO(() -> new RandomAccessFile(path.toPath().toFile(), "rw").close());
     }
 
     static void setAccessible(Method method) {
