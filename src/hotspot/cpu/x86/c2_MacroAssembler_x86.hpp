@@ -144,6 +144,9 @@ public:
   void load_vector_mask(XMMRegister dst, XMMRegister src, int vlen_in_bytes, BasicType elem_bt, bool is_legacy);
   void load_vector_mask(KRegister dst, XMMRegister src, XMMRegister xtmp, Register tmp, bool novlbwdq, int vlen_enc);
 
+  void load_vector(XMMRegister dst, Address src, int vlen_in_bytes);
+  void load_vector(XMMRegister dst, AddressLiteral src, int vlen_in_bytes, Register rscratch = rscratch1);
+  void store_vector(Address dst, XMMRegister src, int vlen_in_bytes);
   void load_iota_indices(XMMRegister dst, Register scratch, int vlen_in_bytes);
 
   // vector compare
@@ -300,10 +303,8 @@ public:
   void masked_op(int ideal_opc, int mask_len, KRegister dst,
                  KRegister src1, KRegister src2);
 
-#ifdef _LP64
   void vector_castL2FD(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
                        Register tmp, KRegister ktmp, BasicType bt, int vlen, int vec_enc);
-#endif
 
   void vector_castF2I_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
                           XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4,

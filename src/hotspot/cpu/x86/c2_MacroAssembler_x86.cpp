@@ -1493,6 +1493,37 @@ void C2_MacroAssembler::load_vector_mask(KRegister dst, XMMRegister src, XMMRegi
   }
 }
 
+void C2_MacroAssembler::load_vector(XMMRegister dst, Address src, int vlen_in_bytes) {
+  switch (vlen_in_bytes) {
+  case 4:  movdl(dst, src);   break;
+  case 8:  movq(dst, src);    break;
+  case 16: movdqu(dst, src);  break;
+  case 32: vmovdqu(dst, src); break;
+  case 64: evmovdquq(dst, src, Assembler::AVX_512bit); break;
+  default: ShouldNotReachHere();
+  }
+}
+
+void C2_MacroAssembler::load_vector(XMMRegister dst, AddressLiteral src, int vlen_in_bytes, Register rscratch) {
+  if (reachable(src)) {
+    load_vector(dst, as_Address(src), vlen_in_bytes);
+  } else {
+    lea(rscratch, src);
+    load_vector(dst, Address(rscratch, 0), vlen_in_bytes);
+  }
+}
+
+void C2_MacroAssembler::store_vector(Address dst, XMMRegister src, int vlen_in_bytes) {
+  switch (vlen_in_bytes) {
+  case 4:  movdl(dst, src);   break;
+  case 8:  movq(dst, src);    break;
+  case 16: movdqu(dst, src);  break;
+  case 32: vmovdqu(dst, src); break;
+  case 64: evmovdquq(dst, src, Assembler::AVX_512bit); break;
+  default: ShouldNotReachHere();
+  }
+}
+
 void C2_MacroAssembler::load_iota_indices(XMMRegister dst, Register scratch, int vlen_in_bytes) {
   ExternalAddress addr(StubRoutines::x86::vector_iota_indices());
   if (vlen_in_bytes == 4) {
@@ -4071,7 +4102,6 @@ void C2_MacroAssembler::masked_op(int ideal_opc, int mask_len, KRegister dst,
   }
 }
 
-#ifdef _LP64
 /*
  * Convert long vectors to floating-point vectors on non-AVX512dq
  * The fast path downcasts the vector to an int vector to perform the
@@ -4113,6 +4143,8 @@ void C2_MacroAssembler::vector_castL2FD(XMMRegister dst, XMMRegister src, XMMReg
   jmp(done);
 
   bind(slow_path);
+
+#ifdef __LP64
   int dst_eles_per_lane = MIN2(vlen, 16 / type2aelembytes(bt));
   int dst_lane_num = vlen / dst_eles_per_lane;
   for (int dst_lane = 0; dst_lane < dst_lane_num; dst_lane++) {
@@ -4158,9 +4190,26 @@ void C2_MacroAssembler::vector_castL2FD(XMMRegister dst, XMMRegister src, XMMReg
       }
     }
   }
+#else // __LP64
+  int src_vlen_in_bytes = vlen * type2aelembytes(T_LONG);
+  int dst_vlen_in_bytes = vlen * type2aelembytes(bt);
+  assert(src_vlen_in_bytes + dst_vlen_in_bytes <= 128, "red zone");
+  store_vector(Address(rsp, -src_vlen_in_bytes), src, src_vlen_in_bytes);
+  for (int i = 0; i < vlen; i++) {
+    int src_ele_offset = -src_vlen_in_bytes + i * type2aelembytes(T_LONG);
+    int dst_ele_offset = -src_vlen_in_bytes - dst_vlen_in_bytes + i * type2aelembytes(bt);
+    fild_d(Address(rsp, src_ele_offset));
+    if (bt == T_FLOAT) {
+      fstp_s(Address(rsp, dst_ele_offset));
+    } else {
+      fstp_d(Address(rsp, dst_ele_offset));
+    }
+  }
+  load_vector(dst, Address(rsp, -src_vlen_in_bytes - dst_vlen_in_bytes), dst_vlen_in_bytes);
+#endif // __LP64
+
   bind(done);
 }
-#endif // _LP64
 
 /*
  * Algorithm for vector D2L and F2I conversions:-
