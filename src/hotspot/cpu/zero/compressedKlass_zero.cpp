@@ -31,6 +31,8 @@
 #include "utilities/ostream.hpp"
 #include "runtime/globals.hpp"
 
+#ifdef _LP64
+
 // Given an address p, return true if p can be used as an encoding base.
 //  (Some platforms have restrictions of what constitutes a valid base address).
 bool CompressedKlassPointers::is_valid_base(address p) {
@@ -38,10 +40,10 @@ bool CompressedKlassPointers::is_valid_base(address p) {
 }
 
 void CompressedKlassPointers::print_mode(outputStream* st) {
-#ifdef _LP64
   st->print_cr("Narrow klass base: " PTR_FORMAT ", Narrow klass shift: %d, "
                "Narrow klass range: " UINT64_FORMAT, p2i(base()), shift(),
                KlassEncodingMetaspaceMax);
-#endif
 }
+
+#endif // _LP64
 
