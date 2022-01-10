@@ -261,26 +261,45 @@ static void pd_conjoint_bytes_atomic(const void* from, void* to, size_t count) {
   pd_conjoint_bytes(from, to, count);
 }
 
-// Windows has a different implementation
-#ifndef _WINDOWS
+// Windows non-assembly implementation.
 static void pd_conjoint_jshorts_atomic(const jshort* from, jshort* to, size_t count) {
-  _Copy_conjoint_jshorts_atomic(from, to, count);
+  if (from > to) {
+    while (count-- > 0) {
+      // Copy forwards
+      *to++ = *from++;
+    }
+  } else {
+    from += count - 1;
+    to   += count - 1;
+    while (count-- > 0) {
+      // Copy backwards
+      *to-- = *from--;
+    }
+  }
 }
 
 static void pd_conjoint_jints_atomic(const jint* from, jint* to, size_t count) {
-#ifdef AMD64
-  _Copy_conjoint_jints_atomic(from, to, count);
-#else
-  assert(HeapWordSize == BytesPerInt, "heapwords and jints must be the same size");
-  // pd_conjoint_words is word-atomic in this implementation.
-  pd_conjoint_words((const HeapWord*)from, (HeapWord*)to, count);
-#endif // AMD64
+  if (from > to) {
+    while (count-- > 0) {
+      // Copy forwards
+      *to++ = *from++;
+    }
+  } else {
+    from += count - 1;
+    to   += count - 1;
+    while (count-- > 0) {
+      // Copy backwards
+      *to-- = *from--;
+    }
+  }
 }
 
 static void pd_conjoint_jlongs_atomic(const jlong* from, jlong* to, size_t count) {
 #ifdef AMD64
-  _Copy_conjoint_jlongs_atomic(from, to, count);
+  assert(BytesPerLong == BytesPerOop, "jlongs and oops must be the same size");
+  pd_conjoint_oops_atomic((const oop*)from, (oop*)to, count);
 #else
+#ifndef _WINDOWS
   // Guarantee use of fild/fistp or xmm regs via some asm code, because compilers won't.
   if (from > to) {
     while (count-- > 0) {
@@ -299,53 +318,75 @@ static void pd_conjoint_jlongs_atomic(const jlong* from, jlong* to, size_t count
                        : "memory" );
     }
   }
+#else
+  // Guarantee use of fild/fistp or xmm regs via some asm code, because compilers won't.
+  __asm {
+    mov    eax, from;
+    mov    edx, to;
+    mov    ecx, count;
+    cmp    eax, edx;
+    jbe    downtest;
+    jmp    uptest;
+  up:
+    fild   qword ptr [eax];
+    fistp  qword ptr [edx];
+    add    eax, 8;
+    add    edx, 8;
+  uptest:
+    sub    ecx, 1;
+    jge    up;
+    jmp    done;
+  down:
+    fild   qword ptr [eax][ecx*8];
+    fistp  qword ptr [edx][ecx*8];
+  downtest:
+    sub    ecx, 1;
+    jge    down;
+  done:;
+  }
+#endif // _WINDOWS
 #endif // AMD64
 }
 
 static void pd_conjoint_oops_atomic(const oop* from, oop* to, size_t count) {
-#ifdef AMD64
-  assert(BytesPerLong == BytesPerOop, "jlongs and oops must be the same size");
-  _Copy_conjoint_jlongs_atomic((const jlong*)from, (jlong*)to, count);
-#else
-  assert(HeapWordSize == BytesPerOop, "heapwords and oops must be the same size");
-  // pd_conjoint_words is word-atomic in this implementation.
-  pd_conjoint_words((const HeapWord*)from, (HeapWord*)to, count);
-#endif // AMD64
+  // Do better than this: inline memmove body  NEEDS CLEANUP
+  if (from > to) {
+    while (count-- > 0) {
+      // Copy forwards
+      *to++ = *from++;
+    }
+  } else {
+    from += count - 1;
+    to   += count - 1;
+    while (count-- > 0) {
+      // Copy backwards
+      *to-- = *from--;
+    }
+  }
 }
 
 static void pd_arrayof_conjoint_bytes(const HeapWord* from, HeapWord* to, size_t count) {
-  _Copy_arrayof_conjoint_bytes(from, to, count);
+#ifdef AMD64
+  pd_conjoint_bytes_atomic(from, to, count);
+#else
+  pd_conjoint_bytes(from, to, count);
+#endif // AMD64
 }
 
 static void pd_arrayof_conjoint_jshorts(const HeapWord* from, HeapWord* to, size_t count) {
-  _Copy_arrayof_conjoint_jshorts(from, to, count);
+  pd_conjoint_jshorts_atomic((const jshort*)from, (jshort*)to, count);
 }
 
 static void pd_arrayof_conjoint_jints(const HeapWord* from, HeapWord* to, size_t count) {
-#ifdef AMD64
-   _Copy_arrayof_conjoint_jints(from, to, count);
-#else
   pd_conjoint_jints_atomic((const jint*)from, (jint*)to, count);
-#endif // AMD64
 }
 
 static void pd_arrayof_conjoint_jlongs(const HeapWord* from, HeapWord* to, size_t count) {
-#ifdef AMD64
-  _Copy_arrayof_conjoint_jlongs(from, to, count);
-#else
   pd_conjoint_jlongs_atomic((const jlong*)from, (jlong*)to, count);
-#endif // AMD64
 }
 
 static void pd_arrayof_conjoint_oops(const HeapWord* from, HeapWord* to, size_t count) {
-#ifdef AMD64
-  assert(BytesPerLong == BytesPerOop, "jlongs and oops must be the same size");
-  _Copy_arrayof_conjoint_jlongs(from, to, count);
-#else
   pd_conjoint_oops_atomic((const oop*)from, (oop*)to, count);
-#endif // AMD64
 }
-
-#endif // _WINDOWS
 
 #endif // CPU_X86_COPY_X86_HPP
