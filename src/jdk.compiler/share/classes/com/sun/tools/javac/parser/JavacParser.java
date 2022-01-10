@@ -2035,7 +2035,7 @@ public class JavacParser implements Parser {
                     args.append(parseExpression());
                 }
             }
-            accept(RPAREN);
+            accept(RPAREN, tk -> Errors.Expected2(RPAREN, COMMA));
         } else {
             syntaxError(token.pos, Errors.Expected(LPAREN));
         }
@@ -2123,7 +2123,7 @@ public class JavacParser implements Parser {
                     nextToken();
                     break;
                 default:
-                    args.append(syntaxError(token.pos, Errors.Expected(GT)));
+                    args.append(syntaxError(token.pos, Errors.Expected2(GT, COMMA)));
                     break;
                 }
                 return args.toList();
@@ -3379,7 +3379,7 @@ public class JavacParser implements Parser {
                     buf.append(annotationValue());
                 }
             }
-            accept(RBRACE);
+            accept(RBRACE, tk -> Errors.AnnotationMissingElementValue);
             return toP(F.at(pos).NewArray(null, List.nil(), buf.toList()));
         default:
             selectExprMode();
