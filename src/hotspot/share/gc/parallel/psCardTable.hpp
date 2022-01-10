@@ -50,6 +50,13 @@ class PSCardTable: public CardTable {
     verify_card       = CT_MR_BS_last_reserved + 5
   };
 
+  CardValue* find_first_dirty_card(CardValue* const start_card,
+                                   CardValue* const end_card);
+
+  CardValue* find_first_clean_card(ObjectStartArray* start_array,
+                                   CardValue* const start_card,
+                                   CardValue* const end_card);
+
  public:
   PSCardTable(MemRegion whole_heap) : CardTable(whole_heap) {}
 
@@ -61,8 +68,8 @@ class PSCardTable: public CardTable {
                                   MutableSpace* sp,
                                   HeapWord* space_top,
                                   PSPromotionManager* pm,
-                                  uint stripe_number,
-                                  uint stripe_total);
+                                  uint stripe_index,
+                                  uint n_stripes);
 
   bool addr_is_marked_imprecise(void *addr);
   bool addr_is_marked_precise(void *addr);
