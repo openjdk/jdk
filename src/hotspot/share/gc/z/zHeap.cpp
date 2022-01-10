@@ -261,11 +261,6 @@ size_t ZHeap::free_pages(const ZArray<ZPage*>* pages) {
   return freed;
 }
 
-void ZHeap::mark_flush_and_free(Thread* thread) {
-  _young_collector.mark_flush_and_free(thread);
-  _old_collector.mark_flush_and_free(thread);
-}
-
 void ZHeap::keep_alive(oop obj) {
   zaddress addr = to_zaddress(obj);
   ZBarrier::mark<ZMark::Resurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong, ZMark::Publish>(addr);

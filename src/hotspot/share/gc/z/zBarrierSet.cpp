@@ -99,7 +99,8 @@ void ZBarrierSet::on_thread_attach(Thread* thread) {
 
 void ZBarrierSet::on_thread_detach(Thread* thread) {
   // Flush and free any remaining mark stacks
-  ZHeap::heap()->mark_flush_and_free(thread);
+  ZCollector::young()->mark_flush_and_free(thread);
+  ZCollector::old()->mark_flush_and_free(thread);
 }
 
 void ZBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {

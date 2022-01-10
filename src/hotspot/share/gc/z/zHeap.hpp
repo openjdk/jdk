@@ -99,7 +99,6 @@ public:
   ZPage* page(volatile zpointer* addr) const;
   bool is_object_live(zaddress addr) const;
   bool is_object_strongly_live(zaddress addr) const;
-  void mark_flush_and_free(Thread* thread);
   void keep_alive(oop obj);
 
   // Relocating
