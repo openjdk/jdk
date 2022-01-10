@@ -68,19 +68,19 @@ inline zaddress ZUncoloredRoot::make_load_good(zaddress_unsafe addr, uintptr_t c
 }
 
 inline void ZUncoloredRoot::mark_object(zaddress addr) {
-  ZBarrier::mark<ZMark::DontResurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong, ZMark::Publish>(addr);
+  ZBarrier::mark<ZMark::DontResurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong>(addr);
 }
 
 inline void ZUncoloredRoot::mark_young_object(zaddress addr) {
-  ZBarrier::mark_if_young<ZMark::DontResurrect, ZMark::GCThread, ZMark::Follow, ZMark::Overflow>(addr);
+  ZBarrier::mark_if_young<ZMark::DontResurrect, ZMark::GCThread, ZMark::Follow>(addr);
 }
 
 inline void ZUncoloredRoot::mark_invisible_object(zaddress addr) {
-  ZBarrier::mark<ZMark::DontResurrect, ZMark::AnyThread, ZMark::DontFollow, ZMark::Strong, ZMark::Publish>(addr);
+  ZBarrier::mark<ZMark::DontResurrect, ZMark::AnyThread, ZMark::DontFollow, ZMark::Strong>(addr);
 }
 
 inline void ZUncoloredRoot::keep_alive_object(zaddress addr) {
-  ZBarrier::mark<ZMark::Resurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong, ZMark::Publish>(addr);
+  ZBarrier::mark<ZMark::Resurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong>(addr);
 }
 
 inline void ZUncoloredRoot::mark(zaddress_unsafe* p, uintptr_t color) {

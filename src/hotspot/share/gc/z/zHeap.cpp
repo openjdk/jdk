@@ -263,7 +263,7 @@ size_t ZHeap::free_pages(const ZArray<ZPage*>* pages) {
 
 void ZHeap::keep_alive(oop obj) {
   zaddress addr = to_zaddress(obj);
-  ZBarrier::mark<ZMark::Resurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong, ZMark::Publish>(addr);
+  ZBarrier::mark<ZMark::Resurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong>(addr);
 }
 
 void ZHeap::object_iterate(ObjectClosure* object_cl, bool visit_weaks) {

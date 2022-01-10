@@ -127,11 +127,11 @@ public:
   static void remap_young_relocated(volatile zpointer* p, zpointer o);
 
   // Helpers for marking
-  template <bool resurrect, bool gc_thread, bool follow, bool finalizable, bool publish>
+  template <bool resurrect, bool gc_thread, bool follow, bool finalizable>
   static void mark(zaddress addr);
-  template <bool resurrect, bool gc_thread, bool follow, bool publish>
+  template <bool resurrect, bool gc_thread, bool follow>
   static void mark_young(zaddress addr);
-  template <bool resurrect, bool gc_thread, bool follow, bool publish>
+  template <bool resurrect, bool gc_thread, bool follow>
   static void mark_if_young(zaddress addr);
 
   // Load barrier

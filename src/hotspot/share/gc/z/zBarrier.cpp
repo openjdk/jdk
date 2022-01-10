@@ -60,7 +60,7 @@ zaddress ZBarrier::remap(zaddress_unsafe addr, ZCollector* collector) {
 
 static void keep_alive_young(zaddress addr) {
   if (ZCollector::young()->is_phase_mark()) {
-    ZBarrier::mark_young<ZMark::Resurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Publish>(addr);
+    ZBarrier::mark_young<ZMark::Resurrect, ZMark::AnyThread, ZMark::Follow>(addr);
   }
 }
 
@@ -160,7 +160,7 @@ zaddress ZBarrier::mark_slow_path(zaddress addr) {
 
   // Mark
   if (!is_null(addr)) {
-    mark<ZMark::DontResurrect, ZMark::GCThread, ZMark::Follow, ZMark::Strong, ZMark::Overflow>(addr);
+    mark<ZMark::DontResurrect, ZMark::GCThread, ZMark::Follow, ZMark::Strong>(addr);
   }
 
   return addr;
@@ -171,7 +171,7 @@ zaddress ZBarrier::mark_young_slow_path(zaddress addr) {
 
   // Mark
   if (!is_null(addr)) {
-    mark_if_young<ZMark::DontResurrect, ZMark::GCThread, ZMark::Follow, ZMark::Overflow>(addr);
+    mark_if_young<ZMark::DontResurrect, ZMark::GCThread, ZMark::Follow>(addr);
   }
 
   return addr;
@@ -182,7 +182,7 @@ zaddress ZBarrier::mark_finalizable_slow_path(zaddress addr) {
 
   // Mark
   if (!is_null(addr)) {
-    mark<ZMark::DontResurrect, ZMark::GCThread, ZMark::Follow, ZMark::Finalizable, ZMark::Overflow>(addr);
+    mark<ZMark::DontResurrect, ZMark::GCThread, ZMark::Follow, ZMark::Finalizable>(addr);
   }
 
   return addr;
@@ -197,7 +197,7 @@ void ZBarrier::remember(volatile zpointer* p) {
 void ZBarrier::mark_and_remember(volatile zpointer* p, zaddress addr) {
   // FIXME: Maybe rely on earlier null-filtering
   if (!is_null(addr)) {
-    mark<ZMark::DontResurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong, ZMark::Publish>(addr);
+    mark<ZMark::DontResurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong>(addr);
   }
   remember(p);
 }
@@ -217,7 +217,7 @@ zaddress ZBarrier::heap_store_slow_path(volatile zpointer* p, zaddress addr, zpo
 
 zaddress ZBarrier::native_store_slow_path(zaddress addr) {
   if (!is_null(addr)) {
-    mark<ZMark::DontResurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong, ZMark::Publish>(addr);
+    mark<ZMark::DontResurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong>(addr);
   }
 
   return addr;
@@ -225,7 +225,7 @@ zaddress ZBarrier::native_store_slow_path(zaddress addr) {
 
 zaddress ZBarrier::keep_alive_slow_path(zaddress addr) {
   if (!is_null(addr)) {
-    mark<ZMark::Resurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong, ZMark::Publish>(addr);
+    mark<ZMark::Resurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong>(addr);
   }
 
   return addr;

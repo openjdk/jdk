@@ -114,9 +114,9 @@ inline const ZForwardingTable* ZCollector::forwarding_table() const {
   return &_forwarding_table;
 }
 
-template <bool resurrect, bool gc_thread, bool follow, bool finalizable, bool publish>
+template <bool resurrect, bool gc_thread, bool follow, bool finalizable>
 inline void ZCollector::mark_object(zaddress addr) {
-  _mark.mark_object<resurrect, gc_thread, follow, finalizable, publish>(addr);
+  _mark.mark_object<resurrect, gc_thread, follow, finalizable>(addr);
 }
 
 inline zaddress ZCollector::relocate_or_remap_object(zaddress_unsafe addr) {

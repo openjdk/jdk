@@ -54,9 +54,6 @@ public:
   static const bool Strong        = false;
   static const bool Finalizable   = true;
 
-  static const bool Publish       = true;
-  static const bool Overflow      = false;
-
 private:
   ZCollector* const   _collector;
   ZPageTable* const   _page_table;
@@ -108,7 +105,7 @@ public:
 
   bool is_initialized() const;
 
-  template <bool resurrect, bool gc_thread, bool follow, bool finalizable, bool publish>
+  template <bool resurrect, bool gc_thread, bool follow, bool finalizable>
   void mark_object(zaddress addr);
 
   void start();

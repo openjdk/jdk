@@ -150,7 +150,7 @@ public:
   ZForwarding* forwarding(zaddress_unsafe addr) const;
 
   // Marking
-  template <bool resurrect, bool gc_thread, bool follow, bool finalizable, bool publish>
+  template <bool resurrect, bool gc_thread, bool follow, bool finalizable>
   void mark_object(zaddress addr);
   void mark_flush_and_free(Thread* thread);
   void mark_free();
