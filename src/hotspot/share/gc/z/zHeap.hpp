@@ -89,9 +89,9 @@ public:
   uint32_t hash_oop(zaddress addr) const;
 
   bool is_young(zaddress addr) const;
-  bool is_old(zaddress addr) const;
-
   bool is_young(volatile zpointer* ptr) const;
+
+  bool is_old(zaddress addr) const;
   bool is_old(volatile zpointer* ptr) const;
 
   ZPage* page(zaddress addr) const;
@@ -101,9 +101,6 @@ public:
   bool is_object_live(zaddress addr) const;
   bool is_object_strongly_live(zaddress addr) const;
   void keep_alive(oop obj);
-
-  // Relocating
-  ZCollector* remap_collector(zpointer ptr);
 
   // Page allocation
   ZPage* alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age);

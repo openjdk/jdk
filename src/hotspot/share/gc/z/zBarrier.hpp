@@ -119,9 +119,11 @@ private:
   static void verify_on_weak(volatile zpointer* referent_addr) NOT_DEBUG_RETURN;
 
 public:
+
   static zpointer load_atomic(volatile zpointer* p);
 
-  // Helper for relocation
+  // Helpers for relocation
+  static ZCollector* remap_collector(zpointer ptr);
   static void remap_young_relocated(volatile zpointer* p, zpointer o);
 
   // Helpers for marking

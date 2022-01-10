@@ -87,7 +87,7 @@ void ZStoreBarrierBuffer::install_base_pointers_inner() {
 
     // Look up the collector that thinks that this pointer is not
     // load good and check if the page is being relocated.
-    ZCollector* const remap_collector = ZHeap::heap()->remap_collector(ptr);
+    ZCollector* const remap_collector = ZBarrier::remap_collector(ptr);
     ZForwarding* const forwarding = remap_collector->forwarding(p_unsafe);
     if (forwarding != NULL) {
       // Page is being relocated
