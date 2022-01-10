@@ -72,7 +72,7 @@ inline void ZUncoloredRoot::mark_object(zaddress addr) {
 }
 
 inline void ZUncoloredRoot::mark_young_object(zaddress addr) {
-  ZBarrier::mark_if_young<ZMark::DontResurrect, ZMark::GCThread, ZMark::Follow, ZMark::Publish>(addr);
+  ZBarrier::mark_if_young<ZMark::DontResurrect, ZMark::GCThread, ZMark::Follow, ZMark::Overflow>(addr);
 }
 
 inline void ZUncoloredRoot::mark_invisible_object(zaddress addr) {
