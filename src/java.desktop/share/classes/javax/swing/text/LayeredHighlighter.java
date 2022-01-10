@@ -69,8 +69,8 @@ public abstract class LayeredHighlighter implements Highlighter {
         protected LayerPainter() {}
 
         /**
-	 * Paints a portion of a highlight.
-	 *
+         * Paints a portion of a highlight.
+         *
          * @return a shape
          * @param g Graphics used to draw
          * @param p0 starting offset of view

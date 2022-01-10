@@ -1683,8 +1683,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
         }
 
         /**
-	 * Returns HTMLDocument of given <code>JEditorPane</code>.
-	 *
+         * Returns HTMLDocument of given <code>JEditorPane</code>.
+         *
          * @param e the JEditorPane
          * @return HTMLDocument of <code>e</code>.
          */
@@ -1697,8 +1697,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
         }
 
         /**
-	 * Returns HTMLEditorKit of given <code>JEditorPane</code>.
-	 *
+         * Returns HTMLEditorKit of given <code>JEditorPane</code>.
+         *
          * @param e the JEditorPane
          * @return HTMLEditorKit for <code>e</code>.
          */

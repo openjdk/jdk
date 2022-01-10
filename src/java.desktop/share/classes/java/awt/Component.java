@@ -4133,7 +4133,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
         /**
          * Gets direct access to the back buffer, as an image.
-	 *
+         *
          * @return direct access to the back buffer, as an image.
          * @exception IllegalStateException if the buffers have not yet
          * been created
