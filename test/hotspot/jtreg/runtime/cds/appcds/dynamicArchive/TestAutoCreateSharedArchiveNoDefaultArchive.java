@@ -103,7 +103,7 @@ public class TestAutoCreateSharedArchiveNoDefaultArchive {
         }
 
         // Now rename classes.jsa to old-classes.jsa
-        String dstDir = java_home_dst + File.separator + "lib" + File.separator + "
+        String dstDir = java_home_dst + File.separator + "lib" + File.separator + "server";
         CDSTestUtils.renameModulesFile(dstDir, "classes.jsa", "old-classes.jsa");
         System.out.println("======= renamed " + dstDir + File.separator + "classes.jsa to old-classes.jsa");
 
