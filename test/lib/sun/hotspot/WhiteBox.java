@@ -226,7 +226,6 @@ public class WhiteBox {
   public native void NMTReleaseMemory(long addr, long size);
   public native long NMTMallocWithPseudoStack(long size, int index);
   public native long NMTMallocWithPseudoStackAndType(long size, int index, int type);
-  public native boolean NMTChangeTrackingLevel();
   public native int NMTGetHashSize();
   public native long NMTNewArena(long initSize);
   public native void NMTFreeArena(long arena);
@@ -625,6 +624,8 @@ public class WhiteBox {
   }
 
   // Sharing & archiving
+  public native int     getCDSGenericHeaderMinVersion();
+  public native int     getCurrentCDSVersion();
   public native String  getDefaultArchivePath();
   public native boolean cdsMemoryMappingFailed();
   public native boolean isSharingEnabled();

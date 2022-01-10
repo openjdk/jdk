@@ -444,8 +444,8 @@ public abstract class FloatVector extends AbstractVector<Float> {
     @ForceInline
     public static FloatVector zero(VectorSpecies<Float> species) {
         FloatSpecies vsp = (FloatSpecies) species;
-        return VectorSupport.broadcastCoerced(vsp.vectorType(), float.class, species.length(),
-                        toBits(0.0f), vsp,
+        return VectorSupport.fromBitsCoerced(vsp.vectorType(), float.class, species.length(),
+                        toBits(0.0f), MODE_BROADCAST, vsp,
                         ((bits_, s_) -> s_.rvOp(i -> bits_)));
     }
 
@@ -3704,9 +3704,9 @@ public abstract class FloatVector extends AbstractVector<Float> {
         @ForceInline
         final FloatVector broadcastBits(long bits) {
             return (FloatVector)
-                VectorSupport.broadcastCoerced(
+                VectorSupport.fromBitsCoerced(
                     vectorType, float.class, laneCount,
-                    bits, this,
+                    bits, MODE_BROADCAST, this,
                     (bits_, s_) -> s_.rvOp(i -> bits_));
         }
 

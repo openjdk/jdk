@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include <new>
+#include "cds.h"
 #include "cds/cdsConstants.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.inline.hpp"
@@ -701,37 +702,6 @@ WB_END
 
 WB_ENTRY(void, WB_NMTReleaseMemory(JNIEnv* env, jobject o, jlong addr, jlong size))
   os::release_memory((char *)(uintptr_t)addr, size);
-WB_END
-
-WB_ENTRY(jboolean, WB_NMTChangeTrackingLevel(JNIEnv* env))
-  // Test that we can downgrade NMT levels but not upgrade them.
-  if (MemTracker::tracking_level() == NMT_off) {
-    MemTracker::transition_to(NMT_off);
-    return MemTracker::tracking_level() == NMT_off;
-  } else {
-    assert(MemTracker::tracking_level() == NMT_detail, "Should start out as detail tracking");
-    MemTracker::transition_to(NMT_summary);
-    assert(MemTracker::tracking_level() == NMT_summary, "Should be summary now");
-
-    // Can't go to detail once NMT is set to summary.
-    MemTracker::transition_to(NMT_detail);
-    assert(MemTracker::tracking_level() == NMT_summary, "Should still be summary now");
-
-    // Shutdown sets tracking level to minimal.
-    MemTracker::shutdown();
-    assert(MemTracker::tracking_level() == NMT_minimal, "Should be minimal now");
-
-    // Once the tracking level is minimal, we cannot increase to summary.
-    // The code ignores this request instead of asserting because if the malloc site
-    // table overflows in another thread, it tries to change the code to summary.
-    MemTracker::transition_to(NMT_summary);
-    assert(MemTracker::tracking_level() == NMT_minimal, "Should still be minimal now");
-
-    // Really can never go up to detail, verify that the code would never do this.
-    MemTracker::transition_to(NMT_detail);
-    assert(MemTracker::tracking_level() == NMT_minimal, "Should still be minimal now");
-    return MemTracker::tracking_level() == NMT_minimal;
-  }
 WB_END
 
 WB_ENTRY(jint, WB_NMTGetHashSize(JNIEnv* env, jobject o))
@@ -1993,6 +1963,24 @@ WB_ENTRY(jboolean, WB_IsSharingEnabled(JNIEnv* env, jobject wb))
   return UseSharedSpaces;
 WB_END
 
+WB_ENTRY(jint, WB_GetCDSGenericHeaderMinVersion(JNIEnv* env, jobject wb))
+#if INCLUDE_CDS
+  return (jint)CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION;
+#else
+  ShouldNotReachHere();
+  return (jint)-1;
+#endif
+WB_END
+
+WB_ENTRY(jint, WB_GetCDSCurrentVersion(JNIEnv* env, jobject wb))
+#if INCLUDE_CDS
+  return (jint)CURRENT_CDS_ARCHIVE_VERSION;
+#else
+  ShouldNotReachHere();
+  return (jint)-1;
+#endif
+WB_END
+
 WB_ENTRY(jboolean, WB_CDSMemoryMappingFailed(JNIEnv* env, jobject wb))
   return FileMapInfo::memory_mapping_failed();
 WB_END
@@ -2567,7 +2555,6 @@ static JNINativeMethod methods[] = {
   {CC"NMTCommitMemory",     CC"(JJ)V",                (void*)&WB_NMTCommitMemory    },
   {CC"NMTUncommitMemory",   CC"(JJ)V",                (void*)&WB_NMTUncommitMemory  },
   {CC"NMTReleaseMemory",    CC"(JJ)V",                (void*)&WB_NMTReleaseMemory   },
-  {CC"NMTChangeTrackingLevel", CC"()Z",               (void*)&WB_NMTChangeTrackingLevel},
   {CC"NMTGetHashSize",      CC"()I",                  (void*)&WB_NMTGetHashSize     },
   {CC"NMTNewArena",         CC"(J)J",                 (void*)&WB_NMTNewArena        },
   {CC"NMTFreeArena",        CC"(J)V",                 (void*)&WB_NMTFreeArena       },
@@ -2716,6 +2703,8 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_GetMethodStringOption},
   {CC"getDefaultArchivePath",             CC"()Ljava/lang/String;",
                                                       (void*)&WB_GetDefaultArchivePath},
+  {CC"getCDSGenericHeaderMinVersion",     CC"()I",    (void*)&WB_GetCDSGenericHeaderMinVersion},
+  {CC"getCurrentCDSVersion",              CC"()I",    (void*)&WB_GetCDSCurrentVersion},
   {CC"isSharingEnabled",   CC"()Z",                   (void*)&WB_IsSharingEnabled},
   {CC"isShared",           CC"(Ljava/lang/Object;)Z", (void*)&WB_IsShared },
   {CC"isSharedInternedString", CC"(Ljava/lang/String;)Z", (void*)&WB_IsSharedInternedString },

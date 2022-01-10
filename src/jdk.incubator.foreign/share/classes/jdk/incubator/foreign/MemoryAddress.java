@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,16 @@ package jdk.incubator.foreign;
 import jdk.internal.foreign.MemoryAddressImpl;
 import jdk.internal.reflect.CallerSensitive;
 
+import java.lang.invoke.MethodHandle;
 import java.nio.ByteOrder;
 
 /**
- * A memory address models a reference into a memory location. Memory addresses are typically obtained in three ways:
+ * A memory address models a reference into a memory location. Memory addresses are typically obtained in one of the following ways:
  * <ul>
  *     <li>By calling {@link Addressable#address()} on an instance of type {@link Addressable} (e.g. a memory segment);</li>
  *     <li>By invoking a {@linkplain CLinker#downcallHandle(FunctionDescriptor) downcall method handle} which returns a pointer;</li>
  *     <li>By reading an address from memory, e.g. via {@link MemorySegment#get(ValueLayout.OfAddress, long)}.</li>
+ *     <li>By the invocation of an {@linkplain CLinker#upcallStub(MethodHandle, FunctionDescriptor, ResourceScope) upcall stub} which accepts a pointer.
  * </ul>
  * A memory address is backed by a raw machine pointer, expressed as a {@linkplain #toRawLongValue() long value}.
  *
@@ -46,17 +48,17 @@ import java.nio.ByteOrder;
  * Each dereference method takes a {@linkplain jdk.incubator.foreign.ValueLayout value layout}, which specifies the size,
  * alignment constraints, byte order as well as the Java type associated with the dereference operation, and an offset.
  * For instance, to read an int from a segment, using {@link ByteOrder#nativeOrder() default endianness}, the following code can be used:
- * <blockquote><pre>{@code
-MemoryAddress address = ...
-int value = address.get(ValueLayout.JAVA_INT, 0);
- * }</pre></blockquote>
+ * {@snippet lang=java :
+ * MemoryAddress address = ...
+ * int value = address.get(ValueLayout.JAVA_INT, 0);
+ * }
  *
  * If the value to be read is stored in memory using {@link ByteOrder#BIG_ENDIAN big-endian} encoding, the dereference operation
  * can be expressed as follows:
- * <blockquote><pre>{@code
-MemoryAddress address = ...
-int value = address.get(ValueLayout.JAVA_INT.withOrder(BIG_ENDIAN), 0);
- * }</pre></blockquote>
+ * {@snippet lang=java :
+ * MemoryAddress address = ...
+ * int value = address.get(ValueLayout.JAVA_INT.withOrder(BIG_ENDIAN), 0);
+ * }
  *
  * All the dereference methods in this class are <a href="package-summary.html#restricted"><em>restricted</em></a>: since
  * a memory address does not feature temporal nor spatial bounds, the runtime has no way to check the correctness
@@ -172,6 +174,8 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be read.
      * @param offset offset in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
      * @return a byte value read from this address.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -190,6 +194,8 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be written.
      * @param offset offset in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + offset}.
      * @param value the byte value to be written.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -208,6 +214,8 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be read.
      * @param offset offset in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
      * @return a boolean value read from this address.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -226,6 +234,8 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be written.
      * @param offset offset in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + offset}.
      * @param value the boolean value to be written.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -244,6 +254,8 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be read.
      * @param offset offset in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
      * @return a char value read from this address.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -262,6 +274,8 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be written.
      * @param offset offset in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + offset}.
      * @param value the char value to be written.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -280,6 +294,8 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be read.
      * @param offset offset in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
      * @return a short value read from this address.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -298,6 +314,8 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be written.
      * @param offset offset in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + offset}.
      * @param value the short value to be written.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -316,6 +334,8 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be read.
      * @param offset offset in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
      * @return an int value read from this address.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -334,6 +354,8 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be written.
      * @param offset offset in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + offset}.
      * @param value the int value to be written.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -352,6 +374,8 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be read.
      * @param offset offset in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
      * @return a float value read from this address.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -370,6 +394,8 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be written.
      * @param offset offset in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + offset}.
      * @param value the float value to be written.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -388,6 +414,8 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be read.
      * @param offset offset in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
      * @return a long value read from this address.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -406,6 +434,8 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be written.
      * @param offset offset in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + offset}.
      * @param value the long value to be written.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -424,6 +454,8 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be read.
      * @param offset offset in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
      * @return a double value read from this address.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -442,6 +474,8 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be written.
      * @param offset offset in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + offset}.
      * @param value the double value to be written.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -460,6 +494,8 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be read.
      * @param offset offset in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
      * @return an address value read from this address.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -478,6 +514,8 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be written.
      * @param offset offset in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + offset}.
      * @param value the address value to be written.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -496,6 +534,9 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be read.
      * @param index index in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
      * @return a char value read from this address.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -514,6 +555,9 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be written.
      * @param index index in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
      * @param value the char value to be written.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -532,6 +576,9 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be read.
      * @param index index in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
      * @return a short value read from this address.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -550,6 +597,9 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be written.
      * @param index index in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
      * @param value the short value to be written.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -568,6 +618,9 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be read.
      * @param index index in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
      * @return an int value read from this address.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -586,6 +639,9 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be written.
      * @param index index in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
      * @param value the int value to be written.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -604,6 +660,9 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be read.
      * @param index index in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
      * @return a float value read from this address.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -622,6 +681,9 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be written.
      * @param index index in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
      * @param value the float value to be written.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -640,6 +702,9 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be read.
      * @param index index in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
      * @return a long value read from this address.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -658,6 +723,9 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be written.
      * @param index index in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
      * @param value the long value to be written.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -676,6 +744,9 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be read.
      * @param index index in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
      * @return a double value read from this address.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -694,6 +765,9 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be written.
      * @param index index in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
      * @param value the double value to be written.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -712,6 +786,9 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be read.
      * @param index index in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
      * @return an address value read from this address.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -730,6 +807,9 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param layout the layout of the memory region to be written.
      * @param index index in bytes (relative to this address). The final address of this write operation can be expressed as {@code toRowLongValue() + (index * layout.byteSize())}.
      * @param value the address value to be written.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.

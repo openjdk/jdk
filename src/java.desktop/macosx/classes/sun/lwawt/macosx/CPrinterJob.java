@@ -598,7 +598,7 @@ public final class CPrinterJob extends RasterPrinterJob {
     // The following methods are CPrinterJob specific.
 
     @Override
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     protected void finalize() {
         synchronized (fNSPrintInfoLock) {
             if (fNSPrintInfo != -1) {

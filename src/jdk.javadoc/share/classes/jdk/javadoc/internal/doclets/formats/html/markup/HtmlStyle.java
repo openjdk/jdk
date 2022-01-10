@@ -908,6 +908,11 @@ public enum HtmlStyle {
     inheritedList,
 
     /**
+     * The class of an element that acts as a notification for an invalid tag.
+     */
+    invalidTag,
+
+    /**
      * The class of a {@code p} element containing legal copy in the page footer.
      */
     legalCopy,

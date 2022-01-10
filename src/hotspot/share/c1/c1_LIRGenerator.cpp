@@ -620,7 +620,7 @@ void LIRGenerator::monitor_exit(LIR_Opr object, LIR_Opr lock, LIR_Opr new_hdr, L
   // setup registers
   LIR_Opr hdr = lock;
   lock = new_hdr;
-  CodeStub* slow_path = new MonitorExitStub(lock, UseFastLocking, monitor_no);
+  CodeStub* slow_path = new MonitorExitStub(lock, !UseHeavyMonitors, monitor_no);
   __ load_stack_address_monitor(monitor_no, lock);
   __ unlock_object(hdr, object, lock, scratch, slow_path);
 }
@@ -963,6 +963,14 @@ void LIRGenerator::move_to_phi(PhiResolver* resolver, Value cur_val, Value sux_v
   Phi* phi = sux_val->as_Phi();
   // cur_val can be null without phi being null in conjunction with inlining
   if (phi != NULL && cur_val != NULL && cur_val != phi && !phi->is_illegal()) {
+    if (phi->is_local()) {
+      for (int i = 0; i < phi->operand_count(); i++) {
+        Value op = phi->operand_at(i);
+        if (op != NULL && op->type()->is_illegal()) {
+          bailout("illegal phi operand");
+        }
+      }
+    }
     Phi* cur_phi = cur_val->as_Phi();
     if (cur_phi != NULL && cur_phi->is_illegal()) {
       // Phi and local would need to get invalidated

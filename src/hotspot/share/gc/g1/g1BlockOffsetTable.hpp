@@ -55,7 +55,7 @@ private:
   volatile u_char* _offset_array;  // byte array keeping backwards offsets
 
   void check_offset(size_t offset, const char* msg) const {
-    assert(offset <= BOTConstants::card_size_in_words(),
+    assert(offset < BOTConstants::card_size_in_words(),
            "%s - offset: " SIZE_FORMAT ", N_words: %u",
            msg, offset, BOTConstants::card_size_in_words());
   }
@@ -114,9 +114,6 @@ private:
   // allocation boundary at which offset array must be updated
   HeapWord* _next_offset_threshold;
 
-  // Indicates if an object can span into this G1BlockOffsetTablePart.
-  debug_only(bool _object_can_span;)
-
   // This is the global BlockOffsetTable.
   G1BlockOffsetTable* _bot;
 
@@ -131,10 +128,6 @@ private:
   // Same as above, except that the args here are a card _index_ interval
   // that is closed: [start_index, end_index]
   void set_remainder_to_point_to_start_incl(size_t start, size_t end);
-
-  // Zero out the entry for _bottom (offset will be zero). Does not check for availability of the
-  // memory first.
-  void zero_bottom_entry_raw();
 
   inline size_t block_size(const HeapWord* p) const;
 
@@ -180,14 +173,10 @@ public:
   // discussed above.
   inline HeapWord* block_start_const(const void* addr) const;
 
-  // Initialize the threshold to reflect the first boundary after the
-  // bottom of the covered region.
-  void initialize_threshold();
+  // Reset bot to be empty.
+  void reset_bot();
 
-  void reset_bot() {
-    zero_bottom_entry_raw();
-    initialize_threshold();
-  }
+  bool is_empty() const;
 
   // Return the next threshold, the point at which the table should be
   // updated.
@@ -212,7 +201,6 @@ public:
   }
 
   void set_for_starts_humongous(HeapWord* obj_top, size_t fill_size);
-  void set_object_can_span(bool can_span) NOT_DEBUG_RETURN;
 
   void print_on(outputStream* out) PRODUCT_RETURN;
 };

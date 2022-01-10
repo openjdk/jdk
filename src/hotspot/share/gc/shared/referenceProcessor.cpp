@@ -748,8 +748,6 @@ void ReferenceProcessor::process_soft_weak_final_refs(RefProcProxyTask& proxy_ta
     maybe_balance_queues(_discoveredFinalRefs);
   }
 
-  RefProcPhaseTimeTracker tt(SoftWeakFinalRefsPhase, &phase_times);
-
   log_reflist("SoftWeakFinalRefsPhase Soft before", _discoveredSoftRefs, _max_num_queues);
   log_reflist("SoftWeakFinalRefsPhase Weak before", _discoveredWeakRefs, _max_num_queues);
   log_reflist("SoftWeakFinalRefsPhase Final before", _discoveredFinalRefs, _max_num_queues);
@@ -780,7 +778,6 @@ void ReferenceProcessor::process_final_keep_alive(RefProcProxyTask& proxy_task,
   }
 
   // Traverse referents of final references and keep them and followers alive.
-  RefProcPhaseTimeTracker tt(KeepAliveFinalRefsPhase, &phase_times);
   RefProcKeepAliveFinalPhaseTask phase_task(*this, &phase_times);
   run_task(phase_task, proxy_task, true);
 
@@ -804,9 +801,6 @@ void ReferenceProcessor::process_phantom_refs(RefProcProxyTask& proxy_task,
     maybe_balance_queues(_discoveredPhantomRefs);
   }
 
-  // Walk phantom references appropriately.
-  RefProcPhaseTimeTracker tt(PhantomRefsPhase, &phase_times);
-
   log_reflist("PhantomRefsPhase Phantom before", _discoveredPhantomRefs, _max_num_queues);
 
   RefProcPhantomPhaseTask phase_task(*this, &phase_times);
@@ -821,7 +815,7 @@ inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt)
   if (_discovery_is_mt) {
     // During a multi-threaded discovery phase,
     // each thread saves to its "own" list.
-    id = WorkerThread::current()->id();
+    id = WorkerThread::worker_id();
   } else {
     // single-threaded discovery, we save in round-robin
     // fashion to each of the lists.

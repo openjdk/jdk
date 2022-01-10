@@ -27,6 +27,7 @@
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTrace.hpp"
+#include "jfr/recorder/storage/jfrBuffer.hpp"
 #include "jfr/support/jfrMethodLookup.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
@@ -175,11 +176,22 @@ void vframeStreamSamples::samples_next() {
   } while (!fill_from_frame());
 }
 
+static const size_t min_valid_free_size_bytes = 16;
+
+static inline bool is_full(const JfrBuffer* enqueue_buffer) {
+  return enqueue_buffer->free_size() < min_valid_free_size_bytes;
+}
+
 bool JfrStackTrace::record_thread(JavaThread& thread, frame& frame) {
+  // Explicitly monitor the available space of the thread-local buffer used for enqueuing klasses as part of tagging methods.
+  // We do this because if space becomes sparse, we cannot rely on the implicit allocation of a new buffer as part of the
+  // regular tag mechanism. If the free list is empty, a malloc could result, and the problem with that is that the thread
+  // we have suspended could be the holder of the malloc lock. If there is no more available space, the attempt is aborted.
+  const JfrBuffer* const enqueue_buffer = JfrTraceIdLoadBarrier::get_enqueue_buffer(Thread::current());
+  assert(enqueue_buffer != nullptr, "invariant");
   vframeStreamSamples st(&thread, frame, false);
   u4 count = 0;
   _reached_root = true;
-
   _hash = 1;
   while (!st.at_end()) {
     if (count >= _max_frames) {
@@ -187,7 +199,7 @@ bool JfrStackTrace::record_thread(JavaThread& thread, frame& frame) {
       break;
     }
     const Method* method = st.method();
-    if (!Method::is_valid_method(method)) {
+    if (!Method::is_valid_method(method) || is_full(enqueue_buffer)) {
       // we throw away everything we've gathered in this sample since
       // none of it is safe
       return false;

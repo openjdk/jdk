@@ -422,11 +422,6 @@ class Generation: public CHeapObj<mtGC> {
   // each.
   virtual void object_iterate(ObjectClosure* cl);
 
-  // Inform a generation that it longer contains references to objects
-  // in any younger generation.    [e.g. Because younger gens are empty,
-  // clear the card table.]
-  virtual void clear_remembered_set() { }
-
   // Inform a generation that some of its objects have moved.  [e.g. The
   // generation's spaces were compacted, invalidating the card table.]
   virtual void invalidate_remembered_set() { }

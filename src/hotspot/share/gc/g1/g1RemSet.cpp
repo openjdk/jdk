@@ -106,7 +106,7 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
   // within a region to claim. Dependent on the region size as proxy for the heap
   // size, we limit the total number of chunks to limit memory usage and maintenance
   // effort of that table vs. granularity of distributing scanning work.
-  // Testing showed that 8 for 1M/2M region, 16 for 4M/8M regions, 32 for 16/32M regions,
+  // Testing showed that 64 for 1M/2M region, 128 for 4M/8M regions, 256 for 16/32M regions,
   // and so on seems to be such a good trade-off.
   static uint get_chunks_per_region(uint log_region_size) {
     // Limit the expected input values to current known possible values of the
@@ -114,7 +114,7 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
     // values for region size.
     assert(log_region_size >= 20 && log_region_size <= 29,
            "expected value in [20,29], but got %u", log_region_size);
-    return 1u << (log_region_size / 2 - 7);
+    return 1u << (log_region_size / 2 - 4);
   }
 
   uint _scan_chunks_per_region;         // Number of chunks per region.
@@ -1259,6 +1259,46 @@ class G1MergeHeapRootsTask : public WorkerTask {
     G1MergeCardSetStats stats() const { return _stats; }
   };
 
+  // Closure to clear the prev bitmap for any old region in the collection set.
+  // This is needed to be able to use the bitmap for evacuation failure handling.
+  class G1ClearBitmapClosure : public HeapRegionClosure {
+    G1CollectedHeap* _g1h;
+    void assert_bitmap_clear(HeapRegion* hr, const G1CMBitMap* bitmap) {
+      assert(bitmap->get_next_marked_addr(hr->bottom(), hr->end()) == hr->end(),
+             "Bitmap should have no mark for young regions");
+    }
+  public:
+    G1ClearBitmapClosure(G1CollectedHeap* g1h) : _g1h(g1h) { }
+
+    bool do_heap_region(HeapRegion* hr) {
+      assert(_g1h->is_in_cset(hr), "Should only be used iterating the collection set");
+      // Young regions should always have cleared bitmaps, so only clear old.
+      if (hr->is_old()) {
+        _g1h->clear_prev_bitmap_for_region(hr);
+      } else {
+        assert(hr->is_young(), "Should only be young and old regions in collection set");
+        assert_bitmap_clear(hr, _g1h->concurrent_mark()->prev_mark_bitmap());
+      }
+      return false;
+    }
+  };
+
+  // Helper to allow two closure to be applied when
+  // iterating through the collection set.
+  class G1CombinedClosure : public HeapRegionClosure {
+    HeapRegionClosure* _closure1;
+    HeapRegionClosure* _closure2;
+  public:
+    G1CombinedClosure(HeapRegionClosure* cl1, HeapRegionClosure* cl2) :
+      _closure1(cl1),
+      _closure2(cl2) { }
+
+    bool do_heap_region(HeapRegion* hr) {
+      return _closure1->do_heap_region(hr) ||
+             _closure2->do_heap_region(hr);
+    }
+  };
+
   // Visitor for the remembered sets of humongous candidate regions to merge their
   // remembered set into the card table.
   class G1FlushHumongousCandidateRemSets : public HeapRegionClosure {
@@ -1423,12 +1463,15 @@ public:
 
     // Merge remembered sets of current candidates.
     {
-      G1GCParPhaseTimesTracker x(p, merge_remset_phase, worker_id, _initial_evacuation /* must_record */);
+      G1GCParPhaseTimesTracker x(p, merge_remset_phase, worker_id, !_initial_evacuation /* allow_multiple_record */);
       G1MergeCardSetStats stats;
       {
-        G1MergeCardSetClosure cl(_scan_state);
-        g1h->collection_set_iterate_increment_from(&cl, &_hr_claimer, worker_id);
-        stats = cl.stats();
+        G1MergeCardSetClosure merge(_scan_state);
+        G1ClearBitmapClosure clear(g1h);
+        G1CombinedClosure combined(&merge, &clear);
+
+        g1h->collection_set_iterate_increment_from(&combined, &_hr_claimer, worker_id);
+        stats = merge.stats();
       }
 
       for (uint i = 0; i < G1GCPhaseTimes::MergeRSContainersSentinel; i++) {

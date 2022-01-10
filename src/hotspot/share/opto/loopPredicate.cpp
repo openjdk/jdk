@@ -741,7 +741,7 @@ bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, BasicT
     return false;
   }
   const CmpNode *cmp = bol->in(1)->as_Cmp();
-  if (!(cmp->is_Cmp() && cmp->operates_on(bt, false))) {
+  if (cmp->Opcode() != Op_Cmp_unsigned(bt)) {
     return false;
   }
   range = cmp->in(2);
@@ -1367,7 +1367,7 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree *loop, ProjNode*
   invar.map_ctrl(proj, new_predicate_proj); // so that invariance test can be appropriate
 
   // Eliminate the old If in the loop body
-  dominated_by( new_predicate_proj, iff, proj->_con != new_predicate_proj->_con );
+  dominated_by( new_predicate_proj->as_IfProj(), iff, proj->_con != new_predicate_proj->_con );
 
   C->set_major_progress();
   return true;

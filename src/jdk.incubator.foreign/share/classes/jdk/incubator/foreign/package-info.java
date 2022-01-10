@@ -43,12 +43,12 @@
  * For example, to allocate an off-heap memory region big enough to hold 10 values of the primitive type {@code int}, and fill it with values
  * ranging from {@code 0} to {@code 9}, we can use the following code:
  *
- * <pre>{@code
-MemorySegment segment = MemorySegment.allocateNative(10 * 4, ResourceScope.newImplicitScope());
-for (int i = 0 ; i < 10 ; i++) {
-   segment.setAtIndex(ValueLayout.JAVA_INT, i, i);
-}
- * }</pre>
+ * {@snippet lang=java :
+ * MemorySegment segment = MemorySegment.allocateNative(10 * 4, ResourceScope.newImplicitScope());
+ * for (int i = 0 ; i < 10 ; i++) {
+ *     segment.setAtIndex(ValueLayout.JAVA_INT, i, i);
+ * }
+ * }
  *
  * This code creates a <em>native</em> memory segment, that is, a memory segment backed by
  * off-heap memory; the size of the segment is 40 bytes, enough to store 10 values of the primitive type {@code int}.
@@ -69,14 +69,14 @@ for (int i = 0 ; i < 10 ; i++) {
  * Clients that operate under these assumptions might want to programmatically release the memory associated
  * with a memory segment. This can be done, using the {@link jdk.incubator.foreign.ResourceScope} abstraction, as shown below:
  *
- * <pre>{@code
-try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-    MemorySegment segment = MemorySegment.allocateNative(10 * 4, scope);
-    for (int i = 0 ; i < 10 ; i++) {
-        segment.setAtIndex(ValueLayout.JAVA_INT, i, i);
-    }
-}
- * }</pre>
+ * {@snippet lang=java :
+ * try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+ *     MemorySegment segment = MemorySegment.allocateNative(10 * 4, scope);
+ *     for (int i = 0 ; i < 10 ; i++) {
+ *         segment.setAtIndex(ValueLayout.JAVA_INT, i, i);
+ *     }
+ * }
+ * }
  *
  * This example is almost identical to the prior one; this time we first create a so called <em>resource scope</em>,
  * which is used to <em>bind</em> the life-cycle of the segment created immediately afterwards. Note the use of the
@@ -86,7 +86,7 @@ try (ResourceScope scope = ResourceScope.newConfinedScope()) {
  * <h3><a id="safety"></a>Safety</h3>
  *
  * This API provides strong safety guarantees when it comes to memory access. First, when dereferencing a memory segment,
- * the access coordinates are validated (upon access), to make sure that access does not occur at an address which resides
+ * the access coordinates are validated (upon access), to make sure that access does not occur at any address which resides
  * <em>outside</em> the boundaries of the memory segment used by the dereference operation. We call this guarantee <em>spatial safety</em>;
  * in other words, access to memory segments is bounds-checked, in the same way as array access is, as described in
  * Section {@jls 15.10.4} of <cite>The Java Language Specification</cite>.
@@ -99,30 +99,30 @@ try (ResourceScope scope = ResourceScope.newConfinedScope()) {
  * <h2>Foreign function access</h2>
  * The key abstractions introduced to support foreign function access are {@link jdk.incubator.foreign.SymbolLookup},
  * {@link jdk.incubator.foreign.MemoryAddress} and {@link jdk.incubator.foreign.CLinker}.
- * The first is used to lookup symbols inside native libraries; the second is used to model native addresses (more on that later),
+ * The first is used to look up symbols inside native libraries; the second is used to model native addresses (more on that later),
  * while the third provides linking capabilities which allows modelling foreign functions as {@link java.lang.invoke.MethodHandle} instances,
  * so that clients can perform foreign function calls directly in Java, without the need for intermediate layers of native
- * code (as it's the case with the <a href="{@docRoot}/../specs/jni/index.html">Java Native Interface (JNI)</a>).
+ * code (as is the case with the <a href="{@docRoot}/../specs/jni/index.html">Java Native Interface (JNI)</a>).
  * <p>
  * For example, to compute the length of a string using the C standard library function {@code strlen} on a Linux x64 platform,
  * we can use the following code:
  *
- * <pre>{@code
-      var linker = CLinker.systemCLinker();
-      MethodHandle strlen = linker.downcallHandle(
-        linker.lookup("strlen").get(),
-        FunctionDescriptor.of(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS)
-      );
-
-      try (var scope = ResourceScope.newConfinedScope()) {
-         var cString = MemorySegment.allocateNative(5 + 1, scope);
-         cString.setUtf8String("Hello");
-         long len = (long)strlen.invoke(cString); // 5
-      }
- * }</pre>
+ * {@snippet lang=java :
+ * var linker = CLinker.systemCLinker();
+ * MethodHandle strlen = linker.downcallHandle(
+ *     linker.lookup("strlen").get(),
+ *     FunctionDescriptor.of(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS)
+ * );
+ *
+ * try (var scope = ResourceScope.newConfinedScope()) {
+ *     var cString = MemorySegment.allocateNative(5 + 1, scope);
+ *     cString.setUtf8String("Hello");
+ *     long len = (long)strlen.invoke(cString); // 5
+ * }
+ * }
  *
  * Here, we obtain a {@linkplain jdk.incubator.foreign.CLinker#systemCLinker() linker instance} and we use it
- * to {@linkplain jdk.incubator.foreign.CLinker#lookup(java.lang.String) lookup} the {@code strlen} symbol in the
+ * to {@linkplain jdk.incubator.foreign.CLinker#lookup(java.lang.String) look up} the {@code strlen} symbol in the
  * standard C library; a <em>downcall method handle</em> targeting said symbol is subsequently
  * {@linkplain jdk.incubator.foreign.CLinker#downcallHandle(jdk.incubator.foreign.FunctionDescriptor) obtained}.
  * To complete the linking successfully, we must provide a {@link jdk.incubator.foreign.FunctionDescriptor} instance,
@@ -138,9 +138,9 @@ try (ResourceScope scope = ResourceScope.newConfinedScope()) {
  * <h3>Foreign addresses</h3>
  *
  * When a memory segment is created from Java code, the segment properties (spatial bounds, temporal bounds and confinement)
- * are fully known at segment creation. But when interacting with native libraries, clients will often receive <em>raw</em> pointers;
- * such pointers have no spatial bounds (example: does the C type {@code char*} refer to a single {@code char} value,
- * or an array of {@code char} values, of given size?), no notion of temporal bounds, nor thread-confinement.
+ * are fully known at segment creation. But when interacting with native libraries, clients will often receive <em>raw</em> pointers.
+ * Such pointers have no spatial bounds. For example, the C type {@code char*} can refer to a single {@code char} value,
+ * or an array of {@code char} values, of given size. Nor do said pointers have any notion of temporal bounds or thread-confinement.
  * <p>
  * Raw pointers are modelled using the {@link jdk.incubator.foreign.MemoryAddress} class. When clients receive a
  * memory address instance from a foreign function call, they can perform memory dereference on it directly,
@@ -148,11 +148,10 @@ try (ResourceScope scope = ResourceScope.newConfinedScope()) {
  * {@linkplain jdk.incubator.foreign.MemoryAddress#get(jdk.incubator.foreign.ValueLayout.OfInt, long) dereference methods}
  * provided:
  *
- * <pre>{@code
-...
-MemoryAddress addr = ... //obtain address from native code
-int x = addr.get(ValueLayout.JAVA_INT, 0);
- * }</pre>
+ * {@snippet lang=java :
+ * MemoryAddress addr = ... //obtain address from native code
+ * int x = addr.get(ValueLayout.JAVA_INT, 0);
+ * }
  *
  * Alternatively, the client can
  * {@linkplain jdk.incubator.foreign.MemorySegment#ofAddress(jdk.incubator.foreign.MemoryAddress, long, jdk.incubator.foreign.ResourceScope) create}
@@ -160,51 +159,51 @@ int x = addr.get(ValueLayout.JAVA_INT, 0);
  * for instance, be available in the documentation of the foreign function which produced the native address.
  * Here is how an unsafe segment can be created from a native address:
  *
- * <pre>{@code
-ResourceScope scope = ... // initialize a resource scope object
-MemoryAddress addr = ... //obtain address from native code
-MemorySegment segment = MemorySegment.ofAddress(addr, 4, scope); // segment is 4 bytes long
-int x = segment.get(ValueLayout.JAVA_INT, 0);
- * }</pre>
+ * {@snippet lang=java :
+ * ResourceScope scope = ... // initialize a resource scope object
+ * MemoryAddress addr = ... //obtain address from native code
+ * MemorySegment segment = MemorySegment.ofAddress(addr, 4, scope); // segment is 4 bytes long
+ * int x = segment.get(ValueLayout.JAVA_INT, 0);
+ * }
  *
  * <h3>Upcalls</h3>
- * The {@link jdk.incubator.foreign.CLinker} interface also allows to turn an existing method handle (which might point
+ * The {@link jdk.incubator.foreign.CLinker} interface also allows clients to turn an existing method handle (which might point
  * to a Java method) into a memory address, so that Java code can effectively be passed to other foreign functions.
  * For instance, we can write a method that compares two integer values, as follows:
  *
- * <pre>{@code
-class IntComparator {
-    static int intCompare(MemoryAddress addr1, MemoryAddress addr2) {
-        return addr1.get(ValueLayout.JAVA_INT, 0) - addr2.get(ValueLayout.JAVA_INT, 0);
-    }
-}
- * }</pre>
+ * {@snippet lang=java :
+ * class IntComparator {
+ *     static int intCompare(MemoryAddress addr1, MemoryAddress addr2) {
+ *         return addr1.get(ValueLayout.JAVA_INT, 0) - addr2.get(ValueLayout.JAVA_INT, 0);
+ *     }
+ * }
+ * }
  *
  * The above method dereferences two memory addresses containing an integer value, and performs a simple comparison
  * by returning the difference between such values. We can then obtain a method handle which targets the above static
  * method, as follows:
  *
- * <pre>{@code
-FunctionDescriptor intCompareDescriptor = FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.ADDRESS, ValueLayout.ADDRESS);
-MethodHandle intCompareHandle = MethodHandles.lookup().findStatic(IntComparator.class,
-                                                   "intCompare",
-                                                   CLinker.upcallType(comparFunction));
- * }</pre>
+ * {@snippet lang=java :
+ * FunctionDescriptor intCompareDescriptor = FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.ADDRESS, ValueLayout.ADDRESS);
+ * MethodHandle intCompareHandle = MethodHandles.lookup().findStatic(IntComparator.class,
+ *                                                 "intCompare",
+ *                                                 CLinker.upcallType(comparFunction));
+ * }
  *
  * As before, we need to create a {@link jdk.incubator.foreign.FunctionDescriptor} instance, this time describing the signature
  * of the function pointer we want to create. The descriptor can be used to
  * {@linkplain jdk.incubator.foreign.CLinker#upcallType(jdk.incubator.foreign.FunctionDescriptor) derive} a method type
- * that can be used to lookup the method handle for {@code IntComparator.intCompare}.
+ * that can be used to look up the method handle for {@code IntComparator.intCompare}.
  * <p>
  * Now that we have a method handle instance, we can turn it into a fresh function pointer,
  * using the {@link jdk.incubator.foreign.CLinker} interface, as follows:
  *
- * <pre>{@code
-ResourceScope scope = ...
-Addressable comparFunc = CLinker.systemCLinker().upcallStub(
-     intCompareHandle, intCompareDescriptor, scope);
-);
- * }</pre>
+ * {@snippet lang=java :
+ * ResourceScope scope = ...
+ * Addressable comparFunc = CLinker.systemCLinker().upcallStub(
+ *     intCompareHandle, intCompareDescriptor, scope);
+ * );
+ * }
  *
  * The {@link jdk.incubator.foreign.FunctionDescriptor} instance created in the previous step is then used to
  * {@linkplain jdk.incubator.foreign.CLinker#upcallStub(java.lang.invoke.MethodHandle, jdk.incubator.foreign.FunctionDescriptor, jdk.incubator.foreign.ResourceScope) create}

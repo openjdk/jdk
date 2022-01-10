@@ -148,7 +148,7 @@ public class DnsClient {
         }
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     protected void finalize() {
         close();
     }

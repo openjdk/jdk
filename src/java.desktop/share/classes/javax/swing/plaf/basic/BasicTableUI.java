@@ -27,16 +27,11 @@ package javax.swing.plaf.basic;
 
 import java.awt.*;
 import java.awt.datatransfer.*;
-import java.awt.dnd.*;
 import java.awt.event.*;
 import java.util.Enumeration;
-import java.util.EventObject;
-import java.util.Hashtable;
-import java.util.TooManyListenersException;
 import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.plaf.*;
-import javax.swing.text.*;
 import javax.swing.table.*;
 import javax.swing.plaf.basic.DragRecognitionSupport.BeforeDrag;
 import sun.swing.SwingUtilities2;
@@ -221,8 +216,8 @@ public class BasicTableUI extends TableUI
                 this.inSelection = true;
 
                 // look at the sign of dx and dy only
-                dx = sign(dx);
-                dy = sign(dy);
+                dx = Integer.signum(dx);
+                dy = Integer.signum(dy);
 
                 // make sure one is zero, but not both
                 assert (dx == 0 || dy == 0) && !(dx == 0 && dy == 0);
@@ -248,10 +243,6 @@ public class BasicTableUI extends TableUI
         private void moveWithinTableRange(JTable table, int dx, int dy) {
             leadRow = clipToRange(leadRow+dy, 0, table.getRowCount());
             leadColumn = clipToRange(leadColumn+dx, 0, table.getColumnCount());
-        }
-
-        private static int sign(int num) {
-            return (num < 0) ? -1 : ((num == 0) ? 0 : 1);
         }
 
         /**
