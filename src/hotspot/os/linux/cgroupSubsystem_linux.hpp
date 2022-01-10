@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,12 +61,13 @@
 #define INVALID_CGROUPS_NO_MOUNT 5
 #define INVALID_CGROUPS_GENERIC  6
 
-// Four controllers: cpu, cpuset, cpuacct, memory
-#define CG_INFO_LENGTH 4
+// Five controllers: cpu, cpuset, cpuacct, memory, pids
+#define CG_INFO_LENGTH 5
 #define CPUSET_IDX     0
 #define CPU_IDX        1
 #define CPUACCT_IDX    2
 #define MEMORY_IDX     3
+#define PIDS_IDX       4
 
 typedef char * cptr;
 
@@ -238,10 +239,12 @@ class CgroupSubsystem: public CHeapObj<mtInternal> {
   public:
     jlong memory_limit_in_bytes();
     int active_processor_count();
+    jlong limit_from_str(char* limit_str);
 
     virtual int cpu_quota() = 0;
     virtual int cpu_period() = 0;
     virtual int cpu_shares() = 0;
+    virtual jlong pids_max() = 0;
     virtual jlong memory_usage_in_bytes() = 0;
     virtual jlong memory_and_swap_limit_in_bytes() = 0;
     virtual jlong memory_soft_limit_in_bytes() = 0;
