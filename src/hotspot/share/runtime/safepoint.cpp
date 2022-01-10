@@ -754,6 +754,7 @@ void SafepointSynchronize::block(JavaThread *thread) {
 
 void SafepointSynchronize::handle_polling_page_exception(JavaThread *thread) {
   assert(thread->thread_state() == _thread_in_Java, "should come from Java code");
+  thread->set_thread_state(_thread_in_vm);
 
   // Enable WXWrite: the function is called implicitly from java code.
   MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
@@ -765,6 +766,8 @@ void SafepointSynchronize::handle_polling_page_exception(JavaThread *thread) {
   ThreadSafepointState* state = thread->safepoint_state();
 
   state->handle_polling_page_exception();
+
+  thread->set_thread_state(_thread_in_Java);
 }
 
 
@@ -970,7 +973,6 @@ void ThreadSafepointState::handle_polling_page_exception() {
     // If we have a pending async exception deoptimize the frame
     // as otherwise we may never deliver it.
     if (self->has_async_exception_condition()) {
-      ThreadInVMfromJava __tiv(self, false /* check asyncs */);
       Deoptimization::deoptimize_frame(self, caller_fr.id());
     }
 
