@@ -3567,6 +3567,7 @@ void Arguments::init_shared_archive_paths() {
             DynamicDumpSharedSpaces = true;
             ArchiveClassesAtExit = const_cast<char *>(SharedArchiveFile);
             SharedArchivePath = get_default_shared_archive_path();
+            SharedArchiveFile = nullptr;
           } else {
             no_shared_spaces("invalid archive");
           }
@@ -3599,7 +3600,7 @@ void Arguments::init_shared_archive_paths() {
         }
       }
 
-      if (!AutoCreateSharedArchive && ArchiveClassesAtExit != nullptr && os::same_files(SharedArchiveFile, ArchiveClassesAtExit)) {
+      if (ArchiveClassesAtExit != nullptr && os::same_files(SharedArchiveFile, ArchiveClassesAtExit)) {
           vm_exit_during_initialization(
             "Cannot have the same archive file specified for -XX:SharedArchiveFile and -XX:ArchiveClassesAtExit",
             SharedArchiveFile);
