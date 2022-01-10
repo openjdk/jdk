@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3814,7 +3814,7 @@ SWPointer::SWPointer(MemNode* mem, SuperWord* slp, Node_Stack *nstack, bool anal
   // Match AddP(base, AddP(ptr, k*iv [+ invariant]), constant)
   Node* base = adr->in(AddPNode::Base);
   // The base address should be loop invariant
-  if (is_main_loop_member(base)) {
+  if (is_loop_member(base)) {
     assert(!valid(), "base address is loop variant");
     return;
   }
@@ -3843,7 +3843,7 @@ SWPointer::SWPointer(MemNode* mem, SuperWord* slp, Node_Stack *nstack, bool anal
       break; // stop looking at addp's
     }
   }
-  if (is_main_loop_member(adr)) {
+  if (is_loop_member(adr)) {
     assert(!valid(), "adr is loop variant");
     return;
   }
@@ -3874,7 +3874,7 @@ SWPointer::SWPointer(SWPointer* p) :
   #endif
 {}
 
-bool SWPointer::is_main_loop_member(Node* n) const {
+bool SWPointer::is_loop_member(Node* n) const {
   Node* n_c = phase()->get_ctrl(n);
   return lpt()->is_member(phase()->get_loop(n_c));
 }
@@ -3883,7 +3883,7 @@ bool SWPointer::invariant(Node* n) const {
   NOT_PRODUCT(Tracer::Depth dd;)
   Node* n_c = phase()->get_ctrl(n);
   NOT_PRODUCT(_tracer.invariant_1(n, n_c);)
-  bool is_not_member = !is_main_loop_member(n);
+  bool is_not_member = !is_loop_member(n);
   if (is_not_member && _slp->lp()->is_main_loop()) {
     // Check that n_c dominates the pre loop head node. If it does not, then we cannot use n as invariant for the pre loop
     // CountedLoopEndNode check because n_c is either part of the pre loop or between the pre and the main loop (illegal
@@ -3953,7 +3953,7 @@ bool SWPointer::scaled_iv(Node* n) {
     NOT_PRODUCT(_tracer.scaled_iv_3(n, _scale);)
     return true;
   }
-  if (_analyze_only && (is_main_loop_member(n))) {
+  if (_analyze_only && (is_loop_member(n))) {
     _nstack->push(n, _stack_idx++);
   }
 
@@ -4036,7 +4036,7 @@ bool SWPointer::offset_plus_k(Node* n, bool negate) {
     return false;
   }
 
-  if (_analyze_only && is_main_loop_member(n)) {
+  if (_analyze_only && is_loop_member(n)) {
     _nstack->push(n, _stack_idx++);
   }
   if (opc == Op_AddI) {
@@ -4070,14 +4070,14 @@ bool SWPointer::offset_plus_k(Node* n, bool negate) {
     }
   }
 
-  if (!is_main_loop_member(n)) {
+  if (!is_loop_member(n)) {
     // 'n' is loop invariant. Skip ConvI2L and CastII nodes before checking if 'n' is dominating the pre loop.
     if (opc == Op_ConvI2L) {
       n = n->in(1);
     }
     if (n->Opcode() == Op_CastII) {
       // Skip CastII nodes
-      assert(!is_main_loop_member(n), "sanity");
+      assert(!is_loop_member(n), "sanity");
       n = n->in(1);
     }
     // Check if 'n' can really be used as invariant (not in main loop and dominating the pre loop).

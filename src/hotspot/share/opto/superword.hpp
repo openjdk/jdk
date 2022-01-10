@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -635,7 +635,7 @@ class SWPointer : public ResourceObj {
   IdealLoopTree*  lpt() const   { return _slp->lpt(); }
   PhiNode*        iv() const    { return _slp->iv();  } // Induction var
 
-  bool is_main_loop_member(Node* n) const;
+  bool is_loop_member(Node* n) const;
   bool invariant(Node* n) const;
 
   // Match: k*iv + offset
