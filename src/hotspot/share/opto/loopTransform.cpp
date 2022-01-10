@@ -532,7 +532,7 @@ void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree* loop, Node_List& old_ne
           if (n->is_If() && n->in(1) == test_cond) {
             // IfNode was dominated by version in peeled loop body
             progress = true;
-            dominated_by(old_new[prev->_idx], n);
+            dominated_by(old_new[prev->_idx]->as_IfProj(), n->as_If());
           }
         }
       }
