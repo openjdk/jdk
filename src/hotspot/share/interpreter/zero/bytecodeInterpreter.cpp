@@ -1949,6 +1949,9 @@ run:
 
               oop obj = cast_to_oop(result);
 
+              // Must prevent reordering of stores for object initialization
+              // with stores that publish the new object.
+              OrderAccess::storestore();
               SET_STACK_OBJECT(obj, 0);
               UPDATE_PC_AND_TOS_AND_CONTINUE(3, 1);
             }
