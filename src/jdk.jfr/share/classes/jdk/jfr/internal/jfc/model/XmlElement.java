@@ -104,7 +104,7 @@ class XmlElement {
         this.content = content;
     }
 
-    public final String getContent() {
+    final String getContent() {
         return content;
     }
 
