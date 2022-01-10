@@ -48,7 +48,7 @@ public class Jstatd {
     private static boolean startRegistry = true;
     private static RemoteHost remoteHost;
 
-    private static final String rmiFilterPattern = "sun.jvmstat.monitor.remote.RemoteVm;com.sun.proxy.jdk.proxy1.$Proxy1;com.sun.proxy.jdk.proxy1.$Proxy2;java.lang.reflect.Proxy;java.rmi.server.RemoteObjectInvocationHandler;java.rmi.server.RemoteObject;!*";
+    private static final String rmiFilterPattern = "sun.jvmstat.monitor.remote.RemoteVm;com.sun.proxy.jdk.proxy*;java.lang.reflect.Proxy;java.rmi.server.RemoteObjectInvocationHandler;java.rmi.server.RemoteObject;!*";
 
     private static void printUsage() {
         System.err.println("usage: jstatd [-nr] [-p port] [-r rmiport] [-n rminame]\n" +
