@@ -290,20 +290,6 @@ inline void ZHeap::mark_young_object(zaddress addr) {
   }
 }
 
-inline void ZHeap::remember(volatile zpointer* p) {
-  _young_collector.remember(p);
-}
-
-inline void ZHeap::remember_filtered(volatile zpointer* p) {
-  if (is_old(p)) {
-    remember(p);
-  }
-}
-
-inline void ZHeap::remember_fields(zaddress addr) {
-  _young_collector.remember_fields(addr);
-}
-
 inline bool ZHeap::is_remembered(volatile zpointer* p) {
   return _young_collector.is_remembered(p);
 }

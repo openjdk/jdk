@@ -293,7 +293,9 @@ void ZReferenceProcessor::process_worker_discovered_list(zpointer discovered_lis
   auto store_in_list = [&](zpointer* p, zpointer ptr) {
     *p = ptr;
     if (p != start) {
-      ZHeap::heap()->remember_filtered(p);
+      if (ZHeap::heap()->is_old(p)) {
+        ZCollector::young()->remember(p);
+      }
     }
   };
 

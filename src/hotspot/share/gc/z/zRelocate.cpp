@@ -212,11 +212,11 @@ static zaddress forwarding_insert(ZForwarding* forwarding, zaddress from_addr, z
 }
 
 void ZRelocate::add_remset(volatile zpointer* p) {
-  ZHeap::heap()->remember(p);
+  ZCollector::young()->remember(p);
 }
 
 void ZRelocate::add_remset_for_fields(volatile zaddress addr) {
-  ZHeap::heap()->remember_fields(addr);
+  ZCollector::young()->remember_fields(addr);
 }
 
 static zaddress relocate_object_inner(ZForwarding* forwarding, zaddress from_addr, ZForwardingCursor* cursor) {

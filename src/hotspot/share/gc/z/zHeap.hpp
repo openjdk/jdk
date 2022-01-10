@@ -109,11 +109,6 @@ public:
   // Relocating
   ZCollector* remap_collector(zpointer ptr);
 
-  // Remembering
-  void remember(volatile zpointer* p);
-  void remember_filtered(volatile zpointer* p);
-  void remember_fields(zaddress addr);
-
   // Page allocation
   ZPage* alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age);
   void undo_alloc_page(ZPage* page);
