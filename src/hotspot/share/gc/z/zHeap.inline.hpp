@@ -81,10 +81,6 @@ inline bool ZHeap::is_object_strongly_live(zaddress addr) const {
   return page->is_object_strongly_live(addr);
 }
 
-inline bool ZHeap::is_remembered(volatile zpointer* p) {
-  return _young_collector.is_remembered(p);
-}
-
 inline bool ZHeap::is_alloc_stalling_for_old() const {
   return _page_allocator.is_alloc_stalling_for_old();
 }

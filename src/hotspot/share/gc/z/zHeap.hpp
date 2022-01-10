@@ -134,7 +134,6 @@ public:
 
   // Verification
   bool is_oop(uintptr_t addr) const;
-  bool is_remembered(volatile zpointer* p);
   void verify();
 };
 

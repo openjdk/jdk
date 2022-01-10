@@ -70,7 +70,7 @@ static void z_verify_old_oop(zpointer* p) {
         // If young collection was aborted, the GC does not guarantee
         // that all old-to-young pointers have remembered set entry.
         guarantee(ZAbort::should_abort() ||
-                  ZHeap::heap()->is_remembered(p) ||
+                  ZCollector::young()->is_remembered(p) ||
                   ZStoreBarrierBuffer::is_in(p), "Must be remembered");
       } else {
         guarantee(ZPointer::is_store_good(o) || (uintptr_t(o) & ZPointerRememberedMask) == ZPointerRememberedMask, "Must be remembered");
