@@ -58,6 +58,12 @@ zaddress ZBarrier::remap(zaddress_unsafe addr, ZCollector* collector) {
 // Weak load barrier
 //
 
+static void keep_alive_young(zaddress addr) {
+  if (ZCollector::young()->is_phase_mark()) {
+    ZBarrier::mark_young<ZMark::Resurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Publish>(addr);
+  }
+}
+
 zaddress ZBarrier::blocking_keep_alive_on_weak_slow_path(zaddress addr) {
   if (is_null(addr)) {
     return zaddress::null;
@@ -69,7 +75,7 @@ zaddress ZBarrier::blocking_keep_alive_on_weak_slow_path(zaddress addr) {
     }
   } else {
     // Young gen objects are never blocked, need to keep alive
-    mark<ZMark::Resurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong, ZMark::Publish>(addr);
+    keep_alive_young(addr);
   }
 
   // Strongly live
@@ -87,7 +93,7 @@ zaddress ZBarrier::blocking_keep_alive_on_phantom_slow_path(zaddress addr) {
     }
   } else {
     // Young gen objects are never blocked, need to keep alive
-    mark<ZMark::Resurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong, ZMark::Publish>(addr);
+    keep_alive_young(addr);
   }
 
   // Strongly live
@@ -108,7 +114,7 @@ zaddress ZBarrier::blocking_load_barrier_on_weak_slow_path(zaddress addr) {
     // Note: Should not need to keep object alive in this operation,
     //       but the barrier colors the pointer mark good, so we need
     //       to mark the object accordingly.
-    mark<ZMark::Resurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong, ZMark::Publish>(addr);
+    keep_alive_young(addr);
   }
 
   return addr;
@@ -128,7 +134,7 @@ zaddress ZBarrier::blocking_load_barrier_on_phantom_slow_path(zaddress addr) {
     // Note: Should not need to keep object alive in this operation,
     //       but the barrier colors the pointer mark good, so we need
     //       to mark the object accordingly.
-    mark<ZMark::Resurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong, ZMark::Publish>(addr);
+    keep_alive_young(addr);
   }
 
   return addr;
@@ -165,7 +171,7 @@ zaddress ZBarrier::mark_young_slow_path(zaddress addr) {
 
   // Mark
   if (!is_null(addr)) {
-    mark_young<ZMark::Follow, ZMark::Overflow>(addr);
+    mark_if_young<ZMark::DontResurrect, ZMark::GCThread, ZMark::Follow, ZMark::Overflow>(addr);
   }
 
   return addr;

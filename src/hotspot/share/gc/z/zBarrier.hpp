@@ -129,8 +129,10 @@ public:
   // Helpers for marking
   template <bool resurrect, bool gc_thread, bool follow, bool finalizable, bool publish>
   static void mark(zaddress addr);
-  template <bool follow,bool publish>
+  template <bool resurrect, bool gc_thread, bool follow, bool publish>
   static void mark_young(zaddress addr);
+  template <bool resurrect, bool gc_thread, bool follow, bool publish>
+  static void mark_if_young(zaddress addr);
 
   // Load barrier
   static zaddress load_barrier_on_oop_field(volatile zpointer* p);
