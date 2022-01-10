@@ -94,9 +94,10 @@ public:
   bool is_young(volatile zpointer* ptr) const;
   bool is_old(volatile zpointer* ptr) const;
 
-  // Marking
   ZPage* page(zaddress addr) const;
   ZPage* page(volatile zpointer* addr) const;
+
+  // Liveness
   bool is_object_live(zaddress addr) const;
   bool is_object_strongly_live(zaddress addr) const;
   void keep_alive(oop obj);
