@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,6 +111,46 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_connect
         }
     }
 }
+/**
+ * Check /proc/$pid/stat to determine SIGQUIT is caught by pid.
+ * Return 1 if the SIGQUIT is set in SigCgt; 0 if it is not.
+ * Return -1 when it runs into any error.
+ */
+static int check_sigquit_caught(jint pid) {
+    char buf[2048];
+    int statlen;
+
+    sprintf(buf, "/proc/%d/stat", pid);
+    FILE *fp = fopen(buf, "r");
+    if (fp != NULL) {
+        statlen = fread(buf, 1, 2047, fp);
+        buf[statlen] = '\0';
+        fclose(fp);
+
+        // Code is inspired by email from Hans Boehm. /proc/self/stat begins with current
+        // pid, followed by command name surrounded by parentheses, state, etc
+        char *s = strrchr(buf, ')');
+        // https://www.kernel.org/doc/html/latest/filesystems/proc.html#id10
+        // pid tcomm) stat ppid ... sigign sigcatch
+        // 0   1      2    3    ... 32     33
+        for (int i = 1; s != NULL && i < 33; ++i) {
+            s = strchr(s + 1, ' ');
+        }
+
+        if (s != NULL) {
+            unsigned long bitmask;
+            if (1 == sscanf(s + 1, "%lu", &bitmask)) {
+                if (bitmask & (1 << (SIGQUIT - 1))) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            }
+        }
+    }
+
+    return -1;
+}
 
 /*
  * Class:     sun_tools_attach_VirtualMachineImpl
@@ -120,6 +160,8 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_connect
 JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_sendQuitTo
   (JNIEnv *env, jclass cls, jint pid)
 {
+    // Only give up sending SIGQUIT if we see that SigCgt is not set.
+    if (check_sigquit_caught(pid) == 0) return;
     if (kill((pid_t)pid, SIGQUIT)) {
         JNU_ThrowIOExceptionWithLastError(env, "kill");
     }
