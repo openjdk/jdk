@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -969,7 +969,7 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
 /**
  * Method entry for static native methods:
  *   int java.util.zip.CRC32.updateBytes(int crc, byte[] b, int off, int len)
- *   int java.util.zip.CRC32.updateByteBuffer(int crc, long buf, int off, int len)
+ *   int java.util.zip.CRC32.updateByteBuffer(int crc, jlong buf, int off, int len)
  */
 address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
   if (UseCRC32Intrinsics) {
@@ -994,7 +994,7 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
     // Arguments are reversed on java expression stack
     // Calculate address of start element
     if (kind == Interpreter::java_util_zip_CRC32_updateByteBuffer) {
-      __ ldr(buf, Address(esp, 2*wordSize)); // long buf
+      __ ldr(buf, Address(esp, 2*wordSize)); // jlong buf
       __ ldrw(off, Address(esp, wordSize)); // offset
       __ add(buf, buf, off); // + offset
       __ ldrw(crc,   Address(esp, 4*wordSize)); // Initial CRC
@@ -1024,7 +1024,7 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
 /**
  * Method entry for intrinsic-candidate (non-native) methods:
  *   int java.util.zip.CRC32C.updateBytes(int crc, byte[] b, int off, int end)
- *   int java.util.zip.CRC32C.updateDirectByteBuffer(int crc, long buf, int off, int end)
+ *   int java.util.zip.CRC32C.updateDirectByteBuffer(int crc, jlong buf, int off, int end)
  * Unlike CRC32, CRC32C does not have any methods marked as native
  * CRC32C also uses an "end" variable instead of the length variable CRC32 uses
  */
@@ -1043,13 +1043,13 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
     __ ldrw(end, Address(esp)); // int end
     __ ldrw(off, Address(esp, wordSize)); // int offset
     __ sub(len, end, off);
-    __ ldr(buf, Address(esp, 2*wordSize)); // byte[] buf | long buf
+    __ ldr(buf, Address(esp, 2*wordSize)); // byte[] buf | jlong buf
     __ add(buf, buf, off); // + offset
     if (kind == Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer) {
-      __ ldrw(crc, Address(esp, 4*wordSize)); // long crc
+      __ ldrw(crc, Address(esp, 4*wordSize)); // jlong crc
     } else {
       __ add(buf, buf, arrayOopDesc::base_offset_in_bytes(T_BYTE)); // + header size
-      __ ldrw(crc, Address(esp, 3*wordSize)); // long crc
+      __ ldrw(crc, Address(esp, 3*wordSize)); // jlong crc
     }
 
     __ andr(sp, r13, -16); // Restore the caller's SP

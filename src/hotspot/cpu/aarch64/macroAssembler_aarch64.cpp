@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -4342,7 +4342,7 @@ address MacroAssembler::has_negatives(Register ary1, Register len, Register resu
 
     int shift = 64 - exact_log2(os::vm_page_size());
     lsl(rscratch1, ary1, shift);
-    mov(rscratch2, (size_t)(4 * wordSize) << shift);
+    mov(rscratch2, (uint64_t)(4 * wordSize) << shift);
     adds(rscratch2, rscratch1, rscratch2);  // At end of page?
     br(CS, STUB); // at the end of page then go to stub
     subs(len, len, wordSize);

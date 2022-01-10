@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -492,18 +492,16 @@ public:
   // 64 bit integers
 
   inline void mov(Register dst, address addr)             { mov_immediate64(dst, (uint64_t)addr); }
+  inline void mov(Register dst, int32_t imm32)            { mov_immediate64(dst, imm32); }
+  inline void mov(Register dst, uint32_t imm32)           { mov_immediate64(dst, imm32); }
+#ifdef __APPLE__
+  // macosx wants all the overloads
+  inline void mov(Register dst, intptr_t imm32)           { mov_immediate64(dst, imm32); }
+#endif
+  inline void mov(Register dst, int64_t imm32)           { mov_immediate64(dst, imm32); }
+  inline void mov(Register dst, uint64_t imm32)           { mov_immediate64(dst, imm32); }
 
-  inline void mov(Register dst, int imm64)                { mov_immediate64(dst, (uint64_t)imm64); }
-  inline void mov(Register dst, long imm64)               { mov_immediate64(dst, (uint64_t)imm64); }
-  inline void mov(Register dst, long long imm64)          { mov_immediate64(dst, (uint64_t)imm64); }
-  inline void mov(Register dst, unsigned int imm64)       { mov_immediate64(dst, (uint64_t)imm64); }
-  inline void mov(Register dst, unsigned long imm64)      { mov_immediate64(dst, (uint64_t)imm64); }
-  inline void mov(Register dst, unsigned long long imm64) { mov_immediate64(dst, (uint64_t)imm64); }
-
-  inline void movw(Register dst, uint32_t imm32)
-  {
-    mov_immediate32(dst, imm32);
-  }
+  inline void movw(Register dst, uint32_t imm32)          { mov_immediate32(dst, imm32); }
 
   void mov(Register dst, RegisterOrConstant src) {
     if (src.is_register())

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -404,17 +404,9 @@ class Address {
     : _mode(no_mode) { }
   Address(Register r)
     : _base(r), _index(noreg), _offset(0), _mode(base_plus_offset), _target(0) { }
+  //Address(Register r, int64_t o)
+  //  : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
   Address(Register r, int o)
-    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
-  Address(Register r, long o)
-    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
-  Address(Register r, long long o)
-    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
-  Address(Register r, unsigned int o)
-    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
-  Address(Register r, unsigned long o)
-    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
-  Address(Register r, unsigned long long o)
     : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
   Address(Register r, ByteSize disp)
     : Address(r, in_bytes(disp)) { }
