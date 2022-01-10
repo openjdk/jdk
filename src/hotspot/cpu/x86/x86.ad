@@ -6884,6 +6884,9 @@ instruct vxor_mem(vec dst, vec src, memory mem) %{
 // --------------------------------- VectorCast --------------------------------------
 
 instruct vcastBtoX(vec dst, vec src) %{
+  predicate(UseAVX > 1 ||
+            Matcher::vector_element_basic_type(n) != T_FLOAT ||
+            Matcher::vector_length_in_bytes(n) < 32);
   match(Set dst (VectorCastB2X src));
   format %{ "vector_cast_b2x $dst,$src\t!" %}
   ins_encode %{
@@ -6952,8 +6955,11 @@ instruct vcastStoX(vec dst, vec src, vec vtmp, rRegP scratch) %{
 %}
 
 instruct vcastStoX_evex(vec dst, vec src) %{
-  predicate((UseAVX > 2 && VM_Version::supports_avx512vlbw()) ||
-            (Matcher::vector_length_in_bytes(n) >= Matcher::vector_length_in_bytes(n->in(1)))); // dst >= src
+  predicate((Matcher::vector_element_basic_type(n) == T_BYTE && UseAVX > 2 && VM_Version::supports_avx512vlbw()) ||
+            (Matcher::vector_element_basic_type(n) == T_FLOAT && (UseAVX > 1 || Matcher::vector_length_in_bytes(n) < 32)) ||
+            Matcher::vector_element_basic_type(n) == T_INT ||
+            Matcher::vector_element_basic_type(n) == T_LONG ||
+            Matcher::vector_element_basic_type(n) == T_DOUBLE);
   match(Set dst (VectorCastS2X src));
   format %{ "vector_cast_s2x $dst,$src\t!" %}
   ins_encode %{
@@ -6992,7 +6998,6 @@ instruct vcastStoX_evex(vec dst, vec src) %{
 
 instruct vcastBStoF(vec dst, vec src, vec xtmp) %{
   predicate(UseAVX == 1 &&
-            is_subword_type(Matcher::vector_element_basic_type(n->in(1))) &&
             Matcher::vector_element_basic_type(n) == T_FLOAT &&
             Matcher::vector_length_in_bytes(n) == 32);
   match(Set dst (VectorCastB2X src));
@@ -7150,12 +7155,12 @@ instruct vcastLtoBS(vec dst, vec src, rRegP scratch) %{
 
 #ifdef _LP64
 
-instruct vcastLtoFD_avx(vec dst, vec src, vec xtmp1, vec xtmp2, rRegL tmp) %{
+instruct vcastLtoFD_avx(vec dst, vec src, vec xtmp1, vec xtmp2, rRegL tmp, rFlagsReg cr) %{
   predicate((UseAVX <= 2 || !VM_Version::supports_avx512dq()) &&
             is_floating_point_type(Matcher::vector_element_basic_type(n)) &&
             Matcher::vector_length_in_bytes(n->in(1)) <= 32);
   match(Set dst (VectorCastL2X src));
-  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP tmp);
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP tmp, KILL cr);
   format %{ "vector_cast_l2x  $dst,$src\t! using $xtmp1, $xtmp2 and $tmp as TEMP" %}
   ins_encode %{
     BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
@@ -7167,12 +7172,12 @@ instruct vcastLtoFD_avx(vec dst, vec src, vec xtmp1, vec xtmp2, rRegL tmp) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vcastLtoFD_evex(vec dst, vec src, vec xtmp1, vec xtmp2, rRegL tmp, kReg ktmp) %{
+instruct vcastLtoFD_evex(vec dst, vec src, vec xtmp1, vec xtmp2, rRegL tmp, kReg ktmp, rFlagsReg cr) %{
   predicate((UseAVX <= 2 || !VM_Version::supports_avx512dq()) &&
             is_floating_point_type(Matcher::vector_element_basic_type(n)) &&
             Matcher::vector_length_in_bytes(n->in(1)) == 64);
   match(Set dst (VectorCastL2X src));
-  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP tmp, TEMP ktmp);
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP tmp, TEMP ktmp, KILL cr);
   format %{ "vector_cast_l2x  $dst,$src\t! using $xtmp1, $xtmp2, $tmp and $ktmp as TEMP" %}
   ins_encode %{
     BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
