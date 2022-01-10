@@ -265,31 +265,6 @@ inline bool ZHeap::is_object_strongly_live(zaddress addr) const {
   return page->is_object_strongly_live(addr);
 }
 
-template <bool resurrect, bool gc_thread, bool follow, bool finalizable, bool publish>
-inline void ZHeap::mark_object(zaddress addr) {
-  assert(!ZVerifyOops || oopDesc::is_oop(to_oop(addr), false), "must be oop");
-
-  if (is_old(addr)) {
-    if (_old_collector.is_phase_mark()) {
-      _old_collector.mark_object<resurrect, gc_thread, follow, finalizable, publish>(addr);
-    }
-  } else {
-    if (_young_collector.is_phase_mark()) {
-      _young_collector.mark_object<resurrect, gc_thread, follow, ZMark::Strong, publish>(addr);
-    }
-  }
-}
-
-template <bool follow, bool publish>
-inline void ZHeap::mark_young_object(zaddress addr) {
-  assert(_young_collector.is_phase_mark(), "Wrong phase");
-  assert(!ZVerifyOops || oopDesc::is_oop(to_oop(addr), false), "must be oop");
-
-  if (is_young(addr)) {
-    _young_collector.mark_object<ZMark::DontResurrect, ZMark::GCThread, follow, ZMark::Strong, publish>(addr);
-  }
-}
-
 inline bool ZHeap::is_remembered(volatile zpointer* p) {
   return _young_collector.is_remembered(p);
 }

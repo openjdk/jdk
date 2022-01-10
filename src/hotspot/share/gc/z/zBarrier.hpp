@@ -124,6 +124,12 @@ public:
   // Helper for relocation
   static void remap_young_relocated(volatile zpointer* p, zpointer o);
 
+  // Helpers for marking
+  template <bool resurrect, bool gc_thread, bool follow, bool finalizable, bool publish>
+  static void mark(zaddress addr);
+  template <bool follow,bool publish>
+  static void mark_young(zaddress addr);
+
   // Load barrier
   static zaddress load_barrier_on_oop_field(volatile zpointer* p);
   static zaddress load_barrier_on_oop_field_preloaded(volatile zpointer* p, zpointer o);

@@ -489,4 +489,30 @@ inline void ZBarrier::store_barrier_on_native_oop_field(volatile zpointer* p, bo
   barrier(is_store_good_fast_path, native_store_slow_path, color_store_good, (heal ? p : NULL), prev);
 }
 
+template <bool resurrect, bool gc_thread, bool follow, bool finalizable, bool publish>
+inline void ZBarrier::mark(zaddress addr) {
+  assert(!ZVerifyOops || oopDesc::is_oop(to_oop(addr), false), "must be oop");
+
+  if (ZHeap::heap()->is_old(addr)) {
+    if (ZCollector::old()->is_phase_mark()) {
+      ZCollector::old()->mark_object<resurrect, gc_thread, follow, finalizable, publish>(addr);
+    }
+  } else {
+    if (ZCollector::young()->is_phase_mark()) {
+      ZCollector::young()->mark_object<resurrect, gc_thread, follow, ZMark::Strong, publish>(addr);
+    }
+  }
+}
+
+template <bool follow, bool publish>
+inline void ZBarrier::mark_young(zaddress addr) {
+  assert(ZCollector::young()->is_phase_mark(), "Should only be called during marking");
+
+  assert(!ZVerifyOops || oopDesc::is_oop(to_oop(addr), false), "must be oop");
+
+  if (ZHeap::heap()->is_young(addr)) {
+    ZCollector::young()->mark_object<ZMark::DontResurrect, ZMark::GCThread, follow, ZMark::Strong, publish>(addr);
+  }
+}
+
 #endif // SHARE_GC_Z_ZBARRIER_INLINE_HPP

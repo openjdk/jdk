@@ -99,10 +99,6 @@ public:
   ZPage* page(volatile zpointer* addr) const;
   bool is_object_live(zaddress addr) const;
   bool is_object_strongly_live(zaddress addr) const;
-  template <bool resurrect, bool gc_thread, bool follow, bool finalizable, bool publish>
-  void mark_object(zaddress addr);
-  template <bool follow, bool publish>
-  void mark_young_object(zaddress addr);
   void mark_flush_and_free(Thread* thread);
   void keep_alive(oop obj);
 

@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZUNCOLOREDROOT_INLINE_HPP
 
 #include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zUncoloredRoot.hpp"
 #include "oops/oop.hpp"
@@ -67,19 +68,19 @@ inline zaddress ZUncoloredRoot::make_load_good(zaddress_unsafe addr, uintptr_t c
 }
 
 inline void ZUncoloredRoot::mark_object(zaddress addr) {
-  ZHeap::heap()->mark_object<ZMark::DontResurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong, ZMark::Publish>(addr);
+  ZBarrier::mark<ZMark::DontResurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong, ZMark::Publish>(addr);
 }
 
 inline void ZUncoloredRoot::mark_young_object(zaddress addr) {
-  ZHeap::heap()->mark_young_object<ZMark::Follow, ZMark::Publish>(addr);
+  ZBarrier::mark_young<ZMark::Follow, ZMark::Publish>(addr);
 }
 
 inline void ZUncoloredRoot::mark_invisible_object(zaddress addr) {
-  ZHeap::heap()->mark_object<ZMark::DontResurrect, ZMark::AnyThread, ZMark::DontFollow, ZMark::Strong, ZMark::Publish>(addr);
+  ZBarrier::mark<ZMark::DontResurrect, ZMark::AnyThread, ZMark::DontFollow, ZMark::Strong, ZMark::Publish>(addr);
 }
 
 inline void ZUncoloredRoot::keep_alive_object(zaddress addr) {
-  ZHeap::heap()->mark_object<ZMark::Resurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong, ZMark::Publish>(addr);
+  ZBarrier::mark<ZMark::Resurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong, ZMark::Publish>(addr);
 }
 
 inline void ZUncoloredRoot::mark(zaddress_unsafe* p, uintptr_t color) {
