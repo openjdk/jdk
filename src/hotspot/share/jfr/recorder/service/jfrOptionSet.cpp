@@ -54,6 +54,7 @@ static const ObsoleteOption OBSOLETE_OPTIONS[] = {
   {"dumponexit",           "Use -XX:StartFlightRecording:dumponexit=... instead."},
   {"dumponexitpath",       "Use -XX:StartFlightRecording:filename=... instead."},
   {"loglevel",             "Use -Xlog:jfr=... instead."}
+
 };
 
 jlong JfrOptionSet::max_chunk_size() {
@@ -116,14 +117,6 @@ void JfrOptionSet::set_stackdepth(u4 depth) {
   } else {
     _stack_depth = depth;
   }
-}
-
-bool JfrOptionSet::sample_threads() {
-  return _sample_threads == JNI_TRUE;
-}
-
-void JfrOptionSet::set_sample_threads(jboolean sample) {
-  _sample_threads = sample;
 }
 
 bool JfrOptionSet::can_retransform() {
@@ -315,7 +308,6 @@ jlong JfrOptionSet::_memory_size = 0;
 jlong JfrOptionSet::_num_global_buffers = 0;
 jlong JfrOptionSet::_old_object_queue_size = 0;
 u4 JfrOptionSet::_stack_depth = STACK_DEPTH_DEFAULT;
-jboolean JfrOptionSet::_sample_threads = JNI_TRUE;
 jboolean JfrOptionSet::_retransform = JNI_TRUE;
 #ifdef ASSERT
 jboolean JfrOptionSet::_sample_protection = JNI_FALSE;
