@@ -817,7 +817,7 @@ class StubGenerator: public StubCodeGenerator {
     __ subl(qword_count, 8);
     __ jcc(Assembler::greaterEqual, L_copy_64_bytes_loop);
 
-    if (UseUnalignedLoadStores && (UseAVX == 2)) {
+    if (UseUnalignedLoadStores && (UseAVX >= 2)) {
       // clean upper bits of YMM registers: qword/byte copy loops
       // would use lower bits of these registers.
       __ vpxor(xmm0, xmm0, xmm0, Assembler::AVX_128bit);
