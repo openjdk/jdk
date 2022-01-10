@@ -53,10 +53,6 @@ class PSScavenge: AllStatic {
    full_follows_scavenge
  };
 
-  // Saved value of to_space->top(), used to prevent objects in to_space from
-  // being rescanned.
-  static HeapWord* _to_space_top_before_gc;
-
  protected:
   // Flags/counters
   static SpanSubjectToDiscoveryClosure _span_based_discoverer;
@@ -79,9 +75,6 @@ class PSScavenge: AllStatic {
   static void clean_up_failed_promotion();
 
   static bool should_attempt_scavenge();
-
-  static HeapWord* to_space_top_before_gc() { return _to_space_top_before_gc; }
-  static inline void save_to_space_top_before_gc();
 
   // Private accessors
   static PSCardTable* const card_table()           { assert(_card_table != NULL, "Sanity"); return _card_table; }
