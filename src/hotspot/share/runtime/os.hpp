@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -565,7 +565,7 @@ class os: AllStatic {
 
   static ssize_t read(int fd, void *buf, unsigned int nBytes);
   static ssize_t read_at(int fd, void *buf, unsigned int nBytes, jlong offset);
-  static size_t write(int fd, const void *buf, unsigned int nBytes);
+  static ssize_t write(int fd, const void *buf, unsigned int nBytes);
 
   // Reading directories.
   static DIR*           opendir(const char* dirname);
