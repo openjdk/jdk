@@ -5337,11 +5337,11 @@ class StubGenerator: public StubCodeGenerator {
     __ add(str1, str1, wordSize);
     __ add(str2, str2, wordSize);
     if (SoftwarePrefetchHintDistance >= 0) {
+      __ align(OptoLoopAlignment);
       __ bind(LARGE_LOOP_PREFETCH);
         __ prfm(Address(str1, SoftwarePrefetchHintDistance));
         __ prfm(Address(str2, SoftwarePrefetchHintDistance));
 
-        __ align(OptoLoopAlignment);
         for (int i = 0; i < 4; i++) {
           __ ldp(tmp1, tmp1h, Address(str1, i * 16));
           __ ldp(tmp2, tmp2h, Address(str2, i * 16));
