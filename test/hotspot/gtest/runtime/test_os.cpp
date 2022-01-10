@@ -352,6 +352,10 @@ TEST_VM(os, jio_snprintf) {
 }
 
 #ifdef __APPLE__
+// Not all macOS versions can use os::reserve_memory (i.e. anon_mmap) API
+// to reserve executable memory, so before attempting to use it,
+// we need to verify that we can do so by asking for a tiny exectuable
+// memory chunk
 static inline bool can_reserve_executable_memory(void) {
   bool executable = true;
   size_t len = 128;
