@@ -1942,16 +1942,13 @@ run:
                 Copy::fill_to_words(result + hdr_size, obj_size - hdr_size, 0);
               }
 
+              // Initialize header, mirrors MemAllocator.
+              oopDesc::set_mark(result, markWord::prototype());
+              oopDesc::set_klass_gap(result, 0);
+              oopDesc::release_set_klass(result, ik);
+
               oop obj = cast_to_oop(result);
 
-              // Initialize header
-              obj->set_mark(markWord::prototype());
-              obj->set_klass_gap(0);
-              obj->set_klass(ik);
-
-              // Must prevent reordering of stores for object initialization
-              // with stores that publish the new object.
-              OrderAccess::storestore();
               SET_STACK_OBJECT(obj, 0);
               UPDATE_PC_AND_TOS_AND_CONTINUE(3, 1);
             }
