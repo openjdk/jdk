@@ -112,7 +112,7 @@ void ZRelocationSetSelectorGroup::select_inner() {
   const int npages = _live_pages.length();
   int selected_from = 0;
   int selected_to = 0;
-  size_t selected_live_bytes = 0;
+  size_t selected_live_bytes[ZPageAgeMax + 1] = { 0 };
   size_t selected_forwarding_entries = 0;
 
   size_t from_live_bytes = 0;
@@ -142,7 +142,7 @@ void ZRelocationSetSelectorGroup::select_inner() {
     if (diff_reclaimable > ZFragmentationLimit) {
       selected_from = from;
       selected_to = to;
-      selected_live_bytes = from_live_bytes;
+      selected_live_bytes[static_cast<uint>(page->age())] = from_live_bytes;
       selected_forwarding_entries = from_forwarding_entries;
     }
 
@@ -163,7 +163,9 @@ void ZRelocationSetSelectorGroup::select_inner() {
   _forwarding_entries = selected_forwarding_entries;
 
   // Update statistics
-  _stats._relocate = selected_live_bytes;
+  for (uint i = 0; i <= ZPageAgeMax; ++i) {
+    _stats[i]._relocate = selected_live_bytes[i];
+  }
 
   log_trace(gc, reloc)("Relocation Set (%s Pages): %d->%d, %d skipped, " SIZE_FORMAT " forwarding entries",
                        _name, selected_from, selected_to, npages - selected_from, selected_forwarding_entries);
@@ -187,16 +189,25 @@ void ZRelocationSetSelectorGroup::select() {
     }
   }
 
+  size_t npages = 0;
+  size_t total = 0;
+  size_t empty = 0;
+  size_t relocate = 0;
+  for (uint i = 0; i <= ZPageAgeMax; ++i) {
+    npages += _stats[i].npages();
+    total += _stats[i].total();
+    empty += _stats[i].empty();
+    relocate += _stats[i].relocate();
+  }
   // Send event
-  event.commit((u8)_page_type, _stats.npages(), _stats.total(), _stats.empty(), _stats.relocate());
+  event.commit((u8)_page_type, npages, total, empty, relocate);
 }
 
-ZRelocationSetSelector::ZRelocationSetSelector(bool promote_all) :
+ZRelocationSetSelector::ZRelocationSetSelector() :
     _small("Small", ZPageType::small, ZPageSizeSmall, ZObjectSizeLimitSmall),
     _medium("Medium", ZPageType::medium, ZPageSizeMedium, ZObjectSizeLimitMedium),
     _large("Large", ZPageType::large, 0 /* page_size */, 0 /* object_size_limit */),
-    _empty_pages(),
-    _promote_all(promote_all) {}
+    _empty_pages() {}
 
 void ZRelocationSetSelector::select() {
   // Select pages to relocate. The resulting relocation set will be
@@ -218,8 +229,11 @@ void ZRelocationSetSelector::select() {
 
 ZRelocationSetSelectorStats ZRelocationSetSelector::stats() const {
   ZRelocationSetSelectorStats stats;
-  stats._small = _small.stats();
-  stats._medium = _medium.stats();
-  stats._large = _large.stats();
+  for (uint i = 0; i <= ZPageAgeMax; ++i) {
+    ZPageAge age = static_cast<ZPageAge>(i);
+    stats._small[i] = _small.stats(age);
+    stats._medium[i] = _medium.stats(age);
+    stats._large[i] = _large.stats(age);
+  }
   return stats;
 }

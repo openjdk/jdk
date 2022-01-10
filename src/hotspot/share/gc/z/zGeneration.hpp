@@ -91,7 +91,7 @@ protected:
 
   void mark_free();
 
-  void select_relocation_set(bool promote_all);
+  void select_relocation_set(ZGenerationId generation, bool promote_all);
   void reset_relocation_set();
 
   ZGeneration(ZGenerationId id, ZPageTable* page_table, ZPageAllocator* page_allocator);
@@ -192,6 +192,7 @@ class ZGenerationYoung : public ZGeneration {
 
 private:
   ZYoungType  _active_type;
+  uint        _tenuring_threshold;
   ZRemembered _remembered;
 
   void mark_start();
@@ -218,11 +219,16 @@ public:
 
   void collect(ZYoungType type, ConcurrentGCTimer* timer);
 
+  // Support for promoting object to the old generation
   void flip_promote(ZPage* from_page, ZPage* to_page);
   void in_place_relocate_promote(ZPage* from_page, ZPage* to_page);
 
   void register_flip_promoted(const ZArray<ZPage*>& pages);
   void register_in_place_relocate_promoted(ZPage* page);
+
+  uint tenuring_threshold();
+  void select_tenuring_threshold(ZRelocationSetSelectorStats stats, bool promote_all);
+  uint compute_tenuring_threshold(ZRelocationSetSelectorStats stats);
 
   // Add remembered set entries
   void remember(volatile zpointer* p);

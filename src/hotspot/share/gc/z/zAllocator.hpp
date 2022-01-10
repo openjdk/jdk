@@ -26,11 +26,11 @@
 
 #include "gc/z/zAllocationFlags.hpp"
 #include "gc/z/zObjectAllocator.hpp"
+#include "gc/z/zPageAge.hpp"
 #include "gc/z/zPageType.hpp"
 
 class ZAllocatorEden;
-class ZAllocatorSurvivor;
-class ZAllocatorOld;
+class ZAllocatorForRelocation;
 class ZPage;
 
 class ZAllocator {
@@ -38,18 +38,19 @@ class ZAllocator {
   friend class ZAllocatorSurvivor;
   friend class ZAllocatorOld;
 
-private:
-  static ZAllocatorEden*     _eden;
-  static ZAllocatorSurvivor* _survivor;
-  static ZAllocatorOld*      _old;
+public:
+  static constexpr uint _relocation_allocators = static_cast<uint>(ZPageAge::old);
 
 protected:
   ZObjectAllocator _object_allocator;
 
+  static ZAllocatorEden*          _eden;
+  static ZAllocatorForRelocation* _relocation[ZAllocator::_relocation_allocators];
+
 public:
   static ZAllocatorEden* eden();
-  static ZAllocatorSurvivor* survivor();
-  static ZAllocatorOld* old();
+  static ZAllocatorForRelocation* relocation(ZPageAge page_age);
+  static ZAllocatorForRelocation* old();
 
   ZAllocator(ZPageAge age);
 
@@ -70,25 +71,17 @@ public:
 };
 
 class ZAllocatorForRelocation : public ZAllocator {
+private:
+  ZPageAge install();
+
 public:
-  ZAllocatorForRelocation(ZPageAge age);
+  ZAllocatorForRelocation();
 
   // Relocation
   zaddress alloc_object(size_t size);
   void undo_alloc_object(zaddress addr, size_t size);
 
   ZPage* alloc_page_for_relocation(ZPageType type, size_t size, ZAllocationFlags flags);
-
-};
-
-class ZAllocatorSurvivor : public ZAllocatorForRelocation {
-public:
-  ZAllocatorSurvivor();
-};
-
-class ZAllocatorOld : public ZAllocatorForRelocation {
-public:
-  ZAllocatorOld();
 };
 
 #endif // SHARE_GC_Z_ZALLOCATOR_HPP

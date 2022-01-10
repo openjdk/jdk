@@ -498,6 +498,13 @@ public:
   void print();
 };
 
+struct ZStatRelocationSummary {
+  size_t npages;
+  size_t total;
+  size_t empty;
+  size_t relocate;
+};
+
 //
 // Stat relocation
 //
@@ -509,7 +516,7 @@ private:
   size_t                      _medium_in_place_count;
 
   void print(const char* name,
-             const ZRelocationSetSelectorGroupStats& selector_group,
+             ZStatRelocationSummary selector_group,
              size_t in_place_count);
 
 public:

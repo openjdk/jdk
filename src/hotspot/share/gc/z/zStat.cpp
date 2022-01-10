@@ -1371,24 +1371,40 @@ void ZStatRelocation::at_relocate_end(size_t small_in_place_count, size_t medium
 }
 
 void ZStatRelocation::print(const char* name,
-                            const ZRelocationSetSelectorGroupStats& selector_group,
+                            ZStatRelocationSummary selector_group,
                             size_t in_place_count) {
   log_info(gc, reloc)("%s Pages: " SIZE_FORMAT " / " SIZE_FORMAT "M, Empty: " SIZE_FORMAT "M, "
                       "Relocated: " SIZE_FORMAT "M, In-Place: " SIZE_FORMAT,
                       name,
-                      selector_group.npages(),
-                      selector_group.total() / M,
-                      selector_group.empty() / M,
-                      selector_group.relocate() / M,
+                      selector_group.npages,
+                      selector_group.total / M,
+                      selector_group.empty / M,
+                      selector_group.relocate / M,
                       in_place_count);
 }
 
 void ZStatRelocation::print() {
-  print("Small", _selector_stats.small(), _small_in_place_count);
-  if (ZPageSizeMedium != 0) {
-    print("Medium", _selector_stats.medium(), _medium_in_place_count);
+  ZStatRelocationSummary small_stats = {0};
+  ZStatRelocationSummary medium_stats = {0};
+  ZStatRelocationSummary large_stats = {0};
+
+  for (uint i = 0; i <= ZPageAgeMax; ++i) {
+    ZPageAge age = static_cast<ZPageAge>(i);
+    auto small = _selector_stats.small(age);
+    auto medium = _selector_stats.medium(age);
+    auto large = _selector_stats.large(age);
+
+    small_stats.npages += small.npages();
+    small_stats.total += small.total();
+    small_stats.empty += small.empty();
+    small_stats.relocate += small.relocate();
   }
-  print("Large", _selector_stats.large(), 0 /* in_place_count */);
+
+  print("Small", small_stats, _small_in_place_count);
+  if (ZPageSizeMedium != 0) {
+    print("Medium", medium_stats, _medium_in_place_count);
+  }
+  print("Large", large_stats, 0 /* in_place_count */);
 
   log_info(gc, reloc)("Forwarding Usage: " SIZE_FORMAT "M", _forwarding_usage / M);
 }
@@ -1534,7 +1550,11 @@ void ZStatHeap::at_mark_end(const ZPageAllocatorStats& stats) {
 }
 
 void ZStatHeap::at_select_relocation_set(const ZRelocationSetSelectorStats& stats) {
-  const size_t live = stats.small().live() + stats.medium().live() + stats.large().live();
+  size_t live = 0;
+  for (uint i = 0; i <= ZPageAgeMax; ++i) {
+    ZPageAge age = static_cast<ZPageAge>(i);
+    live += stats.small(age).live() + stats.medium(age).live() + stats.large(age).live();
+  }
   _at_mark_end.live = live;
   _at_mark_end.garbage = _at_mark_start.used_generation - live;
 }

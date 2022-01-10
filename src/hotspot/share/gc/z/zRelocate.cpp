@@ -225,9 +225,7 @@ static zaddress relocate_object_inner(ZForwarding* forwarding, zaddress from_add
   // Allocate object
   const size_t size = ZUtils::object_size(from_addr);
 
-  ZAllocatorForRelocation* const allocator = forwarding->to_age() == ZPageAge::old
-      ? (ZAllocatorForRelocation*) ZAllocator::old()
-      : (ZAllocatorForRelocation*) ZAllocator::survivor();
+  ZAllocatorForRelocation* allocator = ZAllocator::relocation(forwarding->to_age());
 
   const zaddress to_addr = allocator->alloc_object(size);
 
@@ -331,18 +329,17 @@ static void retire_target_page(ZGeneration* generation, ZPage* page) {
 
 class ZRelocateSmallAllocator {
 private:
-  ZGeneration* const             _generation;
-  ZAllocatorForRelocation* const _allocator;
-  volatile size_t                _in_place_count;
+  ZGeneration* const _generation;
+  volatile size_t    _in_place_count;
 
 public:
-  ZRelocateSmallAllocator(ZGeneration* generation, ZAllocatorForRelocation* allocator) :
+  ZRelocateSmallAllocator(ZGeneration* generation) :
       _generation(generation),
-      _allocator(allocator),
       _in_place_count(0) {}
 
   ZPage* alloc_and_retire_target_page(ZForwarding* forwarding, ZPage* target) {
-    ZPage* const page = alloc_page(_allocator, forwarding->type(), forwarding->size());
+    ZAllocatorForRelocation* allocator = ZAllocator::relocation(forwarding->to_age());
+    ZPage* const page = alloc_page(allocator, forwarding->type(), forwarding->size());
     if (page == NULL) {
       Atomic::inc(&_in_place_count);
     }
@@ -380,26 +377,34 @@ public:
 
 class ZRelocateMediumAllocator {
 private:
-  ZGeneration* const             _generation;
-  ZAllocatorForRelocation* const _allocator;
-  ZConditionLock                 _lock;
-  ZPage*                         _shared;
-  bool                           _in_place;
-  volatile size_t                _in_place_count;
+  ZGeneration* const _generation;
+  ZConditionLock     _lock;
+  ZPage*             _shared[ZAllocator::_relocation_allocators];
+  bool               _in_place;
+  volatile size_t    _in_place_count;
 
 public:
-  ZRelocateMediumAllocator(ZGeneration* generation, ZAllocatorForRelocation* allocator) :
+  ZRelocateMediumAllocator(ZGeneration* generation) :
       _generation(generation),
-      _allocator(allocator),
       _lock(),
-      _shared(NULL),
+      _shared(),
       _in_place(false),
       _in_place_count(0) {}
 
   ~ZRelocateMediumAllocator() {
-    if (_shared != NULL) {
-      retire_target_page(_generation, _shared);
+    for (uint i = 0; i < ZAllocator::_relocation_allocators; ++i) {
+      if (_shared[i] != NULL) {
+        retire_target_page(_generation, _shared[i]);
+      }
     }
+  }
+
+  ZPage* shared(ZPageAge age) {
+    return _shared[static_cast<uint>(age) - 1];
+  }
+
+  void set_shared(ZPageAge age, ZPage* page) {
+    _shared[static_cast<uint>(age) - 1] = page;
   }
 
   ZPage* alloc_and_retire_target_page(ZForwarding* forwarding, ZPage* target) {
@@ -414,9 +419,12 @@ public:
     // current target page. The shared page will be different from the
     // current target page if another thread shared a page, or allocated
     // a new page.
-    if (_shared == target) {
-      _shared = alloc_page(_allocator, forwarding->type(), forwarding->size());
-      if (_shared == NULL) {
+    ZPageAge to_age = forwarding->to_age();
+    if (shared(to_age) == target) {
+      ZAllocatorForRelocation* allocator = ZAllocator::relocation(forwarding->to_age());
+      ZPage* to_page = alloc_page(allocator, forwarding->type(), forwarding->size());
+      set_shared(to_age, to_page);
+      if (to_page == NULL) {
         Atomic::inc(&_in_place_count);
         _in_place = true;
       }
@@ -427,17 +435,18 @@ public:
       }
     }
 
-    return _shared;
+    return shared(to_age);
   }
 
   void share_target_page(ZPage* page) {
-    ZLocker<ZConditionLock> locker(&_lock);
+    ZPageAge age = page->age();
 
+    ZLocker<ZConditionLock> locker(&_lock);
     assert(_in_place, "Invalid state");
-    assert(_shared == NULL, "Invalid state");
+    assert(shared(age) == NULL, "Invalid state");
     assert(page != NULL, "Invalid page");
 
-    _shared = page;
+    set_shared(age, page);
     _in_place = false;
 
     _lock.notify_all();
@@ -465,10 +474,18 @@ class ZRelocateWork : public StackObj {
 private:
   Allocator* const   _allocator;
   ZForwarding*       _forwarding;
-  ZPage*             _target;
+  ZPage*             _target[ZAllocator::_relocation_allocators];
   ZGeneration* const _generation;
   size_t             _other_promoted;
   size_t             _other_compacted;
+
+  ZPage* target(ZPageAge age) {
+    return _target[static_cast<uint>(age) - 1];
+  }
+
+  void set_target(ZPageAge age, ZPage* page) {
+    _target[static_cast<uint>(age) - 1] = page;
+  }
 
   size_t object_alignment() const {
     return (size_t)1 << _forwarding->object_alignment_shift();
@@ -487,6 +504,7 @@ private:
     ZForwardingCursor cursor;
 
     const size_t size = ZUtils::object_size(from_addr);
+    ZPage* to_page = target(_forwarding->to_age());
 
     // Lookup forwarding
     {
@@ -499,7 +517,7 @@ private:
     }
 
     // Allocate object
-    const zaddress allocated_addr = _allocator->alloc_object(_target, size);
+    const zaddress allocated_addr = _allocator->alloc_object(to_page, size);
     if (is_null(allocated_addr)) {
       // Allocation failed
       return zaddress::null;
@@ -517,7 +535,7 @@ private:
     const zaddress to_addr = forwarding_insert(_forwarding, from_addr, allocated_addr, &cursor);
     if (to_addr != allocated_addr) {
       // Already relocated, undo allocation
-      _allocator->undo_alloc_object(_target, to_addr, size);
+      _allocator->undo_alloc_object(to_page, to_addr, size);
       increase_other_forwarded(size);
     }
 
@@ -751,15 +769,18 @@ private:
       // Allocate a new target page, or if that fails, use the page being
       // relocated as the new target, which will cause it to be relocated
       // in-place.
-      _target = _allocator->alloc_and_retire_target_page(_forwarding, _target);
-      if (_target != NULL) {
+      ZPageAge to_age = _forwarding->to_age();
+      ZPage* to_page = _allocator->alloc_and_retire_target_page(_forwarding, target(to_age));
+      set_target(to_age, to_page);
+      if (to_page != NULL) {
         continue;
       }
 
       // Start in-place relocation to block other threads from accessing
       // the page, or its forwarding table, until it has been released
       // (relocation completed).
-      _target = start_in_place_relocation();
+      to_page = start_in_place_relocation();
+      set_target(to_age, to_page);
     }
   }
 
@@ -767,13 +788,15 @@ public:
   ZRelocateWork(Allocator* allocator, ZGeneration* generation) :
       _allocator(allocator),
       _forwarding(NULL),
-      _target(NULL),
+      _target(),
       _generation(generation),
       _other_promoted(0),
       _other_compacted(0) {}
 
   ~ZRelocateWork() {
-    _allocator->free_target_page(_target);
+    for (uint i = 0; i < ZAllocator::_relocation_allocators; ++i) {
+      _allocator->free_target_page(_target[i]);
+    }
     // Report statistics on-behalf of non-worker threads
     _generation->increase_promoted(_other_promoted);
     _generation->increase_compacted(_other_compacted);
@@ -826,7 +849,7 @@ public:
       // The relocated page has been relocated in-place and should not
       // be freed. Keep it as target page until it is full, and offer to
       // share it with other worker threads.
-      _allocator->share_target_page(_target);
+      _allocator->share_target_page(target(_forwarding->to_age()));
     } else {
       // Detach and free relocated page
       ZPage* const page = _forwarding->detach_page();
@@ -868,10 +891,8 @@ private:
   ZRelocationSetParallelIterator _iter;
   ZGeneration* const             _generation;
   ZRelocateQueue* const          _queue;
-  ZRelocateSmallAllocator        _survivor_small_allocator;
-  ZRelocateMediumAllocator       _survivor_medium_allocator;
-  ZRelocateSmallAllocator        _old_small_allocator;
-  ZRelocateMediumAllocator       _old_medium_allocator;
+  ZRelocateSmallAllocator        _small_allocator;
+  ZRelocateMediumAllocator       _medium_allocator;
 
 public:
   ZRelocateTask(ZRelocationSet* relocation_set, ZRelocateQueue* queue) :
@@ -879,21 +900,16 @@ public:
       _iter(relocation_set),
       _generation(relocation_set->generation()),
       _queue(queue),
-      _survivor_small_allocator(_generation, ZAllocator::survivor()),
-      _survivor_medium_allocator(_generation, ZAllocator::survivor()),
-      _old_small_allocator(_generation, ZAllocator::old()),
-      _old_medium_allocator(_generation, ZAllocator::old()) {}
+      _small_allocator(_generation),
+      _medium_allocator(_generation) {}
 
   ~ZRelocateTask() {
-    _generation->stat_relocation()->at_relocate_end(_survivor_small_allocator.in_place_count() + _old_small_allocator.in_place_count(),
-                                                   _survivor_medium_allocator.in_place_count() + _old_medium_allocator.in_place_count());
+    _generation->stat_relocation()->at_relocate_end(_small_allocator.in_place_count(), _medium_allocator.in_place_count());
   }
 
   virtual void work() {
-    ZRelocateWork<ZRelocateSmallAllocator> survivor_small(&_survivor_small_allocator, _generation);
-    ZRelocateWork<ZRelocateMediumAllocator> survivor_medium(&_survivor_medium_allocator, _generation);
-    ZRelocateWork<ZRelocateSmallAllocator> old_small(&_old_small_allocator, _generation);
-    ZRelocateWork<ZRelocateMediumAllocator> old_medium(&_old_medium_allocator, _generation);
+    ZRelocateWork<ZRelocateSmallAllocator> small(&_small_allocator, _generation);
+    ZRelocateWork<ZRelocateMediumAllocator> medium(&_medium_allocator, _generation);
 
     bool synchronized = false;
 
@@ -902,11 +918,9 @@ public:
         ZPage* page = forwarding->page();
         ZPageAge to_age = forwarding->to_age();
         if (page->is_small()) {
-          ZRelocateWork<ZRelocateSmallAllocator>* small = to_age == ZPageAge::old ? &old_small : &survivor_small;
-          small->do_forwarding(forwarding);
+          small.do_forwarding(forwarding);
         } else {
-          ZRelocateWork<ZRelocateMediumAllocator>* medium = to_age == ZPageAge::old ? &old_medium : &survivor_medium;
-          medium->do_forwarding(forwarding);
+          medium.do_forwarding(forwarding);
         }
       }
     };
@@ -1041,26 +1055,26 @@ void ZRelocate::relocate(ZRelocationSet* relocation_set) {
   _queue.clear();
 }
 
-ZPageAge ZRelocate::compute_to_age(ZPageAge from_age, bool promote_all) {
-  if (promote_all) {
+ZPageAge ZRelocate::compute_to_age(ZPageAge from_age) {
+  if (from_age == ZPageAge::old) {
     return ZPageAge::old;
-  } else if (from_age == ZPageAge::eden) {
-    return ZPageAge::survivor;
   } else {
-    return ZPageAge::old;
+    uint age = static_cast<uint>(from_age);
+    if (age >= ZGeneration::young()->tenuring_threshold()) {
+      return ZPageAge::old;
+    }
+    return static_cast<ZPageAge>(age + 1);
   }
 }
 
 class ZFlipAgePagesTask : public ZTask {
 private:
   ZArrayParallelIterator<ZPage*> _iter;
-  const bool                     _promote_all;
 
 public:
-  ZFlipAgePagesTask(const ZArray<ZPage*>* pages, bool promote_all) :
+  ZFlipAgePagesTask(const ZArray<ZPage*>* pages) :
       ZTask("ZPromotePagesTask"),
-      _iter(pages),
-      _promote_all(promote_all) {}
+      _iter(pages) {}
 
   virtual void work() {
     SuspendibleThreadSetJoiner sts_joiner;
@@ -1068,7 +1082,7 @@ public:
 
     for (ZPage* prev_page; _iter.next(&prev_page);) {
       const ZPageAge from_age = prev_page->age();
-      const ZPageAge to_age = ZRelocate::compute_to_age(from_age, _promote_all);
+      const ZPageAge to_age = ZRelocate::compute_to_age(from_age);
       assert(from_age != ZPageAge::old, "invalid age for a young collection");
 
       // Figure out if this is proper promotion
@@ -1094,8 +1108,8 @@ public:
   }
 };
 
-void ZRelocate::flip_age_pages(const ZArray<ZPage*>* pages, bool promote_all) {
-  ZFlipAgePagesTask flip_age_task(pages, promote_all);
+void ZRelocate::flip_age_pages(const ZArray<ZPage*>* pages) {
+  ZFlipAgePagesTask flip_age_task(pages);
   workers()->run(&flip_age_task);
 }
 

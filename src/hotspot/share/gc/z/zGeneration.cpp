@@ -167,16 +167,15 @@ void ZGeneration::free_empty_pages(ZRelocationSetSelector* selector, int bulk) {
 
 void ZGeneration::flip_age_pages(const ZRelocationSetSelector* selector) {
   if (is_young()) {
-    const bool promote_all = selector->promote_all();
-    _relocate.flip_age_pages(selector->not_selected_small(), promote_all);
-    _relocate.flip_age_pages(selector->not_selected_medium(), promote_all);
-    _relocate.flip_age_pages(selector->not_selected_large(), promote_all);
+    _relocate.flip_age_pages(selector->not_selected_small());
+    _relocate.flip_age_pages(selector->not_selected_medium());
+    _relocate.flip_age_pages(selector->not_selected_large());
   }
 }
 
-void ZGeneration::select_relocation_set(bool promote_all) {
+void ZGeneration::select_relocation_set(ZGenerationId generation, bool promote_all) {
   // Register relocatable pages with selector
-  ZRelocationSetSelector selector(promote_all);
+  ZRelocationSetSelector selector;
   {
     ZGenerationPagesIterator pt_iter(_page_table, _id, _page_allocator);
     for (ZPage* page; pt_iter.next(&page);) {
@@ -226,6 +225,13 @@ void ZGeneration::select_relocation_set(bool promote_all) {
 
   // Select relocation set
   selector.select();
+
+  // Selecting tenuring threshold must be done after select
+  // which produces the liveness data, but before install,
+  // which consumes the tenuring threshold.
+  if (generation == ZGenerationId::young) {
+    ZGeneration::young()->select_tenuring_threshold(selector.stats(), promote_all);
+  }
 
   // Install relocation set
   _relocation_set.install(&selector);
@@ -453,8 +459,13 @@ ZYoungTypeSetter::~ZYoungTypeSetter() {
 ZGenerationYoung::ZGenerationYoung(ZPageTable* page_table, ZPageAllocator* page_allocator) :
     ZGeneration(ZGenerationId::young, page_table, page_allocator),
     _active_type(ZYoungType::none),
+    _tenuring_threshold(0),
     _remembered(page_table, page_allocator) {
   ZGeneration::_young = this;
+}
+
+uint ZGenerationYoung::tenuring_threshold() {
+  return _tenuring_threshold;
 }
 
 class ZGenerationCollectionScopeYoung : public StackObj {
@@ -610,10 +621,54 @@ void ZGenerationYoung::concurrent_reset_relocation_set() {
   reset_relocation_set();
 }
 
+void ZGenerationYoung::select_tenuring_threshold(ZRelocationSetSelectorStats stats, bool promote_all) {
+  if (promote_all) {
+    _tenuring_threshold = 0;
+  } else {
+    _tenuring_threshold = compute_tenuring_threshold(stats);
+  }
+  log_info(gc, reloc)("Using tenuring threshold: %d", _tenuring_threshold);
+}
+
+uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats stats) {
+  const size_t old_live_total = ZGeneration::old()->stat_heap()->live_at_mark_end();
+
+  size_t young_live_total = 0;
+
+  for (uint i = 0; i <= ZPageAgeMax; ++i) {
+    ZPageAge age = static_cast<ZPageAge>(i);
+    young_live_total += stats.small(age).live() + stats.medium(age).live() + stats.large(age).live();
+  }
+
+  const size_t live_total = young_live_total + old_live_total;
+  const double young_residency_ratio = double(young_live_total) / double(live_total);
+  const double young_life_expectancy = 1.0 / 8.0;
+  const double max_promotion_fraction = young_residency_ratio * young_life_expectancy;
+  const size_t promotion_threshold = live_total * max_promotion_fraction;
+
+  size_t young_selected_live = 0;
+
+  uint tenuring_threshold;
+  for (tenuring_threshold = 0; tenuring_threshold <= MaxTenuringThreshold; ++tenuring_threshold) {
+    ZPageAge age = static_cast<ZPageAge>(tenuring_threshold);
+    size_t live = stats.small(age).live() + stats.medium(age).live() + stats.large(age).live();
+    size_t promoted = young_live_total - young_selected_live;
+    young_selected_live += live;
+
+    if (promoted <= promotion_threshold) {
+      // Increment tenuring threshold until promoted memory goes below the
+      // heuristically computed threshold
+      break;
+    }
+  }
+
+  return tenuring_threshold;
+}
+
 void ZGenerationYoung::concurrent_select_relocation_set() {
   ZStatTimerYoung timer(ZPhaseConcurrentSelectRelocationSetYoung);
   const bool promote_all = type() == ZYoungType::major_preclean;
-  select_relocation_set(promote_all);
+  select_relocation_set(_id, promote_all);
 }
 
 class VM_ZRelocateStartYoung : public VM_ZOperation {
@@ -651,7 +706,9 @@ void ZGenerationYoung::mark_start() {
 
   // Retire allocating pages
   ZAllocator::eden()->retire_pages();
-  ZAllocator::survivor()->retire_pages();
+  for (ZPageAge i = ZPageAge::survivor1; i <= ZPageAge::survivor14; i = static_cast<ZPageAge>(static_cast<uint>(i) + 1)) {
+    ZAllocator::relocation(i)->retire_pages();
+  }
 
   // Reset allocated/reclaimed/used statistics
   reset_statistics();
@@ -928,7 +985,7 @@ void ZGenerationOld::pause_verify() {
 
 void ZGenerationOld::concurrent_select_relocation_set() {
   ZStatTimerOld timer(ZPhaseConcurrentSelectRelocationSetOld);
-  select_relocation_set(false /* promote_all */);
+  select_relocation_set(_id, false /* promote_all */);
 }
 
 class VM_ZRelocateStartOld : public VM_ZOperation {

@@ -25,9 +25,8 @@
 #include "gc/z/zAllocator.hpp"
 #include "gc/z/zObjectAllocator.hpp"
 
-ZAllocatorEden*     ZAllocator::_eden;
-ZAllocatorSurvivor* ZAllocator::_survivor;
-ZAllocatorOld*      ZAllocator::_old;
+ZAllocatorEden*          ZAllocator::_eden;
+ZAllocatorForRelocation* ZAllocator::_relocation[ZAllocator::_relocation_allocators];
 
 ZAllocator::ZAllocator(ZPageAge age) :
     _object_allocator(age) {}
@@ -49,8 +48,21 @@ size_t ZAllocatorEden::remaining() const {
   return _object_allocator.remaining();
 }
 
-ZAllocatorForRelocation::ZAllocatorForRelocation(ZPageAge age) :
-    ZAllocator(age) {}
+ZPageAge ZAllocatorForRelocation::install() {
+  for (uint i = 0; i < ZAllocator::_relocation_allocators; ++i) {
+    if (_relocation[i] == NULL) {
+      _relocation[i] = this;
+      return static_cast<ZPageAge>(i + 1);
+    }
+  }
+
+  ShouldNotReachHere();
+  return ZPageAge::eden;
+}
+
+ZAllocatorForRelocation::ZAllocatorForRelocation() :
+    ZAllocator(install()) {
+}
 
 zaddress ZAllocatorForRelocation::alloc_object(size_t size) {
   return _object_allocator.alloc_object_for_relocation(size);
@@ -62,14 +74,4 @@ void ZAllocatorForRelocation::undo_alloc_object(zaddress addr, size_t size) {
 
 ZPage* ZAllocatorForRelocation::alloc_page_for_relocation(ZPageType type, size_t size, ZAllocationFlags flags) {
   return _object_allocator.alloc_page_for_relocation(type, size, flags);
-}
-
-ZAllocatorSurvivor::ZAllocatorSurvivor() :
-    ZAllocatorForRelocation(ZPageAge::survivor) {
-  ZAllocator::_survivor = this;
-}
-
-ZAllocatorOld::ZAllocatorOld() :
-    ZAllocatorForRelocation(ZPageAge::old) {
-  ZAllocator::_old = this;
 }

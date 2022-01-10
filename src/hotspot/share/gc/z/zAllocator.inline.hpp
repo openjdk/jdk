@@ -32,12 +32,12 @@ inline ZAllocatorEden* ZAllocator::eden() {
   return _eden;
 }
 
-inline ZAllocatorSurvivor* ZAllocator::survivor() {
-  return _survivor;
+inline ZAllocatorForRelocation* ZAllocator::relocation(ZPageAge page_age) {
+  return _relocation[static_cast<uint>(page_age) - 1];
 }
 
-inline ZAllocatorOld* ZAllocator::old() {
-  return _old;
+inline ZAllocatorForRelocation* ZAllocator::old() {
+  return relocation(ZPageAge::old);
 }
 
 inline zaddress ZAllocatorEden::alloc_tlab(size_t size) {

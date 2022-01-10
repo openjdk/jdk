@@ -26,6 +26,7 @@
 
 #include "gc/z/zArray.hpp"
 #include "gc/z/zGenerationId.hpp"
+#include "gc/z/zPageAge.hpp"
 #include "gc/z/zPageType.hpp"
 #include "memory/allocation.hpp"
 
@@ -55,14 +56,14 @@ class ZRelocationSetSelectorStats {
   friend class ZRelocationSetSelector;
 
 private:
-  ZRelocationSetSelectorGroupStats _small;
-  ZRelocationSetSelectorGroupStats _medium;
-  ZRelocationSetSelectorGroupStats _large;
+  ZRelocationSetSelectorGroupStats _small[ZPageAgeMax + 1];
+  ZRelocationSetSelectorGroupStats _medium[ZPageAgeMax + 1];
+  ZRelocationSetSelectorGroupStats _large[ZPageAgeMax + 1];
 
 public:
-  const ZRelocationSetSelectorGroupStats& small() const;
-  const ZRelocationSetSelectorGroupStats& medium() const;
-  const ZRelocationSetSelectorGroupStats& large() const;
+  const ZRelocationSetSelectorGroupStats& small(ZPageAge age) const;
+  const ZRelocationSetSelectorGroupStats& medium(ZPageAge age) const;
+  const ZRelocationSetSelectorGroupStats& large(ZPageAge age) const;
 };
 
 class ZRelocationSetSelectorGroup {
@@ -75,7 +76,7 @@ private:
   ZArray<ZPage*>                   _live_pages;
   ZArray<ZPage*>                   _not_selected_pages;
   size_t                           _forwarding_entries;
-  ZRelocationSetSelectorGroupStats _stats;
+  ZRelocationSetSelectorGroupStats _stats[ZPageAgeMax + 1];
 
   bool is_disabled();
   bool is_selectable();
@@ -97,7 +98,7 @@ public:
   const ZArray<ZPage*>* not_selected_pages() const;
   size_t forwarding_entries() const;
 
-  const ZRelocationSetSelectorGroupStats& stats() const;
+  const ZRelocationSetSelectorGroupStats& stats(ZPageAge age) const;
 };
 
 class ZRelocationSetSelector : public StackObj {
@@ -106,19 +107,16 @@ private:
   ZRelocationSetSelectorGroup _medium;
   ZRelocationSetSelectorGroup _large;
   ZArray<ZPage*>              _empty_pages;
-  const bool                  _promote_all;
 
   size_t total() const;
   size_t empty() const;
   size_t relocate() const;
 
 public:
-  ZRelocationSetSelector(bool promote_all);
+  ZRelocationSetSelector();
 
   void register_live_page(ZPage* page);
   void register_empty_page(ZPage* page);
-
-  bool promote_all() const;
 
   bool should_free_empty_pages(int bulk) const;
   const ZArray<ZPage*>* empty_pages() const;

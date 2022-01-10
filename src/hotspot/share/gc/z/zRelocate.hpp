@@ -76,14 +76,14 @@ public:
   static void add_remset(volatile zpointer* p);
   static void add_remset_for_fields(volatile zaddress addr);
 
-  static ZPageAge compute_to_age(ZPageAge from_age, bool promote_all);
+  static ZPageAge compute_to_age(ZPageAge from_age);
 
   zaddress relocate_object(ZForwarding* forwarding, zaddress_unsafe from_addr);
   zaddress forward_object(ZForwarding* forwarding, zaddress_unsafe from_addr);
 
   void relocate(ZRelocationSet* relocation_set);
 
-  void flip_age_pages(const ZArray<ZPage*>* pages, bool promote_all);
+  void flip_age_pages(const ZArray<ZPage*>* pages);
 
   void synchronize();
   void desynchronize();

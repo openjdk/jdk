@@ -41,7 +41,6 @@ private:
   ZForwardingAllocator* const    _allocator;
   ZForwarding**                  _forwardings;
   const size_t                   _nforwardings;
-  const bool                     _promote_all;
   ZArrayParallelIterator<ZPage*> _small_iter;
   ZArrayParallelIterator<ZPage*> _medium_iter;
   volatile size_t                _small_next;
@@ -65,7 +64,7 @@ private:
   }
 
   ZPageAge to_age(ZPage* page) {
-    return ZRelocate::compute_to_age(page->age(), _promote_all);
+    return ZRelocate::compute_to_age(page->age());
   }
 
 public:
@@ -74,7 +73,6 @@ public:
       _allocator(allocator),
       _forwardings(NULL),
       _nforwardings(selector->selected_small()->length() + selector->selected_medium()->length()),
-      _promote_all(selector->promote_all()),
       _small_iter(selector->selected_small()),
       _medium_iter(selector->selected_medium()),
       _small_next(selector->selected_medium()->length()),

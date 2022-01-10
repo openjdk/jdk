@@ -63,7 +63,7 @@ bool ZHeuristics::use_per_cpu_shared_small_pages() {
   // Use per-CPU shared small pages only if these pages occupy at most 3.125%
   // of the max heap size. Otherwise fall back to using a single shared small
   // page. This is useful when using small heaps on large machines.
-  const size_t per_cpu_share = (MaxHeapSize * 0.03125) / ZCPU::count();
+  const size_t per_cpu_share = significant_heap_overhead() / ZCPU::count();
   return per_cpu_share >= ZPageSizeSmall;
 }
 
@@ -98,4 +98,8 @@ uint ZHeuristics::nconcurrent_workers() {
   // threads will prolong the GC cycle and we then risk being out-run by the
   // application.
   return MAX2(nworkers(25.0), 1u);
+}
+
+size_t ZHeuristics::significant_heap_overhead() {
+  return MaxHeapSize * 0.03125;
 }

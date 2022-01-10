@@ -42,21 +42,21 @@ class ZHeap {
   friend class ZLiveMapTest;
 
 private:
-  static ZHeap*      _heap;
+  static ZHeap*           _heap;
 
-  ZPageAllocator     _page_allocator;
-  ZPageTable         _page_table;
 
-  ZAllocatorEden     _allocator_eden;
-  ZAllocatorSurvivor _allocator_survivor;
-  ZAllocatorOld      _allocator_old;
+  ZPageAllocator          _page_allocator;
+  ZPageTable              _page_table;
 
-  ZServiceability    _serviceability;
+  ZAllocatorEden          _allocator_eden;
+  ZAllocatorForRelocation _allocator_relocation[ZAllocator::_relocation_allocators];
 
-  ZGenerationYoung   _young;
-  ZGenerationOld     _old;
+  ZServiceability         _serviceability;
 
-  bool               _initialized;
+  ZGenerationYoung        _young;
+  ZGenerationOld          _old;
+
+  bool                    _initialized;
 
 public:
   static ZHeap* heap();
