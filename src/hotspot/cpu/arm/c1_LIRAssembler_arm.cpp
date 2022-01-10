@@ -1820,8 +1820,8 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
         __ teq(xhi, yhi);
         __ teq(xlo, ylo, eq);
       } else {
-        __ subs(xlo, xlo, ylo);
-        __ sbcs(xhi, xhi, yhi);
+        __ subs(Rtemp, xlo, ylo);
+        __ sbcs(Rtemp, xhi, yhi);
       }
     } else {
       ShouldNotReachHere();

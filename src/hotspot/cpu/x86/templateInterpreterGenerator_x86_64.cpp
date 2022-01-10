@@ -445,3 +445,18 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   return entry_point;
 }
 
+address TemplateInterpreterGenerator::generate_currentThread() {
+
+  address entry_point = __ pc();
+
+  __ movptr(rax, Address(r15_thread, JavaThread::threadObj_offset()));
+
+  __ resolve_oop_handle(rax, rscratch1);
+
+  __ pop(rcx);
+  __ mov(rsp, r13);
+  __ jmp(rcx);
+
+  return entry_point;
+}
+

@@ -70,11 +70,12 @@ enum {
   JVM_ACC_IS_HIDDEN_CLASS         = 0x04000000,     // True if klass is hidden
   JVM_ACC_IS_VALUE_BASED_CLASS    = 0x08000000,     // True if klass is marked as a ValueBased class
   JVM_ACC_IS_BEING_REDEFINED      = 0x00100000,     // True if the klass is being redefined.
+  JVM_ACC_HAS_RESOLVED_METHODS    = 0x00200000,     // True if the klass has resolved methods
 
   // Klass* and Method* flags
-  JVM_ACC_HAS_LOCAL_VARIABLE_TABLE= 0x00200000,
+  JVM_ACC_HAS_LOCAL_VARIABLE_TABLE= 0x00400000,
 
-  JVM_ACC_PROMOTED_FLAGS          = 0x00200000,     // flags promoted from methods to the holding klass
+  JVM_ACC_PROMOTED_FLAGS          = 0x00400000,     // flags promoted from methods to the holding klass
 
   // field flags
   // Note: these flags must be defined in the low order 16 bits because
@@ -163,6 +164,9 @@ class AccessFlags {
   bool is_being_redefined() const       { return (_flags & JVM_ACC_IS_BEING_REDEFINED) != 0; }
   void set_is_being_redefined()         { atomic_set_bits(JVM_ACC_IS_BEING_REDEFINED); }
   void clear_is_being_redefined()       { atomic_clear_bits(JVM_ACC_IS_BEING_REDEFINED); }
+
+  bool has_resolved_methods() const     { return (_flags & JVM_ACC_HAS_RESOLVED_METHODS) != 0; }
+  void set_has_resolved_methods()       { atomic_set_bits(JVM_ACC_HAS_RESOLVED_METHODS); }
 
   // field flags
   bool is_field_access_watched() const  { return (_flags & JVM_ACC_FIELD_ACCESS_WATCHED) != 0; }

@@ -623,6 +623,8 @@ public class WhiteBox {
   }
 
   // Sharing & archiving
+  public native int     getCDSGenericHeaderMinVersion();
+  public native int     getCurrentCDSVersion();
   public native String  getDefaultArchivePath();
   public native boolean cdsMemoryMappingFailed();
   public native boolean isSharingEnabled();

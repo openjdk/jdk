@@ -92,6 +92,11 @@ public class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl {
         return null;
     }
 
+    @Override
+    public long maxAlignMask() {
+        return 0;
+    }
+
     // factories
 
     public static MemorySegment makeNativeSegment(long bytesSize, long alignmentBytes, ResourceScopeImpl scope) {

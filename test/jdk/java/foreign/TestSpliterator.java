@@ -127,6 +127,11 @@ public class TestSpliterator {
         MemorySegment.ofArray(new byte[7]).elements(MemoryLayout.sequenceLayout(0, ValueLayout.JAVA_INT));
     }
 
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testHyperAligned() {
+        MemorySegment.ofArray(new byte[8]).elements(MemoryLayout.sequenceLayout(2, ValueLayout.JAVA_INT.withBitAlignment(64)));
+    }
+
     static long sumSingle(long acc, MemorySegment segment) {
         return acc + (int)INT_HANDLE.get(segment, 0L);
     }

@@ -645,8 +645,10 @@ void ParallelScavengeHeap::prepare_for_verify() {
 PSHeapSummary ParallelScavengeHeap::create_ps_heap_summary() {
   PSOldGen* old = old_gen();
   HeapWord* old_committed_end = (HeapWord*)old->virtual_space()->committed_high_addr();
-  VirtualSpaceSummary old_summary(old->reserved().start(), old_committed_end, old->reserved().end());
-  SpaceSummary old_space(old->reserved().start(), old_committed_end, old->used_in_bytes());
+  HeapWord* old_reserved_start = old->reserved().start();
+  HeapWord* old_reserved_end = old->reserved().end();
+  VirtualSpaceSummary old_summary(old_reserved_start, old_committed_end, old_reserved_end);
+  SpaceSummary old_space(old_reserved_start, old_committed_end, old->used_in_bytes());
 
   PSYoungGen* young = young_gen();
   VirtualSpaceSummary young_summary(young->reserved().start(),

@@ -45,6 +45,9 @@ import sun.hotspot.WhiteBox;
 
 // This class performs operations on shared archive file
 public class CDSArchiveUtils {
+    // Minimum supported CDS file header version
+    private static int genericHeaderMinVersion;    // CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION
+    private static int currentCDSArchiveVersion;   // CURRENT_CDS_ARCHIVE_VERSION
     // offsets
     private static int offsetMagic;                // offset of GenericCDSFileMapHeader::_magic
     private static int offsetCrc;                  // offset of GenericCDSFileMapHeader::_crc
@@ -82,6 +85,9 @@ public class CDSArchiveUtils {
         WhiteBox wb;
         try {
             wb = WhiteBox.getWhiteBox();
+            // genericHeaderMinVersion
+            genericHeaderMinVersion = wb.getCDSGenericHeaderMinVersion();
+            currentCDSArchiveVersion = wb.getCurrentCDSVersion();
             // offsets
             offsetMagic = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_magic");
             offsetCrc = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_crc");
@@ -116,6 +122,10 @@ public class CDSArchiveUtils {
     }
 
     // accessors
+    // minimum supported file header version
+    public static int getGenericHeaderMinVersion()  { return genericHeaderMinVersion;     }
+    // current CDS version
+    public static int getCurrentCDSArchiveVersion() { return currentCDSArchiveVersion;    }
     // offsets
     public static int offsetMagic()                 { return offsetMagic;                 }
     public static int offsetCrc()                   { return offsetCrc;                   }

@@ -334,9 +334,21 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
   if (!CompilerDirectivesIgnoreCompileCommandsOption && CompilerOracle::has_any_command_set()) {
     DirectiveSetPtr set(this);
 
+#ifdef COMPILER1
+    if (C1Breakpoint) {
+      // If the directives didn't have 'BreakAtExecute',
+      // the command 'C1Breakpoint' would become effective.
+      if (!_modified[BreakAtExecuteIndex]) {
+         set.cloned()->BreakAtExecuteOption = true;
+      }
+    }
+#endif
+
     // All CompileCommands are not equal so this gets a bit verbose
     // When CompileCommands have been refactored less clutter will remain.
     if (CompilerOracle::should_break_at(method)) {
+      // If the directives didn't have 'BreakAtCompile' or 'BreakAtExecute',
+      // the sub-command 'Break' of the 'CompileCommand' would become effective.
       if (!_modified[BreakAtCompileIndex]) {
         set.cloned()->BreakAtCompileOption = true;
       }
