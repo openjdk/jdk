@@ -244,8 +244,8 @@ public class MimeTable implements FileNameMap {
                 throw new InternalError("default mime table not found");
         }
 
-        try (BufferedInputStream bin = new BufferedInputStream(in)) {
-            entries.load(bin);
+        try (in) {
+            entries.load(in);
         } catch (IOException e) {
             System.err.println("Warning: " + e.getMessage());
         }
