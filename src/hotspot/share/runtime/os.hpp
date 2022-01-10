@@ -541,7 +541,7 @@ class os: AllStatic {
 
   // File i/o operations
   static int open(const char *path, int oflag, int mode);
-  static FILE* open(int fd, const char* mode);
+  static FILE* fdopen(int fd, const char* mode);
   static FILE* fopen(const char* path, const char* mode);
   static int close(int fd);
   static jlong lseek(int fd, jlong offset, int whence);

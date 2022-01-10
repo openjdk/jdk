@@ -4754,7 +4754,7 @@ int os::open(const char *path, int oflag, int mode) {
   return fd;
 }
 
-FILE* os::open(int fd, const char* mode) {
+FILE* os::fdopen(int fd, const char* mode) {
   return ::_fdopen(fd, mode);
 }
 

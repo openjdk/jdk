@@ -675,7 +675,7 @@ const char* os::get_current_directory(char *buf, size_t buflen) {
   return getcwd(buf, buflen);
 }
 
-FILE* os::open(int fd, const char* mode) {
+FILE* os::fdopen(int fd, const char* mode) {
   return ::fdopen(fd, mode);
 }
 
