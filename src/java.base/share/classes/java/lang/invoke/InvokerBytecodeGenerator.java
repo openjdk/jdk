@@ -44,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static java.lang.invoke.LambdaForm.BasicType;
@@ -316,7 +317,7 @@ class InvokerBytecodeGenerator {
      * Extract the MemberName of a newly-defined method.
      */
     private MemberName loadMethod(byte[] classFile) {
-        Class<?> invokerClass = LOOKUP.makeHiddenClassDefiner(className, classFile)
+        Class<?> invokerClass = LOOKUP.makeHiddenClassDefiner(className, classFile, Set.of())
                                       .defineClass(true, classDataValues());
         return resolveInvokerMember(invokerClass, invokerName, invokerType);
     }
@@ -376,7 +377,7 @@ class InvokerBytecodeGenerator {
         MethodVisitor mv = cw.visitMethod(Opcodes.ACC_STATIC, "<clinit>", "()V", null, null);
         mv.visitCode();
         mv.visitLdcInsn(Type.getType("L" + className + ";"));
-        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/invoke/MethodHandleNatives",
+        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/invoke/MethodHandles",
                            "classData", "(Ljava/lang/Class;)Ljava/lang/Object;", false);
         // we should optimize one single element case that does not need to create a List
         mv.visitTypeInsn(Opcodes.CHECKCAST, "java/util/List");

@@ -27,6 +27,7 @@
 
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/memset_with_concurrent_readers.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/virtualspace.hpp"
@@ -48,30 +49,40 @@
 class ContiguousSpace;
 
 class BOTConstants : public AllStatic {
+  static uint _log_card_size;
+  static uint _log_card_size_in_words;
+  static uint _card_size;
+  static uint _card_size_in_words;
+
 public:
-  static const uint LogN = 9;
-  static const uint LogN_words = LogN - LogHeapWordSize;
-  static const uint N_bytes = 1 << LogN;
-  static const uint N_words = 1 << LogN_words;
   // entries "e" of at least N_words mean "go back by Base^(e-N_words)."
   // All entries are less than "N_words + N_powers".
   static const uint LogBase = 4;
   static const uint Base = (1 << LogBase);
   static const uint N_powers = 14;
 
+  // Initialize bot size based on card size
+  static void initialize_bot_size(uint card_shift);
+
   static size_t power_to_cards_back(uint i) {
     return (size_t)1 << (LogBase * i);
   }
-  static size_t power_to_words_back(uint i) {
-    return power_to_cards_back(i) * N_words;
-  }
+
   static size_t entry_to_cards_back(u_char entry) {
-    assert(entry >= N_words, "Precondition");
-    return power_to_cards_back(entry - N_words);
+    assert(entry >= _card_size_in_words, "Precondition");
+    return power_to_cards_back(entry - _card_size_in_words);
   }
-  static size_t entry_to_words_back(u_char entry) {
-    assert(entry >= N_words, "Precondition");
-    return power_to_words_back(entry - N_words);
+  static uint log_card_size() {
+    return _log_card_size;
+  }
+  static uint log_card_size_in_words() {
+    return _log_card_size_in_words;
+  }
+  static uint card_size() {
+    return _card_size;
+  }
+  static uint card_size_in_words() {
+    return _card_size_in_words;
   }
 };
 
@@ -93,6 +104,7 @@ public:
   BlockOffsetTable(HeapWord* bottom, HeapWord* end):
     _bottom(bottom), _end(end) {
     assert(_bottom <= _end, "arguments out of order");
+    assert(BOTConstants::card_size() == CardTable::card_size(), "sanity");
   }
 
   // Note that the committed size of the covered space may have changed,
@@ -179,7 +191,7 @@ class BlockOffsetSharedArray: public CHeapObj<mtGC> {
     check_reducing_assertion(reducing);
     assert(index < _vs.committed_size(), "index out of range");
     assert(high >= low, "addresses out of order");
-    assert(pointer_delta(high, low) <= BOTConstants::N_words, "offset too large");
+    assert(pointer_delta(high, low) <= BOTConstants::card_size_in_words(), "offset too large");
     assert(!reducing || _offset_array[index] >=  (u_char)pointer_delta(high, low),
            "Not reducing");
     _offset_array[index] = (u_char)pointer_delta(high, low);
@@ -190,7 +202,7 @@ class BlockOffsetSharedArray: public CHeapObj<mtGC> {
     assert(index_for(right - 1) < _vs.committed_size(),
            "right address out of range");
     assert(left  < right, "Heap addresses out of order");
-    size_t num_cards = pointer_delta(right, left) >> BOTConstants::LogN_words;
+    size_t num_cards = pointer_delta(right, left) >> BOTConstants::log_card_size_in_words();
 
     fill_range(index_for(left), num_cards, offset);
   }
@@ -207,7 +219,7 @@ class BlockOffsetSharedArray: public CHeapObj<mtGC> {
   void check_offset_array(size_t index, HeapWord* high, HeapWord* low) const {
     assert(index < _vs.committed_size(), "index out of range");
     assert(high >= low, "addresses out of order");
-    assert(pointer_delta(high, low) <= BOTConstants::N_words, "offset too large");
+    assert(pointer_delta(high, low) <= BOTConstants::card_size_in_words(), "offset too large");
     assert(_offset_array[index] == pointer_delta(high, low),
            "Wrong offset");
   }
@@ -222,7 +234,7 @@ class BlockOffsetSharedArray: public CHeapObj<mtGC> {
   // to be reserved.
 
   size_t compute_size(size_t mem_region_words) {
-    size_t number_of_slots = (mem_region_words / BOTConstants::N_words) + 1;
+    size_t number_of_slots = (mem_region_words / BOTConstants::card_size_in_words()) + 1;
     return ReservedSpace::allocation_align_size_up(number_of_slots);
   }
 
@@ -336,7 +348,7 @@ class BlockOffsetArray: public BlockOffsetTable {
       assert(_array->is_card_boundary(new_end),
              "new _end would not be a card boundary");
       // set all the newly added cards
-      _array->set_offset_array(_end, new_end, BOTConstants::N_words);
+      _array->set_offset_array(_end, new_end, BOTConstants::card_size_in_words());
     }
     _end = new_end;  // update _end
   }

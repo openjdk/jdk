@@ -46,7 +46,7 @@ inline bool G1CMBitMap::iterate(G1CMBitMapClosure* cl, MemRegion mr) {
     if (!cl->do_addr(addr)) {
       return false;
     }
-    size_t const obj_size = (size_t)cast_to_oop(addr)->size();
+    size_t const obj_size = cast_to_oop(addr)->size();
     offset = _bm.get_next_one_offset(offset + (obj_size >> _shifter), end_offset);
   }
   return true;

@@ -600,6 +600,9 @@ public:
   bool can_be_statically_bound(InstanceKlass* context) const;
   bool can_be_statically_bound(AccessFlags class_access_flags) const;
 
+  // true if method can omit stack trace in throw in compiled code.
+  bool can_omit_stack_trace();
+
   // returns true if the method has any backward branches.
   bool has_loops() {
     return access_flags().loops_flag_init() ? access_flags().has_loops() : compute_has_loops_flag();

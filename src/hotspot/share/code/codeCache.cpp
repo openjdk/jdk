@@ -678,7 +678,7 @@ void CodeCache::nmethods_do(void f(nmethod* nm)) {
 
 void CodeCache::metadata_do(MetadataClosure* f) {
   assert_locked_or_safepoint(CodeCache_lock);
-  NMethodIterator iter(NMethodIterator::only_alive_and_not_unloading);
+  NMethodIterator iter(NMethodIterator::only_alive);
   while(iter.next()) {
     iter.method()->metadata_do(f);
   }
@@ -1032,7 +1032,7 @@ CompiledMethod* CodeCache::find_compiled(void* start) {
 }
 
 #if INCLUDE_JVMTI
-// RedefineClasses support for unloading nmethods that are dependent on "old" methods.
+// RedefineClasses support for saving nmethods that are dependent on "old" methods.
 // We don't really expect this table to grow very large.  If it does, it can become a hashtable.
 static GrowableArray<CompiledMethod*>* old_compiled_method_table = NULL;
 
@@ -1085,7 +1085,7 @@ int CodeCache::mark_dependents_for_evol_deoptimization() {
   reset_old_method_table();
 
   int number_of_marked_CodeBlobs = 0;
-  CompiledMethodIterator iter(CompiledMethodIterator::only_alive_and_not_unloading);
+  CompiledMethodIterator iter(CompiledMethodIterator::only_alive);
   while(iter.next()) {
     CompiledMethod* nm = iter.method();
     // Walk all alive nmethods to check for old Methods.
@@ -1105,7 +1105,7 @@ int CodeCache::mark_dependents_for_evol_deoptimization() {
 
 void CodeCache::mark_all_nmethods_for_evol_deoptimization() {
   assert(SafepointSynchronize::is_at_safepoint(), "Can only do this at a safepoint!");
-  CompiledMethodIterator iter(CompiledMethodIterator::only_alive_and_not_unloading);
+  CompiledMethodIterator iter(CompiledMethodIterator::only_alive);
   while(iter.next()) {
     CompiledMethod* nm = iter.method();
     if (!nm->method()->is_method_handle_intrinsic()) {
@@ -1226,7 +1226,9 @@ void CodeCache::report_codemem_full(int code_blob_type, bool print) {
   CodeHeap* heap = get_code_heap(code_blob_type);
   assert(heap != NULL, "heap is null");
 
-  if ((heap->full_count() == 0) || print) {
+  heap->report_full();
+
+  if ((heap->full_count() == 1) || print) {
     // Not yet reported for this heap, report
     if (SegmentedCodeCache) {
       ResourceMark rm;
@@ -1263,14 +1265,12 @@ void CodeCache::report_codemem_full(int code_blob_type, bool print) {
       tty->print("%s", s.as_string());
     }
 
-    if (heap->full_count() == 0) {
+    if (heap->full_count() == 1) {
       if (PrintCodeHeapAnalytics) {
         CompileBroker::print_heapinfo(tty, "all", 4096); // details, may be a lot!
       }
     }
   }
-
-  heap->report_full();
 
   EventCodeCacheFull event;
   if (event.should_commit()) {

@@ -45,7 +45,7 @@ public:
       oop new_obj = o->forwardee();
       if (log_develop_is_enabled(Trace, gc, scavenge)) {
         ResourceMark rm; // required by internal_name()
-        log_develop_trace(gc, scavenge)("{%s %s " PTR_FORMAT " -> " PTR_FORMAT " (%d)}",
+        log_develop_trace(gc, scavenge)("{%s %s " PTR_FORMAT " -> " PTR_FORMAT " (" SIZE_FORMAT ")}",
                                         "forwarding",
                                         new_obj->klass()->internal_name(), p2i((void *)o), p2i((void *)new_obj), new_obj->size());
       }

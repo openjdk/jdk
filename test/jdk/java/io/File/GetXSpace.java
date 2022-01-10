@@ -51,6 +51,7 @@ import jdk.test.lib.Platform;
 import static java.lang.System.err;
 import static java.lang.System.out;
 
+@SuppressWarnings("removal")
 public class GetXSpace {
 
     private static SecurityManager [] sma = { null, new Allow(), new DenyFSA(),
@@ -213,8 +214,9 @@ public class GetXSpace {
         out.format(fmt, "df", s.total(), 0, s.free());
         out.format(fmt, "getX", ts, fs, us);
 
-        // if the file system can dynamically change size, this check will fail
-        if (ts != s.total()) {
+        // If the file system can dynamically change size, this check will fail.
+        // This can happen on macOS for the /dev files system.
+        if (ts != s.total() && (!Platform.isOSX() || !s.name().equals("/dev"))) {
             long blockSize = 1;
             long numBlocks = 0;
             try {
@@ -230,7 +232,6 @@ public class GetXSpace {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-
 
             // On macOS, the number of 1024 byte blocks might be incorrectly
             // calculated by 'df' using integer division by 2 of the number of

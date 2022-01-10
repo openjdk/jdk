@@ -51,7 +51,6 @@ import java.security.Signature;
     for this purpose, namely the loss of compile-time checking. */
 
 public class SharedSecrets {
-    private static final MethodHandles.Lookup lookup = MethodHandles.lookup();
     private static JavaAWTAccess javaAWTAccess;
     private static JavaAWTFontAccess javaAWTFontAccess;
     private static JavaBeansAccess javaBeansAccess;

@@ -151,7 +151,7 @@ JNIEXPORT jboolean JNICALL
 JVM_IsUseContainerSupport(void);
 
 JNIEXPORT void * JNICALL
-JVM_LoadLibrary(const char *name);
+JVM_LoadLibrary(const char *name, jboolean throwException);
 
 JNIEXPORT void JNICALL
 JVM_UnloadLibrary(void * handle);
@@ -758,6 +758,9 @@ JVM_SupportsCX8(void);
  */
 JNIEXPORT void JNICALL
 JVM_ReportFinalizationComplete(JNIEnv *env, jobject finalizee);
+
+JNIEXPORT jboolean JNICALL
+JVM_IsFinalizationEnabled(JNIEnv *env);
 
 /*************************************************************************
  PART 2: Support for the Verifier and Class File Format Checker

@@ -59,7 +59,7 @@ import jdk.jfr.internal.Utils;
  */
 public final class PrettyWriter extends EventPrintWriter {
     private static final String TYPE_OLD_OBJECT = Type.TYPES_PREFIX + "OldObject";
-    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss.SSS (YYYY-MM-dd)");
+    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss.SSS (yyyy-MM-dd)");
     private static final Long ZERO = 0L;
     private boolean showIds;
     private RecordedEvent currentEvent;

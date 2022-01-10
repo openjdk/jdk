@@ -521,7 +521,6 @@ void VM_PopulateDumpSharedSpace::doit() {
   // Block concurrent class unloading from changing the _dumptime_table
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
   SystemDictionaryShared::check_excluded_classes();
-  SystemDictionaryShared::cleanup_lambda_proxy_class_dictionary();
 
   StaticArchiveBuilder builder;
   builder.gather_source_objs();
@@ -597,7 +596,7 @@ public:
   void do_cld(ClassLoaderData* cld) {
     assert(cld->is_alive(), "must be");
     _loaded_cld.append(cld);
-    _loaded_cld_handles.append(OopHandle(Universe::vm_global(), cld->holder_phantom()));
+    _loaded_cld_handles.append(OopHandle(Universe::vm_global(), cld->holder()));
   }
 
   int nof_cld() const                { return _loaded_cld.length(); }

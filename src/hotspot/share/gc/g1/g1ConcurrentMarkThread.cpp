@@ -56,26 +56,6 @@ G1ConcurrentMarkThread::G1ConcurrentMarkThread(G1ConcurrentMark* cm) :
   create_and_start();
 }
 
-class CMRemark : public VoidClosure {
-  G1ConcurrentMark* _cm;
-public:
-  CMRemark(G1ConcurrentMark* cm) : _cm(cm) {}
-
-  void do_void(){
-    _cm->remark();
-  }
-};
-
-class CMCleanup : public VoidClosure {
-  G1ConcurrentMark* _cm;
-public:
-  CMCleanup(G1ConcurrentMark* cm) : _cm(cm) {}
-
-  void do_void(){
-    _cm->cleanup();
-  }
-};
-
 double G1ConcurrentMarkThread::mmu_delay_end(G1Policy* policy, bool remark) {
   // There are 3 reasons to use SuspendibleThreadSetJoiner.
   // 1. To avoid concurrency problem.
@@ -239,8 +219,7 @@ bool G1ConcurrentMarkThread::subphase_delay_to_keep_mmu_before_remark() {
 
 bool G1ConcurrentMarkThread::subphase_remark() {
   ConcurrentGCBreakpoints::at("BEFORE MARKING COMPLETED");
-  CMRemark cl(_cm);
-  VM_G1Concurrent op(&cl, "Pause Remark");
+  VM_G1PauseRemark op;
   VMThread::execute(&op);
   return _cm->has_aborted();
 }
@@ -257,8 +236,7 @@ bool G1ConcurrentMarkThread::phase_delay_to_keep_mmu_before_cleanup() {
 }
 
 bool G1ConcurrentMarkThread::phase_cleanup() {
-  CMCleanup cl(_cm);
-  VM_G1Concurrent op(&cl, "Pause Cleanup");
+  VM_G1PauseCleanup op;
   VMThread::execute(&op);
   return _cm->has_aborted();
 }

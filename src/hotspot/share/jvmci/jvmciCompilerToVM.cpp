@@ -86,29 +86,6 @@ static void requireInHotSpot(const char* caller, JVMCI_TRAPS) {
   }
 }
 
-void JNIHandleMark::push_jni_handle_block(JavaThread* thread) {
-  if (thread != NULL) {
-    // Allocate a new block for JNI handles.
-    // Inlined code from jni_PushLocalFrame()
-    JNIHandleBlock* java_handles = thread->active_handles();
-    JNIHandleBlock* compile_handles = JNIHandleBlock::allocate_block(thread);
-    assert(compile_handles != NULL && java_handles != NULL, "should not be NULL");
-    compile_handles->set_pop_frame_link(java_handles);
-    thread->set_active_handles(compile_handles);
-  }
-}
-
-void JNIHandleMark::pop_jni_handle_block(JavaThread* thread) {
-  if (thread != NULL) {
-    // Release our JNI handle block
-    JNIHandleBlock* compile_handles = thread->active_handles();
-    JNIHandleBlock* java_handles = compile_handles->pop_frame_link();
-    thread->set_active_handles(java_handles);
-    compile_handles->set_pop_frame_link(NULL);
-    JNIHandleBlock::release_block(compile_handles, thread); // may block
-  }
-}
-
 class JVMCITraceMark : public StackObj {
   const char* _msg;
  public:
@@ -1045,9 +1022,10 @@ C2V_VMENTRY_NULL(jlongArray, getLineNumberTable, (JNIEnv* env, jobject, jobject 
   int i = 0;
   jlong value;
   while (stream.read_pair()) {
-    value = ((long) stream.bci());
+    // FIXME: Why was this long before?
+    value = ((jlong) stream.bci());
     JVMCIENV->put_long_at(result, i, value);
-    value = ((long) stream.line());
+    value = ((jlong) stream.line());
     JVMCIENV->put_long_at(result, i + 1, value);
     i += 2;
   }
@@ -1891,20 +1869,7 @@ C2V_VMENTRY_NULL(jobjectArray, getDeclaredMethods, (JNIEnv* env, jobject, jobjec
   return JVMCIENV->get_jobjectArray(methods);
 C2V_END
 
-// Enforces volatile semantics for a non-volatile read.
-class VolatileRead : public StackObj {
- public:
-  VolatileRead() {
-    // Ensures a possibly volatile read is not reordered with a prior
-    // volatile write.
-    OrderAccess::storeload();
-  }
-  ~VolatileRead() {
-    OrderAccess::acquire();
-  }
-};
-
-C2V_VMENTRY_NULL(jobject, readFieldValue, (JNIEnv* env, jobject, jobject object, jobject expected_type, long displacement, jobject kind_object))
+C2V_VMENTRY_NULL(jobject, readFieldValue, (JNIEnv* env, jobject, jobject object, jobject expected_type, jlong displacement, jobject kind_object))
   if (object == NULL || kind_object == NULL) {
     JVMCI_THROW_0(NullPointerException);
   }
@@ -1944,13 +1909,18 @@ C2V_VMENTRY_NULL(jobject, readFieldValue, (JNIEnv* env, jobject, jobject object,
     ShouldNotReachHere();
   }
 
-  if (displacement < 0 || ((long) displacement + type2aelembytes(basic_type) > HeapWordSize * obj->size())) {
+  int basic_type_elemsize = type2aelembytes(basic_type);
+  if (displacement < 0 || ((size_t) displacement + basic_type_elemsize > HeapWordSize * obj->size())) {
     // Reading outside of the object bounds
     JVMCI_THROW_MSG_NULL(IllegalArgumentException, "reading outside object bounds");
   }
 
   // Perform basic sanity checks on the read.  Primitive reads are permitted to read outside the
   // bounds of their fields but object reads must map exactly onto the underlying oop slot.
+  bool aligned = (displacement % basic_type_elemsize) == 0;
+  if (!aligned) {
+    JVMCI_THROW_MSG_NULL(IllegalArgumentException, "read is unaligned");
+  }
   if (basic_type == T_OBJECT) {
     if (obj->is_objArray()) {
       if (displacement < arrayOopDesc::base_offset_in_bytes(T_OBJECT)) {
@@ -1991,22 +1961,17 @@ C2V_VMENTRY_NULL(jobject, readFieldValue, (JNIEnv* env, jobject, jobject object,
 
   // Treat all reads as volatile for simplicity as this function can be used
   // both for reading Java fields declared as volatile as well as for constant
-  // folding Unsafe.get* methods with volatile semantics. This is done by
-  // performing the volatile barrier operations around a call to an
-  // oopDesc::<kind>_field method. The oopDesc::<kind>_field_acquire method
-  // cannot be used since it does not support unaligned reads on all platforms
-  // (e.g., an unaligned ldar on AArch64 causes a SIGBUS).
-
+  // folding Unsafe.get* methods with volatile semantics.
 
   switch (basic_type) {
-    case T_BOOLEAN: { VolatileRead vr; value = obj->bool_field(displacement); } break;
-    case T_BYTE:    { VolatileRead vr; value = obj->byte_field(displacement); } break;
-    case T_SHORT:   { VolatileRead vr; value = obj->short_field(displacement);} break;
-    case T_CHAR:    { VolatileRead vr; value = obj->char_field(displacement); } break;
+    case T_BOOLEAN: value = obj->bool_field_acquire(displacement);  break;
+    case T_BYTE:    value = obj->byte_field_acquire(displacement);  break;
+    case T_SHORT:   value = obj->short_field_acquire(displacement); break;
+    case T_CHAR:    value = obj->char_field_acquire(displacement);  break;
     case T_FLOAT:
-    case T_INT:     { VolatileRead vr; value = obj->int_field(displacement);  } break;
+    case T_INT:     value = obj->int_field_acquire(displacement);   break;
     case T_DOUBLE:
-    case T_LONG:    { VolatileRead vr; value = obj->long_field(displacement); } break;
+    case T_LONG:    value = obj->long_field_acquire(displacement);  break;
 
     case T_OBJECT: {
       if (displacement == java_lang_Class::component_mirror_offset() && java_lang_Class::is_instance(obj()) &&
@@ -2016,8 +1981,7 @@ C2V_VMENTRY_NULL(jobject, readFieldValue, (JNIEnv* env, jobject, jobject object,
         return JVMCIENV->get_jobject(JVMCIENV->get_JavaConstant_NULL_POINTER());
       }
 
-      oop value;
-      { VolatileRead vr; value = obj->obj_field(displacement); }
+      oop value = obj->obj_field_acquire(displacement);
 
       if (value == NULL) {
         return JVMCIENV->get_jobject(JVMCIENV->get_JavaConstant_NULL_POINTER());

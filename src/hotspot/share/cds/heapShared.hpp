@@ -155,10 +155,18 @@ public:
 
   // Can this VM write heap regions into the CDS archive? Currently only G1+compressed{oops,cp}
   static bool can_write() {
-    CDS_JAVA_HEAP_ONLY(return (UseG1GC && UseCompressedOops && UseCompressedClassPointers);)
+    CDS_JAVA_HEAP_ONLY(
+      if (_disable_writing) {
+        return false;
+      }
+      return (UseG1GC && UseCompressedOops && UseCompressedClassPointers);
+    )
     NOT_CDS_JAVA_HEAP(return false;)
   }
 
+  static void disable_writing() {
+    CDS_JAVA_HEAP_ONLY(_disable_writing = true;)
+  }
   // Can this VM map archived heap regions? Currently only G1+compressed{oops,cp}
   static bool can_map() {
     CDS_JAVA_HEAP_ONLY(return (UseG1GC && UseCompressedOops && UseCompressedClassPointers);)
@@ -188,6 +196,7 @@ public:
 
 private:
 #if INCLUDE_CDS_JAVA_HEAP
+  static bool _disable_writing;
   static bool _closed_regions_mapped;
   static bool _open_regions_mapped;
   static bool _is_loaded;

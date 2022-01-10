@@ -237,7 +237,6 @@ void report_vm_error(const char* file, int line, const char* error_msg)
 
 
 static void print_error_for_unit_test(const char* message, const char* detail_fmt, va_list detail_args) {
-#ifdef ASSERT
   if (ExecutingUnitTests) {
     char detail_msg[256];
     if (detail_fmt != NULL) {
@@ -262,7 +261,6 @@ static void print_error_for_unit_test(const char* message, const char* detail_fm
       va_end(detail_args_copy);
     }
   }
-#endif // ASSERT
 }
 
 void report_vm_error(const char* file, int line, const char* error_msg, const char* detail_fmt, ...)

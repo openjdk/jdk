@@ -2961,8 +2961,8 @@ public class DecimalFormat extends NumberFormat {
      * the expanded affix strings up to date.
      */
     private void expandAffixes() {
-        // Reuse one StringBuffer for better performance
-        StringBuffer buffer = new StringBuffer();
+        // Reuse one StringBuilder for better performance
+        StringBuilder buffer = new StringBuilder();
         if (posPrefixPattern != null) {
             positivePrefix = expandAffix(posPrefixPattern, buffer);
             positivePrefixFieldPositions = null;
@@ -2992,10 +2992,10 @@ public class DecimalFormat extends NumberFormat {
      * itself at the end of the pattern.
      *
      * @param pattern the non-null, possibly empty pattern
-     * @param buffer a scratch StringBuffer; its contents will be lost
+     * @param buffer a scratch StringBuilder; its contents will be lost
      * @return the expanded equivalent of pattern
      */
-    private String expandAffix(String pattern, StringBuffer buffer) {
+    private String expandAffix(String pattern, StringBuilder buffer) {
         buffer.setLength(0);
         for (int i=0; i<pattern.length(); ) {
             char c = pattern.charAt(i++);
@@ -3097,7 +3097,7 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Appends an affix pattern to the given StringBuffer, quoting special
+     * Appends an affix pattern to the given StringBuilder, quoting special
      * characters as needed.  Uses the internal affix pattern, if that exists,
      * or the literal affix, if the internal affix pattern is null.  The
      * appended string will generate the same affix pattern (or literal affix)
@@ -3111,7 +3111,7 @@ public class DecimalFormat extends NumberFormat {
      * @param localized true if the appended pattern should contain localized
      * pattern characters; otherwise, non-localized pattern chars are appended
      */
-    private void appendAffix(StringBuffer buffer, String affixPattern,
+    private void appendAffix(StringBuilder buffer, String affixPattern,
                              String expAffix, boolean localized) {
         if (affixPattern == null) {
             appendAffix(buffer, expAffix, localized);
@@ -3156,11 +3156,11 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Append an affix to the given StringBuffer, using quotes if
+     * Append an affix to the given StringBuilder, using quotes if
      * there are special characters.  Single quotes themselves must be
      * escaped in either case.
      */
-    private void appendAffix(StringBuffer buffer, String affix, boolean localized) {
+    private void appendAffix(StringBuilder buffer, String affix, boolean localized) {
         boolean needQuote;
         if (localized) {
             needQuote = affix.indexOf(symbols.getZeroDigit()) >= 0
@@ -3198,7 +3198,7 @@ public class DecimalFormat extends NumberFormat {
     /**
      * Does the real work of generating a pattern.  */
     private String toPattern(boolean localized) {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         for (int j = 1; j >= 0; --j) {
             if (j == 1)
                 appendAffix(result, posPrefixPattern, positivePrefix, localized);
@@ -3341,8 +3341,8 @@ public class DecimalFormat extends NumberFormat {
         int start = 0;
         for (int j = 1; j >= 0 && start < pattern.length(); --j) {
             boolean inQuote = false;
-            StringBuffer prefix = new StringBuffer();
-            StringBuffer suffix = new StringBuffer();
+            StringBuilder prefix = new StringBuilder();
+            StringBuilder suffix = new StringBuilder();
             int decimalPos = -1;
             int multiplier = 1;
             int digitLeftCount = 0, zeroDigitCount = 0, digitRightCount = 0;
@@ -3358,7 +3358,7 @@ public class DecimalFormat extends NumberFormat {
             int phase = 0;
 
             // The affix is either the prefix or the suffix.
-            StringBuffer affix = prefix;
+            StringBuilder affix = prefix;
 
             for (int pos = start; pos < pattern.length(); ++pos) {
                 char ch = pattern.charAt(pos);

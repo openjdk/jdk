@@ -61,7 +61,7 @@ class TypeArrayKlass : public ArrayKlass {
     return create_klass(type, external_name(type), THREAD);
   }
 
-  int oop_size(oop obj) const;
+  size_t oop_size(oop obj) const;
 
   // Allocation
   typeArrayOop allocate_common(int length, bool do_zero, TRAPS);

@@ -331,7 +331,7 @@ public class MethodData extends Metadata implements MethodDataInterface<Klass,Me
     return new DataLayout(this, sizeInBytes());
   }
 
-  static public int extraNbCells(DataLayout dataLayout) {
+  public static int extraNbCells(DataLayout dataLayout) {
     int nbCells = 0;
     switch(dataLayout.tag()) {
     case DataLayout.bitDataTag:

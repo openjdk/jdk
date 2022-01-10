@@ -84,8 +84,8 @@ public class PackageWriterImpl extends HtmlDocletWriter
     private final BodyContents bodyContents = new BodyContents();
 
     // Maximum number of subpackages and sibling packages to list in related packages table
-    private final static int MAX_SUBPACKAGES = 20;
-    private final static int MAX_SIBLING_PACKAGES = 5;
+    private static final int MAX_SUBPACKAGES = 20;
+    private static final int MAX_SIBLING_PACKAGES = 5;
 
 
     /**
@@ -257,8 +257,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 .addTab(contents.classes, e -> utils.isOrdinaryClass((TypeElement)e))
                 .addTab(contents.enums, utils::isEnum)
                 .addTab(contents.records, e -> utils.isRecord((TypeElement)e))
-                .addTab(contents.exceptions, e -> utils.isException((TypeElement)e))
-                .addTab(contents.errors, e -> utils.isError((TypeElement)e))
+                .addTab(contents.exceptionClasses, e -> utils.isThrowable((TypeElement)e))
                 .addTab(contents.annotationTypes, utils::isAnnotationType);
         for (TypeElement typeElement : allClasses) {
             if (typeElement != null && utils.isCoreClass(typeElement)) {

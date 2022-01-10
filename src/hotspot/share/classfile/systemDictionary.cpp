@@ -1625,6 +1625,7 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer) {
       assert(_pd_cache_table->number_of_entries() == 0, "should be empty");
     }
 
+    MutexLocker ml(is_concurrent ? ClassInitError_lock : NULL);
     InstanceKlass::clean_initialization_error_table();
   }
 

@@ -4404,6 +4404,9 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
 
   the_class->set_has_been_redefined();
 
+  // Scratch class is unloaded but still needs cleaning, and skipping for CDS.
+  scratch_class->set_is_scratch_class();
+
   // keep track of previous versions of this class
   the_class->add_previous_version(scratch_class, emcp_method_count);
 

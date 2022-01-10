@@ -57,10 +57,6 @@ class PSScavenge: AllStatic {
   // being rescanned.
   static HeapWord* _to_space_top_before_gc;
 
-  // Number of consecutive attempts to scavenge that were skipped
-  static int                _consecutive_skipped_scavenges;
-
-
  protected:
   // Flags/counters
   static SpanSubjectToDiscoveryClosure _span_based_discoverer;
@@ -95,8 +91,6 @@ class PSScavenge: AllStatic {
   // Accessors
   static uint             tenuring_threshold()  { return _tenuring_threshold; }
   static elapsedTimer*    accumulated_time()    { return &_accumulated_time; }
-  static int              consecutive_skipped_scavenges()
-    { return _consecutive_skipped_scavenges; }
 
   // Performance Counters
   static CollectorCounters* counters()           { return _counters; }

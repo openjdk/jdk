@@ -878,8 +878,7 @@ public abstract class JComponent extends Container implements Serializable,
             }
             // If we are only to paint to a specific child, determine
             // its index.
-            if (paintingChild != null &&
-                (paintingChild instanceof JComponent) &&
+            if ((paintingChild instanceof JComponent) &&
                 paintingChild.isOpaque()) {
                 for (; i >= 0; i--) {
                     if (getComponent(i) == paintingChild){
@@ -3448,7 +3447,7 @@ public abstract class JComponent extends Container implements Serializable,
      * <code>ActionListeners</code> that are
      * added via <code>registerKeyboardAction</code>.
      */
-    final class ActionStandin implements Action {
+    static final class ActionStandin implements Action {
         private final ActionListener actionListener;
         private final String command;
         // This will be non-null if actionListener is an Action.
@@ -3636,20 +3635,18 @@ public abstract class JComponent extends Container implements Serializable,
                                               boolean temporary, boolean focusedWindowChangeAllowed,
                                               FocusEvent.Cause cause)
             {
-                if ((to == null) || !(to instanceof JComponent)) {
+                if (!(to instanceof JComponent target)) {
                     return true;
                 }
 
-                if ((from == null) || !(from instanceof JComponent)) {
+                if (!(from instanceof JComponent jFocusOwner)) {
                     return true;
                 }
 
-                JComponent target = (JComponent) to;
                 if (!target.getVerifyInputWhenFocusTarget()) {
                     return true;
                 }
 
-                JComponent jFocusOwner = (JComponent)from;
                 InputVerifier iv = jFocusOwner.getInputVerifier();
 
                 if (iv == null) {
@@ -3774,7 +3771,7 @@ public abstract class JComponent extends Container implements Serializable,
             protected AccessibleContainerHandler() {}
             public void componentAdded(ContainerEvent e) {
                 Component c = e.getChild();
-                if (c != null && c instanceof Accessible) {
+                if (c instanceof Accessible) {
                     AccessibleJComponent.this.firePropertyChange(
                         AccessibleContext.ACCESSIBLE_CHILD_PROPERTY,
                         null, c.getAccessibleContext());
@@ -3782,7 +3779,7 @@ public abstract class JComponent extends Container implements Serializable,
             }
             public void componentRemoved(ContainerEvent e) {
                 Component c = e.getChild();
-                if (c != null && c instanceof Accessible) {
+                if (c instanceof Accessible) {
                     AccessibleJComponent.this.firePropertyChange(
                         AccessibleContext.ACCESSIBLE_CHILD_PROPERTY,
                         c.getAccessibleContext(), null);
@@ -5501,8 +5498,7 @@ public abstract class JComponent extends Container implements Serializable,
      * @see java.io.ObjectInputStream#registerValidation
      * @see SwingUtilities#updateComponentTreeUI
      */
-    private class ReadObjectCallback implements ObjectInputValidation
-    {
+    private static class ReadObjectCallback implements ObjectInputValidation {
         private final Vector<JComponent> roots = new Vector<JComponent>(1);
         private final ObjectInputStream inputStream;
 

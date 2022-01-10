@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -250,14 +250,21 @@ static size_t calc_min_yellow_zone_size() {
   }
 }
 
+// An initial guess at the rate for pause-time card refinement for one
+// thread, used when computing the default initial green zone value.
+const double InitialPauseTimeCardRefinementRate = 200.0;
+
 static size_t calc_init_green_zone() {
-  size_t green = G1ConcRefinementGreenZone;
-  const char* name = "G1ConcRefinementGreenZone";
+  size_t green;
   if (FLAG_IS_DEFAULT(G1ConcRefinementGreenZone)) {
-    green = ParallelGCThreads;
-    name = "ParallelGCThreads";
+    const double rate = InitialPauseTimeCardRefinementRate * ParallelGCThreads;
+    // The time budget for pause-time card refinement.
+    const double ms = MaxGCPauseMillis * (G1RSetUpdatingPauseTimePercent / 100.0);
+    green = rate * ms;
+  } else {
+    green = configuration_buffers_to_cards(G1ConcRefinementGreenZone,
+                                           "G1ConcRefinementGreenZone");
   }
-  green = configuration_buffers_to_cards(green, name);
   return MIN2(green, max_green_zone);
 }
 

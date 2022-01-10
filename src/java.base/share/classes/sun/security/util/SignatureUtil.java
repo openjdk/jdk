@@ -54,7 +54,7 @@ public class SignatureUtil {
      *      form of an OID, or the OID value if no match is found.
      */
     private static String checkName(String algName) {
-        if (algName.indexOf(".") == -1) {
+        if (!algName.contains(".")) {
             return algName;
         } else {
             // convert oid to String
@@ -100,7 +100,7 @@ public class SignatureUtil {
             // AlgorithmParameters.getAlgorithm() may returns oid if it's
             // created during DER decoding. Convert to use the standard name
             // before passing it to RSAUtil
-            if (params.getAlgorithm().indexOf(".") != -1) {
+            if (params.getAlgorithm().contains(".")) {
                 try {
                     params = createAlgorithmParameters(sigName,
                         params.getEncoded());
@@ -109,9 +109,9 @@ public class SignatureUtil {
                 }
             }
 
-            if (sigName.indexOf("RSA") != -1) {
+            if (sigName.contains("RSA")) {
                 paramSpec = RSAUtil.getParamSpec(params);
-            } else if (sigName.indexOf("ECDSA") != -1) {
+            } else if (sigName.contains("ECDSA")) {
                 try {
                     paramSpec = params.getParameterSpec(ECParameterSpec.class);
                 } catch (Exception e) {
@@ -141,11 +141,11 @@ public class SignatureUtil {
 
         if (paramBytes != null) {
             sigName = checkName(sigName).toUpperCase(Locale.ENGLISH);
-            if (sigName.indexOf("RSA") != -1) {
+            if (sigName.contains("RSA")) {
                 AlgorithmParameters params =
                     createAlgorithmParameters(sigName, paramBytes);
                 paramSpec = RSAUtil.getParamSpec(params);
-            } else if (sigName.indexOf("ECDSA") != -1) {
+            } else if (sigName.contains("ECDSA")) {
                 try {
                     Provider p = Signature.getInstance(sigName).getProvider();
                     paramSpec = ECUtil.getECParameterSpec(p, paramBytes);

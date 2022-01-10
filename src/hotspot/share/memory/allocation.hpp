@@ -408,7 +408,7 @@ class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
   void initialize_allocation_info();
  public:
   allocation_type get_allocation_type() const;
-  bool allocated_on_stack()    const { return get_allocation_type() == STACK_OR_EMBEDDED; }
+  bool allocated_on_stack_or_embedded() const { return get_allocation_type() == STACK_OR_EMBEDDED; }
   bool allocated_on_res_area() const { return get_allocation_type() == RESOURCE_AREA; }
   bool allocated_on_C_heap()   const { return get_allocation_type() == C_HEAP; }
   bool allocated_on_arena()    const { return get_allocation_type() == ARENA; }

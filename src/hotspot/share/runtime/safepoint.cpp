@@ -168,6 +168,14 @@ void SafepointSynchronize::decrement_waiting_to_block() {
 
 bool SafepointSynchronize::thread_not_running(ThreadSafepointState *cur_state) {
   if (!cur_state->is_running()) {
+    // Robustness: asserted in the caller, but handle/tolerate it for release bits.
+    LogTarget(Error, safepoint) lt;
+    if (lt.is_enabled()) {
+      ResourceMark rm;
+      LogStream ls(lt);
+      ls.print("Illegal initial state detected: ");
+      cur_state->print_on(&ls);
+    }
     return true;
   }
   cur_state->examine_state_of_thread(SafepointSynchronize::safepoint_counter());
@@ -706,7 +714,6 @@ void SafepointSynchronize::block(JavaThread *thread) {
   }
 
   JavaThreadState state = thread->thread_state();
-  assert(is_a_block_safe_state(state), "Illegal threadstate encountered: %d", state);
   thread->frame_anchor()->make_walkable(thread);
 
   uint64_t safepoint_id = SafepointSynchronize::safepoint_counter();

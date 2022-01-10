@@ -561,11 +561,11 @@ public class URLClassPath {
                     // fallback to checkRead/checkConnect for pre 1.2
                     // security managers
                     if ((perm instanceof java.io.FilePermission) &&
-                        perm.getActions().indexOf("read") != -1) {
+                        perm.getActions().contains("read")) {
                         security.checkRead(perm.getName());
                     } else if ((perm instanceof
                         java.net.SocketPermission) &&
-                        perm.getActions().indexOf("connect") != -1) {
+                        perm.getActions().contains("connect")) {
                         URL locUrl = url;
                         if (urlConnection instanceof JarURLConnection) {
                             locUrl = ((JarURLConnection)urlConnection).getJarFileURL();
@@ -1254,7 +1254,7 @@ public class URLClassPath {
                     URLClassPath.check(url);
 
                 final File file;
-                if (name.indexOf("..") != -1) {
+                if (name.contains("..")) {
                     file = (new File(dir, name.replace('/', File.separatorChar)))
                           .getCanonicalFile();
                     if ( !((file.getPath()).startsWith(dir.getPath())) ) {

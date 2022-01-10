@@ -67,12 +67,4 @@ public final class Attributes {
                 .map(type::cast)
                 .findAny();
     }
-
-    public int size() {
-        return attributes.values().stream().mapToInt(List::size).sum();
-    }
-
-    public boolean isEmpty() {
-        return attributes.isEmpty();
-    }
 }

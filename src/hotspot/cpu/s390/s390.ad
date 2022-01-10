@@ -1536,11 +1536,15 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
   return true; // Per default match rules are supported.
 }
 
+const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
+  return false;
+}
+
 const RegMask* Matcher::predicate_reg_mask(void) {
   return NULL;
 }
 
-const TypeVect* Matcher::predicate_reg_type(const Type* elemTy, int length) {
+const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) {
   return NULL;
 }
 
@@ -5055,6 +5059,7 @@ instruct membar_CPUOrder() %{
 
 instruct membar_storestore() %{
   match(MemBarStoreStore);
+  match(StoreStoreFence);
   ins_cost(0);
   size(0);
   format %{ "MEMBAR-storestore (empty)" %}

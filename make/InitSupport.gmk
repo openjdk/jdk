@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -313,6 +313,15 @@ else # $(HAS_SPEC)=true
       SOURCE_DATE := $$(shell $$(DATE) +"%s")
     endif
     export SOURCE_DATE_EPOCH := $$(SOURCE_DATE)
+    ifeq ($$(IS_GNU_DATE), yes)
+      export SOURCE_DATE_ISO_8601 := $$(shell $$(DATE) --utc \
+                                                       --date="@$$(SOURCE_DATE_EPOCH)" \
+                                                       +"%Y-%m-%dT%H:%M:%SZ" 2> /dev/null)
+    else
+      export SOURCE_DATE_ISO_8601 := $$(shell $$(DATE) -u \
+                                                       -j -f "%s" "$$(SOURCE_DATE_EPOCH)" \
+                                                       +"%Y-%m-%dT%H:%M:%SZ" 2> /dev/null)
+    endif
   endef
 
   # Parse COMPARE_BUILD into COMPARE_BUILD_*
