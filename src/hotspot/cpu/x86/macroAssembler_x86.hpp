@@ -1491,11 +1491,11 @@ public:
   // Simple version for AVX2 256bit vectors
   void vpxor(XMMRegister dst, XMMRegister src) {
     assert(UseAVX >= 2, "Only with AVX2");
-    Assembler::vpxor(dst, dst, src, 1);
+    Assembler::vpxor(dst, dst, src, AVX_256bit);
   }
   void vpxor(XMMRegister dst, Address src) {
     assert(UseAVX >= 2, "Only with AVX2");
-    Assembler::vpxor(dst, dst, src, 1);
+    Assembler::vpxor(dst, dst, src, AVX_256bit);
   }
 
   void vpermd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) { Assembler::vpermd(dst, nds, src, vector_len); }
