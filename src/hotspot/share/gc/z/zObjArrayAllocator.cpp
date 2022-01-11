@@ -67,6 +67,13 @@ oop ZObjArrayAllocator::initialize(HeapWord* mem) const {
   assert(_length >= 0, "length should be non-negative");
   arrayOopDesc::set_length(mem, _length);
 
+  // Keep the array alive across safepoints through an invisible
+  // root. Invisible roots are not visited by the heap iterator
+  // and the marking logic will not attempt to follow its elements.
+  // Relocation and remembered set code know how to dodge iterating
+  // over such objects.
+  ZThreadLocalData::set_invisible_root(_thread, (zaddress_unsafe*)&mem);
+
   for (size_t processed = 0; processed < payload_size; processed += segment_max) {
     // Clear segment
     uintptr_t* const start = (uintptr_t*)(mem + header + processed);
@@ -83,18 +90,11 @@ oop ZObjArrayAllocator::initialize(HeapWord* mem) const {
     const uintptr_t fill_value = is_reference_type(element_type) ? (ZPointerStoreGoodMask | ZPointerRememberedMask) : 0;
     ZUtils::fill(start, segment, fill_value);
 
-    // Keep the array alive across safepoints through an invisible
-    // root. Invisible roots are not visited by the heap iterator
-    // and the marking logic will not attempt to follow its elements.
-    // Relocation and remembered set code know how to dodge iterating
-    // over such objects.
-    ZThreadLocalData::set_invisible_root(_thread, (zaddress_unsafe*)&mem);
-    {
-      // Safepoint
-      ThreadBlockInVM tbivm(JavaThread::cast(_thread));
-    }
-    ZThreadLocalData::clear_invisible_root(_thread);
+    // Safepoint
+    ThreadBlockInVM tbivm(JavaThread::cast(_thread));
   }
+
+  ZThreadLocalData::clear_invisible_root(_thread);
 
   // Signal to the ZIterator that this is no longer an invisible root
   oopDesc::release_set_mark(mem, markWord::prototype());
