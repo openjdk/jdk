@@ -43,6 +43,7 @@ void LIR_Assembler::patching_epilog(PatchingStub* patch, LIR_PatchCode patch_cod
   while ((intx) _masm->pc() - (intx) patch->pc_start() < NativeGeneralJump::instruction_size) {
     _masm->nop();
   }
+  info->set_force_reexecute();
   patch->install(_masm, patch_code, obj, info);
   append_code_stub(patch);
 
