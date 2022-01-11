@@ -96,7 +96,7 @@ public class RandomWrapper extends Random implements RandomGenerator {
     }
 
     @Override
-    public synchronized double nextGaussian() {
+    public double nextGaussian() {
         return this.randomToWrap.nextGaussian();
     }
 
