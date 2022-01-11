@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -899,15 +899,27 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
     return false;
   }
 
+  bool should_unroll = true;
+
   // When unroll count is greater than LoopUnrollMin, don't unroll if:
   //   the residual iterations are more than 10% of the trip count
   //   and rounds of "unroll,optimize" are not making significant progress
   //   Progress defined as current size less than 20% larger than previous size.
   if (UseSuperWord && cl->node_count_before_unroll() > 0 &&
       future_unroll_cnt > LoopUnrollMin &&
-      (future_unroll_cnt - 1) * (100.0 / LoopPercentProfileLimit) > cl->profile_trip_cnt() &&
+      is_residual_iters_large(future_unroll_cnt, cl) &&
       1.2 * cl->node_count_before_unroll() < (double)_body.size()) {
-    return false;
+    if ((cl->slp_max_unroll() == 0) && !is_residual_iters_large(cl->unrolled_count(), cl)) {
+      // cl->slp_max_unroll() = 0 means that the previous slp analysis never passed.
+      // slp analysis may fail due to the loop IR is too complicated especially during the early stage
+      // of loop unrolling analysis. But after several rounds of loop unrolling and other optimizations,
+      // it's possible that the loop IR becomes simple enough to pass the slp analysis.
+      // So we don't return immediately in hoping that the next slp analysis can succeed.
+      should_unroll = false;
+      future_unroll_cnt = cl->unrolled_count();
+    } else {
+      return false;
+    }
   }
 
   Node *init_n = cl->init_trip();
@@ -985,7 +997,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
     }
 
     // Only attempt slp analysis when user controls do not prohibit it
-    if (LoopMaxUnroll > _local_loop_unroll_factor) {
+    if (!cl->range_checks_present() && (LoopMaxUnroll > _local_loop_unroll_factor)) {
       // Once policy_slp_analysis succeeds, mark the loop with the
       // maximal unroll factor so that we minimize analysis passes
       if (future_unroll_cnt >= _local_loop_unroll_factor) {
@@ -1003,7 +1015,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
 
   if (cl->has_passed_slp()) {
     if (slp_max_unroll_factor >= future_unroll_cnt) {
-      return phase->may_require_nodes(estimate);
+      return should_unroll && phase->may_require_nodes(estimate);
     }
     return false; // Loop too big.
   }
@@ -1011,7 +1023,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
   // Check for being too big
   if (body_size > (uint)_local_loop_unroll_limit) {
     if ((cl->is_subword_loop() || xors_in_loop >= 4) && body_size < 4u * LoopUnrollLimit) {
-      return phase->may_require_nodes(estimate);
+      return should_unroll && phase->may_require_nodes(estimate);
     }
     return false; // Loop too big.
   }
@@ -1024,7 +1036,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
   }
 
   // Unroll once!  (Each trip will soon do double iterations)
-  return phase->may_require_nodes(estimate);
+  return should_unroll && phase->may_require_nodes(estimate);
 }
 
 void IdealLoopTree::policy_unroll_slp_analysis(CountedLoopNode *cl, PhaseIdealLoop *phase, int future_unroll_cnt) {
@@ -3528,6 +3540,8 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
     if (should_rce) {
       if (phase->do_range_check(this, old_new) != 0) {
         cl->mark_has_range_checks();
+      } else {
+        cl->clear_has_range_checks();
       }
     } else if (PostLoopMultiversioning) {
       phase->has_range_checks(this);
