@@ -297,7 +297,7 @@ void MacroAssembler::fast_log(FloatRegister vtmp0, FloatRegister vtmp1,
   bind(MAIN);
     fmovs(tmp3, vtmp5);                        // int intB0 = AS_INT_BITS(B);
     mov(tmp5, 0x3FE0);
-    uint64_t mask = 0xffffe00000000000ULL;
+    uint64_t mask = UCONST64(0xffffe00000000000);
     mov(rscratch1, mask);
     andr(tmp2, tmp2, tmp1, LSR, 48);           // hiWord & 0x7FF0
     sub(tmp2, tmp2, tmp5);                     // tmp2 = hiWord & 0x7FF0 - 0x3FE0
