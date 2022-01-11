@@ -195,7 +195,6 @@ void ZBarrier::remember(volatile zpointer* p) {
 }
 
 void ZBarrier::mark_and_remember(volatile zpointer* p, zaddress addr) {
-  // FIXME: Maybe rely on earlier null-filtering
   if (!is_null(addr)) {
     mark<ZMark::DontResurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong>(addr);
   }
