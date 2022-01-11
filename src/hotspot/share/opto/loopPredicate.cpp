@@ -1060,13 +1060,12 @@ public:
               LoopNode* inner_head = inner_loop->_head->as_Loop();
               assert(_phase->get_loop(n) == loop, "only 1 inner loop");
               if (inner_head->is_OuterStripMinedLoop()) {
-                inner_head->verify_strip_mined(1);
                 if (n->in(0) == inner_head->in(LoopNode::LoopBackControl)->in(0)) {
                   n = n->in(0)->in(0)->in(0);
                 }
                 inner_loop = inner_loop->_child;
+                assert(inner_loop != NULL, "inner strip mined loop expected");
                 inner_head = inner_loop->_head->as_Loop();
-                inner_head->verify_strip_mined(1);
               }
               float loop_exit_cnt = 0.0f;
               for (uint i = 0; i < inner_loop->_body.size(); i++) {

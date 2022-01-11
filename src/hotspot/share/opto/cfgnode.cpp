@@ -1108,7 +1108,7 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
         const TypeInteger* hi = phase->type(limit)->isa_integer(l->bt());
         const TypeInteger* stride_t = phase->type(stride)->isa_integer(l->bt());
         if (lo != NULL && hi != NULL && stride_t != NULL) { // Dying loops might have TOP here
-          assert(stride_t->hi_as_long() >= stride_t->lo_as_long(), "bad stride type");
+          assert(stride_t->hi_as_long() == stride_t->lo_as_long(), "bad stride type");
           BoolTest::mask bt = l->loopexit()->test_trip();
           // If the loop exit condition is "not equal", the condition
           // would not trigger if init > limit (if stride > 0) or if
@@ -1117,9 +1117,35 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
           if (bt != BoolTest::ne) {
             if (stride_t->hi_as_long() < 0) {          // Down-counter loop
               swap(lo, hi);
-              return TypeInteger::make(MIN2(lo->lo_as_long(), hi->lo_as_long()), hi->hi_as_long(), 3, l->bt())->filter_speculative(_type);
+              jlong first = lo->lo_as_long();
+              if (first < max_signed_integer(l->bt())) {
+                first += 1; // lo is after decrement
+                // When bounds are constant and ABS(stride) greater than 1, exact bounds for the phi can be computed
+                if (lo->is_con() && hi->is_con() && hi->lo_as_long() > lo->hi_as_long() && stride_t->lo_as_long() != -1) {
+                  julong uhi = static_cast<julong>(hi->lo_as_long());
+                  julong ulo = static_cast<julong>(lo->hi_as_long());
+                  julong diff = (uhi - ulo - 1) / (-stride_t->lo_as_long()) * (-stride_t->lo_as_long());
+                  julong ufirst = hi->lo_as_long() - diff;
+                  first = reinterpret_cast<jlong &>(ufirst);
+                  assert(first >= lo->lo_as_long() + 1, "should end up with narrower range");
+                }
+              }
+              return TypeInteger::make(MIN2(first, hi->lo_as_long()), hi->hi_as_long(), 3, l->bt())->filter_speculative(_type);
             } else if (stride_t->lo_as_long() >= 0) {
-              return TypeInteger::make(lo->lo_as_long(), MAX2(lo->hi_as_long(), hi->hi_as_long()), 3, l->bt())->filter_speculative(_type);
+              jlong last = hi->hi_as_long();
+              if (last > min_signed_integer(l->bt())) {
+                last -= 1; // hi is after increment
+                // When bounds are constant and ABS(stride) greater than 1, exact bounds for the phi can be computed
+                if (lo->is_con() && hi->is_con() && hi->lo_as_long() > lo->hi_as_long() && stride_t->lo_as_long() != 1) {
+                  julong uhi = static_cast<julong>(hi->lo_as_long());
+                  julong ulo = static_cast<julong>(lo->hi_as_long());
+                  julong diff = (uhi - ulo - 1) / stride_t->lo_as_long() * stride_t->lo_as_long();
+                  julong ulast = lo->hi_as_long() + diff;
+                  last = reinterpret_cast<jlong &>(ulast);
+                  assert(last <= hi->hi_as_long() - 1, "should end up with narrower range");
+                }
+              }
+              return TypeInteger::make(lo->lo_as_long(), MAX2(lo->hi_as_long(), last), 3, l->bt())->filter_speculative(_type);
             }
           }
         }
