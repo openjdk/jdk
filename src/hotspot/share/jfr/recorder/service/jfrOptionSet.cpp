@@ -54,7 +54,6 @@ static const ObsoleteOption OBSOLETE_OPTIONS[] = {
   {"dumponexit",           "Use -XX:StartFlightRecording:dumponexit=... instead."},
   {"dumponexitpath",       "Use -XX:StartFlightRecording:filename=... instead."},
   {"loglevel",             "Use -Xlog:jfr=... instead."}
-
 };
 
 jlong JfrOptionSet::max_chunk_size() {
