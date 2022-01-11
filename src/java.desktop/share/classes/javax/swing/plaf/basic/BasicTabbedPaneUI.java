@@ -1877,7 +1877,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
     }
 
     /**
-     * Assures the rectangles are created.
+     * Assure the rectangles are created.
      * @param tabCount the tab count
      */
     protected void assureRectsCreated(int tabCount) {
