@@ -496,10 +496,10 @@ public:
   inline void mov(Register dst, uint32_t imm32)           { mov_immediate64(dst, imm32); }
 #ifdef __APPLE__
   // macosx wants all the overloads
-  inline void mov(Register dst, intptr_t imm32)           { mov_immediate64(dst, imm32); }
+  inline void mov(Register dst, intptr_t imm64)           { mov_immediate64(dst, imm64); }
 #endif
-  inline void mov(Register dst, int64_t imm32)           { mov_immediate64(dst, imm32); }
-  inline void mov(Register dst, uint64_t imm32)           { mov_immediate64(dst, imm32); }
+  inline void mov(Register dst, int64_t imm64)            { mov_immediate64(dst, imm64); }
+  inline void mov(Register dst, uint64_t imm64)           { mov_immediate64(dst, imm64); }
 
   inline void movw(Register dst, uint32_t imm32)          { mov_immediate32(dst, imm32); }
 
