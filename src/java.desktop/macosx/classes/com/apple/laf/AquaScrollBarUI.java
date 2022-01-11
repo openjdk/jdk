@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,16 +190,16 @@ public class AquaScrollBarUI extends ScrollBarUI {
 
     protected Rectangle getTrackBounds() {
         Insets insets = fScrollBar.getInsets();
-        return new Rectangle(insets.left, 0,
+        return new Rectangle(insets.left, insets.top,
                 fScrollBar.getWidth() - (insets.left + insets.right),
-                fScrollBar.getHeight());
+                fScrollBar.getHeight() - (insets.top + insets.bottom));
     }
 
     protected Rectangle getDragBounds() {
         Insets insets = fScrollBar.getInsets();
-        return new Rectangle(insets.left, 0,
+        return new Rectangle(insets.left, insets.top,
             fScrollBar.getWidth() - (insets.left + insets.right),
-            fScrollBar.getHeight());
+            fScrollBar.getHeight() - (insets.top + insets.bottom));
     }
 
     protected void startTimer(final boolean initial) {
@@ -237,7 +237,8 @@ public class AquaScrollBarUI extends ScrollBarUI {
         syncState(fScrollBar);
         Insets insets = fScrollBar.getInsets();
         return JRSUIUtils.HitDetection.getHitForPoint(painter.getControl(), 0, 0,
-                fScrollBar.getWidth() - (insets.left + insets.right), fScrollBar.getHeight(), x, y);
+                fScrollBar.getWidth() - (insets.left + insets.right),
+                fScrollBar.getHeight() - (insets.top + insets.bottom), x, y);
     }
 
     protected class PropertyChangeHandler implements PropertyChangeListener {
