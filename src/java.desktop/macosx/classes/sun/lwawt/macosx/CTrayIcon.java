@@ -276,14 +276,6 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
         mouseEvent.setSource(target);
         postEvent(mouseEvent);
 
-        // fire ACTION event
-        if (jeventType == MouseEvent.MOUSE_PRESSED && isPopupTrigger) {
-            final String cmd = target.getActionCommand();
-            final ActionEvent event = new ActionEvent(target,
-                    ActionEvent.ACTION_PERFORMED, cmd);
-            postEvent(event);
-        }
-
         // synthesize CLICKED event
         if (jeventType == MouseEvent.MOUSE_RELEASED) {
             if ((mouseClickButtons & eventButtonMask) != 0) {

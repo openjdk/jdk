@@ -49,7 +49,7 @@ public class RightClickWhenBalloonDisplayed {
 
     TrayIcon icon;
     ExtendedRobot robot;
-    int actionPerformedCount = -1;
+    int actionPerformedCount = 0;
 
     public static void main(String[] args) throws Exception {
         if (!SystemTray.isSupported()) {
@@ -103,20 +103,14 @@ public class RightClickWhenBalloonDisplayed {
         if (iconPosition == null)
             throw new RuntimeException("Unable to find the icon location!");
 
-        // Do left click to start displaying the message
+        // Do right click
         robot.delay(50);
         robot.mouseMove(iconPosition.x, iconPosition.y);
-        robot.waitForIdle();
-        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        robot.delay(50);
-        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        robot.delay(1000);
-
-        // Do right click
         robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
         robot.delay(50);
         robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
-        robot.delay(50);
+        robot.delay(1000);
+        robot.waitForIdle();
 
         if (actionPerformedCount > 0)
             throw new RuntimeException("FAIL: ActionEvent triggered when " +
