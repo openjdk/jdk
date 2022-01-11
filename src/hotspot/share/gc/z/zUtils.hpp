@@ -43,6 +43,9 @@ public:
   static size_t object_size(zaddress addr);
   static void object_copy_disjoint(zaddress from, zaddress to, size_t size);
   static void object_copy_conjoint(zaddress from, zaddress to, size_t size);
+
+  // Memory
+  static void fill(uintptr_t* addr, size_t count, uintptr_t value);
 };
 
 #endif // SHARE_GC_Z_ZUTILS_HPP

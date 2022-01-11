@@ -25,6 +25,8 @@
 #include "gc/z/zUtils.hpp"
 #include "runtime/nonJavaThread.hpp"
 
+#include <algorithm>
+
 const char* ZUtils::thread_name() {
   const Thread* const thread = Thread::current();
   if (thread->is_Named_thread()) {
@@ -33,4 +35,8 @@ const char* ZUtils::thread_name() {
   }
 
   return thread->type_name();
+}
+
+void ZUtils::fill(uintptr_t* addr, size_t count, uintptr_t value) {
+  std::fill_n(addr, count, value);
 }

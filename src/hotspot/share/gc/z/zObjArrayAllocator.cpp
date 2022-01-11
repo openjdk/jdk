@@ -27,8 +27,7 @@
 #include "gc/z/zUtils.inline.hpp"
 #include "oops/arrayKlass.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-
-#include <algorithm>
+#include "utilities/debug.hpp"
 
 ZObjArrayAllocator::ZObjArrayAllocator(Klass* klass, size_t word_size, int length, bool do_zero, Thread* thread) :
     ObjArrayAllocator(klass, word_size, length, do_zero, thread) {}
@@ -82,7 +81,7 @@ oop ZObjArrayAllocator::initialize(HeapWord* mem) const {
     // (ZPointerRememberedMask) in the remembered bits, similar to how
     // forgotten old oops also have 11, for the very same reason.
     const uintptr_t fill_value = is_reference_type(element_type) ? (ZPointerStoreGoodMask | ZPointerRememberedMask) : 0;
-    std::fill_n(start, segment, fill_value);
+    ZUtils::fill(start, segment, fill_value);
 
     // Keep the array alive across safepoints through an invisible
     // root. Invisible roots are not visited by the heap iterator
