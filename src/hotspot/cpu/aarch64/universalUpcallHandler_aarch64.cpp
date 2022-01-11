@@ -71,7 +71,7 @@ address ProgrammableUpcallHandler::generate_upcall_stub(jobject rec, jobject jab
 
   // Capture prev stack pointer (stack arguments base)
   __ add(rscratch1, rfp, 16);   // Skip saved FP and LR
-  __ str(rscratch1, Address(sp, layout.stack_args));
+  __ str(rscratch1, Address(sp, (int)layout.stack_args));  // x86 casts to int also
 
   // Call upcall helper
   __ ldr(c_rarg0, rec_adr);

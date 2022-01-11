@@ -404,7 +404,7 @@ class Address {
     : _mode(no_mode) { }
   Address(Register r)
     : _base(r), _index(noreg), _offset(0), _mode(base_plus_offset), _target(0) { }
-  Address(Register r, int o)
+  Address(Register r, int64_t o)
     : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
   Address(Register r, ByteSize disp)
     : Address(r, in_bytes(disp)) { }
