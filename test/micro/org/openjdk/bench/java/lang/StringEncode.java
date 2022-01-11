@@ -94,7 +94,7 @@ public class StringEncode {
     }
 
     @Benchmark
-    public byte[] encodeAsciiCharsetName(Blackhole bh) throws Exception {
+    public byte[] encodeAsciiCharsetName() throws Exception {
         return asciiString.getBytes(charset);
     }
 
@@ -110,17 +110,17 @@ public class StringEncode {
     }
 
     @Benchmark
-    public byte[] encodeUTF16LongEnd(Blackhole bh) throws Exception {
+    public byte[] encodeUTF16LongEnd() throws Exception {
         return longUtf16String.getBytes(charset);
     }
 
     @Benchmark
-    public byte[] encodeUTF16LongStart(Blackhole bh) throws Exception {
+    public byte[] encodeUTF16LongStart() throws Exception {
         return longUtf16StartString.getBytes(charset);
     }
 
     @Benchmark
-    public byte[] encodeUTF16(Blackhole bh) throws Exception {
+    public byte[] encodeUTF16() throws Exception {
         return utf16String.getBytes(charset);
     }
 }
