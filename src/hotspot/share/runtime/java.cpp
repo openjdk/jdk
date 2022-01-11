@@ -57,7 +57,6 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/handles.inline.hpp"
@@ -505,11 +504,9 @@ void before_exit(JavaThread* thread) {
 
 #if INCLUDE_CDS
   if (DynamicArchive::should_dump_at_vm_exit()) {
-    const char* archive_name =
-       (ArchiveClassesAtExit != nullptr) ? ArchiveClassesAtExit : Arguments::GetSharedDynamicArchivePath();
-    assert(archive_name != NULL, "Must be already set");
+    assert(ArchiveClassesAtExit != NULL, "Must be already set");
     ExceptionMark em(thread);
-    DynamicArchive::dump(archive_name, thread);
+    DynamicArchive::dump(ArchiveClassesAtExit, thread);
     if (thread->has_pending_exception()) {
       ResourceMark rm(thread);
       oop pending_exception = thread->pending_exception();

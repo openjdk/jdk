@@ -949,21 +949,16 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
     if (dynamic_mapped) {
       FileMapInfo::set_shared_path_table(dynamic_mapinfo);
       // turn AutoCreateSharedArchive off if successfully mapped
-      if (AutoCreateSharedArchive) {
-        AutoCreateSharedArchive = false;
-      }
+      AutoCreateSharedArchive = false;
     } else {
       FileMapInfo::set_shared_path_table(static_mapinfo);
     }
   } else {
     set_shared_metaspace_range(NULL, NULL, NULL);
     UseSharedSpaces = false;
-    if (AutoCreateSharedArchive) {
-      AutoCreateSharedArchive = false;
-    }
-    if (DynamicDumpSharedSpaces) {
-      DynamicDumpSharedSpaces = false;
-    }
+    // The base archive cannot be mapped. We cannot dump the dynamic shared archive.
+    AutoCreateSharedArchive = false;
+    DynamicDumpSharedSpaces = false;
     FileMapInfo::fail_continue("Unable to map shared spaces");
     if (PrintSharedArchiveAndExit) {
       vm_exit_during_initialization("Unable to use shared archive.");

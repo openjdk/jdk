@@ -1239,7 +1239,7 @@ bool FileMapInfo::get_base_archive_name_from_header(const char* archive_name,
   if (header->_magic != CDS_DYNAMIC_ARCHIVE_MAGIC) {
     assert(header->_magic == CDS_ARCHIVE_MAGIC, "must be");
     if (AutoCreateSharedArchive) {
-      warning("AutoCreateSharedArchive is ignored because %s is a static archive", archive_name);
+     log_warning(cds)("AutoCreateSharedArchive is ignored because %s is a static archive", archive_name);
     }
     return true;
   }
