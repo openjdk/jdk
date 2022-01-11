@@ -471,7 +471,7 @@ private:
   size_t             _other_compacted;
 
   size_t object_alignment() const {
-    return 1 << _forwarding->object_alignment_shift();
+    return (size_t)1 << _forwarding->object_alignment_shift();
   }
 
   void increase_other_forwarded(size_t unaligned_object_size) {
