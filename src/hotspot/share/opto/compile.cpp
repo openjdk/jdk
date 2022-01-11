@@ -3774,7 +3774,7 @@ bool Compile::final_graph_reshaping() {
             }
           } else if (call->entry_point() == OptoRuntime::new_array_Java() ||
                      call->entry_point() == OptoRuntime::new_array_nozero_Java()) {
-            // Check for negative array length. In such case, the optimizer has
+            // Check for illegal array length. In such case, the optimizer has
             // detected that the allocation attempt will always result in an
             // exception. There is no fall-through projection of this CatchNode .
             assert(call->is_CallStaticJava(), "static call expected");
@@ -3800,7 +3800,7 @@ bool Compile::final_graph_reshaping() {
           call->entry_point() == OptoRuntime::new_array_nozero_Java()) {
         assert(call->is_CallStaticJava(), "static call expected");
         assert(call->req() == call->jvms()->endoff() + 1, "missing extra input");
-        call->del_req(call->req()-1);
+        call->del_req(call->req()-1); // valid length test useless now
       }
     }
     // Check that I actually visited all kids.  Unreached kids
