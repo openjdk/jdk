@@ -1285,11 +1285,11 @@ public final class String
         int sl = val.length >> 1;
         byte[] dst = new byte[sl * 3];
         while (sp < sl) {
+            // ascii fast loop;
             char c = StringUTF16.getChar(val, sp);
             if (c >= '\u0080') {
                 break;
             }
-            // ascii fast loop;
             dst[dp++] = (byte)c;
             sp++;
         }
