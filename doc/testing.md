@@ -421,6 +421,10 @@ modules. If multiple modules are specified, they should be separated by space
 
 Retry failed tests up to a set number of times. Defaults to 0.
 
+#### REPEAT_COUNT
+
+Repeat the tests for a set number of times. Defaults to 0.
+
 ### Gtest keywords
 
 #### REPEAT
