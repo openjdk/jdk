@@ -240,7 +240,7 @@ final class DCmdStart extends AbstractDCmd {
             paths.add(JFC.createSafePath(setting));
         }
         try {
-            JFCModel model = new JFCModel(paths);
+            JFCModel model = new JFCModel(paths, l -> logWarning(l));
             Set<String> jfcOptions = new HashSet<>();
             for (XmlInput input : model.getInputs()) {
                 jfcOptions.add(input.getName());
