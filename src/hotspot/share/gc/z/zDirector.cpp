@@ -581,9 +581,9 @@ static ZWorkerResizeInfo wanted_young_nworkers() {
   if (!stats._is_active) {
     // Collection is not running
     return {
-      _is_active: stats._is_active,
-      _current_nworkers: stats._nworkers_current,
-      _desired_nworkers: 0
+      stats._is_active,        // _is_active
+      stats._nworkers_current, // _current_nworkers
+      0                        // _desired_nworkers
     };
   }
 
@@ -591,16 +591,16 @@ static ZWorkerResizeInfo wanted_young_nworkers() {
   if (request.cause() == GCCause::_no_gc) {
     // No urgency
     return {
-      _is_active: stats._is_active,
-      _current_nworkers: stats._nworkers_current,
-      _desired_nworkers: 0
+      stats._is_active,        // _is_active
+      stats._nworkers_current, // _current_nworkers
+      0                        // _desired_nworkers
     };
   }
 
   return {
-    _is_active: stats._is_active,
-    _current_nworkers: stats._nworkers_current,
-    _desired_nworkers: request.young_nworkers()
+    stats._is_active,        // _is_active
+    stats._nworkers_current, // _current_nworkers
+    request.young_nworkers() // _desired_nworkers
   };
 }
 
@@ -611,25 +611,25 @@ static ZWorkerResizeInfo wanted_old_nworkers() {
   if (!stats._is_active) {
     // Collection is not running
     return {
-      _is_active: stats._is_active,
-      _current_nworkers: stats._nworkers_current,
-      _desired_nworkers: 0
+       stats._is_active,        // _is_active
+       stats._nworkers_current, // _current_nworkers
+       0                        // _desired_nworkers
     };
   }
 
   if (!rule_major_allocation_rate()) {
     // No urgency
     return {
-      _is_active: stats._is_active,
-      _current_nworkers: stats._nworkers_current,
-      _desired_nworkers: 0
+      stats._is_active,        // _is_active
+      stats._nworkers_current, // _current_nworkers
+      0                        // _desired_nworkers
     };
   }
 
   return {
-    _is_active: stats._is_active,
-    _current_nworkers: stats._nworkers_current,
-    _desired_nworkers: calculate_old_workers()
+    stats._is_active,        // _is_active
+    stats._nworkers_current, // _current_nworkers
+    calculate_old_workers()  // _desired_nworkers
   };
 }
 
@@ -691,9 +691,9 @@ static uint initial_young_workers() {
 
   // Force old generation to yield threads if it has too many
   const ZWorkerResizeInfo young_info = {
-    _is_active: true,
-    _current_nworkers: wanted_young_nworkers,
-    _desired_nworkers: wanted_young_nworkers
+    true,                  // _is_active
+    wanted_young_nworkers, // _current_nworkers
+    wanted_young_nworkers  // _desired_nworkers
   };
 
   adjust_gc(young_info, wanted_old_nworkers());

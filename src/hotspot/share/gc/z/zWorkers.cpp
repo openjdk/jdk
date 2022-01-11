@@ -140,10 +140,10 @@ ZWorkerResizeStats ZWorkers::resize_stats(ZStatCycle* stat_cycle) {
     // If the workers are not active, it isn't safe to read stats
     // from the stat_cycle, so return early.
     return {
-      _is_active: false,
-      _serial_gc_time_passed: 0.0,
-      _parallel_gc_time_passed: 0.0,
-      _nworkers_current: 0
+      false, // _is_active
+      0.0,   // _serial_gc_time_passed
+      0.0,   // _parallel_gc_time_passed
+      0      // _nworkers_current
     };
   }
 
@@ -153,10 +153,10 @@ ZWorkerResizeStats ZWorkers::resize_stats(ZStatCycle* stat_cycle) {
   const uint active_nworkers = active_workers();
 
   return {
-    _is_active: true,
-    _serial_gc_time_passed: serial_gc_time_passed,
-    _parallel_gc_time_passed: parallel_gc_time_passed,
-    _nworkers_current: active_nworkers
+    true,                    // _is_active
+    serial_gc_time_passed,   // _serial_gc_time_passed
+    parallel_gc_time_passed, // _parallel_gc_time_passed
+    active_nworkers          // _nworkers_current
   };
 }
 
