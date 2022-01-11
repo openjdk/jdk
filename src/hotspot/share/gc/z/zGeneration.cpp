@@ -101,8 +101,8 @@ static const ZStatSubPhase ZSubPhaseConcurrentRemapRootsUncoloredOld("Concurrent
 
 static const ZStatSampler         ZSamplerJavaThreads("System", "Java Threads", ZStatUnitThreads);
 
-ZYoungGeneration* ZGeneration::_young;
-ZOldGeneration*   ZGeneration::_old;
+ZGenerationYoung* ZGeneration::_young;
+ZGenerationOld*   ZGeneration::_old;
 
 ZGeneration::ZGeneration(ZGenerationId id, ZPageTable* page_table, ZPageAllocator* page_allocator) :
     _id(id),
@@ -445,18 +445,16 @@ public:
 };
 
 ZYoungTypeSetter::ZYoungTypeSetter(ZYoungType type) {
-  ZYoungGeneration* const young_generation = ZGeneration::young();
-  assert(young_generation->_active_type == ZYoungType::none, "Invalid type");
-  young_generation->_active_type = type;
+  assert(ZGeneration::young()->_active_type == ZYoungType::none, "Invalid type");
+  ZGeneration::young()->_active_type = type;
 }
 
 ZYoungTypeSetter::~ZYoungTypeSetter() {
-  ZYoungGeneration* const young_generation = ZGeneration::young();
-  assert(young_generation->_active_type != ZYoungType::none, "Invalid type");
-  young_generation->_active_type = ZYoungType::none;
+  assert(ZGeneration::young()->_active_type != ZYoungType::none, "Invalid type");
+  ZGeneration::young()->_active_type = ZYoungType::none;
 }
 
-ZYoungGeneration::ZYoungGeneration(ZPageTable* page_table, ZPageAllocator* page_allocator) :
+ZGenerationYoung::ZGenerationYoung(ZPageTable* page_table, ZPageAllocator* page_allocator) :
     ZGeneration(ZGenerationId::young, page_table, page_allocator),
     _active_type(ZYoungType::none),
     _remembered(page_table, page_allocator) {
@@ -482,7 +480,7 @@ public:
   }
 };
 
-void ZYoungGeneration::collect(ZYoungType type, ConcurrentGCTimer* timer) {
+void ZGenerationYoung::collect(ZYoungType type, ConcurrentGCTimer* timer) {
   ZDriverScopeYoung scope(type, timer);
 
   // Phase 1: Pause Mark Start
@@ -569,7 +567,7 @@ public:
 };
 
 
-void ZYoungGeneration::pause_mark_start() {
+void ZGenerationYoung::pause_mark_start() {
   if (type() == ZYoungType::major_roots) {
     VM_ZMarkStartYoungAndOld().pause();
   } else {
@@ -577,7 +575,7 @@ void ZYoungGeneration::pause_mark_start() {
   }
 }
 
-void ZYoungGeneration::concurrent_mark() {
+void ZGenerationYoung::concurrent_mark() {
   ZStatTimerYoung timer(ZPhaseConcurrentMarkYoung);
   mark_roots();
   mark_follow();
@@ -597,26 +595,26 @@ public:
 };
 
 
-bool ZYoungGeneration::pause_mark_end() {
+bool ZGenerationYoung::pause_mark_end() {
   return VM_ZMarkEndYoung().pause();
 }
 
-void ZYoungGeneration::concurrent_mark_continue() {
+void ZGenerationYoung::concurrent_mark_continue() {
   ZStatTimerYoung timer(ZPhaseConcurrentMarkContinueYoung);
   mark_follow();
 }
 
-void ZYoungGeneration::concurrent_mark_free() {
+void ZGenerationYoung::concurrent_mark_free() {
   ZStatTimerYoung timer(ZPhaseConcurrentMarkFreeYoung);
   mark_free();
 }
 
-void ZYoungGeneration::concurrent_reset_relocation_set() {
+void ZGenerationYoung::concurrent_reset_relocation_set() {
   ZStatTimerYoung timer(ZPhaseConcurrentResetRelocationSetYoung);
   reset_relocation_set();
 }
 
-void ZYoungGeneration::concurrent_select_relocation_set() {
+void ZGenerationYoung::concurrent_select_relocation_set() {
   ZStatTimerYoung timer(ZPhaseConcurrentSelectRelocationSetYoung);
   const bool promote_all = type() == ZYoungType::major_preclean;
   select_relocation_set(promote_all);
@@ -640,16 +638,16 @@ public:
   }
 };
 
-void ZYoungGeneration::pause_relocate_start() {
+void ZGenerationYoung::pause_relocate_start() {
   VM_ZRelocateStartYoung().pause();
 }
 
-void ZYoungGeneration::concurrent_relocate() {
+void ZGenerationYoung::concurrent_relocate() {
   ZStatTimerYoung timer(ZPhaseConcurrentRelocatedYoung);
   relocate();
 }
 
-void ZYoungGeneration::mark_start() {
+void ZGenerationYoung::mark_start() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
   // Flip address view
@@ -678,17 +676,17 @@ void ZYoungGeneration::mark_start() {
   stat_heap()->at_mark_start(_page_allocator->stats(this));
 }
 
-void ZYoungGeneration::mark_roots() {
+void ZGenerationYoung::mark_roots() {
   ZStatTimerYoung timer(ZSubPhaseConcurrentMarkRootsYoung);
   _mark.mark_roots();
 }
 
-void ZYoungGeneration::mark_follow() {
+void ZGenerationYoung::mark_follow() {
   ZStatTimerYoung timer(ZSubPhaseConcurrentMarkFollowYoung);
   _mark.mark_follow();
 }
 
-bool ZYoungGeneration::mark_end() {
+bool ZGenerationYoung::mark_end() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
   // End marking
@@ -717,7 +715,7 @@ bool ZYoungGeneration::mark_end() {
   return true;
 }
 
-void ZYoungGeneration::relocate_start() {
+void ZGenerationYoung::relocate_start() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
   // Flip address view
@@ -735,7 +733,7 @@ void ZYoungGeneration::relocate_start() {
   _relocate.start();
 }
 
-void ZYoungGeneration::relocate() {
+void ZGenerationYoung::relocate() {
   // Relocate relocation set
   _relocate.relocate(&_relocation_set);
 
@@ -743,7 +741,7 @@ void ZYoungGeneration::relocate() {
   stat_heap()->at_relocate_end(_page_allocator->stats(this));
 }
 
-void ZYoungGeneration::flip_promote(ZPage* from_page, ZPage* to_page) {
+void ZGenerationYoung::flip_promote(ZPage* from_page, ZPage* to_page) {
   _page_table->replace(from_page, to_page);
 
   // Update statistics
@@ -752,31 +750,31 @@ void ZYoungGeneration::flip_promote(ZPage* from_page, ZPage* to_page) {
   increase_promoted(from_page->live_bytes());
 }
 
-void ZYoungGeneration::in_place_relocate_promote(ZPage* from_page, ZPage* to_page) {
+void ZGenerationYoung::in_place_relocate_promote(ZPage* from_page, ZPage* to_page) {
   _page_table->replace(from_page, to_page);
 
   // Update statistics
   _page_allocator->promote_used(from_page->size());
 }
 
-void ZYoungGeneration::register_flip_promoted(const ZArray<ZPage*>& pages) {
+void ZGenerationYoung::register_flip_promoted(const ZArray<ZPage*>& pages) {
   _relocation_set.register_flip_promoted(pages);
 }
 
-void ZYoungGeneration::register_in_place_relocate_promoted(ZPage* page) {
+void ZGenerationYoung::register_in_place_relocate_promoted(ZPage* page) {
   _relocation_set.register_in_place_relocate_promoted(page);
 }
 
-void ZYoungGeneration::scan_remembered_sets() {
+void ZGenerationYoung::scan_remembered_sets() {
   ZStatTimerYoung timer(ZSubPhaseConcurrentMarkRememberedSetYoung);
   _remembered.scan();
 }
 
-void ZYoungGeneration::flip_remembered_sets() {
+void ZGenerationYoung::flip_remembered_sets() {
   _remembered.flip();
 }
 
-ZOldGeneration::ZOldGeneration(ZPageTable* page_table, ZPageAllocator* page_allocator) :
+ZGenerationOld::ZGenerationOld(ZPageTable* page_table, ZPageAllocator* page_allocator) :
   ZGeneration(ZGenerationId::old, page_table, page_allocator),
   _reference_processor(&_workers),
   _weak_roots_processor(&_workers),
@@ -804,7 +802,7 @@ public:
   }
 };
 
-void ZOldGeneration::collect(ConcurrentGCTimer* timer) {
+void ZGenerationOld::collect(ConcurrentGCTimer* timer) {
   ZDriverScopeOld scope(timer);
 
   // Phase 1: Concurrent Mark
@@ -863,7 +861,7 @@ void ZOldGeneration::collect(ConcurrentGCTimer* timer) {
   concurrent_relocate();
 }
 
-void ZOldGeneration::concurrent_mark() {
+void ZGenerationOld::concurrent_mark() {
   ZStatTimerOld timer(ZPhaseConcurrentMarkOld);
   ZBreakpoint::at_after_marking_started();
   mark_roots();
@@ -884,28 +882,28 @@ public:
   }
 };
 
-bool ZOldGeneration::pause_mark_end() {
+bool ZGenerationOld::pause_mark_end() {
   ZDriverLocker locker;
   return VM_ZMarkEndOld().pause();
 }
 
-void ZOldGeneration::concurrent_mark_continue() {
+void ZGenerationOld::concurrent_mark_continue() {
   ZStatTimerOld timer(ZPhaseConcurrentMarkContinueOld);
   mark_follow();
 }
 
-void ZOldGeneration::concurrent_mark_free() {
+void ZGenerationOld::concurrent_mark_free() {
   ZStatTimerOld timer(ZPhaseConcurrentMarkFreeOld);
   mark_free();
 }
 
-void ZOldGeneration::concurrent_process_non_strong_references() {
+void ZGenerationOld::concurrent_process_non_strong_references() {
   ZStatTimerOld timer(ZPhaseConcurrentProcessNonStrongOld);
   ZBreakpoint::at_after_reference_processing_started();
   process_non_strong_references();
 }
 
-void ZOldGeneration::concurrent_reset_relocation_set() {
+void ZGenerationOld::concurrent_reset_relocation_set() {
   ZStatTimerOld timer(ZPhaseConcurrentResetRelocationSetOld);
   reset_relocation_set();
 }
@@ -929,7 +927,7 @@ public:
   }
 };
 
-void ZOldGeneration::pause_verify() {
+void ZGenerationOld::pause_verify() {
   // Note that we block out concurrent young collections when performing the
   // verification. The verification checks that store good oops in the
   // old generation have a corresponding remembered set entry, or is in
@@ -944,7 +942,7 @@ void ZOldGeneration::pause_verify() {
   }
 }
 
-void ZOldGeneration::concurrent_select_relocation_set() {
+void ZGenerationOld::concurrent_select_relocation_set() {
   ZStatTimerOld timer(ZPhaseConcurrentSelectRelocationSetOld);
   select_relocation_set(false /* promote_all */);
 }
@@ -967,21 +965,21 @@ public:
   }
 };
 
-void ZOldGeneration::pause_relocate_start() {
+void ZGenerationOld::pause_relocate_start() {
   VM_ZRelocateStartOld().pause();
 }
 
-void ZOldGeneration::concurrent_relocate() {
+void ZGenerationOld::concurrent_relocate() {
   ZStatTimerOld timer(ZPhaseConcurrentRelocatedOld);
   relocate();
 }
 
-void ZOldGeneration::concurrent_remap_roots() {
+void ZGenerationOld::concurrent_remap_roots() {
   ZStatTimerOld timer(ZPhaseConcurrentRemapRootsOld);
   remap_roots();
 }
 
-void ZOldGeneration::mark_start() {
+void ZGenerationOld::mark_start() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
   // Verification
@@ -1012,17 +1010,17 @@ void ZOldGeneration::mark_start() {
   stat_heap()->at_mark_start(_page_allocator->stats(this));
 }
 
-void ZOldGeneration::mark_roots() {
+void ZGenerationOld::mark_roots() {
   ZStatTimerOld timer(ZSubPhaseConcurrentMarkRootsOld);
   _mark.mark_roots();
 }
 
-void ZOldGeneration::mark_follow() {
+void ZGenerationOld::mark_follow() {
   ZStatTimerOld timer(ZSubPhaseConcurrentMarkFollowOld);
   _mark.mark_follow();
 }
 
-bool ZOldGeneration::mark_end() {
+bool ZGenerationOld::mark_end() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
   // Try end marking
@@ -1052,7 +1050,7 @@ bool ZOldGeneration::mark_end() {
   return true;
 }
 
-void ZOldGeneration::set_soft_reference_policy(bool clear) {
+void ZGenerationOld::set_soft_reference_policy(bool clear) {
   _reference_processor.set_soft_reference_policy(clear);
 }
 
@@ -1066,7 +1064,7 @@ public:
   }
 };
 
-void ZOldGeneration::process_non_strong_references() {
+void ZGenerationOld::process_non_strong_references() {
   // Process Soft/Weak/Final/PhantomReferences
   _reference_processor.process_references();
 
@@ -1109,7 +1107,7 @@ void ZOldGeneration::process_non_strong_references() {
   ClassLoaderDataGraph::clear_claimed_marks(ClassLoaderData::_claim_strong);
 }
 
-void ZOldGeneration::relocate_start() {
+void ZGenerationOld::relocate_start() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
   // Finish unloading stale metadata and nmethods
@@ -1130,7 +1128,7 @@ void ZOldGeneration::relocate_start() {
   _relocate.start();
 }
 
-void ZOldGeneration::relocate() {
+void ZGenerationOld::relocate() {
   // Relocate relocation set
   _relocate.relocate(&_relocation_set);
 
@@ -1233,7 +1231,7 @@ public:
   }
 };
 
-void ZOldGeneration::remap_remembered_sets() {
+void ZGenerationOld::remap_remembered_sets() {
   ZGenerationPagesIterator iter(_page_table, ZGenerationId::old, _page_allocator);
   for (ZPage* page; iter.next(&page);) {
     // Visit all object fields that potentially pointing into young generation
@@ -1241,7 +1239,7 @@ void ZOldGeneration::remap_remembered_sets() {
   }
 }
 
-void ZOldGeneration::remap_roots() {
+void ZGenerationOld::remap_roots() {
   SuspendibleThreadSetJoiner sts_joiner;
 
   // Remap remembered sets
@@ -1253,6 +1251,6 @@ void ZOldGeneration::remap_roots() {
   workers()->run(&task);
 }
 
-int ZOldGeneration::total_collections_at_end() const {
+int ZGenerationOld::total_collections_at_end() const {
   return _total_collections_at_end;
 }

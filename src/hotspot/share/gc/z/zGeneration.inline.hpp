@@ -59,11 +59,11 @@ inline bool ZGeneration::is_old() const {
   return _id == ZGenerationId::old;
 }
 
-inline ZYoungGeneration* ZGeneration::young() {
+inline ZGenerationYoung* ZGeneration::young() {
   return _young;
 }
 
-inline ZOldGeneration* ZGeneration::old() {
+inline ZGenerationOld* ZGeneration::old() {
   return _old;
 }
 
@@ -149,28 +149,28 @@ inline zaddress ZGeneration::remap_object(zaddress_unsafe addr) {
   return _relocate.forward_object(forwarding, addr);
 }
 
-inline ZYoungType ZYoungGeneration::type() const {
+inline ZYoungType ZGenerationYoung::type() const {
   assert(_active_type != ZYoungType::none, "Invalid type");
   return _active_type;
 }
 
-inline void ZYoungGeneration::remember(volatile zpointer* p) {
+inline void ZGenerationYoung::remember(volatile zpointer* p) {
   _remembered.remember(p);
 }
 
-inline void ZYoungGeneration::remember_fields(zaddress addr) {
+inline void ZGenerationYoung::remember_fields(zaddress addr) {
   _remembered.remember_fields(addr);
 }
 
-inline void ZYoungGeneration::scan_remembered_field(volatile zpointer* p) {
+inline void ZGenerationYoung::scan_remembered_field(volatile zpointer* p) {
   _remembered.scan_field(p);
 }
 
-inline bool ZYoungGeneration::is_remembered(volatile zpointer* p) const {
+inline bool ZGenerationYoung::is_remembered(volatile zpointer* p) const {
   return _remembered.is_remembered(p);
 }
 
-inline ReferenceDiscoverer* ZOldGeneration::reference_discoverer() {
+inline ReferenceDiscoverer* ZGenerationOld::reference_discoverer() {
   return &_reference_processor;
 }
 

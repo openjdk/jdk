@@ -134,8 +134,8 @@ ZDriverRequest rule_minor_allocation_rate_dynamic(double serial_gc_time_passed, 
     return ZDriverRequest(GCCause::_no_gc, ConcGCThreads, 0);
   }
 
-  ZYoungGeneration* const young_generation = ZGeneration::young();
-  ZOldGeneration* const old_generation = ZGeneration::old();
+  ZGenerationYoung* const young = ZGeneration::young();
+  ZGenerationOld* const old = ZGeneration::old();
 
   // Calculate amount of free memory available. Note that we take the
   // relocation headroom into account to avoid in-place relocation.
@@ -159,8 +159,8 @@ ZDriverRequest rule_minor_allocation_rate_dynamic(double serial_gc_time_passed, 
 
   // Calculate max serial/parallel times of a GC cycle. The times are
   // moving averages, we add ~3.3 sigma to account for the variance.
-  const double serial_gc_time = fabsd(young_generation->stat_cycle()->serial_time().davg() + (young_generation->stat_cycle()->serial_time().dsd() * one_in_1000) - serial_gc_time_passed);
-  const double parallelizable_gc_time = fabsd(young_generation->stat_cycle()->parallelizable_time().davg() + (young_generation->stat_cycle()->parallelizable_time().dsd() * one_in_1000) - parallel_gc_time_passed);
+  const double serial_gc_time = fabsd(young->stat_cycle()->serial_time().davg() + (young->stat_cycle()->serial_time().dsd() * one_in_1000) - serial_gc_time_passed);
+  const double parallelizable_gc_time = fabsd(young->stat_cycle()->parallelizable_time().davg() + (young->stat_cycle()->parallelizable_time().dsd() * one_in_1000) - parallel_gc_time_passed);
 
   // Calculate number of GC workers needed to avoid OOM.
   const double gc_workers = select_young_gc_workers(serial_gc_time, parallelizable_gc_time, alloc_rate_sd_percent, time_until_oom);
@@ -170,7 +170,7 @@ ZDriverRequest rule_minor_allocation_rate_dynamic(double serial_gc_time_passed, 
 
   // Calculate GC duration given number of GC workers needed.
   const double actual_gc_duration = serial_gc_time + (parallelizable_gc_time / actual_gc_workers);
-  const double last_gc_workers = young_generation->stat_cycle()->last_active_workers();
+  const double last_gc_workers = young->stat_cycle()->last_active_workers();
 
   // Calculate time until GC given the time until OOM and GC duration.
   // We also subtract the sample interval, so that we don't overshoot the
@@ -209,8 +209,8 @@ static bool rule_minor_allocation_rate_static() {
   // margin based on variations in the allocation rate and unforeseen
   // allocation spikes.
 
-  ZYoungGeneration* const young_generation = ZGeneration::young();
-  ZOldGeneration* const old_generation = ZGeneration::old();
+  ZGenerationYoung* const young = ZGeneration::young();
+  ZGenerationOld* const old = ZGeneration::old();
 
   // Calculate amount of free memory available. Note that we take the
   // relocation headroom into account to avoid in-place relocation.
@@ -230,8 +230,8 @@ static bool rule_minor_allocation_rate_static() {
 
   // Calculate max serial/parallel times of a GC cycle. The times are
   // moving averages, we add ~3.3 sigma to account for the variance.
-  const double serial_gc_time = young_generation->stat_cycle()->serial_time().davg() + (young_generation->stat_cycle()->serial_time().dsd() * one_in_1000);
-  const double parallelizable_gc_time = young_generation->stat_cycle()->parallelizable_time().davg() + (young_generation->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
+  const double serial_gc_time = young->stat_cycle()->serial_time().davg() + (young->stat_cycle()->serial_time().dsd() * one_in_1000);
+  const double parallelizable_gc_time = young->stat_cycle()->parallelizable_time().davg() + (young->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
 
   // Calculate GC duration given number of GC workers needed.
   const double gc_duration = serial_gc_time + (parallelizable_gc_time / ConcGCThreads);
@@ -342,23 +342,23 @@ static double calculate_extra_young_gc_time() {
 
   // Calculate amount of free memory available. Note that we take the
   // relocation headroom into account to avoid in-place relocation.
-  ZYoungGeneration* const young_generation = ZGeneration::young();
-  ZOldGeneration* const old_generation = ZGeneration::old();
+  ZGenerationYoung* const young = ZGeneration::young();
+  ZGenerationOld* const old = ZGeneration::old();
   const size_t soft_max_capacity = ZHeap::heap()->soft_max_capacity();
   const size_t used = ZHeap::heap()->used();
   const size_t free_including_headroom = soft_max_capacity - MIN2(soft_max_capacity, used);
   const size_t free = free_including_headroom - MIN2(free_including_headroom, ZHeuristics::relocation_headroom());
   const size_t old_used = ZHeap::heap()->used_old();
-  const size_t old_live = old_generation->stat_heap()->live_at_mark_end();
+  const size_t old_live = old->stat_heap()->live_at_mark_end();
   const size_t old_garbage = old_used - old_live;
   const size_t young_used = ZHeap::heap()->used_young();
-  const size_t young_live = young_generation->stat_heap()->live_at_mark_end();
+  const size_t young_live = young->stat_heap()->live_at_mark_end();
   const size_t young_available = young_used + free;
 
   // Calculate max serial/parallel times of a young GC cycle. The times are
   // moving averages, we add ~3.3 sigma to account for the variance.
-  const double young_serial_gc_time = young_generation->stat_cycle()->serial_time().davg() + (young_generation->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
-  const double young_parallelizable_gc_time = young_generation->stat_cycle()->parallelizable_time().davg() + (young_generation->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
+  const double young_serial_gc_time = young->stat_cycle()->serial_time().davg() + (young->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
+  const double young_parallelizable_gc_time = young->stat_cycle()->parallelizable_time().davg() + (young->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
 
   // Calculate young GC time and duration given number of GC workers needed.
   const double young_gc_time = young_serial_gc_time + young_parallelizable_gc_time;
@@ -395,12 +395,12 @@ static bool rule_major_allocation_rate() {
     return false;
   }
 
-  ZOldGeneration* const old_generation = ZGeneration::old();
+  ZGenerationOld* const old = ZGeneration::old();
 
   // Calculate max serial/parallel times of an old GC cycle. The times are
   // moving averages, we add ~3.3 sigma to account for the variance.
-  const double old_serial_gc_time = old_generation->stat_cycle()->serial_time().davg() + (old_generation->stat_cycle()->serial_time().dsd() * one_in_1000);
-  const double old_parallelizable_gc_time = old_generation->stat_cycle()->parallelizable_time().davg() + (old_generation->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
+  const double old_serial_gc_time = old->stat_cycle()->serial_time().davg() + (old->stat_cycle()->serial_time().dsd() * one_in_1000);
+  const double old_parallelizable_gc_time = old->stat_cycle()->parallelizable_time().davg() + (old->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
 
   // Calculate old GC time.
   const double old_gc_time = old_serial_gc_time + old_parallelizable_gc_time;
@@ -412,7 +412,7 @@ static bool rule_major_allocation_rate() {
   // Doing an old collection makes subsequent young collections more efficient.
   // Calculate the number of young collections ahead that we will try to amortize
   // the cost of doing an old collection for.
-  const int lookahead = ZCollectedHeap::heap()->total_collections() - old_generation->total_collections_at_end();
+  const int lookahead = ZCollectedHeap::heap()->total_collections() - old->total_collections_at_end();
 
   // Calculate extra young collection overhead predicted for a number of future
   // young collections, due to not freeing up memory in the old generation.
@@ -433,24 +433,24 @@ static bool rule_major_allocation_rate() {
 }
 
 static uint calculate_old_workers() {
-  ZYoungGeneration* const young_generation = ZGeneration::young();
-  ZOldGeneration* const old_generation = ZGeneration::old();
+  ZGenerationYoung* const young = ZGeneration::young();
+  ZGenerationOld* const old = ZGeneration::old();
 
   // Calculate max serial/parallel times of an old collection. The times
   // are moving averages, we add ~3.3 sigma to account for the variance.
-  const double old_serial_gc_time = old_generation->stat_cycle()->serial_time().davg() + (old_generation->stat_cycle()->serial_time().dsd() * one_in_1000);
-  const double old_parallelizable_gc_time = old_generation->stat_cycle()->parallelizable_time().davg() + (old_generation->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
+  const double old_serial_gc_time = old->stat_cycle()->serial_time().davg() + (old->stat_cycle()->serial_time().dsd() * one_in_1000);
+  const double old_parallelizable_gc_time = old->stat_cycle()->parallelizable_time().davg() + (old->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
 
-  const double old_last_gc_workers = old_generation->stat_cycle()->last_active_workers();
+  const double old_last_gc_workers = old->stat_cycle()->last_active_workers();
   const double old_parallelizable_gc_duration = old_parallelizable_gc_time / old_last_gc_workers;
 
   // Calculate max serial/parallel times of a young collection. The times
   // are moving averages, we add ~3.3 sigma to account for the variance.
-  const double young_serial_gc_time = young_generation->stat_cycle()->serial_time().davg() + (young_generation->stat_cycle()->serial_time().dsd() * one_in_1000);
-  const double young_parallelizable_gc_time = young_generation->stat_cycle()->parallelizable_time().davg() + (young_generation->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
+  const double young_serial_gc_time = young->stat_cycle()->serial_time().davg() + (young->stat_cycle()->serial_time().dsd() * one_in_1000);
+  const double young_parallelizable_gc_time = young->stat_cycle()->parallelizable_time().davg() + (young->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
 
   // Calculate GC duration given number of GC workers needed.
-  const double young_last_gc_workers = young_generation->stat_cycle()->last_active_workers();
+  const double young_last_gc_workers = young->stat_cycle()->last_active_workers();
   const double young_gc_duration = young_serial_gc_time + (young_parallelizable_gc_time / young_last_gc_workers);
 
   const double extra_young_gc_time = calculate_extra_young_gc_time();
@@ -568,14 +568,14 @@ static GCCause::Cause make_major_gc_decision() {
   return GCCause::_no_gc;
 }
 
-struct ZGenerationResizeInfo {
+struct ZWorkerResizeInfo {
   bool _is_active;
   uint _current_nworkers;
   uint _desired_nworkers;
 };
 
-static ZGenerationResizeInfo wanted_young_nworkers() {
-  ZYoungGeneration* const generation = ZGeneration::young();
+static ZWorkerResizeInfo wanted_young_nworkers() {
+  ZGenerationYoung* const generation = ZGeneration::young();
   const ZWorkerResizeStats stats = generation->workers()->resize_stats(generation->stat_cycle());
 
   if (!stats._is_active) {
@@ -604,8 +604,8 @@ static ZGenerationResizeInfo wanted_young_nworkers() {
   };
 }
 
-static ZGenerationResizeInfo wanted_old_nworkers() {
-  ZOldGeneration* const generation = ZGeneration::old();
+static ZWorkerResizeInfo wanted_old_nworkers() {
+  ZGenerationOld* const generation = ZGeneration::old();
   const ZWorkerResizeStats stats = generation->workers()->resize_stats(generation->stat_cycle());
 
   if (!stats._is_active) {
@@ -633,10 +633,7 @@ static ZGenerationResizeInfo wanted_old_nworkers() {
   };
 }
 
-static void adjust_gc(ZGenerationResizeInfo young_info, ZGenerationResizeInfo old_info) {
-  ZYoungGeneration* const young_generation = ZGeneration::young();
-  ZOldGeneration* const old_generation = ZGeneration::old();
-
+static void adjust_gc(ZWorkerResizeInfo young_info, ZWorkerResizeInfo old_info) {
   if (young_info._is_active && old_info._is_active) {
     // Need at least 1 thread for old generation
     const uint max_young_threads = MAX2(ConcGCThreads - 1, 1u);
@@ -650,14 +647,14 @@ static void adjust_gc(ZGenerationResizeInfo young_info, ZGenerationResizeInfo ol
   const bool need_more_old_workers = old_info._current_nworkers < old_info._desired_nworkers;
   const bool too_many_total_threads = MAX2(young_info._current_nworkers, young_info._desired_nworkers) + old_info._current_nworkers > ConcGCThreads;
 
-  if (old_info._desired_nworkers != 0 && need_more_old_workers || too_many_total_threads) {
+  if ((old_info._desired_nworkers != 0 && need_more_old_workers) || too_many_total_threads) {
     // Need to change major workers
-    old_generation->workers()->request_resize_workers(old_info._desired_nworkers);
+    ZGeneration::old()->workers()->request_resize_workers(old_info._desired_nworkers);
   }
 
   if (young_info._desired_nworkers != 0 && need_more_young_workers) {
     // We need more workers than we currently use; trigger worker resize
-    young_generation->workers()->request_resize_workers(young_info._desired_nworkers);
+    ZGeneration::young()->workers()->request_resize_workers(young_info._desired_nworkers);
   }
 }
 
@@ -693,7 +690,7 @@ static uint initial_young_workers() {
   const uint wanted_young_nworkers = clamp(request.young_nworkers(), min_young_nworkers, max_young_nworkers);
 
   // Force old generation to yield threads if it has too many
-  const ZGenerationResizeInfo young_info = {
+  const ZWorkerResizeInfo young_info = {
     _is_active: true,
     _current_nworkers: wanted_young_nworkers,
     _desired_nworkers: wanted_young_nworkers

@@ -65,10 +65,10 @@ public:
 // Class to expose perf counters used by jstat.
 class ZServiceabilityCounters : public CHeapObj<mtGC> {
 private:
-  ZGenerationCounters _young_generation_counters;
-  ZGenerationCounters _old_generation_counters;
-  HSpaceCounters      _young_space_counters;
-  HSpaceCounters      _old_space_counters;
+  ZGenerationCounters _generation_young_counters;
+  ZGenerationCounters _generation_old_counters;
+  HSpaceCounters      _space_young_counters;
+  HSpaceCounters      _space_old_counters;
   CollectorCounters   _minor_collection_counters;
   CollectorCounters   _major_collection_counters;
 
@@ -82,7 +82,7 @@ public:
 
 ZServiceabilityCounters::ZServiceabilityCounters(size_t initial_capacity, size_t min_capacity, size_t max_capacity) :
     // generation.0
-    _young_generation_counters(
+    _generation_young_counters(
         "young"          /* name */,
         0                /* ordinal */,
         1                /* spaces */,
@@ -90,7 +90,7 @@ ZServiceabilityCounters::ZServiceabilityCounters(size_t initial_capacity, size_t
         max_capacity     /* max_capacity */,
         initial_capacity /* curr_capacity */),
     // generation.1
-    _old_generation_counters(
+    _generation_old_counters(
         "old"        /* name */,
         1            /* ordinal */,
         1            /* spaces */,
@@ -98,15 +98,15 @@ ZServiceabilityCounters::ZServiceabilityCounters(size_t initial_capacity, size_t
         max_capacity /* max_capacity */,
         0            /* curr_capacity */),
     // generation.0.space.0
-    _young_space_counters(
-        _young_generation_counters.name_space(),
+    _space_young_counters(
+        _generation_young_counters.name_space(),
         "space"          /* name */,
         0                /* ordinal */,
         max_capacity     /* max_capacity */,
         initial_capacity /* init_capacity */),
     // generation.1.space.0
-    _old_space_counters(
-        _old_generation_counters.name_space(),
+    _space_old_counters(
+        _generation_old_counters.name_space(),
         "space"      /* name */,
         0            /* ordinal */,
         max_capacity /* max_capacity */,
@@ -129,12 +129,12 @@ CollectorCounters* ZServiceabilityCounters::collector_counters(bool minor) {
 void ZServiceabilityCounters::update_sizes() {
   if (UsePerfData) {
     ZMemoryUsageInfo info = compute_memory_usage_info();
-    _young_generation_counters.update_capacity(info._young_capacity);
-    _old_generation_counters.update_capacity(info._old_capacity);
-    _young_space_counters.update_capacity(info._young_capacity);
-    _young_space_counters.update_used(info._young_used);
-    _old_space_counters.update_capacity(info._old_capacity);
-    _old_space_counters.update_used(info._old_used);
+    _generation_young_counters.update_capacity(info._young_capacity);
+    _generation_old_counters.update_capacity(info._old_capacity);
+    _space_young_counters.update_capacity(info._young_capacity);
+    _space_young_counters.update_used(info._young_used);
+    _space_old_counters.update_capacity(info._old_capacity);
+    _space_old_counters.update_used(info._old_used);
 
     MetaspaceCounters::update_performance_counters();
   }

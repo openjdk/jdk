@@ -40,20 +40,20 @@
 
 class ThreadClosure;
 class ZForwardingTable;
-class ZOldGeneration;
+class ZGenerationOld;
 class ZPage;
 class ZPageAllocator;
 class ZPageTable;
 class ZRelocationSetSelector;
-class ZYoungGeneration;
+class ZGenerationYoung;
 
 class ZGeneration {
   friend class ZForwardingTest;
   friend class ZLiveMapTest;
 
 protected:
-  static ZYoungGeneration* _young;
-  static ZOldGeneration*   _old;
+  static ZGenerationYoung* _young;
+  static ZGenerationOld*   _old;
 
   enum class Phase {
     Mark,
@@ -109,8 +109,8 @@ public:
   bool is_young() const;
   bool is_old() const;
 
-  static ZYoungGeneration* young();
-  static ZOldGeneration* old();
+  static ZGenerationYoung* young();
+  static ZGenerationOld* old();
   static ZGeneration* generation(ZGenerationId id);
 
   // Statistics
@@ -184,15 +184,15 @@ public:
   ~ZYoungTypeSetter();
 };
 
-class ZYoungGeneration : public ZGeneration {
+class ZGenerationYoung : public ZGeneration {
   friend class ZYoungTypeSetter;
 
 private:
-  ZYoungType   _active_type;
-  ZRemembered  _remembered;
+  ZYoungType  _active_type;
+  ZRemembered _remembered;
 
 public:
-  ZYoungGeneration(ZPageTable* page_table, ZPageAllocator* page_allocator);
+  ZGenerationYoung(ZPageTable* page_table, ZPageAllocator* page_allocator);
 
   ZYoungType type() const;
 
@@ -245,7 +245,7 @@ public:
   bool is_remembered(volatile zpointer* p) const;
 };
 
-class ZOldGeneration : public ZGeneration {
+class ZGenerationOld : public ZGeneration {
 private:
   ZReferenceProcessor _reference_processor;
   ZWeakRootsProcessor _weak_roots_processor;
@@ -253,7 +253,7 @@ private:
   int                 _total_collections_at_end;
 
 public:
-  ZOldGeneration(ZPageTable* page_table, ZPageAllocator* page_allocator);
+  ZGenerationOld(ZPageTable* page_table, ZPageAllocator* page_allocator);
 
   void collect(ConcurrentGCTimer* timer);
 

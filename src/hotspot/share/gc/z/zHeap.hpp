@@ -53,8 +53,8 @@ private:
 
   ZServiceability    _serviceability;
 
-  ZYoungGeneration   _young_generation;
-  ZOldGeneration     _old_generation;
+  ZGenerationYoung   _young;
+  ZGenerationOld     _old;
 
   bool               _initialized;
 

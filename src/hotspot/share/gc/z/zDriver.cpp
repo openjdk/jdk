@@ -86,18 +86,6 @@ ZDriverUnlocker::~ZDriverUnlocker() {
   ZDriver::lock();
 }
 
-static ZCollectedHeap* collected_heap() {
-  return ZCollectedHeap::heap();
-}
-
-static ZYoungGeneration* young_generation() {
-  return ZGeneration::young();
-}
-
-static ZOldGeneration* old_generation() {
-  return ZGeneration::old();
-}
-
 ZDriverMinor::ZDriverMinor() :
     _port(),
     _gc_timer(),
@@ -154,11 +142,11 @@ public:
   ZDriverScopeMinor(const ZDriverRequest& request, ConcurrentGCTimer* gc_timer) :
       _gc_id(),
       _gc_cause(request.cause()),
-      _gc_cause_setter(collected_heap(), _gc_cause),
+      _gc_cause_setter(ZCollectedHeap::heap(), _gc_cause),
       _stat_timer(ZPhaseCollectionMinor, gc_timer),
       _tracer(true /* minor */) {
     // Select number of worker threads to use
-    young_generation()->set_active_workers(request.young_nworkers());
+    ZGeneration::young()->set_active_workers(request.young_nworkers());
   }
 };
 
@@ -342,24 +330,24 @@ public:
   ZDriverScopeMajor(const ZDriverRequest& request, ConcurrentGCTimer* gc_timer) :
       _gc_id(),
       _gc_cause(request.cause()),
-      _gc_cause_setter(collected_heap(), _gc_cause),
+      _gc_cause_setter(ZCollectedHeap::heap(), _gc_cause),
       _stat_timer(ZPhaseCollectionMajor, gc_timer),
       _tracer(false /* minor */) {
     // Set up soft reference policy
     const bool clear = should_clear_soft_references(request.cause());
-    old_generation()->set_soft_reference_policy(clear);
+    ZGeneration::old()->set_soft_reference_policy(clear);
 
     // Select number of worker threads to use
-    young_generation()->set_active_workers(request.young_nworkers());
-    old_generation()->set_active_workers(request.old_nworkers());
+    ZGeneration::young()->set_active_workers(request.young_nworkers());
+    ZGeneration::old()->set_active_workers(request.old_nworkers());
   }
 
   ~ZDriverScopeMajor() {
     // Update data used by soft reference policy
-    collected_heap()->update_capacity_and_used_at_gc();
+    ZCollectedHeap::heap()->update_capacity_and_used_at_gc();
 
     // Signal that we have completed a visit to all live objects
-    collected_heap()->record_whole_heap_examined_timestamp();
+    ZCollectedHeap::heap()->record_whole_heap_examined_timestamp();
   }
 };
 
