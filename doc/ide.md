@@ -45,11 +45,16 @@ after the workspace has been generated.
 
 #### Visual Studio
 
-This section is a work in progress.
+The make system can generate a Visual Studio project for a limited subset
+of native sources. After configuring, the project can be generated using:
 
 ```shell
-make ide-project
+make hotspot-ide-project
 ```
+
+This creates a file named `jvm.vcxproj` in `ide\hotspot-visualstudio`
+subfolder of the build output folder. The file can be opened in Visual Studio
+via `File -> Open -> Project/Solution`.
 
 #### Compilation Database
 
@@ -70,4 +75,24 @@ make compile-commands-hotspot
 
 ### IDE support for Java code
 
-This section is a work in progress.
+#### IntelliJ IDEA
+
+The JDK project has a script that can be used for indexing the project
+with IntelliJ. After configuring and building the JDK, IntelliJ workspace
+can be generated using:
+
+```shell
+bash bin/idea.sh
+```
+
+This creates a subfolder called `.idea` in the current folder. To use it,
+choose `File -> Open...` in IntelliJ and select the folder where you run
+the above script.
+
+Next, configure the project SDK in IntelliJ. Open
+`File -> Project Structure -> Project` and select `build/<config>/images/jdk`
+as the SDK to use.
+
+In order to run the tests from the IDE, you can use the JTReg plugin.
+Instructions for building and using the plugin can be found
+[here](https://github.com/openjdk/jtreg/tree/master/plugins/idea).
