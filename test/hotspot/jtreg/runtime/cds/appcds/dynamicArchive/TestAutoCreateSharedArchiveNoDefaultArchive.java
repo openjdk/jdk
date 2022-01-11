@@ -104,8 +104,9 @@ public class TestAutoCreateSharedArchiveNoDefaultArchive {
 
         // Now rename classes.jsa to old-classes.jsa
         String dstDir = java_home_dst + File.separator + "lib" + File.separator + "server";
-        CDSTestUtils.renameModulesFile(dstDir, "classes.jsa", "old-classes.jsa");
-        System.out.println("======= renamed " + dstDir + File.separator + "classes.jsa to old-classes.jsa");
+        CDSTestUtils.rename(new File(dstDir + File.separator +  "classes.jsa"),
+                            new File(dstDir + File.separator +  "old-classes.jsa"));
+        System.out.println("======= renamed classes.jsa to old-classes.jsa");
 
         {
             ProcessBuilder pb = CDSTestUtils.makeBuilder(dstJava,

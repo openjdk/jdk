@@ -181,7 +181,7 @@ public class SharedArchiveConsistency {
         copiedJsa = CDSArchiveUtils.copyArchiveFile(orgJsaFile, modVersion);
         CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetVersion(), version);
         output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs);
-        output.shouldContain("The shared archive file version " + version + " which is not current version " + currentCDSArchiveVersion);
+        output.shouldContain("The shared archive file version " + version + " does not match the required version " + currentCDSArchiveVersion);
         if (shareAuto) {
             output.shouldContain(HELLO_WORLD);
         }

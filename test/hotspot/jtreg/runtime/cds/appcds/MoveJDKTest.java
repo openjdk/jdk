@@ -113,7 +113,9 @@ public class MoveJDKTest {
         }
 
         // Test with no modules image in the <java home>/lib directory
-        CDSTestUtils.renameModulesFile(java_home_dst + File.separator + "lib", "modules", "orig-modules");
+        String locDir = java_home_dst + File.separator + "lib";
+        CDSTestUtils.rename(new File(locDir + File.separator + "modules"),
+                            new File(locDir + File.separator + "orig-modules"));
         {
             ProcessBuilder pb = CDSTestUtils.makeBuilder(dstJava, "-version");
             OutputAnalyzer out = TestCommon.executeAndLog(pb, "exec-missing-modules");

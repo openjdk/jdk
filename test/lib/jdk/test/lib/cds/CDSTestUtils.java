@@ -738,20 +738,18 @@ public class CDSTestUtils {
     // modulesDir, like $JDK/lib
     // oldName, module name under modulesDir
     // newName, new name for oldName
-    public static void renameModulesFile(String modulesDir, String oldName, String newName) throws Exception {
-        File origModules = new File(modulesDir, oldName);
-        if (!origModules.exists()) {
-            throw new RuntimeException(oldName + " file not found");
+    public static void rename(File fromFile, File toFile) throws Exception {
+        if (!fromFile.exists()) {
+            throw new RuntimeException(fromFile.getName() + " does not exist");
         }
 
-        File renamedModules = new File(modulesDir, newName);
-        if (renamedModules.exists()) {
-            throw new RuntimeException(newName + " found unexpectedly");
+        if (toFile.exists()) {
+            throw new RuntimeException(toFile.getName() + " already exists");
         }
 
-        boolean success = origModules.renameTo(renamedModules);
+        boolean success = fromFile.renameTo(toFile);
         if (!success) {
-            throw new RuntimeException("rename file " + oldName + " to " + newName + " failed");
+            throw new RuntimeException("rename file " + fromFile.getName()+ " to " + toFile.getName() + " failed");
         }
     }
 

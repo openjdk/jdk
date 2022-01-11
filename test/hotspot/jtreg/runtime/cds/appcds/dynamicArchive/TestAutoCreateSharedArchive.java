@@ -40,7 +40,7 @@
  * -XX:SharedArchiveFile can be specified in two styles:
  *
  *  (A) Test with default base archive -XX:+SharedArchiveFile=<archive>
- *  (B) Test with the base archive is specified: -XX:SharedArchiveFile=<base>:<file>
+ *  (B) Test with the base archive is specified: -XX:SharedArchiveFile=<base>:<top>
  *  all the following if not explained explicitly, run with flag -XX:+AutoCreateSharedArchive
  *
  *  Note VerifySharedSpaces will affect output so the tests run twice: one with -XX:+VerifySharedSpaces and the other with -XX:-VerifySharedSpaces
@@ -88,7 +88,7 @@
  * 22 create an archive with dynamic magic number only
  *    archive will be created at exit if base can be shared.
  *
- * 23  mismatched jvm_indent in top archive
+ * 23  mismatched jvm_indent in base/top archive
  *     23.01 mismatched jvm_indent in top archive
  *     23.02 mismatched jvm_indent in base archive
  *
@@ -96,7 +96,7 @@
  *   24.01 run -Xshare:auto -XX:+AutoCreateSharedArchive -XX:SharedArchiveFile=base.jsa:non-exist-top.jsa
  *     The top archive will be regenerated.
  *   24.02 run -Xshare:auto -XX:+AutoCreateSharedArchive -XX:SharedArchiveFile=non-exist-base.jsa:top.jsa
- *     top archive will not be shared. No shared archive will be generated.
+ *     top archive will not be shared if base archive failed to load.
  */
 
 import java.io.IOException;
@@ -174,7 +174,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
         // 10 non-existing archive should automatically create dynamic archive based on default shared archive
         // if base archive loaded.
         print("10 Test with default base shared archive");
-        print("    10.1 run with non-existing archive should automatically create dynamic archive");
+        print("    10.01 run with non-existing archive should automatically create dynamic archive");
         File fileTop = new File(TOP_NAME);
         if (fileTop.exists()) {
             fileTop.delete();
@@ -193,8 +193,8 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
                 });
         checkFileExists(TOP_NAME);
 
-        // 10.2 run with the created dynamic archive should pass
-        print("    10.2 run with the created dynamic archive should pass");
+        //10.02 run with the created dynamic archive should pass
+        print("    10.02 run with the created dynamic archive should pass");
         run(TOP_NAME,
             "-Xlog:cds",
             "-Xlog:class+load",
@@ -208,9 +208,9 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
         // remember the FileTime
         FileTime ft1 = Files.getLastModifiedTime(Paths.get(TOP_NAME));
 
-        // 10.3 run with the created dynamic archive with -XX:+AutoCreateSharedArchive should pass
+        // 10.03 run with the created dynamic archive with -XX:+AutoCreateSharedArchive should pass
         //      archive should not be created again.
-        print("    10.3 run with the created dynamic archive with -XX:+AutoCreateSharedArchive should pass");
+        print("    10.03 run with the created dynamic archive with -XX:+AutoCreateSharedArchive should pass");
         run(TOP_NAME,
             "-Xlog:cds",
             "-Xlog:class+load",
@@ -327,7 +327,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
             .assertNormalExit(output -> {
                 output.shouldHaveExitValue(0)
                       .shouldContain(HELLO_WORLD)
-                      .shouldContain("The shared archive file version " + version2 + " which is not current version " + currentCDSVersion)
+                      .shouldContain("The shared archive file version " + version2 + " does not match the required version " + currentCDSVersion)
                       .shouldContain("UseSharedSpaces: The shared archive file has the wrong version")
                       .shouldContain("UseSharedSpaces: Initialize dynamic archive failed")
                       .shouldContain("Dumping shared data to file");
@@ -470,8 +470,8 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
               });
         checkFileExists(TOP_NAME);
 
-        // 20.03 run with -XX:SharedArchveFile=top:base
-        print("    20.03 run with -XX:SharedArchveFile=top:base");
+        // 20.03 run with -XX:SharedArchveFile=base:top
+        print("    20.03 run with -XX:SharedArchveFile=base:top");
         run2(BASE_NAME, TOP_NAME,
              "-Xlog:cds",
              "-Xlog:cds+dynamic=info",
@@ -483,8 +483,8 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
                       .shouldContain(HELLO_SOURCE);
             });
 
-        // 20.04 run with -XX:SharedArchveFile=base:top (reversed)
-        print("    20.04 run with -XX:SharedArchveFile=base:top (reversed)");
+        // 20.04 run with -XX:SharedArchveFile=top:base (reversed)
+        print("    20.04 run with -XX:SharedArchveFile=top:base (reversed)");
         run2(TOP_NAME, BASE_NAME,
              "-Xlog:cds",
              "-Xlog:cds+dynamic=info",
@@ -544,7 +544,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
              "-cp", appJar,
              mainAppClass)
              .assertNormalExit(output -> {
-                 output.shouldContain("The shared archive file version " + version2 + " which is not current version " + currentCDSVersion)
+                 output.shouldContain("The shared archive file version " + version2 + " does not match the required version " + currentCDSVersion)
                        .shouldContain(HELLO_WORLD)
                        .shouldContain("Dumping shared data to file:");
              });
@@ -578,9 +578,9 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
             throw new RuntimeException("Shared archive " + magicOnly + " should not be created at exit");
         }
 
-        // 23  mismatched jvm_indent in top archive
+        // 23  mismatched jvm_indent in top or base archive
         //    23.01 mismatched jvm_indent in top archive
-        print("    23.01  mismatched jvm_indent in archive");
+        print("    23.01  mismatched jvm_indent in top archive");
         String modJvmIdentTop = startNewArchive("modify-jvmident-top");
         copiedJsa = CDSArchiveUtils.copyArchiveFile(archiveFile, modJvmIdentTop);
         CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetJvmIdent(), 0x65656565);
@@ -607,8 +607,8 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
         if (!fileModified) {
             throw new RuntimeException("Shared archive " + modJvmIdentTop + " should be generated");
         }
-        //    23.02 mismatched jvm_indent in base archive -Xshare:auto -XX:SahredArchiveFile=base:top
-        print("    23.02  mismatched jvm_indent in base archive, -Xshare:auto -XX:SahredArchiveFile=base:top");
+        //    23.02 mismatched jvm_indent in base archive
+        print("    23.02  mismatched jvm_indent in base archive");
         String modJvmIdentBase = startNewArchive("modify-jvmident-base");
         copiedJsa = CDSArchiveUtils.copyArchiveFile(new File(BASE_NAME), modJvmIdentBase);
         CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetJvmIdent(), 0x65656565);

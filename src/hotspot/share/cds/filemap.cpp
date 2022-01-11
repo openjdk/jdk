@@ -1111,7 +1111,7 @@ public:
     }
 
     if (gen_header._version !=  CURRENT_CDS_ARCHIVE_VERSION) {
-      FileMapInfo::fail_continue("The shared archive file version %d which is not current version %d",
+      FileMapInfo::fail_continue("The shared archive file version %d does not match the required version %d",
                                     gen_header._version, CURRENT_CDS_ARCHIVE_VERSION);
     }
 
