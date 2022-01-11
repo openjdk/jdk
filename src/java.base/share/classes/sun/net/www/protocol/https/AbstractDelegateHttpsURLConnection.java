@@ -25,10 +25,13 @@
 
 package sun.net.www.protocol.https;
 
+import java.net.Authenticator;
 import java.net.URL;
 import java.net.Proxy;
 import java.net.SecureCacheResponse;
 import java.security.Principal;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -36,6 +39,7 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import sun.net.www.http.*;
 import sun.net.www.protocol.http.HttpURLConnection;
+import sun.net.www.protocol.http.HttpCallerInfo;
 
 /**
  * HTTPS URL connection support.
@@ -309,4 +313,37 @@ public abstract class AbstractDelegateHttpsURLConnection extends
 
         return ((HttpsClient)http).getSSLSession();
     }
+
+    @Override
+    protected HttpCallerInfo getHttpCallerInfo(URL url, String proxy, int port,
+                                               Authenticator authenticator)
+    {
+        HttpsClient https = (HttpsClient)http;
+        try {
+            Certificate[] certs = https.getServerCertificates();
+            if (certs[0] instanceof X509Certificate x509Cert) {
+                return new HttpCallerInfo(url, proxy, port, x509Cert, authenticator);
+            }
+        } catch (SSLPeerUnverifiedException e) {
+            // ignore
+        }
+        return super.getHttpCallerInfo(url, proxy, port, authenticator);
+    }
+
+    @Override
+    protected HttpCallerInfo getHttpCallerInfo(URL url, Authenticator authenticator)
+    {
+        HttpsClient https = (HttpsClient)http;
+        try {
+            Certificate[] certs = https.getServerCertificates();
+            if (certs[0] instanceof X509Certificate x509Cert) {
+                return new HttpCallerInfo(url, x509Cert, authenticator);
+            }
+        } catch (SSLPeerUnverifiedException e) {
+            // ignore
+        }
+
+        return super.getHttpCallerInfo(url, authenticator);
+    }
+
 }
