@@ -71,7 +71,7 @@ address ProgrammableUpcallHandler::generate_upcall_stub(jobject rec, jobject jab
 
   // Capture prev stack pointer (stack arguments base)
   __ add(rscratch1, rfp, 16);   // Skip saved FP and LR
-  Address slot = __ legitimize_address(Address(sp, checked_cast<int>(layout.stack_args)), wordSize, rscratch2);
+  Address slot = __ legitimize_address(Address(sp, layout.stack_args), wordSize, rscratch2);
   __ str(rscratch1, slot);
 
   // Call upcall helper
