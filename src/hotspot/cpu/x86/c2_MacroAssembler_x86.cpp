@@ -4194,11 +4194,11 @@ void C2_MacroAssembler::vector_castL2FD(XMMRegister dst, XMMRegister src, XMMReg
 #else // _LP64
   int src_vlen_in_bytes = vlen * type2aelembytes(T_LONG);
   int dst_vlen_in_bytes = vlen * type2aelembytes(bt);
-  assert(src_vlen_in_bytes + dst_vlen_in_bytes <= 128, "red zone");
-  store_vector(Address(rsp, -src_vlen_in_bytes), src, src_vlen_in_bytes);
+  subptr(rsp, src_vlen_in_bytes + dst_vlen_in_bytes);
+  store_vector(Address(rsp, dst_vlen_in_bytes), src, src_vlen_in_bytes);
   for (int i = 0; i < vlen; i++) {
-    int src_ele_offset = -src_vlen_in_bytes + i * type2aelembytes(T_LONG);
-    int dst_ele_offset = -src_vlen_in_bytes - dst_vlen_in_bytes + i * type2aelembytes(bt);
+    int src_ele_offset = dst_vlen_in_bytes + i * type2aelembytes(T_LONG);
+    int dst_ele_offset = i * type2aelembytes(bt);
     fild_d(Address(rsp, src_ele_offset));
     if (bt == T_FLOAT) {
       fstp_s(Address(rsp, dst_ele_offset));
@@ -4206,7 +4206,8 @@ void C2_MacroAssembler::vector_castL2FD(XMMRegister dst, XMMRegister src, XMMReg
       fstp_d(Address(rsp, dst_ele_offset));
     }
   }
-  load_vector(dst, Address(rsp, -src_vlen_in_bytes - dst_vlen_in_bytes), dst_vlen_in_bytes);
+  load_vector(dst, Address(rsp, 0), dst_vlen_in_bytes);
+  addptr(rsp, src_vlen_in_bytes + dst_vlen_in_bytes);
 #endif // _LP64
 
   bind(done);
