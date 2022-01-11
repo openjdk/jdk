@@ -461,27 +461,27 @@ ZGenerationYoung::ZGenerationYoung(ZPageTable* page_table, ZPageAllocator* page_
   ZGeneration::_young = this;
 }
 
-class ZDriverScopeYoung : public StackObj {
+class ZGenerationCollectionScopeYoung : public StackObj {
 private:
   ZYoungTypeSetter _type_setter;
   ZStatTimer       _stat_timer;
 
 public:
-  ZDriverScopeYoung(ZYoungType type, ConcurrentGCTimer* gc_timer) :
+  ZGenerationCollectionScopeYoung(ZYoungType type, ConcurrentGCTimer* gc_timer) :
       _type_setter(type),
       _stat_timer(ZPhaseGenerationYoung[(int)type], gc_timer) {
     // Update statistics and set the GC timer
     ZGeneration::young()->at_collection_start(gc_timer);
   }
 
-  ~ZDriverScopeYoung() {
+  ~ZGenerationCollectionScopeYoung() {
     // Update statistics and clear the GC timer
     ZGeneration::young()->at_collection_end();
   }
 };
 
 void ZGenerationYoung::collect(ZYoungType type, ConcurrentGCTimer* timer) {
-  ZDriverScopeYoung scope(type, timer);
+  ZGenerationCollectionScopeYoung scope(type, timer);
 
   // Phase 1: Pause Mark Start
   pause_mark_start();
@@ -783,27 +783,27 @@ ZGenerationOld::ZGenerationOld(ZPageTable* page_table, ZPageAllocator* page_allo
   ZGeneration::_old = this;
 }
 
-class ZDriverScopeOld : public StackObj {
+class ZGenerationCollectionScopeOld : public StackObj {
 private:
   ZStatTimer      _stat_timer;
   ZDriverUnlocker _unlocker;
 
 public:
-  ZDriverScopeOld(ConcurrentGCTimer* gc_timer) :
+  ZGenerationCollectionScopeOld(ConcurrentGCTimer* gc_timer) :
       _stat_timer(ZPhaseGenerationOld, gc_timer),
       _unlocker() {
     // Update statistics and set the GC timer
     ZGeneration::old()->at_collection_start(gc_timer);
   }
 
-  ~ZDriverScopeOld() {
+  ~ZGenerationCollectionScopeOld() {
     // Update statistics and clear the GC timer
     ZGeneration::old()->at_collection_end();
   }
 };
 
 void ZGenerationOld::collect(ConcurrentGCTimer* timer) {
-  ZDriverScopeOld scope(timer);
+  ZGenerationCollectionScopeOld scope(timer);
 
   // Phase 1: Concurrent Mark
   concurrent_mark();
