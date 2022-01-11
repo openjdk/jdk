@@ -152,6 +152,8 @@ public:
   // Marking
   template <bool resurrect, bool gc_thread, bool follow, bool finalizable>
   void mark_object(zaddress addr);
+  template <bool resurrect, bool gc_thread, bool follow, bool finalizable>
+  void mark_object_if_active(zaddress addr);
   void mark_flush_and_free(Thread* thread);
   void mark_free();
 

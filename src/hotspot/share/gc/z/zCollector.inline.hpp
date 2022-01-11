@@ -119,6 +119,13 @@ inline void ZCollector::mark_object(zaddress addr) {
   _mark.mark_object<resurrect, gc_thread, follow, finalizable>(addr);
 }
 
+template <bool resurrect, bool gc_thread, bool follow, bool finalizable>
+inline void ZCollector::mark_object_if_active(zaddress addr) {
+  if (is_phase_mark()) {
+    mark_object<resurrect, gc_thread, follow, finalizable>(addr);
+  }
+}
+
 inline zaddress ZCollector::relocate_or_remap_object(zaddress_unsafe addr) {
   ZForwarding* const forwarding = _forwarding_table.get(addr);
   if (forwarding == NULL) {

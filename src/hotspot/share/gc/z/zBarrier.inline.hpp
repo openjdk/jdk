@@ -678,13 +678,9 @@ inline void ZBarrier::mark(zaddress addr) {
   assert(!ZVerifyOops || oopDesc::is_oop(to_oop(addr), false), "must be oop");
 
   if (ZHeap::heap()->is_old(addr)) {
-    if (ZCollector::old()->is_phase_mark()) {
-      ZCollector::old()->mark_object<resurrect, gc_thread, follow, finalizable>(addr);
-    }
+    ZCollector::old()->mark_object_if_active<resurrect, gc_thread, follow, finalizable>(addr);
   } else {
-    if (ZCollector::young()->is_phase_mark()) {
-      ZCollector::young()->mark_object<resurrect, gc_thread, follow, ZMark::Strong>(addr);
-    }
+    ZCollector::young()->mark_object_if_active<resurrect, gc_thread, follow, ZMark::Strong>(addr);
   }
 }
 
