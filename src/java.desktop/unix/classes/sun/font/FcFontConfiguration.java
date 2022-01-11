@@ -295,7 +295,7 @@ public class FcFontConfiguration extends FontConfiguration {
         return null;
     }
 
-    private String getOsinfo(String s) {
+    private String extractOsInfo(String s) {
         if (s.startsWith("\"")) s = s.substring(1);
         if (s.endsWith("\"")) s = s.substring(0, s.length()-1);
         return s;
@@ -343,10 +343,10 @@ public class FcFontConfiguration extends FontConfiguration {
                     props.load(fis);
                 }
                 osName = props.getProperty("NAME");
-                osVersion =  props.getProperty("VERSION_ID");
-                osName = getOsinfo(osName);
+                osVersion = props.getProperty("VERSION_ID");
+                osName = extractOsInfo(osName);
                 if (osName.equals("SLES")) osName = "SuSE";
-                osVersion = getOsinfo(osVersion);
+                osVersion = extractOsInfo(osVersion);
             }
         } catch (Exception e) {
             if (FontUtilities.debugFonts()) {
