@@ -4953,7 +4953,7 @@ void MacroAssembler::encode_iso_array(Register src, Register dst,
   prfm(Address(src), PLDL1STRM);
   movw(cnt, len);
 
-#define ASCII(insn) if (ascii) { insn; }
+#define ASCII(insn) do { if (ascii) { insn; } } while (0)
 
   Label LOOP_32, DONE_32, FAIL_32;
 
