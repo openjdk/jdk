@@ -57,7 +57,7 @@ public class RandomWrapper extends Random implements RandomGenerator {
      * use it
      */
     @Override
-    public synchronized void setSeed(long seed) {
+    public void setSeed(long seed) {
     }
 
     @Override
