@@ -29,8 +29,8 @@
 #include "gc/z/zAllocator.inline.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zCollectedHeap.hpp"
-#include "gc/z/zCollector.inline.hpp"
 #include "gc/z/zForwarding.inline.hpp"
+#include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zIndexDistributor.inline.hpp"
 #include "gc/z/zIterator.inline.hpp"
@@ -170,12 +170,12 @@ void ZRelocateQueue::desynchronize() {
   _lock.notify_all();
 }
 
-ZRelocate::ZRelocate(ZCollector* collector) :
-    _collector(collector),
+ZRelocate::ZRelocate(ZGeneration* generation) :
+    _generation(generation),
     _queue() {}
 
 ZWorkers* ZRelocate::workers() const {
-  return _collector->workers();
+  return _generation->workers();
 }
 
 void ZRelocate::start() {
@@ -212,11 +212,11 @@ static zaddress forwarding_insert(ZForwarding* forwarding, zaddress from_addr, z
 }
 
 void ZRelocate::add_remset(volatile zpointer* p) {
-  ZCollector::young()->remember(p);
+  ZGeneration::young()->remember(p);
 }
 
 void ZRelocate::add_remset_for_fields(volatile zaddress addr) {
-  ZCollector::young()->remember_fields(addr);
+  ZGeneration::young()->remember_fields(addr);
 }
 
 static zaddress relocate_object_inner(ZForwarding* forwarding, zaddress from_addr, ZForwardingCursor* cursor) {
@@ -313,11 +313,11 @@ static ZPage* alloc_page(ZAllocatorForRelocation* allocator, ZPageType type, siz
   return allocator->alloc_page_for_relocation(type, size, flags);
 }
 
-static void retire_target_page(ZCollector* collector, ZPage* page) {
-  if (collector->is_young() && page->is_old()) {
-    collector->increase_promoted(page->used());
+static void retire_target_page(ZGeneration* generation, ZPage* page) {
+  if (generation->is_young() && page->is_old()) {
+    generation->increase_promoted(page->used());
   } else {
-    collector->increase_compacted(page->used());
+    generation->increase_compacted(page->used());
   }
 
   // Free target page if it is empty. We can end up with an empty target
@@ -331,13 +331,13 @@ static void retire_target_page(ZCollector* collector, ZPage* page) {
 
 class ZRelocateSmallAllocator {
 private:
-  ZCollector* const              _collector;
+  ZGeneration* const             _generation;
   ZAllocatorForRelocation* const _allocator;
   volatile size_t                _in_place_count;
 
 public:
-  ZRelocateSmallAllocator(ZCollector* collector, ZAllocatorForRelocation* allocator) :
-      _collector(collector),
+  ZRelocateSmallAllocator(ZGeneration* generation, ZAllocatorForRelocation* allocator) :
+      _generation(generation),
       _allocator(allocator),
       _in_place_count(0) {}
 
@@ -349,7 +349,7 @@ public:
 
     if (target != NULL) {
       // Retire the old target page
-      retire_target_page(_collector, target);
+      retire_target_page(_generation, target);
     }
 
     return page;
@@ -361,7 +361,7 @@ public:
 
   void free_target_page(ZPage* page) {
     if (page != NULL) {
-      retire_target_page(_collector, page);
+      retire_target_page(_generation, page);
     }
   }
 
@@ -380,7 +380,7 @@ public:
 
 class ZRelocateMediumAllocator {
 private:
-  ZCollector* const              _collector;
+  ZGeneration* const             _generation;
   ZAllocatorForRelocation* const _allocator;
   ZConditionLock                 _lock;
   ZPage*                         _shared;
@@ -388,8 +388,8 @@ private:
   volatile size_t                _in_place_count;
 
 public:
-  ZRelocateMediumAllocator(ZCollector* collector, ZAllocatorForRelocation* allocator) :
-      _collector(collector),
+  ZRelocateMediumAllocator(ZGeneration* generation, ZAllocatorForRelocation* allocator) :
+      _generation(generation),
       _allocator(allocator),
       _lock(),
       _shared(NULL),
@@ -398,7 +398,7 @@ public:
 
   ~ZRelocateMediumAllocator() {
     if (_shared != NULL) {
-      retire_target_page(_collector, _shared);
+      retire_target_page(_generation, _shared);
     }
   }
 
@@ -423,7 +423,7 @@ public:
 
       // This thread is responsible for retiring the shared target page
       if (target != NULL) {
-        retire_target_page(_collector, target);
+        retire_target_page(_generation, target);
       }
     }
 
@@ -463,12 +463,12 @@ public:
 template <typename Allocator>
 class ZRelocateWork : public StackObj {
 private:
-  Allocator* const  _allocator;
-  ZForwarding*      _forwarding;
-  ZPage*            _target;
-  ZCollector* const _collector;
-  size_t            _other_promoted;
-  size_t            _other_compacted;
+  Allocator* const   _allocator;
+  ZForwarding*       _forwarding;
+  ZPage*             _target;
+  ZGeneration* const _generation;
+  size_t             _other_promoted;
+  size_t             _other_compacted;
 
   size_t object_alignment() const {
     return 1 << _forwarding->object_alignment_shift();
@@ -616,7 +616,7 @@ private:
     }
 
     zaddress_unsafe addr_unsafe = ZPointer::uncolor_unsafe(ptr);
-    ZForwarding* forwarding = ZCollector::young()->forwarding(addr_unsafe);
+    ZForwarding* forwarding = ZGeneration::young()->forwarding(addr_unsafe);
 
     if (forwarding == NULL) {
       // Object isn't being relocated
@@ -694,8 +694,8 @@ private:
 
     if (promotion) {
       // Register the the promotion
-      ZCollector::young()->in_place_relocate_promote(prev_page, new_page);
-      ZCollector::young()->register_in_place_relocate_promoted(prev_page);
+      ZGeneration::young()->in_place_relocate_promote(prev_page, new_page);
+      ZGeneration::young()->register_in_place_relocate_promoted(prev_page);
     }
 
     return new_page;
@@ -722,19 +722,19 @@ private:
   }
 
 public:
-  ZRelocateWork(Allocator* allocator, ZCollector* collector) :
+  ZRelocateWork(Allocator* allocator, ZGeneration* generation) :
       _allocator(allocator),
       _forwarding(NULL),
       _target(NULL),
-      _collector(collector),
+      _generation(generation),
       _other_promoted(0),
       _other_compacted(0) {}
 
   ~ZRelocateWork() {
     _allocator->free_target_page(_target);
     // Report statistics on-behalf of non-worker threads
-    _collector->increase_promoted(_other_promoted);
-    _collector->increase_compacted(_other_compacted);
+    _generation->increase_promoted(_other_promoted);
+    _generation->increase_compacted(_other_compacted);
   }
 
   void do_forwarding(ZForwarding* forwarding) {
@@ -754,7 +754,7 @@ public:
       _forwarding->verify();
     }
 
-    _collector->increase_freed(_forwarding->page()->size());
+    _generation->increase_freed(_forwarding->page()->size());
 
     // Deal with in-place relocation
     const bool in_place = _forwarding->in_place_relocation();
@@ -810,7 +810,7 @@ public:
 class ZRelocateTask : public ZRestartableTask {
 private:
   ZRelocationSetParallelIterator _iter;
-  ZCollector* const              _collector;
+  ZGeneration* const             _generation;
   ZRelocateQueue* const          _queue;
   ZRelocateSmallAllocator        _survivor_small_allocator;
   ZRelocateMediumAllocator       _survivor_medium_allocator;
@@ -821,23 +821,23 @@ public:
   ZRelocateTask(ZRelocationSet* relocation_set, ZRelocateQueue* queue) :
       ZRestartableTask("ZRelocateTask"),
       _iter(relocation_set),
-      _collector(relocation_set->collector()),
+      _generation(relocation_set->generation()),
       _queue(queue),
-      _survivor_small_allocator(_collector, ZAllocator::survivor()),
-      _survivor_medium_allocator(_collector, ZAllocator::survivor()),
-      _old_small_allocator(_collector, ZAllocator::old()),
-      _old_medium_allocator(_collector, ZAllocator::old()) {}
+      _survivor_small_allocator(_generation, ZAllocator::survivor()),
+      _survivor_medium_allocator(_generation, ZAllocator::survivor()),
+      _old_small_allocator(_generation, ZAllocator::old()),
+      _old_medium_allocator(_generation, ZAllocator::old()) {}
 
   ~ZRelocateTask() {
-    _collector->stat_relocation()->at_relocate_end(_survivor_small_allocator.in_place_count() + _old_small_allocator.in_place_count(),
+    _generation->stat_relocation()->at_relocate_end(_survivor_small_allocator.in_place_count() + _old_small_allocator.in_place_count(),
                                                    _survivor_medium_allocator.in_place_count() + _old_medium_allocator.in_place_count());
   }
 
   virtual void work() {
-    ZRelocateWork<ZRelocateSmallAllocator> survivor_small(&_survivor_small_allocator, _collector);
-    ZRelocateWork<ZRelocateMediumAllocator> survivor_medium(&_survivor_medium_allocator, _collector);
-    ZRelocateWork<ZRelocateSmallAllocator> old_small(&_old_small_allocator, _collector);
-    ZRelocateWork<ZRelocateMediumAllocator> old_medium(&_old_medium_allocator, _collector);
+    ZRelocateWork<ZRelocateSmallAllocator> survivor_small(&_survivor_small_allocator, _generation);
+    ZRelocateWork<ZRelocateMediumAllocator> survivor_medium(&_survivor_medium_allocator, _generation);
+    ZRelocateWork<ZRelocateSmallAllocator> old_small(&_old_small_allocator, _generation);
+    ZRelocateWork<ZRelocateMediumAllocator> old_medium(&_old_medium_allocator, _generation);
 
     bool synchronized = false;
 
@@ -865,7 +865,7 @@ public:
       }
 
       // Check if we should resize threads
-      if (_collector->should_worker_resize()) {
+      if (_generation->should_worker_resize()) {
         break;
       }
     }
@@ -928,7 +928,7 @@ public:
       });
 
       SuspendibleThreadSet::yield();
-      if (ZCollector::young()->should_worker_stop()) {
+      if (ZGeneration::young()->should_worker_stop()) {
         return;
       }
     }
@@ -944,7 +944,7 @@ public:
   ZRelocateAddRemsetForNormalPromoted() :
       ZRestartableTask("ZRelocateAddRemsetForNormalPromoted"),
       _timer(ZSubPhaseConcurrentRelocateRememberedSetNormalPromotedYoung),
-      _iter(ZCollector::young()->forwarding_table()) {}
+      _iter(ZGeneration::young()->forwarding_table()) {}
 
   virtual void work() {
     SuspendibleThreadSetJoiner sts_joiner;
@@ -953,7 +953,7 @@ public:
       forwarding->oops_do_in_forwarded_via_table(remap_and_maybe_add_remset);
 
       SuspendibleThreadSet::yield();
-      return !ZCollector::young()->should_worker_stop();
+      return !ZGeneration::young()->should_worker_stop();
     });
   }
 };
@@ -972,12 +972,12 @@ void ZRelocate::relocate(ZRelocationSet* relocation_set) {
     workers()->run(&relocate_task);
   }
 
-  if (relocation_set->collector()->is_young()) {
+  if (relocation_set->generation()->is_young()) {
     ZRelocateAddRemsetForFlipPromoted task(relocation_set->flip_promoted_pages());
     workers()->run(&task);
   }
 
-  if (relocation_set->collector()->is_young() && ZRelocateRemsetStrategy == 2) {
+  if (relocation_set->generation()->is_young() && ZRelocateRemsetStrategy == 2) {
     ZRelocateAddRemsetForNormalPromoted task;
     workers()->run(&task);
   }
@@ -1026,7 +1026,7 @@ public:
       new_page->reset(to_age, ZPageResetType::FlipAging);
 
       if (promotion) {
-        ZCollector::young()->flip_promote(prev_page, new_page);
+        ZGeneration::young()->flip_promote(prev_page, new_page);
         // Defer promoted page registration times the lock is taken
         promoted_pages.push(prev_page);
       }
@@ -1034,7 +1034,7 @@ public:
       SuspendibleThreadSet::yield();
     }
 
-    ZCollector::young()->register_flip_promoted(promoted_pages);
+    ZGeneration::young()->register_flip_promoted(promoted_pages);
   }
 };
 

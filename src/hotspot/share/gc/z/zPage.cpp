@@ -22,7 +22,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/z/zCollector.inline.hpp"
+#include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zList.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPhysicalMemory.inline.hpp"
@@ -72,17 +72,17 @@ ZPage* ZPage::clone_limited_promote_flipped() const {
   return page;
 }
 
-ZCollector* ZPage::collector() {
-  return ZCollector::collector(_generation_id);
+ZGeneration* ZPage::generation() {
+  return ZGeneration::generation(_generation_id);
 }
 
-const ZCollector* ZPage::collector() const {
-  return ZCollector::collector(_generation_id);
+const ZGeneration* ZPage::generation() const {
+  return ZGeneration::generation(_generation_id);
 }
 
 void ZPage::reset_seqnum() {
-  Atomic::store(&_seqnum, collector()->seqnum());
-  Atomic::store(&_seqnum_other, ZCollector::collector(_generation_id == ZGenerationId::young ? ZGenerationId::old : ZGenerationId::young)->seqnum());
+  Atomic::store(&_seqnum, generation()->seqnum());
+  Atomic::store(&_seqnum_other, ZGeneration::generation(_generation_id == ZGenerationId::young ? ZGenerationId::old : ZGenerationId::young)->seqnum());
 }
 
 void ZPage::reset_remembered_set(ZPageAge prev_age, ZPageResetType type) {

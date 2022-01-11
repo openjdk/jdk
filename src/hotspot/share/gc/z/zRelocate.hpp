@@ -28,6 +28,7 @@
 #include "gc/z/zPageAge.hpp"
 
 class ZForwarding;
+class ZGeneration;
 class ZWorkers;
 
 class ZRelocateQueue {
@@ -61,14 +62,14 @@ class ZRelocate {
   friend class ZRelocateTask;
 
 private:
-  ZCollector* const _collector;
-  ZRelocateQueue    _queue;
+  ZGeneration* const _generation;
+  ZRelocateQueue     _queue;
 
   ZWorkers* workers() const;
   void work(ZRelocationSetParallelIterator* iter);
 
 public:
-  ZRelocate(ZCollector* collector);
+  ZRelocate(ZGeneration* generation);
 
   void start();
 

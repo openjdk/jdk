@@ -129,7 +129,7 @@ define zmarked
     end
 end
 
-# For some reason gdb doesn't like ZCollector::ZPhase::Mark etc.
+# For some reason gdb doesn't like ZGeneration::ZPhase::Mark etc.
 # Use hard-coded values instead.
 define z_print_phase
   if $arg0 == 0
@@ -147,7 +147,7 @@ define z_print_phase
   end
 end
 
-define z_print_collector
+define z_print_generation
   printf "%u", $arg0->_seqnum
   printf "/"
   z_print_phase $arg0->_phase
@@ -155,12 +155,12 @@ end
 
 define zz
   printf "Old: "
-  z_print_collector ZHeap::_heap->_old_collector
+  z_print_generation ZHeap::_heap->_old_generation
 
   printf " | "
 
   printf "Young: "
-  z_print_collector ZHeap::_heap->_young_collector
+  z_print_generation ZHeap::_heap->_young_generation
 
   printf "\n"
 end
@@ -168,10 +168,10 @@ end
 # Print heap information
 define zph
     printf "Heap\n"
-    printf "     Young Phase:       %u\n", ZHeap::_heap->_young_collector->_phase
-    printf "     Old Phase:       %u\n", ZHeap::_heap->_old_collector->_phase
-    printf "     Young SeqNum:      %u\n", ZHeap::_heap->_young_collector->_seqnum
-    printf "     Old SeqNum:      %u\n", ZHeap::_heap->_old_collector->_seqnum
+    printf "     Young Phase:       %u\n", ZHeap::_heap->_young_generation->_phase
+    printf "     Old Phase:       %u\n", ZHeap::_heap->_old_generation->_phase
+    printf "     Young SeqNum:      %u\n", ZHeap::_heap->_young_generation->_seqnum
+    printf "     Old SeqNum:      %u\n", ZHeap::_heap->_old_generation->_seqnum
     printf "     Offset Max:        %-15llu (0x%llx)\n", ZAddressOffsetMax, ZAddressOffsetMax
     printf "     Page Size Small:   %-15llu (0x%llx)\n", ZPageSizeSmall, ZPageSizeSmall
     printf "     Page Size Medium:  %-15llu (0x%llx)\n", ZPageSizeMedium, ZPageSizeMedium

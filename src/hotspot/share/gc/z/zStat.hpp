@@ -37,7 +37,7 @@
 #include "utilities/ticks.hpp"
 
 class GCTracer;
-class ZCollector;
+class ZGeneration;
 class ZPage;
 class ZPageAllocatorStats;
 class ZRelocationSetSelectorGroupStats;
@@ -652,7 +652,7 @@ public:
   size_t used_at_relocate_end() const;
   size_t used_at_collection_end() const;
 
-  void print(const ZCollector* collector) const;
+  void print(const ZGeneration* generation) const;
 };
 
 #endif // SHARE_GC_Z_ZSTAT_HPP

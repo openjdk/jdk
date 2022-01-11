@@ -21,52 +21,53 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZCOLLECTOR_INLINE_HPP
-#define SHARE_GC_Z_ZCOLLECTOR_INLINE_HPP
+#ifndef SHARE_GC_Z_ZGENERATION_INLINE_HPP
+#define SHARE_GC_Z_ZGENERATION_INLINE_HPP
+
+#include "gc/z/zGeneration.hpp"
 
 #include "gc/z/zAbort.inline.hpp"
-#include "gc/z/zCollector.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zWorkers.inline.hpp"
 #include "utilities/debug.hpp"
 
-inline bool ZCollector::is_phase_relocate() const {
+inline bool ZGeneration::is_phase_relocate() const {
   return _phase == Phase::Relocate;
 }
 
-inline bool ZCollector::is_phase_mark() const {
+inline bool ZGeneration::is_phase_mark() const {
   return _phase == Phase::Mark;
 }
 
-inline bool ZCollector::is_phase_mark_complete() const {
+inline bool ZGeneration::is_phase_mark_complete() const {
   return _phase == Phase::MarkComplete;
 }
 
-inline uint32_t ZCollector::seqnum() const {
+inline uint32_t ZGeneration::seqnum() const {
   return _seqnum;
 }
 
-inline ZGenerationId ZCollector::id() const {
+inline ZGenerationId ZGeneration::id() const {
   return _id;
 }
 
-inline bool ZCollector::is_young() const {
+inline bool ZGeneration::is_young() const {
   return _id == ZGenerationId::young;
 }
 
-inline bool ZCollector::is_old() const {
+inline bool ZGeneration::is_old() const {
   return _id == ZGenerationId::old;
 }
 
-inline ZYoungCollector* ZCollector::young() {
+inline ZYoungGeneration* ZGeneration::young() {
   return _young;
 }
 
-inline ZOldCollector* ZCollector::old() {
+inline ZOldGeneration* ZGeneration::old() {
   return _old;
 }
 
-inline ZCollector* ZCollector::collector(ZGenerationId id) {
+inline ZGeneration* ZGeneration::generation(ZGenerationId id) {
   if (id == ZGenerationId::young) {
     return _young;
   } else {
@@ -74,59 +75,59 @@ inline ZCollector* ZCollector::collector(ZGenerationId id) {
   }
 }
 
-inline ZForwarding* ZCollector::forwarding(zaddress_unsafe addr) const {
+inline ZForwarding* ZGeneration::forwarding(zaddress_unsafe addr) const {
   return _forwarding_table.get(addr);
 }
 
-inline bool ZCollector::should_worker_resize() {
+inline bool ZGeneration::should_worker_resize() {
   return _workers.should_worker_resize();
 }
 
-inline bool ZCollector::should_worker_stop() {
+inline bool ZGeneration::should_worker_stop() {
   return ZAbort::should_abort() || should_worker_resize();
 }
 
-inline ZStatHeap* ZCollector::stat_heap() {
+inline ZStatHeap* ZGeneration::stat_heap() {
   return &_stat_heap;
 }
 
-inline ZStatCycle* ZCollector::stat_cycle() {
+inline ZStatCycle* ZGeneration::stat_cycle() {
   return &_stat_cycle;
 }
 
-inline ZStatWorkers* ZCollector::stat_workers() {
+inline ZStatWorkers* ZGeneration::stat_workers() {
   return &_stat_workers;
 }
 
-inline ZStatMark* ZCollector::stat_mark() {
+inline ZStatMark* ZGeneration::stat_mark() {
   return &_stat_mark;
 }
 
-inline ZStatRelocation* ZCollector::stat_relocation() {
+inline ZStatRelocation* ZGeneration::stat_relocation() {
   return &_stat_relocation;
 }
 
-inline ZPageTable* ZCollector::page_table() const {
+inline ZPageTable* ZGeneration::page_table() const {
   return _page_table;
 }
 
-inline const ZForwardingTable* ZCollector::forwarding_table() const {
+inline const ZForwardingTable* ZGeneration::forwarding_table() const {
   return &_forwarding_table;
 }
 
 template <bool resurrect, bool gc_thread, bool follow, bool finalizable>
-inline void ZCollector::mark_object(zaddress addr) {
+inline void ZGeneration::mark_object(zaddress addr) {
   _mark.mark_object<resurrect, gc_thread, follow, finalizable>(addr);
 }
 
 template <bool resurrect, bool gc_thread, bool follow, bool finalizable>
-inline void ZCollector::mark_object_if_active(zaddress addr) {
+inline void ZGeneration::mark_object_if_active(zaddress addr) {
   if (is_phase_mark()) {
     mark_object<resurrect, gc_thread, follow, finalizable>(addr);
   }
 }
 
-inline zaddress ZCollector::relocate_or_remap_object(zaddress_unsafe addr) {
+inline zaddress ZGeneration::relocate_or_remap_object(zaddress_unsafe addr) {
   ZForwarding* const forwarding = _forwarding_table.get(addr);
   if (forwarding == NULL) {
     // Not forwarding
@@ -137,7 +138,7 @@ inline zaddress ZCollector::relocate_or_remap_object(zaddress_unsafe addr) {
   return _relocate.relocate_object(forwarding, addr);
 }
 
-inline zaddress ZCollector::remap_object(zaddress_unsafe addr) {
+inline zaddress ZGeneration::remap_object(zaddress_unsafe addr) {
   ZForwarding* const forwarding = _forwarding_table.get(addr);
   if (forwarding == NULL) {
     // Not forwarding
@@ -148,29 +149,29 @@ inline zaddress ZCollector::remap_object(zaddress_unsafe addr) {
   return _relocate.forward_object(forwarding, addr);
 }
 
-inline ZYoungType ZYoungCollector::type() const {
+inline ZYoungType ZYoungGeneration::type() const {
   assert(_active_type != ZYoungType::none, "Invalid type");
   return _active_type;
 }
 
-inline void ZYoungCollector::remember(volatile zpointer* p) {
+inline void ZYoungGeneration::remember(volatile zpointer* p) {
   _remembered.remember(p);
 }
 
-inline void ZYoungCollector::remember_fields(zaddress addr) {
+inline void ZYoungGeneration::remember_fields(zaddress addr) {
   _remembered.remember_fields(addr);
 }
 
-inline void ZYoungCollector::scan_remembered_field(volatile zpointer* p) {
+inline void ZYoungGeneration::scan_remembered_field(volatile zpointer* p) {
   _remembered.scan_field(p);
 }
 
-inline bool ZYoungCollector::is_remembered(volatile zpointer* p) const {
+inline bool ZYoungGeneration::is_remembered(volatile zpointer* p) const {
   return _remembered.is_remembered(p);
 }
 
-inline ReferenceDiscoverer* ZOldCollector::reference_discoverer() {
+inline ReferenceDiscoverer* ZOldGeneration::reference_discoverer() {
   return &_reference_processor;
 }
 
-#endif // SHARE_GC_Z_ZCOLLECTOR_INLINE_HPP
+#endif // SHARE_GC_Z_ZGENERATION_INLINE_HPP

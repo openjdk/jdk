@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZGENERATION_HPP
-#define SHARE_GC_Z_ZGENERATION_HPP
+#ifndef SHARE_GC_Z_ZALLOCATOR_HPP
+#define SHARE_GC_Z_ZALLOCATOR_HPP
 
 #include "gc/z/zAllocationFlags.hpp"
 #include "gc/z/zObjectAllocator.hpp"
@@ -91,4 +91,4 @@ public:
   ZAllocatorOld();
 };
 
-#endif // SHARE_GC_Z_ZGENERATION_HPP
+#endif // SHARE_GC_Z_ZALLOCATOR_HPP

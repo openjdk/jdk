@@ -27,6 +27,7 @@
 #include "gc/z/zBarrier.hpp"
 
 #include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zResurrection.inline.hpp"
 #include "oops/oop.hpp"
@@ -175,15 +176,15 @@ inline void ZBarrier::self_heal(ZBarrierFastPath fast_path, volatile zpointer* p
   }
 }
 
-inline ZCollector* ZBarrier::remap_collector(zpointer ptr) {
+inline ZGeneration* ZBarrier::remap_generation(zpointer ptr) {
   assert(!ZPointer::is_load_good(ptr), "no need to remap load-good pointer");
 
   if (ZPointer::is_old_load_good(ptr)) {
-    return ZCollector::young();
+    return ZGeneration::young();
   }
 
   if (ZPointer::is_young_load_good(ptr)) {
-    return ZCollector::old();
+    return ZGeneration::old();
   }
 
   // Double remap bad - the pointer is neither old load good nor
@@ -193,15 +194,15 @@ inline ZCollector* ZBarrier::remap_collector(zpointer ptr) {
   const bool old_to_old_ptr = remembered_bits == ZPointerRememberedMask;
 
   if (old_to_old_ptr) {
-    return ZCollector::old();
+    return ZGeneration::old();
   }
 
   const zaddress_unsafe addr = ZPointer::uncolor_unsafe(ptr);
-  if (ZCollector::young()->forwarding(addr) != NULL) {
-    assert(ZCollector::old()->forwarding(addr) == NULL, "Mutually exclusive");
-    return ZCollector::young();
+  if (ZGeneration::young()->forwarding(addr) != NULL) {
+    assert(ZGeneration::old()->forwarding(addr) == NULL, "Mutually exclusive");
+    return ZGeneration::young();
   } else {
-    return ZCollector::old();
+    return ZGeneration::old();
   }
 
   // ... then the explanation. Time to put your seat belt on.
@@ -334,7 +335,7 @@ inline ZCollector* ZBarrier::remap_collector(zpointer ptr) {
   //
   // Iff we find a double remap bad pointer with *double remember bits*,
   // then we know that it is an old-to-old pointer, and we should use the
-  // forwarding table of the old collector.
+  // forwarding table of the old generation.
   //
   // Iff we find a double remap bad pointer with a *single remember bit*,
   // then we know that it is a young-to-any pointer. We still don't know
@@ -346,12 +347,12 @@ inline ZCollector* ZBarrier::remap_collector(zpointer ptr) {
   // The scenario that created a double remap bad pointer in the young
   // allocating or survivor memory is that it was written during the last
   // young marking before the old relocation started. At that point, the old
-  // collector has already taken its marking snapshot, and determined what
-  // pages will be marked and therefore eligible to become part of the old
-  // relocation set. If the young collector relocated/freed a page
-  // (address range), and that address range was then reused for an old page,
-  // it won't be part of the old snapshot and it therefore won't be selected
-  // for old relocation.
+  // generation collection has already taken its marking snapshot, and
+  // determined what pages will be marked and therefore eligible to become
+  // part of the old relocation set. If the young generation relocated/freed
+  // a page (address range), and that address range was then reused for an old
+  // page, it won't be part of the old snapshot and it therefore won't be
+  // selected for old relocation.
   //
   // Because of this, we know that the object written into the young
   // allocating page will at most belong to one of the two relocation sets,
@@ -368,7 +369,7 @@ inline zaddress ZBarrier::make_load_good(zpointer o) {
     return ZPointer::uncolor(o);
   }
 
-  return relocate_or_remap(ZPointer::uncolor_unsafe(o), remap_collector(o));
+  return relocate_or_remap(ZPointer::uncolor_unsafe(o), remap_generation(o));
 }
 
 inline zaddress ZBarrier::make_load_good_no_relocate(zpointer o) {
@@ -380,7 +381,7 @@ inline zaddress ZBarrier::make_load_good_no_relocate(zpointer o) {
     return ZPointer::uncolor(o);
   }
 
-  return remap(ZPointer::uncolor_unsafe(o), remap_collector(o));
+  return remap(ZPointer::uncolor_unsafe(o), remap_generation(o));
 }
 
 
@@ -678,19 +679,19 @@ inline void ZBarrier::mark(zaddress addr) {
   assert(!ZVerifyOops || oopDesc::is_oop(to_oop(addr), false), "must be oop");
 
   if (ZHeap::heap()->is_old(addr)) {
-    ZCollector::old()->mark_object_if_active<resurrect, gc_thread, follow, finalizable>(addr);
+    ZGeneration::old()->mark_object_if_active<resurrect, gc_thread, follow, finalizable>(addr);
   } else {
-    ZCollector::young()->mark_object_if_active<resurrect, gc_thread, follow, ZMark::Strong>(addr);
+    ZGeneration::young()->mark_object_if_active<resurrect, gc_thread, follow, ZMark::Strong>(addr);
   }
 }
 
 template <bool resurrect, bool gc_thread, bool follow>
 inline void ZBarrier::mark_young(zaddress addr) {
-  assert(ZCollector::young()->is_phase_mark(), "Should only be called during marking");
+  assert(ZGeneration::young()->is_phase_mark(), "Should only be called during marking");
   assert(!ZVerifyOops || oopDesc::is_oop(to_oop(addr), false), "must be oop");
   assert(ZHeap::heap()->is_young(addr), "Must be young");
 
-  ZCollector::young()->mark_object<resurrect, gc_thread, follow, ZMark::Strong>(addr);
+  ZGeneration::young()->mark_object<resurrect, gc_thread, follow, ZMark::Strong>(addr);
 }
 
 template <bool resurrect, bool gc_thread, bool follow>

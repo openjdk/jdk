@@ -36,7 +36,7 @@
 #include "gc/z/zVirtualMemory.hpp"
 
 class ThreadClosure;
-class ZCollector;
+class ZGeneration;
 class ZPageAllocation;
 class ZPageAllocator;
 class ZPageAllocatorStats;
@@ -143,7 +143,7 @@ public:
 
   void promote_used(size_t size);
 
-  ZPageAllocatorStats stats(ZCollector* collector) const;
+  ZPageAllocatorStats stats(ZGeneration* generation) const;
 
   void reset_statistics(ZGenerationId id);
 

@@ -26,6 +26,7 @@
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zForwarding.inline.hpp"
 #include "gc/z/zForwardingAllocator.inline.hpp"
+#include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zPageAllocator.hpp"
 #include "gc/z/zRelocationSet.inline.hpp"
 #include "gc/z/zRelocationSetSelector.inline.hpp"
@@ -117,8 +118,8 @@ public:
   }
 };
 
-ZRelocationSet::ZRelocationSet(ZCollector* collector) :
-    _collector(collector),
+ZRelocationSet::ZRelocationSet(ZGeneration* generation) :
+    _generation(generation),
     _allocator(),
     _forwardings(NULL),
     _nforwardings(0),
@@ -127,11 +128,11 @@ ZRelocationSet::ZRelocationSet(ZCollector* collector) :
     _in_place_relocate_promoted_pages() {}
 
 ZWorkers* ZRelocationSet::workers() const {
-  return _collector->workers();
+  return _generation->workers();
 }
 
-ZCollector* ZRelocationSet::collector() const {
-  return _collector;
+ZGeneration* ZRelocationSet::generation() const {
+  return _generation;
 }
 
 ZArray<ZPage*>* ZRelocationSet::flip_promoted_pages() {
@@ -147,7 +148,7 @@ void ZRelocationSet::install(const ZRelocationSetSelector* selector) {
   _nforwardings = task.nforwardings();
 
   // Update statistics
-  _collector->stat_relocation()->at_install_relocation_set(_allocator.size());
+  _generation->stat_relocation()->at_install_relocation_set(_allocator.size());
 }
 
 static void destroy_and_clear(ZPageAllocator* page_allocator, ZArray<ZPage*>* array) {

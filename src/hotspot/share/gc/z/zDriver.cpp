@@ -29,6 +29,7 @@
 #include "gc/z/zBreakpoint.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zDriver.hpp"
+#include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zServiceability.hpp"
@@ -89,12 +90,12 @@ static ZCollectedHeap* collected_heap() {
   return ZCollectedHeap::heap();
 }
 
-static ZYoungCollector* young_collector() {
-  return ZCollector::young();
+static ZYoungGeneration* young_generation() {
+  return ZGeneration::young();
 }
 
-static ZOldCollector* old_collector() {
-  return ZCollector::old();
+static ZOldGeneration* old_generation() {
+  return ZGeneration::old();
 }
 
 ZDriverMinor::ZDriverMinor() :
@@ -157,13 +158,13 @@ public:
       _stat_timer(ZPhaseCollectionMinor, gc_timer),
       _tracer(true /* minor */) {
     // Select number of worker threads to use
-    young_collector()->set_active_workers(request.young_nworkers());
+    young_generation()->set_active_workers(request.young_nworkers());
   }
 };
 
 void ZDriverMinor::gc(const ZDriverRequest& request) {
   ZDriverScopeMinor scope(request, &_gc_timer);
-  ZCollector::young()->collect(ZYoungType::minor, &_gc_timer);
+  ZGeneration::young()->collect(ZYoungType::minor, &_gc_timer);
 }
 
 static void handle_alloc_stalling_for_young() {
@@ -346,11 +347,11 @@ public:
       _tracer(false /* minor */) {
     // Set up soft reference policy
     const bool clear = should_clear_soft_references(request.cause());
-    old_collector()->set_soft_reference_policy(clear);
+    old_generation()->set_soft_reference_policy(clear);
 
     // Select number of worker threads to use
-    young_collector()->set_active_workers(request.young_nworkers());
-    old_collector()->set_active_workers(request.old_nworkers());
+    young_generation()->set_active_workers(request.young_nworkers());
+    old_generation()->set_active_workers(request.old_nworkers());
   }
 
   ~ZDriverScopeMajor() {
@@ -367,13 +368,13 @@ void ZDriverMajor::gc(const ZDriverRequest& request) {
 
   if (should_preclean_young(request.cause())) {
     // Collect young generation and promote everything to old generation
-    ZCollector::young()->collect(ZYoungType::major_preclean, &_gc_timer);
+    ZGeneration::young()->collect(ZYoungType::major_preclean, &_gc_timer);
   }
 
   abortpoint();
 
   // Collect young generation and gather roots pointing into old generation
-  ZCollector::young()->collect(ZYoungType::major_roots, &_gc_timer);
+  ZGeneration::young()->collect(ZYoungType::major_roots, &_gc_timer);
 
   abortpoint();
 
@@ -383,7 +384,7 @@ void ZDriverMajor::gc(const ZDriverRequest& request) {
   abortpoint();
 
   // Collect old generation
-  ZCollector::old()->collect(&_gc_timer);
+  ZGeneration::old()->collect(&_gc_timer);
 }
 
 static void handle_alloc_stalling_for_old() {

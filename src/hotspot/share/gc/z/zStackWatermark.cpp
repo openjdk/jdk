@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "gc/z/zAddress.hpp"
 #include "gc/z/zBarrier.inline.hpp"
+#include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zStackWatermark.hpp"
 #include "gc/z/zStoreBarrierBuffer.hpp"
 #include "gc/z/zThreadLocalAllocBuffer.hpp"
@@ -194,7 +195,7 @@ void ZStackWatermark::start_processing_impl(void* context) {
   ZThreadLocalData::set_nmethod_disarmed(_jt, ZPointerStoreGoodMask);
 
   // Retire TLAB
-  if (ZCollector::young()->is_phase_mark() || ZCollector::old()->is_phase_mark()) {
+  if (ZGeneration::young()->is_phase_mark() || ZGeneration::old()->is_phase_mark()) {
     ZThreadLocalAllocBuffer::retire(_jt, &_stats);
   } else {
     ZThreadLocalAllocBuffer::remap(_jt);

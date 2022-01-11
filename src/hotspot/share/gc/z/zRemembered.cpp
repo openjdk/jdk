@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zForwarding.inline.hpp"
+#include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zIterator.inline.hpp"
 #include "gc/z/zPageTable.hpp"
@@ -61,7 +62,7 @@ void ZRemembered::oops_do_forwarded_via_containing(GrowableArrayView<ZRemembered
       from_addr = containing._addr;
 
       // Relocate object to new location
-      to_addr = ZCollector::old()->relocate_or_remap_object(from_addr);
+      to_addr = ZGeneration::old()->relocate_or_remap_object(from_addr);
 
       // Figure out size
       object_size = ZUtils::object_size(to_addr);
@@ -89,23 +90,23 @@ void ZRemembered::oops_do_forwarded(ZForwarding* forwarding, Function function) 
 }
 
 bool ZRemembered::should_scan_page(ZPage* page) const {
-  if (!ZCollector::old()->is_phase_relocate()) {
-    // If the old collector is not in the relocation phase, then it will not need any
-    // synchronization on its forwardings.
+  if (!ZGeneration::old()->is_phase_relocate()) {
+    // If the old generation collection is not in the relocation phase, then it
+    // will not need any synchronization on its forwardings.
     return true;
   }
 
   if (page->is_allocating()) {
-    // If the page is old and was allocated after old marking start, then it can't be part
-    // of the old relocation set.
+    // If the page is old and was allocated after old marking start, then it
+    // can't be part of the old relocation set.
     return true;
   }
 
-  // If we get here, we know that the old collection is concurrently relocating objects,
-  // and the page was allocated at a time that makes it possible for it to be in the
-  // relocation set.
+  // If we get here, we know that the old collection is concurrently
+  // relocating objects, and the page was allocated at a time that makes it
+  // possible for it to be in the relocation set.
 
-  if (ZCollector::old()->forwarding(ZOffset::address_unsafe(page->start())) == NULL) {
+  if (ZGeneration::old()->forwarding(ZOffset::address_unsafe(page->start())) == NULL) {
     // This page was provably not part of the old relocation set.
     return true;
   }
@@ -115,7 +116,7 @@ bool ZRemembered::should_scan_page(ZPage* page) const {
 
 void ZRemembered::scan_page(ZPage* page) const {
   const bool can_trust_live_bits =
-      page->is_relocatable() && !ZCollector::old()->is_phase_mark();
+      page->is_relocatable() && !ZGeneration::old()->is_phase_mark();
 
   if (!can_trust_live_bits) {
     // We don't have full liveness info - scan all remset entries
@@ -179,7 +180,7 @@ private:
 public:
   ZRememberedScanForwardingTask(const ZRemembered& remembered) :
       ZRestartableTask("ZRememberedScanForwardingTask"),
-      _iterator(ZCollector::old()->forwarding_table()),
+      _iterator(ZGeneration::old()->forwarding_table()),
       _remembered(remembered) {}
 
   virtual void work() {
@@ -187,7 +188,7 @@ public:
 
     _iterator.do_forwardings([&](ZForwarding* forwarding) {
       _remembered.scan_forwarding(forwarding, &containing_array);
-      return !ZCollector::young()->should_worker_stop();
+      return !ZGeneration::young()->should_worker_stop();
     });
   }
 };
@@ -211,25 +212,25 @@ public:
         // ... and as a side-effect clear the previous entries
         page->clear_previous_remembered();
       }
-      return !ZCollector::young()->should_worker_stop();
+      return !ZGeneration::young()->should_worker_stop();
     });
   }
 };
 
 void ZRemembered::scan() const {
-  if (ZCollector::old()->is_phase_relocate()) {
+  if (ZGeneration::old()->is_phase_relocate()) {
     ZStatTimerYoung timer(ZSubPhaseConcurrentMarkRootRemsetForwardingYoung);
     ZRememberedScanForwardingTask task(*this);
-    ZCollector::young()->workers()->run(&task);
+    ZGeneration::young()->workers()->run(&task);
   }
 
   ZStatTimerYoung timer(ZSubPhaseConcurrentMarkRootRemsetPageYoung);
   ZRememberedScanPageTask task(*this);
-  ZCollector::young()->workers()->run(&task);
+  ZGeneration::young()->workers()->run(&task);
 }
 
 void ZRemembered::scan_field(volatile zpointer* p) const {
-  assert(ZCollector::young()->is_phase_mark(), "Wrong phase");
+  assert(ZGeneration::young()->is_phase_mark(), "Wrong phase");
 
   zaddress addr = ZBarrier::mark_young_good_barrier_on_oop_field(p);
 

@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZCOLLECTOR_HPP
-#define SHARE_GC_Z_ZCOLLECTOR_HPP
+#ifndef SHARE_GC_Z_ZGENERATION_HPP
+#define SHARE_GC_Z_ZGENERATION_HPP
 
 #include "gc/z/zForwardingTable.hpp"
 #include "gc/z/zGenerationId.hpp"
@@ -40,20 +40,20 @@
 
 class ThreadClosure;
 class ZForwardingTable;
-class ZOldCollector;
+class ZOldGeneration;
 class ZPage;
 class ZPageAllocator;
 class ZPageTable;
 class ZRelocationSetSelector;
-class ZYoungCollector;
+class ZYoungGeneration;
 
-class ZCollector {
+class ZGeneration {
   friend class ZForwardingTest;
   friend class ZLiveMapTest;
 
 protected:
-  static ZYoungCollector* _young;
-  static ZOldCollector*   _old;
+  static ZYoungGeneration* _young;
+  static ZOldGeneration*   _old;
 
   enum class Phase {
     Mark,
@@ -89,7 +89,7 @@ protected:
   void flip_age_pages(const ZRelocationSetSelector* selector);
   void flip_age_pages(const ZArray<ZPage*>* pages);
 
-  ZCollector(ZGenerationId id, ZPageTable* page_table, ZPageAllocator* page_allocator);
+  ZGeneration(ZGenerationId id, ZPageTable* page_table, ZPageAllocator* page_allocator);
 
   void log_phase_switch(Phase from, Phase to);
 
@@ -109,9 +109,9 @@ public:
   bool is_young() const;
   bool is_old() const;
 
-  static ZYoungCollector* young();
-  static ZOldCollector* old();
-  static ZCollector* collector(ZGenerationId id);
+  static ZYoungGeneration* young();
+  static ZOldGeneration* old();
+  static ZGeneration* generation(ZGenerationId id);
 
   // Statistics
   void reset_statistics();
@@ -184,7 +184,7 @@ public:
   ~ZYoungTypeSetter();
 };
 
-class ZYoungCollector : public ZCollector {
+class ZYoungGeneration : public ZGeneration {
   friend class ZYoungTypeSetter;
 
 private:
@@ -192,7 +192,7 @@ private:
   ZRemembered  _remembered;
 
 public:
-  ZYoungCollector(ZPageTable* page_table, ZPageAllocator* page_allocator);
+  ZYoungGeneration(ZPageTable* page_table, ZPageAllocator* page_allocator);
 
   ZYoungType type() const;
 
@@ -245,7 +245,7 @@ public:
   bool is_remembered(volatile zpointer* p) const;
 };
 
-class ZOldCollector : public ZCollector {
+class ZOldGeneration : public ZGeneration {
 private:
   ZReferenceProcessor _reference_processor;
   ZWeakRootsProcessor _weak_roots_processor;
@@ -253,7 +253,7 @@ private:
   int                 _total_collections_at_end;
 
 public:
-  ZOldCollector(ZPageTable* page_table, ZPageAllocator* page_allocator);
+  ZOldGeneration(ZPageTable* page_table, ZPageAllocator* page_allocator);
 
   void collect(ConcurrentGCTimer* timer);
 
@@ -289,4 +289,4 @@ public:
   int total_collections_at_end() const;
 };
 
-#endif // SHARE_GC_Z_ZCOLLECTOR_HPP
+#endif // SHARE_GC_Z_ZGENERATION_HPP

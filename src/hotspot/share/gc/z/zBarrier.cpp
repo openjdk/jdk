@@ -25,6 +25,7 @@
 #include "classfile/javaClasses.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zBarrier.inline.hpp"
+#include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zStoreBarrierBuffer.inline.hpp"
 #include "memory/iterator.inline.hpp"
@@ -34,11 +35,11 @@
 
 #ifdef ASSERT
 static bool during_young_mark() {
-  return ZCollector::young()->is_phase_mark();
+  return ZGeneration::young()->is_phase_mark();
 }
 
 static bool during_old_mark() {
-  return ZCollector::old()->is_phase_mark();
+  return ZGeneration::old()->is_phase_mark();
 }
 
 static bool during_any_mark() {
@@ -46,12 +47,12 @@ static bool during_any_mark() {
 }
 #endif
 
-zaddress ZBarrier::relocate_or_remap(zaddress_unsafe addr, ZCollector* collector) {
-  return collector->relocate_or_remap_object(addr);
+zaddress ZBarrier::relocate_or_remap(zaddress_unsafe addr, ZGeneration* generation) {
+  return generation->relocate_or_remap_object(addr);
 }
 
-zaddress ZBarrier::remap(zaddress_unsafe addr, ZCollector* collector) {
-  return collector->remap_object(addr);
+zaddress ZBarrier::remap(zaddress_unsafe addr, ZGeneration* generation) {
+  return generation->remap_object(addr);
 }
 
 //
@@ -59,7 +60,7 @@ zaddress ZBarrier::remap(zaddress_unsafe addr, ZCollector* collector) {
 //
 
 static void keep_alive_young(zaddress addr) {
-  if (ZCollector::young()->is_phase_mark()) {
+  if (ZGeneration::young()->is_phase_mark()) {
     ZBarrier::mark_young<ZMark::Resurrect, ZMark::AnyThread, ZMark::Follow>(addr);
   }
 }
@@ -190,7 +191,7 @@ zaddress ZBarrier::mark_finalizable_slow_path(zaddress addr) {
 
 void ZBarrier::remember(volatile zpointer* p) {
   if (ZHeap::heap()->is_old(p)) {
-    ZCollector::young()->remember(p);
+    ZGeneration::young()->remember(p);
   }
 }
 

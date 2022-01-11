@@ -27,6 +27,7 @@
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zDriver.hpp"
 #include "gc/z/zCPU.inline.hpp"
+#include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zNMethodTable.hpp"
 #include "gc/z/zPageAllocator.inline.hpp"
@@ -701,23 +702,23 @@ void ZStatPhaseGeneration::register_end(ConcurrentGCTimer* timer, const Ticks& s
   const Tickspan duration = end - start;
   ZStatSample(_sampler, duration.value());
 
-  ZCollector* const collector = ZCollector::collector(_id);
+  ZGeneration* const generation = ZGeneration::generation(_id);
 
   ZStatLoad::print();
   ZStatMMU::print();
-  collector->stat_mark()->print();
+  generation->stat_mark()->print();
   ZStatNMethods::print();
   ZStatMetaspace::print();
-  if (collector->is_old()) {
+  if (generation->is_old()) {
     ZStatReferences::print();
   }
-  collector->stat_relocation()->print();
-  collector->stat_heap()->print(collector);
+  generation->stat_relocation()->print();
+  generation->stat_heap()->print(generation);
 
   log_info(gc, phases)("%s " ZSIZE_FMT "->" ZSIZE_FMT,
                name(),
-               ZSIZE_ARGS(collector->stat_heap()->used_at_collection_start()),
-               ZSIZE_ARGS(collector->stat_heap()->used_at_collection_end()));
+               ZSIZE_ARGS(generation->stat_heap()->used_at_collection_start()),
+               ZSIZE_ARGS(generation->stat_heap()->used_at_collection_end()));
 }
 
 Tickspan ZStatPhasePause::_max;
@@ -849,10 +850,10 @@ void ZStatCriticalPhase::register_end(ConcurrentGCTimer* timer, const Ticks& sta
 }
 
 ZStatTimerYoung::ZStatTimerYoung(const ZStatPhase& phase) :
-    ZStatTimer(phase, ZCollector::young()->gc_timer()) {}
+    ZStatTimer(phase, ZGeneration::young()->gc_timer()) {}
 
 ZStatTimerOld::ZStatTimerOld(const ZStatPhase& phase) :
-    ZStatTimer(phase, ZCollector::old()->gc_timer()) {}
+    ZStatTimer(phase, ZGeneration::old()->gc_timer()) {}
 
 ZStatTimerWorker::ZStatTimerWorker(const ZStatPhase& phase) :
     ZStatTimer(phase, NULL /* gc_timer */) {
@@ -1596,7 +1597,7 @@ size_t ZStatHeap::used_at_collection_end() const {
   return used_at_relocate_end();
 }
 
-void ZStatHeap::print(const ZCollector* collector) const {
+void ZStatHeap::print(const ZGeneration* generation) const {
   log_info(gc, heap)("Min Capacity: "
                      ZSIZE_FMT, ZSIZE_ARGS(_at_initialize.min_capacity));
   log_info(gc, heap)("Max Capacity: "
@@ -1643,7 +1644,7 @@ void ZStatHeap::print(const ZCollector* collector) const {
                      .left(ZTABLE_ARGS(_at_relocate_end.used_low))
                      .end());
 
-  log_info(gc, heap)("%s Generation Statistics:", collector->is_young() ? "Young" : "Old");
+  log_info(gc, heap)("%s Generation Statistics:", generation->is_young() ? "Young" : "Old");
   ZStatTablePrinter gen_table(10, 18);
   log_info(gc, heap)("%s", gen_table()
                      .fill()
@@ -1687,7 +1688,7 @@ void ZStatHeap::print(const ZCollector* collector) const {
                      .left(ZTABLE_ARGS(_at_relocate_start.reclaimed))
                      .left(ZTABLE_ARGS(_at_relocate_end.reclaimed))
                      .end());
-  if (collector->is_young()) {
+  if (generation->is_young()) {
     log_info(gc, heap)("%s", gen_table()
                        .right("Promoted:")
                        .left(ZTABLE_ARGS_NA)

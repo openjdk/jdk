@@ -25,7 +25,7 @@
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zArray.inline.hpp"
-#include "gc/z/zCollector.inline.hpp"
+#include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zDriver.hpp"
 #include "gc/z/zFuture.inline.hpp"
 #include "gc/z/zGenerationId.hpp"
@@ -116,8 +116,8 @@ public:
       _type(type),
       _size(size),
       _flags(flags),
-      _young_seqnum(ZCollector::young()->seqnum()),
-      _old_seqnum(ZCollector::old()->seqnum()),
+      _young_seqnum(ZGeneration::young()->seqnum()),
+      _old_seqnum(ZGeneration::old()->seqnum()),
       _flushed(0),
       _committed(0),
       _pages(),
@@ -317,19 +317,19 @@ size_t ZPageAllocator::unused() const {
   return unused > 0 ? (size_t)unused : 0;
 }
 
-ZPageAllocatorStats ZPageAllocator::stats(ZCollector* collector) const {
+ZPageAllocatorStats ZPageAllocator::stats(ZGeneration* generation) const {
   ZLocker<ZLock> locker(&_lock);
   return ZPageAllocatorStats(_min_capacity,
                              _max_capacity,
                              soft_max_capacity(),
                              _capacity,
                              _used,
-                             _collection_stats[(int)collector->id()]._used_high,
-                             _collection_stats[(int)collector->id()]._used_low,
-                             used_generation(collector->id()),
-                             collector->freed(),
-                             collector->promoted(),
-                             collector->compacted());
+                             _collection_stats[(int)generation->id()]._used_high,
+                             _collection_stats[(int)generation->id()]._used_low,
+                             used_generation(generation->id()),
+                             generation->freed(),
+                             generation->promoted(),
+                             generation->compacted());
 }
 
 void ZPageAllocator::reset_statistics(ZGenerationId id) {
@@ -922,11 +922,11 @@ void ZPageAllocator::disable_safe_recycle() const {
 }
 
 static bool has_alloc_seen_young(const ZPageAllocation* allocation) {
-  return allocation->young_seqnum() != ZCollector::young()->seqnum();
+  return allocation->young_seqnum() != ZGeneration::young()->seqnum();
 }
 
 static bool has_alloc_seen_old(const ZPageAllocation* allocation) {
-  return allocation->old_seqnum() != ZCollector::old()->seqnum();
+  return allocation->old_seqnum() != ZGeneration::old()->seqnum();
 }
 
 bool ZPageAllocator::is_alloc_stalling_for_old() const {

@@ -70,7 +70,7 @@ static void z_verify_old_oop(zpointer* p) {
         // If young collection was aborted, the GC does not guarantee
         // that all old-to-young pointers have remembered set entry.
         guarantee(ZAbort::should_abort() ||
-                  ZCollector::young()->is_remembered(p) ||
+                  ZGeneration::young()->is_remembered(p) ||
                   ZStoreBarrierBuffer::is_in(p), "Must be remembered");
       } else {
         guarantee(ZPointer::is_store_good(o) || (uintptr_t(o) & ZPointerRememberedMask) == ZPointerRememberedMask, "Must be remembered");
@@ -489,8 +489,8 @@ void ZVerify::threads_start_processing() {
 
 void ZVerify::objects(bool verify_weaks) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
-  assert(ZCollector::young()->is_phase_mark_complete() ||
-         ZCollector::old()->is_phase_mark_complete(), "Invalid phase");
+  assert(ZGeneration::young()->is_phase_mark_complete() ||
+         ZGeneration::old()->is_phase_mark_complete(), "Invalid phase");
   assert(!ZResurrection::is_blocked(), "Invalid phase");
 
   // Note that object verification will fix the pointers and

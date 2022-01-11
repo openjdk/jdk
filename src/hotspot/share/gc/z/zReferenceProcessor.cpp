@@ -28,6 +28,7 @@
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zDriver.hpp"
+#include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zReferenceProcessor.hpp"
 #include "gc/z/zStat.hpp"
@@ -294,7 +295,7 @@ void ZReferenceProcessor::process_worker_discovered_list(zpointer discovered_lis
     *p = ptr;
     if (p != start) {
       if (ZHeap::heap()->is_old(p)) {
-        ZCollector::young()->remember(p);
+        ZGeneration::young()->remember(p);
       }
     }
   };

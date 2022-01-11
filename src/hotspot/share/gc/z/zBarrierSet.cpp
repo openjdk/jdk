@@ -25,6 +25,7 @@
 #include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zBarrierSetAssembler.hpp"
 #include "gc/z/zBarrierSetNMethod.hpp"
+#include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zStackWatermark.hpp"
@@ -99,8 +100,8 @@ void ZBarrierSet::on_thread_attach(Thread* thread) {
 
 void ZBarrierSet::on_thread_detach(Thread* thread) {
   // Flush and free any remaining mark stacks
-  ZCollector::young()->mark_flush_and_free(thread);
-  ZCollector::old()->mark_flush_and_free(thread);
+  ZGeneration::young()->mark_flush_and_free(thread);
+  ZGeneration::old()->mark_flush_and_free(thread);
 }
 
 void ZBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {

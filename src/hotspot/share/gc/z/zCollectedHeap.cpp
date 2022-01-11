@@ -30,9 +30,9 @@
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zAllocator.inline.hpp"
 #include "gc/z/zCollectedHeap.hpp"
-#include "gc/z/zCollector.inline.hpp"
 #include "gc/z/zDirector.hpp"
 #include "gc/z/zDriver.hpp"
+#include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zJNICritical.hpp"
@@ -322,15 +322,15 @@ VirtualSpaceSummary ZCollectedHeap::create_heap_space_summary() {
 }
 
 void ZCollectedHeap::safepoint_synchronize_begin() {
-  ZCollector::young()->synchronize_relocation();
-  ZCollector::old()->synchronize_relocation();
+  ZGeneration::young()->synchronize_relocation();
+  ZGeneration::old()->synchronize_relocation();
   SuspendibleThreadSet::synchronize();
 }
 
 void ZCollectedHeap::safepoint_synchronize_end() {
   SuspendibleThreadSet::desynchronize();
-  ZCollector::old()->desynchronize_relocation();
-  ZCollector::young()->desynchronize_relocation();
+  ZGeneration::old()->desynchronize_relocation();
+  ZGeneration::young()->desynchronize_relocation();
 }
 
 void ZCollectedHeap::prepare_for_verify() {
@@ -343,8 +343,8 @@ void ZCollectedHeap::print_on(outputStream* st) const {
 
 void ZCollectedHeap::print_on_error(outputStream* st) const {
   st->print_cr("ZGC Globals:");
-  st->print_cr(" Young Collector Phase/SeqNum: %s/%u", ZCollector::young()->phase_to_string(), ZCollector::young()->seqnum());
-  st->print_cr(" Old Collector Phase/SeqNum: %s/%u", ZCollector::old()->phase_to_string(), ZCollector::old()->seqnum());
+  st->print_cr(" Young Collection Phase/SeqNum: %s/%u", ZGeneration::young()->phase_to_string(), ZGeneration::young()->seqnum());
+  st->print_cr(" Old Collection Phase/SeqNum: %s/%u", ZGeneration::old()->phase_to_string(), ZGeneration::old()->seqnum());
   st->print_cr(" Offset Max:         " SIZE_FORMAT "%s (" PTR_FORMAT ")",
                byte_size_in_exact_unit(ZAddressOffsetMax),
                exact_unit_for_byte_size(ZAddressOffsetMax),

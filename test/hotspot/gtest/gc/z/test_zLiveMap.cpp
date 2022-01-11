@@ -39,11 +39,11 @@ public:
     _old_heap = ZHeap::_heap;
     ZHeap::_heap = (ZHeap*)os::malloc(sizeof(ZHeap), mtTest);
 
-    *(ZGenerationId*)&ZHeap::_heap->_old_collector._id = ZGenerationId::old;
-    *(ZGenerationId*)&ZHeap::_heap->_young_collector._id = ZGenerationId::young;
+    *(ZGenerationId*)&ZHeap::_heap->_old_generation._id = ZGenerationId::old;
+    *(ZGenerationId*)&ZHeap::_heap->_young_generation._id = ZGenerationId::young;
 
-    ZHeap::_heap->_old_collector._seqnum = 1;
-    ZHeap::_heap->_young_collector._seqnum = 2;
+    ZHeap::_heap->_old_generation._seqnum = 1;
+    ZHeap::_heap->_young_generation._seqnum = 2;
   }
 
   virtual void TearDown() {

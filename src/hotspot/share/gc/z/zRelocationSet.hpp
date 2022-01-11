@@ -29,7 +29,7 @@
 #include "gc/z/zLock.hpp"
 
 class ZForwarding;
-class ZCollector;
+class ZGeneration;
 class ZPage;
 class ZPageAllocator;
 class ZRelocationSetSelector;
@@ -39,7 +39,7 @@ class ZRelocationSet {
   template <bool> friend class ZRelocationSetIteratorImpl;
 
 private:
-  ZCollector*          _collector;
+  ZGeneration*         _generation;
   ZForwardingAllocator _allocator;
   ZForwarding**        _forwardings;
   size_t               _nforwardings;
@@ -50,11 +50,11 @@ private:
   ZWorkers* workers() const;
 
 public:
-  ZRelocationSet(ZCollector* collector);
+  ZRelocationSet(ZGeneration* generation);
 
   void install(const ZRelocationSetSelector* selector);
   void reset(ZPageAllocator* page_allocator);
-  ZCollector* collector() const;
+  ZGeneration* generation() const;
   ZArray<ZPage*>* flip_promoted_pages();
 
   void register_flip_promoted(const ZArray<ZPage*>& pages);

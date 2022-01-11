@@ -27,7 +27,7 @@
 #include "gc/z/zAllocationFlags.hpp"
 #include "gc/z/zAllocator.hpp"
 #include "gc/z/zArray.hpp"
-#include "gc/z/zCollector.hpp"
+#include "gc/z/zGeneration.hpp"
 #include "gc/z/zPageAge.hpp"
 #include "gc/z/zPageAllocator.hpp"
 #include "gc/z/zPageTable.hpp"
@@ -42,21 +42,21 @@ class ZHeap {
   friend class ZLiveMapTest;
 
 private:
-  static ZHeap*       _heap;
+  static ZHeap*      _heap;
 
-  ZPageAllocator      _page_allocator;
-  ZPageTable          _page_table;
+  ZPageAllocator     _page_allocator;
+  ZPageTable         _page_table;
 
-  ZAllocatorEden      _allocator_eden;
-  ZAllocatorSurvivor  _allocator_survivor;
-  ZAllocatorOld       _allocator_old;
+  ZAllocatorEden     _allocator_eden;
+  ZAllocatorSurvivor _allocator_survivor;
+  ZAllocatorOld      _allocator_old;
 
-  ZServiceability     _serviceability;
+  ZServiceability    _serviceability;
 
-  ZYoungCollector     _young_collector;
-  ZOldCollector       _old_collector;
+  ZYoungGeneration   _young_generation;
+  ZOldGeneration     _old_generation;
 
-  bool                _initialized;
+  bool               _initialized;
 
 public:
   static ZHeap* heap();

@@ -65,7 +65,7 @@
 typedef bool (*ZBarrierFastPath)(zpointer);
 typedef zpointer (*ZBarrierColor)(zaddress, zpointer);
 
-class ZCollector;
+class ZGeneration;
 
 class ZBarrier : public AllStatic {
   friend class ZStoreBarrierBuffer;
@@ -80,8 +80,8 @@ private:
 
   static zaddress make_load_good(zpointer ptr);
   static zaddress make_load_good_no_relocate(zpointer ptr);
-  static zaddress relocate_or_remap(zaddress_unsafe addr, ZCollector* collector);
-  static zaddress remap(zaddress_unsafe addr, ZCollector* collector);
+  static zaddress relocate_or_remap(zaddress_unsafe addr, ZGeneration* generation);
+  static zaddress remap(zaddress_unsafe addr, ZGeneration* generation);
   static void remember(volatile zpointer* p);
   static void mark_and_remember(volatile zpointer* p, zaddress addr);
 
@@ -123,7 +123,7 @@ public:
   static zpointer load_atomic(volatile zpointer* p);
 
   // Helpers for relocation
-  static ZCollector* remap_collector(zpointer ptr);
+  static ZGeneration* remap_generation(zpointer ptr);
   static void remap_young_relocated(volatile zpointer* p, zpointer o);
 
   // Helpers for marking

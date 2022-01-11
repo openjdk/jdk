@@ -33,7 +33,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 class Thread;
-class ZCollector;
+class ZGeneration;
 class ZMarkContext;
 class ZPageTable;
 class ZWorkers;
@@ -55,7 +55,7 @@ public:
   static const bool Finalizable   = true;
 
 private:
-  ZCollector* const   _collector;
+  ZGeneration* const  _generation;
   ZPageTable* const   _page_table;
   ZMarkStackAllocator _allocator;
   ZMarkStripeSet      _stripes;
@@ -101,7 +101,7 @@ private:
   void verify_all_stacks_empty() const;
 
 public:
-  ZMark(ZCollector* collector, ZPageTable* page_table);
+  ZMark(ZGeneration* generation, ZPageTable* page_table);
 
   bool is_initialized() const;
 

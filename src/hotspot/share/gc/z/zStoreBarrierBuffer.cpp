@@ -25,7 +25,7 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zBarrier.inline.hpp"
-#include "gc/z/zCollector.inline.hpp"
+#include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zStoreBarrierBuffer.inline.hpp"
 #include "gc/z/zUncoloredRoot.inline.hpp"
 #include "runtime/threadSMR.hpp"
@@ -85,10 +85,10 @@ void ZStoreBarrierBuffer::install_base_pointers_inner() {
     // Color with the last processed color
     const zpointer ptr = ZAddress::color(p_unsafe, _last_processed_color);
 
-    // Look up the collector that thinks that this pointer is not
+    // Look up the generation that thinks that this pointer is not
     // load good and check if the page is being relocated.
-    ZCollector* const remap_collector = ZBarrier::remap_collector(ptr);
-    ZForwarding* const forwarding = remap_collector->forwarding(p_unsafe);
+    ZGeneration* const remap_generation = ZBarrier::remap_generation(ptr);
+    ZForwarding* const forwarding = remap_generation->forwarding(p_unsafe);
     if (forwarding != NULL) {
       // Page is being relocated
       ZPage* const page = forwarding->page();
@@ -177,16 +177,16 @@ void ZStoreBarrierBuffer::on_new_phase_remember(int i) {
     // were supposed to be part of the remembered sets that the GC scans.
     // However, it is too late to add those entries at this point, so instead
     // we perform the GC remembered set scanning up-front here.
-    ZCollector::young()->scan_remembered_field(p);
+    ZGeneration::young()->scan_remembered_field(p);
   } else {
     // The remembered set wasn't flipped in this phase shift,
     // so just add the remembered set entry.
-    ZCollector::young()->remember(p);
+    ZGeneration::young()->remember(p);
   }
 }
 
 bool ZStoreBarrierBuffer::is_old_mark() const {
-  return ZCollector::old()->is_phase_mark();
+  return ZGeneration::old()->is_phase_mark();
 }
 
 bool ZStoreBarrierBuffer::stored_during_old_mark() const {

@@ -23,9 +23,9 @@
 
 #include "precompiled.hpp"
 #include "gc/z/zAddress.inline.hpp"
-#include "gc/z/zCollector.inline.hpp"
 #include "gc/z/zForwarding.inline.hpp"
 #include "gc/z/zForwardingAllocator.inline.hpp"
+#include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.hpp"
 #include "gc/z/zPage.inline.hpp"
@@ -50,11 +50,11 @@ public:
     _old_heap = ZHeap::_heap;
     ZHeap::_heap = (ZHeap*)os::malloc(sizeof(ZHeap), mtTest);
 
-    *(ZGenerationId*)&ZHeap::_heap->_old_collector._id = ZGenerationId::old;
-    *(ZGenerationId*)&ZHeap::_heap->_young_collector._id = ZGenerationId::young;
+    *(ZGenerationId*)&ZHeap::_heap->_old_generation._id = ZGenerationId::old;
+    *(ZGenerationId*)&ZHeap::_heap->_young_generation._id = ZGenerationId::young;
 
-    ZHeap::_heap->_old_collector._seqnum = 1;
-    ZHeap::_heap->_young_collector._seqnum = 2;
+    ZHeap::_heap->_old_generation._seqnum = 1;
+    ZHeap::_heap->_young_generation._seqnum = 2;
 
 
     bool reserved = os::attempt_reserve_memory_at((char*)ZAddressHeapBase, ZGranuleSize, false /* executable */);
@@ -183,9 +183,9 @@ public:
     const size_t object_size = 16;
     const zaddress object = page.alloc_object(object_size);
 
-    ZCollector::young()->set_phase(ZCollector::Phase::Mark);
-    ZCollector::young()->set_phase(ZCollector::Phase::MarkComplete);
-    ZCollector::young()->set_phase(ZCollector::Phase::Relocate);
+    ZGeneration::young()->set_phase(ZGeneration::Phase::Mark);
+    ZGeneration::young()->set_phase(ZGeneration::Phase::MarkComplete);
+    ZGeneration::young()->set_phase(ZGeneration::Phase::Relocate);
 
     //page.mark_object(object, dummy, dummy);
     {

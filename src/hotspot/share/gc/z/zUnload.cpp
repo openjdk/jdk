@@ -31,6 +31,7 @@
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zBarrierSetNMethod.hpp"
+#include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zNMethod.hpp"
 #include "gc/z/zStat.hpp"
@@ -147,7 +148,7 @@ void ZUnload::unlink() {
 
   {
     MutexLocker ml(ClassLoaderDataGraph_lock);
-    unloading_occurred = SystemDictionary::do_unloading(ZCollector::old()->gc_timer());
+    unloading_occurred = SystemDictionary::do_unloading(ZGeneration::old()->gc_timer());
   }
 
   Klass::clean_weak_klass_links(unloading_occurred);
