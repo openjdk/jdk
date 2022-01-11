@@ -87,6 +87,7 @@ const size_t      ZMarkCacheSize                = 1024; // Must be a power of tw
 // Partial array minimum size
 const size_t      ZMarkPartialArrayMinSizeShift = 12; // 4K
 const size_t      ZMarkPartialArrayMinSize      = (size_t)1 << ZMarkPartialArrayMinSizeShift;
+const size_t      ZMarkPartialArrayMinLength    = ZMarkPartialArrayMinSize / oopSize;
 
 // Max number of proactive/terminate flush attempts
 const size_t      ZMarkProactiveFlushMax        = 10;

@@ -71,10 +71,10 @@ private:
   size_t calculate_nstripes(uint nworkers) const;
 
   bool is_array(zaddress addr) const;
-  void push_partial_array(uintptr_t addr, size_t size, bool finalizable);
-  void follow_small_array(uintptr_t addr, size_t size, bool finalizable);
-  void follow_large_array(uintptr_t addr, size_t size, bool finalizable);
-  void follow_array(uintptr_t addr, size_t size, bool finalizable);
+  void push_partial_array(zpointer* addr, size_t length, bool finalizable);
+  void follow_array_elements_small(zpointer* addr, size_t length, bool finalizable);
+  void follow_array_elements_large(zpointer* addr, size_t length, bool finalizable);
+  void follow_array_elements(zpointer* addr, size_t length, bool finalizable);
   void follow_partial_array(ZMarkStackEntry entry, bool finalizable);
   void follow_array_object(objArrayOop obj, bool finalizable);
   void follow_object(oop obj, bool finalizable);

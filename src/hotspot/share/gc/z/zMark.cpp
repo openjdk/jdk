@@ -166,16 +166,23 @@ bool ZMark::is_array(zaddress addr) const {
   return to_oop(addr)->is_objArray();
 }
 
-void ZMark::push_partial_array(uintptr_t addr, size_t size, bool finalizable) {
+static uintptr_t encode_partial_array_offset(zpointer* addr) {
+  return untype(ZAddress::offset(to_zaddress((uintptr_t)addr))) >> ZMarkPartialArrayMinSizeShift;
+}
+
+static zpointer* decode_partial_array_offset(uintptr_t offset) {
+  return (zpointer*)ZOffset::address(to_zoffset(offset << ZMarkPartialArrayMinSizeShift));
+}
+
+void ZMark::push_partial_array(zpointer* addr, size_t length, bool finalizable) {
   assert(is_aligned(addr, ZMarkPartialArrayMinSize), "Address misaligned");
   ZMarkThreadLocalStacks* const stacks = ZThreadLocalData::mark_stacks(Thread::current(), _generation->id());
-  ZMarkStripe* const stripe = _stripes.stripe_for_addr_worker(addr);
-  const uintptr_t offset = untype(ZAddress::offset(to_zaddress(addr))) >> ZMarkPartialArrayMinSizeShift;
-  const uintptr_t length = size / oopSize;
+  ZMarkStripe* const stripe = _stripes.stripe_for_addr_worker((uintptr_t)addr);
+  const uintptr_t offset = encode_partial_array_offset(addr);
   const ZMarkStackEntry entry(offset, length, finalizable);
 
   log_develop_trace(gc, marking)("Array push partial: " PTR_FORMAT " (" SIZE_FORMAT "), stripe: " SIZE_FORMAT,
-                                 addr, size, _stripes.stripe_id(stripe));
+                                 p2i(addr), length, _stripes.stripe_id(stripe));
 
   stacks->push(&_allocator, &_stripes, stripe, &_terminate, entry, false /* publish */);
 }
@@ -190,68 +197,68 @@ static void mark_barrier_on_oop_array(volatile zpointer* p, size_t length, bool 
   }
 }
 
-void ZMark::follow_small_array(uintptr_t addr, size_t size, bool finalizable) {
-  assert(size <= ZMarkPartialArrayMinSize, "Too large, should be split");
-  const size_t length = size / oopSize;
+void ZMark::follow_array_elements_small(zpointer* addr, size_t length, bool finalizable) {
+  assert(length <= ZMarkPartialArrayMinLength, "Too large, should be split");
 
-  log_develop_trace(gc, marking)("Array follow small: " PTR_FORMAT " (" SIZE_FORMAT ")", addr, size);
+  log_develop_trace(gc, marking)("Array follow small: " PTR_FORMAT " (" SIZE_FORMAT ")", p2i(addr), length);
 
-  mark_barrier_on_oop_array((zpointer*)addr, length, finalizable, _generation->is_young());
+  mark_barrier_on_oop_array(addr, length, finalizable, _generation->is_young());
 }
 
-void ZMark::follow_large_array(uintptr_t addr, size_t size, bool finalizable) {
-  assert(size <= (size_t)arrayOopDesc::max_array_length(T_OBJECT) * oopSize, "Too large");
-  assert(size > ZMarkPartialArrayMinSize, "Too small, should not be split");
-  const uintptr_t start = addr;
-  const uintptr_t end = start + size;
+void ZMark::follow_array_elements_large(zpointer* addr, size_t length, bool finalizable) {
+  assert(length <= (size_t)arrayOopDesc::max_array_length(T_OBJECT), "Too large");
+  assert(length > ZMarkPartialArrayMinLength, "Too small, should not be split");
+
+  zpointer* const start = addr;
+  zpointer* const end = start + length;
 
   // Calculate the aligned middle start/end/size, where the middle start
   // should always be greater than the start (hence the +1 below) to make
   // sure we always do some follow work, not just split the array into pieces.
-  const uintptr_t middle_start = align_up(start + 1, ZMarkPartialArrayMinSize);
-  const size_t    middle_size = align_down(end - middle_start, ZMarkPartialArrayMinSize);
-  const uintptr_t middle_end = middle_start + middle_size;
+  zpointer* const middle_start = align_up(start + 1, ZMarkPartialArrayMinSize);
+  const size_t    middle_length = align_down(end - middle_start, ZMarkPartialArrayMinLength);
+  zpointer* const middle_end = middle_start + middle_length;
 
   log_develop_trace(gc, marking)("Array follow large: " PTR_FORMAT "-" PTR_FORMAT" (" SIZE_FORMAT "), "
                                  "middle: " PTR_FORMAT "-" PTR_FORMAT " (" SIZE_FORMAT ")",
-                                 start, end, size, middle_start, middle_end, middle_size);
+                                 p2i(start), p2i(end), length, p2i(middle_start), p2i(middle_end), middle_length);
 
   // Push unaligned trailing part
   if (end > middle_end) {
-    const uintptr_t trailing_addr = middle_end;
-    const size_t trailing_size = end - middle_end;
-    push_partial_array(trailing_addr, trailing_size, finalizable);
+    zpointer* const trailing_addr = middle_end;
+    const size_t trailing_length = end - middle_end;
+    push_partial_array(trailing_addr, trailing_length, finalizable);
   }
 
   // Push aligned middle part(s)
-  uintptr_t partial_addr = middle_end;
+  zpointer* partial_addr = middle_end;
   while (partial_addr > middle_start) {
     const size_t parts = 2;
-    const size_t partial_size = align_up((partial_addr - middle_start) / parts, ZMarkPartialArrayMinSize);
-    partial_addr -= partial_size;
-    push_partial_array(partial_addr, partial_size, finalizable);
+    const size_t partial_length = align_up((partial_addr - middle_start) / parts, ZMarkPartialArrayMinLength);
+    partial_addr -= partial_length;
+    push_partial_array(partial_addr, partial_length, finalizable);
   }
 
   // Follow leading part
   assert(start < middle_start, "Miscalculated middle start");
-  const uintptr_t leading_addr = start;
-  const size_t leading_size = middle_start - start;
-  follow_small_array(leading_addr, leading_size, finalizable);
+  zpointer* const leading_addr = start;
+  const size_t leading_length = middle_start - start;
+  follow_array_elements_small(leading_addr, leading_length, finalizable);
 }
 
-void ZMark::follow_array(uintptr_t addr, size_t size, bool finalizable) {
-  if (size <= ZMarkPartialArrayMinSize) {
-    follow_small_array(addr, size, finalizable);
+void ZMark::follow_array_elements(zpointer* addr, size_t length, bool finalizable) {
+  if (length <= ZMarkPartialArrayMinLength) {
+    follow_array_elements_small(addr, length, finalizable);
   } else {
-    follow_large_array(addr, size, finalizable);
+    follow_array_elements_large(addr, length, finalizable);
   }
 }
 
 void ZMark::follow_partial_array(ZMarkStackEntry entry, bool finalizable) {
-  const uintptr_t addr = untype(ZOffset::address(to_zoffset(entry.partial_array_offset() << ZMarkPartialArrayMinSizeShift)));
-  const size_t size = entry.partial_array_length() * oopSize;
+  zpointer* const addr = decode_partial_array_offset(entry.partial_array_offset());
+  const size_t length = entry.partial_array_length();
 
-  follow_array(addr, size, finalizable);
+  follow_array_elements(addr, length, finalizable);
 }
 
 template <bool finalizable, bool young>
@@ -315,11 +322,10 @@ void ZMark::follow_array_object(objArrayOop obj, bool finalizable) {
   // Should be convertible to colorless oop
   assert_is_valid(to_zaddress(obj));
 
-  // FIXME: Don't use uintptr_t
-  const uintptr_t addr = (uintptr_t)obj->base();
-  const size_t size = (size_t)obj->length() * oopSize;
+  zpointer* const addr = (zpointer*)obj->base();
+  const size_t length = (size_t)obj->length();
 
-  follow_array(addr, size, finalizable);
+  follow_array_elements(addr, length, finalizable);
 }
 
 void ZMark::follow_object(oop obj, bool finalizable) {
