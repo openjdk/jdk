@@ -408,6 +408,13 @@ class Address {
     : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
   Address(Register r, int64_t o)
     : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
+#ifdef __APPLE__
+  // macosx wants all the overloads
+  Address(Register r, uintptr_t o)
+    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
+  Address(Register r, ptrdiff_t o)
+    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
+#endif
   Address(Register r, uint64_t o)
     : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
   Address(Register r, ByteSize disp)
