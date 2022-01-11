@@ -4829,6 +4829,14 @@ void Assembler::vpopcntd(XMMRegister dst, XMMRegister src, int vector_len) {
   emit_int16(0x55, (0xC0 | encode));
 }
 
+void Assembler::vpopcntq(XMMRegister dst, XMMRegister src, int vector_len) {
+  assert(VM_Version::supports_avx512_vpopcntdq(), "must support vpopcntdq feature");
+  InstructionAttr attributes(vector_len, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
+  attributes.set_is_evex_instruction();
+  int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int16(0x55, (0xC0 | encode));
+}
+
 void Assembler::popf() {
   emit_int8((unsigned char)0x9D);
 }
