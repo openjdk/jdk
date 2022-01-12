@@ -783,9 +783,8 @@ ZStatSubPhase::ZStatSubPhase(const char* name) :
     ZStatPhase("Subphase", name) {}
 
 void ZStatSubPhase::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
-  assert(timer != NULL || Thread::current()->is_Worker_thread(), "Incorrect timer value");
-
-  if (timer != NULL && !Thread::current()->is_Worker_thread()) {
+  if (timer != NULL) {
+    assert(!Thread::current()->is_Worker_thread(), "Unexpected timer value");
     timer->register_gc_phase_start(name(), start);
   }
 
@@ -803,7 +802,8 @@ void ZStatSubPhase::register_end(ConcurrentGCTimer* timer, const Ticks& start, c
     return;
   }
 
-  if (timer != NULL && !Thread::current()->is_Worker_thread()) {
+  if (timer != NULL) {
+    assert(!Thread::current()->is_Worker_thread(), "Unexpected timer value");
     timer->register_gc_phase_end(end);
   }
 
