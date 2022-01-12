@@ -25,8 +25,6 @@
 #ifndef CPU_X86_COPY_X86_HPP
 #define CPU_X86_COPY_X86_HPP
 
-#include OS_CPU_HEADER(copy)
-
 static void pd_fill_to_words(HeapWord* tohw, size_t count, juint value) {
 #ifdef AMD64
   julong* to = (julong*) tohw;
