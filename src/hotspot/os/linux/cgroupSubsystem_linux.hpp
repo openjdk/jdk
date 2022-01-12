@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,8 +157,10 @@ PRAGMA_DIAG_POP
                                      NULL,                                \
                                      scan_fmt,                            \
                                      &variable);                          \
-  if (err != 0)                                                           \
+  if (err != 0) {                                                         \
+    log_trace(os, container)(logstring, (return_type) OSCONTAINER_ERROR); \
     return (return_type) OSCONTAINER_ERROR;                               \
+  }                                                                       \
                                                                           \
   log_trace(os, container)(logstring, variable);                          \
 }
