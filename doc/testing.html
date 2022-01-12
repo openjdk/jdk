@@ -193,9 +193,9 @@ TEST FAILURE</code></pre>
 <h4 id="aot_modules-1">AOT_MODULES</h4>
 <p>Generate AOT modules before testing for the specified module, or set of modules. If multiple modules are specified, they should be separated by space (or, to help avoid quoting issues, the special value <code>%20</code>).</p>
 <h4 id="retry_count">RETRY_COUNT</h4>
-<p>Retry failed tests up to a set number of times. Defaults to 0.</p>
+<p>Retry failed tests up to a set number of times, until they pass. This allows to pass the tests with intermittent failures. Defaults to 0.</p>
 <h4 id="repeat_count">REPEAT_COUNT</h4>
-<p>Repeat the tests for a set number of times. Defaults to 0.</p>
+<p>Repeat the tests up to a set number of times, stopping at first failure. This helps to reproduce intermittent test failures. Defaults to 0.</p>
 <h3 id="gtest-keywords">Gtest keywords</h3>
 <h4 id="repeat">REPEAT</h4>
 <p>The number of times to repeat the tests (<code>--gtest_repeat</code>).</p>
