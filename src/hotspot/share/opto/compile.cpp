@@ -4789,23 +4789,25 @@ void Compile::print_method_impl(CompilerPhaseType cpt, const char *name, int lev
   C->_latest_stage_start_counter.stamp();
 }
 
-void Compile::begin_method(int level) {
+// Only used from CompileWrapper
+void Compile::begin_method() {
 #ifndef PRODUCT
-  if (_method != NULL && should_print(level)) {
+  if (_method != NULL && should_print(1)) {
     _printer->begin_method();
   }
 #endif
   C->_latest_stage_start_counter.stamp();
 }
 
-void Compile::end_method(int level) {
+// Only used from CompileWrapper
+void Compile::end_method() {
   EventCompilerPhase event;
   if (event.should_commit()) {
-    CompilerEvent::PhaseEvent::post(event, C->_latest_stage_start_counter, PHASE_END, C->_compile_id, level);
+    CompilerEvent::PhaseEvent::post(event, C->_latest_stage_start_counter, PHASE_END, C->_compile_id, 1);
   }
 
 #ifndef PRODUCT
-  if (_method != NULL && should_print(level)) {
+  if (_method != NULL && should_print(1)) {
     _printer->end_method();
   }
 #endif

@@ -650,9 +650,9 @@ class Compile : public Phase {
 
   Ticks _latest_stage_start_counter;
 
-  void begin_method(int level = 1);
-  void end_method(int level = 1);
-  bool should_print(int level = 1);
+  void begin_method();
+  void end_method();
+  bool should_print(int level);
 
   void print_method(CompilerPhaseType cpt, int level);
   void print_method(CompilerPhaseType cpt, Node* n, int level = 3);
