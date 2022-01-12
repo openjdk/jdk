@@ -273,8 +273,8 @@ static OopMap* generate_oop_map(StubAssembler* sasm, bool save_fpu_registers) {
   return oop_map;
 }
 
-static OopMap* save_live_registers(StubAssembler* sasm,
-                                   bool save_fpu_registers = true) {
+static void save_live_registers_no_oop_map(StubAssembler* sasm,
+                                              bool save_fpu_registers = true) {
   __ block_comment("save_live_registers");
 
   __ push(RegSet::range(r0, r29), sp);         // integer registers except lr & sp
@@ -288,7 +288,11 @@ static OopMap* save_live_registers(StubAssembler* sasm,
   } else {
     __ add(sp, sp, -32 * wordSize);
   }
+}
 
+static OopMap* save_live_registers(StubAssembler* sasm,
+                                   bool save_fpu_registers = true) {
+  save_live_registers_no_oop_map(sasm, save_fpu_registers);
   return generate_oop_map(sasm, save_fpu_registers);
 }
 
@@ -713,6 +717,16 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         // r0,: new instance
       }
 
+      break;
+
+    case load_klass_id:
+      {
+        StubFrame f(sasm, "load_klass", dont_gc_arguments);
+        save_live_registers_no_oop_map(sasm, true);
+        f.load_argument(0, r0); // obj
+        __ call_VM_leaf(CAST_FROM_FN_PTR(address, oopDesc::load_klass_runtime), r0);
+        restore_live_registers_except_r0(sasm, true);
+      }
       break;
 
     case counter_overflow_id:

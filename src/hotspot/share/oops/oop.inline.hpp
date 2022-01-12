@@ -374,6 +374,7 @@ oop oopDesc::forwardee(markWord header) const {
   } else
 #endif
   {
+    assert(header.is_marked(), "only decode when actually forwarded");
     return cast_to_oop(header.decode_pointer());
   }
 }

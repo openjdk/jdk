@@ -3525,18 +3525,27 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
   Register obj = op->obj()->as_pointer_register();
   Register result = op->result_opr()->as_pointer_register();
 
-  CodeEmitInfo* info = op->info();
-  if (info != NULL) {
-    add_debug_info_for_null_check_here(info);
+  if (op->info() != NULL) {
+    add_debug_info_for_null_check_here(op->info());
   }
-
 #ifdef _LP64
-  if (UseCompressedClassPointers) {
-    __ movl(result, Address(obj, oopDesc::klass_offset_in_bytes()));
-    __ decode_klass_not_null(result, rscratch1);
-  } else
+  Register tmp = rscratch1;
+  assert_different_registers(tmp, obj);
+  assert_different_registers(tmp, result);
+
+  // Check if we can take the (common) fast path, if obj is unlocked.
+  __ movq(tmp, Address(obj, oopDesc::mark_offset_in_bytes()));
+  __ xorq(tmp, markWord::unlocked_value);
+  __ testb(tmp, markWord::lock_mask_in_place);
+  __ jcc(Assembler::notZero, *op->stub()->entry());
+
+  // Fast-path: shift and decode Klass*.
+  __ movq(result, tmp);
+  __ shrq(result, markWord::klass_shift);
+  __ decode_klass_not_null(result, tmp);
+#else
+  __ movptr(result, Address(obj, oopDesc::klass_offset_in_bytes()));
 #endif
-    __ movptr(result, Address(obj, oopDesc::klass_offset_in_bytes()));
 }
 
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
