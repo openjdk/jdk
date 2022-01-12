@@ -109,7 +109,8 @@ class SystemProperty : public PathString {
   void set_next(SystemProperty* next) { _next = next; }
 
   bool is_readable() const {
-    return !_internal || strcmp(_key, "jdk.boot.class.path.append") == 0;
+    return !_internal || (strcmp(_key, "jdk.boot.class.path.append") == 0 &&
+                          value() != NULL);
   }
 
   // A system property should only have its value set

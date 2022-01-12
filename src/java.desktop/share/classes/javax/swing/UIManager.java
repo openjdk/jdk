@@ -57,7 +57,6 @@ import sun.awt.SunToolkit;
 import sun.awt.OSInfo;
 import sun.security.action.GetPropertyAction;
 import sun.swing.SwingUtilities2;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Objects;
 import sun.awt.AppContext;
@@ -1301,9 +1300,9 @@ public class UIManager implements Serializable
                         if (file.exists()) {
                             // InputStream has been buffered in Properties
                             // class
-                            FileInputStream ins = new FileInputStream(file);
-                            props.load(ins);
-                            ins.close();
+                            try (FileInputStream ins = new FileInputStream(file)) {
+                                props.load(ins);
+                            }
                         }
                     }
                     catch (Exception e) {

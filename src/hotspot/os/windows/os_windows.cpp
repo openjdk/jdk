@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -568,7 +568,7 @@ static unsigned __stdcall thread_native_entry(Thread* thread) {
 static OSThread* create_os_thread(Thread* thread, HANDLE thread_handle,
                                   int thread_id) {
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread(NULL, NULL);
+  OSThread* osthread = new OSThread();
   if (osthread == NULL) return NULL;
 
   // Initialize the JDK library's interrupt event.
@@ -671,7 +671,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   unsigned thread_id;
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread(NULL, NULL);
+  OSThread* osthread = new OSThread();
   if (osthread == NULL) {
     return false;
   }
@@ -4754,11 +4754,11 @@ int os::open(const char *path, int oflag, int mode) {
   return fd;
 }
 
-FILE* os::open(int fd, const char* mode) {
+FILE* os::fdopen(int fd, const char* mode) {
   return ::_fdopen(fd, mode);
 }
 
-size_t os::write(int fd, const void *buf, unsigned int nBytes) {
+ssize_t os::write(int fd, const void *buf, unsigned int nBytes) {
   return ::write(fd, buf, nBytes);
 }
 

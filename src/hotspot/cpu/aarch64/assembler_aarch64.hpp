@@ -2424,6 +2424,12 @@ public:
   INSN(cnt,    0, 0b100000010110, 0); // accepted arrangements: T8B, T16B
   INSN(uaddlp, 1, 0b100000001010, 2); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
   INSN(uaddlv, 1, 0b110000001110, 1); // accepted arrangements: T8B, T16B, T4H, T8H,      T4S
+  // Zero compare.
+  INSN(cmeq,   0, 0b100000100110, 3); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
+  INSN(cmge,   1, 0b100000100010, 3); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
+  INSN(cmgt,   0, 0b100000100010, 3); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
+  INSN(cmle,   1, 0b100000100110, 3); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
+  INSN(cmlt,   0, 0b100000101010, 3); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
 
 #undef INSN
 
@@ -2756,20 +2762,18 @@ public:
 
   // Move from general purpose register
   //   mov  Vd.T[index], Rn
-  void mov(FloatRegister Vd, SIMD_Arrangement T, int index, Register Xn) {
+  void mov(FloatRegister Vd, SIMD_RegVariant T, int index, Register Xn) {
+    guarantee(T != Q, "invalid register variant");
     starti;
-    f(0b01001110000, 31, 21), f(((1 << (T >> 1)) | (index << ((T >> 1) + 1))), 20, 16);
+    f(0b01001110000, 31, 21), f(((1 << T) | (index << (T + 1))), 20, 16);
     f(0b000111, 15, 10), zrf(Xn, 5), rf(Vd, 0);
   }
 
   // Move to general purpose register
   //   mov  Rd, Vn.T[index]
-  void mov(Register Xd, FloatRegister Vn, SIMD_Arrangement T, int index) {
-    guarantee(T >= T2S && T < T1Q, "only D and S arrangements are supported");
-    starti;
-    f(0, 31), f((T >= T1D) ? 1:0, 30), f(0b001110000, 29, 21);
-    f(((1 << (T >> 1)) | (index << ((T >> 1) + 1))), 20, 16);
-    f(0b001111, 15, 10), rf(Vn, 5), rf(Xd, 0);
+  void mov(Register Xd, FloatRegister Vn, SIMD_RegVariant T, int index) {
+    guarantee(T == S || T == D, "invalid register variant");
+    umov(Xd, Vn, T, index);
   }
 
 private:

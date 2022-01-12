@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -273,7 +273,6 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
 
   if (!DynamicDumpSharedSpaces) {
     set_shared_path_table(info->_shared_path_table);
-    CDS_JAVA_HEAP_ONLY(_heap_obj_roots = CompressedOops::encode(HeapShared::roots());)
   }
 }
 
@@ -1614,8 +1613,8 @@ size_t FileMapInfo::write_heap_regions(GrowableArray<MemRegion>* regions,
 
 void FileMapInfo::write_bytes(const void* buffer, size_t nbytes) {
   assert(_file_open, "must be");
-  size_t n = os::write(_fd, buffer, (unsigned int)nbytes);
-  if (n != nbytes) {
+  ssize_t n = os::write(_fd, buffer, (unsigned int)nbytes);
+  if (n < 0 || (size_t)n != nbytes) {
     // If the shared archive is corrupted, close it and remove it.
     close();
     remove(_full_path);
@@ -2097,7 +2096,6 @@ void FileMapInfo::map_heap_regions_impl() {
                          /*is_open_archive=*/ true,
                          &open_heap_regions, &num_open_heap_regions)) {
       HeapShared::set_open_regions_mapped();
-      HeapShared::set_roots(header()->heap_obj_roots());
     }
   }
 }
@@ -2404,8 +2402,8 @@ void FileMapHeader::set_as_offset(char* p, size_t *offset) {
 
 int FileMapHeader::compute_crc() {
   char* start = (char*)this;
-  // start computing from the field after _crc to end of base archive name.
-  char* buf = (char*)&(_generic_header._crc) + sizeof(_generic_header._crc);
+  // start computing from the field after _header_size to end of base archive name.
+  char* buf = (char*)&(_generic_header._header_size) + sizeof(_generic_header._header_size);
   size_t sz = header_size() - (buf - start);
   int crc = ClassLoader::crc32(0, buf, (jint)sz);
   return crc;

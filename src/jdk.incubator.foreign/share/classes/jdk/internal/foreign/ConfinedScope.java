@@ -39,10 +39,7 @@ import java.lang.ref.Cleaner;
  */
 final class ConfinedScope extends ResourceScopeImpl {
 
-    private boolean closed; // = false
-    private int lockCount = 0;
     private int asyncReleaseCount = 0;
-    private final Thread owner;
 
     static final VarHandle ASYNC_RELEASE_COUNT;
 
@@ -55,40 +52,29 @@ final class ConfinedScope extends ResourceScopeImpl {
     }
 
     public ConfinedScope(Thread owner, Cleaner cleaner) {
-        super(new ConfinedResourceList(), cleaner);
-        this.owner = owner;
-    }
-
-    @ForceInline
-    public final void checkValidState() {
-        if (owner != Thread.currentThread()) {
-            throw new IllegalStateException("Attempted access outside owning thread");
-        }
-        if (closed) {
-            throw new IllegalStateException("Already closed");
-        }
+        super(owner, new ConfinedResourceList(), cleaner);
     }
 
     @Override
     public boolean isAlive() {
-        return !closed;
+        return state != CLOSED;
     }
 
     @Override
     @ForceInline
     public void acquire0() {
-        checkValidState();
-        if (lockCount == MAX_FORKS) {
+        checkValidStateSlow();
+        if (state == MAX_FORKS) {
             throw new IllegalStateException("Scope keep alive limit exceeded");
         }
-        lockCount++;
+        state++;
     }
 
     @Override
     @ForceInline
     public void release0() {
         if (Thread.currentThread() == owner) {
-            lockCount--;
+            state--;
         } else {
             // It is possible to end up here in two cases: this scope was kept alive by some other confined scope
             // which is implicitly released (in which case the release call comes from the cleaner thread). Or,
@@ -99,17 +85,12 @@ final class ConfinedScope extends ResourceScopeImpl {
     }
 
     void justClose() {
-        this.checkValidState();
-        if (lockCount == 0 || lockCount - ((int)ASYNC_RELEASE_COUNT.getVolatile(this)) == 0) {
-            closed = true;
+        checkValidStateSlow();
+        if (state == 0 || state - ((int)ASYNC_RELEASE_COUNT.getVolatile(this)) == 0) {
+            state = CLOSED;
         } else {
-            throw new IllegalStateException("Scope is kept alive by " + lockCount + " scopes");
+            throw new IllegalStateException("Scope is kept alive by " + state + " scopes");
         }
-    }
-
-    @Override
-    public Thread ownerThread() {
-        return owner;
     }
 
     /**

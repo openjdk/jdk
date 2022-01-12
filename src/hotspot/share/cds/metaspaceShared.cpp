@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -384,7 +384,7 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   // Dump/restore the symbol/string/subgraph_info tables
   SymbolTable::serialize_shared_table_header(soc);
   StringTable::serialize_shared_table_header(soc);
-  HeapShared::serialize_subgraph_info_table_header(soc);
+  HeapShared::serialize(soc);
   SystemDictionaryShared::serialize_dictionary_headers(soc);
 
   InstanceMirrorKlass::serialize_offsets(soc);
@@ -596,7 +596,7 @@ public:
   void do_cld(ClassLoaderData* cld) {
     assert(cld->is_alive(), "must be");
     _loaded_cld.append(cld);
-    _loaded_cld_handles.append(OopHandle(Universe::vm_global(), cld->holder_phantom()));
+    _loaded_cld_handles.append(OopHandle(Universe::vm_global(), cld->holder()));
   }
 
   int nof_cld() const                { return _loaded_cld.length(); }

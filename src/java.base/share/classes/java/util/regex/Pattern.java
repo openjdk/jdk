@@ -1795,6 +1795,8 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             if (patternLength != cursor) {
                 if (peek() == ')') {
                     throw error("Unmatched closing ')'");
+                } else if (cursor == patternLength + 1 && temp[patternLength - 1] == '\\') {
+                    throw error("Unescaped trailing backslash");
                 } else {
                     throw error("Unexpected internal error");
                 }

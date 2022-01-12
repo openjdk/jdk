@@ -1232,3 +1232,39 @@ void C2_MacroAssembler::sve_reduce_integral(int opc, Register dst, BasicType bt,
     }
   }
 }
+
+// Set elements of the dst predicate to true if the element number is
+// in the range of [0, lane_cnt), or to false otherwise.
+void C2_MacroAssembler::sve_ptrue_lanecnt(PRegister dst, SIMD_RegVariant size, int lane_cnt) {
+  assert(size != Q, "invalid size");
+  switch(lane_cnt) {
+    case 1: /* VL1 */
+    case 2: /* VL2 */
+    case 3: /* VL3 */
+    case 4: /* VL4 */
+    case 5: /* VL5 */
+    case 6: /* VL6 */
+    case 7: /* VL7 */
+    case 8: /* VL8 */
+      sve_ptrue(dst, size, lane_cnt);
+      break;
+    case 16:
+      sve_ptrue(dst, size, /* VL16 */ 0b01001);
+      break;
+    case 32:
+      sve_ptrue(dst, size, /* VL32 */ 0b01010);
+      break;
+    case 64:
+      sve_ptrue(dst, size, /* VL64 */ 0b01011);
+      break;
+    case 128:
+      sve_ptrue(dst, size, /* VL128 */ 0b01100);
+      break;
+    case 256:
+      sve_ptrue(dst, size, /* VL256 */ 0b01101);
+      break;
+    default:
+      assert(false, "unsupported");
+      ShouldNotReachHere();
+  }
+}
