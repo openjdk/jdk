@@ -28,7 +28,6 @@
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zDriver.hpp"
-#include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zReferenceProcessor.hpp"
 #include "gc/z/zStat.hpp"
@@ -36,6 +35,7 @@
 #include "gc/z/zTracer.inline.hpp"
 #include "gc/z/zValue.inline.hpp"
 #include "memory/universe.hpp"
+#include "oops/access.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
@@ -292,12 +292,10 @@ void ZReferenceProcessor::process_worker_discovered_list(zpointer discovered_lis
   // The list is chained through the discovered field,
   // but the first entry is not in the heap.
   auto store_in_list = [&](zpointer* p, zpointer ptr) {
-    *p = ptr;
     if (p != start) {
-      if (ZHeap::heap()->is_old(p)) {
-        ZGeneration::young()->remember(p);
-      }
+      ZBarrier::store_barrier_on_heap_oop_field(p, false /* heal */);
     }
+    *p = ptr;
   };
 
   zpointer* p = start;
