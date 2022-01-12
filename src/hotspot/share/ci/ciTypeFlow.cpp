@@ -2535,10 +2535,12 @@ ciTypeFlow::Loop* ciTypeFlow::Loop::sorted_merge(Loop* lp, ciMethod* method) {
     int lp_count = profiled_count(method, lp);
     // Find insertion point for "lp"
     while (current != NULL) {
-      if (current == lp)
+      if (current == lp) {
         return leaf; // Already in list
-      if (current->head()->pre_order() < lp_pre_order)
+      }
+      if (current->head()->pre_order() < lp_pre_order) {
         break;
+      }
       int current_count = profiled_count(method, current);
       // In the case of a shared head, make the most frequent head/tail (as reported by profiling) the inner loop
       if (current->head() == lp->head() && current_count < lp_count) {
