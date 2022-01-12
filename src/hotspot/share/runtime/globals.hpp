@@ -1346,11 +1346,6 @@ const intx ObjectAlignmentInBytes = 8;
           "(using CompileCommand or marked w/ @ForceInline)")               \
           range(0, max_jint)                                                \
                                                                             \
-  product(intx, MinInliningThreshold, 0,                                    \
-          "(Deprecated) The minimum invocation count a method needs to"     \
-          "have to be inlined")                                             \
-          range(0, max_jint)                                                \
-                                                                            \
   develop(intx, MethodHistogramCutoff, 100,                                 \
           "The cutoff value for method invocation histogram (+CountCalls)") \
                                                                             \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -675,13 +675,13 @@ const char* os::get_current_directory(char *buf, size_t buflen) {
   return getcwd(buf, buflen);
 }
 
-FILE* os::open(int fd, const char* mode) {
+FILE* os::fdopen(int fd, const char* mode) {
   return ::fdopen(fd, mode);
 }
 
-size_t os::write(int fd, const void *buf, unsigned int nBytes) {
-  size_t res;
-  RESTARTABLE((size_t) ::write(fd, buf, (size_t) nBytes), res);
+ssize_t os::write(int fd, const void *buf, unsigned int nBytes) {
+  ssize_t res;
+  RESTARTABLE(::write(fd, buf, (size_t) nBytes), res);
   return res;
 }
 

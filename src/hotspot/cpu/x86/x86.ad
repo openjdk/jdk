@@ -1405,6 +1405,7 @@ const bool Matcher::match_rule_supported(int opcode) {
       }
       break;
     case Op_PopCountVI:
+    case Op_PopCountVL:
       if (!UsePopCountInstruction || !VM_Version::supports_avx512_vpopcntdq()) {
         return false;
       }
@@ -8586,6 +8587,20 @@ instruct vpopcountI(vec dst, vec src) %{
 
     int vlen_enc = vector_length_encoding(this);
     __ vpopcntd($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vpopcountL(vec dst, vec src) %{
+  match(Set dst (PopCountVL src));
+  format %{ "vpopcntq  $dst,$src\t! vector popcount packedL" %}
+  ins_encode %{
+    assert(UsePopCountInstruction, "not enabled");
+
+    int vlen_enc = vector_length_encoding(this, $src);
+    __ vpopcntq($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
+    __ evpmovqd($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
+
   %}
   ins_pipe( pipe_slow );
 %}

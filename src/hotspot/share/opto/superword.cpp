@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2553,7 +2553,7 @@ void SuperWord::output() {
                  opc == Op_AbsF || opc == Op_AbsD ||
                  opc == Op_AbsI || opc == Op_AbsL ||
                  opc == Op_NegF || opc == Op_NegD ||
-                 opc == Op_PopCountI) {
+                 opc == Op_PopCountI || opc == Op_PopCountL) {
         assert(n->req() == 2, "only one input expected");
         Node* in = vector_opd(p, 1);
         vn = VectorNode::make(opc, in, NULL, vlen, velt_basic_type(n));
@@ -2928,6 +2928,7 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) {
     }
     return true;
   }
+
   if (VectorNode::is_muladds2i(use)) {
     // MulAddS2I takes shorts and produces ints - hence the special checks
     // on alignment and size.
@@ -2943,6 +2944,24 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) {
     }
     return true;
   }
+
+  if (VectorNode::is_vpopcnt_long(use)) {
+    // VPOPCNT_LONG takes long and produces int - hence the special checks
+    // on alignment and size.
+    if (u_pk->size() != d_pk->size()) {
+      return false;
+    }
+    for (uint i = 0; i < MIN2(d_pk->size(), u_pk->size()); i++) {
+      Node* ui = u_pk->at(i);
+      Node* di = d_pk->at(i);
+      if (alignment(ui) * 2 != alignment(di)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+
   if (u_pk->size() != d_pk->size())
     return false;
   for (uint i = 0; i < u_pk->size(); i++) {
