@@ -35,43 +35,74 @@
 class G1CMBitMap;
 class G1FullCollector;
 
+// Determines the regions in the heap that should be part of the compaction and
+// distributes them among the compaction queues in round-robin fashion.
+class G1DetermineCompactionQueueClosure : public HeapRegionClosure {
+  G1CollectedHeap* _g1h;
+  G1FullCollector* _collector;
+  uint _cur_worker;
+  bool _found_empty_regions;
+
+  template<bool is_humongous>
+  void free_pinned_region(HeapRegion* hr);
+
+  bool should_compact(HeapRegion* hr) const;
+
+  // Returns the current worker id to assign a compaction point to, and selects
+  // the next one round-robin style.
+  uint next_worker();
+
+  G1FullGCCompactionPoint* next_compaction_point();
+
+  void add_to_compaction_queue(G1FullGCCompactionPoint* cp, HeapRegion* hr);
+
+public:
+  G1DetermineCompactionQueueClosure(G1FullCollector* collector);
+
+  bool do_heap_region(HeapRegion* hr) override;
+
+  bool found_empty_regions() { return _found_empty_regions; }
+};
+
 class G1FullGCPrepareTask : public G1FullGCTask {
-protected:
-  volatile bool     _freed_regions;
+  volatile bool     _has_free_compaction_targets;
   HeapRegionClaimer _hrclaimer;
 
-  void set_freed_regions();
+  void set_has_free_compaction_targets();
 
 public:
   G1FullGCPrepareTask(G1FullCollector* collector);
   void work(uint worker_id);
-  void prepare_serial_compaction();
-  bool has_freed_regions();
+  // After the Prepare phase, are there any unused (empty) regions (compaction
+  // targets) at the end of any compaction queues?
+  bool has_free_compaction_targets();
 
-protected:
+private:
   class G1CalculatePointersClosure : public HeapRegionClosure {
-  private:
-    template<bool is_humongous>
-    void free_pinned_region(HeapRegion* hr);
-  protected:
     G1CollectedHeap* _g1h;
     G1FullCollector* _collector;
     G1CMBitMap* _bitmap;
     G1FullGCCompactionPoint* _cp;
-    bool _regions_freed;
 
-    bool should_compact(HeapRegion* hr);
     void prepare_for_compaction(HeapRegion* hr);
-    void prepare_for_compaction_work(G1FullGCCompactionPoint* cp, HeapRegion* hr);
-
-    void reset_region_metadata(HeapRegion* hr);
 
   public:
     G1CalculatePointersClosure(G1FullCollector* collector,
                                G1FullGCCompactionPoint* cp);
 
     bool do_heap_region(HeapRegion* hr);
-    bool freed_regions();
+  };
+
+  class G1ResetMetadataClosure : public HeapRegionClosure {
+    G1CollectedHeap* _g1h;
+    G1FullCollector* _collector;
+
+    void reset_region_metadata(HeapRegion* hr);
+
+  public:
+    G1ResetMetadataClosure(G1FullCollector* collector);
+
+    bool do_heap_region(HeapRegion* hr);
   };
 
   class G1PrepareCompactLiveClosure : public StackObj {
@@ -79,19 +110,6 @@ protected:
 
   public:
     G1PrepareCompactLiveClosure(G1FullGCCompactionPoint* cp);
-    size_t apply(oop object);
-  };
-
-  class G1RePrepareClosure : public StackObj {
-    G1FullGCCompactionPoint* _cp;
-    HeapRegion* _current;
-
-  public:
-    G1RePrepareClosure(G1FullGCCompactionPoint* hrcp,
-                       HeapRegion* hr) :
-        _cp(hrcp),
-        _current(hr) { }
-
     size_t apply(oop object);
   };
 };

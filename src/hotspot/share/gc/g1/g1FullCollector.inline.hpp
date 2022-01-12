@@ -43,6 +43,10 @@ bool G1FullCollector::is_skip_marking(oop obj) const {
   return _region_attr_table.is_skip_marking(cast_from_oop<HeapWord*>(obj));
 }
 
+bool G1FullCollector::is_compaction_target(uint region_index) const {
+  return _region_attr_table.is_compacting(region_index) || is_free(region_index);
+}
+
 void G1FullCollector::set_free(uint region_idx) {
   _region_attr_table.set_free(region_idx);
 }

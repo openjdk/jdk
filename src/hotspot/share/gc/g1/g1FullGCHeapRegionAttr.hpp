@@ -70,6 +70,10 @@ public:
     return get_by_address(obj) == Compacting;
   }
 
+  bool is_compacting(uint idx) const {
+    return get_by_index(idx) == Compacting;
+  }
+
   bool is_skip_compacting(uint idx) const {
     return get_by_index(idx) == SkipCompacting;
   }
