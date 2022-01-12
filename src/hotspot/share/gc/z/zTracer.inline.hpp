@@ -46,26 +46,18 @@ inline void ZTracer::report_thread_phase(const char* name, const Ticks& start, c
   }
 }
 
-inline void ZTracer::report_thread_event(const char* name, const Ticks& start, const Ticks& end) {
-  if (EventZThreadEvent::is_enabled()) {
-    send_thread_event(name, start, end);
+inline void ZTracer::report_thread_debug(const char* name, const Ticks& start, const Ticks& end) {
+  if (EventZThreadDebug::is_enabled()) {
+    send_thread_debug(name, start, end);
   }
 }
 
-inline ZTraceThreadPhase::ZTraceThreadPhase(const char* name) :
+inline ZTraceThreadDebug::ZTraceThreadDebug(const char* name) :
     _start(Ticks::now()),
     _name(name) {}
 
-inline ZTraceThreadPhase::~ZTraceThreadPhase() {
-  ZTracer::report_thread_phase(_name, _start, Ticks::now());
-}
-
-inline ZTraceThreadEvent::ZTraceThreadEvent(const char* name) :
-    _start(Ticks::now()),
-    _name(name) {}
-
-inline ZTraceThreadEvent::~ZTraceThreadEvent() {
-  ZTracer::report_thread_event(_name, _start, Ticks::now());
+inline ZTraceThreadDebug::~ZTraceThreadDebug() {
+  ZTracer::report_thread_debug(_name, _start, Ticks::now());
 }
 
 #endif // SHARE_GC_Z_ZTRACER_INLINE_HPP

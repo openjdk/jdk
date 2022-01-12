@@ -36,7 +36,7 @@ private:
   static void send_stat_counter(const ZStatCounter& counter, uint64_t increment, uint64_t value);
   static void send_stat_sampler(const ZStatSampler& sampler, uint64_t value);
   static void send_thread_phase(const char* name, const Ticks& start, const Ticks& end);
-  static void send_thread_event(const char* name, const Ticks& start, const Ticks& end);
+  static void send_thread_debug(const char* name, const Ticks& start, const Ticks& end);
 
 public:
   static void initialize();
@@ -44,7 +44,7 @@ public:
   static void report_stat_counter(const ZStatCounter& counter, uint64_t increment, uint64_t value);
   static void report_stat_sampler(const ZStatSampler& sampler, uint64_t value);
   static void report_thread_phase(const char* name, const Ticks& start, const Ticks& end);
-  static void report_thread_event(const char* name, const Ticks& start, const Ticks& end);
+  static void report_thread_debug(const char* name, const Ticks& start, const Ticks& end);
 };
 
 class ZMinorTracer : public YoungGCTracer {
@@ -57,25 +57,15 @@ public:
   ZMajorTracer();
 };
 
-class ZTraceThreadPhase : public StackObj {
+// For temporary latency measurements during development and debugging
+class ZTraceThreadDebug : public StackObj {
 private:
   const Ticks       _start;
   const char* const _name;
 
 public:
-  ZTraceThreadPhase(const char* name);
-  ~ZTraceThreadPhase();
-};
-
-// For temporary measurement during development
-class ZTraceThreadEvent : public StackObj {
-private:
-  const Ticks       _start;
-  const char* const _name;
-
-public:
-  ZTraceThreadEvent(const char* name);
-  ~ZTraceThreadEvent();
+  ZTraceThreadDebug(const char* name);
+  ~ZTraceThreadDebug();
 };
 
 #endif // SHARE_GC_Z_ZTRACER_HPP

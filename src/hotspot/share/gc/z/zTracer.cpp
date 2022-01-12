@@ -133,10 +133,10 @@ void ZTracer::send_thread_phase(const char* name, const Ticks& start, const Tick
   }
 }
 
-void ZTracer::send_thread_event(const char* name, const Ticks& start, const Ticks& end) {
+void ZTracer::send_thread_debug(const char* name, const Ticks& start, const Ticks& end) {
   NoSafepointVerifier nsv;
 
-  EventZThreadEvent e(UNTIMED);
+  EventZThreadDebug e(UNTIMED);
   if (e.should_commit()) {
     e.set_gcId(GCId::current_or_undefined());
     e.set_name(name);
