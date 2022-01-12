@@ -370,6 +370,348 @@ First line // @highlight :
         testPositive(base, testCases);
     }
 
+    /*
+     * These are corner cases. As such they are expected to rarely happen in
+     * practise. These tests merely capture what the results looked when
+     * the feature was integrated. This might help when refactoring
+     * and refreshing the feature, to better understand the impact of
+     * the proposed changes.
+     */
+    @Test
+    public void testPositiveInlineTagMarkup_ReplaceOnBlankLine(Path base) throws Exception {
+        var testCases = List.of(
+                // the complete line is being replaced
+                new TestCase("one",
+                        """
+                                // @start region=one @replace regex=".*" replacement="-----"
+                                one
+                                // @end
+                                """,
+                        """
+                                -----one
+                                """
+                ),
+                // the contents of the line, but not the line terminator is being replaced
+                new TestCase("two",
+                        """
+                                    // @start region=two @replace regex=".+" replacement="*****"
+                                two
+                                // @end
+                                """,
+                        """
+                                *****two
+                                """
+                ),
+                new TestCase(
+                        """
+                                // @replace regex="duke" replacement="duchess"
+                                """,
+                        """
+                                """
+                )
+        );
+        testPositive(base, testCases);
+    }
+
+    @Test
+    public void testPositiveInlineTagMarkup_BlankLinesRegionEquivalence(Path base) throws Exception {
+        var testCases = List.of(
+                new TestCase("example1",
+                        """
+                                // @start region="example1"
+                                if (v.isPresent()) {
+                                    System.out.println("v: " + v.get());
+                                } // @end
+                                """,
+                        """
+                                if (v.isPresent()) {
+                                    System.out.println("v: " + v.get());
+                                }"""),
+                new TestCase("example2",
+                        """
+                                if (v.isPresent()) { // @start region="example2"
+                                    System.out.println("v: " + v.get());
+                                } // @end
+                                """,
+                        """
+                                if (v.isPresent()) {
+                                    System.out.println("v: " + v.get());
+                                }"""),
+                new TestCase("example3",
+                        """
+                                // @start region="example3" :
+                                if (v.isPresent()) {
+                                    System.out.println("v: " + v.get());
+                                // @end :
+                                }
+                                """,
+                        """
+                                if (v.isPresent()) {
+                                    System.out.println("v: " + v.get());
+                                }""")
+        );
+        testPositive(base, testCases);
+    }
+
+    @Test
+    public void testPositiveInlineTagMarkup_BlankLinesEquivalence(Path base) throws Exception {
+        var testCases = List.of(
+                new TestCase(
+                        """
+                                // @start region="example"
+                                if (v.isPresent()) {
+                                    System.out.println("v: " + v.get());
+                                }
+                                // @end
+                                """,
+                        """
+                                if (v.isPresent()) {
+                                    System.out.println("v: " + v.get());
+                                }
+                                """),
+                new TestCase(
+                        """
+                                if (v.isPresent()) { // @start region="example"
+                                    System.out.println("v: " + v.get());
+                                } // @end
+                                """,
+                        """
+                                if (v.isPresent()) {
+                                    System.out.println("v: " + v.get());
+                                }
+                                """),
+                new TestCase(
+                        """
+                                 // @start region="example" :
+                                if (v.isPresent()) {
+                                    System.out.println("v: " + v.get());
+                                // @end :
+                                }
+                                """,
+                        """
+                                if (v.isPresent()) {
+                                    System.out.println("v: " + v.get());
+                                }
+                                """)
+        );
+        testPositive(base, testCases);
+    }
+
+    @Test
+    public void testPositiveInlineTagMarkup_BlankLinesFromStartEnd(Path base) throws Exception {
+        // A markup line that contains either @start or @end is removed.
+        var testCases = List.of(
+                new TestCase("""
+                        First line
+                          // @start region="a"
+                         Third line
+                          // @end
+                        Fifth line
+                        """,
+                        """
+                                First line
+                                 Third line
+                                Fifth line
+                                """),
+                new TestCase("""
+                        First line
+                          // @start region="a"
+                          // @start region="b"
+                         Third line
+                          // @end
+                        Fifth line
+                          // @end
+                        """,
+                        """
+                                First line
+                                 Third line
+                                Fifth line
+                                """),
+                // note incidental whitespace removal in test cases below
+                new TestCase("a", """
+                        First line
+                          // @start region="a"
+                         Third line
+                          // @end
+                        Fifth line
+                        """,
+
+                        """
+                                Third line
+                                """),
+                new TestCase("b", """
+                        First line
+                          // @start region="a"
+                          // @start region="b"
+                         Third line
+                          // @end
+                        Fifth line
+                          // @end
+                        """,
+                        """
+                                Third line
+                                """)
+        );
+        testPositive(base, testCases);
+    }
+
+    @Test
+    public void testPositiveInlineTagMarkup_BlankLinesFromNextLineMarkup(Path base) throws Exception {
+        // A markup line that refers to the next line is removed.
+        var testCases = List.of(
+                new TestCase("""
+                        First line
+                             // @highlight:
+                         Third line
+                        """,
+                        """
+                                First line
+                                <span class="bold"> Third line
+                                </span>"""),
+                new TestCase("""
+                        First line
+                             // @link target="Object#equals(Object)":
+                         Third line
+                        """,
+                        replace("""
+                                First line
+                                 link(Third line)
+                                """, "link\\((.+?)\\)", r -> link(true, "java.lang.Object#equals(Object)", r.group(1)))
+                ),
+                new TestCase("""
+                        First line
+                             // @replace regex=.+ replacement="x":
+                         Third line
+                        """,
+                        """
+                                First line
+                                x
+                                """),
+                new TestCase("""
+                        First line
+                             // @start region=a:
+                         Third line
+                             // @end:
+                           Fifth line
+                        """,
+                        """
+                                First line
+                                 Third line
+                                   Fifth line
+                                """)
+        );
+        testPositive(base, testCases);
+    }
+
+    @Test
+    public void testPositiveInlineTagMarkup_FalseMarkup(Path base) throws Exception {
+        var testCases = List.of(
+                new TestCase(
+                        """
+                        First line
+                        // @formatter:off
+                          Second Line
+                            Third line
+                            // @formatter:on
+                              Fourth line
+                        """,
+                        """
+                        First line
+                        // @formatter:off
+                          Second Line
+                            Third line
+                            // @formatter:on
+                              Fourth line
+                        """),
+                new TestCase("showThis",
+                        """
+                        First line
+                        // @formatter:off
+                          // @start region=showThis
+                          Second Line
+                            Third line
+                            // @end region
+                            // @formatter:on
+                              Fourth line
+                        """,
+                        """
+                        Second Line
+                          Third line
+                        """)
+        );
+        testPositive(base, testCases);
+    }
+
+    @Test
+    public void testPositiveInlineTagMarkup_NextLineTwoTags(Path base) throws Exception {
+        var firstTag = new String[]{
+                "@highlight string=firstWord",
+                "@replace string=secondWord replacement=replacedSecondWord",
+                "@link substring=firstWord target=java.lang.Object"};
+        var secondTag = new String[]{
+                "@highlight string=secondWord",
+                "@replace string=firstWord replacement=replacedFirstWord",
+                "@link substring=secondWord target=java.lang.Thread"};
+        List<TestCase> testCases = new ArrayList<>();
+        for (var f : firstTag) {
+            for (var s : secondTag)
+                for (var separator : List.of("", " ")) {
+                    var t = new TestCase(
+                            """
+                                first-line // %s %s%s:
+                                firstWord secondWord thirdWord
+                                """.formatted(f, s, separator),
+                            """
+                                first-line
+                                firstWord secondWord thirdWord // %s %s
+                                """.formatted(f, s));
+                    testCases.add(t);
+            }
+        }
+        testEquivalence(base, testCases);
+    }
+
+    record Snippet(String region, String snippet) { }
+
+    private void testEquivalence(Path base, List<TestCase> testCases) throws IOException {
+        // group all the testcases in just two runs
+        Path out1 = base.resolve("out1");
+        Path out2 = base.resolve("out2");
+        run(base.resolve("src1"), out1, testCases.stream().map(t -> new Snippet(t.region(), t.input())).toList());
+        run(base.resolve("src2"), out2, testCases.stream().map(t -> new Snippet(t.region(), t.expectedOutput())).toList());
+        match(out1, out2, (p, a) -> /* p.toString().endsWith(".html") */ true);
+    }
+
+    private void run(Path source, Path target, List<Snippet> snippets) throws IOException {
+        StringBuilder methods = new StringBuilder();
+        forEachNumbered(snippets, (i, n) -> {
+            String r = i.region.isBlank() ? "" : "region=" + i.region;
+            var methodDef = """
+
+                    /**
+                    {@snippet %s:
+                    %s}*/
+                    public void case%s() {}
+                    """.formatted(r, i.snippet(), n);
+            methods.append(methodDef);
+        });
+        var classDef = """
+                public class A {
+                %s
+                }
+                """.formatted(methods.toString());
+        Path src = Files.createDirectories(source);
+        tb.writeJavaFiles(src, classDef);
+        javadoc("-d", target.toString(),
+                "--limit-modules", "java.base",
+                "-quiet", "-nohelp", "-noindex", "-nonavbar", "-nosince",
+                "-notimestamp", "-notree", "-Xdoclint:none",
+                "-sourcepath", src.toString(),
+                src.resolve("A.java").toString());
+        checkExit(Exit.OK);
+        checkNoCrashes();
+    }
+
     private static String link(boolean linkPlain,
                                String targetReference,
                                String content)

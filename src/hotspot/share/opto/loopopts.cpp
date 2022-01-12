@@ -1053,7 +1053,7 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
 
   // Do not clone the trip counter through on a CountedLoop
   // (messes up the canonical shape).
-  if (((n_blk->is_CountedLoop() || (n_blk->is_Loop() && n_blk->as_Loop()->is_transformed_long_inner_loop())) && n->Opcode() == Op_AddI) ||
+  if (((n_blk->is_CountedLoop() || (n_blk->is_Loop() && n_blk->as_Loop()->is_loop_nest_inner_loop())) && n->Opcode() == Op_AddI) ||
       (n_blk->is_LongCountedLoop() && n->Opcode() == Op_AddL)) {
     return n;
   }
@@ -1174,6 +1174,16 @@ bool PhaseIdealLoop::identical_backtoback_ifs(Node *n) {
   if (!n->in(0)->is_Region()) {
     return false;
   }
+
+  IfNode* n_if = n->as_If();
+  if (n_if->proj_out(0)->outcnt() > 1 || n_if->proj_out(1)->outcnt() > 1) {
+    // Removing the dominated If node by using the split-if optimization does not work if there are data dependencies.
+    // Some data dependencies depend on its immediate dominator If node and should not be separated from it (e.g. null
+    // checks, division by zero checks etc.). Bail out for now until data dependencies are correctly handled when
+    // optimizing back-to-back ifs.
+    return false;
+  }
+
   Node* region = n->in(0);
   Node* dom = idom(region);
   if (!dom->is_If() || dom->in(1) != n->in(1)) {

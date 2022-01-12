@@ -1168,9 +1168,15 @@ private:
   void vcvtps2pd(XMMRegister dst, XMMRegister src, int vector_len);
   void vcvtpd2ps(XMMRegister dst, XMMRegister src, int vector_len);
 
+  // Convert vector float and int
+  void vcvttps2dq(XMMRegister dst, XMMRegister src, int vector_len);
+
   // Convert vector long to vector FP
   void evcvtqq2ps(XMMRegister dst, XMMRegister src, int vector_len);
   void evcvtqq2pd(XMMRegister dst, XMMRegister src, int vector_len);
+
+  // Convert vector double to long
+  void evcvttpd2qq(XMMRegister dst, XMMRegister src, int vector_len);
 
   // Evex casts with truncation
   void evpmovwb(XMMRegister dst, XMMRegister src, int vector_len);
@@ -1774,6 +1780,8 @@ private:
 
   void pmovmskb(Register dst, XMMRegister src);
   void vpmovmskb(Register dst, XMMRegister src, int vec_enc);
+  void vmovmskps(Register dst, XMMRegister src, int vec_enc);
+  void vmovmskpd(Register dst, XMMRegister src, int vec_enc);
   void vpmaskmovd(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
 
   // SSE 4.1 extract
@@ -2176,6 +2184,9 @@ private:
   void shrxq(Register dst, Register src1, Register src2);
 
   void bzhiq(Register dst, Register src1, Register src2);
+  void pdep(Register dst, Register src1, Register src2);
+  void pext(Register dst, Register src1, Register src2);
+
 
   //====================VECTOR ARITHMETIC=====================================
   // Add Packed Floating-Point Values

@@ -101,10 +101,7 @@ RefProcWorkerTimeTracker::~RefProcWorkerTimeTracker() {
 RefProcSubPhasesWorkerTimeTracker::RefProcSubPhasesWorkerTimeTracker(ReferenceProcessor::RefProcSubPhases phase,
                                                                      ReferenceProcessorPhaseTimes* phase_times,
                                                                      uint worker_id) :
-  RefProcWorkerTimeTracker(phase_times->sub_phase_worker_time_sec(phase), worker_id) {
-}
-
-RefProcSubPhasesWorkerTimeTracker::~RefProcSubPhasesWorkerTimeTracker() {
+  _tracker(phase_times->sub_phase_worker_time_sec(phase), worker_id) {
 }
 
 RefProcPhaseTimeBaseTracker::RefProcPhaseTimeBaseTracker(const char* title,
@@ -234,6 +231,11 @@ void ReferenceProcessorPhaseTimes::add_ref_cleared(ReferenceType ref_type, size_
 void ReferenceProcessorPhaseTimes::set_ref_discovered(ReferenceType ref_type, size_t count) {
   ASSERT_REF_TYPE(ref_type);
   _ref_discovered[ref_type_2_index(ref_type)] = count;
+}
+
+size_t ReferenceProcessorPhaseTimes::ref_discovered(ReferenceType ref_type) {
+  ASSERT_REF_TYPE(ref_type);
+  return _ref_discovered[ref_type_2_index(ref_type)];
 }
 
 double ReferenceProcessorPhaseTimes::balance_queues_time_ms(ReferenceProcessor::RefProcPhases phase) const {

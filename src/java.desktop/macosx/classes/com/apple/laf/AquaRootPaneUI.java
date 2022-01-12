@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,8 +75,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
         // it is not since we are going to grab the one that was set on the JFrame. :(
         final Component parent = c.getParent();
 
-        if (parent != null && parent instanceof JFrame) {
-            final JFrame frameParent = (JFrame)parent;
+        if (parent instanceof JFrame frameParent) {
             final Color bg = frameParent.getBackground();
             if (bg == null || bg instanceof UIResource) {
                 frameParent.setBackground(UIManager.getColor("Panel.background"));
@@ -126,8 +125,8 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
                     final Window owningWindow = SwingUtilities.getWindowAncestor(jmb);
 
                     // Could be a JDialog, and may have been added to a JRootPane not yet in a window.
-                    if (owningWindow != null && owningWindow instanceof JFrame) {
-                        ((AquaMenuBarUI)mbui).setScreenMenuBar((JFrame)owningWindow);
+                    if (owningWindow instanceof JFrame frame) {
+                        ((AquaMenuBarUI)mbui).setScreenMenuBar(frame);
                     }
                 }
             }
@@ -154,8 +153,8 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
                     final Window owningWindow = SwingUtilities.getWindowAncestor(jmb);
 
                     // Could be a JDialog, and may have been added to a JRootPane not yet in a window.
-                    if (owningWindow != null && owningWindow instanceof JFrame) {
-                        ((AquaMenuBarUI)mbui).clearScreenMenuBar((JFrame)owningWindow);
+                    if (owningWindow instanceof JFrame frame) {
+                        ((AquaMenuBarUI)mbui).clearScreenMenuBar(frame);
                     }
                 }
             }

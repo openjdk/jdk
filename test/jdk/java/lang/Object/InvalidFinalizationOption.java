@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,37 +23,30 @@
 
 /*
  * @test
- * @summary Run shutdown twice
+ * @bug 8276422
+ * @summary Invalid/missing values for the finalization option should be rejected
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @run main/othervm -XX:NativeMemoryTracking=detail ShutdownTwice
+ * @run driver InvalidFinalizationOption
  */
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.JDKToolFinder;
 
-public class ShutdownTwice {
+public class InvalidFinalizationOption {
+    public static void main(String[] args) throws Exception {
+        record TestData(String arg, String expected) { }
 
-  public static void main(String args[]) throws Exception {
-    // Grab my own PID
-    String pid = Long.toString(ProcessTools.getProcessId());
-    OutputAnalyzer output;
+        TestData[] testData = {
+            new TestData("--finalization",        "Unrecognized option"),
+            new TestData("--finalization=",       "Invalid finalization value"),
+            new TestData("--finalization=azerty", "Invalid finalization value")
+        };
 
-    ProcessBuilder pb = new ProcessBuilder();
-
-    // Run 'jcmd <pid> VM.native_memory shutdown'
-    pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "shutdown"});
-    output = new OutputAnalyzer(pb.start());
-
-    // Verify that jcmd reports that NMT is shutting down
-    output.shouldContain("Native memory tracking has been turned off");
-
-    // Run shutdown again
-    output = new OutputAnalyzer(pb.start());
-
-    // Verify that jcmd reports that NMT has been shutdown already
-    output.shouldContain("Native memory tracking has been shutdown");
-  }
+        for (var data : testData) {
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(data.arg);
+            OutputAnalyzer output = new OutputAnalyzer(pb.start());
+            output.shouldContain(data.expected);
+            output.shouldHaveExitValue(1);
+        }
+    }
 }

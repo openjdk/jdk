@@ -103,8 +103,8 @@ public class ObjectStreamClass implements Serializable {
 
     private static class Caches {
         /** cache mapping local classes -> descriptors */
-        static final ClassValue<ObjectStreamClass> localDescs =
-            new ClassValue<>() {
+        static final ClassCache<ObjectStreamClass> localDescs =
+            new ClassCache<>() {
                 @Override
                 protected ObjectStreamClass computeValue(Class<?> type) {
                     return new ObjectStreamClass(type);
@@ -112,8 +112,8 @@ public class ObjectStreamClass implements Serializable {
             };
 
         /** cache mapping field group/local desc pairs -> field reflectors */
-        static final ClassValue<Map<FieldReflectorKey, FieldReflector>> reflectors =
-            new ClassValue<>() {
+        static final ClassCache<Map<FieldReflectorKey, FieldReflector>> reflectors =
+            new ClassCache<>() {
                 @Override
                 protected Map<FieldReflectorKey, FieldReflector> computeValue(Class<?> type) {
                     return new ConcurrentHashMap<>();
@@ -2118,6 +2118,7 @@ public class ObjectStreamClass implements Serializable {
         // class irrelevant if no fields
         Class<?> cl = (localDesc != null && fields.length > 0) ?
             localDesc.cl : Void.class;
+
         var clReflectors = Caches.reflectors.get(cl);
         var key = new FieldReflectorKey(fields);
         var reflector = clReflectors.get(key);

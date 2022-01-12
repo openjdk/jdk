@@ -301,9 +301,8 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseFMA, true);
   }
 
-  if (UseMD5Intrinsics) {
-    warning("MD5 intrinsics are not available on this CPU");
-    FLAG_SET_DEFAULT(UseMD5Intrinsics, false);
+  if (FLAG_IS_DEFAULT(UseMD5Intrinsics)) {
+    UseMD5Intrinsics = true;
   }
 
   if (_features & (CPU_SHA1 | CPU_SHA2 | CPU_SHA3 | CPU_SHA512)) {
@@ -468,6 +467,14 @@ void VM_Version::initialize() {
     } else {
       FLAG_SET_DEFAULT(MaxVectorSize, 16);
     }
+  }
+
+  int inline_size = (UseSVE > 0 && MaxVectorSize >= 16) ? MaxVectorSize : 0;
+  if (FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize)) {
+    FLAG_SET_DEFAULT(ArrayOperationPartialInlineSize, inline_size);
+  } else if (ArrayOperationPartialInlineSize != 0 && ArrayOperationPartialInlineSize != inline_size) {
+    warning("Setting ArrayOperationPartialInlineSize to %d", inline_size);
+    ArrayOperationPartialInlineSize = inline_size;
   }
 
   if (FLAG_IS_DEFAULT(OptoScheduling)) {

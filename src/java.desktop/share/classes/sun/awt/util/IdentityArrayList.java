@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,7 +203,7 @@ public class IdentityArrayList<E> extends AbstractList<E>
      * Returns {@code true} if this list contains the specified element.
      * More formally, returns {@code true} if and only if this list contains
      * at least one element {@code e} such that
-     * {@code Objects.equals(o, e)}.
+     * {@code o == e}.
      *
      * @param o element whose presence in this list is to be tested
      * @return {@code true} if this list contains the specified element
@@ -216,8 +216,12 @@ public class IdentityArrayList<E> extends AbstractList<E>
      * Returns the index of the first occurrence of the specified element
      * in this list, or -1 if this list does not contain the element.
      * More formally, returns the lowest index {@code i} such that
-     * {@code Objects.equals(o, get(i))},
+     * {@code get(i) == o},
      * or -1 if there is no such index.
+     *
+     * @param o element to search for
+     * @return the index of the first occurrence of the specified element in
+     *         this list, or -1 if this list does not contain the element
      */
     public int indexOf(Object o) {
         for (int i = 0; i < size; i++) {
@@ -232,8 +236,12 @@ public class IdentityArrayList<E> extends AbstractList<E>
      * Returns the index of the last occurrence of the specified element
      * in this list, or -1 if this list does not contain the element.
      * More formally, returns the highest index {@code i} such that
-     * {@code Objects.equals(o, get(i))},
+     * {@code get(i) == o},
      * or -1 if there is no such index.
+     *
+     * @param o element to search for
+     * @return the index of the last occurrence of the specified element in
+     *         this list, or -1 if this list does not contain the element
      */
     public int lastIndexOf(Object o) {
         for (int i = size-1; i >= 0; i--) {
@@ -390,9 +398,9 @@ public class IdentityArrayList<E> extends AbstractList<E>
 
     /**
      * Removes the first occurrence of the specified element from this list,
-     * if it is present.  If the list does not contain the element, it is
+     * if it is present.  If this list does not contain the element, the list is
      * unchanged.  More formally, removes the element with the lowest index
-     * {@code i} such that {@code Objects.equals(o, get(i))}
+     * {@code i} such that {@code get(i) == o}
      * (if such an element exists).  Returns {@code true} if this list
      * contained the specified element (or equivalently, if this list
      * changed as a result of the call).

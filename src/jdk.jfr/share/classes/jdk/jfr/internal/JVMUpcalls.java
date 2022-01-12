@@ -126,13 +126,21 @@ final class JVMUpcalls {
     }
 
     /**
+     * Called by the JVM to ensure metadata for internal events/types become public.
+     *
+     * Must be called after metadata repository has been initialized (JFR created).
+     *
+     */
+    static void unhideInternalTypes() {
+        MetadataRepository.unhideInternalTypes();
+    }
+
+    /**
      * Called by the JVM to create the recorder thread.
      *
-     * @param systemThreadGroup
-     *            the system thread group
+     * @param systemThreadGroup  the system thread group
      *
-     * @param contextClassLoader
-     *            the context class loader.
+     * @param contextClassLoader the context class loader.
      *
      * @return a new thread
      */

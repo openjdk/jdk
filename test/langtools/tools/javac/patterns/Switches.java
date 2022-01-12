@@ -28,7 +28,7 @@ import java.util.function.Function;
 
 /*
  * @test
- * @bug 8262891 8268333 8268896 8269802 8269808 8270151 8269113
+ * @bug 8262891 8268333 8268896 8269802 8269808 8270151 8269113 8277864
  * @summary Check behavior of pattern switches.
  * @compile --enable-preview -source ${jdk.version} Switches.java
  * @run main/othervm --enable-preview Switches
@@ -85,6 +85,9 @@ public class Switches {
         assertEquals(2, switchOverNull1());
         assertEquals(2, switchOverNull2());
         assertEquals(2, switchOverNull3());
+        assertEquals(5, switchOverPrimitiveInt(0));
+        assertEquals(7, switchOverPrimitiveInt(1));
+        assertEquals(9, switchOverPrimitiveInt(2));
     }
 
     void run(Function<Object, Integer> mapper) {
@@ -588,6 +591,14 @@ public class Switches {
         return switch (null) {
             case null -> 2;
             case Object o -> 1;
+        };
+    }
+
+    private int switchOverPrimitiveInt(Integer i) {
+        return switch (i) {
+            case 0 -> 5 + 0;
+            case Integer j && j == 1 -> 6 + j;
+            case Integer j -> 7 + j;
         };
     }
 

@@ -1828,15 +1828,13 @@ class LIR_OpLoadKlass: public LIR_Op {
 
  private:
   LIR_Opr _obj;
-  CodeEmitInfo* _info;
  public:
   LIR_OpLoadKlass(LIR_Opr obj, LIR_Opr result, CodeEmitInfo* info)
-    : LIR_Op(lir_load_klass, result, NULL)
+    : LIR_Op(lir_load_klass, result, info)
     , _obj(obj)
-    , _info(info) {}
+    {}
 
   LIR_Opr obj()        const { return _obj;  }
-  CodeEmitInfo* info() const { return _info; }
 
   virtual LIR_OpLoadKlass* as_OpLoadKlass() { return this; }
   virtual void emit_code(LIR_Assembler* masm);
