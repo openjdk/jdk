@@ -932,7 +932,7 @@ class oop_Relocation : public DataRelocation {
 
   void verify_oop_relocation();
 
-  address value()  { return cast_from_oop<address>(*oop_addr()); }
+  address value()  { return *reinterpret_cast<address*>(oop_addr()); }
 
   bool oop_is_immediate()  { return oop_index() == 0; }
 
