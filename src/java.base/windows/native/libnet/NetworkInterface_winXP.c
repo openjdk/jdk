@@ -244,7 +244,6 @@ int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
     netif *nif=NULL, *dup_nif, *last=NULL, *loopif=NULL, *curr;
     int tun=0, net=0;
 
-    *netifPP = NULL;
    /*
     * Get the IPv4 interfaces. This information is the same
     * as what previous JDK versions would return.
@@ -833,7 +832,7 @@ JNIEXPORT jobjectArray JNICALL Java_java_net_NetworkInterface_getAll_XP
     (JNIEnv *env, jclass cls)
 {
     int count;
-    netif *ifList = NULL, *curr;
+    netif *ifList, *curr;
     jobjectArray netIFArr;
     jint arr_index;
 

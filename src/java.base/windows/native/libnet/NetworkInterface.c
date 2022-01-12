@@ -949,7 +949,7 @@ JNIEXPORT jobjectArray JNICALL Java_java_net_NetworkInterface_getAll
     (JNIEnv *env, jclass cls)
 {
     int count;
-    netif *ifList = NULL, *curr;
+    netif *ifList, *curr;
     jobjectArray netIFArr;
     jint arr_index;
 
