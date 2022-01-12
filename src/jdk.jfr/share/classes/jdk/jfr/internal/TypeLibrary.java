@@ -119,8 +119,19 @@ public final class TypeLibrary {
         }
     }
 
-    public List<Type> getTypes() {
-        return new ArrayList<>(types.values());
+    public Collection<Type> getTypes() {
+        return types.values();
+    }
+
+    // Returned list should be mutable (for in-place sorting)
+    public List<Type> getVisibleTypes() {
+        List<Type> visible = new ArrayList<>(types.size());
+        types.values().forEach(t -> {
+            if (t.isVisible()) {
+                visible.add(t);
+            }
+        });
+        return visible;
     }
 
     public static Type createAnnotationType(Class<? extends Annotation> a) {

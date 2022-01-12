@@ -113,9 +113,14 @@ inline size_t G1BlockOffsetTablePart::block_size(const HeapWord* p) const {
 }
 
 inline HeapWord* G1BlockOffsetTablePart::block_at_or_preceding(const void* addr) const {
-  assert(_object_can_span || _bot->offset_array(_bot->index_for(_hr->bottom())) == 0,
-         "Object crossed region boundary, found offset %u instead of 0",
-         (uint) _bot->offset_array(_bot->index_for(_hr->bottom())));
+#ifdef ASSERT
+  if (!_hr->is_continues_humongous()) {
+    // For non-ContinuesHumongous regions, the first obj always starts from bottom.
+    u_char offset = _bot->offset_array(_bot->index_for(_hr->bottom()));
+    assert(offset == 0, "Found offset %u instead of 0 for region %u %s",
+           offset, _hr->hrm_index(), _hr->get_short_type_str());
+  }
+#endif
 
   size_t index = _bot->index_for(addr);
 

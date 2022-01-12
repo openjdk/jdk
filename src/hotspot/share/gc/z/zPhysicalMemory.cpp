@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -282,7 +282,7 @@ void ZPhysicalMemoryManager::nmt_commit(uintptr_t offset, size_t size) const {
 }
 
 void ZPhysicalMemoryManager::nmt_uncommit(uintptr_t offset, size_t size) const {
-  if (MemTracker::tracking_level() > NMT_minimal) {
+  if (MemTracker::enabled()) {
     const uintptr_t addr = ZAddress::marked0(offset);
     Tracker tracker(Tracker::uncommit);
     tracker.record((address)addr, size);

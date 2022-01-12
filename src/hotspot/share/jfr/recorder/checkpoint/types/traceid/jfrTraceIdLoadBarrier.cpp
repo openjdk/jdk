@@ -68,3 +68,11 @@ void JfrTraceIdLoadBarrier::do_klasses(klass_callback callback, bool previous_ep
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   klass_queue().iterate(callback, previous_epoch);
 }
+
+JfrBuffer* JfrTraceIdLoadBarrier::get_enqueue_buffer(Thread* thread) {
+  return klass_queue().get_enqueue_buffer(thread);
+}
+
+JfrBuffer* JfrTraceIdLoadBarrier::renew_enqueue_buffer(size_t size, Thread* thread) {
+  return klass_queue().renew_enqueue_buffer(size, thread);
+}

@@ -88,7 +88,10 @@ public enum Target {
     JDK1_17("17", 61, 0),
 
     /** JDK 18. */
-    JDK1_18("18", 62, 0);
+    JDK1_18("18", 62, 0),
+
+    /** JDK 19. */
+    JDK1_19("19", 63, 0);
 
     private static final Context.Key<Target> targetKey = new Context.Key<>();
 

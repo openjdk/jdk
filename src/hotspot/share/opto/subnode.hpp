@@ -62,10 +62,6 @@ public:
   virtual const Type *add_id() const = 0;
 
   static SubNode* make(Node* in1, Node* in2, BasicType bt);
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return false;
-  }
 };
 
 
@@ -81,10 +77,6 @@ public:
   const Type *add_id() const { return TypeInt::ZERO; }
   const Type *bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_INT;
-  }
 };
 
 //------------------------------SubLNode---------------------------------------
@@ -98,10 +90,6 @@ public:
   const Type *add_id() const { return TypeLong::ZERO; }
   const Type *bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_LONG;
-  }
 };
 
 // NOTE: SubFPNode should be taken away and replaced by add and negate
@@ -162,10 +150,6 @@ public:
   // including eventual control nodes and their projections.
   virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
 #endif
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return false;
-  }
 };
 
 //------------------------------CmpINode---------------------------------------
@@ -176,10 +160,6 @@ public:
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *sub( const Type *, const Type * ) const;
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_INT && signed_int;
-  }
 };
 
 //------------------------------CmpUNode---------------------------------------
@@ -191,10 +171,6 @@ public:
   virtual const Type *sub( const Type *, const Type * ) const;
   const Type* Value(PhaseGVN* phase) const;
   bool is_index_range_check() const;
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_INT && !signed_int;
-  }
 };
 
 //------------------------------CmpPNode---------------------------------------
@@ -225,10 +201,6 @@ public:
   virtual int    Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *sub( const Type *, const Type * ) const;
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_LONG && signed_int;
-  }
 };
 
 //------------------------------CmpULNode---------------------------------------
@@ -238,10 +210,6 @@ public:
   CmpULNode(Node* in1, Node* in2) : CmpNode(in1, in2) { }
   virtual int Opcode() const;
   virtual const Type* sub(const Type*, const Type*) const;
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_LONG && !signed_int;
-  }
 };
 
 //------------------------------CmpL3Node--------------------------------------

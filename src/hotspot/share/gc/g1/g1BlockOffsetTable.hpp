@@ -114,9 +114,6 @@ private:
   // allocation boundary at which offset array must be updated
   HeapWord* _next_offset_threshold;
 
-  // Indicates if an object can span into this G1BlockOffsetTablePart.
-  debug_only(bool _object_can_span;)
-
   // This is the global BlockOffsetTable.
   G1BlockOffsetTable* _bot;
 
@@ -212,7 +209,6 @@ public:
   }
 
   void set_for_starts_humongous(HeapWord* obj_top, size_t fill_size);
-  void set_object_can_span(bool can_span) NOT_DEBUG_RETURN;
 
   void print_on(outputStream* out) PRODUCT_RETURN;
 };
