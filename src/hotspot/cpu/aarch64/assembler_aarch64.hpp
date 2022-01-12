@@ -27,6 +27,7 @@
 #define CPU_AARCH64_ASSEMBLER_AARCH64_HPP
 
 #include "asm/register.hpp"
+#include "metaprogramming/enableIf.hpp"
 
 #ifdef __GNUC__
 
@@ -404,19 +405,11 @@ class Address {
     : _mode(no_mode) { }
   Address(Register r)
     : _base(r), _index(noreg), _offset(0), _mode(base_plus_offset), _target(0) { }
-  Address(Register r, int o)
-    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
-  Address(Register r, int64_t o)
-    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
-#ifdef __APPLE__
-  // macosx wants all the overloads
-  Address(Register r, uintptr_t o)
-    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
-  Address(Register r, ptrdiff_t o)
-    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
-#endif
-  Address(Register r, uint64_t o)
-    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
+
+  template<typename T, ENABLE_IF(std::is_integral<T>::value)>
+  Address(Register r, T o)
+    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) {}
+
   Address(Register r, ByteSize disp)
     : Address(r, in_bytes(disp)) { }
   Address(Register r, Register r1, extend ext = lsl())

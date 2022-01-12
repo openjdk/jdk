@@ -27,6 +27,7 @@
 #define CPU_AARCH64_MACROASSEMBLER_AARCH64_HPP
 
 #include "asm/assembler.inline.hpp"
+#include "metaprogramming/enableIf.hpp"
 #include "oops/compressedOops.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -492,14 +493,9 @@ public:
   // 64 bit integers
 
   inline void mov(Register dst, address addr)             { mov_immediate64(dst, (uint64_t)addr); }
-  inline void mov(Register dst, int32_t imm32)            { mov_immediate64(dst, imm32); }
-  inline void mov(Register dst, uint32_t imm32)           { mov_immediate64(dst, imm32); }
-#ifdef __APPLE__
-  // macosx wants all the overloads
-  inline void mov(Register dst, intptr_t imm64)           { mov_immediate64(dst, imm64); }
-#endif
-  inline void mov(Register dst, int64_t imm64)            { mov_immediate64(dst, imm64); }
-  inline void mov(Register dst, uint64_t imm64)           { mov_immediate64(dst, imm64); }
+
+  template<typename T, ENABLE_IF(std::is_integral<T>::value)>
+  inline void mov(Register dst, T o)                      { mov_immediate64(dst, (uint64_t)o); }
 
   inline void movw(Register dst, uint32_t imm32)          { mov_immediate32(dst, imm32); }
 
