@@ -26,6 +26,7 @@ import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.ResourceScope;
+import jdk.incubator.foreign.ValueLayout;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -61,6 +62,10 @@ public class LoopOverNonConstant {
     static final int ALLOC_SIZE = ELEM_SIZE * CARRIER_SIZE;
 
     static final VarHandle VH_int = MemoryLayout.sequenceLayout(JAVA_INT).varHandle(sequenceElement());
+
+    static final ValueLayout.OfInt JAVA_INT_ALIGNED = JAVA_INT.withBitAlignment(32);
+    static final VarHandle VH_int_aligned = MemoryLayout.sequenceLayout(JAVA_INT_ALIGNED).varHandle(sequenceElement());
+
     MemorySegment segment;
     long unsafe_addr;
 
@@ -126,6 +131,15 @@ public class LoopOverNonConstant {
     }
 
     @Benchmark
+    public int segment_loop_aligned() {
+        int sum = 0;
+        for (int i = 0; i < ELEM_SIZE; i++) {
+            sum += (int) VH_int_aligned.get(segment, (long) i);
+        }
+        return sum;
+    }
+
+    @Benchmark
     public int segment_loop_instance() {
         int sum = 0;
         for (int i = 0; i < ELEM_SIZE; i++) {
@@ -143,6 +157,15 @@ public class LoopOverNonConstant {
 
         }
         return sum;
+    }
+
+    @Benchmark
+    public int segment_loop_instance_aligned() {
+        int res = 0;
+        for (int i = 0; i < ELEM_SIZE; i ++) {
+            res += segment.get(JAVA_INT_ALIGNED, i * CARRIER_SIZE);
+        }
+        return res;
     }
 
     @Benchmark

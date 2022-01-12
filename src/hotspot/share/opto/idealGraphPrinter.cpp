@@ -316,7 +316,9 @@ void IdealGraphPrinter::begin_method() {
   }
 
   if (C->is_osr_compilation()) {
-      print_prop(COMPILATION_OSR_PROPERTY, TRUE_VALUE);
+      stringStream ss;
+      ss.print("bci: %d, line: %d", C->entry_bci(), method->line_number_from_bci(C->entry_bci()));
+      print_prop(COMPILATION_OSR_PROPERTY, ss.as_string());
   }
 
   print_prop(COMPILATION_ID_PROPERTY, C->compile_id());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,7 @@ class VectorNode : public TypeNode {
   static bool is_type_transition_short_to_int(Node* n);
   static bool is_type_transition_to_int(Node* n);
   static bool is_muladds2i(Node* n);
+  static bool is_vpopcnt_long(Node* n);
   static bool is_roundopD(Node* n);
   static bool is_scalar_rotate(Node* n);
   static bool is_vector_rotate_supported(int opc, uint vlen, BasicType bt);
@@ -502,6 +503,14 @@ class NegVDNode : public VectorNode {
 class PopCountVINode : public VectorNode {
  public:
   PopCountVINode(Node* in, const TypeVect* vt) : VectorNode(in,vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------PopCountVLNode---------------------------------
+// Vector popcount long bits
+class PopCountVLNode : public VectorNode {
+ public:
+  PopCountVLNode(Node* in, const TypeVect* vt) : VectorNode(in,vt) {}
   virtual int Opcode() const;
 };
 
@@ -1275,13 +1284,19 @@ public:
 // Vector logical operations packing node.
 class MacroLogicVNode : public VectorNode {
 private:
-  MacroLogicVNode(Node* in1, Node* in2, Node* in3, Node* fn, const TypeVect* vt)
-  : VectorNode(in1, in2, in3, fn, vt) {}
+  MacroLogicVNode(Node* in1, Node* in2, Node* in3, Node* fn, Node* mask, const TypeVect* vt)
+  : VectorNode(in1, in2, in3, fn, vt) {
+     if (mask) {
+       this->add_req(mask);
+       this->add_flag(Node::Flag_is_predicated_vector);
+     }
+  }
 
 public:
   virtual int Opcode() const;
 
-  static MacroLogicVNode* make(PhaseGVN& igvn, Node* in1, Node* in2, Node* in3, uint truth_table, const TypeVect* vt);
+  static MacroLogicVNode* make(PhaseGVN& igvn, Node* in1, Node* in2, Node* in3,
+                               Node* mask, uint truth_table, const TypeVect* vt);
 };
 
 class VectorMaskCmpNode : public VectorNode {

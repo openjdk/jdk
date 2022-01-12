@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -310,7 +310,6 @@ private:
   static SeenObjectsTable *_seen_objects_table;
 
   static GrowableArrayCHeap<oop, mtClassShared>* _pending_roots;
-  static narrowOop _roots_narrow;
   static OopHandle _roots;
 
   static void init_seen_objects_table() {
@@ -418,7 +417,6 @@ private:
   static oop get_root(int index, bool clear=false);
 
   // Run-time only
-  static void set_roots(narrowOop roots);
   static void clear_root(int index);
 #endif // INCLUDE_CDS_JAVA_HEAP
 
@@ -468,7 +466,7 @@ private:
 
   static void init_for_dumping(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void write_subgraph_info_table() NOT_CDS_JAVA_HEAP_RETURN;
-  static void serialize_subgraph_info_table_header(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
+  static void serialize(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
 };
 
 #if INCLUDE_CDS_JAVA_HEAP
