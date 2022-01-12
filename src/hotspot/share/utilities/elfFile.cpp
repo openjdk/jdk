@@ -85,7 +85,7 @@ bool FileReader::read(void* buf, size_t size) {
   return fread(buf, size, 1, _fd) == 1;
 }
 
-int FileReader::read_buffer(void* buf, size_t size) {
+size_t FileReader::read_buffer(void* buf, size_t size) {
   assert(buf != NULL, "no buffer");
   assert(size > 0, "no space");
   return fread(buf, 1, size, _fd);
@@ -95,8 +95,7 @@ bool FileReader::set_position(long offset) {
   return fseek(_fd, offset, SEEK_SET) == 0;
 }
 
-MarkedFileReader::MarkedFileReader(FILE* fd) : FileReader(fd) {
-  _marked_pos = ftell(fd);
+MarkedFileReader::MarkedFileReader(FILE* fd) : FileReader(fd), _marked_pos(ftell(fd)) {
 }
 
 MarkedFileReader::~MarkedFileReader() {
@@ -406,7 +405,7 @@ bool ElfFile::load_dwarf_file() {
 }
 
 #ifndef PRODUCT
-bool ElfFile::load_dwarf_file_from_env(const char* folder, const char* debug_filename, const int crc) {
+bool ElfFile::load_dwarf_file_from_env(const char* folder, const char* debug_filename, const uint32_t crc) {
   const char* dwarf_path = ::getenv("_JVM_DWARF_PATH");
   if (dwarf_path != nullptr) {
     char* debug_pathname = NEW_RESOURCE_ARRAY(char, strlen(dwarf_path) + strlen(folder) + strlen(debug_filename) + 2);
@@ -550,8 +549,8 @@ bool ElfFile::open_valid_debuginfo_file(const char* filepath, const uint32_t crc
   {
     MarkedFileReader reader(file);
     while (true) {
-      int len = reader.read_buffer(buffer, sizeof(buffer));
-      if (len <= 0) {
+      size_t len = reader.read_buffer(buffer, sizeof(buffer));
+      if (len == 0) {
         break;
       }
       file_crc = gnu_debuglink_crc32(file_crc, buffer, len);
@@ -577,7 +576,7 @@ bool ElfFile::open_valid_debuginfo_file(const char* filepath, const uint32_t crc
 
 // The CRC used in gnu_debuglink, retrieved from
 // http://sourceware.org/gdb/current/onlinedocs/gdb/Separate-Debug-Files.html#Separate-Debug-Files.
-uint32_t ElfFile::gnu_debuglink_crc32(uint32_t crc, uint8_t* buf, size_t len) {
+uint32_t ElfFile::gnu_debuglink_crc32(uint32_t crc, uint8_t* buf, const size_t len) {
   crc = ~crc & 0xffffffff;
   for (uint8_t* end = buf + len; buf < end; buf++) {
     crc = crc32_table[(crc ^ *buf) & 0xffu] ^ (crc >> 8u);
@@ -586,7 +585,7 @@ uint32_t ElfFile::gnu_debuglink_crc32(uint32_t crc, uint8_t* buf, size_t len) {
 }
 
 // Starting point of reading line number and filename information from the DWARF file.
-bool DwarfFile::get_filename_and_line_number(uint32_t offset_in_library, char* filename, size_t filename_len, int* line, bool is_first_frame) {
+bool DwarfFile::get_filename_and_line_number(uint32_t offset_in_library, char* filename, const size_t filename_len, int* line, const bool is_first_frame) {
   DebugAranges debug_aranges(this);
   uint32_t compilation_unit_offset = 0; // 4-bytes for 32-bit DWARF
   if (!debug_aranges.find_compilation_unit_offset(offset_in_library, &compilation_unit_offset)) {
@@ -1180,7 +1179,7 @@ bool DwarfFile::LineNumberProgram::set_filename_and_line(const uint32_t file, co
   if (!read_filename_from_header(file)) {
     return false;
   }
-  *_line = line;
+  *_line = (int)line; // We are using an int for _line which should be fine for any files.
   log_debug(dwarf)("^^^ Found line for requested offset " PTR32_FORMAT " ^^^", _offset_in_library);
   log_debug(dwarf)("(" INTPTR_FORMAT "    %-5u    %-3u       %-4u)", _state->_address, _state->_line, _state->_column, _state->_file);
   return true;
@@ -1418,10 +1417,10 @@ void DwarfFile::LineNumberProgram::LineNumberProgramState::reset_fields() {
 // Defined in section 6.2.5.1 of the DWARF 4 spec.
 void DwarfFile::LineNumberProgram::LineNumberProgramState::add_to_address_register(uint32_t operation_advance) {
   if (_dwarf_version == 3) {
-    _address += operation_advance * _header->_minimum_instruction_length;
+    _address += (uintptr_t)(operation_advance * _header->_minimum_instruction_length);
   } else if (_dwarf_version == 4) {
-    _address += _header->_minimum_instruction_length *
-                ((_op_index + operation_advance) / _header->_maximum_operations_per_instruction);
+    _address += (uintptr_t)(_header->_minimum_instruction_length *
+                ((_op_index + operation_advance) / _header->_maximum_operations_per_instruction));
   }
 }
 
@@ -1550,7 +1549,7 @@ bool DwarfFile::MarkedDwarfFileReader::read_string(char* result, const size_t re
       // Strings must contain at least one non-null byte and a null byte terminator.
       return false;
     }
-    result[0] = next_byte;
+    result[0] = (char)next_byte;
   }
 
   size_t char_index = 1;
@@ -1566,7 +1565,7 @@ bool DwarfFile::MarkedDwarfFileReader::read_string(char* result, const size_t re
         // Exceeded buffer size of 'result'.
         exceeded_buffer = true;
       } else {
-        result[char_index] = next_byte;
+        result[char_index] = (char)next_byte;
       }
       char_index++;
     }

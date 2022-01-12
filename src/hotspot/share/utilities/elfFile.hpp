@@ -102,7 +102,7 @@ class FileReader : public StackObj {
  public:
   FileReader(FILE* const fd) : _fd(fd) {};
   bool read(void* buf, size_t size);
-  int  read_buffer(void* buf, size_t size);
+  size_t read_buffer(void* buf, size_t size);
   virtual bool set_position(long offset);
 };
 
@@ -209,7 +209,7 @@ class ElfFile: public CHeapObj<mtInternal> {
 
   // Load the DWARF file (.debuginfo) that belongs to this file.
   bool load_dwarf_file();
-  NOT_PRODUCT(bool load_dwarf_file_from_env(const char* folder, const char* debug_filename, int crc);)
+  NOT_PRODUCT(bool load_dwarf_file_from_env(const char* folder, const char* debug_filename, uint32_t crc);)
   char* get_debug_filename() const;
   static uint gnu_debuglink_crc32(uint32_t crc, uint8_t* buf, size_t len);
 
@@ -237,7 +237,7 @@ class ElfFile: public CHeapObj<mtInternal> {
  *
  * Description of used DWARF file sections:
  * - .debug_aranges: A table that consists of sets of variable length entries, each set describing the portion of the program's address space that
- *                   is covered by a single compilation unit. In other words the entries describe a mapping between addresses and compilation units.
+ *                   is covered by a single compilation unit. In other words, the entries describe a mapping between addresses and compilation units.
  * - .debug_info:    The core DWARF data containing DWARF Information Entries (DIEs). Each DIE consists of a tag and a series of attributes.
  *                   Each (normal) compilation unit is represented by a DIE with the tag DW_TAG_compile_unit and contains children.
  *                   For our purposes, we are only interested in this DIE to get to the .debug_line section. We do not care about the children.
@@ -263,7 +263,7 @@ class ElfFile: public CHeapObj<mtInternal> {
  *     (c) Read the abbreviation code that immediately follows the compilation unit header from (3a) which is needed to find the correct entry
  *         into the .debug_abbrev section.
  *     (d) Find the correct entry in the abbreviation table in the .debug_abbrev section by starting to parse entries at the debug_abbrev_offset
- *         from (3b) until we find the correct one matching the abbreviation code from (3c) .
+ *         from (3b) until we find the correct one matching the abbreviation code from (3c).
  *     (e) Read the specified attributes of the abbreviation entry from (3d) from the compilation unit (in the .debug_info section) until we
  *         find the attribute DW_AT_stmt_list. This attributes represents an offset into the .debug_line section which contains the line number
  *         program information to get the filename and the line number.
@@ -286,7 +286,7 @@ class DwarfFile : public ElfFile {
    public:
     MarkedDwarfFileReader(FILE* const fd) : MarkedFileReader(fd), _current_pos(-1), _max_pos(-1) {}
 
-    bool set_position(long new_pos);
+    virtual bool set_position(long new_pos);
     long get_position() const { return _current_pos; }
     void set_max_pos(long max_pos) { _max_pos = max_pos; }
     // Have we reached the limit of maximally allowable bytes to read? Used to ensure an early bail out if the file is corrupted.
@@ -433,7 +433,8 @@ class DwarfFile : public ElfFile {
 
    public:
     DebugAbbrev(DwarfFile* dwarf_file, CompilationUnit* compilation_unit) :
-      _dwarf_file(dwarf_file), _reader(_dwarf_file->fd()), _compilation_unit(compilation_unit) {}
+      _dwarf_file(dwarf_file), _reader(_dwarf_file->fd()), _compilation_unit(compilation_unit),
+      _debug_line_offset(nullptr) {}
     bool read_section_header(uint32_t debug_abbrev_offset);
     bool get_debug_line_offset(uint64_t abbrev_code);
 
