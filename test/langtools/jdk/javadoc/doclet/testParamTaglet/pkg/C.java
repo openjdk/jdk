@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,4 +38,14 @@ public class C extends Parent {
      */
     public void nonMatchingParams(int param1, int param2) {}
 
+    /**
+     * Overriding method with missing/additional/duplicate param tags in non-declaration order.
+     *
+     * @param x does not exist
+     * @param b a boolean
+     * @param i an int
+     * @param x duplicate
+     * @param b another duplicate
+     */
+    public void unorderedParams(int i, double d, boolean b) {}
 }
