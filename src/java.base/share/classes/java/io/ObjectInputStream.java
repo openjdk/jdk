@@ -1625,8 +1625,7 @@ public class ObjectInputStream
         if (sm == null) {
             return;
         }
-        Boolean result = Caches.subclassAudits.get(cl);
-        assert result != null;
+        boolean result = Caches.subclassAudits.get(cl);
         if (!result) {
             sm.checkPermission(SUBCLASS_IMPLEMENTATION_PERMISSION);
         }
