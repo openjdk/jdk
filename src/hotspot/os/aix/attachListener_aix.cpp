@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -230,7 +230,7 @@ int AixAttachListener::init() {
   // We must call bind with the actual socketaddr length. This is obligatory for AS400.
   int res = ::bind(listener, (struct sockaddr*)&addr, SUN_LEN(&addr));
   if (res == -1) {
-    ::close(listener);
+    os::close(listener);
     return -1;
   }
 
@@ -248,7 +248,7 @@ int AixAttachListener::init() {
     }
   }
   if (res == -1) {
-    ::close(listener);
+    os::close(listener);
     ::unlink(initial_path);
     return -1;
   }
@@ -375,13 +375,13 @@ AixAttachOperation* AixAttachListener::dequeue() {
     // We must prevent accept blocking on the socket if it has been shut down.
     // Therefore we allow interrupts and check whether we have been shut down already.
     if (AixAttachListener::is_shutdown()) {
-      ::close(listener());
+      os::close(listener());
       set_listener(-1);
       return NULL;
     }
     s = ::accept(listener(), &addr, &len);
     if (s == -1) {
-      ::close(listener());
+      os::close(listener());
       set_listener(-1);
       return NULL;      // log a warning?
     }
@@ -391,21 +391,21 @@ AixAttachOperation* AixAttachListener::dequeue() {
     socklen_t optlen = sizeof(cred_info);
     if (::getsockopt(s, SOL_SOCKET, SO_PEERID, (void*)&cred_info, &optlen) == -1) {
       log_debug(attach)("Failed to get socket option SO_PEERID");
-      ::close(s);
+      os::close(s);
       continue;
     }
 
     if (!os::Posix::matches_effective_uid_and_gid_or_root(cred_info.euid, cred_info.egid)) {
       log_debug(attach)("euid/egid check failed (%d/%d vs %d/%d)",
               cred_info.euid, cred_info.egid, geteuid(), getegid());
-      ::close(s);
+      os::close(s);
       continue;
     }
 
     // peer credential look okay so we read the request
     AixAttachOperation* op = read_request(s);
     if (op == NULL) {
-      ::close(s);
+      os::close(s);
       continue;
     } else {
       return op;
@@ -453,7 +453,7 @@ void AixAttachOperation::complete(jint result, bufferedStream* st) {
   }
 
   // done
-  ::close(this->socket());
+  os::close(this->socket());
 
   delete this;
 }

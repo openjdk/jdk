@@ -150,6 +150,8 @@ enum CoredumpFilterBit {
   DAX_SHARED_BIT = 1 << 8
 };
 
+PRAGMA_PERMIT_FORBIDDEN_C_FUNCTION(closedir);  // prevents compiler warning for all functions
+
 ////////////////////////////////////////////////////////////////////////////////
 // global variables
 julong os::Linux::_physical_memory = 0;

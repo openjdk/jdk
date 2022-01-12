@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,6 +89,8 @@ julong os::alloc_bytes = 0;         // # of bytes allocated
 julong os::num_frees = 0;           // # of calls to free
 julong os::free_bytes = 0;          // # of bytes freed
 #endif
+
+PRAGMA_PERMIT_FORBIDDEN_C_FUNCTION(fopen); // prevents compiler warnings for all functions
 
 static size_t cur_malloc_words = 0;  // current size for MallocMaxTestWords
 

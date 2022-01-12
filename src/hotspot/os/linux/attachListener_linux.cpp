@@ -167,7 +167,7 @@ extern "C" {
     if (s != -1) {
       LinuxAttachListener::set_listener(-1);
       ::shutdown(s, SHUT_RDWR);
-      ::close(s);
+      os::close(s);
     }
     if (LinuxAttachListener::has_path()) {
       ::unlink(LinuxAttachListener::path());
@@ -199,7 +199,7 @@ int LinuxAttachListener::init() {
   }
 
   // create the listener socket
-  listener = ::socket(PF_UNIX, SOCK_STREAM, 0);
+  listener = os::socket(PF_UNIX, SOCK_STREAM, 0);
   if (listener == -1) {
     return -1;
   }
@@ -212,7 +212,7 @@ int LinuxAttachListener::init() {
   ::unlink(initial_path);
   int res = ::bind(listener, (struct sockaddr*)&addr, sizeof(addr));
   if (res == -1) {
-    ::close(listener);
+    os::close(listener);
     return -1;
   }
 
@@ -230,7 +230,7 @@ int LinuxAttachListener::init() {
     }
   }
   if (res == -1) {
-    ::close(listener);
+    os::close(listener);
     ::unlink(initial_path);
     return -1;
   }
@@ -271,7 +271,7 @@ LinuxAttachOperation* LinuxAttachListener::read_request(int s) {
 
   do {
     int n;
-    RESTARTABLE(read(s, buf+off, left), n);
+    RESTARTABLE(os::read(s, buf+off, left), n);
     assert(n <= left, "buffer was too small, impossible!");
     buf[max_len - 1] = '\0';
     if (n == -1) {
@@ -360,21 +360,21 @@ LinuxAttachOperation* LinuxAttachListener::dequeue() {
     socklen_t optlen = sizeof(cred_info);
     if (::getsockopt(s, SOL_SOCKET, SO_PEERCRED, (void*)&cred_info, &optlen) == -1) {
       log_debug(attach)("Failed to get socket option SO_PEERCRED");
-      ::close(s);
+      os::close(s);
       continue;
     }
 
     if (!os::Posix::matches_effective_uid_and_gid_or_root(cred_info.uid, cred_info.gid)) {
       log_debug(attach)("euid/egid check failed (%d/%d vs %d/%d)",
               cred_info.uid, cred_info.gid, geteuid(), getegid());
-      ::close(s);
+      os::close(s);
       continue;
     }
 
     // peer credential look okay so we read the request
     LinuxAttachOperation* op = read_request(s);
     if (op == NULL) {
-      ::close(s);
+      os::close(s);
       continue;
     } else {
       return op;
@@ -385,7 +385,7 @@ LinuxAttachOperation* LinuxAttachListener::dequeue() {
 // write the given buffer to the socket
 int LinuxAttachListener::write_fully(int s, char* buf, int len) {
   do {
-    ssize_t n = ::write(s, buf, len);
+    ssize_t n = os::write(s, buf, len);
     if (n == -1) {
       if (errno != EINTR) return -1;
     } else {
@@ -421,7 +421,7 @@ void LinuxAttachOperation::complete(jint result, bufferedStream* st) {
   }
 
   // done
-  ::close(this->socket());
+  os::close(this->socket());
 
   delete this;
 }

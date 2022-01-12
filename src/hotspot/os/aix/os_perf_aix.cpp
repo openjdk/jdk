@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -615,7 +615,7 @@ bool SystemProcessInterface::SystemProcesses::ProcessIterator::is_dir(const char
   struct stat mystat;
   int ret_val = 0;
 
-  ret_val = stat(name, &mystat);
+  ret_val = os::stat(name, &mystat);
   if (ret_val < 0) {
     return false;
   }

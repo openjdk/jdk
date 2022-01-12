@@ -289,11 +289,11 @@ static int get_systemtype(void) {
   }
 
   // Check whether we have a task subdirectory
-  if ((taskDir = opendir("/proc/self/task")) == NULL) {
+  if ((taskDir = os::opendir("/proc/self/task")) == NULL) {
     procEntriesType = UNDETECTABLE;
   } else {
     // The task subdirectory exists; we're on a Linux >= 2.6 system
-    closedir(taskDir);
+    os::closedir(taskDir);
     procEntriesType = LINUX26_NPTL;
   }
 
@@ -675,7 +675,7 @@ bool SystemProcessInterface::SystemProcesses::ProcessIterator::is_dir(const char
   struct stat mystat;
   int ret_val = 0;
 
-  ret_val = stat(name, &mystat);
+  ret_val = os::stat(name, &mystat);
   if (ret_val < 0) {
     return false;
   }
@@ -688,7 +688,7 @@ int SystemProcessInterface::SystemProcesses::ProcessIterator::fsize(const char* 
   size = 0;
   struct stat fbuf;
 
-  if (stat(name, &fbuf) < 0) {
+  if (os::stat(name, &fbuf) < 0) {
     return OS_ERR;
   }
   size = fbuf.st_size;
@@ -992,8 +992,8 @@ int64_t NetworkPerformanceInterface::NetworkPerformance::read_counter(const char
     return -1;
   }
 
-  ssize_t num_bytes = read(fd, buf, sizeof(buf));
-  close(fd);
+  ssize_t num_bytes = os::read(fd, buf, sizeof(buf));
+  os::close(fd);
   if ((num_bytes == -1) || (num_bytes >= static_cast<ssize_t>(sizeof(buf))) || (num_bytes < 1)) {
     return -1;
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,5 +69,62 @@
 #ifndef PRAGMA_NONNULL_IGNORED
 #define PRAGMA_NONNULL_IGNORED
 #endif
+
+#if __GNUC__ >= 9
+
+#include <dirent.h>
+// AIX also needs a 64 bit NULL to work as a null address pointer.
+// Most system includes on AIX would define it as an int 0 if not already defined with one
+// exception: /usr/include/dirent.h will unconditionally redefine NULL to int 0 again.
+// In this case you need to copy the following defines to a position after #include <dirent.h>
+#include <dirent.h>
+#ifdef _LP64
+  #undef NULL
+  #define NULL 0L
+#else
+  #ifndef NULL
+    #define NULL 0
+  #endif
+#endif
+
+#include <sys/socket.h>
+#include <stdio.h>
+
+#define FORBID_C_FUNCTION(signature, alternative) \
+  extern "C" signature __attribute__((__warning__(alternative)))
+
+#define PRAGMA_PERMIT_FORBIDDEN_C_FUNCTION(name) \
+  PRAGMA_DISABLE_GCC_WARNING("-Wattribute-warning")
+
+FORBID_C_FUNCTION(void abort(void),                            "use os::abort");
+FORBID_C_FUNCTION(int close(int),                              "use os::close");
+FORBID_C_FUNCTION(int closedir(DIR *),                         "use os::closedir");
+FORBID_C_FUNCTION(int connect(int, const struct sockaddr*, socklen_t), "use os::connect");
+FORBID_C_FUNCTION(void flockfile(FILE*),                       "use os::flockfile");
+FORBID_C_FUNCTION(FILE *fopen(const char *, const char *),     "use os::fopen");
+FORBID_C_FUNCTION(int fsync(int),                              "use os::fsync");
+FORBID_C_FUNCTION(int ftruncate(int, off_t),                   "use os::ftruncate");
+FORBID_C_FUNCTION(void funlockfile(FILE *),                    "use os::funlockfile");
+FORBID_C_FUNCTION(off_t lseek(int, off_t, int),                "use os::lseek");
+FORBID_C_FUNCTION(DIR *opendir(const char *),                  "use os::opendir");
+FORBID_C_FUNCTION(long int random(void),                       "use os::random");
+FORBID_C_FUNCTION(ssize_t read(int, void*, size_t),            "use os::read");
+FORBID_C_FUNCTION(struct dirent* readdir(DIR*),                "use os::readdir");
+FORBID_C_FUNCTION(ssize_t recv(int, void*, size_t, int),       "use os::recv");
+FORBID_C_FUNCTION(int stat(const char*, struct stat*),         "use os::stat");
+FORBID_C_FUNCTION(ssize_t send(int, const void*, size_t, int), "use os::send");
+FORBID_C_FUNCTION(int socket(int, int, int),                   "use os::socket");
+FORBID_C_FUNCTION(char *strdup(const char*),                   "use os::strdup");
+FORBID_C_FUNCTION(char* strerror(int),                         "use os::strerror");
+FORBID_C_FUNCTION(ssize_t write(int, const void*, size_t),     "use os::write");
+
+FORBID_C_FUNCTION(char *strtok(char*, const char*),            "use strtok_r");
+
+#else
+
+#define FORBID_C_FUNCTION(signature, alternative)
+#define PRAGMA_PERMIT_FORBIDDEN_C_FUNCTION(name)
+
+#endif // __GNUC__ >= 9
 
 #endif // SHARE_UTILITIES_COMPILERWARNINGS_HPP

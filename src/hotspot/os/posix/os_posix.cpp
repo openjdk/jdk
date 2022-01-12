@@ -90,6 +90,8 @@
 #define assert_with_errno(cond, msg)    check_with_errno(assert, cond, msg)
 #define guarantee_with_errno(cond, msg) check_with_errno(guarantee, cond, msg)
 
+PRAGMA_PERMIT_FORBIDDEN_C_FUNCTION(closedir); // prevents compiler warnings for all functions
+
 static jlong initial_time_count = 0;
 
 static int clock_tics_per_sec = 100;

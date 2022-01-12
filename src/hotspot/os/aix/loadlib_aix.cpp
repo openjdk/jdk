@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -71,7 +71,7 @@ class StringList {
       }
     }
     assert0(_cap > _num);
-    char* s2 = ::strdup(s);
+    char* s2 = os::strdup(s);
     if (!s2) {
       return NULL;
     }

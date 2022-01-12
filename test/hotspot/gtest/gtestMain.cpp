@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -278,7 +278,7 @@ static void runUnitTestsInner(int argc, char** argv) {
     int ret;
     if ((ret = init_jvm(argc, argv, is_vmassert_test, &jvm)) != 0) {
       fprintf(stderr, "ERROR: JNI_CreateJavaVM failed: %d\n", ret);
-      abort();
+      os::abort();
     }
   } else {
     ::testing::TestEventListeners& listeners = ::testing::UnitTest::GetInstance()->listeners();

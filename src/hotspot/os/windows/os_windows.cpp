@@ -102,6 +102,8 @@
 #include <mmsystem.h>
 #include <winsock2.h>
 
+PRAGMA_PERMIT_FORBIDDEN_C_FUNCTION(close); // prevents compiler warnings for all functions
+
 // for timer info max values which include all bits
 #define ALL_64_BITS CONST64(-1)
 

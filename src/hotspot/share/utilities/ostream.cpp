@@ -614,7 +614,7 @@ void fileStream::flush() {
 void fdStream::write(const char* s, size_t len) {
   if (_fd != -1) {
     // Make an unused local variable to avoid warning from gcc compiler.
-    ssize_t count = ::write(_fd, s, (int)len);
+    ssize_t count = os::write(_fd, s, (int)len);
     update_position(s, len);
   }
 }

@@ -110,7 +110,6 @@ static void save_memory_to_file(char* addr, size_t size) {
     ssize_t result;
 
     for (size_t remaining = size; remaining > 0;) {
-
       result = os::write(fd, addr, remaining);
       if (result == OS_ERR) {
         if (PrintMiscellaneous && Verbose) {
@@ -335,7 +334,7 @@ static DIR *open_directory_secure(const char* dirname) {
   }
 
   // Open the directory.
-  dirp = ::opendir(dirname);
+  dirp = os::opendir(dirname);
   if (dirp == NULL) {
     // The directory doesn't exist, close fd and return.
     os::close(fd);
@@ -394,7 +393,7 @@ static DIR *open_directory_secure_cwd(const char* dirname, int *saved_cwd_fd) {
       warning("could not change to directory %s", dirname);
     }
     if (*saved_cwd_fd != -1) {
-      ::close(*saved_cwd_fd);
+      os::close(*saved_cwd_fd);
       *saved_cwd_fd = -1;
     }
     // Close the directory.
@@ -413,7 +412,7 @@ static void close_directory_secure_cwd(DIR* dirp, int saved_cwd_fd) {
   // If we have a saved cwd change back to it and close the fd.
   if (saved_cwd_fd != -1) {
     result = fchdir(saved_cwd_fd);
-    ::close(saved_cwd_fd);
+    os::close(saved_cwd_fd);
   }
 
   // Close the directory.
@@ -861,28 +860,28 @@ static int create_sharedmem_resources(const char* dirname, const char* filename,
 
   // check to see if the file is secure
   if (!is_file_secure(fd, filename)) {
-    ::close(fd);
+    os::close(fd);
     return -1;
   }
 
   ssize_t result;
 
   // truncate the file to get rid of any existing data
-  RESTARTABLE(::ftruncate(fd, (off_t)0), result);
+  RESTARTABLE(os::ftruncate(fd, (off_t)0), result);
   if (result == OS_ERR) {
     if (PrintMiscellaneous && Verbose) {
       warning("could not truncate shared memory file: %s\n", os::strerror(errno));
     }
-    ::close(fd);
+    os::close(fd);
     return -1;
   }
   // set the file size
-  RESTARTABLE(::ftruncate(fd, (off_t)size), result);
+  RESTARTABLE(os::ftruncate(fd, (off_t)size), result);
   if (result == OS_ERR) {
     if (PrintMiscellaneous && Verbose) {
       warning("could not set shared memory file size: %s\n", os::strerror(errno));
     }
-    ::close(fd);
+    os::close(fd);
     return -1;
   }
 
@@ -937,7 +936,7 @@ static int open_sharedmem_file(const char* filename, int oflags, TRAPS) {
 
   // check to see if the file is secure
   if (!is_file_secure(fd, filename)) {
-    ::close(fd);
+    os::close(fd);
     return -1;
   }
 
@@ -998,7 +997,7 @@ static char* mmap_create_shared(size_t size) {
 
   mapAddress = (char*)::mmap((char*)0, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
 
-  result = ::close(fd);
+  result = os::close(fd);
   assert(result != OS_ERR, "could not close file");
 
   if (mapAddress == MAP_FAILED) {
@@ -1181,7 +1180,7 @@ static void mmap_attach_shared(const char* user, int vmid, PerfMemory::PerfMemor
   }
 
   if (HAS_PENDING_EXCEPTION) {
-    ::close(fd);
+    os::close(fd);
     return;
   }
 
@@ -1195,7 +1194,7 @@ static void mmap_attach_shared(const char* user, int vmid, PerfMemory::PerfMemor
 
   mapAddress = (char*)::mmap((char*)0, size, mmap_prot, MAP_SHARED, fd, 0);
 
-  result = ::close(fd);
+  result = os::close(fd);
   assert(result != OS_ERR, "could not close file");
 
   if (mapAddress == MAP_FAILED) {
