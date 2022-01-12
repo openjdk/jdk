@@ -720,11 +720,13 @@ public final class DateTimeFormatter {
 
     //-----------------------------------------------------------------------
     /**
-     * Creates a locale specific formatter using the specified Skeleton for the default locale. Skeleton
-     * is based on CLDR's
+     * Creates a locale specific formatter derived from the requested pattern for the
+     * default locale. The requested pattern is a series of fields (represented
+     * by typical pattern symbols) in a canonical order, which is based on {@code skeleton}
+     * in Unicode's LDML specification. For example, {@code yMMM} will format the date
+     * '2020-06-16' to 'Jun 2020' in the {@link Locale#US US locale}. Refer to
      * <a href="https://www.unicode.org/reports/tr35/tr35-dates.html#availableFormats_appendItems">
-     * availableFormats</a>.
-     * For example, {@code yMMM} will format 2020-06-16 as 'Jun 2020' in US locale.
+     * availableFormats</a> for more detail with regard to {@code skeleton}.
      * <p>
      * The formatter will use the {@link Locale#getDefault(Locale.Category) default FORMAT locale} and
      * the chronology returned from {@link Chronology#ofLocale(Locale)} with that locale.
@@ -732,23 +734,25 @@ public final class DateTimeFormatter {
      * The returned formatter has no override zone.
      * It uses {@link ResolverStyle#SMART SMART} resolver style.
      *
-     * @param skeleton the skeleton to use, not null
-     * @return the formatter based on the skeleton, not null
-     * @throws IllegalArgumentException if the skeleton is invalid
-     * @throws DateTimeException if the formatter for the given {@code skeleton} is not available
+     * @param requested the requested pattern, not null
+     * @return the formatter based on the {@code requested} pattern, not null
+     * @throws IllegalArgumentException if {@code requested} is invalid
+     * @throws DateTimeException if the formatter for the given {@code requested} is not available
      * @see #ofPattern(String)
      * @since 19
      */
-    public static DateTimeFormatter ofSkeleton(String skeleton) {
-        return ofSkeleton(skeleton, Locale.getDefault(Locale.Category.FORMAT));
+    public static DateTimeFormatter ofLocalizedPattern(String requested) {
+        return ofLocalizedPattern(requested, Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**
-     * Creates a locale specific formatter using the specified Skeleton and locale. Skeleton
-     * is based on CLDR's
+     * Creates a locale specific formatter derived from the requested pattern and
+     * the specified locale. The requested pattern is a series of fields (represented
+     * by typical pattern symbols) in a canonical order, which is based on {@code skeleton}
+     * in Unicode's LDML specification. For example, {@code yMMM} will format the date
+     * '2020-06-16' to 'Jun 2020' in the {@link Locale#US US locale}. Refer to
      * <a href="https://www.unicode.org/reports/tr35/tr35-dates.html#availableFormats_appendItems">
-     * availableFormats</a>.
-     * For example, {@code yMMM} will format 2020-06-16 as 'Jun 2020' in US locale.
+     * availableFormats</a> for more detail with regard to {@code skeleton}.
      * <p>
      * The formatter will use the specified locale and
      * the chronology returned from {@link Chronology#ofLocale(Locale)} with that locale.
@@ -756,17 +760,17 @@ public final class DateTimeFormatter {
      * The returned formatter has no override zone.
      * It uses {@link ResolverStyle#SMART SMART} resolver style.
      *
-     * @param skeleton the skeleton to use, not null
+     * @param requested the requested pattern, not null
      * @param locale the locale to use, not null
-     * @return the formatter based on the skeleton, not null
-     * @throws IllegalArgumentException if the skeleton is invalid
-     * @throws DateTimeException if the formatter for the given {@code skeleton} is not available
+     * @return the formatter based on the {@code requested} pattern, not null
+     * @throws IllegalArgumentException if {@code requested} is invalid
+     * @throws DateTimeException if the formatter for the given {@code requested} is not available
      * @see #ofPattern(String, Locale)
      * @since 19
      */
-    public static DateTimeFormatter ofSkeleton(String skeleton, Locale locale) {
+    public static DateTimeFormatter ofLocalizedPattern(String requested, Locale locale) {
         Chronology chrono = Chronology.ofLocale(locale);
-        return new DateTimeFormatterBuilder().appendSkeleton(skeleton, locale, chrono)
+        return new DateTimeFormatterBuilder().appendLocalizedPattern(requested, locale, chrono)
                 .toFormatter(ResolverStyle.SMART, chrono)
                 .withLocale(locale);
     }

@@ -66,24 +66,23 @@ public class JavaTimeDateTimePatternImpl extends JavaTimeDateTimePatternProvider
     @Override
     public String getJavaTimeDateTimePattern(int timeStyle, int dateStyle, String calType, Locale locale) {
         LocaleResources lr = LocaleProviderAdapter.getResourceBundleBased().getLocaleResources(locale);
-        String pattern = lr.getJavaTimeDateTimePattern(
+        return lr.getJavaTimeDateTimePattern(
                 timeStyle, dateStyle, calType);
-        return pattern;
     }
 
     @Override
-    public String getJavaTimeDateTimePattern(String skeleton, String calType, Locale locale) {
+    public String getJavaTimeDateTimePattern(String requested, String calType, Locale locale) {
         LocaleProviderAdapter lpa = LocaleProviderAdapter.getResourceBundleBased();
         // CLDR's 'u'/'U' are not supported in the JDK. Replace them with 'y' instead
-        final var modifiedSkeleton = skeleton.replaceAll("[uU]", "y");
+        final var modifiedSkeleton = requested.replaceAll("[uU]", "y");
         return ((ResourceBundleBasedAdapter)lpa).getCandidateLocales("", locale).stream()
                 .map(lpa::getLocaleResources)
-                .map(lr -> lr.getSkeletonPattern(modifiedSkeleton, calType))
+                .map(lr -> lr.getLocalizedPattern(modifiedSkeleton, calType))
                 .filter(Objects::nonNull)
                 .findFirst()
                 .or(() -> calType.equals("generic") ? Optional.empty():
-                        Optional.of(getJavaTimeDateTimePattern(skeleton, "generic", locale)))
-                .orElseThrow(() -> new DateTimeException("Skeleton pattern \"" + skeleton +
+                        Optional.of(getJavaTimeDateTimePattern(requested, "generic", locale)))
+                .orElseThrow(() -> new DateTimeException("Request pattern \"" + requested +
                         "\" cannot be resolved in the locale \"" + locale + "\""));
     }
 

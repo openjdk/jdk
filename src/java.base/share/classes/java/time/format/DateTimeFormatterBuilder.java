@@ -1425,29 +1425,31 @@ public final class DateTimeFormatterBuilder {
 
     //-----------------------------------------------------------------------
     /**
-     * Appends a localized pattern to the formatter using the specified skeleton,
-     * locale, and chronology. Skeleton is based on CLDR's
+     * Appends a localized pattern to the formatter using the requested pattern,
+     * locale, and chronology. The requested pattern is a series of fields (represented
+     * by typical pattern symbols) in a canonical order, which is based on {@code skeleton}
+     * in Unicode's LDML specification. For example, {@code yMMM} will format the date
+     * '2020-06-16' to 'Jun 2020' in the {@link Locale#US US locale}. Refer to
      * <a href="https://www.unicode.org/reports/tr35/tr35-dates.html#availableFormats_appendItems">
-     * availableFormats</a>.
-     * For example, {@code yMMM} will format 2011-12-03 as 'Dec 2011' in US locale.
-     * @param skeleton the skeleton to use, not null
+     * availableFormats</a> for more detail with regard to {@code skeleton}.
+     * @param requested the requested pattern to use, not null
      * @param locale the locale to use, not null
      * @param chrono the chronology to use, not null
      * @return this, for chaining, not null
-     * @throws IllegalArgumentException if the skeleton is invalid
-     * @throws DateTimeException if the formatter for the given {@code skeleton} is not available
+     * @throws IllegalArgumentException if {@code requested} is invalid
+     * @throws DateTimeException if the formatter for the given {@code requested} is not available
      * @see #appendPattern(String)
      * @since 19
      */
-    public DateTimeFormatterBuilder appendSkeleton(String skeleton, Locale locale, Chronology chrono) {
-        Objects.requireNonNull(skeleton, "skeleton");
+    public DateTimeFormatterBuilder appendLocalizedPattern(String requested, Locale locale, Chronology chrono) {
+        Objects.requireNonNull(requested, "requested");
         Objects.requireNonNull(locale, "locale");
         Objects.requireNonNull(chrono, "chrono");
 
         Locale override = CalendarDataUtility.findRegionOverride(locale);
         LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(JavaTimeDateTimePatternProvider.class, override);
         JavaTimeDateTimePatternProvider provider = adapter.getJavaTimeDateTimePatternProvider();
-        parsePattern(provider.getJavaTimeDateTimePattern(skeleton,
+        parsePattern(provider.getJavaTimeDateTimePattern(requested,
                                 chrono.getCalendarType(),
                                 CalendarDataUtility.findRegionOverride(override)));
         return this;

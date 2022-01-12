@@ -540,23 +540,23 @@ public class LocaleResources {
     }
 
     /**
-     * Returns the actual format pattern string based on the passed skeleton
+     * Returns the actual format pattern string based on the requested pattern
      * and calendar type for this locale.
      *
-     * @param requestedSkeleton requested skeleton
+     * @param requested requested pattern
      * @param calType calendar type
-     * @throws IllegalArgumentException if the input skeleton is invalid
+     * @throws IllegalArgumentException if the requested pattern is invalid
      * @return format pattern string for this locale, null if not found
      */
-    public String getSkeletonPattern(String requestedSkeleton, String calType) {
+    public String getLocalizedPattern(String requested, String calType) {
         initSkeletonIfNeeded();
 
         // input skeleton substitution
-        final String skeleton = substituteInputSkeletons(requestedSkeleton);
+        final String skeleton = substituteInputSkeletons(requested);
 
         // validity check
         if (!validSkeletons.contains(skeleton)) {
-            throw new IllegalArgumentException("Input skeleton is invalid: " + requestedSkeleton);
+            throw new IllegalArgumentException("Requested pattern is invalid: " + requested);
         }
 
         // Expand it with possible inferred skeleton stream based on its priority
@@ -573,7 +573,7 @@ public class LocaleResources {
                 .map(s -> adjustSkeletonLength(skeleton, s))
                 .orElse(null);
 
-System.out.println("requested: " + requestedSkeleton + ", locale: " + locale + ", caltype: " + calType + ", matched: "+matched);
+System.out.println("requested: " + requested + ", locale: " + locale + ", caltype: " + calType + ", matched: "+matched);
         return matched;
     }
 
