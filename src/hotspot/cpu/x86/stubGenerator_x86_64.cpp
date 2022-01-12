@@ -1120,9 +1120,11 @@ class StubGenerator: public StubCodeGenerator {
 
   // This is used in places where r10 is a scratch register, and can
   // be adapted if r9 is needed also.
-  void setup_arg_regs_using_thread() {
+  void setup_arg_regs_using_thread(int nargs = 3) {
     const Register saved_r15 = r9;
 #ifdef _WIN64
+    if (nargs >= 4)
+      __ mov(rax, r9);       // r9 is also saved_r15
     __ mov(saved_r15, r15);  // r15 is callee saved and needs to be restored
     __ get_thread(r15_thread);
     assert(c_rarg0 == rcx && c_rarg1 == rdx && c_rarg2 == r8 && c_rarg3 == r9,
@@ -1133,6 +1135,8 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(rdi, rcx); // c_rarg0
     __ mov(rsi, rdx); // c_rarg1
     __ mov(rdx, r8);  // c_rarg2
+    if (nargs >= 4)
+      __ mov(rcx, rax); // c_rarg3 (via rax)
 #else
     assert(c_rarg0 == rdi && c_rarg1 == rsi && c_rarg2 == rdx && c_rarg3 == rcx,
            "unexpected argument registers");
@@ -2803,9 +2807,9 @@ class StubGenerator: public StubCodeGenerator {
     }
 #endif //ASSERT
 
-    setup_arg_regs(4); // from => rdi, to => rsi, length => rdx
-                       // ckoff => rcx, ckval => r8
-                       // r9 and r10 may be used to save non-volatile registers
+    setup_arg_regs_using_thread(4); // from => rdi, to => rsi, length => rdx
+                                    // ckoff => rcx, ckval => r8
+                                    // r9 is used to save r15_thread
 #ifdef _WIN64
     // last argument (#4) is on stack on Win64
     __ movptr(ckval, Address(rsp, 6 * wordSize));
@@ -2892,7 +2896,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ BIND(L_store_element);
     if (UseZGC) {
-      __ store_heap_oop(to_element_addr, rax_oop, r9, r10, r11, IN_HEAP | (dest_uninitialized ? IS_DEST_UNINITIALIZED : 0));  // store the oop
+      __ store_heap_oop(to_element_addr, rax_oop, r10, r11, noreg, IN_HEAP | (dest_uninitialized ? IS_DEST_UNINITIALIZED : 0));  // store the oop
     } else {
       __ store_heap_oop(to_element_addr, rax_oop, noreg, noreg, noreg, IN_HEAP | AS_RAW);  // store the oop
     }
@@ -2933,7 +2937,7 @@ class StubGenerator: public StubCodeGenerator {
     __ movptr(r13, Address(rsp, saved_r13_offset * wordSize));
     __ movptr(r14, Address(rsp, saved_r14_offset * wordSize));
     __ movptr(r10, Address(rsp, saved_r10_offset * wordSize));
-    restore_arg_regs();
+    restore_arg_regs_using_thread();
     inc_counter_np(SharedRuntime::_checkcast_array_copy_ctr); // Update counter after rscratch1 is free
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -3348,7 +3352,7 @@ class StubGenerator: public StubCodeGenerator {
       // the checkcast_copy loop needs two extra arguments:
       assert(c_rarg3 == sco_temp, "#3 already in place");
       // Set up arguments for checkcast_copy_entry.
-      setup_arg_regs(4);
+      setup_arg_regs_using_thread(4);
       __ movptr(r8, r11_dst_klass);  // dst.klass.element_klass, r8 is c_rarg4 on Linux/Solaris
       __ jump(RuntimeAddress(checkcast_copy_entry));
     }
