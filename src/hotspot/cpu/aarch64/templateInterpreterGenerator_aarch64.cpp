@@ -969,7 +969,7 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
 /**
  * Method entry for static native methods:
  *   int java.util.zip.CRC32.updateBytes(int crc, byte[] b, int off, int len)
- *   int java.util.zip.CRC32.updateByteBuffer(int crc, jlong buf, int off, int len)
+ *   int java.util.zip.CRC32.updateByteBuffer(int crc, long buf, int off, int len)
  */
 address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
   if (UseCRC32Intrinsics) {
@@ -1024,7 +1024,7 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
 /**
  * Method entry for intrinsic-candidate (non-native) methods:
  *   int java.util.zip.CRC32C.updateBytes(int crc, byte[] b, int off, int end)
- *   int java.util.zip.CRC32C.updateDirectByteBuffer(int crc, jlong buf, int off, int end)
+ *   int java.util.zip.CRC32C.updateDirectByteBuffer(int crc, long buf, int off, int end)
  * Unlike CRC32, CRC32C does not have any methods marked as native
  * CRC32C also uses an "end" variable instead of the length variable CRC32 uses
  */

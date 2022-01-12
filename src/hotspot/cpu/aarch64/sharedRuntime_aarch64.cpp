@@ -1171,7 +1171,7 @@ static void verify_oop_args(MacroAssembler* masm,
         VMReg r = regs[i].first();
         assert(r->is_valid(), "bad oop arg");
         if (r->is_stack()) {
-          __ ldr(temp_reg, Address(sp, (uint64_t)r->reg2stack() * VMRegImpl::stack_slot_size));
+          __ ldr(temp_reg, Address(sp, r->reg2stack() * VMRegImpl::stack_slot_size));
           __ verify_oop(temp_reg);
         } else {
           __ verify_oop(r->as_Register());
