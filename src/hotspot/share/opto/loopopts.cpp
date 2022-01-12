@@ -229,11 +229,10 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
 // Replace the dominated test with an obvious true or false.  Place it on the
 // IGVN worklist for later cleanup.  Move control-dependent data Nodes on the
 // live path up to the dominating control.
-void PhaseIdealLoop::dominated_by( Node *prevdom, Node *iff, bool flip, bool exclude_loop_predicate ) {
+void PhaseIdealLoop::dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip, bool exclude_loop_predicate) {
   if (VerifyLoopOptimizations && PrintOpto) { tty->print_cr("dominating test"); }
 
   // prevdom is the dominating projection of the dominating test.
-  assert(iff->is_If(), "must be");
   assert(iff->Opcode() == Op_If ||
          iff->Opcode() == Op_CountedLoopEnd ||
          iff->Opcode() == Op_LongCountedLoopEnd ||
@@ -263,7 +262,7 @@ void PhaseIdealLoop::dominated_by( Node *prevdom, Node *iff, bool flip, bool exc
   // Make control-dependent data Nodes on the live path (path that will remain
   // once the dominated IF is removed) become control-dependent on the
   // dominating projection.
-  Node* dp = iff->as_If()->proj_out_or_null(pop == Op_IfTrue);
+  Node* dp = iff->proj_out_or_null(pop == Op_IfTrue);
 
   // Loop predicates may have depending checks which should not
   // be skipped. For example, range check predicate has two checks
@@ -272,7 +271,7 @@ void PhaseIdealLoop::dominated_by( Node *prevdom, Node *iff, bool flip, bool exc
     return;
 
   ProjNode* dp_proj  = dp->as_Proj();
-  ProjNode* unc_proj = iff->as_If()->proj_out(1 - dp_proj->_con)->as_Proj();
+  ProjNode* unc_proj = iff->proj_out(1 - dp_proj->_con)->as_Proj();
   if (exclude_loop_predicate &&
       (unc_proj->is_uncommon_trap_proj(Deoptimization::Reason_predicate) != NULL ||
        unc_proj->is_uncommon_trap_proj(Deoptimization::Reason_profile_predicate) != NULL ||
@@ -1175,15 +1174,6 @@ bool PhaseIdealLoop::identical_backtoback_ifs(Node *n) {
     return false;
   }
 
-  IfNode* n_if = n->as_If();
-  if (n_if->proj_out(0)->outcnt() > 1 || n_if->proj_out(1)->outcnt() > 1) {
-    // Removing the dominated If node by using the split-if optimization does not work if there are data dependencies.
-    // Some data dependencies depend on its immediate dominator If node and should not be separated from it (e.g. null
-    // checks, division by zero checks etc.). Bail out for now until data dependencies are correctly handled when
-    // optimizing back-to-back ifs.
-    return false;
-  }
-
   Node* region = n->in(0);
   Node* dom = idom(region);
   if (!dom->is_If() || dom->in(1) != n->in(1)) {
@@ -1359,28 +1349,7 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
   }
 
   // Two identical ifs back to back can be merged
-  if (identical_backtoback_ifs(n) && can_split_if(n->in(0))) {
-    Node *n_ctrl = n->in(0);
-    PhiNode* bolphi = PhiNode::make_blank(n_ctrl, n->in(1));
-    IfNode* dom_if = idom(n_ctrl)->as_If();
-    Node* proj_true = dom_if->proj_out(1);
-    Node* proj_false = dom_if->proj_out(0);
-    Node* con_true = _igvn.makecon(TypeInt::ONE);
-    Node* con_false = _igvn.makecon(TypeInt::ZERO);
-
-    for (uint i = 1; i < n_ctrl->req(); i++) {
-      if (is_dominator(proj_true, n_ctrl->in(i))) {
-        bolphi->init_req(i, con_true);
-      } else {
-        assert(is_dominator(proj_false, n_ctrl->in(i)), "bad if");
-        bolphi->init_req(i, con_false);
-      }
-    }
-    register_new_node(bolphi, n_ctrl);
-    _igvn.replace_input_of(n, 1, bolphi);
-
-    // Now split the IF
-    do_split_if(n);
+  if (try_merge_identical_ifs(n)) {
     return;
   }
 
@@ -1416,7 +1385,7 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
           // Replace the dominated test with an obvious true or false.
           // Place it on the IGVN worklist for later cleanup.
           C->set_major_progress();
-          dominated_by(prevdom, n, false, true);
+          dominated_by(prevdom->as_IfProj(), n->as_If(), false, true);
 #ifndef PRODUCT
           if( VerifyLoopOptimizations ) verify();
 #endif
@@ -1438,6 +1407,118 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
       n->in(1) != NULL &&
       get_loop(get_ctrl(n)) == get_loop(get_ctrl(n->in(1))) ) {
     _igvn.replace_node( n, n->in(1) );
+  }
+}
+
+// Tranform:
+//
+// if (some_condition) {
+//   // body 1
+// } else {
+//   // body 2
+// }
+// if (some_condition) {
+//   // body 3
+// } else {
+//   // body 4
+// }
+//
+// into:
+//
+//
+// if (some_condition) {
+//   // body 1
+//   // body 3
+// } else {
+//   // body 2
+//   // body 4
+// }
+bool PhaseIdealLoop::try_merge_identical_ifs(Node* n) {
+  if (identical_backtoback_ifs(n) && can_split_if(n->in(0))) {
+    Node *n_ctrl = n->in(0);
+    IfNode* dom_if = idom(n_ctrl)->as_If();
+    ProjNode* dom_proj_true = dom_if->proj_out(1);
+    ProjNode* dom_proj_false = dom_if->proj_out(0);
+
+    // Now split the IF
+    RegionNode* new_false_region;
+    RegionNode* new_true_region;
+    do_split_if(n, &new_false_region, &new_true_region);
+    assert(new_false_region->req() == new_true_region->req(), "");
+#ifdef ASSERT
+    for (uint i = 1; i < new_false_region->req(); ++i) {
+      assert(new_false_region->in(i)->in(0) == new_true_region->in(i)->in(0), "unexpected shape following split if");
+      assert(i == new_false_region->req() - 1 || new_false_region->in(i)->in(0)->in(1) == new_false_region->in(i + 1)->in(0)->in(1), "unexpected shape following split if");
+    }
+#endif
+    assert(new_false_region->in(1)->in(0)->in(1) == dom_if->in(1), "dominating if and dominated if after split must share test");
+
+    // We now have:
+    // if (some_condition) {
+    //   // body 1
+    //   if (some_condition) {
+    //     body3: // new_true_region
+    //     // body3
+    //   } else {
+    //     goto body4;
+    //   }
+    // } else {
+    //   // body 2
+    //  if (some_condition) {
+    //     goto body3;
+    //   } else {
+    //     body4:   // new_false_region
+    //     // body4;
+    //   }
+    // }
+    //
+
+    // clone pinned nodes thru the resulting regions
+    push_pinned_nodes_thru_region(dom_if, new_true_region);
+    push_pinned_nodes_thru_region(dom_if, new_false_region);
+
+    // Optimize out the cloned ifs. Because pinned nodes were cloned, this also allows a CastPP that would be dependent
+    // on a projection of n to have the dom_if as a control dependency. We don't want the CastPP to end up with an
+    // unrelated control dependency.
+    for (uint i = 1; i < new_false_region->req(); i++) {
+      if (is_dominator(dom_proj_true, new_false_region->in(i))) {
+        dominated_by(dom_proj_true->as_IfProj(), new_false_region->in(i)->in(0)->as_If(), false, false);
+      } else {
+        assert(is_dominator(dom_proj_false, new_false_region->in(i)), "bad if");
+        dominated_by(dom_proj_false->as_IfProj(), new_false_region->in(i)->in(0)->as_If(), false, false);
+      }
+    }
+    return true;
+  }
+  return false;
+}
+
+void PhaseIdealLoop::push_pinned_nodes_thru_region(IfNode* dom_if, Node* region) {
+  for (DUIterator i = region->outs(); region->has_out(i); i++) {
+    Node* u = region->out(i);
+    if (!has_ctrl(u) || u->is_Phi() || !u->depends_only_on_test() || !_igvn.no_dependent_zero_check(u)) {
+      continue;
+    }
+    assert(u->in(0) == region, "not a control dependent node?");
+    uint j = 1;
+    for (; j < u->req(); ++j) {
+      Node* in = u->in(j);
+      if (!is_dominator(ctrl_or_self(in), dom_if)) {
+        break;
+      }
+    }
+    if (j == u->req()) {
+      Node *phi = PhiNode::make_blank(region, u);
+      for (uint k = 1; k < region->req(); ++k) {
+        Node* clone = u->clone();
+        clone->set_req(0, region->in(k));
+        register_new_node(clone, region->in(k));
+        phi->init_req(k, clone);
+      }
+      register_new_node(phi, region);
+      _igvn.replace_node(u, phi);
+      --i;
+    }
   }
 }
 

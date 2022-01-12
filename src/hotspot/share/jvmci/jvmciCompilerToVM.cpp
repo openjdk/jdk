@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2376,7 +2376,7 @@ C2V_VMENTRY_PREFIX(void, detachCurrentThread, (JNIEnv* env, jobject c2vm))
   }
 C2V_END
 
-C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle))
+C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle, jboolean callPostTranslation))
   requireJVMCINativeLibrary(JVMCI_CHECK_0);
   if (obj_handle == NULL) {
     return 0L;
@@ -2427,7 +2427,9 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle))
       const char* cstring = name_string.is_null() ? NULL : thisEnv->as_utf8_string(name_string);
       // Create a new HotSpotNmethod instance in the peer runtime
       result = peerEnv->new_HotSpotNmethod(mh, cstring, isDefault, compileIdSnapshot, JVMCI_CHECK_0);
-      if (nm == NULL) {
+      if (result.is_null()) {
+        // exception occurred (e.g. OOME) creating a new HotSpotNmethod
+      } else if (nm == NULL) {
         // nmethod must have been unloaded
       } else {
         // Link the new HotSpotNmethod to the nmethod
@@ -2449,6 +2451,13 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle))
   } else {
     JVMCI_THROW_MSG_0(IllegalArgumentException,
                 err_msg("Cannot translate object of type: %s", thisEnv->klass_name(obj)));
+  }
+  if (callPostTranslation) {
+    peerEnv->call_HotSpotJVMCIRuntime_postTranslation(result, JVMCI_CHECK_0);
+  }
+  // Propagate any exception that occurred while creating the translated object
+  if (peerEnv->transfer_pending_exception(thread, thisEnv)) {
+    return 0L;
   }
   return (jlong) peerEnv->make_global(result).as_jobject();
 }
@@ -2790,7 +2799,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getCurrentJavaThread",                         CC "()J",                                                                             FN_PTR(getCurrentJavaThread)},
   {CC "attachCurrentThread",                          CC "([BZ)Z",                                                                          FN_PTR(attachCurrentThread)},
   {CC "detachCurrentThread",                          CC "()V",                                                                             FN_PTR(detachCurrentThread)},
-  {CC "translate",                                    CC "(" OBJECT ")J",                                                                   FN_PTR(translate)},
+  {CC "translate",                                    CC "(" OBJECT "Z)J",                                                                  FN_PTR(translate)},
   {CC "unhand",                                       CC "(J)" OBJECT,                                                                      FN_PTR(unhand)},
   {CC "updateHotSpotNmethod",                         CC "(" HS_NMETHOD ")V",                                                               FN_PTR(updateHotSpotNmethod)},
   {CC "getCode",                                      CC "(" HS_INSTALLED_CODE ")[B",                                                       FN_PTR(getCode)},

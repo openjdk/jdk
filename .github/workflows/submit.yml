@@ -341,6 +341,7 @@ jobs:
         run: >
           if ! grep --include=test-summary.txt -lqr build/*/test-results -e "TEST SUCCESS" ; then
             cat build/*/test-results/*/text/newfailures.txt ;
+            cat build/*/test-results/*/text/other_errors.txt ;
             exit 1 ;
           fi
 
@@ -807,6 +808,7 @@ jobs:
         run: >
           if ! grep --include=test-summary.txt -lqr build/*/test-results -e "TEST SUCCESS" ; then
             cat build/*/test-results/*/text/newfailures.txt ;
+            cat build/*/test-results/*/text/other_errors.txt ;
             exit 1 ;
           fi
 
@@ -1218,6 +1220,7 @@ jobs:
         run: >
           if ((Get-ChildItem -Path build\*\test-results\test-summary.txt -Recurse | Select-String -Pattern "TEST SUCCESS" ).Count -eq 0) {
             Get-Content -Path build\*\test-results\*\*\newfailures.txt ;
+            Get-Content -Path build\*\test-results\*\*\other_errors.txt ;
             exit 1
           }
 
@@ -1611,6 +1614,7 @@ jobs:
         run: >
           if ! grep --include=test-summary.txt -lqr build/*/test-results -e "TEST SUCCESS" ; then
             cat build/*/test-results/*/text/newfailures.txt ;
+            cat build/*/test-results/*/text/other_errors.txt ;
             exit 1 ;
           fi
 

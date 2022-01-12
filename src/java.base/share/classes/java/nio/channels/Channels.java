@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,6 @@ import java.nio.charset.UnsupportedCharsetException;
 import java.nio.channels.spi.AbstractInterruptibleChannel;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
-import sun.nio.ch.ChannelInputStream;
-import sun.nio.ch.ChannelOutputStream;
 import sun.nio.cs.StreamDecoder;
 import sun.nio.cs.StreamEncoder;
 
@@ -87,7 +85,7 @@ public final class Channels {
      */
     public static InputStream newInputStream(ReadableByteChannel ch) {
         Objects.requireNonNull(ch, "ch");
-        return new ChannelInputStream(ch);
+        return sun.nio.ch.Streams.of(ch);
     }
 
     /**
@@ -106,7 +104,7 @@ public final class Channels {
      */
     public static OutputStream newOutputStream(WritableByteChannel ch) {
         Objects.requireNonNull(ch, "ch");
-        return new ChannelOutputStream(ch);
+        return sun.nio.ch.Streams.of(ch);
     }
 
     /**

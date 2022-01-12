@@ -412,7 +412,7 @@ void Arguments::init_system_properties() {
   // It can only be set by either:
   //    - -Xbootclasspath/a:
   //    - AddToBootstrapClassLoaderSearch during JVMTI OnLoad phase
-  _jdk_boot_class_path_append = new SystemProperty("jdk.boot.class.path.append", "", false, true);
+  _jdk_boot_class_path_append = new SystemProperty("jdk.boot.class.path.append", NULL, false, true);
 
   // Add to System Property list.
   PropertyList_add(&_system_properties, _sun_boot_library_path);
@@ -530,7 +530,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "AllowRedefinitionToAddDeleteMethods", JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "FlightRecorder",               JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
-  { "MinInliningThreshold",         JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
   { "DumpSharedSpaces",             JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "DynamicDumpSharedSpaces",      JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "RequireSharedSpaces",          JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
@@ -547,6 +546,7 @@ static SpecialFlag const special_jvm_flags[] = {
   // -------------- Obsolete Flags - sorted by expired_in --------------
 
   { "FilterSpuriousWakeups",        JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
+  { "MinInliningThreshold",         JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
 #endif

@@ -451,7 +451,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             for (Constraint constraint : list) {
                 if (!constraint.permits(key)) {
                     if (debug != null) {
-                        debug.println("Constraints: failed key size" +
+                        debug.println("Constraints: failed key size " +
                                 "constraint check " + KeyUtil.getKeySize(key));
                     }
                     return false;
