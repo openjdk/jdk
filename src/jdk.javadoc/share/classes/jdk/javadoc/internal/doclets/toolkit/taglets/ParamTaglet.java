@@ -240,12 +240,12 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         Content result = writer.getOutputInstance();
         for (int i = 0; i < formalParameters.size(); i++) {
             ParamTree dt = documented.get(String.valueOf(i));
-            if (dt == null) {
-                result.add(getInheritedTagletOutput(kind, e, writer,
-                        formalParameters.get(i), i, result.isEmpty()));
-            } else {
+            if (dt != null) {
                 result.add(processParamTag(e, kind, writer, dt,
                         ch.getParameterName(dt), result.isEmpty()));
+            } else if (writer.configuration().utils.isExecutableElement(e)) {
+                result.add(getInheritedTagletOutput(kind, e, writer,
+                        formalParameters.get(i), i, result.isEmpty()));
             }
         }
         if (paramTags.size() > documented.size()) {

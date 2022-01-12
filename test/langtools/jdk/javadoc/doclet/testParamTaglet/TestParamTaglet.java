@@ -76,6 +76,23 @@ public class TestParamTaglet extends JavadocTester {
                     <dd><code>x</code> - does not exist</dd>
                     <dd><code>x</code> - duplicate</dd>
                     <dd><code>b</code> - another duplicate</dd>
+                    </dl>""",
+                """
+                    <dt>Type Parameters:</dt>
+                    <dd><code>T2</code> - type 2</dd>
+                    <dt>Parameters:</dt>
+                    <dd><code>t1</code> - param 1</dd>
+                    <dd><code>t3</code> - param 3</dd>
+                    </dl>""");
+        checkOutput("pkg/C.Point.html", true,
+                """
+                    <dt>Record Components:</dt>
+                    <dd><code><span id="param-y">y</span></code> - the y coordinate</dd>
+                    </dl>""");
+        checkOutput("pkg/C.Nested.html", true,
+                """
+                    <dt>Type Parameters:</dt>
+                    <dd><code>T1</code> - type 1</dd>
                     </dl>""");
     }
 }
