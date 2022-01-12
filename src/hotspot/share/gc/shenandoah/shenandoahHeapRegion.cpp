@@ -285,9 +285,7 @@ void ShenandoahHeapRegion::make_trash_immediate() {
   // On this path, we know there are no marked objects in the region,
   // tell marking context about it to bypass bitmap resets.
   assert(ShenandoahHeap::heap()->active_generation()->is_mark_complete(), "Marking should be complete here.");
-  // Leave top_bitmap alone.  If it is greater than bottom(), then we still need to clear between bottom() and top_bitmap()
-  // when this FREE region is repurposed for YOUNG or OLD.
-  // ShenandoahHeap::heap()->marking_context()->reset_top_bitmap(this);
+  ShenandoahHeap::heap()->marking_context()->reset_top_bitmap(this);
 }
 
 void ShenandoahHeapRegion::make_empty() {

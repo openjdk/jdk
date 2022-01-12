@@ -67,8 +67,7 @@ void ShenandoahMarkingContext::initialize_top_at_mark_start(ShenandoahHeapRegion
   HeapWord *bottom = r->bottom();
 
   _top_at_mark_starts_base[idx] = bottom;
-  // Arrange that the first time we use this bitmap, we clean from bottom to end.
-  _top_bitmaps[idx] = r->end();
+  _top_bitmaps[idx] = bottom;
 
   log_debug(gc)("SMC:initialize_top_at_mark_start for Region " SIZE_FORMAT ", TAMS: " PTR_FORMAT ", TopOfBitMap: " PTR_FORMAT,
                 r->index(), p2i(bottom), p2i(r->end()));
