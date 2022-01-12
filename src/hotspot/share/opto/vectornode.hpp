@@ -541,7 +541,8 @@ class SqrtVDNode : public VectorNode {
 // Class ShiftV functionality.  This covers the common behaviors for all kinds
 // of vector shifts.
 class ShiftVNode : public VectorNode {
- bool _is_var_shift;
+ private:
+  bool _is_var_shift;
  public:
   ShiftVNode(Node* in1, Node* in2, const TypeVect* vt, bool is_var_shift) :
     VectorNode(in1,in2,vt), _is_var_shift(is_var_shift) {
@@ -549,8 +550,12 @@ class ShiftVNode : public VectorNode {
   }
   virtual Node* Identity(PhaseGVN* phase);
   virtual int Opcode() const = 0;
+  virtual uint hash() const { return VectorNode::hash() + _is_var_shift; }
+  virtual bool cmp(const Node& n) const {
+    return VectorNode::cmp(n) && _is_var_shift == ((ShiftVNode&)n)._is_var_shift;
+  }
   bool is_var_shift() { return _is_var_shift;}
-  virtual  uint  size_of() const { return sizeof(ShiftVNode); }
+  virtual uint size_of() const { return sizeof(ShiftVNode); }
 };
 
 //------------------------------LShiftVBNode-----------------------------------
