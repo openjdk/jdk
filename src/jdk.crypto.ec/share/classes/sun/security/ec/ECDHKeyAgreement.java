@@ -197,7 +197,7 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         EllipticCurve curve = spec.getCurve();
         BigInteger rhs = x.modPow(BigInteger.valueOf(3), p).add(curve.getA()
             .multiply(x)).add(curve.getB()).mod(p);
-        BigInteger lhs = y.modPow(BigInteger.valueOf(2), p).mod(p);
+        BigInteger lhs = y.modPow(BigInteger.TWO, p);
         if (!rhs.equals(lhs)) {
             throw new InvalidKeyException("Point is not on curve");
         }
