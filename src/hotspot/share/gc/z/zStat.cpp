@@ -790,7 +790,7 @@ void ZStatSubPhase::register_start(ConcurrentGCTimer* timer, const Ticks& start)
   }
 
   if (Thread::current()->is_Worker_thread()) {
-    LogTarget(Debug, gc, phases, thread, start) log;
+    LogTarget(Trace, gc, phases, start) log;
     log_start(log, true /* thread */);
   } else {
     LogTarget(Debug, gc, phases, start) log;
@@ -813,7 +813,7 @@ void ZStatSubPhase::register_end(ConcurrentGCTimer* timer, const Ticks& start, c
   ZStatSample(_sampler, duration.value());
 
   if (Thread::current()->is_Worker_thread()) {
-    LogTarget(Debug, gc, phases, thread) log;
+    LogTarget(Trace, gc, phases) log;
     log_end(log, duration, true /* thread */);
   } else {
     LogTarget(Debug, gc, phases) log;
