@@ -90,8 +90,6 @@ julong os::num_frees = 0;           // # of calls to free
 julong os::free_bytes = 0;          // # of bytes freed
 #endif
 
-PRAGMA_PERMIT_FORBIDDEN_C_FUNCTION(fopen); // prevents compiler warnings for all functions
-
 static size_t cur_malloc_words = 0;  // current size for MallocMaxTestWords
 
 DEBUG_ONLY(bool os::_mutex_init_done = false;)
@@ -1342,7 +1340,10 @@ FILE* os::fopen(const char* path, const char* mode) {
   char modified_mode[20];
   assert(strlen(mode) + 1 < sizeof(modified_mode), "mode chars plus one extra must fit in buffer");
   sprintf(modified_mode, "%s" LINUX_ONLY("e") BSD_ONLY("e") WINDOWS_ONLY("N"), mode);
+PRAGMA_DIAG_PUSH
+PRAGMA_PERMIT_FORBIDDEN_C_FUNCTION(fopen);
   FILE* file = ::fopen(path, modified_mode);
+PRAGMA_DIAG_POP
 
 #if !(defined LINUX || defined BSD || defined _WINDOWS)
   // assume fcntl FD_CLOEXEC support as a backup solution when 'e' or 'N'
@@ -1362,7 +1363,10 @@ FILE* os::fopen(const char* path, const char* mode) {
 }
 
 ssize_t os::read(int fd, void *buf, unsigned int nBytes) {
+PRAGMA_DIAG_PUSH
+PRAGMA_PERMIT_FORBIDDEN_C_FUNCTION(read);
   return ::read(fd, buf, nBytes);
+PRAGMA_DIAG_POP
 }
 
 bool os::set_boot_path(char fileSep, char pathSep) {

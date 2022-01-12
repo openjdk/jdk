@@ -70,9 +70,10 @@
 #define PRAGMA_NONNULL_IGNORED
 #endif
 
+#endif // SHARE_UTILITIES_COMPILERWARNINGS_HPP
+
 #if __GNUC__ >= 9
 
-#include <dirent.h>
 // AIX also needs a 64 bit NULL to work as a null address pointer.
 // Most system includes on AIX would define it as an int 0 if not already defined with one
 // exception: /usr/include/dirent.h will unconditionally redefine NULL to int 0 again.
@@ -114,7 +115,6 @@ FORBID_C_FUNCTION(ssize_t recv(int, void*, size_t, int),       "use os::recv");
 FORBID_C_FUNCTION(int stat(const char*, struct stat*),         "use os::stat");
 FORBID_C_FUNCTION(ssize_t send(int, const void*, size_t, int), "use os::send");
 FORBID_C_FUNCTION(int socket(int, int, int),                   "use os::socket");
-FORBID_C_FUNCTION(char *strdup(const char*),                   "use os::strdup");
 FORBID_C_FUNCTION(char* strerror(int),                         "use os::strerror");
 FORBID_C_FUNCTION(ssize_t write(int, const void*, size_t),     "use os::write");
 
@@ -126,5 +126,3 @@ FORBID_C_FUNCTION(char *strtok(char*, const char*),            "use strtok_r");
 #define PRAGMA_PERMIT_FORBIDDEN_C_FUNCTION(name)
 
 #endif // __GNUC__ >= 9
-
-#endif // SHARE_UTILITIES_COMPILERWARNINGS_HPP

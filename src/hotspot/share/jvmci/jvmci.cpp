@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ void* JVMCI::get_shared_library(char*& path, bool load) {
       fatal("Unable to load JVMCI shared library from %s: %s", path, ebuf);
     }
     _shared_library_handle = handle;
-    _shared_library_path = os::strdup(path);
+    _shared_library_path = strdup(path);
 
     JVMCI_event_1("loaded JVMCI shared library from %s", path);
   }

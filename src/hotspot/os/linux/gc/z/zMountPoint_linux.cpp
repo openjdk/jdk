@@ -35,8 +35,6 @@
 // Mount information, see proc(5) for more details.
 #define PROC_SELF_MOUNTINFO        "/proc/self/mountinfo"
 
-PRAGMA_PERMIT_FORBIDDEN_C_FUNCTION(fopen);
-
 ZMountPoint::ZMountPoint(const char* filesystem, const char** preferred_mountpoints) {
   if (AllocateHeapAt != NULL) {
     // Use specified path
