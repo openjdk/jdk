@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,7 +258,7 @@ bool os::Linux::get_tick_information(CPUPerfTicks* pticks, int which_logical_cpu
 
   memset(pticks, 0, sizeof(CPUPerfTicks));
 
-  if ((fh = fopen("/proc/stat", "r")) == NULL) {
+  if ((fh = os::fopen("/proc/stat", "r")) == NULL) {
     return false;
   }
 
@@ -352,7 +352,7 @@ void os::Linux::initialize_system_info() {
     pid_t pid = os::Linux::gettid();
     char fname[32];
     jio_snprintf(fname, sizeof(fname), "/proc/%d", pid);
-    FILE *fp = fopen(fname, "r");
+    FILE *fp = os::fopen(fname, "r");
     if (fp == NULL) {
       unsafe_chroot_detected = true;
     } else {
@@ -1027,7 +1027,7 @@ bool os::is_primordial_thread(void) {
 
 // Find the virtual memory area that contains addr
 static bool find_vma(address addr, address* vma_low, address* vma_high) {
-  FILE *fp = fopen("/proc/self/maps", "r");
+  FILE *fp = os::fopen("/proc/self/maps", "r");
   if (fp) {
     address low, high;
     while (!feof(fp)) {
@@ -1139,7 +1139,7 @@ void os::Linux::capture_initial_stack(size_t max_size) {
     char stat[2048];
     int statlen;
 
-    fp = fopen("/proc/self/stat", "r");
+    fp = os::fopen("/proc/self/stat", "r");
     if (fp) {
       statlen = fread(stat, 1, 2047, fp);
       stat[statlen] = '\0';
@@ -2004,7 +2004,7 @@ static void parse_os_info_helper(FILE* fp, char* distro, size_t length, bool get
 }
 
 static void parse_os_info(char* distro, size_t length, const char* file) {
-  FILE* fp = fopen(file, "r");
+  FILE* fp = os::fopen(file, "r");
   if (fp != NULL) {
     // if suse format, print out first line
     bool get_first_line = (strcmp(file, "/etc/SuSE-release") == 0);
@@ -2065,7 +2065,7 @@ void os::Linux::print_system_memory_info(outputStream* st) {
 }
 
 bool os::Linux::query_process_memory_info(os::Linux::meminfo_t* info) {
-  FILE* f = ::fopen("/proc/self/status", "r");
+  FILE* f = os::fopen("/proc/self/status", "r");
   const int num_values = sizeof(os::Linux::meminfo_t) / sizeof(size_t);
   int num_found = 0;
   char buf[256];
@@ -2312,7 +2312,7 @@ void os::print_memory_info(outputStream* st) {
 static bool print_model_name_and_flags(outputStream* st, char* buf, size_t buflen) {
 #if defined(IA32) || defined(AMD64)
   // Other platforms have less repetitive cpuinfo files
-  FILE *fp = fopen("/proc/cpuinfo", "r");
+  FILE *fp = os::fopen("/proc/cpuinfo", "r");
   if (fp) {
     bool model_name_printed = false;
     while (!feof(fp)) {
@@ -2416,7 +2416,7 @@ const char* search_string = "Processor";
 
 // Parses the cpuinfo file for string representing the model name.
 void os::get_summary_cpu_info(char* cpuinfo, size_t length) {
-  FILE* fp = fopen("/proc/cpuinfo", "r");
+  FILE* fp = os::fopen("/proc/cpuinfo", "r");
   if (fp != NULL) {
     while (!feof(fp)) {
       char buf[256];
@@ -3551,7 +3551,7 @@ static void set_coredump_filter(CoredumpFilterBit bit) {
   FILE *f;
   long cdm;
 
-  if ((f = fopen("/proc/self/coredump_filter", "r+")) == NULL) {
+  if ((f = os::fopen("/proc/self/coredump_filter", "r+")) == NULL) {
     return;
   }
 
@@ -3590,7 +3590,7 @@ static size_t scan_default_large_page_size() {
   // If we can't determine the value (e.g. /proc is not mounted, or the text
   // format has been changed), we'll set largest page size to 0
 
-  FILE *fp = fopen("/proc/meminfo", "r");
+  FILE *fp = os::fopen("/proc/meminfo", "r");
   if (fp) {
     while (!feof(fp)) {
       int x = 0;
@@ -4268,7 +4268,7 @@ int os::Linux::get_namespace_pid(int vmid) {
   int retpid = -1;
 
   snprintf(fname, sizeof(fname), "/proc/%d/status", vmid);
-  FILE *fp = fopen(fname, "r");
+  FILE *fp = os::fopen(fname, "r");
 
   if (fp) {
     int pid, nspid;
@@ -5077,7 +5077,7 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   FILE *fp;
 
   snprintf(proc_name, 64, "/proc/self/task/%d/stat", tid);
-  fp = fopen(proc_name, "r");
+  fp = os::fopen(proc_name, "r");
   if (fp == NULL) return -1;
   statlen = fread(stat, 1, 2047, fp);
   stat[statlen] = '\0';
@@ -5382,7 +5382,7 @@ bool os::supports_map_sync() {
 void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
   unsigned long long start = (unsigned long long)addr;
   unsigned long long end = start + bytes;
-  FILE* f = ::fopen("/proc/self/maps", "r");
+  FILE* f = os::fopen("/proc/self/maps", "r");
   int num_found = 0;
   if (f != NULL) {
     st->print("Range [%llx-%llx) contains: ", start, end);
