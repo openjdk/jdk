@@ -40,7 +40,7 @@
  * -XX:SharedArchiveFile can be specified in two styles:
  *
  *  (A) Test with default base archive -XX:+SharedArchiveFile=<archive>
- *  (B) Test with the base archive is specified: -XX:SharedArchiveFile=<base>:<top>
+ *  (B) Test with the base archive specified: -XX:SharedArchiveFile=<base>:<top>
  *  all the following if not explained explicitly, run with flag -XX:+AutoCreateSharedArchive
  *
  *  Note VerifySharedSpaces will affect output so the tests run twice: one with -XX:+VerifySharedSpaces and the other with -XX:-VerifySharedSpaces
@@ -69,7 +69,7 @@
  *     create dynamic archive at exit with -XX:-VerifySharedSpaces
  *     not create dynamic archive at exit with -XX:+VerifySharedSpaces
  *
- * 16 run with an archive of only containing magic in the file (size of 4 bytes)
+ * 16 run with an archive only containing magic in the file (size of 4 bytes)
  *    the archive will be created at exit.
  *
  * 20 (case B)
@@ -82,7 +82,7 @@
  * 21 Mismatched versions
  *   21.01 if version of top archive is higher than CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION, the archive cannot be shared and will be
  *         regenerated at exit.
- *   21.02 if version of top archive is lower than CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION, the archive cannot be shared abd will be
+ *   21.02 if version of top archive is lower than CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION, the archive cannot be shared and will be
  *         created at exit.
  *
  * 22 create an archive with dynamic magic number only
@@ -151,7 +151,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
         String appJar = ClassFileInstaller.getJarPath("hello.jar");
         boolean fileModified = false;
 
-        String VerifySharedSpaces = verifyOn ? "-XX:+VerifySharedSpaces" : "-XX:-VerifySharedSpaces";
+        String verifySharedSpaces = verifyOn ? "-XX:+VerifySharedSpaces" : "-XX:-VerifySharedSpaces";
         File archiveFile = new File(TOP_NAME);
         if (archiveFile.exists()) {
           archiveFile.delete();
@@ -238,7 +238,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
             "-Xlog:cds+dynamic=info",
             "-Xshare:auto",
             "-XX:+AutoCreateSharedArchive",
-            VerifySharedSpaces,
+            verifySharedSpaces,
             "-cp", appJar,
             mainAppClass)
             .assertNormalExit(output -> {
@@ -265,7 +265,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
             "-XX:+AutoCreateSharedArchive",
             "-Xlog:cds",
             "-Xlog:cds+dynamic=info",
-            VerifySharedSpaces,
+            verifySharedSpaces,
             "-cp", appJar,
             mainAppClass)
             .assertNormalExit(output -> {
@@ -276,7 +276,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
         ft2 = Files.getLastModifiedTime(Paths.get(modMagic));
         fileModified = !ft1.equals(ft2);
         if (fileModified) {
-            throw new RuntimeException("Shared archive " + modMagic + " should automatically be generated");
+            throw new RuntimeException("Shared archive " + modMagic + " should not automatically be generated");
         }
 
         // 13 run with a bad versioned (< genericHeaderMinVersion) archive
@@ -293,7 +293,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
             "-XX:+AutoCreateSharedArchive",
             "-Xlog:cds",
             "-Xlog:cds+dynamic=info",
-            VerifySharedSpaces,
+            verifySharedSpaces,
             "-cp", appJar,
             mainAppClass)
             .assertNormalExit(output -> {
@@ -321,7 +321,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
             "-XX:+AutoCreateSharedArchive",
             "-Xlog:cds",
             "-Xlog:cds+dynamic=info",
-            VerifySharedSpaces,
+            verifySharedSpaces,
             "-cp", appJar,
             mainAppClass)
             .assertNormalExit(output -> {
@@ -359,7 +359,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
             "-XX:+AutoCreateSharedArchive",
             "-Xlog:cds",
             "-Xlog:cds+dynamic=info",
-            VerifySharedSpaces,
+            verifySharedSpaces,
             "-cp", appJar,
             mainAppClass)
             .assertNormalExit(output -> {
@@ -386,7 +386,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
             "-XX:+AutoCreateSharedArchive",
             "-Xlog:cds",
             "-Xlog:cds+dynamic=info",
-            VerifySharedSpaces,
+            verifySharedSpaces,
             "-cp", appJar,
             mainAppClass)
             .assertNormalExit(output -> {
@@ -513,7 +513,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
              "-XX:+AutoCreateSharedArchive",
              "-Xlog:cds",
              "-Xlog:cds+dynamic=info",
-             VerifySharedSpaces,
+             verifySharedSpaces,
              "-cp", appJar,
              mainAppClass)
              .assertNormalExit(output -> {
@@ -540,7 +540,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
              "-XX:+AutoCreateSharedArchive",
              "-Xlog:cds",
              "-Xlog:cds+dynamic=info",
-             VerifySharedSpaces,
+             verifySharedSpaces,
              "-cp", appJar,
              mainAppClass)
              .assertNormalExit(output -> {
@@ -564,7 +564,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
              "-XX:+AutoCreateSharedArchive",
              "-Xlog:cds",
              "-Xlog:cds+dynamic=info",
-             VerifySharedSpaces,
+             verifySharedSpaces,
              "-cp", appJar,
              mainAppClass)
              .assertNormalExit(output -> {
@@ -575,7 +575,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
         ft2 = Files.getLastModifiedTime(Paths.get(magicOnly));
         fileModified = !ft1.equals(ft2);
         if (!fileModified) {
-            throw new RuntimeException("Shared archive " + magicOnly + " should not be created at exit");
+            throw new RuntimeException("Shared archive " + magicOnly + " should be created at exit");
         }
 
         // 23  mismatched jvm_indent in top or base archive
@@ -591,7 +591,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
             "-XX:+AutoCreateSharedArchive",
             "-Xlog:cds",
             "-Xlog:cds+dynamic=info",
-            VerifySharedSpaces,
+            verifySharedSpaces,
             "-cp", appJar,
             mainAppClass)
             .assertNormalExit(output -> {
@@ -619,7 +619,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
             "-XX:+AutoCreateSharedArchive",
             "-Xlog:cds",
             "-Xlog:cds+dynamic=info",
-            VerifySharedSpaces,
+            verifySharedSpaces,
             "-cp", appJar,
             mainAppClass)
             .assertNormalExit(output -> {
@@ -651,7 +651,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
              "-XX:+AutoCreateSharedArchive",
              "-Xlog:cds",
              "-Xlog:cds+dynamic=info",
-             VerifySharedSpaces,
+             verifySharedSpaces,
              "-cp", appJar,
              mainAppClass)
              .assertNormalExit(output -> {
@@ -676,7 +676,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
              "-XX:+AutoCreateSharedArchive",
              "-Xlog:cds",
              "-Xlog:cds+dynamic=info",
-             VerifySharedSpaces,
+             verifySharedSpaces,
              "-cp", appJar,
              mainAppClass)
              .assertNormalExit(output -> {
@@ -687,7 +687,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
         ft2 = Files.getLastModifiedTime(Paths.get(TOP_NAME));
         fileModified = !ft1.equals(ft2);
         if (fileModified) {
-            throw new RuntimeException("Shared archive " + TOP_NAME + " should be created at exit");
+            throw new RuntimeException("Shared archive " + TOP_NAME + " should not be created at exit");
         }
     }
 }

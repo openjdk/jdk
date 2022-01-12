@@ -123,7 +123,7 @@ public class TestAutoCreateSharedArchiveNoDefaultArchive {
         if (jsaFile.exists()) {
             jsaFile.delete();
         }
-        System.out.println("======= run with no default shared archive should no create shared archive at exit");
+        System.out.println("======= run with no default shared archive should not create shared archive at exit");
         {
             ProcessBuilder pb = CDSTestUtils.makeBuilder(dstJava,
                                                          "-Xshare:auto",
