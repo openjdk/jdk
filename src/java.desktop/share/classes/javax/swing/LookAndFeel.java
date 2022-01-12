@@ -188,26 +188,6 @@ public abstract class LookAndFeel
 
 
     /**
-     * Convenience method for uninstalling a component's foreground
-     * and background color properties. If the properties are
-     * {@code UIResource}s, they are set to {@code null}.
-     *
-     * @param c component to uninstall the properties from
-     * @see #uninstallColorsAndFont
-     * @throws NullPointerException if {@code c} is {@code null}
-     * @since 19
-     */
-    public static void uninstallColors(JComponent c) {
-        if (c.getForeground() instanceof UIResource) {
-            c.setForeground(null);
-        }
-        if (c.getBackground() instanceof UIResource) {
-            c.setBackground(null);
-        }
-    }
-
-
-    /**
      * Convenience method for setting a component's foreground,
      * background and font properties with values from the
      * defaults.  The properties are only set if the current
@@ -234,23 +214,6 @@ public abstract class LookAndFeel
         }
 
         installColors(c, defaultBgName, defaultFgName);
-    }
-
-
-    /**
-     * Convenience method for uninstalling a component's foreground,
-     * background, and font properties. If the properties are
-     * {@code UIResource}s, they are set to {@code null}.
-     *
-     * @param c component to uninstall the properties from
-     * @throws NullPointerException if {@code c} is {@code null}
-     * @since 19
-     */
-    public static void uninstallColorsAndFont(JComponent c) {
-        if (c.getFont() instanceof UIResource) {
-            c.setFont(null);
-        }
-        uninstallColors(c);
     }
 
 

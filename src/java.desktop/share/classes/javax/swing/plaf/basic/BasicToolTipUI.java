@@ -105,7 +105,6 @@ public class BasicToolTipUI extends ToolTipUI
      */
     protected void uninstallDefaults(JComponent c){
         LookAndFeel.uninstallBorder(c);
-        LookAndFeel.uninstallColorsAndFont(c);
     }
 
     /* Unfortunately this has to remain private until we can make API additions.

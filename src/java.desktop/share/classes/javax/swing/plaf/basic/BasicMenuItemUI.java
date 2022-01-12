@@ -321,7 +321,6 @@ public class BasicMenuItemUI extends MenuItemUI
      */
     protected void uninstallDefaults() {
         LookAndFeel.uninstallBorder(menuItem);
-        LookAndFeel.uninstallColorsAndFont(menuItem);
         LookAndFeel.installProperty(menuItem, "borderPainted", oldBorderPainted);
         if (menuItem.getMargin() instanceof UIResource)
             menuItem.setMargin(null);

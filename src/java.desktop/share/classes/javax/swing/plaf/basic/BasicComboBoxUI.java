@@ -426,7 +426,10 @@ public class BasicComboBoxUI extends ComboBoxUI {
      * and default editor from the combo box.
      */
     protected void uninstallDefaults() {
-        LookAndFeel.uninstallColorsAndFont( comboBox );
+        LookAndFeel.installColorsAndFont( comboBox,
+                                          "ComboBox.background",
+                                          "ComboBox.foreground",
+                                          "ComboBox.font" );
         LookAndFeel.uninstallBorder( comboBox );
     }
 

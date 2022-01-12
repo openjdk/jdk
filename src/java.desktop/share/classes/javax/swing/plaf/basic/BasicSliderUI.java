@@ -306,7 +306,6 @@ public class BasicSliderUI extends SliderUI{
      */
     protected void uninstallDefaults(JSlider slider) {
         LookAndFeel.uninstallBorder(slider);
-        LookAndFeel.uninstallColorsAndFont(slider);
 
         focusInsets = null;
     }

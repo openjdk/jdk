@@ -278,7 +278,6 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
     protected void uninstallDefaults( )
     {
         LookAndFeel.uninstallBorder(toolBar);
-        LookAndFeel.uninstallColorsAndFont(toolBar);
         dockingColor = null;
         floatingColor = null;
         dockingBorderColor = null;

@@ -908,7 +908,15 @@ public class BasicListUI extends ListUI
     protected void uninstallDefaults()
     {
         LookAndFeel.uninstallBorder(list);
-        LookAndFeel.uninstallColorsAndFont(list);
+        if (list.getFont() instanceof UIResource) {
+            list.setFont(null);
+        }
+        if (list.getForeground() instanceof UIResource) {
+            list.setForeground(null);
+        }
+        if (list.getBackground() instanceof UIResource) {
+            list.setBackground(null);
+        }
         if (list.getSelectionBackground() instanceof UIResource) {
             list.setSelectionBackground(null);
         }

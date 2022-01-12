@@ -222,7 +222,6 @@ public class BasicColorChooserUI extends ColorChooserUI
         if (chooser.getTransferHandler() instanceof UIResource) {
             chooser.setTransferHandler(null);
         }
-        LookAndFeel.uninstallColorsAndFont(chooser);
     }
 
     /**

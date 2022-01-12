@@ -266,7 +266,6 @@ public class BasicButtonUI extends ButtonUI{
      */
     protected void uninstallDefaults(AbstractButton b) {
         LookAndFeel.uninstallBorder(b);
-        LookAndFeel.uninstallColorsAndFont(b);
     }
 
     // ********************************

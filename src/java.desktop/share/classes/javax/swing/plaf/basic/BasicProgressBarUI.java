@@ -188,7 +188,6 @@ public class BasicProgressBarUI extends ProgressBarUI {
      */
     protected void uninstallDefaults() {
         LookAndFeel.uninstallBorder(progressBar);
-        LookAndFeel.uninstallColorsAndFont(progressBar);
     }
 
     /**

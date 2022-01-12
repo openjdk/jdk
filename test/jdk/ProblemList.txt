@@ -516,6 +516,7 @@ java/awt/KeyboardFocusmanager/TypeAhead/ButtonActionKeyTest/ButtonActionKeyTest.
 
 java/awt/Window/GetScreenLocation/GetScreenLocationTest.java 8225787 linux-x64
 java/awt/Dialog/MakeWindowAlwaysOnTop/MakeWindowAlwaysOnTop.java 8266243 macosx-aarch64
+java/awt/dnd/BadSerializationTest/BadSerializationTest.java 8277817 linux-x64,windows-x64
 
 ############################################################################
 

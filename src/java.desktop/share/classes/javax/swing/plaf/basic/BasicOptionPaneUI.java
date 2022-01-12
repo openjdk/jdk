@@ -190,7 +190,6 @@ public class BasicOptionPaneUI extends OptionPaneUI {
      */
     protected void uninstallDefaults() {
         LookAndFeel.uninstallBorder(optionPane);
-        LookAndFeel.uninstallColorsAndFont(optionPane);
     }
 
     /**

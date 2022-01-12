@@ -74,11 +74,6 @@ public class MetalSeparatorUI extends BasicSeparatorUI
         LookAndFeel.installColors( s, "Separator.background", "Separator.foreground" );
     }
 
-    protected void uninstallDefaults( JSeparator s )
-    {
-        LookAndFeel.uninstallColors( s );
-    }
-
     public void paint( Graphics g, JComponent c )
     {
         Dimension s = c.getSize();

@@ -199,7 +199,6 @@ public class BasicPopupMenuUI extends PopupMenuUI {
      */
     protected void uninstallDefaults() {
         LookAndFeel.uninstallBorder(popupMenu);
-        LookAndFeel.uninstallColorsAndFont(popupMenu);
     }
 
     /**

@@ -94,7 +94,6 @@ public class BasicPanelUI extends PanelUI {
      */
     protected void uninstallDefaults(JPanel p) {
         LookAndFeel.uninstallBorder(p);
-        LookAndFeel.uninstallColorsAndFont(p);
     }
 
 

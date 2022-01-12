@@ -70,10 +70,6 @@ public class MetalDesktopIconUI extends BasicDesktopIconUI
         width = UIManager.getInt("DesktopIcon.width");
     }
 
-    protected void uninstallDefaults() {
-        LookAndFeel.uninstallColorsAndFont(desktopIcon);
-    }
-
     protected void installComponents() {
         frame = desktopIcon.getInternalFrame();
         Icon icon = frame.getFrameIcon();

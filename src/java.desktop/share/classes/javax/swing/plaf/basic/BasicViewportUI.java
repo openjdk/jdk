@@ -90,6 +90,5 @@ public class BasicViewportUI extends ViewportUI {
      * @param c a component
      */
     protected void uninstallDefaults(JComponent c) {
-        LookAndFeel.uninstallColorsAndFont(c);
     }
 }
