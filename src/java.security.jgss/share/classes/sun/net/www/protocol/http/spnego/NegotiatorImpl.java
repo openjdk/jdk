@@ -105,6 +105,9 @@ public class NegotiatorImpl extends Negotiator {
             ((GSSContextImpl)context).requestDelegPolicy(true);
         }
         if (hci.serverCert != null) {
+            if (DEBUG) {
+                System.out.println("Negotiate: Setting CBT");
+            }
             // set the channel binding token
             TlsChannelBinding b = TlsChannelBinding.create(hci.serverCert);
             context.setChannelBinding(new TlsChannelBindingImpl(b.getData()));

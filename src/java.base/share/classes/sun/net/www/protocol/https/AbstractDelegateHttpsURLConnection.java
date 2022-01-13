@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -314,10 +314,43 @@ public abstract class AbstractDelegateHttpsURLConnection extends
         return ((HttpsClient)http).getSSLSession();
     }
 
+    /**
+     * If no SSL Session available or if the system config does not allow it
+     * don't use the extended caller info (the server cert).
+     * Otherwise return true to include the server cert
+     */
+    private boolean useExtendedCallerInfo(URL url) {
+        HttpsClient https = (HttpsClient)http;
+        if (https.getSSLSession() == null) {
+            return false;
+        }
+        String prop = http.getSpnegoCBT();
+        if (prop.equals("never")) {
+            return false;
+        }
+        String target = url.getHost();
+        if (prop.startsWith("domain:")) {
+            String[] domains = prop.substring(7).split(",");
+            for (String domain : domains) {
+                if (target.equals(domain)) {
+                    return true;
+                }
+                if (domain.startsWith("*.") && target.endsWith(domain.substring(1))) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        return true;
+    }
+
     @Override
     protected HttpCallerInfo getHttpCallerInfo(URL url, String proxy, int port,
                                                Authenticator authenticator)
     {
+        if (!useExtendedCallerInfo(url)) {
+            return super.getHttpCallerInfo(url, proxy, port, authenticator);
+        }
         HttpsClient https = (HttpsClient)http;
         try {
             Certificate[] certs = https.getServerCertificates();
@@ -333,6 +366,9 @@ public abstract class AbstractDelegateHttpsURLConnection extends
     @Override
     protected HttpCallerInfo getHttpCallerInfo(URL url, Authenticator authenticator)
     {
+        if (!useExtendedCallerInfo(url)) {
+            return super.getHttpCallerInfo(url, authenticator);
+        }
         HttpsClient https = (HttpsClient)http;
         try {
             Certificate[] certs = https.getServerCertificates();
@@ -342,8 +378,6 @@ public abstract class AbstractDelegateHttpsURLConnection extends
         } catch (SSLPeerUnverifiedException e) {
             // ignore
         }
-
         return super.getHttpCallerInfo(url, authenticator);
     }
-
 }

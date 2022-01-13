@@ -144,7 +144,17 @@ public class HttpClient extends NetworkClient {
     // Traffic capture tool, if configured. See HttpCapture class for info
     private HttpCapture capture = null;
 
+    /* "jdk.spnego.cbt" property can be set to "always" (always sent), "never" (never sent) or
+     * "domain:a,c.d,*.e.f" (sent to host a, or c.d or to the domain e.f and any of its subdomains). This is
+     * a comma separated list of arbitrary length with no white-space allowed.
+     * If enabled (for a particular destination) then SPNEGO authentication requests will include
+     * a channel binding token for the destination server. The default behavior and setting for the
+     * property is "never"
+     */
+    private static final String spnegoCBT;
+
     private static final PlatformLogger logger = HttpURLConnection.getHttpLogger();
+
     private static void logFinest(String msg) {
         if (logger.isLoggable(PlatformLogger.Level.FINEST)) {
             logger.finest(msg);
@@ -165,12 +175,24 @@ public class HttpClient extends NetworkClient {
         return keepAliveTimeout;
     }
 
+    static String normalizeCBT(String s) {
+        if (s == null || ! (s.equals("always") ||
+                s.equals("never") || s.startsWith("domain:"))) {
+            return "never";
+        } else {
+            return s;
+        }
+    }
+
     static {
         Properties props = GetPropertyAction.privilegedGetProperties();
         String keepAlive = props.getProperty("http.keepAlive");
         String retryPost = props.getProperty("sun.net.http.retryPost");
         String cacheNTLM = props.getProperty("jdk.ntlm.cache");
         String cacheSPNEGO = props.getProperty("jdk.spnego.cache");
+
+        String s = props.getProperty("jdk.spnego.cbt");
+        spnegoCBT = normalizeCBT(s);
 
         if (keepAlive != null) {
             keepAliveProp = Boolean.parseBoolean(keepAlive);
@@ -205,6 +227,10 @@ public class HttpClient extends NetworkClient {
         return keepAliveProp;
     }
 
+
+    public String getSpnegoCBT() {
+        return spnegoCBT;
+    }
 
     protected HttpClient() {
     }
