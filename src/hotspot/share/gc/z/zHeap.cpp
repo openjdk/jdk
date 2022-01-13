@@ -354,12 +354,3 @@ bool ZHeap::print_location(outputStream* st, uintptr_t addr) const {
 
   return false;
 }
-
-void ZHeap::verify() {
-  // Heap verification can only be done between mark end and
-  // relocate start. This is the only window where all oop are
-  // good and the whole heap is in a consistent state.
-  guarantee(_old.is_phase_mark_complete(), "Invalid phase");
-
-  ZVerify::after_weak_processing();
-}

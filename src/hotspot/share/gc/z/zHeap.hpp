@@ -134,7 +134,6 @@ public:
 
   // Verification
   bool is_oop(uintptr_t addr) const;
-  void verify();
 };
 
 #endif // SHARE_GC_Z_ZHEAP_HPP

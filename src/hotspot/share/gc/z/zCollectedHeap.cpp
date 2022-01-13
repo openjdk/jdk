@@ -380,7 +380,7 @@ bool ZCollectedHeap::print_location(outputStream* st, void* addr) const {
 }
 
 void ZCollectedHeap::verify(VerifyOption option /* ignored */) {
-  _heap.verify();
+  fatal("Externally triggered verification not supported");
 }
 
 bool ZCollectedHeap::is_oop(oop object) const {

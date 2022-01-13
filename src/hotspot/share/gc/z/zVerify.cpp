@@ -96,15 +96,6 @@ static void z_verify_root_oop_object(zaddress o, void* p) {
   guarantee(oopDesc::is_oop(to_oop(o)), BAD_OOP_ARG(o, p));
 }
 
-static void z_verify_root_oop(zpointer* p) {
-  assert(!ZHeap::heap()->is_in((uintptr_t)p), "Roots shouldn't be in heap");
-  zpointer o = *p;
-  if (!z_is_null_relaxed(o)) {
-    guarantee(ZPointer::is_marked_old(o), BAD_OOP_ARG(o, p));
-    z_verify_root_oop_object(ZBarrier::load_barrier_on_oop_field_preloaded(NULL, o), p);
-  }
-}
-
 static void z_verify_uncolored_root_oop(zaddress* p) {
   assert(!ZHeap::heap()->is_in((uintptr_t)p), "Roots shouldn't be in heap");
   zaddress o = *p;
@@ -125,35 +116,43 @@ static void z_verify_possibly_weak_oop(zpointer* p) {
   }
 }
 
-class ZVerifyRootClosure : public OopClosure {
+class ZVerifyColoredRootClosure : public OopClosure {
 private:
-  const bool _verify_fixed;
+  const bool _verify_marked_old;
 
 public:
-  ZVerifyRootClosure(bool verify_fixed) :
-      _verify_fixed(verify_fixed) {}
-
-  bool verify_fixed() const {
-    return _verify_fixed;
-  }
-};
-
-class ZVerifyColoredRootClosure : public ZVerifyRootClosure {
-public:
-  ZVerifyColoredRootClosure(bool verify_fixed) :
-      ZVerifyRootClosure(verify_fixed) {}
+  ZVerifyColoredRootClosure(bool verify_marked_old) :
+      OopClosure(),
+      _verify_marked_old(verify_marked_old) {}
 
   virtual void do_oop(oop* p_) {
     zpointer* p = (zpointer*)p_;
-    if (verify_fixed()) {
-      z_verify_root_oop(p);
+
+    assert(!ZHeap::heap()->is_in((uintptr_t)p), "Roots shouldn't be in heap");
+
+    zpointer o = *p;
+
+    if (z_is_null_relaxed(o)) {
+      // Skip verifying nulls
+      return;
+    }
+
+    assert(is_valid(o), "Catch me!");
+
+    if (_verify_marked_old) {
+      guarantee(ZPointer::is_marked_old(o), BAD_OOP_ARG(o, p));
+
+      // Minor collections could have relocated the object;
+      // use load barrier to find correct object.
+      zaddress addr = ZBarrier::load_barrier_on_oop_field_preloaded(NULL, o);
+      z_verify_root_oop_object(addr, p);
     } else {
-      // Don't know the state of the oop.
-      zpointer o = *p;
-      if (!z_is_null_relaxed(o) && is_valid(o)) {
-        // colored root
-        oop obj = NativeAccess<AS_NO_KEEPALIVE>::oop_load(p_);
-        z_verify_root_oop_object(to_zaddress(obj), p);
+      // Don't know the state of the oop
+      if (is_valid(o)) {
+        // it looks like a valid colored oop;
+        // use load barrier to find correct object.
+        zaddress addr = ZBarrier::load_barrier_on_oop_field_preloaded(NULL, o);
+        z_verify_root_oop_object(addr, p);
       }
     }
   }
@@ -163,26 +162,11 @@ public:
   }
 };
 
-class ZVerifyUncoloredRootClosure : public ZVerifyRootClosure {
+class ZVerifyUncoloredRootClosure : public OopClosure {
 public:
-  ZVerifyUncoloredRootClosure(bool verify_fixed) :
-      ZVerifyRootClosure(verify_fixed) {}
-
   virtual void do_oop(oop* p_) {
     zaddress* p = (zaddress*)p_;
-    if (verify_fixed()) {
-      z_verify_uncolored_root_oop(p);
-    } else {
-      fatal("Unimplemented");
-#if 0
-      // Don't know the state of the oop.
-      oop obj = *p;
-      if (obj != NULL && ZOop::is_valid_zaddress(obj)) {
-        ZUncoloredRoot::remap(&obj);
-        z_verify_root_oop_object(to_zaddress(obj), p);
-      }
-#endif
-    }
+    z_verify_uncolored_root_oop(p);
   }
 
   virtual void do_oop(narrowOop*) {
@@ -192,82 +176,11 @@ public:
 
 class ZVerifyCodeBlobClosure : public CodeBlobToOopClosure {
 public:
-  ZVerifyCodeBlobClosure(ZVerifyRootClosure* cl) :
+  ZVerifyCodeBlobClosure(OopClosure* cl) :
       CodeBlobToOopClosure(cl, false /* fix_relocations */) {}
 
   virtual void do_code_blob(CodeBlob* cb) {
     CodeBlobToOopClosure::do_code_blob(cb);
-  }
-};
-
-class ZVerifyStack : public OopClosure {
-private:
-  ZVerifyRootClosure* const _cl;
-  JavaThread*         const _jt;
-  uint64_t                  _last_good;
-  bool                      _verifying_bad_frames;
-
-public:
-  ZVerifyStack(ZVerifyRootClosure* cl, JavaThread* jt) :
-      _cl(cl),
-      _jt(jt),
-      _last_good(0),
-      _verifying_bad_frames(false) {
-    ZStackWatermark* const stack_watermark = StackWatermarkSet::get<ZStackWatermark>(jt, StackWatermarkKind::gc);
-
-    if (_cl->verify_fixed()) {
-      assert(stack_watermark->processing_started(), "Should already have been fixed");
-      assert(stack_watermark->processing_completed(), "Should already have been fixed");
-    } else {
-      // We don't really know the state of the stack, verify watermark.
-      if (!stack_watermark->processing_started()) {
-        _verifying_bad_frames = true;
-      } else {
-        // Not time yet to verify bad frames
-        _last_good = stack_watermark->last_processed();
-      }
-    }
-  }
-
-  void do_oop(oop* p) {
-    if (_verifying_bad_frames) {
-      const zaddress prev = *(zaddress*)p;
-      guarantee(!is_valid(prev), BAD_OOP_ARG(prev, p));
-    } else {
-      _cl->do_oop(p);
-    }
-  }
-
-  void do_oop(narrowOop* p) {
-    ShouldNotReachHere();
-  }
-
-  void prepare_next_frame(frame& frame) {
-    if (_cl->verify_fixed()) {
-      // All frames need to be good
-      return;
-    }
-
-    // The verification has two modes, depending on whether we have reached the
-    // last processed frame or not. Before it is reached, we expect everything to
-    // be good. After reaching it, we expect everything to be bad.
-    const uintptr_t sp = reinterpret_cast<uintptr_t>(frame.sp());
-
-    if (!_verifying_bad_frames && sp == _last_good) {
-      // Found the last good frame, now verify the bad ones
-      _verifying_bad_frames = true;
-    }
-  }
-
-  void verify_frames() {
-    ZVerifyCodeBlobClosure cb_cl(_cl);
-    for (StackFrameStream frames(_jt, true /* update */, false /* process_frames */);
-         !frames.is_done();
-         frames.next()) {
-      frame& frame = *frames.current();
-      frame.oops_do(this, &cb_cl, frames.register_map(), DerivedPointerIterationMode::_ignore);
-      prepare_next_frame(frame);
-    }
   }
 };
 
@@ -331,28 +244,21 @@ typedef ClaimingCLDToOopClosure<ClassLoaderData::_claim_none> ZVerifyCLDClosure;
 
 class ZVerifyThreadClosure : public ThreadClosure {
 private:
-  ZVerifyRootClosure* const _cl;
+  OopClosure* const _verify_cl;
 
 public:
-  ZVerifyThreadClosure(ZVerifyRootClosure* cl) :
-      _cl(cl) {}
+  ZVerifyThreadClosure(OopClosure* verify_cl) :
+      _verify_cl(verify_cl) {}
 
   virtual void do_thread(Thread* thread) {
     JavaThread* const jt = JavaThread::cast(thread);
     ZStackWatermark* watermark = StackWatermarkSet::get<ZStackWatermark>(jt, StackWatermarkKind::gc);
-    if (!watermark->processing_started_acquire()) {
-      return;
-    }
+    if (watermark->processing_started_acquire()) {
+      thread->oops_do_no_frames(_verify_cl, NULL);
 
-    thread->oops_do_no_frames(_cl, NULL);
-
-    if (!jt->has_last_Java_frame()) {
-      return;
-    }
-
-    if (watermark->processing_completed_acquire()) {
-      ZVerifyStack verify_stack(_cl, jt);
-      verify_stack.verify_frames();
+       if (watermark->processing_completed_acquire()) {
+         thread->oops_do_frames(_verify_cl, NULL);
+       }
     }
   }
 };
@@ -361,44 +267,38 @@ class ZVerifyNMethodClosure : public NMethodClosure {
 private:
   OopClosure* const        _cl;
   BarrierSetNMethod* const _bs_nm;
-  const bool               _verify_fixed;
-
-  bool trust_nmethod_state() const {
-    // The root iterator will visit non-processed
-    // nmethods class unloading is turned off.
-    return ClassUnloading || _verify_fixed;
-  }
 
 public:
-  ZVerifyNMethodClosure(OopClosure* cl, bool verify_fixed) :
+  ZVerifyNMethodClosure(OopClosure* cl) :
       _cl(cl),
-      _bs_nm(BarrierSet::barrier_set()->barrier_set_nmethod()),
-      _verify_fixed(verify_fixed) {}
+      _bs_nm(BarrierSet::barrier_set()->barrier_set_nmethod()) {}
 
   virtual void do_nmethod(nmethod* nm) {
-    assert(!trust_nmethod_state() || !_bs_nm->is_armed(nm), "Should not encounter any armed nmethods");
+    if (_bs_nm->is_armed(nm)) {
+      // Can't verify
+      return;
+    }
 
     ZNMethod::nmethod_oops_do(nm, _cl);
   }
 };
 
-void ZVerify::roots_strong(bool verify_fixed) {
+void ZVerify::roots_strong(bool verify_after_old_mark) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
-  assert(!ZResurrection::is_blocked(), "Invalid phase");
 
   {
-    ZVerifyColoredRootClosure cl(verify_fixed);
+    ZVerifyColoredRootClosure cl(verify_after_old_mark);
     ZVerifyCLDClosure cld_cl(&cl);
 
     ZRootsIteratorStrongColored roots_strong_colored;
     roots_strong_colored.apply(&cl,
                                &cld_cl);
   }
-  // FIXME: Only verify_fixed == true supported right now
-  if (verify_fixed) {
-    ZVerifyUncoloredRootClosure cl(verify_fixed);
+
+  {
+    ZVerifyUncoloredRootClosure cl;
     ZVerifyThreadClosure thread_cl(&cl);
-    ZVerifyNMethodClosure nm_cl(&cl, verify_fixed);
+    ZVerifyNMethodClosure nm_cl(&cl);
 
     ZRootsIteratorStrongUncolored roots_strong_uncolored;
     roots_strong_uncolored.apply(&thread_cl,
@@ -410,7 +310,7 @@ void ZVerify::roots_weak() {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   assert(!ZResurrection::is_blocked(), "Invalid phase");
 
-  ZVerifyColoredRootClosure cl(true /* verify_fixed */);
+  ZVerifyColoredRootClosure cl(true /* verify_after_old_mark*/);
   ZRootsIteratorWeakColored roots_weak_colored;
   roots_weak_colored.apply(&cl);
 }
@@ -508,7 +408,7 @@ void ZVerify::before_zoperation() {
   // Verify strong roots
   ZStatTimerDisable disable;
   if (ZVerifyRoots) {
-    roots_strong(false /* verify_fixed */);
+    roots_strong(false /* verify_after_old_mark */);
   }
 }
 
@@ -516,7 +416,7 @@ void ZVerify::after_mark() {
   // Verify all strong roots and strong references
   ZStatTimerDisable disable;
   if (ZVerifyRoots) {
-    roots_strong(true /* verify_fixed */);
+    roots_strong(true /* verify_after_old_mark */);
   }
   if (ZVerifyObjects) {
     // Workaround OopMapCacheAllocation_lock reordering with the StackWatermark_lock
@@ -531,7 +431,7 @@ void ZVerify::after_weak_processing() {
   // Verify all roots and all references
   ZStatTimerDisable disable;
   if (ZVerifyRoots) {
-    roots_strong(true /* verify_fixed */);
+    roots_strong(true /* verify_after_old_mark */);
     roots_weak();
   }
   if (ZVerifyObjects) {

@@ -408,11 +408,7 @@ public:
     IsGCActiveMark gc_active_mark;
 
     // Verify before operation
-    // FIXME: Need to prevent verification when young collection pauses happen
-    // during old resurrection block window.
-    if (!ZResurrection::is_blocked()) {
-      ZVerify::before_zoperation();
-    }
+    ZVerify::before_zoperation();
 
     // Execute operation
     _success = do_operation();
@@ -697,14 +693,6 @@ bool ZGenerationYoung::mark_end() {
 
   // Enter mark completed phase
   set_phase(Phase::MarkComplete);
-
-  if (!ZResurrection::is_blocked()) {
-    // FIXME: Always verify
-    // Verify after mark
-
-    // FIXME: Need to turn this off because it assumes that strong roots will have been old marked as well.
-    // ZVerify::after_mark();
-  }
 
   // Update statistics
   stat_heap()->at_mark_end(_page_allocator->stats(this));

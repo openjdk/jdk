@@ -31,7 +31,7 @@ class ZPageAllocator;
 
 class ZVerify : public AllStatic {
 private:
-  static void roots_strong(bool verify_fixed);
+  static void roots_strong(bool verify_after_old_mark);
   static void roots_weak();
 
   static void objects(bool verify_weaks);
