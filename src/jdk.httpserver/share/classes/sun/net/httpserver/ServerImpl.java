@@ -522,7 +522,7 @@ class ServerImpl implements TimeSource {
             /* context will be null for new connections */
             logger.log(Level.TRACE, "exchange started");
 
-            if (dispatcherThread != null && dispatcherThread == Thread.currentThread()) {
+            if (dispatcherThread == Thread.currentThread()) {
                 try {
                     // call selector to process cancelled keys
                     selector.selectNow();

@@ -95,15 +95,16 @@ public class MaxRequestTimeTest {
     public void testMaxRequestTime() throws Throwable {
         final var sb = new StringBuffer();  // stdout & stderr
         final var p = startProcess("jwebserver", sb);
-
-        sendHTTPSRequest();  // server expected to terminate connection
-        sendHTTPRequest();   // server expected to respond successfully
-        sendHTTPSRequest();  // server expected to terminate connection
-        sendHTTPRequest();   // server expected to respond successfully
-
-        p.destroy();
-        int exitCode = p.waitFor();
-        checkOutput(sb, exitCode);
+        try {
+            sendHTTPSRequest();  // server expected to terminate connection
+            sendHTTPRequest();   // server expected to respond successfully
+            sendHTTPSRequest();  // server expected to terminate connection
+            sendHTTPRequest();   // server expected to respond successfully
+        } finally {
+            p.destroy();
+            int exitCode = p.waitFor();
+            checkOutput(sb, exitCode);
+        }
     }
 
     static String expectedBody = """
