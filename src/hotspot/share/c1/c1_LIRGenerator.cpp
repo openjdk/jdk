@@ -1420,7 +1420,9 @@ void LIRGenerator::do_getObjectSize(Intrinsic* x) {
 #else
   __ add(length_int, header_size, length_int);
   if (round_mask != 0) {
-    __ logical_and(length_int, LIR_OprFact::intConst(~round_mask), length_int);
+    // generates LIR_Const if mask fits instruction requirement
+    LIR_Opr round_mask_opr = load_immediate((~round_mask), T_INT);
+    __ logical_and(length_int, round_mask_opr, length_int);
   }
   __ convert(Bytecodes::_i2l, length_int, result_reg);
 #endif
