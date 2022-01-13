@@ -428,6 +428,7 @@ class AbstractDumpWriter : public StackObj {
   void write_u4(u4 x);
   void write_u8(u8 x);
   void write_objectID(oop o);
+  void write_rootID(oop* p);
   void write_symbolID(Symbol* o);
   void write_classID(Klass* k);
   void write_id(u4 x);
@@ -516,6 +517,14 @@ void AbstractDumpWriter::write_objectID(oop o) {
   write_u8((u8)a);
 #else
   write_u4((u4)a);
+#endif
+}
+
+void AbstractDumpWriter::write_rootID(oop* p) {
+#ifdef _LP64
+  write_u8((u8)p);
+#else
+  write_u4((u4)p);
 #endif
 }
 
@@ -1630,7 +1639,7 @@ void JNIGlobalsDumper::do_oop(oop* obj_p) {
     u4 size = 1 + 2 * sizeof(address);
     writer()->start_sub_record(HPROF_GC_ROOT_JNI_GLOBAL, size);
     writer()->write_objectID(o);
-    writer()->write_objectID((oopDesc*)obj_p);      // global ref ID
+    writer()->write_rootID(obj_p);      // global ref ID
     writer()->end_sub_record();
   }
 };
