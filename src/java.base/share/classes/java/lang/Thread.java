@@ -1667,8 +1667,6 @@ public class Thread implements Runnable {
     }
 
     /** cache of subclass security audit results */
-    /* Replace with ConcurrentReferenceHashMap when/if it appears in a future
-     * release */
     private static class Caches {
         /** cache of subclass security audit results */
         static final ClassValue<Boolean> subclassAudits =
