@@ -4126,14 +4126,17 @@ void C2_MacroAssembler::vector_castL2FD(XMMRegister dst, XMMRegister src, XMMReg
   vpmovsxdq(xtmp2, xtmp1, vec_enc);
   if (vec_enc == AVX_512bit) {
     evpcmp(T_LONG, ktmp, k0, xtmp1, xtmp2, Assembler::eq, vec_enc);
-    kortest(vlen, ktmp, ktmp);
-    jccb(Assembler::carryClear, slow_path);
+    kmov(tmp, ktmp);
   } else {
     vpcmpeqq(xtmp2, src, xtmp2, vec_enc);
     vmovmskpd(tmp, xtmp2, vec_enc);
-    cmp32(tmp, vlen == 32 ? -1 : ((1 << vlen) - 1));
-    jccb(Assembler::notEqual, slow_path);
   }
+  if (vlen == 1) {
+    testl(tmp, 1);
+  } else {
+    cmp32(tmp, (1 << vlen) - 1);
+  }
+  jccb(Assembler::notEqual, slow_path);
 
   // fast path
   if (bt == T_FLOAT) {
