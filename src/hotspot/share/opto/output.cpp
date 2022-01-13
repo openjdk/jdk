@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,12 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  *
- */
-
-/*
- * This file has been modified by Loongson Technology in 2022. These
- * modifications are Copyright (c) 2022, Loongson Technology, and are made
- * available on the same license terms set forth above.
  */
 
 #include "precompiled.hpp"
