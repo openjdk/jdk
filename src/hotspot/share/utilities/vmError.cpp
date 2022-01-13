@@ -357,7 +357,7 @@ void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, char* bu
         if (count == 1 && _lineno != 0) {
           // We have source information of the first frame for internal errors. There is no need to parse it from the symbols.
           st->print("  (%s:%d)", get_filename_only(), _lineno);
-        } else if (Decoder::get_source_info(fr.pc(), buf, sizeof(buf), &line_no, count == 1)) {
+        } else if (Decoder::get_source_info(fr.pc(), buf, sizeof(buf), &line_no, count != 1)) {
           st->print("  (%s:%d)", buf, line_no);
         }
       }

@@ -180,7 +180,7 @@ class ElfFile: public CHeapObj<mtInternal> {
   static bool specifies_noexecstack(const char* filepath) NOT_LINUX({ return false; });
 
   bool open_valid_debuginfo_file(const char* path_name, uint crc);
-  bool get_source_info(uint32_t offset_in_library, char* filename, size_t filename_size, int* line, bool is_first_frame);
+  bool get_source_info(uint32_t offset_in_library, char* filename, size_t filename_size, int* line, bool is_pc_after_call);
 
  private:
   // sanity check, if the file is a real elf file
@@ -438,10 +438,12 @@ class DwarfFile : public ElfFile {
       _debug_line_offset(nullptr) {}
     bool read_section_header(uint32_t debug_abbrev_offset);
     bool get_debug_line_offset(uint64_t abbrev_code);
-
   };
 
   // (4) The line number program for the compilation unit at the offset of the .debug_line obtained by (3).
+  // For some reason, GCC emits DWARF 3 for the line number program even though the default is DWARF 4.
+  // Therefore, this class supports DWARF 3 and DWARF 4 parsing.
+  // DWARF 3 standard: https://dwarfstd.org/doc/Dwarf3.pdf
   class LineNumberProgram {
 
     // Standard opcodes for the line number program defined in section 6.2.5.2 of the DWARF 4 spec.
@@ -471,7 +473,7 @@ class DwarfFile : public ElfFile {
       uint32_t _unit_length;
 
       // The version of the DWARF information for the line number program unit. The value in this field should be 4 for DWARF 4.
-      // But for some reason, GCC uses version 3 as used for DWARF 3.
+      // and version 3 as used for DWARF 3.
       uint16_t _version;
 
       // The number of bytes following the header_length field to the beginning of the first byte of the line number program itself.
@@ -591,7 +593,7 @@ class DwarfFile : public ElfFile {
     LineNumberProgramState* _state;
     const uint32_t _offset_in_library;
     const uint64_t _debug_line_offset;
-    bool _is_first_frame;
+    bool _is_pc_after_call;
 
     // Result fields of a request.
     int* _line;
@@ -601,6 +603,7 @@ class DwarfFile : public ElfFile {
 
     bool read_header();
     bool read_line_number_program();
+    bool apply_opcode();
     bool apply_extended_opcode();
     bool apply_standard_opcode(uint8_t opcode);
     bool apply_special_opcode(uint8_t opcode);
@@ -608,9 +611,9 @@ class DwarfFile : public ElfFile {
     bool read_filename_from_header(uint32_t file_index);
 
    public:
-    LineNumberProgram(DwarfFile* dwarf_file, uint32_t offset_in_library, uint64_t debug_line_offset, bool is_first_frame)
-      : _dwarf_file(dwarf_file),  _reader(dwarf_file->fd()), _state(nullptr), _offset_in_library(offset_in_library),
-        _debug_line_offset(debug_line_offset), _is_first_frame(is_first_frame) , _line(nullptr), _filename(nullptr), _filename_len(0) {}
+    LineNumberProgram(DwarfFile* dwarf_file, uint32_t offset_in_library, uint64_t debug_line_offset, bool is_pc_after_call)
+      : _dwarf_file(dwarf_file), _reader(dwarf_file->fd()), _state(nullptr), _offset_in_library(offset_in_library),
+        _debug_line_offset(debug_line_offset), _is_pc_after_call(is_pc_after_call) , _line(nullptr), _filename(nullptr), _filename_len(0) {}
     ~LineNumberProgram() {
       delete _state;
       _state = nullptr;
@@ -631,7 +634,7 @@ class DwarfFile : public ElfFile {
    *
    *  More details about the different phases can be found at the associated methods.
    */
-  bool get_filename_and_line_number(uint32_t offset_in_library, char* filename, size_t filename_len, int* line, bool is_first_frame);
+  bool get_filename_and_line_number(uint32_t offset_in_library, char* filename, size_t filename_len, int* line, bool is_pc_after_call);
 };
 
 #endif // !_WINDOWS && !__APPLE__

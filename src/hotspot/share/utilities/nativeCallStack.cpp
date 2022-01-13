@@ -96,7 +96,7 @@ void NativeCallStack::print_on(outputStream* out, int indent) const {
         out->print("[" PTR_FORMAT "]", p2i(pc));
       }
 
-      if (Decoder::get_source_info(pc, buf, sizeof(buf), &line_no, frame == 0)) {
+      if (Decoder::get_source_info(pc, buf, sizeof(buf), &line_no, frame != 0)) {
         out->print("  (%s:%d)", buf, line_no);
       }
       out->cr();
