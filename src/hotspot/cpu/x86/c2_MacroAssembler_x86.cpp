@@ -4133,10 +4133,11 @@ void C2_MacroAssembler::vector_castL2FD(XMMRegister dst, XMMRegister src, XMMReg
   }
   if (vlen == 1) {
     testl(tmp, 1);
+    jccb(Assembler::zero, slow_path);
   } else {
     cmp32(tmp, (1 << vlen) - 1);
+    jccb(Assembler::notEqual, slow_path);
   }
-  jccb(Assembler::notEqual, slow_path);
 
   // fast path
   if (bt == T_FLOAT) {
