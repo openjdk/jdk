@@ -209,7 +209,8 @@ class ElfFile: public CHeapObj<mtInternal> {
 
   // Load the DWARF file (.debuginfo) that belongs to this file.
   bool load_dwarf_file();
-  NOT_PRODUCT(bool load_dwarf_file_from_env(const char* folder, const char* debug_filename, uint32_t crc);)
+  bool load_dwarf_file_from_env_path(const char* debug_filename, uint32_t crc);
+  bool load_dwarf_file_from_env_path_folder(const char* env_path, const char* folder, const char* debug_filename, uint32_t crc);
   char* get_debug_filename() const;
   static uint gnu_debuglink_crc32(uint32_t crc, uint8_t* buf, size_t len);
 

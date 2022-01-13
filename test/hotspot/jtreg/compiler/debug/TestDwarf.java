@@ -30,10 +30,7 @@
  *          by the environment variable JVM_DWARF_PATH, then no verification of the hs_err_file is done for libjvm.so.
  * @requires vm.debug == true & vm.compMode != "Xint" & os.family == "linux" & !vm.graal.enabled & vm.gc.G1
  * @modules java.base/jdk.internal.misc
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/native/othervm -Xbootclasspath/a:. -XX:-CreateCoredumpOnCrash -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      compiler.debug.TestDwarf
+ * @run main/native/othervm -Xbootclasspath/a:. -XX:-CreateCoredumpOnCrash compiler.debug.TestDwarf
  */
 
 package compiler.debug;
@@ -196,7 +193,7 @@ public class TestDwarf {
     private static void crashOutOfMemory() {
         Object[] o = null;
 
-        // Loop endlessly and consume memory until we run out. Will crash due -XX:+CrashOnOutOfMemoryError.
+        // Loop endlessly and consume memory until we run out. Will crash due to -XX:+CrashOnOutOfMemoryError.
         while (true) {
             o = new Object[] {o};
         }

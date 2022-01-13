@@ -365,25 +365,10 @@ bool ElfFile::load_dwarf_file() {
     return true;
   }
 
-#ifndef PRODUCT
-  // For debug builds, additionally look in environmental variable _JVM_DWARF_PATH specified by user.
-  const char* dwarf_path = ::getenv("_JVM_DWARF_PATH");
-  if (dwarf_path != nullptr) {
-    log_debug(dwarf)("_JVM_DWARF_PATH: %s", dwarf_path);
-    if (load_dwarf_file_from_env("/lib/server/", debug_filename, crc)) {
-      return true;
-    }
-    if (load_dwarf_file_from_env("/lib/", debug_filename, crc)) {
-      return true;
-    }
-    if (load_dwarf_file_from_env("/bin/", debug_filename, crc)) {
-      return true;
-    }
-    if (load_dwarf_file_from_env("/", debug_filename, crc)) {
-      return true;
-    }
+  // Additionally look in environmental variable _JVM_DWARF_PATH specified by user.
+  if (load_dwarf_file_from_env_path(debug_filename, crc)) {
+    return true;
   }
-#endif
 
   // Look in a subdirectory named ".debug".
   strcpy(last_slash + 1, ".debug/");
@@ -404,21 +389,25 @@ bool ElfFile::load_dwarf_file() {
   return false;
 }
 
-#ifndef PRODUCT
-bool ElfFile::load_dwarf_file_from_env(const char* folder, const char* debug_filename, const uint32_t crc) {
+bool ElfFile::load_dwarf_file_from_env_path(const char* debug_filename, const uint32_t crc) {
   const char* dwarf_path = ::getenv("_JVM_DWARF_PATH");
   if (dwarf_path != nullptr) {
-    char* debug_pathname = NEW_RESOURCE_ARRAY(char, strlen(dwarf_path) + strlen(folder) + strlen(debug_filename) + 2);
-    strcpy(debug_pathname, dwarf_path);
-    strcat(debug_pathname, folder);
-    strcat(debug_pathname, debug_filename);
-    if (open_valid_debuginfo_file(debug_pathname, crc)) {
-      return true;
-    }
+    log_debug(dwarf)("_JVM_DWARF_PATH: %s", dwarf_path);
+    return (load_dwarf_file_from_env_path_folder(dwarf_path, "/lib/server/", debug_filename, crc)
+            || load_dwarf_file_from_env_path_folder(dwarf_path, "/lib/", debug_filename, crc)
+            || load_dwarf_file_from_env_path_folder(dwarf_path, "/bin/", debug_filename, crc)
+            || load_dwarf_file_from_env_path_folder(dwarf_path, "/", debug_filename, crc));
   }
   return false;
 }
-#endif
+
+bool ElfFile::load_dwarf_file_from_env_path_folder(const char* env_path, const char* folder, const char* debug_filename, const uint32_t crc) {
+  char* debug_pathname = NEW_RESOURCE_ARRAY(char, strlen(env_path) + strlen(folder) + strlen(debug_filename) + 2);
+  strcpy(debug_pathname, env_path);
+  strcat(debug_pathname, folder);
+  strcat(debug_pathname, debug_filename);
+  return open_valid_debuginfo_file(debug_pathname, crc);
+}
 
 char* ElfFile::get_debug_filename() const {
   Elf_Shdr shdr;

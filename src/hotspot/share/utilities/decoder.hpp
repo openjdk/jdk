@@ -114,7 +114,7 @@ public:
   // Attempts to retrieve source file name and line number associated with a pc.
   // If buf != NULL, points to a buffer of size buflen which will receive the
   // file name. File name will be silently truncated if output buffer is too small.
-  static bool get_source_info(address pc, char* buf, size_t buflen, int* line, bool is_first_frame = false);
+  static bool get_source_info(address pc, char* buf, size_t buflen, int* line, bool is_first_frame = true);
 
   static void print_state_on(outputStream* st);
 
