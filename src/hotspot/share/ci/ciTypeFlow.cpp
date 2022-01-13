@@ -2492,9 +2492,12 @@ static int profiled_count(ciMethod* m, ciTypeFlow::Loop* loop) {
       is_an_if = true;
       break;
     case Bytecodes::_goto:
+    case Bytecodes::_goto_w:
+    case Bytecodes::_jsr:
+    case Bytecodes::_jsr_w:
       break;
     default:
-      ShouldNotReachHere();
+      fatal(" invalid bytecode: %s", Bytecodes::name(iter.cur_bc()));
   }
 
   GrowableArray<ciTypeFlow::Block*>* succs = tail->successors();
