@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8149036 8150619
+ * @bug 8149036 8150619 8277531
  * @summary os+thread output should contain logging calls for thread start stop attaches detaches
  * @requires vm.flagless
  * @library /test/lib
@@ -36,6 +36,7 @@
 
 import java.io.File;
 import java.util.Map;
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -43,7 +44,11 @@ public class ThreadLoggingTest {
 
     static void analyzeOutputForInfoLevel(OutputAnalyzer output) throws Exception {
         output.shouldMatch("Thread .* started");
-        output.shouldContain("Thread is alive");
+        if (Platform.isWindows()) {
+            output.shouldMatch("Thread is alive \\(tid: [0-9]+, stacksize: [0-9]+k\\)");
+        } else {
+            output.shouldContain("Thread is alive");
+        }
         output.shouldContain("Thread finished");
         output.shouldHaveExitValue(0);
     }
