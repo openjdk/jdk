@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -454,13 +454,13 @@ public class Ktab {
         System.out.println();
         System.out.println("-l [-e] [-t]\n"
                 + "    list the keytab name and entries. -e with etype, -t with timestamp.");
-        System.out.println("-a <principal name> [<password>] [-s <salt>] [-n <kvno>] [-f | -s <salt>] [-append]\n"
+        System.out.println("-a <principal name> [<password>] [-n <kvno>] [-f | -s <salt>] [-append]\n"
                 + "    add new key entries to the keytab for the given principal name with\n"
                 + "    optional <password>. If a <kvno> is specified, new keys' Key Version\n"
                 + "    Numbers equal to the value, otherwise, automatically incrementing\n"
                 + "    the Key Version Numbers. If <salt> is specified, it will be used\n"
                 + "    instead of the default salt. If -f is specified, the KDC will be\n"
-                + "    contacted to get the salt. If -append is specified, new keys are\n"
+                + "    contacted to fetch the salt. If -append is specified, new keys are\n"
                 + "    appended to the keytab, otherwise, old keys for the\n"
                 + "    same principal are removed.");
         System.out.println("-d <principal name> [-f] [-e <etype>] [<kvno> | all | old]\n"
