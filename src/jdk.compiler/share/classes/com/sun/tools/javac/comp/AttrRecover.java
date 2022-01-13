@@ -193,7 +193,7 @@ public class AttrRecover {
                                  attr.new ResultInfo(todo.resultInfo.pkind, todo.resultInfo.pt.getReturnType(), todo.resultInfo.checkContext, todo.resultInfo.checkMode),
                                  todo.env, args, pats,
                                  todo.resultInfo.pt.getTypeArguments());
-                rollback.stream().forEach(Runnable::run);
+                rollback.forEach(Runnable::run);
             } else {
                 owntype = basicMethodInvocationRecovery(todo.tree, todo.site, todo.errSym, todo.env, todo.resultInfo);
             }

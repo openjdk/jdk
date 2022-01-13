@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import sun.hotspot.WhiteBox;
  */
 class DynamicArchiveTestBase {
     private static boolean executedIn_run = false;
-
+    private static boolean autoMode = false;  // -Xshare:auto
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
     public static interface DynamicArchiveTest {
@@ -47,6 +47,7 @@ class DynamicArchiveTestBase {
         public void run(String args[]) throws Exception;
     }
 
+    public static void setAutoMode(boolean val) { autoMode = val; }
 
     /*
      * Tests for dynamic archives should be written using this pattern:
@@ -92,6 +93,19 @@ class DynamicArchiveTestBase {
     }
     public static String getNewArchiveName(String stem) {
         return TestCommon.getNewArchiveName(stem);
+    }
+
+    /**
+     * Excute a JVM to dump a base archive by
+     *  -Xshare:dump -XX:SharedArchiveFile=baseArchiveName
+     */
+    public static Result dumpBaseArchive(String baseArchiveName, String... cmdLineSuffix)
+        throws Exception
+    {
+        OutputAnalyzer output = TestCommon.dumpBaseArchive(baseArchiveName, cmdLineSuffix);
+        CDSOptions opts = new CDSOptions();
+        opts.setXShareMode("dump");
+        return new Result(opts, output);
     }
 
     /**
@@ -183,7 +197,7 @@ class DynamicArchiveTestBase {
             (topArchiveName == null) ? baseArchiveName :
             baseArchiveName + File.pathSeparator + topArchiveName;
         String[] cmdLine = TestCommon.concat(
-            "-Xshare:on",
+            autoMode ? "-Xshare:auto" : "-Xshare:on",
             "-XX:SharedArchiveFile=" + archiveFiles);
         cmdLine = TestCommon.concat(cmdLine, cmdLineSuffix);
         return execProcess("exec", null, cmdLine);
@@ -202,7 +216,7 @@ class DynamicArchiveTestBase {
             (topArchiveName == null) ? baseArchiveName :
             baseArchiveName + File.pathSeparator + topArchiveName;
         String[] cmdLine = TestCommon.concat(
-            "-Xshare:on",
+            autoMode ? "-Xshare:auto" : "-Xshare:on",
             "-XX:SharedArchiveFile=" + archiveFiles);
         cmdLine = TestCommon.concat(cmdLine, cmdLineSuffix);
         return execProcess("exec", jarDir, cmdLine);
@@ -278,10 +292,10 @@ class DynamicArchiveTestBase {
     }
 
     /**
-     * Return true if the UseSharedSpaces flag has been disabled.
+     * Return true if sharing has been disabled.
      * By default, the VM will be started with -Xshare:auto.
-     * The UseSharedSpaces flag will be disabled by the VM if there's some
-     * problem in using the default CDS archive. It could happen under some
+     * Sharing will be disabled by the VM if there's some problem
+     * in using the default CDS archive. It could happen under some
      * situations such as follows:
      * - the default CDS archive wasn't generated during build time because
      *   the JDK was built via cross-compilation on a different platform;
@@ -292,6 +306,6 @@ class DynamicArchiveTestBase {
      *   enabled when the default CDS archive was built.
      */
     public static boolean isUseSharedSpacesDisabled() {
-        return (WB.getBooleanVMFlag("UseSharedSpaces") == false);
+        return !WB.isSharingEnabled();
     }
 }

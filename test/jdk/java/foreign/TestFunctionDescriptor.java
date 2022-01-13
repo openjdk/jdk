@@ -32,10 +32,8 @@ import jdk.incubator.foreign.FunctionDescriptor;
 import jdk.incubator.foreign.MemoryLayout;
 import org.testng.annotations.Test;
 
-import java.lang.constant.Constable;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -67,7 +65,7 @@ public class TestFunctionDescriptor extends NativeTestHelper {
     @Test
     public void testAppendArgumentLayouts() {
         FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_DOUBLE, C_LONG_LONG);
-        fd = fd.withAppendedArgumentLayouts(C_POINTER);
+        fd = fd.appendArgumentLayouts(C_POINTER);
 
         assertEquals(fd.argumentLayouts(), List.of(C_DOUBLE, C_LONG_LONG, C_POINTER));
         Optional<MemoryLayout> returnLayoutOp = fd.returnLayout();
@@ -78,7 +76,7 @@ public class TestFunctionDescriptor extends NativeTestHelper {
     @Test
     public void testChangeReturnLayout() {
         FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_DOUBLE, C_LONG_LONG);
-        fd = fd.withReturnLayout(C_INT);
+        fd = fd.changeReturnLayout(C_INT);
 
         assertEquals(fd.argumentLayouts(), List.of(C_DOUBLE, C_LONG_LONG));
         Optional<MemoryLayout> returnLayoutOp = fd.returnLayout();
@@ -89,7 +87,7 @@ public class TestFunctionDescriptor extends NativeTestHelper {
     @Test
     public void testDropReturnLayout() {
         FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_DOUBLE, C_LONG_LONG);
-        fd = fd.withVoidReturnLayout();
+        fd = fd.dropReturnLayout();
 
         assertEquals(fd.argumentLayouts(), List.of(C_DOUBLE, C_LONG_LONG));
         Optional<MemoryLayout> returnLayoutOp = fd.returnLayout();

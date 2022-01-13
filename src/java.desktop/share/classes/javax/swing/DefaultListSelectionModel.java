@@ -50,7 +50,8 @@ import javax.swing.event.*;
  * @see ListSelectionModel
  * @since 1.2
  */
-@SuppressWarnings("serial") // Same-version serialization only
+@SuppressWarnings({"serial", // Same-version serialization only
+                   "doclint:missing"})
 public class DefaultListSelectionModel implements ListSelectionModel, Cloneable, Serializable
 {
     private static final int MIN = -1;

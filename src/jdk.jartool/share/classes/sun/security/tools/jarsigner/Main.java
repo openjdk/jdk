@@ -834,9 +834,9 @@ public class Main {
                     }
 
                     // Only used when -verbose provided
-                    StringBuffer sb = null;
+                    StringBuilder sb = null;
                     if (verbose != null) {
-                        sb = new StringBuffer();
+                        sb = new StringBuilder();
                         boolean inManifest =
                             ((man.getAttributes(name) != null) ||
                              (man.getAttributes("./"+name) != null) ||

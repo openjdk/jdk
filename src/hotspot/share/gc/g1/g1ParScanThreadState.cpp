@@ -421,8 +421,8 @@ HeapWord* G1ParScanThreadState::allocate_copy_slow(G1HeapRegionAttr* dest_attr,
 }
 
 #if EVAC_FAILURE_INJECTOR
-bool G1ParScanThreadState::inject_evacuation_failure() {
-  return _g1h->evac_failure_injector()->evacuation_should_fail(_evac_failure_inject_counter);
+bool G1ParScanThreadState::inject_evacuation_failure(uint region_idx) {
+  return _g1h->evac_failure_injector()->evacuation_should_fail(_evac_failure_inject_counter, region_idx);
 }
 #endif
 
@@ -470,7 +470,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
   assert(_g1h->is_in_reserved(obj_ptr), "Allocated memory should be in the heap");
 
   // Should this evacuation fail?
-  if (inject_evacuation_failure()) {
+  if (inject_evacuation_failure(from_region->hrm_index())) {
     // Doing this after all the allocation attempts also tests the
     // undo_allocation() method too.
     undo_allocation(dest_attr, obj_ptr, word_sz, node_index);
@@ -482,6 +482,10 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(old), obj_ptr, word_sz);
 
   const oop obj = cast_to_oop(obj_ptr);
+  // Because the forwarding is done with memory_order_relaxed there is no
+  // ordering with the above copy.  Clients that get the forwardee must not
+  // examine its contents without other synchronization, since the contents
+  // may not be up to date for them.
   const oop forward_ptr = old->forward_to_atomic(obj, old_mark, memory_order_relaxed);
   if (forward_ptr == NULL) {
 
@@ -612,9 +616,11 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
   if (forward_ptr == NULL) {
     // Forward-to-self succeeded. We are the "owner" of the object.
     HeapRegion* r = _g1h->heap_region_containing(old);
-    // Records evac failure objs, this will help speed up iteration
-    // of these objs later in *remove self forward* phase of post evacuation.
-    r->record_evac_failure_obj(old);
+
+    // Objects failing evacuation will turn into old objects since the regions
+    // are relabeled as such. We mark the failing objects in the prev bitmap and
+    // later use it to handle all failed objects.
+    _g1h->mark_evac_failure_object(old, _worker_id);
 
     if (_evac_failure_regions->record(r->hrm_index())) {
       _g1h->hr_printer()->evac_failure(r);

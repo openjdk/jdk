@@ -52,7 +52,7 @@ class ReferenceProcessorPhaseTimes : public CHeapObj<mtGC> {
   // Total spent time for reference processing.
   double                   _total_time_ms;
 
-  size_t                   _ref_cleared[number_of_subclasses_of_ref];
+  size_t                   _ref_dropped[number_of_subclasses_of_ref];
   size_t                   _ref_discovered[number_of_subclasses_of_ref];
 
   bool                     _processing_is_mt;
@@ -83,8 +83,9 @@ public:
 
   void set_total_time_ms(double total_time_ms) { _total_time_ms = total_time_ms; }
 
-  void add_ref_cleared(ReferenceType ref_type, size_t count);
+  void add_ref_dropped(ReferenceType ref_type, size_t count);
   void set_ref_discovered(ReferenceType ref_type, size_t count);
+  size_t ref_discovered(ReferenceType ref_type);
 
   void set_balance_queues_time_ms(ReferenceProcessor::RefProcPhases phase, double time_ms);
 
@@ -98,23 +99,23 @@ public:
   void print_all_references(uint base_indent = 0, bool print_total = true) const;
 };
 
-class RefProcWorkerTimeTracker : public CHeapObj<mtGC> {
+class RefProcWorkerTimeTracker : public StackObj {
 protected:
   WorkerDataArray<double>* _worker_time;
   double                   _start_time;
   uint                     _worker_id;
 public:
   RefProcWorkerTimeTracker(WorkerDataArray<double>* worker_time, uint worker_id);
-  virtual ~RefProcWorkerTimeTracker();
+  ~RefProcWorkerTimeTracker();
 };
 
 // Updates working time of each worker thread for a given sub phase.
-class RefProcSubPhasesWorkerTimeTracker : public RefProcWorkerTimeTracker {
+class RefProcSubPhasesWorkerTimeTracker : public StackObj {
+  RefProcWorkerTimeTracker _tracker;
 public:
   RefProcSubPhasesWorkerTimeTracker(ReferenceProcessor::RefProcSubPhases phase,
                                     ReferenceProcessorPhaseTimes* phase_times,
                                     uint worker_id);
-  ~RefProcSubPhasesWorkerTimeTracker();
 };
 
 class RefProcPhaseTimeBaseTracker : public StackObj {
@@ -143,14 +144,6 @@ public:
   RefProcBalanceQueuesTimeTracker(ReferenceProcessor::RefProcPhases phase_number,
                                   ReferenceProcessorPhaseTimes* phase_times);
   ~RefProcBalanceQueuesTimeTracker();
-};
-
-// Updates phase time at ReferenceProcessorPhaseTimes and save it into GCTimer.
-class RefProcPhaseTimeTracker : public RefProcPhaseTimeBaseTracker {
-public:
-  RefProcPhaseTimeTracker(ReferenceProcessor::RefProcPhases phase_number,
-                          ReferenceProcessorPhaseTimes* phase_times);
-  ~RefProcPhaseTimeTracker();
 };
 
 // Highest level time tracker.

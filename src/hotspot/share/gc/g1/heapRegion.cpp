@@ -91,7 +91,7 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   GrainWords = GrainBytes >> LogHeapWordSize;
 
   guarantee(CardsPerRegion == 0, "we should only set it once");
-  CardsPerRegion = GrainBytes >> G1CardTable::card_shift;
+  CardsPerRegion = GrainBytes >> G1CardTable::card_shift();
 
   LogCardsPerRegion = log2i(CardsPerRegion);
 
@@ -105,10 +105,6 @@ void HeapRegion::handle_evacuation_failure() {
   clear_young_index_in_cset();
   set_old();
   _next_marked_bytes = 0;
-}
-
-void HeapRegion::process_and_drop_evac_failure_objs(ObjectClosure* closure) {
-  _evac_failure_objs.process_and_drop(closure);
 }
 
 void HeapRegion::unlink_from_list() {
@@ -214,8 +210,6 @@ void HeapRegion::set_continues_humongous(HeapRegion* first_hr) {
   report_region_type_change(G1HeapRegionTraceType::ContinuesHumongous);
   _type.set_continues_humongous();
   _humongous_start_region = first_hr;
-
-  _bot_part.set_object_can_span(true);
 }
 
 void HeapRegion::clear_humongous() {
@@ -223,8 +217,6 @@ void HeapRegion::clear_humongous() {
 
   assert(capacity() == HeapRegion::GrainBytes, "pre-condition");
   _humongous_start_region = NULL;
-
-  _bot_part.set_object_can_span(false);
 }
 
 HeapRegion::HeapRegion(uint hrm_index,
@@ -250,8 +242,7 @@ HeapRegion::HeapRegion(uint hrm_index,
   _prev_marked_bytes(0), _next_marked_bytes(0),
   _young_index_in_cset(-1),
   _surv_rate_group(NULL), _age_index(G1SurvRateGroup::InvalidAgeIndex), _gc_efficiency(-1.0),
-  _node_index(G1NUMA::UnknownNodeIndex),
-  _evac_failure_objs(hrm_index, _bottom)
+  _node_index(G1NUMA::UnknownNodeIndex)
 {
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
          "invalid space boundaries");
@@ -659,6 +650,8 @@ void HeapRegion::verify(VerifyOption vo,
   VerifyLiveClosure vl_cl(g1h, vo);
   VerifyRemSetClosure vr_cl(g1h, vo);
   bool is_region_humongous = is_humongous();
+  // We cast p to an oop, so region-bottom must be an obj-start.
+  assert(!is_region_humongous || is_starts_humongous(), "invariant");
   size_t object_num = 0;
   while (p < top()) {
     oop obj = cast_to_oop(p);
@@ -740,11 +733,6 @@ void HeapRegion::verify(VerifyOption vo,
   verify_strong_code_roots(vo, failures);
 }
 
-void HeapRegion::verify() const {
-  bool dummy = false;
-  verify(VerifyOption_G1UsePrevMarking, /* failures */ &dummy);
-}
-
 void HeapRegion::verify_rem_set(VerifyOption vo, bool* failures) const {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   *failures = false;
@@ -802,7 +790,7 @@ void HeapRegion::mangle_unused_area() {
 #endif
 
 void HeapRegion::initialize_bot_threshold() {
-  _bot_part.initialize_threshold();
+  _bot_part.reset_bot();
 }
 
 void HeapRegion::alloc_block_in_bot(HeapWord* start, HeapWord* end) {

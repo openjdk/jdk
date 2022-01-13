@@ -56,7 +56,7 @@ import java.util.stream.Stream;
  * A memory segment models a contiguous region of memory. A memory segment is associated with both spatial
  * and temporal bounds (e.g. a {@link ResourceScope}). Spatial bounds ensure that memory access operations on a memory segment cannot affect a memory location
  * which falls <em>outside</em> the boundaries of the memory segment being accessed. Temporal bounds ensure that memory access
- * operations on a segment cannot occur after the resource scope associated with a memory segment has been closed (see {@link ResourceScope#close()}).
+ * operations on a segment cannot occur <em>after</em> the resource scope associated with a memory segment has been closed (see {@link ResourceScope#close()}).
  * <p>
  * All implementations of this interface must be <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>;
  * programmers should treat instances that are {@linkplain Object#equals(Object) equal} as interchangeable and should not
@@ -119,17 +119,17 @@ import java.util.stream.Stream;
  * Each dereference method takes a {@linkplain jdk.incubator.foreign.ValueLayout value layout}, which specifies the size,
  * alignment constraints, byte order as well as the Java type associated with the dereference operation, and an offset.
  * For instance, to read an int from a segment, using {@link ByteOrder#nativeOrder() default endianness}, the following code can be used:
- * <blockquote><pre>{@code
-MemorySegment segment = ...
-int value = segment.get(ValueLayout.JAVA_INT, 0);
- * }</pre></blockquote>
+ * {@snippet lang=java :
+ * MemorySegment segment = ...
+ * int value = segment.get(ValueLayout.JAVA_INT, 0);
+ * }
  *
  * If the value to be read is stored in memory using {@link ByteOrder#BIG_ENDIAN big-endian} encoding, the dereference operation
  * can be expressed as follows:
- * <blockquote><pre>{@code
-MemorySegment segment = ...
-int value = segment.get(ValueLayout.JAVA_INT.withOrder(BIG_ENDIAN), 0);
- * }</pre></blockquote>
+ * {@snippet lang=java :
+ * MemorySegment segment = ...
+ * int value = segment.get(ValueLayout.JAVA_INT.withOrder(BIG_ENDIAN), 0);
+ * }
  *
  * For more complex dereference operations (e.g. structured memory access), clients can obtain a <em>memory access var handle</em>,
  * that is, a var handle that accepts a segment and, optionally, one or more additional {@code long} coordinates. Memory
@@ -139,33 +139,83 @@ int value = segment.get(ValueLayout.JAVA_INT.withOrder(BIG_ENDIAN), 0);
  * {@linkplain MemoryHandles#varHandle(ValueLayout) value layout}, and then adapt it using the var handle combinator
  * functions defined in the {@link MemoryHandles} class.
  *
+ * <h2 id="segment-alignment">Alignment</h2>
+ *
+ * When dereferencing a memory segment using a layout, the runtime must check that the segment address being dereferenced
+ * matches the layout's {@linkplain MemoryLayout#byteAlignment() alignment constraints}. If the segment being
+ * dereferenced is a native segment, then it has a concrete {@linkplain #address() base address}, which can
+ * be used to perform the alignment check. The pseudo-function below demonstrates this:
+ *
+ * <blockquote><pre>{@code
+boolean isAligned(MemorySegment segment, long offset, MemoryLayout layout) {
+   return ((segment.address().toRawLongValue() + offset) % layout.byteAlignment()) == 0
+}
+ * }</pre></blockquote>
+ *
+ * If, however, the segment being dereferenced is a heap segment, the above function will not work: a heap
+ * segment's base address is <em>virtualized</em> and, as such, cannot be used to construct an alignment check. Instead,
+ * heap segments are assumed to produce addresses which are never more aligned than the element size of the Java array from which
+ * they have originated from, as shown in the following table:
+ *
+ * <blockquote><table class="plain">
+ * <caption style="display:none">Array type of an array backing a segment and its address alignment</caption>
+ * <thead>
+ * <tr>
+ *     <th scope="col">Array type</th>
+ *     <th scope="col">Alignment</th>
+ * </tr>
+ * </thead>
+ * <tbody>
+ * <tr><th scope="row" style="font-weight:normal">{@code boolean[]}</th>
+ *     <td style="text-align:center;">{@code 1}</td></tr>
+ * <tr><th scope="row" style="font-weight:normal">{@code byte[]}</th>
+ *     <td style="text-align:center;">{@code 1}</td></tr>
+ * <tr><th scope="row" style="font-weight:normal">{@code char[]}</th>
+ *     <td style="text-align:center;">{@code 2}</td></tr>
+ * <tr><th scope="row" style="font-weight:normal">{@code short[]}</th>
+ *     <td style="text-align:center;">{@code 2}</td></tr>
+ * <tr><th scope="row" style="font-weight:normal">{@code int[]}</th>
+ *     <td style="text-align:center;">{@code 4}</td></tr>
+ * <tr><th scope="row" style="font-weight:normal">{@code float[]}</th>
+ *     <td style="text-align:center;">{@code 4}</td></tr>
+ * <tr><th scope="row" style="font-weight:normal">{@code long[]}</th>
+ *     <td style="text-align:center;">{@code 8}</td></tr>
+ * <tr><th scope="row" style="font-weight:normal">{@code double[]}</th>
+ *     <td style="text-align:center;">{@code 8}</td></tr>
+ * </tbody>
+ * </table></blockquote>
+ *
+ * Note that the above definition is conservative: it might be possible, for instance, that a heap segment
+ * constructed from a {@code byte[]} might have a subset of addresses {@code S} which happen to be 8-byte aligned. But determining
+ * which segment addresses belong to {@code S} requires reasoning about details which are ultimately implementation-dependent.
+ *
  * <h2>Lifecycle and confinement</h2>
  *
  * Memory segments are associated with a resource scope (see {@link ResourceScope}), which can be accessed using
  * the {@link #scope()} method. As for all resources associated with a resource scope, a segment cannot be
  * accessed after its corresponding scope has been closed. For instance, the following code will result in an
  * exception:
- * <blockquote><pre>{@code
-MemorySegment segment = null;
-try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-    segment = MemorySegment.allocateNative(8, scope);
-}
-segment.get(ValueLayout.JAVA_LONG, 0); // already closed!
- * }</pre></blockquote>
+ * {@snippet lang=java :
+ * MemorySegment segment = null;
+ * try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+ *     segment = MemorySegment.allocateNative(8, scope);
+ * }
+ * segment.get(ValueLayout.JAVA_LONG, 0); // already closed!
+ * }
  * Additionally, access to a memory segment is subject to the thread-confinement checks enforced by the owning scope; that is,
  * if the segment is associated with a shared scope, it can be accessed by multiple threads; if it is associated with a confined
  * scope, it can only be accessed by the thread which owns the scope.
  * <p>
  * Heap and buffer segments are always associated with a <em>global</em>, shared scope. This scope cannot be closed,
- * and can be considered as <em>always alive</em>.
+ * and segments associated with it can be considered as <em>always alive</em>.
  *
  * <h2>Memory segment views</h2>
  *
  * Memory segments support <em>views</em>. For instance, it is possible to create an <em>immutable</em> view of a memory segment, as follows:
- * <blockquote><pre>{@code
-MemorySegment segment = ...
-MemorySegment roSegment = segment.asReadOnly();
- * }</pre></blockquote>
+ * {@snippet lang=java :
+ * MemorySegment segment = ...
+ * MemorySegment roSegment = segment.asReadOnly();
+ * }
  * It is also possible to create views whose spatial bounds are stricter than the ones of the original segment
  * (see {@link MemorySegment#asSlice(long, long)}).
  * <p>
@@ -184,15 +234,15 @@ MemorySegment roSegment = segment.asReadOnly();
  * (to do this, the segment has to be associated with a shared scope). The following code can be used to sum all int
  * values in a memory segment in parallel:
  *
- * <blockquote><pre>{@code
-try (ResourceScope scope = ResourceScope.newSharedScope()) {
-    SequenceLayout SEQUENCE_LAYOUT = MemoryLayout.sequenceLayout(1024, ValueLayout.JAVA_INT);
-    MemorySegment segment = MemorySegment.allocateNative(SEQUENCE_LAYOUT, scope);
-    int sum = segment.elements(ValueLayout.JAVA_INT).parallel()
-                           .mapToInt(s -> s.get(ValueLayout.JAVA_INT, 0))
-                           .sum();
-}
- * }</pre></blockquote>
+ * {@snippet lang=java :
+ * try (ResourceScope scope = ResourceScope.newSharedScope()) {
+ *     SequenceLayout SEQUENCE_LAYOUT = MemoryLayout.sequenceLayout(1024, ValueLayout.JAVA_INT);
+ *     MemorySegment segment = MemorySegment.allocateNative(SEQUENCE_LAYOUT, scope);
+ *     int sum = segment.elements(ValueLayout.JAVA_INT).parallel()
+ *                      .mapToInt(s -> s.get(ValueLayout.JAVA_INT, 0))
+ *                      .sum();
+ * }
+ * }
  *
  * @implSpec
  * Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
@@ -217,30 +267,34 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
      * The returned spliterator splits this segment according to the specified element layout; that is,
      * if the supplied layout has size N, then calling {@link Spliterator#trySplit()} will result in a spliterator serving
      * approximately {@code S/N/2} elements (depending on whether N is even or not), where {@code S} is the size of
-     * this segment. As such, splitting is possible as long as {@code S/N >= 2}. The spliterator returns segments that feature the same
-     * scope as this given segment.
+     * this segment. As such, splitting is possible as long as {@code S/N >= 2}. The spliterator returns segments that
+     * are associated with the same scope as this segment.
      * <p>
-     * The returned spliterator effectively allows to slice this segment into disjoint sub-segments, which can then
-     * be processed in parallel by multiple threads.
+     * The returned spliterator effectively allows to slice this segment into disjoint {@linkplain #asSlice(long, long) slices},
+     * which can then be processed in parallel by multiple threads.
      *
      * @param elementLayout the layout to be used for splitting.
      * @return the element spliterator for this segment
      * @throws IllegalArgumentException if the {@code elementLayout} size is zero, or the segment size modulo the
-     * {@code elementLayout} size is greater than zero.
+     * {@code elementLayout} size is greater than zero, if this segment is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the {@code elementLayout} alignment is greater than its size.
      */
     Spliterator<MemorySegment> spliterator(MemoryLayout elementLayout);
 
     /**
      * Returns a sequential {@code Stream} over disjoint slices (whose size matches that of the specified layout)
      * in this segment. Calling this method is equivalent to the following code:
-     * <blockquote><pre>{@code
-    StreamSupport.stream(segment.spliterator(elementLayout), false);
-     * }</pre></blockquote>
+     * {@snippet lang=java :
+     * StreamSupport.stream(segment.spliterator(elementLayout), false);
+     * }
      *
      * @param elementLayout the layout to be used for splitting.
      * @return a sequential {@code Stream} over disjoint slices in this segment.
      * @throws IllegalArgumentException if the {@code elementLayout} size is zero, or the segment size modulo the
-     * {@code elementLayout} size is greater than zero.
+     * {@code elementLayout} size is greater than zero, if this segment is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the {@code elementLayout} alignment is greater than its size.
      */
     Stream<MemorySegment> elements(MemoryLayout elementLayout);
 
@@ -274,9 +328,9 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
      * and whose new size is computed by subtracting the specified offset from this segment size.
      * <p>
      * Equivalent to the following code:
-     * <pre>{@code
-    asSlice(offset, byteSize() - offset);
-     * }</pre>
+     * {@snippet lang=java :
+     * asSlice(offset, byteSize() - offset);
+     * }
      *
      * @see #asSlice(long, long)
      *
@@ -343,9 +397,9 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
      * a negative or positive value. For instance, if both segments are native
      * segments, the resulting offset can be computed as follows:
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      * other.baseAddress().toRawLongValue() - segment.baseAddress().toRawLongValue()
-     * }</pre>
+     * }
      *
      * If the segments share the same base address, {@code 0} is returned. If
      * {@code other} is a slice of this segment, the offset is always
@@ -362,13 +416,13 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
      * More specifically, the given value is filled into each address of this
      * segment. Equivalent to (but likely more efficient than) the following code:
      *
-     * <pre>{@code
-byteHandle = MemoryLayout.ofSequence(ValueLayout.JAVA_BYTE)
-         .varHandle(byte.class, MemoryLayout.PathElement.sequenceElement());
-for (long l = 0; l < segment.byteSize(); l++) {
-     byteHandle.set(segment.address(), l, value);
-}
-     * }</pre>
+     * {@snippet lang=java :
+     * byteHandle = MemoryLayout.ofSequence(ValueLayout.JAVA_BYTE)
+     *         .varHandle(byte.class, MemoryLayout.PathElement.sequenceElement());
+     * for (long l = 0; l < segment.byteSize(); l++) {
+     *     byteHandle.set(segment.address(), l, value);
+     * }
+     * }
      *
      * without any regard or guarantees on the ordering of particular memory
      * elements being set.
@@ -389,9 +443,9 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * at offset {@code 0} through {@code src.byteSize() - 1}.
      * <p>
      * Calling this method is equivalent to the following code:
-     * <blockquote><pre>{@code
-    MemorySegment.copy(src, 0, this, 0, src.byteSize);
-     * }</pre></blockquote>
+     * {@snippet lang=java :
+     * MemorySegment.copy(src, 0, this, 0, src.byteSize);
+     * }
      * @param src the source segment.
      * @throws IndexOutOfBoundsException if {@code src.byteSize() > this.byteSize()}.
      * @throws IllegalStateException if either the scope associated with the source segment or the scope associated
@@ -651,6 +705,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform.
      * @throws IllegalStateException if the size of the native string is greater than the size of this segment,
      * or if the scope associated with this segment has been closed, or if access occurs from a thread other than the thread owning that scope.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     default void setUtf8String(long offset, String str) {
         Utils.toCString(str.getBytes(StandardCharsets.UTF_8), SegmentAllocator.prefixAllocator(asSlice(offset)));
@@ -678,7 +733,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
 
     /**
      * Creates a new array memory segment that models the memory associated with a given heap-allocated byte array.
-     * The returned segment's resource scope is set to the {@linkplain ResourceScope#globalScope() global} resource scope.
+     * The returned segment is associated with the {@linkplain ResourceScope#globalScope() global} resource scope.
      *
      * @param arr the primitive array backing the array memory segment.
      * @return a new array memory segment.
@@ -689,7 +744,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
 
     /**
      * Creates a new array memory segment that models the memory associated with a given heap-allocated char array.
-     * The returned segment's resource scope is set to the {@linkplain ResourceScope#globalScope() global} resource scope.
+     * The returned segment is associated with the {@linkplain ResourceScope#globalScope() global} resource scope.
      *
      * @param arr the primitive array backing the array memory segment.
      * @return a new array memory segment.
@@ -700,7 +755,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
 
     /**
      * Creates a new array memory segment that models the memory associated with a given heap-allocated short array.
-     * The returned segment's resource scope is set to the {@linkplain ResourceScope#globalScope() global} resource scope.
+     * The returned segment is associated with the {@linkplain ResourceScope#globalScope() global} resource scope.
      *
      * @param arr the primitive array backing the array memory segment.
      * @return a new array memory segment.
@@ -711,7 +766,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
 
     /**
      * Creates a new array memory segment that models the memory associated with a given heap-allocated int array.
-     * The returned segment's resource scope is set to the {@linkplain ResourceScope#globalScope() global} resource scope.
+     * The returned segment is associated with the {@linkplain ResourceScope#globalScope() global} resource scope.
      *
      * @param arr the primitive array backing the array memory segment.
      * @return a new array memory segment.
@@ -722,7 +777,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
 
     /**
      * Creates a new array memory segment that models the memory associated with a given heap-allocated float array.
-     * The returned segment's resource scope is set to the {@linkplain ResourceScope#globalScope() global} resource scope.
+     * The returned segment is associated with the {@linkplain ResourceScope#globalScope() global} resource scope.
      *
      * @param arr the primitive array backing the array memory segment.
      * @return a new array memory segment.
@@ -733,7 +788,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
 
     /**
      * Creates a new array memory segment that models the memory associated with a given heap-allocated long array.
-     * The returned segment's resource scope is set to the {@linkplain ResourceScope#globalScope() global} resource scope.
+     * The returned segment is associated with the {@linkplain ResourceScope#globalScope() global} resource scope.
      *
      * @param arr the primitive array backing the array memory segment.
      * @return a new array memory segment.
@@ -744,7 +799,7 @@ for (long l = 0; l < segment.byteSize(); l++) {
 
     /**
      * Creates a new array memory segment that models the memory associated with a given heap-allocated double array.
-     * The returned segment's resource scope is set to the {@linkplain ResourceScope#globalScope() global} resource scope.
+     * The returned segment is associated with the {@linkplain ResourceScope#globalScope() global} resource scope.
      *
      * @param arr the primitive array backing the array memory segment.
      * @return a new array memory segment.
@@ -800,9 +855,9 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * when the segment is no longer in use. Failure to do so will result in off-heap memory leaks.
      * <p>
      * This is equivalent to the following code:
-     * <blockquote><pre>{@code
-    allocateNative(layout.bytesSize(), layout.bytesAlignment(), scope);
-     * }</pre></blockquote>
+     * {@snippet lang=java :
+     * allocateNative(layout.bytesSize(), layout.bytesAlignment(), scope);
+     * }
      * <p>
      * The block of off-heap memory associated with the returned native memory segment is initialized to zero.
      *
@@ -825,9 +880,9 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * when the segment is no longer in use. Failure to do so will result in off-heap memory leaks.
      * <p>
      * This is equivalent to the following code:
-     * <blockquote><pre>{@code
-    allocateNative(bytesSize, 1, scope);
-     * }</pre></blockquote>
+     * {@snippet lang=java :
+     * allocateNative(bytesSize, 1, scope);
+     * }
      * <p>
      * The block of off-heap memory associated with the returned native memory segment is initialized to zero.
      *
@@ -934,9 +989,9 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * For example, this may occur if the same file is {@linkplain MemorySegment#mapFile mapped} to two segments.
      * <p>
      * Calling this method is equivalent to the following code:
-     * <blockquote><pre>{@code
-    MemorySegment.copy(srcSegment, ValueLayout.JAVA_BYTE, srcOffset, dstSegment, ValueLayout.JAVA_BYTE, dstOffset, bytes);
-     * }</pre></blockquote>
+     * {@snippet lang=java :
+     * MemorySegment.copy(srcSegment, ValueLayout.JAVA_BYTE, srcOffset, dstSegment, ValueLayout.JAVA_BYTE, dstOffset, bytes);
+     * }
      * @param srcSegment the source segment.
      * @param srcOffset the starting offset, in bytes, of the source segment.
      * @param dstSegment the destination segment.
@@ -981,9 +1036,9 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @param dstElementLayout the element layout associated with the destination segment.
      * @param dstOffset the starting offset, in bytes, of the destination segment.
      * @param elementCount the number of elements to be copied.
-     * @throws IllegalArgumentException if the element layouts have different sizes, if the source offset is incompatible
-     * with the alignment constraints in the source element layout, or if the destination offset is incompatible with the
-     * alignment constraints in the destination element layout.
+     * @throws IllegalArgumentException if the element layouts have different sizes, if the source (resp. destination) segment/offset are
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the source
+     * (resp. destination) element layout, or if the source (resp. destination) element layout alignment is greater than its size.
      * @throws IllegalStateException if either the scope associated with the source segment or the scope associated
      * with the destination segment have been already closed, or if access occurs from a thread other than the thread
      * owning either scopes.
@@ -1002,13 +1057,15 @@ for (long l = 0; l < segment.byteSize(); l++) {
         AbstractMemorySegmentImpl srcImpl = (AbstractMemorySegmentImpl)srcSegment;
         AbstractMemorySegmentImpl dstImpl = (AbstractMemorySegmentImpl)dstSegment;
         if (srcElementLayout.byteSize() != dstElementLayout.byteSize()) {
-            throw new IllegalArgumentException("Source and destination layouts must have same sizes");
+            throw new IllegalArgumentException("Source and destination layouts must have same size");
         }
-        if (srcOffset % srcElementLayout.byteAlignment() != 0) {
+        Utils.checkElementAlignment(srcElementLayout, "Source layout alignment greater than its size");
+        Utils.checkElementAlignment(dstElementLayout, "Destination layout alignment greater than its size");
+        if (!srcImpl.isAlignedForElement(srcOffset, srcElementLayout)) {
             throw new IllegalArgumentException("Source segment incompatible with alignment constraints");
         }
-        if (dstOffset % dstElementLayout.byteAlignment() != 0) {
-            throw new IllegalArgumentException("Target segment incompatible with alignment constraints");
+        if (!dstImpl.isAlignedForElement(dstOffset, dstElementLayout)) {
+            throw new IllegalArgumentException("Destination segment incompatible with alignment constraints");
         }
         long size = elementCount * srcElementLayout.byteSize();
         srcImpl.checkAccess(srcOffset, size, true);
@@ -1033,6 +1090,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @return a byte value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
      * memory segment.
      */
@@ -1050,7 +1109,11 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @param value the byte value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void set(ValueLayout.OfByte layout, long offset, byte value) {
@@ -1066,6 +1129,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @return a boolean value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
      * memory segment.
      */
@@ -1083,7 +1148,11 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @param value the boolean value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void set(ValueLayout.OfBoolean layout, long offset, boolean value) {
@@ -1099,6 +1168,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @return a char value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
      * memory segment.
      */
@@ -1116,7 +1187,11 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @param value the char value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void set(ValueLayout.OfChar layout, long offset, char value) {
@@ -1132,6 +1207,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @return a short value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
      * memory segment.
      */
@@ -1149,7 +1226,11 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @param value the short value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void set(ValueLayout.OfShort layout, long offset, short value) {
@@ -1165,6 +1246,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @return an int value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
      * memory segment.
      */
@@ -1182,7 +1265,11 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @param value the int value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void set(ValueLayout.OfInt layout, long offset, int value) {
@@ -1198,6 +1285,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @return a float value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
      * memory segment.
      */
@@ -1215,7 +1304,11 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @param value the float value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void set(ValueLayout.OfFloat layout, long offset, float value) {
@@ -1231,6 +1324,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @return a long value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
      * memory segment.
      */
@@ -1248,7 +1343,11 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @param value the long value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void set(ValueLayout.OfLong layout, long offset, long value) {
@@ -1264,6 +1363,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @return a double value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
      * memory segment.
      */
@@ -1281,7 +1382,11 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @param value the double value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void set(ValueLayout.OfDouble layout, long offset, double value) {
@@ -1297,6 +1402,8 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @return an address value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
      * memory segment.
      */
@@ -1314,7 +1421,11 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @param value the address value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void set(ValueLayout.OfAddress layout, long offset, Addressable value) {
@@ -1330,11 +1441,15 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @return a char value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
      * memory segment.
      */
     @ForceInline
     default char getAtIndex(ValueLayout.OfChar layout, long index) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         return (char)layout.accessHandle().get(this, Utils.scaleOffset(this, index, layout.byteSize()));
     }
 
@@ -1347,10 +1462,16 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @param value the char value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void setAtIndex(ValueLayout.OfChar layout, long index, char value) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         layout.accessHandle().set(this, Utils.scaleOffset(this, index, layout.byteSize()), value);
     }
 
@@ -1363,11 +1484,15 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @return a short value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
      * memory segment.
      */
     @ForceInline
     default short getAtIndex(ValueLayout.OfShort layout, long index) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         return (short)layout.accessHandle().get(this, Utils.scaleOffset(this, index, layout.byteSize()));
     }
 
@@ -1380,10 +1505,16 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @param value the short value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void setAtIndex(ValueLayout.OfShort layout, long index, short value) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         layout.accessHandle().set(this, Utils.scaleOffset(this, index, layout.byteSize()), value);
     }
 
@@ -1396,11 +1527,15 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @return an int value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
      * memory segment.
      */
     @ForceInline
     default int getAtIndex(ValueLayout.OfInt layout, long index) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         return (int)layout.accessHandle().get(this, Utils.scaleOffset(this, index, layout.byteSize()));
     }
 
@@ -1413,10 +1548,16 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @param value the int value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void setAtIndex(ValueLayout.OfInt layout, long index, int value) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         layout.accessHandle().set(this, Utils.scaleOffset(this, index, layout.byteSize()), value);
     }
 
@@ -1429,11 +1570,15 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @return a float value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
      * memory segment.
      */
     @ForceInline
     default float getAtIndex(ValueLayout.OfFloat layout, long index) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         return (float)layout.accessHandle().get(this, Utils.scaleOffset(this, index, layout.byteSize()));
     }
 
@@ -1446,10 +1591,16 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @param value the float value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void setAtIndex(ValueLayout.OfFloat layout, long index, float value) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         layout.accessHandle().set(this, Utils.scaleOffset(this, index, layout.byteSize()), value);
     }
 
@@ -1462,11 +1613,15 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @return a long value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
      * memory segment.
      */
     @ForceInline
     default long getAtIndex(ValueLayout.OfLong layout, long index) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         return (long)layout.accessHandle().get(this, Utils.scaleOffset(this, index, layout.byteSize()));
     }
 
@@ -1479,10 +1634,16 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @param value the long value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void setAtIndex(ValueLayout.OfLong layout, long index, long value) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         layout.accessHandle().set(this, Utils.scaleOffset(this, index, layout.byteSize()), value);
     }
 
@@ -1495,11 +1656,15 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @return a double value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
      * memory segment.
      */
     @ForceInline
     default double getAtIndex(ValueLayout.OfDouble layout, long index) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         return (double)layout.accessHandle().get(this, Utils.scaleOffset(this, index, layout.byteSize()));
     }
 
@@ -1512,10 +1677,16 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @param value the double value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void setAtIndex(ValueLayout.OfDouble layout, long index, double value) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         layout.accessHandle().set(this, Utils.scaleOffset(this, index, layout.byteSize()), value);
     }
 
@@ -1528,11 +1699,15 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @return an address value read from this address.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
      * memory segment.
      */
     @ForceInline
     default MemoryAddress getAtIndex(ValueLayout.OfAddress layout, long index) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         return (MemoryAddress)layout.accessHandle().get(this, Utils.scaleOffset(this, index, layout.byteSize()));
     }
 
@@ -1545,10 +1720,16 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @param value the address value to be written.
      * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
      * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     default void setAtIndex(ValueLayout.OfAddress layout, long index, Addressable value) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         layout.accessHandle().set(this, Utils.scaleOffset(this, index, layout.byteSize()), value.address());
     }
 
@@ -1565,7 +1746,9 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @param dstIndex the starting index of the destination array.
      * @param elementCount the number of array elements to be copied.
      * @throws  IllegalArgumentException if {@code dstArray} is not an array, or if it is an array but whose type is not supported,
-     * or if the destination array component type does not match the carrier of the source element layout.
+     * if the destination array component type does not match the carrier of the source element layout, if the source
+     * segment/offset are <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the source element layout,
+     * or if the destination element layout alignment is greater than its size.
      */
     @ForceInline
     static void copy(
@@ -1581,6 +1764,10 @@ for (long l = 0; l < segment.byteSize(); l++) {
         int dstBase = (int)baseAndScale;
         int dstWidth = (int)(baseAndScale >> 32);
         AbstractMemorySegmentImpl srcImpl = (AbstractMemorySegmentImpl)srcSegment;
+        Utils.checkElementAlignment(srcLayout, "Source layout alignment greater than its size");
+        if (!srcImpl.isAlignedForElement(srcOffset, srcLayout)) {
+            throw new IllegalArgumentException("Source segment incompatible with alignment constraints");
+        }
         srcImpl.checkAccess(srcOffset, elementCount * dstWidth, true);
         Objects.checkFromIndexSize(dstIndex, elementCount, Array.getLength(dstArray));
         if (dstWidth == 1 || srcLayout.order() == ByteOrder.nativeOrder()) {
@@ -1606,7 +1793,9 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * @param dstOffset the starting offset, in bytes, of the destination segment.
      * @param elementCount the number of array elements to be copied.
      * @throws  IllegalArgumentException if {@code srcArray} is not an array, or if it is an array but whose type is not supported,
-     * or if the source array component type does not match the carrier of the destination element layout.
+     * if the source array component type does not match the carrier of the destination element layout, if the destination
+     * segment/offset are <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the destination element layout,
+     * or if the destination element layout alignment is greater than its size.
      */
     @ForceInline
     static void copy(
@@ -1623,6 +1812,10 @@ for (long l = 0; l < segment.byteSize(); l++) {
         int srcWidth = (int)(baseAndScale >> 32);
         Objects.checkFromIndexSize(srcIndex, elementCount, Array.getLength(srcArray));
         AbstractMemorySegmentImpl destImpl = (AbstractMemorySegmentImpl)dstSegment;
+        Utils.checkElementAlignment(dstLayout, "Destination layout alignment greater than its size");
+        if (!destImpl.isAlignedForElement(dstOffset, dstLayout)) {
+            throw new IllegalArgumentException("Destination segment incompatible with alignment constraints");
+        }
         destImpl.checkAccess(dstOffset, elementCount * srcWidth, false);
         if (srcWidth == 1 || dstLayout.order() == ByteOrder.nativeOrder()) {
             ScopedMemoryAccess.getScopedMemoryAccess().copyMemory(null, destImpl.scope(),

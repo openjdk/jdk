@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1168,9 +1168,15 @@ private:
   void vcvtps2pd(XMMRegister dst, XMMRegister src, int vector_len);
   void vcvtpd2ps(XMMRegister dst, XMMRegister src, int vector_len);
 
+  // Convert vector float and int
+  void vcvttps2dq(XMMRegister dst, XMMRegister src, int vector_len);
+
   // Convert vector long to vector FP
   void evcvtqq2ps(XMMRegister dst, XMMRegister src, int vector_len);
   void evcvtqq2pd(XMMRegister dst, XMMRegister src, int vector_len);
+
+  // Convert vector double to long
+  void evcvttpd2qq(XMMRegister dst, XMMRegister src, int vector_len);
 
   // Evex casts with truncation
   void evpmovwb(XMMRegister dst, XMMRegister src, int vector_len);
@@ -1504,12 +1510,15 @@ private:
 
   void kxnorbl(KRegister dst, KRegister src1, KRegister src2);
   void kshiftlbl(KRegister dst, KRegister src, int imm8);
+  void kshiftlql(KRegister dst, KRegister src, int imm8);
   void kshiftrbl(KRegister dst, KRegister src, int imm8);
   void kshiftrwl(KRegister dst, KRegister src, int imm8);
   void kshiftrdl(KRegister dst, KRegister src, int imm8);
   void kshiftrql(KRegister dst, KRegister src, int imm8);
   void ktestq(KRegister src1, KRegister src2);
   void ktestd(KRegister src1, KRegister src2);
+  void kunpckdql(KRegister dst, KRegister src1, KRegister src2);
+
 
   void ktestql(KRegister dst, KRegister src);
   void ktestdl(KRegister dst, KRegister src);
@@ -1860,6 +1869,7 @@ private:
   void popcntl(Register dst, Register src);
 
   void vpopcntd(XMMRegister dst, XMMRegister src, int vector_len);
+  void vpopcntq(XMMRegister dst, XMMRegister src, int vector_len);
 
 #ifdef _LP64
   void popcntq(Register dst, Address src);
@@ -2178,6 +2188,9 @@ private:
   void shrxq(Register dst, Register src1, Register src2);
 
   void bzhiq(Register dst, Register src1, Register src2);
+  void pdep(Register dst, Register src1, Register src2);
+  void pext(Register dst, Register src1, Register src2);
+
 
   //====================VECTOR ARITHMETIC=====================================
   // Add Packed Floating-Point Values
@@ -2400,6 +2413,12 @@ private:
   void evprorq(XMMRegister dst, KRegister mask, XMMRegister src, int shift, bool merge, int vector_len);
   void evprorvd(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
   void evprorvq(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
+
+  void evpternlogd(XMMRegister dst, int imm8, KRegister mask, XMMRegister src2, XMMRegister src3, bool merge, int vector_len);
+  void evpternlogd(XMMRegister dst, int imm8, KRegister mask, XMMRegister src2, Address src3, bool merge, int vector_len);
+  void evpternlogq(XMMRegister dst, int imm8, KRegister mask, XMMRegister src2, XMMRegister src3, bool merge, int vector_len);
+  void evpternlogq(XMMRegister dst, int imm8, KRegister mask, XMMRegister src2, Address src3, bool merge, int vector_len);
+
 
   // Sub packed integers
   void psubb(XMMRegister dst, XMMRegister src);
