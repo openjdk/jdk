@@ -1255,14 +1255,15 @@ public:
                              FloatRegister vtmp3, Register tmp4);
 
   void char_array_compress(Register src, Register dst, Register len,
-                           FloatRegister tmp1Reg, FloatRegister tmp2Reg,
-                           FloatRegister tmp3Reg, FloatRegister tmp4Reg,
-                           Register result);
+                           Register res,
+                           FloatRegister vtmp0, FloatRegister vtmp1,
+                           FloatRegister vtmp2, FloatRegister vtmp3);
 
   void encode_iso_array(Register src, Register dst,
-                        Register len, Register result,
-                        FloatRegister Vtmp1, FloatRegister Vtmp2,
-                        FloatRegister Vtmp3, FloatRegister Vtmp4);
+                        Register len, Register res, bool ascii,
+                        FloatRegister vtmp0, FloatRegister vtmp1,
+                        FloatRegister vtmp2, FloatRegister vtmp3);
+
   void fast_log(FloatRegister vtmp0, FloatRegister vtmp1, FloatRegister vtmp2,
                 FloatRegister vtmp3, FloatRegister vtmp4, FloatRegister vtmp5,
                 FloatRegister tmpC1, FloatRegister tmpC2, FloatRegister tmpC3,
