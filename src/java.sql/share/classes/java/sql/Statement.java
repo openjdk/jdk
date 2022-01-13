@@ -960,7 +960,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      *         object; {@code false} if it is an update count or there
      *         are no more results
      * @throws SQLException if a database access error occurs,
-     * this method is called on a closed {@code Statement},the
+     * this method is called on a closed {@code Statement}, the
      *          elements of the {@code String} array passed to this
      *          method are not valid column names, the method is called on a
      * {@code PreparedStatement} or {@code CallableStatement}
