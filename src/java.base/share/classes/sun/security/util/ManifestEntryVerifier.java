@@ -209,8 +209,8 @@ public class ManifestEntryVerifier {
         }
 
         CodeSigner[] entrySigners = sigFileSigners.get(name);
-        Map<String, Boolean> permittedAlgs =
-            permittedAlgsMap(signersToAlgs, entrySigners);
+        Map<String, Boolean> algsPermittedStatus =
+            algsPermittedStatusForSigners(signersToAlgs, entrySigners);
 
         // Flag that indicates if only disabled algorithms are used and jar
         // entry should be treated as unsigned.
@@ -221,14 +221,17 @@ public class ManifestEntryVerifier {
             String digestAlg = digest.getAlgorithm();
 
             // Check if this algorithm is permitted, skip if false.
-            if (permittedAlgs != null) {
-                Boolean permitted = permittedAlgs.get(digestAlg);
+            if (algsPermittedStatus != null) {
+                Boolean permitted = algsPermittedStatus.get(digestAlg);
                 if (permitted == null) {
                     if (params == null) {
                         params = new JarConstraintsParameters(entrySigners);
                     }
-                    if (!checkConstraints(digestAlg, permittedAlgs, params)) {
+                    if (!checkConstraints(digestAlg, params)) {
+                        algsPermittedStatus.put(digestAlg, Boolean.FALSE);
                         continue;
+                    } else {
+                        algsPermittedStatus.put(digestAlg, Boolean.TRUE);
                     }
                 } else if (!permitted) {
                     continue;
@@ -269,8 +272,8 @@ public class ManifestEntryVerifier {
         return signers;
     }
 
-    // Gets the permitted algs for the signers of this entry.
-    private static Map<String, Boolean> permittedAlgsMap(
+    // Gets the algorithms permitted status for the signers of this entry.
+    private static Map<String, Boolean> algsPermittedStatusForSigners(
             Map<CodeSigner[], Map<String, Boolean>> signersToAlgs,
             CodeSigner[] signers) {
         if (signers != null) {
@@ -287,19 +290,17 @@ public class ManifestEntryVerifier {
 
     // Checks the algorithm constraints against the signers of this entry.
     private boolean checkConstraints(String algorithm,
-        Map<String, Boolean> permittedAlgs, JarConstraintsParameters params) {
+        JarConstraintsParameters params) {
         try {
             params.setExtendedExceptionMsg(JarFile.MANIFEST_NAME,
                 name + " entry");
             DisabledAlgorithmConstraints.jarConstraints()
                    .permits(algorithm, params, false);
-            permittedAlgs.put(algorithm, Boolean.TRUE);
             return true;
         } catch (GeneralSecurityException e) {
             if (debug != null) {
                 debug.println("Digest algorithm is restricted: " + e);
             }
-            permittedAlgs.put(algorithm, Boolean.FALSE);
             return false;
         }
     }
