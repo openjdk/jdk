@@ -1425,31 +1425,37 @@ public final class DateTimeFormatterBuilder {
 
     //-----------------------------------------------------------------------
     /**
-     * Appends a localized pattern to the formatter using the requested pattern,
-     * locale, and chronology. The requested pattern is a series of fields (represented
-     * by typical pattern symbols) in a canonical order, which is based on {@code skeleton}
-     * in Unicode's LDML specification. For example, {@code yMMM} will format the date
-     * '2020-06-16' to 'Jun 2020' in the {@link Locale#US US locale}. Refer to
+     * Appends a localized pattern to the formatter using the requested template,
+     * locale, and chronology. The requested template is a series of typical pattern
+     * symbols in canonical order from the largest date or time unit to the smallest.
+     * The mapping of the requested template to the closest of the available localized
+     * formats is defined by the
      * <a href="https://www.unicode.org/reports/tr35/tr35-dates.html#availableFormats_appendItems">
-     * availableFormats</a> for more detail with regard to {@code skeleton}.
-     * @param requested the requested pattern to use, not null
+     * Unicode LDML specification</a>. The requested template is mapped to the closest
+     * available localized format skeleton that contains the requested date and time
+     * pattern symbols as described by LDML. For example, {@code yMMM} will format the
+     * date '2020-06-16' to 'Jun 2020' in the {@link Locale#US US locale}. If the
+     * localized pattern symbols for the given {@code requestedTemplate} is not
+     * available, {@code DateTimeException} is thrown.
+     * @param requestedTemplate the requested template to use, not null
      * @param locale the locale to use, not null
      * @param chrono the chronology to use, not null
      * @return this, for chaining, not null
-     * @throws IllegalArgumentException if {@code requested} is invalid
-     * @throws DateTimeException if the formatter for the given {@code requested} is not available
+     * @throws IllegalArgumentException if {@code requestedTemplate} is invalid
+     * @throws DateTimeException if a match for the localized pattern for
+     *      {@code requestedTemplate} is not available
      * @see #appendPattern(String)
      * @since 19
      */
-    public DateTimeFormatterBuilder appendLocalizedPattern(String requested, Locale locale, Chronology chrono) {
-        Objects.requireNonNull(requested, "requested");
+    public DateTimeFormatterBuilder appendLocalizedPattern(String requestedTemplate, Locale locale, Chronology chrono) {
+        Objects.requireNonNull(requestedTemplate, "requestedTemplate");
         Objects.requireNonNull(locale, "locale");
         Objects.requireNonNull(chrono, "chrono");
 
         Locale override = CalendarDataUtility.findRegionOverride(locale);
         LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(JavaTimeDateTimePatternProvider.class, override);
         JavaTimeDateTimePatternProvider provider = adapter.getJavaTimeDateTimePatternProvider();
-        parsePattern(provider.getJavaTimeDateTimePattern(requested,
+        parsePattern(provider.getJavaTimeDateTimePattern(requestedTemplate,
                                 chrono.getCalendarType(),
                                 CalendarDataUtility.findRegionOverride(override)));
         return this;

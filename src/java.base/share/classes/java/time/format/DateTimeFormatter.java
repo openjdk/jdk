@@ -81,7 +81,6 @@ import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.chrono.ChronoLocalDateTime;
-import java.time.chrono.ChronoZonedDateTime;
 import java.time.chrono.Chronology;
 import java.time.chrono.IsoChronology;
 import java.time.format.DateTimeFormatterBuilder.CompositePrinterParser;
@@ -720,39 +719,18 @@ public final class DateTimeFormatter {
 
     //-----------------------------------------------------------------------
     /**
-     * Creates a locale specific formatter derived from the requested pattern for the
-     * default locale. The requested pattern is a series of fields (represented
-     * by typical pattern symbols) in a canonical order, which is based on {@code skeleton}
-     * in Unicode's LDML specification. For example, {@code yMMM} will format the date
-     * '2020-06-16' to 'Jun 2020' in the {@link Locale#US US locale}. Refer to
+     * Creates a locale specific formatter derived from the requested template and
+     * the specified locale. The requested template is a series of typical pattern
+     * symbols in canonical order from the largest date or time unit to the smallest.
+     * The mapping of the requested template to the closest of the available localized
+     * formats is defined by the
      * <a href="https://www.unicode.org/reports/tr35/tr35-dates.html#availableFormats_appendItems">
-     * availableFormats</a> for more detail with regard to {@code skeleton}.
-     * <p>
-     * The formatter will use the {@link Locale#getDefault(Locale.Category) default FORMAT locale} and
-     * the chronology returned from {@link Chronology#ofLocale(Locale)} with that locale.
-     * <p>
-     * The returned formatter has no override zone.
-     * It uses {@link ResolverStyle#SMART SMART} resolver style.
-     *
-     * @param requested the requested pattern, not null
-     * @return the formatter based on the {@code requested} pattern, not null
-     * @throws IllegalArgumentException if {@code requested} is invalid
-     * @throws DateTimeException if the formatter for the given {@code requested} is not available
-     * @see #ofPattern(String)
-     * @since 19
-     */
-    public static DateTimeFormatter ofLocalizedPattern(String requested) {
-        return ofLocalizedPattern(requested, Locale.getDefault(Locale.Category.FORMAT));
-    }
-
-    /**
-     * Creates a locale specific formatter derived from the requested pattern and
-     * the specified locale. The requested pattern is a series of fields (represented
-     * by typical pattern symbols) in a canonical order, which is based on {@code skeleton}
-     * in Unicode's LDML specification. For example, {@code yMMM} will format the date
-     * '2020-06-16' to 'Jun 2020' in the {@link Locale#US US locale}. Refer to
-     * <a href="https://www.unicode.org/reports/tr35/tr35-dates.html#availableFormats_appendItems">
-     * availableFormats</a> for more detail with regard to {@code skeleton}.
+     * Unicode LDML specification</a>. The requested template is mapped to the closest
+     * available localized format skeleton that contains the requested date and time
+     * pattern symbols as described by LDML. For example, {@code yMMM} will format the
+     * date '2020-06-16' to 'Jun 2020' in the {@link Locale#US US locale}. If the
+     * localized pattern symbols for the given {@code requestedTemplate} is not
+     * available, {@code DateTimeException} is thrown.
      * <p>
      * The formatter will use the specified locale and
      * the chronology returned from {@link Chronology#ofLocale(Locale)} with that locale.
@@ -760,19 +738,40 @@ public final class DateTimeFormatter {
      * The returned formatter has no override zone.
      * It uses {@link ResolverStyle#SMART SMART} resolver style.
      *
-     * @param requested the requested pattern, not null
+     * @param requestedTemplate the requested template, not null
      * @param locale the locale to use, not null
-     * @return the formatter based on the {@code requested} pattern, not null
-     * @throws IllegalArgumentException if {@code requested} is invalid
-     * @throws DateTimeException if the formatter for the given {@code requested} is not available
+     * @return the formatter based on the {@code requestedTemplate} pattern, not null
+     * @throws IllegalArgumentException if {@code requestedTemplate} is invalid
+     * @throws DateTimeException if a match for the localized pattern for
+     *      {@code requestedTemplate} is not available
      * @see #ofPattern(String, Locale)
      * @since 19
      */
-    public static DateTimeFormatter ofLocalizedPattern(String requested, Locale locale) {
+    public static DateTimeFormatter ofLocalizedPattern(String requestedTemplate, Locale locale) {
         Chronology chrono = Chronology.ofLocale(locale);
-        return new DateTimeFormatterBuilder().appendLocalizedPattern(requested, locale, chrono)
+        return new DateTimeFormatterBuilder().appendLocalizedPattern(requestedTemplate, locale, chrono)
                 .toFormatter(ResolverStyle.SMART, chrono)
                 .withLocale(locale);
+    }
+
+    /**
+     * Creates a locale specific formatter derived from the requested template for the
+     * {@link Locale#getDefault(Locale.Category) default locale}. This is equivalent to
+     * {@snippet :
+     *      DateTimeFormatter.ofLocalizedPattern(requestedTemplate,
+     *          Locale.getDefault(Locale.Category.FORMAT));
+     * }
+     *
+     * @param requestedTemplate the requested template, not null
+     * @return the formatter based on the {@code requestedTemplate} pattern, not null
+     * @throws IllegalArgumentException if {@code requestedTemplate} is invalid
+     * @throws DateTimeException if a match for the localized pattern for
+     *      {@code requestedTemplate} is not available
+     * @see #ofPattern(String)
+     * @since 19
+     */
+    public static DateTimeFormatter ofLocalizedPattern(String requestedTemplate) {
+        return ofLocalizedPattern(requestedTemplate, Locale.getDefault(Locale.Category.FORMAT));
     }
 
     //-----------------------------------------------------------------------
