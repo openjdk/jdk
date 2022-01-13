@@ -823,8 +823,7 @@ public final class Files {
      * names in the same manner as the {@link
      * java.io.File#createTempFile(String,String,File)} method.
      *
-     * <p> The resulting file should be deleted once it is no longer needed.
-     * The file may be opened using the {@link
+     * <p> The file may be opened using the {@link
      * StandardOpenOption#DELETE_ON_CLOSE DELETE_ON_CLOSE} option so that the
      * file is deleted when the appropriate {@code close} method is invoked
      * either explicitly or via a try-with-resources statement. Alternatively,
