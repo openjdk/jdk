@@ -3219,7 +3219,8 @@ void SharedRuntime::montgomery_multiply(jint *a_ints, jint *b_ints, jint *n_ints
   // Make very sure we don't use so much space that the stack might
   // overflow. 512 jints corresponds to an 16384-bit integer and
   // will use here a total of 8k bytes of stack space.
-  guarantee(longwords <= 256, "must be");
+  int divisor = sizeof(unsigned long) * 4;
+  guarantee(longwords <= 8192 / divisor, "must be");
   int total_allocation = longwords * sizeof (unsigned long) * 4;
   unsigned long *scratch = (unsigned long *)alloca(total_allocation);
 
@@ -3249,7 +3250,8 @@ void SharedRuntime::montgomery_square(jint *a_ints, jint *n_ints,
   // Make very sure we don't use so much space that the stack might
   // overflow. 512 jints corresponds to an 16384-bit integer and
   // will use here a total of 6k bytes of stack space.
-  guarantee(longwords <= 341, "must be");
+  int divisor = sizeof(unsigned long) * 3;
+  guarantee(longwords <= (8192 / divisor), "must be");
   int total_allocation = longwords * sizeof (unsigned long) * 3;
   unsigned long *scratch = (unsigned long *)alloca(total_allocation);
 
