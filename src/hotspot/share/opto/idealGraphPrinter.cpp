@@ -706,15 +706,12 @@ Node* IdealGraphPrinter::get_load_node(const Node* node) {
   if (addr != NULL && addr->is_AddP()) {
     Node* base = addr->as_AddP()->base_node();
     if (base != NULL) {
-      if (base->Opcode() == Op_CastPP) {
-        // CastPP node could have been removed.
-        base = base->in(1);
-      }
+      base = base->uncast();
       if (base->is_Load()) {
-        // Mem(AddP([CastPP](LoadP))) for non-compressed oops.
+        // Mem(AddP([ConstraintCast*](LoadP))) for non-compressed oops.
         load = base;
       } else if (base->is_DecodeN() && base->in(1)->is_Load()) {
-        // Mem(AddP([CastPP](DecodeN(LoadN)))) for compressed oops.
+        // Mem(AddP([ConstraintCast*](DecodeN(LoadN)))) for compressed oops.
         load = base->in(1);
       }
     }
