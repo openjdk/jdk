@@ -2095,10 +2095,19 @@ enum Nf {
 //    but most of time we have no need to explicitly use these instructions.
 // 3. 'CompressibleRegion' is introduced to hint instructions in this Region's RTTI range
 //    are qualified to be compressed with their 2-byte versions.
+//    'IncompressibleRegion' hints instructions to remain their 4-byte forms.
 //    An example:
 //
 //      CompressibleRegion cr(_masm);
-//      __ andr(...);      // this instruction could change to c.and if able to
+//      __ andr(...);       // this instruction could change to 'c.and' if able to
+//      {
+//         IncompressibleRegion ir(_masm);
+//         __ andr(...);    // this instruction should not be compressed
+//         {
+//            CompressibleRegion cr(_masm);
+//            __ andr(...); // this instruction could change to 'c.and' if able to
+//         }
+//      }
 //
 // 4. Using -XX:PrintAssemblyOptions=no-aliases could distinguish RVC instructions from
 //    normal ones.
@@ -2111,18 +2120,33 @@ public:
   void set_in_compressible_region(bool b) { _in_compressible_region = b; }
 public:
 
-  // a compressible region
-  class CompressibleRegion : public StackObj {
+  // an abstract compressible region
+  class AbstractCompressibleRegion : public StackObj {
   protected:
     Assembler *_masm;
     bool _saved_in_compressible_region;
-  public:
-    CompressibleRegion(Assembler *_masm)
+  protected:
+    AbstractCompressibleRegion(Assembler *_masm)
     : _masm(_masm)
-    , _saved_in_compressible_region(_masm->in_compressible_region()) {
+    , _saved_in_compressible_region(_masm->in_compressible_region()) {}
+  };
+  // a compressible region
+  class CompressibleRegion : public AbstractCompressibleRegion {
+  public:
+    CompressibleRegion(Assembler *_masm) : AbstractCompressibleRegion(_masm) {
       _masm->set_in_compressible_region(true);
     }
     ~CompressibleRegion() {
+      _masm->set_in_compressible_region(_saved_in_compressible_region);
+    }
+  };
+  // an incompressible region
+  class IncompressibleRegion : public AbstractCompressibleRegion {
+  public:
+    IncompressibleRegion(Assembler *_masm) : AbstractCompressibleRegion(_masm) {
+      _masm->set_in_compressible_region(false);
+    }
+    ~IncompressibleRegion() {
       _masm->set_in_compressible_region(_saved_in_compressible_region);
     }
   };
