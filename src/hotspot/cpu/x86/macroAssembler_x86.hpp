@@ -722,7 +722,6 @@ class MacroAssembler: public Assembler {
   void cmpptr(Address src1, AddressLiteral src2);
 
   void cmpptr(Register src1, AddressLiteral src2);
-  void cmpptr(Register src1, address src2);
 
   void cmpptr(Register src1, Register src2) { LP64_ONLY(cmpq(src1, src2)) NOT_LP64(cmpl(src1, src2)) ; }
   void cmpptr(Register src1, Address src2) { LP64_ONLY(cmpq(src1, src2)) NOT_LP64(cmpl(src1, src2)) ; }

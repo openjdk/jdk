@@ -1805,27 +1805,6 @@ void MacroAssembler::cmpptr(Register src1, AddressLiteral src2) {
 #endif // _LP64
 }
 
-void MacroAssembler::cmpptr(Register src1, address src2) {
-  auto addr2 = ExternalAddress((address)CompressedOops::ptrs_base_addr());
-  assert(!addr2.is_lval(), "should not be lval");
-#ifdef _LP64
-  if (reachable(addr2)) {
-    cmpq(src1, as_Address(addr2));
-  } else {
-    push(rscratch1);
-    lea(rscratch1, addr2);
-    Assembler::cmpq(src1, Address(rscratch1, 0));
-    pop(rscratch1);
-  }
-#else
-  if (addr2.is_lval()) {
-    cmp_literal32(src1, (int32_t) addr2.target(), addr2.rspec());
-  } else {
-    cmpl(src1, as_Address(addr2));
-  }
-#endif // _LP64
-}
-
 void MacroAssembler::cmpptr(Address src1, AddressLiteral src2) {
   assert(src2.is_lval(), "not a mem-mem compare");
 #ifdef _LP64
@@ -4651,10 +4630,23 @@ void MacroAssembler::verify_heapbase(const char* msg) {
   assert (Universe::heap() != NULL, "java heap should be initialized");
   if (CheckCompressedOops) {
     Label ok;
-    cmpptr(r12_heapbase, (address)CompressedOops::ptrs_base_addr());
+#ifdef _LP64
+    const auto src2 = ExternalAddress((address)CompressedOops::ptrs_base_addr());
+    assert(!src2.is_lval(), "should not be lval");
+    const bool is_src2_reachable = reachable(src2);
+    if (!is_src2_reachable) {
+      push(rscratch1);  // cmpptr trashes rscratch1
+    }
+#endif
+    cmpptr(r12_heapbase, src2);
     jcc(Assembler::equal, ok);
     STOP(msg);
     bind(ok);
+#ifdef _LP64
+    if (!is_src2_reachable) {
+      pop(rscratch1);
+    }
+#endif
   }
 }
 #endif
