@@ -274,7 +274,7 @@ public final class JFC {
         }
         throw new NoSuchFileException("Could not locate configuration with name " + name);
     }
-    
+
     public static Reader newReader(SafePath sf) throws IOException {
         for (KnownConfiguration c : getKnownConfigurations()) {
             if (c.path.equals(sf)) {
