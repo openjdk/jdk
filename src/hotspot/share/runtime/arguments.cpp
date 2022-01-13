@@ -3140,6 +3140,17 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
     DynamicDumpSharedSpaces = true;
   }
 
+  if (AutoCreateSharedArchive) {
+    if (SharedArchiveFile == NULL) {
+      log_warning(cds)("-XX:+AutoCreateSharedArchive requires -XX:SharedArchiveFile");
+      return JNI_ERR;
+    }
+    if (ArchiveClassesAtExit != NULL) {
+      log_warning(cds)("-XX:+AutoCreateSharedArchive does not work with ArchiveClassesAtExit");
+      return JNI_ERR;
+    }
+  }
+
   if (UseSharedSpaces && patch_mod_javabase) {
     no_shared_spaces("CDS is disabled when " JAVA_BASE_NAME " module is patched.");
   }
@@ -3487,9 +3498,6 @@ void Arguments::extract_shared_archive_paths(const char* archive_path,
   char* cur_path = NEW_C_HEAP_ARRAY(char, len + 1, mtInternal);
   strncpy(cur_path, begin_ptr, len);
   cur_path[len] = '\0';
-  if (!FileMapInfo::check_archive((const char*)cur_path, true /*is_static*/)) {
-    return;
-  }
   *base_archive_path = cur_path;
 
   begin_ptr = ++end_ptr;
@@ -3501,9 +3509,6 @@ void Arguments::extract_shared_archive_paths(const char* archive_path,
   len = end_ptr - begin_ptr;
   cur_path = NEW_C_HEAP_ARRAY(char, len + 1, mtInternal);
   strncpy(cur_path, begin_ptr, len + 1);
-  if (!FileMapInfo::check_archive((const char*)cur_path, false /*is_static*/)) {
-    return;
-  }
   *top_archive_path = cur_path;
 }
 
@@ -3556,7 +3561,16 @@ void Arguments::init_shared_archive_paths() {
         bool success =
           FileMapInfo::get_base_archive_name_from_header(SharedArchiveFile, &base_archive_path);
         if (!success) {
-          no_shared_spaces("invalid archive");
+          // If +AutoCreateSharedArchive and the specified shared archive does not exist,
+          // regenerate the dynamic archive base on default archive.
+          if (AutoCreateSharedArchive && !os::file_exists(SharedArchiveFile)) {
+            DynamicDumpSharedSpaces = true;
+            ArchiveClassesAtExit = const_cast<char *>(SharedArchiveFile);
+            SharedArchivePath = get_default_shared_archive_path();
+            SharedArchiveFile = nullptr;
+          } else {
+            no_shared_spaces("invalid archive");
+          }
         } else if (base_archive_path == NULL) {
           // User has specified a single archive, which is a static archive.
           SharedArchivePath = const_cast<char *>(SharedArchiveFile);
