@@ -89,6 +89,11 @@ protected:
   void flip_age_pages(const ZRelocationSetSelector* selector);
   void flip_age_pages(const ZArray<ZPage*>* pages);
 
+  void mark_free();
+
+  void select_relocation_set(bool promote_all);
+  void reset_relocation_set();
+
   ZGeneration(ZGenerationId id, ZPageTable* page_table, ZPageAllocator* page_allocator);
 
   void log_phase_switch(Phase from, Phase to);
@@ -146,7 +151,6 @@ public:
 
   ZPageTable* page_table() const;
   const ZForwardingTable* forwarding_table() const;
-
   ZForwarding* forwarding(zaddress_unsafe addr) const;
 
   // Marking
@@ -155,11 +159,6 @@ public:
   template <bool resurrect, bool gc_thread, bool follow, bool finalizable>
   void mark_object_if_active(zaddress addr);
   void mark_flush_and_free(Thread* thread);
-  void mark_free();
-
-  // Relocation set
-  void select_relocation_set(bool promote_all);
-  void reset_relocation_set();
 
   // Relocation
   void synchronize_relocation();
@@ -185,18 +184,22 @@ public:
 };
 
 class ZGenerationYoung : public ZGeneration {
+  friend class VM_ZMarkStartYoungAndOld;
+  friend class VM_ZMarkStartYoung;
+  friend class VM_ZMarkEndYoung;
+  friend class VM_ZRelocateStartYoung;
   friend class ZYoungTypeSetter;
 
 private:
   ZYoungType  _active_type;
   ZRemembered _remembered;
 
-public:
-  ZGenerationYoung(ZPageTable* page_table, ZPageAllocator* page_allocator);
-
-  ZYoungType type() const;
-
-  void collect(ZYoungType type, ConcurrentGCTimer* timer);
+  void mark_start();
+  void mark_roots();
+  void mark_follow();
+  bool mark_end();
+  void relocate_start();
+  void relocate();
 
   void pause_mark_start();
   void concurrent_mark();
@@ -208,17 +211,12 @@ public:
   void pause_relocate_start();
   void concurrent_relocate();
 
-  // Marking
+public:
+  ZGenerationYoung(ZPageTable* page_table, ZPageAllocator* page_allocator);
 
-  void mark_start();
-  void mark_roots();
-  void mark_follow();
-  bool mark_end();
+  ZYoungType type() const;
 
-  // Relocation
-
-  void relocate_start();
-  void relocate();
+  void collect(ZYoungType type, ConcurrentGCTimer* timer);
 
   void flip_promote(ZPage* from_page, ZPage* to_page);
   void in_place_relocate_promote(ZPage* from_page, ZPage* to_page);
@@ -227,7 +225,6 @@ public:
   void register_in_place_relocate_promoted(ZPage* page);
 
   // Remembered set
-
   void remember(volatile zpointer* p);
   void remember_fields(zaddress addr);
 
@@ -237,25 +234,30 @@ public:
   // Scan all remembered sets
   void scan_remembered_sets();
 
-  // Save the current remembered sets,
-  // and switch over to empty remembered sets.
-  void flip_remembered_sets();
-
   // Verification
   bool is_remembered(volatile zpointer* p) const;
 };
 
 class ZGenerationOld : public ZGeneration {
+  friend class VM_ZMarkStartYoungAndOld;
+  friend class VM_ZMarkEndOld;
+  friend class VM_ZRelocateStartOld;
+
 private:
   ZReferenceProcessor _reference_processor;
   ZWeakRootsProcessor _weak_roots_processor;
   ZUnload             _unload;
   int                 _total_collections_at_end;
 
-public:
-  ZGenerationOld(ZPageTable* page_table, ZPageAllocator* page_allocator);
-
-  void collect(ConcurrentGCTimer* timer);
+  void mark_start();
+  void mark_roots();
+  void mark_follow();
+  bool mark_end();
+  void process_non_strong_references();
+  void relocate_start();
+  void relocate();
+  void remap_roots();
+  void remap_remembered_sets();
 
   void concurrent_mark();
   bool pause_mark_end();
@@ -269,22 +271,14 @@ public:
   void concurrent_relocate();
   void concurrent_remap_roots();
 
+public:
+  ZGenerationOld(ZPageTable* page_table, ZPageAllocator* page_allocator);
+
+  void collect(ConcurrentGCTimer* timer);
+
   // Reference processing
   ReferenceDiscoverer* reference_discoverer();
   void set_soft_reference_policy(bool clear);
-
-  // Non-strong reference processing
-  void process_non_strong_references();
-
-  // GC operations
-  void mark_start();
-  void mark_roots();
-  void mark_follow();
-  bool mark_end();
-  void relocate_start();
-  void relocate();
-  void remap_roots();
-  void remap_remembered_sets();
 
   int total_collections_at_end() const;
 };

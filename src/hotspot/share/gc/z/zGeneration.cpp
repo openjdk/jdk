@@ -666,7 +666,7 @@ void ZGenerationYoung::mark_start() {
   _mark.start();
 
   // Flip remembered set bits
-  flip_remembered_sets();
+  _remembered.flip();
 
   // Update statistics
   stat_heap()->at_mark_start(_page_allocator->stats(this));
@@ -756,10 +756,6 @@ void ZGenerationYoung::register_in_place_relocate_promoted(ZPage* page) {
 void ZGenerationYoung::scan_remembered_sets() {
   ZStatTimerYoung timer(ZSubPhaseConcurrentMarkRememberedSetYoung);
   _remembered.scan();
-}
-
-void ZGenerationYoung::flip_remembered_sets() {
-  _remembered.flip();
 }
 
 ZGenerationOld::ZGenerationOld(ZPageTable* page_table, ZPageAllocator* page_allocator) :
