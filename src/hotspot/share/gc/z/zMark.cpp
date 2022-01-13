@@ -262,7 +262,7 @@ void ZMark::follow_partial_array(ZMarkStackEntry entry, bool finalizable) {
 }
 
 template <bool finalizable, bool young>
-class ZMarkBarrierOldGenOopClosure : public ClaimMetadataVisitingOopIterateClosure {
+class ZMarkBarrierOldOopClosure : public ClaimMetadataVisitingOopIterateClosure {
 private:
   static int claim_value() {
     return finalizable ? ClassLoaderData::_claim_finalizable
@@ -285,7 +285,7 @@ private:
   const bool _visit_metadata;
 
 public:
-  ZMarkBarrierOldGenOopClosure() :
+  ZMarkBarrierOldOopClosure() :
       ClaimMetadataVisitingOopIterateClosure(claim_value(),
                                              discoverer()),
       _visit_metadata(visit_metadata()) {}
@@ -311,10 +311,10 @@ public:
 void ZMark::follow_array_object(objArrayOop obj, bool finalizable) {
   if (_generation->is_old()) {
     if (finalizable) {
-      ZMarkBarrierOldGenOopClosure<true /* finalizable */, false /* young */> cl;
+      ZMarkBarrierOldOopClosure<true /* finalizable */, false /* young */> cl;
       cl.do_klass(obj->klass());
     } else {
-      ZMarkBarrierOldGenOopClosure<false /* finalizable */, false /* young */> cl;
+      ZMarkBarrierOldOopClosure<false /* finalizable */, false /* young */> cl;
       cl.do_klass(obj->klass());
     }
   }
@@ -332,10 +332,10 @@ void ZMark::follow_object(oop obj, bool finalizable) {
   if (_generation->is_old()) {
     if (ZHeap::heap()->is_old(to_zaddress(obj))) {
       if (finalizable) {
-        ZMarkBarrierOldGenOopClosure<true /* finalizable */, false /* young */> cl;
+        ZMarkBarrierOldOopClosure<true /* finalizable */, false /* young */> cl;
         ZIterator::oop_iterate(obj, &cl);
       } else {
-        ZMarkBarrierOldGenOopClosure<false /* finalizable */, false /* young */> cl;
+        ZMarkBarrierOldOopClosure<false /* finalizable */, false /* young */> cl;
         ZIterator::oop_iterate(obj, &cl);
       }
     } else {
@@ -343,7 +343,7 @@ void ZMark::follow_object(oop obj, bool finalizable) {
     }
   } else {
     // Young gen must help out with old marking
-    ZMarkBarrierOldGenOopClosure<false /* finalizable */, true /* young */> cl;
+    ZMarkBarrierOldOopClosure<false /* finalizable */, true /* young */> cl;
     ZIterator::oop_iterate(obj, &cl);
   }
 }
@@ -742,24 +742,23 @@ public:
   }
 };
 
-typedef ClaimingCLDToOopClosure<ClassLoaderData::_claim_strong> ZMarkOldGenCLDClosure;
+typedef ClaimingCLDToOopClosure<ClassLoaderData::_claim_strong> ZMarkOldCLDClosure;
 
-class ZMarkOldGenRootsTask : public ZTask {
+class ZMarkOldRootsTask : public ZTask {
 private:
   ZMark* const                  _mark;
   ZRootsIteratorStrongColored   _roots_colored;
   ZRootsIteratorStrongUncolored _roots_uncolored;
 
   ZMarkOopClosure               _cl_colored;
-  ZMarkOldGenCLDClosure         _cld_cl;
+  ZMarkOldCLDClosure            _cld_cl;
 
   ZMarkThreadClosure            _thread_cl;
   ZMarkNMethodClosure           _nm_cl;
 
-
 public:
-  ZMarkOldGenRootsTask(ZMark* mark) :
-      ZTask("ZMarkOldGenRootsTask"),
+  ZMarkOldRootsTask(ZMark* mark) :
+      ZTask("ZMarkOldRootsTask"),
       _mark(mark),
       _roots_colored(),
       _roots_uncolored(),
@@ -770,7 +769,7 @@ public:
     ClassLoaderDataGraph_lock->lock();
   }
 
-  ~ZMarkOldGenRootsTask() {
+  ~ZMarkOldRootsTask() {
     ClassLoaderDataGraph_lock->unlock();
   }
 
@@ -795,23 +794,23 @@ public:
   }
 };
 
-typedef ClaimingCLDToOopClosure<ClassLoaderData::_claim_none> ZMarkYoungGenCLDClosure;
+typedef ClaimingCLDToOopClosure<ClassLoaderData::_claim_none> ZMarkYoungCLDClosure;
 
-class ZMarkYoungGenRootsTask : public ZTask {
+class ZMarkYoungRootsTask : public ZTask {
 private:
   ZMark* const               _mark;
   ZRootsIteratorAllColored   _roots_colored;
   ZRootsIteratorAllUncolored _roots_uncolored;
 
   ZMarkYoungOopClosure       _cl_colored;
-  ZMarkYoungGenCLDClosure    _cld_cl;
+  ZMarkYoungCLDClosure       _cld_cl;
 
   ZMarkThreadClosure         _thread_cl;
   ZMarkYoungNMethodClosure   _nm_cl;
 
 public:
-  ZMarkYoungGenRootsTask(ZMark* mark) :
-      ZTask("ZMarkYoungGenRootsTask"),
+  ZMarkYoungRootsTask(ZMark* mark) :
+      ZTask("ZMarkYoungRootsTask"),
       _mark(mark),
       _roots_colored(),
       _roots_uncolored(),
@@ -822,7 +821,7 @@ public:
     ClassLoaderDataGraph_lock->lock();
   }
 
-  ~ZMarkYoungGenRootsTask() {
+  ~ZMarkYoungRootsTask() {
     ClassLoaderDataGraph_lock->unlock();
   }
 
@@ -882,13 +881,13 @@ void ZMark::mark_roots() {
   SuspendibleThreadSetJoiner sts_joiner;
 
   if (_generation->is_old()) {
-    ZMarkOldGenRootsTask task(this);
+    ZMarkOldRootsTask task(this);
     workers()->run(&task);
   } else {
     // Mark from old-to-young pointers
     ZGeneration::young()->scan_remembered_sets();
 
-    ZMarkYoungGenRootsTask task(this);
+    ZMarkYoungRootsTask task(this);
     workers()->run(&task);
   }
 }
