@@ -38,7 +38,7 @@ public class SharedLoopHeader {
     private static final int size = 1000;
     private static final boolean branch[] = new boolean[size];
     private static final int count[] = new int[size];
-    
+
     @Setup
     public void setup() {
         for (int i = 0; i < branch.length; i++) {
@@ -61,5 +61,5 @@ public class SharedLoopHeader {
             i += 2;
         }
     }
-    
+
 }
