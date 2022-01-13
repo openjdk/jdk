@@ -2315,8 +2315,36 @@ void Scheduling::AddNodeToAvailableList(Node *n) {
   }
 #endif
 
+  int latency = _current_latency[n->_idx];
+
+  // Insert in latency order (insertion sort)
+  uint i;
+  for ( i=0; i < _available.size(); i++ )
+    if (_current_latency[_available[i]->_idx] > latency)
+      break;
+
+  // Special Check for compares following branches
+  if( n->is_Mach() && _scheduled.size() > 0 ) {
+    int op = n->as_Mach()->ideal_Opcode();
+    Node *last = _scheduled[0];
+    if( last->is_MachIf() && last->in(1) == n &&
+        ( op == Op_CmpI ||
+          op == Op_CmpU ||
+          op == Op_CmpUL ||
+          op == Op_CmpP ||
+          op == Op_CmpF ||
+          op == Op_CmpD ||
+          op == Op_CmpL ) ) {
+
+      // Recalculate position, moving to front of same latency
+      for ( i=0 ; i < _available.size(); i++ )
+        if (_current_latency[_available[i]->_idx] >= latency)
+          break;
+    }
+  }
+
   // Insert the node in the available list
-  _available.insert(_available.size(), n);
+  _available.insert(i, n);
 
 #ifndef PRODUCT
   if (_cfg->C->trace_opto_output())
