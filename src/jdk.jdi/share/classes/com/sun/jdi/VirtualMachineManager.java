@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,7 @@ import com.sun.jdi.event.VMStartEvent;
  * {@code -agentlib:jdwp=transport=xxx,server=y}
  * </LI>
  * <LI>
- * Target VM generates and outputs the tranport-specific address at which it will
+ * Target VM generates and outputs the transport-specific address at which it will
  * listen for a connection.</LI>
  * <LI>
  * Debugger is launched. Debugger selects a connector in the list
@@ -158,7 +158,7 @@ import com.sun.jdi.event.VMStartEvent;
  * </LI>
  * <LI>
  * Later, an uncaught exception is thrown in the target VM. The target
- * VM generates the tranport-specific address at which it will
+ * VM generates the transport-specific address at which it will
  * listen for a connection.
  * <LI>Target VM launches the debugger with the following items concatenated
  * together (separated by spaces) to form the command line:
