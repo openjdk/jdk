@@ -123,6 +123,10 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
     private static int   currentCDSVersion = CDSArchiveUtils.getCurrentCDSArchiveVersion();
 
     public static void main(String[] args) throws Exception {
+        if (isUseSharedSpacesDisabled()) {
+            System.out.println("This test is not applicable when JTREG tests are executed with -Xshare:off, or if the JDK doesn't have a default archive.");
+            return;
+        }
         if (args.length != 1 || (!args[0].equals("verifySharedSpacesOff") && !args[0].equals("verifySharedSpacesOn"))) {
             throw new RuntimeException("Must run with verifySharedSpacesOff or verifySharedSpacesOn");
         }

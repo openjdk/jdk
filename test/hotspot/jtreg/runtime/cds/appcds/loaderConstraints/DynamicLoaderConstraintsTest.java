@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,11 @@ public class DynamicLoaderConstraintsTest extends DynamicArchiveTestBase {
     static boolean useZGC;
 
     public static void main(String[] args) throws Exception {
+        if (isUseSharedSpacesDisabled()) {
+            System.out.println("This test is not applicable when JTREG tests are executed with -Xshare:off, or if the JDK doesn't have a default archive.");
+            return;
+        }
+
         useCustomLoader = (args.length != 0);
         useZGC = (args.length != 0 && args[0].equals("custom-zgc"));
         runTest(DynamicLoaderConstraintsTest::doTest);
@@ -130,7 +135,7 @@ public class DynamicLoaderConstraintsTest extends DynamicArchiveTestBase {
   static void doTest(boolean errorInDump) throws Exception  {
         for (int i = 1; i <= 3; i++) {
             System.out.println("========================================");
-            System.out.println("errorInDump: " + errorInDump + ", useCustomLoader: " + useCustomLoader + ", case: " + i);
+            System.out.println("errorInDump: " + errorInDump + ", useCustomLoader: " + useCustomLoader + ", useZGC: " + useZGC + ", case: " + i);
             System.out.println("========================================");
             String topArchiveName = getNewArchiveName();
             String testCase = Integer.toString(i);
