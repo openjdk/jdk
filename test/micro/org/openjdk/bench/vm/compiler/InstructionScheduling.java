@@ -28,17 +28,18 @@ import org.openjdk.jmh.annotations.Benchmark;
 public class InstructionScheduling {
 
     public static final int N = 20000;
+    public static final int Ival = 2;
     public static final double fval = 2.00;
     public static double[] D = new double[N];
     public static int[] I = new int[N];
 
     @Benchmark
-    public void testMethod(){
+    public void testMethod() {
         for (int i = 0; i < N; i++) {
             D[i] += D[i] * fval;
             D[i] += D[i] / fval;
-            I[i] += I[i] * 2;
-            I[i] += I[i] / 2;
+            I[i] += I[i] * Ival;
+            I[i] += I[i] / Ival;
         }
     }
 }
