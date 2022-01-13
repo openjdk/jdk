@@ -1196,7 +1196,6 @@ public:
       _cld_cl(&_cl_colored),
       _thread_cl(),
       _nm_cl() {
-    // FIXME: Needed?
     ClassLoaderDataGraph_lock->lock();
   }
 
