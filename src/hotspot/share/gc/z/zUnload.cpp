@@ -40,8 +40,8 @@
 #include "memory/metaspaceUtils.hpp"
 #include "oops/access.inline.hpp"
 
-static const ZStatSubPhase ZSubPhaseConcurrentClassesUnlink("Concurrent Classes Unlink (Old)");
-static const ZStatSubPhase ZSubPhaseConcurrentClassesPurge("Concurrent Classes Purge (Old)");
+static const ZStatSubPhase ZSubPhaseConcurrentClassesUnlink("Old: Concurrent Classes Unlink");
+static const ZStatSubPhase ZSubPhaseConcurrentClassesPurge("Old: Concurrent Classes Purge");
 
 class ZIsUnloadingOopClosure : public OopClosure {
 private:

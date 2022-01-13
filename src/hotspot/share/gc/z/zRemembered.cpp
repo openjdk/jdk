@@ -35,8 +35,8 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"
 
-static const ZStatSubPhase ZSubPhaseConcurrentMarkRootRemsetForwardingYoung("Concurrent Mark Root Remset Forw (Young)");
-static const ZStatSubPhase ZSubPhaseConcurrentMarkRootRemsetPageYoung("Concurrent Mark Root Remset Page (Young)");
+static const ZStatSubPhase ZSubPhaseConcurrentMarkRootRemsetForwardingYoung("Young: Concurrent Mark Root Remset Forw");
+static const ZStatSubPhase ZSubPhaseConcurrentMarkRootRemsetPageYoung("Young: Concurrent Mark Root Remset Page");
 
 ZRemembered::ZRemembered(ZPageTable* page_table, ZPageAllocator* page_allocator) :
     _page_table(page_table),

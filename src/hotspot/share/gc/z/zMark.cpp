@@ -69,10 +69,10 @@
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/ticks.hpp"
 
-static const ZStatSubPhase ZSubPhaseConcurrentMarkRootUncoloredYoung("Concurrent Mark Root Uncolored (Young)");
-static const ZStatSubPhase ZSubPhaseConcurrentMarkRootColoredYoung("Concurrent Mark Root Colored (Young)");
-static const ZStatSubPhase ZSubPhaseConcurrentMarkRootUncoloredOld("Concurrent Mark Root Uncolored (Old)");
-static const ZStatSubPhase ZSubPhaseConcurrentMarkRootColoredOld("Concurrent Mark Root Colored (Old)");
+static const ZStatSubPhase ZSubPhaseConcurrentMarkRootUncoloredYoung("Young: Concurrent Mark Root Uncolored");
+static const ZStatSubPhase ZSubPhaseConcurrentMarkRootColoredYoung("Young: Concurrent Mark Root Colored");
+static const ZStatSubPhase ZSubPhaseConcurrentMarkRootUncoloredOld("Old: Concurrent Mark Root Uncolored");
+static const ZStatSubPhase ZSubPhaseConcurrentMarkRootColoredOld("Old: Concurrent Mark Root Colored");
 
 ZMark::ZMark(ZGeneration* generation, ZPageTable* page_table) :
     _generation(generation),

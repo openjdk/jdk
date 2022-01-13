@@ -61,43 +61,43 @@
 #include "utilities/events.hpp"
 
 static const ZStatPhaseGeneration ZPhaseGenerationYoung[] {
-  ZStatPhaseGeneration("Young Generation (Minor)", ZGenerationId::young),
-  ZStatPhaseGeneration("Young Generation (Major Preclean)", ZGenerationId::young),
-  ZStatPhaseGeneration("Young Generation (Major Roots)", ZGenerationId::young)
+  ZStatPhaseGeneration("Young: Generation Collection (Minor)", ZGenerationId::young),
+  ZStatPhaseGeneration("Young: Generation Collection (Major Preclean)", ZGenerationId::young),
+  ZStatPhaseGeneration("Young: Generation Collection (Major Roots)", ZGenerationId::young)
 };
 
-static const ZStatPhaseGeneration ZPhaseGenerationOld("Old Generation (Major)", ZGenerationId::old);
+static const ZStatPhaseGeneration ZPhaseGenerationOld("Old: Generation Collection (Major)", ZGenerationId::old);
 
-static const ZStatPhasePause      ZPhasePauseMarkStartYoung("Pause Mark Start (Young)");
-static const ZStatPhasePause      ZPhasePauseMarkStartYoungAndOld("Pause Mark Start (Young + Old)");
-static const ZStatPhaseConcurrent ZPhaseConcurrentMarkYoung("Concurrent Mark (Young)");
-static const ZStatPhaseConcurrent ZPhaseConcurrentMarkContinueYoung("Concurrent Mark Continue (Young)");
-static const ZStatPhasePause      ZPhasePauseMarkEndYoung("Pause Mark End (Young)");
-static const ZStatPhaseConcurrent ZPhaseConcurrentMarkFreeYoung("Concurrent Mark Free (Young)");
-static const ZStatPhaseConcurrent ZPhaseConcurrentResetRelocationSetYoung("Concurrent Reset Relocation Set (Young)");
-static const ZStatPhaseConcurrent ZPhaseConcurrentSelectRelocationSetYoung("Concurrent Select Relocation Set (Young)");
-static const ZStatPhasePause      ZPhasePauseRelocateStartYoung("Pause Relocate Start (Young)");
-static const ZStatPhaseConcurrent ZPhaseConcurrentRelocatedYoung("Concurrent Relocate (Young)");
+static const ZStatPhasePause      ZPhasePauseMarkStartYoung("Young: Pause Mark Start");
+static const ZStatPhasePause      ZPhasePauseMarkStartYoungAndOld("Young + Old: Pause Mark Start");
+static const ZStatPhaseConcurrent ZPhaseConcurrentMarkYoung("Young: Concurrent Mark");
+static const ZStatPhaseConcurrent ZPhaseConcurrentMarkContinueYoung("Young: Concurrent Mark Continue");
+static const ZStatPhasePause      ZPhasePauseMarkEndYoung("Young: Pause Mark End");
+static const ZStatPhaseConcurrent ZPhaseConcurrentMarkFreeYoung("Young: Concurrent Mark Free");
+static const ZStatPhaseConcurrent ZPhaseConcurrentResetRelocationSetYoung("Young: Concurrent Reset Relocation Set");
+static const ZStatPhaseConcurrent ZPhaseConcurrentSelectRelocationSetYoung("Young: Concurrent Select Relocation Set");
+static const ZStatPhasePause      ZPhasePauseRelocateStartYoung("Young: Pause Relocate Start");
+static const ZStatPhaseConcurrent ZPhaseConcurrentRelocatedYoung("Young: Concurrent Relocate");
 
-static const ZStatPhaseConcurrent ZPhaseConcurrentMarkOld("Concurrent Mark (Old)");
-static const ZStatPhaseConcurrent ZPhaseConcurrentMarkContinueOld("Concurrent Mark Continue (Old)");
-static const ZStatPhasePause      ZPhasePauseMarkEndOld("Pause Mark End (Old)");
-static const ZStatPhaseConcurrent ZPhaseConcurrentMarkFreeOld("Concurrent Mark Free (Old)");
-static const ZStatPhaseConcurrent ZPhaseConcurrentProcessNonStrongOld("Concurrent Process Non-Strong (Old)");
-static const ZStatPhaseConcurrent ZPhaseConcurrentResetRelocationSetOld("Concurrent Reset Relocation Set (Old)");
-static const ZStatPhaseConcurrent ZPhaseConcurrentSelectRelocationSetOld("Concurrent Select Relocation Set (Old)");
-static const ZStatPhasePause      ZPhasePauseRelocateStartOld("Pause Relocate Start (Old)");
-static const ZStatPhaseConcurrent ZPhaseConcurrentRelocatedOld("Concurrent Relocate (Old)");
-static const ZStatPhaseConcurrent ZPhaseConcurrentRemapRootsOld("Concurrent Remap Roots (Old)");
+static const ZStatPhaseConcurrent ZPhaseConcurrentMarkOld("Old: Concurrent Mark");
+static const ZStatPhaseConcurrent ZPhaseConcurrentMarkContinueOld("Old: Concurrent Mark Continue");
+static const ZStatPhasePause      ZPhasePauseMarkEndOld("Old: Pause Mark End");
+static const ZStatPhaseConcurrent ZPhaseConcurrentMarkFreeOld("Old: Concurrent Mark Free");
+static const ZStatPhaseConcurrent ZPhaseConcurrentProcessNonStrongOld("Old: Concurrent Process Non-Strong");
+static const ZStatPhaseConcurrent ZPhaseConcurrentResetRelocationSetOld("Old: Concurrent Reset Relocation Set");
+static const ZStatPhaseConcurrent ZPhaseConcurrentSelectRelocationSetOld("Old: Concurrent Select Relocation Set");
+static const ZStatPhasePause      ZPhasePauseRelocateStartOld("Old: Pause Relocate Start");
+static const ZStatPhaseConcurrent ZPhaseConcurrentRelocatedOld("Old: Concurrent Relocate");
+static const ZStatPhaseConcurrent ZPhaseConcurrentRemapRootsOld("Old: Concurrent Remap Roots");
 
-static const ZStatSubPhase ZSubPhaseConcurrentMarkRootsYoung("Concurrent Mark Roots (Young)");
-static const ZStatSubPhase ZSubPhaseConcurrentMarkFollowYoung("Concurrent Mark Follow (Young)");
-static const ZStatSubPhase ZSubPhaseConcurrentMarkRememberedSetYoung("Concurrent Mark Remset (Young)");
+static const ZStatSubPhase ZSubPhaseConcurrentMarkRootsYoung("Young: Concurrent Mark Roots");
+static const ZStatSubPhase ZSubPhaseConcurrentMarkFollowYoung("Young: Concurrent Mark Follow");
+static const ZStatSubPhase ZSubPhaseConcurrentMarkRememberedSetYoung("Young: Concurrent Mark Remset");
 
-static const ZStatSubPhase ZSubPhaseConcurrentMarkRootsOld("Concurrent Mark Roots (Old)");
-static const ZStatSubPhase ZSubPhaseConcurrentMarkFollowOld("Concurrent Mark Follow (Old)");
-static const ZStatSubPhase ZSubPhaseConcurrentRemapRootsColoredOld("Concurrent Remap Roots Colored (Old)");
-static const ZStatSubPhase ZSubPhaseConcurrentRemapRootsUncoloredOld("Concurrent Remap Roots Uncolored (Old)");
+static const ZStatSubPhase ZSubPhaseConcurrentMarkRootsOld("Old: Concurrent Mark Roots");
+static const ZStatSubPhase ZSubPhaseConcurrentMarkFollowOld("Old: Concurrent Mark Follow");
+static const ZStatSubPhase ZSubPhaseConcurrentRemapRootsColoredOld("Old: Concurrent Remap Roots Colored");
+static const ZStatSubPhase ZSubPhaseConcurrentRemapRootsUncoloredOld("Old: Concurrent Remap Roots Uncolored");
 
 static const ZStatSampler         ZSamplerJavaThreads("System", "Java Threads", ZStatUnitThreads);
 

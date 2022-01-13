@@ -48,8 +48,8 @@
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 
-static const ZStatSubPhase ZSubPhaseConcurrentRelocateRememberedSetFlipPromotedYoung("Concurrent Relocate Remset FP (Young)");
-static const ZStatSubPhase ZSubPhaseConcurrentRelocateRememberedSetNormalPromotedYoung("Concurrent Relocate Remset NP (Young)");
+static const ZStatSubPhase ZSubPhaseConcurrentRelocateRememberedSetFlipPromotedYoung("Young: Concurrent Relocate Remset FP");
+static const ZStatSubPhase ZSubPhaseConcurrentRelocateRememberedSetNormalPromotedYoung("Young: Concurrent Relocate Remset NP");
 
 ZRelocateQueue::ZRelocateQueue() :
     _lock(),

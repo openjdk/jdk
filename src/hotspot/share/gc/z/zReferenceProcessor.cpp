@@ -40,8 +40,8 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 
-static const ZStatSubPhase ZSubPhaseConcurrentReferencesProcess("Concurrent References Process (Old)");
-static const ZStatSubPhase ZSubPhaseConcurrentReferencesEnqueue("Concurrent References Enqueue (Old)");
+static const ZStatSubPhase ZSubPhaseConcurrentReferencesProcess("Old: Concurrent References Process");
+static const ZStatSubPhase ZSubPhaseConcurrentReferencesEnqueue("Old: Concurrent References Enqueue");
 
 static ReferenceType reference_type(zaddress reference) {
   return InstanceKlass::cast(to_oop(reference)->klass())->reference_type();
