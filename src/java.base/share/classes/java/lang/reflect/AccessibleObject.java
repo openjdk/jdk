@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -446,7 +446,7 @@ public class AccessibleObject implements AnnotatedElement {
             }
             // if this object is an instance member, the given object
             // must be a subclass of the declaring class of this reflected object
-            if (!declaringClass.isAssignableFrom(obj.getClass())) {
+            if (!declaringClass.isInstance(obj)) {
                 throw new IllegalArgumentException("object is not an instance of "
                                                    + declaringClass.getName());
             }
