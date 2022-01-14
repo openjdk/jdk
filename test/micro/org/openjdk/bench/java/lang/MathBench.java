@@ -102,11 +102,6 @@ public class MathBench {
     }
 
     @Benchmark
-    public int absConstantInt() {
-        return Math.abs(-3);
-    }
-
-    @Benchmark
     public double  acosDouble() {
         return  Math.acos(double1);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1899,11 +1899,7 @@ Node* AbsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* in1 = in(1);
   // Convert "abs(0-x)" into "abs(x)"
   if (in1->is_Sub() && phase->type(in1->in(1))->is_zero_type()) {
-    set_req(1, in1->in(2));
-    PhaseIterGVN* igvn = phase->is_IterGVN();
-    if (igvn) {
-      igvn->_worklist.push(in1);
-    }
+    set_req_X(1, in1->in(2), phase);
     return this;
   }
   return NULL;
