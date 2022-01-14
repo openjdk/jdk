@@ -224,7 +224,7 @@ LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_o
   return addr;
 }
 
-LIR_Opr LIRGenerator::load_immediate(int x, BasicType type) {
+LIR_Opr LIRGenerator::load_immediate(jlong x, BasicType type) {
   LIR_Opr r;
   if (type == T_LONG) {
     r = LIR_OprFact::longConst(x);
@@ -234,7 +234,8 @@ LIR_Opr LIRGenerator::load_immediate(int x, BasicType type) {
       return tmp;
     }
   } else if (type == T_INT) {
-    r = LIR_OprFact::intConst(x);
+    assert(min_jint <= x && x <= max_jint, "in range");
+    r = LIR_OprFact::intConst((jint)x);
     if (!Assembler::operand_valid_for_logical_immediate(true, x)) {
       // This is all rather nasty.  We don't know whether our constant
       // is required for a logical or an arithmetic operation, wo we

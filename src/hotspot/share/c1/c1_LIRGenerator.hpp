@@ -215,7 +215,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   LIR_Opr load_constant(LIR_Const* constant);
 
   // Given an immediate value, return an operand usable in logical ops.
-  LIR_Opr load_immediate(int x, BasicType type);
+  LIR_Opr load_immediate(jlong x, BasicType type);
 
   void  set_result(Value x, LIR_Opr opr)           {
     assert(opr->is_valid(), "must set to valid value");
