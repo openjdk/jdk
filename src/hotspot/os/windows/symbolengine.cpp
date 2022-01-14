@@ -576,11 +576,11 @@ bool SymbolEngine::recalc_search_path(bool* p_search_path_was_updated) {
 
 }
 
-bool SymbolEngine::get_source_info(const void* addr, char* buf, size_t buflen,
+bool SymbolEngine::get_source_info(const void* addr, char* filename, size_t filename_len,
                                    int* line_no)
 {
-  assert(buf != NULL && buflen > 0 && line_no != NULL, "Argument error");
-  buf[0] = '\0';
+  assert(buf != NULL && filename_len > 0 && line_no != NULL, "Argument error");
+  filename[0] = '\0';
   *line_no = -1;
 
   if (addr == NULL) {
@@ -602,8 +602,8 @@ bool SymbolEngine::get_source_info(const void* addr, char* buf, size_t buflen,
       if (q) {
         p = q + 1;
       }
-      ::strncpy(buf, p, buflen - 1);
-      buf[buflen - 1] = '\0';
+      ::strncpy(buf, p, filename_len - 1);
+      filename[filename_len - 1] = '\0';
     }
     if (line_no != 0) {
       *line_no = lineinfo.LineNumber;

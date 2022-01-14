@@ -260,10 +260,10 @@ bool os::platform_print_native_stack(outputStream* st, const void* context,
         // to crash. Let's just print out the symbolic address.
         frame::print_C_frame(st, buf, buf_size, pc);
         // print source file and line, if available
-        char buf[128];
+        char filename[128];
         int line_no;
-        if (SymbolEngine::get_source_info(pc, buf, sizeof(buf), &line_no)) {
-          st->print("  (%s:%d)", buf, line_no);
+        if (SymbolEngine::get_source_info(pc, filename, sizeof(filename), &line_no)) {
+          st->print("  (%s:%d)", filename, line_no);
         }
         st->cr();
       }

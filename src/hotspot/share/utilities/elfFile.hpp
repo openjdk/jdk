@@ -180,7 +180,7 @@ class ElfFile: public CHeapObj<mtInternal> {
   static bool specifies_noexecstack(const char* filepath) NOT_LINUX({ return false; });
 
   bool open_valid_debuginfo_file(const char* path_name, uint crc);
-  bool get_source_info(uint32_t offset_in_library, char* filename, size_t filename_size, int* line, bool is_pc_after_call);
+  bool get_source_info(uint32_t offset_in_library, char* filename, size_t filename_len, int* line, bool is_pc_after_call);
 
  private:
   // sanity check, if the file is a real elf file
@@ -275,6 +275,11 @@ class ElfFile: public CHeapObj<mtInternal> {
  *      state machine and parse the filename from the line number program header with the given file index from the file register of the state machine.
  *
  *  More details about the different phases can be found at the associated classes and methods.
+ *
+ *  Available log levels (-Xlog:dwarf=X):
+ *  - info:  Prints the path of parsed DWARF file together with the query and the resulting source information.
+ *  - debug: Prints the results of the steps (1) - (4) together with the generated line information matrix.
+ *  - trace: Full logging information for intermediate states/results when parsing the DWARF file.
  */
 class DwarfFile : public ElfFile {
 
@@ -302,6 +307,7 @@ class DwarfFile : public ElfFile {
     bool read_word(uint16_t* result);
     bool read_dword(uint32_t* result);
     bool read_qword(uint64_t* result);
+    bool read_uleb128_ignore(int8_t check_size = -1);
     bool read_uleb128(uint64_t* result, int8_t check_size = -1);
     bool read_sleb128(int64_t* result, int8_t check_size = -1);
     // Reads 4 bytes for 32-bit and 8 bytes for 64-bit Linux builds.
@@ -567,17 +573,15 @@ class DwarfFile : public ElfFile {
       // Specifies which DWARF version is used in the .debug_line section. Currently supported: DWARF 3 + 4.
       const uint8_t _dwarf_version;
       const bool _initial_is_stmt;
-      bool _first_row;
       bool _append_row;
       bool _do_reset;
-
-      // Could the current sequence be a candidate which contains the library offset?
-      // (library offset must be bigger than the address of the first row in the matrix)
-      bool _sequence_candidate;
+      bool _first_entry_in_sequence;
+      bool _can_sequence_match_offset;
+      bool _found_match;
 
       LineNumberProgramState(LineNumberProgramHeader* header)
         : _is_stmt(header->_default_is_stmt != 0), _header(header), _dwarf_version(header->_version),
-          _initial_is_stmt(header->_default_is_stmt != 0) {
+          _initial_is_stmt(header->_default_is_stmt != 0), _found_match(false) {
         reset_fields();
       }
 
@@ -607,7 +611,9 @@ class DwarfFile : public ElfFile {
     bool apply_extended_opcode();
     bool apply_standard_opcode(uint8_t opcode);
     bool apply_special_opcode(uint8_t opcode);
-    bool set_filename_and_line(uint32_t file, uint32_t line);
+    bool does_offset_match_entry(uintptr_t previous_address, uint32_t previous_file, uint32_t previous_line);
+    void print_and_store_prev_entry(uint32_t previous_file, uint32_t previous_line);
+    bool set_filename_and_line();
     bool read_filename_from_header(uint32_t file_index);
 
    public:

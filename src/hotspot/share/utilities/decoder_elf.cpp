@@ -53,11 +53,11 @@ bool ElfDecoder::decode(address addr, char *buf, int buflen, int* offset, const 
   return true;
 }
 
-bool ElfDecoder::get_source_info(address pc, char* buf, size_t buflen, int* line, bool is_pc_after_call) {
-  if (buf == nullptr || buflen <= 0 || line == nullptr) {
+bool ElfDecoder::get_source_info(address pc, char* filename, size_t filename_len, int* line, bool is_pc_after_call) {
+  if (filename == nullptr || filename_len <= 0 || line == nullptr) {
     return false;
   }
-  buf[0] = '\0';
+  filename[0] = '\0';
   *line = -1;
 
   char filepath[JVM_MAXPATHLEN];
@@ -76,11 +76,11 @@ bool ElfDecoder::get_source_info(address pc, char* buf, size_t buflen, int* line
     return false;
   }
 
-  if (!file->get_source_info(unsigned_offset_in_library, buf, buflen, line, is_pc_after_call)) {
+  if (!file->get_source_info(unsigned_offset_in_library, filename, filename_len, line, is_pc_after_call)) {
     return false;
   }
 
-  log_info(dwarf)("pc: " INTPTR_FORMAT ", offset: " PTR32_FORMAT ", filename: %s, line: %u", p2i(pc), offset_in_library, buf, *line);
+  log_info(dwarf)("pc: " INTPTR_FORMAT ", offset: " PTR32_FORMAT ", filename: %s, line: %u", p2i(pc), offset_in_library, filename, *line);
   log_debug(dwarf)(""); // To structure the debug output better.
   return true;
 }
