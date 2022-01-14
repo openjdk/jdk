@@ -132,8 +132,13 @@ bool ObjectStartArray::object_starts_in_range(HeapWord* start_addr,
          "Range is wrong. start_addr (" PTR_FORMAT ") is after end_addr (" PTR_FORMAT ")",
          p2i(start_addr), p2i(end_addr));
 
+  if (start_addr == end_addr) {
+    // empty
+    return false;
+  }
+
   jbyte* start_block = block_for_addr(start_addr);
-  jbyte* end_block = block_for_addr(end_addr);
+  jbyte* end_block = block_for_addr(end_addr - 1);
 
   for (jbyte* block = start_block; block <= end_block; block++) {
     if (*block != clean_block) {
