@@ -224,7 +224,7 @@ public:
   void register_flip_promoted(const ZArray<ZPage*>& pages);
   void register_in_place_relocate_promoted(ZPage* page);
 
-  // Remembered set
+  // Add remembered set entries
   void remember(volatile zpointer* p);
   void remember_fields(zaddress addr);
 
