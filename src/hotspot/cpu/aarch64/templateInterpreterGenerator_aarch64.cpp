@@ -994,7 +994,7 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
     // Arguments are reversed on java expression stack
     // Calculate address of start element
     if (kind == Interpreter::java_util_zip_CRC32_updateByteBuffer) {
-      __ ldr(buf, Address(esp, 2*wordSize)); // jlong buf
+      __ ldr(buf, Address(esp, 2*wordSize)); // long buf
       __ ldrw(off, Address(esp, wordSize)); // offset
       __ add(buf, buf, off); // + offset
       __ ldrw(crc,   Address(esp, 4*wordSize)); // Initial CRC
@@ -1043,13 +1043,13 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
     __ ldrw(end, Address(esp)); // int end
     __ ldrw(off, Address(esp, wordSize)); // int offset
     __ sub(len, end, off);
-    __ ldr(buf, Address(esp, 2*wordSize)); // byte[] buf | jlong buf
+    __ ldr(buf, Address(esp, 2*wordSize)); // byte[] buf | long buf
     __ add(buf, buf, off); // + offset
     if (kind == Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer) {
-      __ ldrw(crc, Address(esp, 4*wordSize)); // jlong crc
+      __ ldrw(crc, Address(esp, 4*wordSize)); // long crc
     } else {
       __ add(buf, buf, arrayOopDesc::base_offset_in_bytes(T_BYTE)); // + header size
-      __ ldrw(crc, Address(esp, 3*wordSize)); // jlong crc
+      __ ldrw(crc, Address(esp, 3*wordSize)); // long crc
     }
 
     __ andr(sp, r13, -16); // Restore the caller's SP
