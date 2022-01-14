@@ -106,7 +106,8 @@ public class TestMisc {
             "Memory Usage",
             "Maximum Memory Usage",
             "memory_max_usage_in_bytes",
-            "maximum number of tasks"
+            "maximum number of tasks",
+            "current number of tasks"
         };
 
         for (String s : expectedToContain) {
