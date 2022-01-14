@@ -79,6 +79,19 @@ class BitMap {
     return bit >> LogBitsPerWord;
   }
 
+  // Assumes relevant validity checking for bit has already been done.
+  static idx_t raw_to_words_aligned(idx_t bit) {
+    return bit >> LogBitsPerWord;
+  }
+
+  // Converts word-aligned bit it to a word offset.
+  // precondition: bit <= size()
+  idx_t to_words_aligned(idx_t bit) const {
+    verify_limit(bit);
+    assert(is_aligned(bit, BitsPerWord), "Incorrect alignment");
+    return raw_to_words_aligned(bit);
+  }
+
   // Word-aligns bit and converts it to a word offset.
   // precondition: bit <= size()
   idx_t to_words_align_up(idx_t bit) const {
@@ -97,14 +110,16 @@ class BitMap {
   // - flip designates whether searching for 1s or 0s.  Must be one of
   //   find_{zeros,ones}_flip.
   // - aligned_right is true if r_index is a priori on a bm_word_t boundary.
+  // - returns r_index if bit not found
   template<bm_word_t flip, bool aligned_right>
   inline idx_t get_next_bit_impl(idx_t l_index, idx_t r_index) const;
 
   // Helper for get_prev_{zero,one}_bit variants.
   // - flip designates whether searching for 1s or 0s.  Must be one of
   //   find_{zeros,ones}_flip.
-  // - aligned_right is true if r_index is a priori on a bm_word_t boundary.
-  template<bm_word_t flip, bool aligned_right>
+  // - aligned_left is true if l_index is a priori on a bm_word_t boundary.
+  // - returns idx_t(-1) if bit not found
+  template<bm_word_t flip, bool aligned_left>
   inline idx_t get_prev_bit_impl(idx_t l_index, idx_t r_index) const;
 
   // Values for get_next_bit_impl flip parameter.
@@ -132,7 +147,8 @@ class BitMap {
   // Return the array of bitmap words, or a specific word from it.
   bm_word_t* map()                 { return _map; }
   const bm_word_t* map() const     { return _map; }
-  bm_word_t  map(idx_t word) const { return _map[word]; }
+
+  bm_word_t  word(idx_t word_index, bm_word_t flip) const { return _map[word_index] ^ flip; }
 
   // Return a pointer to the word containing the specified bit.
   bm_word_t* word_addr(idx_t bit) {
