@@ -55,7 +55,7 @@ import java.util.Optional;
  * {@linkplain #downcallHandle(FunctionDescriptor) Linking a foreign function} is a process which requires a function descriptor,
  * a set of memory layouts which, together, specify the signature of the foreign function to be linked, and returns,
  * when complete, a downcall method handle, that is, a method handle that can be used to invoke the target native function.
- * The Java {@link java.lang.invoke.MethodType method type} associated with the returned method handle is
+ * The Java {@linkplain java.lang.invoke.MethodType method type} associated with the returned method handle is
  * {@linkplain #downcallType(FunctionDescriptor) derived} from the argument and return layouts in the function descriptor.
  * More specifically, given each layout {@code L} in the function descriptor, a corresponding carrier {@code C} is inferred,
  * as described below:
@@ -69,7 +69,8 @@ import java.util.Optional;
  * <li>or, if {@code L} is a {@link GroupLayout}, then {@code C} is set to {@code MemorySegment.class}</li>
  * </ul>
  * <p>
- * The downcall method handle type, derived as above, might be decorated by additional leading parameters:
+ * The downcall method handle type, derived as above, might be decorated by additional leading parameters,
+ * in the given order if both are present:
  * <ul>
  * <li>If the downcall method handle is created {@linkplain #downcallHandle(FunctionDescriptor) without specifying a native symbol},
  * the downcall method handle type features a leading parameter of type {@link NativeSymbol}, from which the
@@ -91,7 +92,7 @@ import java.util.Optional;
  * handle and a function descriptor; in this case, the set of memory layouts in the function descriptor
  * specify the signature of the function pointer associated with the upcall stub.
  * <p>
- * The type of the provided method handle has to match the Java {@link java.lang.invoke.MethodType method type}
+ * The type of the provided method handle has to match the Java {@linkplain java.lang.invoke.MethodType method type}
  * associated with the upcall stub, which is derived from the argument and return layouts in the function descriptor.
  * More specifically, given each layout {@code L} in the function descriptor, a corresponding carrier {@code C} is inferred, as described below:
  * <ul>
@@ -109,7 +110,7 @@ import java.util.Optional;
  *
  * <h2>System lookup</h2>
  *
- * This class implements the {@link SymbolLookup} interface; as such clients can {@linkplain #lookup(String) lookup} symbols
+ * This class implements the {@link SymbolLookup} interface; as such clients can {@linkplain #lookup(String) look up} symbols
  * in the standard libraries associated with this linker. The set of symbols available for lookup is unspecified,
  * as it depends on the platform and on the operating system.
  *
@@ -163,7 +164,7 @@ public sealed interface CLinker extends SymbolLookup permits Windowsx64Linker, S
     }
 
     /**
-     * Lookup a symbol in the standard libraries associated with this linker.
+     * Look up a symbol in the standard libraries associated with this linker.
      * The set of symbols available for lookup is unspecified, as it depends on the platform and on the operating system.
      * @return a symbol in the standard libraries associated with this linker.
      */

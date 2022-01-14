@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -818,6 +818,18 @@ bool Method::can_be_statically_bound(InstanceKlass* context) const {
   return (method_holder() == context) && can_be_statically_bound();
 }
 
+/**
+ *  Returns false if this is one of specially treated methods for
+ *  which we have to provide stack trace in throw in compiled code.
+ *  Returns true otherwise.
+ */
+bool Method::can_omit_stack_trace() {
+  if (klass_name() == vmSymbols::sun_invoke_util_ValueConversions()) {
+    return false; // All methods in sun.invoke.util.ValueConversions
+  }
+  return true;
+}
+
 bool Method::is_accessor() const {
   return is_getter() || is_setter();
 }
@@ -1186,7 +1198,7 @@ void Method::unlink_method() {
 void Method::link_method(const methodHandle& h_method, TRAPS) {
   // If the code cache is full, we may reenter this function for the
   // leftover methods that weren't linked.
-  if (_i2i_entry != NULL) {
+  if (adapter() != NULL) {
     return;
   }
   assert( _code == NULL, "nothing compiled yet" );

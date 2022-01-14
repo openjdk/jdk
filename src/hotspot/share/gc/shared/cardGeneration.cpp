@@ -174,11 +174,6 @@ void CardGeneration::shrink(size_t bytes) {
                       name(), old_mem_size/K, new_mem_size/K);
 }
 
-// No young generation references, clear this generation's cards.
-void CardGeneration::clear_remembered_set() {
-  _rs->clear(reserved());
-}
-
 // Objects in this generation may have moved, invalidate this
 // generation's cards.
 void CardGeneration::invalidate_remembered_set() {

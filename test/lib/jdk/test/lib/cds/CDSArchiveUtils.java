@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,9 @@ import sun.hotspot.WhiteBox;
 
 // This class performs operations on shared archive file
 public class CDSArchiveUtils {
+    // Minimum supported CDS file header version
+    private static int genericHeaderMinVersion;    // CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION
+    private static int currentCDSArchiveVersion;   // CURRENT_CDS_ARCHIVE_VERSION
     // offsets
     private static int offsetMagic;                // offset of GenericCDSFileMapHeader::_magic
     private static int offsetCrc;                  // offset of GenericCDSFileMapHeader::_crc
@@ -82,6 +85,9 @@ public class CDSArchiveUtils {
         WhiteBox wb;
         try {
             wb = WhiteBox.getWhiteBox();
+            // genericHeaderMinVersion
+            genericHeaderMinVersion = wb.getCDSGenericHeaderMinVersion();
+            currentCDSArchiveVersion = wb.getCurrentCDSVersion();
             // offsets
             offsetMagic = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_magic");
             offsetCrc = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_crc");
@@ -116,6 +122,10 @@ public class CDSArchiveUtils {
     }
 
     // accessors
+    // minimum supported file header version
+    public static int getGenericHeaderMinVersion()  { return genericHeaderMinVersion;     }
+    // current CDS version
+    public static int getCurrentCDSArchiveVersion() { return currentCDSArchiveVersion;    }
     // offsets
     public static int offsetMagic()                 { return offsetMagic;                 }
     public static int offsetCrc()                   { return offsetCrc;                   }
@@ -329,6 +339,18 @@ public class CDSArchiveUtils {
         setReadWritePermission(newJsaFile);
 
         return newJsaFile;
+    }
+
+    public static File createMagicOnlyFile(String fileName, boolean createStatic) throws Exception {
+        File file = new File(fileName);
+        if (file.exists()) {
+            file.delete();
+        }
+        try (FileOutputStream out = new FileOutputStream(file)) {
+            ByteBuffer buffer = ByteBuffer.allocate(4).putInt(createStatic ? staticMagic: dynamicMagic);
+            out.write(buffer.array(), 0, 4);
+        }
+        return file;
     }
 
     private static FileChannel getFileChannel(File file, boolean write) throws Exception {
