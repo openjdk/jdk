@@ -42,6 +42,9 @@ import java.util.Set;
 import jdk.jfr.FlightRecorder;
 import jdk.jfr.Recording;
 import jdk.jfr.internal.JVM;
+import jdk.jfr.internal.LogLevel;
+import jdk.jfr.internal.LogTag;
+import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.OldObjectSample;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.PrivateAccess;
@@ -434,6 +437,7 @@ final class DCmdStart extends AbstractDCmd {
             }
             return sb.toString();
         } catch (IOException | ParseException e) {
+            Logger.log(LogTag.JFR_DCMD, LogLevel.DEBUG, "Could not list .jfc options for JFR.start. " + e.getMessage());
             return "";
         }
     }
