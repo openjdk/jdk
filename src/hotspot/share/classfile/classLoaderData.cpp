@@ -365,7 +365,7 @@ void ClassLoaderData::loaded_classes_do(KlassClosure* klass_closure) {
       if (!InstanceKlass::cast(k)->is_loaded()) {
         continue;
       }
-    } else if (k->is_objArray_klass()) {
+    } else if (k->is_shared() && k->is_objArray_klass()) {
       Klass* bottom = ObjArrayKlass::cast(k)->bottom_klass();
       if (bottom->is_instance_klass() && !InstanceKlass::cast(bottom)->is_loaded()) {
         // This could happen if <bottom> is a shared class that has been restored
