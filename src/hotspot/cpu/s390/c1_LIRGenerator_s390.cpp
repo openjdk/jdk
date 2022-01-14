@@ -196,8 +196,7 @@ LIR_Opr LIRGenerator::load_immediate(jlong x, BasicType type) {
   if (type == T_LONG) {
     r = LIR_OprFact::longConst(x);
   } else if (type == T_INT) {
-    assert(min_jint <= x && x <= max_jint, "in range");
-    r = LIR_OprFact::intConst((jint)x);
+    r = LIR_OprFact::intConst(checked_cast<jint>(x));
   } else {
     ShouldNotReachHere();
   }

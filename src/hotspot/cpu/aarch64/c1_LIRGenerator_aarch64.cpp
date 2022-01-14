@@ -234,8 +234,7 @@ LIR_Opr LIRGenerator::load_immediate(jlong x, BasicType type) {
       return tmp;
     }
   } else if (type == T_INT) {
-    assert(min_jint <= x && x <= max_jint, "in range");
-    r = LIR_OprFact::intConst((jint)x);
+    r = LIR_OprFact::intConst(checked_cast<jint>(x));
     if (!Assembler::operand_valid_for_logical_immediate(true, x)) {
       // This is all rather nasty.  We don't know whether our constant
       // is required for a logical or an arithmetic operation, wo we
