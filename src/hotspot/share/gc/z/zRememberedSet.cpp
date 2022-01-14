@@ -163,7 +163,7 @@ bool ZRememberedSetContainingIterator::next(ZRememberedSetContaining* containing
   // containing information, this code doesn't read the size of the objects and
   // therefore doesn't filter out remset bits that belong to dead objects.
   // The (addr, addr_field) pair will contain the nearest live object, of a
-  // given remset bit. Users of 'containing' needs to do the filtering.
+  // given remset bit. Users of 'containing' need to do the filtering.
 
   size_t index;
 
