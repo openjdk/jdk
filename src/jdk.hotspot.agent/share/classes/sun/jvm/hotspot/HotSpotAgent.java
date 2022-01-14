@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -389,17 +389,6 @@ public class HotSpotAgent {
             //
             // Remote mode (client attaching to server)
             //
-
-            // Create and install a security manager
-
-            // FIXME: currently commented out because we were having
-            // security problems since we're "in the sun.* hierarchy" here.
-            // Perhaps a permissive policy file would work around this. In
-            // the long run, will probably have to move into com.sun.*.
-
-            //    if (System.getSecurityManager() == null) {
-            //      System.setSecurityManager(new RMISecurityManager());
-            //    }
 
             connectRemoteDebugger();
         }
