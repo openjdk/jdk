@@ -4125,7 +4125,7 @@ void C2_MacroAssembler::vector_castL2FD(XMMRegister dst, XMMRegister src, XMMReg
 
   vpmovsxdq(xtmp2, xtmp1, vec_enc);
   if (vec_enc == AVX_512bit) {
-    evpcmp(T_LONG, ktmp, k0, xtmp1, xtmp2, Assembler::eq, vec_enc);
+    evpcmp(T_LONG, ktmp, k0, src, xtmp2, Assembler::eq, vec_enc);
     kmov(tmp, ktmp);
   } else {
     vpcmpeqq(xtmp2, src, xtmp2, vec_enc);
