@@ -60,7 +60,7 @@ public class TestParamTaglet extends JavadocTester {
                     <dd><code>param2</code> - testing 1 2 3.</dd>
                     </dl>""",
                 // Param tags that don't match with any real parameters.
-                // {@inherit} doc misuse does not cause doclet to throw exception.
+                // {@inheritDoc} misuse does not cause doclet to throw exception.
                 // Param is printed with nothing inherited.
                 """
                     <dt>Parameters:</dt>
