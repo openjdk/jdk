@@ -70,7 +70,6 @@ void FreeChunkList::verify() const {
   } else {
     assert(_last != NULL, "Sanity");
     int num = 0;
-    bool uncommitted = (_first->committed_words() == 0);
     for (Metachunk* c = _first; c != NULL; c = c->next()) {
       assert(c->is_free(), "Chunks in freelist should be free");
       assert(c->used_words() == 0, "Chunk in freelist should have not used words.");

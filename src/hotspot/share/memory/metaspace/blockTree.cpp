@@ -101,7 +101,6 @@ void BlockTree::verify() const {
   // Traverse the tree and test that all nodes are in the correct order.
 
   MemRangeCounter counter;
-  int longest_edge = 0;
   if (_root != NULL) {
 
     ResourceMark rm;

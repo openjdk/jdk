@@ -70,8 +70,6 @@ public:
     _c -= v;
   }
 
-  void reset()                { _c = 0; }
-
 #ifdef ASSERT
   void check(T expected) const {
     assert(_c == expected, "Counter mismatch: %d, expected: %d.",

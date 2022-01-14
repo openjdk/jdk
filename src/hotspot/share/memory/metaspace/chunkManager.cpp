@@ -88,7 +88,6 @@ void ChunkManager::split_chunk_and_add_splinters(Metachunk* c, chunklevel_t targ
 
   DEBUG_ONLY(size_t committed_words_before = c->committed_words();)
 
-  const chunklevel_t orig_level = c->level();
   c->vsnode()->split(target_level, c, &_chunks);
 
   // Splitting should never fail.
