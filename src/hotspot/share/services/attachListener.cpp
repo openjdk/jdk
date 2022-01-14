@@ -292,6 +292,7 @@ static jint heap_inspection(AttachOperation* op, outputStream* out) {
     uintx num;
     if (!Arguments::parse_uintx(num_str, &num, 0)) {
       out->print_cr("Invalid parallel thread number: [%s]", num_str);
+      delete fs;
       return JNI_ERR;
     }
     parallel_thread_num = num == 0 ? parallel_thread_num : (uint)num;
