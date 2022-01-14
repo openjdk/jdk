@@ -34,14 +34,6 @@ class PSPromotionManager;
 
 class PSCardTable: public CardTable {
  private:
-  // Support methods for resizing the card table.
-  // resize_commit_uncommit() returns true if the pages were committed or
-  // uncommitted
-  bool resize_commit_uncommit(int changed_region, MemRegion new_region);
-  void resize_update_card_table_entries(int changed_region,
-                                        MemRegion new_region);
-  void resize_update_committed_table(int changed_region, MemRegion new_region);
-  void resize_update_covered_table(int changed_region, MemRegion new_region);
 
   void verify_all_young_refs_precise_helper(MemRegion mr);
 
@@ -90,12 +82,6 @@ class PSCardTable: public CardTable {
   // Finds the covered region to resize based on the start address
   // of the covered regions.
   void resize_covered_region_by_start(MemRegion new_region);
-  // Finds the covered region to resize based on the end address
-  // of the covered regions.
-  void resize_covered_region_by_end(int changed_region, MemRegion new_region);
-  // Finds the lowest start address of a covered region that is
-  // previous (i.e., lower index) to the covered region with index "ind".
-  HeapWord* lowest_prev_committed_start(int ind) const;
 
 #ifdef ASSERT
   bool is_valid_card_address(CardValue* addr) {
