@@ -41,7 +41,7 @@ inline frame::frame() {
   _fp = NULL;
   _cb = NULL;
   _deopt_state = unknown;
-  _from_thread = false;
+  _from_anchor = false;
 }
 
 static int spin;
@@ -65,7 +65,7 @@ inline void frame::init(intptr_t* sp, intptr_t* fp, address pc) {
   } else {
     _deopt_state = not_deoptimized;
   }
-  _from_thread = false;
+  _from_anchor = false;
 }
 
 inline frame::frame(intptr_t* sp, intptr_t* fp, address pc) {
@@ -93,7 +93,7 @@ inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address
   } else {
     _deopt_state = not_deoptimized;
   }
-  _from_thread = false;
+  _from_anchor = false;
 }
 
 inline frame::frame(intptr_t* sp, intptr_t* fp) {
@@ -125,7 +125,7 @@ inline frame::frame(intptr_t* sp, intptr_t* fp) {
   } else {
     _deopt_state = not_deoptimized;
   }
-  _from_thread = false;
+  _from_anchor = false;
 }
 
 // Accessors

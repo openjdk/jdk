@@ -358,6 +358,7 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
   assert(map->include_argument_oops(), "should be set by clear");
   vmassert(jfa->last_Java_pc() != NULL, "not walkable");
   frame fr(jfa->last_Java_sp(), jfa->last_Java_fp(), jfa->last_Java_pc());
+  fr.set_from_anchor();
 
   return fr;
 }
@@ -468,7 +469,7 @@ frame frame::sender_for_compiled_frame(RegisterMap* map) const {
   // have to find it relative to the unextended sp
 
   assert(_cb->frame_size() >= 0, "must have non-zero frame size");
-  intptr_t* l_sender_sp = (!PreserveFramePointer || _from_thread) ? unextended_sp() + _cb->frame_size()
+  intptr_t* l_sender_sp = (!PreserveFramePointer || _from_anchor) ? unextended_sp() + _cb->frame_size()
                                                                   : sender_sp();
   intptr_t* unextended_sp = l_sender_sp;
 
