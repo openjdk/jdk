@@ -46,6 +46,7 @@ import jdk.jfr.internal.OldObjectSample;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.SecuritySupport.SafePath;
+import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.jfc.JFC;
 import jdk.jfr.internal.jfc.model.JFCModel;
@@ -364,7 +365,7 @@ final class DCmdStart extends AbstractDCmd {
                                  Turn on this flag only when you have an application that you
                                  suspect has a memory leak. If the settings parameter is set to
                                  'profile', then the information collected includes the stack
-                                 trace from where the potential leaking object wasallocated.
+                                 trace from where the potential leaking object was allocated.
                                  (BOOLEAN, false)
 
                  settings        (Optional) Name of the settings file that identifies which events
@@ -394,7 +395,7 @@ final class DCmdStart extends AbstractDCmd {
                take  precedence. The whitespace character can be omitted for timespan values,
                i.e. 20s. For more information about the settings syntax, see Javadoc of the
                jdk.jfr package.
-
+               %s
                Options must be specified using the <key> or <key>=<value> syntax.
 
                Example usage:
@@ -414,7 +415,27 @@ final class DCmdStart extends AbstractDCmd {
 
                Note, if the default event settings are modified, overhead may exceed 1%%.
 
-               """.formatted(exampleDirectory()).lines().toArray(String[]::new);
+               """.formatted(jfcOptions(), exampleDirectory()).lines().toArray(String[]::new);
+    }
+
+    private static String jfcOptions() {
+        try {
+            StringBuilder sb = new StringBuilder();
+            for (SafePath s : SecuritySupport.getPredefinedJFCFiles()) {
+                String name = JFC.nameFromPath(s.toPath());
+                JFCModel model = new JFCModel(s, l -> {});
+                sb.append('\n');
+                sb.append("Options for ").append(name).append(":\n");
+                sb.append('\n');
+                for (XmlInput input : model.getInputs()) {
+                    sb.append("  ").append(input.getOptionSyntax()).append('\n');
+                    sb.append('\n');
+                }
+            }
+            return sb.toString();
+        } catch (IOException | ParseException e) {
+            return "";
+        }
     }
 
     @Override
