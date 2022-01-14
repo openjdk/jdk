@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,12 @@ public class DNSName implements GeneralNameInterface {
      * @exception IOException on error.
      */
     public DNSName(DerValue derValue) throws IOException {
+        byte[] data = derValue.getData().toByteArray();
+        for (int i=0; i < data.length; i++) {
+            if ((int)data[i] < 0) {
+                 throw new IOException("Incorrect DNSName");
+            }
+        }
         name = derValue.getIA5String();
     }
 

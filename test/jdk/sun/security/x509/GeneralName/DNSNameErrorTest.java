@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,17 @@
  * @library /test/lib
  * @summary CertificateFactory.generateCertificate should not read invalid
  *          subjectAlternativeNames values.
+ * @run main/othervm  DNSNameErrorTest
+ * @run main/othervm -Djava.security.debug=x509 DNSNameErrorTest debug.x509
  */
 
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
 import java.util.Collection;
 import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateParsingException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 
@@ -77,21 +80,18 @@ public class DNSNameErrorTest {
         "w3l4T5it0fa5qw50gQ==\n" +
         "-----END CERTIFICATE-----";
 
+    private final static String debugMsg1 = "x509: Debug info only. Error parsing extension: ObjectId: 2.5.29.17 Criticality=false";
+    private final static String debugMsg2 = "java.io.IOException: Incorrect DNSName";
+
     public static void main(String[] args) throws Exception {
 
-        if (args.length > 0) {
-            String test = args[0];
-            if (test.equals("nonCritical")) {
-               testNonCriticalName();
-            }
-            else if (test.equals("critical")) {
-               testCriticalName();
-            }
+        if (args.length > 0 && args[0].equals("debug.x509")) {
+               testNonCriticalNameWithDBG();
         }
-
-        runTestNonCriticalName();
-        runTestNonCriticalNameWithDBG();
-        runTestCriticalName();
+        else {
+            testNonCriticalName();
+            testCriticalName();
+        }
     }
 
     private static void testNonCriticalName() throws Exception {
@@ -105,41 +105,46 @@ public class DNSNameErrorTest {
         System.out.println("Passed.");
     }
 
+    private static void testNonCriticalNameWithDBG() throws Exception {
+        // getSubjectAlternativeNames() doesn't throw an Exception and retrun null
+        // when critical is not specified, even if it has incorrect strings.
+        // IOExceition is printed in x509 debug info.
+        PrintStream err = System.err;
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        System.setErr(new PrintStream(baos));
+        X509Certificate certificate = certificate(invalidSANCertStr);
+        Collection<?> subjectAltNames = certificate.getSubjectAlternativeNames();
+        if (subjectAltNames != null) {
+            throw new RuntimeException("Read invalid subjectAlternativeNames.");
+        }
+        baos.close();
+        System.setErr(err);
+        String debugMsg = baos.toString();
+        if (debugMsg.contains(debugMsg1) && debugMsg.contains(debugMsg2)) {
+            System.out.println("Passed.");
+            return;
+        }
+        throw new RuntimeException("Invalid java.security.debug=x509 messaege.");
+    }
+
     private static void testCriticalName() throws Exception {
         // getSubjectAlternativeNames() should throw an Exception
         // when critical is specified and it has incorrect strings.
-        X509Certificate certificate = certificate(invalidCriticalSANCertStr);
-        Collection<?> subjectAltNames = certificate.getSubjectAlternativeNames();
-        System.out.println("Failed.");
+        try {
+            X509Certificate certificate = certificate(invalidCriticalSANCertStr);
+            Collection<?> subjectAltNames = certificate.getSubjectAlternativeNames();
+        }
+        catch (CertificateParsingException e) {
+            if (e.getMessage().equals("java.io.IOException: Incorrect DNSName")) {
+                System.out.println("Passed.");
+                return;
+            }
+        }
+        throw new RuntimeException("Read invalid subjectAlternativeNames.");
     }
 
     private static X509Certificate certificate(String certificate) throws CertificateException {
         return (X509Certificate) CertificateFactory.getInstance("X.509")
             .generateCertificate(new ByteArrayInputStream(certificate.getBytes()));
-    }
-
-    private static void runTestNonCriticalName() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "DNSNameErrorTest", "nonCritical");
-        OutputAnalyzer output = ProcessTools.executeProcess(pb);
-        output.shouldContain("Passed.");
-    }
-
-    static void runTestNonCriticalNameWithDBG() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-Djava.security.debug=x509", "DNSNameErrorTest", "nonCritical");
-        OutputAnalyzer output = ProcessTools.executeProcess(pb);
-        output.shouldContain("java.io.IOException: Incorrect string value");
-        output.shouldContain("Caused by: java.nio.charset.MalformedInputException");
-        output.shouldContain("Passed.");
-    }
-
-    static void runTestCriticalName() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "DNSNameErrorTest", "critical");
-        OutputAnalyzer output = ProcessTools.executeProcess(pb);
-        output.shouldContain("java.io.IOException: Incorrect string value");
-        output.shouldContain("Caused by: java.nio.charset.MalformedInputException");
-        output.shouldNotContain("Failed.");
     }
 }
