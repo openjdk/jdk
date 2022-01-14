@@ -28,6 +28,7 @@ package java.io;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
+import java.util.Objects;
 
 // Maps Class instances to values of type T. Under memory pressure, the
 // mapping is released (under soft references GC policy) and would be
@@ -59,15 +60,17 @@ abstract class ClassCache<T> {
         map = new ClassValue<>() {
             @Override
             protected SoftReference<T> computeValue(Class<?> type) {
-                return new CacheRef<>(ClassCache.this.computeValue(type), queue, type);
+                T v = ClassCache.this.computeValue(type);
+                Objects.requireNonNull(v);
+                return new CacheRef<>(v, queue, type);
             }
         };
     }
 
     T get(Class<?> cl) {
-        processQueue();
         T val;
         do {
+            processQueue();
             SoftReference<T> ref = map.get(cl);
             val = ref.get();
             if (val == null) {
