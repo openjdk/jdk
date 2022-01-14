@@ -124,7 +124,7 @@ public class WindowsMenuUI extends BasicMenuUI {
         menuBarHeight = (Integer)UIManager.getInt("MenuBar.height");
 
         Object obj      = UIManager.get("MenuBar.rolloverEnabled");
-        hotTrackingOn = (obj instanceof Boolean) ? (Boolean)obj : true;
+        hotTrackingOn = obj instanceof Boolean bool ? bool : true;
     }
 
     /**
@@ -288,7 +288,7 @@ public class WindowsMenuUI extends BasicMenuUI {
         // Note: When toolbar containers (rebars) are implemented, only do
         // this if the JMenuBar is not in a rebar (i.e. ignore the desktop
         // property win.menu.height if in a rebar.)
-        if (c instanceof JMenu && ((JMenu)c).isTopLevelMenu() &&
+        if (c instanceof JMenu menu && menu.isTopLevelMenu() &&
             menuBarHeight != null && d.height < menuBarHeight) {
 
             d.height = menuBarHeight;

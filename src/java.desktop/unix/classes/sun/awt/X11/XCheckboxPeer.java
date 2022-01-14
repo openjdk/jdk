@@ -339,7 +339,9 @@ class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
         Graphics2D g2 = null;
         int rx = x;
         int ry = y;
-        if (!(g instanceof Graphics2D)) {
+        if (g instanceof Graphics2D graphics2D) {
+            g2 = graphics2D;
+        } else {
             // Fix for 5045936. While printing, g is an instance of
             //   sun.print.ProxyPrintGraphics which extends Graphics. So
             //   we use a separate buffered image and its graphics is
@@ -349,9 +351,6 @@ class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
             useBufferedImage = true;
             rx = 0;
             ry = 0;
-        }
-        else {
-            g2 = (Graphics2D)g;
         }
         try {
             drawMotif3DRect(g2, rx, ry, w-1, h-1, armed | selected);

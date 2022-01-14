@@ -306,26 +306,26 @@ class XPStyle {
             super(color, thickness);
         }
 
-        public Insets getBorderInsets(Component c, Insets insets)       {
+        public Insets getBorderInsets(Component c, Insets insets) {
             Insets margin = null;
             //
             // Ideally we'd have an interface defined for classes which
             // support margins (to avoid this hackery), but we've
             // decided against it for simplicity
             //
-           if (c instanceof AbstractButton) {
-               margin = ((AbstractButton)c).getMargin();
-           } else if (c instanceof JToolBar) {
-               margin = ((JToolBar)c).getMargin();
-           } else if (c instanceof JTextComponent) {
-               margin = ((JTextComponent)c).getMargin();
-           }
-           insets.top    = (margin != null? margin.top : 0)    + thickness;
-           insets.left   = (margin != null? margin.left : 0)   + thickness;
-           insets.bottom = (margin != null? margin.bottom : 0) + thickness;
-           insets.right =  (margin != null? margin.right : 0)  + thickness;
+            if (c instanceof AbstractButton abstractButton) {
+                margin = abstractButton.getMargin();
+            } else if (c instanceof JToolBar toolbar) {
+                margin = toolbar.getMargin();
+            } else if (c instanceof JTextComponent component) {
+                margin = component.getMargin();
+            }
+            insets.top = (margin != null ? margin.top : 0) + thickness;
+            insets.left = (margin != null ? margin.left : 0) + thickness;
+            insets.bottom = (margin != null ? margin.bottom : 0) + thickness;
+            insets.right = (margin != null ? margin.right : 0) + thickness;
 
-           return insets;
+            return insets;
         }
     }
 
@@ -340,17 +340,15 @@ class XPStyle {
         }
 
         public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
-            State state = State.NORMAL;
             // special casing for comboboxes.
             // there may be more special cases in the future
-            if(c instanceof JComboBox) {
-                JComboBox<?> cb = (JComboBox)c;
-                // note. in the future this should be replaced with a call
-                // to BasicLookAndFeel.getUIOfType()
-                if(cb.getUI() instanceof WindowsComboBoxUI) {
-                    WindowsComboBoxUI wcb = (WindowsComboBoxUI)cb.getUI();
-                    state = wcb.getXPComboBoxState(cb);
-                }
+            // note. in the future this should be replaced with a call
+            // to BasicLookAndFeel.getUIOfType()
+            State state;
+            if (c instanceof JComboBox<?> cb && cb.getUI() instanceof WindowsComboBoxUI wcb) {
+                state = wcb.getXPComboBoxState(cb);
+            } else {
+                state = State.NORMAL;
             }
             lineColor = getColor(c, part, state, prop, Color.black);
             super.paintBorder(c, g, x, y, width, height);
@@ -370,10 +368,10 @@ class XPStyle {
             skin.paintSkin(g, x, y, width, height, null);
         }
 
-        public Insets getBorderInsets(Component c, Insets insets)       {
+        public Insets getBorderInsets(Component c, Insets insets) {
             Insets margin = null;
             Insets borderInsets = skin.getContentMargin();
-            if(borderInsets == null) {
+            if (borderInsets == null) {
                 borderInsets = new Insets(0, 0, 0, 0);
             }
             //
@@ -381,19 +379,20 @@ class XPStyle {
             // support margins (to avoid this hackery), but we've
             // decided against it for simplicity
             //
-           if (c instanceof AbstractButton) {
-               margin = ((AbstractButton)c).getMargin();
-           } else if (c instanceof JToolBar) {
-               margin = ((JToolBar)c).getMargin();
-           } else if (c instanceof JTextComponent) {
-               margin = ((JTextComponent)c).getMargin();
-           }
-           insets.top    = (margin != null? margin.top : 0)    + borderInsets.top;
-           insets.left   = (margin != null? margin.left : 0)   + borderInsets.left;
-           insets.bottom = (margin != null? margin.bottom : 0) + borderInsets.bottom;
-           insets.right  = (margin != null? margin.right : 0)  + borderInsets.right;
+            if (c instanceof AbstractButton button) {
+                margin = button.getMargin();
+            } else if (c instanceof JToolBar toolbar) {
+                margin = toolbar.getMargin();
+            } else if (c instanceof JTextComponent component) {
+                margin = component.getMargin();
+            }
 
-           return insets;
+            insets.top = (margin != null ? margin.top : 0) + borderInsets.top;
+            insets.left = (margin != null ? margin.left : 0) + borderInsets.left;
+            insets.bottom = (margin != null ? margin.bottom : 0) + borderInsets.bottom;
+            insets.right = (margin != null ? margin.right : 0) + borderInsets.right;
+
+            return insets;
         }
     }
 
@@ -407,8 +406,8 @@ class XPStyle {
             insets = super.getBorderInsets(c, insets);
 
             Insets margin = null;
-            if (c instanceof AbstractButton) {
-                Insets m = ((AbstractButton)c).getMargin();
+            if (c instanceof AbstractButton button) {
+                Insets m = button.getMargin();
                 // if this is a toolbar button then ignore getMargin()
                 // and subtract the padding added by the constructor
                 if(c.getParent() instanceof JToolBar
@@ -422,10 +421,10 @@ class XPStyle {
                 } else {
                     margin = m;
                 }
-            } else if (c instanceof JToolBar) {
-                margin = ((JToolBar)c).getMargin();
-            } else if (c instanceof JTextComponent) {
-                margin = ((JTextComponent)c).getMargin();
+            } else if (c instanceof JToolBar toolBar) {
+                margin = toolBar.getMargin();
+            } else if (c instanceof JTextComponent component) {
+                margin = component.getMargin();
             }
             if (margin != null) {
                 insets.top    = margin.top + 2;
@@ -546,7 +545,7 @@ class XPStyle {
         }
 
         public boolean equals(Object obj) {
-            return (obj instanceof Skin && ((Skin)obj).string.equals(string));
+            return obj instanceof Skin skin && skin.string.equals(string);
         }
 
         public int hashCode() {
@@ -594,10 +593,10 @@ class XPStyle {
             if (XPStyle.getXP() == null) {
                 return;
             }
-            if (component instanceof JComponent
+            if (component instanceof JComponent jComponent
                   && SwingUtilities.getAncestorOfClass(CellRendererPane.class,
                                                        component) == null) {
-                AnimationController.paintSkin((JComponent) component, this,
+                AnimationController.paintSkin(jComponent, this,
                                               g, dx, dy, dw, dh, state);
             } else {
                 paintSkinRaw(g, dx, dy, dw, dh, state);

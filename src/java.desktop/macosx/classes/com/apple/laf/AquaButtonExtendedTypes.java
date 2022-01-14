@@ -49,10 +49,12 @@ public class AquaButtonExtendedTypes {
         final TypeSpecifier specifier = getSpecifierByName(name);
         if (specifier == null) return null;
 
-        final Border border = specifier.getBorder();
-        if (!(border instanceof AquaBorder)) return border;
-
-        return ((AquaBorder)border).deriveBorderForSize(AquaUtilControlSize.getUserSizeFrom(c));
+        Border border = specifier.getBorder();
+        if (border instanceof AquaBorder aquaBorder) {
+            return aquaBorder.deriveBorderForSize(AquaUtilControlSize.getUserSizeFrom(c));
+        } else {
+            return border;
+        }
     }
 
     protected static String getRealPositionForLogicalPosition(String logicalPosition, boolean leftToRight) {

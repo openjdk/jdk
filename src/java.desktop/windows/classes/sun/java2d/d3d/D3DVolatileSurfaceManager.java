@@ -89,12 +89,7 @@ public class D3DVolatileSurfaceManager
         WComponentPeer peer = (comp != null) ? acc.getPeer(comp) : null;
 
         try {
-            boolean forceback = false;
-            if (context instanceof Boolean) {
-                forceback = ((Boolean)context).booleanValue();
-            }
-
-            if (forceback) {
+            if (context instanceof Boolean bool && bool) {
                 // peer must be non-null in this case
                 sData = D3DSurfaceData.createData(peer, vImg);
             } else {
@@ -194,31 +189,27 @@ public class D3DVolatileSurfaceManager
      * the source surface is disabled forever.
      */
     static void handleVItoScreenOp(SurfaceData src, SurfaceData dst) {
-        if (src instanceof D3DSurfaceData &&
+        if (src instanceof D3DSurfaceData d3dsd &&
             dst instanceof GDIWindowSurfaceData)
         {
-            D3DSurfaceData d3dsd = (D3DSurfaceData)src;
             SurfaceManager mgr =
                 SurfaceManager.getManager((Image)d3dsd.getDestination());
-            if (mgr instanceof D3DVolatileSurfaceManager) {
-                D3DVolatileSurfaceManager vsm = (D3DVolatileSurfaceManager)mgr;
-                if (vsm != null) {
-                    d3dsd.setSurfaceLost(true);
+            if (mgr instanceof D3DVolatileSurfaceManager vsm && vsm != null) {
+                d3dsd.setSurfaceLost(true);
 
-                    GDIWindowSurfaceData wsd = (GDIWindowSurfaceData)dst;
-                    WComponentPeer p = wsd.getPeer();
-                    if (D3DScreenUpdateManager.canUseD3DOnScreen(p,
-                            (Win32GraphicsConfig)p.getGraphicsConfiguration(),
+                GDIWindowSurfaceData wsd = (GDIWindowSurfaceData) dst;
+                WComponentPeer p = wsd.getPeer();
+                if (D3DScreenUpdateManager.canUseD3DOnScreen(p,
+                        (Win32GraphicsConfig) p.getGraphicsConfiguration(),
                             p.getBackBuffersNum()))
                     {
-                        // 10 is only chosen to be greater than the number of
-                        // times a sane person would call validate() inside
-                        // a validation loop, and to reduce thrashing between
-                        // accelerated and backup surfaces
-                        vsm.setRestoreCountdown(10);
-                    } else {
-                        vsm.setAccelerationEnabled(false);
-                    }
+                    // 10 is only chosen to be greater than the number of
+                    // times a sane person would call validate() inside
+                    // a validation loop, and to reduce thrashing between
+                    // accelerated and backup surfaces
+                    vsm.setRestoreCountdown(10);
+                } else {
+                    vsm.setAccelerationEnabled(false);
                 }
             }
         }

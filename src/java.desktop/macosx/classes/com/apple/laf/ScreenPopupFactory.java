@@ -64,28 +64,27 @@ class ScreenPopupFactory extends PopupFactory {
         // Make the popup semi-translucent if it is a heavy weight
         // see <rdar://problem/3547670> JPopupMenus have incorrect background
         final Window w = getWindow(invoker);
-        if (w == null) return popup;
+        if (w instanceof RootPaneContainer rootPane) {
+            JRootPane popupRootPane = rootPane.getRootPane();
 
-        if (!(w instanceof RootPaneContainer)) return popup;
-        final JRootPane popupRootPane = ((RootPaneContainer)w).getRootPane();
+            // we need to set every time, because PopupFactory caches the heavy weight
+            // TODO: CPlatformWindow constants?
+            if (fIsActive) {
+                popupRootPane.putClientProperty(CPlatformWindow.WINDOW_ALPHA, TRANSLUCENT);
+                popupRootPane.putClientProperty(CPlatformWindow.WINDOW_SHADOW, Boolean.TRUE);
+                popupRootPane.putClientProperty(CPlatformWindow.WINDOW_FADE_DELEGATE, invoker);
 
-        // we need to set every time, because PopupFactory caches the heavy weight
-        // TODO: CPlatformWindow constants?
-        if (fIsActive) {
-            popupRootPane.putClientProperty(CPlatformWindow.WINDOW_ALPHA, TRANSLUCENT);
-            popupRootPane.putClientProperty(CPlatformWindow.WINDOW_SHADOW, Boolean.TRUE);
-            popupRootPane.putClientProperty(CPlatformWindow.WINDOW_FADE_DELEGATE, invoker);
-
-            w.setBackground(UIManager.getColor("PopupMenu.translucentBackground"));
-            popupRootPane.putClientProperty(CPlatformWindow.WINDOW_DRAGGABLE_BACKGROUND, Boolean.FALSE);
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    popupRootPane.putClientProperty(CPlatformWindow.WINDOW_SHADOW_REVALIDATE_NOW, Double.valueOf(Math.random()));
-                }
-            });
-        } else {
-            popupRootPane.putClientProperty(CPlatformWindow.WINDOW_ALPHA, OPAQUE);
-            popupRootPane.putClientProperty(CPlatformWindow.WINDOW_SHADOW, Boolean.FALSE);
+                w.setBackground(UIManager.getColor("PopupMenu.translucentBackground"));
+                popupRootPane.putClientProperty(CPlatformWindow.WINDOW_DRAGGABLE_BACKGROUND, Boolean.FALSE);
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        popupRootPane.putClientProperty(CPlatformWindow.WINDOW_SHADOW_REVALIDATE_NOW, Double.valueOf(Math.random()));
+                    }
+                });
+            } else {
+                popupRootPane.putClientProperty(CPlatformWindow.WINDOW_ALPHA, OPAQUE);
+                popupRootPane.putClientProperty(CPlatformWindow.WINDOW_SHADOW, Boolean.FALSE);
+            }
         }
 
         return popup;

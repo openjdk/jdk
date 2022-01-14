@@ -196,8 +196,8 @@ public abstract class XRSurfaceData extends XSurfaceData {
                 && (sg2d.paintState <= SunGraphics2D.PAINT_ALPHACOLOR || sg2d.composite == null);
 
         boolean supportedCompOp = false;
-        if (sg2d.composite instanceof AlphaComposite) {
-            int compRule = ((AlphaComposite) sg2d.composite).getRule();
+        if (sg2d.composite instanceof AlphaComposite composite) {
+            int compRule = composite.getRule();
             supportedCompOp = XRUtils.isMaskEvaluated(XRUtils.j2dAlphaCompToXR(compRule))
                     || (compRule == AlphaComposite.SRC
                                 && sg2d.paintState <= SunGraphics2D.PAINT_ALPHACOLOR);

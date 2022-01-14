@@ -53,10 +53,8 @@ public class WindowsPopupMenuSeparatorUI extends BasicPopupMenuSeparatorUI {
         XPStyle xp = XPStyle.getXP();
         if (WindowsMenuItemUI.isVistaPainting(xp)) {
             int x = 1;
-            Component parent = c.getParent();
-            if (parent instanceof JComponent) {
-                Object gutterOffsetObject =
-                    ((JComponent) parent).getClientProperty(
+            if (c.getParent() instanceof JComponent component) {
+                Object gutterOffsetObject = component.getClientProperty(
                         WindowsPopupMenuUI.GUTTER_OFFSET_KEY);
                 if (gutterOffsetObject instanceof Integer) {
                     /*

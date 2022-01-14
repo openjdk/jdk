@@ -181,8 +181,7 @@ public class WindowsButtonUI extends BasicButtonUI
         if(b instanceof JRadioButton) {
             return Part.BP_RADIOBUTTON;
         }
-        boolean toolbar = (b.getParent() instanceof JToolBar);
-        return toolbar ? Part.TP_BUTTON : Part.BP_PUSHBUTTON;
+        return b.getParent() instanceof JToolBar ? Part.TP_BUTTON : Part.BP_PUSHBUTTON;
     }
 
     static State getXPButtonState(AbstractButton b) {
@@ -210,8 +209,7 @@ public class WindowsButtonUI extends BasicButtonUI
         case BP_PUSHBUTTON:
             /* falls through */
         case TP_BUTTON:
-            boolean toolbar = (b.getParent() instanceof JToolBar);
-            if (toolbar) {
+            if (b.getParent() instanceof JToolBar) {
                 if (model.isArmed() && model.isPressed()) {
                     state = State.PRESSED;
                 } else if (!model.isEnabled()) {
@@ -233,8 +231,7 @@ public class WindowsButtonUI extends BasicButtonUI
                     state = State.DISABLED;
                 } else if (model.isRollover() || model.isPressed()) {
                     state = State.HOT;
-                } else if (b instanceof JButton
-                           && ((JButton)b).isDefaultButton()) {
+                } else if (b instanceof JButton button && button.isDefaultButton()) {
                     state = State.DEFAULTED;
                 } else if (b.hasFocus()) {
                     state = State.HOT;
@@ -301,8 +298,7 @@ public class WindowsButtonUI extends BasicButtonUI
         }
         if (b.isBorderOpaque()) {
             return b.getBorderInsets(c);
-        } else if (b instanceof CompoundBorder) {
-            CompoundBorder cb = (CompoundBorder)b;
+        } else if (b instanceof CompoundBorder cb) {
             Insets iOut = getOpaqueInsets(cb.getOutsideBorder(), c);
             if (iOut != null && iOut.equals(cb.getOutsideBorder().getBorderInsets(c))) {
                 // Outside border is opaque, keep looking

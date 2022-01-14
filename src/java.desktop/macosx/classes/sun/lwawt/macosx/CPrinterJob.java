@@ -184,9 +184,7 @@ public final class CPrinterJob extends RasterPrinterJob {
         if (attributes == null) {
             return;
         }
-        Attribute attr = attributes.get(Media.class);
-        if (attr instanceof CustomMediaTray) {
-            CustomMediaTray customTray = (CustomMediaTray) attr;
+        if (attributes.get(Media.class) instanceof CustomMediaTray customTray) {
             tray = customTray.getChoiceName();
         }
 
@@ -741,8 +739,11 @@ public final class CPrinterJob extends RasterPrinterJob {
             try { EventQueue.invokeAndWait(r);
             } catch (java.lang.reflect.InvocationTargetException ite) {
                 Throwable te = ite.getTargetException();
-                if (te instanceof PrinterException) throw (PrinterException)te;
-                else te.printStackTrace();
+                if (te instanceof PrinterException printerException) {
+                    throw printerException;
+                } else {
+                    te.printStackTrace();
+                }
             } catch (Exception e) { e.printStackTrace(); }
         } else {
             r.run();

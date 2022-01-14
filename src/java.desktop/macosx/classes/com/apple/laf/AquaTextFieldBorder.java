@@ -65,40 +65,38 @@ public class AquaTextFieldBorder extends AquaBorder {
 //        g.setColor(Color.MAGENTA);
 //        g.drawRect(x, y, width - 1, height - 1);
 
-        if (!(c instanceof JTextComponent)) {
+        if (c instanceof JTextComponent jc) {
+            final State state = getStateFor(jc);
+            painter.state.set(state);
+            painter.state.set(State.ACTIVE == state && jc.hasFocus() ? Focused.YES : Focused.NO);
+
+            if (jc.isOpaque()) {
+                painter.paint(g, c, x, y, width, height);
+                return;
+            }
+
+            final int shrinkage = getShrinkageFor(jc, height);
+            final Insets subInsets = getSubInsets(shrinkage);
+            x += subInsets.left;
+            y += subInsets.top;
+            width -= (subInsets.left + subInsets.right);
+            height -= (subInsets.top + subInsets.bottom);
+
+            if (shrinkage > 0) {
+                final Rectangle clipBounds = g.getClipBounds();
+                clipBounds.x += shrinkage;
+                clipBounds.width -= shrinkage * 2;
+                g.setClip(clipBounds);
+            }
+
+            painter.paint(g, c, x, y, width, height);
+//        g.setColor(Color.ORANGE);
+//        g.drawRect(x, y, width - 1, height - 1);
+        } else {
             painter.state.set(State.ACTIVE);
             painter.state.set(Focused.NO);
             painter.paint(g, c, x, y, width, height);
-            return;
         }
-
-        final JTextComponent jc = (JTextComponent)c;
-        final State state = getStateFor(jc);
-        painter.state.set(state);
-        painter.state.set(State.ACTIVE == state && jc.hasFocus() ? Focused.YES : Focused.NO);
-
-        if (jc.isOpaque()) {
-            painter.paint(g, c, x, y, width, height);
-            return;
-        }
-
-        final int shrinkage = getShrinkageFor(jc, height);
-        final Insets subInsets = getSubInsets(shrinkage);
-        x += subInsets.left;
-        y += subInsets.top;
-        width -= (subInsets.left + subInsets.right);
-        height -= (subInsets.top + subInsets.bottom);
-
-        if (shrinkage > 0) {
-            final Rectangle clipBounds = g.getClipBounds();
-            clipBounds.x += shrinkage;
-            clipBounds.width -= shrinkage * 2;
-            g.setClip(clipBounds);
-        }
-
-        painter.paint(g, c, x, y, width, height);
-//        g.setColor(Color.ORANGE);
-//        g.drawRect(x, y, width - 1, height - 1);
     }
 
     static int getShrinkageFor(final JTextComponent jc, final int height) {

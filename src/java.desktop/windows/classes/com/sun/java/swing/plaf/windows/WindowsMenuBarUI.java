@@ -78,8 +78,9 @@ public class WindowsMenuBarUI extends BasicMenuBarUI
     private void installWindowListener() {
         if (windowListener == null) {
             Component component = menuBar.getTopLevelAncestor();
-            if (component instanceof Window) {
-                window = (Window) component;
+            if (component instanceof Window window) {
+                this.window = window;
+
                 windowListener = new WindowAdapter() {
                     @Override
                     public void windowActivated(WindowEvent e) {
@@ -90,7 +91,8 @@ public class WindowsMenuBarUI extends BasicMenuBarUI
                         menuBar.repaint();
                     }
                 };
-                ((Window) component).addWindowListener(windowListener);
+
+                window.addWindowListener(windowListener);
             }
         }
     }
@@ -179,12 +181,6 @@ public class WindowsMenuBarUI extends BasicMenuBarUI
      */
     static boolean isActive(JComponent c) {
         JRootPane rootPane = c.getRootPane();
-        if (rootPane != null) {
-            Component component = rootPane.getParent();
-            if (component instanceof Window) {
-                return ((Window) component).isActive();
-            }
-        }
-        return true;
+        return rootPane == null || !(rootPane.getParent() instanceof Window window && window.isActive());
     }
 }

@@ -329,12 +329,9 @@ public abstract class MTLSurfaceData extends SurfaceData
     }
 
     private boolean canHandleComposite(Composite c) {
-        if (c instanceof AlphaComposite) {
-            AlphaComposite ac = (AlphaComposite)c;
-
-            return ac.getRule() == AlphaComposite.SRC_OVER && ac.getAlpha() >= 1f;
-        }
-        return false;
+        return c instanceof AlphaComposite ac &&
+                ac.getRule() == AlphaComposite.SRC_OVER &&
+                ac.getAlpha() >= 1f;
     }
 
     public void validatePipe(SunGraphics2D sg2d) {

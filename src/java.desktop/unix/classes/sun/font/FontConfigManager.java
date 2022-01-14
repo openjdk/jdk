@@ -267,8 +267,8 @@ public class FontConfigManager {
                 Font2D f2d = fm.findFont2D(fcInfo.firstFont.familyName,
                                            fcInfo.style,
                                            FontManager.NO_FALLBACK);
-                if (f2d instanceof PhysicalFont) { /* paranoia */
-                    return (PhysicalFont)f2d;
+                if (f2d instanceof PhysicalFont physicalFont) { /* paranoia */
+                    return physicalFont;
                 } else {
                     return null;
                 }
@@ -295,8 +295,8 @@ public class FontConfigManager {
                     Font2D f2d = fm.findFont2D(fcInfo.firstFont.familyName,
                                                fcInfo.style,
                                                FontManager.NO_FALLBACK);
-                    if (f2d instanceof PhysicalFont) { /* paranoia */
-                        return (PhysicalFont)f2d;
+                    if (f2d instanceof PhysicalFont physicalFont) { /* paranoia */
+                        return physicalFont;
                     } else {
                         return null;
                     }
@@ -385,11 +385,8 @@ public class FontConfigManager {
          */
         FontFamily family = FontFamily.getFamily(fcInfo.firstFont.familyName);
         PhysicalFont physFont = null;
-        if (family != null) {
-            Font2D f2D = family.getFontWithExactStyleMatch(fcInfo.style);
-            if (f2D instanceof PhysicalFont) {
-                physFont = (PhysicalFont)f2D;
-            }
+        if (family != null && family.getFontWithExactStyleMatch(fcInfo.style) instanceof PhysicalFont physicalFont) {
+            physFont = physicalFont;
         }
 
         if (physFont == null ||

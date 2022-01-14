@@ -418,20 +418,18 @@ public class AquaInternalFrameBorder implements Border, UIResource {
         if (fBorderInsets == null) fBorderInsets = new Insets(0, 0, 0, 0);
 
         // Paranoia check
-        if (!(c instanceof JInternalFrame)) return fBorderInsets;
+        if (c instanceof final JInternalFrame frame) {
+            // Set the contentRect to an arbitrary value (in case the current real one is too small)
+            setInBounds(0, 0, kContentTester, kContentTester);
 
-        final JInternalFrame frame = (JInternalFrame)c;
+            // Set parameters
+            setMetrics(frame, c);
 
-        // Set the contentRect to an arbitrary value (in case the current real one is too small)
-        setInBounds(0, 0, kContentTester, kContentTester);
-
-        // Set parameters
-        setMetrics(frame, c);
-
-        fBorderInsets.left = 0;
-        fBorderInsets.top = metrics.titleBarHeight;
-        fBorderInsets.right = 0;
-        fBorderInsets.bottom = 0;
+            fBorderInsets.left = 0;
+            fBorderInsets.top = metrics.titleBarHeight;
+            fBorderInsets.right = 0;
+            fBorderInsets.bottom = 0;
+        }
 
         return fBorderInsets;
     }

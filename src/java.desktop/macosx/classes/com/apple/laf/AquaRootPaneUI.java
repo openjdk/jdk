@@ -110,26 +110,15 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
      * If a new JMenuBar was added, tell the menu bar UI, because it will need to update the menu bar.
      */
     public void componentAdded(final ContainerEvent e) {
-        if (e.getContainer() instanceof JRootPane) {
-            final JRootPane root = (JRootPane)e.getContainer();
+        if (e.getContainer() instanceof JRootPane root) {
             if (e.getChild() == root.getLayeredPane()) {
-                final JLayeredPane layered = root.getLayeredPane();
-                layered.addContainerListener(this);
+                root.getLayeredPane().addContainerListener(this);
             }
-        } else {
-            if (e.getChild() instanceof JMenuBar) {
-                final JMenuBar jmb = (JMenuBar)e.getChild();
-                final MenuBarUI mbui = jmb.getUI();
-
-                if (mbui instanceof AquaMenuBarUI) {
-                    final Window owningWindow = SwingUtilities.getWindowAncestor(jmb);
-
-                    // Could be a JDialog, and may have been added to a JRootPane not yet in a window.
-                    if (owningWindow instanceof JFrame frame) {
-                        ((AquaMenuBarUI)mbui).setScreenMenuBar(frame);
-                    }
-                }
-            }
+        } else if (e.getChild() instanceof JMenuBar jmb &&
+                jmb.getUI() instanceof AquaMenuBarUI aquaMenuBar &&
+                // Could be a JDialog, and may have been added to a JRootPane not yet in a window.
+                SwingUtilities.getWindowAncestor(jmb) instanceof JFrame frame) {
+            aquaMenuBar.setScreenMenuBar(frame);
         }
     }
 
@@ -138,25 +127,16 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
      * If the JMenuBar is removed, tell the menu bar UI to clear the menu bar.
      */
     public void componentRemoved(final ContainerEvent e) {
-        if (e.getContainer() instanceof JRootPane) {
-            final JRootPane root = (JRootPane)e.getContainer();
+        if (e.getContainer() instanceof JRootPane root) {
             if (e.getChild() == root.getLayeredPane()) {
-                final JLayeredPane layered = root.getLayeredPane();
-                layered.removeContainerListener(this);
+                root.getLayeredPane().removeContainerListener(this);
             }
         } else {
-            if (e.getChild() instanceof JMenuBar) {
-                final JMenuBar jmb = (JMenuBar)e.getChild();
-                final MenuBarUI mbui = jmb.getUI();
-
-                if (mbui instanceof AquaMenuBarUI) {
-                    final Window owningWindow = SwingUtilities.getWindowAncestor(jmb);
-
+            if (e.getChild() instanceof JMenuBar jmb &&
+                    jmb.getUI() instanceof AquaMenuBarUI menuBar &&
                     // Could be a JDialog, and may have been added to a JRootPane not yet in a window.
-                    if (owningWindow instanceof JFrame frame) {
-                        ((AquaMenuBarUI)mbui).clearScreenMenuBar(frame);
-                    }
-                }
+                    SwingUtilities.getWindowAncestor(jmb) instanceof JFrame frame) {
+                menuBar.clearScreenMenuBar(frame);
             }
         }
     }
@@ -254,12 +234,10 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
         // button to start the throbbing.  Since the UI is a singleton make sure the root pane
         // we are checking has a default button before calling update otherwise we will stop
         // throbbing the current default button.
-        final JComponent comp = event.getComponent();
-        if (comp instanceof JRootPane) {
-            final JRootPane rp = (JRootPane)comp;
-            if (rp.isEnabled() && rp.getDefaultButton() != null) {
-                updateDefaultButton((JRootPane)comp);
-            }
+        if (event.getComponent() instanceof JRootPane rp
+                && rp.isEnabled() &&
+                rp.getDefaultButton() != null) {
+            updateDefaultButton(rp);
         }
     }
 
@@ -296,20 +274,20 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
     public void windowLostFocus(final WindowEvent e) { }
 
     private static void updateComponentTreeUIActivation(final Component c, Object active) {
-        if (c instanceof javax.swing.JInternalFrame) {
-            active = (((JInternalFrame)c).isSelected() ? Boolean.TRUE : Boolean.FALSE);
+        if (c instanceof JInternalFrame frame) {
+            active = frame.isSelected();
         }
 
-        if (c instanceof javax.swing.JComponent) {
-            ((javax.swing.JComponent)c).putClientProperty(AquaFocusHandler.FRAME_ACTIVE_PROPERTY, active);
+        if (c instanceof JComponent component) {
+            component.putClientProperty(AquaFocusHandler.FRAME_ACTIVE_PROPERTY, active);
         }
 
         Component[] children = null;
 
-        if (c instanceof javax.swing.JMenu) {
-            children = ((javax.swing.JMenu)c).getMenuComponents();
-        } else if (c instanceof Container) {
-            children = ((Container)c).getComponents();
+        if (c instanceof JMenu menu) {
+            children = menu.getMenuComponents();
+        } else if (c instanceof Container container) {
+            children = container.getComponents();
         }
 
         if (children == null) return;

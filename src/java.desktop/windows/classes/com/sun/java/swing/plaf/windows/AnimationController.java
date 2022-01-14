@@ -189,13 +189,11 @@ class AnimationController implements ActionListener, PropertyChangeListener {
     }
 
     private synchronized State getState(JComponent component, Part part) {
-        State rv = null;
-        Object tmpObject =
-            component.getClientProperty(PartUIClientPropertyKey.getKey(part));
-        if (tmpObject instanceof State) {
-            rv = (State) tmpObject;
+        if (component.getClientProperty(PartUIClientPropertyKey.getKey(part)) instanceof State state) {
+            return state;
+        } else {
+            return null;
         }
-        return rv;
     }
 
     private synchronized void putState(JComponent component, Part part,

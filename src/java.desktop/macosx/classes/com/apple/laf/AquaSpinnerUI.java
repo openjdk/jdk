@@ -183,9 +183,8 @@ public class AquaSpinnerUI extends SpinnerUI {
 
     protected void installListeners() {
         spinner.addPropertyChangeListener(getPropertyChangeListener());
-        JComponent editor = spinner.getEditor();
-        if (editor instanceof DefaultEditor) {
-            JTextField tf = ((JSpinner.DefaultEditor)editor).getTextField();
+        if (spinner.getEditor() instanceof DefaultEditor defaultEditor) {
+            JTextField tf = defaultEditor.getTextField();
             if (tf != null) {
                 tf.addFocusListener(getNextButtonHandler());
                 tf.addFocusListener(getPreviousButtonHandler());
@@ -194,9 +193,8 @@ public class AquaSpinnerUI extends SpinnerUI {
     }
 
     protected void uninstallListeners() {
-        JComponent editor = spinner.getEditor();
-        if (editor instanceof DefaultEditor) {
-            JTextField tf = ((JSpinner.DefaultEditor) editor).getTextField();
+        if (spinner.getEditor() instanceof DefaultEditor defaultEditor) {
+            JTextField tf = defaultEditor.getTextField();
             if (tf != null) {
                 tf.removeFocusListener(getNextButtonHandler());
                 tf.removeFocusListener(getPreviousButtonHandler());
@@ -347,8 +345,8 @@ public class AquaSpinnerUI extends SpinnerUI {
             final Component child = c.getComponent(counter);
 
             child.setEnabled(enabled);
-            if (child instanceof Container) {
-                updateEnabledState((Container) child, enabled);
+            if (child instanceof Container container) {
+                updateEnabledState(container, enabled);
             }
         }
     }
@@ -403,10 +401,10 @@ public class AquaSpinnerUI extends SpinnerUI {
 
         private JSpinner eventToSpinner(final AWTEvent e) {
             Object src = e.getSource();
-            while ((src instanceof Component) && !(src instanceof JSpinner)) {
-                src = ((Component) src).getParent();
+            while (src instanceof Component component && !(src instanceof JSpinner)) {
+                src = component.getParent();
             }
-            return (src instanceof JSpinner) ? (JSpinner) src : null;
+            return src instanceof JSpinner spinner ? spinner : null;
         }
 
         @Override
@@ -414,8 +412,8 @@ public class AquaSpinnerUI extends SpinnerUI {
             if (!(e.getSource() instanceof javax.swing.Timer)) {
                 // Most likely resulting from being in ActionMap.
                 spinner = eventToSpinner(e);
-                if (e.getSource() instanceof JButton) {
-                    arrowButton = (JButton)e.getSource();
+                if (e.getSource() instanceof JButton button) {
+                    arrowButton = button;
                 }
             } else {
                 if (arrowButton != null && !arrowButton.getModel().isPressed()
@@ -455,31 +453,28 @@ public class AquaSpinnerUI extends SpinnerUI {
             if (spinnerComponent == null) {
                 return;
             }
-            final JComponent editor = spinnerComponent.getEditor();
-            if (!(editor instanceof JSpinner.DateEditor)) {
-                return;
-            }
 
-            final JSpinner.DateEditor dateEditor = (JSpinner.DateEditor) editor;
-            final JFormattedTextField ftf = dateEditor.getTextField();
-            final Format format = dateEditor.getFormat();
-            Object value;
-            if (format == null || (value = spinnerComponent.getValue()) == null) {
-                return;
-            }
-
-            final SpinnerDateModel model = dateEditor.getModel();
-            final DateFormat.Field field = DateFormat.Field.ofCalendarField(model.getCalendarField());
-            if (field == null) {
-                return;
-            }
-
-            try {
-                final AttributedCharacterIterator iterator = format.formatToCharacterIterator(value);
-                if (!select(ftf, iterator, field) && field == DateFormat.Field.HOUR0) {
-                    select(ftf, iterator, DateFormat.Field.HOUR1);
+            if (spinnerComponent.getEditor() instanceof JSpinner.DateEditor dateEditor) {
+                final JFormattedTextField ftf = dateEditor.getTextField();
+                final Format format = dateEditor.getFormat();
+                Object value;
+                if (format == null || (value = spinnerComponent.getValue()) == null) {
+                    return;
                 }
-            } catch (final IllegalArgumentException iae) {
+
+                final SpinnerDateModel model = dateEditor.getModel();
+                final DateFormat.Field field = DateFormat.Field.ofCalendarField(model.getCalendarField());
+                if (field == null) {
+                    return;
+                }
+
+                try {
+                    final AttributedCharacterIterator iterator = format.formatToCharacterIterator(value);
+                    if (!select(ftf, iterator, field) && field == DateFormat.Field.HOUR0) {
+                        select(ftf, iterator, DateFormat.Field.HOUR1);
+                    }
+                } catch (final IllegalArgumentException iae) {
+                }
             }
         }
 
@@ -514,36 +509,25 @@ public class AquaSpinnerUI extends SpinnerUI {
          * isn't editing dates.
          */
         private int getCalendarField(final JSpinner spinnerComponent) {
-            final JComponent editor = spinnerComponent.getEditor();
-            if (!(editor instanceof JSpinner.DateEditor)) {
-                return -1;
-            }
+            if (spinnerComponent.getEditor() instanceof JSpinner.DateEditor dateEditor) {
+                JFormattedTextField ftf = dateEditor.getTextField();
+                if (ftf.getFormatter() instanceof InternationalFormatter iFormatter) {
+                    for (Field element : iFormatter.getFields(ftf.getSelectionStart())) {
+                        if (element instanceof DateFormat.Field field) {
+                            if (field == DateFormat.Field.HOUR1) {
+                                return Calendar.HOUR;
+                            }
 
-            final JSpinner.DateEditor dateEditor = (JSpinner.DateEditor) editor;
-            final JFormattedTextField ftf = dateEditor.getTextField();
-            final int start = ftf.getSelectionStart();
-            final JFormattedTextField.AbstractFormatter formatter = ftf.getFormatter();
-            if (!(formatter instanceof InternationalFormatter)) {
-                return -1;
-            }
+                            int calendarField = field.getCalendarField();
 
-            final Format.Field[] fields = ((InternationalFormatter) formatter).getFields(start);
-            for (final Field element : fields) {
-                if (!(element instanceof DateFormat.Field)) {
-                    continue;
-                }
-                int calendarField;
-
-                if (element == DateFormat.Field.HOUR1) {
-                    calendarField = Calendar.HOUR;
-                } else {
-                    calendarField = ((DateFormat.Field) element).getCalendarField();
-                }
-
-                if (calendarField != -1) {
-                    return calendarField;
+                            if (calendarField != -1) {
+                                return calendarField;
+                            }
+                        }
+                    }
                 }
             }
+
             return -1;
         }
 
@@ -808,25 +792,22 @@ public class AquaSpinnerUI extends SpinnerUI {
         public void propertyChange(final PropertyChangeEvent e) {
             final String propertyName = e.getPropertyName();
             final JSpinner spinner = (JSpinner) (e.getSource());
-            final SpinnerUI spinnerUI = spinner.getUI();
 
-            if (spinnerUI instanceof AquaSpinnerUI) {
-                final AquaSpinnerUI ui = (AquaSpinnerUI) spinnerUI;
-
+            if (spinner.getUI() instanceof AquaSpinnerUI ui) {
                 if ("editor".equals(propertyName)) {
                     final JComponent oldEditor = (JComponent) e.getOldValue();
                     final JComponent newEditor = (JComponent) e.getNewValue();
                     ui.replaceEditor(oldEditor, newEditor);
                     ui.updateEnabledState();
-                    if (oldEditor instanceof JSpinner.DefaultEditor) {
-                        JTextField tf = ((JSpinner.DefaultEditor)oldEditor).getTextField();
+                    if (oldEditor instanceof DefaultEditor defaultEditor) {
+                        JTextField tf = defaultEditor.getTextField();
                         if (tf != null) {
                             tf.removeFocusListener(getNextButtonHandler());
                             tf.removeFocusListener(getPreviousButtonHandler());
                         }
                     }
-                    if (newEditor instanceof JSpinner.DefaultEditor) {
-                        JTextField tf = ((JSpinner.DefaultEditor)newEditor).getTextField();
+                    if (newEditor instanceof DefaultEditor defaultEditor) {
+                        JTextField tf = defaultEditor.getTextField();
                         if (tf != null) {
                             if (tf.getFont() instanceof UIResource) {
                                 Font font = spinner.getFont();
@@ -852,10 +833,8 @@ public class AquaSpinnerUI extends SpinnerUI {
                 } else if (JComponent.TOOL_TIP_TEXT_KEY.equals(propertyName)) {
                     ui.updateToolTipTextForChildren(spinner);
                 } else if ("font".equals(propertyName)) {
-                    JComponent editor = spinner.getEditor();
-                    if (editor instanceof JSpinner.DefaultEditor) {
-                        JTextField tf
-                                = ((JSpinner.DefaultEditor) editor).getTextField();
+                    if (spinner.getEditor() instanceof DefaultEditor defaultEditor) {
+                        JTextField tf = defaultEditor.getTextField();
                         if (tf != null) {
                             if (tf.getFont() instanceof UIResource) {
                                 Font font = spinner.getFont();
@@ -871,16 +850,15 @@ public class AquaSpinnerUI extends SpinnerUI {
     // Syncronizes the ToolTip text for the components within the spinner
     // to be the same value as the spinner ToolTip text.
     void updateToolTipTextForChildren(final JComponent spinnerComponent) {
-        final String toolTipText = spinnerComponent.getToolTipText();
-        final Component[] children = spinnerComponent.getComponents();
-        for (final Component element : children) {
-            if (element instanceof JSpinner.DefaultEditor) {
-                final JTextField tf = ((JSpinner.DefaultEditor) element).getTextField();
+        String toolTipText = spinnerComponent.getToolTipText();
+        for (Component component : spinnerComponent.getComponents()) {
+            if (component instanceof DefaultEditor defaultEditor) {
+                JTextField tf = defaultEditor.getTextField();
                 if (tf != null) {
                     tf.setToolTipText(toolTipText);
                 }
-            } else if (element instanceof JComponent) {
-                ((JComponent) element).setToolTipText(toolTipText);
+            } else if (component instanceof JComponent jComponent) {
+                jComponent.setToolTipText(toolTipText);
             }
         }
     }

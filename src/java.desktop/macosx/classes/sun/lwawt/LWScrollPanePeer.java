@@ -59,8 +59,7 @@ final class LWScrollPanePeer extends LWContainerPeer<ScrollPane, JScrollPane>
 
     @Override
     public void handleEvent(AWTEvent e) {
-        if (e instanceof MouseWheelEvent) {
-            MouseWheelEvent wheelEvent = (MouseWheelEvent) e;
+        if (e instanceof MouseWheelEvent wheelEvent) {
             //java.awt.ScrollPane consumes the event
             // in case isWheelScrollingEnabled() is true,
             // forcibly send the consumed event to the delegate

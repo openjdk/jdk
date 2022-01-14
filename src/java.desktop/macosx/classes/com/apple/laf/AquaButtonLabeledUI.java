@@ -114,11 +114,9 @@ public abstract class AquaButtonLabeledUI extends AquaButtonToggleUI implements 
         }
 
         // only do this if borders are on!
-        if (((AbstractButton)c).isBorderPainted() && !isCellEditor) {
-            final Border border = c.getBorder();
-            if (border instanceof AquaButtonBorder) {
-                ((AquaButtonBorder)border).paintButton(c, g, viewRect.x, viewRect.y, viewRect.width, viewRect.height);
-            }
+        if (((AbstractButton) c).isBorderPainted() && !isCellEditor &&
+                c.getBorder() instanceof AquaButtonBorder aquaButtonBorder) {
+            aquaButtonBorder.paintButton(c, g, viewRect.x, viewRect.y, viewRect.width, viewRect.height);
         }
 
         viewRect.x = i.left;

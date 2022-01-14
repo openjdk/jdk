@@ -273,9 +273,7 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
         // TODO:
         boolean sOptimizeShapes = true;
         if (sOptimizeShapes && OSXSurfaceData.IsSimpleColor(sg2d.paint)) {
-            if (s instanceof Rectangle2D) {
-                Rectangle2D rectangle = (Rectangle2D) s;
-
+            if (s instanceof Rectangle2D rectangle) {
                 float x = (float) rectangle.getX();
                 float y = (float) rectangle.getY();
                 float w = (float) rectangle.getWidth();
@@ -285,9 +283,7 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
                 } else {
                     drawRect(sg2d, x, y, w, h);
                 }
-            } else if (s instanceof Ellipse2D) {
-                Ellipse2D ellipse = (Ellipse2D) s;
-
+            } else if (s instanceof Ellipse2D ellipse) {
                 float x = (float) ellipse.getX();
                 float y = (float) ellipse.getY();
                 float w = (float) ellipse.getWidth();
@@ -298,9 +294,7 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
                 } else {
                     drawOval(sg2d, x, y, w, h);
                 }
-            } else if (s instanceof Arc2D) {
-                Arc2D arc = (Arc2D) s;
-
+            } else if (s instanceof Arc2D arc) {
                 float x = (float) arc.getX();
                 float y = (float) arc.getY();
                 float w = (float) arc.getWidth();
@@ -313,9 +307,7 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
                 } else {
                     drawArc(sg2d, x, y, w, h, as, ae, arc.getArcType());
                 }
-            } else if (s instanceof RoundRectangle2D) {
-                RoundRectangle2D roundrect = (RoundRectangle2D) s;
-
+            } else if (s instanceof RoundRectangle2D roundrect) {
                 float x = (float) roundrect.getX();
                 float y = (float) roundrect.getY();
                 float w = (float) roundrect.getWidth();
@@ -328,30 +320,20 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
                 } else {
                     drawRoundRect(sg2d, x, y, w, h, aw, ah);
                 }
-            } else if (s instanceof Line2D) {
-                Line2D line = (Line2D) s;
-
+            } else if (s instanceof Line2D line) {
                 float x1 = (float) line.getX1();
                 float y1 = (float) line.getY1();
                 float x2 = (float) line.getX2();
                 float y2 = (float) line.getY2();
 
                 drawLine(sg2d, x1, y1, x2, y2);
-            } else if (s instanceof Point2D) {
-                Point2D point = (Point2D) s;
-
+            } else if (s instanceof Point2D point) {
                 float x = (float) point.getX();
                 float y = (float) point.getY();
 
                 drawLine(sg2d, x, y, x, y);
             } else {
-                GeneralPath gp;
-
-                if (s instanceof GeneralPath) {
-                    gp = (GeneralPath) s;
-                } else {
-                    gp = new GeneralPath(s);
-                }
+                GeneralPath gp = s instanceof GeneralPath path ? path : new GeneralPath(s);
 
                 PathIterator pi = gp.getPathIterator(null);
                 if (pi.isDone() == false) {
@@ -359,13 +341,7 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
                 }
             }
         } else {
-            GeneralPath gp;
-
-            if (s instanceof GeneralPath) {
-                gp = (GeneralPath) s;
-            } else {
-                gp = new GeneralPath(s);
-            }
+            GeneralPath gp = s instanceof GeneralPath path ? path : new GeneralPath(s);
 
             PathIterator pi = gp.getPathIterator(null);
             if (pi.isDone() == false) {
@@ -484,8 +460,8 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
             int iw = img.getWidth(null);
             int ih = img.getHeight(null);
 
-            if ((op != null) && (img instanceof BufferedImage)) {
-                if (((BufferedImage) img).getType() == BufferedImage.TYPE_CUSTOM) {
+            if (op != null && img instanceof BufferedImage bufferedImage) {
+                if (bufferedImage.getType() == BufferedImage.TYPE_CUSTOM) {
                     // BufferedImageOp can not handle custom images
                     BufferedImage dest = null;
                     dest = new BufferedImage(iw, ih, BufferedImage.TYPE_INT_ARGB_PRE);
@@ -495,7 +471,7 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
                     img = op.filter(dest, null);
                 } else {
                     // sun.awt.image.BufImgSurfaceData.createData((BufferedImage)img).finishLazyDrawing();
-                    img = op.filter((BufferedImage) img, null);
+                    img = op.filter(bufferedImage, null);
                 }
 
                 iw = img.getWidth(null);
@@ -530,63 +506,69 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
     public boolean copyImage(SunGraphics2D sg2d, Image img, int x, int y, Color bgColor, ImageObserver observer) {
         if (img == null) { throw new NullPointerException(); }
 
-        if (!(img instanceof sun.awt.image.ToolkitImage)) { return copyImage(sg2d, img, x, y, bgColor); }
-
-        sun.awt.image.ToolkitImage sunimg = (sun.awt.image.ToolkitImage) img;
-        if (!imageReady(sunimg, observer)) { return false; }
-        ImageRepresentation ir = sunimg.getImageRep();
-        return ir.drawToBufImage(sg2d, sunimg, x, y, bgColor, observer);
+        if (img instanceof ToolkitImage tki) {
+            return imageReady(tki, observer) &&
+                    tki.getImageRep().drawToBufImage(sg2d, tki,
+                            x, y, bgColor, observer);
+        } else {
+            return copyImage(sg2d, img, x, y, bgColor);
+        }
     }
 
     // copied from DrawImage.java
     public boolean copyImage(SunGraphics2D sg2d, Image img, int dx, int dy, int sx, int sy, int width, int height, Color bgColor, ImageObserver observer) {
         if (img == null) { throw new NullPointerException(); }
 
-        if (!(img instanceof sun.awt.image.ToolkitImage)) { return copyImage(sg2d, img, dx, dy, sx, sy, width, height, bgColor); }
-
-        sun.awt.image.ToolkitImage sunimg = (sun.awt.image.ToolkitImage) img;
-        if (!imageReady(sunimg, observer)) { return false; }
-        ImageRepresentation ir = sunimg.getImageRep();
-        return ir.drawToBufImage(sg2d, sunimg, dx, dy, (dx + width), (dy + height), sx, sy, (sx + width), (sy + height), null, observer);
+        if (img instanceof ToolkitImage tki) {
+            return imageReady(tki, observer) &&
+                    tki.getImageRep().drawToBufImage(sg2d, tki, dx, dy,
+                                    (dx + width), (dy + height),
+                                    sx, sy, (sx + width), (sy + height),
+                                    null, observer);
+        } else {
+            return copyImage(sg2d, img, dx, dy, sx, sy, width, height, bgColor);
+        }
     }
 
     // copied from DrawImage.java
     public boolean scaleImage(SunGraphics2D sg2d, Image img, int x, int y, int width, int height, Color bgColor, ImageObserver observer) {
         if (img == null) { throw new NullPointerException(); }
 
-        if (!(img instanceof sun.awt.image.ToolkitImage)) { return scaleImage(sg2d, img, x, y, width, height, bgColor); }
+        if (img instanceof ToolkitImage tki) {
+            return imageReady(tki, observer) &&
+                    tki.getImageRep().drawToBufImage(sg2d, tki, x, y,
+                            width, height, bgColor, observer);
+        } else {
+            return scaleImage(sg2d, img, x, y, width, height, bgColor);
+        }
 
-        sun.awt.image.ToolkitImage sunimg = (sun.awt.image.ToolkitImage) img;
-        if (!imageReady(sunimg, observer)) { return false; }
-        ImageRepresentation ir = sunimg.getImageRep();
-        return ir.drawToBufImage(sg2d, sunimg, x, y, width, height, bgColor, observer);
     }
 
     // copied from DrawImage.java
     public boolean scaleImage(SunGraphics2D sg2d, Image img, int dx1, int dy1, int dx2, int dy2, int sx1, int sy1, int sx2, int sy2, Color bgColor, ImageObserver observer) {
         if (img == null) { throw new NullPointerException(); }
 
-        if (!(img instanceof sun.awt.image.ToolkitImage)) { return scaleImage(sg2d, img, dx1, dy1, dx2, dy2, sx1, sy1, sx2, sy2, bgColor); }
-
-        sun.awt.image.ToolkitImage sunimg = (sun.awt.image.ToolkitImage) img;
-        if (!imageReady(sunimg, observer)) { return false; }
-        ImageRepresentation ir = sunimg.getImageRep();
-        return ir.drawToBufImage(sg2d, sunimg, dx1, dy1, dx2, dy2, sx1, sy1, sx2, sy2, bgColor, observer);
+        if (img instanceof ToolkitImage tki) {
+            return imageReady(tki, observer) &&
+                    tki.getImageRep().drawToBufImage(sg2d, tki,
+                            dx1, dy1, dx2, dy2, sx1, sy1,
+                            sx2, sy2, bgColor, observer);
+        } else {
+            return scaleImage(sg2d, img, dx1, dy1, dx2, dy2, sx1, sy1, sx2, sy2, bgColor);
+        }
     }
 
     // copied from DrawImage.java
     public boolean transformImage(SunGraphics2D sg2d, Image img, AffineTransform atfm, ImageObserver observer) {
         if (img == null) { throw new NullPointerException(); }
 
-        if (!(img instanceof sun.awt.image.ToolkitImage)) {
+        if (img instanceof ToolkitImage sunimg) {
+            return imageReady(sunimg, observer) &&
+                    sunimg.getImageRep().drawToBufImage(sg2d, sunimg, atfm, observer);
+        } else {
             transformImage(sg2d, img, 0, 0, null, atfm, null);
             return true;
         }
-
-        sun.awt.image.ToolkitImage sunimg = (sun.awt.image.ToolkitImage) img;
-        if (!imageReady(sunimg, observer)) { return false; }
-        ImageRepresentation ir = sunimg.getImageRep();
-        return ir.drawToBufImage(sg2d, sunimg, atfm, observer);
     }
 
     // copied from DrawImage.java

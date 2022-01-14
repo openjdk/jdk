@@ -160,8 +160,7 @@ final class WPathGraphics extends PathGraphics {
          * the shape, and then set the line width back.
          * We can only do this for BasicStroke's.
          */
-        if (stroke instanceof BasicStroke) {
-            BasicStroke lineStroke;
+        if (stroke instanceof BasicStroke lineStroke) {
             BasicStroke minLineStroke = null;
             float deviceLineWidth;
             float lineWidth;
@@ -170,7 +169,6 @@ final class WPathGraphics extends PathGraphics {
 
             /* Get the requested line width in user space.
              */
-            lineStroke = (BasicStroke) stroke;
             lineWidth = lineStroke.getLineWidth();
             penSize = new Point2D.Float(lineWidth, lineWidth);
 
@@ -540,7 +538,7 @@ final class WPathGraphics extends PathGraphics {
                     scaledFontSizeY, iangle, awScale,
                     advanceScaleX, advanceScaleY,
                     x, y, devpos.x, devpos.y, targetW);
-        } else if (font2D instanceof CompositeFont) {
+        } else if (font2D instanceof CompositeFont compFont) {
             /* Composite fonts are made up of multiple fonts and each
              * substring that uses a particular component font needs to
              * be separately sent to GDI.
@@ -548,7 +546,6 @@ final class WPathGraphics extends PathGraphics {
              * Fonts that are a physical font backed by a standard composite,
              * and with fallback fonts.
              */
-            CompositeFont compFont = (CompositeFont)font2D;
             float userx = x, usery = y;
             float devx = devpos.x, devy = devpos.y;
             char[] chars = str.toCharArray();
@@ -773,7 +770,7 @@ final class WPathGraphics extends PathGraphics {
             }
             wPrinterJob.glyphsOut(glyphCodes, devpos.x, devpos.y, glyphAdvPos);
 
-        } else if (font2D instanceof CompositeFont) {
+        } else if (font2D instanceof CompositeFont compFont) {
             /* Composite fonts are made up of multiple fonts and each
              * substring that uses a particular component font needs to
              * be separately sent to GDI.
@@ -781,7 +778,6 @@ final class WPathGraphics extends PathGraphics {
              * Fonts that are a physical font backed by a standard composite,
              * and with fallback fonts.
              */
-            CompositeFont compFont = (CompositeFont)font2D;
             float userx = x, usery = y;
             float devx = devpos.x, devy = devpos.y;
 
@@ -1214,11 +1210,11 @@ final class WPathGraphics extends PathGraphics {
 
                     ColorModel cm = img.getColorModel();
                     int imgType = img.getType();
-                    if (cm instanceof IndexColorModel &&
+                    if (cm instanceof IndexColorModel colorModel &&
                         cm.getPixelSize() <= 8 &&
                         (imgType == BufferedImage.TYPE_BYTE_BINARY ||
                          imgType == BufferedImage.TYPE_BYTE_INDEXED)) {
-                        icm = (IndexColorModel)cm;
+                        icm = colorModel;
                         dibType = imgType;
                         /* BYTE_BINARY may be 2 bpp which DIB can't handle.
                          * Convert this to 4bpp.
@@ -1328,22 +1324,19 @@ final class WPathGraphics extends PathGraphics {
                      */
                     WritableRaster raster = deepImage.getRaster();
                     byte[] data;
-                    if (raster instanceof ByteComponentRaster) {
-                        data = ((ByteComponentRaster)raster).getDataStorage();
-                    } else if (raster instanceof BytePackedRaster) {
-                        data = ((BytePackedRaster)raster).getDataStorage();
+                    if (raster instanceof ByteComponentRaster bcr) {
+                        data = bcr.getDataStorage();
+                    } else if (raster instanceof BytePackedRaster bpr) {
+                        data = bpr.getDataStorage();
                     } else {
                         return false;
                     }
 
                     int bitsPerPixel = 24;
                     SampleModel sm = deepImage.getSampleModel();
-                    if (sm instanceof ComponentSampleModel) {
-                        ComponentSampleModel csm = (ComponentSampleModel)sm;
+                    if (sm instanceof ComponentSampleModel csm) {
                         bitsPerPixel = csm.getPixelStride() * 8;
-                    } else if (sm instanceof MultiPixelPackedSampleModel) {
-                        MultiPixelPackedSampleModel mppsm =
-                            (MultiPixelPackedSampleModel)sm;
+                    } else if (sm instanceof MultiPixelPackedSampleModel mppsm) {
                         bitsPerPixel = mppsm.getPixelBitStride();
                     } else {
                         if (icm != null) {
@@ -1532,10 +1525,7 @@ final class WPathGraphics extends PathGraphics {
             return;
         }
 
-        Stroke stroke = getStroke();
-
-        if (stroke instanceof BasicStroke) {
-            BasicStroke lineStroke = (BasicStroke) stroke;
+         if (getStroke() instanceof BasicStroke lineStroke) {
 
             int endCap = lineStroke.getEndCap();
             int lineJoin = lineStroke.getLineJoin();
@@ -1647,9 +1637,7 @@ final class WPathGraphics extends PathGraphics {
                                   Color color) {
         Stroke stroke = getStroke();
 
-        if (stroke instanceof BasicStroke) {
-            BasicStroke lineStroke = (BasicStroke) stroke;
-
+        if (stroke instanceof BasicStroke lineStroke) {
             if (lineStroke.getDashArray() != null) {
                 draw(new Line2D.Float(xBegin, yBegin, xEnd, yEnd));
                 return;

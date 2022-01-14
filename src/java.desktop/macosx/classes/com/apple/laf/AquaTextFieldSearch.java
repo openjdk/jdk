@@ -60,25 +60,24 @@ public class AquaTextFieldSearch {
 
     static class SearchFieldPropertyListener implements PropertyChangeListener {
         public void propertyChange(final PropertyChangeEvent evt) {
-            final Object source = evt.getSource();
-            if (!(source instanceof JTextComponent)) return;
+            if (evt.getSource() instanceof JTextComponent c) {
+                final String propertyName = evt.getPropertyName();
+                if (!VARIANT_KEY.equals(propertyName) &&
+                    !FIND_POPUP_KEY.equals(propertyName) &&
+                    !FIND_ACTION_KEY.equals(propertyName) &&
+                    !CANCEL_ACTION_KEY.equals(propertyName) &&
+                    !PROMPT_KEY.equals(propertyName)) {
+                    return;
+                }
 
-            final String propertyName = evt.getPropertyName();
-            if (!VARIANT_KEY.equals(propertyName) &&
-                !FIND_POPUP_KEY.equals(propertyName) &&
-                !FIND_ACTION_KEY.equals(propertyName) &&
-                !CANCEL_ACTION_KEY.equals(propertyName) &&
-                !PROMPT_KEY.equals(propertyName)) {
-                return;
+                if (wantsToBeASearchField(c)) {
+                    uninstallSearchField(c);
+                    installSearchField(c);
+                } else {
+                    uninstallSearchField(c);
+                }
             }
 
-            final JTextComponent c = (JTextComponent)source;
-            if (wantsToBeASearchField(c)) {
-                uninstallSearchField(c);
-                installSearchField(c);
-            } else {
-                uninstallSearchField(c);
-            }
         }
     }
 
@@ -103,9 +102,8 @@ public class AquaTextFieldSearch {
         c.add(getCancelButton(c), BorderLayout.EAST);
         c.add(getPromptLabel(c), BorderLayout.CENTER);
 
-        final TextUI ui = c.getUI();
-        if (ui instanceof AquaTextFieldUI) {
-            ((AquaTextFieldUI)ui).setPaintingDelegate(border);
+        if (c.getUI() instanceof AquaTextFieldUI textField) {
+            textField.setPaintingDelegate(border);
         }
     }
 
@@ -113,9 +111,8 @@ public class AquaTextFieldSearch {
         c.setBorder(UIManager.getBorder("TextField.border"));
         c.removeAll();
 
-        final TextUI ui = c.getUI();
-        if (ui instanceof AquaTextFieldUI) {
-            ((AquaTextFieldUI)ui).setPaintingDelegate(null);
+        if (c.getUI() instanceof AquaTextFieldUI textField) {
+            textField.setPaintingDelegate(null);
         }
     }
 
@@ -190,23 +187,21 @@ public class AquaTextFieldSearch {
         final JButton b = createButton(c, findIcon);
         b.setName("find");
 
-        final Object findPopup = c.getClientProperty(FIND_POPUP_KEY);
-        if (findPopup instanceof JPopupMenu) {
+        if (c.getClientProperty(FIND_POPUP_KEY) instanceof JPopupMenu popup) {
             // if we have a popup, indicate that in the icon
             findIcon.painter.state.set(Variant.MENU_GLYPH);
 
             b.addMouseListener(new MouseAdapter() {
                 public void mousePressed(final MouseEvent e) {
-                    ((JPopupMenu)findPopup).show(b, 8, b.getHeight() - 2);
+                    popup.show(b, 8, b.getHeight() - 2);
                     c.requestFocusInWindow();
                     c.repaint();
                 }
             });
         }
 
-        final Object findAction = c.getClientProperty(FIND_ACTION_KEY);
-        if (findAction instanceof ActionListener) {
-            b.addActionListener((ActionListener)findAction);
+        if (c.getClientProperty(FIND_ACTION_KEY) instanceof ActionListener listener) {
+            b.addActionListener(listener);
         }
 
         return b;
@@ -254,9 +249,8 @@ public class AquaTextFieldSearch {
         final JButton b = createButton(c, getCancelIcon());
         b.setName("cancel");
 
-        final Object cancelAction = c.getClientProperty(CANCEL_ACTION_KEY);
-        if (cancelAction instanceof ActionListener) {
-            b.addActionListener((ActionListener)cancelAction);
+        if (c.getClientProperty(CANCEL_ACTION_KEY) instanceof ActionListener listener) {
+            b.addActionListener(listener);
         }
 
         b.addActionListener(new AbstractAction("cancel") {

@@ -63,9 +63,11 @@ public final class FullScreenUtilities {
      * @throws IllegalArgumentException if window is not a {@link RootPaneContainer}
      */
     public static void setWindowCanFullScreen(final Window window, final boolean canFullScreen) {
-        if (!(window instanceof RootPaneContainer)) throw new IllegalArgumentException("Can't mark a non-RootPaneContainer as full screen-able");
-        final RootPaneContainer rpc = (RootPaneContainer)window;
-        rpc.getRootPane().putClientProperty(CPlatformWindow.WINDOW_FULLSCREENABLE, Boolean.valueOf(canFullScreen));
+        if (window instanceof final RootPaneContainer rpc) {
+            rpc.getRootPane().putClientProperty(CPlatformWindow.WINDOW_FULLSCREENABLE, canFullScreen);
+        } else {
+            throw new IllegalArgumentException("Can't mark a non-RootPaneContainer as full screen-able");
+        }
     }
 
     /**
@@ -75,9 +77,15 @@ public final class FullScreenUtilities {
      * @throws IllegalArgumentException if window is not a {@link RootPaneContainer}
      */
     public static void addFullScreenListenerTo(final Window window, final FullScreenListener listener) {
-        if (!(window instanceof RootPaneContainer)) throw new IllegalArgumentException("Can't attach FullScreenListener to a non-RootPaneContainer");
-        if (listener == null) throw new NullPointerException();
-        FullScreenHandler.addFullScreenListenerTo((RootPaneContainer)window, listener);
+        if (window instanceof RootPaneContainer rpc) {
+            if (listener == null) {
+                throw new NullPointerException();
+            }
+
+            FullScreenHandler.addFullScreenListenerTo(rpc, listener);
+        } else {
+            throw new IllegalArgumentException("Can't attach FullScreenListener to a non-RootPaneContainer");
+        }
     }
 
     /**
@@ -87,8 +95,14 @@ public final class FullScreenUtilities {
      * @throws IllegalArgumentException if window is not a {@link RootPaneContainer}
      */
     public static void removeFullScreenListenerFrom(final Window window, final FullScreenListener listener) {
-        if (!(window instanceof RootPaneContainer)) throw new IllegalArgumentException("Can't remove FullScreenListener from non-RootPaneContainer");
-        if (listener == null) throw new NullPointerException();
-        FullScreenHandler.removeFullScreenListenerFrom((RootPaneContainer)window, listener);
+        if (window instanceof RootPaneContainer rpc) {
+            if (listener == null) {
+                throw new NullPointerException();
+            }
+
+            FullScreenHandler.removeFullScreenListenerFrom(rpc, listener);
+        } else {
+            throw new IllegalArgumentException("Can't remove FullScreenListener from non-RootPaneContainer");
+        }
     }
 }

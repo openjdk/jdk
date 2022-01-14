@@ -80,8 +80,9 @@ public class JRSUIState {
 
     @Override
     public boolean equals(final Object obj) {
-        if (!(obj instanceof JRSUIState)) return false;
-        return encodedState == ((JRSUIState)obj).encodedState && getClass().equals(obj.getClass());
+        return obj instanceof JRSUIState state &&
+                encodedState == state.encodedState &&
+                getClass().equals(obj.getClass());
     }
 
     public boolean is(Property property) {
@@ -130,8 +131,9 @@ public class JRSUIState {
 
         @Override
         public boolean equals(final Object obj) {
-            if (!(obj instanceof AnimationFrameState)) return false;
-            return animationFrame == ((AnimationFrameState)obj).animationFrame && super.equals(obj);
+            return obj instanceof AnimationFrameState state &&
+                    animationFrame == state.animationFrame &&
+                    super.equals(obj);
         }
 
         @Override
@@ -177,8 +179,9 @@ public class JRSUIState {
 
         @Override
         public boolean equals(final Object obj) {
-            if (!(obj instanceof ValueState)) return false;
-            return value == ((ValueState)obj).value && super.equals(obj);
+            return obj instanceof ValueState valueState &&
+                    value == valueState.value &&
+                    super.equals(obj);
         }
 
         @Override
@@ -251,8 +254,10 @@ public class JRSUIState {
 
         @Override
         public boolean equals(final Object obj) {
-            if (!(obj instanceof ScrollBarState)) return false;
-            return (thumbProportion == ((ScrollBarState)obj).thumbProportion) && (thumbStart == ((ScrollBarState)obj).thumbStart) && super.equals(obj);
+            return obj instanceof ScrollBarState state &&
+                    thumbProportion == state.thumbProportion &&
+                    thumbStart == state.thumbStart &&
+                    super.equals(obj);
         }
 
         @Override

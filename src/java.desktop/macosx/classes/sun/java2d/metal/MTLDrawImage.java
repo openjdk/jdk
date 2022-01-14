@@ -96,8 +96,7 @@ public class MTLDrawImage extends DrawImage {
                                BufferedImageOp op, int x, int y)
     {
         if (op != null) {
-            if (op instanceof AffineTransformOp) {
-                AffineTransformOp atop = (AffineTransformOp) op;
+            if (op instanceof AffineTransformOp atop) {
                 transformImage(sg, img, x, y,
                         atop.getTransform(),
                         atop.getInterpolationType());

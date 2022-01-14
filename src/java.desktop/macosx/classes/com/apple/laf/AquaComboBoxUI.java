@@ -143,20 +143,18 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
                 lastBlink = now;
 
                 final JList<Object> itemList = popup.getList();
-                final ListUI listUI = itemList.getUI();
-                if (!(listUI instanceof AquaListUI)) return;
-                final AquaListUI aquaListUI = (AquaListUI)listUI;
+                if (itemList.getUI() instanceof AquaListUI aquaListUI) {
+                    final int selectedIndex = comboBox.getSelectedIndex();
+                    final ListModel<Object> dataModel = itemList.getModel();
+                    if (dataModel == null) return;
 
-                final int selectedIndex = comboBox.getSelectedIndex();
-                final ListModel<Object> dataModel = itemList.getModel();
-                if (dataModel == null) return;
-
-                final Object value = dataModel.getElementAt(selectedIndex);
-                AquaUtils.blinkMenu(new AquaUtils.Selectable() {
-                    public void paintSelected(final boolean selected) {
-                        aquaListUI.repaintCell(value, selectedIndex, selected);
-                    }
-                });
+                    final Object value = dataModel.getElementAt(selectedIndex);
+                    AquaUtils.blinkMenu(new AquaUtils.Selectable() {
+                        public void paintSelected(final boolean selected) {
+                            aquaListUI.repaintCell(value, selectedIndex, selected);
+                        }
+                    });
+                }
             }
         };
     }
@@ -249,8 +247,8 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
                     if (popup.isVisible()) {
                         triggerSelectionEvent(comboBox, e);
 
-                        if (editor instanceof AquaCustomComboTextField) {
-                            ((AquaCustomComboTextField)editor).selectAll();
+                        if (editor instanceof AquaCustomComboTextField textField) {
+                            textField.selectAll();
                         }
                     } else {
                         action.actionPerformed(e);
@@ -583,11 +581,9 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
     };
 
     public void applySizeFor(final JComponent c, final Size size) {
-        if (arrowButton == null) return;
-        final Border border = arrowButton.getBorder();
-        if (!(border instanceof AquaButtonBorder)) return;
-        final AquaButtonBorder aquaBorder = (AquaButtonBorder)border;
-        arrowButton.setBorder(aquaBorder.deriveBorderForSize(size));
+        if (arrowButton != null && arrowButton.getBorder() instanceof AquaButtonBorder aquaBorder) {
+            arrowButton.setBorder(aquaBorder.deriveBorderForSize(size));
+        }
     }
 
     public Dimension getMinimumSize(final JComponent c) {
@@ -668,21 +664,25 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
                 },
                 new Property<AquaComboBoxUI>(POPDOWN_CLIENT_PROPERTY_KEY) {
                     public void applyProperty(final AquaComboBoxUI target, final Object value) {
-                        if (!(target.arrowButton instanceof AquaComboBoxButton)) return;
-                        ((AquaComboBoxButton)target.arrowButton).setIsPopDown(Boolean.TRUE.equals(value));
+                        if (target.arrowButton instanceof AquaComboBoxButton aquaComboBoxButton) {
+                            aquaComboBoxButton.setIsPopDown(Boolean.TRUE.equals(value));
+                        }
                     }
                 },
                 new Property<AquaComboBoxUI>(ISSQUARE_CLIENT_PROPERTY_KEY) {
                     public void applyProperty(final AquaComboBoxUI target, final Object value) {
-                        if (!(target.arrowButton instanceof AquaComboBoxButton)) return;
-                        ((AquaComboBoxButton)target.arrowButton).setIsSquare(Boolean.TRUE.equals(value));
+                        if (target.arrowButton instanceof AquaComboBoxButton aquaComboBoxButton) {
+                            aquaComboBoxButton.setIsSquare(Boolean.TRUE.equals(value));
+                        }
                     }
                 }
             ) {
                 public AquaComboBoxUI convertJComponentToTarget(final JComboBox<?> combo) {
-                    final ComboBoxUI comboUI = combo.getUI();
-                    if (comboUI instanceof AquaComboBoxUI) return (AquaComboBoxUI)comboUI;
-                    return null;
+                    if (combo.getUI() instanceof AquaComboBoxUI aqua) {
+                        return aqua;
+                    } else {
+                        return null;
+                    }
                 }
             };
         }

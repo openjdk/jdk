@@ -249,8 +249,8 @@ public class NativeFont extends PhysicalFont {
             /* If no FileFont's are found, delegate font may be
              * a NativeFont, so we need to avoid recursing here.
              */
-            if (delegateFont instanceof NativeFont) {
-                return new NativeStrike((NativeFont)delegateFont, desc);
+            if (delegateFont instanceof NativeFont nativeFont) {
+                return new NativeStrike(nativeFont, desc);
             }
             FontStrike delegate = delegateFont.createStrike(desc);
             return new DelegateStrike(this, desc, delegate);

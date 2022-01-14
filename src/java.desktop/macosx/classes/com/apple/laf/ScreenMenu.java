@@ -266,12 +266,11 @@ final class ScreenMenu extends Menu
                 if (tooltipText != null) {
                     setToolTipText(tooltipText);
                 }
-                final Object peer = AWTAccessor.getMenuComponentAccessor()
-                                               .getPeer(this);
-                if (peer instanceof CMenu) {
-                    final CMenu menu = (CMenu) peer;
-                    final long nativeMenu = menu.getNativeMenu();
-                    fModelPtr = addMenuListeners(this, nativeMenu);
+                Object peer = AWTAccessor
+                        .getMenuComponentAccessor()
+                        .getPeer(this);
+                if (peer instanceof CMenu menu) {
+                    fModelPtr = addMenuListeners(this, menu.getNativeMenu());
                 }
             }
         }
@@ -371,27 +370,28 @@ final class ScreenMenu extends Menu
 
     @Override
     public void setToolTipText(final String text) {
-        Object peer = AWTAccessor.getMenuComponentAccessor().getPeer(this);
-        if (!(peer instanceof CMenuItem)) return;
+        Object peer = AWTAccessor
+                .getMenuComponentAccessor()
+                .getPeer(this);
 
-        final CMenuItem cmi = (CMenuItem)peer;
-        cmi.setToolTipText(text);
+        if (peer instanceof CMenuItem cmi) {
+            cmi.setToolTipText(text);
+        }
     }
 
     @Override
     public void setIcon(final Icon i) {
-        Object peer = AWTAccessor.getMenuComponentAccessor().getPeer(this);
-        if (!(peer instanceof CMenuItem)) return;
+        Object peer = AWTAccessor
+                .getMenuComponentAccessor()
+                .getPeer(this);
 
-        final CMenuItem cmi = (CMenuItem)peer;
-        Image img = null;
-
-        if (i != null) {
-            if (i.getIconWidth() > 0 && i.getIconHeight() > 0) {
-                img = AquaIcon.getImageForIcon(i);
+        if (peer instanceof final CMenuItem cmi) {
+            if (i != null && i.getIconWidth() > 0 && i.getIconHeight() > 0) {
+                cmi.setImage(AquaIcon.getImageForIcon(i));
+            } else {
+                cmi.setImage(null);
             }
         }
-        cmi.setImage(img);
     }
 
 
@@ -402,8 +402,7 @@ final class ScreenMenu extends Menu
     private static int getHashCode(final Component m) {
         int hashCode = m.hashCode();
 
-        if (m instanceof JMenuItem) {
-            final JMenuItem mi = (JMenuItem) m;
+        if (m instanceof JMenuItem mi) {
 
             final String text = mi.getText();
             if (text != null) hashCode ^= text.hashCode();
@@ -436,14 +435,14 @@ final class ScreenMenu extends Menu
         MenuItem sm = fItems.get(m);
 
         if (sm == null) {
-            if (m instanceof JMenu) {
-                sm = new ScreenMenu((JMenu)m);
-            } else if (m instanceof JCheckBoxMenuItem) {
-                sm = new ScreenMenuItemCheckbox((JCheckBoxMenuItem)m);
-            } else if (m instanceof JRadioButtonMenuItem) {
-                sm = new ScreenMenuItemCheckbox((JRadioButtonMenuItem)m);
-            } else if (m instanceof JMenuItem) {
-                sm = new ScreenMenuItem((JMenuItem)m);
+            if (m instanceof JMenu menu) {
+                sm = new ScreenMenu(menu);
+            } else if (m instanceof JCheckBoxMenuItem checkBox) {
+                sm = new ScreenMenuItemCheckbox(checkBox);
+            } else if (m instanceof JRadioButtonMenuItem radioButton) {
+                sm = new ScreenMenuItemCheckbox(radioButton);
+            } else if (m instanceof JMenuItem menuItem) {
+                sm = new ScreenMenuItem(menuItem);
             } else if (m instanceof JPopupMenu.Separator || m instanceof JSeparator) {
                 sm = new MenuItem("-"); // This is what java.awt.Menu.addSeparator does
             }

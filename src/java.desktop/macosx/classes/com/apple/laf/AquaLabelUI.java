@@ -91,10 +91,9 @@ public class AquaLabelUI extends BasicLabelUI {
     protected Color getDisabledLabelColor(final JLabel label) {
         final Color fg = label.getForeground();
 
-        final Object colorProperty = label.getClientProperty(DISABLED_COLOR_KEY);
-        if (colorProperty instanceof Color) {
-            final Color disabledColor = (Color)colorProperty;
-            if ((fg.getRGB() << 8) == (disabledColor.getRGB() << 8)) return disabledColor;
+        if (label.getClientProperty(DISABLED_COLOR_KEY) instanceof Color disabledColor &&
+                (fg.getRGB() << 8) == (disabledColor.getRGB() << 8)) {
+            return disabledColor;
         }
 
         final Color newDisabledColor = new Color(fg.getRed(), fg.getGreen(), fg.getBlue(), fg.getAlpha() / 2);

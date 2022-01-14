@@ -180,8 +180,8 @@ public final class Win32GraphicsEnvironment extends SunGraphicsEnvironment {
         // a new or an old array this time around
         screens = newDevices;
         for (GraphicsDevice gd : screens) {
-            if (gd instanceof DisplayChangedListener) {
-                ((DisplayChangedListener)gd).displayChanged();
+            if (gd instanceof DisplayChangedListener displayChangedListener) {
+                displayChangedListener.displayChanged();
             }
         }
         // re-invalidate all old devices. It's needed because those in the list
@@ -231,11 +231,10 @@ public final class Win32GraphicsEnvironment extends SunGraphicsEnvironment {
 
     @Override
     public boolean isFlipStrategyPreferred(ComponentPeer peer) {
-        GraphicsConfiguration gc;
-        if (peer != null && (gc = peer.getGraphicsConfiguration()) != null) {
-            GraphicsDevice gd = gc.getDevice();
-            if (gd instanceof D3DGraphicsDevice) {
-                return ((D3DGraphicsDevice)gd).isD3DEnabledOnDevice();
+        if (peer != null) {
+            GraphicsConfiguration gc = peer.getGraphicsConfiguration();
+            if (gc != null && gc.getDevice() instanceof D3DGraphicsDevice device) {
+                return device.isD3DEnabledOnDevice();
             }
         }
         return false;

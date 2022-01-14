@@ -53,9 +53,8 @@ final class WCustomCursor extends CustomCursor {
                                BufferedImage.TYPE_INT_RGB);
         Graphics g = bimage.getGraphics();
         try {
-            if (im instanceof ToolkitImage) {
-                ImageRepresentation ir = ((ToolkitImage)im).getImageRep();
-                ir.reconstruct(ImageObserver.ALLBITS);
+            if (im instanceof ToolkitImage tki) {
+                tki.getImageRep().reconstruct(ImageObserver.ALLBITS);
             }
             g.drawImage(im, 0, 0, w, h, null);
         } finally {
@@ -78,10 +77,13 @@ final class WCustomCursor extends CustomCursor {
         }
 
         {
-            int     ficW = raster.getWidth();
-            if( raster instanceof IntegerComponentRaster ) {
-                ficW = ((IntegerComponentRaster)raster).getScanlineStride();
+            int ficW;
+            if (raster instanceof IntegerComponentRaster icr) {
+                ficW = icr.getScanlineStride();
+            } else {
+                ficW = raster.getWidth();
             }
+
             createCursorIndirect(
                 ((DataBufferInt)bimage.getRaster().getDataBuffer()).getData(),
                 andMask, ficW, raster.getWidth(), raster.getHeight(),

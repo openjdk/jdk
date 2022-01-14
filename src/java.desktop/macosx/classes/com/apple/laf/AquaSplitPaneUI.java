@@ -96,13 +96,8 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI implements MouseListener, 
     public void mouseReleased(final MouseEvent e) { }
 
     public void propertyChange(final PropertyChangeEvent evt) {
-        if (!DIVIDER_PAINTER_KEY.equals(evt.getPropertyName())) return;
-
-        final Object value = evt.getNewValue();
-        if (value instanceof Border) {
-            divider.setBorder((Border)value);
-        } else {
-            divider.setBorder(null);
+        if (DIVIDER_PAINTER_KEY.equals(evt.getPropertyName())) {
+            divider.setBorder(evt.getNewValue() instanceof Border border ? border : null);
         }
     }
 }

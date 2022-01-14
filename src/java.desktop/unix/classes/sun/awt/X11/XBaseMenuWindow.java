@@ -394,7 +394,7 @@ public abstract class XBaseMenuWindow extends XWindow {
                 this.selectedIndex = newSelectedIndex;
                 postPaintEvent();
             }
-            final XMenuPeer submenuToShow = (showWindowIfMenu && (item instanceof XMenuPeer)) ? (XMenuPeer)item : null;
+            XMenuPeer submenuToShow = (showWindowIfMenu && item instanceof XMenuPeer xMenuPeer) ? xMenuPeer : null;
             if (submenuToShow != showingSubmenu) {
                 XToolkit.executeOnEventHandlerThread(target, new Runnable() {
                         public void run() {

@@ -170,8 +170,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
 
     @SuppressWarnings("deprecation")
     public boolean isObscured() {
-        Container container  = (target instanceof Container) ?
-            (Container)target : target.getParent();
+        Container container = target instanceof Container c ? c : target.getParent();
 
         if (container == null) {
             return true;
@@ -374,9 +373,8 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
             enabled = status;
         }
 
-        if (target instanceof Container) {
-            final Component[] list = ((Container) target).getComponents();
-            for (final Component child : list) {
+        if (target instanceof Container container) {
+            for (Component child : container.getComponents()) {
                 final ComponentPeer p = acc.getPeer(child);
                 if (p != null) {
                     p.setEnabled(status && child.isEnabled());
@@ -455,7 +453,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
 
     XWindowPeer getParentTopLevel() {
         ComponentAccessor compAccessor = AWTAccessor.getComponentAccessor();
-        Container parent = (target instanceof Container) ? ((Container)target) : (compAccessor.getParent(target));
+        Container parent = target instanceof Container container ? container : compAccessor.getParent(target);
         // Search for parent window
         while (parent != null && !(parent instanceof Window)) {
             parent = compAccessor.getParent(parent);
@@ -509,8 +507,8 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
     void handleF10JavaKeyEvent(KeyEvent e) {
         if (e.getID() == KeyEvent.KEY_PRESSED && e.getKeyCode() == KeyEvent.VK_F10) {
             XWindowPeer winPeer = this.getToplevelXWindow();
-            if (winPeer instanceof XFramePeer) {
-                XMenuBarPeer mPeer = ((XFramePeer)winPeer).getMenubarPeer();
+            if (winPeer instanceof XFramePeer xPeer) {
+                XMenuBarPeer mPeer = xPeer.getMenubarPeer();
                 if (mPeer != null) {
                     mPeer.handleF10KeyPress(e);
                 }
@@ -520,25 +518,22 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
 
     @SuppressWarnings("fallthrough")
     public void handleEvent(java.awt.AWTEvent e) {
-        if ((e instanceof InputEvent) && !((InputEvent)e).isConsumed() && target.isEnabled())  {
-            if (e instanceof MouseEvent) {
-                if (e instanceof MouseWheelEvent) {
-                    handleJavaMouseWheelEvent((MouseWheelEvent) e);
+        if (e instanceof InputEvent inputEvent && !inputEvent.isConsumed() && target.isEnabled())  {
+            if (e instanceof MouseEvent mouseEvent) {
+                if (mouseEvent instanceof MouseWheelEvent mouseWheelEvent) {
+                    handleJavaMouseWheelEvent(mouseWheelEvent);
+                } else {
+                    handleJavaMouseEvent(mouseEvent);
                 }
-                else
-                    handleJavaMouseEvent((MouseEvent) e);
+            } else if (e instanceof KeyEvent keyEvent) {
+                handleF10JavaKeyEvent(keyEvent);
+                handleJavaKeyEvent(keyEvent);
             }
-            else if (e instanceof KeyEvent) {
-                handleF10JavaKeyEvent((KeyEvent)e);
-                handleJavaKeyEvent((KeyEvent)e);
-            }
-        }
-        else if (e instanceof KeyEvent && !((InputEvent)e).isConsumed()) {
+        } else if (e instanceof KeyEvent keyEvent && !keyEvent.isConsumed()) {
             // even if target is disabled.
-            handleF10JavaKeyEvent((KeyEvent)e);
-        }
-        else if (e instanceof InputMethodEvent) {
-            handleJavaInputMethodEvent((InputMethodEvent) e);
+            handleF10JavaKeyEvent(keyEvent);
+        } else if (e instanceof InputMethodEvent inputMethodEvent) {
+            handleJavaInputMethodEvent(inputMethodEvent);
         }
 
         int id = e.getID();
@@ -1266,16 +1261,16 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         for (int i = 0; i < cont.getComponentCount(); i++) {
             Component comp = cont.getComponent(i);
             Object peer = AWTAccessor.getComponentAccessor().getPeer(comp);
-            if (peer instanceof XComponentPeer) {
-                Long window = Long.valueOf(((XComponentPeer)peer).getWindow());
+            if (peer instanceof XComponentPeer xPeer) {
+                Long window = xPeer.getWindow();
                 if (!set.contains(window)) {
                     set.add(window);
                     order.add(window);
                 }
-            } else if (comp instanceof Container) {
+            } else if (comp instanceof Container container) {
                 // It is lightweight container, it might contain heavyweight components attached to this
                 // peer
-                addTree(order, set, (Container)comp);
+                addTree(order, set, container);
             }
         }
     }

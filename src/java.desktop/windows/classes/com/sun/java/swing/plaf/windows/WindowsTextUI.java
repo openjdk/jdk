@@ -187,13 +187,8 @@ public abstract class WindowsTextUI extends BasicTextUI {
             if (offs0 == view.getStartOffset() &&
                 offs1 == view.getEndOffset()) {
                 // Contained in view, can just use bounds.
-                Rectangle alloc;
-                if (bounds instanceof Rectangle) {
-                    alloc = (Rectangle)bounds;
-                }
-                else {
-                    alloc = bounds.getBounds();
-                }
+                Rectangle alloc = bounds instanceof Rectangle rect ? rect : bounds.getBounds();
+
                 if (firstIsDot && alloc.width > 0) {
                     g.fillRect(alloc.x + 1, alloc.y, alloc.width - 1,
                                alloc.height);
@@ -214,8 +209,8 @@ public abstract class WindowsTextUI extends BasicTextUI {
                     Shape shape = view.modelToView(offs0, Position.Bias.Forward,
                                                    offs1,Position.Bias.Backward,
                                                    bounds);
-                    Rectangle r = (shape instanceof Rectangle) ?
-                                  (Rectangle)shape : shape.getBounds();
+                    Rectangle r = shape instanceof Rectangle rect ? rect : shape.getBounds();
+
                     if (firstIsDot && r.width > 0) {
                         g.fillRect(r.x + 1, r.y, r.width - 1, r.height);
                     }

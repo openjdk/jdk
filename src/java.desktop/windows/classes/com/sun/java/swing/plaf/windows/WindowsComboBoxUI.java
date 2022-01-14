@@ -110,27 +110,25 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
 
             private JComboBox<?> getComboBox(MouseEvent event) {
                 Object source = event.getSource();
-                JComboBox<?> rv = null;
-                if (source instanceof JComboBox) {
-                    rv = (JComboBox) source;
-                } else if (source instanceof XPComboBoxButton) {
-                    rv = ((XPComboBoxButton) source)
-                        .getWindowsComboBoxUI().comboBox;
-                } else if (source instanceof JTextField &&
-                        ((JTextField) source).getParent() instanceof JComboBox) {
-                    rv = (JComboBox) ((JTextField) source).getParent();
+                if (source instanceof JComboBox<?> comboBox) {
+                    return comboBox;
+                } else if (source instanceof XPComboBoxButton comboBox) {
+                    return comboBox.getWindowsComboBoxUI().comboBox;
+                } else if (source instanceof JTextField textField &&
+                        textField.getParent() instanceof JComboBox<?> comboBox) {
+                    return comboBox;
+                } else {
+                    return null;
                 }
-                return rv;
             }
 
             private WindowsComboBoxUI getWindowsComboBoxUI(MouseEvent event) {
                 JComboBox<?> comboBox = getComboBox(event);
-                WindowsComboBoxUI rv = null;
-                if (comboBox != null
-                    && comboBox.getUI() instanceof WindowsComboBoxUI) {
-                    rv = (WindowsComboBoxUI) comboBox.getUI();
+                if (comboBox != null && comboBox.getUI() instanceof WindowsComboBoxUI box) {
+                    return box;
+                } else {
+                    return null;
                 }
-                return rv;
             }
 
         };
@@ -139,24 +137,19 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
     private static final PropertyChangeListener componentOrientationListener =
         new PropertyChangeListener() {
             public void propertyChange(PropertyChangeEvent e) {
-                String propertyName = e.getPropertyName();
-                Object source = null;
-                if ("componentOrientation" == propertyName
-                    && (source = e.getSource()) instanceof JComboBox
-                    && ((JComboBox) source).getUI() instanceof
-                      WindowsComboBoxUI) {
-                    JComboBox<?> comboBox = (JComboBox) source;
-                    WindowsComboBoxUI comboBoxUI = (WindowsComboBoxUI) comboBox.getUI();
-                    if (comboBoxUI.arrowButton instanceof XPComboBoxButton) {
-                        ((XPComboBoxButton) comboBoxUI.arrowButton).setPart(
-                                    (comboBox.getComponentOrientation() ==
-                                       ComponentOrientation.RIGHT_TO_LEFT)
+                if ("componentOrientation".equals(e.getPropertyName()) &&
+                        e.getSource() instanceof JComboBox<?> comboBox &&
+                        comboBox.getUI() instanceof WindowsComboBoxUI comboBoxUI &&
+                        comboBoxUI.arrowButton instanceof XPComboBoxButton xpComboBox) {
+
+                    xpComboBox.setPart(
+                            (comboBox.getComponentOrientation() ==
+                                    ComponentOrientation.RIGHT_TO_LEFT)
                                     ? Part.CP_DROPDOWNBUTTONLEFT
                                     : Part.CP_DROPDOWNBUTTONRIGHT);
-                            }
-                        }
-                    }
-                };
+                }
+            }
+        };
 
     public static ComponentUI createUI(JComponent c) {
         return new WindowsComboBoxUI();
@@ -358,11 +351,8 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
         Dimension d = super.getMinimumSize(c);
         if (XPStyle.getXP() != null) {
             d.width += 7;
-            boolean isEditable = false;
-            if (c instanceof JComboBox) {
-                isEditable = ((JComboBox) c).isEditable();
-            }
-            if (((JComboBox)c).getBorder() instanceof EmptyBorder) {
+            boolean isEditable = c instanceof JComboBox<?> comboBox && comboBox.isEditable();
+            if (c.getBorder() instanceof EmptyBorder) {
                 d.height += isEditable ? 2 : 4;
             } else {
                 d.height += isEditable ? 4 : 6;
@@ -629,8 +619,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
             Component rv =
                 super.getListCellRendererComponent(list, value, index,
                                                    isSelected, cellHasFocus);
-            if (rv instanceof JComponent) {
-                JComponent component = (JComponent) rv;
+            if (rv instanceof JComponent component) {
                 if (index == -1 && isSelected) {
                     Border border = component.getBorder();
                     Border dashedBorder =
@@ -645,10 +634,8 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
                     if (component.getBorder() instanceof
                           WindowsBorders.DashedBorder) {
                         Object storedBorder = component.getClientProperty(BORDER_KEY);
-                        if (storedBorder instanceof Border) {
-                            component.setBorder(
-                                (storedBorder == NULL_BORDER) ? null
-                                    : (Border) storedBorder);
+                        if (storedBorder instanceof Border border) {
+                            component.setBorder(storedBorder == NULL_BORDER ? null : border);
                         }
                         component.putClientProperty(BORDER_KEY, null);
                     }

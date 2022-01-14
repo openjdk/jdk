@@ -69,8 +69,8 @@ public class MTLLayer extends CFLayer {
         }
         // the layer holds a reference to the buffer, which in
         // turn has a reference back to this layer
-        if (surfaceData instanceof MTLSurfaceData) {
-            validate((MTLSurfaceData)surfaceData);
+        if (surfaceData instanceof MTLSurfaceData metalSurface) {
+            validate(metalSurface);
         }
 
         return surfaceData;

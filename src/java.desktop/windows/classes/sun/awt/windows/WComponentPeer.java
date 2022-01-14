@@ -347,15 +347,13 @@ public abstract class WComponentPeer extends WObjectPeer
     public void handleEvent(AWTEvent e) {
         int id = e.getID();
 
-        if ((e instanceof InputEvent) && !((InputEvent)e).isConsumed() &&
+        if (e instanceof InputEvent inputEvent && !inputEvent.isConsumed() &&
             ((Component)target).isEnabled())
         {
-            if (e instanceof MouseEvent && !(e instanceof MouseWheelEvent)) {
-                handleJavaMouseEvent((MouseEvent) e);
-            } else if (e instanceof KeyEvent) {
-                if (handleJavaKeyEvent((KeyEvent)e)) {
-                    return;
-                }
+            if (e instanceof MouseEvent mouseEvent && !(e instanceof MouseWheelEvent)) {
+                handleJavaMouseEvent(mouseEvent);
+            } else if (e instanceof KeyEvent keyEvent && handleJavaKeyEvent(keyEvent)) {
+                return;
             }
         }
 

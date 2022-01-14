@@ -250,12 +250,12 @@ abstract class AquaPainter <T extends JRSUIState> {
 
         @Override
         public boolean equals(Object obj) {
-            if (obj instanceof AquaPixelsKey) {
-                AquaPixelsKey key = (AquaPixelsKey) obj;
-                return config == key.config && w == key.w && h == key.h
-                        && bounds.equals(key.bounds) && state.equals(key.state);
-            }
-            return false;
+            return obj instanceof AquaPixelsKey key &&
+                    config == key.config &&
+                    w == key.w &&
+                    h == key.h
+                    && bounds.equals(key.bounds) &&
+                    state.equals(key.state);
         }
     }
 
@@ -288,21 +288,17 @@ abstract class AquaPainter <T extends JRSUIState> {
     }
 
     private Graphics2D getGraphics2D(final Graphics g) {
-        try {
-            return (SunGraphics2D)g; // doing a blind try is faster than checking instanceof
-        } catch (Exception ignored) {
-            if (g instanceof PeekGraphics) {
-                // if it is a peek just dirty the region
-                g.fillRect(boundsRect.x, boundsRect.y, boundsRect.width, boundsRect.height);
-            } else if (g instanceof ProxyGraphics2D) {
-                final ProxyGraphics2D pg = (ProxyGraphics2D)g;
-                final Graphics2D g2d = pg.getDelegate();
-                if (g2d instanceof SunGraphics2D) {
-                    return g2d;
-                }
-            } else if (g instanceof Graphics2D) {
-                return (Graphics2D) g;
+        if (g instanceof SunGraphics2D sunGraphics2D) {
+            return sunGraphics2D;
+        } else if (g instanceof PeekGraphics) {
+            // if it is a peek just dirty the region
+            g.fillRect(boundsRect.x, boundsRect.y, boundsRect.width, boundsRect.height);
+        } else if (g instanceof ProxyGraphics2D pg) {
+            if (pg.getDelegate() instanceof SunGraphics2D sg2d) {
+                return sg2d;
             }
+        } else if (g instanceof Graphics2D g2d) {
+            return g2d;
         }
 
         return null;

@@ -24,9 +24,7 @@
  */
 package sun.awt.X11;
 
-import java.awt.Component;
-import java.awt.Rectangle;
-import java.awt.Insets;
+import java.awt.*;
 
 import java.awt.event.ComponentEvent;
 
@@ -170,8 +168,8 @@ public final class XContentWindow extends XWindow {
         // that come when the frame is iconified. Then we
         // actually handle saved expose events on deiconification.
 
-        if (parentFrame instanceof XFramePeer &&
-                (((XFramePeer)parentFrame).getState() & java.awt.Frame.ICONIFIED) != 0) {
+        if (parentFrame instanceof XFramePeer framePeer &&
+                (framePeer.getState() & Frame.ICONIFIED) != 0) {
             // Save expose events if the frame is iconified
             // in order to handle them on deiconification.
             iconifiedExposeEvents.add(new SavedExposeEvent(target, x, y, w, h));

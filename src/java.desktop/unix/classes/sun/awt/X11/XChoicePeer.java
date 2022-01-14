@@ -1064,14 +1064,14 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
                 return super.prePostEvent(e);
             }
             //fix 6252982: PIT: Keyboard FocusTraversal not working when choice's drop-down is visible, on XToolkit
-            if (e instanceof KeyEvent){
+            if (e instanceof KeyEvent keyEvent){
                 // notify XWindow that this event had been already handled and no need to post it again
                 InvocationEvent ev = new InvocationEvent(target, new Runnable() {
                     public void run() {
                         if(target.isFocusable() &&
                                 getParentTopLevel().isFocusableWindow() )
                         {
-                            handleJavaKeyEvent((KeyEvent)e);
+                            handleJavaKeyEvent(keyEvent);
                         }
                     }
                 });
@@ -1079,13 +1079,12 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
 
                 return true;
             } else {
-                if (e instanceof MouseEvent){
+                if (e instanceof MouseEvent me){
                     // Fix for 6240046 : REG:Choice's Drop-down does not disappear when clicking somewhere, after popup menu is disposed
                     // if user presses Right Mouse Button on opened (unfurled)
                     // Choice then we mustn't open a popup menu. We could filter
                     // Mouse Events and handle them in XChoicePeer if Choice
                     // currently in opened state.
-                    MouseEvent me = (MouseEvent)e;
                     int eventId = e.getID();
                     // fix 6251983: PIT: MouseDragged events not triggered
                     // fix 6251988: PIT: Choice consumes MouseReleased, MouseClicked events when clicking it with left button,

@@ -47,8 +47,8 @@ final class GestureHandler {
     // installs a private instance of GestureHandler, if necessary
     static void addGestureListenerTo(final JComponent component, final GestureListener listener) {
         final Object value = component.getClientProperty(CLIENT_PROPERTY);
-        if (value instanceof GestureHandler) {
-            ((GestureHandler)value).addListener(listener);
+        if (value instanceof GestureHandler handler) {
+            handler.addListener(listener);
             return;
         }
 
@@ -61,9 +61,9 @@ final class GestureHandler {
 
     // asks the installed GestureHandler to remove it's listener (does not uninstall the GestureHandler)
     static void removeGestureListenerFrom(final JComponent component, final GestureListener listener) {
-        final Object value = component.getClientProperty(CLIENT_PROPERTY);
-        if (!(value instanceof GestureHandler)) return;
-        ((GestureHandler)value).removeListener(listener);
+        if (component.getClientProperty(CLIENT_PROPERTY) instanceof GestureHandler handler) {
+            handler.removeListener(listener);
+        }
     }
 
 
@@ -76,12 +76,9 @@ final class GestureHandler {
             public void run() {
                 final Component component = SwingUtilities.getDeepestComponentAt(window, (int)x, (int)y);
 
-                final PerComponentNotifier firstNotifier;
-                if (component instanceof RootPaneContainer) {
-                    firstNotifier = getNextNotifierForComponent(((RootPaneContainer)component).getRootPane());
-                } else {
-                    firstNotifier = getNextNotifierForComponent(component);
-                }
+                Component c = component instanceof RootPaneContainer root ? root.getContentPane() : component;
+                PerComponentNotifier firstNotifier = getNextNotifierForComponent(c);
+
                 if (firstNotifier == null) return;
 
                 switch (type) {
@@ -111,10 +108,10 @@ final class GestureHandler {
     GestureHandler() { }
 
     void addListener(final GestureListener listener) {
-        if (listener instanceof GesturePhaseListener) phasers.add((GesturePhaseListener)listener);
-        if (listener instanceof RotationListener) rotaters.add((RotationListener)listener);
-        if (listener instanceof MagnificationListener) magnifiers.add((MagnificationListener)listener);
-        if (listener instanceof SwipeListener) swipers.add((SwipeListener)listener);
+        if (listener instanceof GesturePhaseListener gpl) phasers.add(gpl);
+        if (listener instanceof RotationListener rotationListener) rotaters.add(rotationListener);
+        if (listener instanceof MagnificationListener magnificationListener) magnifiers.add(magnificationListener);
+        if (listener instanceof SwipeListener swipeListener) swipers.add(swipeListener);
     }
 
     void removeListener(final GestureListener listener) {
@@ -185,10 +182,12 @@ final class GestureHandler {
 
     // helper function to get a handler from a Component
     static GestureHandler getHandlerForComponent(final Component c) {
-        if (!(c instanceof JComponent)) return null;
-        final Object value = ((JComponent)c).getClientProperty(CLIENT_PROPERTY);
-        if (!(value instanceof GestureHandler)) return null;
-        return (GestureHandler)value;
+        if (c instanceof JComponent component &&
+                component.getClientProperty(CLIENT_PROPERTY) instanceof GestureHandler gestureHandler) {
+            return gestureHandler;
+        } else {
+            return null;
+        }
     }
 
     // recursive helper to find the next component/handler pair

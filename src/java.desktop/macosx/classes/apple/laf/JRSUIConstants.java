@@ -107,7 +107,7 @@ public final class JRSUIConstants {
         }
 
         public boolean equals(final Object obj) {
-            return (obj instanceof DoubleValue) && (((DoubleValue)obj).doubleValue == doubleValue);
+            return obj instanceof DoubleValue doubleVal && doubleVal.doubleValue == doubleValue;
         }
 
         public int hashCode() {

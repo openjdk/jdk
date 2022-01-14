@@ -116,18 +116,18 @@ public class AquaMnemonicHandler {
                 continue;
             }
 
-            if (c instanceof AbstractButton && ((AbstractButton)c).getMnemonic() != '\0') {
+            if (c instanceof AbstractButton button && button.getMnemonic() != '\0') {
                 c.repaint();
                 continue;
             }
 
-            if (c instanceof JLabel && ((JLabel)c).getDisplayedMnemonic() != '\0') {
+            if (c instanceof JLabel label && label.getDisplayedMnemonic() != '\0') {
                 c.repaint();
                 continue;
             }
 
-            if (c instanceof Container) {
-                repaintMnemonicsInContainer((Container)c);
+            if (c instanceof Container container) {
+                repaintMnemonicsInContainer(container);
             }
         }
     }

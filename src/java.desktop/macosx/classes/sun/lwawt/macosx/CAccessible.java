@@ -86,8 +86,8 @@ class CAccessible extends CFRetainedResource implements Accessible {
         if (accessible == null) throw new NullPointerException();
         this.accessible = accessible;
 
-        if (accessible instanceof Component) {
-            addNotificationListeners((Component)accessible);
+        if (accessible instanceof Component component) {
+            addNotificationListeners(component);
         }
     }
 
@@ -103,9 +103,10 @@ class CAccessible extends CFRetainedResource implements Accessible {
     }
 
     public void addNotificationListeners(Component c) {
-        if (c instanceof Accessible) {
-            AccessibleContext ac = ((Accessible)c).getAccessibleContext();
-            ac.addPropertyChangeListener(new AXChangeNotifier());
+        if (c instanceof Accessible accessible) {
+            accessible
+                    .getAccessibleContext()
+                    .addPropertyChangeListener(new AXChangeNotifier());
         }
     }
 
@@ -133,10 +134,9 @@ class CAccessible extends CFRetainedResource implements Accessible {
                         }
                     }
                 } else if (name.equals(ACCESSIBLE_ACTIVE_DESCENDANT_PROPERTY)) {
-                    if (newValue instanceof AccessibleContext) {
-                        activeDescendant = (AccessibleContext)newValue;
-                        if (newValue instanceof Accessible) {
-                            Accessible a = (Accessible)newValue;
+                    if (newValue instanceof AccessibleContext accessibleContext) {
+                        activeDescendant = accessibleContext;
+                        if (accessibleContext instanceof Accessible a) {
                             AccessibleContext ac = a.getAccessibleContext();
                             if (ac !=  null) {
                                 Accessible p = ac.getAccessibleParent();
@@ -202,11 +202,11 @@ class CAccessible extends CFRetainedResource implements Accessible {
 
 
     static Accessible getSwingAccessible(final Accessible a) {
-        return (a instanceof CAccessible) ? ((CAccessible)a).accessible : a;
+        return a instanceof CAccessible accessible ? accessible.accessible : a;
     }
 
     static AccessibleContext getActiveDescendant(final Accessible a) {
-        return (a instanceof CAccessible) ? ((CAccessible)a).activeDescendant : null;
+        return a instanceof CAccessible accessible ? accessible.activeDescendant : null;
     }
 
 }

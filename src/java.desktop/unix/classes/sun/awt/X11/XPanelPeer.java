@@ -116,10 +116,8 @@ public class XPanelPeer extends XCanvasPeer implements PanelPeer {
                     if (cpeer != null) {
                         cpeer.setForeground(c);
                     }
-                    if (cpeer instanceof LightweightPeer
-                        && comp instanceof Container)
-                    {
-                        setForegroundForHierarchy((Container) comp, c);
+                    if (cpeer instanceof LightweightPeer && comp instanceof Container container) {
+                        setForegroundForHierarchy(container, c);
                     }
                 }
             }

@@ -483,8 +483,8 @@ public final class WPrinterJob extends RasterPrinterJob
         DialogOwner dlgOwner = (DialogOwner)attributes.get(DialogOwner.class);
         Window owner = (dlgOwner != null) ? dlgOwner.getOwner() : null;
 
-        WPrintDialog dialog =  (owner instanceof Frame) ?
-                new WPrintDialog((Frame)owner, this) :
+        WPrintDialog dialog =  owner instanceof Frame frame ?
+                new WPrintDialog(frame, this) :
                 new WPrintDialog((Dialog)owner, this);
 
         dialog.setRetVal(false);
@@ -504,8 +504,8 @@ public final class WPrinterJob extends RasterPrinterJob
                 title = rb.getString("dialog.printtofile");
             } catch (MissingResourceException e) {
             }
-            FileDialog fileDialog = (owner instanceof Frame) ?
-                    new FileDialog((Frame)owner, title, FileDialog.SAVE) :
+            FileDialog fileDialog = owner instanceof Frame frame ?
+                    new FileDialog(frame, title, FileDialog.SAVE) :
                     new FileDialog((Dialog)owner, title, FileDialog.SAVE);
 
             URI destURI = dest.getURI();
@@ -538,16 +538,16 @@ public final class WPrinterJob extends RasterPrinterJob
                    ((pFile != null) &&
                       (!pFile.exists() || (pFile.exists() && !pFile.canWrite())))) {
 
-                if (owner instanceof Frame) {
-                    (new PrintToFileErrorDialog((Frame)owner,
+                if (owner instanceof Frame frame) {
+                    new PrintToFileErrorDialog(frame,
                                 ServiceDialog.getMsg("dialog.owtitle"),
                                 ServiceDialog.getMsg("dialog.writeerror")+" "+fullName,
-                                ServiceDialog.getMsg("button.ok"))).setVisible(true);
+                                ServiceDialog.getMsg("button.ok")).setVisible(true);
                 } else {
-                    (new PrintToFileErrorDialog((Dialog)owner,
+                    new PrintToFileErrorDialog((Dialog)owner,
                                 ServiceDialog.getMsg("dialog.owtitle"),
                                 ServiceDialog.getMsg("dialog.writeerror")+" "+fullName,
-                                ServiceDialog.getMsg("button.ok"))).setVisible(true);
+                                ServiceDialog.getMsg("button.ok")).setVisible(true);
                 }
 
                 fileDialog.setVisible(true);
@@ -2063,9 +2063,8 @@ public final class WPrinterJob extends RasterPrinterJob
         }
 
         Media m = (Media)aset.get(Media.class);
-        if (m instanceof MediaSizeName) {
+        if (m instanceof MediaSizeName msn) {
             info.dmFields |= DM_PAPERSIZE;
-            MediaSizeName msn = (MediaSizeName)m;
             info.paper =
                 (short)((Win32PrintService)myService).findPaperID(msn);
         }
@@ -2077,8 +2076,8 @@ public final class WPrinterJob extends RasterPrinterJob
         if (mt == null) {
             SunAlternateMedia sam =
                 (SunAlternateMedia)aset.get(SunAlternateMedia.class);
-            if (sam != null && (sam.getMedia() instanceof MediaTray)) {
-                mt = (MediaTray)sam.getMedia();
+            if (sam != null && (sam.getMedia() instanceof MediaTray tray)) {
+                mt = tray;
             }
         }
 

@@ -199,10 +199,8 @@ public class CImage extends CFRetainedResource {
 
         // This is used to create a CImage from a Image
         private CImage createFromImage(final Image image, final boolean prepareImage, CTrayIcon.IconObserver observer) {
-            if (image instanceof MultiResolutionImage) {
-                List<Image> resolutionVariants
-                        = ((MultiResolutionImage) image).getResolutionVariants();
-                return createFromImages(resolutionVariants, prepareImage);
+            if (image instanceof MultiResolutionImage mri) {
+                return createFromImages(mri.getResolutionVariants(), prepareImage);
             }
 
             int[] buffer = imageToArray(image, prepareImage, observer);

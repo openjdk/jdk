@@ -209,10 +209,10 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
                                             final Win32GraphicsConfig gc,
                                             final int bbNum)
     {
-        if (!(gc instanceof D3DGraphicsConfig)) {
+        if (!(gc instanceof D3DGraphicsConfig d3dgc)) {
             return false;
         }
-        D3DGraphicsConfig d3dgc = (D3DGraphicsConfig)gc;
+
         D3DGraphicsDevice d3dgd = d3dgc.getD3DDevice();
         String peerName = peer.getClass().getName();
         Rectangle r = peer.getBounds();
@@ -256,8 +256,7 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
     public Graphics2D createGraphics(SurfaceData sd,
             WComponentPeer peer, Color fgColor, Color bgColor, Font font)
     {
-        if (!done && sd instanceof D3DWindowSurfaceData) {
-            D3DWindowSurfaceData d3dw = (D3DWindowSurfaceData)sd;
+        if (!done && sd instanceof D3DWindowSurfaceData d3dw) {
             if (!d3dw.isSurfaceLost() || validate(d3dw)) {
                 trackScreenSurface(d3dw);
                 return new SunGraphics2D(sd, fgColor, bgColor, font);
@@ -290,12 +289,11 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
      * @param sd the surface to be added
      */
     private void trackScreenSurface(SurfaceData sd) {
-        if (!done && sd instanceof D3DWindowSurfaceData) {
+        if (!done && sd instanceof D3DWindowSurfaceData d3dw) {
             synchronized (this) {
                 if (d3dwSurfaces == null) {
                     d3dwSurfaces = new ArrayList<D3DWindowSurfaceData>();
                 }
-                D3DWindowSurfaceData d3dw = (D3DWindowSurfaceData)sd;
                 if (!d3dwSurfaces.contains(d3dw)) {
                     d3dwSurfaces.add(d3dw);
                 }
@@ -306,8 +304,7 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
 
     @Override
     public synchronized void dropScreenSurface(SurfaceData sd) {
-        if (d3dwSurfaces != null && sd instanceof D3DWindowSurfaceData) {
-            D3DWindowSurfaceData d3dw = (D3DWindowSurfaceData)sd;
+        if (d3dwSurfaces != null && sd instanceof D3DWindowSurfaceData d3dw) {
             removeGdiSurface(d3dw);
             d3dwSurfaces.remove(d3dw);
         }
@@ -527,8 +524,8 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
      */
     private static boolean hasHWChildren(Component comp) {
         final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
-        if (comp instanceof Container) {
-            for (Component c : ((Container)comp).getComponents()) {
+        if (comp instanceof Container container) {
+            for (Component c : container.getComponents()) {
                 if (acc.getPeer(c) instanceof WComponentPeer || hasHWChildren(c)) {
                     return true;
                 }

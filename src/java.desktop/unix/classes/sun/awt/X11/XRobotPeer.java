@@ -57,14 +57,7 @@ final class XRobotPeer implements RobotPeer {
         setup(tk.getNumberOfButtons(),
                 AWTAccessor.getInputEventAccessor().getButtonDownMasks());
 
-        boolean isGtkSupported = false;
-        if (tryGtk) {
-            if (tk instanceof UNIXToolkit && ((UNIXToolkit) tk).loadGTK()) {
-                isGtkSupported = true;
-            }
-        }
-
-        useGtk = (tryGtk && isGtkSupported);
+        useGtk = tryGtk && tk instanceof UNIXToolkit utk && utk.loadGTK();
     }
 
     @Override

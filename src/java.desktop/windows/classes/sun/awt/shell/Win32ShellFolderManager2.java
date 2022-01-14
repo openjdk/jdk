@@ -341,12 +341,10 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
             do {
                 value = toolkit.getDesktopProperty("win.comdlg.placesBarPlace" + i++);
                 try {
-                    if (value instanceof Integer) {
-                        // A CSIDL
-                        folders.add(new Win32ShellFolder2((Integer)value));
-                    } else if (value instanceof String) {
-                        // A path
-                        folders.add(createShellFolder(new File((String)value)));
+                    if (value instanceof Integer csidl) {
+                        folders.add(new Win32ShellFolder2(csidl));
+                    } else if (value instanceof String path) {
+                        folders.add(createShellFolder(new File(path)));
                     }
                 } catch (IOException e) {
                     if (log.isLoggable(PlatformLogger.Level.WARNING)) {
@@ -429,13 +427,10 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
         try {
             sm.checkRead(file.getPath());
 
-            if (file instanceof Win32ShellFolder2) {
-                Win32ShellFolder2 f = (Win32ShellFolder2)file;
-                if (f.isLink()) {
-                    Win32ShellFolder2 link = (Win32ShellFolder2)f.getLinkLocation();
-                    if (link != null)
-                        sm.checkRead(link.getPath());
-                }
+            if (file instanceof Win32ShellFolder2 f && f.isLink()) {
+                Win32ShellFolder2 link = (Win32ShellFolder2) f.getLinkLocation();
+                if (link != null)
+                    sm.checkRead(link.getPath());
             }
             return file;
         } catch (SecurityException se) {
@@ -488,10 +483,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
     public boolean isFileSystemRoot(File dir) {
         //Note: Removable drives don't "exist" but are listed in "My Computer"
         if (dir != null) {
-
-            if (dir instanceof Win32ShellFolder2) {
-                Win32ShellFolder2 sf = (Win32ShellFolder2)dir;
-
+            if (dir instanceof Win32ShellFolder2 sf) {
                 //This includes all the drives under "My PC" or "My Computer.
                 // On windows 10, "External Drives" are listed under "Desktop"
                 // also
@@ -648,12 +640,12 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
                 } catch (ExecutionException e) {
                     Throwable cause = e.getCause();
 
-                    if (cause instanceof Exception) {
-                        throw (Exception) cause;
+                    if (cause instanceof Exception ex) {
+                        throw ex;
                     }
 
-                    if (cause instanceof Error) {
-                        throw (Error) cause;
+                    if (cause instanceof Error er) {
+                        throw er;
                     }
 
                     throw new RuntimeException("Unexpected error", cause);

@@ -48,14 +48,14 @@ final class WPopupMenuPeer extends WMenuPeer implements PopupMenuPeer {
             parent = target.getParent();
         }
 
-        if (parent instanceof Component) {
+        if (parent instanceof Component component) {
             WComponentPeer parentPeer = (WComponentPeer) WToolkit.targetToPeer(parent);
             if (parentPeer == null) {
                 // because the menu isn't a component (sigh) we first have to wait
                 // for a failure to map the peer which should only happen for a
                 // lightweight container, then find the actual native parent from
                 // that component.
-                parent = WToolkit.getNativeContainer((Component)parent);
+                parent = WToolkit.getNativeContainer(component);
                 parentPeer = (WComponentPeer) WToolkit.targetToPeer(parent);
             }
             parentPeer.addChildPeer(this);

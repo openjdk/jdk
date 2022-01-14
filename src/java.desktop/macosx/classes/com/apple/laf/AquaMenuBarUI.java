@@ -130,19 +130,12 @@ public class AquaMenuBarUI extends BasicMenuBarUI implements ScreenMenuBarProvid
     // unless the JFrame has a normal java.awt.MenuBar (it's possible!)
     // Other JMenuBars appear where the programmer puts them - top of window or elsewhere
     public static final boolean isScreenMenuBar(final JMenuBar c) {
-        final javax.swing.plaf.ComponentUI ui = c.getUI();
-        if (ui instanceof AquaMenuBarUI) {
-            if (!((AquaMenuBarUI)ui).useScreenMenuBar) return false;
+        return c.getUI() instanceof AquaMenuBarUI menuBar &&
+                menuBar.useScreenMenuBar &&
+                c.getTopLevelAncestor() instanceof JFrame frame &&
+                frame.getJMenuBar() == c &&
+                (frame.getMenuBar() == null || frame.getMenuBar() instanceof ScreenMenuBar);
 
-            final Component parent = c.getTopLevelAncestor();
-            if (parent instanceof JFrame) {
-                final MenuBar mb = ((JFrame)parent).getMenuBar();
-                final boolean thisIsTheJMenuBar = (((JFrame)parent).getJMenuBar() == c);
-                if (mb == null) return thisIsTheJMenuBar;
-                return (mb instanceof ScreenMenuBar && thisIsTheJMenuBar);
-            }
-        }
-        return false;
     }
 
     ScreenMenuBar fScreenMenuBar;

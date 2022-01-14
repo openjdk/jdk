@@ -3678,8 +3678,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
 
         protected void paintComponent(final Graphics g) {
             super.paintComponent(g);
-            if (isParamsSet() && g instanceof Graphics2D) {
-                final Graphics2D g2 = (Graphics2D)g;
+            if (isParamsSet() && g instanceof Graphics2D g2) {
                 g2.clipRect(0, 0, getWidth(), getHeight());
                 g2.setColor(getBgColor());
                 g2.translate(cropx, cropy);

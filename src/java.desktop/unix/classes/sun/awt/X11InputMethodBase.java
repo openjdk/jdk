@@ -386,8 +386,8 @@ public abstract class X11InputMethodBase extends InputMethodAdapter {
         Component client = getClientComponent();
         Container container;
 
-        if (client instanceof Container) {
-            container = (Container) client;
+        if (client instanceof Container c) {
+            container = c;
         } else {
             container = getParent(client);
         }

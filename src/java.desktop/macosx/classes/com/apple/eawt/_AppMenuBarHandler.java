@@ -135,18 +135,21 @@ class _AppMenuBarHandler {
             screenMenuBar.addNotify();
         }
 
-        final Object peer = AWTAccessor.getMenuComponentAccessor().getPeer(screenMenuBar);
-        if (!(peer instanceof CMenuBar)) {
+        Object peer = AWTAccessor
+                .getMenuComponentAccessor()
+                .getPeer(screenMenuBar);
+
+        if (peer instanceof CMenuBar cMenuBar) {
+            // grab the pointer to the CMenuBar, and retain it in native
+            cMenuBar.execute(_AppMenuBarHandler::nativeSetDefaultMenuBar);
+
+            // if there is no currently active frame, install the default menu bar in the application main menu
+            if (isMenuBarActivationNeeded()) {
+                cMenuBar.execute(_AppMenuBarHandler::nativeActivateDefaultMenuBar);
+            }
+        } else {
             // such a thing should not be possible
             throw new IllegalStateException("Unable to determine native menu bar from provided JMenuBar");
-        }
-
-        // grab the pointer to the CMenuBar, and retain it in native
-        ((CMenuBar) peer).execute(_AppMenuBarHandler::nativeSetDefaultMenuBar);
-
-        // if there is no currently active frame, install the default menu bar in the application main menu
-        if (isMenuBarActivationNeeded()) {
-            ((CMenuBar) peer).execute(_AppMenuBarHandler::nativeActivateDefaultMenuBar);
         }
     }
 

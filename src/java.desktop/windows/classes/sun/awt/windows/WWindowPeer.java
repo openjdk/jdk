@@ -377,15 +377,15 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
     // WARNING: it's called on the Toolkit thread!
     @Override
     void preprocessPostEvent(AWTEvent event) {
-        if (event instanceof WindowEvent) {
+        if (event instanceof WindowEvent e) {
             WindowListener listener = windowListener;
             if (listener != null) {
                 switch(event.getID()) {
                     case WindowEvent.WINDOW_CLOSING:
-                        listener.windowClosing((WindowEvent)event);
+                        listener.windowClosing(e);
                         break;
                     case WindowEvent.WINDOW_ICONIFIED:
-                        listener.windowIconified((WindowEvent)event);
+                        listener.windowIconified(e);
                         break;
                 }
             }
@@ -401,10 +401,9 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
             log.fine("Reporting state change %x -> %x", oldState, newState);
         }
 
-        if (target instanceof Frame) {
+        if (target instanceof Frame frame) {
             // Sync target with peer.
-            AWTAccessor.getFrameAccessor().setExtendedState((Frame) target,
-                newState);
+            AWTAccessor.getFrameAccessor().setExtendedState(frame, newState);
         }
 
         // Report (de)iconification to old clients.
@@ -506,19 +505,19 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
                 // handle native dialogs separately, as they may have not
                 // got HWND yet; modalEnable/modalDisable is called from
                 // their setHWnd() methods
-                if (blockerPeer instanceof WFileDialogPeer) {
-                    ((WFileDialogPeer)blockerPeer).blockWindow(this);
-                } else if (blockerPeer instanceof WPrintDialogPeer) {
-                    ((WPrintDialogPeer)blockerPeer).blockWindow(this);
+                if (blockerPeer instanceof WFileDialogPeer peer) {
+                    peer.blockWindow(this);
+                } else if (blockerPeer instanceof WPrintDialogPeer peer) {
+                    peer.blockWindow(this);
                 } else {
                     modalDisable(dialog, blockerPeer.getHWnd());
                 }
             } else {
                 modalBlocker = null;
-                if (blockerPeer instanceof WFileDialogPeer) {
-                    ((WFileDialogPeer)blockerPeer).unblockWindow(this);
-                } else if (blockerPeer instanceof WPrintDialogPeer) {
-                    ((WPrintDialogPeer)blockerPeer).unblockWindow(this);
+                if (blockerPeer instanceof WFileDialogPeer peer) {
+                    peer.unblockWindow(this);
+                } else if (blockerPeer instanceof WPrintDialogPeer peer) {
+                    peer.unblockWindow(this);
                 } else {
                     modalEnable(dialog);
                 }
@@ -670,14 +669,13 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
     }
 
     private void replaceSurfaceDataRecursively(Component c) {
-        if (c instanceof Container) {
-            for (Component child : ((Container)c).getComponents()) {
+        if (c instanceof Container container) {
+            for (Component child : container.getComponents()) {
                 replaceSurfaceDataRecursively(child);
             }
         }
-        final Object cp = AWTAccessor.getComponentAccessor().getPeer(c);
-        if (cp instanceof WComponentPeer) {
-            ((WComponentPeer)cp).replaceSurfaceDataLater();
+        if (AWTAccessor.getComponentAccessor().getPeer(c) instanceof WComponentPeer peer) {
+            peer.replaceSurfaceDataLater();
         }
     }
 

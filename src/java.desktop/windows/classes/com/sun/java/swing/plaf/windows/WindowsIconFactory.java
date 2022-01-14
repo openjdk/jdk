@@ -686,10 +686,11 @@ public class WindowsIconFactory implements Serializable
         public void paintIcon(Component c, Graphics g, int x, int y) {
             XPStyle xp = XPStyle.getXP();
             if (WindowsMenuItemUI.isVistaPainting(xp)) {
-                State state = State.NORMAL;
-                if (c instanceof JMenuItem) {
-                    state = ((JMenuItem) c).getModel().isEnabled()
-                    ? State.NORMAL : State.DISABLED;
+                State state;
+                if (c instanceof JMenuItem menuItem && !menuItem.getModel().isEnabled()) {
+                    state = State.DISABLED;
+                } else {
+                    state = State.NORMAL;
                 }
                 Skin skin = xp.getSkin(c, Part.MP_POPUPSUBMENU);
                 if (WindowsGraphicsUtils.isLeftToRight(c)) {
@@ -746,8 +747,7 @@ public class WindowsIconFactory implements Serializable
         }
 
         public boolean isCompatible(Object icon, String prefix) {
-            return icon instanceof VistaMenuItemCheckIcon
-              && ((VistaMenuItemCheckIcon) icon).type == getType(prefix);
+            return icon instanceof VistaMenuItemCheckIcon vmic && vmic.type == getType(prefix);
         }
 
         public Icon getIcon(String type) {
@@ -895,27 +895,28 @@ public class WindowsIconFactory implements Serializable
                     icon.paintIcon(c, g, x + OFFSET, y + OFFSET);
                 }
             }
-            private static WindowsMenuItemUIAccessor getAccessor(
-                    JMenuItem menuItem) {
-                WindowsMenuItemUIAccessor rv = null;
-                ButtonUI uiObject = (menuItem != null) ? menuItem.getUI()
-                        : null;
-                if (uiObject instanceof WindowsMenuItemUI) {
-                    rv = ((WindowsMenuItemUI) uiObject).accessor;
-                } else if (uiObject instanceof WindowsMenuUI) {
-                    rv = ((WindowsMenuUI) uiObject).accessor;
-                } else if (uiObject instanceof WindowsCheckBoxMenuItemUI) {
-                    rv = ((WindowsCheckBoxMenuItemUI) uiObject).accessor;
-                } else if (uiObject instanceof WindowsRadioButtonMenuItemUI) {
-                    rv = ((WindowsRadioButtonMenuItemUI) uiObject).accessor;
+            private static WindowsMenuItemUIAccessor getAccessor(JMenuItem menuItem) {
+                if (menuItem == null) {
+                    return null;
                 }
-                return rv;
+
+                ButtonUI uiObject = menuItem.getUI();
+                if (uiObject instanceof WindowsMenuItemUI winMenu) {
+                    return winMenu.accessor;
+                } else if (uiObject instanceof WindowsMenuUI winMenu) {
+                    return winMenu.accessor;
+                } else if (uiObject instanceof WindowsCheckBoxMenuItemUI winCheck) {
+                    return winCheck.accessor;
+                } else if (uiObject instanceof WindowsRadioButtonMenuItemUI winRadio) {
+                    return winRadio.accessor;
+                } else {
+                    return null;
+                }
             }
 
             private static boolean isEnabled(Component  c, State state) {
-                if (state == null && c instanceof JMenuItem) {
-                    WindowsMenuItemUIAccessor accessor =
-                        getAccessor((JMenuItem) c);
+                if (state == null && c instanceof JMenuItem menu) {
+                    WindowsMenuItemUIAccessor accessor = getAccessor(menu);
                     if (accessor != null) {
                         state = accessor.getState((JMenuItem) c);
                     }
@@ -961,11 +962,11 @@ public class WindowsIconFactory implements Serializable
             private Icon getLaFIcon() {
                 // use icon from the UI table if it does not match this one.
                 Icon rv = (Icon) UIManager.getDefaults().get(typeToString(type));
-                if (rv instanceof VistaMenuItemCheckIcon
-                      && ((VistaMenuItemCheckIcon) rv).type == type) {
-                    rv = null;
+                if (rv instanceof VistaMenuItemCheckIcon menuItem && menuItem.type == type) {
+                    return null;
+                } else {
+                    return rv;
                 }
-                return rv;
             }
 
             private static String typeToString(

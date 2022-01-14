@@ -80,21 +80,19 @@ public class AquaMenuBorder implements Border, UIResource {
      * @param c the component for which this border insets value applies
      */
     public Insets getBorderInsets(final Component c) {
-        if (!(c instanceof JPopupMenu)) {
+        if (c instanceof final JPopupMenu menu) {// for more info on this issue, see AquaComboBoxPopup.updateContents()
+            if (menu.getComponentCount() > 0) {
+                Component firstChild = menu.getComponent(0);
+                if (firstChild instanceof Box.Filler || firstChild instanceof JScrollPane) {
+                    return getEmptyInsets();
+                }
+            }
+
+            // just need top and bottom, and not right and left.
+            // but only for non-list popups.
+            return getPopupInsets();
+        } else {
             return getItemInsets();
         }
-
-        // for more info on this issue, see AquaComboBoxPopup.updateContents()
-        final JPopupMenu menu = (JPopupMenu)c;
-        final int nChildren = menu.getComponentCount();
-        if (nChildren > 0) {
-            final Component firstChild = menu.getComponent(0);
-            if (firstChild instanceof Box.Filler) return getEmptyInsets();
-            if (firstChild instanceof JScrollPane) return getEmptyInsets();
-        }
-
-        // just need top and bottom, and not right and left.
-        // but only for non-list popups.
-        return getPopupInsets();
     }
 }

@@ -97,7 +97,7 @@ public final class CDragSourceContextPeer extends SunDragSourceContextPeer {
         @SuppressWarnings("deprecation")
         int extModifiers = (triggerEvent.getModifiers() | triggerEvent.getModifiersEx());
         long timestamp   = triggerEvent.getWhen();
-        int clickCount   = ((triggerEvent instanceof MouseEvent) ? (((MouseEvent) triggerEvent).getClickCount()) : 1);
+        int clickCount   = triggerEvent instanceof MouseEvent mouseEvent ? mouseEvent.getClickCount() : 1;
 
         Component component = trigger.getComponent();
         // For a lightweight component traverse up the hierarchy to the root
@@ -193,27 +193,22 @@ public final class CDragSourceContextPeer extends SunDragSourceContextPeer {
     }
 
     private void setDefaultDragImage(Component component) {
-        boolean handled = false;
-
         // Special-case default drag image, depending on the drag source type:
         if (component.isLightweight()) {
-            if (component instanceof JTextComponent) {
-                this.setDefaultDragImage((JTextComponent) component);
-                handled = true;
-            } else if (component instanceof JTree) {
-                            this.setDefaultDragImage((JTree) component);
-                            handled = true;
-                        } else if (component instanceof JTable) {
-                            this.setDefaultDragImage((JTable) component);
-                            handled = true;
-                        } else if (component instanceof JList) {
-                            this.setDefaultDragImage((JList) component);
-                            handled = true;
-                        }
-        }
-
-        if (handled == false)
+            if (component instanceof JTextComponent textComponent) {
+                this.setDefaultDragImage(textComponent);
+            } else if (component instanceof JTree tree) {
+                this.setDefaultDragImage(tree);
+            } else if (component instanceof JTable table) {
+                this.setDefaultDragImage(table);
+            } else if (component instanceof JList<?> list) {
+                this.setDefaultDragImage(list);
+            } else {
+                this.setDefaultDragImage();
+            }
+        } else {
             this.setDefaultDragImage();
+        }
     }
 
     @SuppressWarnings("deprecation")
@@ -362,10 +357,9 @@ public final class CDragSourceContextPeer extends SunDragSourceContextPeer {
         Point compOffset = comp.getLocation();
 
         // For lightweight components add some special treatment:
-        if (comp instanceof JComponent) {
+        if (comp instanceof JComponent component) {
             // Intersect requested bounds with visible bounds:
-            Rectangle visibleBounds = ((JComponent) comp).getVisibleRect();
-            Rectangle clipedOutline = outline.intersection(visibleBounds);
+            Rectangle clipedOutline = outline.intersection(component.getVisibleRect());
             if (clipedOutline.isEmpty() == false)
                 outline = clipedOutline;
 
@@ -456,8 +450,8 @@ public final class CDragSourceContextPeer extends SunDragSourceContextPeer {
             return root;
         }
 
-        if (root instanceof Container) {
-            for (Component comp : ((Container) root).getComponents()) {
+        if (root instanceof Container container) {
+            for (Component comp : container.getComponents()) {
                 Point loc = comp.getLocation();
                 Component dropTarget = getDropTargetAt(comp, x - loc.x, y - loc.y);
                 if (dropTarget != null) {

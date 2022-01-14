@@ -49,18 +49,16 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI {
     public void installDefaults() {
         super.installDefaults();
 
-        final TableCellRenderer renderer = header.getDefaultRenderer();
-        if (renderer instanceof UIResource && renderer instanceof DefaultTableCellRenderer) {
-            final DefaultTableCellRenderer defaultRenderer = (DefaultTableCellRenderer)renderer;
+        if (header.getDefaultRenderer() instanceof UIResource resource &&
+                resource instanceof DefaultTableCellRenderer defaultRenderer) {
             originalHeaderAlignment = defaultRenderer.getHorizontalAlignment();
             defaultRenderer.setHorizontalAlignment(SwingConstants.LEADING);
         }
     }
 
     public void uninstallDefaults() {
-        final TableCellRenderer renderer = header.getDefaultRenderer();
-        if (renderer instanceof UIResource && renderer instanceof DefaultTableCellRenderer) {
-            final DefaultTableCellRenderer defaultRenderer = (DefaultTableCellRenderer)renderer;
+        if (header.getDefaultRenderer() instanceof UIResource resource &&
+                resource instanceof DefaultTableCellRenderer defaultRenderer) {
             defaultRenderer.setHorizontalAlignment(originalHeaderAlignment);
         }
 
@@ -157,12 +155,11 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI {
         if (renderer == null) return null;
 
         final Component c = renderer.getTableCellRendererComponent(header.getTable(), column.getHeaderValue(), false, false, -1, column.getModelIndex());
-        if (!(c instanceof JComponent)) return null;
-
-        final Border border = ((JComponent)c).getBorder();
-        if (!(border instanceof AquaTableHeaderBorder)) return null;
-
-        return (AquaTableHeaderBorder)border;
+        if (c instanceof JComponent component && component.getBorder() instanceof AquaTableHeaderBorder border) {
+            return border;
+        } else {
+            return null;
+        }
     }
 
     protected void installListeners() {

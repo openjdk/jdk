@@ -135,9 +135,8 @@ public class CMenuItem extends CMenuComponent implements MenuItemPeer {
 
     @Override
     public void setEnabled(boolean b) {
-        final Object parent = LWToolkit.targetToPeer(getTarget().getParent());
-        if (parent instanceof CMenuItem) {
-            b &= ((CMenuItem) parent).isEnabled();
+        if (LWToolkit.targetToPeer(getTarget().getParent()) instanceof CMenuItem menuItem) {
+            b &= menuItem.isEnabled();
         }
         if (enabled.compareAndSet(!b, b)) {
             final boolean finalB = b;

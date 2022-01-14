@@ -248,17 +248,11 @@ public class AttributeClass {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof AttributeClass)) {
-            return false;
-        }
-        if (this == obj) {
-            return true;
-        }
-
-        AttributeClass acObj = (AttributeClass) obj;
-        return myType == acObj.getType() &&
-               Objects.equals(myName, acObj.getName()) &&
-               Objects.equals(myValue, acObj.getObjectValue());
+        return this == obj ||
+                obj instanceof AttributeClass acObj &&
+                myType == acObj.getType() &&
+                Objects.equals(myName, acObj.getName()) &&
+                Objects.equals(myValue, acObj.getObjectValue());
     }
 
     @Override

@@ -54,16 +54,16 @@ class MTLBufImgOps extends BufferedBufImgOps {
     {
         // Validate the provided BufferedImage (make sure it is one that
         // is supported, and that its properties are acceleratable)
-        if (biop instanceof ConvolveOp) {
-            if (!isConvolveOpValid((ConvolveOp)biop)) {
+        if (biop instanceof ConvolveOp op) {
+            if (!isConvolveOpValid(op)) {
                 return false;
             }
-        } else if (biop instanceof RescaleOp) {
-            if (!isRescaleOpValid((RescaleOp)biop, img)) {
+        } else if (biop instanceof RescaleOp op) {
+            if (!isRescaleOpValid(op, img)) {
                 return false;
             }
-        } else if (biop instanceof LookupOp) {
-            if (!isLookupOpValid((LookupOp)biop, img)) {
+        } else if (biop instanceof LookupOp op) {
+            if (!isLookupOpValid(op, img)) {
                 return false;
             }
         } else {

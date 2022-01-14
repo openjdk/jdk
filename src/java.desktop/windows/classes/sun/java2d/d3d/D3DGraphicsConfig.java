@@ -184,8 +184,7 @@ public final class D3DGraphicsConfig
         SurfaceManager d3dvsm =
             SurfaceManager.getManager(backBuffer);
         SurfaceData sd = d3dvsm.getPrimarySurfaceData();
-        if (sd instanceof D3DSurfaceData) {
-            D3DSurfaceData d3dsd = (D3DSurfaceData)sd;
+        if (sd instanceof D3DSurfaceData d3dsd) {
             double scaleX = sd.getDefaultScaleX();
             double scaleY = sd.getDefaultScaleY();
             if (scaleX > 1 || scaleY > 1) {
@@ -292,15 +291,14 @@ public final class D3DGraphicsConfig
 
         SunVolatileImage vi = new AccelTypedVolatileImage(this, width, height,
                                                           transparency, type);
-        Surface sd = vi.getDestSurface();
-        if (!(sd instanceof AccelSurface) ||
-            ((AccelSurface)sd).getType() != type)
-        {
-            vi.flush();
-            vi = null;
+        if (vi.getDestSurface() instanceof AccelSurface surface &&
+                surface.getType() == type) {
+            return vi;
         }
 
-        return vi;
+        vi.flush();
+
+        return null;
     }
 
     @Override

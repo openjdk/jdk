@@ -248,8 +248,7 @@ public final class AquaInternalFrameDockIconUI extends DesktopIconUI
 
             final int x = (halfway - (int)stringBounds.getWidth() / 2);
 
-            final Graphics2D g2d = g instanceof Graphics2D ? (Graphics2D)g : null;
-            if (g2d != null) {
+            if (g instanceof Graphics2D g2d) {
                 g.setColor(UIManager.getColor("DesktopIcon.labelBackground"));
                 final Object origAA = g2d.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -277,9 +276,9 @@ public final class AquaInternalFrameDockIconUI extends DesktopIconUI
             Container parent = invoker.getParent();
 
             for (Container p = parent; p != null; p = p.getParent()) {
-                if (p instanceof JRootPane) {
+                if (p instanceof JRootPane rootPane) {
                     if (p.getParent() instanceof JInternalFrame) continue;
-                    parent = ((JRootPane)p).getLayeredPane();
+                    parent = rootPane.getLayeredPane();
                     for (p = parent.getParent(); p != null && (!(p instanceof java.awt.Window)); p = p.getParent());
                     break;
                 }

@@ -165,13 +165,10 @@ class WindowDimensions {
     }
 
     public boolean equals(Object o) {
-        if (!(o instanceof WindowDimensions)) {
-            return false;
-        }
-        WindowDimensions dims = (WindowDimensions)o;
-        return ((dims.insets.equals(insets)))
-            && (getClientRect().equals(dims.getClientRect()))
-            && (getBounds().equals(dims.getBounds()));
+        return o instanceof WindowDimensions dims &&
+                dims.insets.equals(insets)
+                && getClientRect().equals(dims.getClientRect())
+                && getBounds().equals(dims.getBounds());
     }
 
     public int hashCode() {

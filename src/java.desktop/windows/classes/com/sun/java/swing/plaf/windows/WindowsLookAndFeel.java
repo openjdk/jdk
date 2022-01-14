@@ -2035,8 +2035,8 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
     static void repaintRootPane(Component c) {
         JRootPane root = null;
         for (; c != null; c = c.getParent()) {
-            if (c instanceof JRootPane) {
-                root = (JRootPane)c;
+            if (c instanceof JRootPane rootPane) {
+                root = rootPane;
             }
         }
 
@@ -2230,8 +2230,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         }
 
         protected Object configureValue(Object value) {
-            if (value instanceof Font) {
-                Font font = (Font)value;
+            if (value instanceof Font font) {
                 if ("MS Sans Serif".equals(font.getName())) {
                     int size = font.getSize();
                     // 4950968: Workaround to mimic the way Windows maps the default
@@ -2343,11 +2342,11 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         }
 
         private Object recursiveCreateValue(Object value, UIDefaults table) {
-            if (value instanceof UIDefaults.LazyValue) {
-                value = ((UIDefaults.LazyValue)value).createValue(table);
+            if (value instanceof LazyValue lazyValue) {
+                value = lazyValue.createValue(table);
             }
-            if (value instanceof UIDefaults.ActiveValue) {
-                return ((UIDefaults.ActiveValue)value).createValue(table);
+            if (value instanceof UIDefaults.ActiveValue activeValue) {
+                return activeValue.createValue(table);
             } else {
                 return value;
             }

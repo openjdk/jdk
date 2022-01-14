@@ -55,7 +55,9 @@ public class AquaIcon {
 
     // converts an object that is an icon into an image so we can hand it off to AppKit
     public static Image getImageForIcon(final Icon i) {
-        if (i instanceof ImageIcon) return ((ImageIcon)i).getImage();
+        if (i instanceof ImageIcon imageIcon) {
+            return imageIcon.getImage();
+        }
 
         final int w = i.getIconWidth();
         final int h = i.getIconHeight();
@@ -103,7 +105,7 @@ public class AquaIcon {
         }
 
         public void paintIcon(final Component c, final Graphics g, final int x, final int y) {
-            final Size size = c instanceof JComponent ? AquaUtilControlSize.getUserSizeFrom((JComponent)c) : Size.REGULAR;
+            Size size = c instanceof JComponent component ? AquaUtilControlSize.getUserSizeFrom(component) : Size.REGULAR;
             sizeVariant = sizeDescriptor.get(size);
             painter.state.set(size);
             super.paintIcon(c, g, x, y);
@@ -145,9 +147,9 @@ public class AquaIcon {
         public void paintIcon(final Component c, Graphics g, final int x, final int y) {
             g = g.create();
 
-            if (g instanceof Graphics2D) {
+            if (g instanceof Graphics2D g2d) {
                 // improves icon rendering quality in Quartz
-                ((Graphics2D)g).setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
             }
 
             final Image myImage = getImage();
@@ -186,9 +188,9 @@ public class AquaIcon {
 
             g = g.create();
 
-            if (g instanceof Graphics2D) {
+            if (g instanceof Graphics2D g2d) {
                 // improves icon rendering quality in Quartz
-                ((Graphics2D) g).setRenderingHint(RenderingHints.KEY_RENDERING,
+                g2d.setRenderingHint(RenderingHints.KEY_RENDERING,
                         RenderingHints.VALUE_RENDER_QUALITY);
             }
 

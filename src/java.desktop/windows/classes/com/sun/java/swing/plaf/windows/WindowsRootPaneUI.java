@@ -101,8 +101,8 @@ public class WindowsRootPaneUI extends BasicRootPaneUI {
                 WindowsLookAndFeel.setMnemonicHidden(false);
                 WindowsGraphicsUtils.repaintMnemonicsInWindow(winAncestor);
                 JMenuBar mbar = root != null ? root.getJMenuBar() : null;
-                if(mbar == null && winAncestor instanceof JFrame) {
-                    mbar = ((JFrame)winAncestor).getJMenuBar();
+                if(mbar == null && winAncestor instanceof JFrame frame) {
+                    mbar = frame.getJMenuBar();
                 }
                 JMenu menu = mbar != null ? mbar.getMenu(0) : null;
                 if(menu != null) {
@@ -124,8 +124,8 @@ public class WindowsRootPaneUI extends BasicRootPaneUI {
                 // if no menu is active, we try activating the menubar
 
                 JMenuBar mbar = root != null ? root.getJMenuBar() : null;
-                if(mbar == null && winAncestor instanceof JFrame) {
-                    mbar = ((JFrame)winAncestor).getJMenuBar();
+                if(mbar == null && winAncestor instanceof JFrame frame) {
+                    mbar = frame.getJMenuBar();
                 }
                 JMenu menu = mbar != null ? mbar.getMenu(0) : null;
 
@@ -137,14 +137,13 @@ public class WindowsRootPaneUI extends BasicRootPaneUI {
                 // activation. See 7121442.
                 // Also we must ensure that original source of key event belongs
                 // to the same window object as winAncestor. See 8001633.
-                boolean skip = false;
-                Toolkit tk = Toolkit.getDefaultToolkit();
-                if (tk instanceof SunToolkit) {
-                    Component originalSource = AWTAccessor.getKeyEventAccessor()
-                            .getOriginalSource(ev);
-                    skip = SunToolkit.getContainingWindow(originalSource) != winAncestor ||
-                            ev.getWhen() <= ((SunToolkit) tk).getWindowDeactivationTime(winAncestor);
-                }
+                Component originalSource = AWTAccessor
+                        .getKeyEventAccessor()
+                        .getOriginalSource(ev);
+
+                boolean skip = Toolkit.getDefaultToolkit() instanceof SunToolkit stk &&
+                        (SunToolkit.getContainingWindow(originalSource) != winAncestor ||
+                        ev.getWhen() <= stk.getWindowDeactivationTime(winAncestor));
 
                 if (menu != null && !skip) {
                     MenuElement[] path = new MenuElement[2];

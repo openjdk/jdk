@@ -374,8 +374,8 @@ public class AquaMenuPainter {
     protected void paintCheck(final Graphics g, final JMenuItem item, Icon checkIcon, Rectangle checkIconRect) {
         if (isTopLevelMenu(item) || !item.isSelected()) return;
 
-        if (item.isArmed() && checkIcon instanceof InvertableIcon) {
-            ((InvertableIcon)checkIcon).getInvertedIcon().paintIcon(item, g, checkIconRect.x, checkIconRect.y);
+        if (item.isArmed() && checkIcon instanceof InvertableIcon invertable) {
+            invertable.getInvertedIcon().paintIcon(item, g, checkIconRect.x, checkIconRect.y);
         } else {
             checkIcon.paintIcon(item, g, checkIconRect.x, checkIconRect.y);
         }
@@ -402,8 +402,8 @@ public class AquaMenuPainter {
     protected void paintArrow(Graphics g, JMenuItem c, ButtonModel model, Icon arrowIcon, Rectangle arrowIconRect) {
         if (isTopLevelMenu(c)) return;
 
-        if (c instanceof JMenu && (model.isArmed() || model.isSelected()) && arrowIcon instanceof InvertableIcon) {
-            ((InvertableIcon)arrowIcon).getInvertedIcon().paintIcon(c, g, arrowIconRect.x, arrowIconRect.y);
+        if (c instanceof JMenu && (model.isArmed() || model.isSelected()) && arrowIcon instanceof InvertableIcon invertable) {
+            invertable.getInvertedIcon().paintIcon(c, g, arrowIconRect.x, arrowIconRect.y);
         } else {
             arrowIcon.paintIcon(c, g, arrowIconRect.x, arrowIconRect.y);
         }
@@ -437,7 +437,7 @@ public class AquaMenuPainter {
      * level menu (on the menubar).
      */
     private static boolean isTopLevelMenu(final JMenuItem menuItem) {
-        return (menuItem instanceof JMenu) && (((JMenu)menuItem).isTopLevelMenu());
+        return menuItem instanceof JMenu menu && menu.isTopLevelMenu();
     }
 
     private String layoutMenuItem(final JMenuItem menuItem, final FontMetrics fm, final String text, final FontMetrics fmAccel, String keyString, final String modifiersString, final Icon icon, final Icon checkIcon, final Icon arrowIcon, final int verticalAlignment, final int horizontalAlignment, final int verticalTextPosition, final int horizontalTextPosition, final Rectangle viewR, final Rectangle iconR, final Rectangle textR, final Rectangle acceleratorR, final Rectangle checkIconR, final Rectangle arrowIconR, final int textIconGap, final int menuItemGap) {

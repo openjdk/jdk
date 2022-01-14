@@ -418,11 +418,14 @@ public class Application {
      * @since Java for Mac OS X 10.7 Update 1
      */
     public void requestToggleFullScreen(final Window window) {
-        final Object peer = AWTAccessor.getComponentAccessor().getPeer(window);
-        if (!(peer instanceof LWWindowPeer)) return;
-        Object platformWindow = ((LWWindowPeer) peer).getPlatformWindow();
-        if (!(platformWindow instanceof CPlatformWindow)) return;
-        ((CPlatformWindow)platformWindow).toggleFullScreen();
+        Object peer = AWTAccessor
+                .getComponentAccessor()
+                .getPeer(window);
+
+        if (peer instanceof LWWindowPeer windowPeer &&
+                windowPeer.getPlatformWindow() instanceof CPlatformWindow cPlatformWindow) {
+            cPlatformWindow.toggleFullScreen();
+        }
     }
 
 }

@@ -348,10 +348,8 @@ public abstract class UNIXToolkit extends SunToolkit
          * us to default to "OFF". I don't think that's the best guess.
          * So if its !=0 then lets assume AA.
          */
-        boolean aa = ((aaValue instanceof Number)
-                        && ((Number) aaValue).intValue() != 0);
         Object aaHint;
-        if (aa) {
+        if (aaValue instanceof Number n && n.intValue() != 0) {
             String subpixOrder =
                 (String)getDesktopProperty("gnome.Xft/RGBA");
 

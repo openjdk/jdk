@@ -61,8 +61,8 @@ public class CGLLayer extends CFLayer {
         setScale(gc.getDevice().getScaleFactor());
         // the layer holds a reference to the buffer, which in
         // turn has a reference back to this layer
-        if (surfaceData instanceof CGLSurfaceData) {
-            validate((CGLSurfaceData)surfaceData);
+        if (surfaceData instanceof CGLSurfaceData surfaceData) {
+            validate(surfaceData);
         }
 
         return surfaceData;

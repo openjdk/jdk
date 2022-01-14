@@ -171,7 +171,9 @@ abstract class XScrollbar {
         boolean useBufferedImage = false;
         Graphics2D g2 = null;
         BufferedImage buffer = null;
-        if (!(g instanceof Graphics2D)) {
+        if (g instanceof Graphics2D graphics2d) {
+            g2 = graphics2d;
+        } else {
             // Fix for 5045936, 5055171. While printing, g is an instance
             //   of sun.print.ProxyPrintGraphics which extends Graphics.
             //   So we use a separate buffered image and its graphics is
@@ -180,8 +182,6 @@ abstract class XScrollbar {
             buffer = graphicsConfig.createCompatibleImage(width, height);
             g2 = buffer.createGraphics();
             useBufferedImage = true;
-        } else {
-            g2 = (Graphics2D)g;
         }
         try {
             Rectangle thumbRect = calculateThumbRect();

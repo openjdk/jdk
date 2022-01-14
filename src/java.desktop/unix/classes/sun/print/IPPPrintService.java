@@ -1388,11 +1388,11 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
             }
             return false;
         } else if (attr.getCategory() == Media.class) {
-            if (attr instanceof MediaSizeName) {
-                return isSupportedMedia((MediaSizeName)attr);
+            if (attr instanceof MediaSizeName msn) {
+                return isSupportedMedia(msn);
             }
-            if (attr instanceof MediaTray) {
-                return isSupportedMediaTray((MediaTray)attr);
+            if (attr instanceof MediaTray tray) {
+                return isSupportedMediaTray(tray);
             }
         } else if (attr.getCategory() == PageRanges.class) {
             if (flavor != null &&
@@ -1436,8 +1436,8 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
             }
             return false;
         } else if (attr.getCategory() == PrinterResolution.class) {
-            if (attr instanceof PrinterResolution) {
-                return isSupportedResolution((PrinterResolution)attr);
+            if (attr instanceof PrinterResolution printerResolution) {
+                return isSupportedResolution(printerResolution);
             }
         } else if (attr.getCategory() == DialogOwner.class) {
             DialogOwner owner = (DialogOwner)attr;

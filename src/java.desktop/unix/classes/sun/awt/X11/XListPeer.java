@@ -1599,10 +1599,11 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
      * posted to Java
      */
     boolean prePostEvent(final AWTEvent e) {
-        if (e instanceof MouseEvent) {
-            return prePostMouseEvent((MouseEvent)e);
+        if (e instanceof MouseEvent mouseEvent) {
+            return prePostMouseEvent(mouseEvent);
+        } else {
+            return super.prePostEvent(e);
         }
-        return super.prePostEvent(e);
     }
 
     /*

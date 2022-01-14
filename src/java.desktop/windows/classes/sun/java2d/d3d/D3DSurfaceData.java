@@ -232,8 +232,8 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
         if (scaleX == 1 && scaleY == 1) {
             this.width = width;
             this.height = height;
-        } else if (peer instanceof WWindowPeer) {
-            Dimension scaledSize = ((WWindowPeer) peer).getScaledWindowSize();
+        } else if (peer instanceof WWindowPeer wPeer) {
+            Dimension scaledSize = wPeer.getScaledWindowSize();
             this.width = scaledSize.width;
             this.height = scaledSize.height;
         } else {
@@ -286,10 +286,7 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
             return null;
         }
         BufferCapabilities caps = peer.getBackBufferCaps();
-        VSyncType vSyncType = VSYNC_DEFAULT;
-        if (caps instanceof ExtendedBufferCapabilities) {
-            vSyncType = ((ExtendedBufferCapabilities)caps).getVSync();
-        }
+        VSyncType vSyncType = caps instanceof ExtendedBufferCapabilities ebc ? ebc.getVSync() : VSYNC_DEFAULT;
         Rectangle r = peer.getBounds();
         BufferCapabilities.FlipContents flip = caps.getFlipContents();
         int swapEffect;
@@ -555,12 +552,10 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
      * longer attempt to re-create a D3DSurface.
      */
     void disableAccelerationForSurface() {
-        if (offscreenImage != null) {
-            SurfaceManager sm = SurfaceManager.getManager(offscreenImage);
-            if (sm instanceof D3DVolatileSurfaceManager) {
-                setSurfaceLost(true);
-                ((D3DVolatileSurfaceManager)sm).setAccelerationEnabled(false);
-            }
+        if (offscreenImage != null &&
+                SurfaceManager.getManager(offscreenImage) instanceof D3DVolatileSurfaceManager surfaceManager) {
+            setSurfaceLost(true);
+            surfaceManager.setAccelerationEnabled(false);
         }
     }
 
@@ -854,7 +849,8 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
             GraphicsDevice gd = env.getDefaultScreenDevice();
             gc = gd.getDefaultConfiguration();
         }
-        return (gc instanceof D3DGraphicsConfig) ? (D3DGraphicsConfig)gc : null;
+
+        return gc instanceof D3DGraphicsConfig graphicsConfig ? graphicsConfig : null;
     }
 
     /**

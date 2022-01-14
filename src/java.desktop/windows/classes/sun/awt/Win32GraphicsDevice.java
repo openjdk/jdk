@@ -614,9 +614,8 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
             }
             // otherwise apply state to all fullscreen windows
             for (GraphicsDevice gd : gds) {
-                Window fsw = gd.getFullScreenWindow();
-                if (fsw instanceof Frame) {
-                    ((Frame)fsw).setExtendedState(state);
+                if (gd.getFullScreenWindow() instanceof Frame frame) {
+                    frame.setExtendedState(state);
                 }
             }
         }

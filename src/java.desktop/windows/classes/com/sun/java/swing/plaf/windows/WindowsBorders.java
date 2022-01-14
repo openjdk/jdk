@@ -157,7 +157,7 @@ public class WindowsBorders {
 
         public void paintBorder(Component c, Graphics g, int x, int y,
                                 int width, int height) {
-            if (!(c instanceof JToolBar)) {
+            if (!(c instanceof JToolBar toolBar)) {
                 return;
             }
             g.translate(x, y);
@@ -169,8 +169,8 @@ public class WindowsBorders {
                     xpBorder.paintBorder(c, g, 0, 0, width, height);
                 }
             }
-            if (((JToolBar)c).isFloatable()) {
-                boolean vertical = ((JToolBar)c).getOrientation() == VERTICAL;
+            if (toolBar.isFloatable()) {
+                boolean vertical = toolBar.getOrientation() == VERTICAL;
 
                 if (xp != null) {
                     Part part = vertical ? Part.RP_GRIPPERVERT : Part.RP_GRIPPER;
@@ -226,21 +226,21 @@ public class WindowsBorders {
 
         public Insets getBorderInsets(Component c, Insets insets) {
             insets.set(1,1,1,1);
-            if (!(c instanceof JToolBar)) {
-                return insets;
-            }
-            if (((JToolBar)c).isFloatable()) {
-                int gripInset = (XPStyle.getXP() != null) ? 12 : 9;
-                if (((JToolBar)c).getOrientation() == HORIZONTAL) {
-                    if (c.getComponentOrientation().isLeftToRight()) {
-                        insets.left = gripInset;
+            if (c instanceof JToolBar toolBar) {
+                if (toolBar.isFloatable()) {
+                    int gripInset = (XPStyle.getXP() != null) ? 12 : 9;
+                    if (toolBar.getOrientation() == HORIZONTAL) {
+                        if (c.getComponentOrientation().isLeftToRight()) {
+                            insets.left = gripInset;
+                        } else {
+                            insets.right = gripInset;
+                        }
                     } else {
-                        insets.right = gripInset;
+                        insets.top = gripInset;
                     }
-                } else {
-                    insets.top = gripInset;
                 }
             }
+
             return insets;
         }
     }
@@ -318,11 +318,11 @@ public class WindowsBorders {
         public void paintBorder(Component c, Graphics g, int x, int y,
                 int width, int height) {
 
-            JInternalFrame jif = null;
-            if (c instanceof JInternalFrame) {
-                jif = (JInternalFrame)c;
-            } else if (c instanceof JInternalFrame.JDesktopIcon) {
-                jif = ((JInternalFrame.JDesktopIcon)c).getInternalFrame();
+            JInternalFrame jif;
+            if (c instanceof JInternalFrame internalFrame) {
+                jif = internalFrame;
+            } else if (c instanceof JInternalFrame.JDesktopIcon desktopIcon) {
+                jif = desktopIcon.getInternalFrame();
             } else {
                 return;
             }

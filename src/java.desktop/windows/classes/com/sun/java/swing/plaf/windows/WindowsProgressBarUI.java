@@ -305,16 +305,14 @@ public class WindowsProgressBarUI extends BasicProgressBarUI
             boxRect = getBox(boxRect);
             if (boxRect != null) {
                 g.setColor(progressBar.getForeground());
-                if (!(g instanceof Graphics2D)) {
-                    return;
-                }
-                paintIndeterminateFrame(boxRect, (Graphics2D)g, vertical,
-                                        barRectWidth, barRectHeight);
-                if (progressBar.isStringPainted()) {
-                    if (!vertical) {
-                        paintString(g, -1, -1, barRectWidth, barRectHeight, 0, null);
-                    } else {
-                        paintString(g, 1, 1, barRectWidth, barRectHeight, 0, null);
+                if (g instanceof Graphics2D g2d) {
+                    paintIndeterminateFrame(boxRect, g2d, vertical, barRectWidth, barRectHeight);
+                    if (progressBar.isStringPainted()) {
+                        if (!vertical) {
+                            paintString(g, -1, -1, barRectWidth, barRectHeight, 0, null);
+                        } else {
+                            paintString(g, 1, 1, barRectWidth, barRectHeight, 0, null);
+                        }
                     }
                 }
             }

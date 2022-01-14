@@ -622,25 +622,25 @@ class XFileDialogPeer extends XDialogPeer
             handleFilter( filterField.getText() );
         } else if (actionCommand.equals(cancelButtonText)) {
             handleCancel();
-        } else if ( source instanceof TextField ) {
-            if ( selectionField == ((TextField)source) ) {
+        } else if (source instanceof TextField textField) {
+            if (selectionField == textField) {
                 // Fixed within 6259434: PIT: Choice in FileDialog is not responding to keyboard interactions, XToolkit
                 // We should handle the action based on the selection field
                 // Looks like mistake
                 handleSelection(selectionField.getText());
                 handleQuitButton();
-            } else if (filterField == ((TextField)source)) {
+            } else if (filterField == textField) {
                 handleFilter(filterField.getText());
-            } else if (pathField == ((TextField)source)) {
+            } else if (pathField == textField) {
                 target.setDirectory(pathField.getText());
             }
-        } else if (source instanceof List) {
-            if (directoryList == ((List)source)) {
+        } else if (source instanceof List list) {
+            if (directoryList == list) {
                 //handleFilter( actionCommand + getFileName( filterField.getText() ) );
                 if (updateDirectoryByUserAction(actionCommand)){
                     handleFilter( getFileName( filterField.getText() ) );
                 }
-            } else if (fileList == ((List)source)) {
+            } else if (fileList == source) {
                 handleSelection( actionCommand );
                 handleQuitButton();
             }

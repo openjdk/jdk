@@ -770,11 +770,9 @@ public final class XAtom {
     }
 
     public boolean equals(Object o) {
-        if (!(o instanceof XAtom)) {
-            return false;
-        }
-        XAtom ot = (XAtom)o;
-        return (atom == ot.atom && display == ot.display);
+        return o instanceof XAtom ot &&
+                atom == ot.atom &&
+                display == ot.display;
     }
     public int hashCode() {
         return (int)((atom ^ display)& 0xFFFFL);

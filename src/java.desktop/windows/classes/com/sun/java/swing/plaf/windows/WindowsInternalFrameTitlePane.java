@@ -237,8 +237,7 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
         } else {
             Boolean gradientsOn = (Boolean)LookAndFeel.getDesktopPropertyValue(
                 "win.frame.captionGradientsOn", Boolean.valueOf(false));
-            if (gradientsOn.booleanValue() && g instanceof Graphics2D) {
-                Graphics2D g2 = (Graphics2D)g;
+            if (gradientsOn.booleanValue() && g instanceof Graphics2D g2) {
                 Paint savePaint = g2.getPaint();
 
                 boolean isSelected = frame.isSelected();
@@ -511,8 +510,8 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
             this.icons = new Icon[objects.length];
 
             for (int i = 0; i < objects.length; i++) {
-                if (objects[i] instanceof UIDefaults.LazyValue) {
-                    icons[i] = (Icon)((UIDefaults.LazyValue)objects[i]).createValue(null);
+                if (objects[i] instanceof UIDefaults.LazyValue lazyValue) {
+                    icons[i] = (Icon) lazyValue.createValue(null);
                 } else {
                     icons[i] = (Icon)objects[i];
                 }

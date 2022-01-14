@@ -330,12 +330,9 @@ public final class WGLGraphicsConfig
             SurfaceManager vsm = SurfaceManager.getManager(backBuffer);
             SurfaceData sd = vsm.getPrimarySurfaceData();
 
-            if (sd instanceof WGLVSyncOffScreenSurfaceData) {
-                WGLVSyncOffScreenSurfaceData vsd =
-                    (WGLVSyncOffScreenSurfaceData)sd;
-                SurfaceData bbsd = vsd.getFlipSurface();
+            if (sd instanceof WGLVSyncOffScreenSurfaceData vsd) {
                 Graphics2D bbg =
-                    new SunGraphics2D(bbsd, Color.black, Color.white, null);
+                    new SunGraphics2D(vsd.getFlipSurface(), Color.black, Color.white, null);
                 try {
                     bbg.drawImage(backBuffer, 0, 0, null);
                 } finally {
@@ -416,15 +413,13 @@ public final class WGLGraphicsConfig
         }
         SunVolatileImage vi = new AccelTypedVolatileImage(this, width, height,
                                                           transparency, type);
-        Surface sd = vi.getDestSurface();
-        if (!(sd instanceof AccelSurface) ||
-            ((AccelSurface)sd).getType() != type)
-        {
-            vi.flush();
-            vi = null;
+        if (vi.getDestSurface() instanceof AccelSurface surface && surface.getType() == type) {
+            return vi;
         }
 
-        return vi;
+        vi.flush();
+
+        return null;
     }
 
     @Override

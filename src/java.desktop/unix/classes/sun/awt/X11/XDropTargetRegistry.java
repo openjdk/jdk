@@ -398,17 +398,12 @@ final class XDropTargetRegistry {
     }
 
     private void registerEmbeddedDropSite(long toplevel, long window) {
-        XBaseWindow xBaseWindow = XToolkit.windowToXWindow(window);
-        boolean isXEmbedClient =
-            (xBaseWindow instanceof XEmbeddedFramePeer) &&
-            ((XEmbeddedFramePeer)xBaseWindow).isXEmbedActive();
-
         XEmbedCanvasPeer peer = null;
         {
             XBaseWindow xbaseWindow = XToolkit.windowToXWindow(toplevel);
             if (xbaseWindow != null) {
-                if (xbaseWindow instanceof XEmbedCanvasPeer) {
-                    peer = (XEmbedCanvasPeer)xbaseWindow;
+                if (xbaseWindow instanceof XEmbedCanvasPeer xPeer) {
+                    peer = xPeer;
                 } else {
                     throw new UnsupportedOperationException();
                 }
@@ -445,6 +440,9 @@ final class XDropTargetRegistry {
         }
 
         assert entry != null;
+
+        XBaseWindow xBaseWindow = XToolkit.windowToXWindow(window);
+        boolean isXEmbedClient = xBaseWindow instanceof XEmbeddedFramePeer xPeer && xPeer.isXEmbedActive();
 
         synchronized (entry) {
             // For a foreign toplevel.
@@ -492,8 +490,7 @@ final class XDropTargetRegistry {
 
                 XBaseWindow xbaseWindow = XToolkit.windowToXWindow(toplevel);
                 if (xbaseWindow != null) {
-                    if (xbaseWindow instanceof XEmbedCanvasPeer) {
-                        XEmbedCanvasPeer peer = (XEmbedCanvasPeer)xbaseWindow;
+                    if (xbaseWindow instanceof XEmbedCanvasPeer peer) {
                         // Unregister an XEmbed drop site.
                         peer.removeXEmbedDropTarget();
                     } else {

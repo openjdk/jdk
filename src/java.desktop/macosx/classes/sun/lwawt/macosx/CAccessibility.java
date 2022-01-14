@@ -113,12 +113,9 @@ class CAccessibility implements PropertyChangeListener {
         // frame, glasspane, layeredpane, optionpane, panel, rootpane, separator,
         // tooltip, viewport, window.
         // List taken from initializeRoles() in JavaComponentUtilities.m.
-        if (newValue instanceof Accessible) {
-            AccessibleContext nvAC = ((Accessible) newValue).getAccessibleContext();
-            AccessibleRole nvRole = nvAC.getAccessibleRole();
-            if (!ignoredRoles.contains(roleKey(nvRole))) {
-                focusChanged();
-            }
+        if (newValue instanceof Accessible accessible &&
+                !ignoredRoles.contains(roleKey(accessible.getAccessibleContext().getAccessibleRole()))) {
+            focusChanged();
         }
     }
 
@@ -407,8 +404,7 @@ class CAccessibility implements PropertyChangeListener {
             int indexInParent = ac.getAccessibleIndexInParent();
             Accessible child = parent.getAccessibleContext()
                                      .getAccessibleChild(indexInParent);
-            if (child instanceof JMenuItem) {
-                JMenuItem menuItem = (JMenuItem) child;
+            if (child instanceof JMenuItem menuItem) {
                 KeyStroke keyStroke = menuItem.getAccelerator();
                 if (keyStroke != null) {
                     int modifiers = keyStroke.getModifiers();
@@ -437,8 +433,8 @@ class CAccessibility implements PropertyChangeListener {
 
                 final String accessibleDescription = ac.getAccessibleDescription();
                 if (accessibleDescription == null) {
-                    if (c instanceof JComponent) {
-                        String toolTipText = ((JComponent)c).getToolTipText();
+                    if (c instanceof JComponent component) {
+                        String toolTipText = component.getToolTipText();
                         if (toolTipText != null) {
                             return toolTipText;
                         }
@@ -491,8 +487,11 @@ class CAccessibility implements PropertyChangeListener {
                     return CAccessible.getCAccessible(axComponent.getAccessibleAt(localP2));
                 }
 
-                if (!(component instanceof Accessible)) return null;
-                return CAccessible.getCAccessible((Accessible)component);
+                if (component instanceof Accessible accessible) {
+                    return CAccessible.getCAccessible(accessible);
+                } else {
+                    return null;
+                }
             }
         }, parent);
     }
@@ -555,8 +554,8 @@ class CAccessibility implements PropertyChangeListener {
                 if (pac == null) return;
                 AccessibleSelection as = pac.getAccessibleSelection();
                 if (as == null) return;
-                if (parent instanceof JList) {
-                    ((JList) parent).setSelectedIndex(i);
+                if (parent instanceof JList<?> list) {
+                    list.setSelectedIndex(i);
                     return;
                 }
                 as.addAccessibleSelection(i);
@@ -626,9 +625,14 @@ class CAccessibility implements PropertyChangeListener {
     public static Accessible getFocusOwner(final Component c) {
         return invokeAndWait(new Callable<Accessible>() {
             public Accessible call() throws Exception {
-                Component c = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
-                if (!(c instanceof Accessible accessible)) return null;
-                return CAccessible.getCAccessible(accessible);
+                Component c = KeyboardFocusManager
+                        .getCurrentKeyboardFocusManager()
+                        .getFocusOwner();
+                if (c instanceof Accessible accessible) {
+                    return CAccessible.getCAccessible(accessible);
+                } else {
+                    return null;
+                }
             }
         }, c);
     }
@@ -762,44 +766,36 @@ class CAccessibility implements PropertyChangeListener {
                         if (!indexses.isEmpty()) index = indexses.remove(indexses.size() - 1);
                         currentLevel -= 1;
                         currentLevelChildren.clear();
-                        continue;
-                    }
+                    } else if (currentLevelChildren.get(index) instanceof Accessible ca) {
+                        Object role = currentLevelChildren.get(index + 1);
+                        currentLevelChildren.clear();
 
-                    Accessible ca = null;
-                    Object obj = currentLevelChildren.get(index);
-                    if (!(obj instanceof Accessible)) {
+                        AccessibleContext cac = ca.getAccessibleContext();
+                        if (cac == null) {
+                            index += 2;
+                            continue;
+                        }
+
+                        if ((cac.getAccessibleStateSet().contains(AccessibleState.SELECTED) && (whichChildren == JAVA_AX_SELECTED_CHILDREN)) ||
+                                (cac.getAccessibleStateSet().contains(AccessibleState.VISIBLE) && (whichChildren == JAVA_AX_VISIBLE_CHILDREN)) ||
+                                (whichChildren == JAVA_AX_ALL_CHILDREN)) {
+                            allChildren.add(ca);
+                            allChildren.add(role);
+                            allChildren.add(String.valueOf(currentLevel));
+                        }
+
+                        index += 2;
+
+                        if (cac.getAccessibleStateSet().contains(AccessibleState.EXPANDED)) {
+                            parentStack.add(ca);
+                            indexses.add(index);
+                            index = 0;
+                            currentLevel += 1;
+                        }
+                    } else {
                         index += 2;
                         currentLevelChildren.clear();
-                        continue;
                     }
-                    ca = (Accessible) obj;
-                    Object role = currentLevelChildren.get(index + 1);
-                    currentLevelChildren.clear();
-
-                    AccessibleContext cac = ca.getAccessibleContext();
-                    if (cac == null) {
-                        index += 2;
-                        continue;
-                    }
-
-                    if ((cac.getAccessibleStateSet().contains(AccessibleState.SELECTED) && (whichChildren == JAVA_AX_SELECTED_CHILDREN)) ||
-                            (cac.getAccessibleStateSet().contains(AccessibleState.VISIBLE) && (whichChildren == JAVA_AX_VISIBLE_CHILDREN)) ||
-                            (whichChildren == JAVA_AX_ALL_CHILDREN)) {
-                        allChildren.add(ca);
-                        allChildren.add(role);
-                        allChildren.add(String.valueOf(currentLevel));
-                    }
-
-                    index += 2;
-
-                    if (cac.getAccessibleStateSet().contains(AccessibleState.EXPANDED)) {
-                        parentStack.add(ca);
-                        indexses.add(index);
-                        index = 0;
-                        currentLevel += 1;
-                        continue;
-                    }
-
                 }
 
                 return allChildren.toArray();
@@ -859,13 +855,13 @@ class CAccessibility implements PropertyChangeListener {
     private static AccessibleRole getAccessibleRole(Accessible a) {
         AccessibleContext ac = a.getAccessibleContext();
         AccessibleRole role = ac.getAccessibleRole();
-        Object component = CAccessible.getSwingAccessible(a);
         if (role == null) return null;
-        String roleString = role.toString();
-        if ("label".equals(roleString) && component instanceof JLabel) {
-            return getAccessibleRoleForLabel((JLabel) component, role);
+        if ("label".equals(role.toString()) &&
+                CAccessible.getSwingAccessible(a) instanceof JLabel label) {
+            return getAccessibleRoleForLabel(label, role);
+        } else {
+            return role;
         }
-        return role;
     }
 
     private interface ChildrenOperations {
@@ -993,24 +989,24 @@ class CAccessibility implements PropertyChangeListener {
      * @return AWTView ptr, a peer of the CPlatformView associated with the toplevel container of the Accessible, if any
      */
     private static long getAWTView(Accessible a) {
-        Accessible ax = CAccessible.getSwingAccessible(a);
-        if (!(ax instanceof Component)) return 0;
-
-        return invokeAndWait(new Callable<Long>() {
-            public Long call() throws Exception {
-                Component cont = (Component) ax;
-                while (cont != null && !(cont instanceof Window)) {
-                    cont = cont.getParent();
-                }
-                if (cont != null) {
-                    LWWindowPeer peer = (LWWindowPeer) AWTAccessor.getComponentAccessor().getPeer(cont);
-                    if (peer != null) {
-                        return ((CPlatformWindow) peer.getPlatformWindow()).getContentView().getAWTView();
+        if (CAccessible.getSwingAccessible(a) instanceof Component component) {
+            return invokeAndWait(new Callable<Long>() {
+                public Long call() throws Exception {
+                    Component cont = component;
+                    while (cont != null && !(cont instanceof Window)) {
+                        cont = cont.getParent();
                     }
+                    if (cont != null) {
+                        LWWindowPeer peer = (LWWindowPeer) AWTAccessor.getComponentAccessor().getPeer(cont);
+                        if (peer != null) {
+                            return ((CPlatformWindow) peer.getPlatformWindow()).getContentView().getAWTView();
+                        }
+                    }
+                    return 0L;
                 }
-                return 0L;
-            }
-        }, (Component)ax);
+            }, component);
+        }
+        return 0;
     }
 
     private static boolean isTreeRootVisible(Accessible a, Component c) {
@@ -1018,11 +1014,7 @@ class CAccessibility implements PropertyChangeListener {
 
         return invokeAndWait(new Callable<Boolean>() {
             public Boolean call() throws Exception {
-                Accessible sa = CAccessible.getSwingAccessible(a);
-                if (sa instanceof JTree) {
-                    return ((JTree) sa).isRootVisible();
-                }
-                return false;
+                return CAccessible.getSwingAccessible(a) instanceof JTree tree && tree.isRootVisible();
             }
         }, c);
     }

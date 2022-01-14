@@ -46,13 +46,12 @@ final class ScreenMenuItem extends MenuItem
         super(mi.getText());
         fMenuItem = mi;
         setEnabled(fMenuItem.isEnabled());
-        final ComponentUI ui = fMenuItem.getUI();
 
-        if (ui instanceof ScreenMenuItemUI) {
-            ((ScreenMenuItemUI)ui).updateListenersForScreenMenuItem();
+        if (fMenuItem.getUI() instanceof ScreenMenuItemUI menuItem) {
+            menuItem.updateListenersForScreenMenuItem();
             // SAK:  Not calling this means that mouse and mouse motion listeners don't get
             // installed.  Not a problem because the menu manager handles tracking for us.
-    }
+        }
     }
 
     public void addNotify() {
@@ -83,12 +82,9 @@ final class ScreenMenuItem extends MenuItem
             this.setToolTipText(tooltipText);
         }
 
-        if (fMenuItem instanceof JRadioButtonMenuItem) {
-            final ComponentUI ui = fMenuItem.getUI();
-
-            if (ui instanceof ScreenMenuItemUI) {
-                ((ScreenMenuItemUI)ui).updateListenersForScreenMenuItem();
-            }
+        if (fMenuItem instanceof JRadioButtonMenuItem &&
+                fMenuItem.getUI() instanceof ScreenMenuItemUI menuItem) {
+            menuItem.updateListenersForScreenMenuItem();
         }
     }
 
@@ -101,17 +97,17 @@ final class ScreenMenuItem extends MenuItem
     }
 
     static void syncLabelAndKS(MenuItem menuItem, String label, KeyStroke ks) {
-        Object peer = AWTAccessor.getMenuComponentAccessor().getPeer(menuItem);
-        if (!(peer instanceof CMenuItem)) {
-            //Is it possible?
-            return;
-        }
-        final CMenuItem cmi = (CMenuItem) peer;
-        if (ks == null) {
-            cmi.setLabel(label);
-        } else {
-            cmi.setLabel(label, ks.getKeyChar(), ks.getKeyCode(),
-                         ks.getModifiers());
+        Object peer = AWTAccessor
+                .getMenuComponentAccessor()
+                .getPeer(menuItem);
+
+        if (peer instanceof CMenuItem cmi) {
+            if (ks == null) {
+                cmi.setLabel(label);
+            } else {
+                cmi.setLabel(label, ks.getKeyChar(), ks.getKeyCode(),
+                        ks.getModifiers());
+            }
         }
     }
 
@@ -169,27 +165,28 @@ final class ScreenMenuItem extends MenuItem
     }
 
     public void setToolTipText(final String text) {
-        Object peer = AWTAccessor.getMenuComponentAccessor().getPeer(this);
-        if (!(peer instanceof CMenuItem)) return;
+        Object peer = AWTAccessor
+                .getMenuComponentAccessor()
+                .getPeer(this);
 
-        final CMenuItem cmi = (CMenuItem)peer;
-        cmi.setToolTipText(text);
+        if (peer instanceof CMenuItem cmi) {
+            cmi.setToolTipText(text);
+        }
     }
 
     public void setIcon(final Icon i) {
-        Object peer = AWTAccessor.getMenuComponentAccessor().getPeer(this);
-        if (!(peer instanceof CMenuItem)) return;
+        Object peer = AWTAccessor
+                .getMenuComponentAccessor()
+                .getPeer(this);
 
-        final CMenuItem cmi = (CMenuItem)peer;
-            Image img = null;
-
-        if (i != null) {
-            if (i.getIconWidth() > 0 && i.getIconHeight() > 0) {
-                    img = AquaIcon.getImageForIcon(i);
-                }
+        if (peer instanceof CMenuItem cmi) {
+            if (i != null && i.getIconWidth() > 0 && i.getIconHeight() > 0) {
+                cmi.setImage(AquaIcon.getImageForIcon(i));
+            } else {
+                cmi.setImage(null);
+            }
         }
-            cmi.setImage(img);
-        }
+    }
 
     // we have no children
     public void setChildVisible(final JMenuItem child, final boolean b) {}

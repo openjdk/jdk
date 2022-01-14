@@ -444,8 +444,7 @@ final class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
 
         @Override
         protected String getPropertyPrefix() {
-            JTextComponent comp = getComponent();
-            if (comp instanceof JPasswordField && ((JPasswordField)comp).echoCharIsSet()) {
+            if (getComponent() instanceof JPasswordField passwordField && passwordField.echoCharIsSet()) {
                 return "PasswordField";
             } else {
                 return "TextField";

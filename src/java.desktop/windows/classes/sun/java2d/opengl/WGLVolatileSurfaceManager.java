@@ -79,20 +79,14 @@ public class WGLVolatileSurfaceManager extends VolatileSurfaceManager {
         try {
             boolean createVSynced = false;
             boolean forceback = false;
-            if (context instanceof Boolean) {
-                forceback = ((Boolean)context).booleanValue();
-                if (forceback) {
-                    BufferCapabilities caps = peer.getBackBufferCaps();
-                    if (caps instanceof ExtendedBufferCapabilities) {
-                        ExtendedBufferCapabilities ebc =
-                            (ExtendedBufferCapabilities)caps;
-                        if (ebc.getVSync() == VSYNC_ON &&
-                            ebc.getFlipContents() == COPIED)
-                        {
-                            createVSynced = true;
-                            forceback = false;
-                        }
-                    }
+            if (context instanceof Boolean bool) {
+                forceback = bool;
+                if (forceback &&
+                        peer.getBackBufferCaps() instanceof ExtendedBufferCapabilities ebc &&
+                        ebc.getVSync() == VSYNC_ON &&
+                        ebc.getFlipContents() == COPIED) {
+                    createVSynced = true;
+                    forceback = false;
                 }
             }
 

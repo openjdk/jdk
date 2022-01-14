@@ -208,9 +208,8 @@ class TMSchema {
 
         public String getControlName(Component component) {
             String str = "";
-            if (component instanceof JComponent) {
-                JComponent c = (JComponent)component;
-                String subAppName = (String)c.getClientProperty("XPStyle.subAppName");
+            if (component instanceof JComponent c) {
+                String subAppName = (String) c.getClientProperty("XPStyle.subAppName");
                 if (subAppName != null) {
                     str = subAppName + "::";
                 }

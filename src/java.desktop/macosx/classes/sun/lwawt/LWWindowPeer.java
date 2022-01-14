@@ -215,13 +215,12 @@ public class LWWindowPeer
         super.initializeImpl();
 
 
-        if (getTarget() instanceof Frame) {
-            Frame frame = (Frame) getTarget();
+        if (getTarget() instanceof Frame frame) {
             setTitle(frame.getTitle());
             setState(frame.getExtendedState());
             setMaximizedBounds(frame.getMaximizedBounds());
-        } else if (getTarget() instanceof Dialog) {
-            setTitle(((Dialog) getTarget()).getTitle());
+        } else if (getTarget() instanceof Dialog dialog) {
+            setTitle(dialog.getTitle());
         }
 
         updateAlwaysOnTopState();
@@ -450,9 +449,11 @@ public class LWWindowPeer
     @Override
     public void setModalBlocked(Dialog blocker, boolean blocked) {
         synchronized (getPeerTreeLock()) {
-            ComponentPeer peer =  AWTAccessor.getComponentAccessor().getPeer(blocker);
-            if (blocked && (peer instanceof LWWindowPeer)) {
-                this.blocker = (LWWindowPeer) peer;
+            ComponentPeer peer = AWTAccessor
+                    .getComponentAccessor()
+                    .getPeer(blocker);
+            if (blocked && peer instanceof LWWindowPeer windowPeer) {
+                this.blocker = windowPeer;
             } else {
                 this.blocker = null;
             }
@@ -750,16 +751,16 @@ public class LWWindowPeer
                                                getFont());
         if (g != null) {
             try {
-                if (g instanceof Graphics2D) {
-                    ((Graphics2D) g).setComposite(AlphaComposite.Src);
+                if (g instanceof Graphics2D g2d) {
+                    g2d.setComposite(AlphaComposite.Src);
                 }
                 if (isTranslucent()) {
                     g.setColor(nonOpaqueBackground);
                     g.fillRect(0, 0, w, h);
                 }
                 if (!isTextured()) {
-                    if (g instanceof SunGraphics2D) {
-                        ((SunGraphics2D) g).constrain(0, 0, w, h, getRegion());
+                    if (g instanceof SunGraphics2D sg2d) {
+                        sg2d.constrain(0, 0, w, h, getRegion());
                     }
                     g.setColor(getBackground());
                     g.fillRect(0, 0, w, h);
@@ -1068,9 +1069,8 @@ public class LWWindowPeer
     }
 
     private void postWindowStateChangedEvent(int newWindowState) {
-        if (getTarget() instanceof Frame) {
-            AWTAccessor.getFrameAccessor().setExtendedState(
-                    (Frame)getTarget(), newWindowState);
+        if (getTarget() instanceof Frame frame) {
+            AWTAccessor.getFrameAccessor().setExtendedState(frame, newWindowState);
         }
 
         WindowEvent stateChangedEvent = new WindowEvent(getTarget(),

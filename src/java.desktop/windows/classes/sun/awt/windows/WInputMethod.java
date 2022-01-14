@@ -285,8 +285,8 @@ final class WInputMethod extends InputMethodAdapter
 
     @Override
     public void dispatchEvent(AWTEvent e) {
-        if (e instanceof ComponentEvent) {
-            Component comp = ((ComponentEvent) e).getComponent();
+        if (e instanceof ComponentEvent event) {
+            Component comp = event.getComponent();
             if (comp == awtFocussedComponent) {
                 if (awtFocussedComponentPeer == null ||
                     awtFocussedComponentPeer.isDisposed()) {
@@ -647,11 +647,11 @@ final class WInputMethod extends InputMethodAdapter
             if (peer==null) return null;
         }
 
-        if (peer instanceof WComponentPeer)
-            return (WComponentPeer)peer;
-        else
+        if (peer instanceof WComponentPeer componentPeer) {
+            return componentPeer;
+        } else {
             return null;
-
+        }
     }
 
     private native int createNativeContext();

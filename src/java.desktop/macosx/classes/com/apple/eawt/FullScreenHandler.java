@@ -47,8 +47,8 @@ final class FullScreenHandler {
     // installs a private instance of the handler, if necessary
     static void addFullScreenListenerTo(final RootPaneContainer window, final FullScreenListener listener) {
         final Object value = window.getRootPane().getClientProperty(CLIENT_PROPERTY);
-        if (value instanceof FullScreenHandler) {
-            ((FullScreenHandler)value).addListener(listener);
+        if (value instanceof FullScreenHandler fsh) {
+            fsh.addListener(listener);
             return;
         }
 
@@ -61,27 +61,32 @@ final class FullScreenHandler {
 
     // asks the installed FullScreenHandler to remove it's listener (does not uninstall the FullScreenHandler)
     static void removeFullScreenListenerFrom(final RootPaneContainer window, final FullScreenListener listener) {
-        final Object value = window.getRootPane().getClientProperty(CLIENT_PROPERTY);
-        if (!(value instanceof FullScreenHandler)) return;
-        ((FullScreenHandler)value).removeListener(listener);
+        if (window.getRootPane().getClientProperty(CLIENT_PROPERTY) instanceof FullScreenHandler fsh) {
+            fsh.removeListener(listener);
+        }
     }
 
     static FullScreenHandler getHandlerFor(final RootPaneContainer window) {
-        final Object value = window.getRootPane().getClientProperty(CLIENT_PROPERTY);
-        if (value instanceof FullScreenHandler) return (FullScreenHandler)value;
-        return null;
+        if (window.getRootPane().getClientProperty(CLIENT_PROPERTY) instanceof FullScreenHandler fsh) {
+            return fsh;
+        } else {
+            return null;
+        }
     }
 
     // called from native
     static void handleFullScreenEventFromNative(final Window window, final int type) {
-        if (!(window instanceof RootPaneContainer)) return; // handles null
-
-        SunToolkit.executeOnEventHandlerThread(window, new Runnable() {
-            public void run() {
-                final FullScreenHandler handler = getHandlerFor((RootPaneContainer)window);
-                if (handler != null) handler.notifyListener(new FullScreenEvent(window), type);
-            }
-        });
+        if (window instanceof RootPaneContainer handler) {
+            SunToolkit.executeOnEventHandlerThread(window, new Runnable() {
+                @Override
+                public void run() {
+                    final FullScreenHandler fsh = getHandlerFor(handler);
+                    if (fsh != null) {
+                        fsh.notifyListener(new FullScreenEvent(window), type);
+                    }
+                }
+            });
+        } // handles null
     }
 
 

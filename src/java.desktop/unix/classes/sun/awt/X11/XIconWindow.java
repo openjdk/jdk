@@ -254,8 +254,8 @@ public class XIconWindow extends XBaseWindow {
                 //for using as iconWindow's background
                 g.setColor(SystemColor.window);
                 g.fillRect(0, 0, iconWidth, iconHeight);
-                if (g instanceof Graphics2D) {
-                    ((Graphics2D)g).setComposite(AlphaComposite.Src);
+                if (g instanceof Graphics2D graphics2D) {
+                    graphics2D.setComposite(AlphaComposite.Src);
                 }
                 g.drawImage(img, 0, 0, iconWidth, iconHeight, null);
             } finally {
@@ -289,8 +289,8 @@ public class XIconWindow extends XBaseWindow {
             //Transform image data
             long bytes = 0;
             DataBuffer srcBuf = bi.getData().getDataBuffer();
-            if (srcBuf instanceof DataBufferByte) {
-                byte[] buf = ((DataBufferByte)srcBuf).getData();
+            if (srcBuf instanceof DataBufferByte dataBufferByte) {
+                byte[] buf = dataBufferByte.getData();
                 ColorData cdata = adata.get_color_data(0);
                 int num_colors = cdata.get_awt_numICMcolors();
                 for (int i = 0; i < buf.length; i++) {
@@ -299,10 +299,10 @@ public class XIconWindow extends XBaseWindow {
                         0 : cdata.get_awt_icmLUT2Colors(b);
                 }
                 bytes = Native.toData(buf);
-            } else if (srcBuf instanceof DataBufferInt) {
-                bytes = Native.toData(((DataBufferInt)srcBuf).getData());
-            } else if (srcBuf instanceof DataBufferUShort) {
-                bytes = Native.toData(((DataBufferUShort)srcBuf).getData());
+            } else if (srcBuf instanceof DataBufferInt dataBufferInt) {
+                bytes = Native.toData(dataBufferInt.getData());
+            } else if (srcBuf instanceof DataBufferUShort dataBufferUShort) {
+                bytes = Native.toData(dataBufferUShort.getData());
             } else {
                 throw new IllegalArgumentException("Unknown data buffer: " + srcBuf);
             }
@@ -457,8 +457,8 @@ public class XIconWindow extends XBaseWindow {
             //get image size
             int width;
             int height;
-            if (img instanceof ToolkitImage) {
-                ImageRepresentation ir = ((ToolkitImage)img).getImageRep();
+            if (img instanceof ToolkitImage tki) {
+                ImageRepresentation ir = tki.getImageRep();
                 ir.reconstruct(ImageObserver.ALLBITS);
                 width = ir.getWidth();
                 height = ir.getHeight();

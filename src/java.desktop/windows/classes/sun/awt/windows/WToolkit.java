@@ -668,11 +668,11 @@ public final class WToolkit extends SunToolkit implements Runnable {
 
     @Override
     public Insets getScreenInsets(final GraphicsConfiguration gc) {
-        GraphicsDevice gd = gc.getDevice();
-        if (!(gd instanceof Win32GraphicsDevice)) {
+        if (gc.getDevice() instanceof Win32GraphicsDevice device) {
+            return getScreenInsets(device.getScreen());
+        } else {
             return super.getScreenInsets(gc);
         }
-        return getScreenInsets(((Win32GraphicsDevice) gd).getScreen());
     }
 
     @Override
@@ -857,9 +857,8 @@ public final class WToolkit extends SunToolkit implements Runnable {
     public native int getMaximumCursorColors();
 
     static void paletteChanged() {
-        Object lge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        if (lge instanceof DisplayChangedListener) {
-            ((DisplayChangedListener) lge).paletteChanged();
+        if (GraphicsEnvironment.getLocalGraphicsEnvironment() instanceof DisplayChangedListener listener) {
+            listener.paletteChanged();
         }
     }
 
@@ -872,9 +871,8 @@ public final class WToolkit extends SunToolkit implements Runnable {
      */
     public static void displayChanged() {
         final Runnable runnable = () -> {
-            Object lge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-            if (lge instanceof DisplayChangedListener) {
-                ((DisplayChangedListener) lge).displayChanged();
+            if (GraphicsEnvironment.getLocalGraphicsEnvironment() instanceof DisplayChangedListener listener) {
+                listener.displayChanged();
             }
         };
         if (AppContext.getAppContext() != null) {
@@ -1170,14 +1168,11 @@ public final class WToolkit extends SunToolkit implements Runnable {
         NULL_COMPONENT_WR;
 
     private boolean isComponentValidForTouchKeyboard(Component comp) {
-        if ((comp != null) && comp.isEnabled() && comp.isFocusable() &&
-            (((comp instanceof TextComponent) &&
-                    ((TextComponent) comp).isEditable()) ||
-                ((comp instanceof JTextComponent) &&
-                    ((JTextComponent) comp).isEditable()))) {
-            return true;
-        }
-        return false;
+        return (comp != null) &&
+                comp.isEnabled() &&
+                comp.isFocusable() &&
+                ((comp instanceof TextComponent textComponent && textComponent.isEditable()) ||
+                        (comp instanceof JTextComponent jTextComponent && jTextComponent.isEditable()));
     }
 
     @Override
@@ -1187,8 +1182,7 @@ public final class WToolkit extends SunToolkit implements Runnable {
             return;
         }
 
-        if ((e instanceof MouseEvent) && isComponentValidForTouchKeyboard(comp)) {
-            MouseEvent me = (MouseEvent) e;
+        if (e instanceof MouseEvent me && isComponentValidForTouchKeyboard(comp)) {
             if (me.getID() == MouseEvent.MOUSE_PRESSED) {
                 if (AWTAccessor.getMouseEventAccessor().isCausedByTouchEvent(me)) {
                     compOnTouchDownEvent = new WeakReference<>(comp);
@@ -1208,14 +1202,11 @@ public final class WToolkit extends SunToolkit implements Runnable {
                     compOnMousePressedEvent = NULL_COMPONENT_WR;
                 }
             }
-        } else if (e instanceof FocusEvent) {
-            FocusEvent fe = (FocusEvent) e;
-            if (fe.getID() == FocusEvent.FOCUS_LOST) {
+        } else if (e instanceof FocusEvent fe &&
+                fe.getID() == FocusEvent.FOCUS_LOST &&
                 // Hide the touch keyboard, if not a text component gains focus.
-                if (!isComponentValidForTouchKeyboard(fe.getOppositeComponent())) {
-                    hideTouchKeyboard();
-                }
-            }
+                !isComponentValidForTouchKeyboard(fe.getOppositeComponent())) {
+            hideTouchKeyboard();
         }
     }
 

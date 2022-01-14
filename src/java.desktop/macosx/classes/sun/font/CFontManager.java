@@ -298,8 +298,8 @@ public final class CFontManager extends SunFontManager {
     public String getFontPath(boolean noType1Fonts) {
         // In the case of the Cocoa toolkit, since we go through NSFont, we don't need to register /Library/Fonts
         Toolkit tk = Toolkit.getDefaultToolkit();
-        if (tk instanceof HeadlessToolkit) {
-            tk = ((HeadlessToolkit)tk).getUnderlyingToolkit();
+        if (tk instanceof HeadlessToolkit htk) {
+            tk = htk.getUnderlyingToolkit();
         }
         if (tk instanceof LWCToolkit) {
             return "";

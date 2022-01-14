@@ -210,15 +210,15 @@ public class UnixPrintJob implements CancelablePrintJob {
                 reader = null;
             }
         }
-        else if (data instanceof InputStream) {
+        else if (data instanceof InputStream stream) {
             try {
-                ((InputStream)data).close();
+                stream.close();
             } catch (IOException e) {
             }
         }
-        else if (data instanceof Reader) {
+        else if (data instanceof Reader reader) {
             try {
-                ((Reader)data).close();
+                reader.close();
             } catch (IOException e) {
             }
         }
@@ -352,7 +352,7 @@ public class UnixPrintJob implements CancelablePrintJob {
         getAttributeValues(flavor);
 
         // set up mOptions
-        if ((service instanceof IPPPrintService) &&
+        if (service instanceof IPPPrintService printService &&
             CUPSPrinter.isCupsRunning()) {
 
              IPPPrintService.debug_println(debugPrefix+
@@ -360,7 +360,7 @@ public class UnixPrintJob implements CancelablePrintJob {
 
              if (mediaName != null) {
                  CustomMediaSizeName customMedia =
-                     ((IPPPrintService)service).findCustomMedia(mediaName);
+                     printService.findCustomMedia(mediaName);
                  if (customMedia != null) {
                      mOptions = " media="+ customMedia.getChoiceName();
                  }
@@ -409,12 +409,12 @@ public class UnixPrintJob implements CancelablePrintJob {
                     notifyEvent(PrintJobEvent.JOB_FAILED);
                     throw new PrintException("No stream for data");
                 }
-                if (!(service instanceof IPPPrintService &&
-                    ((IPPPrintService)service).isIPPSupportedImages(
+                if (!(service instanceof IPPPrintService printService &&
+                    printService.isIPPSupportedImages(
                                                 flavor.getMimeType()))) {
                     printableJob(new ImagePrinter(instream));
-                    if (service instanceof IPPPrintService) {
-                        ((IPPPrintService)service).wakeNotifier();
+                    if (service instanceof IPPPrintService printService) {
+                        printService.wakeNotifier();
                     } else {
                         ((UnixPrintService)service).wakeNotifier();
                     }
@@ -432,14 +432,14 @@ public class UnixPrintJob implements CancelablePrintJob {
                    flavor.equals(DocFlavor.URL.PNG)) {
             try {
                 URL url = (URL)data;
-                if ((service instanceof IPPPrintService) &&
-                    ((IPPPrintService)service).isIPPSupportedImages(
+                if (service instanceof IPPPrintService printService &&
+                    printService.isIPPSupportedImages(
                                                flavor.getMimeType())) {
                     instream = url.openStream();
                 } else {
                     printableJob(new ImagePrinter(url));
-                    if (service instanceof IPPPrintService) {
-                        ((IPPPrintService)service).wakeNotifier();
+                    if (service instanceof IPPPrintService printService) {
+                        printService.wakeNotifier();
                     } else {
                         ((UnixPrintService)service).wakeNotifier();
                     }
@@ -498,8 +498,8 @@ public class UnixPrintJob implements CancelablePrintJob {
         } else if (repClassName.equals("java.awt.print.Pageable")) {
             try {
                 pageableJob((Pageable)doc.getPrintData());
-                if (service instanceof IPPPrintService) {
-                    ((IPPPrintService)service).wakeNotifier();
+                if (service instanceof IPPPrintService printService) {
+                    printService.wakeNotifier();
                 } else {
                     ((UnixPrintService)service).wakeNotifier();
                 }
@@ -514,8 +514,8 @@ public class UnixPrintJob implements CancelablePrintJob {
         } else if (repClassName.equals("java.awt.print.Printable")) {
             try {
                 printableJob((Printable)doc.getPrintData());
-                if (service instanceof IPPPrintService) {
-                    ((IPPPrintService)service).wakeNotifier();
+                if (service instanceof IPPPrintService printService) {
+                    printService.wakeNotifier();
                 } else {
                     ((UnixPrintService)service).wakeNotifier();
                 }
@@ -615,8 +615,8 @@ public class UnixPrintJob implements CancelablePrintJob {
             }
         }
         notifyEvent(PrintJobEvent.NO_MORE_EVENTS);
-        if (service instanceof IPPPrintService) {
-            ((IPPPrintService)service).wakeNotifier();
+        if (service instanceof IPPPrintService printService) {
+            printService.wakeNotifier();
         } else {
             ((UnixPrintService)service).wakeNotifier();
         }

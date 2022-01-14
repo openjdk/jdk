@@ -111,7 +111,9 @@ public class WindowsPopupMenuUI extends BasicPopupMenuUI {
                 repaintRoot = null;
             } else {
                 Component c = (Component)path[0];
-                if (c instanceof JPopupMenu) c = ((JPopupMenu)c).getInvoker();
+                if (c instanceof JPopupMenu menu) {
+                    c = menu.getInvoker();
+                }
                 repaintRoot = SwingUtilities.getRootPane(c);
             }
         }
@@ -124,23 +126,20 @@ public class WindowsPopupMenuUI extends BasicPopupMenuUI {
      * @return text offset for the component
      */
     static int getTextOffset(JComponent c) {
-        int rv = -1;
-        Object maxTextOffset =
-            c.getClientProperty(BASICMENUITEMUI_MAX_TEXT_OFFSET);
-        if (maxTextOffset instanceof Integer) {
+        if (c.getClientProperty(BASICMENUITEMUI_MAX_TEXT_OFFSET) instanceof Integer i) {
             /*
              * this is in JMenuItem coordinates.
              * Let's assume all the JMenuItem have the same offset along X.
              */
-            rv = (Integer) maxTextOffset;
-            int menuItemOffset = 0;
             Component component = c.getComponent(0);
             if (component != null) {
-                menuItemOffset = component.getX();
+                i += component.getX();
             }
-            rv += menuItemOffset;
+
+            return i;
+        } else {
+            return -1;
         }
-        return rv;
     }
 
     /**

@@ -66,10 +66,9 @@ public class CMenu extends CMenuItem implements MenuPeer {
         if (parent instanceof CMenu) {
             return parent.executeGet(this::nativeCreateSubMenu);
         }
-        if (parent instanceof CMenuBar) {
-            MenuBar parentContainer = (MenuBar)getTarget().getParent();
-            boolean isHelpMenu = parentContainer.getHelpMenu() == getTarget();
-            int insertionLocation = ((CMenuBar)parent).getNextInsertionIndex();
+        if (parent instanceof CMenuBar menuBar) {
+            boolean isHelpMenu = ((MenuBar)getTarget().getParent()).getHelpMenu() == getTarget();
+            int insertionLocation = menuBar.getNextInsertionIndex();
             return parent.executeGet(ptr -> nativeCreateMenu(ptr, isHelpMenu,
                                                              insertionLocation));
         }

@@ -223,18 +223,17 @@ public class AquaSplitPaneDividerUI extends BasicSplitPaneDivider {
         }
 
         public void paintBorder(final Component c, final Graphics g, final int x, final int y, final int width, final int height) {
-            if (!(g instanceof Graphics2D)) return;
+            if (g instanceof Graphics2D g2d) {
+                final Color oldColor = g2d.getColor();
 
-            final Graphics2D g2d = (Graphics2D)g;
-            final Color oldColor = g2d.getColor();
+                g2d.setPaint(new GradientPaint(0, 0, startColor, 0, height, endColor));
+                g2d.fillRect(x, y, width, height);
+                g2d.setColor(borderLines);
+                g2d.drawLine(x, y, x + width, y);
+                g2d.drawLine(x, y + height - 1, x + width, y + height - 1);
 
-            g2d.setPaint(new GradientPaint(0, 0, startColor, 0, height, endColor));
-            g2d.fillRect(x, y, width, height);
-            g2d.setColor(borderLines);
-            g2d.drawLine(x, y, x + width, y);
-            g2d.drawLine(x, y + height - 1, x + width, y + height - 1);
-
-            g2d.setColor(oldColor);
+                g2d.setColor(oldColor);
+            }
         }
     }
 }

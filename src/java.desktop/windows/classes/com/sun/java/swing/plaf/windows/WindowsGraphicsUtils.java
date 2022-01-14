@@ -213,23 +213,16 @@ public class WindowsGraphicsUtils {
      * Recursively searches for all the subcomponents.
      */
     static void repaintMnemonicsInContainer(Container cont) {
-        Component c;
         for(int i=0; i<cont.getComponentCount(); i++) {
-            c = cont.getComponent(i);
-            if(c == null || !c.isVisible()) {
-                continue;
-            }
-            if(c instanceof AbstractButton
-               && ((AbstractButton)c).getMnemonic() != '\0') {
-                c.repaint();
-                continue;
-            } else if(c instanceof JLabel
-                      && ((JLabel)c).getDisplayedMnemonic() != '\0') {
-                c.repaint();
-                continue;
-            }
-            if(c instanceof Container) {
-                repaintMnemonicsInContainer((Container)c);
+            Component c = cont.getComponent(i);
+            if (c != null && c.isVisible()) {
+                if (c instanceof AbstractButton button && button.getMnemonic() != '\0') {
+                    c.repaint();
+                } else if (c instanceof JLabel label && label.getDisplayedMnemonic() != '\0') {
+                    c.repaint();
+                } else if (c instanceof Container container) {
+                    repaintMnemonicsInContainer(container);
+                }
             }
         }
     }

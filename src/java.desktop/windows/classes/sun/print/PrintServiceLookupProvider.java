@@ -174,10 +174,10 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
         // Look for deleted services and invalidate these
         if (printServices != null) {
             for (int j=0; j < printServices.length; j++) {
-                if ((printServices[j] instanceof Win32PrintService) &&
-                    (!printServices[j].equals(defaultPrintService))) {
+                if ((printServices[j] instanceof Win32PrintService printService) &&
+                    (!printService.equals(defaultPrintService))) {
 
-                    ((Win32PrintService)printServices[j]).invalidateService();
+                    printService.invalidateService();
                 }
             }
         }

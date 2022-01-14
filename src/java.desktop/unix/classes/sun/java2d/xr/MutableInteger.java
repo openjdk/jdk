@@ -43,8 +43,7 @@ public class MutableInteger {
     }
 
     public boolean equals(Object o) {
-        return (o instanceof MutableInteger) &&
-               (((MutableInteger) o).getValue() == getValue());
+        return o instanceof MutableInteger mutable && mutable.getValue() == getValue();
     }
 
     public void setValue(int value) {

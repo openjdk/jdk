@@ -120,28 +120,21 @@ public class AquaUtilControlSize {
     }
 
     private static void applyBorderForSize(final JComponent c, final Size size) {
-        final Border border = c.getBorder();
-        if (!(border instanceof AquaBorder)) return;
-        final AquaBorder aquaBorder = (AquaBorder)border;
-
-        if (aquaBorder.sizeVariant.size == size) return;
-        final AquaBorder derivedBorder = aquaBorder.deriveBorderForSize(size);
-        if (derivedBorder == null) return;
-
-        c.setBorder(derivedBorder);
+        if (c.getBorder() instanceof AquaBorder aquaBorder && aquaBorder.sizeVariant.size != size) {
+            AquaBorder derivedBorder = aquaBorder.deriveBorderForSize(size);
+            if (derivedBorder != null) {
+                c.setBorder(derivedBorder);
+            }
+        }
     }
 
     protected static class PropertySizeListener implements PropertyChangeListener {
         @Override
         public void propertyChange(final PropertyChangeEvent evt) {
-            final String key = evt.getPropertyName();
-            if (!CLIENT_PROPERTY_KEY.equalsIgnoreCase(key)) return;
-
-            final Object source = evt.getSource();
-            if (!(source instanceof JComponent)) return;
-
-            final JComponent c = (JComponent)source;
-            applyComponentSize(c, evt.getNewValue());
+            if (CLIENT_PROPERTY_KEY.equalsIgnoreCase(evt.getPropertyName()) &&
+                    evt.getSource() instanceof JComponent c) {
+                applyComponentSize(c, evt.getNewValue());
+            }
         }
 
         protected static void applyComponentSize(final JComponent c, final Object value) {
@@ -153,9 +146,8 @@ public class AquaUtilControlSize {
 
             applyBorderForSize(c, size);
 
-            final Object ui = c.getUI();
-            if (ui instanceof Sizeable) {
-                ((Sizeable) ui).applySizeFor(c, size);
+            if (c.getUI() instanceof Sizeable sizable) {
+                sizable.applySizeFor(c, size);
             }
 
             final Font priorFont = c.getFont();

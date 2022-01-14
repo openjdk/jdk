@@ -92,9 +92,8 @@ final class ScreenMenuItemCheckbox extends CheckboxMenuItem
         // sja fix is this needed?
         fMenuItem.addItemListener(this);
 
-        final ButtonUI ui = fMenuItem.getUI();
-        if (ui instanceof ScreenMenuItemUI) {
-            ((ScreenMenuItemUI)ui).updateListenersForScreenMenuItem();
+        if (fMenuItem.getUI() instanceof ScreenMenuItemUI menuItem) {
+            menuItem.updateListenersForScreenMenuItem();
         }
 
         if (fMenuItem instanceof JCheckBoxMenuItem) {
@@ -159,25 +158,27 @@ final class ScreenMenuItemCheckbox extends CheckboxMenuItem
     }
 
     public void setToolTipText(final String text) {
-        Object peer = AWTAccessor.getMenuComponentAccessor().getPeer(this);
-        if (!(peer instanceof CMenuItem)) return;
+        Object peer = AWTAccessor
+                .getMenuComponentAccessor()
+                .getPeer(this);
 
-        ((CMenuItem)peer).setToolTipText(text);
+        if (peer instanceof CMenuItem menuItem) {
+            menuItem.setToolTipText(text);
+        }
     }
 
     public void setIcon(final Icon i) {
-        Object peer = AWTAccessor.getMenuComponentAccessor().getPeer(this);
-        if (!(peer instanceof CMenuItem)) return;
+        Object peer = AWTAccessor
+                .getMenuComponentAccessor()
+                .getPeer(this);
 
-        final CMenuItem cmi = (CMenuItem)peer;
-        Image img = null;
-
-        if (i != null) {
-            if (i.getIconWidth() > 0 && i.getIconHeight() > 0) {
-                img = AquaIcon.getImageForIcon(i);
+        if (peer instanceof CMenuItem cmi) {
+            if (i != null && i.getIconWidth() > 0 && i.getIconHeight() > 0) {
+                cmi.setImage(AquaIcon.getImageForIcon(i));
+            } else {
+                cmi.setImage(null);
             }
         }
-        cmi.setImage(img);
     }
 
     public void setVisible(final boolean b) {
@@ -210,9 +211,12 @@ final class ScreenMenuItemCheckbox extends CheckboxMenuItem
         }
 
     public void setIndeterminate(final boolean indeterminate) {
-        Object peer = AWTAccessor.getMenuComponentAccessor().getPeer(this);
-        if (peer instanceof CCheckboxMenuItem) {
-            ((CCheckboxMenuItem)peer).setIsIndeterminate(indeterminate);
+        Object peer = AWTAccessor
+                .getMenuComponentAccessor()
+                .getPeer(this);
+
+        if (peer instanceof CCheckboxMenuItem menuItem) {
+            menuItem.setIsIndeterminate(indeterminate);
         }
     }
 

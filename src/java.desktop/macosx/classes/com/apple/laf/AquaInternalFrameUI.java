@@ -463,19 +463,18 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
             if (resizeDir == RESIZE_NONE) getDesktopManager().endDraggingFrame(frame);
             else {
                 final Container c = frame.getTopLevelAncestor();
-                if (c instanceof JFrame) {
-                    ((JFrame)frame.getTopLevelAncestor()).getGlassPane().setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-
-                    ((JFrame)frame.getTopLevelAncestor()).getGlassPane().setVisible(false);
-                } else if (c instanceof JApplet) {
-                    ((JApplet)c).getGlassPane().setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-                    ((JApplet)c).getGlassPane().setVisible(false);
-                } else if (c instanceof JWindow) {
-                    ((JWindow)c).getGlassPane().setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-                    ((JWindow)c).getGlassPane().setVisible(false);
-                } else if (c instanceof JDialog) {
-                    ((JDialog)c).getGlassPane().setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-                    ((JDialog)c).getGlassPane().setVisible(false);
+                if (c instanceof JFrame jFrame) {
+                    jFrame.getGlassPane().setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                    jFrame.getGlassPane().setVisible(false);
+                } else if (c instanceof JApplet applet) {
+                    applet.getGlassPane().setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                    applet.getGlassPane().setVisible(false);
+                } else if (c instanceof JWindow window) {
+                    window.getGlassPane().setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                    window.getGlassPane().setVisible(false);
+                } else if (c instanceof JDialog dialog) {
+                    dialog.getGlassPane().setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                    dialog.getGlassPane().setVisible(false);
                 }
                 getDesktopManager().endResizingFrame(frame);
             }
@@ -630,9 +629,8 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
             if (!isEventInWindowShadow(originalPoint)) return false;
 
             final Container parent = frame.getParent();
-            if (!(parent instanceof JDesktopPane)) return false;
-            final JDesktopPane pane = (JDesktopPane)parent;
-            final Point parentPoint = SwingUtilities.convertPoint(frame, originalPoint, parent);
+            if (parent instanceof JDesktopPane pane) {
+                final Point parentPoint = SwingUtilities.convertPoint(frame, originalPoint, parent);
 
         /*     // debug drawing
             Graphics g = parent.getGraphics();
@@ -640,16 +638,19 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
             g.drawLine(parentPoint.x, parentPoint.y, parentPoint.x, parentPoint.y);
         */
 
-            final Component hitComponent = findComponentToHitBehindMe(pane, parentPoint);
-            if (hitComponent == null || hitComponent == frame) return false;
+                final Component hitComponent = findComponentToHitBehindMe(pane, parentPoint);
+                if (hitComponent == null || hitComponent == frame) return false;
 
-            final Point hitComponentPoint = SwingUtilities.convertPoint(pane, parentPoint, hitComponent);
-            hitComponent.dispatchEvent(
-                    new MouseEvent(hitComponent, e.getID(), e.getWhen(),
-                                   e.getModifiers(), hitComponentPoint.x,
-                                   hitComponentPoint.y, e.getClickCount(),
-                                   e.isPopupTrigger(), e.getButton()));
-            return true;
+                final Point hitComponentPoint = SwingUtilities.convertPoint(pane, parentPoint, hitComponent);
+                hitComponent.dispatchEvent(
+                        new MouseEvent(hitComponent, e.getID(), e.getWhen(),
+                                e.getModifiers(), hitComponentPoint.x,
+                                hitComponentPoint.y, e.getClickCount(),
+                                e.isPopupTrigger(), e.getButton()));
+                return true;
+            } else {
+                return false;
+            }
         }
 
         Component findComponentToHitBehindMe(final JDesktopPane pane, final Point parentPoint) {
@@ -682,16 +683,16 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
     }
 
     static void updateComponentTreeUIActivation(final Component c, final Object active) {
-        if (c instanceof javax.swing.JComponent) {
-            ((javax.swing.JComponent)c).putClientProperty(AquaFocusHandler.FRAME_ACTIVE_PROPERTY, active);
+        if (c instanceof JComponent component) {
+            component.putClientProperty(AquaFocusHandler.FRAME_ACTIVE_PROPERTY, active);
         }
 
         Component[] children = null;
 
-        if (c instanceof javax.swing.JMenu) {
-            children = ((javax.swing.JMenu)c).getMenuComponents();
-        } else if (c instanceof Container) {
-            children = ((Container)c).getComponents();
+        if (c instanceof JMenu menu) {
+            children = menu.getMenuComponents();
+        } else if (c instanceof Container container) {
+            children = container.getComponents();
         }
 
         if (children != null) {
@@ -706,8 +707,8 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
         public void propertyChange(final PropertyChangeEvent e) {
             final String name = e.getPropertyName();
             if (FRAME_TYPE.equals(name)) {
-                if (e.getNewValue() instanceof String) {
-                    setFrameType((String)e.getNewValue());
+                if (e.getNewValue() instanceof String s) {
+                    setFrameType(s);
                 }
             } else if (IS_PALETTE_PROPERTY.equals(name)) {
                 if (e.getNewValue() != null) {

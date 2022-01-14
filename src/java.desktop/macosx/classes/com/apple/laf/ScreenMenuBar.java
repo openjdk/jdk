@@ -111,19 +111,19 @@ public class ScreenMenuBar extends MenuBar
      * Invoked when a component has been added to the container.
      */
     public void componentAdded(final ContainerEvent e) {
-        final Component child = e.getChild();
-        if (!(child instanceof JMenu)) return;
-            addSubmenu((JMenu)child);
-     }
+        if (e.getChild() instanceof JMenu menu) {
+            addSubmenu(menu);
+        }
+    }
 
     /**
      * Invoked when a component has been removed from the container.
      */
     public void componentRemoved(final ContainerEvent e) {
-          final Component child = e.getChild();
-          if (!(child instanceof JMenu)) return;
-            removeSubmenu((JMenu)child);
+        if (e.getChild() instanceof JMenu menu) {
+            removeSubmenu(menu);
         }
+    }
 
     /**
         * Invoked when the component's size changes.
@@ -141,9 +141,9 @@ public class ScreenMenuBar extends MenuBar
      * it just isn't inserted
      */
     public void componentShown(final ComponentEvent e) {
-        final Object source = e.getSource();
-        if (!(source instanceof JMenuItem)) return;
-        setChildVisible((JMenuItem)source, true);
+        if (e.getSource() instanceof JMenuItem menuItem) {
+            setChildVisible(menuItem, true);
+        }
     }
 
     /**
@@ -153,9 +153,9 @@ public class ScreenMenuBar extends MenuBar
      * but leave it in fItems
      */
     public void componentHidden(final ComponentEvent e)  {
-        final Object source = e.getSource();
-        if (!(source instanceof JMenuItem)) return;
-        setChildVisible((JMenuItem)source, false);
+        if (e.getSource() instanceof JMenuItem menuItem) {
+            setChildVisible(menuItem, false);
+        }
     }
 
     /*
@@ -164,13 +164,14 @@ public class ScreenMenuBar extends MenuBar
      * but leave it in the list
      */
     public void setChildVisible(final JMenuItem child, final boolean b) {
-        if (child instanceof JMenu) {
+        if (child instanceof JMenu menu) {
             if (b) {
-                addSubmenu((JMenu)child);
+                addSubmenu(menu);
             } else {
                 final ScreenMenu sm = fSubmenus.get(child);
-                if (sm != null)
+                if (sm != null) {
                     remove(sm);
+                }
             }
         }
     }

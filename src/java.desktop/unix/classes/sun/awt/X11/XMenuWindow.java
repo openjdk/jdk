@@ -488,13 +488,13 @@ public class XMenuWindow extends XBaseMenuWindow {
                     g.setColor(item.isTargetItemEnabled() ? getLightShadowColor() : getDisabledColor());
                     g.drawLine(markX, markY, markX + markWidth, markY + markHeight / 2);
                     g.drawLine(markX, markY, markX, markY + markHeight);
-                } else if (item instanceof XCheckboxMenuItemPeer) {
+                } else if (item instanceof XCheckboxMenuItemPeer peer) {
                     //calculate checkmark coordinates
                     int markWidth = textDim.height * 4 / 5;
                     int markHeight = textDim.height * 4 / 5;
                     int markX = WINDOW_SPACING_LEFT + WINDOW_ITEM_MARGIN_LEFT;
                     int markY = bounds.y + (bounds.height - markHeight) / 2;
-                    boolean checkState = ((XCheckboxMenuItemPeer)item).getTargetState();
+                    boolean checkState = peer.getTargetState();
                     //draw checkmark
                     if (checkState) {
                         g.setColor(getSelectedColor());

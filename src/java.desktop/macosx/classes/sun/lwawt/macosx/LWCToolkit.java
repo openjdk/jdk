@@ -303,10 +303,11 @@ public final class LWCToolkit extends LWToolkit {
 
     @Override
     public DialogPeer createDialog(Dialog target) {
-        if (target instanceof CPrinterDialog) {
-            return createCPrinterDialog((CPrinterDialog)target);
+        if (target instanceof CPrinterDialog printerDialog) {
+            return createCPrinterDialog(printerDialog);
+        } else {
+            return super.createDialog(target);
         }
-        return super.createDialog(target);
     }
 
     @Override
@@ -496,11 +497,11 @@ public final class LWCToolkit extends LWToolkit {
 
     @Override
     public Insets getScreenInsets(final GraphicsConfiguration gc) {
-        GraphicsDevice gd = gc.getDevice();
-        if (!(gd instanceof CGraphicsDevice)) {
+        if (gc.getDevice() instanceof CGraphicsDevice cgd) {
+            return cgd.getScreenInsets();
+        } else {
             return super.getScreenInsets(gc);
         }
-        return ((CGraphicsDevice)gd).getScreenInsets();
     }
 
     @Override
@@ -518,10 +519,11 @@ public final class LWCToolkit extends LWToolkit {
 
     @Override
     public RobotPeer createRobot(GraphicsDevice screen) throws AWTException {
-        if (screen instanceof CGraphicsDevice) {
-            return new CRobot((CGraphicsDevice) screen);
+        if (screen instanceof CGraphicsDevice device) {
+            return new CRobot(device);
+        } else {
+            return super.createRobot(screen);
         }
-        return super.createRobot(screen);
     }
 
     private native boolean isCapsLockOn();
@@ -764,8 +766,8 @@ public final class LWCToolkit extends LWToolkit {
         Throwable eventException = event.getException();
         if (eventException == null) return;
 
-        if (eventException instanceof UndeclaredThrowableException) {
-            eventException = ((UndeclaredThrowableException)eventException).getUndeclaredThrowable();
+        if (eventException instanceof UndeclaredThrowableException e) {
+            eventException = e.getUndeclaredThrowable();
         }
         throw new InvocationTargetException(eventException);
     }

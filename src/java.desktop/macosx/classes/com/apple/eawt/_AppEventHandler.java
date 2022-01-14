@@ -131,21 +131,21 @@ class _AppEventHandler {
     }
 
     void addListener(final SystemEventListener listener) {
-        if (listener instanceof AppReopenedListener) reOpenAppDispatcher.addListener((AppReopenedListener)listener);
-        if (listener instanceof AppForegroundListener) foregroundAppDispatcher.addListener((AppForegroundListener)listener);
-        if (listener instanceof AppHiddenListener) hiddenAppDispatcher.addListener((AppHiddenListener)listener);
-        if (listener instanceof UserSessionListener) userSessionDispatcher.addListener((UserSessionListener)listener);
-        if (listener instanceof ScreenSleepListener) screenSleepDispatcher.addListener((ScreenSleepListener)listener);
-        if (listener instanceof SystemSleepListener) systemSleepDispatcher.addListener((SystemSleepListener)listener);
+        if (listener instanceof AppReopenedListener apl) reOpenAppDispatcher.addListener(apl);
+        if (listener instanceof AppForegroundListener afl) foregroundAppDispatcher.addListener(afl);
+        if (listener instanceof AppHiddenListener ahl) hiddenAppDispatcher.addListener(ahl);
+        if (listener instanceof UserSessionListener usl) userSessionDispatcher.addListener(usl);
+        if (listener instanceof ScreenSleepListener ssl) screenSleepDispatcher.addListener(ssl);
+        if (listener instanceof SystemSleepListener ssl) systemSleepDispatcher.addListener(ssl);
     }
 
     void removeListener(final SystemEventListener listener) {
-        if (listener instanceof AppReopenedListener) reOpenAppDispatcher.removeListener((AppReopenedListener)listener);
-        if (listener instanceof AppForegroundListener) foregroundAppDispatcher.removeListener((AppForegroundListener)listener);
-        if (listener instanceof AppHiddenListener) hiddenAppDispatcher.removeListener((AppHiddenListener)listener);
-        if (listener instanceof UserSessionListener) userSessionDispatcher.removeListener((UserSessionListener)listener);
-        if (listener instanceof ScreenSleepListener) screenSleepDispatcher.removeListener((ScreenSleepListener)listener);
-        if (listener instanceof SystemSleepListener) systemSleepDispatcher.removeListener((SystemSleepListener)listener);
+        if (listener instanceof AppReopenedListener apl) reOpenAppDispatcher.removeListener(apl);
+        if (listener instanceof AppForegroundListener afl) foregroundAppDispatcher.removeListener(afl);
+        if (listener instanceof AppHiddenListener ahl) hiddenAppDispatcher.removeListener(ahl);
+        if (listener instanceof UserSessionListener usl) userSessionDispatcher.removeListener(usl);
+        if (listener instanceof ScreenSleepListener ssl) screenSleepDispatcher.removeListener(ssl);
+        if (listener instanceof SystemSleepListener ssl) systemSleepDispatcher.removeListener(ssl);
     }
 
     void openCocoaAboutWindow() {

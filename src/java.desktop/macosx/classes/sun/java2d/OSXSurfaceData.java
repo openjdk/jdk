@@ -447,13 +447,7 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
                 // the coordinates, so we might as well do all of it anyhow
                 lastClipShape = sg2d.usrClip;
 
-                GeneralPath gp = null;
-
-                if (sg2d.usrClip instanceof GeneralPath) {
-                    gp = (GeneralPath) sg2d.usrClip;
-                } else {
-                    gp = new GeneralPath(sg2d.usrClip);
-                }
+                GeneralPath gp = sg2d.usrClip instanceof GeneralPath path ? path : new GeneralPath(sg2d.usrClip);
 
                 int shapeLength = getPathLength(gp);
 
@@ -554,8 +548,7 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
     }
 
     void setupPaint(SunGraphics2D sg2d, int x, int y, int w, int h) {
-        if (sg2d.paint instanceof SystemColor) {
-            SystemColor color = (SystemColor) sg2d.paint;
+        if (sg2d.paint instanceof SystemColor color) {
             int index = color.hashCode(); // depends on Color.java hashCode implementation! (returns "value" of color)
             if ((this.fGraphicsStatesInt.get(kColorStateIndex) != kColorSystem) || (index != this.lastPaintIndex)) {
                 this.lastPaintIndex = index;
@@ -567,8 +560,7 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
             } else {
                 this.fChangeFlag = (this.fChangeFlag & kColorNotChangedBit);
             }
-        } else if (sg2d.paint instanceof Color) {
-            Color color = (Color) sg2d.paint;
+        } else if (sg2d.paint instanceof Color color) {
             int rgb = color.getRGB();
             if ((this.fGraphicsStatesInt.get(kColorStateIndex) != kColorSimple) || (rgb != this.lastPaintRGB)) {
                 this.lastPaintRGB = rgb;
@@ -580,9 +572,8 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
             } else {
                 this.fChangeFlag = (this.fChangeFlag & kColorNotChangedBit);
             }
-        } else if (sg2d.paint instanceof GradientPaint) {
+        } else if (sg2d.paint instanceof GradientPaint color) {
             if ((this.fGraphicsStatesInt.get(kColorStateIndex) != kColorGradient) || (lastPaint != sg2d.paint)) {
-                GradientPaint color = (GradientPaint) sg2d.paint;
                 this.fGraphicsStatesInt.put(kColorStateIndex, kColorGradient);
                 this.fGraphicsStatesInt.put(kColorRGBValue1Index, color.getColor1().getRGB());
                 this.fGraphicsStatesInt.put(kColorRGBValue2Index, color.getColor2().getRGB());
@@ -598,8 +589,7 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
             } else {
                 this.fChangeFlag = (this.fChangeFlag & kColorNotChangedBit);
             }
-        } else if (sg2d.paint instanceof LinearGradientPaint) {
-            LinearGradientPaint color = (LinearGradientPaint) sg2d.paint;
+        } else if (sg2d.paint instanceof LinearGradientPaint color) {
             if (color.getCycleMethod() == LinearGradientPaint.CycleMethod.NO_CYCLE) {
                 if ((this.fGraphicsStatesInt.get(kColorStateIndex) != kColorLinearGradient) || (lastPaint != sg2d.paint)) {
 
@@ -632,8 +622,7 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
             } else {
                 setGradientViaRasterPath(sg2d);
             }
-        } else if (sg2d.paint instanceof RadialGradientPaint) {
-            RadialGradientPaint color = (RadialGradientPaint) sg2d.paint;
+        } else if (sg2d.paint instanceof RadialGradientPaint color) {
             if (color.getCycleMethod() == RadialGradientPaint.CycleMethod.NO_CYCLE) {
                 if ((this.fGraphicsStatesInt.get(kColorStateIndex) != kColorRadialGradient) || (lastPaint != sg2d.paint)) {
 
@@ -667,9 +656,8 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
             } else {
                 setGradientViaRasterPath(sg2d);
             }
-        } else if (sg2d.paint instanceof TexturePaint) {
+        } else if (sg2d.paint instanceof TexturePaint color) {
             if ((this.fGraphicsStatesInt.get(kColorStateIndex) != kColorTexture) || (lastPaint != sg2d.paint)) {
-                TexturePaint color = (TexturePaint) sg2d.paint;
                 this.fGraphicsStatesInt.put(kColorStateIndex, kColorTexture);
                 texturePaintImage = color.getImage();
                 SurfaceData textureSurfaceData = OSXOffScreenSurfaceData.createNewSurface(texturePaintImage);
@@ -738,11 +726,7 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
     static BasicStroke defaultBasicStroke = new BasicStroke();
 
     void setupStroke(SunGraphics2D sg2d) {
-        BasicStroke stroke = defaultBasicStroke;
-
-        if (sg2d.stroke instanceof BasicStroke) {
-            stroke = (BasicStroke) sg2d.stroke;
-        }
+        BasicStroke stroke = sg2d.stroke instanceof BasicStroke basicStroke ? basicStroke : defaultBasicStroke;
 
         if (lastStroke != stroke) {
             this.fGraphicsStatesObject[kStrokeDashArrayIndex] = stroke.getDashArray();

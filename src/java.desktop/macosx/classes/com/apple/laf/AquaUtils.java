@@ -68,8 +68,8 @@ final class AquaUtils {
 
     static void enforceComponentOrientation(final Component c, final ComponentOrientation orientation) {
         c.setComponentOrientation(orientation);
-        if (c instanceof Container) {
-            for (final Component child : ((Container)c).getComponents()) {
+        if (c instanceof Container container) {
+            for (Component child : container.getComponents()) {
                 enforceComponentOrientation(child, orientation);
             }
         }
@@ -106,10 +106,9 @@ final class AquaUtils {
     }
 
     private static Image map(Image image, ImageFilter filter) {
-        if (image instanceof MultiResolutionImage) {
+        if (image instanceof MultiResolutionImage mri) {
             return MultiResolutionCachedImage
-                    .map((MultiResolutionImage) image,
-                         (img) -> generateFilteredImage(img, filter));
+                    .map(mri, img -> generateFilteredImage(img, filter));
         }
         return generateFilteredImage(image, filter);
     }
@@ -360,20 +359,21 @@ final class AquaUtils {
     }
 
     private static boolean isWindowTextured(final Component c) {
-        if (!(c instanceof JComponent)) {
+        if (c instanceof JComponent component) {
+            final JRootPane pane = component.getRootPane();
+            if (pane == null) {
+                return false;
+            }
+            Object prop = pane.getClientProperty(
+                    CPlatformWindow.WINDOW_BRUSH_METAL_LOOK);
+            if (prop != null) {
+                return Boolean.parseBoolean(prop.toString());
+            }
+            prop = pane.getClientProperty(CPlatformWindow.WINDOW_STYLE);
+            return prop != null && "textured".equals(prop);
+        } else {
             return false;
         }
-        final JRootPane pane = ((JComponent) c).getRootPane();
-        if (pane == null) {
-            return false;
-        }
-        Object prop = pane.getClientProperty(
-                CPlatformWindow.WINDOW_BRUSH_METAL_LOOK);
-        if (prop != null) {
-            return Boolean.parseBoolean(prop.toString());
-        }
-        prop = pane.getClientProperty(CPlatformWindow.WINDOW_STYLE);
-        return prop != null && "textured".equals(prop);
     }
 
     private static Color resetAlpha(final Color color) {

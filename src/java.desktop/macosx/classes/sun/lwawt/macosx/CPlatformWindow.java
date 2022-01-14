@@ -283,16 +283,21 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             return 0;
         }
         ComponentAccessor componentAccessor = AWTAccessor.getComponentAccessor();
-        Object p1 = componentAccessor.getPeer(w1);
-        Object p2 = componentAccessor.getPeer(w2);
-        long time1 = 0;
-        if (p1 instanceof LWWindowPeer) {
-            time1 = ((CPlatformWindow) (((LWWindowPeer) p1).getPlatformWindow())).lastBecomeMainTime;
+
+        long time1;
+        if (componentAccessor.getPeer(w1) instanceof LWWindowPeer windowPeer) {
+            time1 = ((CPlatformWindow) (windowPeer.getPlatformWindow())).lastBecomeMainTime;
+        } else {
+            time1 = 0;
         }
-        long time2 = 0;
-        if (p2 instanceof LWWindowPeer) {
-            time2 = ((CPlatformWindow) (((LWWindowPeer) p2).getPlatformWindow())).lastBecomeMainTime;
+
+        long time2;
+        if (componentAccessor.getPeer(w2) instanceof LWWindowPeer windowPeer) {
+            time2 = ((CPlatformWindow) (windowPeer.getPlatformWindow())).lastBecomeMainTime;
+        } else {
+            time2 = 0;
         }
+
         return Long.compare(time1, time2);
     };
 
@@ -366,8 +371,8 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         if (peer != null) { // Not applicable to CWarningWindow
             peer.setTextured(IS(TEXTURED, styleBits));
         }
-        if (target instanceof javax.swing.RootPaneContainer) {
-            final javax.swing.JRootPane rootpane = ((javax.swing.RootPaneContainer)target).getRootPane();
+        if (target instanceof RootPaneContainer container) {
+            JRootPane rootpane = container.getRootPane();
             if (rootpane != null) rootpane.addPropertyChangeListener("ancestor", new PropertyChangeListener() {
                 public void propertyChange(final PropertyChangeEvent evt) {
                     CLIENT_PROPERTY_APPLICATOR.attachAndApplyClientProperties(rootpane);
@@ -380,8 +385,8 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     void initializeBase(Window target, LWWindowPeer peer, PlatformWindow owner) {
         this.peer = peer;
         this.target = target;
-        if (owner instanceof CPlatformWindow) {
-            this.owner = (CPlatformWindow)owner;
+        if (owner instanceof CPlatformWindow window) {
+            this.owner = window;
         }
         contentView = createContentView();
     }
@@ -445,8 +450,8 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             styleBits = SET(styleBits, UTILITY, true);
         }
 
-        if (target instanceof javax.swing.RootPaneContainer) {
-            javax.swing.JRootPane rootpane = ((javax.swing.RootPaneContainer)target).getRootPane();
+        if (target instanceof RootPaneContainer container) {
+            JRootPane rootpane = container.getRootPane();
             Object prop = null;
 
             prop = rootpane.getClientProperty(WINDOW_BRUSH_METAL_LOOK);
@@ -691,9 +696,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                     }
 
                     if (owner != null
-                            && owner.getPeer() instanceof LWLightweightFramePeer) {
-                        LWLightweightFramePeer peer =
-                                (LWLightweightFramePeer) owner.getPeer();
+                            && owner.getPeer() instanceof LWLightweightFramePeer peer) {
 
                         long ownerWindowPtr = peer.getOverriddenWindowHandle();
                         if (ownerWindowPtr != 0) {
@@ -731,19 +734,20 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             /* Frame or Dialog should be set property WINDOW_FULLSCREENABLE to true if the
             Frame or Dialog is resizable.
             **/
-            final boolean resizable = (target instanceof Frame) ? ((Frame)target).isResizable() :
-            ((target instanceof Dialog) ? ((Dialog)target).isResizable() : false);
-            if (resizable) {
-                setCanFullscreen(true);
-            }
+            if (target instanceof Frame frame) {
+                if (frame.isResizable() ||
+                        !(target instanceof Frame) &&
+                        target instanceof Dialog dialog &&
+                        dialog.isResizable()) {
+                    setCanFullscreen(true);
+                }
 
-            // Apply the extended state as expected in shared code
-            if (target instanceof Frame) {
+                // Apply the extended state as expected in shared code
                 if (!wasMaximized && isMaximized()) {
                     // setVisible could have changed the native maximized state
                     deliverZoom(true);
                 } else {
-                    int frameState = ((Frame)target).getExtendedState();
+                    int frameState = frame.getExtendedState();
                     if ((frameState & Frame.ICONIFIED) != 0) {
                         // Treat all state bit masks with ICONIFIED bit as ICONIFIED state.
                         frameState = Frame.ICONIFIED;
@@ -786,9 +790,8 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
             // Order my own children above myself
             for (Window w : target.getOwnedWindows()) {
-                final Object p = acc.getPeer(w);
-                if (p instanceof LWWindowPeer) {
-                    CPlatformWindow pw = (CPlatformWindow)((LWWindowPeer)p).getPlatformWindow();
+                if (acc.getPeer(w) instanceof LWWindowPeer peer) {
+                    CPlatformWindow pw = (CPlatformWindow) peer.getPlatformWindow();
                     if (pw != null && pw.isVisible()) {
                         pw.execute(childPtr -> {
                             execute(ptr -> {
@@ -853,14 +856,13 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     }
 
     private void setCanFullscreen(final boolean canFullScreen) {
-        if (target instanceof RootPaneContainer
+        if (target instanceof RootPaneContainer rpc
                 && getPeer().getPeerType() == PeerType.FRAME) {
 
             if (isInFullScreen && !canFullScreen) {
                 toggleFullScreen();
             }
 
-            final RootPaneContainer rpc = (RootPaneContainer) target;
             rpc.getRootPane().putClientProperty(
                     CPlatformWindow.WINDOW_FULLSCREENABLE, canFullScreen);
         }
@@ -1093,13 +1095,13 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
      * Helper method to get a pointer to the native view from the PlatformWindow.
      */
     static long getNativeViewPtr(PlatformWindow platformWindow) {
-        long nativePeer = 0L;
-        if (platformWindow instanceof CPlatformWindow) {
-            nativePeer = ((CPlatformWindow) platformWindow).getContentView().getAWTView();
-        } else if (platformWindow instanceof CViewPlatformEmbeddedFrame){
-            nativePeer = ((CViewPlatformEmbeddedFrame) platformWindow).getNSViewPtr();
+        if (platformWindow instanceof CPlatformWindow cpw) {
+            return cpw.getContentView().getAWTView();
+        } else if (platformWindow instanceof CViewPlatformEmbeddedFrame cvpef){
+            return cvpef.getNSViewPtr();
+        } else {
+            return 0L;
         }
-        return nativePeer;
     }
 
     /*************************************************************
@@ -1225,14 +1227,9 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     }
 
     private boolean isIconified() {
-        boolean isIconified = false;
-        if (target instanceof Frame) {
-            int state = ((Frame)target).getExtendedState();
-            if ((state & Frame.ICONIFIED) != 0) {
-                isIconified = true;
-            }
-        }
-        return isIconifyAnimationActive || isIconified;
+        return isIconifyAnimationActive ||
+                target instanceof Frame frame &&
+                (frame.getExtendedState() & Frame.ICONIFIED) != 0;
     }
 
     private boolean isOneOfOwnersOrSelf(CPlatformWindow window) {
@@ -1279,9 +1276,8 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         CPlatformWindow pwUnder = null;
         for (Window w : windows) {
             boolean iconified = false;
-            final Object p = componentAccessor.getPeer(w);
-            if (p instanceof LWWindowPeer) {
-                CPlatformWindow pw = (CPlatformWindow)((LWWindowPeer)p).getPlatformWindow();
+            if (componentAccessor.getPeer(w) instanceof LWWindowPeer peer) {
+                CPlatformWindow pw = (CPlatformWindow) peer.getPlatformWindow();
                 iconified = isIconified();
                 if (pw != null && pw.isVisible() && !iconified) {
                     // If the window is one of ancestors of 'main window' or is going to become main by itself,

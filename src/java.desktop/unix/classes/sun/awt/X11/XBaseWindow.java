@@ -132,9 +132,8 @@ public class XBaseWindow {
         embedded = Boolean.TRUE.equals(params.get(EMBEDDED));
         visible = Boolean.TRUE.equals(params.get(VISIBLE));
 
-        Object parent = params.get(PARENT);
-        if (parent instanceof XBaseWindow) {
-            parentWindow = (XBaseWindow)parent;
+        if (params.get(PARENT) instanceof XBaseWindow baseWindow) {
+            parentWindow = baseWindow;
         } else {
             Long parentWindowID = (Long)params.get(PARENT_WINDOW);
             if (parentWindowID != null) {

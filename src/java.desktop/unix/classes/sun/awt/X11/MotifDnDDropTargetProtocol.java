@@ -486,8 +486,8 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
         XWindow xwindow = null;
         {
             XBaseWindow xbasewindow = XToolkit.windowToXWindow(xclient.get_window());
-            if (xbasewindow instanceof XWindow) {
-                xwindow = (XWindow)xbasewindow;
+            if (xbasewindow instanceof XWindow xWindow) {
+                xwindow = xWindow;
             }
         }
 
@@ -511,8 +511,8 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
 
                 if (receiver != 0) {
                     XBaseWindow xbasewindow = XToolkit.windowToXWindow(receiver);
-                    if (xbasewindow instanceof XWindow) {
-                        xwindow = (XWindow)xbasewindow;
+                    if (xbasewindow instanceof XWindow xWindow) {
+                        xwindow = xWindow;
                     }
                 }
             }
@@ -641,8 +641,8 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
         XWindow xwindow = null;
         {
             XBaseWindow xbasewindow = XToolkit.windowToXWindow(xclient.get_window());
-            if (xbasewindow instanceof XWindow) {
-                xwindow = (XWindow)xbasewindow;
+            if (xbasewindow instanceof XWindow xWindow) {
+                xwindow = xWindow;
             }
         }
 
@@ -653,8 +653,8 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
 
             if (receiver != 0) {
                 XBaseWindow xbasewindow = XToolkit.windowToXWindow(receiver);
-                if (xbasewindow instanceof XWindow) {
-                    xwindow = (XWindow)xbasewindow;
+                if (xbasewindow instanceof XWindow xWindow) {
+                    xwindow = xWindow;
                 }
             }
         }

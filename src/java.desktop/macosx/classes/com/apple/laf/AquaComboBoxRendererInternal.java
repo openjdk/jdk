@@ -119,8 +119,8 @@ class AquaComboBoxRendererInternal<E> extends JLabel implements ListCellRenderer
 
         setFont(list.getFont());
 
-        if (value instanceof Icon) {
-            setIcon((Icon)value);
+        if (value instanceof Icon icon) {
+            setIcon(icon);
         } else {
             setText((value == null) ? " " : value.toString());
         }

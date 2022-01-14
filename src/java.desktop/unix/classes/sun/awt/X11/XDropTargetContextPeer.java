@@ -192,11 +192,12 @@ final class XDropTargetContextPeer extends SunDropTargetContextPeer {
     private boolean processSunDropTargetEvent(SunDropTargetEvent event) {
         Object source = event.getSource();
 
-        if (source instanceof Component) {
-            Object peer = AWTAccessor.getComponentAccessor()
-                                     .getPeer((Component) source);
-            if (peer instanceof XEmbedCanvasPeer) {
-                XEmbedCanvasPeer xEmbedCanvasPeer = (XEmbedCanvasPeer)peer;
+        if (source instanceof Component component) {
+            Object peer = AWTAccessor
+                    .getComponentAccessor()
+                    .getPeer(component);
+
+            if (peer instanceof XEmbedCanvasPeer xEmbedCanvasPeer) {
                 /* The native context is the pointer to the XClientMessageEvent
                    structure. */
                 long ctxt = getNativeDragContext();

@@ -363,15 +363,14 @@ public final class MTLGraphicsConfig extends CGraphicsConfig
 
         SunVolatileImage vi = new AccelTypedVolatileImage(this, width, height,
                 transparency, type);
-        Surface sd = vi.getDestSurface();
-        if (!(sd instanceof AccelSurface) ||
-                ((AccelSurface)sd).getType() != type)
-        {
-            vi.flush();
-            vi = null;
+        if (vi.getDestSurface() instanceof AccelSurface accelSurface &&
+                accelSurface.getType() == type) {
+            return vi;
         }
 
-        return vi;
+        vi.flush();
+
+        return null;
     }
 
     /**

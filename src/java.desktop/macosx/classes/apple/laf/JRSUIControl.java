@@ -332,12 +332,10 @@ public final class JRSUIControl {
 
     @Override
     public boolean equals(final Object obj) {
-        if (!(obj instanceof JRSUIControl)) return false;
-        final JRSUIControl other = (JRSUIControl)obj;
-        if (currentEncodedProperties != other.currentEncodedProperties) return false;
-        if (!nativeMap.equals(other.nativeMap)) return false;
-        if (!changes.equals(other.changes)) return false;
-        return true;
+        return obj instanceof JRSUIControl other &&
+                currentEncodedProperties == other.currentEncodedProperties &&
+                nativeMap.equals(other.nativeMap) &&
+                changes.equals(other.changes);
     }
 
     @Override

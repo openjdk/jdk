@@ -398,15 +398,13 @@ public class OSXOffScreenSurfaceData extends OSXSurfaceData // implements Raster
         OSXOffScreenSurfaceData offsd = new OSXOffScreenSurfaceData(bImg, sType);
 
         ByteComponentRaster bcRaster = (ByteComponentRaster) bImg.getRaster();
-        ColorModel cm = bImg.getColorModel();
-        IndexColorModel icm = ((cm instanceof IndexColorModel) ? (IndexColorModel) cm : null);
         offsd.initRaster(bcRaster.getDataStorage(),
                             bcRaster.getDataOffset(primaryBank),
                             bcRaster.getWidth(),
                             bcRaster.getHeight(),
                             bcRaster.getPixelStride(),
                             bcRaster.getScanlineStride(),
-                            icm,
+                            bImg.getColorModel() instanceof IndexColorModel icm ? icm : null,
                             iType,
                             offsd.fGraphicsStates,
                             offsd.fGraphicsStatesObject,
@@ -425,8 +423,6 @@ public class OSXOffScreenSurfaceData extends OSXSurfaceData // implements Raster
         OSXOffScreenSurfaceData offsd = new OSXOffScreenSurfaceData(bImg, sType);
 
         BytePackedRaster bpRaster = (BytePackedRaster) bImg.getRaster();
-        ColorModel cm = bImg.getColorModel();
-        IndexColorModel icm = ((cm instanceof IndexColorModel) ? (IndexColorModel) cm : null);
         offsd.initRaster(bpRaster.getDataStorage(),
                             bpRaster.getDataBitOffset(), // in bits, NOT bytes! (needs special attention in native
                                                          // code!)
@@ -434,7 +430,7 @@ public class OSXOffScreenSurfaceData extends OSXSurfaceData // implements Raster
                             bpRaster.getHeight(),
                             bpRaster.getPixelBitStride(),
                             bpRaster.getScanlineStride() * 8,
-                            icm,
+                            bImg.getColorModel() instanceof IndexColorModel icm ? icm : null,
                             iType,
                             offsd.fGraphicsStates,
                             offsd.fGraphicsStatesObject,
@@ -636,8 +632,8 @@ public class OSXOffScreenSurfaceData extends OSXSurfaceData // implements Raster
     // we need to refer to rasters often, so cache them
     void cacheRasters(BufferedImage bim) {
         this.bufImgRaster = bim.getRaster();
-        if (this.bufImgRaster instanceof SunWritableRaster) {
-            this.bufImgSunRaster = (SunWritableRaster) this.bufImgRaster;
+        if (this.bufImgRaster instanceof SunWritableRaster writableRaster) {
+            this.bufImgSunRaster = writableRaster;
         }
     }
 

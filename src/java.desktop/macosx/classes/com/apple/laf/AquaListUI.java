@@ -150,7 +150,7 @@ public class AquaListUI extends BasicListUI {
         final Component rendererComponent = renderer.getListCellRendererComponent(list, value, selectedIndex, selected, true);
         if (rendererComponent == null) return;
 
-        final AquaComboBoxRenderer aquaRenderer = renderer instanceof AquaComboBoxRenderer ? (AquaComboBoxRenderer)renderer : null;
+        AquaComboBoxRenderer aquaRenderer = renderer instanceof AquaComboBoxRenderer acbr ? acbr : null;
         if (aquaRenderer != null) aquaRenderer.setDrawCheckedItem(false);
         rendererPane.paintComponent(list.getGraphics().create(), rendererComponent, list, rowBounds.x, rowBounds.y, rowBounds.width, rowBounds.height, true);
         if (aquaRenderer != null) aquaRenderer.setDrawCheckedItem(true);
@@ -196,12 +196,15 @@ public class AquaListUI extends BasicListUI {
 
     static class ComponentPainter extends AquaBorder.Default {
         public void paintBorder(final Component c, final Graphics g, final int x, final int y, final int w, final int h) {
-            final JComponent jc = c instanceof JComponent ? (JComponent)c : null;
-            if (jc != null && !AquaFocusHandler.isActive(jc)) {
-                painter.state.set(State.INACTIVE);
+            State state;
+            if (c instanceof JComponent component &&!AquaFocusHandler.isActive(component)) {
+                state = State.INACTIVE;
             } else {
-                painter.state.set(State.ACTIVE);
+                state = State.ACTIVE;
             }
+
+            painter.state.set(state);
+
             super.paintBorder(c, g, x, y, w, h);
         }
     }

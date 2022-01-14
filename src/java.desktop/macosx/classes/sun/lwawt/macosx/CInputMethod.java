@@ -247,10 +247,8 @@ public class CInputMethod extends InputMethodAdapter {
     }
 
     long getNativeViewPtr(LWComponentPeer<?, ?> peer) {
-        if (peer.getPlatformWindow() instanceof CPlatformWindow) {
-            CPlatformWindow platformWindow = (CPlatformWindow) peer.getPlatformWindow();
-            CPlatformView platformView = platformWindow.getContentView();
-            return platformView.getAWTView();
+        if (peer.getPlatformWindow() instanceof CPlatformWindow platformWindow) {
+            return platformWindow.getContentView().getAWTView();
         } else {
             return 0;
         }
@@ -405,8 +403,9 @@ public class CInputMethod extends InputMethodAdapter {
                 return null;
         }
 
-        if (peer instanceof LWComponentPeer)
-            return (LWComponentPeer)peer;
+        if (peer instanceof LWComponentPeer<?, ?> componentPeer) {
+            return componentPeer;
+        }
 
         return null;
     }
@@ -501,13 +500,13 @@ public class CInputMethod extends InputMethodAdapter {
                     final int offset = fIMContext.getInsertPositionOffset();
                     if (offset < 1) return; // ???
 
-                    if (fAwtFocussedComponent instanceof JTextComponent) {
-                        ((JTextComponent) fAwtFocussedComponent).select(offset - 1, offset);
+                    if (fAwtFocussedComponent instanceof JTextComponent textComponent) {
+                        textComponent.select(offset - 1, offset);
                         return;
                     }
 
-                    if (fAwtFocussedComponent instanceof TextComponent) {
-                        ((TextComponent) fAwtFocussedComponent).select(offset - 1, offset);
+                    if (fAwtFocussedComponent instanceof TextComponent textComponent) {
+                        textComponent.select(offset - 1, offset);
                         return;
                     }
                     // TODO: Ideally we want to disable press-and-hold in this case
@@ -650,11 +649,9 @@ public class CInputMethod extends InputMethodAdapter {
 
                     int startLocation;
 
-                    if (fAwtFocussedComponent instanceof JTextComponent) {
-                        JTextComponent theComponent = (JTextComponent)fAwtFocussedComponent;
+                    if (fAwtFocussedComponent instanceof JTextComponent theComponent) {
                         startLocation = theComponent.getSelectionStart();
-                    } else if (fAwtFocussedComponent instanceof TextComponent) {
-                        TextComponent theComponent = (TextComponent)fAwtFocussedComponent;
+                    } else if (fAwtFocussedComponent instanceof TextComponent theComponent) {
                         startLocation = theComponent.getSelectionStart();
                     } else {
                         // If we don't have a Swing or AWT component, we have to guess whether the selection is before or after the input spot.

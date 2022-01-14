@@ -97,8 +97,8 @@ public class WindowsSpinnerUI extends BasicSpinnerUI {
 
     private UIResource getUIResource(Object[] listeners) {
         for (int counter = 0; counter < listeners.length; counter++) {
-            if (listeners[counter] instanceof UIResource) {
-                return (UIResource)listeners[counter];
+            if (listeners[counter] instanceof UIResource resource) {
+                return resource;
             }
         }
         return null;

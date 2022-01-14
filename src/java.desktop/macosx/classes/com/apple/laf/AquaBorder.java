@@ -116,19 +116,23 @@ public abstract class AquaBorder implements Border, UIResource {
         // Being really paranoid in case this Component isn't a Swing component
         Component focusable = c;
 
-        if (c instanceof JScrollPane) {
-            final JViewport vp = ((JScrollPane)c).getViewport();
+        if (c instanceof JScrollPane pane) {
+            JViewport vp = pane.getViewport();
             if (vp != null) {
                 focusable = vp.getView();
                 // Lists, Tables & Trees get focus rings, TextAreas don't (JBuilder puts TextField border on TextAreas)
-                if (focusable instanceof JTextComponent) return false;
+                if (focusable instanceof JTextComponent) {
+                    return false;
+                }
             }
-        } else if (focusable instanceof JTextComponent) {
+        } else if (focusable instanceof JTextComponent textComponent) {
             // non-editable text areas don't draw the focus ring
-            if (!((javax.swing.text.JTextComponent)focusable).isEditable()) return false;
+            if (!textComponent.isEditable()) {
+                return false;
+            }
         }
 
-        return (focusable instanceof JComponent jComponent) && jComponent.hasFocus();
+        return focusable instanceof JComponent jComponent && jComponent.hasFocus();
     }
 
     @Override

@@ -88,9 +88,8 @@ public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
 
     static final PropertyChangeListener REPAINT_LISTENER = new PropertyChangeListener() {
         public void propertyChange(final PropertyChangeEvent evt) {
-            final Object source = evt.getSource();
-            if (source instanceof JComponent) {
-                ((JComponent)source).repaint();
+            if (evt.getSource() instanceof JComponent component) {
+                component.repaint();
             }
         }
     };

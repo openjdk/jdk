@@ -79,17 +79,13 @@ public abstract class LWCursorManager {
     private void updateCursorImpl() {
         final Point cursorPos = getCursorPosition();
         final Component c = findComponent(cursorPos);
-        final Cursor cursor;
-        final Object peer = LWToolkit.targetToPeer(c);
-        if (peer instanceof LWComponentPeer) {
-            final LWComponentPeer<?, ?> lwpeer = (LWComponentPeer<?, ?>) peer;
+        if (LWToolkit.targetToPeer(c) instanceof LWComponentPeer<?, ?> lwpeer) {
             final Point p = lwpeer.getLocationOnScreen();
-            cursor = lwpeer.getCursor(new Point(cursorPos.x - p.x,
-                                                cursorPos.y - p.y));
+            setCursor(lwpeer.getCursor(new Point(cursorPos.x - p.x,
+                                                cursorPos.y - p.y)));
         } else {
-            cursor = (c != null) ? c.getCursor() : null;
+            setCursor(c != null ? c.getCursor() : null);
         }
-        setCursor(cursor);
     }
 
     /**

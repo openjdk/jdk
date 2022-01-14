@@ -993,8 +993,8 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
                 if (b && !isRollover()) {
                     // Reset other buttons
                     for (Component component : result.getParent().getComponents()) {
-                        if (component instanceof JButton && component != result) {
-                            ((JButton) component).getModel().setRollover(false);
+                        if (component instanceof JButton button && component != result) {
+                            button.getModel().setRollover(false);
                         }
                     }
                 }

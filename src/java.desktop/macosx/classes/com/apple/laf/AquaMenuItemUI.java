@@ -171,26 +171,18 @@ public class AquaMenuItemUI extends BasicMenuItemUI implements AquaMenuPainter.C
         }
 
         public void propertyChange(final PropertyChangeEvent evt) {
-            final String key = evt.getPropertyName();
-            if (!CLIENT_PROPERTY_KEY.equalsIgnoreCase(key)) return;
-
-            final Object source = evt.getSource();
-            if (!(source instanceof JMenuItem)) return;
-
-            final JMenuItem c = (JMenuItem)source;
-            apply(c, evt.getNewValue());
+            if (CLIENT_PROPERTY_KEY.equalsIgnoreCase(evt.getPropertyName()) && evt.getSource() instanceof JMenuItem c) {
+                apply(c, evt.getNewValue());
+            }
         }
 
         static void apply(final JMenuItem menuItem, final Object value) {
-            final ButtonUI ui = menuItem.getUI();
-            if (!(ui instanceof AquaMenuItemUI)) return;
+            if (menuItem.getUI() instanceof AquaMenuItemUI aquaUI) {
+                aquaUI.fIsIndeterminate = "indeterminate".equals(value);
 
-            final AquaMenuItemUI aquaUI = (AquaMenuItemUI)ui;
+                String postFix = aquaUI.fIsIndeterminate ? ".dashIcon" : ".checkIcon";
 
-            if (aquaUI.fIsIndeterminate = "indeterminate".equals(value)) {
-                aquaUI.checkIcon = UIManager.getIcon(aquaUI.getPropertyPrefix() + ".dashIcon");
-            } else {
-                aquaUI.checkIcon = UIManager.getIcon(aquaUI.getPropertyPrefix() + ".checkIcon");
+                aquaUI.checkIcon = UIManager.getIcon(aquaUI.getPropertyPrefix() + postFix);
             }
         }
 

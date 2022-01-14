@@ -566,8 +566,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
     void propogateRegisterAccelerator(AWTKeyStroke stroke) {
         // Find the top-level and see if it is XEmbed client. If so, ask him to
         // register the accelerator
-        XWindowPeer parent = getToplevelXWindow();
-        if (parent instanceof XEmbeddedFramePeer embedded) {
+        if (getToplevelXWindow() instanceof XEmbeddedFramePeer embedded) {
             embedded.registerAccelerator(stroke);
         }
     }
@@ -575,8 +574,7 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
     void propogateUnRegisterAccelerator(AWTKeyStroke stroke) {
         // Find the top-level and see if it is XEmbed client. If so, ask him to
         // register the accelerator
-        XWindowPeer parent = getToplevelXWindow();
-        if (parent instanceof XEmbeddedFramePeer embedded) {
+        if (getToplevelXWindow() instanceof XEmbeddedFramePeer embedded) {
             embedded.unregisterAccelerator(stroke);
         }
     }
@@ -876,11 +874,9 @@ public class XEmbedCanvasPeer extends XCanvasPeer implements WindowFocusListener
         }
 
         public boolean equals(Object o) {
-            if (!(o instanceof GrabbedKey)) {
-                return false;
-            }
-            GrabbedKey key = (GrabbedKey)o;
-            return (keysym == key.keysym && modifiers == key.modifiers);
+            return o instanceof GrabbedKey key &&
+                    keysym == key.keysym &&
+                    modifiers == key.modifiers;
         }
 
         public String toString() {

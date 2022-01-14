@@ -758,9 +758,8 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
     static {
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        if (ge instanceof SunGraphicsEnvironment) {
-            ((SunGraphicsEnvironment) ge).addDisplayChangedListener(
-                    displayChangedHandler);
+        if (ge instanceof SunGraphicsEnvironment sge) {
+            sge.addDisplayChangedListener(displayChangedHandler);
         }
     }
 
@@ -913,10 +912,11 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
     @Override
     public RobotPeer createRobot(GraphicsDevice screen) throws AWTException {
-        if (screen instanceof X11GraphicsDevice) {
-            return new XRobotPeer((X11GraphicsDevice) screen);
+        if (screen instanceof X11GraphicsDevice x11gd) {
+            return new XRobotPeer(x11gd);
+        } else {
+            return super.createRobot(screen);
         }
-        return super.createRobot(screen);
     }
 
   /*
@@ -1405,9 +1405,8 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             log.fine("Mapped windows:");
             winMap.forEach((k, v) -> {
                 log.fine(k + "->" + v);
-                if (v instanceof XComponentPeer) {
-                    Component target = (Component)((XComponentPeer)v).getTarget();
-                    log.fine("\ttarget: " + target);
+                if (v instanceof XComponentPeer peer) {
+                    log.fine("\ttarget: " + peer.getTarget());
                 }
             });
 
@@ -2529,10 +2528,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
     @Override
     public boolean isTranslucencyCapable(GraphicsConfiguration gc) {
-        if (!(gc instanceof X11GraphicsConfig)) {
-            return false;
-        }
-        return ((X11GraphicsConfig)gc).isTranslucencyCapable();
+        return gc instanceof X11GraphicsConfig x11gc && x11gc.isTranslucencyCapable();
     }
 
     /**

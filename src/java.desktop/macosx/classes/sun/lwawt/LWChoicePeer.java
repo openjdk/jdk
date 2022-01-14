@@ -32,7 +32,7 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.peer.ChoicePeer;
 
-import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
 import javax.swing.JComboBox;
 import javax.swing.SwingUtilities;
 import javax.swing.JPopupMenu;
@@ -169,10 +169,10 @@ final class LWChoicePeer extends LWComponentPeer<Choice, JComboBox<String>>
         }
 
         private JPopupMenu getPopupMenu() {
-            for (int i = 0; i < getAccessibleContext().getAccessibleChildrenCount(); i++) {
-                Accessible child = getAccessibleContext().getAccessibleChild(i);
-                if (child instanceof JPopupMenu) {
-                    return  (JPopupMenu) child;
+            AccessibleContext accessibleContext = getAccessibleContext();
+            for (int i = 0; i < accessibleContext.getAccessibleChildrenCount(); i++) {
+                if (accessibleContext.getAccessibleChild(i) instanceof JPopupMenu popupMenu) {
+                    return popupMenu;
                 }
             }
             return null;

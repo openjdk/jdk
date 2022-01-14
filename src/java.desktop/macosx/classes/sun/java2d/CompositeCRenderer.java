@@ -305,8 +305,8 @@ public class CompositeCRenderer extends CRenderer implements PixelDrawPipe, Pixe
         int paddingHalf = fPaddingHalf;
         int padding = fPadding;
         if (sg2d.stroke != null) {
-            if (sg2d.stroke instanceof BasicStroke) {
-                int width = (int) (((BasicStroke) sg2d.stroke).getLineWidth() + 0.5f);
+            if (sg2d.stroke instanceof BasicStroke basicStroke) {
+                int width = (int) (basicStroke.getLineWidth() + 0.5f);
                 int widthHalf = width / 2 + 1;
                 paddingHalf += widthHalf;
                 padding += 2 * widthHalf;
@@ -365,11 +365,11 @@ public class CompositeCRenderer extends CRenderer implements PixelDrawPipe, Pixe
         boolean succeded = false;
 
         Composite composite = sg2d.getComposite();
-        if (composite instanceof XORComposite) {
+        if (composite instanceof XORComposite xor) {
             // 1st native XOR try
             // we try to perform XOR using surface pixels directly
             try {
-                succeded = surfaceData.xorSurfacePixels(sg2d, srcPixels, x, y, w, h, ((XORComposite) composite).getXorColor().getRGB());
+                succeded = surfaceData.xorSurfacePixels(sg2d, srcPixels, x, y, w, h, xor.getXorColor().getRGB());
             } catch (Exception e) {
                 succeded = false;
             }
@@ -380,12 +380,12 @@ public class CompositeCRenderer extends CRenderer implements PixelDrawPipe, Pixe
             BufferedImage dstInPixels = getSurfacePixels(sg2d, surfaceData, x, y, w, h);
             BufferedImage dstOutPixels = null;
 
-            if (composite instanceof XORComposite) {
+            if (composite instanceof XORComposite xor) {
                 // 2nd native XOR try
                 // we try to perform XOR on image's pixels (which were copied from surface first)
                 try {
                     OSXSurfaceData osxsd = (OSXSurfaceData) (BufImgSurfaceData.createData(dstInPixels));
-                    succeded = osxsd.xorSurfacePixels(sg2d, srcPixels, 0, 0, w, h, ((XORComposite) composite).getXorColor().getRGB());
+                    succeded = osxsd.xorSurfacePixels(sg2d, srcPixels, 0, 0, w, h, xor.getXorColor().getRGB());
                     dstOutPixels = dstInPixels;
                 } catch (Exception e) {
                     succeded = false;

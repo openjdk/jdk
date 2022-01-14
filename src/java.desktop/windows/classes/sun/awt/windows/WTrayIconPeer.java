@@ -159,7 +159,6 @@ final class WTrayIconPeer extends WObjectPeer implements TrayIconPeer {
         byte[] andMask = new byte[TRAY_ICON_MASK_SIZE];
         int[]  pixels = ((DataBufferInt)raster.getDataBuffer()).getData();
         int npixels = pixels.length;
-        int ficW = raster.getWidth();
 
         for (int i = 0; i < npixels; i++) {
             int ibyte = i / 8;
@@ -173,8 +172,11 @@ final class WTrayIconPeer extends WObjectPeer implements TrayIconPeer {
             }
         }
 
-        if (raster instanceof IntegerComponentRaster) {
-            ficW = ((IntegerComponentRaster)raster).getScanlineStride();
+        int ficW;
+        if (raster instanceof IntegerComponentRaster icr) {
+            ficW = icr.getScanlineStride();
+        } else {
+            ficW = raster.getWidth();
         }
         setNativeIcon(((DataBufferInt)bimage.getRaster().getDataBuffer()).getData(),
                       andMask, ficW, raster.getWidth(), raster.getHeight());

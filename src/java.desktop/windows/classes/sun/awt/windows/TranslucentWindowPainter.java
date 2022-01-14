@@ -80,9 +80,8 @@ abstract class TranslucentWindowPainter {
      */
     public static TranslucentWindowPainter createInstance(WWindowPeer peer) {
         GraphicsConfiguration gc = peer.getGraphicsConfiguration();
-        if (!forceSW && gc instanceof AccelGraphicsConfig) {
+        if (!forceSW && gc instanceof AccelGraphicsConfig agc) {
             String gcName = gc.getClass().getSimpleName();
-            AccelGraphicsConfig agc = (AccelGraphicsConfig)gc;
             // this is a heuristic to check that we have a pcix board
             // (those have higher transfer rate from gpu to cpu)
             if ((agc.getContextCapabilities().getCaps() & CAPS_PS30) != 0 ||
@@ -207,28 +206,24 @@ abstract class TranslucentWindowPainter {
         protected boolean update(Image bb) {
             VolatileImage viBB = null;
 
-            if (bb instanceof BufferedImage) {
-                BufferedImage bi = (BufferedImage)bb;
+            if (bb instanceof BufferedImage bi) {
                 int[] data =
                     ((DataBufferInt)bi.getRaster().getDataBuffer()).getData();
                 peer.updateWindowImpl(data, bi.getWidth(), bi.getHeight());
                 return true;
-            } else if (bb instanceof VolatileImage) {
-                viBB = (VolatileImage)bb;
-                if (bb instanceof DestSurfaceProvider) {
-                    Surface s = ((DestSurfaceProvider)bb).getDestSurface();
-                    if (s instanceof BufImgSurfaceData) {
-                        // the image is probably lost, upload the data from the
-                        // backup surface to avoid creating another heap-based
-                        // image (the parent's buffer)
-                        int w = viBB.getWidth();
-                        int h = viBB.getHeight();
-                        BufImgSurfaceData bisd = (BufImgSurfaceData)s;
-                        int[] data = ((DataBufferInt)bisd.getRaster(0,0,w,h).
+            } else if (bb instanceof VolatileImage vi) {
+                viBB = vi;
+                if (bb instanceof DestSurfaceProvider dsp &&
+                        dsp.getDestSurface() instanceof BufImgSurfaceData bisd) {
+                    // the image is probably lost, upload the data from the
+                    // backup surface to avoid creating another heap-based
+                    // image (the parent's buffer)
+                    int w = viBB.getWidth();
+                    int h = viBB.getHeight();
+                    int[] data = ((DataBufferInt) bisd.getRaster(0, 0, w, h).
                             getDataBuffer()).getData();
-                        peer.updateWindowImpl(data, w, h);
-                        return true;
-                    }
+                    peer.updateWindowImpl(data, w, h);
+                    return true;
                 }
             }
 
@@ -287,8 +282,7 @@ abstract class TranslucentWindowPainter {
             {
                 flush();
 
-                if (gc instanceof AccelGraphicsConfig) {
-                    AccelGraphicsConfig agc = ((AccelGraphicsConfig)gc);
+                if (gc instanceof AccelGraphicsConfig agc) {
                     viBB = agc.createCompatibleVolatileImage(w, h,
                                                              TRANSLUCENT,
                                                              RT_PLAIN);
@@ -331,31 +325,28 @@ abstract class TranslucentWindowPainter {
 
         @Override
         protected boolean update(Image bb) {
-            if (bb instanceof DestSurfaceProvider) {
-                Surface s = ((DestSurfaceProvider)bb).getDestSurface();
-                if (s instanceof AccelSurface) {
-                    final boolean[] arr = { false };
-                    final AccelSurface as = (AccelSurface)s;
-                    final int w = as.getBounds().width;
-                    final int h = as.getBounds().height;
-                    RenderQueue rq = as.getContext().getRenderQueue();
-                    rq.lock();
-                    try {
-                        BufferedContext.validateContext(as);
-                        rq.flushAndInvokeNow(new Runnable() {
-                            @Override
-                            public void run() {
-                                long psdops = as.getNativeOps();
-                                arr[0] = updateWindowAccel(psdops, w, h);
-                            }
-                        });
-                    } catch (InvalidPipeException e) {
-                        // ignore, false will be returned
-                    } finally {
-                        rq.unlock();
-                    }
-                    return arr[0];
+            if (bb instanceof DestSurfaceProvider dsp &&
+                    dsp.getDestSurface() instanceof AccelSurface as) {
+                final boolean[] arr = {false};
+                final int w = as.getBounds().width;
+                final int h = as.getBounds().height;
+                RenderQueue rq = as.getContext().getRenderQueue();
+                rq.lock();
+                try {
+                    BufferedContext.validateContext(as);
+                    rq.flushAndInvokeNow(new Runnable() {
+                        @Override
+                        public void run() {
+                            long psdops = as.getNativeOps();
+                            arr[0] = updateWindowAccel(psdops, w, h);
+                        }
+                    });
+                } catch (InvalidPipeException e) {
+                    // ignore, false will be returned
+                } finally {
+                    rq.unlock();
                 }
+                return arr[0];
             }
             return super.update(bb);
         }

@@ -348,8 +348,8 @@ final class WDataTransferer extends DataTransferer {
         int width = 0;
         int height = 0;
 
-        if (image instanceof ToolkitImage) {
-            ImageRepresentation ir = ((ToolkitImage)image).getImageRep();
+        if (image instanceof ToolkitImage tki) {
+            ImageRepresentation ir = tki.getImageRep();
             ir.reconstruct(ImageObserver.ALLBITS);
             width = ir.getWidth();
             height = ir.getHeight();

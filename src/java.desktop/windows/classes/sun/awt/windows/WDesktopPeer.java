@@ -135,21 +135,21 @@ final class WDesktopPeer implements DesktopPeer {
 
     @Override
     public void addAppEventListener(final SystemEventListener listener) {
-        if (listener instanceof UserSessionListener) {
-            listenerList.add(UserSessionListener.class, (UserSessionListener) listener);
+        if (listener instanceof UserSessionListener usl) {
+            listenerList.add(UserSessionListener.class, usl);
         }
-        if (listener instanceof SystemSleepListener) {
-            listenerList.add(SystemSleepListener.class, (SystemSleepListener) listener);
+        if (listener instanceof SystemSleepListener ssl) {
+            listenerList.add(SystemSleepListener.class, ssl);
         }
     }
 
     @Override
     public void removeAppEventListener(final SystemEventListener listener) {
-        if (listener instanceof UserSessionListener) {
-            listenerList.remove(UserSessionListener.class, (UserSessionListener) listener);
+        if (listener instanceof UserSessionListener usl) {
+            listenerList.remove(UserSessionListener.class, usl);
         }
-        if (listener instanceof SystemSleepListener) {
-            listenerList.remove(SystemSleepListener.class, (SystemSleepListener) listener);
+        if (listener instanceof SystemSleepListener ssl) {
+            listenerList.remove(SystemSleepListener.class, ssl);
         }
     }
 

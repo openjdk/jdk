@@ -254,8 +254,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
     }
 
     public int findPaperID(MediaSizeName msn) {
-        if (msn instanceof Win32MediaSize) {
-            Win32MediaSize winMedia = (Win32MediaSize)msn;
+        if (msn instanceof Win32MediaSize winMedia) {
             return winMedia.getDMPaper();
         } else {
             for (int id=0; id<dmPaperToPrintService.length;id++) {
@@ -294,8 +293,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
 
         getMediaTrays(); // make sure they are initialised.
 
-        if (tray instanceof Win32MediaTray) {
-            Win32MediaTray winTray = (Win32MediaTray)tray;
+        if (tray instanceof Win32MediaTray winTray) {
             return winTray.getDMBinID();
         }
         for (int id=0; id<dmPaperBinToPrintService.length; id++) {
@@ -313,11 +311,8 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
         MediaTray[] trays = getMediaTrays();
         if (trays != null) {
             for (int i=0;i<trays.length;i++) {
-                if(trays[i] instanceof Win32MediaTray) {
-                    Win32MediaTray win32Tray = (Win32MediaTray)trays[i];
-                    if (win32Tray.winID == dmBin) {
-                        return win32Tray;
-                    }
+                if (trays[i] instanceof Win32MediaTray win32Tray && win32Tray.winID == dmBin) {
+                    return win32Tray;
                 }
             }
         }

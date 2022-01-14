@@ -42,9 +42,11 @@ public class CTextPipe implements TextPipe {
     public native void doOneUnicode(SurfaceData sData, long nativeStrikePtr, char aUnicode, float x, float y);
 
     long getNativeStrikePtr(final SunGraphics2D sg2d) {
-        final FontStrike fontStrike = sg2d.getFontInfo().fontStrike;
-        if (!(fontStrike instanceof CStrike)) return 0;
-        return ((CStrike)fontStrike).getNativeStrikePtr();
+        if (sg2d.getFontInfo().fontStrike instanceof CStrike cStrike) {
+            return cStrike.getNativeStrikePtr();
+        } else {
+            return 0;
+        }
     }
 
     void drawGlyphVectorAsShape(final SunGraphics2D sg2d, final GlyphVector gv, final float x, final float y) {

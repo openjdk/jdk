@@ -1175,26 +1175,25 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
      */
     @Override
     public void handleEvent(AWTEvent e) {
-        if ((e instanceof InputEvent) && ((InputEvent) e).isConsumed()) {
-            return;
-        }
-        switch (e.getID()) {
-            case FocusEvent.FOCUS_GAINED:
-            case FocusEvent.FOCUS_LOST:
-                handleJavaFocusEvent((FocusEvent) e);
-                break;
-            case PaintEvent.PAINT:
-                // Got a native paint event
-//                paintPending = false;
-                // fall through to the next statement
-            case PaintEvent.UPDATE:
-                handleJavaPaintEvent();
-                break;
-            case MouseEvent.MOUSE_PRESSED:
-                handleJavaMouseEvent((MouseEvent)e);
-        }
+        if (!(e instanceof InputEvent inputEvent && inputEvent.isConsumed())) {
+            switch (e.getID()) {
+                case FocusEvent.FOCUS_GAINED:
+                case FocusEvent.FOCUS_LOST:
+                    handleJavaFocusEvent((FocusEvent) e);
+                    break;
+                case PaintEvent.PAINT:
+                    // Got a native paint event
+    //                paintPending = false;
+                    // fall through to the next statement
+                case PaintEvent.UPDATE:
+                    handleJavaPaintEvent();
+                    break;
+                case MouseEvent.MOUSE_PRESSED:
+                    handleJavaMouseEvent((MouseEvent) e);
+            }
 
-        sendEventToDelegate(e);
+            sendEventToDelegate(e);
+        }
     }
 
     protected void sendEventToDelegate(final AWTEvent e) {
@@ -1207,8 +1206,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
                 AWTAccessor.getComponentAccessor()
                         .processEvent((Component) delegateEvent.getSource(),
                                 delegateEvent);
-                if (delegateEvent instanceof KeyEvent) {
-                    KeyEvent ke = (KeyEvent) delegateEvent;
+                if (delegateEvent instanceof KeyEvent ke) {
                     SwingUtilities.processKeyBindings(ke);
                 }
             }
@@ -1222,10 +1220,8 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     @SuppressWarnings("deprecation")
     private AWTEvent createDelegateEvent(final AWTEvent e) {
         // TODO modifiers should be changed to getModifiers()|getModifiersEx()?
-        AWTEvent delegateEvent = null;
-        if (e instanceof MouseWheelEvent) {
-            MouseWheelEvent me = (MouseWheelEvent) e;
-            delegateEvent = new MouseWheelEvent(
+        if (e instanceof MouseWheelEvent me) {
+            return new MouseWheelEvent(
                     delegate, me.getID(), me.getWhen(),
                     me.getModifiers(),
                     me.getX(), me.getY(),
@@ -1236,9 +1232,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
                     me.getScrollAmount(),
                     me.getWheelRotation(),
                     me.getPreciseWheelRotation());
-        } else if (e instanceof MouseEvent) {
-            MouseEvent me = (MouseEvent) e;
-
+        } else if (e instanceof MouseEvent me) {
             Component eventTarget = SwingUtilities.getDeepestComponentAt(delegate, me.getX(), me.getY());
 
             if (me.getID() == MouseEvent.MOUSE_DRAGGED) {
@@ -1255,18 +1249,19 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
             if (eventTarget == null) {
                 eventTarget = delegate;
             }
-            delegateEvent = SwingUtilities.convertMouseEvent(getTarget(), me, eventTarget);
-        } else if (e instanceof KeyEvent) {
-            KeyEvent ke = (KeyEvent) e;
-            delegateEvent = new KeyEvent(getDelegateFocusOwner(), ke.getID(), ke.getWhen(),
+            return SwingUtilities.convertMouseEvent(getTarget(), me, eventTarget);
+        } else if (e instanceof KeyEvent ke) {
+            KeyEvent delegateEvent = new KeyEvent(getDelegateFocusOwner(), ke.getID(), ke.getWhen(),
                     ke.getModifiers(), ke.getKeyCode(), ke.getKeyChar(), ke.getKeyLocation());
-            AWTAccessor.getKeyEventAccessor().setExtendedKeyCode((KeyEvent) delegateEvent,
+            AWTAccessor.getKeyEventAccessor().setExtendedKeyCode(delegateEvent,
                     ke.getExtendedKeyCode());
-        } else if (e instanceof FocusEvent) {
-            FocusEvent fe = (FocusEvent) e;
-            delegateEvent = new FocusEvent(getDelegateFocusOwner(), fe.getID(), fe.isTemporary());
+
+            return delegateEvent;
+        } else if (e instanceof FocusEvent fe) {
+            return new FocusEvent(getDelegateFocusOwner(), fe.getID(), fe.isTemporary());
+        } else {
+            return null;
         }
-        return delegateEvent;
     }
 
     protected void handleJavaMouseEvent(MouseEvent e) {

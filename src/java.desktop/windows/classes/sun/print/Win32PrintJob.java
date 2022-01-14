@@ -190,15 +190,15 @@ public class Win32PrintJob implements CancelablePrintJob {
                 reader = null;
             }
         }
-        else if (data instanceof InputStream) {
+        else if (data instanceof InputStream stream) {
             try {
-                ((InputStream)data).close();
+                stream.close();
             } catch (IOException e) {
             }
         }
-        else if (data instanceof Reader) {
+        else if (data instanceof Reader reader) {
             try {
-                ((Reader)data).close();
+                reader.close();
             } catch (IOException e) {
             }
         }
@@ -495,12 +495,10 @@ public class Win32PrintJob implements CancelablePrintJob {
                 copies = c.getValue();
             }
 
-            if (mediaName == null) {
-                Object media = svc.getDefaultAttributeValue(Media.class);
-                if (media instanceof MediaSizeName) {
-                    mediaName = (MediaSizeName) media;
-                    mediaSize = MediaSize.getMediaSizeForName(mediaName);
-                }
+            if (mediaName == null &&
+                    svc.getDefaultAttributeValue(Media.class) instanceof MediaSizeName msn) {
+                mediaName = msn;
+                mediaSize = MediaSize.getMediaSizeForName(mediaName);
             }
 
             if (orient == null) {
@@ -700,8 +698,8 @@ public class Win32PrintJob implements CancelablePrintJob {
             } else if (category == Copies.class) {
                 copies = ((Copies)attr).getValue();
             } else if (category == Media.class) {
-              if (attr instanceof MediaSizeName) {
-                    mediaName = (MediaSizeName)attr;
+                if (attr instanceof MediaSizeName msn) {
+                    mediaName = msn;
                     // If requested MediaSizeName is not supported,
                     // get the corresponding media size - this will
                     // be used to create a new PageFormat.

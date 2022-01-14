@@ -569,9 +569,13 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
      */
     static XWindowPeer getNativeFocusedWindowPeer() {
         XBaseWindow baseWindow = XToolkit.windowToXWindow(xGetInputFocus());
-        return (baseWindow instanceof XWindowPeer) ? (XWindowPeer)baseWindow :
-               (baseWindow instanceof XFocusProxyWindow) ?
-               ((XFocusProxyWindow)baseWindow).getOwner() : null;
+        if (baseWindow instanceof XWindowPeer peer) {
+            return peer;
+        } else if (baseWindow instanceof XFocusProxyWindow proxy) {
+            return proxy.getOwner();
+        } else {
+            return null;
+        }
     }
 
     /*
@@ -899,8 +903,8 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                     XWindowPeer oppositeXWindow = getNativeFocusedWindowPeer();
                     Object oppositeTarget = (oppositeXWindow!=null)? oppositeXWindow.getTarget() : null;
                     Window oppositeWindow = null;
-                    if (oppositeTarget instanceof Window) {
-                        oppositeWindow = (Window) oppositeTarget;
+                    if (oppositeTarget instanceof Window window) {
+                        oppositeWindow = window;
                     }
                     // Check if opposite window is non-focusable. In that case we don't want to
                     // post any event.
@@ -909,9 +913,9 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                     }
                     if (this == oppositeXWindow) {
                         oppositeWindow = null;
-                    } else if (oppositeXWindow instanceof XDecoratedPeer) {
-                        if (((XDecoratedPeer) oppositeXWindow).actualFocusedWindow != null) {
-                            oppositeXWindow = ((XDecoratedPeer) oppositeXWindow).actualFocusedWindow;
+                    } else if (oppositeXWindow instanceof XDecoratedPeer peer) {
+                        if (peer.actualFocusedWindow != null) {
+                            oppositeXWindow = peer.actualFocusedWindow;
                             oppositeTarget = oppositeXWindow.getTarget();
                             if (oppositeTarget instanceof Window
                                 && oppositeXWindow.isVisible()
@@ -1130,8 +1134,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                     if(!child.isLightweight() && child.isVisible()) {
                         ComponentPeer childPeer = AWTAccessor.
                                 getComponentAccessor().getPeer(child);
-                        if(childPeer instanceof XWindowPeer) {
-                            XWindowPeer windowPeer = (XWindowPeer) childPeer;
+                        if(childPeer instanceof XWindowPeer windowPeer) {
                             restoreTransientFor(windowPeer);
                             windowPeer.applyWindowType();
                         }
@@ -1569,8 +1572,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                         } else {
                             v.add(child);
                         }
-                        if (childWindow instanceof XWindowPeer) {
-                            XWindowPeer np = (XWindowPeer)childWindow;
+                        if (childWindow instanceof XWindowPeer np) {
                             javaToplevels.add(np);
                             // XQueryTree returns windows sorted by their z-order. However,
                             // if WM has not handled transient for hint for a child window,
@@ -1684,8 +1686,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
             parent = XToolkit.windowToXWindow(tpw);
         }
 
-        if (parent instanceof XLightweightFramePeer) {
-            XLightweightFramePeer peer = (XLightweightFramePeer) parent;
+        if (parent instanceof XLightweightFramePeer peer) {
             long ownerWindowPtr = peer.getOverriddenWindowHandle();
             if (ownerWindowPtr != 0) {
                 tpw = ownerWindowPtr;

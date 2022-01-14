@@ -397,11 +397,10 @@ final class Win32ShellFolder2 extends ShellFolder {
                         File[] driveRoots = drives.listFiles();
                         if (driveRoots != null) {
                             for (int i = 0; i < driveRoots.length; i++) {
-                                if (driveRoots[i] instanceof Win32ShellFolder2) {
-                                    Win32ShellFolder2 sf = (Win32ShellFolder2) driveRoots[i];
-                                    if (sf.isFileSystem() && !sf.hasAttribute(ATTRIB_REMOVABLE)) {
-                                        return new File(sf.getPath());
-                                    }
+                                if (driveRoots[i] instanceof Win32ShellFolder2 sf &&
+                                        sf.isFileSystem() &&
+                                        !sf.hasAttribute(ATTRIB_REMOVABLE)) {
+                                    return new File(sf.getPath());
                                 }
                             }
                         }
@@ -542,10 +541,11 @@ final class Win32ShellFolder2 extends ShellFolder {
     public boolean equals(Object o) {
         if (!(o instanceof Win32ShellFolder2 rhs)) {
             // Short-circuit circuitous delegation path
-            if (!(o instanceof File)) {
+            if (o instanceof File file) {
+                return pathsEqual(getPath(), file.getPath());
+            } else {
                 return super.equals(o);
             }
-            return pathsEqual(getPath(), ((File) o).getPath());
         }
         if ((parent == null && rhs.parent != null) ||
             (parent != null && rhs.parent == null)) {
@@ -1302,8 +1302,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     private ShellFolder resolveLibrary() {
         for (ShellFolder f = this; f != null; f = f.parent) {
             if (!f.isFileSystem()) {
-                if (f instanceof Win32ShellFolder2 &&
-                                           ((Win32ShellFolder2)f).isLibrary()) {
+                if (f instanceof Win32ShellFolder2 shell && shell.isLibrary()) {
                     try {
                         return getShellFolder(new File(getPath()));
                     } catch (FileNotFoundException e) {
@@ -1351,13 +1350,13 @@ final class Win32ShellFolder2 extends ShellFolder {
         public int compare(final File o, final File o1) {
             Integer result = invoke(new Callable<Integer>() {
                 public Integer call() {
-                    if (o instanceof Win32ShellFolder2
-                        && o1 instanceof Win32ShellFolder2) {
+                    if (o instanceof Win32ShellFolder2 w
+                            && o1 instanceof Win32ShellFolder2 w1) {
                         // delegates comparison to native method
                         return compareIDsByColumn(shellFolder.getIShellFolder(),
-                            ((Win32ShellFolder2) o).getRelativePIDL(),
-                            ((Win32ShellFolder2) o1).getRelativePIDL(),
-                            columnIdx);
+                                w.getRelativePIDL(),
+                                w1.getRelativePIDL(),
+                                columnIdx);
                     }
                     return 0;
                 }

@@ -117,7 +117,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements Border, UIR
 
         if (model.isArmed() && model.isPressed()) return State.PRESSED;
         if (model.isSelected() && isSelectionPressing()) return State.PRESSED;
-        if ((b instanceof JButton) && ((JButton)b).isDefaultButton()) return State.PULSED;
+        if (b instanceof JButton button && button.isDefaultButton()) return State.PULSED;
 
         return State.ACTIVE;
     }

@@ -160,8 +160,8 @@ public final class D3DGraphicsDevice extends Win32GraphicsDevice {
         Window owner = w;
         while (owner != null) {
             owner = owner.getOwner();
-            if (owner instanceof Frame) {
-                return (Frame) owner;
+            if (owner instanceof Frame frame) {
+                return frame;
             }
         }
         // could get here if passed Window is an owner-less Dialog

@@ -98,8 +98,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
     @Override
     protected void uninstallListeners() {
         // We're not just a mouseListener, we're a mouseMotionListener
-        if (mouseListener instanceof  MouseHandler) {
-            final MouseHandler mh = (MouseHandler) mouseListener;
+        if (mouseListener instanceof MouseHandler mh) {
             mh.dispose();
             tabPane.removeMouseMotionListener(mh);
         }
@@ -316,31 +315,27 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
         }
 
         // from super.paintText - its normal text painting is totally wrong for the Mac
-        if (!(g instanceof Graphics2D)) {
-            g.setClip(temp);
-            return;
-        }
-        final Graphics2D g2d = (Graphics2D) g;
+        if (g instanceof Graphics2D g2d) {
+            AffineTransform savedAT = null;
+            if (isVertical) {
+                savedAT = g2d.getTransform();
+                rotateGraphics(g2d, tabRect, textRect, iconRect, tabPlacement);
+            }
 
-        AffineTransform savedAT = null;
-        if (isVertical) {
-            savedAT = g2d.getTransform();
-            rotateGraphics(g2d, tabRect, textRect, iconRect, tabPlacement);
-        }
+            // not for the scrolling tabs
+            if (component == null && tabIndex >= 0) {
+                String clippedTitle = SwingUtilities2.clipStringIfNecessary(tabPane, metrics,
+                        title, textRect.width);
+                paintTitle(g2d, font, metrics, textRect, tabIndex, clippedTitle);
+            }
 
-        // not for the scrolling tabs
-        if (component == null && tabIndex >= 0) {
-            String clippedTitle = SwingUtilities2.clipStringIfNecessary(tabPane, metrics,
-                    title, textRect.width);
-            paintTitle(g2d, font, metrics, textRect, tabIndex, clippedTitle);
-        }
+            if (icon != null) {
+                paintIcon(g, tabPlacement, tabIndex, icon, iconRect, isSelected);
+            }
 
-        if (icon != null) {
-            paintIcon(g, tabPlacement, tabIndex, icon, iconRect, isSelected);
-        }
-
-        if (savedAT != null) {
-            g2d.setTransform(savedAT);
+            if (savedAT != null) {
+                g2d.setTransform(savedAT);
+            }
         }
 
         g.setClip(temp);

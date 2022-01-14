@@ -101,9 +101,7 @@ public final class XGlobalCursorManager extends GlobalCursorManager {
      * Swing, not for AWT.
      */
     private static void updateGrabbedCursor(Cursor cur) {
-        XBaseWindow target = XAwtState.getGrabWindow();
-        if (target instanceof XWindowPeer) {
-            XWindowPeer grabber = (XWindowPeer) target;
+        if (XAwtState.getGrabWindow() instanceof XWindowPeer grabber) {
             grabber.pSetCursor(cur);
         }
     }

@@ -93,8 +93,8 @@ public class GDIWindowSurfaceData extends SurfaceData {
         switch (cm.getPixelSize()) {
         case 32:
         case 24:
-            if (cm instanceof DirectColorModel) {
-                if (((DirectColorModel)cm).getRedMask() == 0xff0000) {
+            if (cm instanceof DirectColorModel dcm) {
+                if (dcm.getRedMask() == 0xff0000) {
                     return IntRgbGdi;
                 } else {
                     return SurfaceType.IntRgbx;
@@ -105,9 +105,7 @@ public class GDIWindowSurfaceData extends SurfaceData {
         case 15:
             return Ushort555RgbGdi;
         case 16:
-            if ((cm instanceof DirectColorModel) &&
-                (((DirectColorModel)cm).getBlueMask() == 0x3e))
-            {
+            if (cm instanceof DirectColorModel dcm && dcm.getBlueMask() == 0x3e) {
                 return SurfaceType.Ushort555Rgbx;
             } else {
                 return Ushort565RgbGdi;
@@ -116,8 +114,7 @@ public class GDIWindowSurfaceData extends SurfaceData {
             if (cm.getColorSpace().getType() == ColorSpace.TYPE_GRAY &&
                 cm instanceof ComponentColorModel) {
                 return SurfaceType.ByteGray;
-            } else if (cm instanceof IndexColorModel &&
-                       isOpaqueGray((IndexColorModel)cm)) {
+            } else if (cm instanceof IndexColorModel icm && isOpaqueGray(icm)) {
                 return SurfaceType.Index8Gray;
             } else {
                 return SurfaceType.ByteIndexedOpaque;
@@ -260,8 +257,7 @@ public class GDIWindowSurfaceData extends SurfaceData {
         default:
             depth = cm.getPixelSize();
         }
-        if (cm instanceof DirectColorModel) {
-            DirectColorModel dcm = (DirectColorModel)cm;
+        if (cm instanceof DirectColorModel dcm) {
             rMask = dcm.getRedMask();
             gMask = dcm.getGreenMask();
             bMask = dcm.getBlueMask();

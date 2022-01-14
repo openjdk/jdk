@@ -108,9 +108,9 @@ public class AquaImageFactory {
     private static final int kAlertIconSize = 64;
     static IconUIResource getAppIconCompositedOn(final Image background) {
 
-        if (background instanceof MultiResolutionCachedImage) {
+        if (background instanceof MultiResolutionCachedImage mrci) {
             int width = background.getWidth(null);
-            Image mrIconImage = ((MultiResolutionCachedImage) background).map(
+            Image mrIconImage = mrci.map(
                     rv -> getAppIconImageCompositedOn(rv, rv.getWidth(null) / width));
             return new IconUIResource(new ImageIcon(mrIconImage));
         }
@@ -136,9 +136,9 @@ public class AquaImageFactory {
         final Graphics g = image.getGraphics();
         g.drawImage(background, 0, 0,
                 scaledAlertIconSize, scaledAlertIconSize, null);
-        if (g instanceof Graphics2D) {
+        if (g instanceof Graphics2D g2d) {
             // improves icon rendering quality in Quartz
-            ((Graphics2D) g).setRenderingHint(RenderingHints.KEY_RENDERING,
+            g2d.setRenderingHint(RenderingHints.KEY_RENDERING,
                     RenderingHints.VALUE_RENDER_QUALITY);
         }
 

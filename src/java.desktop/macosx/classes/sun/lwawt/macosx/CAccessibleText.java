@@ -295,35 +295,36 @@ class CAccessibleText {
 
     @SuppressWarnings("deprecation")
     static int[] getVisibleCharacterRange(final Accessible a) {
-        final Accessible sa = CAccessible.getSwingAccessible(a);
-        if (!(sa instanceof JTextComponent)) return null;
+        if (CAccessible.getSwingAccessible(a) instanceof JTextComponent jc) {
+            final Rectangle rect = jc.getVisibleRect();
+            final Point topLeft = new Point(rect.x, rect.y);
+            final Point topRight = new Point(rect.x + rect.width, rect.y);
+            final Point bottomLeft = new Point(rect.x, rect.y + rect.height);
+            final Point bottomRight = new Point(rect.x + rect.width, rect.y + rect.height);
 
-        final JTextComponent jc = (JTextComponent) sa;
-        final Rectangle rect = jc.getVisibleRect();
-        final Point topLeft = new Point(rect.x, rect.y);
-        final Point topRight = new Point(rect.x + rect.width, rect.y);
-        final Point bottomLeft = new Point(rect.x, rect.y + rect.height);
-        final Point bottomRight = new Point(rect.x + rect.width, rect.y + rect.height);
+            int start = Math.min(jc.viewToModel(topLeft), jc.viewToModel(topRight));
+            int end = Math.max(jc.viewToModel(bottomLeft), jc.viewToModel(bottomRight));
+            if (start < 0) start = 0;
+            if (end < 0) end = 0;
 
-        int start = Math.min(jc.viewToModel(topLeft), jc.viewToModel(topRight));
-        int end = Math.max(jc.viewToModel(bottomLeft), jc.viewToModel(bottomRight));
-        if (start < 0) start = 0;
-        if (end < 0) end = 0;
-        return new int[] { start, end };
+            return new int[]{start, end};
+        } else {
+            return null;
+        }
     }
 
     static int getLineNumberForIndex(final Accessible a, int index) {
-        final Accessible sa = CAccessible.getSwingAccessible(a);
-        if (!(sa instanceof JTextComponent)) return -1;
+        if (CAccessible.getSwingAccessible(a) instanceof JTextComponent jc) {
+            final Element root = jc.getDocument().getDefaultRootElement();
 
-        final JTextComponent jc = (JTextComponent) sa;
-        final Element root = jc.getDocument().getDefaultRootElement();
+            // treat -1 special, returns the current caret position
+            if (index == -1) index = jc.getCaretPosition();
 
-        // treat -1 special, returns the current caret position
-        if (index == -1) index = jc.getCaretPosition();
-
-        // Determine line number (can be -1)
-        return root.getElementIndex(index);
+            // Determine line number (can be -1)
+            return root.getElementIndex(index);
+        } else {
+            return -1;
+        }
     }
 
     static int getLineNumberForInsertionPoint(final Accessible a) {
@@ -331,14 +332,11 @@ class CAccessibleText {
     }
 
     static int[] getRangeForLine(final Accessible a, final int lineIndex) {
-        Accessible sa = CAccessible.getSwingAccessible(a);
-        if (!(sa instanceof JTextComponent)) return null;
-
-        final JTextComponent jc = (JTextComponent) sa;
-        final Element root = jc.getDocument().getDefaultRootElement();
-        final Element line = root.getElement(lineIndex);
-        if (line == null) return null;
-
-        return new int[] { line.getStartOffset(), line.getEndOffset() };
+        if (CAccessible.getSwingAccessible(a) instanceof JTextComponent jc) {
+            Element line = jc.getDocument().getDefaultRootElement().getElement(lineIndex);
+            return line == null ? null : new int[]{line.getStartOffset(), line.getEndOffset()};
+        } else {
+            return null;
+        }
     }
 }
