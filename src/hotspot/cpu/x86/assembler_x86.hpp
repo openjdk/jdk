@@ -1156,10 +1156,12 @@ private:
   void cvttsd2sil(Register dst, XMMRegister src);
   void cvttsd2siq(Register dst, Address src);
   void cvttsd2siq(Register dst, XMMRegister src);
+  void cvtsd2siq(Register dst, XMMRegister src);
 
   // Convert with Truncation Scalar Single-Precision Floating-Point Value to Doubleword Integer
   void cvttss2sil(Register dst, XMMRegister src);
   void cvttss2siq(Register dst, XMMRegister src);
+  void cvtss2sil(Register dst, XMMRegister src);
 
   // Convert vector double to int
   void cvttpd2dq(XMMRegister dst, XMMRegister src);
@@ -1170,6 +1172,7 @@ private:
 
   // Convert vector float and int
   void vcvttps2dq(XMMRegister dst, XMMRegister src, int vector_len);
+  void vcvtps2dq(XMMRegister dst, XMMRegister src, int vector_len);
 
   // Convert vector long to vector FP
   void evcvtqq2ps(XMMRegister dst, XMMRegister src, int vector_len);
@@ -1177,6 +1180,7 @@ private:
 
   // Convert vector double to long
   void evcvttpd2qq(XMMRegister dst, XMMRegister src, int vector_len);
+  void evcvtpd2qq(XMMRegister dst, XMMRegister src, int vector_len);
 
   // Evex casts with truncation
   void evpmovwb(XMMRegister dst, XMMRegister src, int vector_len);

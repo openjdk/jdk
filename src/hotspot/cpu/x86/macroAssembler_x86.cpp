@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -8884,9 +8884,13 @@ void MacroAssembler::generate_fill_avx3(BasicType type, Register to, Register va
 
 
 #ifdef _LP64
-void MacroAssembler::convert_f2i(Register dst, XMMRegister src) {
+void MacroAssembler::convert_f2i(Register dst, XMMRegister src, bool roundF) {
   Label done;
-  cvttss2sil(dst, src);
+  if (roundF) {
+    cvtss2sil(dst, src);
+  } else {
+    cvttss2sil(dst, src);
+  }
   // Conversion instructions do not match JLS for overflow, underflow and NaN -> fixup in stub
   cmpl(dst, 0x80000000); // float_sign_flip
   jccb(Assembler::notEqual, done);
@@ -8922,9 +8926,13 @@ void MacroAssembler::convert_f2l(Register dst, XMMRegister src) {
   bind(done);
 }
 
-void MacroAssembler::convert_d2l(Register dst, XMMRegister src) {
+void MacroAssembler::convert_d2l(Register dst, XMMRegister src, bool roundD) {
   Label done;
-  cvttsd2siq(dst, src);
+  if (roundD) {
+    cvtsd2siq(dst, src);
+  } else {
+    cvttsd2siq(dst, src);
+  }
   cmp64(dst, ExternalAddress((address) StubRoutines::x86::double_sign_flip()));
   jccb(Assembler::notEqual, done);
   subptr(rsp, 8);

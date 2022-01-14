@@ -4083,9 +4083,13 @@ void C2_MacroAssembler::masked_op(int ideal_opc, int mask_len, KRegister dst,
 
 void C2_MacroAssembler::vector_castD2L_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
                                             KRegister ktmp1, KRegister ktmp2, AddressLiteral double_sign_flip,
-                                            Register scratch, int vec_enc) {
+                                            Register scratch, int vec_enc, bool roundD) {
   Label done;
-  evcvttpd2qq(dst, src, vec_enc);
+  if (roundD) {
+    evcvtpd2qq(dst, src, vec_enc);
+  } else {
+    evcvttpd2qq(dst, src, vec_enc);
+  }
   evmovdqul(xtmp1, k0, double_sign_flip, false, vec_enc, scratch);
   evpcmpeqq(ktmp1, xtmp1, dst, vec_enc);
   kortestwl(ktmp1, ktmp1);
@@ -4104,9 +4108,14 @@ void C2_MacroAssembler::vector_castD2L_evex(XMMRegister dst, XMMRegister src, XM
 
 void C2_MacroAssembler::vector_castF2I_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
                                            XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4,
-                                           AddressLiteral float_sign_flip, Register scratch, int vec_enc) {
+                                           AddressLiteral float_sign_flip, Register scratch, int vec_enc,
+                                           bool roundF) {
   Label done;
-  vcvttps2dq(dst, src, vec_enc);
+  if (roundF) {
+    vcvtps2dq(dst, src, vec_enc);
+  } else {
+    vcvttps2dq(dst, src, vec_enc);
+  }
   vmovdqu(xtmp1, float_sign_flip, scratch, vec_enc);
   vpcmpeqd(xtmp2, dst, xtmp1, vec_enc);
   vptest(xtmp2, xtmp2, vec_enc);
@@ -4133,9 +4142,13 @@ void C2_MacroAssembler::vector_castF2I_avx(XMMRegister dst, XMMRegister src, XMM
 
 void C2_MacroAssembler::vector_castF2I_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
                                             KRegister ktmp1, KRegister ktmp2, AddressLiteral float_sign_flip,
-                                            Register scratch, int vec_enc) {
+                                            Register scratch, int vec_enc, bool roundF) {
   Label done;
-  vcvttps2dq(dst, src, vec_enc);
+  if (roundF) {
+    vcvtps2dq(dst, src, vec_enc);
+  } else {
+    vcvttps2dq(dst, src, vec_enc);
+  }
   evmovdqul(xtmp1, k0, float_sign_flip, false, vec_enc, scratch);
   Assembler::evpcmpeqd(ktmp1, k0, xtmp1, dst, vec_enc);
   kortestwl(ktmp1, ktmp1);

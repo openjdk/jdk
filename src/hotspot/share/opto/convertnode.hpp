@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,14 @@ class ConvD2LNode : public Node {
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
+class RoundDNode : public Node {
+  public:
+  RoundDNode( Node *dbl ) : Node(0,dbl) {}
+  virtual int Opcode() const;
+  virtual const Type *bottom_type() const { return TypeLong::LONG; }
+  virtual uint ideal_reg() const { return Op_RegL; }
+};
+
 //------------------------------ConvF2DNode------------------------------------
 // Convert Float to a Double.
 class ConvF2DNode : public Node {
@@ -104,6 +112,7 @@ class ConvF2INode : public Node {
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual uint  ideal_reg() const { return Op_RegI; }
 };
+
 
 //------------------------------ConvF2LNode------------------------------------
 // Convert float to long
@@ -139,6 +148,14 @@ class ConvI2FNode : public Node {
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
   virtual uint  ideal_reg() const { return Op_RegF; }
+};
+
+class RoundFNode : public Node {
+  public:
+  RoundFNode( Node *in1 ) : Node(0,in1) {}
+  virtual int Opcode() const;
+  virtual const Type *bottom_type() const { return TypeInt::INT; }
+  virtual uint  ideal_reg() const { return Op_RegI; }
 };
 
 //------------------------------ConvI2LNode------------------------------------

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -10659,13 +10659,15 @@ instruct convD2F_reg_mem(regF dst, memory src)
 %}
 
 // XXX do mem variants
-instruct convF2I_reg_reg(rRegI dst, regF src, rFlagsReg cr)
+instruct round_or_convF2I_reg_reg(rRegI dst, regF src, rFlagsReg cr)
 %{
   match(Set dst (ConvF2I src));
+  match(Set dst (RoundF src));
   effect(KILL cr);
-  format %{ "convert_f2i $dst,$src" %}
+  format %{ "round_or_convert_f2i $dst,$src" %}
   ins_encode %{
-    __ convert_f2i($dst$$Register, $src$$XMMRegister);
+  bool is_rounding = this->ideal_Opcode() == Op_RoundF ? true : false;
+    __ convert_f2i($dst$$Register, $src$$XMMRegister, is_rounding);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -10692,13 +10694,15 @@ instruct convD2I_reg_reg(rRegI dst, regD src, rFlagsReg cr)
   ins_pipe(pipe_slow);
 %}
 
-instruct convD2L_reg_reg(rRegL dst, regD src, rFlagsReg cr)
+instruct round_or_convD2L_reg_reg(rRegL dst, regD src, rFlagsReg cr)
 %{
   match(Set dst (ConvD2L src));
+  match(Set dst (RoundD src));
   effect(KILL cr);
-  format %{ "convert_d2l $dst,$src"%}
+  format %{ "round_or_convert_d2l $dst,$src"%}
   ins_encode %{
-    __ convert_d2l($dst$$Register, $src$$XMMRegister);
+  bool is_rounding = this->ideal_Opcode() == Op_RoundD ? true : false;
+    __ convert_d2l($dst$$Register, $src$$XMMRegister, is_rounding);
   %}
   ins_pipe(pipe_slow);
 %}

@@ -52,6 +52,7 @@ public class TestFloatVect {
 
   static int test() {
     float[] a0 = new float[ARRLEN];
+    int[] i0 = new int[ARRLEN];
     float[] a1 = new float[ARRLEN];
     float[] a2 = new float[ARRLEN];
     float[] a3 = new float[ARRLEN];
@@ -88,7 +89,9 @@ public class TestFloatVect {
       test_diva(a0, a1, a3);
       test_negc(a0, a1);
       test_sqrt(a0, a1);
+      test_round(i0, a1);
     }
+
     // Test and verify results
     System.out.println("Verification");
     int errn = 0;
@@ -353,6 +356,17 @@ public class TestFloatVect {
         errn += verify("test_negc: ", i, a0[i], (float)(-((float)(ADD_INIT+i))));
       }
 
+      test_round(i0, a1);
+      errn += verify("test_round: ", 0, i0[0], 0);
+      errn += verify("test_round: ", 1, i0[1], Integer.MAX_VALUE);
+      errn += verify("test_round: ", 2, i0[2], Integer.MIN_VALUE);
+      errn += verify("test_round: ", 3, i0[3], Integer.MAX_VALUE);
+      errn += verify("test_round: ", 4, i0[4], 0);
+      errn += verify("test_round: ", 5, i0[5], 0);
+      for (int i=6; i<ARRLEN; i++) {
+        errn += verify("test_round: ", i, i0[i], Math.round(((float)(ADD_INIT+i))));
+      }
+
       // Overwrite with +0.0/-0.0 values
       a1[6] = (float)0.0;
       a1[7] = (float)-0.0;
@@ -512,6 +526,12 @@ public class TestFloatVect {
     end = System.currentTimeMillis();
     System.out.println("test_sqrt_n: " + (end - start));
 
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_round(i0, a1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_round_n: " + (end - start));
     return errn;
   }
 
@@ -607,6 +627,20 @@ public class TestFloatVect {
     for (int i = 0; i < a0.length; i+=1) {
       a0[i] = (float)(Math.sqrt((double)a1[i]));
     }
+  }
+
+  static void test_round(int[] a0, float[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = Math.round(a1[i]);
+    }
+  }
+
+  static int verify(String text, int i, int elem, int val) {
+    if (elem != val) {
+      System.err.println(text + "[" + i + "] = " + elem + " != " + val);
+      return 1;
+    }
+    return 0;
   }
 
   static int verify(String text, int i, float elem, float val) {
