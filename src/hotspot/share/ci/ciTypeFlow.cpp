@@ -2451,8 +2451,8 @@ void ciTypeFlow::PreorderLoops::next() {
 }
 
 // If the tail is a branch to the head, retrieve how many times that path was taken from profiling
-static int profiled_count(ciMethod* m, ciTypeFlow::Loop* loop) {
-  ciMethodData* methodData = m->method_data();
+int ciTypeFlow::profiled_count(ciTypeFlow::Loop* loop) {
+  ciMethodData* methodData = method()->method_data();
   if (!methodData->is_mature()) {
     return 0;
   }
@@ -2468,7 +2468,7 @@ static int profiled_count(ciMethod* m, ciTypeFlow::Loop* loop) {
     return 0;
   }
 
-  ciBytecodeStream iter(m);
+  ciBytecodeStream iter(method());
   iter.reset_to_bci(tail->control());
 
   bool is_an_if = false;
@@ -2505,19 +2505,42 @@ static int profiled_count(ciMethod* m, ciTypeFlow::Loop* loop) {
   if (!is_an_if) {
     assert((iter.get_dest() == loop->head()->start()) == (succs->at(ciTypeFlow::GOTO_TARGET) == loop->head()), "branch should lead to loop head");
     if (succs->at(ciTypeFlow::GOTO_TARGET) == loop->head()) {
-      return m->scale_count(data->as_JumpData()->taken());
+      return method()->scale_count(data->as_JumpData()->taken());
     }
   } else {
     assert((iter.get_dest() == loop->head()->start()) == (succs->at(ciTypeFlow::IF_TAKEN) == loop->head()), "bytecode and CFG not consistent");
     assert((succs->at(ciTypeFlow::IF_NOT_TAKEN) == loop->head()) == (tail->limit() == loop->head()->start()), "bytecode and CFG not consistent");
     if (succs->at(ciTypeFlow::IF_TAKEN) == loop->head()) {
-      return m->scale_count(data->as_JumpData()->taken());
+      return method()->scale_count(data->as_JumpData()->taken());
     } else if (succs->at(ciTypeFlow::IF_NOT_TAKEN) == loop->head()) {
-      return m->scale_count(data->as_BranchData()->not_taken());
+      return method()->scale_count(data->as_BranchData()->not_taken());
     }
   }
 
   return 0;
+}
+
+bool ciTypeFlow::Loop::insertion_point(Loop* lp, Loop* current) {
+  int lp_pre_order = lp->head()->pre_order();
+  if (current->head()->pre_order() < lp_pre_order) {
+    return true;
+  } else if (current->head()->pre_order() > lp_pre_order) {
+    return false;
+  }
+  // In the case of a shared head, make the most frequent head/tail (as reported by profiling) the inner loop
+  if (current->head() == lp->head()) {
+    int lp_count = outer()->profiled_count(lp);
+    int current_count = outer()->profiled_count(current);
+    if (current_count < lp_count) {
+      return true;
+    } else if (current_count > lp_count) {
+      return false;
+    }
+  }
+  if (current->tail()->pre_order() > lp->tail()->pre_order()) {
+    return true;
+  }
+  return false;
 }
 
 // ------------------------------------------------------------------
@@ -2529,28 +2552,18 @@ static int profiled_count(ciMethod* m, ciTypeFlow::Loop* loop) {
 // Sort is (looking from leaf towards the root)
 //  descending on primary key: loop head's pre_order, and
 //  ascending  on secondary key: loop tail's pre_order.
-ciTypeFlow::Loop* ciTypeFlow::Loop::sorted_merge(Loop* lp, ciMethod* method) {
+ciTypeFlow::Loop* ciTypeFlow::Loop::sorted_merge(Loop* lp) {
   Loop* leaf = this;
   Loop* prev = NULL;
   Loop* current = leaf;
   while (lp != NULL) {
     int lp_pre_order = lp->head()->pre_order();
-    int lp_count = profiled_count(method, lp);
     // Find insertion point for "lp"
     while (current != NULL) {
       if (current == lp) {
         return leaf; // Already in list
       }
-      if (current->head()->pre_order() < lp_pre_order) {
-        break;
-      }
-      int current_count = profiled_count(method, current);
-      // In the case of a shared head, make the most frequent head/tail (as reported by profiling) the inner loop
-      if (current->head() == lp->head() && current_count < lp_count) {
-        break;
-      } else if (current->head()->pre_order() == lp_pre_order &&
-                 (current->head() != lp->head() || current_count == lp_count) &&
-                 current->tail()->pre_order() > lp->tail()->pre_order()) {
+      if (insertion_point(lp, current)) {
         break;
       }
       prev = current;
@@ -2624,7 +2637,7 @@ void ciTypeFlow::build_loop_tree(Block* blk) {
     }
 
     // Merge loop tree branch for all successors.
-    innermost = innermost == NULL ? lp : innermost->sorted_merge(lp, method());
+    innermost = innermost == NULL ? lp : innermost->sorted_merge(lp);
 
   } // end loop
 

@@ -717,6 +717,9 @@ public:
     bool   _irreducible;
     LocalSet _def_locals;
 
+    ciTypeFlow* outer() const { return head()->outer(); }
+    bool insertion_point(Loop* lp, Loop* current);
+
   public:
     Loop(Block* head, Block* tail) :
       _parent(NULL), _sibling(NULL), _child(NULL),
@@ -746,7 +749,7 @@ public:
 
     // Merge the branch lp into this branch, sorting on the loop head
     // pre_orders. Returns the new branch.
-    Loop* sorted_merge(Loop* lp, ciMethod* method);
+    Loop* sorted_merge(Loop* lp);
 
     // Mark non-single entry to loop
     void set_irreducible(Block* entry) {
@@ -912,6 +915,8 @@ private:
 
   // Create the block map, which indexes blocks in pre_order.
   void map_blocks();
+
+  int profiled_count(ciTypeFlow::Loop* loop);
 
 public:
   // Perform type inference flow analysis.
