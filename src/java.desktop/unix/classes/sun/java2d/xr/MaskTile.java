@@ -25,6 +25,9 @@
 
 package sun.java2d.xr;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Represents a single tile, used to store the rectangles covering the area
  * of the mask where the tile is located.
@@ -32,23 +35,13 @@ package sun.java2d.xr;
  * @author Clemens Eisserer
  */
 public class MaskTile {
-    GrowableRectArray rects;
-    DirtyRegion dirtyArea;
 
-    public MaskTile()
-    {
-        rects = new GrowableRectArray(128);
-        dirtyArea = new DirtyRegion();
-    }
+    List<Rect> rects = new ArrayList<>();
+    DirtyRegion dirtyArea = new DirtyRegion();
 
-    public void calculateDirtyAreas()
-    {
-        for (int i=0; i < rects.getSize(); i++) {
-            int x = rects.getX(i);
-            int y = rects.getY(i);
-            dirtyArea.growDirtyRegion(x, y,
-                                      x + rects.getWidth(i),
-                                      y + rects.getHeight(i));
+    public void calculateDirtyAreas() {
+        for (Rect rect : rects) {
+            dirtyArea.growDirtyRegion(rect.x(), rect.y(), rect.x() + rect.width(), rect.y() + rect.height());
         }
     }
 
@@ -58,13 +51,13 @@ public class MaskTile {
     }
 
     public void translate(int x, int y) {
-        if (rects.getSize() > 0) {
+        if (rects.size() > 0) {
             dirtyArea.translate(x, y);
         }
-        rects.translateRects(x, y);
+        Rect.move(rects, x, y);
     }
 
-    public GrowableRectArray getRects() {
+    public List<Rect> getRects() {
         return rects;
     }
 

@@ -119,8 +119,8 @@ public class XRBackendNative implements XRBackend {
                                                int x1, int y1, int x2, int y2,
                                                Region clip, boolean isGC);
 
-    public void GCRectangles(int drawable, long gc, GrowableRectArray rects) {
-        GCRectanglesNative(drawable, gc, rects.getArray(), rects.getSize());
+    public void GCRectangles(int drawable, long gc, List<Rect> rects) {
+        GCRectanglesNative(drawable, gc, Rect.collect(rects), rects.size());
     }
 
     public int createPicture(int drawable, int formatID) {
@@ -212,13 +212,11 @@ public class XRBackendNative implements XRBackend {
         }
     }
 
-    public void renderRectangles(int dst, byte op, XRColor color,
-                                 GrowableRectArray rects) {
+    public void renderRectangles(int dst, byte op, XRColor color, List<Rect> rects) {
         XRenderRectanglesNative(dst, op,
                                 (short) color.red, (short) color.green,
                                 (short) color.blue, (short) color.alpha,
-                                rects.getArray(), rects
-                .getSize());
+                                Rect.collect(rects), rects.size());
     }
 
     private static long[] getGlyphInfoPtrs(List<XRGlyphCacheEntry> cacheEntries) {
@@ -265,12 +263,12 @@ public class XRBackendNative implements XRBackend {
     public void XRenderCompositeText(byte op, int src, int dst,
                                      int maskFormatID,
                                      int sx, int sy, int dx, int dy,
-                                     int glyphset, GrowableEltArray elts) {
+                                     int glyphset, List<Elt> elts) {
 
-        GrowableIntArray glyphs = elts.getGlyphs();
-        XRenderCompositeTextNative(op, src, dst, sx, sy, 0, elts.getArray(),
-                                   glyphs.getArray(), elts.getSize(),
-                                   glyphs.getSize());
+        int[] glyphs = new int[8]; // ???
+        XRenderCompositeTextNative(op, src, dst, sx, sy, 0, Elt.collect(elts),
+                                   glyphs, elts.size(),
+                                   glyphs.length);
     }
 
     public void putMaskImage(int drawable, long gc, byte[] imageData,

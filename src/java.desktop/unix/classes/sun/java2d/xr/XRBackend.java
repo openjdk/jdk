@@ -62,7 +62,7 @@ public interface XRBackend {
 
     public void setGCClipRectangles(long gc, Region clip);
 
-    public void GCRectangles(int drawable, long gc, GrowableRectArray rects);
+    public void GCRectangles(int drawable, long gc, List<Rect> rects);
 
     public void setClipRectangles(int picture, Region clip);
 
@@ -79,8 +79,7 @@ public interface XRBackend {
     public void renderRectangle(int dst, byte op, XRColor color,
                                 int x, int y, int width, int height);
 
-    public void renderRectangles(int dst, byte op, XRColor color,
-                                 GrowableRectArray rects);
+    public void renderRectangles(int dst, byte op, XRColor color, List<Rect> rects);
 
     public void renderComposite(byte op, int src, int mask, int dst,
                                 int srcX, int srcY, int maskX, int maskY,
@@ -97,7 +96,7 @@ public interface XRBackend {
     public void XRenderCompositeText(byte op, int src, int dst,
                                      int maskFormatID,
                                      int xSrc, int ySrc, int xDst, int yDst,
-                                     int glyphset, GrowableEltArray elts);
+                                     int glyphset, List<Elt> elts);
 
     public int createRadialGradient(float centerX, float centerY,
                                     float innerRadius, float outerRadius,

@@ -27,6 +27,7 @@ package sun.java2d.xr;
 
 import java.awt.*;
 import java.util.*;
+import java.util.List;
 
 /**
  * We render non-antialiased geometry (consisting of rectangles) into a mask,
@@ -160,7 +161,7 @@ public class MaskTileManager {
                                        boolean maskRequired,
                                        int tileStartX, int tileStartY,
                                        XRColor maskColor) {
-        if (tile.rects.getSize() > 0) {
+        if (tile.rects.size() > 0) {
             DirtyRegion tileDirtyArea = tile.getDirtyArea();
 
             int x = tileDirtyArea.x + tileStartX + dirtyArea.x;
@@ -170,7 +171,7 @@ public class MaskTileManager {
             width = Math.min(width, MASK_SIZE);
             height = Math.min(height, MASK_SIZE);
 
-            int rectCnt = tile.rects.getSize();
+            int rectCnt = tile.rects.size();
 
             if (maskRequired) {
                 int mask = XRUtils.None;
@@ -203,8 +204,8 @@ public class MaskTileManager {
 
                 tile.reset();
             } else if (rectCnt > 0) {
-                tile.rects.translateRects(tileStartX + dirtyArea.x,
-                                          tileStartY + dirtyArea.y);
+                Rect.move(tile.rects, tileStartX + dirtyArea.x,
+                        tileStartY + dirtyArea.y);
                 xrMgr.XRRenderRectangles(dst, tile.rects);
             }
         }
@@ -237,16 +238,17 @@ public class MaskTileManager {
      * Tiles the stored rectangles, if they are larger than the MASK_SIZE
      */
     protected void tileRects() {
-        GrowableRectArray rects = mainTile.rects;
+        List<Rect> rects = mainTile.rects;
 
-        for (int i = 0; i < rects.getSize(); i++) {
-            int tileXStartIndex = rects.getX(i) / MASK_SIZE;
-            int tileYStartIndex = rects.getY(i) / MASK_SIZE;
+        for (int i = 0; i < rects.size(); i++) {
+            Rect rect = rects.get(i);
+            int tileXStartIndex = rect.x() / MASK_SIZE;
+            int tileYStartIndex = rect.y() / MASK_SIZE;
             int tileXLength =
-                ((rects.getX(i) + rects.getWidth(i)) / MASK_SIZE + 1) -
+                ((rect.x() + rect.width()) / MASK_SIZE + 1) -
                  tileXStartIndex;
             int tileYLength =
-                 ((rects.getY(i) + rects.getHeight(i)) / MASK_SIZE + 1) -
+                 ((rect.y() + rect.height()) / MASK_SIZE + 1) -
                  tileYStartIndex;
 
             for (int n = 0; n < tileYLength; n++) {
@@ -254,28 +256,18 @@ public class MaskTileManager {
 
                     int tileIndex =
                          xTiles * (tileYStartIndex + n) + tileXStartIndex + m;
-                    MaskTile tile = tileList.get(tileIndex);
-
-                    GrowableRectArray rectTileList = tile.getRects();
-                    int tileArrayIndex = rectTileList.getNextIndex();
 
                     int tileStartPosX = (tileXStartIndex + m) * MASK_SIZE;
                     int tileStartPosY = (tileYStartIndex + n) * MASK_SIZE;
 
-                    rectTileList.setX(tileArrayIndex, rects.getX(i) - tileStartPosX);
-                    rectTileList.setY(tileArrayIndex, rects.getY(i) - tileStartPosY);
-                    rectTileList.setWidth(tileArrayIndex, rects.getWidth(i));
-                    rectTileList.setHeight(tileArrayIndex, rects.getHeight(i));
+                    Rect newerRect = limitRectCoords(rect.x() - tileStartPosX, rect.y() - tileStartPosY, rect.width(), rect.height());
+                    rects.add(newerRect);
 
-                    limitRectCoords(rectTileList, tileArrayIndex);
-
-                    tile.getDirtyArea().growDirtyRegion
-                       (rectTileList.getX(tileArrayIndex),
-                        rectTileList.getY(tileArrayIndex),
-                        rectTileList.getWidth(tileArrayIndex) +
-                             rectTileList.getX(tileArrayIndex),
-                        rectTileList.getHeight(tileArrayIndex) +
-                            rectTileList.getY(tileArrayIndex));
+                    tileList.get(tileIndex)
+                            .getDirtyArea()
+                            .growDirtyRegion(newerRect.x(), newerRect.y(),
+                                    newerRect.width() + newerRect.x(),
+                                    newerRect.height() + newerRect.y());
                 }
             }
         }
@@ -285,21 +277,23 @@ public class MaskTileManager {
      * Limits the rect's coordinates to the mask coordinates. The result is used
      * by growDirtyRegion.
      */
-    private void limitRectCoords(GrowableRectArray rects, int index) {
-        if ((rects.getX(index) + rects.getWidth(index)) > MASK_SIZE) {
-            rects.setWidth(index, MASK_SIZE - rects.getX(index));
+    private Rect limitRectCoords(int x, int y, int width, int height) {
+        if (x + width > MASK_SIZE) {
+            width = MASK_SIZE - x;
         }
-        if ((rects.getY(index) + rects.getHeight(index)) > MASK_SIZE) {
-            rects.setHeight(index, MASK_SIZE - rects.getY(index));
+        if (y + height > MASK_SIZE) {
+            height = MASK_SIZE - y;
         }
-        if (rects.getX(index) < 0) {
-            rects.setWidth(index, rects.getWidth(index) + rects.getX(index));
-            rects.setX(index, 0);
+        if (x < 0) {
+            width += x;
+            x = 0;
         }
-        if (rects.getY(index) < 0) {
-            rects.setHeight(index, rects.getHeight(index) + rects.getY(index));
-            rects.setY(index, 0);
+        if (y < 0) {
+            height += y;
+            y = 0;
         }
+
+        return new Rect(x, y, width, height);
     }
 
     /**

@@ -32,6 +32,8 @@
  */
 package sun.java2d.xr;
 
+import java.util.List;
+
 public class XRDrawLine {
     static final int BIG_MAX = ((1 << 29) - 1);
     static final int BIG_MIN = (-(1 << 29));
@@ -46,7 +48,7 @@ public class XRDrawLine {
 
     DirtyRegion region = new DirtyRegion();
 
-    protected void rasterizeLine(GrowableRectArray rectBuffer, int _x1,
+    protected void rasterizeLine(List<Rect> rectBuffer, int _x1,
             int _y1, int _x2, int _y2, int cxmin, int cymin, int cxmax,
             int cymax, boolean clip, boolean overflowCheck) {
         float diagF;
@@ -79,8 +81,7 @@ public class XRDrawLine {
         if (xDiff == 0 || yDiff == 0) {
             // horizontal / diagonal lines can be represented by a single
             // rectangle
-            rectBuffer.pushRectValues(region.x, region.y, region.x2 - region.x
-                    + 1, region.y2 - region.y + 1);
+            rectBuffer.add(new Rect(region.x, region.y, region.x2 - region.x + 1, region.y2 - region.y + 1));
             return;
         }
 
@@ -140,13 +141,13 @@ public class XRDrawLine {
         }
     }
 
-    private void lineToPoints(GrowableRectArray rectBuffer, int steps,
+    private void lineToPoints(List<Rect> rectBuffer, int steps,
             int error, int errmajor, int errminor, int xStep, int yStep,
             int orthogonalXStep, int orthogonalYStep) {
         int x = x1, y = y1;
 
         do {
-            rectBuffer.pushRectValues(x, y, 1, 1);
+            rectBuffer.add(new Rect(x, y, 1, 1));
 
             // "Traditional" Bresenham line drawing
             if (error < 0) {
@@ -161,7 +162,7 @@ public class XRDrawLine {
         } while (--steps > 0);
     }
 
-    private void lineToRects(GrowableRectArray rectBuffer, int steps,
+    private void lineToRects(List<Rect> rectBuffer, int steps,
             int error, int errmajor, int errminor, int xStep, int yStep,
             int orthogonalXStep, int orthogonalYStep) {
         int x = x1, y = y1;
@@ -190,7 +191,7 @@ public class XRDrawLine {
                 // iff it was "real" (= not initialized before the first
                 // iteration)
                 if (rectX != Integer.MIN_VALUE) {
-                    rectBuffer.pushRectValues(rectX, rectY, rectW, rectH);
+                    rectBuffer.add(new Rect(rectX, rectY, rectW, rectH));
                 }
                 rectX = x;
                 rectY = y;
@@ -211,7 +212,7 @@ public class XRDrawLine {
 
         // Add last rectangle which isn't handled by the combination-code
         // anymore
-        rectBuffer.pushRectValues(rectX, rectY, rectW, rectH);
+        rectBuffer.add(new Rect(rectX, rectY, rectW, rectH));
     }
 
     private boolean clipCoordinates(int cxmin, int cymin, int cxmax, int cymax,

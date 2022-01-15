@@ -32,6 +32,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.List;
 
 import sun.awt.image.PixelConverter;
 import sun.font.XRTextRenderer;
@@ -259,29 +260,25 @@ public class XRCompositeManager {
                 maskX, maskY, dstX, dstY, width, height);
     }
 
-    public void XRRenderRectangles(XRSurfaceData dst, GrowableRectArray rects) {
+    public void XRRenderRectangles(XRSurfaceData dst, List<Rect> rects) {
         if (xorEnabled) {
             con.GCRectangles(dst.getXid(), dst.getGC(), rects);
         } else {
-            if (rects.getSize() == 1) {
+            if (rects.size() == 1) {
+                Rect zero = rects.get(0);
                 con.renderRectangle(dst.getPicture(), compRule, solidColor,
-                        rects.getX(0), rects.getY(0), rects.getWidth(0), rects.getHeight(0));
+                        zero.x(), zero.y(), zero.width(), zero.height());
             } else {
                 con.renderRectangles(dst.getPicture(), compRule, solidColor, rects);
             }
         }
     }
 
-    public void XRCompositeRectangles(XRSurfaceData dst, GrowableRectArray rects) {
-        int srcPict = getCurrentSource().picture;
-
-        for(int i=0; i < rects.getSize(); i++) {
-            int x = rects.getX(i);
-            int y = rects.getY(i);
-            int width = rects.getWidth(i);
-            int height = rects.getHeight(i);
-
-            con.renderComposite(compRule, srcPict, XRUtils.None, dst.picture, x, y, 0, 0, x, y, width, height);
+    public void XRCompositeRectangles(XRSurfaceData dst, List<Rect> rects) {
+        for (Rect rect : rects) {
+            con.renderComposite(compRule, getCurrentSource().picture, XRUtils.None, dst.picture,
+                    rect.x(), rect.y(), 0, 0,
+                    rect.x(), rect.y(), rect.width(), rect.height());
         }
     }
 
@@ -305,7 +302,7 @@ public class XRCompositeManager {
     }
 
     public void compositeText(XRSurfaceData dst, int sx, int sy, int glyphSet,
-            int maskFormat, GrowableEltArray elts) {
+            int maskFormat, List<Elt> elts) {
         /*
          * Try to emulate the SRC blend mode with SRC_OVER.
          * We bail out during pipe validation for cases where this is not possible.

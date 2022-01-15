@@ -30,6 +30,9 @@ import sun.java2d.SunGraphics2D;
 import sun.java2d.pipe.GlyphListPipe;
 import sun.java2d.xr.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * A delegate pipe of SG2D for drawing any text to a XRender surface
  *
@@ -45,13 +48,12 @@ public class XRTextRenderer extends GlyphListPipe {
     XRCompositeManager maskBuffer;
     XRBackend backend;
 
-    GrowableEltArray eltList;
+    List<Elt> eltList = new ArrayList<>();
 
     public XRTextRenderer(XRCompositeManager buffer) {
         glyphCache = new XRGlyphCache(buffer);
         maskBuffer = buffer;
         backend = buffer.getBackend();
-        eltList = new GrowableEltArray(64);
     }
 
     protected void drawGlyphList(SunGraphics2D sg2d, GlyphList gl) {
@@ -92,7 +94,7 @@ public class XRTextRenderer extends GlyphListPipe {
                     continue;
                 }
 
-                eltList.getGlyphs().addInt(cacheEntry.getGlyphID());
+                eltList.add(new Elt(cacheEntry.getGlyphID(), 0, 0, 0));
                 int glyphSet = cacheEntry.getGlyphSet();
 
                 containsLCDGlyphs |= (glyphSet == glyphCache.lcdGlyphSet);
@@ -103,12 +105,7 @@ public class XRTextRenderer extends GlyphListPipe {
                         || cacheEntry.getYAdvance() != ((float) cacheEntry.getYOff())
                         || glyphSet != activeGlyphSet
                         || eltIndex < 0
-                        || eltList.getCharCnt(eltIndex) == MAX_ELT_GLYPH_COUNT) {
-
-                    eltIndex = eltList.getNextIndex();
-                    eltList.setCharCnt(eltIndex, 1);
-                    activeGlyphSet = glyphSet;
-                    eltList.setGlyphSet(eltIndex, glyphSet);
+                        || eltList.get(eltIndex).charCnt() == MAX_ELT_GLYPH_COUNT) {
 
                     if (gl.usePositions()) {
                         // In this case advX only stores rounding errors
@@ -138,14 +135,17 @@ public class XRTextRenderer extends GlyphListPipe {
 
                     // Offset of the current glyph is the difference
                     // to the last glyph and this one
-                    eltList.setXOff(eltIndex, (posX - oldPosX));
-                    eltList.setYOff(eltIndex, (posY - oldPosY));
+                    eltList.add(eltIndex, new Elt(1, posX - oldPosX, posY - oldPosY, glyphSet));
+
+                    eltIndex = eltList.size();
+                    activeGlyphSet = glyphSet;
 
                     oldPosX = posX;
                     oldPosY = posY;
 
                 } else {
-                    eltList.setCharCnt(eltIndex, eltList.getCharCnt(eltIndex) + 1);
+                    Elt elt = eltList.get(eltIndex);
+                    eltList.set(eltIndex, new Elt(elt.charCnt() + 1, elt.xOff(), elt.yOff(), elt.glyphSet()));
                 }
             }
 
