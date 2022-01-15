@@ -2255,6 +2255,9 @@ public final class Main {
                 out.println(mf);
                 dumpCert(cert, out);
             } else if (debug) {
+                for (var attr : keyStore.getEntry(alias, null).getAttributes()) {
+                    System.out.println("Attribute " + attr.getName() + ": " + attr.getValue());
+                }
                 out.println(cert.toString());
             } else {
                 out.println("trustedCertEntry, ");
