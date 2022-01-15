@@ -962,7 +962,7 @@ Node* XorLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (op1 == Op_AddL && phase->type(in2) == TypeLong::MINUS_1 &&
       in1->in(2)->Opcode() == Op_ConL) {
     jlong c = phase->type(in1->in(2))->isa_long()->get_con();
-    Node* neg_c_minus_one = phase->longcon(java_add(-c, -1L));
+    Node* neg_c_minus_one = phase->longcon(java_add(-c, (jlong)-1));
     return new SubLNode(neg_c_minus_one, in1->in(1));
   }
   return AddNode::Ideal(phase, can_reshape);
