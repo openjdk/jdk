@@ -426,7 +426,7 @@ final class DCmdStart extends AbstractDCmd {
             StringBuilder sb = new StringBuilder();
             for (SafePath s : SecuritySupport.getPredefinedJFCFiles()) {
                 String name = JFC.nameFromPath(s.toPath());
-                JFCModel model = new JFCModel(s, l -> {});
+                JFCModel model = JFCModel.create(s, l -> {});
                 sb.append('\n');
                 sb.append("Options for ").append(name).append(":\n");
                 sb.append('\n');
