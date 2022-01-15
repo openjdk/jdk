@@ -829,14 +829,8 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
                 dstMinVal[i] = cs.getMinValue(i);
                 dstDiffMinMax[i] = (cs.getMaxValue(i) - dstMinVal[i]) / maxNum;
             }
-            float[] dstColor;
-            if (dstHasAlpha) {
-                int size = ((dstNumComp + 1) > 3) ? (dstNumComp + 1) : 3;
-                dstColor = new float[size];
-            } else {
-                int size = (dstNumComp  > 3) ? dstNumComp : 3;
-                dstColor = new float[size];
-            }
+            int size = Math.max(dstNumComp + (dstHasAlpha ? 1 : 0), 3);
+            float[] dstColor = new float[size];
             short[] srcLine = new short[w * iccSrcNumComp];
             short[] dstLine = new short[w * iccDstNumComp];
             Object pixel;

@@ -126,8 +126,7 @@ final class ColorModelHSL extends ColorModel {
      * @return the smaller of {@code red}, {@code green} and {@code blue}
      */
     static float min(float red, float green, float blue) {
-        float min = (red < green) ? red : green;
-        return (min < blue) ? min : blue;
+        return Math.min(Math.min(red, green), blue);
     }
 
     /**
@@ -139,8 +138,7 @@ final class ColorModelHSL extends ColorModel {
      * @return the larger of {@code red}, {@code green} and {@code blue}
      */
     static float max(float red, float green, float blue) {
-        float max = (red > green) ? red : green;
-        return (max > blue) ? max : blue;
+        return Math.max(Math.max(red, green), blue);
     }
 
     /**

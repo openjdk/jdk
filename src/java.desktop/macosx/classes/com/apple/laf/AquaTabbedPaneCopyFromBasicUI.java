@@ -1933,8 +1933,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
     }
 
     protected int getPreviousTabIndex(final int base) {
-        final int tabIndex = (base - 1 >= 0 ? base - 1 : tabPane.getTabCount() - 1);
-        return (tabIndex >= 0 ? tabIndex : 0);
+        return Math.max(base - 1 >= 0 ? base - 1 : tabPane.getTabCount() - 1, 0);
     }
 
     protected int getNextTabIndex(final int base) {
@@ -1966,8 +1965,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
     }
 
     protected int getPreviousTabRun(final int baseRun) {
-        final int runIndex = (baseRun - 1 >= 0 ? baseRun - 1 : runCount - 1);
-        return (runIndex >= 0 ? runIndex : 0);
+        return Math.max(baseRun - 1 >= 0 ? baseRun - 1 : runCount - 1, 0);
     }
 
     protected int getNextTabRun(final int baseRun) {

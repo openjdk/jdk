@@ -1801,7 +1801,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
                     // try to centre the printable area.
                     pax = (wid - paw)/2f;
                 } else {
-                    pax = (lmVal >= paxMax) ? lmVal : paxMax;
+                    pax = Math.max(lmVal, paxMax);
                     paw = wid - pax - rmVal;
                 }
                 if (tmVal + bmVal > hgt) {
@@ -1810,7 +1810,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
                     }
                     pay = (hgt - pah)/2f;
                 } else {
-                    pay = (tmVal >= payMax) ? tmVal : payMax;
+                    pay = Math.max(tmVal, payMax);
                     pah = hgt - pay - bmVal;
                 }
             }

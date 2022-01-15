@@ -209,7 +209,7 @@ public class TextField extends TextComponent {
      */
     public TextField(String text, int columns) throws HeadlessException {
         super(replaceEOL(text));
-        this.columns = (columns >= 0) ? columns : 0;
+        this.columns = Math.max(columns, 0);
     }
 
     /**

@@ -623,8 +623,7 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
         int prefWidth = PREF_SIZE.width;
         Dimension d = c.getLayout().preferredLayoutSize(c);
         if (d != null) {
-            return new Dimension(d.width < prefWidth ? prefWidth : d.width,
-                                 d.height < PREF_SIZE.height ? PREF_SIZE.height : d.height);
+            return new Dimension(Math.max(d.width, prefWidth), Math.max(d.height, PREF_SIZE.height));
         } else {
             return new Dimension(prefWidth, PREF_SIZE.height);
         }

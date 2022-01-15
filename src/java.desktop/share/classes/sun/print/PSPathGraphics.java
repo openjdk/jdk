@@ -489,13 +489,13 @@ class PSPathGraphics extends PathGraphics {
                     int h = (int)region.getHeight();
                     int nbytes = w * h * 3;
                     int maxBytes = 8 * 1024 * 1024;
-                    double origDpi = (devResX < devResY) ? devResX : devResY;
+                    double origDpi = Math.min(devResX, devResY);
                     int dpi = (int)origDpi;
                     double scaleFactor = 1;
 
                     double maxSFX = w/(double)boundsWidth;
                     double maxSFY = h/(double)boundsHeight;
-                    double maxSF = (maxSFX > maxSFY) ? maxSFY : maxSFX;
+                    double maxSF = Math.min(maxSFX, maxSFY);
                     int minDpi = (int)(dpi/maxSF);
                     if (minDpi < DEFAULT_USER_RES) minDpi = DEFAULT_USER_RES;
 

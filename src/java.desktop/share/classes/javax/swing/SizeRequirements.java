@@ -153,7 +153,7 @@ public class SizeRequirements implements Serializable {
         minimum = min;
         preferred = pref;
         maximum = max;
-        alignment = a > 1.0f ? 1.0f : a < 0.0f ? 0.0f : a;
+        alignment = Math.min(Math.max(a, 0.0f), 1.0f);
     }
 
     /**
@@ -231,7 +231,7 @@ public class SizeRequirements implements Serializable {
         float alignment = 0.0f;
         if (min > 0) {
             alignment = (float) totalAscent.minimum / min;
-            alignment = alignment > 1.0f ? 1.0f : alignment < 0.0f ? 0.0f : alignment;
+            alignment = Math.min(Math.max(alignment, 0.0f), 1.0f);
         }
         return new SizeRequirements(min, pref, max, alignment);
     }

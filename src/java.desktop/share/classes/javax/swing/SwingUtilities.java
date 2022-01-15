@@ -545,10 +545,10 @@ public class SwingUtilities implements SwingConstants
      * @return <code>dest</code>, modified to specify the intersection
      */
     public static Rectangle computeIntersection(int x,int y,int width,int height,Rectangle dest) {
-        int x1 = (x > dest.x) ? x : dest.x;
-        int x2 = ((x+width) < (dest.x + dest.width)) ? (x+width) : (dest.x + dest.width);
-        int y1 = (y > dest.y) ? y : dest.y;
-        int y2 = ((y + height) < (dest.y + dest.height) ? (y+height) : (dest.y + dest.height));
+        int x1 = Math.max(x, dest.x);
+        int x2 = Math.min(x + width, dest.x + dest.width);
+        int y1 = Math.max(y, dest.y);
+        int y2 = Math.min(y + height, dest.y + dest.height);
 
         dest.x = x1;
         dest.y = y1;
@@ -576,10 +576,10 @@ public class SwingUtilities implements SwingConstants
      * @return the <code>dest</code> <code>Rectangle</code>
      */
     public static Rectangle computeUnion(int x,int y,int width,int height,Rectangle dest) {
-        int x1 = (x < dest.x) ? x : dest.x;
-        int x2 = ((x+width) > (dest.x + dest.width)) ? (x+width) : (dest.x + dest.width);
-        int y1 = (y < dest.y) ? y : dest.y;
-        int y2 = ((y+height) > (dest.y + dest.height)) ? (y+height) : (dest.y + dest.height);
+        int x1 = Math.min(x, dest.x);
+        int x2 = Math.max(x + width, dest.x + dest.width);
+        int y1 = Math.min(y, dest.y);
+        int y2 = Math.max(y + height, dest.y + dest.height);
 
         dest.x = x1;
         dest.y = y1;
@@ -2084,7 +2084,7 @@ public class SwingUtilities implements SwingConstants
         } else if(lci == -1) {
             return uci;
         } else {
-            return (lci < uci) ? lci : uci;
+            return Math.min(lci, uci);
         }
     }
 

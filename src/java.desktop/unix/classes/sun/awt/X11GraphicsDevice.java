@@ -553,7 +553,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
                 return (int) debugScale;
             }
             int nativeScale = getNativeScale();
-            return nativeScale >= 1 ? nativeScale : 1;
+            return Math.max(nativeScale, 1);
         }
 
         return 1;

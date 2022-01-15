@@ -624,10 +624,10 @@ public final class Region {
         if (isInsideXYXY(lox, loy, hix, hiy)) {
             return this;
         }
-        Region ret = new Region((lox < this.lox) ? this.lox : lox,
-                                (loy < this.loy) ? this.loy : loy,
-                                (hix > this.hix) ? this.hix : hix,
-                                (hiy > this.hiy) ? this.hiy : hiy);
+        Region ret = new Region(Math.max(lox, this.lox),
+                Math.max(loy, this.loy),
+                Math.min(hix, this.hix),
+                Math.min(hiy, this.hiy));
         if (bands != null) {
             ret.appendSpans(this.getSpanIterator());
         }
@@ -653,10 +653,10 @@ public final class Region {
         if (r.isInsideQuickCheck(this)) {
             return r;
         }
-        Region ret = new Region((r.lox < this.lox) ? this.lox : r.lox,
-                                (r.loy < this.loy) ? this.loy : r.loy,
-                                (r.hix > this.hix) ? this.hix : r.hix,
-                                (r.hiy > this.hiy) ? this.hiy : r.hiy);
+        Region ret = new Region(Math.max(r.lox, this.lox),
+                Math.max(r.loy, this.loy),
+                Math.min(r.hix, this.hix),
+                Math.min(r.hiy, this.hiy));
         if (!ret.isEmpty()) {
             ret.filterSpans(this, r, INCLUDE_COMMON);
         }
@@ -682,10 +682,10 @@ public final class Region {
         if (this.isEmpty() || this.isInsideQuickCheck(r)) {
             return r;
         }
-        Region ret = new Region((r.lox > this.lox) ? this.lox : r.lox,
-                                (r.loy > this.loy) ? this.loy : r.loy,
-                                (r.hix < this.hix) ? this.hix : r.hix,
-                                (r.hiy < this.hiy) ? this.hiy : r.hiy);
+        Region ret = new Region(Math.min(r.lox, this.lox),
+                Math.min(r.loy, this.loy),
+                Math.max(r.hix, this.hix),
+                Math.max(r.hiy, this.hiy));
         ret.filterSpans(this, r, INCLUDE_A | INCLUDE_B | INCLUDE_COMMON);
         return ret;
     }
@@ -733,10 +733,10 @@ public final class Region {
         if (this.isEmpty()) {
             return r;
         }
-        Region ret = new Region((r.lox > this.lox) ? this.lox : r.lox,
-                                (r.loy > this.loy) ? this.loy : r.loy,
-                                (r.hix < this.hix) ? this.hix : r.hix,
-                                (r.hiy < this.hiy) ? this.hiy : r.hiy);
+        Region ret = new Region(Math.min(r.lox, this.lox),
+                Math.min(r.loy, this.loy),
+                Math.max(r.hix, this.hix),
+                Math.max(r.hiy, this.hiy));
         ret.filterSpans(this, r, INCLUDE_A | INCLUDE_B);
         return ret;
     }
@@ -930,10 +930,10 @@ public final class Region {
         {
             return this;
         }
-        return new Region((lox < this.lox) ? this.lox : lox,
-                          (loy < this.loy) ? this.loy : loy,
-                          (hix > this.hix) ? this.hix : hix,
-                          (hiy > this.hiy) ? this.hiy : hiy);
+        return new Region(Math.max(lox, this.lox),
+                Math.max(loy, this.loy),
+                Math.min(hix, this.hix),
+                Math.min(hiy, this.hiy));
     }
 
     /**
@@ -951,10 +951,10 @@ public final class Region {
         if (r.encompasses(this)) {
             return this;
         }
-        return new Region((r.lox < this.lox) ? this.lox : r.lox,
-                          (r.loy < this.loy) ? this.loy : r.loy,
-                          (r.hix > this.hix) ? this.hix : r.hix,
-                          (r.hiy > this.hiy) ? this.hiy : r.hiy);
+        return new Region(Math.max(r.lox, this.lox),
+                Math.max(r.loy, this.loy),
+                Math.min(r.hix, this.hix),
+                Math.min(r.hiy, this.hiy));
     }
 
     /**

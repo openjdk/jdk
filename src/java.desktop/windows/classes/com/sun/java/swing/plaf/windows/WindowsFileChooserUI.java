@@ -682,7 +682,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
         int prefWidth = PREF_SIZE.width;
         Dimension d = c.getLayout().preferredLayoutSize(c);
         if (d != null) {
-            return new Dimension(d.width < prefWidth ? prefWidth : d.width,
+            return new Dimension(Math.max(d.width, prefWidth),
                                  d.height < PREF_SIZE.height ? PREF_SIZE.height : d.height);
         } else {
             return new Dimension(prefWidth, PREF_SIZE.height);

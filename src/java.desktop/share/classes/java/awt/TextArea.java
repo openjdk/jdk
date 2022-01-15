@@ -260,8 +260,8 @@ public class TextArea extends TextComponent {
         throws HeadlessException {
         super(text);
 
-        this.rows = (rows >= 0) ? rows : 0;
-        this.columns = (columns >= 0) ? columns : 0;
+        this.rows = Math.max(rows, 0);
+        this.columns = Math.max(columns, 0);
 
         if (scrollbars >= SCROLLBARS_BOTH && scrollbars <= SCROLLBARS_NONE) {
             this.scrollbarVisibility = scrollbars;

@@ -258,7 +258,7 @@ public class XRUtils {
     }
 
     public static int clampToUShort(int x) {
-        return (x > 65535 ? 65535 : (x < 0) ? 0 : x);
+        return Math.min(Math.max(x, 0), 65535);
     }
 
     public static boolean isDoubleInShortRange(double dbl) {

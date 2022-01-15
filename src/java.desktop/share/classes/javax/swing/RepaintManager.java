@@ -1098,10 +1098,8 @@ public class RepaintManager
                             getDefaultScreenDevice().getDefaultConfiguration();
         }
         Dimension maxSize = getDoubleBufferMaximumSize();
-        int width = proposedWidth < 1 ? 1 :
-            (proposedWidth > maxSize.width? maxSize.width : proposedWidth);
-        int height = proposedHeight < 1 ? 1 :
-            (proposedHeight > maxSize.height? maxSize.height : proposedHeight);
+        int width = Math.max(Math.min(proposedWidth, maxSize.width), 1);
+        int height = Math.max(Math.min(proposedHeight, maxSize.height), 1);
         VolatileImage image = volatileMap.get(config);
         if (image == null || image.getWidth() < width ||
                              image.getHeight() < height) {
@@ -1134,10 +1132,8 @@ public class RepaintManager
         }
         doubleBuffer = standardDoubleBuffer;
 
-        width = proposedWidth < 1? 1 :
-                  (proposedWidth > maxSize.width? maxSize.width : proposedWidth);
-        height = proposedHeight < 1? 1 :
-                  (proposedHeight > maxSize.height? maxSize.height : proposedHeight);
+        width = Math.max(Math.min(proposedWidth, maxSize.width), 1);
+        height = Math.max(Math.min(proposedHeight, maxSize.height), 1);
 
         if (doubleBuffer.needsReset || (doubleBuffer.image != null &&
                                         (doubleBuffer.size.width < width ||

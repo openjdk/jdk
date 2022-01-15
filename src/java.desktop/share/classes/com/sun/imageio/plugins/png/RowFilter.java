@@ -27,10 +27,6 @@ package com.sun.imageio.plugins.png;
 
 public class RowFilter {
 
-    private static final int abs(int x) {
-        return (x < 0) ? -x : x;
-    }
-
     // Returns the sum of absolute differences
     protected static int subFilter(byte[] currRow,
                                    byte[] subFilteredRow,
@@ -43,7 +39,7 @@ public class RowFilter {
             int difference = curr - left;
             subFilteredRow[i] = (byte)difference;
 
-            badness += abs(difference);
+            badness += Math.abs(difference);
         }
 
         return badness;
@@ -62,7 +58,7 @@ public class RowFilter {
             int difference = curr - up;
             upFilteredRow[i] = (byte)difference;
 
-            badness += abs(difference);
+            badness += Math.abs(difference);
         }
 
         return badness;
@@ -70,9 +66,9 @@ public class RowFilter {
 
     protected final int paethPredictor(int a, int b, int c) {
         int p = a + b - c;
-        int pa = abs(p - a);
-        int pb = abs(p - b);
-        int pc = abs(p - c);
+        int pa = Math.abs(p - a);
+        int pb = Math.abs(p - b);
+        int pc = Math.abs(p - c);
 
         if ((pa <= pb) && (pa <= pc)) {
             return a;
@@ -146,7 +142,7 @@ public class RowFilter {
                 int difference = curr - (left + up)/2;;
                 averageFilteredRow[i] = (byte)difference;
 
-                badness += abs(difference);
+                badness += Math.abs(difference);
             }
 
             filterBadness[3] = badness;
@@ -165,7 +161,7 @@ public class RowFilter {
                 int difference = curr - predictor;
                 paethFilteredRow[i] = (byte)difference;
 
-                badness += abs(difference);
+                badness += Math.abs(difference);
             }
 
             filterBadness[4] = badness;

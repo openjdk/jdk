@@ -127,13 +127,9 @@ class MotifColorUtilities {
                 + (XmGREEN_LUMINOSITY * (float) green)
                 + (XmBLUE_LUMINOSITY * (float) blue));
 
-        maxprimary = ( (red > green) ?
-                ( (red > blue) ? red : blue ) :
-                ( (green > blue) ? green : blue ) );
+        maxprimary = Math.max(Math.max(red, green), blue);
 
-        minprimary = ( (red < green) ?
-                ( (red < blue) ? red : blue ) :
-                ( (green < blue) ? green : blue ) );
+        minprimary = Math.min(Math.min(red, green), blue);
 
         light = (minprimary + maxprimary) / 2;
 

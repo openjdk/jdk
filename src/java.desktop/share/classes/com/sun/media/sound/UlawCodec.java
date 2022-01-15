@@ -348,7 +348,7 @@ public final class UlawCodec extends FormatConversionProvider {
                 int readCount = 0;
                 int currentPos = off;
                 int readLeft = len*2;
-                int readLen = ( (readLeft>tempBufferSize) ? tempBufferSize : readLeft );
+                int readLen = Math.min(readLeft, tempBufferSize);
 
                 while ((readCount = super.read(tempBuffer,0,readLen))>0) {
                     for(i = 0; i < readCount; i+=2) {
@@ -382,7 +382,7 @@ public final class UlawCodec extends FormatConversionProvider {
                     }
                     /* And update pointers and counters for next iteration */
                     readLeft -= readCount;
-                    readLen = ( (readLeft>tempBufferSize) ? tempBufferSize : readLeft );
+                    readLen = Math.min(readLeft, tempBufferSize);
                 }
                 if( currentPos==off && readCount<0 ) {  // EOF or error on read
                     return readCount;

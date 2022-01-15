@@ -431,7 +431,7 @@ abstract class TexturePaintContext implements PaintContext {
                     if (bWidth >= 32) {
                         int i = w;
                         while (i > 0) {
-                            int copyw = (i < x) ? i : x;
+                            int copyw = Math.min(i, x);
                             System.arraycopy(inData, in - x,
                                              outData, out - i,
                                              copyw);
@@ -567,7 +567,7 @@ abstract class TexturePaintContext implements PaintContext {
                     if (bWidth >= 32) {
                         int i = w;
                         while (i > 0) {
-                            int copyw = (i < x) ? i : x;
+                            int copyw = Math.min(i, x);
                             System.arraycopy(inData, in - x,
                                              outData, out - i,
                                              copyw);

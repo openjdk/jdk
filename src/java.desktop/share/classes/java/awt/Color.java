@@ -911,9 +911,9 @@ public class Color implements Paint, java.io.Serializable {
         if (hsbvals == null) {
             hsbvals = new float[3];
         }
-        int cmax = (r > g) ? r : g;
+        int cmax = Math.max(r, g);
         if (b > cmax) cmax = b;
-        int cmin = (r < g) ? r : g;
+        int cmin = Math.min(r, g);
         if (b < cmin) cmin = b;
 
         brightness = ((float) cmax) / 255.0f;

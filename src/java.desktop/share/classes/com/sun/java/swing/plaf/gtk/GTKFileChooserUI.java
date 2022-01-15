@@ -1112,8 +1112,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
         }
         Dimension d = c.getLayout().preferredLayoutSize(c);
         if (d != null) {
-            return new Dimension(d.width < prefSize.width ? prefSize.width : d.width,
-                                 d.height < prefSize.height ? prefSize.height : d.height);
+            return new Dimension(Math.max(d.width, prefSize.width), Math.max(d.height, prefSize.height));
         } else {
             return prefSize;
         }

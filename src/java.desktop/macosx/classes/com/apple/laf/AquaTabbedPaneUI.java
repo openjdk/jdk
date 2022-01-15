@@ -308,7 +308,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
         final FontMetrics metrics = g.getFontMetrics(font);
 
         // our scrolling tabs
-        layoutLabel(tabPlacement, metrics, tabIndex < 0 ? 0 : tabIndex, title, icon, fContentRect, iconRect, textRect, false); // Never give it "isSelected" - ApprMgr handles this
+        layoutLabel(tabPlacement, metrics, Math.max(tabIndex, 0), title, icon, fContentRect, iconRect, textRect, false); // Never give it "isSelected" - ApprMgr handles this
         if (isVertical) {
             transposeRect(fContentRect);
             transposeRect(iconRect);

@@ -415,7 +415,7 @@ final class ListHelper implements XScrollbarClient {
     }
 
     private int getNumItemsDisplayed() {
-        return items.size() > maxVisItems ? maxVisItems : items.size();
+        return Math.min(items.size(), maxVisItems);
     }
 
     @Override

@@ -426,7 +426,7 @@ public class AquaMenuPainter {
 
             if (uci == -1) index = lci;
             else if (lci == -1) index = uci;
-            else index = (lci < uci) ? lci : uci;
+            else index = Math.min(lci, uci);
         }
 
         SwingUtilities2.drawStringUnderlineCharAt(c, g, text, index, x, y);

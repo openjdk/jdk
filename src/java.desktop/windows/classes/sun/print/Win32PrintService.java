@@ -1196,7 +1196,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
             int yRes = defYRes;
             int xRes = defQuality;
             if ((xRes < 0) || (yRes < 0)) {
-                int res = (yRes > xRes) ? yRes : xRes;
+                int res = Math.max(yRes, xRes);
                 if (res > 0) {
                  return new PrinterResolution(res, res, PrinterResolution.DPI);
                 }

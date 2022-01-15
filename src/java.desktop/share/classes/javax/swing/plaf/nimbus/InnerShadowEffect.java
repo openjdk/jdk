@@ -106,7 +106,7 @@ class InnerShadowEffect extends ShadowEffect {
         float spread = Math.min(1 / (1 - (0.01f * this.spread)), 255);
         for (int i = 0; i < tmpBuf1.length; i++) {
             int val = (int) (((int) tmpBuf1[i] & 0xFF) * spread);
-            tmpBuf1[i] = (val > 255) ? (byte) 0xFF : (byte) val;
+            tmpBuf1[i] = (byte) Math.min(val, 0xFF);
         }
         // create color image with shadow color and greyscale image as alpha
         if (dst == null) dst = new BufferedImage(w, h,

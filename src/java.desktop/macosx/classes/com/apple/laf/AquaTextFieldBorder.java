@@ -108,7 +108,7 @@ public class AquaTextFieldBorder extends AquaBorder {
         final Dimension size = ui.getPreferredSize(jc);
         if (size == null) return 0;
         final int shrinkage = size.height - height;
-        return (shrinkage < 0) ? 0 : (shrinkage > 3) ? 3 : shrinkage;
+        return Math.max(Math.min(shrinkage, 3), 0);
     }
 
     // this determines the rect that we should draw inset to our existing bounds

@@ -1986,7 +1986,7 @@ public abstract class JComponent extends Container implements Serializable,
     }
 
     private float validateAlignment(float alignment) {
-        return alignment > 1.0f ? 1.0f : alignment < 0.0f ? 0.0f : alignment;
+        return Math.min(Math.max(alignment, 0.0f), 1.0f);
     }
 
     /**

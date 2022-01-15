@@ -290,18 +290,18 @@ abstract class TIFFFaxCompressor extends TIFFCompressor {
         } else {                // look for "1"
             if ((testbyte = (data[next] & (0xff >>> extra))) != 0) {
                 bitOffset = (next-base)*8 + byteTable[testbyte];
-                return ((bitOffset < maxOffset) ? bitOffset : maxOffset);
+                return Math.min(bitOffset, maxOffset);
             }
             while (next < end) {
                 if ((testbyte = data[++next]&0xff) != 0) {
                     // "1" is in current byte
                     bitOffset = (next-base)*8 + byteTable[testbyte];
-                    return ((bitOffset < maxOffset) ? bitOffset : maxOffset);
+                    return Math.min(bitOffset, maxOffset);
                 }
             }
         }
         bitOffset = (next-base)*8 + byteTable[testbyte];
-        return ((bitOffset < maxOffset) ? bitOffset : maxOffset);
+        return Math.min(bitOffset, maxOffset);
     }
 
     /**

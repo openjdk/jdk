@@ -741,7 +741,7 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      */
     @Deprecated
     public synchronized void setLineIncrement(int v) {
-        int tmp = (v < 1) ? 1 : v;
+        int tmp = Math.max(v, 1);
 
         if (lineIncrement == tmp) {
             return;
@@ -815,7 +815,7 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      */
     @Deprecated
     public synchronized void setPageIncrement(int v) {
-        int tmp = (v < 1) ? 1 : v;
+        int tmp = Math.max(v, 1);
 
         if (pageIncrement == tmp) {
             return;

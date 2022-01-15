@@ -1729,8 +1729,7 @@ public class BasicComboBoxUI extends ComboBoxUI {
             }
 
             if (key == PAGE_UP) {
-                int index = selectedIndex - listHeight;
-                return (index < 0 ? 0: index);
+                return Math.max(selectedIndex - listHeight, 0);
             }
             else if (key == PAGE_DOWN) {
                 int index = selectedIndex + listHeight;

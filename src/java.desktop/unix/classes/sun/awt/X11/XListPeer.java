@@ -429,7 +429,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
         // This is currently worked-around with origVSGVal.
         origVSBVal = vsb.getValue();
         vis = itemsInWindow(false);
-        maximum = items.size() < vis ? vis : items.size();
+        maximum = Math.max(items.size(), vis);
         vsb.setValues(vsb.getValue(), vis, vsb.getMinimum(), maximum);
         vsbVis = vsbWasVisible = vsbIsVisible(false);
         listHeight = height;
@@ -437,7 +437,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
         // now see if we need a horizontal scrollbar
         listWidth = getListWidth();
         vis = listWidth - ((2 * SPACE) + (2 * MARGIN));
-        maximum = maxLength < vis ? vis : maxLength;
+        maximum = Math.max(maxLength, vis);
         hsb.setValues(hsb.getValue(), vis, hsb.getMinimum(), maximum);
         hsbVis = hsbIsVisible(vsbVis);
 
@@ -446,7 +446,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
             // vertical s crollbar
             listHeight = height - SCROLLBAR_AREA;
             vis = itemsInWindow(true);
-            maximum = items.size() < vis ? vis : items.size();
+            maximum = Math.max(items.size(), vis);
             vsb.setValues(origVSBVal, vis, vsb.getMinimum(), maximum);
             vsbVis = vsbIsVisible(true);
         }

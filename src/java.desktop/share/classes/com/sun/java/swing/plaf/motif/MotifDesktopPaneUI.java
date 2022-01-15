@@ -211,8 +211,8 @@ public class MotifDesktopPaneUI extends javax.swing.plaf.basic.BasicDesktopPaneU
             int w = iconWidth;
             int h = iconHeight;
             c.repaint(x, y, w, h);
-            x = x < 0 ? 0 : x;
-            y = y < 0 ? 0 : y;
+            x = Math.max(x, 0);
+            y = Math.max(y, 0);
 
             /* Fix for disappearing icons. If the y value is maxy then this
              * algorithm would place the icon in a non-displayed cell.  Never

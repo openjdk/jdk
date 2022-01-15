@@ -3476,8 +3476,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
                     y = 0;
                 }
 
-                int pwidth = (width > this.width) ? this.width : width;
-                int pheight = (height > this.height) ? this.height : height;
+                int pwidth = Math.min(width, this.width);
+                int pheight = Math.min(height, this.height);
 
                 if (pwidth <= 0 || pheight <= 0) {
                     return;

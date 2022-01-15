@@ -283,7 +283,7 @@ public class BasicGraphicsUtils
                 index = uci;
             }
             else {
-                index = (lci < uci) ? lci : uci;
+                index = Math.min(lci, uci);
             }
         }
         drawStringUnderlineCharAt(g, text, index, x, y);

@@ -676,8 +676,8 @@ public abstract class XBaseMenuWindow extends XWindow {
         //Fix for 6267162: PIT: Popup Menu gets hidden below the screen when opened
         //near the periphery of the screen, XToolkit
         //Window should be moved if it's outside top-left screen bounds
-        int x = (itemBounds.x > screenBounds.x) ? itemBounds.x : screenBounds.x;
-        int y = (itemBounds.y + itemBounds.height > screenBounds.y) ? itemBounds.y + itemBounds.height : screenBounds.y;
+        int x = Math.max(itemBounds.x, screenBounds.x);
+        int y = Math.max(itemBounds.y + itemBounds.height, screenBounds.y);
         if (y + height <= screenBounds.y + screenBounds.height) {
             //move it to the left if needed
             if (width > screenBounds.width) {
@@ -705,7 +705,7 @@ public abstract class XBaseMenuWindow extends XWindow {
         //Fix for 6267162: PIT: Popup Menu gets hidden below the screen when opened
         //near the periphery of the screen, XToolkit
         //Window should be moved if it's outside bottom-left screen bounds
-        int x = (itemBounds.x > screenBounds.x) ? itemBounds.x : screenBounds.x;
+        int x = Math.max(itemBounds.x, screenBounds.x);
         int y = (itemBounds.y > screenBounds.y + screenBounds.height) ? screenBounds.y + screenBounds.height - height : itemBounds.y - height;
         if (y >= screenBounds.y) {
             //move it to the left if needed
@@ -734,8 +734,8 @@ public abstract class XBaseMenuWindow extends XWindow {
         //Fix for 6267162: PIT: Popup Menu gets hidden below the screen when opened
         //near the periphery of the screen, XToolkit
         //Window should be moved if it's outside top-left screen bounds
-        int x = (itemBounds.x + itemBounds.width > screenBounds.x) ? itemBounds.x + itemBounds.width : screenBounds.x;
-        int y = (itemBounds.y > screenBounds.y) ? itemBounds.y : screenBounds.y;
+        int x = Math.max(itemBounds.x + itemBounds.width, screenBounds.x);
+        int y = Math.max(itemBounds.y, screenBounds.y);
         if (x + width <= screenBounds.x + screenBounds.width) {
             //move it to the top if needed
             if (height > screenBounds.height) {
@@ -764,7 +764,7 @@ public abstract class XBaseMenuWindow extends XWindow {
         //near the periphery of the screen, XToolkit
         //Window should be moved if it's outside top-right screen bounds
         int x = (itemBounds.x < screenBounds.x + screenBounds.width) ? itemBounds.x - width : screenBounds.x + screenBounds.width - width;
-        int y = (itemBounds.y > screenBounds.y) ? itemBounds.y : screenBounds.y;
+        int y = Math.max(itemBounds.y, screenBounds.y);
         if (x >= screenBounds.x) {
             //move it to the top if needed
             if (height > screenBounds.height) {
@@ -787,8 +787,8 @@ public abstract class XBaseMenuWindow extends XWindow {
      * @param screenBounds size of screen
      */
     Rectangle fitWindowToScreen(Dimension windowSize, Rectangle screenBounds) {
-        int width = (windowSize.width < screenBounds.width) ? windowSize.width : screenBounds.width;
-        int height = (windowSize.height < screenBounds.height) ? windowSize.height : screenBounds.height;
+        int width = Math.min(windowSize.width, screenBounds.width);
+        int height = Math.min(windowSize.height, screenBounds.height);
         return new Rectangle(screenBounds.x, screenBounds.y, width, height);
     }
 

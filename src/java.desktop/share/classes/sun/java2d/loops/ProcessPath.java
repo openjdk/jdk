@@ -1751,8 +1751,8 @@ public class ProcessPath {
             if (plgPnts.size() == 0) {
                 plgYMin = plgYMax = y;
             } else {
-                plgYMin = (plgYMin > y)?y:plgYMin;
-                plgYMax = (plgYMax < y)?y:plgYMax;
+                plgYMin = Math.min(plgYMin, y);
+                plgYMax = Math.max(plgYMax, y);
             }
 
             plgPnts.add(new Point(x, y, lastPoint));

@@ -2481,7 +2481,7 @@ public class Font implements java.io.Serializable
                                     FontRenderContext frc) {
         FontLineMetrics flm = defaultLineMetrics(frc);
         int numChars = limit - beginIndex;
-        flm.numchars = (numChars < 0)? 0: numChars;
+        flm.numchars = Math.max(numChars, 0);
         return flm;
     }
 
@@ -2500,7 +2500,7 @@ public class Font implements java.io.Serializable
                                     FontRenderContext frc) {
         FontLineMetrics flm = defaultLineMetrics(frc);
         int numChars = limit - beginIndex;
-        flm.numchars = (numChars < 0)? 0: numChars;
+        flm.numchars = Math.max(numChars, 0);
         return flm;
     }
 
@@ -2519,7 +2519,7 @@ public class Font implements java.io.Serializable
                                     FontRenderContext frc) {
         FontLineMetrics flm = defaultLineMetrics(frc);
         int numChars = limit - beginIndex;
-        flm.numchars = (numChars < 0)? 0: numChars;
+        flm.numchars = Math.max(numChars, 0);
         return flm;
     }
 

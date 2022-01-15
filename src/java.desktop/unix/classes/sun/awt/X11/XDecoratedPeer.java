@@ -152,8 +152,8 @@ abstract class XDecoratedPeer extends XWindowPeer {
                              getX(), getY(), minWidth, minHeight);
                 if (isVisible()) {
                     Rectangle bounds = getShellBounds();
-                    int nw = (bounds.width < minWidth) ? minWidth : bounds.width;
-                    int nh = (bounds.height < minHeight) ? minHeight : bounds.height;
+                    int nw = Math.max(bounds.width, minWidth);
+                    int nh = Math.max(bounds.height, minHeight);
                     if (nw != bounds.width || nh != bounds.height) {
                         setShellSize(new Rectangle(0, 0, nw, nh));
                     }

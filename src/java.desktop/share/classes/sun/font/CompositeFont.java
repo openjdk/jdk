@@ -77,7 +77,7 @@ public final class CompositeFont extends Font2D {
          * using this composite as a backup for a physical font.
          * So we want to leave space for the two additional slots.
          */
-         numSlots = (numSlots <= 254) ? numSlots : 254;
+         numSlots = Math.min(numSlots, 254);
 
         /* Only the first "numMetricsSlots" slots are used for font metrics.
          * the rest are considered "fallback" slots".

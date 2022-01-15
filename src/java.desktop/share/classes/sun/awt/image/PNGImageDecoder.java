@@ -181,7 +181,7 @@ public class PNGImageDecoder extends ImageDecoder
                         int alen = len;
                         if(red_map!=null) alen = red_map.length;
                         alpha_map = new byte[alen];
-                        System.arraycopy(buf,st,alpha_map,0,len<alen ? len : alen);
+                        System.arraycopy(buf,st,alpha_map,0, Math.min(len, alen));
                         while (--alen>=len) alpha_map[alen] = (byte)0xFF;
                         break;
                     case COLOR: // doesn't deal with 16 bit colors properly
@@ -246,7 +246,7 @@ public class PNGImageDecoder extends ImageDecoder
             if(interlaceMethod!=0) {pixSize *= height;rowStride=width;}
             else rowStride = 0;
             int combinedType = colorType|(bitDepth<<3);
-            int bitMask = (1<<(bitDepth>=8?8:bitDepth))-1;
+            int bitMask = (1<<(Math.min(bitDepth, 8)))-1;
             //Figure out the color model
             switch(colorType) {
                 case COLOR|PALETTE:

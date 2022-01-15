@@ -2443,8 +2443,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
      * @return the previous tab index
      */
     protected int getPreviousTabIndex(int base) {
-        int tabIndex = (base - 1 >= 0? base - 1 : tabPane.getTabCount() - 1);
-        return (tabIndex >= 0? tabIndex : 0);
+        return Math.max(base - 1 >= 0? base - 1 : tabPane.getTabCount() - 1, 0);
     }
 
     /**
@@ -2498,8 +2497,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
      * @return the previous tab run
      */
     protected int getPreviousTabRun(int baseRun) {
-        int runIndex = (baseRun - 1 >= 0? baseRun - 1 : runCount - 1);
-        return (runIndex >= 0? runIndex : 0);
+        return Math.max(baseRun - 1 >= 0? baseRun - 1 : runCount - 1, 0);
     }
 
     /**
