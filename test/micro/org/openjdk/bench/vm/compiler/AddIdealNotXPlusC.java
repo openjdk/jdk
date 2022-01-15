@@ -40,7 +40,8 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Tests transformation that converts "~x + c" into "(c - 1) - x" in
- * AddNode::IdealIL.
+ * AddNode::IdealIL and "~(x+c)" into "(-c - 1) - x" in XorINode:Ideal
+ * and XorLNode::Ideal.
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -77,18 +78,36 @@ public class AddIdealNotXPlusC {
     // Convert "~x + c" into "(c - 1) - x" for int.
     // (c - 1) -x + x is then converted into c - 1.
     @Benchmark
-    public void testInt(Blackhole bh) {
+    public void testInt1(Blackhole bh) {
         for (int i = 0; i < SIZE; i++) {
             bh.consume(~iFld + I_C + iFld);
+        }
+    }
+
+    // Convert "~(x + c)" into "(-c - 1) - x" for int.
+    // (-c - 1) -x + x is then converted into -c - 1.
+    @Benchmark
+    public void testInt2(Blackhole bh) {
+        for (int i = 0; i < SIZE; i++) {
+            bh.consume(~(iFld + I_C) + iFld);
         }
     }
 
     // Convert "~x + c" into "(c - 1) - x" for long.
      // (c - 1) -x + x is then converted into c - 1.
     @Benchmark
-    public void testLong(Blackhole bh) {
+    public void testLong1(Blackhole bh) {
         for (int i = 0; i < SIZE; i++) {
             bh.consume(~lFld + L_C + lFld);
+        }
+    }
+
+    // Convert "~(x + c)" into "(-c - 1) - x" for long.
+     // (-c - 1) -x + x is then converted into -c - 1.
+    @Benchmark
+    public void testLong2(Blackhole bh) {
+        for (int i = 0; i < SIZE; i++) {
+            bh.consume(~(lFld + L_C) + lFld);
         }
     }
 }
