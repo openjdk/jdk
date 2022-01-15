@@ -61,8 +61,7 @@ static bool is_suffix(const char* suffix, const char* str) {
   return strncmp(str + (str_len - suffix_len), suffix, suffix_len) == 0;
 }
 
-
-static int init_jvm(int argc, char **argv, bool disable_error_handling) {
+static int init_jvm(int argc, char **argv, bool disable_error_handling, JavaVM** jvm_ptr) {
   // don't care about the program name
   argc--;
   argv++;
@@ -90,10 +89,9 @@ static int init_jvm(int argc, char **argv, bool disable_error_handling) {
   args.options = options;
   args.ignoreUnrecognized = JNI_FALSE;
 
-  JavaVM* jvm;
   JNIEnv* env;
 
-  int ret = JNI_CreateJavaVM(&jvm, (void**)&env, &args);
+  int ret = JNI_CreateJavaVM(jvm_ptr, (void**)&env, &args);
   if (ret == JNI_OK) {
     // CreateJavaVM leaves WXExec context, while gtests
     // calls internal functions assuming running in WXWwrite.
@@ -111,26 +109,31 @@ class JVMInitializerListener : public ::testing::EmptyTestEventListener {
  private:
   int _argc;
   char** _argv;
-  bool _is_initialized;
-
-  void initialize_jvm() {
-  }
+  JavaVM* _jvm;
 
  public:
   JVMInitializerListener(int argc, char** argv) :
-    _argc(argc), _argv(argv), _is_initialized(false) {
+    _argc(argc), _argv(argv), _jvm(nullptr) {
   }
 
   virtual void OnTestStart(const ::testing::TestInfo& test_info) {
     const char* name = test_info.name();
-    if (!_is_initialized && is_same_vm_test(name)) {
+    if (_jvm == nullptr && is_same_vm_test(name)) {
       // we want to have hs_err and core files when we execute regular tests
-      int ret_val = init_jvm(_argc, _argv, false);
+      int ret_val = init_jvm(_argc, _argv, false, &_jvm);
       if (ret_val != 0) {
-        ADD_FAILURE() << "Could not initialize the JVM";
+        ADD_FAILURE() << "Could not initialize the JVM: " << ret_val;
         exit(1);
       }
-      _is_initialized = true;
+    }
+  }
+
+  void destroy_jvm() {
+    if (_jvm != NULL) {
+      int ret = _jvm->DestroyJavaVM();
+      if (ret != 0) {
+        fprintf(stderr, "Warning: DestroyJavaVM error %d\n", ret);
+      }
     }
   }
 };
@@ -208,6 +211,18 @@ static char** remove_test_runner_arguments(int* argcp, char **argv) {
   return new_argv;
 }
 
+// This is generally run once for a set of tests. But if that set includes a vm_assert or
+// other_vm test, then a new process is forked, and runUnitTestsInner is called, passing
+// just that test as the one to be executed.
+//
+// When we execute a vm_assert or other_vm test we create and initialize the JVM below.
+//
+// A vm_assert test crashes the VM so no cleanup is needed, but for other_vm we call
+// DestroyJavaVM via the TEST_OTHER_VM macro prior to the call to exit().
+//
+// For same_vm tests we use an event listener to create the JVM when the first same_vm
+// test is executed. Once all tests are completed we can then call DestroyJavaVM on that
+// JVM directly.
 static void runUnitTestsInner(int argc, char** argv) {
   ::testing::InitGoogleMock(&argc, argv);
   ::testing::GTEST_FLAG(death_test_style) = "threadsafe";
@@ -253,21 +268,37 @@ static void runUnitTestsInner(int argc, char** argv) {
 #endif // _WIN32
   argv = remove_test_runner_arguments(&argc, argv);
 
+
+  JVMInitializerListener* jvm_listener = NULL;
+
   if (is_vmassert_test || is_othervm_test) {
+    JavaVM* jvm = NULL;
     // both vmassert and other vm tests require inited jvm
     // but only vmassert tests disable hs_err and core file generation
-    if (init_jvm(argc, argv, is_vmassert_test) != 0) {
+    int ret;
+    if ((ret = init_jvm(argc, argv, is_vmassert_test, &jvm)) != 0) {
+      fprintf(stderr, "ERROR: JNI_CreateJavaVM failed: %d\n", ret);
       abort();
     }
   } else {
     ::testing::TestEventListeners& listeners = ::testing::UnitTest::GetInstance()->listeners();
-    listeners.Append(new JVMInitializerListener(argc, argv));
+    jvm_listener = new JVMInitializerListener(argc, argv);
+    listeners.Append(jvm_listener);
   }
 
   int result = RUN_ALL_TESTS();
+
+  // vm_assert and other_vm tests never reach this point as they either abort, or call
+  // exit() - see TEST_OTHER_VM macro. We will reach here when all same_vm tests have
+  // completed for this run, so we can terminate the VM used for that case.
+
   if (result != 0) {
     fprintf(stderr, "ERROR: RUN_ALL_TESTS() failed. Error %d\n", result);
     exit(2);
+  }
+
+  if (jvm_listener != NULL) {
+    jvm_listener->destroy_jvm();
   }
 }
 
