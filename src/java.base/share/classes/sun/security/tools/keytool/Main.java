@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2208,6 +2208,9 @@ public final class Main {
                 out.println(mf);
                 dumpCert(cert, out);
             } else if (debug) {
+                for (var attr : keyStore.getEntry(alias, null).getAttributes()) {
+                    System.out.println("Attribute " + attr.getName() + ": " + attr.getValue());
+                }
                 out.println(cert.toString());
             } else {
                 out.println("trustedCertEntry, ");
