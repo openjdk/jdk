@@ -242,7 +242,6 @@ sun/awt/shell/ShellFolderMemoryLeak.java 8197794 windows-all
 sun/java2d/DirectX/OnScreenRenderingResizeTest/OnScreenRenderingResizeTest.java 8022403 generic-all
 sun/java2d/DirectX/OverriddenInsetsTest/OverriddenInsetsTest.java 8196102 generic-all
 sun/java2d/DirectX/RenderingToCachedGraphicsTest/RenderingToCachedGraphicsTest.java 8196180 windows-all,macosx-all
-java/awt/Graphics2D/CopyAreaOOB.java 7001973 windows-all,macosx-all
 sun/java2d/SunGraphics2D/EmptyClipRenderingTest.java 8144029 macosx-all,linux-all
 sun/java2d/SunGraphics2D/DrawImageBilinear.java 8191406 generic-all
 sun/java2d/SunGraphics2D/PolyVertTest.java 6986565 generic-all
