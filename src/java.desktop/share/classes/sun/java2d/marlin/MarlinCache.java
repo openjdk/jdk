@@ -235,7 +235,7 @@ public final class MarlinCache implements MarlinConst {
                    final int px0, final int px1)
     {
         // skip useless pixels above boundary
-        final int px_bbox1 = FloatMath.min(px1, bboxX1);
+        final int px_bbox1 = Math.min(px1, bboxX1);
 
         if (DO_LOG_BOUNDS) {
             MarlinUtils.logInfo("row = [" + px0 + " ... " + px_bbox1
@@ -343,7 +343,7 @@ public final class MarlinCache implements MarlinConst {
         final int from = px0 - _bboxX0; // first pixel inclusive
 
         // skip useless pixels above boundary
-        final int px_bbox1 = FloatMath.min(px1, bboxX1);
+        final int px_bbox1 = Math.min(px1, bboxX1);
         final int to       = px_bbox1 - _bboxX0; //  last pixel exclusive
 
         if (DO_LOG_BOUNDS) {
@@ -401,11 +401,11 @@ public final class MarlinCache implements MarlinConst {
             }
             if (last_t0 != _MAX_VALUE) {
                 // emit blocks:
-                blk_x0 = FloatMath.max(last_t0 << _BLK_SIZE_LG, from);
+                blk_x0 = Math.max(last_t0 << _BLK_SIZE_LG, from);
                 last_t0 = _MAX_VALUE;
 
                 // (last block pixel+1) inclusive => +1
-                blk_x1 = FloatMath.min((t << _BLK_SIZE_LG) + 1, to);
+                blk_x1 = Math.min((t << _BLK_SIZE_LG) + 1, to);
 
                 for (cx = blk_x0; cx < blk_x1; cx++) {
                     if ((delta = alphaRow[cx]) != 0) {
@@ -608,7 +608,7 @@ public final class MarlinCache implements MarlinConst {
             final int txXCoord       =  tx      << _TILE_SIZE_LG;
             final int nextTileXCoord = (tx + 1) << _TILE_SIZE_LG;
 
-            final int lastXCoord = (nextTileXCoord <= x1) ? nextTileXCoord : x1;
+            final int lastXCoord = Math.min(nextTileXCoord, x1);
             _touchedTile[tx] += val * (lastXCoord - txXCoord);
         }
     }

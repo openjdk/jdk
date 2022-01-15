@@ -338,11 +338,11 @@ final class Renderer implements DPathConsumer2D, MarlinConst {
         // Since y1 and y2 are biased by -0.5 in tosubpixy(), this is simply
         // ceil(y1) or ceil(y2)
         // upper integer (inclusive)
-        final int firstCrossing = FloatMath.max(FloatMath.ceil_int(y1), boundsMinY);
+        final int firstCrossing = Math.max(((int) Math.ceil(y1)), boundsMinY);
 
         // note: use boundsMaxY (last Y exclusive) to compute correct coverage
         // upper integer (exclusive)
-        final int lastCrossing  = FloatMath.min(FloatMath.ceil_int(y2), boundsMaxY);
+        final int lastCrossing  = Math.min(((int) Math.ceil(y2)), boundsMaxY);
 
         /* skip horizontal lines in pixel space and clip edges
            out of y range [boundsMinY; boundsMaxY] */
@@ -1170,7 +1170,7 @@ final class Renderer implements DPathConsumer2D, MarlinConst {
                         if ((sum & 0x1) != 0) {
                             // TODO: perform line clipping on left-right sides
                             // to avoid such bound checks:
-                            x0 = (prev > bboxx0) ? prev : bboxx0;
+                            x0 = Math.max(prev, bboxx0);
 
                             if (curx < bboxx1) {
                                 x1 = curx;
@@ -1240,7 +1240,7 @@ final class Renderer implements DPathConsumer2D, MarlinConst {
                         } else {
                             // TODO: perform line clipping on left-right sides
                             // to avoid such bound checks:
-                            x0 = (prev > bboxx0) ? prev : bboxx0;
+                            x0 = Math.max(prev, bboxx0);
 
                             if (curx < bboxx1) {
                                 x1 = curx;
@@ -1314,8 +1314,8 @@ final class Renderer implements DPathConsumer2D, MarlinConst {
                 lastY = y >> _SUBPIXEL_LG_POSITIONS_Y;
 
                 // convert subpixel to pixel coordinate within boundaries:
-                minX = FloatMath.max(minX, bboxx0) >> _SUBPIXEL_LG_POSITIONS_X;
-                maxX = FloatMath.min(maxX, bboxx1) >> _SUBPIXEL_LG_POSITIONS_X;
+                minX = Math.max(minX, bboxx0) >> _SUBPIXEL_LG_POSITIONS_X;
+                maxX = Math.min(maxX, bboxx1) >> _SUBPIXEL_LG_POSITIONS_X;
 
                 if (maxX >= minX) {
                     // note: alpha array will be zeroed by copyAARow()
@@ -1342,7 +1342,7 @@ final class Renderer implements DPathConsumer2D, MarlinConst {
                             (((numCrossings >> stroking) - 1) << _BLK_SIZE_LG));
 
                         if (DO_STATS) {
-                            tmp = FloatMath.max(1,
+                            tmp = Math.max(1,
                                     ((numCrossings >> stroking) - 1));
                             rdrCtx.stats.hist_tile_generator_encoding_dist
                                 .add(maxX / tmp);
@@ -1361,8 +1361,8 @@ final class Renderer implements DPathConsumer2D, MarlinConst {
         y >>= _SUBPIXEL_LG_POSITIONS_Y;
 
         // convert subpixel to pixel coordinate within boundaries:
-        minX = FloatMath.max(minX, bboxx0) >> _SUBPIXEL_LG_POSITIONS_X;
-        maxX = FloatMath.min(maxX, bboxx1) >> _SUBPIXEL_LG_POSITIONS_X;
+        minX = Math.max(minX, bboxx0) >> _SUBPIXEL_LG_POSITIONS_X;
+        maxX = Math.min(maxX, bboxx1) >> _SUBPIXEL_LG_POSITIONS_X;
 
         if (maxX >= minX) {
             // note: alpha array will be zeroed by copyAARow()
@@ -1395,8 +1395,8 @@ final class Renderer implements DPathConsumer2D, MarlinConst {
         }
 
         // bounds as half-open intervals
-        final int spminX = FloatMath.max(FloatMath.ceil_int(edgeMinX - 0.5d), boundsMinX);
-        final int spmaxX = FloatMath.min(FloatMath.ceil_int(edgeMaxX - 0.5d), boundsMaxX);
+        final int spminX = Math.max((int) Math.ceil(edgeMinX - 0.5d), boundsMinX);
+        final int spmaxX = Math.min((int) Math.ceil(edgeMaxX - 0.5d), boundsMaxX);
 
         // edge Min/Max Y are already rounded to subpixels within bounds:
         final int spminY = edgeMinY;
@@ -1491,12 +1491,12 @@ final class Renderer implements DPathConsumer2D, MarlinConst {
         }
 
         final int spminY       = pminY << SUBPIXEL_LG_POSITIONS_Y;
-        final int fixed_spminY = FloatMath.max(bbox_spminY, spminY);
+        final int fixed_spminY = Math.max(bbox_spminY, spminY);
 
         // avoid rendering for last call to nextTile()
         if (fixed_spminY < bbox_spmaxY) {
             // process a complete tile line ie scanlines for 32 rows
-            final int spmaxY = FloatMath.min(bbox_spmaxY, spminY + SUBPIXEL_TILE);
+            final int spmaxY = Math.min(bbox_spmaxY, spminY + SUBPIXEL_TILE);
 
             // process tile line [0 - 32]
             cache.resetTileLine(pminY);

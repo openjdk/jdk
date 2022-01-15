@@ -213,11 +213,11 @@ final class MarlinTileGenerator implements AATileGenerator, MarlinConst {
         final int[] rowAAx1 = _cache.rowAAx1;
 
         final int x0 = this.x;
-        final int x1 = FloatMath.min(x0 + TILE_W, _cache.bboxX1);
+        final int x1 = Math.min(x0 + TILE_W, _cache.bboxX1);
 
         // note: process tile line [0 - 32[
         final int y0 = 0;
-        final int y1 = FloatMath.min(this.y + TILE_H, _cache.bboxY1) - this.y;
+        final int y1 = Math.min(this.y + TILE_H, _cache.bboxY1) - this.y;
 
         if (DO_LOG_BOUNDS) {
             MarlinUtils.logInfo("getAlpha = [" + x0 + " ... " + x1
@@ -265,7 +265,7 @@ final class MarlinTileGenerator implements AATileGenerator, MarlinConst {
                     // Copy AA data (sum alpha data):
                     addr = addr_rowAA + rowAAChunkIndex[cy] + (cx - aax0);
 
-                    for (end = (aax1 <= x1) ? aax1 : x1; cx < end; cx++) {
+                    for (end = Math.min(aax1, x1); cx < end; cx++) {
                         // cx inside tile[x0; x1[ :
                         tile[idx++] = _unsafe.getByte(addr); // [0-255]
                         addr += SIZE;
@@ -323,12 +323,12 @@ final class MarlinTileGenerator implements AATileGenerator, MarlinConst {
         final long[] rowAAPos = _cache.rowAAPos;
 
         final int x0 = this.x;
-        final int x1 = FloatMath.min(x0 + TILE_W, _cache.bboxX1);
+        final int x1 = Math.min(x0 + TILE_W, _cache.bboxX1);
         final int w  = x1 - x0;
 
         // note: process tile line [0 - 32[
         final int y0 = 0;
-        final int y1 = FloatMath.min(this.y + TILE_H, _cache.bboxY1) - this.y;
+        final int y1 = Math.min(this.y + TILE_H, _cache.bboxY1) - this.y;
 
         if (DO_LOG_BOUNDS) {
             MarlinUtils.logInfo("getAlpha = [" + x0 + " ... " + x1
@@ -409,7 +409,7 @@ final class MarlinTileGenerator implements AATileGenerator, MarlinConst {
                             // Copy AA data (sum alpha data):
                             addr = addr_rowAA + rowAAChunkIndex[cy] + (cx - aax0);
 
-                            for (end = (aax1 <= x1) ? aax1 : x1; cx < end; cx++) {
+                            for (end = Math.min(aax1, x1); cx < end; cx++) {
                                 tile[idx++] = _unsafe.getByte(addr); // [0-255]
                                 addr += SIZE_BYTE;
                             }
@@ -543,7 +543,7 @@ final class MarlinTileGenerator implements AATileGenerator, MarlinConst {
                             // Copy AA data (sum alpha data):
                             addr = addr_rowAA + rowAAChunkIndex[cy] + (cx - aax0);
 
-                            for (end = (aax1 <= x1) ? aax1 : x1; cx < end; cx++) {
+                            for (end = Math.min(aax1, x1); cx < end; cx++) {
                                 tile[idx++] = _unsafe.getByte(addr); // [0-255]
                                 addr += SIZE_BYTE;
                             }
@@ -676,7 +676,7 @@ final class MarlinTileGenerator implements AATileGenerator, MarlinConst {
                             // Copy AA data (sum alpha data):
                             addr = addr_rowAA + rowAAChunkIndex[cy] + (cx - aax0);
 
-                            for (end = (aax1 <= x1) ? aax1 : x1; cx < end; cx++) {
+                            for (end = Math.min(aax1, x1); cx < end; cx++) {
                                 tile[idx++] = _unsafe.getByte(addr); // [0-255]
                                 addr += SIZE_BYTE;
                             }

@@ -160,7 +160,7 @@ final class Dasher implements DPathConsumer2D, MarlinConst {
             if (-cycles >= MAX_CYCLES) {
                 phase = 0.0d;
             } else {
-                int fullcycles = FloatMath.floor_int(-cycles);
+                int fullcycles = (int) Math.floor(-cycles);
                 if ((fullcycles & dashLen & 1) != 0) {
                     dashOn = !dashOn;
                 }
@@ -177,7 +177,7 @@ final class Dasher implements DPathConsumer2D, MarlinConst {
             if (cycles >= MAX_CYCLES) {
                 phase = 0.0d;
             } else {
-                int fullcycles = FloatMath.floor_int(cycles);
+                int fullcycles = (int) Math.floor(cycles);
                 if ((fullcycles & dashLen & 1) != 0) {
                     dashOn = !dashOn;
                 }
