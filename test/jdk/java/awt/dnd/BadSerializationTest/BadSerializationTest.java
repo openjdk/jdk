@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.stream.Stream;
 
@@ -62,7 +63,9 @@ public class BadSerializationTest {
 
     public static void main(String[] args) throws Exception {
         if (args.length > 0 && args[0].equals("-write")) {
-            writeObjects(); //Creates the binary files for the test.
+            // Creates the binary files for the test:
+            // java --add-opens=java.desktop/java.awt.dnd=ALL-UNNAMED BadSerializationTest -write
+            writeObjects();
         } else {
             String testSrc = System.getProperty("test.src") + File.separator;
             testReadObject(testSrc + goodSerialized, false);
@@ -92,29 +95,22 @@ public class BadSerializationTest {
     }
 
     /**
-     * Creates the stubs for the test. It is necessary to disable all checks in
-     * the constructors of DragGestureEvent/DragGestureRecognizer before run.
+     * Creates the stubs for the test.
      */
     private static void writeObjects() throws Exception {
         ArrayList<InputEvent> evs = new ArrayList<>();
+        evs.add(new KeyEvent(new JPanel(), 0, 0, 0, 0, 'a', 0));
         Point ori = new Point();
 
-        write(new DragGestureEvent(new NothingNull(), ACTION_COPY, ori, evs),
-              "noEvents");
+        write(createNoEvents(ori, evs), "noEvents");
 
-        evs.add(new KeyEvent(new JPanel(), 0, 0, 0, 0, 'a', 0));
+        write(createNullComponent(ori, evs), "nullComponent");
 
-        write(new DragGestureEvent(new NullComponent(), ACTION_COPY, ori, evs),
-              "nullComponent");
+        write(createBadAction(ori, evs), "badAction");
 
-        write(new DragGestureEvent(new NothingNull(), 100, ori, evs),
-              "badAction");
+        write(createNullDragSource(ori, evs), "nullDragSource");
 
-        write(new DragGestureEvent(new NullDragSource(), ACTION_COPY, ori, evs),
-              "nullDragSource");
-
-        write(new DragGestureEvent(new NothingNull(), ACTION_COPY, null, evs),
-              "nullOrigin");
+        write(createNullOrigin(ori, evs), "nullOrigin");
 
         write(new DragGestureEvent(new NothingNull(), ACTION_COPY, ori, evs),
               "good");
@@ -127,29 +123,47 @@ public class BadSerializationTest {
         }
     }
 
-    public static final class NullDragSource extends DragGestureRecognizer {
-
-        public NullDragSource() {
-            super(null, new JPanel());
-        }
-
-        protected void registerListeners() {
-        }
-
-        protected void unregisterListeners() {
-        }
+    public static DragGestureEvent createNoEvents(Point ori, ArrayList<InputEvent> evs) {
+        DragGestureEvent noEvents = new DragGestureEvent(new NothingNull(), ACTION_COPY, ori, evs);
+        setField(DragGestureEvent.class, noEvents, "events", new ArrayList<>());
+        return noEvents;
     }
 
-    public static final class NullComponent extends DragGestureRecognizer {
+    public static DragGestureEvent createNullComponent(Point ori, ArrayList<InputEvent> evs) {
+        DragGestureRecognizer dgr = new NothingNull();
+        DragGestureEvent nullComponent = new DragGestureEvent(dgr, ACTION_COPY, ori, evs);
+        setField(DragGestureRecognizer.class, dgr, "component", null);
+        setField(DragGestureEvent.class, nullComponent, "component", null);
+        return nullComponent;
+    }
 
-        public NullComponent() {
-            super(new DragSource(), null);
-        }
+    public static DragGestureEvent createNullDragSource(Point ori, ArrayList<InputEvent> evs) {
+        DragGestureRecognizer dgr = new NothingNull();
+        DragGestureEvent nullDragSource = new DragGestureEvent(dgr, ACTION_COPY, ori, evs);
+        setField(DragGestureRecognizer.class, dgr, "dragSource", null);
+        setField(DragGestureEvent.class, nullDragSource, "dragSource", null);
+        return nullDragSource;
+    }
 
-        protected void registerListeners() {
-        }
+    public static DragGestureEvent createNullOrigin(Point ori, ArrayList<InputEvent> evs) {
+        DragGestureEvent nullOrigin = new DragGestureEvent(new NothingNull(), ACTION_COPY, ori, evs);
+        setField(DragGestureEvent.class, nullOrigin, "origin", null);
+        return nullOrigin;
+    }
 
-        protected void unregisterListeners() {
+    public static DragGestureEvent createBadAction(Point ori, ArrayList<InputEvent> evs) {
+        DragGestureEvent badAction = new DragGestureEvent(new NothingNull(), ACTION_COPY, ori, evs);
+        setField(DragGestureEvent.class, badAction, "action", 100);
+        return badAction;
+    }
+
+    public static void setField(Class<?> clazz, Object instance, String fieldName, Object value) {
+        try {
+            Field field = clazz.getDeclaredField(fieldName);
+            field.setAccessible(true);
+            field.set(instance, value);
+        } catch (ReflectiveOperationException e) {
+            throw new LinkageError(e.getMessage(), e);
         }
     }
 
