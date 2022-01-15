@@ -149,7 +149,7 @@ public final class SecuritySupport {
     }
 
     /**
-     * Path created by the default file provider,and not
+     * Path created by the default file provider, and not
      * a malicious provider.
      *
      */

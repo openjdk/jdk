@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2295,8 +2295,7 @@ void Parse::do_one_bytecode() {
       // out to memory to round, the machine instruction that implements
       // ConvL2D is responsible for rounding.
       // c = precision_rounding(b);
-      c = _gvn.transform(b);
-      push(c);
+      push(b);
     } else {
       l2f();
     }
@@ -2307,8 +2306,7 @@ void Parse::do_one_bytecode() {
     b = _gvn.transform( new ConvL2DNode(a));
     // For x86_32.ad, rounding is always necessary (see _l2f above).
     // c = dprecision_rounding(b);
-    c = _gvn.transform(b);
-    push_pair(c);
+    push_pair(b);
     break;
 
   case Bytecodes::_f2l:
