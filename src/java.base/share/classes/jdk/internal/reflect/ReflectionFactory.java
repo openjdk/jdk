@@ -61,7 +61,8 @@ import sun.security.util.SecurityConstants;
 
 public class ReflectionFactory {
 
-    private static boolean initted = false;
+    // volatile ensures static fields set before are published
+    private static volatile boolean initted = false;
     private static final ReflectionFactory soleInstance = new ReflectionFactory();
 
 
