@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -1209,7 +1209,7 @@ static void gen_special_dispatch(MacroAssembler* masm,
     SharedRuntime::check_member_name_argument_is_last_argument(method, sig_bt, regs);
     VMReg r = regs[member_arg_pos].first();
     if (r->is_stack()) {
-      __ ldr(member_reg, Address(sp, (uint64_t)r->reg2stack() * VMRegImpl::stack_slot_size));
+      __ ldr(member_reg, Address(sp, r->reg2stack() * VMRegImpl::stack_slot_size));
     } else {
       // no data motion is needed
       member_reg = r->as_Register();
@@ -1228,7 +1228,7 @@ static void gen_special_dispatch(MacroAssembler* masm,
       // platform, pick a temp and load the receiver from stack.
       fatal("receiver always in a register");
       receiver_reg = r2;  // known to be free at this point
-      __ ldr(receiver_reg, Address(sp, (uint64_t)r->reg2stack() * VMRegImpl::stack_slot_size));
+      __ ldr(receiver_reg, Address(sp, r->reg2stack() * VMRegImpl::stack_slot_size));
     } else {
       // no data motion is needed
       receiver_reg = r->as_Register();
