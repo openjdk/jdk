@@ -34,6 +34,7 @@ import org.testng.annotations.Test;
 import java.io.File;
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -43,18 +44,24 @@ import java.util.UUID;
 import static org.testng.Assert.assertThrows;
 
 public class TestTooManyEntries {
+    // Number of directories in the zip file
     private static final int DIR_COUNT = 25000;
+    // Number of entries per directory
     private static final int ENTRIES_IN_DIR = 1000;
 
+    // Zip file to create for testing
     private File hugeZipFile;
 
+    /**
+     * Create a zip file and add entries that exceed the CEN limit.
+     * @throws IOException if an error occurs creating the ZIP File
+     */
     @BeforeTest
-    public void setup() throws Exception {
+    public void setup() throws IOException {
         hugeZipFile = File.createTempFile("hugeZip", ".zip", new File("."));
         hugeZipFile.deleteOnExit();
         long startTime = System.currentTimeMillis();
         try (ZipOutputStream zip = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(hugeZipFile)))) {
-            long nextLog = System.currentTimeMillis();
             for (int dirN = 0; dirN < DIR_COUNT; dirN++) {
                 String dirName = UUID.randomUUID() + "/";
                 for (int fileN = 0; fileN < ENTRIES_IN_DIR; fileN++) {
@@ -71,6 +78,10 @@ public class TestTooManyEntries {
         }
     }
 
+    /**
+     * Validates that an appropriate exception is thrown when the ZipFile class
+     * is initialized with a zip file whose entries exceed the CEN limit.
+     */
     @Test
     public void test() {
         assertThrows(ZipException.class, () -> new ZipFile(hugeZipFile));
