@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -65,6 +65,11 @@ void G1Arguments::initialize_alignments() {
   // on it.
   if (FLAG_IS_DEFAULT(G1EagerReclaimRemSetThreshold)) {
     FLAG_SET_ERGO(G1EagerReclaimRemSetThreshold, G1RemSetArrayOfCardsEntries);
+  }
+
+  size_t back_skip_granularity_bytes = (size_t)1 << G1LogBackScanSkipGranularity;
+  if (back_skip_granularity_bytes > G1HeapRegionSize) {
+    FLAG_SET_ERGO(G1LogBackScanSkipGranularity, HeapRegion::LogOfHRGrainBytes);
   }
 }
 

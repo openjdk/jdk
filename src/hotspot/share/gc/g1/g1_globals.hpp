@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -378,6 +378,12 @@
           "Allows collections to be triggered proactively based on the      \
            number of free regions and the expected survival rates in each   \
            section of the heap.")                                           \
+                                                                            \
+  product(size_t, G1LogBackScanSkipGranularity, 16, EXPERIMENTAL,           \
+          "Log of the granularity (step) size of the backwards scan table " \
+          "used for finding marks on the bitmap below parsable bottom "     \
+          "scrubbing.")                                                     \
+          range(14, NOT_LP64(25) LP64_ONLY(29))                             \
                                                                             \
   GC_G1_EVACUATION_FAILURE_FLAGS(develop,                                   \
                     develop_pd,                                             \

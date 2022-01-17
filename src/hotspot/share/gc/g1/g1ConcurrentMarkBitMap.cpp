@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,49 @@
  */
 
 #include "precompiled.hpp"
+
+#include "gc/g1/g1_globals.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "memory/virtualspace.hpp"
 
+G1CMBackScanSkipTable::G1CMBackScanSkipTable(size_t log_mapping_granularity) :
+  _mapping_granularity((size_t)1 << log_mapping_granularity) {
+  assert(_mapping_granularity <= HeapRegion::GrainBytes, "must be");
+}
+
+void G1CMBackScanSkipTable::initialize(MemRegion mr) {
+  G1BiasedMappedArray<bool>::initialize(mr, mapping_granularity());
+}
+
+void G1CMBackScanSkipTable::clear_range(MemRegion mr) {
+  assert(is_aligned(mr.start(), mapping_granularity()), "must be");
+  assert(is_aligned(mr.end(), mapping_granularity()), "must be");
+
+  bool* start = address_mapped_to(mr.start());
+  bool* const end = address_mapped_to(mr.end());
+
+  while (start < end) {
+    *start++ = default_value();
+  }
+}
+
+G1CMBitMap::G1CMBitMap() :
+  _bitmap(),
+  _back_scan_skip_table(G1LogBackScanSkipGranularity),
+  _listener() {
+
+  _listener.set_bitmap(this);
+}
+
 void G1CMBitMap::initialize(MemRegion heap, G1RegionToSpaceMapper* storage) {
-  MarkBitMap::initialize(heap, storage->reserved());
+  _bitmap.initialize(heap, storage->reserved());
+  _back_scan_skip_table.initialize(heap);
   storage->set_mapping_changed_listener(&_listener);
 }
+
+void G1CMBitMap::print_on_error(outputStream* out, const char* prefix) const { _bitmap.print_on_error(out, prefix); }
 
 void G1CMBitMapMappingChangedListener::on_commit(uint start_region, size_t num_regions, bool zero_filled) {
   if (zero_filled) {
@@ -41,18 +75,3 @@ void G1CMBitMapMappingChangedListener::on_commit(uint start_region, size_t num_r
   MemRegion mr(G1CollectedHeap::heap()->bottom_addr_for_region(start_region), num_regions * HeapRegion::GrainWords);
   _bm->clear_range(mr);
 }
-
-void G1CMBitMap::clear_region(HeapRegion* region) {
- if (!region->is_empty()) {
-   MemRegion mr(region->bottom(), region->top());
-   clear_range(mr);
- }
-}
-
-#ifdef ASSERT
-void G1CMBitMap::check_mark(HeapWord* addr) {
-  assert(G1CollectedHeap::heap()->is_in(addr),
-         "Trying to access bitmap " PTR_FORMAT " for address " PTR_FORMAT " not in the heap.",
-         p2i(this), p2i(addr));
-}
-#endif

@@ -95,6 +95,7 @@ private:
     G1FullCollector* _collector;
 
     void reset_region_metadata(HeapRegion* hr);
+    void scrub_skip_compacting_region(HeapRegion* hr);
 
   public:
     G1ResetMetadataClosure(G1FullCollector* collector);

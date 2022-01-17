@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,19 +62,17 @@ void G1RemSetTrackingPolicy::update_at_free(HeapRegion* r) {
 
 static void print_before_rebuild(HeapRegion* r, bool selected_for_rebuild, size_t total_live_bytes, size_t live_bytes) {
   log_trace(gc, remset, tracking)("Before rebuild region %u "
-                                  "(ntams: " PTR_FORMAT ") "
-                                  "total_live_bytes " SIZE_FORMAT " "
+                                  "(tams: " PTR_FORMAT ") "
+                                  "total_live_bytes %zu "
                                   "selected %s "
-                                  "(live_bytes " SIZE_FORMAT " "
-                                  "next_marked " SIZE_FORMAT " "
-                                  "marked " SIZE_FORMAT " "
+                                  "(live_bytes %zu "
+                                  "marked %zu "
                                   "type %s)",
                                   r->hrm_index(),
-                                  p2i(r->next_top_at_mark_start()),
+                                  p2i(r->top_at_mark_start()),
                                   total_live_bytes,
                                   BOOL_TO_STR(selected_for_rebuild),
                                   live_bytes,
-                                  r->next_marked_bytes(),
                                   r->marked_bytes(),
                                   r->get_type_str());
 }
@@ -116,8 +114,8 @@ bool G1RemSetTrackingPolicy::update_before_rebuild(HeapRegion* r, size_t live_by
 
   assert(!r->rem_set()->is_updating(), "Remembered set of region %u is updating before rebuild", r->hrm_index());
 
-  size_t between_ntams_and_top = (r->top() - r->next_top_at_mark_start()) * HeapWordSize;
-  size_t total_live_bytes = live_bytes + between_ntams_and_top;
+  size_t between_tams_and_top = (r->top() - r->top_at_mark_start()) * HeapWordSize;
+  size_t total_live_bytes = live_bytes + between_tams_and_top;
 
   bool selected_for_rebuild = false;
   // For old regions, to be of interest for rebuilding the remembered set the following must apply:
@@ -163,15 +161,13 @@ void G1RemSetTrackingPolicy::update_after_rebuild(HeapRegion* r) {
     }
     G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
     log_trace(gc, remset, tracking)("After rebuild region %u "
-                                    "(ntams " PTR_FORMAT " "
-                                    "liveness " SIZE_FORMAT " "
-                                    "next_marked_bytes " SIZE_FORMAT " "
-                                    "remset occ " SIZE_FORMAT " "
-                                    "size " SIZE_FORMAT ")",
+                                    "(tams " PTR_FORMAT " "
+                                    "liveness %zu "
+                                    "remset occ %zu "
+                                    "size %zu)",
                                     r->hrm_index(),
-                                    p2i(r->next_top_at_mark_start()),
+                                    p2i(r->top_at_mark_start()),
                                     cm->live_bytes(r->hrm_index()),
-                                    r->next_marked_bytes(),
                                     r->rem_set()->occupied(),
                                     r->rem_set()->mem_size());
   }

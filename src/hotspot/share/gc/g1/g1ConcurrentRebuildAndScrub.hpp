@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,21 @@
  *
  */
 
-#ifndef SHARE_GC_SHARED_VERIFYOPTION_HPP
-#define SHARE_GC_SHARED_VERIFYOPTION_HPP
+#ifndef SHARE_GC_G1_G1CONCURRENTREBUILDANDSCRUB_HPP
+#define SHARE_GC_G1_G1CONCURRENTREBUILDANDSCRUB_HPP
 
-#include "utilities/globalDefinitions.hpp"
+#include "memory/allStatic.hpp"
 
-enum class VerifyOption : uint {
-  Default = 0,
+class G1ConcurrentMark;
+class WorkerThreads;
 
-  // G1
-  // Use mark bitmap information (from concurrent marking) using TAMS.
-  G1UseConcMarking = Default,
-  // Use mark bitmap information from full gc marking. This does not
-  // use (or need) TAMS.
-  G1UseFullMarking = G1UseConcMarking + 1
+// Rebuild and scrubbing helper class.
+class G1ConcurrentRebuildAndScrub : AllStatic {
+public:
+
+  static void rebuild_and_scrub(G1ConcurrentMark* cm, WorkerThreads* workers);
 };
 
-#endif // SHARE_GC_SHARED_VERIFYOPTION_HPP
+
+#endif /* SHARE_GC_G1_G1CONCURRENTREBUILDANDSCRUB_HPP */
+

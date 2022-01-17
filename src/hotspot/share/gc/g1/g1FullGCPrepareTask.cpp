@@ -138,6 +138,10 @@ bool G1FullGCPrepareTask::G1ResetMetadataClosure::do_heap_region(HeapRegion* hr)
       // performance during scanning their card tables in the collection pauses later.
       hr->update_bot();
     }
+
+    if (_collector->is_skip_compacting(region_idx)) {
+      scrub_skip_compacting_region(hr);
+    }
   }
 
   // Reset data structures not valid after Full GC.
@@ -159,5 +163,32 @@ void G1FullGCPrepareTask::G1CalculatePointersClosure::prepare_for_compaction(Hea
   if (!_collector->is_free(hr->hrm_index())) {
     G1PrepareCompactLiveClosure prepare_compact(_cp);
     hr->apply_to_marked_objects(_bitmap, &prepare_compact);
+  }
+}
+
+void G1FullGCPrepareTask::G1ResetMetadataClosure::scrub_skip_compacting_region(HeapRegion* hr) {
+  if (!hr->needs_scrubbing_during_full_gc()) {
+    return;
+  }
+
+  HeapWord* limit = hr->top();
+  HeapWord* current_obj = hr->bottom();
+  G1CMBitMap* bitmap = _collector->mark_bitmap();
+
+  while (current_obj < limit) {
+    if (bitmap->is_marked(current_obj)) {
+      oop current = cast_to_oop(current_obj);
+      current_obj += current->size();
+      continue;
+    }
+    // Found dead object, which is potentially unloaded, scrub to next
+    // marked object.
+    HeapWord* scrub_start = current_obj;
+    HeapWord* scrub_end = bitmap->get_next_marked_addr(scrub_start, limit);
+    if (scrub_start != scrub_end) {
+      hr->fill_range_with_dead_objects(scrub_start, scrub_end);
+    }
+
+    current_obj = scrub_end;
   }
 }

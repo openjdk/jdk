@@ -29,6 +29,7 @@
 
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
+#include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacFailureRegions.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RemSet.hpp"
@@ -159,7 +160,7 @@ inline G1ScannerTasksQueue* G1CollectedHeap::task_queue(uint i) const {
 }
 
 inline bool G1CollectedHeap::is_marked_next(oop obj) const {
-  return _cm->next_mark_bitmap()->is_marked(obj);
+  return _cm->mark_bitmap()->is_marked(obj);
 }
 
 inline bool G1CollectedHeap::is_in_cset(oop obj) {
@@ -220,7 +221,7 @@ inline bool G1CollectedHeap::requires_barriers(stackChunkOop obj) const {
 }
 
 inline bool G1CollectedHeap::is_obj_dead(const oop obj, const HeapRegion* hr) const {
-  return hr->is_obj_dead(obj, _cm->prev_mark_bitmap());
+  return hr->is_obj_dead(obj, hr->parsable_bottom());
 }
 
 inline bool G1CollectedHeap::is_obj_dead(const oop obj) const {

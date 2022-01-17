@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,12 +73,11 @@ public:
 #ifndef PRODUCT
   // Make sure that the given bitmap has no marked objects in the
   // range [from,limit). If it does, print an error message and return
-  // false. Otherwise, just return true. bitmap_name should be "prev"
-  // or "next".
-  bool verify_no_bits_over_tams(const char* bitmap_name, const G1CMBitMap* const bitmap,
+  // false. Otherwise, just return true.
+  bool verify_no_bits_over_tams(const G1CMBitMap* const bitmap,
                                 HeapWord* from, HeapWord* limit);
 
-  // Verify that the prev / next bitmap range [tams,end) for the given
+  // Verify that the marking bitmap range [tams,end) for the given
   // region has no marks. Return true if all is well, false if errors
   // are detected.
   bool verify_bitmaps(const char* caller, HeapRegion* hr);

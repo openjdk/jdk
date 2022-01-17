@@ -29,6 +29,12 @@
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/bitMap.hpp"
 
+// Closure for iteration over set bits of a bitmap.
+class MarkBitMapClosure {
+public:
+  virtual bool do_addr(HeapWord* const addr) = 0;
+};
+
 // A generic mark bitmap for concurrent marking.  This is essentially a wrapper
 // around the BitMap class that is based on HeapWords, with one bit per (1 << _shifter) HeapWords.
 class MarkBitMap {
@@ -53,10 +59,11 @@ protected:
   // Clear bitmap range
   void do_clear(MemRegion mr, bool large);
 
-public:
-  static size_t compute_size(size_t heap_size);
   // Returns the amount of bytes on the heap between two marks in the bitmap.
   static size_t mark_distance();
+
+public:
+  static size_t compute_size(size_t heap_size);
   // Returns how many bytes (or bits) of the heap a single byte (or bit) of the
   // mark bitmap corresponds to. This is the same as the mark distance above.
   static size_t heap_map_factor() {
@@ -77,11 +84,17 @@ public:
     return _bm.at(addr_to_offset(addr));
   }
 
+  inline bool iterate(MarkBitMapClosure* cl, MemRegion mr);
   // Return the address corresponding to the next marked bit at or after
   // "addr", and before "limit", if "limit" is non-NULL.  If there is no
   // such bit, returns "limit" if that is non-NULL, or else "endWord()".
   inline HeapWord* get_next_marked_addr(const HeapWord* addr,
-                                        const HeapWord* limit) const;
+                                        HeapWord* limit) const;
+
+  // Return the address corresponding to the previous marked bit at or before
+  // "addr", and after or at "limit". If there is no such bit, returns nullptr.
+  inline HeapWord* get_prev_marked_addr(HeapWord* limit,
+                                        const HeapWord* addr) const;
 
   void print_on_error(outputStream* st, const char* prefix) const;
 

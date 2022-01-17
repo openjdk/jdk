@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_G1_G1CONCURRENTMARKBITMAP_HPP
 #define SHARE_GC_G1_G1CONCURRENTMARKBITMAP_HPP
 
+#include "gc/g1/g1BiasedArray.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "gc/shared/markBitMap.hpp"
 #include "memory/memRegion.hpp"
@@ -39,11 +40,11 @@ class G1ConcurrentMark;
 class HeapRegion;
 
 // Closure for iteration over bitmaps
-class G1CMBitMapClosure {
+class G1CMBitMapClosure : public MarkBitMapClosure {
   G1ConcurrentMark* const _cm;
   G1CMTask* const _task;
 public:
-  G1CMBitMapClosure(G1CMTask *task, G1ConcurrentMark* cm) : _cm(cm), _task(task) { }
+  G1CMBitMapClosure(G1CMTask *task, G1ConcurrentMark* cm) : MarkBitMapClosure(), _cm(cm), _task(task) { }
 
   bool do_addr(HeapWord* const addr);
 };
@@ -58,27 +59,77 @@ public:
   virtual void on_commit(uint start_idx, size_t num_regions, bool zero_filled);
 };
 
-// A generic mark bitmap for concurrent marking.  This is essentially a wrapper
-// around the BitMap class that is based on HeapWords, with one bit per (1 << _shifter) HeapWords.
-class G1CMBitMap : public MarkBitMap {
-
-  G1CMBitMapMappingChangedListener _listener;
+// This table is used to quickly scan back large areas within regions: whenever
+// concurrent marking marks an object on the mark bitmap, this class also remembers
+// its approximate location in units of subdivisions of a heap region.
+//
+// When scanning the bitmap backwards for object starts, this table is consulted
+// to skip large unmarked areas.
+class G1CMBackScanSkipTable : private G1BiasedMappedArray<bool> {
+  const size_t _mapping_granularity;
 
 protected:
-
-  virtual void check_mark(HeapWord* addr) NOT_DEBUG_RETURN;
+  virtual bool default_value() const { return false; }
 
 public:
+  G1CMBackScanSkipTable(size_t log_mapping_granularity);
 
-  G1CMBitMap() : MarkBitMap(), _listener() { _listener.set_bitmap(this); }
+  void initialize(MemRegion mr);
 
-  // Initializes the underlying BitMap to cover the given area.
+  size_t mapping_granularity() const { return _mapping_granularity; }
+
+  void mark(HeapWord* const addr);
+  void clear_range(MemRegion mr);
+
+  // Scans backward from address start-1 to bottom, returning the start of the corresponding
+  // area if marked. Otherwise, if no mark has been found, returns nullptr.
+  HeapWord* find_marked_area(HeapWord* const bottom, HeapWord* const start) const;
+};
+
+// A generic mark bitmap for concurrent marking.  This is essentially a wrapper
+// around the BitMap class that is based on HeapWords, with one bit per (1 << _shifter) HeapWords.
+class G1CMBitMap {
+  MarkBitMap _bitmap;
+  G1CMBackScanSkipTable _back_scan_skip_table;
+  G1CMBitMapMappingChangedListener _listener;
+
+public:
+  G1CMBitMap();
+
+  static size_t compute_size(size_t heap_size) { return MarkBitMap::compute_size(heap_size); }
+  static size_t heap_map_factor() { return MarkBitMap::heap_map_factor(); }
+
   void initialize(MemRegion heap, G1RegionToSpaceMapper* storage);
 
-  // Apply the closure to the addresses that correspond to marked bits in the bitmap.
-  inline bool iterate(G1CMBitMapClosure* cl, MemRegion mr);
+  bool is_marked(oop obj) const;
+  bool is_marked(HeapWord* addr) const;
 
-  void clear_region(HeapRegion* hr);
+  inline bool iterate(MarkBitMapClosure* cl, MemRegion mr);
+  // Return the address corresponding to the next marked bit at or after
+  // "addr", and before "limit", if "limit" is non-NULL.  If there is no
+  // such bit, returns "limit" if that is non-NULL, or else "endWord()".
+  inline HeapWord* get_next_marked_addr(const HeapWord* addr,
+                                        HeapWord* limit) const;
+
+  // Return the address corresponding to the previous marked bit at or before
+  // "addr", and after or at "limit". If there is no such bit, returns nullptr.
+  // Uses the back scan skip table to speed up the process, which must be
+  // properly initialized.
+  inline HeapWord* get_prev_marked_addr(HeapWord* limit,
+                                        const HeapWord* addr) const;
+
+  // Write marks.
+  inline void clear(HeapWord* addr);
+  inline void clear(oop obj);
+  inline bool par_mark(HeapWord* addr);
+  inline bool par_mark(oop obj);
+
+  inline void update_back_skip_table(oop obj);
+
+  // Clear bitmap.
+  void clear_range(MemRegion mr);
+
+  void print_on_error(outputStream* out, const char* prefix) const;
 };
 
 #endif // SHARE_GC_G1_G1CONCURRENTMARKBITMAP_HPP
