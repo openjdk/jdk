@@ -650,139 +650,139 @@ public class KeyEvent extends InputEvent {
 
     /* For European keyboards */
     /**
-     * Constant for the DEAD_GRAVE function key.
+     * Constant for the DEAD_GRAVE key.
      * @since 1.2
      */
     public static final int VK_DEAD_GRAVE               = 0x80;
 
     /**
-     * Constant for the DEAD_ACUTE function key.
+     * Constant for the DEAD_ACUTE key.
      * @since 1.2
      */
     public static final int VK_DEAD_ACUTE               = 0x81;
 
     /**
-     * Constant for the DEAD_CIRCUMFLEX function key.
+     * Constant for the DEAD_CIRCUMFLEX key.
      * @since 1.2
      */
     public static final int VK_DEAD_CIRCUMFLEX          = 0x82;
 
     /**
-     * Constant for the DEAD_TILDE function key.
+     * Constant for the DEAD_TILDE key.
      * @since 1.2
      */
     public static final int VK_DEAD_TILDE               = 0x83;
 
     /**
-     * Constant for the DEAD_MACRON function key.
+     * Constant for the DEAD_MACRON key.
      * @since 1.2
      */
     public static final int VK_DEAD_MACRON              = 0x84;
 
     /**
-     * Constant for the DEAD_BREVE function key.
+     * Constant for the DEAD_BREVE key.
      * @since 1.2
      */
     public static final int VK_DEAD_BREVE               = 0x85;
 
     /**
-     * Constant for the DEAD_ABOVEDOT function key.
+     * Constant for the DEAD_ABOVEDOT key.
      * @since 1.2
      */
     public static final int VK_DEAD_ABOVEDOT            = 0x86;
 
     /**
-     * Constant for the DEAD_DIAERESIS function key.
+     * Constant for the DEAD_DIAERESIS key.
      * @since 1.2
      */
     public static final int VK_DEAD_DIAERESIS           = 0x87;
 
     /**
-     * Constant for the DEAD_ABOVERING function key.
+     * Constant for the DEAD_ABOVERING key.
      * @since 1.2
      */
     public static final int VK_DEAD_ABOVERING           = 0x88;
 
     /**
-     * Constant for the DEAD_DOUBLEACUTE function key.
+     * Constant for the DEAD_DOUBLEACUTE key.
      * @since 1.2
      */
     public static final int VK_DEAD_DOUBLEACUTE         = 0x89;
 
     /**
-     * Constant for the DEAD_CARON function key.
+     * Constant for the DEAD_CARON key.
      * @since 1.2
      */
     public static final int VK_DEAD_CARON               = 0x8a;
 
     /**
-     * Constant for the DEAD_CEDILLA function key.
+     * Constant for the DEAD_CEDILLA key.
      * @since 1.2
      */
     public static final int VK_DEAD_CEDILLA             = 0x8b;
 
     /**
-     * Constant for the DEAD_OGONEK function key.
+     * Constant for the DEAD_OGONEK key.
      * @since 1.2
      */
     public static final int VK_DEAD_OGONEK              = 0x8c;
 
     /**
-     * Constant for the DEAD_IOTA function key.
+     * Constant for the DEAD_IOTA key.
      * @since 1.2
      */
     public static final int VK_DEAD_IOTA                = 0x8d;
 
     /**
-     * Constant for the DEAD_VOICED_SOUND function key.
+     * Constant for the DEAD_VOICED_SOUND key.
      * @since 1.2
      */
     public static final int VK_DEAD_VOICED_SOUND        = 0x8e;
 
     /**
-     * Constant for the DEAD_SEMIVOICED_SOUND function key.
+     * Constant for the DEAD_SEMIVOICED_SOUND key.
      * @since 1.2
      */
     public static final int VK_DEAD_SEMIVOICED_SOUND    = 0x8f;
 
     /**
-     * Constant for the "&amp;" function key.
+     * Constant for the "&amp;" key.
      * @since 1.2
      */
     public static final int VK_AMPERSAND                = 0x96;
 
     /**
-     * Constant for the "*" function key.
+     * Constant for the "*" key.
      * @since 1.2
      */
     public static final int VK_ASTERISK                 = 0x97;
 
     /**
-     * Constant for the """" function key.
+     * Constant for the """" key.
      * @since 1.2
      */
     public static final int VK_QUOTEDBL                 = 0x98;
 
     /**
-     * Constant for the "&lt;" function key.
+     * Constant for the "&lt;" key.
      * @since 1.2
      */
     public static final int VK_LESS                     = 0x99;
 
     /**
-     * Constant for the "&gt;" function key.
+     * Constant for the "&gt;" key.
      * @since 1.2
      */
     public static final int VK_GREATER                  = 0xa0;
 
     /**
-     * Constant for the BRACELEFT function key.
+     * Constant for the BRACELEFT key.
      * @since 1.2
      */
     public static final int VK_BRACELEFT                = 0xa1;
 
     /**
-     * Constant for the BRACERIGHT function key.
+     * Constant for the BRACERIGHT key.
      * @since 1.2
      */
     public static final int VK_BRACERIGHT               = 0xa2;

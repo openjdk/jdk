@@ -62,9 +62,9 @@ public class BufferCapabilities implements Cloneable {
     }
 
     /**
-     * Returns the imaga capabilities of the front buffer
+     * Returns the imaga capabilities of the front (displayed) buffer.
      *
-     * @return the imaga capabilities of the front buffer
+     * @return the imaga capabilities of the front (displayed) buffer
      */
     public ImageCapabilities getFrontBufferCapabilities() {
         return frontCaps;

@@ -4694,7 +4694,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
-     * Checks whether or not paint messages received from the operating system
+     * Returns whether or not paint messages received from the operating system
      * should be ignored.
      *
      * @return whether or not paint messages received from the operating system

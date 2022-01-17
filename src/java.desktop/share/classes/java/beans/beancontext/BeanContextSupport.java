@@ -295,7 +295,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
 
     /************************************************************************/
 
-    /**
+    /*
      * protected nested class containing per child information, an instance
      * of which is associated with each child in the "children" hashtable.
      * subclasses can extend this class to include their own per-child state.
@@ -304,6 +304,10 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * when the BeanContextSupport is serialized.
      */
 
+    /**
+     * protected nested class containing per child information
+     * in the "children" hashtable.
+     */
     protected class BCSChild implements Serializable {
 
     /**

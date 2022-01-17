@@ -210,7 +210,7 @@ class Parser implements DTDConstants {
 
 
     /**
-     * Return the line number of the line currently being parsed.
+     * Returns the line number of the line currently being parsed.
      *
      * @return the line number of the line currently being parsed
      */
