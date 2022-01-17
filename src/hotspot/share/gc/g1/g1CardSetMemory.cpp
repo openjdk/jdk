@@ -201,8 +201,8 @@ size_t G1CardSetMemoryManager::wasted_mem_size() const {
   return result;
 }
 
-G1SegmentedArrayMemoryStats G1CardSetMemoryManager::memory_stats() const {
-  G1SegmentedArrayMemoryStats result;
+G1CardSetMemoryStats G1CardSetMemoryManager::memory_stats() const {
+  G1CardSetMemoryStats result;
   for (uint i = 0; i < num_mem_object_types(); i++) {
     result._num_mem_sizes[i] += _allocators[i].mem_size();
     result._num_segments[i] += _allocators[i].num_segments();

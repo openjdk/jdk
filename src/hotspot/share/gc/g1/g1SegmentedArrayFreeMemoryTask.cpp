@@ -33,13 +33,16 @@
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "runtime/os.hpp"
 
-constexpr const char* G1SegmentedArrayFreeMemoryTask::_state_names[];
+template<MEMFLAGS flag, typename Configuration>
+constexpr const char* G1SegmentedArrayFreeMemoryTask<flag, Configuration>::_state_names[];
 
-const char* G1SegmentedArrayFreeMemoryTask::get_state_name(State value) const {
+template<MEMFLAGS flag, typename Configuration>
+const char* G1SegmentedArrayFreeMemoryTask<flag, Configuration>::get_state_name(State value) const {
   return _state_names[static_cast<std::underlying_type_t<State>>(value)];
 }
 
-bool G1SegmentedArrayFreeMemoryTask::deadline_exceeded(jlong deadline) {
+template<MEMFLAGS flag, typename Configuration>
+bool G1SegmentedArrayFreeMemoryTask<flag, Configuration>::deadline_exceeded(jlong deadline) {
   return os::elapsed_counter() >= deadline;
 }
 
@@ -48,31 +51,33 @@ static size_t keep_size(size_t free, size_t used, double percent) {
   return MIN2(free, to_keep);
 }
 
-bool G1SegmentedArrayFreeMemoryTask::calculate_return_infos(jlong deadline) {
+template<MEMFLAGS flag, typename Configuration>
+bool G1SegmentedArrayFreeMemoryTask<flag, Configuration>::calculate_return_infos(jlong deadline) {
   // Ignore the deadline in this step as it is very short.
 
-  G1SegmentedArrayMemoryStats used = _total_used;
-  G1SegmentedArrayMemoryStats free = G1SegmentedArrayFreePool<mtGCCardSet>::free_list_sizes();
+  G1SegmentedArrayMemoryStats<NUM> used = _total_used;
+  G1SegmentedArrayMemoryStats<NUM> free = G1SegmentedArrayFreePool<flag, Configuration>::free_list_sizes();
 
-  _return_info = new G1ReturnMemoryProcessorSet(used.num_pools());
-  for (uint i = 0; i < used.num_pools(); i++) {
+  _return_info = new G1ReturnMemoryProcessorSet(NUM);
+  for (uint i = 0; i < NUM; i++) {
     size_t return_to_vm_size = keep_size(free._num_mem_sizes[i],
                                          used._num_mem_sizes[i],
                                          G1RemSetFreeMemoryKeepExcessRatio);
     log_trace(gc, task)("Segmented Array Free Memory: Type %s: Free: %zu (%zu) "
                         "Used: %zu Keep: %zu",
-                        G1CardSetConfiguration::mem_object_type_name_str(i),
+                        Configuration::mem_object_type_name_str(i),
                         free._num_mem_sizes[i], free._num_segments[i],
                         used._num_mem_sizes[i], return_to_vm_size);
 
     _return_info->append(new G1ReturnMemoryProcessor(return_to_vm_size));
   }
 
-  G1SegmentedArrayFreePool<mtGCCardSet>::update_unlink_processors(_return_info);
+  G1SegmentedArrayFreePool<flag, Configuration>::update_unlink_processors(_return_info);
   return false;
 }
 
-bool G1SegmentedArrayFreeMemoryTask::return_memory_to_vm(jlong deadline) {
+template<MEMFLAGS flag, typename Configuration>
+bool G1SegmentedArrayFreeMemoryTask<flag, Configuration>::return_memory_to_vm(jlong deadline) {
   for (int i = 0; i < _return_info->length(); i++) {
     G1ReturnMemoryProcessor* info = _return_info->at(i);
     if (!info->finished_return_to_vm()) {
@@ -84,7 +89,8 @@ bool G1SegmentedArrayFreeMemoryTask::return_memory_to_vm(jlong deadline) {
   return false;
 }
 
-bool G1SegmentedArrayFreeMemoryTask::return_memory_to_os(jlong deadline) {
+template<MEMFLAGS flag, typename Configuration>
+bool G1SegmentedArrayFreeMemoryTask<flag, Configuration>::return_memory_to_os(jlong deadline) {
   for (int i = 0; i < _return_info->length(); i++) {
     G1ReturnMemoryProcessor* info = _return_info->at(i);
     if (!info->finished_return_to_os()) {
@@ -96,7 +102,8 @@ bool G1SegmentedArrayFreeMemoryTask::return_memory_to_os(jlong deadline) {
   return false;
 }
 
-bool G1SegmentedArrayFreeMemoryTask::cleanup_return_infos() {
+template<MEMFLAGS flag, typename Configuration>
+bool G1SegmentedArrayFreeMemoryTask<flag, Configuration>::cleanup_return_infos() {
   for (int i = 0; i < _return_info->length(); i++) {
      G1ReturnMemoryProcessor* info = _return_info->at(i);
      delete info;
@@ -107,7 +114,8 @@ bool G1SegmentedArrayFreeMemoryTask::cleanup_return_infos() {
   return false;
 }
 
-bool G1SegmentedArrayFreeMemoryTask::free_excess_segmented_array_memory() {
+template<MEMFLAGS flag, typename Configuration>
+bool G1SegmentedArrayFreeMemoryTask<flag, Configuration>::free_excess_segmented_array_memory() {
   jlong start = os::elapsed_counter();
   jlong end = start +
               (os::elapsed_frequency() / 1000) * G1RemSetFreeMemoryStepDurationMillis;
@@ -164,25 +172,30 @@ bool G1SegmentedArrayFreeMemoryTask::free_excess_segmented_array_memory() {
   return is_active();
 }
 
-void G1SegmentedArrayFreeMemoryTask::set_state(State new_state) {
+template<MEMFLAGS flag, typename Configuration>
+void G1SegmentedArrayFreeMemoryTask<flag, Configuration>::set_state(State new_state) {
   log_trace(gc, task)("Segmented Array Free Memory: State change from %s to %s",
                       get_state_name(_state),
                       get_state_name(new_state));
   _state = new_state;
 }
 
-bool G1SegmentedArrayFreeMemoryTask::is_active() const {
+template<MEMFLAGS flag, typename Configuration>
+bool G1SegmentedArrayFreeMemoryTask<flag, Configuration>::is_active() const {
   return _state != State::Inactive;
 }
 
-jlong G1SegmentedArrayFreeMemoryTask::reschedule_delay_ms() const {
+template<MEMFLAGS flag, typename Configuration>
+jlong G1SegmentedArrayFreeMemoryTask<flag, Configuration>::reschedule_delay_ms() const {
   return G1RemSetFreeMemoryRescheduleDelayMillis;
 }
 
-G1SegmentedArrayFreeMemoryTask::G1SegmentedArrayFreeMemoryTask(const char* name) :
+template<MEMFLAGS flag, typename Configuration>
+G1SegmentedArrayFreeMemoryTask<flag, Configuration>::G1SegmentedArrayFreeMemoryTask(const char* name) :
   G1ServiceTask(name), _state(State::CalculateUsed), _return_info(nullptr) { }
 
-void G1SegmentedArrayFreeMemoryTask::execute() {
+template<MEMFLAGS flag, typename Configuration>
+void G1SegmentedArrayFreeMemoryTask<flag, Configuration>::execute() {
   SuspendibleThreadSetJoiner sts;
 
   if (free_excess_segmented_array_memory()) {
@@ -190,8 +203,9 @@ void G1SegmentedArrayFreeMemoryTask::execute() {
   }
 }
 
-void G1SegmentedArrayFreeMemoryTask::notify_new_stats(G1SegmentedArrayMemoryStats* young_gen_stats,
-                                                      G1SegmentedArrayMemoryStats* collection_set_candidate_stats) {
+template<MEMFLAGS flag, typename Configuration>
+void G1SegmentedArrayFreeMemoryTask<flag, Configuration>::notify_new_stats(G1SegmentedArrayMemoryStats<NUM>* young_gen_stats,
+                                                                           G1SegmentedArrayMemoryStats<NUM>* collection_set_candidate_stats) {
   assert_at_safepoint_on_vm_thread();
 
   _total_used = *young_gen_stats;
@@ -202,3 +216,5 @@ void G1SegmentedArrayFreeMemoryTask::notify_new_stats(G1SegmentedArrayMemoryStat
     G1CollectedHeap::heap()->service_thread()->schedule_task(this, 0);
   }
 }
+
+template class G1SegmentedArrayFreeMemoryTask<mtGCCardSet, G1CardSetConfiguration>;

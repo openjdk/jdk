@@ -48,7 +48,6 @@ class G1ParScanThreadStateSet;
 class G1Policy;
 class G1RedirtyCardsQueueSet;
 class G1RemSet;
-class G1SegmentedArrayMemoryStats;
 class G1SurvivorRegions;
 class G1YoungGCEvacFailureInjector;
 class STWGCTimer;

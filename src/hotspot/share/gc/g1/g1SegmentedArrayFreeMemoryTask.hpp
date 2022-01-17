@@ -33,6 +33,7 @@
 #include "utilities/ticks.hpp"
 
 // Task handling deallocation of free segmented array memory.
+template<MEMFLAGS flag, typename Configuration>
 class G1SegmentedArrayFreeMemoryTask : public G1ServiceTask {
 
   enum class State : uint {
@@ -49,15 +50,17 @@ class G1SegmentedArrayFreeMemoryTask : public G1ServiceTask {
                                                   "ReturnToOS",
                                                   "Cleanup" };
 
+  static constexpr uint NUM = Configuration::num_mem_object_types();
+
   const char* get_state_name(State value) const;
 
   State _state;
 
   // Current total segmented array memory usage.
-  G1SegmentedArrayMemoryStats _total_used;
+  G1SegmentedArrayMemoryStats<Configuration::num_mem_object_types()> _total_used;
 
-  typedef G1SegmentedArrayFreePool<mtGCCardSet>::G1ReturnMemoryProcessor G1ReturnMemoryProcessor;
-  typedef G1SegmentedArrayFreePool<mtGCCardSet>::G1ReturnMemoryProcessorSet G1ReturnMemoryProcessorSet;
+  typedef typename G1SegmentedArrayFreePool<flag, Configuration>::G1ReturnMemoryProcessor G1ReturnMemoryProcessor;
+  typedef typename G1SegmentedArrayFreePool<flag, Configuration>::G1ReturnMemoryProcessorSet G1ReturnMemoryProcessorSet;
 
   G1ReturnMemoryProcessorSet* _return_info;
 
@@ -89,8 +92,8 @@ public:
 
   // Notify the task of new used remembered set memory statistics for the young
   // generation and the collection set candidate sets.
-  void notify_new_stats(G1SegmentedArrayMemoryStats* young_gen_stats,
-                        G1SegmentedArrayMemoryStats* collection_set_candidate_stats);
+  void notify_new_stats(G1SegmentedArrayMemoryStats<NUM>* young_gen_stats,
+                        G1SegmentedArrayMemoryStats<NUM>* collection_set_candidate_stats);
 };
 
 #endif // SHARE_GC_G1_G1SEGMENTEDARRAYFREEMEMORYTASK_HPP
