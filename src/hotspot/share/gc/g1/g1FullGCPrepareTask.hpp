@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,24 +44,24 @@ class G1DetermineCompactionQueueClosure : public HeapRegionClosure {
   bool _found_empty_regions;
 
   template<bool is_humongous>
-  void free_pinned_region(HeapRegion* hr);
+  inline void free_pinned_region(HeapRegion* hr);
 
-  bool should_compact(HeapRegion* hr) const;
+  inline bool should_compact(HeapRegion* hr) const;
 
   // Returns the current worker id to assign a compaction point to, and selects
   // the next one round-robin style.
-  uint next_worker();
+  inline uint next_worker();
 
-  G1FullGCCompactionPoint* next_compaction_point();
+  inline G1FullGCCompactionPoint* next_compaction_point();
 
-  void add_to_compaction_queue(G1FullGCCompactionPoint* cp, HeapRegion* hr);
+  inline void add_to_compaction_queue(G1FullGCCompactionPoint* cp, HeapRegion* hr);
 
 public:
   G1DetermineCompactionQueueClosure(G1FullCollector* collector);
 
-  bool do_heap_region(HeapRegion* hr) override;
+  inline bool do_heap_region(HeapRegion* hr) override;
 
-  bool found_empty_regions() { return _found_empty_regions; }
+  inline bool found_empty_regions() { return _found_empty_regions; }
 };
 
 class G1FullGCPrepareTask : public G1FullGCTask {
@@ -125,7 +125,7 @@ public:
     _cp(hrcp),
     _current(hr) { }
 
-  size_t apply(oop obj);
+  inline size_t apply(oop obj);
 };
 
 #endif // SHARE_GC_G1_G1FULLGCPREPARETASK_HPP
