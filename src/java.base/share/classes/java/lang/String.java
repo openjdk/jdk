@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1284,14 +1284,17 @@ public final class String
         int sp = 0;
         int sl = val.length >> 1;
         byte[] dst = new byte[sl * 3];
-        char c;
-        while (sp < sl && (c = StringUTF16.getChar(val, sp)) < '\u0080') {
+        while (sp < sl) {
             // ascii fast loop;
+            char c = StringUTF16.getChar(val, sp);
+            if (c >= '\u0080') {
+                break;
+            }
             dst[dp++] = (byte)c;
             sp++;
         }
         while (sp < sl) {
-            c = StringUTF16.getChar(val, sp++);
+            char c = StringUTF16.getChar(val, sp++);
             if (c < 0x80) {
                 dst[dp++] = (byte)c;
             } else if (c < 0x800) {
