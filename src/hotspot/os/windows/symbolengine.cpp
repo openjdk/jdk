@@ -579,7 +579,7 @@ bool SymbolEngine::recalc_search_path(bool* p_search_path_was_updated) {
 bool SymbolEngine::get_source_info(const void* addr, char* filename, size_t filename_len,
                                    int* line_no)
 {
-  assert(buf != NULL && filename_len > 0 && line_no != NULL, "Argument error");
+  assert(filename != NULL && filename_len > 0 && line_no != NULL, "Argument error");
   filename[0] = '\0';
   *line_no = -1;
 
@@ -595,14 +595,14 @@ bool SymbolEngine::get_source_info(const void* addr, char* filename, size_t file
   DWORD displacement;
   if (WindowsDbgHelp::symGetLineFromAddr64(::GetCurrentProcess(), (DWORD64)addr,
                                            &displacement, &lineinfo)) {
-    if (buf != NULL && buflen > 0 && lineinfo.FileName != NULL) {
+    if (filename != NULL && filename_len > 0 && lineinfo.FileName != NULL) {
       // We only return the file name, not the whole path.
       char* p = lineinfo.FileName;
       char* q = strrchr(lineinfo.FileName, '\\');
       if (q) {
         p = q + 1;
       }
-      ::strncpy(buf, p, filename_len - 1);
+      ::strncpy(filename, p, filename_len - 1);
       filename[filename_len - 1] = '\0';
     }
     if (line_no != 0) {

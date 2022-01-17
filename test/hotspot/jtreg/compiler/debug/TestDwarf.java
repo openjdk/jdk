@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8242181
  * @library / /test/lib
@@ -155,7 +155,7 @@ public class TestDwarf {
                             String library = matcher.group(1);
                             // We should always find symbols for libTestDwarf.so.
                             Asserts.assertFalse(library.equals("libTestDwarf.so"), "Could not find filename or line number in \"" + line + "\" for libTestDwarf.so");
-                            pattern = Pattern.compile("Failed to load DWARF file or find DWARF sections directly inside library.*" + library);
+                            pattern = Pattern.compile("Failed to load DWARF file for library.*" + library + ".*or find DWARF sections directly inside it");
                             matcher = pattern.matcher(crashOutputString);
                             Asserts.assertTrue(matcher.find(), "Could not find filename or line number in \"" + line + "\"");
                             System.out.println("Did not find symbols for " + library + ". If they are not in the same directory as " + library + " consider setting " +
