@@ -52,7 +52,6 @@ void G1FullGCPrepareTask::G1CalculatePointersClosure::free_pinned_region(HeapReg
 }
 
 bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion* hr) {
-  bool force_not_compacted = false;
   if (should_compact(hr)) {
     assert(!hr->is_humongous(), "moving humongous objects not supported.");
     prepare_for_compaction(hr);
@@ -168,8 +167,7 @@ size_t G1FullGCPrepareTask::G1PrepareCompactLiveClosure::apply(oop object) {
 size_t G1FullGCPrepareTask::G1RePrepareClosure::apply(oop obj) {
   // We only re-prepare objects forwarded within the current region, so
   // skip objects that are already forwarded to another region.
-  oop forwarded_to = obj->forwardee();
-  if (forwarded_to != NULL && !_current->is_in(forwarded_to)) {
+  if (obj->is_forwarded() && !_current->is_in(obj->forwardee())) {
     return obj->size();
   }
 

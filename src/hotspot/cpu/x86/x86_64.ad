@@ -13011,6 +13011,29 @@ instruct safePoint_poll_tls(rFlagsReg cr, rRegP poll)
   ins_pipe(ialu_reg_mem);
 %}
 
+instruct mask_all_evexL(kReg dst, rRegL src) %{
+  match(Set dst (MaskAll src));
+  format %{ "mask_all_evexL $dst, $src \t! mask all operation" %}
+  ins_encode %{
+    int mask_len = Matcher::vector_length(this);
+    __ vector_maskall_operation($dst$$KRegister, $src$$Register, mask_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct mask_all_evexI_GT32(kReg dst, rRegI src, rRegL tmp) %{
+  predicate(Matcher::vector_length(n) > 32);
+  match(Set dst (MaskAll src));
+  effect(TEMP tmp);
+  format %{ "mask_all_evexI_GT32 $dst, $src \t! using $tmp as TEMP" %}
+  ins_encode %{
+    int mask_len = Matcher::vector_length(this);
+    __ movslq($tmp$$Register, $src$$Register);
+    __ vector_maskall_operation($dst$$KRegister, $tmp$$Register, mask_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 // ============================================================================
 // Procedure Call/Return Instructions
 // Call Java Static Instruction

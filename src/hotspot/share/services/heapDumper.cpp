@@ -607,23 +607,23 @@ class DumpWriter : public AbstractDumpWriter {
  private:
   CompressionBackend _backend; // Does the actual writing.
  protected:
-  virtual void flush(bool force = false);
+  void flush(bool force = false) override;
 
  public:
   // Takes ownership of the writer and compressor.
   DumpWriter(AbstractWriter* writer, AbstractCompressor* compressor);
 
   // total number of bytes written to the disk
-  virtual julong bytes_written() const          { return (julong) _backend.get_written(); }
+  julong bytes_written() const override { return (julong) _backend.get_written(); }
 
-  virtual char const* error() const             { return _backend.error(); }
+  char const* error() const override    { return _backend.error(); }
 
   // Called by threads used for parallel writing.
   void writer_loop()                    { _backend.thread_loop(); }
   // Called when finish to release the threads.
-  virtual void deactivate()             { flush(); _backend.deactivate(); }
+  void deactivate() override            { flush(); _backend.deactivate(); }
   // Get the backend pointer, used by parallel dump writer.
-  CompressionBackend* backend_ptr() { return &_backend; }
+  CompressionBackend* backend_ptr()     { return &_backend; }
 
 };
 
@@ -701,7 +701,7 @@ class ParDumpWriter : public AbstractDumpWriter {
   bool _split_data;
   static const uint BackendFlushThreshold = 2;
  protected:
-  virtual void flush(bool force = false) {
+  void flush(bool force = false) override {
     assert(_pos != 0, "must not be zero");
     if (_pos != 0) {
       refresh_buffer();
@@ -742,8 +742,8 @@ class ParDumpWriter : public AbstractDumpWriter {
   }
 
   // total number of bytes written to the disk
-  virtual julong bytes_written() const          { return (julong) _backend_ptr->get_written(); }
-  virtual char const* error() const { return _err == NULL ? _backend_ptr->error() : _err; }
+  julong bytes_written() const override { return (julong) _backend_ptr->get_written(); }
+  char const* error() const override    { return _err == NULL ? _backend_ptr->error() : _err; }
 
   static void before_work() {
     assert(_lock == NULL, "ParDumpWriter lock must be initialized only once");
@@ -757,7 +757,7 @@ class ParDumpWriter : public AbstractDumpWriter {
   }
 
   // write raw bytes
-  virtual void write_raw(const void* s, size_t len) {
+  void write_raw(const void* s, size_t len) override {
     assert(!_in_dump_segment || (_sub_record_left >= len), "sub-record too large");
     debug_only(_sub_record_left -= len);
     assert(!_split_data, "Invalid split data");
@@ -778,7 +778,7 @@ class ParDumpWriter : public AbstractDumpWriter {
     set_position(position() + len);
   }
 
-  virtual void deactivate()             { flush(true); _backend_ptr->deactivate(); }
+  void deactivate() override { flush(true); _backend_ptr->deactivate(); }
 
  private:
   void allocate_internal_buffer() {
@@ -1910,7 +1910,6 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
       // Number of dumper threads that only iterate heap.
       uint _heap_only_dumper_threads = _num_dumper_threads - 1 /* VMDumper thread */;
       _dumper_controller = new (std::nothrow) DumperController(_heap_only_dumper_threads);
-      _poi = Universe::heap()->parallel_object_iterator(_num_dumper_threads);
     }
   }
 
@@ -1998,10 +1997,6 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
         delete _stack_traces[i];
       }
       FREE_C_HEAP_ARRAY(ThreadStackTrace*, _stack_traces);
-    }
-    if (_poi != NULL) {
-      delete _poi;
-      _poi = NULL;
     }
     if (_dumper_controller != NULL) {
       delete _dumper_controller;
@@ -2252,7 +2247,14 @@ void VM_HeapDumper::doit() {
     work(0);
   } else {
     prepare_parallel_dump(workers->active_workers());
-    workers->run_task(this);
+    if (_num_dumper_threads > 1) {
+      ParallelObjectIterator poi(_num_dumper_threads);
+      _poi = &poi;
+      workers->run_task(this);
+      _poi = NULL;
+    } else {
+      workers->run_task(this);
+    }
     finish_parallel_dump();
   }
 
@@ -2386,7 +2388,7 @@ void VM_HeapDumper::dump_stack_traces() {
       HandleMark hm(current_thread);
 
       ThreadStackTrace* stack_trace = new ThreadStackTrace(thread, false);
-      stack_trace->dump_stack_at_safepoint(-1);
+      stack_trace->dump_stack_at_safepoint(-1, /* ObjectMonitorsHashtable is not needed here */ nullptr);
       _stack_traces[_num_threads++] = stack_trace;
 
       // write HPROF_FRAME records for this thread's stack trace

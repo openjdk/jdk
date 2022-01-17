@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -143,7 +143,7 @@ void VM_Version::get_os_cpu_info() {
     _zva_length = 4 << (dczid_el0 & 0xf);
   }
 
-  if (FILE *f = fopen("/proc/cpuinfo", "r")) {
+  if (FILE *f = os::fopen("/proc/cpuinfo", "r")) {
     // need a large buffer as the flags line may include lots of text
     char buf[1024], *p;
     while (fgets(buf, sizeof (buf), f) != NULL) {

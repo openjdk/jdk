@@ -52,6 +52,7 @@ public class JavaThread extends Thread {
   private static AddressField  stackBaseField;
   private static CIntegerField stackSizeField;
   private static CIntegerField terminatedField;
+  private static AddressField activeHandlesField;
 
   private static JavaThreadPDAccess access;
 
@@ -95,6 +96,7 @@ public class JavaThread extends Thread {
     stackBaseField    = type.getAddressField("_stack_base");
     stackSizeField    = type.getCIntegerField("_stack_size");
     terminatedField   = type.getCIntegerField("_terminated");
+    activeHandlesField = type.getAddressField("_active_handles");
 
     UNINITIALIZED     = db.lookupIntConstant("_thread_uninitialized").intValue();
     NEW               = db.lookupIntConstant("_thread_new").intValue();
@@ -407,6 +409,14 @@ public class JavaThread extends Thread {
       return OopUtilities.threadOopGetParkBlocker(threadObj);
     }
     return null;
+  }
+
+  public JNIHandleBlock activeHandles() {
+    Address a = activeHandlesField.getAddress(addr);
+    if (a == null) {
+      return null;
+    }
+    return new JNIHandleBlock(a);
   }
 
   public void printInfoOn(PrintStream tty) {

@@ -106,19 +106,24 @@ function indexFilesLoaded() {
         && tagSearchIndex;
 }
 
-function copySnippet(link) {
+function copySnippet(button) {
     var textarea = document.createElement("textarea");
     textarea.style.height = 0;
     document.body.appendChild(textarea);
-    textarea.value = link.nextElementSibling.innerText;
+    textarea.value = button.nextElementSibling.innerText;
     textarea.select();
     document.execCommand("copy");
     document.body.removeChild(textarea);
-    link.classList.add("copied");
-    var parent = link.parentElement;
-    parent.onmouseleave = parent.ontouchend = function() {
-        link.classList.remove("copied");
-    };
+    var span = button.firstElementChild;
+    var copied = span.getAttribute("data-copied");
+    if (span.innerHTML !== copied) {
+        var initialLabel = span.innerHTML;
+        span.innerHTML = copied;
+        var parent = button.parentElement;
+        parent.onmouseleave = parent.ontouchend = function() {
+            span.innerHTML = initialLabel;
+        };
+    }
 }
 
 // Workaround for scroll position not being included in browser history (8249133)

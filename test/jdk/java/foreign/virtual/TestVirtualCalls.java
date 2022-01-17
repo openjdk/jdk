@@ -24,6 +24,7 @@
 /*
  * @test
  * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
+ * @library ../
  * @run testng/othervm
  *   --enable-native-access=ALL-UNNAMED
  *   TestVirtualCalls
@@ -34,28 +35,26 @@ import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.FunctionDescriptor;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
 
+import jdk.incubator.foreign.NativeSymbol;
 import jdk.incubator.foreign.SymbolLookup;
 import jdk.incubator.foreign.MemoryAddress;
 import org.testng.annotations.*;
 
-import static jdk.incubator.foreign.CLinker.*;
 import static org.testng.Assert.assertEquals;
 
-public class TestVirtualCalls {
+public class TestVirtualCalls extends NativeTestHelper {
 
-    static final CLinker abi = CLinker.getInstance();
+    static final CLinker abi = CLinker.systemCLinker();
 
     static final MethodHandle func;
-    static final MemoryAddress funcA;
-    static final MemoryAddress funcB;
-    static final MemoryAddress funcC;
+    static final NativeSymbol funcA;
+    static final NativeSymbol funcB;
+    static final NativeSymbol funcC;
 
     static {
         func = abi.downcallHandle(
-            MethodType.methodType(int.class),
-            FunctionDescriptor.of(C_INT));
+                FunctionDescriptor.of(C_INT));
 
         System.loadLibrary("Virtual");
         SymbolLookup lookup = SymbolLookup.loaderLookup();
@@ -66,14 +65,14 @@ public class TestVirtualCalls {
 
     @Test
     public void testVirtualCalls() throws Throwable {
-        assertEquals((int) func.invokeExact((Addressable) funcA), 1);
-        assertEquals((int) func.invokeExact((Addressable) funcB), 2);
-        assertEquals((int) func.invokeExact((Addressable) funcC), 3);
+        assertEquals((int) func.invokeExact(funcA), 1);
+        assertEquals((int) func.invokeExact(funcB), 2);
+        assertEquals((int) func.invokeExact(funcC), 3);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void testNullTarget() throws Throwable {
-        int x = (int) func.invokeExact((Addressable) null);
+        int x = (int) func.invokeExact((NativeSymbol) null);
     }
 
 }

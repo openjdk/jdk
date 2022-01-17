@@ -19,9 +19,6 @@
 ; or visit www.oracle.com if you need additional information or have any
 ; questions.
 
-; This file contains duplicate entries as globalDefinitions_vecApi.hpp
-; It is intended for inclusion in .s files compiled with masm
-
 ; Used to check whether building on x86_64 architecture. Equivalent to checking in regular hpp file for #ifdef _WIN64
 IFDEF RAX
 

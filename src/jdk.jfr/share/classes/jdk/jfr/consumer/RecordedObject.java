@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -827,8 +827,11 @@ public class RecordedObject {
         throw newIllegalArgumentException(name, "java.time.Duration");
     }
 
-    private Duration getDuration(long timespan, String name) throws InternalError {
+    private Duration getDuration(long timespan, String name) {
         ValueDescriptor v = getValueDescriptor(objectContext.fields, name, null);
+        if (timespan == 0) {
+            return Duration.ZERO;
+        }
         if (timespan == Long.MIN_VALUE) {
             return Duration.ofSeconds(Long.MIN_VALUE, 0);
         }
@@ -997,7 +1000,7 @@ public class RecordedObject {
         if (instant.equals(Instant.MIN)) {
             return OffsetDateTime.MIN;
         }
-        return OffsetDateTime.ofInstant(getInstant(name), objectContext.getZoneOffset());
+        return OffsetDateTime.ofInstant(instant, objectContext.getZoneOffset());
     }
 
     private static IllegalArgumentException newIllegalArgumentException(String name, String typeName) {

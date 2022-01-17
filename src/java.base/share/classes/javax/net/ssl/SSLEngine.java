@@ -339,7 +339,7 @@ import java.util.function.BiFunction;
  * The ApplicationProtocol {@code String} values returned by the methods
  * in this class are in the network byte representation sent by the peer.
  * The bytes could be directly compared, or converted to its Unicode
- * {code String} format for comparison.
+ * {@code String} format for comparison.
  *
  * <blockquote><pre>
  *     String networkString = sslEngine.getHandshakeApplicationProtocol();

@@ -319,7 +319,7 @@ public:
     }
 
     out->print_cr("    Region with largest amount of code roots = " HR_FORMAT ", "
-                  "size = " SIZE_FORMAT "%s, num_elems = " SIZE_FORMAT ".",
+                  "size = " SIZE_FORMAT "%s, num_slots = " SIZE_FORMAT ".",
                   HR_FORMAT_PARAMS(max_code_root_mem_sz_region()),
                   byte_size_in_proper_unit(max_code_root_rem_set->strong_code_roots_mem_size()),
                   proper_unit_for_byte_size(max_code_root_rem_set->strong_code_roots_mem_size()),

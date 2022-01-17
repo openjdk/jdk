@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,13 +75,13 @@ class ServerImpl implements TimeSource {
     private volatile long ticks; /* number of clock ticks since server started */
     private HttpServer wrapper;
 
-    final static int CLOCK_TICK = ServerConfig.getClockTick();
-    final static long IDLE_INTERVAL = ServerConfig.getIdleInterval();
-    final static int MAX_IDLE_CONNECTIONS = ServerConfig.getMaxIdleConnections();
-    final static long TIMER_MILLIS = ServerConfig.getTimerMillis ();
-    final static long MAX_REQ_TIME=getTimeMillis(ServerConfig.getMaxReqTime());
-    final static long MAX_RSP_TIME=getTimeMillis(ServerConfig.getMaxRspTime());
-    final static boolean timer1Enabled = MAX_REQ_TIME != -1 || MAX_RSP_TIME != -1;
+    static final int CLOCK_TICK = ServerConfig.getClockTick();
+    static final long IDLE_INTERVAL = ServerConfig.getIdleInterval();
+    static final int MAX_IDLE_CONNECTIONS = ServerConfig.getMaxIdleConnections();
+    static final long TIMER_MILLIS = ServerConfig.getTimerMillis ();
+    static final long MAX_REQ_TIME=getTimeMillis(ServerConfig.getMaxReqTime());
+    static final long MAX_RSP_TIME=getTimeMillis(ServerConfig.getMaxRspTime());
+    static final boolean timer1Enabled = MAX_REQ_TIME != -1 || MAX_RSP_TIME != -1;
 
     private Timer timer, timer1;
     private final Logger logger;
@@ -521,6 +521,18 @@ class ServerImpl implements TimeSource {
         public void run () {
             /* context will be null for new connections */
             logger.log(Level.TRACE, "exchange started");
+
+            if (dispatcherThread == Thread.currentThread()) {
+                try {
+                    // call selector to process cancelled keys
+                    selector.selectNow();
+                } catch (IOException ioe) {
+                    logger.log(Level.DEBUG, "processing of cancelled keys failed: closing");
+                    closeConnection(connection);
+                    return;
+                }
+            }
+
             context = connection.getHttpContext();
             boolean newconnection;
             SSLEngine engine = null;

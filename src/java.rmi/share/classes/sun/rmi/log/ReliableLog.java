@@ -285,8 +285,7 @@ public class ReliableLog {
         } catch (IOException e) {
             throw e;
         } catch (Exception e) {
-            throw (IOException)
-                new IOException("write update failed").initCause(e);
+            throw new IOException("write update failed", e);
         }
         log.sync();
 
@@ -547,8 +546,7 @@ public class ReliableLog {
                    new LogFile(logName, "rw") :
                    logClassConstructor.newInstance(logName, "rw"));
         } catch (Exception e) {
-            throw (IOException) new IOException(
-                "unable to construct LogFile instance").initCause(e);
+            throw new IOException("unable to construct LogFile instance", e);
         }
 
         if (truncate) {

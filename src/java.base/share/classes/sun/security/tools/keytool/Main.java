@@ -1473,10 +1473,10 @@ public final class Main {
             if (s == null) break;
             // OpenSSL does not use NEW
             //if (s.startsWith("-----BEGIN NEW CERTIFICATE REQUEST-----")) {
-            if (s.startsWith("-----BEGIN") && s.indexOf("REQUEST") >= 0) {
+            if (s.startsWith("-----BEGIN") && s.contains("REQUEST")) {
                 canRead = true;
             //} else if (s.startsWith("-----END NEW CERTIFICATE REQUEST-----")) {
-            } else if (s.startsWith("-----END") && s.indexOf("REQUEST") >= 0) {
+            } else if (s.startsWith("-----END") && s.contains("REQUEST")) {
                 break;
             } else if (canRead) {
                 sb.append(s);

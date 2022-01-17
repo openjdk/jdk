@@ -161,6 +161,6 @@ void StringDedup::Config::initialize() {
   _load_factor_for_shrink = StringDeduplicationShrinkTableLoad;
   _load_factor_target = StringDeduplicationTargetTableLoad;
   _minimum_dead_for_cleanup = StringDeduplicationCleanupDeadMinimum;
-  _dead_factor_for_cleanup = percent_of(StringDeduplicationCleanupDeadPercent, 100);
+  _dead_factor_for_cleanup = StringDeduplicationCleanupDeadPercent / 100.0;
   _hash_seed = initial_hash_seed();
 }

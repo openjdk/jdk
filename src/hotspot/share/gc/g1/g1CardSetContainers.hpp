@@ -95,7 +95,7 @@ class G1CardSetInlinePtr : public StackObj {
     return result;
   }
 
-  uint find(uint const card_idx, uint const bits_per_card, uint start_at, uint num_elems);
+  uint find(uint const card_idx, uint const bits_per_card, uint start_at, uint num_cards);
 
 public:
   G1CardSetInlinePtr() : _value_addr(nullptr), _value((CardSetPtr)G1CardSet::CardSetInlinePtr) { }
@@ -218,7 +218,7 @@ private:
   }
 
 public:
-  G1CardSetArray(uint const card_in_region, EntryCountType num_elems);
+  G1CardSetArray(uint const card_in_region, EntryCountType num_cards);
 
   G1AddCardResult add(uint card_idx);
 
@@ -228,7 +228,6 @@ public:
   void iterate(CardVisitor& found);
 
   size_t num_entries() const { return _num_entries & EntryMask; }
-  size_t max_entries() const { return _size; }
 
   static size_t header_size_in_bytes() { return header_size_in_bytes_internal<G1CardSetArray>(); }
 

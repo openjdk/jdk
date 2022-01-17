@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,7 +208,7 @@ public class ZipFile implements ZipConstants, Closeable {
      *
      * @throws SecurityException
      *         if a security manager exists and its {@code checkRead}
-     *         method doesn't allow read access to the file,or its
+     *         method doesn't allow read access to the file, or its
      *         {@code checkDelete} method doesn't allow deleting the
      *         file when the {@code OPEN_DELETE} flag is set
      *
@@ -1631,12 +1631,17 @@ public class ZipFile implements ZipConstants, Closeable {
                         // slash
                         int entryLen = entry.length();
                         int nameLen = name.length();
-                        if ((entryLen == nameLen && entry.equals(name)) ||
-                                (addSlash &&
-                                nameLen + 1 == entryLen &&
-                                entry.startsWith(name) &&
-                                entry.charAt(entryLen - 1) == '/')) {
+                        if (entryLen == nameLen && entry.equals(name)) {
+                            // Found our match
                             return pos;
+                        }
+                        // If addSlash is true we'll now test for name+/ providing
+                        if (addSlash && nameLen + 1 == entryLen
+                                && entry.startsWith(name) &&
+                                entry.charAt(entryLen - 1) == '/') {
+                            // Found the entry "name+/", now find the CEN entry pos
+                            int exactPos = getEntryPos(name, false);
+                            return exactPos == -1 ? pos : exactPos;
                         }
                     } catch (IllegalArgumentException iae) {
                         // Ignore

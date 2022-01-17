@@ -1518,54 +1518,6 @@ JNI_COCOA_EXIT(env);
 
 /*
  * Class:     sun_lwawt_macosx_CAccessible
- * Method:    menuOpened
- * Signature: (I)V
- */
-JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_menuOpened
-(JNIEnv *env, jclass jklass, jlong element)
-{
-JNI_COCOA_ENTER(env);
-    [ThreadUtilities performOnMainThread:@selector(postMenuOpened)
-                     on:(JavaComponentAccessibility *)jlong_to_ptr(element)
-                     withObject:nil
-                     waitUntilDone:NO];
-JNI_COCOA_EXIT(env);
-}
-
-/*
- * Class:     sun_lwawt_macosx_CAccessible
- * Method:    menuClosed
- * Signature: (I)V
- */
-JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_menuClosed
-(JNIEnv *env, jclass jklass, jlong element)
-{
-JNI_COCOA_ENTER(env);
-    [ThreadUtilities performOnMainThread:@selector(postMenuClosed)
-                     on:(JavaComponentAccessibility *)jlong_to_ptr(element)
-                     withObject:nil
-                     waitUntilDone:NO];
-JNI_COCOA_EXIT(env);
-}
-
-/*
- * Class:     sun_lwawt_macosx_CAccessible
- * Method:    menuItemSelected
- * Signature: (I)V
- */
-JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_menuItemSelected
-(JNIEnv *env, jclass jklass, jlong element)
-{
-JNI_COCOA_ENTER(env);
-    [ThreadUtilities performOnMainThread:@selector(postMenuItemSelected)
-                     on:(JavaComponentAccessibility *)jlong_to_ptr(element)
-                     withObject:nil
-                     waitUntilDone:NO];
-JNI_COCOA_EXIT(env);
-}
-
-/*
- * Class:     sun_lwawt_macosx_CAccessible
  * Method:    unregisterFromCocoaAXSystem
  * Signature: (I)V
  */

@@ -65,8 +65,9 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   size_t region_size = G1HeapRegionSize;
   // G1HeapRegionSize = 0 means decide ergonomically.
   if (region_size == 0) {
-    region_size = MAX2(max_heap_size / HeapRegionBounds::target_number(),
-                       HeapRegionBounds::min_size());
+    region_size = clamp(max_heap_size / HeapRegionBounds::target_number(),
+                        HeapRegionBounds::min_size(),
+                        HeapRegionBounds::max_ergonomics_size());
   }
 
   // Make sure region size is a power of 2. Rounding up since this
@@ -90,7 +91,7 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   GrainWords = GrainBytes >> LogHeapWordSize;
 
   guarantee(CardsPerRegion == 0, "we should only set it once");
-  CardsPerRegion = GrainBytes >> G1CardTable::card_shift;
+  CardsPerRegion = GrainBytes >> G1CardTable::card_shift();
 
   LogCardsPerRegion = log2i(CardsPerRegion);
 
@@ -209,8 +210,6 @@ void HeapRegion::set_continues_humongous(HeapRegion* first_hr) {
   report_region_type_change(G1HeapRegionTraceType::ContinuesHumongous);
   _type.set_continues_humongous();
   _humongous_start_region = first_hr;
-
-  _bot_part.set_object_can_span(true);
 }
 
 void HeapRegion::clear_humongous() {
@@ -218,8 +217,6 @@ void HeapRegion::clear_humongous() {
 
   assert(capacity() == HeapRegion::GrainBytes, "pre-condition");
   _humongous_start_region = NULL;
-
-  _bot_part.set_object_can_span(false);
 }
 
 HeapRegion::HeapRegion(uint hrm_index,
@@ -231,7 +228,6 @@ HeapRegion::HeapRegion(uint hrm_index,
   _top(NULL),
   _compaction_top(NULL),
   _bot_part(bot, this),
-  _par_alloc_lock(Mutex::service-2, "HeapRegionParAlloc_lock"),
   _pre_dummy_top(NULL),
   _rem_set(NULL),
   _hrm_index(hrm_index),
@@ -654,6 +650,8 @@ void HeapRegion::verify(VerifyOption vo,
   VerifyLiveClosure vl_cl(g1h, vo);
   VerifyRemSetClosure vr_cl(g1h, vo);
   bool is_region_humongous = is_humongous();
+  // We cast p to an oop, so region-bottom must be an obj-start.
+  assert(!is_region_humongous || is_starts_humongous(), "invariant");
   size_t object_num = 0;
   while (p < top()) {
     oop obj = cast_to_oop(p);
@@ -735,11 +733,6 @@ void HeapRegion::verify(VerifyOption vo,
   verify_strong_code_roots(vo, failures);
 }
 
-void HeapRegion::verify() const {
-  bool dummy = false;
-  verify(VerifyOption_G1UsePrevMarking, /* failures */ &dummy);
-}
-
 void HeapRegion::verify_rem_set(VerifyOption vo, bool* failures) const {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   *failures = false;
@@ -797,7 +790,7 @@ void HeapRegion::mangle_unused_area() {
 #endif
 
 void HeapRegion::initialize_bot_threshold() {
-  _bot_part.initialize_threshold();
+  _bot_part.reset_bot();
 }
 
 void HeapRegion::alloc_block_in_bot(HeapWord* start, HeapWord* end) {
@@ -812,4 +805,13 @@ void HeapRegion::object_iterate(ObjectClosure* blk) {
     }
     p += block_size(p);
   }
+}
+
+void HeapRegion::fill_with_dummy_object(HeapWord* address, size_t word_size, bool zap) {
+  // Keep the BOT in sync for old generation regions.
+  if (is_old()) {
+    update_bot_at(address, word_size);
+  }
+  // Fill in the object.
+  CollectedHeap::fill_with_object(address, word_size, zap);
 }
