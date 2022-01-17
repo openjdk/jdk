@@ -25,15 +25,15 @@
 #ifndef SHARE_GC_G1_G1FULLGCPREPARETASK_HPP
 #define SHARE_GC_G1_G1FULLGCPREPARETASK_HPP
 
-#include "gc/g1/g1FullGCCompactionPoint.hpp"
-#include "gc/g1/g1FullGCScope.hpp"
 #include "gc/g1/g1FullGCTask.hpp"
-#include "gc/g1/g1RootProcessor.hpp"
-#include "gc/g1/heapRegionManager.hpp"
-#include "gc/shared/referenceProcessor.hpp"
+#include "gc/g1/heapRegion.hpp"
+#include "memory/allocation.hpp"
 
+class G1CollectedHeap;
 class G1CMBitMap;
 class G1FullCollector;
+class G1FullGCCompactionPoint;
+class HeapRegion;
 
 // Determines the regions in the heap that should be part of the compaction and
 // distributes them among the compaction queues in round-robin fashion.
@@ -112,6 +112,20 @@ private:
     G1PrepareCompactLiveClosure(G1FullGCCompactionPoint* cp);
     size_t apply(oop object);
   };
+};
+
+// Closure to re-prepare objects in the serial compaction point queue regions for
+// serial compaction.
+class G1SerialRePrepareClosure : public StackObj {
+  G1FullGCCompactionPoint* _cp;
+  HeapRegion* _current;
+
+public:
+  G1SerialRePrepareClosure(G1FullGCCompactionPoint* hrcp, HeapRegion* hr) :
+    _cp(hrcp),
+    _current(hr) { }
+
+  size_t apply(oop obj);
 };
 
 #endif // SHARE_GC_G1_G1FULLGCPREPARETASK_HPP

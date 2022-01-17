@@ -32,7 +32,7 @@
 #include "gc/g1/g1FullGCCompactTask.hpp"
 #include "gc/g1/g1FullGCMarker.inline.hpp"
 #include "gc/g1/g1FullGCMarkTask.hpp"
-#include "gc/g1/g1FullGCPrepareTask.hpp"
+#include "gc/g1/g1FullGCPrepareTask.inline.hpp"
 #include "gc/g1/g1FullGCScope.hpp"
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1Policy.hpp"
@@ -326,33 +326,6 @@ bool G1FullCollector::phase2b_forward_oops() {
 
   return task.has_free_compaction_targets();
 }
-
-// Closure to re-prepare objects in the serial compaction point queue regions for
-// serial compaction.
-class G1SerialRePrepareClosure : public StackObj {
-  G1FullGCCompactionPoint* _cp;
-  HeapRegion* _current;
-
-public:
-  G1SerialRePrepareClosure(G1FullGCCompactionPoint* hrcp,
-                     HeapRegion* hr) :
-      _cp(hrcp),
-      _current(hr) { }
-
-  size_t apply(oop obj) {
-    // We only re-prepare objects forwarded within the current region, so
-    // skip objects that are already forwarded to another region.
-    if (obj->is_forwarded() && !_current->is_in(obj->forwardee())) {
-      return obj->size();
-    }
-
-    // Get size and forward.
-    size_t size = obj->size();
-    _cp->forward(obj, size);
-
-    return size;
-  }
-};
 
 void G1FullCollector::phase2c_prepare_serial_compaction() {
   GCTraceTime(Debug, gc, phases) debug("Phase 2: Prepare serial compaction", scope()->timer());

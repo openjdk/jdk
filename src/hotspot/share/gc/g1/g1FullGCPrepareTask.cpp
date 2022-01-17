@@ -39,87 +39,11 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/ticks.hpp"
 
-template<bool is_humongous>
-void G1DetermineCompactionQueueClosure::free_pinned_region(HeapRegion* hr) {
-  _found_empty_regions = true;
-  if (is_humongous) {
-    _g1h->free_humongous_region(hr, nullptr);
-  } else {
-    _g1h->free_region(hr, nullptr);
-  }
-  _collector->set_free(hr->hrm_index());
-  add_to_compaction_queue(next_compaction_point(), hr);
-}
-
-bool G1DetermineCompactionQueueClosure::should_compact(HeapRegion* hr) const {
-  // There is no need to iterate and forward objects in pinned regions ie.
-  // prepare them for compaction.
-  if (hr->is_pinned()) {
-    return false;
-  }
-  size_t live_words = _collector->live_words(hr->hrm_index());
-  size_t live_words_threshold = _collector->scope()->region_compaction_threshold();
-  // High live ratio region will not be compacted.
-  return live_words <= live_words_threshold;
-}
-
-uint G1DetermineCompactionQueueClosure::next_worker() {
-  uint result = _cur_worker;
-  _cur_worker = (_cur_worker + 1) % _collector->workers();
-  return result;
-}
-
-G1FullGCCompactionPoint* G1DetermineCompactionQueueClosure::next_compaction_point() {
-  return _collector->compaction_point(next_worker());
-}
-
-void G1DetermineCompactionQueueClosure::add_to_compaction_queue(G1FullGCCompactionPoint* cp, HeapRegion* hr) {
-  hr->set_compaction_top(hr->bottom());
-  if (!cp->is_initialized()) {
-    cp->initialize(hr, true);
-  }
-  // Add region to the compaction queue.
-  cp->add(hr);
-}
-
 G1DetermineCompactionQueueClosure::G1DetermineCompactionQueueClosure(G1FullCollector* collector) :
   _g1h(G1CollectedHeap::heap()),
   _collector(collector),
   _cur_worker(0),
   _found_empty_regions(false) { }
-
-bool G1DetermineCompactionQueueClosure::do_heap_region(HeapRegion* hr) {
-  if (should_compact(hr)) {
-    assert(!hr->is_humongous(), "moving humongous objects not supported.");
-    add_to_compaction_queue(next_compaction_point(), hr);
-  } else {
-    assert(hr->containing_set() == nullptr, "already cleared by PrepareRegionsClosure");
-    if (hr->is_humongous()) {
-      oop obj = cast_to_oop(hr->humongous_start_region()->bottom());
-      bool is_empty = !_collector->mark_bitmap()->is_marked(obj);
-      if (is_empty) {
-        free_pinned_region<true>(hr);
-      }
-    } else if (hr->is_open_archive()) {
-      bool is_empty = _collector->live_words(hr->hrm_index()) == 0;
-      if (is_empty) {
-        free_pinned_region<false>(hr);
-      }
-    } else if (hr->is_closed_archive()) {
-      // nothing to do with closed archive region
-    } else {
-      assert(MarkSweepDeadRatio > 0,
-             "only skip compaction for other regions when MarkSweepDeadRatio > 0");
-
-      // Too many live objects in the region; skip compacting it.
-      _collector->update_from_compacting_to_skip_compacting(hr->hrm_index());
-      log_trace(gc, phases)("Phase 2: skip compaction region index: %u, live words: " SIZE_FORMAT,
-                            hr->hrm_index(), _collector->live_words(hr->hrm_index()));
-    }
-  }
-
-  return false;
-}
 
 bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion* hr) {
   uint region_idx = hr->hrm_index();
@@ -184,10 +108,10 @@ void G1FullGCPrepareTask::work(uint worker_id) {
 
 G1FullGCPrepareTask::G1CalculatePointersClosure::G1CalculatePointersClosure(G1FullCollector* collector,
                                                                             G1FullGCCompactionPoint* cp) :
-    _g1h(G1CollectedHeap::heap()),
-    _collector(collector),
-    _bitmap(collector->mark_bitmap()),
-    _cp(cp) { }
+  _g1h(G1CollectedHeap::heap()),
+  _collector(collector),
+  _bitmap(collector->mark_bitmap()),
+  _cp(cp) { }
 
 G1FullGCPrepareTask::G1ResetMetadataClosure::G1ResetMetadataClosure(G1FullCollector* collector) :
   _g1h(G1CollectedHeap::heap()),
