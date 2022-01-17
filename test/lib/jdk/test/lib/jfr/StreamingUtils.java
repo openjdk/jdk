@@ -45,8 +45,8 @@ public class StreamingUtils {
             if (!process.isAlive()) {
                 String msg = String.format("Process (pid = %d) is no longer alive, exit value = %d\n",
                                            process.pid(), process.exitValue());
-                mes += "Stderr: " + new String(process.getErrorStream().readAllBytes()) + "\n";
-                mes += "Stdout: " + new String(process.getInputStream().readAllBytes()) + "\n";
+                msg += "Stderr: " + new String(process.getErrorStream().readAllBytes()) + "\n";
+                msg += "Stdout: " + new String(process.getInputStream().readAllBytes()) + "\n";
                 throw new RuntimeException(msg);
             }
 
