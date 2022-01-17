@@ -1647,7 +1647,7 @@ void G1ConcurrentMark::weak_refs_work() {
     // We can not trust g1_is_alive and the contents of the heap if the marking stack
     // overflowed while processing references. Exit the VM.
     fatal("Overflow during reference processing, can not continue. Current mark stack depth: "
-          "~" SIZE_FORMAT ", MarkStackSize: " SIZE_FORMAT ", MarkStackSizeMax: " SIZE_FORMAT "."
+          SIZE_FORMAT ", MarkStackSize: " SIZE_FORMAT ", MarkStackSizeMax: " SIZE_FORMAT ". "
           "Please increase MarkStackSize and/or MarkStackSizeMax and restart.",
           _global_mark_stack.size(), MarkStackSize, MarkStackSizeMax);
     return;
