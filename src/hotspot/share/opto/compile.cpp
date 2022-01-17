@@ -4820,7 +4820,7 @@ bool Compile::should_print(int level) {
   }
 
   bool need = directive()->IGVPrintLevelOption >= level;
-  if (need && !_printer) {
+  if (need && _printer == nullptr) {
     _printer = IdealGraphPrinter::printer();
     _printer->set_compile(this);
   }
