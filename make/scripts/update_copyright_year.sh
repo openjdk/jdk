@@ -39,6 +39,10 @@ set -e
 # To allow total changes counting
 shopt -s lastpipe
 
+# Get an absolute path to this script, since that determines the top-level directory.
+this_script_dir=`dirname $0`
+this_script_dir=`cd $this_script_dir > /dev/null && pwd`
+
 # Temp area
 tmp=/tmp/`basename $0`.${USER}.$$
 rm -f -r ${tmp}
@@ -58,7 +62,26 @@ else
 fi
 
 # VCS select
-case "$1" in
+vcs="$1"
+
+if [ -z "$vcs" ] ; then
+  git_found=false
+  hg_found=false
+
+  [ -d "${this_script_dir}/../../.git" ] && git_found=true
+  [ -d "${this_script_dir}/../../.hg" ] && hg_found=true
+
+  if [ "$git_found" == "true" ] && [ "$hg_found" == "false" ] ; then
+    vcs="git"
+  elif [ "$hg_found" == "true" ] && [ "$git_found" == "false" ] ; then
+    vcs="hg"
+  else
+    echo "Error: could not auto-detect version control system"
+    vcs=""
+  fi
+fi
+
+case "$vcs" in
   "git")
     echo "Using Git version control system"
     vcs_status=(git ls-files -m)
