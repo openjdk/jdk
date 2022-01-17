@@ -129,6 +129,8 @@ void MemSummaryReporter::report() {
     MEMFLAGS flag = NMTUtil::index_to_flag(index);
     // thread stack is reported as part of thread category
     if (flag == mtThreadStack) continue;
+    // card sets are reported as part of GC category
+    if (flag == mtGCCardSet) continue;
     MallocMemory* malloc_memory = _malloc_snapshot->by_type(flag);
     VirtualMemory* virtual_memory = _vm_snapshot->by_type(flag);
 
@@ -155,6 +157,11 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
       reserved_amount += thread_stack_usage->malloc_size();
       committed_amount += thread_stack_usage->malloc_size();
     }
+  } else if (flag == mtGC) {
+    const MallocMemory* card_set_usage =
+      (const MallocMemory*)_malloc_snapshot->by_type(mtGCCardSet);
+    reserved_amount += card_set_usage->malloc_size();
+    committed_amount += card_set_usage->malloc_size();
   } else if (flag == mtNMT) {
     // Count malloc headers in "NMT" category
     reserved_amount  += _malloc_snapshot->malloc_overhead()->size();
@@ -191,6 +198,11 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
         out->print("%27s (Stack: " SIZE_FORMAT "%s", " ",
           amount_in_current_scale(thread_stack_memory->malloc_size()), scale);
       }
+      out->print_cr(")");
+    } else if (flag == mtGC) {
+      MallocMemory* card_set_memory = _malloc_snapshot->by_type(mtGCCardSet);
+      out->print("%27s (card sets: " SIZE_FORMAT "%s", " ",
+        amount_in_current_scale(card_set_memory->malloc_size()), current_scale());
       out->print_cr(")");
     }
 
@@ -571,6 +583,16 @@ void MemSummaryDiffReporter::diff_summary_of_type(MEMFLAGS flag,
         print_malloc_diff(current_thread_stack->malloc_size(), current_thread_stack->malloc_count(),
           early_thread_stack->malloc_size(), early_thread_stack->malloc_count(), flag);
       }
+      out->print_cr(")");
+    } else if (flag == mtGC) {
+      out->print("%27s (card sets: ", " ");
+      const MallocMemory* current_gc_card_set =
+        _current_baseline.malloc_memory(mtGCCardSet);
+      const MallocMemory* early_gc_card_set =
+        _early_baseline.malloc_memory(mtGCCardSet);
+
+      print_malloc_diff(current_gc_card_set->malloc_size(), current_gc_card_set->malloc_count(),
+        early_gc_card_set->malloc_size(), early_gc_card_set->malloc_count(), flag);
       out->print_cr(")");
     }
 
