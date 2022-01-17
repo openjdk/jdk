@@ -132,7 +132,7 @@
  * For overviews, tutorials, examples, guides, and other documentation,
  * please see:
  * <ul>
- *     <li><a href=""https://www.oracle.com/java/technologies/a-swing-architecture.html"
+ *     <li><a href="https://www.oracle.com/java/technologies/a-swing-architecture.html"
  *     target="_top">A Swing Architecture Overview</a></li>
  *     <li><a href="https://docs.oracle.com/javase/tutorial/"
  *     target="_top">The Java Tutorial</a></li>
