@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 package gc.g1;
 
 /**
- * @test TestShrinkAuxiliaryData30
+ * @test TestShrinkAuxiliaryData27
  * @key randomness
  * @bug 8038423 8061715 8078405
  * @summary Checks that decommitment occurs for JVM with different
@@ -36,11 +36,11 @@ package gc.g1;
  *          java.management
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/timeout=720 gc.g1.TestShrinkAuxiliaryData30
+ * @run main/timeout=720 gc.g1.TestShrinkAuxiliaryData27
  */
-public class TestShrinkAuxiliaryData30 {
+public class TestShrinkAuxiliaryData27 {
 
     public static void main(String[] args) throws Exception {
-        new TestShrinkAuxiliaryData(30).test();
+        new TestShrinkAuxiliaryData(27).test();
     }
 }
