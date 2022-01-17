@@ -718,7 +718,7 @@ public:
     LocalSet _def_locals;
 
     ciTypeFlow* outer() const { return head()->outer(); }
-    bool insertion_point(Loop* lp, Loop* current);
+    bool at_insertion_point(Loop* lp, Loop* current);
 
   public:
     Loop(Block* head, Block* tail) :

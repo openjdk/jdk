@@ -2509,7 +2509,7 @@ int ciTypeFlow::profiled_count(ciTypeFlow::Loop* loop) {
     }
   } else {
     assert((iter.get_dest() == loop->head()->start()) == (succs->at(ciTypeFlow::IF_TAKEN) == loop->head()), "bytecode and CFG not consistent");
-    assert((succs->at(ciTypeFlow::IF_NOT_TAKEN) == loop->head()) == (tail->limit() == loop->head()->start()), "bytecode and CFG not consistent");
+    assert((tail->limit() == loop->head()->start()) == (succs->at(ciTypeFlow::IF_NOT_TAKEN) == loop->head()), "bytecode and CFG not consistent");
     if (succs->at(ciTypeFlow::IF_TAKEN) == loop->head()) {
       return method()->scale_count(data->as_JumpData()->taken());
     } else if (succs->at(ciTypeFlow::IF_NOT_TAKEN) == loop->head()) {
@@ -2520,7 +2520,7 @@ int ciTypeFlow::profiled_count(ciTypeFlow::Loop* loop) {
   return 0;
 }
 
-bool ciTypeFlow::Loop::insertion_point(Loop* lp, Loop* current) {
+bool ciTypeFlow::Loop::at_insertion_point(Loop* lp, Loop* current) {
   int lp_pre_order = lp->head()->pre_order();
   if (current->head()->pre_order() < lp_pre_order) {
     return true;
@@ -2563,7 +2563,7 @@ ciTypeFlow::Loop* ciTypeFlow::Loop::sorted_merge(Loop* lp) {
       if (current == lp) {
         return leaf; // Already in list
       }
-      if (insertion_point(lp, current)) {
+      if (at_insertion_point(lp, current)) {
         break;
       }
       prev = current;
