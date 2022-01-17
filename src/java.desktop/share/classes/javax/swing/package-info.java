@@ -132,8 +132,8 @@
  * For overviews, tutorials, examples, guides, and other documentation,
  * please see:
  * <ul>
- *     <li><a href="http://www.oracle.com/technetwork/java/javase/tech/articles-jsp-139072.html"
- *     target="_top">The Swing Connection</a></li>
+ *     <li><a href=""https://www.oracle.com/java/technologies/a-swing-architecture.html"
+ *     target="_top">A Swing Architecture Overview</a></li>
  *     <li><a href="https://docs.oracle.com/javase/tutorial/"
  *     target="_top">The Java Tutorial</a></li>
  *     <li><a href="http://www.oracle.com/technetwork/java/javase/training/index.html"
