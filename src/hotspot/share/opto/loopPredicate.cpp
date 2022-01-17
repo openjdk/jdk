@@ -1029,7 +1029,7 @@ private:
     // We do not perform an exact (f <= 1) check
     // this would be error prone with rounding of floats.
     // Performing a check like (f <= 1+eps) would be of benefit,
-    // however, it is not evident how to chose such an eps,
+    // however, it is not evident how to determine such an eps,
     // given that an arbitrary number of add/mul operations
     // are performed on these frequencies.
     return (f > 1) ? 1 : f;
