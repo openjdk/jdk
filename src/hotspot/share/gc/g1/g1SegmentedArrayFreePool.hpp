@@ -29,30 +29,6 @@
 #include "gc/g1/g1SegmentedArray.hpp"
 #include "utilities/growableArray.hpp"
 
-// Statistics for a segmented array. Contains the number of segments and memory
-// used for each. Note that statistics are typically not taken atomically so there
-// can be inconsistencies. The user must be prepared for them.
-template<uint num>
-class G1SegmentedArrayMemoryStats {
-public:
-
-  size_t _num_mem_sizes[num];
-  size_t _num_segments[num];
-
-  // Returns all-zero statistics.
-  G1SegmentedArrayMemoryStats();
-
-  void add(G1SegmentedArrayMemoryStats const other) {
-    STATIC_ASSERT(ARRAY_SIZE(_num_segments) == ARRAY_SIZE(_num_mem_sizes));
-    for (uint i = 0; i < ARRAY_SIZE(_num_mem_sizes); i++) {
-      _num_mem_sizes[i] += other._num_mem_sizes[i];
-      _num_segments[i] += other._num_segments[i];
-    }
-  }
-
-  void clear();
-};
-
 // A set of free lists holding freed segments for use by G1SegmentedArray,
 // e.g. G1CardSetAllocators::SegmentedArray
 template<MEMFLAGS flag, typename Configuration>
@@ -67,11 +43,13 @@ class G1SegmentedArrayFreePool {
   ~G1SegmentedArrayFreePool();
 
 public:
-  static G1SegmentedArrayFreePool* free_list_pool() { return &_freelist_pool; }
-  static G1SegmentedArrayMemoryStats<NUM> free_list_sizes() { return _freelist_pool.memory_sizes(); }
 
   class G1ReturnMemoryProcessor;
   typedef GrowableArrayCHeap<G1ReturnMemoryProcessor*, mtGC> G1ReturnMemoryProcessorSet;
+  class G1SegmentedArrayMemoryStats;
+
+  static G1SegmentedArrayFreePool* free_list_pool() { return &_freelist_pool; }
+  static G1SegmentedArrayMemoryStats free_list_sizes() { return _freelist_pool.memory_sizes(); }
 
   static void update_unlink_processors(G1ReturnMemoryProcessorSet* unlink_processors);
 
@@ -80,10 +58,36 @@ public:
     return &_free_lists[i];
   }
 
-  G1SegmentedArrayMemoryStats<Configuration::num_mem_object_types()> memory_sizes() const;
+  G1SegmentedArrayMemoryStats memory_sizes() const;
   size_t mem_size() const;
 
   void print_on(outputStream* out);
+};
+
+// Statistics for a segmented array. Contains the number of segments and memory
+// used for each. Note that statistics are typically not taken atomically so there
+// can be inconsistencies. The user must be prepared for them.
+template<MEMFLAGS flag, typename Configuration>
+class G1SegmentedArrayFreePool<flag, Configuration>::G1SegmentedArrayMemoryStats {
+  static constexpr uint NUM = Configuration::num_mem_object_types();
+
+public:
+
+  size_t _num_mem_sizes[NUM];
+  size_t _num_segments[NUM];
+
+  // Returns all-zero statistics.
+  G1SegmentedArrayMemoryStats();
+
+  void add(G1SegmentedArrayMemoryStats const other) {
+    STATIC_ASSERT(ARRAY_SIZE(_num_segments) == ARRAY_SIZE(_num_mem_sizes));
+    for (uint i = 0; i < ARRAY_SIZE(_num_mem_sizes); i++) {
+      _num_mem_sizes[i] += other._num_mem_sizes[i];
+      _num_segments[i] += other._num_segments[i];
+    }
+  }
+
+  void clear();
 };
 
 // Data structure containing current in-progress state for returning memory to the

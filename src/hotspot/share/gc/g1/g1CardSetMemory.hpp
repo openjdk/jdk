@@ -139,7 +139,7 @@ public:
 };
 
 typedef G1SegmentedArrayFreePool<mtGCCardSet, G1CardSetConfiguration> G1CardSetFreePool;
-typedef G1SegmentedArrayMemoryStats<G1CardSetConfiguration::num_mem_object_types()> G1CardSetMemoryStats;
+typedef G1CardSetFreePool::G1SegmentedArrayMemoryStats G1CardSetMemoryStats;
 
 class G1CardSetMemoryManager : public CHeapObj<mtGCCardSet> {
   G1CardSetConfiguration* _config;

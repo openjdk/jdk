@@ -55,8 +55,8 @@ template<MEMFLAGS flag, typename Configuration>
 bool G1SegmentedArrayFreeMemoryTask<flag, Configuration>::calculate_return_infos(jlong deadline) {
   // Ignore the deadline in this step as it is very short.
 
-  G1SegmentedArrayMemoryStats<NUM> used = _total_used;
-  G1SegmentedArrayMemoryStats<NUM> free = G1SegmentedArrayFreePool<flag, Configuration>::free_list_sizes();
+  G1SegmentedArrayMemoryStats used = _total_used;
+  G1SegmentedArrayMemoryStats free = G1SegmentedArrayFreePool<flag, Configuration>::free_list_sizes();
 
   _return_info = new G1ReturnMemoryProcessorSet(NUM);
   for (uint i = 0; i < NUM; i++) {
@@ -204,8 +204,8 @@ void G1SegmentedArrayFreeMemoryTask<flag, Configuration>::execute() {
 }
 
 template<MEMFLAGS flag, typename Configuration>
-void G1SegmentedArrayFreeMemoryTask<flag, Configuration>::notify_new_stats(G1SegmentedArrayMemoryStats<NUM>* young_gen_stats,
-                                                                           G1SegmentedArrayMemoryStats<NUM>* collection_set_candidate_stats) {
+void G1SegmentedArrayFreeMemoryTask<flag, Configuration>::notify_new_stats(G1SegmentedArrayMemoryStats* young_gen_stats,
+                                                                           G1SegmentedArrayMemoryStats* collection_set_candidate_stats) {
   assert_at_safepoint_on_vm_thread();
 
   _total_used = *young_gen_stats;

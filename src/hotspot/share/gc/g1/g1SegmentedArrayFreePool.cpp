@@ -32,14 +32,14 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/ostream.hpp"
 
-template<uint num>
-G1SegmentedArrayMemoryStats<num>::G1SegmentedArrayMemoryStats() {
+template<MEMFLAGS flag, typename Configuration>
+G1SegmentedArrayFreePool<flag, Configuration>::G1SegmentedArrayMemoryStats::G1SegmentedArrayMemoryStats() {
   clear();
 }
 
-template<uint num>
-void G1SegmentedArrayMemoryStats<num>::clear() {
-  for (uint i = 0; i < num; i++) {
+template<MEMFLAGS flag, typename Configuration>
+void G1SegmentedArrayFreePool<flag, Configuration>::G1SegmentedArrayMemoryStats::clear() {
+  for (uint i = 0; i < NUM; i++) {
     _num_mem_sizes[i] = 0;
     _num_segments[i] = 0;
   }
@@ -172,8 +172,9 @@ G1SegmentedArrayFreePool<flag, Configuration>::~G1SegmentedArrayFreePool() {
 }
 
 template<MEMFLAGS flag, typename Configuration>
-G1SegmentedArrayMemoryStats<Configuration::num_mem_object_types()> G1SegmentedArrayFreePool<flag, Configuration>::memory_sizes() const {
-  G1SegmentedArrayMemoryStats<NUM> free_list_stats;
+typename G1SegmentedArrayFreePool<flag, Configuration>::G1SegmentedArrayMemoryStats
+G1SegmentedArrayFreePool<flag, Configuration>::memory_sizes() const {
+  G1SegmentedArrayMemoryStats free_list_stats;
   for (uint i = 0; i < NUM; i++) {
     free_list_stats._num_mem_sizes[i] = _free_lists[i].mem_size();
     free_list_stats._num_segments[i] = _free_lists[i].num_segments();

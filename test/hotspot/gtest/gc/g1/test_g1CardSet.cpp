@@ -214,7 +214,7 @@ void G1CardSetTest::cardset_basic_test() {
                                 FullCardSetThreshold,
                                 CardsPerRegion,
                                 0);
-  G1CardSetFreePool free_pool(config.num_mem_object_types());
+  G1CardSetFreePool free_pool;
   G1CardSetMemoryManager mm(&config, &free_pool);
 
   {
@@ -433,7 +433,7 @@ void G1CardSetTest::cardset_mt_test() {
                                 FullCardSetThreshold,
                                 CardsPerRegion,
                                 0);
-  G1CardSetFreePool free_pool(config.num_mem_object_types());
+  G1CardSetFreePool free_pool;
   G1CardSetMemoryManager mm(&config, &free_pool);
 
   G1CardSet card_set(&config, &mm);

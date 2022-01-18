@@ -56,8 +56,9 @@ class G1SegmentedArrayFreeMemoryTask : public G1ServiceTask {
 
   State _state;
 
+  typedef typename G1SegmentedArrayFreePool<flag, Configuration>::G1SegmentedArrayMemoryStats G1SegmentedArrayMemoryStats;
   // Current total segmented array memory usage.
-  G1SegmentedArrayMemoryStats<Configuration::num_mem_object_types()> _total_used;
+  G1SegmentedArrayMemoryStats _total_used;
 
   typedef typename G1SegmentedArrayFreePool<flag, Configuration>::G1ReturnMemoryProcessor G1ReturnMemoryProcessor;
   typedef typename G1SegmentedArrayFreePool<flag, Configuration>::G1ReturnMemoryProcessorSet G1ReturnMemoryProcessorSet;
@@ -92,8 +93,8 @@ public:
 
   // Notify the task of new used remembered set memory statistics for the young
   // generation and the collection set candidate sets.
-  void notify_new_stats(G1SegmentedArrayMemoryStats<NUM>* young_gen_stats,
-                        G1SegmentedArrayMemoryStats<NUM>* collection_set_candidate_stats);
+  void notify_new_stats(G1SegmentedArrayMemoryStats* young_gen_stats,
+                        G1SegmentedArrayMemoryStats* collection_set_candidate_stats);
 };
 
 #endif // SHARE_GC_G1_G1SEGMENTEDARRAYFREEMEMORYTASK_HPP
