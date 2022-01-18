@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,8 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Insets;
 import java.awt.image.BufferedImage;
-import java.awt.image.ImageObserver;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import javax.imageio.ImageIO;
 import javax.swing.JScrollBar;
 import javax.swing.SwingUtilities;
@@ -52,15 +50,11 @@ public class ScrollBarBorderTest {
     public static final int WIDTH = BORDER_WIDTH + 200;
     public static final int HEIGHT = 20;
 
-    private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
-        try {
-            UIManager.setLookAndFeel(laf.getClassName());
-            System.out.println(laf.getName());
-        } catch (UnsupportedLookAndFeelException ignored){
-            System.out.println("Unsupported LookAndFeel: " + laf.getClassName());
-        } catch (ClassNotFoundException | InstantiationException |
-                IllegalAccessException e) {
-            throw new RuntimeException(e);
+    public static void main(String[] args) throws Exception {
+        for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
+            SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
+            SwingUtilities.invokeAndWait(ScrollBarBorderTest::testHorizontal);
+            SwingUtilities.invokeAndWait(ScrollBarBorderTest::testVertical);
         }
     }
 
@@ -84,14 +78,14 @@ public class ScrollBarBorderTest {
         graphics2D2.dispose();
 
         // check border for thumb
-        for (int i = WIDTH - BORDER_WIDTH; i < WIDTH; i++) {
-            for (int j = 0; j < HEIGHT; j++) {
-                int c1 = image1.getRGB(i,j);
-                int c2 = image2.getRGB(i,j);
-                if(c1 != c2) {
-                    System.out.println(i + " " + j + " " + "Color1: "
+        for (int x = WIDTH - BORDER_WIDTH; x < WIDTH; x++) {
+            for (int y = 0; y < HEIGHT; y++) {
+                int c1 = image1.getRGB(x, y);
+                int c2 = image2.getRGB(x, y);
+                if (c1 != c2) {
+                    System.out.println(x + " " + y + " " + "Color1: "
                                        + Integer.toHexString(c1));
-                    System.out.println(i + " " + j + " " + "Color2: "
+                    System.out.println(x + " " + y + " " + "Color2: "
                                        + Integer.toHexString(c2));
                     saveImage(image1, "himage1.png");
                     saveImage(image2, "himage2.png");
@@ -122,20 +116,32 @@ public class ScrollBarBorderTest {
         graphics2D2.dispose();
 
         // check border for thumb
-        for (int i = WIDTH - BORDER_WIDTH; i < WIDTH; i++) {
-            for (int j = 0; j < HEIGHT; j++) {
-                int c1 = image1.getRGB(j,i);
-                int c2 = image2.getRGB(j,i);
-                if(c1 != c2) {
-                    System.out.println(i + " " + j + " " + "Color1: "
+        for (int y = WIDTH - BORDER_WIDTH; y < WIDTH; y++) {
+            for (int x = 0; x < HEIGHT; x++) {
+                int c1 = image1.getRGB(x, y);
+                int c2 = image2.getRGB(x, y);
+                if (c1 != c2) {
+                    System.out.println(x + " " + y + " " + "Color1: "
                                        + Integer.toHexString(c1));
-                    System.out.println(i + " " + j + " " + "Color2: "
+                    System.out.println(x + " " + y + " " + "Color2: "
                                        + Integer.toHexString(c2));
                     saveImage(image1, "vimage1.png");
                     saveImage(image2, "vimage2.png");
                     throw new RuntimeException("Vertical border has a thumb in it");
                 }
             }
+        }
+    }
+
+    private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
+        try {
+            UIManager.setLookAndFeel(laf.getClassName());
+            System.out.println(laf.getName());
+        } catch (UnsupportedLookAndFeelException ignored){
+            System.out.println("Unsupported LookAndFeel: " + laf.getClassName());
+        } catch (ClassNotFoundException | InstantiationException |
+                IllegalAccessException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -148,25 +154,20 @@ public class ScrollBarBorderTest {
         }
     }
 
-    public static void main(String[] args) throws Exception {
-        for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
-                SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
-                SwingUtilities.invokeAndWait(ScrollBarBorderTest::testHorizontal);
-                SwingUtilities.invokeAndWait(ScrollBarBorderTest::testVertical);
-        }
-    }
-
     // custom border
     private static class HorizontalCustomBorder implements Border {
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
             g.setColor(new Color(255, 0, 0, 100));
             g.fillRect(width - BORDER_WIDTH, y, width, height);
         }
 
+        @Override
         public Insets getBorderInsets(Component c) {
-            return new Insets(0, 0, 0, 150);
+            return new Insets(0, 0, 0, BORDER_WIDTH);
         }
 
+        @Override
         public boolean isBorderOpaque() {
             return true;
         }
@@ -174,15 +175,18 @@ public class ScrollBarBorderTest {
 
     // custom border
     private static class VerticalCustomBorder implements Border {
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
             g.setColor(new Color(255, 0, 0, 100));
             g.fillRect(x, height - BORDER_WIDTH, width, height);
         }
 
+        @Override
         public Insets getBorderInsets(Component c) {
-            return new Insets(0, 0, 150, 0);
+            return new Insets(0, 0, BORDER_WIDTH, 0);
         }
 
+        @Override
         public boolean isBorderOpaque() {
             return true;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,7 +236,7 @@ public class AquaScrollBarUI extends ScrollBarUI {
     protected Hit getPartHit(final int x, final int y) {
         syncState(fScrollBar);
         Insets insets = fScrollBar.getInsets();
-        return JRSUIUtils.HitDetection.getHitForPoint(painter.getControl(), 0, 0,
+        return JRSUIUtils.HitDetection.getHitForPoint(painter.getControl(), insets.left, insets.top,
                 fScrollBar.getWidth() - (insets.left + insets.right),
                 fScrollBar.getHeight() - (insets.top + insets.bottom), x, y);
     }
