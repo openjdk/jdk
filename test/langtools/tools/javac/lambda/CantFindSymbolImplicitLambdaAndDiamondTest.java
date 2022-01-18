@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,24 +19,36 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef CPU_AARCH64_VMREG_AARCH64_INLINE_HPP
-#define CPU_AARCH64_VMREG_AARCH64_INLINE_HPP
+/*
+ * @test
+ * @summary symbol not found error, implicit lambdas and diamond constructor invocations
+ * @compile CantFindSymbolImplicitLambdaAndDiamondTest.java
+ */
 
-inline VMReg RegisterImpl::as_VMReg() const {
-  if( this==noreg ) return VMRegImpl::Bad();
-  return VMRegImpl::as_VMReg(encoding() * RegisterImpl::max_slots_per_register);
+import java.util.function.Consumer;
+
+class CantFindSymbolImplicitLambdaAndDiamondTest {
+    static class B<T>{}
+
+    static class A1 {
+        <T> A1(Consumer<T> cons) {}
+    }
+
+    static class A2<T> {
+        A2(Consumer<T> cons) {}
+    }
+
+    public void mount() {
+        new A1(inHours ->
+                new B<>() {{
+                    System.out.println(inHours);
+                }});
+
+        new A2<>(inHours ->
+            new B<>() {{
+                System.out.println(inHours);
+            }});
+    }
 }
-
-inline VMReg FloatRegisterImpl::as_VMReg() const {
-  return VMRegImpl::as_VMReg((encoding() * FloatRegisterImpl::max_slots_per_register) +
-                             ConcreteRegisterImpl::max_gpr);
-}
-
-inline VMReg PRegisterImpl::as_VMReg() const {
-  return VMRegImpl::as_VMReg(encoding() + ConcreteRegisterImpl::max_fpr);
-}
-
-#endif // CPU_AARCH64_VMREG_AARCH64_INLINE_HPP
