@@ -849,9 +849,7 @@ JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_boundInetAddress0
                     break;
                 }
             }
-        }
-        if (tableP != NULL) {
-          free(tableP);
+            free(tableP);
         }
         return found;
     } else {
@@ -928,11 +926,9 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0
             /* on next interface */
             curr = curr->next;
         }
-    }
-
-    /* release the IP address table */
-    if (tableP != NULL)
+        /* release the IP address table */
         free(tableP);
+    }
 
     /* release the interface list */
     free_netif(ifList);

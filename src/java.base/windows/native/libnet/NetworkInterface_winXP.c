@@ -297,7 +297,8 @@ int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
     flags |= GAA_FLAG_INCLUDE_PREFIX;
     ret = getAdapters (env, flags, &adapters);
     if (ret != ERROR_SUCCESS) {
-        goto err;
+        free_netif(*netifPP);
+        return -1;
     }
 
     /* Now get the IPv6 information. This includes:
