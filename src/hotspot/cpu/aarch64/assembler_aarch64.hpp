@@ -1726,7 +1726,7 @@ void mvnw(Register Rd, Register Rm,
 
 #define INSN(NAME, op)                                                  \
   void NAME(Register Rn, Register Rm, int imm, Condition cond) {        \
-    int regNumber = (Rm == zr ? 31 : (uintptr_t)Rm);                    \
+    int regNumber = (Rm == zr ? 31 : Rm->encoding());                   \
     conditional_compare(op, 0, 0, 0, Rn, regNumber, imm, cond);         \
   }                                                                     \
                                                                         \
