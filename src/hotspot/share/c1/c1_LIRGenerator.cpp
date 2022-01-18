@@ -1345,11 +1345,12 @@ void LIRGenerator::do_getObjectSize(Intrinsic* x) {
 
   // Instance case: the layout helper gives us instance size almost directly,
   // but we need to mask out the _lh_instance_slow_path_bit.
-  __ convert(Bytecodes::_i2l, layout, result_reg);
 
   assert((int) Klass::_lh_instance_slow_path_bit < BytesPerLong, "clear bit");
-  LIR_Opr mask = load_immediate(~(jlong) right_n_bits(LogBytesPerLong), T_LONG);
-  __ logical_and(result_reg, mask, result_reg);
+
+  LIR_Opr mask = load_immediate(~(jint) right_n_bits(LogBytesPerLong), T_INT);
+  __ logical_and(layout, mask, layout);
+  __ convert(Bytecodes::_i2l, layout, result_reg);
 
   __ branch(lir_cond_always, L_done->label());
 
