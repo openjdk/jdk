@@ -39,11 +39,7 @@ class G1SegmentedArrayFreePool {
 
   G1SegmentedArrayFreeList<flag>* _free_lists;
 
-  G1SegmentedArrayFreePool();
-  ~G1SegmentedArrayFreePool();
-
 public:
-
   class G1ReturnMemoryProcessor;
   typedef GrowableArrayCHeap<G1ReturnMemoryProcessor*, mtGC> G1ReturnMemoryProcessorSet;
   class G1SegmentedArrayMemoryStats;
@@ -52,6 +48,9 @@ public:
   static G1SegmentedArrayMemoryStats free_list_sizes() { return _freelist_pool.memory_sizes(); }
 
   static void update_unlink_processors(G1ReturnMemoryProcessorSet* unlink_processors);
+
+  G1SegmentedArrayFreePool();
+  ~G1SegmentedArrayFreePool();
 
   G1SegmentedArrayFreeList<flag>* free_list(uint i) {
     assert(i < NUM, "must be");
@@ -72,7 +71,6 @@ class G1SegmentedArrayFreePool<flag, Configuration>::G1SegmentedArrayMemoryStats
   static constexpr uint NUM = Configuration::num_mem_object_types();
 
 public:
-
   size_t _num_mem_sizes[NUM];
   size_t _num_segments[NUM];
 
