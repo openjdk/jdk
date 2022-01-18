@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ createNode(JNIEnv *env, jobject ref)
     RefNode   *node;
     jobject    strongOrWeakRef;
     jvmtiError error;
-    jboolean   pin = gdata->pinAllCount != 0;
+    jboolean   pinAll = gdata->pinAllCount != 0;
 
     /* Could allocate RefNode's in blocks, not sure it would help much */
     node = (RefNode*)jvmtiAllocate((int)sizeof(RefNode));
@@ -97,7 +97,7 @@ createNode(JNIEnv *env, jobject ref)
         return NULL;
     }
 
-    if (pin) {
+    if (pinAll) {
         /* Create strong reference to make sure we have a reference */
         strongOrWeakRef = JNI_FUNC_PTR(env,NewGlobalRef)(env, ref);
     } else {
@@ -116,7 +116,7 @@ createNode(JNIEnv *env, jobject ref)
     error = JVMTI_FUNC_PTR(gdata->jvmti, SetTag)
                           (gdata->jvmti, strongOrWeakRef, ptr_to_jlong(node));
     if ( error != JVMTI_ERROR_NONE ) {
-        if (pin) {
+        if (pinAll) {
             JNI_FUNC_PTR(env,DeleteGlobalRef)(env, strongOrWeakRef);
         } else {
             JNI_FUNC_PTR(env,DeleteWeakGlobalRef)(env, strongOrWeakRef);
@@ -128,7 +128,9 @@ createNode(JNIEnv *env, jobject ref)
     /* Fill in RefNode */
     node->ref         = strongOrWeakRef;
     node->count       = 1;
-    node->strongCount = pin ? 1 : 0;
+    node->isStrong    = pinAll;
+    node->isPinAll    = pinAll;
+    node->isCommonPin = JNI_FALSE;
     node->seqNum      = newSeqNum();
 
     /* Count RefNode's created */
@@ -146,7 +148,7 @@ deleteNode(JNIEnv *env, RefNode *node)
         /* Clear tag */
         (void)JVMTI_FUNC_PTR(gdata->jvmti,SetTag)
                             (gdata->jvmti, node->ref, NULL_OBJECT_ID);
-        if (node->strongCount != 0) {
+        if (node->isStrong) {
             JNI_FUNC_PTR(env,DeleteGlobalRef)(env, node->ref);
         } else {
             JNI_FUNC_PTR(env,DeleteWeakGlobalRef)(env, node->ref);
@@ -158,9 +160,9 @@ deleteNode(JNIEnv *env, RefNode *node)
 
 /* Change a RefNode to have a strong reference */
 static jobject
-strengthenNode(JNIEnv *env, RefNode *node)
+strengthenNode(JNIEnv *env, RefNode *node, jboolean isPinAll)
 {
-    if (node->strongCount == 0) {
+    if (!node->isStrong) {
         jobject strongRef;
 
         strongRef = JNI_FUNC_PTR(env,NewGlobalRef)(env, node->ref);
@@ -176,20 +178,30 @@ strengthenNode(JNIEnv *env, RefNode *node)
         if (strongRef != NULL) {
             JNI_FUNC_PTR(env,DeleteWeakGlobalRef)(env, node->ref);
             node->ref         = strongRef;
-            node->strongCount = 1;
+            node->isStrong = JNI_TRUE;
         }
-        return strongRef;
-    } else {
-        node->strongCount++;
-        return node->ref;
     }
+    if (isPinAll) {
+        node->isPinAll = JNI_TRUE;
+    } else {
+        node->isCommonPin = JNI_TRUE;
+    }
+    return node->ref;
 }
 
 /* Change a RefNode to have a weak reference */
 static jweak
-weakenNode(JNIEnv *env, RefNode *node)
+weakenNode(JNIEnv *env, RefNode *node, jboolean isUnpinAll)
 {
-    if (node->strongCount == 1) {
+    if (isUnpinAll) {
+        node->isPinAll = JNI_FALSE;
+    } else {
+        node->isCommonPin = JNI_FALSE;
+    }
+
+    // If the node is strong, but the reason(s) for it being strong
+    // no longer exist, then weaken it.
+    if (node->isStrong && !node->isPinAll && !node->isCommonPin) {
         jweak weakRef;
 
         weakRef = JNI_FUNC_PTR(env,NewWeakGlobalRef)(env, node->ref);
@@ -200,16 +212,11 @@ weakenNode(JNIEnv *env, RefNode *node)
 
         if (weakRef != NULL) {
             JNI_FUNC_PTR(env,DeleteGlobalRef)(env, node->ref);
-            node->ref         = weakRef;
-            node->strongCount = 0;
+            node->ref      = weakRef;
+            node->isStrong = JNI_FALSE;
         }
-        return weakRef;
-    } else {
-        if (node->strongCount > 0) {
-            node->strongCount--;
-        }
-        return node->ref;
     }
+    return node->ref;
 }
 
 /*
@@ -470,7 +477,7 @@ commonRef_idToRef(JNIEnv *env, jlong id)
 
         node = findNodeByID(env, id);
         if (node != NULL) {
-            if (node->strongCount != 0) {
+            if (node->isStrong) {
                 saveGlobalRef(env, node->ref, &ref);
             } else {
                 jobject lref;
@@ -522,7 +529,7 @@ commonRef_pin(jlong id)
         } else {
             jobject strongRef;
 
-            strongRef = strengthenNode(env, node);
+            strongRef = strengthenNode(env, node, JNI_FALSE);
             if (strongRef == NULL) {
                 /*
                  * Referent has been collected, clean up now.
@@ -551,7 +558,7 @@ commonRef_unpin(jlong id)
         if (node != NULL) {
             jweak weakRef;
 
-            weakRef = weakenNode(env, node);
+            weakRef = weakenNode(env, node, JNI_FALSE);
             if (weakRef == NULL) {
                 error = AGENT_ERROR_OUT_OF_MEMORY;
             }
@@ -585,7 +592,7 @@ commonRef_pinAll()
                 while (node != NULL) {
                     jobject strongRef;
 
-                    strongRef = strengthenNode(env, node);
+                    strongRef = strengthenNode(env, node, JNI_TRUE);
 
                     /* Has the object been collected? */
                     if (strongRef == NULL) {
@@ -628,7 +635,7 @@ commonRef_unpinAll()
                 for (node = gdata->objectsByID[i]; node != NULL; node = node->next) {
                     jweak weakRef;
 
-                    weakRef = weakenNode(env, node);
+                    weakRef = weakenNode(env, node, JNI_TRUE);
                     if (weakRef == NULL) {
                         EXIT_ERROR(AGENT_ERROR_NULL_POINTER,"NewWeakGlobalRef");
                     }
@@ -676,8 +683,7 @@ commonRef_compact(void)
                 prev = NULL;
                 while (node != NULL) {
                     /* Has the object been collected? */
-                    if ( (node->strongCount == 0) &&
-                          isSameObject(env, node->ref, NULL)) {
+                    if (!node->isStrong && isSameObject(env, node->ref, NULL)) {
                         RefNode *freed;
 
                         /* Detach from the ID list */
