@@ -132,6 +132,11 @@ public class StringDecode {
     }
 
     @Benchmark
+    public String decodeLatin1Long() throws Exception {
+        return new String(longLatin1String, charset);
+    }
+
+    @Benchmark
     public String decodeUTF16Short() throws Exception {
         return new String(utf16String, charset);
     }
@@ -144,11 +149,6 @@ public class StringDecode {
     @Benchmark
     public String decodeUTF16LongStart() throws Exception {
         return new String(longUtf16StartString, charset);
-    }
-
-    @Benchmark
-    public String decodeLatin1LongStart() throws Exception {
-        return new String(longLatin1String, charset);
     }
 
     @Benchmark
