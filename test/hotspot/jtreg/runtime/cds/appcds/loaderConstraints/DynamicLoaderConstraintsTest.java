@@ -103,11 +103,6 @@ public class DynamicLoaderConstraintsTest extends DynamicArchiveTestBase {
     static boolean useZGC;
 
     public static void main(String[] args) throws Exception {
-        if (isUseSharedSpacesDisabled()) {
-            System.out.println("This test is not applicable when JTREG tests are executed with -Xshare:off, or if the JDK doesn't have a default archive.");
-            return;
-        }
-
         useCustomLoader = (args.length != 0);
         useZGC = (args.length != 0 && args[0].equals("custom-zgc"));
         runTest(DynamicLoaderConstraintsTest::doTest);
@@ -153,6 +148,7 @@ public class DynamicLoaderConstraintsTest extends DynamicArchiveTestBase {
                     cmdLine = TestCommon.concat(cmdLine, "-cp", loaderJar,
                                                 "-XX:+UseZGC", "-XX:ZCollectionInterval=0.01",
                                                 loaderMainClass, appJar);
+                    setBaseArchiveOptions("-XX:+UseZGC", "-Xlog:cds");
                 } else {
                     cmdLine = TestCommon.concat(cmdLine, "-cp", loaderJar,
                                                 loaderMainClass, appJar);
