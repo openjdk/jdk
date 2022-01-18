@@ -1,0 +1,177 @@
+all:
+
+ifneq ($(shell uname | grep -i cygwin),)
+    is_windows = $1
+    platform_suffix := _windows
+    dll_name = $(strip $1).dll
+    exe_name = $(strip $1).exe
+else
+    is_linux = $1
+    is_unix = $1
+    platform_suffix := _linux
+    dll_name = lib$(strip $1).so
+    exe_name = $(strip $1)
+endif
+
+#
+# Boilerplate.
+#
+define add_target
+    $(info add_target($1))
+    $(eval $(eval_args))
+    $(eval $(call eval_args,$1,\
+        OBJDIR := $(firstword $($1.OBJDIR) ./objs/$1),\
+    ))
+    $(eval $(call eval_args,$1,\
+        objs := $(obj_from_source),
+    ))
+    $(eval $1 := $($1.OUTPUTDIR)/$(word 1, $($1.NAME) $1))
+
+    TARGETS += $($1)
+    PHONY_TARGETS += $1
+    CLEAN_TARGETS += clean_$1
+
+    .PHONY: clean_$1
+    clean_$1:; rm -rf $($1.OBJDIR) $($1)
+
+    .PHONY: $1
+    $1: $($1)
+
+    $($1): target:=$1
+    $($1.objs): target:=$1
+    $($1): $($1.objs); $$(if $$(wildcard $$(@D)),,mkdir -p $$(@D) && )$$(add_target.link)
+    $($1.objs):; $$(if $$(wildcard $$(@D)),,mkdir -p $$(@D) && )$$(add_target.compile)
+    $(foreach $1.SOURCES,$($1.SOURCES),$(eval $(obj_from_source): $($1.SOURCES)))
+
+    $(info end)
+endef
+
+comma := ,
+void :=
+space := $(void) $(void)
+obj_from_source = $(addprefix $($1.OBJDIR)/,$(addsuffix $(call is_unix,.o)$(call is_windows,.obj),$(basename $(notdir $($1.SOURCES)))))
+eval_args = $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20,$(call eval_arg,$1,$(strip $($i))))
+eval_arg = $(if $2,$(info $(space)$(space)$1.$2)$(eval $1.$2))
+
+# Link command line
+add_target.link_linux = $(CXX) $($(target).LDFLAGS) $($(target).LDFLAGS_linux) -o $@ $^
+add_target.link_windows = $(CXX) /Fe$@ $^ /link $($(target).LDFLAGS) $($(target).LDFLAGS_windows)
+add_target.link = $(add_target.link$(platform_suffix))
+
+compiler = $(if $(filter .c,$(suffix $<)),$(CC),$(CXX))
+compiler_flags_prefix = $(if $(filter .c,$(suffix $<)),C,CXX)
+# Compile command line
+add_target.compile_linux = $(compiler) -c -o $@ $($(target).$(compiler_flags_prefix)FLAGS) $($(target).$(compiler_flags_prefix)FLAGS_linux) $<
+add_target.compile_windows = $(compiler) /Fo$@ $($(target).$(compiler_flags_prefix)FLAGS) $($(target).$(compiler_flags_prefix)FLAGS_windows) /c $<
+add_target.compile = $(add_target.compile$(platform_suffix))
+
+
+
+###################################################################################
+#
+# Drop this makefile in src/jdk.incubator.jpackage subdirectory of Open JDK repo!
+#
+###################################################################################
+JP_SRC_ROOT := $(shell cd $(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))); pwd)
+JNI_INCUDES := \
+    $(JP_SRC_ROOT)/../java.base/share/native/include \
+    $(call is_linux, $(JP_SRC_ROOT)/../java.base/unix/native/include) \
+    $(call is_windows, $(JP_SRC_ROOT)/../java.base/windows/native/include)
+JP_ALL_INCLUDES := \
+    $(JNI_INCUDES) \
+    $(foreach i, $(addprefix $(JP_SRC_ROOT)/, \
+        share \
+        $(call is_unix, unix) \
+        $(call is_linux, linux) \
+        $(call is_windows, windows)), $(addprefix $i/native/, common applauncher applauncherlib applauncherlibcommon))
+
+JP_ROOT_OUTPUT := jpackage
+
+jp.sources.dirs := \
+    $(JP_SRC_ROOT)/share \
+    $(call is_windows, $(JP_SRC_ROOT)/windows) \
+    $(call is_linux, $(JP_SRC_ROOT)/linux $(JP_SRC_ROOT)/unix)
+
+jp.sources = $(foreach s, .cpp .c, \
+    $(foreach c, $1,\
+        $(wildcard $(addsuffix /native/$c/*$s, $(jp.sources.dirs))) \
+    ) \
+)
+
+# jpackage app launcher
+ifeq ($(call is_linux,1),1)
+    applauncherlib_SOURCES := $(call jp.sources, common applauncherlib applauncherlibcommon)
+    applauncher_SOURCES := $(call jp.sources, applauncher applauncherlibcommon)
+else
+    applauncher_SOURCES := $(call jp.sources, common applauncher applauncherlibcommon)
+endif
+
+$(eval $(call add_target,applauncher,\
+    NAME := $(call exe_name, applauncher),\
+    OUTPUTDIR := $(JP_ROOT_OUTPUT)/bin,\
+    OBJDIR := $(JP_ROOT_OUTPUT)/obj/applauncher,\
+    SOURCES := $(applauncher_SOURCES),\
+    CXXFLAGS := $(addprefix -I, $(JP_ALL_INCLUDES)),\
+    CFLAGS := $(addprefix -I, $(JP_ALL_INCLUDES)),\
+    CXXFLAGS_linux := -Wall,\
+    CFLAGS_linux := -Wall,\
+    CXXFLAGS_windows := -D_UNICODE -DUNICODE /EHsc,\
+    CFLAGS_windows := -D_UNICODE -DUNICODE,\
+    LDFLAGS_linux := -nodefaultlibs -fno-exceptions -lc -ldl,\
+))
+
+ifeq ($(call is_linux,1),1)
+$(eval $(call add_target,applauncherlib,\
+    NAME := $(call dll_name, applauncherlib),\
+    OUTPUTDIR := $(JP_ROOT_OUTPUT)/bin,\
+    OBJDIR := $(JP_ROOT_OUTPUT)/obj/applauncherlib,\
+    SOURCES := $(applauncherlib_SOURCES),\
+    CXXFLAGS := $(addprefix -I, $(JP_ALL_INCLUDES)),\
+    CFLAGS := $(addprefix -I, $(JP_ALL_INCLUDES)),\
+    CXXFLAGS_linux := -Wall -fPIC,\
+    CFLAGS_linux := -Wall -fPIC,\
+    LDFLAGS_linux := -shared -ldl -Wl$(comma)--version-script=$(JP_SRC_ROOT)/../../make/modules/jdk.jpackage/applauncherlib.ld-version-script -static-libstdc++ -static-libgcc,\
+))
+endif
+
+# jpackage app win launcher
+ifeq ($(call is_windows,1),1)
+$(eval $(call add_target,wapplauncher,\
+    NAME := $(call exe_name, wapplauncher),\
+    OUTPUTDIR := $(JP_ROOT_OUTPUT)/bin,\
+    OBJDIR := $(JP_ROOT_OUTPUT)/obj/wapplauncher,\
+    SOURCES := $(call jp.sources, common applauncher),\
+    CXXFLAGS := $(addprefix -I, $(JP_ALL_INCLUDES)),\
+    CXXFLAGS_windows := -D_UNICODE -DUNICODE -DJP_LAUNCHERW /EHsc,\
+    LDFLAGS_windows := /SUBSYSTEM:WINDOWS,\
+))
+
+# Windows exe installer wrapper for msi
+$(eval $(call add_target,msiwrapper,\
+    NAME := $(call exe_name, msiwrapper),\
+    OUTPUTDIR := $(JP_ROOT_OUTPUT)/bin,\
+    OBJDIR := $(JP_ROOT_OUTPUT)/obj/msiwrapper,\
+    SOURCES := $(call jp.sources, common msiwrapper),\
+    CXXFLAGS := $(addprefix -I, $(JP_ALL_INCLUDES)),\
+    CXXFLAGS_windows := -D_UNICODE -DUNICODE /EHsc,\
+    CXXFLAGS_windows := -D_UNICODE -DUNICODE /EHsc,\
+    LDFLAGS_windows := /SUBSYSTEM:WINDOWS,\
+))
+
+# jpackage native library for jpackage module
+$(eval $(call add_target,libjpackage,\
+    NAME := $(call dll_name, libjpackage),\
+    OUTPUTDIR := $(JP_ROOT_OUTPUT)/lib,\
+    OBJDIR := $(JP_ROOT_OUTPUT)/obj/libjpackage,\
+    SOURCES := $(call jp.sources, common libjpackage),\
+    CXXFLAGS := $(addprefix -I, $(JP_ALL_INCLUDES)),\
+    CXXFLAGS_windows := -D_UNICODE -DUNICODE /EHsc,\
+    LDFLAGS_windows := /DLL,\
+))
+endif
+
+all: $(PHONY_TARGETS)
+.PHONY: all
+
+clean: | $(CLEAN_TARGETS)
+.PHONY: clean
