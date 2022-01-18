@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -738,7 +738,7 @@ public class ObjectInputStream
      * restored a final set of validations can be performed.
      *
      * @param   obj the object to receive the validation callback.
-     * @param   prio controls the order of callbacks;zero is a good default.
+     * @param   prio controls the order of callbacks; zero is a good default.
      *          Use higher numbers to be called back earlier, lower numbers for
      *          later callbacks. Within a priority, callbacks are processed in
      *          no particular order.
