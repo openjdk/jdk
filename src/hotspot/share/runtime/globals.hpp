@@ -1864,8 +1864,8 @@ const intx ObjectAlignmentInBytes = 8;
           "Pause and wait for keypress on exit if a debugger is attached")  \
                                                                             \
   product(bool, ExtendedDTraceProbes,    false,                             \
-          "(Deprecated) Enable performance-impacting dtrace probes"         \
-          "Use a combination of -XX:+DTraceMethodProbes,"                   \
+          "(Deprecated) Enable performance-impacting dtrace probes. "       \
+          "Use a combination of -XX:+DTraceMethodProbes, "                  \
           "-XX:+DTraceAllocProbes and -XX:+DTraceMonitorProbes instead.")   \
                                                                             \
   product(bool, DTraceMethodProbes, false,                                  \
