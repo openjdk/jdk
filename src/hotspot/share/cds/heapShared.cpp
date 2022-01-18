@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,7 +128,6 @@ const static int num_fmg_open_archive_subgraph_entry_fields =
   sizeof(fmg_open_archive_subgraph_entry_fields) / sizeof(ArchivableStaticFieldInfo);
 
 GrowableArrayCHeap<oop, mtClassShared>* HeapShared::_pending_roots = NULL;
-narrowOop HeapShared::_roots_narrow;
 OopHandle HeapShared::_roots;
 
 #ifdef ASSERT
@@ -152,7 +151,6 @@ void HeapShared::fixup_regions() {
     fill_failed_loaded_region();
   }
   if (is_fully_available()) {
-    _roots = OopHandle(Universe::vm_global(), decode_from_archive(_roots_narrow));
     if (!MetaspaceShared::use_full_module_graph()) {
       // Need to remove all the archived java.lang.Module objects from HeapShared::roots().
       ClassLoaderDataShared::clear_archived_oops();
@@ -234,12 +232,6 @@ objArrayOop HeapShared::roots() {
   objArrayOop roots = (objArrayOop)_roots.resolve();
   assert(roots != NULL, "should have been initialized");
   return roots;
-}
-
-void HeapShared::set_roots(narrowOop roots) {
-  assert(UseSharedSpaces, "runtime only");
-  assert(is_fully_available(), "must be");
-  _roots_narrow = roots;
 }
 
 // Returns an objArray that contains all the roots of the archived objects
@@ -670,7 +662,23 @@ void HeapShared::write_subgraph_info_table() {
   writer.dump(&_run_time_subgraph_info_table, "subgraphs");
 }
 
-void HeapShared::serialize_subgraph_info_table_header(SerializeClosure* soc) {
+void HeapShared::serialize(SerializeClosure* soc) {
+  oop roots_oop = NULL;
+
+  if (soc->reading()) {
+    soc->do_oop(&roots_oop); // read from archive
+    assert(oopDesc::is_oop_or_null(roots_oop), "is oop");
+    // Create an OopHandle only if we have actually mapped or loaded the roots
+    if (roots_oop != NULL) {
+      assert(HeapShared::is_fully_available(), "must be");
+      _roots = OopHandle(Universe::vm_global(), roots_oop);
+    }
+  } else {
+    // writing
+    roots_oop = roots();
+    soc->do_oop(&roots_oop); // write to archive
+  }
+
   _run_time_subgraph_info_table.serialize_header(soc);
 }
 
@@ -1695,7 +1703,6 @@ bool HeapShared::load_heap_regions(FileMapInfo* mapinfo) {
 
   init_loaded_heap_relocation(loaded_regions, num_loaded_regions);
   _is_loaded = true;
-  set_roots(mapinfo->heap_obj_roots());
 
   return true;
 }

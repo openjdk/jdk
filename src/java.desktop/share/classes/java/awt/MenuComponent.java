@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -742,7 +742,7 @@ public abstract class MenuComponent implements java.io.Serializable {
         /**
          * Gets the {@code Font} of this object.
          *
-         * @return the {@code Font},if supported, for the object;
+         * @return the {@code Font}, if supported, for the object;
          *     otherwise, {@code null}
          */
         public Font getFont() {

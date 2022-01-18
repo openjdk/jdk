@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,7 +208,7 @@ public class ZipFile implements ZipConstants, Closeable {
      *
      * @throws SecurityException
      *         if a security manager exists and its {@code checkRead}
-     *         method doesn't allow read access to the file,or its
+     *         method doesn't allow read access to the file, or its
      *         {@code checkDelete} method doesn't allow deleting the
      *         file when the {@code OPEN_DELETE} flag is set
      *

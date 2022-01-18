@@ -57,21 +57,9 @@ class PSVirtualSpace : public CHeapObj<mtGC> {
 
  public:
   PSVirtualSpace(ReservedSpace rs, size_t alignment);
-  PSVirtualSpace(ReservedSpace rs);
 
   ~PSVirtualSpace();
 
-  // Eventually all instances should be created with the above 1- or 2-arg
-  // constructors.  Then the 1st constructor below should become protected and
-  // the 2nd ctor and initialize() removed.
-  PSVirtualSpace(size_t alignment):
-    _alignment(alignment),
-    _reserved_low_addr(NULL),
-    _reserved_high_addr(NULL),
-    _committed_low_addr(NULL),
-    _committed_high_addr(NULL),
-    _special(false) {
-  }
   PSVirtualSpace();
   void initialize(ReservedSpace rs);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2318,6 +2318,14 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
     } else if (n->req() == 5) {
       n->set_req(1, new BinaryNode(n->in(1), n->in(2)));
       n->set_req(2, new BinaryNode(n->in(3), n->in(4)));
+      n->del_req(4);
+      n->del_req(3);
+    } else if (n->req() == 6) {
+      Node* b3 = new BinaryNode(n->in(4), n->in(5));
+      Node* b2 = new BinaryNode(n->in(3), b3);
+      Node* b1 = new BinaryNode(n->in(2), b2);
+      n->set_req(2, b1);
+      n->del_req(5);
       n->del_req(4);
       n->del_req(3);
     }

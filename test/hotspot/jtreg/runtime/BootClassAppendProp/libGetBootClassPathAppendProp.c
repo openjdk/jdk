@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Huawei and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,22 +19,44 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_G1_G1EVACFAILUREOBJECTSSET_INLINE_HPP
-#define SHARE_GC_G1_G1EVACFAILUREOBJECTSSET_INLINE_HPP
+#include <stdio.h>
+#include <string.h>
+#include <jvmti.h>
 
-#include "gc/g1/g1EvacFailureObjectsSet.hpp"
-#include "gc/g1/g1CollectedHeap.hpp"
-#include "gc/g1/g1SegmentedArray.inline.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-void G1EvacFailureObjectsSet::record(oop obj) {
-  assert(obj != NULL, "must be");
-  assert(_region_idx == G1CollectedHeap::heap()->heap_region_containing(obj)->hrm_index(), "must be");
-  OffsetInRegion* e = _offsets.allocate();
-  *e = to_offset(obj);
+static jvmtiEnv *jvmti = NULL;
+
+JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+  int err = (*jvm)->GetEnv(jvm, (void**) &jvmti, JVMTI_VERSION_9);
+  if (err != JNI_OK) {
+    return JNI_ERR;
+  }
+  return JNI_OK;
 }
 
-#endif //SHARE_GC_G1_G1EVACFAILUREOBJECTSSET_INLINE_HPP
+JNIEXPORT jstring JNICALL
+Java_GetBootClassPathAppendProp_getSystemProperty(JNIEnv *env, jclass cls) {
+  jvmtiError err;
+  char* prop_value;
+
+  err = (*jvmti)->GetSystemProperty(jvmti, "jdk.boot.class.path.append", &prop_value);
+  if (err == JVMTI_ERROR_NOT_AVAILABLE) {
+    return NULL;
+  }
+  if (err != JVMTI_ERROR_NONE) {
+    char err_msg[50];
+    snprintf(err_msg, 50, "Wrong JVM TI error code: %d", err);
+    return (*env)->NewStringUTF(env, err_msg);
+  }
+
+  return (*env)->NewStringUTF(env, prop_value);
+}
+
+#ifdef __cplusplus
+}
+#endif
