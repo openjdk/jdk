@@ -2880,7 +2880,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       }
     } else if (match_option(option, "-XX:+ExtendedDTraceProbes")) {
 #if defined(DTRACE_ENABLED)
-      warning("-XX:+ExtendedDTraceProbes is deprecated. Use a combination of -XX:+DTraceMethodProbes, -XX:+DTraceAllocProbes and -XX:+DTraceMonitorProbes instead.");
+      warning("Option ExtendedDTraceProbes was deprecated in version 19 and will likely be removed in a future release.");
+      warning("Use a combination of -XX:+DTraceMethodProbes, -XX:+DTraceAllocProbes and -XX:+DTraceMonitorProbes instead.");
       if (FLAG_SET_CMDLINE(ExtendedDTraceProbes, true) != JVMFlag::SUCCESS) {
         return JNI_EINVAL;
       }
