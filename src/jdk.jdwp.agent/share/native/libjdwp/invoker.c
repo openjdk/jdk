@@ -799,10 +799,10 @@ invoker_completeInvokeRequest(jthread thread)
          * when they shouldn't be.
          */
         if (mustReleaseReturnValue && returnValue.l != NULL) {
-          tossGlobalRef(env, &returnValue.l);
+            tossGlobalRef(env, &returnValue.l);
         }
         if (exc != NULL) {
-          tossGlobalRef(env, &exc);
+            tossGlobalRef(env, &exc);
         }
         outStream_sendReply(&out);
     }
