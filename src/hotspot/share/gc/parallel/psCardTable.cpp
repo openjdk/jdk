@@ -411,34 +411,6 @@ bool PSCardTable::addr_is_marked_precise(void *addr) {
   return false;
 }
 
-// Assumes that only the end changes (the bottom/start stays the same). This
-// allows identification of the region that is being resized.
-void PSCardTable::resize_covered_region(MemRegion new_region) {
-  for (int i = 0; i < _cur_covered_regions; i++) {
-    if (_covered[i].start() == new_region.start()) {
-      // Found a covered region with the same start as the
-      // new region.  The region is growing or shrinking
-      // from the start of the region.
-      resize_covered_region_by_start(new_region);
-      return;
-    }
-    if (_covered[i].start() > new_region.start()) {
-      break;
-    }
-  }
-
-  // This should only be a new covered region (where no existing
-  // covered region matches at the start).
-  assert(_cur_covered_regions < _max_covered_regions,
-    "An existing region should have been found");
-  resize_covered_region_by_start(new_region);
-}
-
-void PSCardTable::resize_covered_region_by_start(MemRegion new_region) {
-  CardTable::resize_covered_region(new_region);
-  debug_only(verify_guard();)
-}
-
 bool PSCardTable::is_in_young(oop obj) const {
   return ParallelScavengeHeap::heap()->is_in_young(obj);
 }

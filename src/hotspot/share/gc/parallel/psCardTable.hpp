@@ -76,13 +76,6 @@ class PSCardTable: public CardTable {
   // ReduceInitialCardMarks support
   bool is_in_young(oop obj) const;
 
-  // Adaptive size policy support
-  // Allows adjustment of the base and size of the covered regions
-  void resize_covered_region(MemRegion new_region);
-  // Finds the covered region to resize based on the start address
-  // of the covered regions.
-  void resize_covered_region_by_start(MemRegion new_region);
-
 #ifdef ASSERT
   bool is_valid_card_address(CardValue* addr) {
     return (addr >= _byte_map) && (addr < _byte_map + _byte_map_size);
