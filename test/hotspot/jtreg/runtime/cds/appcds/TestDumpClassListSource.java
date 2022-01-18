@@ -28,18 +28,17 @@
  * @summary test dynamic dump meanwhile output loaded class list
  * @bug 8279009 8275084
  * @requires vm.cds
- * @modules java.base/jdk.internal.org.objectweb.asm
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @compile test-classes/Hello.java ClassListWithInvokerClassNoSource.java ClassListWithCustomClassNoSource.java
+ * @compile test-classes/Hello.java ClassSpecializerTestApp.java ClassListWithCustomClassNoSource.java
  * @run main/othervm TestDumpClassListSource
  */
 
 /* Test two senarios:
- *   1. ClassListWithCustomClassNoSource:
- *      Use custom loader to load dynmaically generated class without source.
- *   2. ClassListWithInvokerClassNoSource:
+ *   1. ClassSpecializerTestApp.java:
  *      Test case for bug 8275084, make sure the filtering of source class to
  *      dumped class list.
+ *   2. ClassListWithCustomClassNoSource:
+ *      Use custom loader to load dynmaically generated class without source.
  */
 
 import java.io.BufferedReader;
@@ -77,7 +76,7 @@ public class TestDumpClassListSource {
         }
     }
 
-    static final String mainInvokeClass = "ClassListWithInvokerClassNoSource";
+    static final String mainInvokeClass = "ClassSpecializerTestApp";
     static final String mainCutomClass  = "ClassListWithCustomClassNoSource";
     static final String sourceTarget    = "_ClassSpecializer_generateConcreteSpeciesCode";
 
@@ -90,8 +89,8 @@ public class TestDumpClassListSource {
     public static void main(String[] args) throws Exception {
         String listFileName = "test-classlist.list";
         String archiveName  = "test-dynamic.jsa";
-        String jarFile = JarBuilder.build("test-hello", "ClassListWithInvokerClassNoSource", "ClassListWithCustomClassNoSource",
-                                          "ClassListWithCustomClassNoSource$CL", "ClassListWithCustomClassNoSource$DL", "Hello");
+        String jarFile = JarBuilder.build("test-hello", "ClassSpecializerTestApp", "ClassListWithCustomClassNoSource",
+                                          "ClassListWithCustomClassNoSource$CL", "Hello");
         // 1. Invoke lambda
         File fileList = new File(listFileName);
         if (fileList.exists()) {
@@ -145,13 +144,13 @@ public class TestDumpClassListSource {
 
         output.shouldHaveExitValue(0);
         checkMatch(listFileName, sourceTarget, EXPECT_NOMATCH, "Failed to filter " + sourceTarget + " in class list file");
-        checkMatch(listFileName, "UserDefKlass", EXPECT_NOMATCH,"UserDefKlass should not be logged in class list file");
+        checkMatch(listFileName, "Hello", EXPECT_NOMATCH,"Hello should not be logged in class list file");
 
         fileArchive.delete();
         fileList.delete();
 
         //    2.2 test in memory class with ProtectionDomain as main class.
-        //    "UserDefKlass" will be printed in list file and its source set as main class.
+        //    "Hello" will be printed in list file and its source set as main class.
         launchArgs  = new String[] {
                 "--add-exports",
                 "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
@@ -173,7 +172,7 @@ public class TestDumpClassListSource {
 
         output.shouldHaveExitValue(0);
         checkMatch(listFileName, sourceTarget, EXPECT_NOMATCH, "Failed to filter " + sourceTarget + " in class list file");
-        checkMatch(listFileName, "UserDefKlass", EXPECT_MATCH, "UserDefKlass should be logged in class list file");
+        checkMatch(listFileName, "Hello", EXPECT_MATCH, "Hello should be logged in class list file");
 
         fileArchive.delete();
         fileList.delete();

@@ -27,49 +27,23 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.ProtectionDomain;
 
-import jdk.internal.org.objectweb.asm.*;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
 public class ClassListWithCustomClassNoSource {
-
-    static byte[] getClassBytes() {
-        ClassWriter cw = new ClassWriter(0);
-        cw.visit(56, ACC_PUBLIC | ACC_SUPER, "UserDefKlass", null, "java/lang/Object", null);
-        {
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-            mv.visitCode();
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(1, 1);
-            mv.visitEnd();
-        }
-        cw.visitEnd();
-        return cw.toByteArray();
-    }
-
+    private static byte[] helloBytes;
+    private static final String HELLO="Hello";
     static class CL extends ClassLoader {
-        @Override
-        protected Class<?> findClass(String name) throws ClassNotFoundException {
-            byte[] classBytes = getClassBytes();
-            // both codeSource and permission set to null.
-            ProtectionDomain pd = new ProtectionDomain(null, null);
-            return defineClass(name, classBytes, 0, classBytes.length, pd);
-        }
-    }
-
-    static class DL extends ClassLoader {
-        ProtectionDomain pd;
-        public DL(ProtectionDomain p) {
-            pd = p;
+        private ProtectionDomain pd;
+        public CL(String name, ClassLoader parent, ProtectionDomain protD) {
+            super(name, parent);
+            pd = protD;
         }
 
         @Override
         protected Class<?> findClass(String name) throws ClassNotFoundException {
-            byte[] classBytes = getClassBytes();
-            // code source is same as main class
-            // started with "file: " so it will be logged in class list file.
-            return defineClass(name, classBytes, 0, classBytes.length, pd);
+            if (pd == null) {
+                pd = new ProtectionDomain(null, null);
+            }
+            return defineClass(name, helloBytes, 0, helloBytes.length, pd);
         }
     }
 
@@ -78,27 +52,30 @@ public class ClassListWithCustomClassNoSource {
             throw new RuntimeException("Invalid arg, Use 1, 2, or 3");
         }
 
+        ClassLoader thisLoader = ClassListWithCustomClassNoSource.class.getClassLoader();
+        helloBytes = thisLoader.getResourceAsStream(HELLO + ".class").readAllBytes();
+
         switch(args[0]) {
         case "1":
-            Class<?> cls1 = (new CL()).loadClass("UserDefKlass");
-            System.out.println("CL Successfully loaded class: UserDefKlass");
+            Class<?> cls1 = (new CL("HelloLoader", null, null)).loadClass(HELLO);
+            System.out.println(HELLO + " was successfully loaded by " + cls1.getClassLoader().getName());
             break;
         case "2":
             ProtectionDomain p = ClassListWithCustomClassNoSource.class.getProtectionDomain();
-            Class<?> cls2 = (new DL(p)).loadClass("UserDefKlass");
-            System.out.println("DL Successfully loaded class: UserDefKlass");
+            Class<?> cls2 = (new CL("HelloLoader", null, p)).loadClass(HELLO);
+            System.out.println(HELLO + " was successfully loaded by " + cls2.getClassLoader().getName());
             break;
         case "3":
             URL url = ClassListWithCustomClassNoSource.class.getProtectionDomain().getCodeSource().getLocation();
             URLClassLoader urlLoader = new URLClassLoader("HelloClassLoader", new URL[] {url}, null);
-            Class<?> cls = urlLoader.loadClass("Hello");
+            Class<?> cls = urlLoader.loadClass(HELLO);
            if (cls != null) {
-               System.out.println("Hello loaded by " + cls.getClassLoader().getName());
+               System.out.println(HELLO + " was loaded by " + cls.getClassLoader().getName());
                if (urlLoader != cls.getClassLoader()) {
-                   System.out.println("Hello is not loaded by " + urlLoader.getName());
+                   System.out.println(HELLO + " was not loaded by " + urlLoader.getName());
                }
            } else {
-               System.out.println("Hello is not loaded");
+               System.out.println(HELLO + " is not loaded");
            }
            break;
         default:
