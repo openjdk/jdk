@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,6 +162,24 @@ public final class Objects {
      */
     public static String toString(Object o, String nullDefault) {
         return (o != null) ? o.toString() : nullDefault;
+    }
+
+    /**
+     * {@return a string equivalent to the string returned by {@code
+     * Object.toString} if that method is not overridden}
+     *
+     * @implSpec
+     * The method returns a string equivalent to:<br>
+     * {@code o.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(o))}
+     *
+     * @param o an object
+     * @throws NullPointerException if the argument is null
+     * @see Object#toString
+     * @since 19
+     */
+    public static String toDefaultString(Object o) {
+        requireNonNull(o);
+        return o.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(o));
     }
 
     /**

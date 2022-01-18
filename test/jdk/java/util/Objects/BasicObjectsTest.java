@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6797535 6889858 6891113 8013712 8011800 8014365
+ * @bug 6797535 6889858 6891113 8013712 8011800 8014365 8280168
  * @summary Basic tests for methods in java.util.Objects
  * @author  Joseph D. Darcy
  */
@@ -40,6 +40,7 @@ public class BasicObjectsTest {
         errors += testHash();
         errors += testToString();
         errors += testToString2();
+        errors += testToDefaultString();
         errors += testCompare();
         errors += testRequireNonNull();
         errors += testIsNull();
@@ -131,6 +132,19 @@ public class BasicObjectsTest {
         String s = "not the default";
         errors += (s.equals(Objects.toString(null, s)) ) ? 0 : 1;
         errors += (s.equals(Objects.toString(s, "another string")) ) ? 0 : 1;
+        return errors;
+    }
+
+    private static int testToDefaultString() {
+        int errors = 0;
+        try {
+            Objects.toDefaultString(null);
+            errors++;
+        } catch (NullPointerException npe) {
+            ; // Expected
+        }
+        Object o = new Object(){};
+        errors += (Objects.toDefaultString(o).equals(o.toString()))? 0 : 1;
         return errors;
     }
 
