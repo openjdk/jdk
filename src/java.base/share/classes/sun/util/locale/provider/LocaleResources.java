@@ -46,6 +46,7 @@ import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -99,6 +100,10 @@ public class LocaleResources {
     private static final String DATE_TIME_PATTERN = "DTP.";
     private static final String RULES_CACHEKEY = "RULE";
     private static final String SKELETON_PATTERN = "SP.";
+
+    // ResourceBundle key names for skeletons
+    private static final String SKELETON_VALID_PATTERNS_KEY = "DateFormatItemValidPatterns";
+    private static final String SKELETON_INPUT_REGIONS_KEY = "DateFormatItemInputRegions";
 
     // TimeZoneNamesBundle exemplar city prefix
     private static final String TZNB_EXCITY_PREFIX = "timezone.excity.";
@@ -577,12 +582,12 @@ System.out.println("requested: " + requested + ", locale: " + locale + ", caltyp
         return matched;
     }
 
-    // Possible valid skeleton patterns. Retrieved from
-    private static Set<String> validSkeletons;
+    // Possible valid skeleton patterns.
+    private Set<String> validSkeletons;
     // Input Skeleton map for "preferred" and "allowed"
-    // Map<"preferred"/"allowed", Map<"region", "skeleton">>>
-    private static Map<String, String> preferredInputSkeletons;
-    private static Map<String, String> allowedInputSkeletons;
+    // Map<"region", "skeleton">
+    private Map<String, String> preferredInputSkeletons;
+    private Map<String, String> allowedInputSkeletons;
     // Skeletons for "j" and "C" input skeleton symbols for this locale
     private String jPattern;
     private String CPattern;
@@ -592,19 +597,27 @@ System.out.println("requested: " + requested + ", locale: " + locale + ", caltyp
             allowedInputSkeletons = new HashMap<>();
             Pattern p = Pattern.compile("([^:]+):([^;]+);");
             ResourceBundle r = localeData.getDateFormatData(Locale.ROOT);
-            validSkeletons = Arrays.stream(r.getString("DateFormatItemValidPatterns").split(","))
-                .map(String::trim)
-                .collect(Collectors.toUnmodifiableSet());
-            p.matcher(r.getString("DateFormatItemInputRegions.preferred")).results()
-                .forEach(mr -> {
-                    Arrays.stream(mr.group(2).split(" "))
-                        .forEach(region -> preferredInputSkeletons.put(region, mr.group(1)));
-                });
-            p.matcher(r.getString("DateFormatItemInputRegions.allowed")).results()
-                .forEach(mr -> {
-                    Arrays.stream(mr.group(2).split(" "))
-                        .forEach(region -> allowedInputSkeletons.put(region, mr.group(1)));
-                });
+            validSkeletons = r.containsKey(SKELETON_VALID_PATTERNS_KEY) ?
+                Arrays.stream(r.getString(SKELETON_VALID_PATTERNS_KEY).split(","))
+                    .map(String::trim)
+                    .collect(Collectors.toUnmodifiableSet()) :
+                Collections.emptySet();
+            var inputRegionsKey = SKELETON_INPUT_REGIONS_KEY + ".preferred";
+            if (r.containsKey(inputRegionsKey)) {
+                p.matcher(r.getString(inputRegionsKey)).results()
+                    .forEach(mr -> {
+                        Arrays.stream(mr.group(2).split(" "))
+                                .forEach(region -> preferredInputSkeletons.put(region, mr.group(1)));
+                    });
+            }
+            inputRegionsKey = SKELETON_INPUT_REGIONS_KEY + ".allowed";
+            if (r.containsKey(inputRegionsKey)) {
+                p.matcher(r.getString(inputRegionsKey)).results()
+                    .forEach(mr -> {
+                        Arrays.stream(mr.group(2).split(" "))
+                            .forEach(region -> allowedInputSkeletons.put(region, mr.group(1)));
+                    });
+            }
         }
         if (jPattern == null) {
             jPattern = resolveInputSkeleton(preferredInputSkeletons);
@@ -626,7 +639,7 @@ System.out.println("requested: " + requested + ", locale: " + locale + ", caltyp
         return inputSkeletons.getOrDefault(locale.getLanguage() + "-" + locale.getCountry(),
             inputSkeletons.getOrDefault(locale.getCountry(),
                 inputSkeletons.getOrDefault(locale.getLanguage() + "-001",
-                    inputSkeletons.get("001"))));
+                    inputSkeletons.getOrDefault("001", ""))));
     }
 
     /**
