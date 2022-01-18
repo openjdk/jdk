@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
+import java.util.concurrent.TimeUnit;
 import jdk.internal.module.Checks;
 import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModuleHashesBuilder;
@@ -67,6 +68,8 @@ import jdk.internal.module.ModuleInfoExtender;
 import jdk.internal.module.ModuleResolution;
 import jdk.internal.module.ModuleTarget;
 import jdk.internal.util.jar.JarIndex;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.jar.JarFile.MANIFEST_NAME;
@@ -172,6 +175,9 @@ public class Main {
     static final String VERSION = "1.0";
     static final int VERSIONS_DIR_LENGTH = VERSIONS_DIR.length();
     private static ResourceBundle rsrc;
+
+    /* Date option for entry timestamps resolved to UTC Local time */
+    LocalDateTime date;
 
     /**
      * If true, maintain compatibility with JDK releases prior to 6.0 by
@@ -858,12 +864,12 @@ public class Main {
                     output(getMsg("out.added.manifest"));
                 }
                 ZipEntry e = new ZipEntry(MANIFEST_DIR);
-                e.setTime(System.currentTimeMillis());
+                setZipEntryTime(e);
                 e.setSize(0);
                 e.setCrc(0);
                 zos.putNextEntry(e);
                 e = new ZipEntry(MANIFEST_NAME);
-                e.setTime(System.currentTimeMillis());
+                setZipEntryTime(e);
                 if (flag0) {
                     crc32Manifest(e, manifest);
                 }
@@ -963,7 +969,7 @@ public class Main {
                     // do our own compression
                     ZipEntry e2 = new ZipEntry(name);
                     e2.setMethod(e.getMethod());
-                    e2.setTime(e.getTime());
+                    setZipEntryTime(e2, e.getTime());
                     e2.setComment(e.getComment());
                     e2.setExtra(e.getExtra());
                     if (e.getMethod() == ZipEntry.STORED) {
@@ -1029,7 +1035,7 @@ public class Main {
         throws IOException
     {
         ZipEntry e = new ZipEntry(INDEX_NAME);
-        e.setTime(System.currentTimeMillis());
+        setZipEntryTime(e);
         if (flag0) {
             CRC32OutputStream os = new CRC32OutputStream();
             index.write(os);
@@ -1048,7 +1054,7 @@ public class Main {
             String name = mi.getKey();
             byte[] bytes = mi.getValue();
             ZipEntry e = new ZipEntry(name);
-            e.setTime(System.currentTimeMillis());
+            setZipEntryTime(e);
             if (flag0) {
                 crc32ModuleInfo(e, bytes);
             }
@@ -1073,7 +1079,7 @@ public class Main {
             addMultiRelease(m);
         }
         ZipEntry e = new ZipEntry(MANIFEST_NAME);
-        e.setTime(System.currentTimeMillis());
+        setZipEntryTime(e);
         if (flag0) {
             crc32Manifest(e, m);
         }
@@ -1194,7 +1200,7 @@ public class Main {
             out.print(formatMsg("out.adding", name));
         }
         ZipEntry e = new ZipEntry(name);
-        e.setTime(file.lastModified());
+        setZipEntryTime(e, file.lastModified());
         if (size == 0) {
             e.setMethod(ZipEntry.STORED);
             e.setSize(0);
@@ -2273,4 +2279,18 @@ public class Main {
     static Comparator<ZipEntry> ENTRY_COMPARATOR =
         Comparator.comparing(ZipEntry::getName, ENTRYNAME_COMPARATOR);
 
+    // Set the ZipEntry dostime using date if specified otherwise the current time
+    private void setZipEntryTime(ZipEntry e) {
+        setZipEntryTime(e, System.currentTimeMillis());
+    }
+
+    // Set the ZipEntry dostime using the date if specified
+    // otherwise the original time
+    private void setZipEntryTime(ZipEntry e, long origTime) {
+        if (date != null) {
+            e.setTimeLocal(date);
+        } else {
+            e.setTime(origTime);
+        }
+    }
 }
