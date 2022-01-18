@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 8269488
- * @compile --release 17 ProcessReaperCCL.java
  * @summary verify that Process Reaper threads have a null CCL
  * @run testng ProcessReaperCCL
  */
