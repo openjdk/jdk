@@ -153,7 +153,7 @@ mode=update
 declare -a jtreg_args
 
 # Create packages only
-jtreg_args+=("-Djpackage.test.action=create")
+#jtreg_args+=("-Djpackage.test.action=create")
 
 # run all tests
 run_all_tests=
