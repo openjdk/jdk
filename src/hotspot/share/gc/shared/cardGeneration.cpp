@@ -301,9 +301,6 @@ void CardGeneration::compute_new_size() {
   }
 }
 
-// Currently nothing to do.
-void CardGeneration::prepare_for_verify() {}
-
 void CardGeneration::space_iterate(SpaceClosure* blk,
                                                  bool usedOnly) {
   blk->do_space(space());
