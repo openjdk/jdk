@@ -1129,8 +1129,7 @@ public:
           }
         }
         if (_stack.size() == 0) {
-          f = check_and_truncate_frequency(f);
-          return f;
+          return check_and_truncate_frequency(f);
         }
       } else if (c->is_Loop()) {
         ShouldNotReachHere();
