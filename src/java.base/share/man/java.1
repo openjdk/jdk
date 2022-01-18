@@ -2974,15 +2974,6 @@ different JDK version.
 .RE
 .RE
 .TP
-.B \f[CB]\-XX:+ExtendedDTraceProbes\f[R]
-Deprecated. Use combination of these flags instead: -XX:+DTraceMethodProbes, -XX:+DTraceAllocProbes, -XX:+DTraceMonitorProbes
-\f[B]Linux and macOS:\f[R] Enables additional \f[CB]dtrace\f[R] tool probes
-that affect the performance.
-By default, this option is disabled and \f[CB]dtrace\f[R] performs only
-standard probes.
-.RS
-.RE
-.TP
 .B \f[CB]\-XX:+HeapDumpOnOutOfMemoryError\f[R]
 Enables the dumping of the Java heap to a file in the current directory
 by using the heap profiler (HPROF) when a
@@ -4004,6 +3995,15 @@ See Enable Logging with the JVM Unified Logging Framework.
 Example:
 .PP
 \f[CB]\-Xlog:gc:garbage\-collection.log\f[R]
+.RE
+.TP
+.B \f[CB]\-XX:+ExtendedDTraceProbes\f[R]
+Deprecated. Use combination of these flags instead: -XX:+DTraceMethodProbes, -XX:+DTraceAllocProbes, -XX:+DTraceMonitorProbes
+\f[B]Linux and macOS:\f[R] Enables additional \f[CB]dtrace\f[R] tool probes
+that affect the performance.
+By default, this option is disabled and \f[CB]dtrace\f[R] performs only
+standard probes.
+.RS
 .RE
 .TP
 .B \f[CB]\-XX:+FlightRecorder\f[R]
