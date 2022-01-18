@@ -83,6 +83,7 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
     }
   } else {
     BLOCK_COMMENT("string_compress {");
+    assert(!toASCII, "Can't compress strings to 7-bit ASCII");
   }
   int  block_start = offset();
 
