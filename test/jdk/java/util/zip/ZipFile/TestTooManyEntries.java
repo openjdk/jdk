@@ -79,7 +79,7 @@ public class TestTooManyEntries {
     }
 
     /**
-     * Validates that an appropriate exception is thrown when the ZipFile class
+     * Validates that the ZipException is thrown when the ZipFile class
      * is initialized with a zip file whose entries exceed the CEN limit.
      */
     @Test
