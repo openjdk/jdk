@@ -139,8 +139,6 @@
  *     <li><a href="https://www.oracle.com/java/technologies/javase/training-support.html"
  *     target="_top">Java SE Training and Certification</a>
  *     at the Java Developer Connection <sup>SM</sup></li>
- *     <li><a href="https://www.oracle.com/java/technologies/java-foundation-classes.html"
- *     target="_top">Java Foundation Classes (JFC)</a> home page</li>
  * </ul>
  *
  * @serial exclude
