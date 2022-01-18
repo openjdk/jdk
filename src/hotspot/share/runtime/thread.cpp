@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -220,8 +220,6 @@ Thread::Thread() {
   DEBUG_ONLY(_current_resource_mark = NULL;)
   set_handle_area(new (mtThread) HandleArea(NULL));
   set_metadata_handles(new (ResourceObj::C_HEAP, mtClass) GrowableArray<Metadata*>(30, mtClass));
-  set_active_handles(NULL);
-  set_free_handle_block(NULL);
   set_last_handle_mark(NULL);
   DEBUG_ONLY(_missed_ic_stub_refill_verifier = NULL);
 
@@ -435,9 +433,12 @@ void Thread::check_for_dangling_thread_pointer(Thread *thread) {
 }
 #endif
 
-// Is the target JavaThread protected by the calling Thread
-// or by some other mechanism:
-bool Thread::is_JavaThread_protected(const JavaThread* p) {
+// Is the target JavaThread protected by the calling Thread or by some other
+// mechanism?
+//
+bool Thread::is_JavaThread_protected(const JavaThread* target) {
+  Thread* current_thread = Thread::current();
+
   // Do the simplest check first:
   if (SafepointSynchronize::is_at_safepoint()) {
     // The target is protected since JavaThreads cannot exit
@@ -448,13 +449,12 @@ bool Thread::is_JavaThread_protected(const JavaThread* p) {
   // If the target hasn't been started yet then it is trivially
   // "protected". We assume the caller is the thread that will do
   // the starting.
-  if (p->osthread() == NULL || p->osthread()->get_state() <= INITIALIZED) {
+  if (target->osthread() == NULL || target->osthread()->get_state() <= INITIALIZED) {
     return true;
   }
 
   // Now make the simple checks based on who the caller is:
-  Thread* current_thread = Thread::current();
-  if (current_thread == p || Threads_lock->owner() == current_thread) {
+  if (current_thread == target || Threads_lock->owner() == current_thread) {
     // Target JavaThread is self or calling thread owns the Threads_lock.
     // Second check is the same as Threads_lock->owner_is_self(),
     // but we already have the current thread so check directly.
@@ -463,26 +463,42 @@ bool Thread::is_JavaThread_protected(const JavaThread* p) {
 
   // Check the ThreadsLists associated with the calling thread (if any)
   // to see if one of them protects the target JavaThread:
+  if (is_JavaThread_protected_by_TLH(target)) {
+    return true;
+  }
+
+  // Use this debug code with -XX:+UseNewCode to diagnose locations that
+  // are missing a ThreadsListHandle or other protection mechanism:
+  // guarantee(!UseNewCode, "current_thread=" INTPTR_FORMAT " is not protecting target="
+  //           INTPTR_FORMAT, p2i(current_thread), p2i(target));
+
+  // Note: Since 'target' isn't protected by a TLH, the call to
+  // target->is_handshake_safe_for() may crash, but we have debug bits so
+  // we'll be able to figure out what protection mechanism is missing.
+  assert(target->is_handshake_safe_for(current_thread), "JavaThread=" INTPTR_FORMAT
+         " is not protected and not handshake safe.", p2i(target));
+
+  // The target JavaThread is not protected so it is not safe to query:
+  return false;
+}
+
+// Is the target JavaThread protected by a ThreadsListHandle (TLH) associated
+// with the calling Thread?
+//
+bool Thread::is_JavaThread_protected_by_TLH(const JavaThread* target) {
+  Thread* current_thread = Thread::current();
+
+  // Check the ThreadsLists associated with the calling thread (if any)
+  // to see if one of them protects the target JavaThread:
   for (SafeThreadsListPtr* stlp = current_thread->_threads_list_ptr;
        stlp != NULL; stlp = stlp->previous()) {
-    if (stlp->list()->includes(p)) {
+    if (stlp->list()->includes(target)) {
       // The target JavaThread is protected by this ThreadsList:
       return true;
     }
   }
 
-  // Use this debug code with -XX:+UseNewCode to diagnose locations that
-  // are missing a ThreadsListHandle or other protection mechanism:
-  // guarantee(!UseNewCode, "current_thread=" INTPTR_FORMAT " is not protecting p="
-  //           INTPTR_FORMAT, p2i(current_thread), p2i(p));
-
-  // Note: Since 'p' isn't protected by a TLH, the call to
-  // p->is_handshake_safe_for() may crash, but we have debug bits so
-  // we'll be able to figure out what protection mechanism is missing.
-  assert(p->is_handshake_safe_for(current_thread), "JavaThread=" INTPTR_FORMAT
-         " is not protected and not handshake safe.", p2i(p));
-
-  // The target JavaThread is not protected so it is not safe to query:
+  // The target JavaThread is not protected by a TLH so it is not safe to query:
   return false;
 }
 
@@ -529,9 +545,6 @@ bool Thread::claim_par_threads_do(uintx claim_token) {
 }
 
 void Thread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
-  if (active_handles() != NULL) {
-    active_handles()->oops_do(f);
-  }
   // Do oop for ThreadShadow
   f->do_oop((oop*)&_pending_exception);
   handle_area()->oops_do(f);
@@ -996,6 +1009,8 @@ JavaThread::JavaThread() :
   _current_pending_monitor(NULL),
   _current_pending_monitor_is_from_java(true),
   _current_waiting_monitor(NULL),
+  _active_handles(NULL),
+  _free_handle_block(NULL),
   _Stalled(0),
 
   _monitor_chunks(nullptr),
@@ -1096,7 +1111,7 @@ void JavaThread::interrupt() {
   debug_only(check_for_dangling_thread_pointer(this);)
 
   // For Windows _interrupt_event
-  osthread()->set_interrupted(true);
+  WINDOWS_ONLY(osthread()->set_interrupted(true);)
 
   // For Thread.sleep
   _SleepEvent->unpark();
@@ -1141,7 +1156,7 @@ bool JavaThread::is_interrupted(bool clear_interrupted) {
   if (interrupted && clear_interrupted) {
     assert(this == Thread::current(), "only the current thread can clear");
     java_lang_Thread::set_interrupted(threadObj(), false);
-    osthread()->set_interrupted(false);
+    WINDOWS_ONLY(osthread()->set_interrupted(false);)
   }
 
   return interrupted;
@@ -1631,24 +1646,10 @@ void JavaThread::check_and_handle_async_exceptions() {
 
     // We may be at method entry which requires we save the do-not-unlock flag.
     UnlockFlagSaver fs(this);
-    switch (thread_state()) {
-    case _thread_in_vm: {
-      JavaThread* THREAD = this;
-      Exceptions::throw_unsafe_access_internal_error(THREAD, __FILE__, __LINE__, "a fault occurred in an unsafe memory access operation");
-      // We might have blocked in a ThreadBlockInVM wrapper in the call above so make sure we process pending
-      // suspend requests and object reallocation operations if any since we might be going to Java after this.
-      SafepointMechanism::process_if_requested_with_exit_check(this, true /* check asyncs */);
-      return;
-    }
-    case _thread_in_Java: {
-      ThreadInVMfromJava tiv(this);
-      JavaThread* THREAD = this;
-      Exceptions::throw_unsafe_access_internal_error(THREAD, __FILE__, __LINE__, "a fault occurred in an unsafe memory access operation in compiled Java code");
-      return;
-    }
-    default:
-      ShouldNotReachHere();
-    }
+    Exceptions::throw_unsafe_access_internal_error(this, __FILE__, __LINE__, "a fault occurred in an unsafe memory access operation");
+    // We might have blocked in a ThreadBlockInVM wrapper in the call above so make sure we process pending
+    // suspend requests and object reallocation operations if any since we might be going to Java after this.
+    SafepointMechanism::process_if_requested_with_exit_check(this, true /* check asyncs */);
   }
 }
 
@@ -1743,45 +1744,31 @@ void JavaThread::send_thread_stop(oop java_throwable)  {
 //   - Target thread will not enter any new monitors.
 //
 bool JavaThread::java_suspend() {
-  ThreadsListHandle tlh;
-  if (!tlh.includes(this)) {
-    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " not on ThreadsList, no suspension", p2i(this));
-    return false;
-  }
+  guarantee(Thread::is_JavaThread_protected_by_TLH(/* target */ this),
+            "missing ThreadsListHandle in calling context.");
   return this->handshake_state()->suspend();
 }
 
 bool JavaThread::java_resume() {
-  ThreadsListHandle tlh;
-  if (!tlh.includes(this)) {
-    log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " not on ThreadsList, nothing to resume", p2i(this));
-    return false;
-  }
+  guarantee(Thread::is_JavaThread_protected_by_TLH(/* target */ this),
+            "missing ThreadsListHandle in calling context.");
   return this->handshake_state()->resume();
 }
 
 // Wait for another thread to perform object reallocation and relocking on behalf of
-// this thread.
-// Raw thread state transition to _thread_blocked and back again to the original
-// state before returning are performed. The current thread is required to
-// change to _thread_blocked in order to be seen to be safepoint/handshake safe
-// whilst suspended and only after becoming handshake safe, the other thread can
-// complete the handshake used to synchronize with this thread and then perform
-// the reallocation and relocking. We cannot use the thread state transition
-// helpers because we arrive here in various states and also because the helpers
-// indirectly call this method.  After leaving _thread_blocked we have to check
-// for safepoint/handshake, except if _thread_in_native. The thread is safe
-// without blocking then. Allowed states are enumerated in
-// SafepointSynchronize::block(). See also EscapeBarrier::sync_and_suspend_*()
+// this thread. The current thread is required to change to _thread_blocked in order
+// to be seen to be safepoint/handshake safe whilst suspended and only after becoming
+// handshake safe, the other thread can complete the handshake used to synchronize
+// with this thread and then perform the reallocation and relocking.
+// See EscapeBarrier::sync_and_suspend_*()
 
 void JavaThread::wait_for_object_deoptimization() {
   assert(!has_last_Java_frame() || frame_anchor()->walkable(), "should have walkable stack");
   assert(this == Thread::current(), "invariant");
-  JavaThreadState state = thread_state();
 
   bool spin_wait = os::is_MP();
   do {
-    set_thread_state(_thread_blocked);
+    ThreadBlockInVM tbivm(this, true /* allow_suspend */);
     // Wait for object deoptimization if requested.
     if (spin_wait) {
       // A single deoptimization is typically very short. Microbenchmarks
@@ -1798,14 +1785,6 @@ void JavaThread::wait_for_object_deoptimization() {
       if (is_obj_deopt_suspend()) {
         ml.wait();
       }
-    }
-    // The current thread could have been suspended again. We have to check for
-    // suspend after restoring the saved state. Without this the current thread
-    // might return to _thread_in_Java and execute bytecode.
-    set_thread_state_fence(state);
-
-    if (state != _thread_in_native) {
-      SafepointMechanism::process_if_requested(this);
     }
     // A handshake for obj. deoptimization suspend could have been processed so
     // we must check after processing.
@@ -1929,12 +1908,38 @@ void JavaThread::verify_frame_info() {
 }
 #endif
 
+// Push on a new block of JNI handles.
+void JavaThread::push_jni_handle_block() {
+  // Allocate a new block for JNI handles.
+  // Inlined code from jni_PushLocalFrame()
+  JNIHandleBlock* old_handles = active_handles();
+  JNIHandleBlock* new_handles = JNIHandleBlock::allocate_block(this);
+  assert(old_handles != NULL && new_handles != NULL, "should not be NULL");
+  new_handles->set_pop_frame_link(old_handles);  // make sure java handles get gc'd.
+  set_active_handles(new_handles);
+}
+
+// Pop off the current block of JNI handles.
+void JavaThread::pop_jni_handle_block() {
+  // Release our JNI handle block
+  JNIHandleBlock* old_handles = active_handles();
+  JNIHandleBlock* new_handles = old_handles->pop_frame_link();
+  assert(new_handles != nullptr, "should never set active handles to null");
+  set_active_handles(new_handles);
+  old_handles->set_pop_frame_link(NULL);
+  JNIHandleBlock::release_block(old_handles, this);
+}
+
 void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
   // Verify that the deferred card marks have been flushed.
   assert(deferred_card_mark().is_empty(), "Should be empty during GC");
 
   // Traverse the GCHandles
   Thread::oops_do_no_frames(f, cf);
+
+  if (active_handles() != NULL) {
+    active_handles()->oops_do(f);
+  }
 
   DEBUG_ONLY(verify_frame_info();)
 
@@ -2136,7 +2141,7 @@ void JavaThread::verify() {
 // if vm exit occurs during initialization). These cases can all be accounted
 // for such that this method never returns NULL.
 const char* JavaThread::name() const  {
-  if (Thread::is_JavaThread_protected(this)) {
+  if (Thread::is_JavaThread_protected(/* target */ this)) {
     // The target JavaThread is protected so get_thread_name_string() is safe:
     return get_thread_name_string();
   }
@@ -2829,7 +2834,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   { TraceTime timer("Start VMThread", TRACETIME_LOG(Info, startuptime));
 
     VMThread::create();
-    Thread* vmthread = VMThread::vm_thread();
+    VMThread* vmthread = VMThread::vm_thread();
 
     if (!os::create_thread(vmthread, os::vm_thread)) {
       vm_exit_during_initialization("Cannot create VM thread. "
@@ -2841,7 +2846,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     {
       MonitorLocker ml(Notify_lock);
       os::start_thread(vmthread);
-      while (vmthread->active_handles() == NULL) {
+      while (!vmthread->is_running()) {
         ml.wait();
       }
     }
@@ -3268,8 +3273,8 @@ void JavaThread::invoke_shutdown_hooks() {
   // Link all classes for dynamic CDS dumping before vm exit.
   // Same operation is being done in JVM_BeforeHalt for handling the
   // case where the application calls System.exit().
-  if (DynamicDumpSharedSpaces) {
-    DynamicArchive::prepare_for_dynamic_dumping();
+  if (DynamicArchive::should_dump_at_vm_exit()) {
+    DynamicArchive::prepare_for_dump_at_exit();
   }
 #endif
 

@@ -560,8 +560,7 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
   // let us handle the throw inline, with a preconstructed instance.
   // Note:   If the deopt count has blown up, the uncommon trap
   // runtime is going to flush this nmethod, not matter what.
-  if (treat_throw_as_hot
-      && (!StackTraceInThrowable || OmitStackTraceInFastThrow)) {
+  if (treat_throw_as_hot && method()->can_omit_stack_trace()) {
     // If the throw is local, we use a pre-existing instance and
     // punt on the backtrace.  This would lead to a missing backtrace
     // (a repeat of 4292742) if the backtrace object is ever asked
@@ -580,11 +579,10 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
       ex_obj = env()->ArrayIndexOutOfBoundsException_instance();
       break;
     case Deoptimization::Reason_class_check:
-      if (java_bc() == Bytecodes::_aastore) {
-        ex_obj = env()->ArrayStoreException_instance();
-      } else {
-        ex_obj = env()->ClassCastException_instance();
-      }
+      ex_obj = env()->ClassCastException_instance();
+      break;
+    case Deoptimization::Reason_array_check:
+      ex_obj = env()->ArrayStoreException_instance();
       break;
     default:
       break;
@@ -614,6 +612,13 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
       Node *adr = basic_plus_adr(ex_node, ex_node, offset);
       const TypeOopPtr* val_type = TypeOopPtr::make_from_klass(env()->String_klass());
       Node *store = access_store_at(ex_node, adr, adr_typ, null(), val_type, T_OBJECT, IN_HEAP);
+
+      if (!method()->has_exception_handlers()) {
+        // We don't need to preserve the stack if there's no handler as the entire frame is going to be popped anyway.
+        // This prevents issues with exception handling and late inlining.
+        set_sp(0);
+        clean_stack(0);
+      }
 
       add_exception_state(make_exception_state(ex_node));
       return;
@@ -2489,8 +2494,7 @@ Node* GraphKit::make_runtime_call(int flags,
                                   Node* parm0, Node* parm1,
                                   Node* parm2, Node* parm3,
                                   Node* parm4, Node* parm5,
-                                  Node* parm6, Node* parm7,
-                                  Node* parm8) {
+                                  Node* parm6, Node* parm7) {
   assert(call_addr != NULL, "must not call NULL targets");
 
   // Slow-path call
@@ -2537,8 +2541,7 @@ Node* GraphKit::make_runtime_call(int flags,
   if (parm5 != NULL) { call->init_req(TypeFunc::Parms+5, parm5);
   if (parm6 != NULL) { call->init_req(TypeFunc::Parms+6, parm6);
   if (parm7 != NULL) { call->init_req(TypeFunc::Parms+7, parm7);
-  if (parm8 != NULL) { call->init_req(TypeFunc::Parms+8, parm8);
-  /* close each nested if ===> */  } } } } } } } } }
+  /* close each nested if ===> */  } } } } } } } }
   assert(call->in(call->req()-1) != NULL, "must initialize all parms");
 
   if (!is_leaf) {
@@ -3340,7 +3343,10 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
         // It needs a null check because a null will *pass* the cast check.
         // A non-null value will always produce an exception.
         if (!objtp->maybe_null()) {
-          builtin_throw(Deoptimization::Reason_class_check, makecon(TypeKlassPtr::make(objtp->klass())));
+          bool is_aastore = (java_bc() == Bytecodes::_aastore);
+          Deoptimization::DeoptReason reason = is_aastore ?
+            Deoptimization::Reason_array_check : Deoptimization::Reason_class_check;
+          builtin_throw(reason, makecon(TypeKlassPtr::make(objtp->klass())));
           return top();
         } else if (!too_many_traps_or_recompiles(Deoptimization::Reason_null_assert)) {
           return null_assert(obj);
@@ -3422,7 +3428,10 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
       if (not_subtype_ctrl != top()) { // If failure is possible
         PreserveJVMState pjvms(this);
         set_control(not_subtype_ctrl);
-        builtin_throw(Deoptimization::Reason_class_check, load_object_klass(not_null_obj));
+        bool is_aastore = (java_bc() == Bytecodes::_aastore);
+        Deoptimization::DeoptReason reason = is_aastore ?
+          Deoptimization::Reason_array_check : Deoptimization::Reason_class_check;
+        builtin_throw(reason, load_object_klass(not_null_obj));
       }
     } else {
       (*failure_control) = not_subtype_ctrl;

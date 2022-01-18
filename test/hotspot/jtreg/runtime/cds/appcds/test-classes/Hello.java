@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,5 +25,12 @@
 public class Hello {
   public static void main(String args[]) {
     System.out.println("Hello World");
+    if (args.length > 0 && args[0].equals("testlambda")) {
+        System.out.println(getRunnable());
+    }
+  }
+
+  public static Runnable getRunnable() {
+    return () -> {};
   }
 }

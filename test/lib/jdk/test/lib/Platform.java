@@ -387,6 +387,6 @@ public class Platform {
      * This should match the #if condition in ClassListParser::load_class_from_source().
      */
     public static boolean areCustomLoadersSupportedForCDS() {
-        return (is64bit() && (isLinux() || isOSX()));
+        return (is64bit() && (isLinux() || isOSX() || isWindows()));
     }
 }

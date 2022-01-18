@@ -31,7 +31,6 @@ import java.io.InputStream;
 import java.util.Collection;
 
 import com.sun.tools.attach.VirtualMachine;
-import com.sun.tools.attach.VirtualMachineDescriptor;
 import com.sun.tools.attach.AttachNotSupportedException;
 import sun.tools.attach.HotSpotVirtualMachine;
 import sun.tools.common.ProcessArgumentMatcher;
@@ -171,8 +170,7 @@ public class JMap {
         String parallel = null;
         String subopts[] = options.split(",");
 
-        for (int i = 0; i < subopts.length; i++) {
-            String subopt = subopts[i];
+        for (String subopt : subopts) {
             if (subopt.equals("") || subopt.equals("all")) {
                 // pass
             } else if (subopt.equals("live")) {
@@ -184,11 +182,11 @@ public class JMap {
                     usage(1);
                 }
             } else if (subopt.startsWith("parallel=")) {
-               parallel = subopt.substring("parallel=".length());
-               if (parallel == null) {
+                parallel = subopt.substring("parallel=".length());
+                if (parallel == null) {
                     System.err.println("Fail: no number provided in option: '" + subopt + "'");
                     usage(1);
-               }
+                }
             } else {
                 System.err.println("Fail: invalid option: '" + subopt + "'");
                 usage(1);
@@ -209,8 +207,7 @@ public class JMap {
         String liveopt = "-all";
         String compress_level = null;
 
-        for (int i = 0; i < subopts.length; i++) {
-            String subopt = subopts[i];
+        for (String subopt : subopts) {
             if (subopt.equals("") || subopt.equals("all")) {
                 // pass
             } else if (subopt.equals("live")) {

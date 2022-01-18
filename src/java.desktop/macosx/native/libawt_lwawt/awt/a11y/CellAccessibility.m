@@ -35,24 +35,6 @@
     return NSAccessibilityCellRole;;
 }
 
-- (NSArray *)accessibilityChildren
-{
-    NSArray *children = [super accessibilityChildren];
-    if (children == NULL) {
-        NSString *javaRole = [self  javaRole];
-        CommonComponentAccessibility *newChild = [CommonComponentAccessibility createWithParent:self
-                                                                       accessible:self->fAccessible
-                                                                             role:javaRole
-                                                                            index:self->fIndex
-                                                                          withEnv:[ThreadUtilities getJNIEnv]
-                                                                         withView:self->fView
-                                                                        isWrapped:NO];
-        return [NSArray arrayWithObject:newChild];
-    } else {
-        return children;
-    }
-}
-
 - (NSInteger)accessibilityIndex
 {
     return self->fIndex;

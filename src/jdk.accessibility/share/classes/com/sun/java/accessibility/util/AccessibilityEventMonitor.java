@@ -56,7 +56,7 @@ public class AccessibilityEventMonitor {
      * @see #addPropertyChangeListener
      * @see #removePropertyChangeListener
      */
-    static protected final AccessibilityListenerList listenerList =
+    protected static final AccessibilityListenerList listenerList =
         new AccessibilityListenerList();
 
 
@@ -66,7 +66,7 @@ public class AccessibilityEventMonitor {
      * occurs.  By doing things this way, the actual number of listeners
      * installed on a component instance is drastically reduced.
      */
-    static private final AccessibilityEventListener accessibilityListener =
+    private static final AccessibilityEventListener accessibilityListener =
         new AccessibilityEventListener();
 
     /**
@@ -80,7 +80,7 @@ public class AccessibilityEventMonitor {
      *
      * @see #removePropertyChangeListener
      */
-    static public void addPropertyChangeListener(PropertyChangeListener l) {
+    public static void addPropertyChangeListener(PropertyChangeListener l) {
         if (listenerList.getListenerCount(PropertyChangeListener.class) == 0) {
             accessibilityListener.installListeners();
         }
@@ -93,7 +93,7 @@ public class AccessibilityEventMonitor {
      * @see #addPropertyChangeListener
      * @param l the listener to remove
      */
-    static public void removePropertyChangeListener(PropertyChangeListener l) {
+    public static void removePropertyChangeListener(PropertyChangeListener l) {
         listenerList.remove(PropertyChangeListener.class, l);
         if (listenerList.getListenerCount(PropertyChangeListener.class) == 0) {
             accessibilityListener.removeListeners();

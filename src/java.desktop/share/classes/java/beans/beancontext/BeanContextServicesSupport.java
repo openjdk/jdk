@@ -54,7 +54,7 @@ import java.util.TooManyListenersException;
  * @author Laurence P. G. Cable
  * @since 1.2
  */
-
+@SuppressWarnings("doclint:missing")
 public class      BeanContextServicesSupport extends BeanContextSupport
        implements BeanContextServices {
 

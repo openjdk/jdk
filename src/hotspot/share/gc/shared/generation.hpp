@@ -118,7 +118,7 @@ class Generation: public CHeapObj<mtGC> {
   };
 
   // allocate and initialize ("weak") refs processing support
-  virtual void ref_processor_init();
+  void ref_processor_init();
   void set_ref_processor(ReferenceProcessor* rp) {
     assert(_ref_processor == NULL, "clobbering existing _ref_processor");
     _ref_processor = rp;
@@ -421,11 +421,6 @@ class Generation: public CHeapObj<mtGC> {
   // Iterate over all objects in the generation, calling "cl.do_object" on
   // each.
   virtual void object_iterate(ObjectClosure* cl);
-
-  // Inform a generation that it longer contains references to objects
-  // in any younger generation.    [e.g. Because younger gens are empty,
-  // clear the card table.]
-  virtual void clear_remembered_set() { }
 
   // Inform a generation that some of its objects have moved.  [e.g. The
   // generation's spaces were compacted, invalidating the card table.]

@@ -26,11 +26,9 @@
 package java.io;
 
 import java.io.ObjectInputFilter.Config;
-import java.io.ObjectStreamClass.WeakClassKey;
 import java.io.ObjectStreamClass.RecordSupport;
 import java.lang.System.Logger;
 import java.lang.invoke.MethodHandle;
-import java.lang.ref.ReferenceQueue;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Modifier;
@@ -43,10 +41,6 @@ import java.security.PrivilegedExceptionAction;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
-import static java.io.ObjectStreamClass.processQueue;
 
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.event.DeserializationEvent;
@@ -282,12 +276,13 @@ public class ObjectInputStream
 
     private static class Caches {
         /** cache of subclass security audit results */
-        static final ConcurrentMap<WeakClassKey,Boolean> subclassAudits =
-            new ConcurrentHashMap<>();
-
-        /** queue for WeakReferences to audited subclasses */
-        static final ReferenceQueue<Class<?>> subclassAuditsQueue =
-            new ReferenceQueue<>();
+        static final ClassValue<Boolean> subclassAudits =
+            new ClassValue<>() {
+                @Override
+                protected Boolean computeValue(Class<?> type) {
+                    return auditSubclass(type);
+                }
+            };
 
         /**
          * Property to permit setting a filter after objects
@@ -296,6 +291,15 @@ public class ObjectInputStream
          */
         static final boolean SET_FILTER_AFTER_READ = GetBooleanAction
                 .privilegedGetProperty("jdk.serialSetFilterAfterRead");
+
+        /**
+         * Property to control {@link GetField#get(String, Object)} conversion of
+         * {@link ClassNotFoundException} to {@code null}. If set to {@code true}
+         * {@link GetField#get(String, Object)} returns null otherwise
+         * throwing {@link ClassNotFoundException}.
+         */
+        private static final boolean GETFIELD_CNFE_RETURNS_NULL = GetBooleanAction
+                .privilegedGetProperty("jdk.serialGetFieldCnfeReturnsNull");
 
         /**
          * Property to override the implementation limit on the number
@@ -373,8 +377,13 @@ public class ObjectInputStream
      * has written and flushed the header.
      *
      * <p>The constructor initializes the deserialization filter to the filter returned
-     * by invoking the {@link Config#getSerialFilterFactory()} with {@code null} for the current filter
+     * by invoking the serial filter factory returned from {@link Config#getSerialFilterFactory()}
+     * with {@code null} for the current filter
      * and the {@linkplain Config#getSerialFilter() static JVM-wide filter} for the requested filter.
+     * If the serial filter or serial filter factory properties are invalid
+     * an {@link IllegalStateException} is thrown.
+     * When the filter factory {@code apply} method is invoked it may throw a runtime exception
+     * preventing the {@code ObjectInputStream} from being constructed.
      *
      * <p>If a security manager is installed, this constructor will check for
      * the "enableSubclassImplementation" SerializablePermission when invoked
@@ -387,6 +396,8 @@ public class ObjectInputStream
      * @throws  IOException if an I/O error occurs while reading stream header
      * @throws  SecurityException if untrusted subclass illegally overrides
      *          security-sensitive methods
+     * @throws  IllegalStateException if the initialization of {@link ObjectInputFilter.Config}
+     *          fails due to invalid serial filter or serial filter factory properties.
      * @throws  NullPointerException if {@code in} is {@code null}
      * @see     ObjectInputStream#ObjectInputStream()
      * @see     ObjectInputStream#readFields()
@@ -410,8 +421,13 @@ public class ObjectInputStream
      * implementation of ObjectInputStream.
      *
      * <p>The constructor initializes the deserialization filter to the filter returned
-     * by invoking the {@link Config#getSerialFilterFactory()} with {@code null} for the current filter
+     * by invoking the serial filter factory returned from {@link Config#getSerialFilterFactory()}
+     * with {@code null} for the current filter
      * and the {@linkplain Config#getSerialFilter() static JVM-wide filter} for the requested filter.
+     * If the serial filter or serial filter factory properties are invalid
+     * an {@link IllegalStateException} is thrown.
+     * When the filter factory {@code apply} method is invoked it may throw a runtime exception
+     * preventing the {@code ObjectInputStream} from being constructed.
      *
      * <p>If there is a security manager installed, this method first calls the
      * security manager's {@code checkPermission} method with the
@@ -422,6 +438,8 @@ public class ObjectInputStream
      *          {@code checkPermission} method denies enabling
      *          subclassing.
      * @throws  IOException if an I/O error occurs while creating this stream
+     * @throws  IllegalStateException if the initialization of {@link ObjectInputFilter.Config}
+     *      fails due to invalid serial filter or serial filter factory properties.
      * @see SecurityManager#checkPermission
      * @see java.io.SerializablePermission
      */
@@ -1026,10 +1044,7 @@ public class ObjectInputStream
         if (buf == null) {
             throw new NullPointerException();
         }
-        int endoff = off + len;
-        if (off < 0 || len < 0 || endoff > buf.length || endoff < 0) {
-            throw new IndexOutOfBoundsException();
-        }
+        Objects.checkFromIndexSize(off, len, buf.length);
         return bin.read(buf, off, len, false);
     }
 
@@ -1198,10 +1213,7 @@ public class ObjectInputStream
      * @throws  IOException If other I/O error has occurred.
      */
     public void readFully(byte[] buf, int off, int len) throws IOException {
-        int endoff = off + len;
-        if (off < 0 || len < 0 || endoff > buf.length || endoff < 0) {
-            throw new IndexOutOfBoundsException();
-        }
+        Objects.checkFromIndexSize(off, len, buf.length);
         bin.readFully(buf, off, len, false);
     }
 
@@ -1596,12 +1608,13 @@ public class ObjectInputStream
          * @param  val the default value to use if {@code name} does not
          *         have a value
          * @return the value of the named {@code Object} field
+         * @throws ClassNotFoundException Class of a serialized object cannot be found.
          * @throws IOException if there are I/O errors while reading from the
          *         underlying {@code InputStream}
          * @throws IllegalArgumentException if type of {@code name} is
          *         not serializable or if the field type is incorrect
          */
-        public abstract Object get(String name, Object val) throws IOException;
+        public abstract Object get(String name, Object val) throws IOException, ClassNotFoundException;
     }
 
     /**
@@ -1620,13 +1633,7 @@ public class ObjectInputStream
         if (sm == null) {
             return;
         }
-        processQueue(Caches.subclassAuditsQueue, Caches.subclassAudits);
-        WeakClassKey key = new WeakClassKey(cl, Caches.subclassAuditsQueue);
-        Boolean result = Caches.subclassAudits.get(key);
-        if (result == null) {
-            result = auditSubclass(cl);
-            Caches.subclassAudits.putIfAbsent(key, result);
-        }
+        boolean result = Caches.subclassAudits.get(cl);
         if (!result) {
             sm.checkPermission(SUBCLASS_IMPLEMENTATION_PERMISSION);
         }
@@ -2645,13 +2652,19 @@ public class ObjectInputStream
             return (off >= 0) ? Bits.getDouble(primValues, off) : val;
         }
 
-        public Object get(String name, Object val) {
+        public Object get(String name, Object val) throws ClassNotFoundException {
             int off = getFieldOffset(name, Object.class);
             if (off >= 0) {
                 int objHandle = objHandles[off];
                 handles.markDependency(passHandle, objHandle);
-                return (handles.lookupException(objHandle) == null) ?
-                    objValues[off] : null;
+                ClassNotFoundException ex = handles.lookupException(objHandle);
+                if (ex == null)
+                    return objValues[off];
+                if (Caches.GETFIELD_CNFE_RETURNS_NULL) {
+                    // Revert to the prior behavior; return null instead of CNFE
+                    return null;
+                }
+                throw ex;
             } else {
                 return val;
             }

@@ -478,15 +478,12 @@ public class StyleSheet extends StyleContext {
      * @since 1.3
      */
     public void importStyleSheet(URL url) {
-        try {
-            InputStream is;
-
-            is = url.openStream();
-            Reader r = new BufferedReader(new InputStreamReader(is));
+        try (InputStream is = url.openStream();
+             InputStreamReader isr = new InputStreamReader(is);
+             Reader r = new BufferedReader(isr))
+        {
             CssParser parser = new CssParser();
             parser.parse(url, r, false, true);
-            r.close();
-            is.close();
         } catch (Throwable e) {
             // on error we simply have no styles... the html
             // will look mighty wrong but still function.
@@ -2211,10 +2208,9 @@ public class StyleSheet extends StyleContext {
                     retIndex--;
                 } else if (as.isDefined(HTML.Attribute.VALUE)) {
                     Object value = as.getAttribute(HTML.Attribute.VALUE);
-                    if (value != null &&
-                        (value instanceof String)) {
+                    if (value instanceof String s) {
                         try {
-                            int iValue = Integer.parseInt((String)value);
+                            int iValue = Integer.parseInt(s);
                             return retIndex - counter + iValue;
                         }
                         catch (NumberFormatException nfe) {}
@@ -2744,8 +2740,7 @@ public class StyleSheet extends StyleContext {
                                    kind of conditional behaviour in the
                                    stylesheet.
                                  **/
-                                    if (o != null && o instanceof AttributeSet) {
-                                        AttributeSet attr = (AttributeSet)o;
+                                    if (o instanceof AttributeSet attr) {
                                         if (attr.getAttribute(HTML.Attribute.HREF) == null) {
                                             continue;
                                         }

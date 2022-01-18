@@ -333,7 +333,7 @@ public class ModuleDotGraph {
 
         private final String name;
         private final Graph<String> graph;
-        private final Set<ModuleDescriptor> descriptors = new TreeSet<>();
+        private final TreeSet<ModuleDescriptor> descriptors = new TreeSet<>();
         private final List<SubGraph> subgraphs = new ArrayList<>();
         private final Attributes attributes;
         public DotGraphBuilder(String name,
@@ -414,7 +414,7 @@ public class ModuleDotGraph {
                 .collect(toSet());
 
             String mn = md.name();
-            edges.forEach(dn -> {
+            edges.stream().sorted().forEach(dn -> {
                 String attr = "";
                 if (dn.equals("java.base")) {
                     attr = "color=\"" + attributes.requiresMandatedColor() + "\"";

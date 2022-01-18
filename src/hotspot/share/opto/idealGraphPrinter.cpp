@@ -316,7 +316,9 @@ void IdealGraphPrinter::begin_method() {
   }
 
   if (C->is_osr_compilation()) {
-      print_prop(COMPILATION_OSR_PROPERTY, TRUE_VALUE);
+      stringStream ss;
+      ss.print("bci: %d, line: %d", C->entry_bci(), method->line_number_from_bci(C->entry_bci()));
+      print_prop(COMPILATION_OSR_PROPERTY, ss.as_string());
   }
 
   print_prop(COMPILATION_ID_PROPERTY, C->compile_id());
@@ -416,6 +418,14 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
       case Type::Category::Undef:
         print_prop("category", "undef");
         break;
+    }
+
+    Node_Notes* nn = C->node_notes_at(node->_idx);
+    if (nn != NULL && !nn->is_clear() && nn->jvms() != NULL) {
+      buffer[0] = 0;
+      stringStream ss(buffer, sizeof(buffer) - 1);
+      nn->jvms()->dump_spec(&ss);
+      print_prop("jvms", buffer);
     }
 
     const jushort flags = node->flags();

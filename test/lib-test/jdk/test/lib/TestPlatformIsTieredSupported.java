@@ -39,6 +39,7 @@ import sun.hotspot.WhiteBox;
  */
 public class TestPlatformIsTieredSupported {
     public static void main(String args[]) {
+        @SuppressWarnings("deprecation")
         WhiteBox whiteBox = WhiteBox.getWhiteBox();
         boolean tieredCompilation = whiteBox.getBooleanVMFlag(
                 "TieredCompilation");

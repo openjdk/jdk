@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import nsk.share.TestBug;
 import nsk.share.jdi.HeapwalkingDebuggee;
 import java.io.*;
 import java.util.*;
+import sun.hotspot.WhiteBox;
 
 /*
  * Class create and save given number of class instances
@@ -56,6 +57,8 @@ public class referringObjects002a extends HeapwalkingDebuggee {
 
     final static public String COMMAND_DELETE_CLASS_OBJECT_REFERRERS = "deleteClassObjectReferrers";
 
+    private final WhiteBox WB = WhiteBox.getWhiteBox();
+
     public static void main(String args[]) {
         new referringObjects002a().doTest(args);
     }
@@ -76,6 +79,9 @@ public class referringObjects002a extends HeapwalkingDebuggee {
 
         for (String referenceType : ObjectInstancesManager.allReferenceTypes)
             classReferrers.add(new ReferringObject(klass, referenceType));
+        // force full GC with WB to ensure that weak refernces are collected
+        // j.l.i.MethodType has ConcurrentWeakInternSet which might contain references to TestClass1
+        WB.fullGC();
     }
 
     // delete all created references to class object

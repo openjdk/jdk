@@ -401,7 +401,13 @@ final class P11AEADCipher extends CipherSpi {
     }
 
     private void cancelOperation() {
-        // cancel operation by finishing it; avoid killSession as some
+        token.ensureValid();
+        if (P11Util.trySessionCancel(token, session,
+                (encrypt ? CKF_ENCRYPT : CKF_DECRYPT))) {
+            return;
+        }
+
+        // cancel by finishing operations; avoid killSession as some
         // hardware vendors may require re-login
         int bufLen = doFinalLength(0);
         byte[] buffer = new byte[bufLen];
@@ -453,7 +459,7 @@ final class P11AEADCipher extends CipherSpi {
 
         token.ensureValid();
 
-        byte[] aad = (aadBuffer.size() > 0? aadBuffer.toByteArray() : null);
+        byte[] aad = (aadBuffer.size() > 0 ? aadBuffer.toByteArray() : null);
 
         long p11KeyID = p11Key.getKeyID();
         try {
@@ -507,7 +513,7 @@ final class P11AEADCipher extends CipherSpi {
                 result -= tagLen;
             }
         }
-        return (result > 0? result : 0);
+        return (result > 0 ? result : 0);
     }
 
     // reset the states to the pre-initialized values

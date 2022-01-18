@@ -34,8 +34,7 @@ class MacroAssembler;
 
 #ifdef COMPILER1
 class LIR_Assembler;
-class LIR_OprDesc;
-typedef LIR_OprDesc* LIR_Opr;
+class LIR_Opr;
 class StubAssembler;
 class ZLoadBarrierStubC1;
 #endif // COMPILER1
