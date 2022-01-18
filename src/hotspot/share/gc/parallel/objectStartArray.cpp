@@ -133,9 +133,9 @@ bool ObjectStartArray::object_starts_in_range(HeapWord* start_addr,
          p2i(start_addr), p2i(end_addr));
 
   jbyte* start_block = block_for_addr(start_addr);
-  jbyte* end_block = block_for_addr(align_up(end_addr, _card_size));
+  jbyte* end_block = block_for_addr(end_addr);
 
-  for (jbyte* block = start_block; block < end_block; block++) {
+  for (jbyte* block = start_block; block <= end_block; block++) {
     if (*block != clean_block) {
       return true;
     }
