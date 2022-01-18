@@ -95,7 +95,11 @@ static jobject sAccessibilityClass = NULL;
         return NO;
     }
 
-    return isChildSelected(env, ((CommonComponentAccessibility *)[self parent])->fAccessible, fIndex, fComponent);
+    CommonComponentAccessibility* parent = [self typeSafeParent];
+    if (parent != nil) {
+        return isChildSelected(env, parent->fAccessible, fIndex, fComponent);
+    }
+    return NO;
 }
 
 - (BOOL)isSelectable:(JNIEnv *)env
@@ -708,6 +712,15 @@ static jobject sAccessibilityClass = NULL;
     return fParent;
 }
 
+- (CommonComponentAccessibility *)typeSafeParent
+{
+    id parent = [self parent];
+    if ([parent isKindOfClass:[CommonComponentAccessibility class]]) {
+        return (CommonComponentAccessibility*)parent;
+    }
+    return nil;
+}
+
 - (NSString *)javaRole
 {
     if(fJavaRole == nil) {
@@ -792,7 +805,7 @@ static jobject sAccessibilityClass = NULL;
     (*env)->DeleteLocalRef(env, axComponent);
     point.y += size.height;
 
-    point.y = [[[[self view] window] screen] frame].size.height - point.y;
+    point.y = [[[NSScreen screens] objectAtIndex:0] frame].size.height - point.y;
 
     return NSMakeRect(point.x, point.y, size.width, size.height);
 }
@@ -824,11 +837,13 @@ static jobject sAccessibilityClass = NULL;
     if (fNSRole == nil) {
         NSString *javaRole = [self javaRole];
         fNSRole = [sRoles objectForKey:javaRole];
+        CommonComponentAccessibility* parent = [self typeSafeParent];
         // The sRoles NSMutableDictionary maps popupmenu to Mac's popup button.
         // JComboBox behavior currently relies on this.  However this is not the
         // proper mapping for a JPopupMenu so fix that.
         if ( [javaRole isEqualToString:@"popupmenu"] &&
-             ![[[self parent] javaRole] isEqualToString:@"combobox"] ) {
+             parent != nil &&
+             ![[parent javaRole] isEqualToString:@"combobox"] ) {
              fNSRole = NSAccessibilityMenuRole;
         }
         if (fNSRole == nil) {
@@ -990,7 +1005,7 @@ static jobject sAccessibilityClass = NULL;
     point.y += size.height;
 
     // Now make it into Cocoa screen coords.
-    point.y = [[[[self view] window] screen] frame].size.height - point.y;
+    point.y = [[[NSScreen screens] objectAtIndex:0] frame].size.height - point.y;
 
     return point;
 }
@@ -1025,8 +1040,9 @@ static jobject sAccessibilityClass = NULL;
     // This may change when later fixing issues which currently
     // exist for combo boxes, but for now the following is only
     // for JPopupMenus, not for combobox menus.
-    id parent = [self parent];
+    id parent = [self typeSafeParent];
     if ( [[self javaRole] isEqualToString:@"popupmenu"] &&
+         parent != nil &&
          ![[parent javaRole] isEqualToString:@"combobox"] ) {
         NSArray *children =
             [CommonComponentAccessibility childrenOfParent:self
@@ -1098,7 +1114,7 @@ static jobject sAccessibilityClass = NULL;
                                  "(Ljava/awt/Container;FF)Ljavax/accessibility/Accessible;", nil);
 
     // Make it into java screen coords
-    point.y = [[[[self view] window] screen] frame].size.height - point.y;
+    point.y = [[[NSScreen screens] objectAtIndex:0] frame].size.height - point.y;
 
     jobject jparent = fComponent;
 

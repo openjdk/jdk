@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +21,45 @@
  * questions.
  */
 
-package gc.g1;
+package compiler.c2.irTests;
 
-/**
- * @test TestShrinkAuxiliaryData30
- * @key randomness
- * @bug 8038423 8061715 8078405
- * @summary Checks that decommitment occurs for JVM with different
- * G1ConcRSLogCacheSize and ObjectAlignmentInBytes options values
- * @requires vm.gc.G1
- * @library /test/lib
- * @library /
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/timeout=720 gc.g1.TestShrinkAuxiliaryData30
+import compiler.lib.ir_framework.*;
+import jdk.test.lib.Utils;
+import java.util.Random;
+
+/*
+ * @test
+ * @bug 8278228
+ * @summary C2: Improve identical back-to-back if elimination
+ * @library /test/lib /
+ * @run driver compiler.c2.irTests.TestBackToBackIfs
  */
-public class TestShrinkAuxiliaryData30 {
 
-    public static void main(String[] args) throws Exception {
-        new TestShrinkAuxiliaryData(30).test();
+public class TestBackToBackIfs {
+    public static void main(String[] args) {
+        TestFramework.run();
+    }
+
+    static private int int_field;
+
+    @Test
+    @IR(counts = { IRNode.IF, "1" })
+    public static void test(int a, int b) {
+        if (a == b) {
+            int_field = 0x42;
+        } else {
+            int_field = 42;
+        }
+        if (a == b) {
+            int_field = 0x42;
+        } else {
+            int_field = 42;
+        }
+    }
+
+    @Run(test = "test")
+    public static void test_runner() {
+        test(42, 0x42);
+        test(0x42, 0x42);
     }
 }

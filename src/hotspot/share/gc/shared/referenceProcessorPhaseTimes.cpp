@@ -143,16 +143,6 @@ RefProcBalanceQueuesTimeTracker::~RefProcBalanceQueuesTimeTracker() {
   phase_times()->set_balance_queues_time_ms(_phase_number, elapsed);
 }
 
-RefProcPhaseTimeTracker::RefProcPhaseTimeTracker(ReferenceProcessor::RefProcPhases phase_number,
-                                                       ReferenceProcessorPhaseTimes* phase_times) :
-  RefProcPhaseTimeBaseTracker(phase_enum_2_phase_string(phase_number), phase_number, phase_times) {
-}
-
-RefProcPhaseTimeTracker::~RefProcPhaseTimeTracker() {
-  double elapsed = elapsed_time();
-  phase_times()->set_phase_time_ms(_phase_number, elapsed);
-}
-
 RefProcTotalPhaseTimesTracker::RefProcTotalPhaseTimesTracker(ReferenceProcessor::RefProcPhases phase_number,
                                                              ReferenceProcessorPhaseTimes* phase_times) :
   RefProcPhaseTimeBaseTracker(phase_enum_2_phase_string(phase_number), phase_number, phase_times) {
@@ -207,7 +197,7 @@ void ReferenceProcessorPhaseTimes::reset() {
   _soft_weak_final_refs_phase_worker_time_sec->reset();
 
   for (int i = 0; i < number_of_subclasses_of_ref; i++) {
-    _ref_cleared[i] = 0;
+    _ref_dropped[i] = 0;
     _ref_discovered[i] = 0;
   }
 
@@ -223,9 +213,9 @@ ReferenceProcessorPhaseTimes::~ReferenceProcessorPhaseTimes() {
   delete _soft_weak_final_refs_phase_worker_time_sec;
 }
 
-void ReferenceProcessorPhaseTimes::add_ref_cleared(ReferenceType ref_type, size_t count) {
+void ReferenceProcessorPhaseTimes::add_ref_dropped(ReferenceType ref_type, size_t count) {
   ASSERT_REF_TYPE(ref_type);
-  Atomic::add(&_ref_cleared[ref_type_2_index(ref_type)], count, memory_order_relaxed);
+  Atomic::add(&_ref_dropped[ref_type_2_index(ref_type)], count, memory_order_relaxed);
 }
 
 void ReferenceProcessorPhaseTimes::set_ref_discovered(ReferenceType ref_type, size_t count) {
@@ -280,13 +270,16 @@ void ReferenceProcessorPhaseTimes::print_reference(ReferenceType ref_type, uint 
     LogStream ls(lt);
     ResourceMark rm;
 
-    ls.print_cr("%s%s:", Indents[base_indent], ref_type_2_string(ref_type));
-
-    uint const next_indent = base_indent + 1;
     int const ref_type_index = ref_type_2_index(ref_type);
 
-    ls.print_cr("%sDiscovered: " SIZE_FORMAT, Indents[next_indent], _ref_discovered[ref_type_index]);
-    ls.print_cr("%sCleared: " SIZE_FORMAT, Indents[next_indent], _ref_cleared[ref_type_index]);
+    size_t discovered = _ref_discovered[ref_type_index];
+    size_t dropped = _ref_dropped[ref_type_index];
+    assert(discovered >= dropped, "invariant");
+    size_t processed = discovered - dropped;
+
+    ls.print_cr("%s%s Discovered: %zu, Dropped: %zu, Processed: %zu",
+                Indents[base_indent], ref_type_2_string(ref_type),
+                discovered, dropped, processed);
   }
 }
 

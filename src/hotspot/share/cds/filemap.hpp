@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,7 +232,6 @@ private:
                                         // some expensive operations.
   bool   _use_full_module_graph;        // Can we use the full archived module graph?
   size_t _ptrmap_size_in_bits;          // Size of pointer relocation bitmap
-  narrowOop _heap_obj_roots;            // An objArray that stores all the roots of archived heap objects
   char* from_mapped_offset(size_t offset) const {
     return mapped_base_address() + offset;
   }
@@ -279,14 +278,12 @@ public:
   jshort app_module_paths_start_index()    const { return _app_module_paths_start_index; }
   jshort app_class_paths_start_index()     const { return _app_class_paths_start_index; }
   jshort num_module_paths()                const { return _num_module_paths; }
-  narrowOop heap_obj_roots()               const { return _heap_obj_roots; }
 
   void set_has_platform_or_app_classes(bool v)   { _has_platform_or_app_classes = v; }
   void set_cloned_vtables(char* p)               { set_as_offset(p, &_cloned_vtables_offset); }
   void set_serialized_data(char* p)              { set_as_offset(p, &_serialized_data_offset); }
   void set_ptrmap_size_in_bits(size_t s)         { _ptrmap_size_in_bits = s; }
   void set_mapped_base_address(char* p)          { _mapped_base_address = p; }
-  void set_heap_obj_roots(narrowOop r)           { _heap_obj_roots = r; }
   void copy_base_archive_name(const char* name);
 
   void set_shared_path_table(SharedPathTable table) {
@@ -359,7 +356,6 @@ private:
 public:
   static bool get_base_archive_name_from_header(const char* archive_name,
                                                 char** base_archive_name);
-  static bool check_archive(const char* archive_name, bool is_static);
   static SharedPathTable shared_path_table() {
     return _shared_path_table;
   }
@@ -373,7 +369,7 @@ public:
 
   void log_paths(const char* msg, int start_idx, int end_idx);
 
-  FileMapInfo(bool is_static);
+  FileMapInfo(const char* full_apth, bool is_static);
   ~FileMapInfo();
 
   // Accessors
@@ -413,8 +409,6 @@ public:
   void set_requested_base(char* b)                  { header()->set_requested_base(b); }
   char* requested_base_address()           const    { return header()->requested_base_address(); }
 
-  narrowOop heap_obj_roots()               const    { return header()->heap_obj_roots(); }
-
   class DynamicArchiveHeader* dynamic_header() const {
     assert(!is_static(), "must be");
     return (DynamicArchiveHeader*)header();
@@ -446,7 +440,7 @@ public:
   // File manipulation.
   bool  initialize() NOT_CDS_RETURN_(false);
   bool  open_for_read();
-  void  open_for_write(const char* path = NULL);
+  void  open_for_write();
   void  write_header();
   void  write_region(int region, char* base, size_t size,
                      bool read_only, bool allow_exec);

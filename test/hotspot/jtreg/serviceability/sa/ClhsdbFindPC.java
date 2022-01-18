@@ -182,6 +182,28 @@ public class ClhsdbFindPC {
                                           methodAddr));
             runTest(withCore, cmds, expStrMap);
 
+            // Rerun above findpc command, but this time using "whatis", which is an alias for "findpc".
+            cmdStr = "whatis " + methodAddr;
+            cmds = List.of(cmdStr);
+            expStrMap = new HashMap<>();
+            expStrMap.put(cmdStr, List.of("Method ",
+                                          "LingeredApp.steadyState",
+                                          methodAddr));
+            runTest(withCore, cmds, expStrMap);
+
+            // Run "mem -v <addr>/30" on a Method*. The first line will look like:
+            //   Address 0x0000152e30403530: Method jdk/test/lib/apps/LingeredApp.steadyState(Ljava/lang/Object;)V@0x0000152e30403530
+            // Followed by lines displaying the memory contents, including interpretation
+            // of any contents that are addresses.
+            cmdStr = "mem -v " + methodAddr + "/30";
+            cmds = List.of(cmdStr);
+            expStrMap = new HashMap<>();
+            expStrMap.put(cmdStr, List.of("Method jdk/test/lib/apps/LingeredApp.steadyState",
+                                          methodAddr,
+                                          /* The following is from a field in the Method object. */
+                                          "In interpreter codelet: method entry point"));
+            runTest(withCore, cmds, expStrMap);
+
             // Run findpc on a JavaThread*. We can find one in the jstack output.
             // The tid for a thread is it's JavaThread*. For example:
             //  "main" #1 prio=5 tid=0x00000080263398f0 nid=0x277e0 ...

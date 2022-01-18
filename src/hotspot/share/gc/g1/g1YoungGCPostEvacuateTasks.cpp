@@ -103,7 +103,7 @@ class G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask : publi
 
 public:
   RemoveSelfForwardPtrsTask(G1EvacFailureRegions* evac_failure_regions) :
-    G1AbstractSubTask(G1GCPhaseTimes::RemoveSelfForwardingPtr),
+    G1AbstractSubTask(G1GCPhaseTimes::RestoreRetainedRegions),
     _task(evac_failure_regions),
     _evac_failure_regions(evac_failure_regions) { }
 

@@ -39,7 +39,7 @@ import jdk.incubator.vector.VectorSpecies;
  * @test
  * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.vm.annotation
- * @run testng/othervm --add-opens jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED
+ * @run testng/othervm/timeout=240 --add-opens jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED
  *      -XX:-TieredCompilation VectorReshapeTests
  */
 

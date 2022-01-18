@@ -28,9 +28,6 @@ package java.io;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.ref.Reference;
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -58,7 +55,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
@@ -2225,68 +2221,6 @@ public class ObjectStreamClass implements Serializable {
             matches[i] = m;
         }
         return matches;
-    }
-
-    /**
-     * Removes from the specified map any keys that have been enqueued
-     * on the specified reference queue.
-     */
-    static void processQueue(ReferenceQueue<Class<?>> queue,
-                             ConcurrentMap<? extends
-                             WeakReference<Class<?>>, ?> map)
-    {
-        Reference<? extends Class<?>> ref;
-        while((ref = queue.poll()) != null) {
-            map.remove(ref);
-        }
-    }
-
-    /**
-     *  Weak key for Class objects.
-     *
-     **/
-    static class WeakClassKey extends WeakReference<Class<?>> {
-        /**
-         * saved value of the referent's identity hash code, to maintain
-         * a consistent hash code after the referent has been cleared
-         */
-        private final int hash;
-
-        /**
-         * Create a new WeakClassKey to the given object, registered
-         * with a queue.
-         */
-        WeakClassKey(Class<?> cl, ReferenceQueue<Class<?>> refQueue) {
-            super(cl, refQueue);
-            hash = System.identityHashCode(cl);
-        }
-
-        /**
-         * Returns the identity hash code of the original referent.
-         */
-        public int hashCode() {
-            return hash;
-        }
-
-        /**
-         * Returns true if the given object is this identical
-         * WeakClassKey instance, or, if this object's referent has not
-         * been cleared, if the given object is another WeakClassKey
-         * instance with the identical non-null referent as this one.
-         */
-        public boolean equals(Object obj) {
-            if (obj == this) {
-                return true;
-            }
-
-            if (obj instanceof WeakClassKey) {
-                Class<?> referent = get();
-                return (referent != null) &&
-                        (((WeakClassKey) obj).refersTo(referent));
-            } else {
-                return false;
-            }
-        }
     }
 
     /**

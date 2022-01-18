@@ -607,7 +607,7 @@ void LIR_Assembler::emit_op0(LIR_Op0* op) {
         check_icache();
       }
       offsets()->set_value(CodeOffsets::Verified_Entry, _masm->offset());
-      _masm->verified_entry();
+      _masm->verified_entry(compilation()->directive()->BreakAtExecuteOption);
       if (needs_clinit_barrier_on_entry(compilation()->method())) {
         clinit_barrier(compilation()->method());
       }
