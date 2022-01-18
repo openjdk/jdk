@@ -364,10 +364,6 @@ class Generation: public CHeapObj<mtGC> {
   virtual void post_compact() { ShouldNotReachHere(); }
 #endif
 
-  // Some generations may require some cleanup actions before allowing
-  // a verification.
-  virtual void prepare_for_verify() {}
-
   // Accessing "marks".
 
   // This function gives a generation a chance to note a point between
