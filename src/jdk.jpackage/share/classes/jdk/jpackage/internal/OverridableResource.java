@@ -76,6 +76,22 @@ final class OverridableResource {
         setSourceOrder(Source.values());
     }
 
+    Path getResourceDir() {
+        return resourceDir;
+    }
+
+    String getDefaultName() {
+        return defaultName;
+    }
+
+    Path getPublicName() {
+        return publicName;
+    }
+
+    Path getExternalPath() {
+        return externalPath;
+    }
+
     OverridableResource setSubstitutionData(Map<String, String> v) {
         if (v != null) {
             // Disconnect `v`
@@ -83,6 +99,13 @@ final class OverridableResource {
         } else {
             substitutionData = null;
         }
+        return this;
+    }
+
+    OverridableResource addSubstitutionDataEntry(String key, String value) {
+        var entry = Map.of(key, value);
+        Optional.ofNullable(substitutionData).ifPresentOrElse(v -> v.putAll(
+                entry), () -> setSubstitutionData(entry));
         return this;
     }
 
