@@ -650,36 +650,13 @@ class Compile : public Phase {
 
   Ticks _latest_stage_start_counter;
 
-  void begin_method(int level = 1) {
-#ifndef PRODUCT
-    if (_method != NULL && should_print(level)) {
-      _printer->begin_method();
-    }
-#endif
-    C->_latest_stage_start_counter.stamp();
-  }
+  void begin_method();
+  void end_method();
+  bool should_print(int level);
 
-  bool should_print(int level = 1) {
-#ifndef PRODUCT
-    if (PrintIdealGraphLevel < 0) { // disabled by the user
-      return false;
-    }
-
-    bool need = directive()->IGVPrintLevelOption >= level;
-    if (need && !_printer) {
-      _printer = IdealGraphPrinter::printer();
-      assert(_printer != NULL, "_printer is NULL when we need it!");
-      _printer->set_compile(this);
-    }
-    return need;
-#else
-    return false;
-#endif
-  }
-
-  void print_method(CompilerPhaseType cpt, const char *name, int level = 1);
-  void print_method(CompilerPhaseType cpt, int level = 1, int idx = 0);
+  void print_method(CompilerPhaseType cpt, int level);
   void print_method(CompilerPhaseType cpt, Node* n, int level = 3);
+  void print_method_impl(CompilerPhaseType cpt, const char *name, int level);
 
 #ifndef PRODUCT
   void igv_print_method_to_file(const char* phase_name = "Debug", bool append = false);
@@ -687,8 +664,6 @@ class Compile : public Phase {
   static IdealGraphPrinter* debug_file_printer() { return _debug_file_printer; }
   static IdealGraphPrinter* debug_network_printer() { return _debug_network_printer; }
 #endif
-
-  void end_method(int level = 1);
 
   int           macro_count()             const { return _macro_nodes.length(); }
   int           predicate_count()         const { return _predicate_opaqs.length(); }

@@ -2080,7 +2080,7 @@ void Compile::Optimize() {
 
   NOT_PRODUCT( verify_graph_edges(); )
 
-  print_method(PHASE_AFTER_PARSING);
+  print_method(PHASE_AFTER_PARSING, 1);
 
  {
   // Iterative Global Value Numbering, including ideal transforms
@@ -2846,7 +2846,7 @@ void Compile::Code_Gen() {
     output.install();
   }
 
-  print_method(PHASE_FINAL_CODE);
+  print_method(PHASE_FINAL_CODE, 1);
 
   // He's dead, Jim.
   _cfg     = (PhaseCFG*)((intptr_t)0xdeadbeef);
@@ -4078,7 +4078,7 @@ void Compile::record_failure(const char* reason) {
   }
 
   if (!C->failure_reason_is(C2Compiler::retry_no_subsuming_loads())) {
-    C->print_method(PHASE_FAILURE);
+    C->print_method(PHASE_FAILURE, 1);
   }
   _root = NULL;  // flush the graph, too
 }
@@ -4808,7 +4808,23 @@ void Compile::sort_macro_nodes() {
   }
 }
 
-void Compile::print_method(CompilerPhaseType cpt, const char *name, int level) {
+void Compile::print_method(CompilerPhaseType cpt, int level) {
+  print_method_impl(cpt, CompilerPhaseTypeHelper::to_string(cpt), level);
+}
+
+void Compile::print_method(CompilerPhaseType cpt, Node* n, int level) {
+  ResourceMark rm;
+  stringStream ss;
+  ss.print_raw(CompilerPhaseTypeHelper::to_string(cpt));
+  if (n != NULL) {
+    ss.print(": %d %s ", n->_idx, NodeClassNames[n->Opcode()]);
+  } else {
+    ss.print_raw(": NULL");
+  }
+  C->print_method_impl(cpt, ss.as_string(), level);
+}
+
+void Compile::print_method_impl(CompilerPhaseType cpt, const char *name, int level) {
   EventCompilerPhase event;
   if (event.should_commit()) {
     CompilerEvent::PhaseEvent::post(event, C->_latest_stage_start_counter, cpt, C->_compile_id, level);
@@ -4821,43 +4837,46 @@ void Compile::print_method(CompilerPhaseType cpt, const char *name, int level) {
   C->_latest_stage_start_counter.stamp();
 }
 
-void Compile::print_method(CompilerPhaseType cpt, int level, int idx) {
-  char output[1024];
+// Only used from CompileWrapper
+void Compile::begin_method() {
 #ifndef PRODUCT
-  if (idx != 0) {
-    jio_snprintf(output, sizeof(output), "%s:%d", CompilerPhaseTypeHelper::to_string(cpt), idx);
-  } else {
-    jio_snprintf(output, sizeof(output), "%s", CompilerPhaseTypeHelper::to_string(cpt));
+  if (_method != NULL && should_print(1)) {
+    _printer->begin_method();
   }
 #endif
-  print_method(cpt, output, level);
+  C->_latest_stage_start_counter.stamp();
 }
 
-void Compile::print_method(CompilerPhaseType cpt, Node* n, int level) {
-  ResourceMark rm;
-  stringStream ss;
-  ss.print_raw(CompilerPhaseTypeHelper::to_string(cpt));
-  if (n != NULL) {
-    ss.print(": %d %s ", n->_idx, NodeClassNames[n->Opcode()]);
-  } else {
-    ss.print_raw(": NULL");
-  }
-  C->print_method(cpt, ss.as_string(), level);
-}
-
-void Compile::end_method(int level) {
+// Only used from CompileWrapper
+void Compile::end_method() {
   EventCompilerPhase event;
   if (event.should_commit()) {
-    CompilerEvent::PhaseEvent::post(event, C->_latest_stage_start_counter, PHASE_END, C->_compile_id, level);
+    CompilerEvent::PhaseEvent::post(event, C->_latest_stage_start_counter, PHASE_END, C->_compile_id, 1);
   }
 
 #ifndef PRODUCT
-  if (_method != NULL && should_print(level)) {
+  if (_method != NULL && should_print(1)) {
     _printer->end_method();
   }
 #endif
 }
 
+bool Compile::should_print(int level) {
+#ifndef PRODUCT
+  if (PrintIdealGraphLevel < 0) { // disabled by the user
+    return false;
+  }
+
+  bool need = directive()->IGVPrintLevelOption >= level;
+  if (need && _printer == nullptr) {
+    _printer = IdealGraphPrinter::printer();
+    _printer->set_compile(this);
+  }
+  return need;
+#else
+  return false;
+#endif
+}
 
 #ifndef PRODUCT
 IdealGraphPrinter* Compile::_debug_file_printer = NULL;
