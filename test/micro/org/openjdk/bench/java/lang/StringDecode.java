@@ -54,6 +54,7 @@ public class StringDecode {
     private byte[] utf16String;
     private byte[] longUtf16String;
     private byte[] longUtf16StartString;
+    private byte[] longLatin1String;
 
     @Setup
     public void setup() {
@@ -102,6 +103,22 @@ public class StringDecode {
              euismod, blandit mauris vel, placerat urna. Etiam malesuada enim purus,
              tristique mollis odio blandit quis. Vivamus posuere.
             """.getBytes(charset);
+
+        longLatin1String = """
+             a\u00B6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6
+             b\u00F6\u00F6\u00B6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6
+             c\u00F6\u00F6\u00F6\u00B6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6
+             d\u00F6\u00F6\u00F6\u00F6\u00B6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6
+             e\u00F6\u00F6\u00F6\u00F6\u00F6\u00B6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6
+             f\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00B6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6
+             g\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00B6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6
+             h\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00B6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6
+             i\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00B6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6
+             j\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00B6\u00F6\u00F6\u00F6\u00F6\u00F6
+             k\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00B6\u00F6\u00F6\u00F6\u00F6
+             l\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00B6\u00F6\u00F6\u00F6
+             m\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00B6\u00F6\u00F6
+            """.getBytes(charset);
     }
 
     @Benchmark
@@ -127,6 +144,11 @@ public class StringDecode {
     @Benchmark
     public String decodeUTF16LongStart() throws Exception {
         return new String(longUtf16StartString, charset);
+    }
+
+    @Benchmark
+    public String decodeLatin1LongStart() throws Exception {
+        return new String(longLatin1String, charset);
     }
 
     @Benchmark
