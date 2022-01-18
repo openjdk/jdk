@@ -138,7 +138,6 @@
  *     target="_top">The Java Tutorial</a></li>
  *     <li><a href="https://www.oracle.com/java/technologies/javase/training-support.html"
  *     target="_top">Java SE Training and Certification</a>
- *     at the Java Developer Connection <sup>SM</sup></li>
  * </ul>
  *
  * @serial exclude
