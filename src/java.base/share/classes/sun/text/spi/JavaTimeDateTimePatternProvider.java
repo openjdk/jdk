@@ -47,12 +47,12 @@ public abstract class JavaTimeDateTimePatternProvider extends LocaleServiceProvi
      * Concrete implementation of this method will retrieve
      * a java.time specific dateTime Pattern from selected Locale Provider.
      *
-     * @param timeStyle an {@code int} value representing FormatStyle constant, -1
+     * @param timeStyle an {@code int} value, representing FormatStyle constant, -1
      * for date-only pattern
-     * @param dateStyle an {@code int} value,representing FormatStyle constant, -1
+     * @param dateStyle an {@code int} value, representing FormatStyle constant, -1
      * for time-only pattern
      * @param locale {@code locale}, non-null
-     * @param calType a {@code String},non-null representing CalendarType such as "japanese",
+     * @param calType a {@code String}, non-null representing CalendarType such as "japanese",
      * "iso8601"
      * @return  formatting pattern {@code String}
      * @see java.time.format.DateTimeFormatterBuilder#convertStyle(java.time.format.FormatStyle)

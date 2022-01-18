@@ -157,8 +157,10 @@ PRAGMA_DIAG_POP
                                      NULL,                                \
                                      scan_fmt,                            \
                                      &variable);                          \
-  if (err != 0)                                                           \
+  if (err != 0) {                                                         \
+    log_trace(os, container)(logstring, (return_type) OSCONTAINER_ERROR); \
     return (return_type) OSCONTAINER_ERROR;                               \
+  }                                                                       \
                                                                           \
   log_trace(os, container)(logstring, variable);                          \
 }

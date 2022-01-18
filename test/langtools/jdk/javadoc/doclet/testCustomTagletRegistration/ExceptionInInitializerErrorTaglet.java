@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +21,40 @@
  * questions.
  */
 
-package gc.g1;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
 
-/**
- * @test TestShrinkAuxiliaryData30
- * @key randomness
- * @bug 8038423 8061715 8078405
- * @summary Checks that decommitment occurs for JVM with different
- * G1ConcRSLogCacheSize and ObjectAlignmentInBytes options values
- * @requires vm.gc.G1
- * @library /test/lib
- * @library /
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/timeout=720 gc.g1.TestShrinkAuxiliaryData30
- */
-public class TestShrinkAuxiliaryData30 {
+import javax.lang.model.element.Element;
 
-    public static void main(String[] args) throws Exception {
-        new TestShrinkAuxiliaryData(30).test();
+import com.sun.source.doctree.DocTree;
+import jdk.javadoc.doclet.Taglet;
+
+public class ExceptionInInitializerErrorTaglet implements Taglet {
+
+    static {
+        if (true) {
+            throw new RuntimeException();
+        }
+    }
+
+    @Override
+    public Set<Taglet.Location> getAllowedLocations() {
+        return EnumSet.allOf(Taglet.Location.class);
+    }
+
+    @Override
+    public boolean isInlineTag() {
+        return false;
+    }
+
+    @Override
+    public String getName() {
+        return "ExceptionInInitializerErrorTaglet";
+    }
+
+    @Override
+    public String toString(List<? extends DocTree> tags, Element element) {
+        return "";
     }
 }
