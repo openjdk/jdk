@@ -536,7 +536,7 @@ void Compile::print_compile_messages() {
 }
 
 #ifndef PRODUCT
-void Compile::print_ideal_ir(const char *name) {
+void Compile::print_ideal_ir(const char* phase_name) {
   ttyLocker ttyl;
   // keep the following output all in one block
   // This output goes directly to the tty, not the compiler log.
@@ -546,7 +546,7 @@ void Compile::print_ideal_ir(const char *name) {
     xtty->head("ideal compile_id='%d'%s compile_phase='%s'",
                compile_id(),
                is_osr_compilation() ? " compile_kind='osr'" : "",
-               name);
+               phase_name);
   }
   root()->dump(9999);
   if (xtty != NULL) {

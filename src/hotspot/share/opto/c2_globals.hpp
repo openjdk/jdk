@@ -113,7 +113,7 @@
           "Print ideal graph before code generation")                       \
                                                                             \
   notproduct(uintx, PrintIdealLevel, 0,                                     \
-          "Print ideal IR on stdout."                                       \
+          "Print ideal IR on stdout. "                                      \
           "Same levels as PrintIdealGraphLevel")                            \
           range(0, 4)                                                       \
                                                                             \
