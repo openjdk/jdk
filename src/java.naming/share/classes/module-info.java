@@ -127,9 +127,6 @@ module java.naming {
         jdk.naming.dns,
         jdk.naming.rmi;
 
-    exports com.sun.jndi.ldap.sasl to
-        java.security.jgss;
-
     uses javax.naming.ldap.StartTlsResponse;
     uses javax.naming.spi.InitialContextFactory;
     uses javax.naming.ldap.spi.LdapDnsProvider;

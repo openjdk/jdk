@@ -42,7 +42,9 @@ import javax.security.sasl.*;
 import com.sun.jndi.ldap.Connection;
 import com.sun.jndi.ldap.LdapClient;
 import com.sun.jndi.ldap.LdapResult;
-import com.sun.jndi.ldap.sasl.TlsChannelBinding.TlsChannelBindingType;
+import sun.security.util.ChannelBindingException;
+import sun.security.util.TlsChannelBinding;
+import sun.security.util.TlsChannelBinding.TlsChannelBindingType;
 
 /**
   * Handles SASL support.
@@ -123,15 +125,23 @@ public final class LdapSasl {
         try {
             // Prepare TLS Channel Binding data
             if (conn.isTlsConnection()) {
-                TlsChannelBindingType cbType =
-                        TlsChannelBinding.parseType(
+                TlsChannelBindingType cbType;
+                try {
+                    cbType = TlsChannelBinding.parseType(
                                 (String)env.get(TlsChannelBinding.CHANNEL_BINDING_TYPE));
+                } catch (ChannelBindingException e) {
+                    throw new SaslException(e.getMessage());
+                }
                 if (cbType == TlsChannelBindingType.TLS_SERVER_END_POINT) {
                     // set tls-server-end-point channel binding
                     X509Certificate cert = conn.getTlsServerCertificate();
                     if (cert != null) {
-                        TlsChannelBinding tlsCB =
-                                TlsChannelBinding.create(cert);
+                        TlsChannelBinding tlsCB;
+                        try {
+                            tlsCB = TlsChannelBinding.create(cert);
+                        } catch (ChannelBindingException e) {
+                            throw new SaslException(e.getMessage());
+                        }
                         envProps = (Hashtable<String, Object>) env.clone();
                         envProps.put(TlsChannelBinding.CHANNEL_BINDING, tlsCB.getData());
                     } else {

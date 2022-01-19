@@ -22,10 +22,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.jndi.ldap.sasl;
 
-import javax.naming.NamingException;
-import javax.security.sasl.SaslException;
+package sun.security.util;
+
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
@@ -84,14 +83,14 @@ public class TlsChannelBinding {
      * @param  cbType
      * @return TLS Channel Binding type or null if
      *         "com.sun.jndi.ldap.tls.cbtype" property has not been set.
-     * @throws NamingException
+     * @throws ChannelBindingException
      */
-    public static TlsChannelBindingType parseType(String cbType) throws NamingException {
+    public static TlsChannelBindingType parseType(String cbType) throws ChannelBindingException {
         if (cbType != null) {
             if (cbType.equals(TlsChannelBindingType.TLS_SERVER_END_POINT.getName())) {
                 return TlsChannelBindingType.TLS_SERVER_END_POINT;
             } else {
-                throw new NamingException("Illegal value for " +
+                throw new ChannelBindingException("Illegal value for " +
                         CHANNEL_BINDING_TYPE + " property.");
             }
         }
@@ -104,9 +103,9 @@ public class TlsChannelBinding {
     /**
      * Construct tls-server-end-point Channel Binding data
      * @param serverCertificate
-     * @throws SaslException
+     * @throws ChannelBindingException
      */
-    public static TlsChannelBinding create(X509Certificate serverCertificate) throws SaslException {
+    public static TlsChannelBinding create(X509Certificate serverCertificate) throws ChannelBindingException {
         try {
             final byte[] prefix =
                 TlsChannelBindingType.TLS_SERVER_END_POINT.getName().concat(":").getBytes();
@@ -127,7 +126,7 @@ public class TlsChannelBinding {
             System.arraycopy(hash, 0, cbData, prefix.length, hash.length);
             return new TlsChannelBinding(TlsChannelBindingType.TLS_SERVER_END_POINT, cbData);
         } catch (NoSuchAlgorithmException | CertificateEncodingException e) {
-            throw new SaslException("Cannot create TLS channel binding data", e);
+            throw new ChannelBindingException("Cannot create TLS channel binding data", e);
         }
     }
 

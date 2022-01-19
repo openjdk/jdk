@@ -144,7 +144,7 @@ public class HttpClient extends NetworkClient {
     // Traffic capture tool, if configured. See HttpCapture class for info
     private HttpCapture capture = null;
 
-    /* "jdk.spnego.cbt" property can be set to "always" (always sent), "never" (never sent) or
+    /* "jdk.https.negotiate.cbt" property can be set to "always" (always sent), "never" (never sent) or
      * "domain:a,c.d,*.e.f" (sent to host a, or c.d or to the domain e.f and any of its subdomains). This is
      * a comma separated list of arbitrary length with no white-space allowed.
      * If enabled (for a particular destination) then SPNEGO authentication requests will include
@@ -158,6 +158,11 @@ public class HttpClient extends NetworkClient {
     private static void logFinest(String msg) {
         if (logger.isLoggable(PlatformLogger.Level.FINEST)) {
             logger.finest(msg);
+        }
+    }
+    private static void logError(String msg) {
+        if (logger.isLoggable(PlatformLogger.Level.SEVERE)) {
+            logger.severe(msg);
         }
     }
 
@@ -180,6 +185,7 @@ public class HttpClient extends NetworkClient {
                 s.equals("never") || s.startsWith("domain:"))) {
             return "never";
         } else {
+            logError("Unexpected value for \"jdk.https.negotiate.cbt\" system property");
             return s;
         }
     }
@@ -191,7 +197,7 @@ public class HttpClient extends NetworkClient {
         String cacheNTLM = props.getProperty("jdk.ntlm.cache");
         String cacheSPNEGO = props.getProperty("jdk.spnego.cache");
 
-        String s = props.getProperty("jdk.spnego.cbt");
+        String s = props.getProperty("jdk.https.negotiate.cbt");
         spnegoCBT = normalizeCBT(s);
 
         if (keepAlive != null) {
