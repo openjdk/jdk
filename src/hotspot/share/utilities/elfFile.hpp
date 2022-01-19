@@ -228,53 +228,67 @@ class ElfFile: public CHeapObj<mtInternal> {
 
 
 /*
- * This class parses and reads filename and line number information from an associated .debuginfo file that belongs to this ELF file or directly from
- * this ELF file if there is no separate .debuginfo file. The debug info is written by GCC in DWARF - a standardized debugging data format. There are
- * special sections where the DWARF info is written to. These section can either be put into the same ELF file or a separate .debuginfo file.
- * For simplicity, when referring to the "DWARF file" or the ".debuginfo file" we just mean the file that contains the required DWARF sections.
- * The current version of GCC uses DWARF version 4 as default which is defined in the official standard: http://www.dwarfstd.org/doc/DWARF4.pdf.
- * This class is able to parse 32-bit DWARF version 4 for 32 and 64-bit Linux builds. GCC does not emit 64-bit DWARF and therefore is not supported
- * by this parser. Other DWARF versions, especially version 5, are not (yet) supported.
+ * This class parses and reads filename and line number information from an associated .debuginfo file that belongs to
+ * this ELF file or directly from this ELF file if there is no separate .debuginfo file. The debug info is written by GCC
+ * in DWARF - a standardized debugging data format. There are special sections where the DWARF info is written to. These
+ * sections can either be put into the same ELF file or a separate .debuginfo file. For simplicity, when referring to the
+ * "DWARF file" or the ".debuginfo file" we just mean the file that contains the required DWARF sections. The current version
+ * of GCC uses DWARF version 4 as default which is defined in the official standard: http://www.dwarfstd.org/doc/DWARF4.pdf.
+ * This class is able to parse 32-bit DWARF version 4 for 32 and 64-bit Linux builds. GCC does not emit 64-bit DWARF and
+ * therefore is not supported by this parser. For some reason, GCC emits DWARF version 3 for the .debug_line section as a
+ * default. This parser was therefore adapted to support DWARF version 3 and 4 for the .debug_line section. Apart from that,
+ * other DWARF versions, especially the newest version 5, are not (yet) supported.
  *
  * Description of used DWARF file sections:
- * - .debug_aranges: A table that consists of sets of variable length entries, each set describing the portion of the program's address space that
- *                   is covered by a single compilation unit. In other words, the entries describe a mapping between addresses and compilation units.
- * - .debug_info:    The core DWARF data containing DWARF Information Entries (DIEs). Each DIE consists of a tag and a series of attributes.
- *                   Each (normal) compilation unit is represented by a DIE with the tag DW_TAG_compile_unit and contains children.
- *                   For our purposes, we are only interested in this DIE to get to the .debug_line section. We do not care about the children.
- *                   This parser currently only supports normal compilation units and no partial compilation or type units.
- * - .debug_abbrev:  Represents abbreviation tables for all compilation units. A table for a specific compilation unit consists of a series of
- *                   abbreviation declarations. Each declaration specifies a tag and attributes for a DIE. The DIEs from the compilation units
- *                   in the .debug_info section need the abbreviation table to decode their attributes (their meaning and size).
- * - .debug_line:    Contains filename and line number information for each compilation unit. To get the information, a state machine needs to be
- *                   executed which generates a matrix. Each row of this matrix describes the filename and line number (among other information)
- *                   for a specific offset in the associated ELF library file. The state machine is executed until the row for the requested offset
- *                   is found. The filename and line number information can then be fetched with the current register values of the state machine.
+ * - .debug_aranges: A table that consists of sets of variable length entries, each set describing the portion of the
+ *                   program's address space that is covered by a single compilation unit. In other words, the entries
+ *                   describe a mapping between addresses and compilation units.
+ * - .debug_info:    The core DWARF data containing DWARF Information Entries (DIEs). Each DIE consists of a tag and a
+ *                   series of attributes. Each (normal) compilation unit is represented by a DIE with the tag
+ *                   DW_TAG_compile_unit and contains children. For our purposes, we are only interested in this DIE to
+ *                   get to the .debug_line section. We do not care about the children. This parser currently only
+ *                   supports normal compilation units and no partial compilation or type units.
+ * - .debug_abbrev:  Represents abbreviation tables for all compilation units. A table for a specific compilation unit
+ *                   consists of a series of abbreviation declarations. Each declaration specifies a tag and attributes
+ *                   for a DIE. The DIEs from the compilation units in the .debug_info section need the abbreviation table
+ *                   to decode their attributes (their meaning and size).
+ * - .debug_line:    Contains filename and line number information for each compilation unit. To get the information, a
+ *                   state machine needs to be executed which generates a matrix. Each row of this matrix describes the
+ *                   filename and line number (among other information) for a specific offset in the associated ELF library
+ *                   file. The state machine is executed until the row for the requested offset is found. The filename and
+ *                   line number information can then be fetched with the current register values of the state machine.
  *
- * Algorithm:
+ * Algorithm
+ * ---------
  * Given: Offset into the ELF file library.
  * Return: Filename and line number for this offset.
- * (1) First, the path to the .debuginfo DWARF file is found by inspecting the .gnu_debuglink section. The DWARF file is then opened by calling
- *     the constructor of this class. Once this is done, the processing of the DWARF file is initiated by calling get_filename_and_line_number().
- * (2) Find the compilation unit offset by reading entries from the section .debug_aranges, which contain address range descriptors, until we
- *     find the correct descriptor that includes the library offset.
+ * (1) First, the path to the .debuginfo DWARF file is found by inspecting the .gnu_debuglink section of the library file.
+ *     The DWARF file is then opened by calling the constructor of this class. Once this is done, the processing of the
+ *     DWARF file is initiated by calling get_filename_and_line_number().
+ * (2) Find the compilation unit offset by reading entries from the section .debug_aranges, which contain address range
+ *     descriptors, until we find the correct descriptor that includes the library offset.
  * (3) Find the .debug_line offset for the line number information program from the .debug_info section:
  *     (a) Parse the compilation unit header from the .debug_info section at the offset obtained by (2).
- *     (b) Read the debug_abbrev_offset into the .debug_abbrev section that belongs to this compilation unit from the header obtained in (3a).
- *     (c) Read the abbreviation code that immediately follows the compilation unit header from (3a) which is needed to find the correct entry
- *         into the .debug_abbrev section.
- *     (d) Find the correct entry in the abbreviation table in the .debug_abbrev section by starting to parse entries at the debug_abbrev_offset
- *         from (3b) until we find the correct one matching the abbreviation code from (3c).
- *     (e) Read the specified attributes of the abbreviation entry from (3d) from the compilation unit (in the .debug_info section) until we
- *         find the attribute DW_AT_stmt_list. This attributes represents an offset into the .debug_line section which contains the line number
- *         program information to get the filename and the line number.
- *  (4) Find the filename and line number belonging to the given library offset by running the line number program state machine with its registers.
- *      This creates a matrix where each row stores information for specific addresses (library offsets). The state machine executes different opcodes
- *      which modify the state machine registers. Certain opcodes will add a new row to the matrix by taking the current values of state machine
- *      registers. As soon as the correct matrix row matching the library offset is found, we can read the line number from the line register of the
- *      state machine and parse the filename from the line number program header with the given file index from the file register of the state machine.
+ *     (b) Read the debug_abbrev_offset into the .debug_abbrev section that belongs to this compilation unit from the
+ *         header obtained in (3a).
+ *     (c) Read the abbreviation code that immediately follows the compilation unit header from (3a) which is needed to
+ *         find the correct entry in the .debug_abbrev section.
+ *     (d) Find the correct entry in the abbreviation table in the .debug_abbrev section by starting to parse entries at
+ *         the debug_abbrev_offset from (3b) until we find the correct one matching the abbreviation code from (3c).
+ *     (e) Read the specified attributes of the abbreviation entry from (3d) from the compilation unit (in the .debug_info
+ *         section) until we find the attribute DW_AT_stmt_list. This attributes represents an offset into the .debug_line
+ *         section which contains the line number program information to get the filename and the line number.
+ *  (4) Find the filename and line number belonging to the given library offset by running the line number program state
+ *      machine with its registers. This creates a matrix where each row stores information for specific addresses (library
+ *      offsets). The state machine executes different opcodes which modify the state machine registers. Certain opcodes
+ *      will add a new row to the matrix by taking the current values of state machine registers. As soon as the correct
+ *      matrix row matching the library offset is found, we can read the line number from the line register of the state
+ *      machine and parse the filename from the line number program header with the given file index from the file register
+ *      of the state machine.
  *
- *  More details about the different phases can be found at the associated classes and methods.
+ *  More details about the different phases can be found at the associated classes and methods. A visualization of the
+ *  algorithm inside the different sections can be found in the class comments for DebugAranges, DebugAbbrev and
+ *  LineNumberProgram further down in this file.
  *
  *  Available log levels (-Xlog:dwarf=X):
  *  - info:  Prints the path of parsed DWARF file together with the query and the resulting source information.
@@ -315,7 +329,25 @@ class DwarfFile : public ElfFile {
     bool read_string(char* result = nullptr, size_t result_len = 0);
   };
 
-  // (2) Processing the .debug_aranges section. This is specified in section 6.1.2 of the DWARF 4 spec.
+  // (2) Processing the .debug_aranges section to find the compilation unit which covers offset_in_library.
+  // This is specified in section 6.1.2 of the DWARF 4 spec.
+  //
+  // Structure of .debug_aranges:
+  //   Section Header
+  //   % Table of variable length sets describing the address space covered by a compilation unit
+  //     % Set 1
+  //     ...
+  //     % Set i:
+  //       % Set header
+  //         ...
+  //         debug_info_offset -> offset to compilation unit
+  //       % Series of address range descriptors [beginning_address, range_length]:
+  //         % Descriptor 1
+  //         ...
+  //         % Descriptor j:
+  //           beginning_address <= offset_in_library < beginning_address + range_length?
+  //           => Found the correct set covering offset_in_library. Take debug_info_offset from the set header to get
+  //              to the correct compilation unit in .debug_info.
   class DebugAranges {
 
     // The header is defined in section 6.1.2 of the DWARF 4 spec.
@@ -352,7 +384,8 @@ class DwarfFile : public ElfFile {
     bool find_compilation_unit_offset(uint32_t offset_in_library, uint32_t* compilation_unit_offset);
   };
 
-  // (3a-c,e) The compilation unit is read from the .debug_info section.
+  // (3a-c,e) The compilation unit is read from the .debug_info section. The structure of .debug_info is shown in the
+  // comments of class DebugAbbrev.
   class CompilationUnit {
 
     // Attribute form encodings from Figure 21 in section 7.5 of the DWARF 4 spec.
@@ -415,6 +448,58 @@ class DwarfFile : public ElfFile {
   };
 
   // (3d) Read from the .debug_abbrev section at the debug_abbrev_offset specified by the compilation unit header.
+  //
+  // The interplay between the .debug_info and .debug_abbrev sections is more complex. The following visualization of the structure
+  // of both sections support the comments found in the parsing steps of the CompilationUnit and DebugAbbrev class.
+  //
+  // Structure of .debug_abbrev:
+  //   Section Header
+  //   % Series of abbreviation tables
+  //     % Abbreviation table 1
+  //     ...
+  //     % Abbreviation table for compilation unit at debug_abbrev_offset:
+  //       % Series of declarations:
+  //         % Declaration 1:
+  //           abbreviation code
+  //           tag
+  //           DW_CHILDREN_yes/no
+  //           % Series of attribute specifications
+  //             % Attribute specification 1:
+  //             attribute name
+  //             attribute form
+  //             ...
+  //             % Last attribute specification:
+  //             0
+  //             0
+  //         ...
+  //         % Declaration i:
+  //           Abbrev code read from compilation unit [AC]
+  //           DW_TAG_compile_unit
+  //           DW_CHILDREN_yes
+  //           % Series of attribute specifications
+  //             % Attribute specification 1 [AS1]
+  //             ...
+  //             % Attribute specification j [ASj]:
+  //             DW_AT_stmt_list
+  //             DW_FORM_sec_offset
+  //
+  //
+  // Structure of .debug_info:
+  //   Section Header
+  //   % Series of compilation units
+  //     % Compilation unit 1
+  //     ...
+  //     % Compilation unit i for library offset fetched from .debug_aranges:
+  //       % Compilation unit header:
+  //         ...
+  //         debug_abbrev_offset -> offset for abbreviation table in .debug_abbrev for this compilation unit
+  //         ...
+  //       Abbrev code -> used in .debug_abbrev to find the correct declaration [AC]
+  //       % Series of attribute values
+  //         Attribute value 1 (in the format defined by attribute specification 1 [AS1])
+  //         ...
+  //         Attribute value j (in the format defined by attribute specification j [ASj]):
+  //         => Specifies Offset to line number program for this compilation unit in .debug_line
   class DebugAbbrev {
 
     // Tag encoding from Figure 18 in section 7.5 of the DWARF 4 spec.
@@ -447,8 +532,27 @@ class DwarfFile : public ElfFile {
 
   // (4) The line number program for the compilation unit at the offset of the .debug_line obtained by (3).
   // For some reason, GCC emits DWARF 3 for the line number program even though the default is DWARF 4.
-  // Therefore, this class supports DWARF 3 and DWARF 4 parsing.
+  // Therefore, this class supports DWARF 3 and DWARF 4 parsing specified in section 6.2 of both DWARF specs.
   // DWARF 3 standard: https://dwarfstd.org/doc/Dwarf3.pdf
+  //
+  // Structure of .debug_ling:
+  //   Section Header
+  //   % Series of line number program entries for each compilation unit
+  //     % Line number program 1
+  //     ...
+  //     % Line number program i for our compilation unit:
+  //       % Line program header unit header:
+  //         ...
+  //         version -> currently emits version 3 by default
+  //         ...
+  //         file_name -> sequence of file names
+  //       % Sequence of opcodes as part of the line number program to build the line number information matrix:
+  //          % Format of matrix: [offset, line, directory_index, file_index]
+  //          % Line 1
+  //          ...
+  //          % Line j:
+  //            [offset matching offset_in_library, line, directory_index, file_index]
+  //            => Get line number + look up file_index in file_name list (pick file_index'th string)
   class LineNumberProgram {
 
     // Standard opcodes for the line number program defined in section 6.2.5.2 of the DWARF 4 spec.
@@ -477,12 +581,12 @@ class DwarfFile : public ElfFile {
       // field itself. 32-bit DWARF uses 4 bytes.
       uint32_t _unit_length;
 
-      // The version of the DWARF information for the line number program unit. The value in this field should be 4 for DWARF 4.
-      // and version 3 as used for DWARF 3.
+      // The version of the DWARF information for the line number program unit. The value in this field should be 4 for
+      // DWARF 4 and version 3 as used for DWARF 3.
       uint16_t _version;
 
-      // The number of bytes following the header_length field to the beginning of the first byte of the line number program itself.
-      // 32-bit DWARF uses 4 bytes.
+      // The number of bytes following the header_length field to the beginning of the first byte of the line number
+      // program itself. 32-bit DWARF uses 4 bytes.
       uint32_t _header_length;
 
       // The size in bytes of the smallest target machine instruction. Line number program opcodes that alter the address
@@ -507,18 +611,18 @@ class DwarfFile : public ElfFile {
       // The number assigned to the first special opcode.
       uint8_t _opcode_base;
 
-      // This array specifies the number of LEB128 operands for each of the standard opcodes. The first element of the array
-      // corresponds to the opcode whose value is 1, and the last element corresponds to the opcode whose value is opcode_base-1.
-      // DWARF 3 and 4 use 12 standard opcodes.
+      // This array specifies the number of LEB128 operands for each of the standard opcodes. The first element of the
+      // array corresponds to the opcode whose value is 1, and the last element corresponds to the opcode whose value is
+      // opcode_base-1. DWARF 3 and 4 use 12 standard opcodes.
       uint8_t _standard_opcode_lengths[12];
 
       // Not part of the real header, implementation only
       long _file_starting_pos;
     };
 
-    // The line number program state consists of several registers that hold the current state of the line number program state machine.
-    // The state/different state registers are defined in section 6.2.2 of the DWARF 4 spec. Most of these fields (state registers) are
-    // not used to get the filename and the line number information.
+    // The line number program state consists of several registers that hold the current state of the line number program
+    // state machine. The state/different state registers are defined in section 6.2.2 of the DWARF 4 spec. Most of these
+    // fields (state registers) are not used to get the filename and the line number information.
     struct LineNumberProgramState : public CHeapObj<mtInternal> {
       // The program-counter value corresponding to a machine instruction generated by the compiler.
       // 4 bytes on 32-bit and 8 bytes on 64-bit.

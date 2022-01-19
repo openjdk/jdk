@@ -618,19 +618,19 @@ bool DwarfFile::DebugAranges::find_compilation_unit_offset(const uint32_t offset
     }
 
     uintptr_t beginning_address = 0;
-    uintptr_t length = 0;
+    uintptr_t range_length = 0;
     do {
-      if (!_reader.read_address_sized(&beginning_address) || !_reader.read_address_sized(&length)) {
+      if (!_reader.read_address_sized(&beginning_address) || !_reader.read_address_sized(&range_length)) {
         return false;
       }
 
-      if (beginning_address <= offset_in_library && offset_in_library < beginning_address + length) {
+      if (beginning_address <= offset_in_library && offset_in_library < beginning_address + range_length) {
         // Found the correct set, read the debug_info_offset from the header of this set.
         log_debug(dwarf)(".debug_aranges offset: " PTR32_FORMAT, (uint32_t)_reader.get_position());
         *compilation_unit_offset = _header._debug_info_offset;
         return true;
       }
-    } while (!is_terminating_set(beginning_address, length) && _reader.has_bytes_left());
+    } while (!is_terminating_set(beginning_address, range_length) && _reader.has_bytes_left());
   }
 
   // No compilation unit found for offset_in_library.
@@ -701,7 +701,8 @@ bool DwarfFile::CompilationUnit::find_debug_line_offset(uint32_t* debug_line_off
     return false;
   }
 
-  // (3c) Read the abbreviation code immediately following the compilation unit header.
+  // (3c) Read the abbreviation code immediately following the compilation unit header which is an offset to the
+  // correct abbreviation table in .debug_abbrev for this compilation unit.
   uint64_t abbrev_code;
   if (!_reader.read_uleb128(&abbrev_code)) {
     return false;
@@ -772,7 +773,8 @@ bool DwarfFile::DebugAbbrev::read_section_header(uint32_t debug_abbrev_offset) {
 
 // (3d) The abbreviations table for a compilation unit consists of a series of abbreviation declarations. Each declaration
 // specifies a tag and an abbrev code. Parse all declarations until we find the declaration which matches 'abbrev_code'.
-// (see section 7.5.3 of the DWARF 4 spec).
+// Read the attribute values from the compilation unit in .debug_info by using the format described in the declaration.
+// This process is described in section 7.5 and 7.5.3 of the DWARF 4 spec.
 bool DwarfFile::DebugAbbrev::find_debug_line_offset(const uint64_t abbrev_code) {
   log_trace(dwarf)("Series of declarations [code, tag]:");
   while (_reader.has_bytes_left()) {
@@ -782,6 +784,7 @@ bool DwarfFile::DebugAbbrev::find_debug_line_offset(const uint64_t abbrev_code) 
     }
 
     if (next_abbrev_code == 0) {
+      // Reached the end of the abbreviation declarations for this compilation unit.
       break;
     }
 
@@ -809,6 +812,7 @@ bool DwarfFile::DebugAbbrev::find_debug_line_offset(const uint64_t abbrev_code) 
         return false;
       }
       log_debug(dwarf)(".debug_abbrev offset:  " PTR32_FORMAT, (uint32_t)_reader.get_position());
+      log_trace(dwarf)("  Read the following attribute values from compilation unit:");
       return read_attribute_specifications(true);
     } else {
       // Not the correct declaration. Read its attributes and continue with next declaration.
@@ -823,7 +827,7 @@ bool DwarfFile::DebugAbbrev::find_debug_line_offset(const uint64_t abbrev_code) 
 }
 
 // Read the attribute names and forms which define the actual attribute values that follow the abbrev code in the compilation unit. All
-// attributes need to be read from the compilation unit until we find the DW_AT_stmt_list attribute which specifies the offset for the
+// attributes need to be read from the compilation unit until we reach the DW_AT_stmt_list attribute which specifies the offset for the
 // line number program into the .debug_line section. The offset is stored in the _debug_line_offset field of the compilation unit.
 bool DwarfFile::DebugAbbrev::read_attribute_specifications(const bool is_DW_TAG_compile_unit) {
   uint64_t next_attribute_name;
@@ -866,7 +870,7 @@ bool DwarfFile::DebugAbbrev::read_attribute_specifications(const bool is_DW_TAG_
 // (3e) Read the actual attribute values from the compilation unit in the .debug_info section. Each attribute has an encoding
 // that specifies which values need to be read for it. This is specified in section 7.5.4 of the DWARF 4 spec.
 // If is_DW_AT_stmt_list_attribute is:
-// - False: Ignore the read attribute value
+// - False: Ignore the read attribute value.
 // - True:  We are going to read the attribute value of the DW_AT_stmt_list attribute which specifies the offset into the
 //          .debug_line section for the line number program. Store this offset in the _debug_line_offset field.
 bool DwarfFile::CompilationUnit::read_attribute_value(const uint64_t attribute_form, const bool is_DW_AT_stmt_list_attribute) {
@@ -960,6 +964,8 @@ bool DwarfFile::CompilationUnit::read_attribute_value(const uint64_t attribute_f
       if (is_DW_AT_stmt_list_attribute) {
         // DW_AT_stmt_list has the DW_FORM_sec_offset attribute encoding. Store the result in _debug_line_offset.
         // 4 bytes for 32-bit DWARF.
+        log_trace(dwarf)("    Name: DW_AT_stmt_list, Form: DW_FORM_sec_offset");
+        log_trace(dwarf)("    Reading .debug_line offset from compilation unit at 0x" UINT64_FORMAT_X, _reader.get_position());
         if (!_reader.read_dword(&_debug_line_offset)) {
           return false;
         }
@@ -1063,24 +1069,25 @@ bool DwarfFile::LineNumberProgram::read_header() {
   // We do not care about them, just read the strings and move on.
   while (_reader.read_string()) { }
 
-  // Delay reading file_names until we found the correct file index in the line number program. Store the position where the file
-  // names start to parse them later. We directly jump to the line number program which starts at offset _debug_line_offset + 10
-  // (=sizeof(_unit_length) + sizeof(_version) + sizeof(_header_length)) + _header_length.
+  // Delay reading file_names until we found the correct file index in the line number program. Store the position where
+  // the file names start to parse them later. We directly jump to the line number program which starts at offset
+  // _debug_line_offset + 10 (=sizeof(_unit_length) + sizeof(_version) + sizeof(_header_length)) + _header_length.
   _header._file_starting_pos = _reader.get_position();
   if (!_reader.set_position(shdr.sh_offset + _debug_line_offset + 10 + _header._header_length)) {
     return false;
   }
 
-  // Now reset the max position to where the line number information for this compilation unit ends (i.e. where the state machine
-  // gets terminated). Add 4 bytes to the offset because the size of the _unit_length field is not included in this value.
+  // Now reset the max position to where the line number information for this compilation unit ends (i.e. where the state
+  // machine gets terminated). Add 4 bytes to the offset because the size of the _unit_length field is not included in this
+  // value.
   _reader.set_max_pos(shdr.sh_offset + _debug_line_offset + _header._unit_length + 4);
   return true;
 }
 
-// Create the line number information matrix as described in section 6.2 of the DWARF 4 spec. Try to find the correct entry by comparing
-// the address register belonging to each matrix row with _offset_in_library. Once it is found, we can read the line number from the
-// line register and the filename by parsing the file_names list from the header until we reach the correct filename as specified by
-// the file register.
+// Create the line number information matrix as described in section 6.2 of the DWARF 4 spec. Try to find the correct entry
+// by comparing the address register belonging to each matrix row with _offset_in_library. Once it is found, we can read
+// the line number from the line register and the filename by parsing the file_names list from the header until we reach
+// the correct filename as specified by the file register.
 //
 // If space as not a problem, the .debug_line section could provide a large matrix that contains an entry for each
 // compiler instruction that contains the line number, the column number, the filename etc. But that's impractical.
@@ -1161,7 +1168,8 @@ bool DwarfFile::LineNumberProgram::read_line_number_program() {
       }
 
       // We do not actually store the matrix while searching the correct entry. Enable logging to print/debug it.
-      log_debug(dwarf)(INTPTR_FORMAT "    %-5u    %-3u       %-4u", _state->_address, _state->_line, _state->_column, _state->_file);
+      log_debug(dwarf)(INTPTR_FORMAT "    %-5u    %-3u       %-4u",
+                       _state->_address, _state->_line, _state->_column, _state->_file);
       previous_file = _state->_file;
       previous_line = _state->_line;
       previous_address = _state->_address;
@@ -1184,7 +1192,7 @@ bool DwarfFile::LineNumberProgram::apply_opcode() {
     return false;
   }
 
-  log_trace(dwarf)("Opcode: %02x ", opcode);
+  log_trace(dwarf)("Opcode: 0x%02x ", opcode);
   if (opcode == 0) {
     // Extended opcodes start with a zero byte.
     if (!apply_extended_opcode()) {
@@ -1443,7 +1451,8 @@ bool DwarfFile::LineNumberProgram::set_filename_and_line() {
 
 // Read field file_names from the header as specified in section 6.2.4 of the DWARF 4 spec.
 bool DwarfFile::LineNumberProgram::read_filename_from_header(uint32_t file_index) {
-  // We do not need to restore the position afterwards as this is the last step of parsing from the file for this compilation unit.
+  // We do not need to restore the position afterwards as this is the last step of parsing from the file for this
+  // compilation unit.
   _reader.set_position(_header._file_starting_pos);
   uint32_t current_index = 1; // file_names start at index 1
   while (_reader.has_bytes_left()) {
