@@ -65,9 +65,7 @@ typedef struct RefNode {
     jobject      ref;           /* could be strong or weak */
     struct RefNode *next;       /* next RefNode* in bucket chain */
     jint         count;         /* count of references */
-    jboolean     isStrong;      /* true if this is a strong reference. Either or both of isPinAll
-                                   and isCommonPin will also be true */
-    jboolean     isPinAll;      /* true this is a strong reference due to a commonRef_pinAll() */
+    jboolean     isPinAll;      /* true if this is a strong reference due to a commonRef_pinAll() */
     jboolean     isCommonPin;   /* true if this is a strong reference due to a commonRef_pin() */
 } RefNode;
 
