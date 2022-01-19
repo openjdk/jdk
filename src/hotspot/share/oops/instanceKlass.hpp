@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -717,9 +717,6 @@ public:
     return _nonstatic_oop_map_size / OopMapBlock::size_in_words();
   }
   int nonstatic_oop_map_size() const { return _nonstatic_oop_map_size; }
-  void set_nonstatic_oop_map_size(int words) {
-    _nonstatic_oop_map_size = words;
-  }
 
   bool has_contended_annotations() const {
     return ((_misc_flags & _misc_has_contended_annotations) != 0);

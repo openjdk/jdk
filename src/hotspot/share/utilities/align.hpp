@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,8 +101,9 @@ inline bool is_aligned(T* ptr, A alignment) {
 
 // Align metaspace objects by rounding up to natural word boundary
 template <typename T>
-inline T align_metadata_size(T size) {
-  return align_up(size, 1);
+inline T align_metadata_size(T word_size) {
+  // size is already in words
+  return word_size;
 }
 
 // Align objects in the Java Heap by rounding up their size, in HeapWord units.
