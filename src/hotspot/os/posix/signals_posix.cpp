@@ -595,6 +595,8 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
 #endif
 
   if (!signal_was_handled && sig == BREAK_SIGNAL) {
+    assert(!ReduceSignalUsage, "Should not happen with -Xrs/-XX:-ReduceSignalUsage");
+    log_info(os, init)("Ignore BREAK_SIGNAL in the initialization phase.");
     signal_was_handled = true;
   }
 
@@ -1283,12 +1285,12 @@ void install_signal_handlers() {
   set_signal_handler(SIGFPE);
   PPC64_ONLY(set_signal_handler(SIGTRAP);)
   set_signal_handler(SIGXFSZ);
-
-  // This is just for initialization phase. os::initialize_jdk_signal_support() will overwrite
-  // the signal handler of BREAK_SIGNAL later. Intercepting the signal here reduces the risk
-  // that an attach client accidentally forces HotSpot to quit prematurely.
-  set_signal_handler(BREAK_SIGNAL);
-
+  if (!ReduceSignalUsage) {
+    // This is just for initialization phase. os::initialize_jdk_signal_support() will overwrite
+    // the signal handler of BREAK_SIGNAL later. Intercepting the signal here reduces the risk
+    // that an attach client accidentally forces HotSpot to quit prematurely.
+    set_signal_handler(BREAK_SIGNAL);
+  }
 #if defined(__APPLE__)
   // lldb (gdb) installs both standard BSD signal handlers, and mach exception
   // handlers. By replacing the existing task exception handler, we disable lldb's mach
