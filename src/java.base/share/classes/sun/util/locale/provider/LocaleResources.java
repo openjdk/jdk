@@ -554,6 +554,25 @@ public class LocaleResources {
      * @return format pattern string for this locale, null if not found
      */
     public String getLocalizedPattern(String requested, String calType) {
+        String lPattern = null;
+        String cacheKey = SKELETON_PATTERN + calType + "." + requested;
+
+        removeEmptyReferences();
+        ResourceReference data = cache.get(cacheKey);
+
+        if (data == null || ((lPattern = (String) data.get()) == null)) {
+            lPattern = getLocalizedPatternImpl(requested, calType);
+            cache.put(cacheKey,
+                new ResourceReference(cacheKey, lPattern != null ? lPattern : "", referenceQueue));
+        } else if (lPattern.isEmpty()) {
+            // non-existent pattern
+            lPattern = null;
+        }
+
+        return lPattern;
+    }
+
+    private String getLocalizedPatternImpl(String requested, String calType) {
         initSkeletonIfNeeded();
 
         // input skeleton substitution
