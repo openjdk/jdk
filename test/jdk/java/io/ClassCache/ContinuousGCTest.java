@@ -26,6 +26,7 @@ import java.io.NameClassCache;
 /**
  * @test
  * @bug 8280041
+ * @summary Sanity test for ClassCache under continuous GC
  * @compile/module=java.base java/io/NameClassCache.java
  * @run main ContinuousGCTest
  */
