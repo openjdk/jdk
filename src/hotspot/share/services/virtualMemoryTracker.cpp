@@ -677,7 +677,8 @@ private:
   const address               _p;
   const ReservedMemoryRegion* _region;
 public:
-  FindRegionWalker(void* p) : _p((address)p), _region(nullptr) { }
+  FindInRegionWalker(void* p) : _p((address)p), _region(nullptr) { }
+
   bool do_allocation_site(const ReservedMemoryRegion* rgn) {
     if (_p >= rgn->base() && _p < rgn->base() + rgn->size()) {
       _region = rgn;
