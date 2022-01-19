@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -492,6 +492,14 @@ void G1DirtyCardQueueSet::handle_completed_buffer(BufferNode* new_node,
 
   // No need for mutator refinement if number of cards is below limit.
   if (Atomic::load(&_num_cards) <= Atomic::load(&_padded_max_cards)) {
+    return;
+  }
+
+  // Don't try to process a buffer that will just get immediately paused.
+  // When going int a safepoint it's just a waste of effort.
+  // When coming out of a safepoint, Java threads may be running before the
+  // yield request (for non-Java threads) has been cleared.
+  if (SuspendibleThreadSet::should_yield()) {
     return;
   }
 
