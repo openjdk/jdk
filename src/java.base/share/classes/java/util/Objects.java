@@ -166,7 +166,8 @@ public final class Objects {
 
     /**
      * {@return a string equivalent to the string returned by {@code
-     * Object.toString} if that method is not overridden}
+     * Object.toString} if that method and {@code hashCode} are not
+     * overridden}
      *
      * @implSpec
      * The method returns a string equivalent to:<br>
@@ -175,6 +176,7 @@ public final class Objects {
      * @param o an object
      * @throws NullPointerException if the argument is null
      * @see Object#toString
+     * @see System#identityHashCode(Object)
      * @since 19
      */
     public static String toDefaultString(Object o) {
