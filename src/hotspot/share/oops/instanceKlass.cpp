@@ -2065,35 +2065,27 @@ Method* InstanceKlass::lookup_method_in_all_interfaces(Symbol* name,
 PrintClassClosure::PrintClassClosure(outputStream* st, bool verbose)
   :_st(st), _verbose(verbose) {
   ResourceMark rm;
-  _st->print("%-18s", "KlassAddr");
-  _st->print("  ");
-  _st->print("%-4s", "Size");
-  _st->print("  ");
-  _st->print("%-8s", "State");
-  _st->print("  ");
-  _st->print("%-7s", "Flags");
-  _st->print("  ");
-  _st->print("%-12s", "LoaderName");
-  _st->print("  ");
-  _st->print("%-5s", "ClassName");
+  _st->print("%-18s  ", "KlassAddr");
+  _st->print("%-4s  ", "Size");
+  _st->print("%-20s  ", "State");
+  _st->print("%-7s  ", "Flags");
+  _st->print("%-12s  ", "LoaderName");
+  _st->print("%-5s  ", "ClassName");
   _st->cr();
 }
 
 void PrintClassClosure::do_klass(Klass* k)  {
   ResourceMark rm;
   // klass pointer
-  _st->print("" INTPTR_FORMAT "", p2i(k));
-  _st->print("  ");
+  _st->print(INTPTR_FORMAT "  ", p2i(k));
   // klass size
-  _st->print("%-4d", k->size());
-  _st->print("  ");
+  _st->print("%-4d  ", k->size());
   // initialization state
   if (k->is_instance_klass()) {
-    _st->print("%-8s",InstanceKlass::cast(k)->init_state_name());
+    _st->print("%-20s  ",InstanceKlass::cast(k)->init_state_name());
   } else {
-    _st->print("%-8s","");
+    _st->print("%-20s  ","");
   }
-  _st->print("  ");
   // misc flags
   char buf[10];
   int i = 0;
@@ -2108,15 +2100,12 @@ void PrintClassClosure::do_klass(Klass* k)  {
     if (ik->is_shared()) buf[i++] = 'S';
   }
   buf[i++] = '\0';
-  _st->print("%-7s", buf);
-  _st->print("  ");
+  _st->print("%-7s  ", buf);
   // classloader name
   ClassLoaderData* cld = k->class_loader_data();
-  _st->print("%-12s", cld->loader_name());
-  _st->print("  ");
+  _st->print("%-12s  ", cld->loader_name());
   // klass name
-  _st->print("%-5s", k->external_name());
-  _st->print("  ");
+  _st->print("%-5s  ", k->external_name());
   // end
   _st->cr();
   if (_verbose) {
@@ -3422,7 +3411,7 @@ nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_le
 #define BULLET  " - "
 
 static const char* state_names[] = {
-  "alloc", "load", "link", "initing", "inited", "init_err"
+  "allocated", "loaded", "linked", "being_initialized", "fully_initialized", "initialization_error"
 };
 
 static void print_vtable(intptr_t* start, int len, outputStream* st) {

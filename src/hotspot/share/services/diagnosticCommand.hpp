@@ -867,10 +867,10 @@ public:
     return "VM.classes";
   }
   static const char* description() {
-    return "Prints list of all loaded java classes";
+    return "Prints list of all loaded classes";
   }
   static const char* impact() {
-      return "Medium: Depends on Java content.";
+      return "Medium: Depends on number of loaded classes.";
   }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
