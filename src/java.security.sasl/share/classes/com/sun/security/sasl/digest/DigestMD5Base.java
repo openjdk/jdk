@@ -158,7 +158,7 @@ abstract class DigestMD5Base extends AbstractSaslImpl {
     protected String authzid;       // authzid or canonicalized authzid
 
     /**
-     * Constucts an instance of DigestMD5Base. Calls super constructor
+     * Constructs an instance of DigestMD5Base. Calls super constructor
      * to parse properties for mechanism.
      *
      * @param props A map of property/value pairs
