@@ -110,7 +110,7 @@ public class TestPrintXML {
                 System.out.println("----------------------");
                 if (xmlEvent.begin != -1 && xmlEvent.end != -1) {
                     String lines[] = xml.split("\\r?\\n");
-                    for (int i = xmlEvent.begin; i <= xmlEvent.end; i++) {
+                    for (int i = xmlEvent.begin; i < xmlEvent.end; i++) {
                         System.out.println(i + " " + lines[i]);
                     }
                 } else {
@@ -243,7 +243,7 @@ public class TestPrintXML {
                 Object value = objects.pop();
                 if (objects.isEmpty()) {
                     XMLEvent event = (XMLEvent) value;
-                    event.end = locator.getLineNumber() - 1;
+                    event.end = locator.getLineNumber();
                     events.add(event);
                     return;
                 }
