@@ -23,7 +23,9 @@
 
 package jdk.jfr.tool;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.StringReader;
 import java.nio.file.Path;
 import java.time.OffsetDateTime;
@@ -47,6 +49,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
+import org.xml.sax.Locator;
 import org.xml.sax.helpers.DefaultHandler;
 
 import jdk.jfr.Timespan;
@@ -105,7 +108,14 @@ public class TestPrintXML {
                 System.out.println();
                 System.out.println("Was (XML)");
                 System.out.println("----------------------");
-                System.out.println(xmlEvent);
+                if (xmlEvent.begin != -1 && xmlEvent.end != -1) {
+                    String lines[] = xml.split("\\r?\\n");
+                    for (int i = xmlEvent.begin; i <= xmlEvent.end; i++) {
+                        System.out.println(i + " " + lines[i]);
+                    }
+                } else {
+                    System.out.println("Could not locate XML position");
+                }
                 System.out.println();
                 throw new Exception("Event doesn't match");
             }
@@ -164,6 +174,8 @@ public class TestPrintXML {
     static class XMLEvent {
         String name;
         private Map<String, Object> values = new HashMap<>();
+        private int begin = -1;
+        private int end = -1;
 
         XMLEvent(String name) {
             this.name = name;
@@ -172,9 +184,14 @@ public class TestPrintXML {
 
     public static final class RecordingHandler extends DefaultHandler {
 
+        private Locator locator;
         private Stack<Object> objects = new Stack<>();
         private Stack<SimpleEntry<String, String>> elements = new Stack<>();
         private List<XMLEvent> events = new ArrayList<>();
+
+        public void setDocumentLocator(Locator locator) {
+            this.locator = locator;
+        }
 
         @Override
         public void startElement(String uri, String localName, String qName, Attributes attrs) throws SAXException {
@@ -187,7 +204,9 @@ public class TestPrintXML {
 
             switch (qName) {
             case "event":
-                objects.push(new XMLEvent(attrs.getValue("type")));
+                XMLEvent event = new XMLEvent(attrs.getValue("type"));
+                event.begin = locator.getLineNumber() -1;
+                objects.push(event);
                 break;
             case "struct":
                 objects.push(new HashMap<String, Object>());
@@ -223,7 +242,9 @@ public class TestPrintXML {
                 String name = element.getKey();
                 Object value = objects.pop();
                 if (objects.isEmpty()) {
-                    events.add((XMLEvent) value);
+                    XMLEvent event = (XMLEvent) value;
+                    event.end = locator.getLineNumber() -1;
+                    events.add(event);
                     return;
                 }
                 if (value instanceof StringBuilder) {
