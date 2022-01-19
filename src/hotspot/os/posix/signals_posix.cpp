@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -593,6 +593,10 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
     signal_was_handled = handle_assert_poison_fault(ucVoid, info->si_addr);
   }
 #endif
+
+  if (!signal_was_handled && sig == BREAK_SIGNAL) {
+    signal_was_handled = true;
+  }
 
   if (!signal_was_handled) {
     // Handle SafeFetch access.
@@ -1279,6 +1283,11 @@ void install_signal_handlers() {
   set_signal_handler(SIGFPE);
   PPC64_ONLY(set_signal_handler(SIGTRAP);)
   set_signal_handler(SIGXFSZ);
+
+  // This is just for initialization phase. os::initialize_jdk_signal_support() will overwrite
+  // the signal handler of BREAK_SIGNAL later. Intercepting the signal here reduces the risk
+  // that an attach client accidentally forces HotSpot to quit prematurely.
+  set_signal_handler(BREAK_SIGNAL);
 
 #if defined(__APPLE__)
   // lldb (gdb) installs both standard BSD signal handlers, and mach exception
