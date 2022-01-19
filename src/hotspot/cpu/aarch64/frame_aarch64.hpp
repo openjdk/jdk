@@ -124,7 +124,10 @@
   intptr_t*     _unextended_sp;
   void adjust_unextended_sp();
 
-  bool _from_anchor;
+  // true means _sp value is correct and we can use it to get the sender's sp
+  // of the compiled frame, otherwise, _sp value may be invalid and we can use
+  // _fp to get the sender's sp if PreserveFramePointer is enabled.
+  bool _sp_is_trusted;
 
   intptr_t* ptr_at_addr(int offset) const {
     return (intptr_t*) addr_at(offset);
@@ -167,6 +170,6 @@
   // returns the sending frame, without applying any barriers
   frame sender_raw(RegisterMap* map) const;
 
-  void set_from_anchor() { _from_anchor = true; }
+  void set_sp_is_trusted() { _sp_is_trusted = true; }
 
 #endif // CPU_AARCH64_FRAME_AARCH64_HPP
