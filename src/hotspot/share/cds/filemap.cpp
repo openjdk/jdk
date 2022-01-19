@@ -1091,7 +1091,7 @@ public:
     // First read the generic header so we know the exact size of the actual header.
     GenericCDSFileMapHeader gen_header;
     size_t size = sizeof(GenericCDSFileMapHeader);
-    lseek(fd, 0, SEEK_SET);
+    os::lseek(fd, 0, SEEK_SET);
     size_t n = os::read(fd, (void*)&gen_header, (unsigned int)size);
     if (n != size) {
       FileMapInfo::fail_continue("Unable to read generic CDS file map header from shared archive");
@@ -1124,7 +1124,7 @@ public:
     // Read the actual header and perform more checks
     size = gen_header._header_size;
     _header = (GenericCDSFileMapHeader*)NEW_C_HEAP_ARRAY(char, size, mtInternal);
-    lseek(fd, 0, SEEK_SET);
+    os::lseek(fd, 0, SEEK_SET);
     n = os::read(fd, (void*)_header, (unsigned int)size);
     if (n != size) {
       FileMapInfo::fail_continue("Unable to read actual CDS file map header from shared archive");
@@ -1277,7 +1277,7 @@ bool FileMapInfo::init_from_file(int fd) {
   }
 
   _header = (FileMapHeader*)os::malloc(gen_header->_header_size, mtInternal);
-  lseek(fd, 0, SEEK_SET); // reset to begin of the archive
+  os::lseek(fd, 0, SEEK_SET); // reset to begin of the archive
   size_t size = gen_header->_header_size;
   size_t n = os::read(fd, (void*)_header, (unsigned int)size);
   if (n != size) {
@@ -1327,7 +1327,7 @@ bool FileMapInfo::init_from_file(int fd) {
   if (is_static()) {
     // just checking the last region is sufficient since the archive is written
     // in sequential order
-    size_t len = lseek(fd, 0, SEEK_END);
+    size_t len = os::lseek(fd, 0, SEEK_END);
     FileMapRegion* si = space_at(MetaspaceShared::last_valid_region);
     // The last space might be empty
     if (si->file_offset() > len || len - si->file_offset() < si->used()) {
@@ -1340,7 +1340,7 @@ bool FileMapInfo::init_from_file(int fd) {
 }
 
 void FileMapInfo::seek_to_position(size_t pos) {
-  if (lseek(_fd, (long)pos, SEEK_SET) < 0) {
+  if (os::lseek(_fd, (long)pos, SEEK_SET) < 0) {
     fail_stop("Unable to seek to position " SIZE_FORMAT, pos);
   }
 }
@@ -1650,7 +1650,7 @@ void FileMapInfo::write_bytes_aligned(const void* buffer, size_t nbytes) {
 
 void FileMapInfo::close() {
   if (_file_open) {
-    if (::close(_fd) < 0) {
+    if (os::close(_fd) < 0) {
       fail_stop("Unable to close the shared archive file.");
     }
     _file_open = false;
@@ -1741,7 +1741,7 @@ bool FileMapInfo::read_region(int i, char* base, size_t size, bool do_commit) {
       return false;
     }
   }
-  if (lseek(_fd, (long)si->file_offset(), SEEK_SET) != (int)si->file_offset() ||
+  if (os::lseek(_fd, (long)si->file_offset(), SEEK_SET) != (int)si->file_offset() ||
       read_bytes(base, size) != size) {
     return false;
   }

@@ -1654,7 +1654,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     _current_step_info = "";
 
     if (fd_log > 3) {
-      close(fd_log);
+      os::close(fd_log);
       fd_log = -1;
     }
 

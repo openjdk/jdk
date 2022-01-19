@@ -784,13 +784,6 @@ class os: AllStatic {
   // Like strdup, but exit VM when strdup() returns NULL
   static char* strdup_check_oom(const char*, MEMFLAGS flags = mtInternal);
 
-#ifndef PRODUCT
-  static julong num_mallocs;         // # of calls to malloc/realloc
-  static julong alloc_bytes;         // # of bytes allocated
-  static julong num_frees;           // # of calls to free
-  static julong free_bytes;          // # of bytes freed
-#endif
-
   // SocketInterface (ex HPI SocketInterface )
   static int socket(int domain, int type, int protocol);
   static int socket_close(int fd);

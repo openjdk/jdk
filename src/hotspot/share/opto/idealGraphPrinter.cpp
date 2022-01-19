@@ -762,7 +762,7 @@ void IdealGraphPrinter::walk_nodes(Node* start, bool edges, VectorSet* temp_set)
 }
 
 void IdealGraphPrinter::print_method(const char *name, int level) {
-  if (C->should_print(level)) {
+  if (C->should_print_igv(level)) {
     print(name, (Node *) C->root());
   }
 }
