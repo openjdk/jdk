@@ -409,7 +409,6 @@ class MallocTracker : AllStatic {
   static void* record_free(void* memblock);
 
   // Offset memory address to header address
-  static inline void* get_base(void* memblock);
   static inline void* get_base(void* memblock, NMT_TrackingLevel level) {
     if (memblock == NULL || level == NMT_off) return memblock;
     return (char*)memblock - malloc_header_size(level);

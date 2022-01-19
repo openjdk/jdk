@@ -104,11 +104,6 @@ class MemTracker : AllStatic {
     return MallocTracker::malloc_footer_size(level);
   }
 
-  // To malloc base address, which is the starting address
-  // of malloc tracking header if tracking is enabled.
-  // Otherwise, it returns the same address.
-  static void* malloc_base(void* memblock);
-
   // Record malloc free and return malloc base address
   static inline void* record_free(void* memblock, NMT_TrackingLevel level) {
     // Never turned on
