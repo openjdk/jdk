@@ -137,7 +137,7 @@
  *     <li><a href="https://docs.oracle.com/javase/tutorial/"
  *     target="_top">The Java Tutorial</a></li>
  *     <li><a href="https://www.oracle.com/java/technologies/javase/training-support.html"
- *     target="_top">Java SE Training and Certification</a>
+ *     target="_top">Java SE Training and Certification</a></li>
  * </ul>
  *
  * @serial exclude
