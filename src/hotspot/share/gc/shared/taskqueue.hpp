@@ -39,7 +39,7 @@
 #if !defined(TASKQUEUE_STATS) && defined(ASSERT)
 #define TASKQUEUE_STATS 1
 #elif !defined(TASKQUEUE_STATS)
-#define TASKQUEUE_STATS 0
+#define TASKQUEUE_STATS 1
 #endif
 
 #if TASKQUEUE_STATS
@@ -56,7 +56,12 @@ public:
     pop,              // number of taskqueue pops
     pop_slow,         // subset of taskqueue pops that were done slow-path
     steal_attempt,    // number of taskqueue steal attempts
-    steal,            // number of taskqueue steals
+    steal_empty,      // number of empty taskqueues
+    steal_contended,  // number of contended steals
+    steal_success,    // number of successful steals
+    steal_tasks,      // number of stolen tasks
+    steal_max_contended_in_a_row, // maximum number of contended steals in a row
+    steal_bias_drop,  // number of times the bias has been dropped
     overflow,         // number of overflow pushes
     overflow_max_len, // max length of overflow stack
     last_stat_id
@@ -68,8 +73,10 @@ public:
   inline void record_push()          { ++_stats[push]; }
   inline void record_pop()           { ++_stats[pop]; }
   inline void record_pop_slow()      { record_pop(); ++_stats[pop_slow]; }
-  inline void record_steal_attempt() { ++_stats[steal_attempt]; }
-  inline void record_steal()         { ++_stats[steal]; }
+  inline void record_steal_attempt(uint kind) { ++_stats[steal_attempt]; ++_stats[steal_empty + kind]; }
+  inline void record_steal_tasks(uint tasks = 1) { _stats[steal_tasks] += tasks; }
+  inline void record_contended_in_a_row(uint in_a_row) { if (_stats[steal_max_contended_in_a_row] < in_a_row) _stats[steal_max_contended_in_a_row] = in_a_row; }
+  inline void record_bias_drop() { ++_stats[steal_bias_drop]; }
   inline void record_overflow(size_t new_length);
 
   TaskQueueStats & operator +=(const TaskQueueStats & addend);
@@ -357,7 +364,14 @@ public:
 
   // Like pop_local(), but uses the "global" end of the queue (the least
   // recently pushed).
-  bool pop_global(E& t);
+  // The result of the pop_global() operation - order must correspond to the order
+  // in the StatId.
+  enum PopResult {
+    Empty,
+    Contended,
+    Success
+  };
+  PopResult pop_global(E& t);
 
   // Delete any resource associated with the queue.
   ~GenericTaskQueue();
@@ -387,7 +401,10 @@ public:
   void set_last_stolen_queue_id(uint id)     { _last_stolen_queue_id = id; }
   uint last_stolen_queue_id() const          { return _last_stolen_queue_id; }
   bool is_last_stolen_queue_id_valid() const { return _last_stolen_queue_id != InvalidQueueId; }
-  void invalidate_last_stolen_queue_id()     { _last_stolen_queue_id = InvalidQueueId; }
+  void invalidate_last_stolen_queue_id()     {
+    TASKQUEUE_STATS_ONLY(stats.record_bias_drop());
+    _last_stolen_queue_id = InvalidQueueId;
+  }
 };
 
 // OverflowTaskQueue is a TaskQueue that also includes an overflow stack for
@@ -452,7 +469,7 @@ private:
   uint _n;
   T** _queues;
 
-  bool steal_best_of_2(uint queue_num, E& t);
+  typename T::PopResult steal_best_of_2(uint queue_num, E& t);
 
 public:
   GenericTaskQueueSet(uint n);
