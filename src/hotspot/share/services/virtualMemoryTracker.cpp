@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -672,7 +672,7 @@ bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
   return true;
 }
 
-class FindRegionWalker : public VirtualMemoryWalker {
+class FindInRegionWalker : public VirtualMemoryWalker {
 private:
   const address               _p;
   const ReservedMemoryRegion* _region;
@@ -690,7 +690,7 @@ public:
 };
 
 const ReservedMemoryRegion* VirtualMemoryTracker::find_region(void* p) {
-  FindRegionWalker walker(p);
+  FindInRegionWalker walker(p);
   walk_virtual_memory(&walker);
   return walker.region();
 }

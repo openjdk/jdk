@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -483,23 +483,22 @@ extern "C" JNIEXPORT void pp(void* p) {
     oop obj = cast_to_oop(p);
     obj->print();
   } else {
-    const Thread* thr = Thread::current_or_null();
-    if (thr != nullptr && thr->stack_base() >= (address)p && thr->stack_end() < (address)p) {
-      tty->print_cr(PTR_FORMAT " on stack of thread " PTR_FORMAT, p2i(p), p2i(thr));
-      return;
-    }
-
     // With NMT
     if (MemTracker::enabled()) {
+      const NMT_TrackingLevel tracking_level = MemTracker::tracking_level();
       // Check if it is in known mmap'd memory regions
       const ReservedMemoryRegion* rgn = VirtualMemoryTracker::find_region(p);
       if (rgn != nullptr) {
-        tty->print_cr(PTR_FORMAT " in mmap'd memory region by %s", p2i(p), rgn->flag_name());
+        tty->print_cr(PTR_FORMAT " in mmap'd memory region [" PTR_FORMAT " - " PTR_FORMAT "] by %s",
+          p2i(p), p2i(rgn->base()), p2i(rgn->base() + rgn->size()), rgn->flag_name());
+        if (tracking_level == NMT_detail) {
+          rgn->call_stack()->print_on(tty);
+          tty->cr();
+        }
         return;
       }
 
       if (CanUseSafeFetchN() && SafeFetchN((intptr_t*)p, 0) != 0) {
-        const NMT_TrackingLevel tracking_level = MemTracker::tracking_level();
         const MallocHeader* mhdr = (const MallocHeader*)MallocTracker::get_base(p, tracking_level);
         if (SafeFetchN((intptr_t*)mhdr, 0) != 0 && mhdr->check_block_integrity(false /*fatal_error*/)) {
           tty->print_cr(PTR_FORMAT " malloc'd " SIZE_FORMAT " bytes by %s",
@@ -507,13 +506,12 @@ extern "C" JNIEXPORT void pp(void* p) {
           if (tracking_level == NMT_detail) {
             NativeCallStack ncs;
             if (mhdr->get_stack(ncs)) {
-              tty->print_cr("Allocated from:");
               ncs.print_on(tty);
               tty->cr();
             }
           }
+          return;
         }
-        return;
       }
     }
 
