@@ -27,17 +27,31 @@ package gc.stringdedup;
  * @test TestStringDeduplicationFullGC
  * @summary Test string deduplication during full GC
  * @bug 8029075
- * @requires vm.gc == "null" | vm.gc == "G1" | vm.gc == "Shenandoah"
+ * @requires vm.gc.G1
  * @library /test/lib
  * @library /
  * @modules java.base/jdk.internal.misc:open
  * @modules java.base/java.lang:open
  *          java.management
- * @run driver gc.stringdedup.TestStringDeduplicationFullGC
+ * @run driver gc.stringdedup.TestStringDeduplicationFullGC G1
+ */
+
+/*
+ * @test TestStringDeduplicationFullGC
+ * @summary Test string deduplication during full GC
+ * @bug 8029075
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ * @library /
+ * @modules java.base/jdk.internal.misc:open
+ * @modules java.base/java.lang:open
+ *          java.management
+ * @run driver gc.stringdedup.TestStringDeduplicationFullGC Shenandoah
  */
 
 public class TestStringDeduplicationFullGC {
     public static void main(String[] args) throws Exception {
+        TestStringDeduplicationTools.selectGC(args);
         TestStringDeduplicationTools.testFullGC();
     }
 }
