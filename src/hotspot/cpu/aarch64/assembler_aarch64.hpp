@@ -1120,7 +1120,7 @@ public:
 
 #define INSN(NAME, opc)              \
   void NAME(Register RN) {           \
-    branch_reg(opc, 0, 0, RN, 0);    \
+    branch_reg(opc, 0, 0, RN, r0);    \
   }
 
   INSN(br, 0b0000);
@@ -1133,7 +1133,7 @@ public:
 
 #define INSN(NAME, opc)                     \
   void NAME() {                             \
-    branch_reg(opc, 0, 0, dummy_reg, 0);    \
+    branch_reg(opc, 0, 0, dummy_reg, r0);    \
   }
 
   INSN(eret, 0b0100);
