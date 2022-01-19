@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,9 @@ class Symbol;
 #if INCLUDE_CDS_JAVA_HEAP
 
 class CDSHeapVerifier : public KlassClosure {
+  class CheckStaticFields;
+  class TraceFields;
+
   int _archived_objs;
   int _problems;
 
@@ -52,9 +55,10 @@ class CDSHeapVerifier : public KlassClosure {
 
   GrowableArray<const char**> _exclusions;
 
-  void add(const char** excl) {
+  void add_exclusion(const char** excl) {
     _exclusions.append(excl);
   }
+  void add_static_obj_field(InstanceKlass* ik, oop field, Symbol* name);
 
   const char** find_exclusion(InstanceKlass* ik) {
     for (int i = 0; i < _exclusions.length(); i++) {
@@ -78,7 +82,7 @@ public:
   // For ResourceHashtable::iterate()
   inline bool do_entry(oop& orig_obj, HeapShared::CachedOopInfo& value);
 
-  static void verify();
+  static void verify() NOT_DEBUG_RETURN;
 };
 
 #endif // INCLUDE_CDS_JAVA_HEAP

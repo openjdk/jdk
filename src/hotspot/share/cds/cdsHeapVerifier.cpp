@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@
 
 CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
 {
-# define ADD_EXCL(...) { static const char* e[] = {__VA_ARGS__, NULL}; add(e); }
+# define ADD_EXCL(...) { static const char* e[] = {__VA_ARGS__, NULL}; add_exclusion(e); }
 
   // Unfortunately this needs to be manually maintained. If
   // test/hotspot/jtreg/runtime/cds/appcds/cacheObject/ArchivedEnumTest.java fails,
@@ -145,14 +145,62 @@ CDSHeapVerifier::~CDSHeapVerifier() {
   }
 }
 
+class CDSHeapVerifier::CheckStaticFields : public FieldClosure {
+  CDSHeapVerifier* _verifier;
+  InstanceKlass* _ik;
+  const char** _exclusions;
+public:
+  CheckStaticFields(CDSHeapVerifier* verifier, InstanceKlass* ik)
+    : _verifier(verifier), _ik(ik) {
+    _exclusions = _verifier->find_exclusion(_ik);
+  }
+
+  void do_field(fieldDescriptor* fd) {
+    if (fd->field_type() != T_OBJECT) {
+      return;
+    }
+
+    oop static_obj_field = _ik->java_mirror()->obj_field(fd->offset());
+    if (static_obj_field != NULL) {
+      Klass* klass = static_obj_field->klass();
+      if (_exclusions != NULL) {
+        for (const char** p = _exclusions; *p != NULL; p++) {
+          if (fd->name()->equals(*p)) {
+            return;
+          }
+        }
+      }
+
+      if (fd->is_final() && java_lang_String::is_instance(static_obj_field) && fd->has_initial_value()) {
+        // This field looks like like this in the Java source:
+        //    static final SOME_STRING = "a string literal";
+        // This string literal has been stored in the shared string table, so it's OK
+        // for the archived objects to refer to it.
+        return;
+      }
+      if (fd->is_final() && java_lang_Class::is_instance(static_obj_field)) {
+        // This field points to an archived mirror.
+        return;
+      }
+      if (klass->has_archived_enum_objs()) {
+        // This klass is a subclass of java.lang.Enum. If any instance of this klass
+        // has been archived, we will archive all static fields of this klass.
+        // See HeapShared::initialize_enum_klass().
+        return;
+      }
+
+      // This field *may* be initialized to a different value at runtime. Remember it
+      // and check later if it appears in the archived object graph.
+      _verifier->add_static_obj_field(_ik, static_obj_field, fd->name());
+    }
+  }
+};
+
 // Remember all the static object fields of every class that are currently
 // loaded.
 void CDSHeapVerifier::do_klass(Klass* k) {
   if (k->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(k);
-    oop mirror = ik->java_mirror();
-    int n = 0;
-    const char** exclusions = find_exclusion(ik);
 
     if (HeapShared::is_subgraph_root_class(ik)) {
       // ik is inside one of the ArchivableStaticFieldInfo tables
@@ -161,54 +209,14 @@ void CDSHeapVerifier::do_klass(Klass* k) {
       return;
     }
 
-    ResourceMark rm;
-    for (JavaFieldStream fs(ik); !fs.done(); fs.next()) {
-      if (fs.access_flags().is_static()) {
-        fieldDescriptor& fd = fs.field_descriptor();
-        if (fd.field_type() == T_OBJECT) {
-          oop static_obj_field = mirror->obj_field(fd.offset());
-          if (static_obj_field != NULL) {
-            Klass* klass = static_obj_field->klass();
-            if (exclusions != NULL) {
-              bool excluded = false;
-              for (const char** p = exclusions; *p != NULL; p++) {
-                if (fd.name()->equals(*p)) {
-                  excluded = true;
-                  break;
-                }
-              }
-              if (excluded) {
-                continue;
-              }
-            }
-
-            if (fd.is_final() && java_lang_String::is_instance(static_obj_field) && fd.has_initial_value()) {
-              // This field looks like like this in the Java source:
-              //    static final SOME_STRING = "a string literal";
-              // This string literal has been stored in the shared string table, so it's OK
-              // for the archived objects to refer to it.
-              continue;
-            }
-            if (fd.is_final() && java_lang_Class::is_instance(static_obj_field)) {
-              // This field points to an archived mirror.
-              continue;
-            }
-            if (klass->has_archived_enum_objs()) {
-              // This klass is a subclass of java.lang.Enum. If any instance of this klass
-              // has been archived, we will archive all static fields of this klass.
-              // See HeapShared::initialize_enum_klass().
-              continue;
-            }
-
-            // This field *may* be initialized to a different value at runtime. Remember it
-            // and check later if it appears in the archived object graph.
-            StaticFieldInfo info = {ik, fd.name()};
-            _table.put(static_obj_field, info);
-          }
-        }
-      }
-    }
+    CheckStaticFields csf(this, ik);
+    ik->do_local_static_fields(&csf);
   }
+}
+
+void CDSHeapVerifier::add_static_obj_field(InstanceKlass* ik, oop field, Symbol* name) {
+  StaticFieldInfo info = {ik, name};
+  _table.put(field, info);
 }
 
 inline bool CDSHeapVerifier::do_entry(oop& orig_obj, HeapShared::CachedOopInfo& value) {
@@ -232,6 +240,26 @@ inline bool CDSHeapVerifier::do_entry(oop& orig_obj, HeapShared::CachedOopInfo& 
   return true; /* keep on iterating */
 }
 
+class CDSHeapVerifier::TraceFields : public FieldClosure {
+  oop _orig_obj;
+  oop _orig_field;
+  LogStream* _ls;
+
+public:
+  TraceFields(oop orig_obj, oop orig_field, LogStream* ls)
+    : _orig_obj(orig_obj), _orig_field(orig_field), _ls(ls) {}
+
+  void do_field(fieldDescriptor* fd) {
+    if (fd->field_type() == T_OBJECT || fd->field_type() == T_ARRAY) {
+      oop obj_field = _orig_obj->obj_field(fd->offset());
+      if (obj_field == _orig_field) {
+        _ls->print("::%s (offset = %d)", fd->name()->as_C_string(), fd->offset());
+      }
+    }
+  }
+};
+
+// Hint: to exercise this function, uncomment out one of the ADD_EXCL lines above.
 int CDSHeapVerifier::trace_to_root(oop orig_obj, oop orig_field, HeapShared::CachedOopInfo* p) {
   int level = 0;
   LogStream ls(Log(cds, heap)::warning());
@@ -249,19 +277,8 @@ int CDSHeapVerifier::trace_to_root(oop orig_obj, oop orig_field, HeapShared::Cac
   ls.print(" %s", k->internal_name());
   if (orig_field != NULL) {
     if (k->is_instance_klass()) {
-      InstanceKlass* ik = InstanceKlass::cast(k);
-      for (JavaFieldStream fs(ik); !fs.done(); fs.next()) {
-        if (!fs.access_flags().is_static()) {
-          fieldDescriptor& fd = fs.field_descriptor();
-          if (fd.field_type() == T_OBJECT || fd.field_type() == T_ARRAY) {
-            oop obj_field = orig_obj->obj_field(fd.offset());
-            if (obj_field == orig_field) {
-              ls.print("::%s (offset = %d)", fd.name()->as_C_string(), fd.offset());
-              break;
-            }
-          }
-        }
-      }
+      TraceFields clo(orig_obj, orig_field, &ls);;
+      InstanceKlass::cast(k)->do_nonstatic_fields(&clo);
     } else {
       assert(orig_obj->is_objArray(), "must be");
       objArrayOop array = (objArrayOop)orig_obj;
@@ -278,9 +295,11 @@ int CDSHeapVerifier::trace_to_root(oop orig_obj, oop orig_field, HeapShared::Cac
   return level;
 }
 
+#ifdef ASSERT
 void CDSHeapVerifier::verify() {
   CDSHeapVerifier verf;
   HeapShared::archived_object_cache()->iterate(&verf);
 }
+#endif
 
 #endif // INCLUDE_CDS_JAVA_HEAP
