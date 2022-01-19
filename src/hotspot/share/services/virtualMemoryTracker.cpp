@@ -671,3 +671,26 @@ bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
    }
   return true;
 }
+
+class FindRegionWalker : public VirtualMemoryWalker {
+private:
+  const address               _p;
+  const ReservedMemoryRegion* _region;
+public:
+  FindRegionWalker(void* p) : _p((address)p), _region(nullptr) { }
+  bool do_allocation_site(const ReservedMemoryRegion* rgn) {
+    if (_p >= rgn->base() && _p < rgn->base() + rgn->size()) {
+      _region = rgn;
+      return false;
+    }
+    return true;
+  }
+
+  const ReservedMemoryRegion* region() const { return _region; }
+};
+
+const ReservedMemoryRegion* VirtualMemoryTracker::find_region(void* p) {
+  FindRegionWalker walker(p);
+  walk_virtual_memory(&walker);
+  return walker.region();
+}

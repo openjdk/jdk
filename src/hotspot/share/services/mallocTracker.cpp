@@ -157,7 +157,7 @@ void MallocHeader::print_block_on_error(outputStream* st, address bad_address) c
 // Check block integrity. If block is broken, print out a report
 // to tty (optionally with hex dump surrounding the broken block),
 // then trigger a fatal error.
-void MallocHeader::check_block_integrity() const {
+bool MallocHeader::check_block_integrity(bool fatal_error) const {
 
 #define PREFIX "NMT corruption: "
   // Note: if you modify the error messages here, make sure you
@@ -167,6 +167,7 @@ void MallocHeader::check_block_integrity() const {
   // values. Note that we should not call this for ::free(NULL),
   // which should be handled by os::free() above us.
   if (((size_t)p2i(this)) < K) {
+    if (!fatal_error) return false;
     fatal(PREFIX "Block at " PTR_FORMAT ": invalid block address", p2i(this));
   }
 
@@ -186,12 +187,14 @@ void MallocHeader::check_block_integrity() const {
   // Should we ever start using std::max_align_t, this would be one place to
   // fix up.
   if (!is_aligned(this, sizeof(uint64_t))) {
+    if (!fatal_error) return false;
     print_block_on_error(tty, (address)this);
     fatal(PREFIX "Block at " PTR_FORMAT ": block address is unaligned", p2i(this));
   }
 
   // Check header canary
   if (_canary != _header_canary_life_mark) {
+    if (!fatal_error) return false;
     print_block_on_error(tty, (address)this);
     fatal(PREFIX "Block at " PTR_FORMAT ": header canary broken.", p2i(this));
   }
@@ -199,6 +202,7 @@ void MallocHeader::check_block_integrity() const {
 #ifndef _LP64
   // On 32-bit we have a second canary, check that one too.
   if (_alt_canary != _header_alt_canary_life_mark) {
+    if (!fatal_error) return false;
     print_block_on_error(tty, (address)this);
     fatal(PREFIX "Block at " PTR_FORMAT ": header alternate canary broken.", p2i(this));
   }
@@ -206,17 +210,20 @@ void MallocHeader::check_block_integrity() const {
 
   // Does block size seems reasonable?
   if (_size >= max_reasonable_malloc_size) {
+    if (!fatal_error) return false;
     print_block_on_error(tty, (address)this);
     fatal(PREFIX "Block at " PTR_FORMAT ": header looks invalid (weirdly large block size)", p2i(this));
   }
 
   // Check footer canary
   if (get_footer() != _footer_canary_life_mark) {
+    if (!fatal_error) return false;
     print_block_on_error(tty, footer_address());
     fatal(PREFIX "Block at " PTR_FORMAT ": footer canary broken at " PTR_FORMAT " (buffer overflow?)",
           p2i(this), p2i(footer_address()));
   }
 #undef PREFIX
+  return true;
 }
 
 bool MallocHeader::record_malloc_site(const NativeCallStack& stack, size_t size,
