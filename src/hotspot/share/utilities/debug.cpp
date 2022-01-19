@@ -486,7 +486,7 @@ extern "C" JNIEXPORT void pp(void* p) {
     // With NMT
     if (MemTracker::enabled()) {
       const NMT_TrackingLevel tracking_level = MemTracker::tracking_level();
-      // Check if it is in known mmap'd memory regions
+      // Check if it is in a known mmap'd memory region
       const ReservedMemoryRegion* rgn = VirtualMemoryTracker::find_region(p);
       if (rgn != nullptr) {
         tty->print_cr(PTR_FORMAT " in mmap'd memory region [" PTR_FORMAT " - " PTR_FORMAT "] by %s",
@@ -497,7 +497,7 @@ extern "C" JNIEXPORT void pp(void* p) {
         }
         return;
       }
-
+      // Check if it is a malloc'd memory block
       if (CanUseSafeFetchN() && SafeFetchN((intptr_t*)p, 0) != 0) {
         const MallocHeader* mhdr = (const MallocHeader*)MallocTracker::get_base(p, tracking_level);
         if (SafeFetchN((intptr_t*)mhdr, 0) != 0 && mhdr->check_block_integrity(false /*fatal_error*/)) {
