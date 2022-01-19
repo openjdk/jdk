@@ -108,9 +108,9 @@ public class TestPrintXML {
                 System.out.println();
                 System.out.println("Was (XML)");
                 System.out.println("----------------------");
-                if (xmlEvent.begin != -1 && xmlEvent.end != -1) {
+                if (xmlEvent.begin > 0 && xmlEvent.end > 0) {
                     String lines[] = xml.split("\\r?\\n");
-                    for (int i = xmlEvent.begin; i < xmlEvent.end; i++) {
+                    for (int i = xmlEvent.begin - 1; i < xmlEvent.end; i++) {
                         System.out.println(i + " " + lines[i]);
                     }
                 } else {
@@ -205,7 +205,7 @@ public class TestPrintXML {
             switch (qName) {
             case "event":
                 XMLEvent event = new XMLEvent(attrs.getValue("type"));
-                event.begin = locator.getLineNumber() - 1;
+                event.begin = locator.getLineNumber();
                 objects.push(event);
                 break;
             case "struct":
