@@ -23,9 +23,7 @@
 
 package jdk.jfr.tool;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.StringReader;
 import java.nio.file.Path;
 import java.time.OffsetDateTime;
