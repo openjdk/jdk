@@ -286,7 +286,7 @@ class DwarfFile : public ElfFile {
   class MarkedDwarfFileReader : public MarkedFileReader {
    private:
     long _current_pos;
-    long _max_pos; // Used to guarantee that we stop reading in case of a corrupted DWARF file.
+    long _max_pos; // Used to guarantee that we stop reading in case we reached the end of a section.
 
     bool read_leb128(uint64_t* result, int8_t check_size, bool is_signed);
    public:
@@ -404,14 +404,14 @@ class DwarfFile : public ElfFile {
     const uint32_t _compilation_unit_offset;
 
     // Result of a request initiated by find_debug_line_offset().
-    uint32_t* _debug_line_offset;
+    uint32_t _debug_line_offset;
 
     bool read_header();
    public:
     CompilationUnit(DwarfFile* dwarf_file, uint32_t compilation_unit_offset)
-      : _dwarf_file(dwarf_file), _reader(dwarf_file->fd()), _compilation_unit_offset(compilation_unit_offset), _debug_line_offset(nullptr) {}
+      : _dwarf_file(dwarf_file), _reader(dwarf_file->fd()), _compilation_unit_offset(compilation_unit_offset), _debug_line_offset(0) {}
     bool find_debug_line_offset(uint32_t* debug_line_offset);
-    bool read_attribute(uint64_t attribute, bool set_result);
+    bool read_attribute_value(uint64_t attribute_form, bool is_DW_AT_stmt_list_attribute);
   };
 
   // (3d) Read from the .debug_abbrev section at the debug_abbrev_offset specified by the compilation unit header.
@@ -435,15 +435,14 @@ class DwarfFile : public ElfFile {
     // Result field of a request
     uint32_t* _debug_line_offset;
 
-    bool skip_attribute_specifications();
-    bool read_attribute_specifications();
+    bool read_attribute_specifications(bool is_DW_TAG_compile_unit);
 
    public:
     DebugAbbrev(DwarfFile* dwarf_file, CompilationUnit* compilation_unit) :
       _dwarf_file(dwarf_file), _reader(_dwarf_file->fd()), _compilation_unit(compilation_unit),
       _debug_line_offset(nullptr) {}
     bool read_section_header(uint32_t debug_abbrev_offset);
-    bool get_debug_line_offset(uint64_t abbrev_code);
+    bool find_debug_line_offset(uint64_t abbrev_code);
   };
 
   // (4) The line number program for the compilation unit at the offset of the .debug_line obtained by (3).

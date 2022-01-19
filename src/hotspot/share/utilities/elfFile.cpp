@@ -695,7 +695,6 @@ bool DwarfFile::DebugAranges::read_header(const uint32_t section_start) {
 
 // Find the .debug_line offset for the line number program by reading from the .debug_abbrev and .debug_info section.
 bool DwarfFile::CompilationUnit::find_debug_line_offset(uint32_t* debug_line_offset) {
-  _debug_line_offset = debug_line_offset;
   // (3a,b)
   if (!read_header()) {
     log_info(dwarf)("Failed to read the compilation unit header.");
@@ -713,7 +712,11 @@ bool DwarfFile::CompilationUnit::find_debug_line_offset(uint32_t* debug_line_off
     log_info(dwarf)("Failed to read the .debug_abbrev header at " PTR32_FORMAT, _header._debug_abbrev_offset);
     return false;
   }
-  return debug_abbrev.get_debug_line_offset(abbrev_code);
+  if (!debug_abbrev.find_debug_line_offset(abbrev_code)) {
+    return false;
+  }
+  *debug_line_offset = _debug_line_offset; // Result was stored in _debug_line_offset.
+  return true;
 }
 
 // (3a) Parse header as specified in section 7.5.1.1 of the DWARF 4 spec.
@@ -767,9 +770,11 @@ bool DwarfFile::DebugAbbrev::read_section_header(uint32_t debug_abbrev_offset) {
   return true;
 }
 
-// (3d) Follows the parsing instructions of section 7.5.3 of the DWARF 4 spec. Skip over all entries until we find the correct
-// entry that matches the 'abbrev_code'. Read the attribute specifications of this entry.
-bool DwarfFile::DebugAbbrev::get_debug_line_offset(const uint64_t abbrev_code) {
+// (3d) The abbreviations table for a compilation unit consists of a series of abbreviation declarations. Each declaration
+// specifies a tag and an abbrev code. Parse all declarations until we find the declaration which matches 'abbrev_code'.
+// (see section 7.5.3 of the DWARF 4 spec).
+bool DwarfFile::DebugAbbrev::find_debug_line_offset(const uint64_t abbrev_code) {
+  log_trace(dwarf)("Series of declarations [code, tag]:");
   while (_reader.has_bytes_left()) {
     uint64_t next_abbrev_code;
     if (!_reader.read_uleb128(&next_abbrev_code)) {
@@ -785,15 +790,16 @@ bool DwarfFile::DebugAbbrev::get_debug_line_offset(const uint64_t abbrev_code) {
       return false;
     }
 
-    log_trace(dwarf)("Code: " UINT64_FORMAT_X ", Tag: " UINT64_FORMAT, next_abbrev_code, next_tag);
+    log_trace(dwarf)("Code: 0x" UINT64_FORMAT_X ", Tag: 0x" UINT64_FORMAT_X, next_abbrev_code, next_tag);
 
     uint8_t has_children;
     if (!_reader.read_byte(&has_children)) {
       return false;
     }
 
+    log_trace(dwarf)("  Series of attributes [name, form]:");
     if (next_abbrev_code == abbrev_code) {
-      // Found the correct abbreviation table entry.
+      // Found the correct declaration.
       if (next_tag != DW_TAG_compile_unit || has_children != DW_CHILDREN_yes) {
         // Is not DW_TAG_compile_unit as specified in Figure 18 in section 7.5 of the DWARF 4 spec. It could also
         // be DW_TAG_partial_unit (0x3c) which is currently not supported by this parser. Must have children.
@@ -802,9 +808,11 @@ bool DwarfFile::DebugAbbrev::get_debug_line_offset(const uint64_t abbrev_code) {
         }
         return false;
       }
-      return read_attribute_specifications();
+      log_debug(dwarf)(".debug_abbrev offset:  " PTR32_FORMAT, (uint32_t)_reader.get_position());
+      return read_attribute_specifications(true);
     } else {
-      if (!skip_attribute_specifications()) {
+      // Not the correct declaration. Read its attributes and continue with next declaration.
+      if (!read_attribute_specifications(false)) {
         return false;
       }
     }
@@ -817,27 +825,36 @@ bool DwarfFile::DebugAbbrev::get_debug_line_offset(const uint64_t abbrev_code) {
 // Read the attribute names and forms which define the actual attribute values that follow the abbrev code in the compilation unit. All
 // attributes need to be read from the compilation unit until we find the DW_AT_stmt_list attribute which specifies the offset for the
 // line number program into the .debug_line section. The offset is stored in the _debug_line_offset field of the compilation unit.
-bool DwarfFile::DebugAbbrev::read_attribute_specifications() {
-  log_debug(dwarf)(".debug_abbrev offset:  " PTR32_FORMAT, (uint32_t)_reader.get_position());
+bool DwarfFile::DebugAbbrev::read_attribute_specifications(const bool is_DW_TAG_compile_unit) {
   uint64_t next_attribute_name;
   uint64_t next_attribute_form;
   while (_reader.has_bytes_left()) {
     if (!_reader.read_uleb128(&next_attribute_name) || !_reader.read_uleb128(&next_attribute_form)) {
       return false;
     }
-    log_trace(dwarf)("  Attribute: " UINT64_FORMAT_X ", Form: " UINT64_FORMAT_X, next_attribute_name, next_attribute_form);
+    log_trace(dwarf)("  Name: 0x" UINT64_FORMAT_X ", Form: 0x" UINT64_FORMAT_X, next_attribute_name, next_attribute_form);
 
     if (next_attribute_name == 0 && next_attribute_form == 0) {
-      log_info(dwarf)("Did not find DW_AT_stmt_list in .debug_abbrev");
-      return false;
+      // Parsed all attributes of this declaration.
+      if (is_DW_TAG_compile_unit) {
+        log_info(dwarf)("Did not find DW_AT_stmt_list in .debug_abbrev");
+        return false;
+      } else {
+        // Continue with next declaration if this was not DW_TAG_compile_unit.
+        return true;
+      }
     }
 
-    if (next_attribute_name == DW_AT_stmt_list) {
-      return _compilation_unit->read_attribute(next_attribute_form, true);
-    } else {
-      // Not DW_AT_stmt_list, need to read it from the compilation unit and then continue with the next attribute.
-      if (!_compilation_unit->read_attribute(next_attribute_form, false)) {
-        return false;
+    if (is_DW_TAG_compile_unit) {
+      // Read attribute from compilation unit
+      if (next_attribute_name == DW_AT_stmt_list) {
+        // This attribute represents the .debug_line offset. Read it and then stop parsing.
+        return _compilation_unit->read_attribute_value(next_attribute_form, true);
+      } else {
+        // Not DW_AT_stmt_list, read it and continue with the next attribute.
+        if (!_compilation_unit->read_attribute_value(next_attribute_form, false)) {
+          return false;
+        }
       }
     }
   }
@@ -847,11 +864,12 @@ bool DwarfFile::DebugAbbrev::read_attribute_specifications() {
 }
 
 // (3e) Read the actual attribute values from the compilation unit in the .debug_info section. Each attribute has an encoding
-// that specifies which values need to be read for it. This is specified in section 7.5.4 of the DWARF 4 spec. Read all
-// attributes while 'set_result' is false. Once it is true, we have reached the attribute DW_AT_stmt_list. Read its value
-// which specifies the offset for the line number program into the .debug_line section. Store the result in _debug_info_result
-// which is returned to the caller of find_debug_line_offset() which initiated the entire request.
-bool DwarfFile::CompilationUnit::read_attribute(const uint64_t attribute, bool set_result) {
+// that specifies which values need to be read for it. This is specified in section 7.5.4 of the DWARF 4 spec.
+// If is_DW_AT_stmt_list_attribute is:
+// - False: Ignore the read attribute value
+// - True:  We are going to read the attribute value of the DW_AT_stmt_list attribute which specifies the offset into the
+//          .debug_line section for the line number program. Store this offset in the _debug_line_offset field.
+bool DwarfFile::CompilationUnit::read_attribute_value(const uint64_t attribute_form, const bool is_DW_AT_stmt_list_attribute) {
   // Reset to the stored _cur_pos of the reader since the DebugAbbrev reader changed the index into the file with its reader.
   _reader.update_to_stored_position();
   uint8_t next_byte = 0;
@@ -859,7 +877,7 @@ bool DwarfFile::CompilationUnit::read_attribute(const uint64_t attribute, bool s
   uint32_t next_dword = 0;
   uint64_t next_qword = 0;
 
-  switch (attribute) {
+  switch (attribute_form) {
     case DW_FORM_addr:
       // Move position by the size of an address.
 #ifndef _LP64
@@ -939,10 +957,10 @@ bool DwarfFile::CompilationUnit::read_attribute(const uint64_t attribute, bool s
       // Should not be used and therefore is not supported by this parser.
       return false;
     case DW_FORM_sec_offset:
-      // The one we are interested in for DW_AT_stmt_list.
-      if (set_result) {
+      if (is_DW_AT_stmt_list_attribute) {
+        // DW_AT_stmt_list has the DW_FORM_sec_offset attribute encoding. Store the result in _debug_line_offset.
         // 4 bytes for 32-bit DWARF.
-        if (!_reader.read_dword(_debug_line_offset)) {
+        if (!_reader.read_dword(&_debug_line_offset)) {
           return false;
         }
         break;
@@ -959,24 +977,6 @@ bool DwarfFile::CompilationUnit::read_attribute(const uint64_t attribute, bool s
   // Reset the index into the file to the original position where the DebugAbbrev reader stopped reading before calling this method.
   _reader.reset_to_previous_position();
   return true;
-}
-
-// Read the attribute specifications for this entry but do not process them in any way as we are not interested in them.
-bool DwarfFile::DebugAbbrev::skip_attribute_specifications() {
-  uint64_t next_attribute_name;
-  uint64_t next_attribute_form;
-  while (_reader.has_bytes_left()) {
-    if (!_reader.read_uleb128(&next_attribute_name) || !_reader.read_uleb128(&next_attribute_form)) {
-      return false;
-    }
-    log_trace(dwarf)("  Attribute: " UINT64_FORMAT_X ", Form: " UINT64_FORMAT_X, next_attribute_name, next_attribute_form);
-
-    if (next_attribute_name == 0 && next_attribute_form == 0) {
-      // Processed all attributes. New entry starts.
-      return true;
-    }
-  }
-  return false;
 }
 
 bool DwarfFile::LineNumberProgram::find_filename_and_line_number(char* filename, size_t filename_len, int* line) {
@@ -1184,7 +1184,7 @@ bool DwarfFile::LineNumberProgram::apply_opcode() {
     return false;
   }
 
-  log_trace(dwarf)("%02x ", opcode);
+  log_trace(dwarf)("Opcode: %02x ", opcode);
   if (opcode == 0) {
     // Extended opcodes start with a zero byte.
     if (!apply_extended_opcode()) {
