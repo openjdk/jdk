@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,10 @@
  *   1. ClassSpecializerTestApp.java:
  *      Test case for bug 8275084, make sure the filtering of source class to
  *      dumped class list.
- *   2. ClassListWithCustomClassNoSource:
- *      Use custom loader to load dynmaically generated class without source.
+ *   2. ClassListWithCustomClassNoSource: test custom class loader
+ *      2.1 class loaded without source.
+ *      2.2 class loaded with ProtectionDomain set as same as main class.
+ *      2.3 class loaded by custom loader from shared space.
  */
 
 import java.io.BufferedReader;
@@ -124,8 +126,6 @@ public class TestDumpClassListSource {
         // 2. Custom loaded class
         //    2.1 test in memory class generation without source
         launchArgs  = new String[] {
-                "--add-exports",
-                "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
                 "-Xshare:auto",
                 "-XX:DumpLoadedClassList=" + listFileName,
                 "-XX:ArchiveClassesAtExit=" + archiveName,
@@ -152,8 +152,6 @@ public class TestDumpClassListSource {
         //    2.2 test in memory class with ProtectionDomain as main class.
         //    "Hello" will be printed in list file and its source set as main class.
         launchArgs  = new String[] {
-                "--add-exports",
-                "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
                 "-Xshare:auto",
                 "-XX:DumpLoadedClassList=" + listFileName,
                 "-XX:ArchiveClassesAtExit=" + archiveName,
@@ -180,8 +178,6 @@ public class TestDumpClassListSource {
         //    2.3 class loaded by custom loader from shared space.
         //      2.3.1 dump class list
         launchArgs = new String[] {
-                "--add-exports",
-                "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
                 "-XX:DumpLoadedClassList=" + listFileName,
                  "-cp",
                 jarFile,
@@ -201,8 +197,6 @@ public class TestDumpClassListSource {
             archiveFile.delete();
         }
         launchArgs = new String[] {
-                "--add-exports",
-                "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
                 "-Xshare:dump",
                 "-XX:SharedClassListFile=" + listFileName,
                 "-XX:SharedArchiveFile=" + archive,
@@ -215,7 +209,7 @@ public class TestDumpClassListSource {
 
         checkFileExistence("Archive", archiveFile);
 
-        //       2.3.3 run iwith the shared archive and -XX:DumpLoadedClassList
+        //       2.3.3 run with the shared archive and -XX:DumpLoadedClassList
         //             Hello should not be printed out in class list file.
         String classList = "new-test-list.list";
         File newFile = new File(classList);
@@ -223,8 +217,6 @@ public class TestDumpClassListSource {
             newFile.delete();
         }
         launchArgs = new String[] {
-                "--add-exports",
-                "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
                 "-Xshare:on",
                 "-XX:SharedArchiveFile=" + archive,
                 "-XX:DumpLoadedClassList=" + classList,

@@ -149,7 +149,7 @@ public class CommandLineFlagCombo {
         if (!listFile.exists()) {
             throw new RuntimeException("ClassList file " + dumpedListName + " should be created");
         }
-        listFile.delete();
+
         // 2. -XX:ArchiveClassesAtExit -XX:DumpLoadedClassFile
         String dynName = "tmpDyn.jsa";
         File dynFile = new File(dynName);
