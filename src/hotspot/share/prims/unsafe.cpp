@@ -762,6 +762,8 @@ static void post_thread_park_event(EventThreadPark* event, const oop obj, jlong 
 }
 
 UNSAFE_ENTRY(void, Unsafe_Park(JNIEnv *env, jobject unsafe, jboolean isAbsolute, jlong time)) {
+  // Only the current (non-null) thread can get parked but static analysis
+  // tools cannot determine that so check for null here.
   if (thread == NULL) return;
   HOTSPOT_THREAD_PARK_BEGIN((uintptr_t) thread->parker(), (int) isAbsolute, time);
   EventThreadPark event;
