@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,7 +205,7 @@ public class TestPrintXML {
             switch (qName) {
             case "event":
                 XMLEvent event = new XMLEvent(attrs.getValue("type"));
-                event.begin = locator.getLineNumber() -1;
+                event.begin = locator.getLineNumber() - 1;
                 objects.push(event);
                 break;
             case "struct":
@@ -243,7 +243,7 @@ public class TestPrintXML {
                 Object value = objects.pop();
                 if (objects.isEmpty()) {
                     XMLEvent event = (XMLEvent) value;
-                    event.end = locator.getLineNumber() -1;
+                    event.end = locator.getLineNumber() - 1;
                     events.add(event);
                     return;
                 }
