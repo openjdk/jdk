@@ -39,7 +39,7 @@
 #if !defined(TASKQUEUE_STATS) && defined(ASSERT)
 #define TASKQUEUE_STATS 1
 #elif !defined(TASKQUEUE_STATS)
-#define TASKQUEUE_STATS 1
+#define TASKQUEUE_STATS 0
 #endif
 
 #if TASKQUEUE_STATS
@@ -59,7 +59,6 @@ public:
     steal_empty,      // number of empty taskqueues
     steal_contended,  // number of contended steals
     steal_success,    // number of successful steals
-    steal_tasks,      // number of stolen tasks
     steal_max_contended_in_a_row, // maximum number of contended steals in a row
     steal_bias_drop,  // number of times the bias has been dropped
     overflow,         // number of overflow pushes
@@ -74,7 +73,6 @@ public:
   inline void record_pop()           { ++_stats[pop]; }
   inline void record_pop_slow()      { record_pop(); ++_stats[pop_slow]; }
   inline void record_steal_attempt(uint kind) { ++_stats[steal_attempt]; ++_stats[steal_empty + kind]; }
-  inline void record_steal_tasks(uint tasks = 1) { _stats[steal_tasks] += tasks; }
   inline void record_contended_in_a_row(uint in_a_row) { if (_stats[steal_max_contended_in_a_row] < in_a_row) _stats[steal_max_contended_in_a_row] = in_a_row; }
   inline void record_bias_drop() { ++_stats[steal_bias_drop]; }
   inline void record_overflow(size_t new_length);
@@ -88,9 +86,9 @@ public:
 
   // Print the specified line of the header (does not include a line separator).
   static void print_header(unsigned int line, outputStream* const stream = tty,
-                           unsigned int width = 10);
+                           unsigned int width = 11);
   // Print the statistics (does not include a line separator).
-  void print(outputStream* const stream = tty, unsigned int width = 10) const;
+  void print(outputStream* const stream = tty, unsigned int width = 11) const;
 
   DEBUG_ONLY(void verify() const;)
 
@@ -364,12 +362,11 @@ public:
 
   // Like pop_local(), but uses the "global" end of the queue (the least
   // recently pushed).
-  // The result of the pop_global() operation - order must correspond to the order
-  // in the StatId.
+  // The result value order of this correspond to the order in the corresponding StatId.
   enum PopResult {
-    Empty,
-    Contended,
-    Success
+    Empty     = 0, // Queue has been empty. t is undefined.
+    Contended = 1, // Contention prevented successful retrieval, queue most likely contains elements. t is undefined.
+    Success   = 2  // Successfully retrieved an element, t contains it.
   };
   PopResult pop_global(E& t);
 
@@ -402,7 +399,7 @@ public:
   uint last_stolen_queue_id() const          { return _last_stolen_queue_id; }
   bool is_last_stolen_queue_id_valid() const { return _last_stolen_queue_id != InvalidQueueId; }
   void invalidate_last_stolen_queue_id()     {
-    TASKQUEUE_STATS_ONLY(stats.record_bias_drop());
+    TASKQUEUE_STATS_ONLY(stats.record_bias_drop();)
     _last_stolen_queue_id = InvalidQueueId;
   }
 };
@@ -469,6 +466,9 @@ private:
   uint _n;
   T** _queues;
 
+  // Attempts to steal an element from a foreign queue (!= queue_num), setting
+  // the result in t. Validity of this value and the return value is the same
+  // as for the last pop_global() operation.
   typename T::PopResult steal_best_of_2(uint queue_num, E& t);
 
 public:

@@ -35,8 +35,8 @@
 #if TASKQUEUE_STATS
 const char * const TaskQueueStats::_names[last_stat_id] = {
   "push", "pop", "pop-slow",
-  "st-attempt", "st-empty", "st-ctdd", "st-succ", "st-tasks", "st-ctdd-mx", "st-biasdrp",
-  "ovfl-push", "ovfl-max"
+  "st-attempt", "st-empty", "st-ctdd", "st-success", "st-ctdd-max", "st-biasdrop",
+  "ovflw-push", "ovflw-max"
 };
 
 TaskQueueStats & TaskQueueStats::operator +=(const TaskQueueStats & addend)

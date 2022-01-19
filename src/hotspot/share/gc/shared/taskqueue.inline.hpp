@@ -298,16 +298,15 @@ typename T::PopResult GenericTaskQueueSet<T, F>::steal_best_of_2(uint queue_num,
     if (sz2 > sz1) {
       sel_k = k2;
       suc = _queues[k2]->pop_global(t);
-      TASKQUEUE_STATS_ONLY(queue(queue_num)->stats.record_steal_attempt((uint)suc));
+      TASKQUEUE_STATS_ONLY(queue(queue_num)->stats.record_steal_attempt((uint)suc);)
     } else if (sz1 > 0) {
       sel_k = k1;
       suc = _queues[k1]->pop_global(t);
-      TASKQUEUE_STATS_ONLY(queue(queue_num)->stats.record_steal_attempt((uint)suc));
+      TASKQUEUE_STATS_ONLY(queue(queue_num)->stats.record_steal_attempt((uint)suc);)
     }
 
     if (suc == T::Success) {
       local_queue->set_last_stolen_queue_id(sel_k);
-      TASKQUEUE_STATS_ONLY(queue(queue_num)->stats.record_steal_tasks(1));
     } else {
       local_queue->invalidate_last_stolen_queue_id();
     }
@@ -317,14 +316,11 @@ typename T::PopResult GenericTaskQueueSet<T, F>::steal_best_of_2(uint queue_num,
     // Just try the other one.
     uint k = (queue_num + 1) % 2;
     PopResult res = _queues[k]->pop_global(t);
-    TASKQUEUE_STATS_ONLY(queue(queue_num)->stats.record_steal_attempt((uint)res));
-    if (res == T::Success) {
-      TASKQUEUE_STATS_ONLY(queue(queue_num)->stats.record_steal_tasks(1));
-    }
+    TASKQUEUE_STATS_ONLY(queue(queue_num)->stats.record_steal_attempt((uint)res);)
     return res;
   } else {
     assert(_n == 1, "can't be zero.");
-    TASKQUEUE_STATS_ONLY(queue(queue_num)->stats.record_steal_attempt((uint)T::Empty));
+    TASKQUEUE_STATS_ONLY(queue(queue_num)->stats.record_steal_attempt((uint)T::Empty);)
     return T::Empty;
   }
 }
