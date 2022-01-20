@@ -23,10 +23,15 @@
 
 /*
  * @test
+ * @key stress randomness
  * @bug 8280123
  * @run main/othervm -Xcomp -XX:-TieredCompilation
  *                   -XX:CompileCommand=compileonly,compiler.c2.TestCMoveInfiniteGVN::test
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN -XX:StressSeed=43739875
+ *                   compiler.c2.TestCMoveInfiniteGVN
+ * @run main/othervm -Xcomp -XX:-TieredCompilation
+ *                   -XX:CompileCommand=compileonly,compiler.c2.TestCMoveInfiniteGVN::test
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN
  *                   compiler.c2.TestCMoveInfiniteGVN
  */
 

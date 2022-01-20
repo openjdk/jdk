@@ -84,19 +84,16 @@ Node *CMoveNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
   assert(in(Condition) != this &&
          in(IfFalse)   != this &&
-         in(IfTrue)    != this, "dead loop in CMoveNode::Ideal" );
+         in(IfTrue)    != this, "dead loop in CMoveNode::Ideal");
   if (phase->type(in(Condition)) == Type::TOP ||
       phase->type(in(IfFalse))   == Type::TOP ||
       phase->type(in(IfTrue))    == Type::TOP) {
     return NULL;
   }
   // Canonicalize the node by moving constants to the right input.
-  if (phase->type(in(IfFalse))->singleton() && !phase->type(in(IfTrue))->singleton()) {
-    if (in(Condition)->is_Bool()) {
-      BoolNode* b  = in(Condition)->as_Bool();
-      BoolNode* b2 = b->negate(phase);
-      return make(in(Control), phase->transform(b2), in(IfTrue), in(IfFalse), _type);
-    }
+  if (in(Condition)->is_Bool() && phase->type(in(IfFalse))->singleton() && !phase->type(in(IfTrue))->singleton()) {
+    BoolNode* b = in(Condition)->as_Bool()->negate(phase);
+    return make(in(Control), phase->transform(b), in(IfTrue), in(IfFalse), _type);
   }
   return NULL;
 }
