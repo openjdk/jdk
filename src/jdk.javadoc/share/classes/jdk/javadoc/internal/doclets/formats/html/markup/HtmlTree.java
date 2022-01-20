@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,12 +85,6 @@ public class HtmlTree extends Content {
     private List<Content> content = List.of();
 
     /**
-     * A sentinel value to explicitly indicate empty content.
-     * The '==' identity of this object is significant.
-     */
-    public static final Content EMPTY = Text.of("");
-
-    /**
      * Creates an {@code HTMLTree} object representing an HTML element
      * with the given name.
      *
@@ -170,15 +164,36 @@ public class HtmlTree extends Content {
     /**
      * Adds additional content for the HTML element.
      *
+     * @implSpec In order to facilitate creation of succinct output this method
+     * silently drops empty content as determined by {@link #isEmpty()}.
+     * Use {@link #addUnchecked(Content)} to add content unconditionally.
+     *
      * @param content the content
+     * @return this HTML tree
      */
     @Override
     public HtmlTree add(Content content) {
         if (content instanceof ContentBuilder cb) {
             cb.contents.forEach(this::add);
+        } else if (!content.isEmpty()) {
+            // quietly avoid adding empty or invalid nodes
+            if (this.content.isEmpty())
+                this.content = new ArrayList<>();
+            this.content.add(content);
         }
-        else if (content == HtmlTree.EMPTY || content.isValid()) {
-            // quietly avoid adding empty or invalid nodes (except EMPTY)
+        return this;
+    }
+
+    /**
+     * Adds content to this HTML tree without checking for emptiness.
+     *
+     * @param content the content to add
+     * @return this HTML tree
+     */
+    public HtmlTree addUnchecked(Content content) {
+        if (content instanceof ContentBuilder cb) {
+            cb.contents.forEach(this::addUnchecked);
+        } else {
             if (this.content.isEmpty())
                 this.content = new ArrayList<>();
             this.content.add(content);
@@ -743,6 +758,17 @@ public class HtmlTree extends Content {
     }
 
     /**
+     * Creates an HTML {@code SPAN} element with the given style.
+     *
+     * @param styleClass the style
+     * @return the element
+     */
+    public static HtmlTree SPAN(HtmlStyle styleClass) {
+        return new HtmlTree(TagName.SPAN)
+                .setStyle(styleClass);
+    }
+
+    /**
      * Creates an HTML {@code SPAN} element with the given style and some content.
      *
      * @param styleClass the style
@@ -863,11 +889,6 @@ public class HtmlTree extends Content {
         return htmlTree;
     }
 
-    @Override
-    public boolean isEmpty() {
-        return (!hasContent() && !hasAttrs());
-    }
-
     /**
      * Returns true if the HTML tree has content.
      *
@@ -897,38 +918,21 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Returns true if the HTML tree is valid. This check is more specific to
-     * standard doclet and not exactly similar to W3C specifications. But it
-     * ensures HTML validation.
+     * Returns {@code true} if the HTML tree is empty.
      *
-     * @return true if the HTML tree is valid
+     * @implSpec This method always returns {@code false} for void elements (which are not
+     * expected to have content) as well as elements that may be used without content, such
+     * as the {@code script} or {@code a} elements. Other elements are considered empty
+     * if they do not contain any content.
+     *
+     * @return true if the HTML tree is empty
      */
     @Override
-    public boolean isValid() {
-        switch (tagName) {
-            case A:
-                return (hasAttr(HtmlAttr.ID) || (hasAttr(HtmlAttr.HREF) && hasContent()));
-            case BR:
-                return (!hasContent() && (!hasAttrs() || hasAttr(HtmlAttr.CLEAR)));
-            case HR:
-            case INPUT:
-                return (!hasContent());
-            case IMG:
-                return (hasAttr(HtmlAttr.SRC) && hasAttr(HtmlAttr.ALT) && !hasContent());
-            case LINK:
-                return (hasAttr(HtmlAttr.HREF) && !hasContent());
-            case META:
-                return (hasAttr(HtmlAttr.CONTENT) && !hasContent());
-            case SCRIPT:
-                return ((hasAttr(HtmlAttr.TYPE) && hasAttr(HtmlAttr.SRC) && !hasContent()) ||
-                        (hasAttr(HtmlAttr.TYPE) && hasContent()));
-            case SPAN:
-                return (hasAttr(HtmlAttr.ID) || hasContent());
-            case WBR:
-                return (!hasContent());
-            default :
-                return hasContent();
-        }
+    public boolean isEmpty() {
+        return !isVoid()
+            && !hasContent()
+            && tagName != TagName.SCRIPT
+            && tagName != TagName.A;
     }
 
     /**
@@ -939,14 +943,10 @@ public class HtmlTree extends Content {
      * @see <a href="https://www.w3.org/TR/html51/dom.html#kinds-of-content-phrasing-content">Phrasing Content</a>
      */
     public boolean isInline() {
-        switch (tagName) {
-            case A: case BUTTON: case BR: case CODE: case EM: case I: case IMG:
-            case LABEL: case SMALL: case SPAN: case STRONG: case SUB: case SUP:
-            case WBR:
-                return true;
-            default:
-                return false;
-        }
+        return switch (tagName) {
+            case A, BUTTON, BR, CODE, EM, I, IMG, LABEL, SMALL, SPAN, STRONG, SUB, SUP, WBR -> true;
+            default -> false;
+        };
     }
 
     /**
@@ -957,12 +957,10 @@ public class HtmlTree extends Content {
      * @see <a href="https://www.w3.org/TR/html51/syntax.html#void-elements">Void Elements</a>
      */
     public boolean isVoid() {
-        switch (tagName) {
-            case BR: case HR: case IMG: case INPUT: case LINK: case META: case WBR:
-                return true;
-            default:
-                return false;
-        }
+        return switch (tagName) {
+            case BR, HR, IMG, INPUT, LINK, META, WBR -> true;
+            default -> false;
+        };
     }
 
     @Override

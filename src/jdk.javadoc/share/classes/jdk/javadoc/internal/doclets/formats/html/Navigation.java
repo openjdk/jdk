@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -612,15 +612,16 @@ public class Navigation {
         Content skipNavLinks = contents.getContent("doclet.Skip_navigation_links");
         String toggleNavLinks = configuration.getDocResources().getText("doclet.Toggle_navigation_links");
         tree.add(MarkerComments.START_OF_TOP_NAVBAR);
+        HtmlTree iconSpan = HtmlTree.SPAN(HtmlStyle.navBarToggleIcon).addUnchecked(Text.EMPTY);
         navDiv.setStyle(HtmlStyle.topNav)
                 .setId(HtmlIds.NAVBAR_TOP)
                 .add(new HtmlTree(TagName.BUTTON).setId(HtmlIds.NAVBAR_TOGGLE_BUTTON)
                         .put(HtmlAttr.ARIA_CONTROLS, HtmlIds.NAVBAR_TOP.name())
                         .put(HtmlAttr.ARIA_EXPANDED, String.valueOf(false))
                         .put(HtmlAttr.ARIA_LABEL, toggleNavLinks)
-                        .add(HtmlTree.SPAN(HtmlStyle.navBarToggleIcon, HtmlTree.EMPTY))
-                        .add(HtmlTree.SPAN(HtmlStyle.navBarToggleIcon, HtmlTree.EMPTY))
-                        .add(HtmlTree.SPAN(HtmlStyle.navBarToggleIcon, HtmlTree.EMPTY)))
+                        .add(iconSpan)
+                        .add(iconSpan)
+                        .add(iconSpan))
                 .add(HtmlTree.DIV(HtmlStyle.skipNav,
                         links.createLink(HtmlIds.SKIP_NAVBAR_TOP, skipNavLinks,
                                 skipNavLinks.toString())));
@@ -649,9 +650,11 @@ public class Navigation {
         addSummaryLinks(ulNavSummary, false);
         div.add(ulNavSummary);
         // Add the detail links if present.
-        HtmlTree ulNavDetail = new HtmlTree(TagName.UL).setStyle(HtmlStyle.subNavList);
-        addDetailLinks(ulNavDetail, false);
-        div.add(ulNavDetail);
+        if (documentedPage == PageMode.CLASS) {
+            HtmlTree ulNavDetail = new HtmlTree(TagName.UL).setStyle(HtmlStyle.subNavList);
+            addDetailLinks(ulNavDetail, false);
+            div.add(ulNavDetail);
+        }
         subDiv.add(div);
 
         if (addSearch) {
@@ -660,7 +663,8 @@ public class Navigation {
         tree.add(subDiv);
 
         tree.add(MarkerComments.END_OF_TOP_NAVBAR);
-        tree.add(HtmlTree.SPAN(HtmlStyle.skipNav, HtmlTree.EMPTY)
+        tree.add(HtmlTree.SPAN(HtmlStyle.skipNav)
+                .addUnchecked(Text.EMPTY)
                 .setId(HtmlIds.SKIP_NAVBAR_TOP));
 
         return tree;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,16 +105,6 @@ public abstract class Content {
      * @return true if no content to be displayed else return false
      */
     public abstract boolean isEmpty();
-
-    /**
-     * Returns true if the content is valid. This allows filtering during
-     * {@link #add(Content) addition}.
-     *
-     * @return true if the content is valid else return false
-     */
-    public boolean isValid() {
-        return !isEmpty();
-    }
 
     /**
      * Return the number of characters of plain text content in this object

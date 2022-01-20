@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1377,12 +1377,14 @@ public class HtmlDocletWriter {
         }
         Content div;
         Content result = commentTagsToContent(null, element, tags, first, inSummary);
-        if (depr) {
-            div = HtmlTree.DIV(HtmlStyle.deprecationComment, result);
-            htmltree.add(div);
-        } else {
-            div = HtmlTree.DIV(HtmlStyle.block, result);
-            htmltree.add(div);
+        if (!result.isEmpty()) {
+            if (depr) {
+                div = HtmlTree.DIV(HtmlStyle.deprecationComment, result);
+                htmltree.add(div);
+            } else {
+                div = HtmlTree.DIV(HtmlStyle.block, result);
+                htmltree.add(div);
+            }
         }
         if (tags.isEmpty()) {
             htmltree.add(Entity.NO_BREAK_SPACE);

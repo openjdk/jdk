@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,7 +207,7 @@ public class SourceToHTMLConverter {
                     .resolve(configuration.docPaths.forPackage(te))
                     .invert();
             Content body = getHeader();
-            Content pre = new HtmlTree(TagName.PRE);
+            HtmlTree pre = new HtmlTree(TagName.PRE);
             try (LineNumberReader reader = new LineNumberReader(r)) {
                 while ((line = reader.readLine()) != null) {
                     addLineNo(pre, lineno);
@@ -292,8 +292,7 @@ public class SourceToHTMLConverter {
      * @param lineno The line number
      */
     private static void addLineNo(Content pre, int lineno) {
-        HtmlTree span = new HtmlTree(TagName.SPAN);
-        span.setStyle(HtmlStyle.sourceLineNo);
+        HtmlTree span = HtmlTree.SPAN(HtmlStyle.sourceLineNo);
         if (lineno < 10) {
             span.add("00" + Integer.toString(lineno));
         } else if (lineno < 100) {
@@ -311,12 +310,12 @@ public class SourceToHTMLConverter {
      * @param line the string to format.
      * @param currentLineNo the current number.
      */
-    private void addLine(Content pre, String line, int currentLineNo) {
+    private void addLine(HtmlTree pre, String line, int currentLineNo) {
         if (line != null) {
             Content anchor = HtmlTree.SPAN_ID(
                     HtmlIds.forLine(currentLineNo),
                     Text.of(utils.replaceTabs(line)));
-            pre.add(anchor);
+            pre.addUnchecked(anchor);
             pre.add(NEW_LINE);
         }
     }

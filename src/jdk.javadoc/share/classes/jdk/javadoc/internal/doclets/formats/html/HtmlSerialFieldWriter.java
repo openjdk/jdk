@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
     @Override
     public Content getSerializableFields(String heading, Content serializableFieldsTree) {
         HtmlTree section = HtmlTree.SECTION(HtmlStyle.detail);
-        if (serializableFieldsTree.isValid()) {
+        if (!serializableFieldsTree.isEmpty()) {
             Content headingContent = Text.of(heading);
             Content serialHeading = HtmlTree.HEADING(Headings.SerializedForm.CLASS_SUBHEADING, headingContent);
             section.add(serialHeading);

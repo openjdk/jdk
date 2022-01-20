@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public class Signatures {
                 ? "open module" : "module";
         signature.add(label);
         signature.add(" ");
-        HtmlTree nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
+        HtmlTree nameSpan = HtmlTree.SPAN(HtmlStyle.elementName);
         nameSpan.add(mdle.getQualifiedName().toString());
         signature.add(nameSpan);
         return signature;
@@ -92,7 +92,7 @@ public class Signatures {
             signature.add(HtmlTree.SPAN(HtmlStyle.annotations, annotations));
         }
         signature.add("package ");
-        HtmlTree nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
+        HtmlTree nameSpan = HtmlTree.SPAN(HtmlStyle.elementName);
         nameSpan.add(pkg.getQualifiedName().toString());
         signature.add(nameSpan);
         return signature;
@@ -129,7 +129,7 @@ public class Signatures {
             }
             content.add(HtmlTree.SPAN(HtmlStyle.modifiers, modifiers));
 
-            HtmlTree nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
+            HtmlTree nameSpan = HtmlTree.SPAN(HtmlStyle.elementName);
             Content className = Text.of(utils.getSimpleName(typeElement));
             if (configuration.getOptions().linkSource()) {
                 writer.addSrcLink(typeElement, className, nameSpan);
@@ -147,8 +147,7 @@ public class Signatures {
                 content.add(getRecordComponents());
             }
             if (!utils.isAnnotationType(typeElement)) {
-                Content extendsImplements = new HtmlTree(TagName.SPAN)
-                        .setStyle(HtmlStyle.extendsImplements);
+                Content extendsImplements = HtmlTree.SPAN(HtmlStyle.extendsImplements);
                 if (!utils.isInterface(typeElement)) {
                     TypeMirror superclass = utils.getFirstVisibleSuperClass(typeElement);
                     if (superclass != null) {
@@ -190,7 +189,7 @@ public class Signatures {
                     .filter(t -> utils.isLinkable(utils.asTypeElement(t)))
                     .toList();
             if (!linkablePermits.isEmpty()) {
-                Content permitsSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.permits);
+                Content permitsSpan = HtmlTree.SPAN(HtmlStyle.permits);
                 boolean isFirst = true;
                 for (TypeMirror type : linkablePermits) {
                     if (isFirst) {
@@ -473,7 +472,7 @@ public class Signatures {
             }
 
             // Name
-            HtmlTree nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
+            HtmlTree nameSpan = HtmlTree.SPAN(HtmlStyle.elementName);
             if (memberWriter.options.linkSource()) {
                 Content name = Text.of(memberWriter.name(element));
                 memberWriter.writer.addSrcLink(element, name, nameSpan);
