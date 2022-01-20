@@ -958,7 +958,7 @@ void TouchedMethodsDCmd::execute(DCmdSource source, TRAPS) {
 
 ClassesDCmd::ClassesDCmd(outputStream* output, bool heap) :
                                      DCmdWithParser(output, heap),
-  _verbose("verbose", "Dump the detail content of each internal class representation",
+  _verbose("-verbose", "Dump the detail content of Java class",
            "BOOLEAN", false, "false") {
   _dcmdparser.add_dcmd_option(&_verbose);
 }
