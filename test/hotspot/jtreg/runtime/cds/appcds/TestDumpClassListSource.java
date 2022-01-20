@@ -144,7 +144,7 @@ public class TestDumpClassListSource {
 
         output.shouldHaveExitValue(0);
         checkMatch(listFileName, sourceTarget, EXPECT_NOMATCH, "Failed to filter " + sourceTarget + " in class list file");
-        checkMatch(listFileName, "Hello", EXPECT_NOMATCH,"Hello should not be logged in class list file");
+        checkMatch(listFileName, "Hello", EXPECT_NOMATCH, "Hello should not be logged in class list file");
 
         fileArchive.delete();
         fileList.delete();

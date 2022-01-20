@@ -30,7 +30,7 @@ import java.security.ProtectionDomain;
 
 public class ClassListWithCustomClassNoSource {
     private static byte[] helloBytes;
-    private static final String HELLO="Hello";
+    private static final String HELLO = "Hello";
     static class CL extends ClassLoader {
         private ProtectionDomain pd;
         public CL(String name, ClassLoader parent, ProtectionDomain protD) {
@@ -69,15 +69,15 @@ public class ClassListWithCustomClassNoSource {
             URL url = ClassListWithCustomClassNoSource.class.getProtectionDomain().getCodeSource().getLocation();
             URLClassLoader urlLoader = new URLClassLoader("HelloClassLoader", new URL[] {url}, null);
             Class<?> cls = urlLoader.loadClass(HELLO);
-           if (cls != null) {
-               System.out.println(HELLO + " was loaded by " + cls.getClassLoader().getName());
-               if (urlLoader != cls.getClassLoader()) {
-                   System.out.println(HELLO + " was not loaded by " + urlLoader.getName());
-               }
-           } else {
-               System.out.println(HELLO + " is not loaded");
-           }
-           break;
+            if (cls != null) {
+                System.out.println(HELLO + " was loaded by " + cls.getClassLoader().getName());
+                if (urlLoader != cls.getClassLoader()) {
+                    System.out.println(HELLO + " was not loaded by " + urlLoader.getName());
+                }
+            } else {
+                System.out.println(HELLO + " is not loaded");
+            }
+            break;
         default:
             throw new RuntimeException("Should have one argument,  1, 2 or 3");
         }
