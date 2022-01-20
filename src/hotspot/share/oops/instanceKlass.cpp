@@ -2086,7 +2086,7 @@ void PrintClassClosure::do_klass(Klass* k)  {
   } else {
     _st->print("%-20s  ","");
   }
-  // misc flags
+  // misc flags(Changes should synced with ClassesDCmd::ClassesDCmd help doc)
   char buf[10];
   int i = 0;
   if (k->has_finalizer()) buf[i++] = 'F';
