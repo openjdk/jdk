@@ -268,9 +268,7 @@ int GenericTaskQueue<E, F, N>::next_random_queue_id() {
 }
 
 template<class T, MEMFLAGS F>
-typename T::PopResult GenericTaskQueueSet<T, F>::steal_best_of_2(uint queue_num, E& t) {
-  typedef typename T::PopResult PopResult;
-
+typename GenericTaskQueueSet<T, F>::PopResult GenericTaskQueueSet<T, F>::steal_best_of_2(uint queue_num, E& t) {
   if (_n > 2) {
     T* const local_queue = _queues[queue_num];
     uint k1 = queue_num;
@@ -293,19 +291,19 @@ typename T::PopResult GenericTaskQueueSet<T, F>::steal_best_of_2(uint queue_num,
     uint sz2 = _queues[k2]->size();
 
     uint sel_k = 0;
-    PopResult suc = T::Empty;
+    PopResult suc = PopResult::Empty;
 
     if (sz2 > sz1) {
       sel_k = k2;
       suc = _queues[k2]->pop_global(t);
-      TASKQUEUE_STATS_ONLY(queue(queue_num)->stats.record_steal_attempt((uint)suc);)
+      TASKQUEUE_STATS_ONLY(queue(queue_num)->record_steal_attempt(suc);)
     } else if (sz1 > 0) {
       sel_k = k1;
       suc = _queues[k1]->pop_global(t);
-      TASKQUEUE_STATS_ONLY(queue(queue_num)->stats.record_steal_attempt((uint)suc);)
+      TASKQUEUE_STATS_ONLY(queue(queue_num)->record_steal_attempt(suc);)
     }
 
-    if (suc == T::Success) {
+    if (suc == PopResult::Success) {
       local_queue->set_last_stolen_queue_id(sel_k);
     } else {
       local_queue->invalidate_last_stolen_queue_id();
@@ -316,12 +314,12 @@ typename T::PopResult GenericTaskQueueSet<T, F>::steal_best_of_2(uint queue_num,
     // Just try the other one.
     uint k = (queue_num + 1) % 2;
     PopResult res = _queues[k]->pop_global(t);
-    TASKQUEUE_STATS_ONLY(queue(queue_num)->stats.record_steal_attempt((uint)res);)
+    TASKQUEUE_STATS_ONLY(queue(queue_num)->record_steal_attempt(res);)
     return res;
   } else {
     assert(_n == 1, "can't be zero.");
-    TASKQUEUE_STATS_ONLY(queue(queue_num)->stats.record_steal_attempt((uint)T::Empty);)
-    return T::Empty;
+    TASKQUEUE_STATS_ONLY(queue(queue_num)->record_steal_attempt(PopResult::Empty);)
+    return PopResult::Empty;
   }
 }
 
@@ -331,16 +329,16 @@ bool GenericTaskQueueSet<T, F>::steal(uint queue_num, E& t) {
 
   TASKQUEUE_STATS_ONLY(uint contended_in_a_row = 0;)
   for (uint i = 0; i < num_retries; i++) {
-    typename T::PopResult sr = steal_best_of_2(queue_num, t);
-    if (sr == T::Success) {
+    PopResult sr = steal_best_of_2(queue_num, t);
+    if (sr == PopResult::Success) {
       return true;
-    } else if (sr == T::Contended) {
+    } else if (sr == PopResult::Contended) {
       TASKQUEUE_STATS_ONLY(
         contended_in_a_row++;
         queue(queue_num)->stats.record_contended_in_a_row(contended_in_a_row);
       )
     } else {
-      assert(sr == T::Empty, "must be");
+      assert(sr == PopResult::Empty, "must be");
       TASKQUEUE_STATS_ONLY(contended_in_a_row = 0;)
     }
   }
