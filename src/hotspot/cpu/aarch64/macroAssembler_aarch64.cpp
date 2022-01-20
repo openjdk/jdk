@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,6 +29,7 @@
 #include "jvm.h"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "ci/ciEnv.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
@@ -159,8 +160,7 @@ int MacroAssembler::pd_patch_instruction_size(address branch, address target) {
     Instruction_aarch64::patch(branch+8, 20, 5, (dest >>= 16) & 0xffff);
     assert(target_addr_for_insn(branch) == target, "should be");
     instructions = 3;
-  } else if (Instruction_aarch64::extract(insn, 31, 22) == 0b1011100101 &&
-             Instruction_aarch64::extract(insn, 4, 0) == 0b11111) {
+  } else if (NativeInstruction::is_ldrw_to_zr(address(&insn))) {
     // nothing to do
     assert(target == 0, "did not expect to relocate target for polling page load");
   } else {
@@ -283,13 +283,17 @@ address MacroAssembler::target_addr_for_insn(address insn_addr, unsigned insn) {
     return address(uint64_t(Instruction_aarch64::extract(insns[0], 20, 5))
                    + (uint64_t(Instruction_aarch64::extract(insns[1], 20, 5)) << 16)
                    + (uint64_t(Instruction_aarch64::extract(insns[2], 20, 5)) << 32));
-  } else if (Instruction_aarch64::extract(insn, 31, 22) == 0b1011100101 &&
-             Instruction_aarch64::extract(insn, 4, 0) == 0b11111) {
-    return 0;
   } else {
     ShouldNotReachHere();
   }
   return address(((uint64_t)insn_addr + (offset << 2)));
+}
+
+address MacroAssembler::target_addr_for_insn_or_null(address insn_addr, unsigned insn) {
+  if (NativeInstruction::is_ldrw_to_zr(address(&insn))) {
+    return 0;
+  }
+  return MacroAssembler::target_addr_for_insn(insn_addr, insn);
 }
 
 void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod) {

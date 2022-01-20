@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,13 @@ void G1DirtyCardQueueSet::enqueue_completed_buffer(BufferNode* cbn) {
   // Increment _num_cards before adding to queue, so queue removal doesn't
   // need to deal with _num_cards possibly going negative.
   size_t new_num_cards = Atomic::add(&_num_cards, buffer_size() - cbn->index());
-  _completed.push(*cbn);
+  {
+    // Perform push in CS.  The old tail may be popped while the push is
+    // observing it (attaching it to the new buffer).  We need to ensure it
+    // can't be reused until the push completes, to avoid ABA problems.
+    GlobalCounter::CriticalSection cs(Thread::current());
+    _completed.push(*cbn);
+  }
   if ((new_num_cards > process_cards_threshold()) &&
       (_primary_refinement_thread != NULL)) {
     _primary_refinement_thread->activate();
