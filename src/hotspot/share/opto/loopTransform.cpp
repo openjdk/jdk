@@ -2658,21 +2658,22 @@ bool PhaseIdealLoop::is_scaled_iv_plus_extra_offset(Node* exp1, Node* exp2, Node
                                                     BasicType bt, bool& converted, int depth) {
   Node* offset2 = NULL;
   if (depth < 2 &&
-          is_scaled_iv_plus_offset(exp1, iv, p_scale,
-                               &offset2, bt, &converted, depth+1)) {
-    if (bt == T_LONG && _igvn.type(offset2)->isa_int() &&
-        (!_igvn.type(offset2)->is_int()->is_con() || _igvn.type(offset2)->is_int()->get_con() != 0)) {
+      is_scaled_iv_plus_offset(exp1, iv, p_scale,
+                               &offset2, bt, &converted, depth+1) &&
+      offset2->is_Con()) {
+    if (bt == T_LONG && _igvn.type(offset2)->isa_int()) {
+      if (_igvn.type(offset2)->is_int()->is_con() && _igvn.type(offset2)->is_int()->get_con() == 0) {
+        if (p_offset != NULL) {
+          *p_offset = exp2;
+        }
+        return true;
+      }
       return false;
     }
     if (p_offset != NULL) {
       Node* ctrl_off2 = get_ctrl(offset2);
-      if (bt == T_LONG && _igvn.type(offset2)->isa_int()) {
-        offset2 = new ConvI2LNode(offset2);
-        register_new_node(offset2, ctrl_off2);
-      }
-      Node* ctrl_exp2 = get_ctrl(exp2);
       Node* offset = AddNode::make(offset2, exp2, bt);
-      register_new_node(offset, get_early_ctrl(offset));
+      register_new_node(offset, ctrl_off2);
       *p_offset = offset;
     }
     return true;
