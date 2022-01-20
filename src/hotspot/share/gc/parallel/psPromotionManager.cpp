@@ -95,7 +95,7 @@ PSPromotionManager* PSPromotionManager::gc_thread_promotion_manager(uint index) 
 
 PSPromotionManager* PSPromotionManager::vm_thread_promotion_manager() {
   assert(_manager_array != NULL, "Sanity");
-  return &_manager_array[ParallelGCThreads];
+  return &_manager_array[0];
 }
 
 void PSPromotionManager::pre_scavenge() {
