@@ -63,7 +63,6 @@ JNIEXPORT void JNICALL Java_TestDwarf_crashNativeDereferenceNull(JNIEnv* env, jc
   dereference_null();
 }
 
-
 JNIEXPORT void JNICALL Java_TestDwarf_crashNativeMultipleMethods(JNIEnv* env, jclass jclazz, jint x) {
   // foo() is not inlined
   foo(x - 2);
