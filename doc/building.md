@@ -374,9 +374,10 @@ available for this update.
 
 ### Microsoft Visual Studio
 
-The minimum accepted version of Visual Studio is 2017. Older versions will not
-be accepted by `configure` and will not work. The maximum accepted
-version of Visual Studio is 2019.
+For aarch64 machines running Windows the minimum accepted version is Visual Studio 2019 
+(16.8 or higher). For all other platforms the minimum accepted version of 
+Visual Studio is 2017. Older versions will not be accepted by `configure` and will 
+not work. For all platforms the maximum accepted version of Visual Studio is 2022.
 
 If you have multiple versions of Visual Studio installed, `configure` will by
 default pick the latest. You can request a specific version to be used by

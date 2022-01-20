@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@ import java.io.IOException;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.CopyOption;
+import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -683,5 +686,79 @@ public class CDSTestUtils {
 
     private static boolean isAsciiPrintable(char ch) {
         return ch >= 32 && ch < 127;
+    }
+
+    // JDK utility
+
+    // Do a cheap clone of the JDK. Most files can be sym-linked. However, $JAVA_HOME/bin/java and $JAVA_HOME/lib/.../libjvm.so"
+    // must be copied, because the java.home property is derived from the canonicalized paths of these 2 files.
+    // Set a list of {jvm, "java"} which will be physically copied. If a file needs copied physically, add it to the list.
+    private static String[] phCopied = {System.mapLibraryName("jvm"), "java"};
+    public static void clone(File src, File dst) throws Exception {
+        if (dst.exists()) {
+            if (!dst.isDirectory()) {
+                throw new RuntimeException("Not a directory :" + dst);
+            }
+        } else {
+            if (!dst.mkdir()) {
+                throw new RuntimeException("Cannot create directory: " + dst);
+            }
+        }
+        // final String jvmLib = System.mapLibraryName("jvm");
+        for (String child : src.list()) {
+            if (child.equals(".") || child.equals("..")) {
+                continue;
+            }
+
+            File child_src = new File(src, child);
+            File child_dst = new File(dst, child);
+            if (child_dst.exists()) {
+                throw new RuntimeException("Already exists: " + child_dst);
+            }
+            if (child_src.isFile()) {
+                boolean needPhCopy = false;
+                for (String target : phCopied) {
+                    if (child.equals(target)) {
+                        needPhCopy = true;
+                        break;
+                    }
+                }
+                if (needPhCopy) {
+                    Files.copy(child_src.toPath(), /* copy data to -> */ child_dst.toPath(),
+                               new CopyOption[] { StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES});
+                } else {
+                    Files.createSymbolicLink(child_dst.toPath(),  /* link to -> */ child_src.toPath());
+                }
+            } else {
+                clone(child_src, child_dst);
+            }
+        }
+    }
+
+    // modulesDir, like $JDK/lib
+    // oldName, module name under modulesDir
+    // newName, new name for oldName
+    public static void rename(File fromFile, File toFile) throws Exception {
+        if (!fromFile.exists()) {
+            throw new RuntimeException(fromFile.getName() + " does not exist");
+        }
+
+        if (toFile.exists()) {
+            throw new RuntimeException(toFile.getName() + " already exists");
+        }
+
+        boolean success = fromFile.renameTo(toFile);
+        if (!success) {
+            throw new RuntimeException("rename file " + fromFile.getName()+ " to " + toFile.getName() + " failed");
+        }
+    }
+
+    public static ProcessBuilder makeBuilder(String... args) throws Exception {
+        System.out.print("[");
+        for (String s : args) {
+            System.out.print(" " + s);
+        }
+        System.out.println(" ]");
+        return new ProcessBuilder(args);
     }
 }

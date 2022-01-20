@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,9 +181,7 @@ public class SharedArchiveConsistency {
         copiedJsa = CDSArchiveUtils.copyArchiveFile(orgJsaFile, modVersion);
         CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetVersion(), version);
         output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs);
-        output.shouldContain("The shared archive file has the wrong version")
-              .shouldContain("_version expected: " + currentCDSArchiveVersion)
-              .shouldContain("actual: " + version);
+        output.shouldContain("The shared archive file version " + version + " does not match the required version " + currentCDSArchiveVersion);
         if (shareAuto) {
             output.shouldContain(HELLO_WORLD);
         }

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -123,9 +123,18 @@ public:
   };
 };
 
+// Assert that the given node is not a var shift.
+bool assert_not_var_shift(const Node *n);
 %}
 
 source %{
+
+// Assert that the given node is not a var shift.
+bool assert_not_var_shift(const Node *n) {
+  assert(!n->as_ShiftV()->is_var_shift(), "illegal var shift");
+  return true;
+}
+
 #define __ _masm.
 
 static FloatRegister reg_to_FloatRegister_object(int register_encoding);
@@ -10591,7 +10600,7 @@ instruct vneg16B_reg(vecX dst, vecX src) %{
   ins_pipe( ialu_reg_reg ); // FIXME
 %}
 
-// ------------------------------ Shift ---------------------------------------
+// ------------------------------ ShiftCount ----------------------------------
 
 instruct vslcntD(vecD dst, iRegI cnt) %{
   predicate(n->as_Vector()->length_in_bytes() == 8 && VM_Version::has_simd());
@@ -10649,6 +10658,8 @@ instruct vsrcntX(vecX dst, iRegI cnt) %{
   %}
   ins_pipe( ialu_reg_reg ); // FIXME
 %}
+
+// ------------------------------ LogicalShift --------------------------------
 
 // Byte vector logical left/right shift based on sign
 instruct vsh8B_reg(vecD dst, vecD src, vecD shift) %{
@@ -10766,9 +10777,9 @@ instruct vsh2L_reg(vecX dst, vecX src, vecX shift) %{
   ins_pipe( ialu_reg_reg ); // FIXME
 %}
 
-// ------------------------------ LeftShift -----------------------------------
+// ------------------------------ LogicalLeftShift ----------------------------
 
-// Byte vector left shift
+// Byte vector logical left shift
 instruct vsl8B_reg(vecD dst, vecD src, vecD shift) %{
   predicate(n->as_Vector()->length() == 8);
   match(Set dst (LShiftVB src shift));
@@ -10790,7 +10801,7 @@ instruct vsl16B_reg(vecX dst, vecX src, vecX shift) %{
 %}
 
 instruct vsl8B_immI(vecD dst, vecD src, immI shift) %{
-  predicate(n->as_Vector()->length() == 8);
+  predicate(n->as_Vector()->length() == 8 && assert_not_var_shift(n));
   match(Set dst (LShiftVB src (LShiftCntV shift)));
   size(4);
   ins_cost(DEFAULT_COST); // FIXME
@@ -10806,7 +10817,7 @@ instruct vsl8B_immI(vecD dst, vecD src, immI shift) %{
 %}
 
 instruct vsl16B_immI(vecX dst, vecX src, immI shift) %{
-  predicate(n->as_Vector()->length() == 16);
+  predicate(n->as_Vector()->length() == 16 && assert_not_var_shift(n));
   match(Set dst (LShiftVB src (LShiftCntV shift)));
   size(4);
   ins_cost(DEFAULT_COST); // FIXME
@@ -10821,11 +10832,10 @@ instruct vsl16B_immI(vecX dst, vecX src, immI shift) %{
   ins_pipe( ialu_reg_reg ); // FIXME
 %}
 
-// Shorts/Chars vector logical left/right shift
+// Shorts/Chars vector logical left shift
 instruct vsl4S_reg(vecD dst, vecD src, vecD shift) %{
   predicate(n->as_Vector()->length() == 4);
   match(Set dst (LShiftVS src shift));
-  match(Set dst (URShiftVS src shift));
   size(4*1);
   ins_cost(DEFAULT_COST*1); // FIXME
   expand %{
@@ -10836,7 +10846,6 @@ instruct vsl4S_reg(vecD dst, vecD src, vecD shift) %{
 instruct vsl8S_reg(vecX dst, vecX src, vecX shift) %{
   predicate(n->as_Vector()->length() == 8);
   match(Set dst (LShiftVS src shift));
-  match(Set dst (URShiftVS src shift));
   size(4*1);
   ins_cost(DEFAULT_COST*1); // FIXME
   expand %{
@@ -10845,7 +10854,7 @@ instruct vsl8S_reg(vecX dst, vecX src, vecX shift) %{
 %}
 
 instruct vsl4S_immI(vecD dst, vecD src, immI shift) %{
-  predicate(n->as_Vector()->length() == 4);
+  predicate(n->as_Vector()->length() == 4 && assert_not_var_shift(n));
   match(Set dst (LShiftVS src (LShiftCntV shift)));
   size(4);
   ins_cost(DEFAULT_COST); // FIXME
@@ -10861,7 +10870,7 @@ instruct vsl4S_immI(vecD dst, vecD src, immI shift) %{
 %}
 
 instruct vsl8S_immI(vecX dst, vecX src, immI shift) %{
-  predicate(n->as_Vector()->length() == 8);
+  predicate(n->as_Vector()->length() == 8 && assert_not_var_shift(n));
   match(Set dst (LShiftVS src shift));
   size(4);
   ins_cost(DEFAULT_COST); // FIXME
@@ -10876,11 +10885,10 @@ instruct vsl8S_immI(vecX dst, vecX src, immI shift) %{
   ins_pipe( ialu_reg_reg ); // FIXME
 %}
 
-// Integers vector logical left/right shift
+// Integers vector logical left shift
 instruct vsl2I_reg(vecD dst, vecD src, vecD shift) %{
   predicate(n->as_Vector()->length() == 2 && VM_Version::has_simd());
   match(Set dst (LShiftVI src shift));
-  match(Set dst (URShiftVI src shift));
   size(4*1);
   ins_cost(DEFAULT_COST*1); // FIXME
   expand %{
@@ -10891,7 +10899,6 @@ instruct vsl2I_reg(vecD dst, vecD src, vecD shift) %{
 instruct vsl4I_reg(vecX dst, vecX src, vecX shift) %{
   predicate(n->as_Vector()->length() == 4 && VM_Version::has_simd());
   match(Set dst (LShiftVI src shift));
-  match(Set dst (URShiftVI src shift));
   size(4*1);
   ins_cost(DEFAULT_COST*1); // FIXME
   expand %{
@@ -10900,7 +10907,9 @@ instruct vsl4I_reg(vecX dst, vecX src, vecX shift) %{
 %}
 
 instruct vsl2I_immI(vecD dst, vecD src, immI shift) %{
-  predicate(n->as_Vector()->length() == 2 && VM_Version::has_simd());
+  predicate(n->as_Vector()->length() == 2 &&
+            VM_Version::has_simd() &&
+            assert_not_var_shift(n));
   match(Set dst (LShiftVI src (LShiftCntV shift)));
   size(4);
   ins_cost(DEFAULT_COST); // FIXME
@@ -10916,7 +10925,9 @@ instruct vsl2I_immI(vecD dst, vecD src, immI shift) %{
 %}
 
 instruct vsl4I_immI(vecX dst, vecX src, immI shift) %{
-  predicate(n->as_Vector()->length() == 4 && VM_Version::has_simd());
+  predicate(n->as_Vector()->length() == 4 &&
+            VM_Version::has_simd() &&
+            assert_not_var_shift(n));
   match(Set dst (LShiftVI src (LShiftCntV shift)));
   size(4);
   ins_cost(DEFAULT_COST); // FIXME
@@ -10931,11 +10942,10 @@ instruct vsl4I_immI(vecX dst, vecX src, immI shift) %{
   ins_pipe( ialu_reg_reg ); // FIXME
 %}
 
-// Longs vector logical left/right shift
+// Longs vector logical left shift
 instruct vsl2L_reg(vecX dst, vecX src, vecX shift) %{
   predicate(n->as_Vector()->length() == 2);
   match(Set dst (LShiftVL src shift));
-  match(Set dst (URShiftVL src shift));
   size(4*1);
   ins_cost(DEFAULT_COST*1); // FIXME
   expand %{
@@ -10944,7 +10954,7 @@ instruct vsl2L_reg(vecX dst, vecX src, vecX shift) %{
 %}
 
 instruct vsl2L_immI(vecX dst, vecX src, immI shift) %{
-  predicate(n->as_Vector()->length() == 2);
+  predicate(n->as_Vector()->length() == 2 && assert_not_var_shift(n));
   match(Set dst (LShiftVL src (LShiftCntV shift)));
   size(4);
   ins_cost(DEFAULT_COST); // FIXME
@@ -10965,9 +10975,79 @@ instruct vsl2L_immI(vecX dst, vecX src, immI shift) %{
 // for negative data because java code convert short value into int with
 // sign extension before a shift.
 
+// Right shift with vector shift count on aarch32 SIMD is implemented as left
+// shift by negative shift count value.
+//
+// Method is_var_shift() denotes that vector shift count is a variable shift:
+// 1) for this case, vector shift count should be negated before conducting
+//    right shifts. E.g., vsrl4S_reg_var rule.
+// 2) for the opposite case, vector shift count is generated via RShiftCntV
+//    rules and is already negated there. Hence, no negation is needed.
+//    E.g., vsrl4S_reg rule.
+
 // Chars vector logical right shift
+instruct vsrl4S_reg(vecD dst, vecD src, vecD shift) %{
+  predicate(n->as_Vector()->length() == 4 && !n->as_ShiftV()->is_var_shift());
+  match(Set dst (URShiftVS src shift));
+  size(4);
+  ins_cost(DEFAULT_COST);
+  expand %{
+    vsh4S_reg(dst, src, shift);
+  %}
+%}
+
+instruct vsrl4S_reg_var(vecD dst, vecD src, vecD shift, vecD tmp) %{
+  predicate(n->as_Vector()->length() == 4 && n->as_ShiftV()->is_var_shift());
+  match(Set dst (URShiftVS src shift));
+  effect(TEMP tmp);
+  size(4*2);
+  ins_cost(DEFAULT_COST*2);
+  format %{
+    "VNEG.S8 $tmp.D,$shift.D\n\t! neg packed8B"
+    "VSHL.U16 $dst.D,$src.D,$tmp.D\t! logical right shift packed4S"
+  %}
+  ins_encode %{
+    bool quad = false;
+    __ vnegI($tmp$$FloatRegister, $shift$$FloatRegister,
+             MacroAssembler::VELEM_SIZE_8, quad);
+    __ vshlUI($dst$$FloatRegister, $tmp$$FloatRegister, $src$$FloatRegister,
+              MacroAssembler::VELEM_SIZE_16, quad);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct vsrl8S_reg(vecX dst, vecX src, vecX shift) %{
+  predicate(n->as_Vector()->length() == 8 && !n->as_ShiftV()->is_var_shift());
+  match(Set dst (URShiftVS src shift));
+  size(4);
+  ins_cost(DEFAULT_COST);
+  expand %{
+    vsh8S_reg(dst, src, shift);
+  %}
+%}
+
+instruct vsrl8S_reg_var(vecX dst, vecX src, vecX shift, vecX tmp) %{
+  predicate(n->as_Vector()->length() == 8 && n->as_ShiftV()->is_var_shift());
+  match(Set dst (URShiftVS src shift));
+  effect(TEMP tmp);
+  size(4*2);
+  ins_cost(DEFAULT_COST*2);
+  format %{
+    "VNEG.S8 $tmp.Q,$shift.Q\n\t! neg packed16B"
+    "VSHL.U16 $dst.Q,$src.Q,$tmp.Q\t! logical right shift packed8S"
+  %}
+  ins_encode %{
+    bool quad = true;
+    __ vnegI($tmp$$FloatRegister, $shift$$FloatRegister,
+             MacroAssembler::VELEM_SIZE_8, quad);
+    __ vshlUI($dst$$FloatRegister, $tmp$$FloatRegister, $src$$FloatRegister,
+              MacroAssembler::VELEM_SIZE_16, quad);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
 instruct vsrl4S_immI(vecD dst, vecD src, immI shift) %{
-  predicate(n->as_Vector()->length() == 4);
+  predicate(n->as_Vector()->length() == 4 && assert_not_var_shift(n));
   match(Set dst (URShiftVS src (RShiftCntV shift)));
   size(4);
   ins_cost(DEFAULT_COST); // FIXME
@@ -10983,7 +11063,7 @@ instruct vsrl4S_immI(vecD dst, vecD src, immI shift) %{
 %}
 
 instruct vsrl8S_immI(vecX dst, vecX src, immI shift) %{
-  predicate(n->as_Vector()->length() == 8);
+  predicate(n->as_Vector()->length() == 8 && assert_not_var_shift(n));
   match(Set dst (URShiftVS src (RShiftCntV shift)));
   size(4);
   ins_cost(DEFAULT_COST); // FIXME
@@ -10999,8 +11079,78 @@ instruct vsrl8S_immI(vecX dst, vecX src, immI shift) %{
 %}
 
 // Integers vector logical right shift
+instruct vsrl2I_reg(vecD dst, vecD src, vecD shift) %{
+  predicate(n->as_Vector()->length() == 2 &&
+            VM_Version::has_simd() &&
+            !n->as_ShiftV()->is_var_shift());
+  match(Set dst (URShiftVI src shift));
+  size(4);
+  ins_cost(DEFAULT_COST);
+  expand %{
+    vsh2I_reg(dst, src, shift);
+  %}
+%}
+
+instruct vsrl2I_reg_var(vecD dst, vecD src, vecD shift, vecD tmp) %{
+  predicate(n->as_Vector()->length() == 2 &&
+            VM_Version::has_simd() &&
+            n->as_ShiftV()->is_var_shift());
+  match(Set dst (URShiftVI src shift));
+  effect(TEMP tmp);
+  size(4*2);
+  ins_cost(DEFAULT_COST*2);
+  format %{
+    "VNEG.S8 $tmp.D,$shift.D\n\t! neg packed8B"
+    "VSHL.U32 $dst.D,$src.D,$tmp.D\t! logical right shift packed2I"
+  %}
+  ins_encode %{
+    bool quad = false;
+    __ vnegI($tmp$$FloatRegister, $shift$$FloatRegister,
+             MacroAssembler::VELEM_SIZE_8, quad);
+    __ vshlUI($dst$$FloatRegister, $tmp$$FloatRegister, $src$$FloatRegister,
+              MacroAssembler::VELEM_SIZE_32, quad);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct vsrl4I_reg(vecX dst, vecX src, vecX shift) %{
+  predicate(n->as_Vector()->length() == 4 &&
+            VM_Version::has_simd() &&
+            !n->as_ShiftV()->is_var_shift());
+  match(Set dst (URShiftVI src shift));
+  size(4);
+  ins_cost(DEFAULT_COST);
+  expand %{
+    vsh4I_reg(dst, src, shift);
+  %}
+%}
+
+instruct vsrl4I_reg_var(vecX dst, vecX src, vecX shift, vecX tmp) %{
+  predicate(n->as_Vector()->length() == 4 &&
+            VM_Version::has_simd() &&
+            n->as_ShiftV()->is_var_shift());
+  match(Set dst (URShiftVI src shift));
+  effect(TEMP tmp);
+  size(4*2);
+  ins_cost(DEFAULT_COST*2);
+  format %{
+    "VNEG.S8 $tmp.Q,$shift.Q\n\t! neg packed16B"
+    "VSHL.U32 $dst.Q,$src.Q,$tmp.Q\t! logical right shift packed4I"
+  %}
+  ins_encode %{
+    bool quad = true;
+    __ vnegI($tmp$$FloatRegister, $shift$$FloatRegister,
+             MacroAssembler::VELEM_SIZE_8, quad);
+    __ vshlUI($dst$$FloatRegister, $tmp$$FloatRegister, $src$$FloatRegister,
+              MacroAssembler::VELEM_SIZE_32, quad);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
 instruct vsrl2I_immI(vecD dst, vecD src, immI shift) %{
-  predicate(n->as_Vector()->length() == 2 && VM_Version::has_simd());
+  predicate(n->as_Vector()->length() == 2 &&
+            VM_Version::has_simd() &&
+            assert_not_var_shift(n));
   match(Set dst (URShiftVI src (RShiftCntV shift)));
   size(4);
   ins_cost(DEFAULT_COST); // FIXME
@@ -11016,7 +11166,9 @@ instruct vsrl2I_immI(vecD dst, vecD src, immI shift) %{
 %}
 
 instruct vsrl4I_immI(vecX dst, vecX src, immI shift) %{
-  predicate(n->as_Vector()->length() == 4 && VM_Version::has_simd());
+  predicate(n->as_Vector()->length() == 4 &&
+            VM_Version::has_simd() &&
+            assert_not_var_shift(n));
   match(Set dst (URShiftVI src (RShiftCntV shift)));
   size(4);
   ins_cost(DEFAULT_COST); // FIXME
@@ -11032,8 +11184,38 @@ instruct vsrl4I_immI(vecX dst, vecX src, immI shift) %{
 %}
 
 // Longs vector logical right shift
+instruct vsrl2L_reg(vecX dst, vecX src, vecX shift) %{
+  predicate(n->as_Vector()->length() == 2 && !n->as_ShiftV()->is_var_shift());
+  match(Set dst (URShiftVL src shift));
+  size(4);
+  ins_cost(DEFAULT_COST);
+  expand %{
+    vsh2L_reg(dst, src, shift);
+  %}
+%}
+
+instruct vsrl2L_reg_var(vecX dst, vecX src, vecX shift, vecX tmp) %{
+  predicate(n->as_Vector()->length() == 2 && n->as_ShiftV()->is_var_shift());
+  match(Set dst (URShiftVL src shift));
+  effect(TEMP tmp, DEF dst, USE src, USE shift);
+  size(4*2);
+  ins_cost(DEFAULT_COST*2);
+  format %{
+    "VNEG.S8 $tmp.Q,$shift.Q\n\t! neg packed16B"
+    "VSHL.U64 $dst.Q,$src.Q,$tmp.Q\t! logical right shift packed2L"
+  %}
+  ins_encode %{
+    bool quad = true;
+    __ vnegI($tmp$$FloatRegister, $shift$$FloatRegister,
+             MacroAssembler::VELEM_SIZE_8, quad);
+    __ vshlUI($dst$$FloatRegister, $tmp$$FloatRegister, $src$$FloatRegister,
+              MacroAssembler::VELEM_SIZE_64, quad);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
 instruct vsrl2L_immI(vecX dst, vecX src, immI shift) %{
-  predicate(n->as_Vector()->length() == 2);
+  predicate(n->as_Vector()->length() == 2 && assert_not_var_shift(n));
   match(Set dst (URShiftVL src (RShiftCntV shift)));
   size(4);
   ins_cost(DEFAULT_COST); // FIXME
@@ -11167,9 +11349,8 @@ instruct vsha2L_reg(vecX dst, vecX src, vecX shift) %{
 %}
 
 // Byte vector arithmetic right shift
-
 instruct vsra8B_reg(vecD dst, vecD src, vecD shift) %{
-  predicate(n->as_Vector()->length() == 8);
+  predicate(n->as_Vector()->length() == 8 && !n->as_ShiftV()->is_var_shift());
   match(Set dst (RShiftVB src shift));
   size(4);
   ins_cost(DEFAULT_COST); // FIXME
@@ -11178,8 +11359,28 @@ instruct vsra8B_reg(vecD dst, vecD src, vecD shift) %{
   %}
 %}
 
-instruct vsrl16B_reg(vecX dst, vecX src, vecX shift) %{
-  predicate(n->as_Vector()->length() == 16);
+instruct vsra8B_reg_var(vecD dst, vecD src, vecD shift, vecD tmp) %{
+  predicate(n->as_Vector()->length() == 8 && n->as_ShiftV()->is_var_shift());
+  match(Set dst (RShiftVB src shift));
+  effect(TEMP tmp);
+  size(4*2);
+  ins_cost(DEFAULT_COST*2);
+  format %{
+    "VNEG.S8 $tmp.D,$shift.D\n\t! neg packed8B"
+    "VSHL.S8 $dst.D,$src.D,$tmp.D\t! arithmetic right shift packed8B"
+  %}
+  ins_encode %{
+    bool quad = false;
+    __ vnegI($tmp$$FloatRegister, $shift$$FloatRegister,
+             MacroAssembler::VELEM_SIZE_8, quad);
+    __ vshlSI($dst$$FloatRegister, $tmp$$FloatRegister, $src$$FloatRegister,
+              MacroAssembler::VELEM_SIZE_8, quad);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct vsra16B_reg(vecX dst, vecX src, vecX shift) %{
+  predicate(n->as_Vector()->length() == 16 && !n->as_ShiftV()->is_var_shift());
   match(Set dst (RShiftVB src shift));
   size(4);
   ins_cost(DEFAULT_COST); // FIXME
@@ -11188,13 +11389,33 @@ instruct vsrl16B_reg(vecX dst, vecX src, vecX shift) %{
   %}
 %}
 
-instruct vsrl8B_immI(vecD dst, vecD src, immI shift) %{
-  predicate(n->as_Vector()->length() == 8);
+instruct vsra16B_reg_var(vecX dst, vecX src, vecX shift, vecX tmp) %{
+  predicate(n->as_Vector()->length() == 16 && n->as_ShiftV()->is_var_shift());
   match(Set dst (RShiftVB src shift));
+  effect(TEMP tmp);
+  size(4*2);
+  ins_cost(DEFAULT_COST*2);
+  format %{
+    "VNEG.S8 $tmp.Q,$shift.Q\n\t! neg packed16B"
+    "VSHL.S8 $dst.Q,$src.Q,$tmp.Q\t! arithmetic right shift packed16B"
+  %}
+  ins_encode %{
+    bool quad = true;
+    __ vnegI($tmp$$FloatRegister, $shift$$FloatRegister,
+             MacroAssembler::VELEM_SIZE_8, quad);
+    __ vshlSI($dst$$FloatRegister, $tmp$$FloatRegister, $src$$FloatRegister,
+              MacroAssembler::VELEM_SIZE_8, quad);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct vsra8B_immI(vecD dst, vecD src, immI shift) %{
+  predicate(n->as_Vector()->length() == 8 && assert_not_var_shift(n));
+  match(Set dst (RShiftVB src (RShiftCntV shift)));
   size(4);
   ins_cost(DEFAULT_COST); // FIXME
   format %{
-    "VSHR.S8 $dst.D,$src.D,$shift\t! logical right shift packed8B"
+    "VSHR.S8 $dst.D,$src.D,$shift\t! arithmetic right shift packed8B"
   %}
   ins_encode %{
     bool quad = false;
@@ -11204,13 +11425,13 @@ instruct vsrl8B_immI(vecD dst, vecD src, immI shift) %{
   ins_pipe( ialu_reg_reg ); // FIXME
 %}
 
-instruct vsrl16B_immI(vecX dst, vecX src, immI shift) %{
-  predicate(n->as_Vector()->length() == 16);
-  match(Set dst (RShiftVB src shift));
+instruct vsra16B_immI(vecX dst, vecX src, immI shift) %{
+  predicate(n->as_Vector()->length() == 16 && assert_not_var_shift(n));
+  match(Set dst (RShiftVB src (RShiftCntV shift)));
   size(4);
   ins_cost(DEFAULT_COST); // FIXME
   format %{
-    "VSHR.S8 $dst.Q,$src.Q,$shift\t! logical right shift packed16B"
+    "VSHR.S8 $dst.Q,$src.Q,$shift\t! arithmetic right shift packed16B"
   %}
   ins_encode %{
     bool quad = true;
@@ -11222,7 +11443,7 @@ instruct vsrl16B_immI(vecX dst, vecX src, immI shift) %{
 
 // Shorts vector arithmetic right shift
 instruct vsra4S_reg(vecD dst, vecD src, vecD shift) %{
-  predicate(n->as_Vector()->length() == 4);
+  predicate(n->as_Vector()->length() == 4 && !n->as_ShiftV()->is_var_shift());
   match(Set dst (RShiftVS src shift));
   size(4);
   ins_cost(DEFAULT_COST); // FIXME
@@ -11231,8 +11452,28 @@ instruct vsra4S_reg(vecD dst, vecD src, vecD shift) %{
   %}
 %}
 
+instruct vsra4S_reg_var(vecD dst, vecD src, vecD shift, vecD tmp) %{
+  predicate(n->as_Vector()->length() == 4 && n->as_ShiftV()->is_var_shift());
+  match(Set dst (RShiftVS src shift));
+  effect(TEMP tmp);
+  size(4*2);
+  ins_cost(DEFAULT_COST*2);
+  format %{
+    "VNEG.S8 $tmp.D,$shift.D\n\t! neg packed8B"
+    "VSHL.S16 $dst.D,$src.D,$tmp.D\t! arithmetic right shift packed4S"
+  %}
+  ins_encode %{
+    bool quad = false;
+    __ vnegI($tmp$$FloatRegister, $shift$$FloatRegister,
+             MacroAssembler::VELEM_SIZE_8, quad);
+    __ vshlSI($dst$$FloatRegister, $tmp$$FloatRegister, $src$$FloatRegister,
+              MacroAssembler::VELEM_SIZE_16, quad);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
 instruct vsra8S_reg(vecX dst, vecX src, vecX shift) %{
-  predicate(n->as_Vector()->length() == 8);
+  predicate(n->as_Vector()->length() == 8 && !n->as_ShiftV()->is_var_shift());
   match(Set dst (RShiftVS src shift));
   size(4);
   ins_cost(DEFAULT_COST); // FIXME
@@ -11241,13 +11482,33 @@ instruct vsra8S_reg(vecX dst, vecX src, vecX shift) %{
   %}
 %}
 
-instruct vsra4S_immI(vecD dst, vecD src, immI shift) %{
-  predicate(n->as_Vector()->length() == 4);
+instruct vsra8S_reg_var(vecX dst, vecX src, vecX shift, vecX tmp) %{
+  predicate(n->as_Vector()->length() == 8 && n->as_ShiftV()->is_var_shift());
   match(Set dst (RShiftVS src shift));
+  effect(TEMP tmp);
+  size(4*2);
+  ins_cost(DEFAULT_COST*2);
+  format %{
+    "VNEG.S8 $tmp.Q,$shift.Q\n\t! neg packed16B"
+    "VSHL.S16 $dst.Q,$src.Q,$tmp.Q\t! arithmetic right shift packed8S"
+  %}
+  ins_encode %{
+    bool quad = true;
+    __ vnegI($tmp$$FloatRegister, $shift$$FloatRegister,
+             MacroAssembler::VELEM_SIZE_8, quad);
+    __ vshlSI($dst$$FloatRegister, $tmp$$FloatRegister, $src$$FloatRegister,
+              MacroAssembler::VELEM_SIZE_16, quad);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct vsra4S_immI(vecD dst, vecD src, immI shift) %{
+  predicate(n->as_Vector()->length() == 4 && assert_not_var_shift(n));
+  match(Set dst (RShiftVS src (RShiftCntV shift)));
   size(4);
   ins_cost(DEFAULT_COST); // FIXME
   format %{
-    "VSHR.S16 $dst.D,$src.D,$shift\t! logical right shift packed4S"
+    "VSHR.S16 $dst.D,$src.D,$shift\t! arithmetic right shift packed4S"
   %}
   ins_encode %{
     bool quad = false;
@@ -11258,12 +11519,12 @@ instruct vsra4S_immI(vecD dst, vecD src, immI shift) %{
 %}
 
 instruct vsra8S_immI(vecX dst, vecX src, immI shift) %{
-  predicate(n->as_Vector()->length() == 8);
-  match(Set dst (RShiftVS src shift));
+  predicate(n->as_Vector()->length() == 8 && assert_not_var_shift(n));
+  match(Set dst (RShiftVS src (RShiftCntV shift)));
   size(4);
   ins_cost(DEFAULT_COST); // FIXME
   format %{
-    "VSHR.S16 $dst.Q,$src.Q,$shift\t! logical right shift packed8S"
+    "VSHR.S16 $dst.Q,$src.Q,$shift\t! arithmetic right shift packed8S"
   %}
   ins_encode %{
     bool quad = true;
@@ -11275,7 +11536,7 @@ instruct vsra8S_immI(vecX dst, vecX src, immI shift) %{
 
 // Integers vector arithmetic right shift
 instruct vsra2I_reg(vecD dst, vecD src, vecD shift) %{
-  predicate(n->as_Vector()->length() == 2);
+  predicate(n->as_Vector()->length() == 2 && !n->as_ShiftV()->is_var_shift());
   match(Set dst (RShiftVI src shift));
   size(4);
   ins_cost(DEFAULT_COST); // FIXME
@@ -11284,8 +11545,28 @@ instruct vsra2I_reg(vecD dst, vecD src, vecD shift) %{
   %}
 %}
 
+instruct vsra2I_reg_var(vecD dst, vecD src, vecD shift, vecD tmp) %{
+  predicate(n->as_Vector()->length() == 2 && n->as_ShiftV()->is_var_shift());
+  match(Set dst (RShiftVI src shift));
+  effect(TEMP tmp);
+  size(4*2);
+  ins_cost(DEFAULT_COST*2);
+  format %{
+    "VNEG.S8 $tmp.D,$shift.D\n\t! neg packed8B"
+    "VSHL.S32 $dst.D,$src.D,$tmp.D\t! arithmetic right shift packed2I"
+  %}
+  ins_encode %{
+    bool quad = false;
+    __ vnegI($tmp$$FloatRegister, $shift$$FloatRegister,
+             MacroAssembler::VELEM_SIZE_8, quad);
+    __ vshlSI($dst$$FloatRegister, $tmp$$FloatRegister, $src$$FloatRegister,
+              MacroAssembler::VELEM_SIZE_32, quad);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
 instruct vsra4I_reg(vecX dst, vecX src, vecX shift) %{
-  predicate(n->as_Vector()->length() == 4);
+  predicate(n->as_Vector()->length() == 4 && !n->as_ShiftV()->is_var_shift());
   match(Set dst (RShiftVI src shift));
   size(4);
   ins_cost(DEFAULT_COST); // FIXME
@@ -11294,13 +11575,33 @@ instruct vsra4I_reg(vecX dst, vecX src, vecX shift) %{
   %}
 %}
 
-instruct vsra2I_immI(vecD dst, vecD src, immI shift) %{
-  predicate(n->as_Vector()->length() == 2);
+instruct vsra4I_reg_var(vecX dst, vecX src, vecX shift, vecX tmp) %{
+  predicate(n->as_Vector()->length() == 4 && n->as_ShiftV()->is_var_shift());
   match(Set dst (RShiftVI src shift));
+  effect(TEMP tmp);
+  size(4*2);
+  ins_cost(DEFAULT_COST*2);
+  format %{
+    "VNEG.S8 $tmp.Q,$shift.Q\n\t! neg packed16B"
+    "VSHL.S32 $dst.Q,$src.Q,$tmp.Q\t! arithmetic right shift packed4I"
+  %}
+  ins_encode %{
+    bool quad = true;
+    __ vnegI($tmp$$FloatRegister, $shift$$FloatRegister,
+             MacroAssembler::VELEM_SIZE_8, quad);
+    __ vshlSI($dst$$FloatRegister, $tmp$$FloatRegister, $src$$FloatRegister,
+              MacroAssembler::VELEM_SIZE_32, quad);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct vsra2I_immI(vecD dst, vecD src, immI shift) %{
+  predicate(n->as_Vector()->length() == 2 && assert_not_var_shift(n));
+  match(Set dst (RShiftVI src (RShiftCntV shift)));
   size(4);
   ins_cost(DEFAULT_COST); // FIXME
   format %{
-    "VSHR.S32 $dst.D,$src.D,$shift\t! logical right shift packed2I"
+    "VSHR.S32 $dst.D,$src.D,$shift\t! arithmetic right shift packed2I"
   %}
   ins_encode %{
     bool quad = false;
@@ -11311,12 +11612,12 @@ instruct vsra2I_immI(vecD dst, vecD src, immI shift) %{
 %}
 
 instruct vsra4I_immI(vecX dst, vecX src, immI shift) %{
-  predicate(n->as_Vector()->length() == 4);
-  match(Set dst (RShiftVI src shift));
+  predicate(n->as_Vector()->length() == 4 && assert_not_var_shift(n));
+  match(Set dst (RShiftVI src (RShiftCntV shift)));
   size(4);
   ins_cost(DEFAULT_COST); // FIXME
   format %{
-    "VSHR.S32 $dst.Q,$src.Q,$shift\t! logical right shift packed4I"
+    "VSHR.S32 $dst.Q,$src.Q,$shift\t! arithmetic right shift packed4I"
   %}
   ins_encode %{
     bool quad = true;
@@ -11328,7 +11629,7 @@ instruct vsra4I_immI(vecX dst, vecX src, immI shift) %{
 
 // Longs vector arithmetic right shift
 instruct vsra2L_reg(vecX dst, vecX src, vecX shift) %{
-  predicate(n->as_Vector()->length() == 2);
+  predicate(n->as_Vector()->length() == 2 && !n->as_ShiftV()->is_var_shift());
   match(Set dst (RShiftVL src shift));
   size(4);
   ins_cost(DEFAULT_COST); // FIXME
@@ -11337,13 +11638,33 @@ instruct vsra2L_reg(vecX dst, vecX src, vecX shift) %{
   %}
 %}
 
-instruct vsra2L_immI(vecX dst, vecX src, immI shift) %{
-  predicate(n->as_Vector()->length() == 2);
+instruct vsra2L_reg_var(vecX dst, vecX src, vecX shift, vecX tmp) %{
+  predicate(n->as_Vector()->length() == 2 && n->as_ShiftV()->is_var_shift());
   match(Set dst (RShiftVL src shift));
+  effect(TEMP tmp);
+  size(4*2);
+  ins_cost(DEFAULT_COST*2);
+  format %{
+    "VNEG.S8 $tmp.Q,$shift.Q\n\t! neg packed16B"
+    "VSHL.S64 $dst.Q,$src.Q,$tmp.Q\t! arithmetic right shift packed2L"
+  %}
+  ins_encode %{
+    bool quad = true;
+    __ vnegI($tmp$$FloatRegister, $shift$$FloatRegister,
+             MacroAssembler::VELEM_SIZE_8, quad);
+    __ vshlSI($dst$$FloatRegister, $tmp$$FloatRegister, $src$$FloatRegister,
+              MacroAssembler::VELEM_SIZE_64, quad);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct vsra2L_immI(vecX dst, vecX src, immI shift) %{
+  predicate(n->as_Vector()->length() == 2 && assert_not_var_shift(n));
+  match(Set dst (RShiftVL src (RShiftCntV shift)));
   size(4);
   ins_cost(DEFAULT_COST); // FIXME
   format %{
-    "VSHR.S64 $dst.Q,$src.Q,$shift\t! logical right shift packed2L"
+    "VSHR.S64 $dst.Q,$src.Q,$shift\t! arithmetic right shift packed2L"
   %}
   ins_encode %{
     bool quad = true;

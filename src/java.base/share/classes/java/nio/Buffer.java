@@ -767,7 +767,11 @@ public abstract class Buffer {
     final void checkScope() {
         ScopedMemoryAccess.Scope scope = scope();
         if (scope != null) {
-            scope.checkValidState();
+            try {
+                scope.checkValidState();
+            } catch (ScopedMemoryAccess.Scope.ScopedAccessError e) {
+                throw new IllegalStateException("This segment is already closed");
+            }
         }
     }
 
