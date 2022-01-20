@@ -3295,7 +3295,6 @@ void G1CollectedHeap::retire_gc_alloc_region(HeapRegion* alloc_region,
   _bytes_used_during_gc += allocated_bytes;
   if (dest.is_old()) {
     old_set_add(alloc_region);
-    alloc_region->update_bot_threshold();
   } else {
     assert(dest.is_young(), "Retiring alloc region should be young (%d)", dest.type());
     _survivor.add_used_bytes(allocated_bytes);

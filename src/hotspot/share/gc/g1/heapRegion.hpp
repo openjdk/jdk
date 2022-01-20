@@ -167,7 +167,6 @@ public:
 
   // Full GC support methods.
 
-  void initialize_bot_threshold();
   void alloc_block_in_bot(HeapWord* start, HeapWord* end);
 
   // Update heap region that has been compacted to be consistent after Full GC.
@@ -192,16 +191,8 @@ public:
   template<typename ApplyToMarkedClosure>
   inline void apply_to_marked_objects(G1CMBitMap* bitmap, ApplyToMarkedClosure* closure);
 
-  void reset_bot() {
-    _bot_part.reset_bot();
-  }
-
   void update_bot() {
     _bot_part.update();
-  }
-
-  void update_bot_threshold() {
-    _bot_part.set_threshold(top());
   }
 
 private:

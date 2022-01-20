@@ -187,8 +187,6 @@ public:
     hr->note_self_forwarding_removal_start(during_concurrent_start,
                                            during_concurrent_mark);
 
-    hr->reset_bot();
-
     _phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,
                                                    _worker_id,
                                                    1,

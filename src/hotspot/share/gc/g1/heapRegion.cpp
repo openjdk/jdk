@@ -260,7 +260,6 @@ void HeapRegion::initialize(bool clear_space, bool mangle_space) {
 
   set_top(bottom());
   set_compaction_top(bottom());
-  reset_bot();
 
   hr_clear(false /*clear_space*/);
 }
@@ -780,7 +779,6 @@ void HeapRegion::clear(bool mangle_space) {
   if (ZapUnusedHeapArea && mangle_space) {
     mangle_unused_area();
   }
-  reset_bot();
 }
 
 #ifndef PRODUCT
@@ -788,10 +786,6 @@ void HeapRegion::mangle_unused_area() {
   SpaceMangler::mangle_region(MemRegion(top(), end()));
 }
 #endif
-
-void HeapRegion::initialize_bot_threshold() {
-  _bot_part.reset_bot();
-}
 
 void HeapRegion::alloc_block_in_bot(HeapWord* start, HeapWord* end) {
   _bot_part.alloc_block(start, end);

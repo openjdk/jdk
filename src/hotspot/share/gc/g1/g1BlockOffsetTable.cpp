@@ -74,7 +74,6 @@ void G1BlockOffsetTable::check_index(size_t index, const char* msg) const {
 //////////////////////////////////////////////////////////////////////
 
 G1BlockOffsetTablePart::G1BlockOffsetTablePart(G1BlockOffsetTable* array, HeapRegion* hr) :
-  _next_offset_threshold(NULL),
   _bot(array),
   _hr(hr)
 {
@@ -213,10 +212,9 @@ void G1BlockOffsetTablePart::check_all_cards(size_t start_card, size_t end_card)
 //       ( ^    ]
 //         block-start
 //
-void G1BlockOffsetTablePart::alloc_block_work(HeapWord** threshold_, HeapWord* blk_start,
+void G1BlockOffsetTablePart::alloc_block_work(HeapWord* blk_start,
                                               HeapWord* blk_end) {
-  // For efficiency, do copy-in/copy-out.
-  HeapWord* threshold = *threshold_;
+  HeapWord* threshold = align_up_by_card_size(blk_start);
   size_t    index =  _bot->index_for_raw(threshold);
 
   assert(blk_start != NULL && blk_end > blk_start,
@@ -258,8 +256,6 @@ void G1BlockOffsetTablePart::alloc_block_work(HeapWord** threshold_, HeapWord* b
   threshold = _bot->address_for_index(end_index) + BOTConstants::card_size_in_words();
   assert(threshold >= blk_end, "Incorrect offset threshold");
 
-  *threshold_ = threshold;
-
 #ifdef ASSERT
   // The offset can be 0 if the block starts on a boundary.  That
   // is checked by an assertion above.
@@ -289,8 +285,6 @@ void G1BlockOffsetTablePart::alloc_block_work(HeapWord** threshold_, HeapWord* b
 void G1BlockOffsetTablePart::verify() const {
   assert(_hr->bottom() < _hr->top(), "Only non-empty regions should be verified.");
   size_t start_card = _bot->index_for(_hr->bottom());
-  // Do not verify beyond the BOT allocation threshold.
-  assert(_hr->top() <= _next_offset_threshold, "invariant");
   size_t end_card = _bot->index_for(_hr->top() - 1);
 
   for (size_t current_card = start_card; current_card < end_card; current_card++) {
@@ -341,20 +335,10 @@ void G1BlockOffsetTablePart::print_on(outputStream* out) {
                   i, p2i(_bot->address_for_index(i)),
                   (uint) _bot->offset_array(i));
   }
-  out->print_cr("  next offset threshold: " PTR_FORMAT, p2i(_next_offset_threshold));
 }
 #endif // !PRODUCT
 
-void G1BlockOffsetTablePart::reset_bot() {
-  _next_offset_threshold = _hr->bottom();
-}
-
-bool G1BlockOffsetTablePart::is_empty() const {
-  return _next_offset_threshold == _hr->bottom();
-}
-
 void G1BlockOffsetTablePart::set_for_starts_humongous(HeapWord* obj_top, size_t fill_size) {
-  assert(is_empty(), "first obj");
   alloc_block(_hr->bottom(), obj_top);
   if (fill_size > 0) {
     alloc_block(obj_top, fill_size);
