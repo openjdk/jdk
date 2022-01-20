@@ -509,9 +509,6 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
       }
       _age_table.add(age, word_sz);
     } else {
-      // Currently we only have two destinations and we only need BOT updates for
-      // old. If the current allocation was done outside the PLAB this call will
-      // have no effect since the _top of the PLAB has not changed.
       update_bot_after_copying(obj, word_sz);
     }
 

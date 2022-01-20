@@ -248,7 +248,11 @@ inline void HeapRegion::update_bot_if_crossing_boundary(HeapWord* obj_start, siz
   bool cross_card_boundary = (obj_end > cur_card_boundary);
 
   if (cross_card_boundary) {
-    _bot_part.alloc_block_work(&cur_card_boundary, obj_start, obj_end);
+    // Creating a dummy variable inside this `if` as the arg of `&`; this
+    // avoids unnecessary loads in the assembly code on the fast path (the
+    // bot-not-updating case).
+    HeapWord* dummy = cur_card_boundary;
+    _bot_part.alloc_block_work(&dummy, obj_start, obj_end);
   }
 }
 
