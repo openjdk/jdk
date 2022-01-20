@@ -70,7 +70,6 @@
 #include "services/memoryService.hpp"
 #include "utilities/stack.inline.hpp"
 
-HeapWord*                     PSScavenge::_to_space_top_before_gc = NULL;
 SpanSubjectToDiscoveryClosure PSScavenge::_span_based_discoverer;
 ReferenceProcessor*           PSScavenge::_ref_processor = NULL;
 PSCardTable*                  PSScavenge::_card_table = NULL;
@@ -284,37 +283,30 @@ class ScavengeRootsTask : public WorkerTask {
   PSOldGen* _old_gen;
   HeapWord* _gen_top;
   uint _active_workers;
-  bool _is_empty;
+  bool _is_old_gen_empty;
   TaskTerminator _terminator;
 
 public:
   ScavengeRootsTask(PSOldGen* old_gen,
-                    HeapWord* gen_top,
-                    uint active_workers,
-                    bool is_empty) :
+                    uint active_workers) :
       WorkerTask("ScavengeRootsTask"),
       _strong_roots_scope(active_workers),
       _subtasks(ParallelRootType::sentinel),
       _old_gen(old_gen),
-      _gen_top(gen_top),
+      _gen_top(old_gen->object_space()->top()),
       _active_workers(active_workers),
-      _is_empty(is_empty),
+      _is_old_gen_empty(old_gen->object_space()->is_empty()),
       _terminator(active_workers, PSPromotionManager::vm_thread_promotion_manager()->stack_array_depth()) {
+    assert(_old_gen != NULL, "Sanity");
   }
 
   virtual void work(uint worker_id) {
+    assert(worker_id < _active_workers, "Sanity");
     ResourceMark rm;
 
-    if (!_is_empty) {
+    if (!_is_old_gen_empty) {
       // There are only old-to-young pointers if there are objects
       // in the old gen.
-
-      assert(_old_gen != NULL, "Sanity");
-      // There are no old-to-young pointers if the old gen is empty.
-      assert(!_old_gen->object_space()->is_empty(), "Should not be called is there is no work");
-      assert(_old_gen->object_space()->contains(_gen_top) || _gen_top == _old_gen->object_space()->top(), "Sanity");
-      assert(worker_id < ParallelGCThreads, "Sanity");
-
       {
         PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(worker_id);
         PSCardTable* card_table = ParallelScavengeHeap::heap()->card_table();
@@ -443,8 +435,6 @@ bool PSScavenge::invoke_no_policy() {
            "Attempt to scavenge with live objects in to_space");
     young_gen->to_space()->clear(SpaceDecorator::Mangle);
 
-    save_to_space_top_before_gc();
-
 #if COMPILER2_OR_JVMCI
     DerivedPointerTable::clear();
 #endif
@@ -455,12 +445,6 @@ bool PSScavenge::invoke_no_policy() {
 
     // Reset our survivor overflow.
     set_survivor_overflow(false);
-
-    // We need to save the old top values before
-    // creating the promotion_manager. We pass the top
-    // values to the card_table, to prevent it from
-    // straying into the promotion labs.
-    HeapWord* old_top = old_gen->object_space()->top();
 
     const uint active_workers =
       WorkerPolicy::calc_active_workers(ParallelScavengeHeap::heap()->workers().max_workers(),
@@ -475,7 +459,7 @@ bool PSScavenge::invoke_no_policy() {
     {
       GCTraceTime(Debug, gc, phases) tm("Scavenge", &_gc_timer);
 
-      ScavengeRootsTask task(old_gen, old_top, active_workers, old_gen->object_space()->is_empty());
+      ScavengeRootsTask task(old_gen, active_workers);
       ParallelScavengeHeap::heap()->workers().run_task(&task);
     }
 

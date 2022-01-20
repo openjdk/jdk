@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,6 +160,7 @@ final class Dispatcher {
                 dispatcherLookup.put(type.getId(), dispatchers);
             }
             cacheDispatchers = dispatchers;
+            cacheEventType = type;
         }
         // Expected behavior if exception occurs in onEvent:
         //

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4150,6 +4150,26 @@ void C2_MacroAssembler::vector_castF2I_evex(XMMRegister dst, XMMRegister src, XM
   vpternlogd(xtmp2, 0x11, xtmp1, xtmp1, vec_enc);
   evmovdqul(dst, ktmp1, xtmp2, true, vec_enc);
   bind(done);
+}
+
+void C2_MacroAssembler::evpternlog(XMMRegister dst, int func, KRegister mask, XMMRegister src2, XMMRegister src3,
+                                   bool merge, BasicType bt, int vlen_enc) {
+  if (bt == T_INT) {
+    evpternlogd(dst, func, mask, src2, src3, merge, vlen_enc);
+  } else {
+    assert(bt == T_LONG, "");
+    evpternlogq(dst, func, mask, src2, src3, merge, vlen_enc);
+  }
+}
+
+void C2_MacroAssembler::evpternlog(XMMRegister dst, int func, KRegister mask, XMMRegister src2, Address src3,
+                                   bool merge, BasicType bt, int vlen_enc) {
+  if (bt == T_INT) {
+    evpternlogd(dst, func, mask, src2, src3, merge, vlen_enc);
+  } else {
+    assert(bt == T_LONG, "");
+    evpternlogq(dst, func, mask, src2, src3, merge, vlen_enc);
+  }
 }
 
 #ifdef _LP64

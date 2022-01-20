@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,9 @@
 package java.io;
 
 import java.io.ObjectInputFilter.Config;
-import java.io.ObjectStreamClass.WeakClassKey;
 import java.io.ObjectStreamClass.RecordSupport;
 import java.lang.System.Logger;
 import java.lang.invoke.MethodHandle;
-import java.lang.ref.ReferenceQueue;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Modifier;
@@ -43,10 +41,6 @@ import java.security.PrivilegedExceptionAction;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
-import static java.io.ObjectStreamClass.processQueue;
 
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.event.DeserializationEvent;
@@ -282,12 +276,13 @@ public class ObjectInputStream
 
     private static class Caches {
         /** cache of subclass security audit results */
-        static final ConcurrentMap<WeakClassKey,Boolean> subclassAudits =
-            new ConcurrentHashMap<>();
-
-        /** queue for WeakReferences to audited subclasses */
-        static final ReferenceQueue<Class<?>> subclassAuditsQueue =
-            new ReferenceQueue<>();
+        static final ClassValue<Boolean> subclassAudits =
+            new ClassValue<>() {
+                @Override
+                protected Boolean computeValue(Class<?> type) {
+                    return auditSubclass(type);
+                }
+            };
 
         /**
          * Property to permit setting a filter after objects
@@ -743,7 +738,7 @@ public class ObjectInputStream
      * restored a final set of validations can be performed.
      *
      * @param   obj the object to receive the validation callback.
-     * @param   prio controls the order of callbacks;zero is a good default.
+     * @param   prio controls the order of callbacks; zero is a good default.
      *          Use higher numbers to be called back earlier, lower numbers for
      *          later callbacks. Within a priority, callbacks are processed in
      *          no particular order.
@@ -1638,13 +1633,7 @@ public class ObjectInputStream
         if (sm == null) {
             return;
         }
-        processQueue(Caches.subclassAuditsQueue, Caches.subclassAudits);
-        WeakClassKey key = new WeakClassKey(cl, Caches.subclassAuditsQueue);
-        Boolean result = Caches.subclassAudits.get(key);
-        if (result == null) {
-            result = auditSubclass(cl);
-            Caches.subclassAudits.putIfAbsent(key, result);
-        }
+        boolean result = Caches.subclassAudits.get(cl);
         if (!result) {
             sm.checkPermission(SUBCLASS_IMPLEMENTATION_PERMISSION);
         }
