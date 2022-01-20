@@ -269,8 +269,8 @@ int GenericTaskQueue<E, F, N>::next_random_queue_id() {
 
 template<class T, MEMFLAGS F>
 typename GenericTaskQueueSet<T, F>::PopResult GenericTaskQueueSet<T, F>::steal_best_of_2(uint queue_num, E& t) {
+  T* const local_queue = queue(queue_num);
   if (_n > 2) {
-    T* const local_queue = _queues[queue_num];
     uint k1 = queue_num;
 
     if (local_queue->is_last_stolen_queue_id_valid()) {
@@ -287,20 +287,20 @@ typename GenericTaskQueueSet<T, F>::PopResult GenericTaskQueueSet<T, F>::steal_b
       k2 = local_queue->next_random_queue_id() % _n;
     }
     // Sample both and try the larger.
-    uint sz1 = _queues[k1]->size();
-    uint sz2 = _queues[k2]->size();
+    uint sz1 = queue(k1)->size();
+    uint sz2 = queue(k2)->size();
 
     uint sel_k = 0;
     PopResult suc = PopResult::Empty;
 
     if (sz2 > sz1) {
       sel_k = k2;
-      suc = _queues[k2]->pop_global(t);
-      TASKQUEUE_STATS_ONLY(queue(queue_num)->record_steal_attempt(suc);)
+      suc = queue(k2)->pop_global(t);
+      TASKQUEUE_STATS_ONLY(local_queue->record_steal_attempt(suc);)
     } else if (sz1 > 0) {
       sel_k = k1;
-      suc = _queues[k1]->pop_global(t);
-      TASKQUEUE_STATS_ONLY(queue(queue_num)->record_steal_attempt(suc);)
+      suc = queue(k1)->pop_global(t);
+      TASKQUEUE_STATS_ONLY(local_queue->record_steal_attempt(suc);)
     }
 
     if (suc == PopResult::Success) {
@@ -313,12 +313,12 @@ typename GenericTaskQueueSet<T, F>::PopResult GenericTaskQueueSet<T, F>::steal_b
   } else if (_n == 2) {
     // Just try the other one.
     uint k = (queue_num + 1) % 2;
-    PopResult res = _queues[k]->pop_global(t);
-    TASKQUEUE_STATS_ONLY(queue(queue_num)->record_steal_attempt(res);)
+    PopResult res = queue(k)->pop_global(t);
+    TASKQUEUE_STATS_ONLY(local_queue->record_steal_attempt(res);)
     return res;
   } else {
     assert(_n == 1, "can't be zero.");
-    TASKQUEUE_STATS_ONLY(queue(queue_num)->record_steal_attempt(PopResult::Empty);)
+    TASKQUEUE_STATS_ONLY(local_queue->record_steal_attempt(PopResult::Empty);)
     return PopResult::Empty;
   }
 }
