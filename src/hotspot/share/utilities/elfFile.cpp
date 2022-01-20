@@ -965,7 +965,7 @@ bool DwarfFile::CompilationUnit::read_attribute_value(const uint64_t attribute_f
         // DW_AT_stmt_list has the DW_FORM_sec_offset attribute encoding. Store the result in _debug_line_offset.
         // 4 bytes for 32-bit DWARF.
         log_trace(dwarf)("    Name: DW_AT_stmt_list, Form: DW_FORM_sec_offset");
-        log_trace(dwarf)("    Reading .debug_line offset from compilation unit at 0x" UINT64_FORMAT_X, _reader.get_position());
+        log_trace(dwarf)("    Reading .debug_line offset from compilation unit at " PTR32_FORMAT, (uint32_t)_reader.get_position());
         if (!_reader.read_dword(&_debug_line_offset)) {
           return false;
         }
