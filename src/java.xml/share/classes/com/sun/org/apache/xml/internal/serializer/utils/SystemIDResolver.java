@@ -282,7 +282,7 @@ public final class SystemIDResolver
   public static String getAbsoluteURI(String urlString, String base)
           throws TransformerException
   {
-    if (base == null)
+    if (base == null || base.length() == 0)
       return getAbsoluteURI(urlString);
 
     String absoluteBase = getAbsoluteURI(base);
