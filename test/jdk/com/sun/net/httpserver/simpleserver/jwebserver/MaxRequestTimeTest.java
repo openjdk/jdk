@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8278398 8280161
+ * @bug 8278398
  * @summary Tests the jwebserver's maximum request time
  * @modules jdk.httpserver
  * @library /test/lib
