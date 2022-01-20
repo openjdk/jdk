@@ -41,6 +41,7 @@ public class BasicObjectsTest {
         errors += testToString();
         errors += testToString2();
         errors += testToDefaultString();
+        errors += testToIdentityString();
         errors += testCompare();
         errors += testRequireNonNull();
         errors += testIsNull();
@@ -147,7 +148,7 @@ public class BasicObjectsTest {
         // Behavior on typical objects
         Object o = new Object(){};
         errors += (Objects.toDefaultString(o).equals(o.toString()))? 0 : 1;
-        // Verify object's toString *not* called
+        // Verify object's toString is *not* called
         Object badToString = new Object() {
                 @Override
                 public String toString() {
@@ -155,6 +156,43 @@ public class BasicObjectsTest {
                 }
             };
         Objects.toDefaultString(badToString);
+        // Verify object's hashCode is called
+        errors += 
+            ("java.math.BigInteger@0"
+             .equals(Objects.toDefaultString(java.math.BigInteger.ZERO))) ?
+            0 : 1;
+
+        return errors;
+    }
+
+    private static int testToIdentityString() {
+        int errors = 0;
+        // Test null behavior
+        try {
+            Objects.toIdentityString(null);
+            errors++;
+        } catch (NullPointerException npe) {
+            ; // Expected
+        }
+        // Behavior on typical objects
+        Object o = new Object(){};
+        errors += (Objects.toIdentityString(o).equals(o.toString()))? 0 : 1;
+        // Verify object's toString *not* called
+        Object badToString = new Object() {
+                @Override
+                public String toString() {
+                    throw new RuntimeException();
+                }
+            };
+        Objects.toIdentityString(badToString);
+        // Verify object's hashCode *not* called
+        Object badHashCode = new Object() {
+                @Override
+                public int hashCode() {
+                    throw new RuntimeException("0xDEADBEFF");
+                }
+            };
+        Objects.toIdentityString(badHashCode);
         return errors;
     }
 
