@@ -767,6 +767,21 @@ int FileMapInfo::num_paths(const char* path) {
   return npaths;
 }
 
+// Returns true if a path within the paths exists and has non-zero size.
+bool FileMapInfo::check_paths_existence(const char* paths) {
+  ClasspathStream cp_stream(paths);
+  bool exist = false;
+  struct stat st;
+  while (cp_stream.has_next()) {
+    const char* path = cp_stream.get_next();
+    if (os::stat(path, &st) == 0 && st.st_size > 0) {
+      exist = true;
+      break;
+    }
+  }
+  return exist;
+}
+
 GrowableArray<const char*>* FileMapInfo::create_path_array(const char* paths) {
   GrowableArray<const char*>* path_array = new GrowableArray<const char*>(10);
   JavaThread* current = JavaThread::current();
@@ -850,7 +865,12 @@ bool FileMapInfo::validate_boot_class_paths() {
     if (relaxed_check) {
       return true;   // ok, relaxed check, runtime has extra boot append path entries
     } else {
-      mismatch = true;
+      ResourceMark rm;
+      if (check_paths_existence(rp)) {
+        // If a path exists in the runtime boot paths, it is considered a mismatch
+        // since there's no boot path specified during dump time.
+        mismatch = true;
+      }
     }
   } else if (dp_len > 0 && rp != NULL) {
     int num;
