@@ -1042,7 +1042,7 @@ public abstract class FileChannel
      *          region
      *
      * @throws  NonReadableChannelException
-     *          If {@code shared} is {@code true} this channel was not
+     *          If {@code shared} is {@code true} but this channel was not
      *          opened for reading
      *
      * @throws  NonWritableChannelException
@@ -1159,6 +1159,10 @@ public abstract class FileChannel
      *          this Java virtual machine, or if another thread is already
      *          blocked in this method and is attempting to lock an overlapping
      *          region of the same file
+     *
+     * @throws  NonReadableChannelException
+     *          If {@code shared} is {@code true} but this channel was not
+     *          opened for reading
      *
      * @throws  NonWritableChannelException
      *          If {@code shared} is {@code false} but this channel was not
