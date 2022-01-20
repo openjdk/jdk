@@ -108,7 +108,7 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
 
 
     /**
-     * Orientation for this scrollBar
+     * Orientation of this scrollBar.
      *
      * @see #setOrientation
      */
@@ -116,8 +116,8 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
 
 
     /**
-     * Amount to change the scrollbar's value by,
-     * given a unit up/down request.
+     * Stores the amount by which the value of the scrollbar is changed
+     * upon a unit up/down request.
      *
      * @see #setUnitIncrement
      */
@@ -125,8 +125,8 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
 
 
     /**
-     * Amount to change the scrollbar's value by,
-     * given a block (usually "page") up/down request.
+     * Stores the amount by which the value of the scrollbar is changed
+     * upon a block (usually "page") up/down request.
      *
      * @see #setBlockIncrement
      */

@@ -147,7 +147,7 @@ public class UndoableEditSupport {
     }
 
     /**
-     * Start UndoableEdit.
+     * Starts a compound edit update.
      */
     public synchronized void beginUpdate() {
         if (updateLevel == 0) {

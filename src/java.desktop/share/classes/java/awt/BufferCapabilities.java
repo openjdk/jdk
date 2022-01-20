@@ -62,9 +62,9 @@ public class BufferCapabilities implements Cloneable {
     }
 
     /**
-     * Returns the imaga capabilities of the front (displayed) buffer.
+     * Returns the image capabilities of the front (displayed) buffer.
      *
-     * @return the imaga capabilities of the front (displayed) buffer
+     * @return the image capabilities of the front (displayed) buffer
      */
     public ImageCapabilities getFrontBufferCapabilities() {
         return frontCaps;
@@ -72,7 +72,7 @@ public class BufferCapabilities implements Cloneable {
 
     /**
      * Returns the image capabilities of all back buffers (intermediate buffers
-     * are considered back buffers)
+     * are considered back buffers).
      *
      * @return the image capabilities of all back buffers (intermediate buffers
      * are considered back buffers)
@@ -82,14 +82,14 @@ public class BufferCapabilities implements Cloneable {
     }
 
     /**
-     * Returns whether or not the buffer strategy uses page flipping; a set of
-     * buffers that uses page flipping
+     * Returns whether or not the buffer strategy uses page flipping.
+     * A set of buffers that uses page flipping
      * can swap the contents internally between the front buffer and one or
      * more back buffers by switching the video pointer (or by copying memory
      * internally).  A non-flipping set of
      * buffers uses blitting to copy the contents from one buffer to
      * another; when this is the case, {@code getFlipContents} returns
-     * {@code null}
+     * {@code null}.
      *
      * @return whether or not the buffer strategy uses page flipping
      */
@@ -136,8 +136,7 @@ public class BufferCapabilities implements Cloneable {
      * intermediate buffers as well as the front and back buffer).
      *
      * @return whether or not
-     * page flipping can be performed using more than two buffers (one or more
-     * intermediate buffers as well as the front and back buffer).
+     * page flipping can be performed using more than two buffers
      * @see #isPageFlipping
      */
     public boolean isMultiBufferAvailable() {

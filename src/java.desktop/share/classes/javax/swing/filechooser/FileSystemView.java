@@ -347,17 +347,14 @@ public abstract class FileSystemView {
     }
 
     /**
-     * Returns a File object which is normally constructed with <code>new
-     * File(parent, fileName)</code> except when parent and child are both
+     * Returns a <code>File</code> object which is normally constructed with <code>new
+     * File(parent, fileName)</code> except when the parent and child are both
      * special folders, in which case the <code>File</code> is a wrapper containing
      * a <code>ShellFolder</code> object.
      *
      * @param parent a <code>File</code> object representing a directory or special folder
      * @param fileName a name of a file or folder which exists in <code>parent</code>
-     * @return a File object. This is normally constructed with <code>new
-     * File(parent, fileName)</code> except when parent and child are both
-     * special folders, in which case the <code>File</code> is a wrapper containing
-     * a <code>ShellFolder</code> object.
+     * @return a File object. 
      * @since 1.4
      */
     public File getChild(File parent, String fileName) {

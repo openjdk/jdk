@@ -28,8 +28,8 @@ import java.awt.Graphics;
 import java.awt.Shape;
 
 /**
- * Highlighter interface to mark up the background of leaf views
- * with colored areas.
+ * Implementation of {@code Highlighter} interface to mark up the
+ * background of leaf views with colored areas.
  *
  * @author  Scott Violet
  * @author  Timothy Prinzing

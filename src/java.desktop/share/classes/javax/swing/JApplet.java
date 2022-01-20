@@ -106,7 +106,7 @@ public class JApplet extends Applet implements Accessible,
 {
     /**
      * The <code>JRootPane</code> instance that manages the
-     * <code>contentPane</code>
+     * <code>contentPane</code>.
      *
      * @see #getRootPane
      * @see #setRootPane

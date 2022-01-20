@@ -157,8 +157,8 @@ public class      BeanContextServicesSupport extends BeanContextSupport
      */
 
     /**
-     * protected nested class containing per child information
-     * in the "children" hashtable.
+     * A protected nested class containing per-child information
+     * in the {@code children} hashtable.
      */
     protected class BCSSChild extends BeanContextSupport.BCSChild  {
 
@@ -791,7 +791,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
      */
 
     /**
-     * subclasses may subclass this nested class to represent proxy for
+     * Subclasses may subclass this nested class to represent a proxy for
      * each BeanContextServiceProvider.
      */
     protected class BCSSProxyServiceProvider implements BeanContextServiceProvider, BeanContextServiceRevokedListener {

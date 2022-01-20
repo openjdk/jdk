@@ -650,97 +650,97 @@ public class KeyEvent extends InputEvent {
 
     /* For European keyboards */
     /**
-     * Constant for the DEAD_GRAVE key.
+     * Constant for the Dead Grave key.
      * @since 1.2
      */
     public static final int VK_DEAD_GRAVE               = 0x80;
 
     /**
-     * Constant for the DEAD_ACUTE key.
+     * Constant for the Dead Acute key.
      * @since 1.2
      */
     public static final int VK_DEAD_ACUTE               = 0x81;
 
     /**
-     * Constant for the DEAD_CIRCUMFLEX key.
+     * Constant for the Dead Circumflex key.
      * @since 1.2
      */
     public static final int VK_DEAD_CIRCUMFLEX          = 0x82;
 
     /**
-     * Constant for the DEAD_TILDE key.
+     * Constant for the Dead Tilde key.
      * @since 1.2
      */
     public static final int VK_DEAD_TILDE               = 0x83;
 
     /**
-     * Constant for the DEAD_MACRON key.
+     * Constant for the Dead Macron key.
      * @since 1.2
      */
     public static final int VK_DEAD_MACRON              = 0x84;
 
     /**
-     * Constant for the DEAD_BREVE key.
+     * Constant for the Dead Breve key.
      * @since 1.2
      */
     public static final int VK_DEAD_BREVE               = 0x85;
 
     /**
-     * Constant for the DEAD_ABOVEDOT key.
+     * Constant for the Dead Above Dot key.
      * @since 1.2
      */
     public static final int VK_DEAD_ABOVEDOT            = 0x86;
 
     /**
-     * Constant for the DEAD_DIAERESIS key.
+     * Constant for the Dead Diaeresis key.
      * @since 1.2
      */
     public static final int VK_DEAD_DIAERESIS           = 0x87;
 
     /**
-     * Constant for the DEAD_ABOVERING key.
+     * Constant for the Dead Above Ring key.
      * @since 1.2
      */
     public static final int VK_DEAD_ABOVERING           = 0x88;
 
     /**
-     * Constant for the DEAD_DOUBLEACUTE key.
+     * Constant for the Dead Double Acute key.
      * @since 1.2
      */
     public static final int VK_DEAD_DOUBLEACUTE         = 0x89;
 
     /**
-     * Constant for the DEAD_CARON key.
+     * Constant for the Dead Caron key.
      * @since 1.2
      */
     public static final int VK_DEAD_CARON               = 0x8a;
 
     /**
-     * Constant for the DEAD_CEDILLA key.
+     * Constant for the Dead Cedilla key.
      * @since 1.2
      */
     public static final int VK_DEAD_CEDILLA             = 0x8b;
 
     /**
-     * Constant for the DEAD_OGONEK key.
+     * Constant for the Dead Ogonek key.
      * @since 1.2
      */
     public static final int VK_DEAD_OGONEK              = 0x8c;
 
     /**
-     * Constant for the DEAD_IOTA key.
+     * Constant for the Dead Iota key.
      * @since 1.2
      */
     public static final int VK_DEAD_IOTA                = 0x8d;
 
     /**
-     * Constant for the DEAD_VOICED_SOUND key.
+     * Constant for the Dead Voiced Sound key.
      * @since 1.2
      */
     public static final int VK_DEAD_VOICED_SOUND        = 0x8e;
 
     /**
-     * Constant for the DEAD_SEMIVOICED_SOUND key.
+     * Constant for the Dead Semivoiced Sound key.
      * @since 1.2
      */
     public static final int VK_DEAD_SEMIVOICED_SOUND    = 0x8f;
@@ -776,13 +776,13 @@ public class KeyEvent extends InputEvent {
     public static final int VK_GREATER                  = 0xa0;
 
     /**
-     * Constant for the BRACELEFT key.
+     * Constant for the "{" key.
      * @since 1.2
      */
     public static final int VK_BRACELEFT                = 0xa1;
 
     /**
-     * Constant for the BRACERIGHT key.
+     * Constant for the "}" key.
      * @since 1.2
      */
     public static final int VK_BRACERIGHT               = 0xa2;
@@ -1015,49 +1015,49 @@ public class KeyEvent extends InputEvent {
 
     /* for Sun keyboards */
     /**
-     * Constant for the "CUT" key.
+     * Constant for the Cut key.
      * @since 1.2
      */
     public static final int VK_CUT                      = 0xFFD1;
 
     /**
-     * Constant for the "COPY" key.
+     * Constant for the Copy key.
      * @since 1.2
      */
     public static final int VK_COPY                     = 0xFFCD;
 
     /**
-     * Constant for the "PASTE" key.
+     * Constant for the Paste key.
      * @since 1.2
      */
     public static final int VK_PASTE                    = 0xFFCF;
 
     /**
-     * Constant for the "UNDO" key.
+     * Constant for the Undo key.
      * @since 1.2
      */
     public static final int VK_UNDO                     = 0xFFCB;
 
     /**
-     * Constant for the "AGAIN" key.
+     * Constant for the Again key.
      * @since 1.2
      */
     public static final int VK_AGAIN                    = 0xFFC9;
 
     /**
-     * Constant for the "FIND" key.
+     * Constant for the Find key.
      * @since 1.2
      */
     public static final int VK_FIND                     = 0xFFD0;
 
     /**
-     * Constant for the "PROPS" key.
+     * Constant for the Props key.
      * @since 1.2
      */
     public static final int VK_PROPS                    = 0xFFCA;
 
     /**
-     * Constant for the "STOP" key.
+     * Constant for the Stop key.
      * @since 1.2
      */
     public static final int VK_STOP                     = 0xFFC8;

@@ -110,7 +110,7 @@ class AttributeList implements DTDConstants, Serializable {
     }
 
     /**
-     * Return the attribute name.
+     * Returns the attribute name.
      *
      * @return attribute name
      */
@@ -119,7 +119,7 @@ class AttributeList implements DTDConstants, Serializable {
     }
 
     /**
-     * Return the attribute type.
+     * Returns the attribute type.
      *
      * @return attribute type
      * @see DTDConstants
@@ -129,7 +129,7 @@ class AttributeList implements DTDConstants, Serializable {
     }
 
     /**
-     * Return attribute modifier.
+     * Returns attribute modifier.
      *
      * @return attribute modifier
      * @see DTDConstants
@@ -139,7 +139,7 @@ class AttributeList implements DTDConstants, Serializable {
     }
 
     /**
-     * Return possible attribute values.
+     * Returns possible attribute values.
      *
      * @return possible attribute values
      */
@@ -148,7 +148,7 @@ class AttributeList implements DTDConstants, Serializable {
     }
 
     /**
-     * Return default attribute value.
+     * Returns default attribute value.
      *
      * @return default attribute value
      */
@@ -157,7 +157,7 @@ class AttributeList implements DTDConstants, Serializable {
     }
 
     /**
-     * Return the next attribute in the list.
+     * Returns the next attribute in the list.
      *
      * @return the next attribute in the list
      */

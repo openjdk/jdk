@@ -925,7 +925,7 @@ public class MetalBorders {
     }
 
     /**
-     * The class represents the border of a {@code JTextField}.
+     * Border for a {@code JTextField}.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class TextFieldBorder extends Flush3DBorder {
@@ -1026,7 +1026,7 @@ public class MetalBorders {
     }
 
     /**
-     * The class represents the border of a {@code JToggleButton}.
+     * Border for a {@code JToggleButton}.
      *
      * @since 1.3
      */

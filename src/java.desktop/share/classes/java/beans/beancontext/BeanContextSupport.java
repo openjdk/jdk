@@ -305,8 +305,8 @@ public class      BeanContextSupport extends BeanContextChildSupport
      */
 
     /**
-     * protected nested class containing per child information
-     * in the "children" hashtable.
+     * A protected nested class containing per-child information
+     * in the {@code children} hashtable.
      */
     protected class BCSChild implements Serializable {
 
