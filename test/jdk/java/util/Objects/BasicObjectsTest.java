@@ -157,7 +157,7 @@ public class BasicObjectsTest {
             };
         Objects.toDefaultString(badToString);
         // Verify object's hashCode is called
-        errors += 
+        errors +=
             ("java.math.BigInteger@0"
              .equals(Objects.toDefaultString(java.math.BigInteger.ZERO))) ?
             0 : 1;
