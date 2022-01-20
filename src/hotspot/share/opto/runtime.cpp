@@ -958,7 +958,7 @@ const TypeFunc* OptoRuntime::counterMode_aescrypt_Type() {
 //for counterMode calls of aescrypt encrypt/decrypt, four pointers and a length, returning int
 const TypeFunc* OptoRuntime::galoisCounterMode_aescrypt_Type() {
   // create input type (domain)
-  int num_args = 9;
+  int num_args = 8;
   int argcnt = num_args;
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
@@ -969,7 +969,6 @@ const TypeFunc* OptoRuntime::galoisCounterMode_aescrypt_Type() {
   fields[argp++] = TypePtr::NOTNULL; // byte[] key from AESCrypt obj
   fields[argp++] = TypePtr::NOTNULL; // long[] state from GHASH obj
   fields[argp++] = TypePtr::NOTNULL; // long[] subkeyHtbl from GHASH obj
-  fields[argp++] = TypePtr::NOTNULL; // long[] avx512_subkeyHtbl newly created
   fields[argp++] = TypePtr::NOTNULL; // byte[] counter from GCTR obj
 
   assert(argp == TypeFunc::Parms + argcnt, "correct decoding");

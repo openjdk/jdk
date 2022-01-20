@@ -71,6 +71,13 @@ hotspot_native_sanity = \
 hotspot_containers = \
   containers
 
+# Test sets for running inside container environment
+hotspot_containers_extended = \
+  runtime \
+  serviceability \
+  vmTestbase/nsk/jvmti \
+  vmTestbase/nsk/monitoring
+
 hotspot_vector_1 = \
   compiler/c2/cr6340864 \
   compiler/codegen \
@@ -94,6 +101,9 @@ hotspot_vector_2 = \
   compiler/vectorapi/VectorRebracket128Test.java \
   -compiler/intrinsics/string/TestStringLatin1IndexOfChar.java
 
+hotspot_compiler_arraycopy = \
+  compiler/arraycopy/stress
+
 tier1_common = \
   sanity/BasicVMTest.java \
   gtest/GTestWrapper.java \
@@ -115,7 +125,8 @@ hotspot_not_fast_compiler = \
 hotspot_slow_compiler = \
   compiler/codegen/aes \
   compiler/codecache/stress \
-  compiler/gcbarriers/PreserveFPRegistersTest.java
+  compiler/gcbarriers/PreserveFPRegistersTest.java \
+  :hotspot_compiler_arraycopy
 
 tier1_compiler_1 = \
   compiler/arraycopy/ \
@@ -132,6 +143,7 @@ tier1_compiler_1 = \
   -compiler/c2/Test6792161.java \
   -compiler/c2/Test6603011.java \
   -compiler/c2/Test6912517.java \
+  -:hotspot_slow_compiler
 
 tier1_compiler_2 = \
   compiler/classUnloading/ \
@@ -172,6 +184,50 @@ tier1_compiler_3 = \
   -compiler/intrinsics/zip/TestAdler32.java \
   -compiler/loopopts/Test7052494.java \
   -compiler/runtime/Test6826736.java
+
+tier2_compiler = \
+  compiler/allocation/ \
+  compiler/arguments/ \
+  compiler/calls/ \
+  compiler/cha/ \
+  compiler/controldependency/ \
+  compiler/conversions/ \
+  compiler/codegen/ \
+  compiler/linkage/ \
+  compiler/loopstripmining/ \
+  compiler/loopopts/Test7052494.java \
+  compiler/longcountedloops/ \
+  compiler/intrinsics/bmi \
+  compiler/intrinsics/mathexact \
+  compiler/intrinsics/sha \
+  compiler/intrinsics/bigInteger/TestMultiplyToLen.java \
+  compiler/intrinsics/zip/TestAdler32.java \
+  compiler/membars/ \
+  compiler/onSpinWait/ \
+  compiler/parsing/ \
+  compiler/rangechecks/ \
+  compiler/reflection/ \
+  compiler/rtm/ \
+  compiler/runtime/Test6826736.java \
+  compiler/stable/ \
+  compiler/stringopts/ \
+  -:tier1_compiler \
+  -:hotspot_slow_compiler
+
+tier3_compiler = \
+  compiler/c2/ \
+  compiler/ciReplay/ \
+  compiler/compilercontrol/ \
+  compiler/debug/ \
+  compiler/oracle/ \
+  compiler/print/ \
+  compiler/relocations/ \
+  compiler/tiered/ \
+  compiler/vectorapi/ \
+  compiler/whitebox/ \
+  :hotspot_slow_compiler \
+  -:tier1_compiler \
+  -:tier2_compiler
 
 tier1_compiler_not_xcomp = \
   compiler/profiling
@@ -354,6 +410,7 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/LambdaEagerInit.java \
  -runtime/cds/appcds/LambdaProxyClasslist.java \
  -runtime/cds/appcds/LambdaVerificationFailedDuringDump.java \
+ -runtime/cds/appcds/LambdaWithJavaAgent.java \
  -runtime/cds/appcds/LambdaWithOldClass.java \
  -runtime/cds/appcds/LongClassListPath.java \
  -runtime/cds/appcds/LotsOfClasses.java \
@@ -467,11 +524,13 @@ tier2 = \
   :hotspot_tier2_runtime \
   :hotspot_tier2_runtime_platform_agnostic \
   :hotspot_tier2_serviceability \
+  :tier2_compiler \
   :tier2_gc_epsilon \
   :tier2_gc_shenandoah
 
 tier3 = \
   :hotspot_tier3_runtime \
+  :tier3_compiler \
   :tier3_gc_shenandoah
 
 # Everything that is not in other tiers, but not apps

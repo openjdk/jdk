@@ -168,13 +168,15 @@ inline unsigned DumpTimeSharedClassTable_hash(InstanceKlass* const& k) {
   }
 }
 
-class DumpTimeSharedClassTable: public ResourceHashtable<
+using DumpTimeSharedClassTableBaseType = ResourceHashtable<
   InstanceKlass*,
   DumpTimeClassInfo,
   15889, // prime number
   ResourceObj::C_HEAP,
   mtClassShared,
-  &DumpTimeSharedClassTable_hash>
+  &DumpTimeSharedClassTable_hash>;
+
+class DumpTimeSharedClassTable: public DumpTimeSharedClassTableBaseType
 {
   int _builtin_count;
   int _unregistered_count;
@@ -194,6 +196,11 @@ public:
       return _unregistered_count;
     }
   }
+
+  // Overrides ResourceHashtable<>::iterate(ITER*)
+  template<class ITER> void iterate(ITER* iter) const;
+private:
+  template<class ITER> class IterationHelper;
 };
 
 #endif // SHARED_CDS_DUMPTIMESHAREDCLASSINFO_HPP

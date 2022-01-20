@@ -137,6 +137,7 @@ class x86 {
 #ifdef _LP64
   static juint    _crc_by128_masks_avx512[];
   static juint    _crc_table_avx512[];
+  static juint    _crc32c_table_avx512[];
   static juint    _shuf_table_crc32_avx512[];
   static juint    _adler32_shuf0_table[];
   static juint    _adler32_shuf1_table[];
@@ -256,6 +257,7 @@ class x86 {
   static address crc_by128_masks_avx512_addr()  { return (address)_crc_by128_masks_avx512; }
   static address shuf_table_crc32_avx512_addr()  { return (address)_shuf_table_crc32_avx512; }
   static address crc_table_avx512_addr()  { return (address)_crc_table_avx512; }
+  static address crc32c_table_avx512_addr()  { return (address)_crc32c_table_avx512; }
   static address ghash_polynomial512_addr() { return _ghash_poly512_addr; }
 #endif // _LP64
   static address ghash_long_swap_mask_addr() { return _ghash_long_swap_mask_addr; }

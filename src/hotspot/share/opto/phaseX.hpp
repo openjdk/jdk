@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,7 +241,7 @@ public:
   // Record an initial type for a node, the node's bottom type.
   void    set_type_bottom(const Node* n) {
     // Use this for initialization when bottom_type() (or better) is not handy.
-    // Usually the initialization shoudl be to n->Value(this) instead,
+    // Usually the initialization should be to n->Value(this) instead,
     // or a hand-optimized value like Type::MEMORY or Type::CONTROL.
     assert(_types[n->_idx] == NULL, "must set the initial type just once");
     _types.map(n->_idx, n->bottom_type());

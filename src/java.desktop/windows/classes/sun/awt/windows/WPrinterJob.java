@@ -731,8 +731,7 @@ public final class WPrinterJob extends RasterPrinterJob
                      */
                     if (attr.getCategory() == SunAlternateMedia.class) {
                         Media media = (Media)attributes.get(Media.class);
-                        if (media == null ||
-                            !(media instanceof MediaTray)) {
+                        if (!(media instanceof MediaTray)) {
                             attr = ((SunAlternateMedia)attr).getMedia();
                         }
                     }

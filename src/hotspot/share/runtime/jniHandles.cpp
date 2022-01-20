@@ -168,11 +168,6 @@ void JNIHandles::oops_do(OopClosure* f) {
 }
 
 
-void JNIHandles::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f) {
-  weak_global_handles()->weak_oops_do(is_alive, f);
-}
-
-
 void JNIHandles::weak_oops_do(OopClosure* f) {
   weak_global_handles()->weak_oops_do(f);
 }

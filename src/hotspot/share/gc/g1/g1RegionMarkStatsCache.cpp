@@ -30,15 +30,13 @@
 
 G1RegionMarkStatsCache::G1RegionMarkStatsCache(G1RegionMarkStats* target, uint num_cache_entries) :
   _target(target),
-  _cache(NULL),
   _num_cache_entries(num_cache_entries),
-  _cache_hits(0),
-  _cache_misses(0),
   _num_cache_entries_mask(_num_cache_entries - 1) {
 
   guarantee(is_power_of_2(num_cache_entries),
             "Number of cache entries must be power of two, but is %u", num_cache_entries);
   _cache = NEW_C_HEAP_ARRAY(G1RegionMarkStatsCacheEntry, _num_cache_entries, mtGC);
+  reset();
 }
 
 G1RegionMarkStatsCache::~G1RegionMarkStatsCache() {

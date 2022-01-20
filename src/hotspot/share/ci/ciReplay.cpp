@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,7 @@ typedef struct _ciInlineRecord {
 
   int _inline_depth;
   int _inline_bci;
+  bool _inline_late;
 } ciInlineRecord;
 
 class  CompileReplay;
@@ -144,7 +145,7 @@ class CompileReplay : public StackObj {
     _protection_domain = Handle();
     _protection_domain_initialized = false;
 
-    _stream = fopen(filename, "rt");
+    _stream = os::fopen(filename, "rt");
     if (_stream == NULL) {
       fprintf(stderr, "ERROR: Can't open replay file %s\n", filename);
     }
@@ -720,7 +721,7 @@ class CompileReplay : public StackObj {
     return NULL;
   }
 
-  // compile <klass> <name> <signature> <entry_bci> <comp_level> inline <count> (<depth> <bci> <klass> <name> <signature>)*
+  // compile <klass> <name> <signature> <entry_bci> <comp_level> inline <count> (<depth> <bci> <inline_late> <klass> <name> <signature>)*
   void process_compile(TRAPS) {
     Method* method = parse_method(CHECK);
     if (had_error()) return;
@@ -762,11 +763,19 @@ class CompileReplay : public StackObj {
         if (had_error()) {
           break;
         }
+        int inline_late = 0;
+        if (_version >= 2) {
+          inline_late = parse_int("inline_late");
+          if (had_error()) {
+              break;
+          }
+        }
+
         Method* inl_method = parse_method(CHECK);
         if (had_error()) {
           break;
         }
-        new_ciInlineRecord(inl_method, bci, depth);
+        new_ciInlineRecord(inl_method, bci, depth, inline_late);
       }
     }
     if (_imethod != NULL) {
@@ -1227,13 +1236,14 @@ class CompileReplay : public StackObj {
   }
 
   // Create and initialize a record for a ciInlineRecord
-  ciInlineRecord* new_ciInlineRecord(Method* method, int bci, int depth) {
+  ciInlineRecord* new_ciInlineRecord(Method* method, int bci, int depth, int inline_late) {
     ciInlineRecord* rec = NEW_RESOURCE_OBJ(ciInlineRecord);
     rec->_klass_name =  method->method_holder()->name()->as_utf8();
     rec->_method_name = method->name()->as_utf8();
     rec->_signature = method->signature()->as_utf8();
     rec->_inline_bci = bci;
     rec->_inline_depth = depth;
+    rec->_inline_late = inline_late;
     _ci_inline_records->append(rec);
     return rec;
   }
@@ -1470,23 +1480,33 @@ bool ciReplay::should_not_inline(ciMethod* method) {
   return replay_state->find_ciMethodRecord(method->get_Method()) == NULL;
 }
 
-bool ciReplay::should_inline(void* data, ciMethod* method, int bci, int inline_depth) {
+bool ciReplay::should_inline(void* data, ciMethod* method, int bci, int inline_depth, bool& should_delay) {
   if (data != NULL) {
-    GrowableArray<ciInlineRecord*>*  records = (GrowableArray<ciInlineRecord*>*)data;
+    GrowableArray<ciInlineRecord*>* records = (GrowableArray<ciInlineRecord*>*)data;
     VM_ENTRY_MARK;
     // Inline record are ordered by bci and depth.
-    return CompileReplay::find_ciInlineRecord(records, method->get_Method(), bci, inline_depth) != NULL;
+    ciInlineRecord* record = CompileReplay::find_ciInlineRecord(records, method->get_Method(), bci, inline_depth);
+    if (record == NULL) {
+      return false;
+    }
+    should_delay = record->_inline_late;
+    return true;
   } else if (replay_state != NULL) {
     VM_ENTRY_MARK;
     // Inline record are ordered by bci and depth.
-    return replay_state->find_ciInlineRecord(method->get_Method(), bci, inline_depth) != NULL;
+    ciInlineRecord* record = replay_state->find_ciInlineRecord(method->get_Method(), bci, inline_depth);
+    if (record == NULL) {
+      return false;
+    }
+    should_delay = record->_inline_late;
+    return true;
   }
   return false;
 }
 
 bool ciReplay::should_not_inline(void* data, ciMethod* method, int bci, int inline_depth) {
   if (data != NULL) {
-    GrowableArray<ciInlineRecord*>*  records = (GrowableArray<ciInlineRecord*>*)data;
+    GrowableArray<ciInlineRecord*>* records = (GrowableArray<ciInlineRecord*>*)data;
     VM_ENTRY_MARK;
     // Inline record are ordered by bci and depth.
     return CompileReplay::find_ciInlineRecord(records, method->get_Method(), bci, inline_depth) == NULL;

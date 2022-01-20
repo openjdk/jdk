@@ -115,6 +115,12 @@ public:
     MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
     SystemDictionaryShared::check_excluded_classes();
 
+    if (SystemDictionaryShared::is_dumptime_table_empty()) {
+      log_warning(cds, dynamic)("There is no class to be included in the dynamic archive.");
+      SystemDictionaryShared::stop_dumping();
+      return;
+    }
+
     // save dumptime tables
     SystemDictionaryShared::clone_dumptime_tables();
 
@@ -171,6 +177,7 @@ public:
 
     assert(_num_dump_regions_used == _total_dump_regions, "must be");
     verify_universe("After CDS dynamic dump");
+    SystemDictionaryShared::stop_dumping();
   }
 
   virtual void iterate_roots(MetaspaceClosure* it, bool is_relocating_pointers) {
@@ -180,7 +187,7 @@ public:
 };
 
 void DynamicArchiveBuilder::init_header() {
-  FileMapInfo* mapinfo = new FileMapInfo(false);
+  FileMapInfo* mapinfo = new FileMapInfo(_archive_name, false);
   assert(FileMapInfo::dynamic_info() == mapinfo, "must be");
   FileMapInfo* base_info = FileMapInfo::current_info();
   // header only be available after populate_header
@@ -320,7 +327,7 @@ void DynamicArchiveBuilder::write_archive(char* serialized_data) {
   FileMapInfo* dynamic_info = FileMapInfo::dynamic_info();
   assert(dynamic_info != NULL, "Sanity");
 
-  dynamic_info->open_for_write(_archive_name);
+  dynamic_info->open_for_write();
   ArchiveBuilder::write_archive(dynamic_info, NULL, NULL, NULL, NULL);
 
   address base = _requested_dynamic_archive_bottom;
@@ -342,10 +349,6 @@ public:
   VMOp_Type type() const { return VMOp_PopulateDumpSharedSpace; }
   void doit() {
     ResourceMark rm;
-    if (SystemDictionaryShared::is_dumptime_table_empty()) {
-      log_warning(cds, dynamic)("There is no class to be included in the dynamic archive.");
-      return;
-    }
     if (AllowArchivingWithJavaAgent) {
       warning("This archive was created with AllowArchivingWithJavaAgent. It should be used "
               "for testing purposes only and should not be used in a production environment");
@@ -353,6 +356,9 @@ public:
     FileMapInfo::check_nonempty_dir_in_shared_path_table();
 
     _builder.doit();
+  }
+  ~VM_PopulateDynamicDumpSharedSpace() {
+    LambdaFormInvokers::cleanup_regenerated_classes();
   }
 };
 

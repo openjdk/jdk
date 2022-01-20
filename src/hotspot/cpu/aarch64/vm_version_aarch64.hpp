@@ -156,6 +156,8 @@ public:
   static bool is_cpu_emulated();
 #endif
 
+  static void initialize_cpu_information(void);
+
   static bool use_rop_protection() { return _rop_protection; }
 };
 

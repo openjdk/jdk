@@ -59,8 +59,8 @@ public final class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
 
     /**
      * Helper class to generate stable positions for AST nodes occurring in diagnostic arguments.
-     * If the AST node appears in the same line number as the main diagnostic, the line is information is omitted.
-     * Otherwise both line and column information is included, using the format @{code line:col}".
+     * If the AST node appears in the same line number as the main diagnostic, the line information is omitted.
+     * Otherwise, both line and column information is included, using the format {@code line:col}.
      *
      * Note: since subdiagnostics can be created without a diagnostic source, a position helper
      * should always refer to the toplevel diagnostic source.
@@ -85,7 +85,7 @@ public final class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
 
     /**
      * Create a formatter based on the supplied options.
-     * @param options
+     * @param options the compiler options
      */
     public RawDiagnosticFormatter(Options options) {
         super(null, new SimpleConfiguration(options,

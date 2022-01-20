@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -168,6 +168,23 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
     AC_MSG_RESULT([$CACERTS_FILE])
   fi
   AC_SUBST(CACERTS_FILE)
+
+  # Choose cacerts source folder for user provided PEM files
+  AC_ARG_WITH(cacerts-src, [AS_HELP_STRING([--with-cacerts-src],
+      [specify alternative cacerts source folder containing certificates])])
+  CACERTS_SRC=""
+  AC_MSG_CHECKING([for cacerts source])
+  if test "x$with_cacerts_src" == x; then
+    AC_MSG_RESULT([default])
+  else
+    CACERTS_SRC=$with_cacerts_src
+    if test ! -d "$CACERTS_SRC"; then
+      AC_MSG_RESULT([fail])
+      AC_MSG_ERROR([Specified cacerts source folder "$CACERTS_SRC" does not exist])
+    fi
+    AC_MSG_RESULT([$CACERTS_SRC])
+  fi
+  AC_SUBST(CACERTS_SRC)
 
   # Enable or disable unlimited crypto
   UTIL_ARG_ENABLE(NAME: unlimited-crypto, DEFAULT: true, RESULT: UNLIMITED_CRYPTO,
@@ -702,7 +719,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
   if test "x$OPENJDK_BUILD_OS" = xwindows && \
       test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = xfalse && \
       test "x$ENABLE_REPRODUCIBLE_BUILD" = xfalse; then
-    AC_MSG_NOTICE([On Windows it is not possible to combine  --disable-reproducible-builds])
+    AC_MSG_NOTICE([On Windows it is not possible to combine  --disable-reproducible-build])
     AC_MSG_NOTICE([with --disable-absolute-paths-in-output.])
     AC_MSG_ERROR([Cannot continue])
   fi
@@ -830,6 +847,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_HSDIS],
       AC_CHECK_LIB(opcodes, disassembler, [ HSDIS_LIBS="$HSDIS_LIBS -lopcodes" ], [ binutils_system_error="libopcodes not found" ])
       AC_CHECK_LIB(iberty, xmalloc, [ HSDIS_LIBS="$HSDIS_LIBS -liberty" ], [ binutils_system_error="libiberty not found" ])
       AC_CHECK_LIB(z, deflate, [ HSDIS_LIBS="$HSDIS_LIBS -lz" ], [ binutils_system_error="libz not found" ])
+      HSDIS_CFLAGS="-DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB"
     elif test "x$BINUTILS_DIR" != x; then
       if test -e $BINUTILS_DIR/bfd/libbfd.a && \
           test -e $BINUTILS_DIR/opcodes/libopcodes.a && \
@@ -847,7 +865,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_HSDIS],
           AC_MSG_ERROR([binutils on system is supported for Linux only])
         elif test "x$binutils_system_error" = x; then
           AC_MSG_RESULT([system])
-          HSDIS_CFLAGS="-DSYSTEM_BINUTILS"
+          HSDIS_CFLAGS="$HSDIS_CFLAGS -DSYSTEM_BINUTILS"
         else
           AC_MSG_RESULT([invalid])
           AC_MSG_ERROR([$binutils_system_error])
