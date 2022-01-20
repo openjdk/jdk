@@ -44,7 +44,6 @@ import jdk.test.lib.BuildHelper;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.OutputAnalyzer;
 
 import sun.hotspot.code.Compiler;
 import sun.hotspot.WhiteBox;
