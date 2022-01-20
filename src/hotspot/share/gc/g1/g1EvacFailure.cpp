@@ -133,7 +133,6 @@ public:
 #endif
       }
     }
-    _cm->clear_range_in_prev_bitmap(mr);
   }
 
   void zap_remainder() {
