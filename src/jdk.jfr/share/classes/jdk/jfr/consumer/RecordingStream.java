@@ -361,7 +361,7 @@ public final class RecordingStream implements AutoCloseable, EventStream {
      * The following example prints the CPU usage for ten seconds. When
      * the current thread leaves the try-with-resources block the
      * stream is stopped/closed.
-     * 
+     *
      * {@snippet class="Snippets" region="RecordingStreamStartAsync"}
      *
      * @throws IllegalStateException if the stream is already started or closed

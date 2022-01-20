@@ -27,7 +27,7 @@
  * This package contains classes for consuming Flight Recorder data.
  * <p>
  * In the following example, the program prints a histogram of all method samples in a recording.
- * 
+ *
  * {@snippet class="Snippets" region="PackageOverview"}
  * <p>
  * <b>Null-handling</b>

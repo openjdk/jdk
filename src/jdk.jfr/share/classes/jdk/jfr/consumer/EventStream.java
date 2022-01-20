@@ -94,7 +94,7 @@ import jdk.jfr.internal.consumer.FileAccess;
  * <p>
  * The following example shows how an {@code EventStream} can be used to listen
  * to events on a JVM running Flight Recorder
- * 
+ *
  * {@snippet class="Snippets" region="EventStreamOverview"}
  * <p>
  * To start recording together with the stream, see {@link RecordingStream}.

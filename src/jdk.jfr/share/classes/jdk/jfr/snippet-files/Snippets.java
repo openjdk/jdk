@@ -95,7 +95,7 @@ public class Snippets {
         event.commit();
         // @end
     }
-    
+
     void EventSettingOverview() throws Exception {
         // @start region="EventSettingOverview"
         Recording r = new Recording();
@@ -110,7 +110,7 @@ public class Snippets {
         r.dump(Files.createTempFile("recording", ".jfr"));
         // @end
     }
-    
+
     void FlightRecorderTakeSnapshot() throws Exception {
         //@start region="FlightRecorderTakeSnapshot"
         try (Recording snapshot = FlightRecorder.getFlightRecorder().takeSnapshot()) {
@@ -122,7 +122,7 @@ public class Snippets {
         }
       //@end
     }
-    
+
     // @start region="MetadataDefinitionOverview"
     @MetadataDefinition
     @Label("Severity")
@@ -153,7 +153,7 @@ public class Snippets {
         long transactionId2;
     }
     // @end
-        
+
  void RecordingnOverview() throws Exception {
   // @start region="RecordingOverview"
      Configuration c = Configuration.getConfiguration("default");

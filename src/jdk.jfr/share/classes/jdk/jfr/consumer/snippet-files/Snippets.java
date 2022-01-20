@@ -14,7 +14,7 @@ import jdk.jfr.Configuration;
 import jdk.jfr.consumer.RecordedEvent;
 
 public class Snippets {
-    
+
     class PackageOveriview {
         // @start region="PackageOverview"
         public static void main(String[] args) throws IOException {
@@ -22,7 +22,7 @@ public class Snippets {
                 System.err.println("Must specify a recording file.");
                 return;
             }
-            
+
             RecordingFile.readAllEvents(Path.of(args[0])).stream()
                 .filter(e -> e.getEventType().getName().equals("jdk.ExecutionSample"))
                 .map(e -> e.getStackTrace())
@@ -40,7 +40,7 @@ public class Snippets {
         }
         // @end
     }
-    
+
     void EventStreamOverview() throws Exception {
         // @start region="EventStreamOverview"
         try (var es = EventStream.openRepository()) {
@@ -62,7 +62,7 @@ public class Snippets {
         }
         // @end
     }
-    
+
     void RecordingFileOverview() throws Exception {
         // @start region="RecordingFileOverview"
         try (RecordingFile recordingFile = new RecordingFile(Paths.get("recording.jfr"))) {
@@ -93,7 +93,7 @@ public class Snippets {
         }
         // @end
     }
-    
+
     void RecordingStreamOverview() throws Exception {
      // @start region="RecordingStreamOverview"
         Configuration c = Configuration.getConfiguration("default");
@@ -105,7 +105,7 @@ public class Snippets {
         }
      // @end
     }
-    
+
     void RecordingStreamConstructor() throws Exception {
         // @start region="RecordingStreamConstructor"
         var c = Configuration.getConfiguration("default");
@@ -115,7 +115,7 @@ public class Snippets {
         }
         // @end
     }
-    
+
     void RecordingStreamSetSettings() throws Exception {
         // @start region="RecordingStreamSetSettings"
         Configuration defaultConfiguration = Configuration.getConfiguration("default");

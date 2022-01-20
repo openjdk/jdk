@@ -36,7 +36,7 @@ import java.lang.annotation.Target;
  * In the following example, a transaction event is defined with two
  * user-defined annotations, {@code @Severity} and {@code @TransactionId}.
  *
- * {@snippet class="Snippets" region="MetadataDefinitionOverview"} 
+ * {@snippet class="Snippets" region="MetadataDefinitionOverview"}
  *
  * Adding {@code @MetadataDefinition} to the declaration of {@code @Severity} and {@code @TransactionId}
  * ensures the information is saved by Flight Recorder.
