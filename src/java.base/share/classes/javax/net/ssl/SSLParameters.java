@@ -616,8 +616,8 @@ public class SSLParameters {
      * This method will return a new array each time it is invoked.
      *
      * @return a non-null, possibly zero-length array of application protocol
-     *         {@code String}s.  The array is placed in descending order of
-     *         application protocols preference.
+     *         {@code String}s.  The array is ordered based on protocol
+     *         preference, with the first entry being the most preferred.
      * @see #setApplicationProtocols
      * @since 9
      */
