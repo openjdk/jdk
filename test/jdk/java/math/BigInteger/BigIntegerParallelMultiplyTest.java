@@ -58,26 +58,10 @@ public class BigIntegerParallelMultiplyTest {
     }
 
     public static void main(String[] args) throws Exception {
-        for (int n = 0; n <= 10; n++) {
-            BigInteger fib = fibonacci(n, BigInteger::multiply);
-            System.out.printf("fibonacci(%d) = %d%n", n, fib);
-        }
-
         compare(1000, 324);
         compare(10_000, 3473);
         compare(100_000, 34883);
         compare(1_000_000, 347084);
-        for (int n = 1_000; n <= 10_000_000; n *= 10) {
-            System.out.println();
-            long time = System.nanoTime();
-            try {
-                var fib = fibonacci(n, BigInteger::parallelMultiply);
-                System.out.print("fibonacci(" + n + ") " + fib.bitLength());
-            } finally {
-                time = System.nanoTime() - time;
-                System.out.printf(" took %dms%n", (time / 1_000_000));
-            }
-        }
     }
 
     private static void compare(int n, int expectedBitCount) {
