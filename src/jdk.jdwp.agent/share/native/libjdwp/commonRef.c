@@ -169,7 +169,7 @@ deleteNode(JNIEnv *env, RefNode *node)
 static jobject
 strengthenNode(JNIEnv *env, RefNode *node, jboolean isPinAll)
 {
-  if (!isStrong(node)) {
+    if (!isStrong(node)) {
         jobject strongRef;
 
         strongRef = JNI_FUNC_PTR(env,NewGlobalRef)(env, node->ref);
@@ -185,6 +185,8 @@ strengthenNode(JNIEnv *env, RefNode *node, jboolean isPinAll)
         if (strongRef != NULL) {
             JNI_FUNC_PTR(env,DeleteWeakGlobalRef)(env, node->ref);
             node->ref         = strongRef;
+        } else {
+          return NULL;
         }
     }
     if (isPinAll) {
@@ -199,16 +201,11 @@ strengthenNode(JNIEnv *env, RefNode *node, jboolean isPinAll)
 static jweak
 weakenNode(JNIEnv *env, RefNode *node, jboolean isUnpinAll)
 {
-    jboolean wasStrong = isStrong(node); // Need to cache this before updating flags below
-    if (isUnpinAll) {
-        node->isPinAll = JNI_FALSE;
-    } else {
-        node->isCommonPin = JNI_FALSE;
-    }
+    jboolean willStillBeStrong = (node->isPinAll && !isUnpinAll) || (node->isCommonPin && isUnpinAll);
 
     // If the node is strong, but the reason(s) for it being strong
-    // no longer exist, then weaken it.
-    if (wasStrong && !node->isPinAll && !node->isCommonPin) {
+    // will no longer exist, then weaken it.
+    if (isStrong(node) && !willStillBeStrong) {
         jweak weakRef;
 
         weakRef = JNI_FUNC_PTR(env,NewWeakGlobalRef)(env, node->ref);
@@ -220,7 +217,15 @@ weakenNode(JNIEnv *env, RefNode *node, jboolean isUnpinAll)
         if (weakRef != NULL) {
             JNI_FUNC_PTR(env,DeleteGlobalRef)(env, node->ref);
             node->ref      = weakRef;
+        } else {
+          return NULL;
         }
+    }
+
+    if (isUnpinAll) {
+        node->isPinAll = JNI_FALSE;
+    } else {
+        node->isCommonPin = JNI_FALSE;
     }
     return node->ref;
 }
@@ -564,7 +569,7 @@ commonRef_unpin(jlong id)
         if (node != NULL) {
             jweak weakRef;
 
-            weakRef = weakenNode(env, node, JNI_FALSE /* isPinAll */);
+            weakRef = weakenNode(env, node, JNI_FALSE /* isUnpinAll */);
             if (weakRef == NULL) {
                 error = AGENT_ERROR_OUT_OF_MEMORY;
             }
@@ -641,7 +646,7 @@ commonRef_unpinAll()
                 for (node = gdata->objectsByID[i]; node != NULL; node = node->next) {
                     jweak weakRef;
 
-                    weakRef = weakenNode(env, node, JNI_TRUE /* isPinAll */);
+                    weakRef = weakenNode(env, node, JNI_TRUE /* isUnpinAll */);
                     if (weakRef == NULL) {
                         EXIT_ERROR(AGENT_ERROR_NULL_POINTER,"NewWeakGlobalRef");
                     }
