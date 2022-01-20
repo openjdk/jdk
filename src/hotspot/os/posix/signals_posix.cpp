@@ -596,7 +596,6 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
 
   if (!signal_was_handled && sig == BREAK_SIGNAL) {
     assert(!ReduceSignalUsage, "Should not happen with -Xrs/-XX:+ReduceSignalUsage");
-    log_info(os, init)("Ignore BREAK_SIGNAL in the initialization phase.");
     signal_was_handled = true;
   }
 
