@@ -33,7 +33,6 @@
  */
 module java.security.jgss {
     requires java.naming;
-    requires java.security.sasl;
 
     exports javax.security.auth.kerberos;
     exports org.ietf.jgss;

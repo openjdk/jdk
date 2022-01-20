@@ -130,7 +130,7 @@ public final class LdapSasl {
                     cbType = TlsChannelBinding.parseType(
                                 (String)env.get(TlsChannelBinding.CHANNEL_BINDING_TYPE));
                 } catch (ChannelBindingException e) {
-                    throw new SaslException(e.getMessage());
+                    throw new SaslException(e.getMessage(), e);
                 }
                 if (cbType == TlsChannelBindingType.TLS_SERVER_END_POINT) {
                     // set tls-server-end-point channel binding
