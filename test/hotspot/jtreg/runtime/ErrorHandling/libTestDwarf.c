@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,17 +54,17 @@ void foo(int x) {
     }
 }
 
-JNIEXPORT void JNICALL Java_compiler_debug_TestDwarf_crashNativeDivByZero(JNIEnv* env, jclass jclazz) {
+JNIEXPORT void JNICALL Java_TestDwarf_crashNativeDivByZero(JNIEnv* env, jclass jclazz) {
   limit = 21;
   foo(34 / zero); // Crash
 }
 
-JNIEXPORT void JNICALL Java_compiler_debug_TestDwarf_crashNativeDereferenceNull(JNIEnv* env, jclass jclazz) {
+JNIEXPORT void JNICALL Java_TestDwarf_crashNativeDereferenceNull(JNIEnv* env, jclass jclazz) {
   dereference_null();
 }
 
 
-JNIEXPORT void JNICALL Java_compiler_debug_TestDwarf_crashNativeMultipleMethods(JNIEnv* env, jclass jclazz, jint x) {
+JNIEXPORT void JNICALL Java_TestDwarf_crashNativeMultipleMethods(JNIEnv* env, jclass jclazz, jint x) {
   // foo() is not inlined
   foo(x - 2);
   foo(x - 1);

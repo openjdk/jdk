@@ -28,12 +28,11 @@
  * @summary Test DWARF parser with various crashes if debug symbols are available. If the libjvm debug symbols are not
  *          in the same directory as the libjvm.so file, in a subdirectory called .debug, or in the path specified
  *          by the environment variable JVM_DWARF_PATH, then no verification of the hs_err_file is done for libjvm.so.
- * @requires vm.compMode != "Xint" & os.family == "linux" & !vm.graal.enabled & vm.gc.G1
+ * @requires vm.flagless & vm.compMode != "Xint" & os.family == "linux" & !vm.graal.enabled & vm.gc.G1
  * @modules java.base/jdk.internal.misc
- * @run main/native/othervm -Xbootclasspath/a:. -XX:-CreateCoredumpOnCrash compiler.debug.TestDwarf
+ * @run main/native/othervm -Xbootclasspath/a:. -XX:-CreateCoredumpOnCrash TestDwarf
  */
 
-package compiler.debug;
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
@@ -104,15 +103,15 @@ public class TestDwarf {
         runAndCheck(new Flags("-Xmx10m", "-XX:+CrashOnOutOfMemoryError", TestDwarf.class.getCanonicalName(), "outOfMemory"));
         // Use -XX:-TieredCompilation as C1 is currently not aborting the VM (JDK-8264899).
         runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "unsafeAccess"));
-        runAndCheck(new Flags("-XX:-TieredCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:AbortVMOnException=compiler.debug.MyException",
+        runAndCheck(new Flags("-XX:-TieredCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:AbortVMOnException=MyException",
                               TestDwarf.class.getCanonicalName(), "abortVMOnException"));
         if (Platform.isX64() || Platform.isX86()) {
             // Not all platforms raise SIGFPE but x86_32 and x86_64 do.
             runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "nativeDivByZero"),
-                        new DwarfConstraint(0, "Java_compiler_debug_TestDwarf_crashNativeDivByZero", "libTestDwarf.c", 59));
+                        new DwarfConstraint(0, "Java_TestDwarf_crashNativeDivByZero", "libTestDwarf.c", 59));
             runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "nativeMultipleMethods"),
                         new DwarfConstraint(0, "foo", "libTestDwarf.c", 42),
-                        new DwarfConstraint(1, "Java_compiler_debug_TestDwarf_crashNativeMultipleMethods", "libTestDwarf.c", 71));
+                        new DwarfConstraint(1, "Java_TestDwarf_crashNativeMultipleMethods", "libTestDwarf.c", 71));
         }
         runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "nativeDereferenceNull"),
                     new DwarfConstraint(0, "dereference_null", "libTestDwarfHelper.h", 44));

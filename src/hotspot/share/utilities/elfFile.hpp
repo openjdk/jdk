@@ -179,7 +179,7 @@ class ElfFile: public CHeapObj<mtInternal> {
   // On systems other than linux it always returns false.
   static bool specifies_noexecstack(const char* filepath) NOT_LINUX({ return false; });
 
-  bool open_valid_debuginfo_file(const char* path_name, uint crc);
+  bool open_valid_debuginfo_file(const char* path_name, uint32_t crc);
   bool get_source_info(uint32_t offset_in_library, char* filename, size_t filename_len, int* line, bool is_pc_after_call);
 
  private:
@@ -211,7 +211,7 @@ class ElfFile: public CHeapObj<mtInternal> {
   bool load_dwarf_file();
   bool load_dwarf_file_from_env_path(const char* debug_filename, uint32_t crc);
   bool load_dwarf_file_from_env_path_folder(const char* env_path, const char* folder, const char* debug_filename, uint32_t crc);
-  char* get_debug_filename() const;
+  const char* get_debug_filename() const;
   static uint gnu_debuglink_crc32(uint32_t crc, uint8_t* buf, size_t len);
 
  protected:
@@ -309,7 +309,7 @@ class DwarfFile : public ElfFile {
     virtual bool set_position(long new_pos);
     long get_position() const { return _current_pos; }
     void set_max_pos(long max_pos) { _max_pos = max_pos; }
-    // Have we reached the limit of maximally allowable bytes to read? Used to ensure an early bail out if the file is corrupted.
+    // Have we reached the limit of maximally allowable bytes to read? Used to ensure to stop reading when a section ends.
     bool has_bytes_left() const;
     // Call this if another file reader has changed the position of the same file handle.
     bool update_to_stored_position();
@@ -324,7 +324,7 @@ class DwarfFile : public ElfFile {
     bool read_uleb128_ignore(int8_t check_size = -1);
     bool read_uleb128(uint64_t* result, int8_t check_size = -1);
     bool read_sleb128(int64_t* result, int8_t check_size = -1);
-    // Reads 4 bytes for 32-bit and 8 bytes for 64-bit Linux builds.
+    // Reads 4 bytes for 32-bit and 8 bytes for 64-bit builds.
     bool read_address_sized(uintptr_t* result);
     bool read_string(char* result = nullptr, size_t result_len = 0);
   };
@@ -443,6 +443,7 @@ class DwarfFile : public ElfFile {
    public:
     CompilationUnit(DwarfFile* dwarf_file, uint32_t compilation_unit_offset)
       : _dwarf_file(dwarf_file), _reader(dwarf_file->fd()), _compilation_unit_offset(compilation_unit_offset), _debug_line_offset(0) {}
+
     bool find_debug_line_offset(uint32_t* debug_line_offset);
     bool read_attribute_value(uint64_t attribute_form, bool is_DW_AT_stmt_list_attribute);
   };
@@ -526,6 +527,7 @@ class DwarfFile : public ElfFile {
     DebugAbbrev(DwarfFile* dwarf_file, CompilationUnit* compilation_unit) :
       _dwarf_file(dwarf_file), _reader(_dwarf_file->fd()), _compilation_unit(compilation_unit),
       _debug_line_offset(nullptr) {}
+
     bool read_section_header(uint32_t debug_abbrev_offset);
     bool find_debug_line_offset(uint64_t abbrev_code);
   };
@@ -707,7 +709,6 @@ class DwarfFile : public ElfFile {
     char* _filename;
     size_t _filename_len;
 
-
     bool read_header();
     bool read_line_number_program();
     bool apply_opcode();
@@ -727,6 +728,7 @@ class DwarfFile : public ElfFile {
       delete _state;
       _state = nullptr;
     }
+
     bool find_filename_and_line_number(char* filename, size_t filename_len, int* line);
   };
 
@@ -739,7 +741,7 @@ class DwarfFile : public ElfFile {
    * Given:  Offset into the ELF library file, a filename buffer of size filename_size, a line number pointer.
    * Return: True:  The filename is set in the 'filename' buffer and the line number at the address pointed to by 'line'.
    *         False: Something went wrong either while reading from the file or during parsing due to an unexpected format.
-   *                This could happen if the DWARF file is corrupted or is in an unsupported format.
+   *                This could happen if the DWARF file is in an unsupported or wrong format.
    *
    *  More details about the different phases can be found at the associated methods.
    */

@@ -303,7 +303,7 @@ ElfStringTable* ElfFile::get_string_table(int index) {
 }
 
 // Use unified logging to report errors rather than assert() throughout this method as this code is already part of the error reporting
-// and the debug symbols might be corrupted or in an unsupported DWARF version.
+// and the debug symbols might be in an unsupported DWARF version or wrong format.
 bool ElfFile::get_source_info(const uint32_t offset_in_library, char* filename, const size_t filename_len, int* line, bool is_pc_after_call) {
   ResourceMark rm;
   // (1)
@@ -409,11 +409,11 @@ bool ElfFile::load_dwarf_file_from_env_path_folder(const char* env_path, const c
   return open_valid_debuginfo_file(debug_pathname, crc);
 }
 
-char* ElfFile::get_debug_filename() const {
+const char* ElfFile::get_debug_filename() const {
   Elf_Shdr shdr;
   if (!read_section_header(".gnu_debuglink", shdr)) {
-    log_debug(dwarf)("Failed to read the .gnu_debuglink header.");
     // Section not found.
+    log_debug(dwarf)("Failed to read the .gnu_debuglink header.");
     return nullptr;
   }
 
@@ -574,7 +574,8 @@ uint32_t ElfFile::gnu_debuglink_crc32(uint32_t crc, uint8_t* buf, const size_t l
 }
 
 // Starting point of reading line number and filename information from the DWARF file.
-bool DwarfFile::get_filename_and_line_number(uint32_t offset_in_library, char* filename, const size_t filename_len, int* line, const bool is_pc_after_call) {
+bool DwarfFile::get_filename_and_line_number(uint32_t offset_in_library, char* filename, const size_t filename_len, int* line,
+                                             const bool is_pc_after_call) {
   DebugAranges debug_aranges(this);
   uint32_t compilation_unit_offset = 0; // 4-bytes for 32-bit DWARF
   if (!debug_aranges.find_compilation_unit_offset(offset_in_library, &compilation_unit_offset)) {
@@ -985,7 +986,7 @@ bool DwarfFile::CompilationUnit::read_attribute_value(const uint64_t attribute_f
   return true;
 }
 
-bool DwarfFile::LineNumberProgram::find_filename_and_line_number(char* filename, size_t filename_len, int* line) {
+bool DwarfFile::LineNumberProgram::find_filename_and_line_number(char* filename, const size_t filename_len, int* line) {
   _filename = filename;
   _filename_len = filename_len;
   _line = line;
@@ -994,10 +995,7 @@ bool DwarfFile::LineNumberProgram::find_filename_and_line_number(char* filename,
     return false;
   }
 
-  if (!read_line_number_program()) {
-    return false;
-  }
-  return true;
+  return read_line_number_program();
 }
 
 // Parsing header as specified in section 6.2.4 of DWARF 4 spec. We do not read the file_names field, yet.
@@ -1596,7 +1594,7 @@ bool DwarfFile::MarkedDwarfFileReader::read_leb128(uint64_t* result, const int8_
     }
   }
   if (bytes_read > 8 || (check_size != -1 && bytes_read > check_size)) {
-    // Invalid leb128 encoding or the read leb128 was bigger than expected.
+    // Invalid leb128 encoding or the read leb128 was larger than expected.
     return false;
   }
 
