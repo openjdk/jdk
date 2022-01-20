@@ -650,11 +650,9 @@ public class Navigation {
         addSummaryLinks(ulNavSummary, false);
         div.add(ulNavSummary);
         // Add the detail links if present.
-        if (documentedPage == PageMode.CLASS) {
-            HtmlTree ulNavDetail = new HtmlTree(TagName.UL).setStyle(HtmlStyle.subNavList);
-            addDetailLinks(ulNavDetail, false);
-            div.add(ulNavDetail);
-        }
+        HtmlTree ulNavDetail = new HtmlTree(TagName.UL).setStyle(HtmlStyle.subNavList);
+        addDetailLinks(ulNavDetail, false);
+        div.add(ulNavDetail);
         subDiv.add(div);
 
         if (addSearch) {
