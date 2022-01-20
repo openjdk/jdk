@@ -562,6 +562,11 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
 {
   assert(info != NULL && ucVoid != NULL, "sanity");
 
+  if (sig == BREAK_SIGNAL) {
+    assert(!ReduceSignalUsage, "Should not happen with -Xrs/-XX:+ReduceSignalUsage");
+    return true; // ignore it
+  }
+
   // Note: it's not uncommon that JNI code uses signal/sigset to install,
   // then restore certain signal handler (e.g. to temporarily block SIGPIPE,
   // or have a SIGILL handler when detecting CPU type). When that happens,
@@ -593,11 +598,6 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
     signal_was_handled = handle_assert_poison_fault(ucVoid, info->si_addr);
   }
 #endif
-
-  if (!signal_was_handled && sig == BREAK_SIGNAL) {
-    assert(!ReduceSignalUsage, "Should not happen with -Xrs/-XX:+ReduceSignalUsage");
-    signal_was_handled = true;
-  }
 
   if (!signal_was_handled) {
     // Handle SafeFetch access.
