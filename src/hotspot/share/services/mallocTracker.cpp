@@ -155,7 +155,7 @@ void MallocHeader::print_block_on_error(outputStream* st, address bad_address) c
 }
 
 // Check block integrity.
-// If fatal_error is true and and block is broken, print out a report
+// If fatal_error is true and block is broken, print out a report
 // to tty (optionally with hex dump surrounding the broken block),
 // then trigger a fatal error
 bool MallocHeader::check_block_integrity(bool fatal_error) const {
