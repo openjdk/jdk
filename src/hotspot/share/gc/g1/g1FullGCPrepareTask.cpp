@@ -52,7 +52,6 @@ void G1FullGCPrepareTask::G1CalculatePointersClosure::free_pinned_region(HeapReg
 }
 
 bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion* hr) {
-  bool force_not_compacted = false;
   if (should_compact(hr)) {
     assert(!hr->is_humongous(), "moving humongous objects not supported.");
     prepare_for_compaction(hr);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2003,7 +2003,7 @@ public final class Locale implements Cloneable, Serializable {
     /**
      * Returns a name for the locale that is appropriate for display
      * to the user.  This will be the values returned by
-     * getDisplayLanguage(), getDisplayScript(),getDisplayCountry()
+     * getDisplayLanguage(), getDisplayScript(), getDisplayCountry(),
      * getDisplayVariant(), and optional <a href="./Locale.html#def_locale_extension">
      * Unicode extensions</a> assembled into a single string. The non-empty
      * values are used in order, with the second and subsequent names in

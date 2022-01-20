@@ -1431,14 +1431,6 @@ By default, this parameter is enabled.
 .RS
 .RE
 .TP
-.B \f[CB]samplethreads=\f[R]{\f[CB]true\f[R]|\f[CB]false\f[R]}
-Specifies whether thread sampling is enabled.
-Thread sampling occurs only if the sampling event is enabled along with
-this parameter.
-By default, this parameter is enabled.
-.RS
-.RE
-.TP
 .B \f[CB]stackdepth=\f[R]\f[I]depth\f[R]
 Stack depth for stack traces.
 By default, the depth is set to 64 method calls.
@@ -1539,6 +1531,31 @@ usage by individual \f[CB]CallSite\f[R], individual virtual memory region
 and its committed regions.
 .RS
 .RE
+.RE
+.TP
+.B \f[CB]\-XX:+NeverActAsServerClassMachine\f[R]
+Enable the "Client VM emulation" mode which only uses the C1 JIT
+compiler, a 32Mb CodeCache and the Serial GC.
+The maximum amount of memory that the JVM may use (controlled by the
+\f[CB]\-XX:MaxRAM=n\f[R] flag) is set to 1GB by default.
+The string "emulated\-client" is added to the JVM version string.
+.RS
+.PP
+By default the flag is set to \f[CB]true\f[R] only on Windows in 32\-bit
+mode and \f[CB]false\f[R] in all other cases.
+.PP
+The "Client VM emulation" mode will not be enabled if any of the
+following flags are used on the command line:
+.IP
+.nf
+\f[CB]
+\-XX:{+|\-}TieredCompilation
+\-XX:CompilationMode=mode
+\-XX:TieredStopAtLevel=n
+\-XX:{+|\-}EnableJVMCI
+\-XX:{+|\-}UseJVMCICompiler
+\f[R]
+.fi
 .RE
 .TP
 .B \f[CB]\-XX:ObjectAlignmentInBytes=\f[R]\f[I]alignment\f[R]

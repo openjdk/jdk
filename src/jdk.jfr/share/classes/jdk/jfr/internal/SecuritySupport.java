@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.io.RandomAccessFile;
 import java.io.Reader;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ReflectPermission;
 import java.nio.channels.FileChannel;
@@ -150,7 +149,7 @@ public final class SecuritySupport {
     }
 
     /**
-     * Path created by the default file provider,and not
+     * Path created by the default file provider, and not
      * a malicious provider.
      *
      */
@@ -267,14 +266,11 @@ public final class SecuritySupport {
 
     public static List<SafePath> getPredefinedJFCFiles() {
         List<SafePath> list = new ArrayList<>();
-        try {
-            Iterator<Path> pathIterator = doPrivilegedIOWithReturn(() -> {
-                return Files.newDirectoryStream(JFC_DIRECTORY.toPath(), "*").iterator();
-            });
-            while (pathIterator.hasNext()) {
-                Path path = pathIterator.next();
-                if (path.toString().endsWith(".jfc")) {
-                    list.add(new SafePath(path));
+        try (var ds = doPrivilegedIOWithReturn(() -> Files.newDirectoryStream(JFC_DIRECTORY.toPath(), "*.jfc"))) {
+            for (Path path : ds) {
+                SafePath s = new SafePath(path);
+                if (!SecuritySupport.isDirectory(s)) {
+                    list.add(s);
                 }
             }
         } catch (IOException ioe) {
@@ -357,10 +353,6 @@ public final class SecuritySupport {
         doPrivileged(() -> thread.setUncaughtExceptionHandler(eh), new RuntimePermission("modifyThread"));
     }
 
-    static void moveReplace(SafePath from, SafePath to) throws IOException {
-        doPrivilegedIOWithReturn(() -> Files.move(from.toPath(), to.toPath()));
-    }
-
     static void clearDirectory(SafePath safePath) throws IOException {
         doPriviligedIO(() -> Files.walkFileTree(safePath.toPath(), new DirectoryCleaner()));
     }
@@ -407,10 +399,6 @@ public final class SecuritySupport {
         return doPrivilegedIOWithReturn(() -> Files.isWritable(safePath.toPath()));
     }
 
-    static void deleteOnExit(SafePath safePath) {
-        doPrivileged(() -> safePath.toPath().toFile().deleteOnExit());
-    }
-
     static ReadableByteChannel newFileChannelToRead(SafePath safePath) throws IOException {
         return doPrivilegedIOWithReturn(() -> FileChannel.open(safePath.toPath(), StandardOpenOption.READ));
     }
@@ -421,10 +409,6 @@ public final class SecuritySupport {
 
     public static Reader newFileReader(SafePath safePath) throws FileNotFoundException, IOException {
         return doPrivilegedIOWithReturn(() -> Files.newBufferedReader(safePath.toPath()));
-    }
-
-    static void touch(SafePath path) throws IOException {
-        doPriviligedIO(() -> new RandomAccessFile(path.toPath().toFile(), "rw").close());
     }
 
     static void setAccessible(Method method) {

@@ -1646,9 +1646,10 @@ void G1ConcurrentMark::weak_refs_work() {
   if (has_overflown()) {
     // We can not trust g1_is_alive and the contents of the heap if the marking stack
     // overflowed while processing references. Exit the VM.
-    fatal("Overflow during reference processing, can not continue. Please "
-          "increase MarkStackSizeMax (current value: " SIZE_FORMAT ") and "
-          "restart.", MarkStackSizeMax);
+    fatal("Overflow during reference processing, can not continue. Current mark stack depth: "
+          SIZE_FORMAT ", MarkStackSize: " SIZE_FORMAT ", MarkStackSizeMax: " SIZE_FORMAT ". "
+          "Please increase MarkStackSize and/or MarkStackSizeMax and restart.",
+          _global_mark_stack.size(), MarkStackSize, MarkStackSizeMax);
     return;
   }
 
@@ -2008,13 +2009,21 @@ void G1ConcurrentMark::print_stats() {
 }
 
 void G1ConcurrentMark::concurrent_cycle_abort() {
-  if (!cm_thread()->in_progress() || _has_aborted) {
-    // We haven't started a concurrent cycle or we have already aborted it. No need to do anything.
+  // We haven't started a concurrent cycle no need to do anything; we might have
+  // aborted the marking because of shutting down though. In this case the marking
+  // might have already completed the abort (leading to in_progress() below to
+  // return false), however this still left marking state particularly in the
+  // shared marking bitmap that must be cleaned up.
+  // If there are multiple full gcs during shutdown we do this work repeatedly for
+  // nothing, but this situation should be extremely rare (a full gc after shutdown
+  // has been signalled is alredy rare), and this work should be negligible compared
+  // to actual full gc work.
+  if (!cm_thread()->in_progress() && !_g1h->concurrent_mark_is_terminating()) {
     return;
   }
 
-  // Clear all marks in the next bitmap for the next marking cycle. This will allow us to skip the next
-  // concurrent bitmap clearing.
+  // Clear all marks in the next bitmap for this full gc as it has been used by the
+  // marking that is interrupted by this full gc.
   {
     GCTraceTime(Debug, gc) debug("Clear Next Bitmap");
     clear_next_bitmap(_g1h->workers());
@@ -2028,9 +2037,8 @@ void G1ConcurrentMark::concurrent_cycle_abort() {
   for (uint i = 0; i < _max_num_tasks; ++i) {
     _tasks[i]->clear_region_fields();
   }
-  _first_overflow_barrier_sync.abort();
-  _second_overflow_barrier_sync.abort();
-  _has_aborted = true;
+
+  abort_marking_threads();
 
   SATBMarkQueueSet& satb_mq_set = G1BarrierSet::satb_mark_queue_set();
   satb_mq_set.abandon_partial_marking();
@@ -2039,6 +2047,13 @@ void G1ConcurrentMark::concurrent_cycle_abort() {
   satb_mq_set.set_active_all_threads(
                                  false, /* new active value */
                                  satb_mq_set.is_active() /* expected_active */);
+}
+
+void G1ConcurrentMark::abort_marking_threads() {
+  assert(!_root_regions.scan_in_progress(), "still doing root region scan");
+  _has_aborted = true;
+  _first_overflow_barrier_sync.abort();
+  _second_overflow_barrier_sync.abort();
 }
 
 static void print_ms_time_info(const char* prefix, const char* name,

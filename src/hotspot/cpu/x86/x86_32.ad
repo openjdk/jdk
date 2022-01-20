@@ -13847,7 +13847,40 @@ instruct cmpFastUnlock(eFlagsReg cr, eRegP object, eAXRegP box, eRegP tmp ) %{
   ins_pipe(pipe_slow);
 %}
 
+instruct mask_all_evexL_LT32(kReg dst, eRegL src) %{
+  predicate(Matcher::vector_length(n) <= 32);
+  match(Set dst (MaskAll src));
+  format %{ "mask_all_evexL_LE32 $dst, $src \t" %}
+  ins_encode %{
+    int mask_len = Matcher::vector_length(this);
+    __ vector_maskall_operation($dst$$KRegister, $src$$Register, mask_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
 
+instruct mask_all_evexL_GT32(kReg dst, eRegL src, kReg ktmp) %{
+  predicate(Matcher::vector_length(n) > 32);
+  match(Set dst (MaskAll src));
+  effect(TEMP ktmp);
+  format %{ "mask_all_evexL_GT32 $dst, $src \t! using $ktmp as TEMP " %}
+  ins_encode %{
+    int mask_len = Matcher::vector_length(this);
+    __ vector_maskall_operation32($dst$$KRegister, $src$$Register, $ktmp$$KRegister, mask_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct mask_all_evexI_GT32(kReg dst, rRegI src, kReg ktmp) %{
+  predicate(Matcher::vector_length(n) > 32);
+  match(Set dst (MaskAll src));
+  effect(TEMP ktmp);
+  format %{ "mask_all_evexI_GT32 $dst, $src \t! using $ktmp as TEMP" %}
+  ins_encode %{
+    int mask_len = Matcher::vector_length(this);
+    __ vector_maskall_operation32($dst$$KRegister, $src$$Register, $ktmp$$KRegister, mask_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
 
 // ============================================================================
 // Safepoint Instruction

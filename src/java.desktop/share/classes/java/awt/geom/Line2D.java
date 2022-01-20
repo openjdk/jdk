@@ -532,7 +532,7 @@ public abstract class Line2D implements Shape, Cloneable {
                 }
             }
         }
-        return java.lang.Double.compare(ccw, 0.0);
+        return (ccw < 0.0) ? -1 : ((ccw > 0.0) ? 1 : 0);
     }
 
     /**
