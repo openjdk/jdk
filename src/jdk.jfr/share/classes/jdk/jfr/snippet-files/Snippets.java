@@ -1,4 +1,4 @@
-package example;
+package example1;
 
 import jdk.jfr.AnnotationElement;
 import jdk.jfr.ValueDescriptor;
