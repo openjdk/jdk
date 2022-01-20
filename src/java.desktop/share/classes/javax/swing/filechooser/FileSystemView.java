@@ -354,7 +354,7 @@ public abstract class FileSystemView {
      *
      * @param parent a <code>File</code> object representing a directory or special folder
      * @param fileName a name of a file or folder which exists in <code>parent</code>
-     * @return a File object. 
+     * @return a File object.
      * @since 1.4
      */
     public File getChild(File parent, String fileName) {
