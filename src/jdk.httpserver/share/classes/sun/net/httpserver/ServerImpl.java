@@ -630,6 +630,11 @@ class ServerImpl implements TimeSource {
                     headerValue = headers.getFirst("Content-Length");
                     if (headerValue != null) {
                         clen = Long.parseLong(headerValue);
+                        if (clen < 0) {
+                            reject(Code.HTTP_BAD_REQUEST, requestLine,
+                                    "Illegal Content-Length value");
+                            return;
+                        }
                     }
                     if (clen == 0) {
                         requestCompleted(connection);

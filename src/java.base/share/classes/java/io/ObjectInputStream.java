@@ -1315,6 +1315,8 @@ public class ObjectInputStream
      *     <li>each object reference previously deserialized from the stream
      *     (class is {@code null}, arrayLength is -1),
      *     <li>each regular class (class is not {@code null}, arrayLength is -1),
+     *     <li>each interface class explicitly referenced in the stream
+     *         (it is not called for interfaces implemented by classes in the stream),
      *     <li>each interface of a dynamic proxy and the dynamic proxy class itself
      *     (class is not {@code null}, arrayLength is -1),
      *     <li>each array is filtered using the array type and length of the array
@@ -2071,6 +2073,30 @@ public class ObjectInputStream
             totalObjectRefs++;
             depth++;
             desc.initNonProxy(readDesc, cl, resolveEx, readClassDesc(false));
+
+            if (cl != null) {
+                // Check that serial filtering has been done on the local class descriptor's superclass,
+                // in case it does not appear in the stream.
+
+                // Find the next super descriptor that has a local class descriptor.
+                // Descriptors for which there is no local class are ignored.
+                ObjectStreamClass superLocal = null;
+                for (ObjectStreamClass sDesc = desc.getSuperDesc(); sDesc != null; sDesc = sDesc.getSuperDesc()) {
+                    if ((superLocal = sDesc.getLocalDesc()) != null) {
+                        break;
+                    }
+                }
+
+                // Scan local descriptor superclasses for a match with the local descriptor of the super found above.
+                // For each super descriptor before the match, invoke the serial filter on the class.
+                // The filter is invoked for each class that has not already been filtered
+                // but would be filtered if the instance had been serialized by this Java runtime.
+                for (ObjectStreamClass lDesc = desc.getLocalDesc().getSuperDesc();
+                     lDesc != null && lDesc != superLocal;
+                     lDesc = lDesc.getSuperDesc()) {
+                    filterCheck(lDesc.forClass(), -1);
+                }
+            }
         } finally {
             depth--;
         }
@@ -2529,6 +2555,13 @@ public class ObjectInputStream
             throw new InternalError();
         }
         clear();
+        // Check that an object follows the TC_EXCEPTION typecode
+        byte tc = bin.peekByte();
+        if (tc != TC_OBJECT &&
+            tc != TC_REFERENCE) {
+            throw new StreamCorruptedException(
+                    String.format("invalid type code: %02X", tc));
+        }
         return (IOException) readObject0(Object.class, false);
     }
 

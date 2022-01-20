@@ -600,9 +600,14 @@ public:
   static bool uses_implicit_null_check(void* address);
 
   static address target_addr_for_insn(address insn_addr, unsigned insn);
+  static address target_addr_for_insn_or_null(address insn_addr, unsigned insn);
   static address target_addr_for_insn(address insn_addr) {
     unsigned insn = *(unsigned*)insn_addr;
     return target_addr_for_insn(insn_addr, insn);
+  }
+  static address target_addr_for_insn_or_null(address insn_addr) {
+    unsigned insn = *(unsigned*)insn_addr;
+    return target_addr_for_insn_or_null(insn_addr, insn);
   }
 
   // Required platform-specific helpers for Label::patch_instructions.
