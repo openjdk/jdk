@@ -28,7 +28,7 @@
  * @summary Test DWARF parser with various crashes if debug symbols are available. If the libjvm debug symbols are not
  *          in the same directory as the libjvm.so file, in a subdirectory called .debug, or in the path specified
  *          by the environment variable JVM_DWARF_PATH, then no verification of the hs_err_file is done for libjvm.so.
- * @requires vm.debug == true & vm.compMode != "Xint" & os.family == "linux" & !vm.graal.enabled & vm.gc.G1
+ * @requires vm.compMode != "Xint" & os.family == "linux" & !vm.graal.enabled & vm.gc.G1
  * @modules java.base/jdk.internal.misc
  * @run main/native/othervm -Xbootclasspath/a:. -XX:-CreateCoredumpOnCrash compiler.debug.TestDwarf
  */
@@ -95,15 +95,19 @@ public class TestDwarf {
     // Crash the VM in different ways in order to verify that DWARF parsing is able to print the source information
     // in the hs_err_files for each VM and C stack frame.
     private static void test() throws Exception {
-        runAndCheck(new Flags("-Xcomp", "-XX:CICrashAt=1", "--version"));
-        runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "unsafeAccess"));
+        if (Platform.isDebugBuild()) {
+            // Used flags not available in product builds
+            runAndCheck(new Flags("-Xcomp", "-XX:CICrashAt=1", "--version"));
+            runAndCheck(new Flags("-Xmx100M", "-XX:ErrorHandlerTest=15", "-XX:TestCrashInErrorHandler=14", "--version"));
+            runAndCheck(new Flags("-XX:+CrashGCForDumpingJavaThread", "--version"));
+        }
         runAndCheck(new Flags("-Xmx10m", "-XX:+CrashOnOutOfMemoryError", TestDwarf.class.getCanonicalName(), "outOfMemory"));
         // Use -XX:-TieredCompilation as C1 is currently not aborting the VM (JDK-8264899).
-        runAndCheck(new Flags("-XX:-TieredCompilation", "-XX:AbortVMOnException=compiler.debug.MyException", TestDwarf.class.getCanonicalName(), "abortVMOnException"));
-        runAndCheck(new Flags("-Xmx100M", "-XX:ErrorHandlerTest=15", "-XX:TestCrashInErrorHandler=14", "--version"));
-        runAndCheck(new Flags("-XX:+CrashGCForDumpingJavaThread", "--version"));
+        runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "unsafeAccess"));
+        runAndCheck(new Flags("-XX:-TieredCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:AbortVMOnException=compiler.debug.MyException",
+                              TestDwarf.class.getCanonicalName(), "abortVMOnException"));
         if (Platform.isX64() || Platform.isX86()) {
-            // Not all platforms raise SIGFPE but x86/64 does.
+            // Not all platforms raise SIGFPE but x86_32 and x86_64 do.
             runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "nativeDivByZero"),
                         new DwarfConstraint(0, "Java_compiler_debug_TestDwarf_crashNativeDivByZero", "libTestDwarf.c", 59));
             runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "nativeMultipleMethods"),
