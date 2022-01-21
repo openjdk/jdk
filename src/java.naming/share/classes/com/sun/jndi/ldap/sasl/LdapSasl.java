@@ -130,7 +130,7 @@ public final class LdapSasl {
                     cbType = TlsChannelBinding.parseType(
                                 (String)env.get(TlsChannelBinding.CHANNEL_BINDING_TYPE));
                 } catch (ChannelBindingException e) {
-                    throw new NamingException(e.getMessage());
+                    throw wrapInNamingException(e);
                 }
                 if (cbType == TlsChannelBindingType.TLS_SERVER_END_POINT) {
                     // set tls-server-end-point channel binding
@@ -140,7 +140,7 @@ public final class LdapSasl {
                         try {
                             tlsCB = TlsChannelBinding.create(cert);
                         } catch (ChannelBindingException e) {
-                            throw new NamingException(e.getMessage());
+                            throw wrapInNamingException(e);
                         }
                         envProps = (Hashtable<String, Object>) env.clone();
                         envProps.put(TlsChannelBinding.CHANNEL_BINDING, tlsCB.getData());
@@ -235,6 +235,12 @@ public final class LdapSasl {
             mechNames[i] = mechs.get(i);
         }
         return mechNames;
+    }
+
+    private static NamingException wrapInNamingException(Exception e) {
+        NamingException ne = new NamingException();
+        ne.setRootCause(e);
+        return ne;
     }
 
     private static final byte[] NO_BYTES = new byte[0];
