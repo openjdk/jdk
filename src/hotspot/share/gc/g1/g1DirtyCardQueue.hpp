@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 #ifndef SHARE_GC_G1_G1DIRTYCARDQUEUE_HPP
 #define SHARE_GC_G1_G1DIRTYCARDQUEUE_HPP
 
-#include "gc/g1/g1BufferNodeList.hpp"
 #include "gc/g1/g1FreeIdSet.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
+#include "gc/shared/bufferNodeList.hpp"
 #include "gc/shared/ptrQueue.hpp"
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
@@ -69,7 +69,7 @@ public:
 
 class G1DirtyCardQueueSet: public PtrQueueSet {
   // Head and tail of a list of BufferNodes, linked through their next()
-  // fields.  Similar to G1BufferNodeList, but without the _entry_count.
+  // fields.  Similar to BufferNodeList, but without the _entry_count.
   struct HeadTail {
     BufferNode* _head;
     BufferNode* _tail;
@@ -275,7 +275,7 @@ public:
 
   void merge_bufferlists(G1RedirtyCardsQueueSet* src);
 
-  G1BufferNodeList take_all_completed_buffers();
+  BufferNodeList take_all_completed_buffers();
 
   void flush_queue(G1DirtyCardQueue& queue);
 

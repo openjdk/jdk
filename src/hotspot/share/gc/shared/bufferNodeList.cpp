@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,18 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1BUFFERNODELIST_HPP
-#define SHARE_GC_G1_G1BUFFERNODELIST_HPP
+#include "precompiled.hpp"
+#include "gc/shared/bufferNodeList.hpp"
+#include "utilities/debug.hpp"
 
-#include "utilities/globalDefinitions.hpp"
+BufferNodeList::BufferNodeList() :
+  _head(NULL), _tail(NULL), _entry_count(0) {}
 
-class BufferNode;
-
-struct G1BufferNodeList {
-  BufferNode* _head;            // First node in list or NULL if empty.
-  BufferNode* _tail;            // Last node in list or NULL if empty.
-  size_t _entry_count;          // Sum of entries in nodes in list.
-
-  G1BufferNodeList();
-  G1BufferNodeList(BufferNode* head, BufferNode* tail, size_t entry_count);
-};
-
-#endif // SHARE_GC_G1_G1BUFFERNODELIST_HPP
-
+BufferNodeList::BufferNodeList(BufferNode* head,
+                               BufferNode* tail,
+                               size_t entry_count) :
+  _head(head), _tail(tail), _entry_count(entry_count)
+{
+  assert((_head == NULL) == (_tail == NULL), "invariant");
+  assert((_head == NULL) == (_entry_count == 0), "invariant");
+}
