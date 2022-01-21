@@ -38,7 +38,7 @@ bool G1EvacFailureRegions::record(uint region_idx, size_t word_sz, G1RegionMarkS
   if (success) {
     size_t offset = Atomic::fetch_and_add(&_evac_failure_regions_cur_length, 1u);
     _evac_failure_regions[offset] = region_idx;
-    _chunk_claimers[region_idx] = new (NEW_C_HEAP_OBJ(G1HeapRegionChunkClaimer, mtGC)) G1HeapRegionChunkClaimer(region_idx);
+    _chunk_claimers[region_idx] = new (NEW_C_HEAP_OBJ(G1HeapRegionChunksClaimer, mtGC)) G1HeapRegionChunksClaimer(region_idx);
   }
   return success;
 }

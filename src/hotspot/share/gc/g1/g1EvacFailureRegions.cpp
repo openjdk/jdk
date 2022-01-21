@@ -55,7 +55,7 @@ void G1EvacFailureRegions::pre_collection(uint max_regions) {
   _max_regions = max_regions;
   _regions_failed_evacuation.resize(_max_regions);
   _evac_failure_regions = NEW_C_HEAP_ARRAY(uint, _max_regions, mtGC);
-  _chunk_claimers = NEW_C_HEAP_ARRAY(G1HeapRegionChunkClaimer*, _max_regions, mtGC);
+  _chunk_claimers = NEW_C_HEAP_ARRAY(G1HeapRegionChunksClaimer*, _max_regions, mtGC);
 }
 
 void G1EvacFailureRegions::post_collection() {
@@ -82,9 +82,10 @@ void G1EvacFailureRegions::par_iterate(HeapRegionClosure* closure,
                                                      worker_id);
 }
 
-void G1EvacFailureRegions::par_iterate_chunks(G1HeapRegionChunkClosure* chunk_closure,
-                                              uint worker_id) const {
-  G1ScanChunksInHeapRegionClosure closure(_chunk_claimers, chunk_closure, worker_id);
+void G1EvacFailureRegions::par_iterate_chunks_in_regions(HeapRegionClosure* prepare_region_closure,
+                                                         G1HeapRegionChunkClosure* chunk_closure,
+                                                         uint worker_id) const {
+  G1ScanChunksInHeapRegionClosure closure(_chunk_claimers, prepare_region_closure, chunk_closure, worker_id);
 
   G1CollectedHeap::heap()->par_iterate_regions_array(&closure,
                                                      nullptr, // pass null, so every worker thread go through every region.

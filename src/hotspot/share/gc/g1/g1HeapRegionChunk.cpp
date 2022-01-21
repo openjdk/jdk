@@ -49,41 +49,56 @@ G1HeapRegionChunk::G1HeapRegionChunk(HeapRegion* region, uint chunk_idx, uint ch
                                 && _bitmap->get_next_marked_addr(_limit, top) == top;
 }
 
-G1HeapRegionChunkClaimer::G1HeapRegionChunkClaimer(uint region_idx) :
+G1HeapRegionChunksClaimer::G1HeapRegionChunksClaimer(uint region_idx, bool region_ready) :
   _chunk_num(G1HeapRegionChunkNum),
   _chunk_size(static_cast<uint>(G1HeapRegionSize / _chunk_num)),
   _region_idx(region_idx),
+  _region_claimed(false),
+  _region_ready(region_ready),
   _chunks(mtGC) {
   _chunks.resize(_chunk_num);
 }
 
-bool G1HeapRegionChunkClaimer::claim_chunk(uint chunk_idx) {
+bool G1HeapRegionChunksClaimer::claim_chunk(uint chunk_idx) {
   return _chunks.par_set_bit(chunk_idx);
 }
 
-G1ScanChunksInHeapRegionClosure::G1ScanChunksInHeapRegionClosure(G1HeapRegionChunkClaimer** chunk_claimers,
+void G1HeapRegionChunksClaimer::prepare_region(HeapRegionClosure* prepare_region_closure) {
+  if (claim_prepare_region()) {
+    prepare_region_closure->do_heap_region(G1CollectedHeap::heap()->region_at(_region_idx));
+    set_region_ready();
+    return;
+  }
+  while (!region_ready());
+}
+
+G1ScanChunksInHeapRegionClosure::G1ScanChunksInHeapRegionClosure(G1HeapRegionChunksClaimer** chunk_claimers,
+                                                                 HeapRegionClosure* prepare_region_closure,
                                                                  G1HeapRegionChunkClosure* closure,
                                                                  uint worker_id) :
   _chunk_claimers(chunk_claimers),
+  _prepare_region_closure(prepare_region_closure),
   _closure(closure),
   _worker_id(worker_id),
   _bitmap(G1CollectedHeap::heap()->concurrent_mark()->prev_mark_bitmap()) {
 }
 
 bool G1ScanChunksInHeapRegionClosure::do_heap_region(HeapRegion* r) {
-  G1HeapRegionChunkClaimer* claimer = _chunk_claimers[r->hrm_index()];
+  G1HeapRegionChunksClaimer* claimer = _chunk_claimers[r->hrm_index()];
+  claimer->prepare_region(_prepare_region_closure);
+
   uint total_workers = G1CollectedHeap::heap()->workers()->active_workers();
   const uint start_pos = _worker_id * claimer->chunk_num() / total_workers;
   uint chunk_idx = start_pos;
   while (true) {
     if (claimer->claim_chunk(chunk_idx)) {
-
       G1HeapRegionChunk chunk(r, chunk_idx, claimer->chunk_size(), _bitmap);
       if (chunk.empty()) {
         continue;
       }
       _closure->do_heap_region_chunk(&chunk);
     }
+
     if (++chunk_idx == claimer->chunk_num()) {
       chunk_idx = 0;
     }

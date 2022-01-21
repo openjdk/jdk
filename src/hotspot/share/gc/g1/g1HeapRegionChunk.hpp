@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_G1_G1HEAPREGIONCHUNK_HPP
 #define SHARE_GC_G1_G1HEAPREGIONCHUNK_HPP
 
+#include "runtime/atomic.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -36,11 +37,13 @@ class G1HeapRegionChunk {
   HeapRegion* _region;
   uint _chunk_idx;
   const G1CMBitMap* const _bitmap;
+
   // _start < _first_obj_in_chunk <= _limit <= _next_obj_in_region
   HeapWord * _start;
   HeapWord * _limit;
   HeapWord * _first_obj_in_chunk;
   HeapWord * _next_obj_in_region;
+
   bool _include_first_obj_in_region;
   bool _include_last_obj_in_region;
 
@@ -75,7 +78,6 @@ public:
   bool include_last_obj_in_region() const {
     return _include_last_obj_in_region;
   }
-
 };
 
 class G1HeapRegionChunkClosure {
@@ -84,14 +86,26 @@ public:
   virtual void do_heap_region_chunk(G1HeapRegionChunk* c) = 0;
 };
 
-class G1HeapRegionChunkClaimer {
+class G1HeapRegionChunksClaimer {
   const uint _chunk_num;
   const uint _chunk_size;
   const uint _region_idx;
+  volatile bool _region_claimed;
+  volatile bool _region_ready;
   CHeapBitMap _chunks;
 
+  bool claim_prepare_region() {
+    return !Atomic::cmpxchg(&_region_claimed, false, true);
+  }
+  bool region_ready() {
+    return Atomic::load(&_region_ready);
+  }
+  void set_region_ready() {
+    Atomic::store(&_region_ready, true);
+  }
+
 public:
-  G1HeapRegionChunkClaimer(uint region_idx);
+  G1HeapRegionChunksClaimer(uint region_idx, bool region_ready = false);
 
   bool claim_chunk(uint chunk_idx);
 
@@ -101,16 +115,22 @@ public:
   uint chunk_num() {
     return _chunk_num;
   }
+
+  void prepare_region(HeapRegionClosure* prepare_region_closure);
 };
 
+// Iterate through chunks of regions, for each region do single preparation.
 class G1ScanChunksInHeapRegionClosure : public HeapRegionClosure {
-  G1HeapRegionChunkClaimer** _chunk_claimers;
+  G1HeapRegionChunksClaimer** _chunk_claimers;
+  // Preparation closure for a single region.
+  HeapRegionClosure* _prepare_region_closure;
   G1HeapRegionChunkClosure* _closure;
   uint _worker_id;
   const G1CMBitMap* const _bitmap;
 
 public:
-  G1ScanChunksInHeapRegionClosure(G1HeapRegionChunkClaimer** chunk_claimers,
+  G1ScanChunksInHeapRegionClosure(G1HeapRegionChunksClaimer** chunk_claimers,
+                                  HeapRegionClosure* prepare_region_closure,
                                   G1HeapRegionChunkClosure* closure,
                                   uint worker_id);
 
