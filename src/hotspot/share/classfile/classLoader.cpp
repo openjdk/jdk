@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -253,9 +253,9 @@ ClassFileStream* ClassPathDirEntry::open_stream(JavaThread* current, const char*
     if (file_handle != -1) {
       // read contents into resource array
       u1* buffer = NEW_RESOURCE_ARRAY(u1, st.st_size);
-      size_t num_read = os::read(file_handle, (char*) buffer, st.st_size);
+      size_t num_read = ::read(file_handle, (char*) buffer, st.st_size);
       // close file
-      os::close(file_handle);
+      ::close(file_handle);
       // construct ClassFileStream
       if (num_read == (size_t)st.st_size) {
         if (UsePerfData) {
@@ -303,13 +303,19 @@ u1* ClassPathZipEntry::open_entry(JavaThread* current, const char* name, jint* f
   }
 
   // read contents into resource array
-  int size = (*filesize) + ((nul_terminate) ? 1 : 0);
+  size_t size = (uint32_t)(*filesize);
+  if (nul_terminate) {
+    if (sizeof(size) == sizeof(uint32_t) && size == UINT_MAX) {
+      return NULL; // 32-bit integer overflow will occur.
+    }
+    size++;
+  }
   buffer = NEW_RESOURCE_ARRAY(u1, size);
   if (!(*ReadEntry)(_zip, entry, buffer, filename)) return NULL;
 
   // return result
   if (nul_terminate) {
-    buffer[*filesize] = 0;
+    buffer[size - 1] = 0;
   }
   return buffer;
 }
