@@ -31,12 +31,11 @@
 class G1CMBitMap;
 class HeapRegion;
 
-// TODO: remove uncessary fields
 class G1HeapRegionChunk {
   const uint _chunk_size;
   HeapRegion* _region;
   uint _chunk_idx;
-  G1CMBitMap* _bitmap;
+  const G1CMBitMap* const _bitmap;
   // _start < _first_obj_in_chunk <= _limit <= _next_obj_in_region
   HeapWord * _start;
   HeapWord * _limit;
@@ -46,7 +45,7 @@ class G1HeapRegionChunk {
   bool _include_last_obj_in_region;
 
 public:
-  G1HeapRegionChunk(HeapRegion* region, uint chunk_idx, uint chunk_size, G1CMBitMap* bitmap);
+  G1HeapRegionChunk(HeapRegion* region, uint chunk_idx, uint chunk_size, const G1CMBitMap* const bitmap);
 
   // All objects that failed evacuation has been marked in the prev bitmap.
   // Use the bitmap to apply the above closure to all failing objects.
@@ -108,7 +107,7 @@ class G1ScanChunksInHeapRegionClosure : public HeapRegionClosure {
   G1HeapRegionChunkClaimer** _chunk_claimers;
   G1HeapRegionChunkClosure* _closure;
   uint _worker_id;
-  G1CMBitMap* _bitmap;
+  const G1CMBitMap* const _bitmap;
 
 public:
   G1ScanChunksInHeapRegionClosure(G1HeapRegionChunkClaimer** chunk_claimers,

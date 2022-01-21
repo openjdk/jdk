@@ -29,7 +29,7 @@
 #include "gc/g1/g1HeapRegionChunk.hpp"
 #include "gc/g1/heapRegion.hpp"
 
-G1HeapRegionChunk::G1HeapRegionChunk(HeapRegion* region, uint chunk_idx, uint chunk_size, G1CMBitMap* bitmap) :
+G1HeapRegionChunk::G1HeapRegionChunk(HeapRegion* region, uint chunk_idx, uint chunk_size, const G1CMBitMap* const bitmap) :
   _chunk_size(chunk_size),
   _region(region),
   _chunk_idx(chunk_idx),
@@ -67,7 +67,7 @@ G1ScanChunksInHeapRegionClosure::G1ScanChunksInHeapRegionClosure(G1HeapRegionChu
   _chunk_claimers(chunk_claimers),
   _closure(closure),
   _worker_id(worker_id),
-  _bitmap(const_cast<G1CMBitMap*>(G1CollectedHeap::heap()->concurrent_mark()->prev_mark_bitmap())) {
+  _bitmap(G1CollectedHeap::heap()->concurrent_mark()->prev_mark_bitmap()) {
 }
 
 bool G1ScanChunksInHeapRegionClosure::do_heap_region(HeapRegion* r) {
