@@ -31,6 +31,8 @@
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
 
+#include "jvm_io.h"
+
 size_t MallocMemorySummary::_snapshot[CALC_OBJ_SIZE_IN_TYPE(MallocMemorySnapshot, size_t)];
 
 #ifdef ASSERT
