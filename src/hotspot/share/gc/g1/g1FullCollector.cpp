@@ -294,6 +294,10 @@ void G1FullCollector::phase1_mark_live_objects() {
   }
 
   scope()->tracer()->report_object_count_after_gc(&_is_alive);
+#if TASKQUEUE_STATS
+  oop_queue_set()->print_and_reset_taskqueue_stats("Oop Queue");
+  array_queue_set()->print_and_reset_taskqueue_stats("ObjArrayOop Queue");
+#endif
 }
 
 void G1FullCollector::phase2_prepare_compaction() {
