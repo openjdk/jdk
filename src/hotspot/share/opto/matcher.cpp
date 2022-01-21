@@ -322,7 +322,7 @@ void Matcher::match( ) {
   find_shared( C->root() );
   find_shared( C->top() );
 
-  C->print_method(PHASE_BEFORE_MATCHING);
+  C->print_method(PHASE_BEFORE_MATCHING, 1);
 
   // Create new ideal node ConP #NULL even if it does exist in old space
   // to avoid false sharing if the corresponding mach node is not used.

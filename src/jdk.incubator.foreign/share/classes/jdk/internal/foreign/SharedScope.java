@@ -45,36 +45,8 @@ class SharedScope extends ResourceScopeImpl {
 
     private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
-    private static final int ALIVE = 0;
-    private static final int CLOSING = -1;
-    private static final int CLOSED = -2;
-
-    private int state = ALIVE;
-
-    private static final VarHandle STATE;
-
-    static {
-        try {
-            STATE = MethodHandles.lookup().findVarHandle(jdk.internal.foreign.SharedScope.class, "state", int.class);
-        } catch (Throwable ex) {
-            throw new ExceptionInInitializerError(ex);
-        }
-    }
-
     SharedScope(Cleaner cleaner) {
-        super(new SharedResourceList(), cleaner);
-    }
-
-    @Override
-    public Thread ownerThread() {
-        return null;
-    }
-
-    @Override
-    public void checkValidState() {
-        if (state < ALIVE) {
-            throw ScopedAccessError.INSTANCE;
-        }
+        super(null, new SharedResourceList(), cleaner);
     }
 
     @Override

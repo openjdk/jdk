@@ -25,8 +25,6 @@
 
 package java.io;
 
-import java.io.ObjectStreamClass.WeakClassKey;
-import java.lang.ref.ReferenceQueue;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -34,9 +32,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import static java.io.ObjectStreamClass.processQueue;
 import sun.reflect.misc.ReflectUtil;
 
 /**
@@ -177,12 +172,13 @@ public class ObjectOutputStream
 
     private static class Caches {
         /** cache of subclass security audit results */
-        static final ConcurrentMap<WeakClassKey,Boolean> subclassAudits =
-            new ConcurrentHashMap<>();
-
-        /** queue for WeakReferences to audited subclasses */
-        static final ReferenceQueue<Class<?>> subclassAuditsQueue =
-            new ReferenceQueue<>();
+        static final ClassValue<Boolean> subclassAudits =
+            new ClassValue<>() {
+                @Override
+                protected Boolean computeValue(Class<?> type) {
+                    return auditSubclass(type);
+                }
+            };
     }
 
     /** filter stream for handling block data conversion */
@@ -1065,13 +1061,7 @@ public class ObjectOutputStream
         if (sm == null) {
             return;
         }
-        processQueue(Caches.subclassAuditsQueue, Caches.subclassAudits);
-        WeakClassKey key = new WeakClassKey(cl, Caches.subclassAuditsQueue);
-        Boolean result = Caches.subclassAudits.get(key);
-        if (result == null) {
-            result = auditSubclass(cl);
-            Caches.subclassAudits.putIfAbsent(key, result);
-        }
+        boolean result = Caches.subclassAudits.get(cl);
         if (!result) {
             sm.checkPermission(SUBCLASS_IMPLEMENTATION_PERMISSION);
         }

@@ -154,6 +154,8 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     // Unimplemented for subword types since bit count changes
     // depending on size of lane (and sign bit).
     return (bt == T_INT ? Op_PopCountVI : 0);
+  case Op_PopCountL:
+    return Op_PopCountVL;
   case Op_LShiftI:
     switch (bt) {
     case T_BOOLEAN:
@@ -296,6 +298,16 @@ bool VectorNode::is_muladds2i(Node* n) {
   }
   return false;
 }
+
+bool VectorNode::is_vpopcnt_long(Node* n) {
+  if (n->Opcode() == Op_PopCountL) {
+    return true;
+  }
+  return false;
+}
+
+
+
 
 bool VectorNode::is_roundopD(Node* n) {
   if (n->Opcode() == Op_RoundDoubleMode) {
@@ -531,6 +543,7 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, b
   case Op_SqrtVD: return new SqrtVDNode(n1, vt);
 
   case Op_PopCountVI: return new PopCountVINode(n1, vt);
+  case Op_PopCountVL: return new PopCountVLNode(n1, vt);
   case Op_RotateLeftV: return new RotateLeftVNode(n1, n2, vt);
   case Op_RotateRightV: return new RotateRightVNode(n1, n2, vt);
 

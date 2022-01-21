@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -45,7 +46,7 @@ char const* FileWriter::open_writer() {
 
 FileWriter::~FileWriter() {
   if (_fd >= 0) {
-    os::close(_fd);
+    ::close(_fd);
     _fd = -1;
   }
 }
@@ -54,7 +55,7 @@ char const* FileWriter::write_buf(char* buf, ssize_t size) {
   assert(_fd >= 0, "Must be open");
   assert(size > 0, "Must write at least one byte");
 
-  ssize_t n = (ssize_t) os::write(_fd, buf, (uint) size);
+  ssize_t n = os::write(_fd, buf, (uint) size);
 
   if (n <= 0) {
     return os::strerror(errno);
