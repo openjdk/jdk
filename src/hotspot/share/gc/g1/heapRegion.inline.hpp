@@ -231,32 +231,27 @@ inline HeapWord* HeapRegion::allocate(size_t min_word_size,
   return allocate_impl(min_word_size, desired_word_size, actual_word_size);
 }
 
-inline HeapWord* HeapRegion::bot_threshold_for_addr(const void* addr) {
-  HeapWord* threshold = _bot_part.threshold_for_addr(addr);
-  assert(threshold >= addr,
-         "threshold must be at or after given address. " PTR_FORMAT " >= " PTR_FORMAT,
-         p2i(threshold), p2i(addr));
-  assert(is_old(),
-         "Should only calculate BOT threshold for old regions. addr: " PTR_FORMAT " region:" HR_FORMAT,
-         p2i(addr), HR_FORMAT_PARAMS(this));
-  return threshold;
-}
-
-inline void HeapRegion::update_bot_crossing_threshold(HeapWord** threshold, HeapWord* obj_start, HeapWord* obj_end) {
+inline void HeapRegion::update_bot_if_crossing_boundary(HeapWord* obj_start, size_t obj_size) {
   assert(is_old(), "should only do BOT updates for old regions");
+
+  HeapWord* obj_end   = obj_start + obj_size;
+
   assert(is_in(obj_start), "obj_start must be in this region: " HR_FORMAT
-         " obj_start " PTR_FORMAT " obj_end " PTR_FORMAT " threshold " PTR_FORMAT,
+         " obj_start " PTR_FORMAT " obj_end " PTR_FORMAT,
          HR_FORMAT_PARAMS(this),
-         p2i(obj_start), p2i(obj_end), p2i(*threshold));
-  _bot_part.alloc_block_work(threshold, obj_start, obj_end);
-}
+         p2i(obj_start), p2i(obj_end));
 
-inline void HeapRegion::update_bot_at(HeapWord* obj_start, size_t obj_size) {
-  HeapWord* threshold = bot_threshold_for_addr(obj_start);
-  HeapWord* obj_end = obj_start + obj_size;
+  HeapWord* cur_card_boundary = _bot_part.align_up_by_card_size(obj_start);
 
-  if (obj_end > threshold) {
-    update_bot_crossing_threshold(&threshold, obj_start, obj_end);
+  // strictly greater-than
+  bool cross_card_boundary = (obj_end > cur_card_boundary);
+
+  if (cross_card_boundary) {
+    // Creating a dummy variable inside this `if` as the arg of `&`; this
+    // avoids unnecessary loads in the assembly code on the fast path (the
+    // bot-not-updating case).
+    HeapWord* dummy = cur_card_boundary;
+    _bot_part.alloc_block_work(&dummy, obj_start, obj_end);
   }
 }
 

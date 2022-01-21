@@ -41,7 +41,7 @@ import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLException;
 import jdk.test.lib.Platform;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -140,8 +140,8 @@ public class MaxRequestTimeTest {
         var request = HttpRequest.newBuilder(URI.create("https://localhost:" + PORT.get() + "/")).build();
         try {
             client.send(request, HttpResponse.BodyHandlers.ofString());
-            throw new RuntimeException("Expected SSLHandshakeException not thrown");
-        } catch (SSLHandshakeException expected) {  // server closes connection when max request time is reached
+            throw new RuntimeException("Expected SSLException not thrown");
+        } catch (SSLException expected) {  // server closes connection when max request time is reached
             expected.printStackTrace(System.out);
         }
     }

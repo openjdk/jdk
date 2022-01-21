@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,14 @@ inline traceid JfrTraceIdLoadBarrier::load(const PackageEntry* package) {
 
 inline traceid JfrTraceIdLoadBarrier::load(const ClassLoaderData* cld) {
   assert(cld != NULL, "invariant");
-  return cld->has_class_mirror_holder() ? 0 : set_used_and_get(cld);
+  if (cld->has_class_mirror_holder()) {
+    return 0;
+  }
+  const Klass* const class_loader_klass = cld->class_loader_klass();
+  if (class_loader_klass != nullptr && should_tag(class_loader_klass)) {
+    load_barrier(class_loader_klass);
+  }
+  return set_used_and_get(cld);
 }
 
 inline traceid JfrTraceIdLoadBarrier::load_leakp(const Klass* klass, const Method* method) {

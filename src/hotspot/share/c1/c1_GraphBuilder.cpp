@@ -2036,19 +2036,19 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
         cha_monomorphic_target = target->find_monomorphic_target(calling_klass, declared_interface, singleton);
         if (cha_monomorphic_target != NULL) {
           if (cha_monomorphic_target->holder() != compilation()->env()->Object_klass()) {
-            // If CHA is able to bind this invoke then update the class
-            // to match that class, otherwise klass will refer to the
-            // interface.
-            klass = cha_monomorphic_target->holder();
+            ciInstanceKlass* holder = cha_monomorphic_target->holder();
+            ciInstanceKlass* constraint = (holder->is_subtype_of(singleton) ? holder : singleton); // avoid upcasts
             actual_recv = declared_interface;
 
             // insert a check it's really the expected class.
-            CheckCast* c = new CheckCast(klass, receiver, copy_state_for_exception());
+            CheckCast* c = new CheckCast(constraint, receiver, copy_state_for_exception());
             c->set_incompatible_class_change_check();
-            c->set_direct_compare(klass->is_final());
+            c->set_direct_compare(constraint->is_final());
             // pass the result of the checkcast so that the compiler has
             // more accurate type info in the inlinee
             better_receiver = append_split(c);
+
+            dependency_recorder()->assert_unique_implementor(declared_interface, singleton);
           } else {
             cha_monomorphic_target = NULL; // subtype check against Object is useless
           }
