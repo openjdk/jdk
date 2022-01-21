@@ -59,47 +59,6 @@
 #include "memory/resourceArea.hpp"
 #include "utilities/ticks.hpp"
 
-#if TASKQUEUE_STATS
-uint G1YoungCollector::num_task_queues() const {
-  return task_queues()->size();
-}
-
-void G1YoungCollector::print_taskqueue_stats_hdr(outputStream* const st) {
-  st->print_raw_cr("GC Task Stats");
-  st->print_raw("thr "); TaskQueueStats::print_header(1, st); st->cr();
-  st->print_raw("--- "); TaskQueueStats::print_header(2, st); st->cr();
-}
-
-void G1YoungCollector::print_taskqueue_stats() const {
-  if (!log_is_enabled(Trace, gc, task, stats)) {
-    return;
-  }
-  Log(gc, task, stats) log;
-  ResourceMark rm;
-  LogStream ls(log.trace());
-  outputStream* st = &ls;
-
-  print_taskqueue_stats_hdr(st);
-
-  TaskQueueStats totals;
-  const uint n = num_task_queues();
-  for (uint i = 0; i < n; ++i) {
-    st->print("%3u ", i); _g1h->task_queue(i)->stats.print(st); st->cr();
-    totals += _g1h->task_queue(i)->stats;
-  }
-  st->print_raw("tot "); totals.print(st); st->cr();
-
-  DEBUG_ONLY(totals.verify());
-}
-
-void G1YoungCollector::reset_taskqueue_stats() {
-  const uint n = num_task_queues();
-  for (uint i = 0; i < n; ++i) {
-    _g1h->task_queue(i)->stats.reset();
-  }
-}
-#endif // TASKQUEUE_STATS
-
 // GCTraceTime wrapper that constructs the message according to GC pause type and
 // GC cause.
 // The code relies on the fact that GCTraceTimeWrapper stores the string passed
@@ -1147,6 +1106,5 @@ void G1YoungCollector::collect() {
 
     policy()->record_young_collection_end(_concurrent_operation_is_full_mark, evacuation_failed());
   }
-  TASKQUEUE_STATS_ONLY(print_taskqueue_stats());
-  TASKQUEUE_STATS_ONLY(reset_taskqueue_stats());
+  TASKQUEUE_STATS_ONLY(_g1h->print_and_reset_taskqueue_stats(_g1h->task_queues(), "Oop Queue");)
 }

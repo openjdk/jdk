@@ -28,10 +28,12 @@
 #include "gc/shared/taskqueue.hpp"
 
 #include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/stack.inline.hpp"
 
 template <class T, MEMFLAGS F>
@@ -47,6 +49,38 @@ template <class T, MEMFLAGS F>
 inline GenericTaskQueueSet<T, F>::~GenericTaskQueueSet() {
   FREE_C_HEAP_ARRAY(T*, _queues);
 }
+
+#if TASKQUEUE_STATS
+template<class T, MEMFLAGS F>
+void GenericTaskQueueSet<T, F>::print_taskqueue_stats_hdr(outputStream* const st, const char* label) {
+  st->print_cr("GC Task Stats %s", label);
+  st->print("thr "); TaskQueueStats::print_header(1, st); st->cr();
+  st->print("--- "); TaskQueueStats::print_header(2, st); st->cr();
+}
+
+template<class T, MEMFLAGS F>
+void GenericTaskQueueSet<T, F>::print_taskqueue_stats(outputStream* const st, const char* label) {
+  print_taskqueue_stats_hdr(st, label);
+
+  TaskQueueStats totals;
+  const uint n = size();
+  for (uint i = 0; i < n; ++i) {
+    st->print("%3u ", i); queue(i)->stats.print(st); st->cr();
+    totals += queue(i)->stats;
+  }
+  st->print_raw("tot "); totals.print(st); st->cr();
+
+  DEBUG_ONLY(totals.verify());
+}
+
+template<class T, MEMFLAGS F>
+void GenericTaskQueueSet<T, F>::reset_taskqueue_stats() {
+  const uint n = size();
+  for (uint i = 0; i < n; ++i) {
+    queue(i)->stats.reset();
+  }
+}
+#endif // TASKQUEUE_STATS
 
 template<class E, MEMFLAGS F, unsigned int N>
 inline GenericTaskQueue<E, F, N>::GenericTaskQueue() :

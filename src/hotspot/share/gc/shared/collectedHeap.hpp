@@ -27,6 +27,7 @@
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcWhen.hpp"
+#include "gc/shared/taskqueue.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
@@ -462,6 +463,11 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
   void print_heap_before_gc();
   void print_heap_after_gc();
+
+#if TASKQUEUE_STATS
+  template <class T, MEMFLAGS F>
+  void print_and_reset_taskqueue_stats(GenericTaskQueueSet<T, F>* queue_set, const char* label) const;
+#endif // TASKQUEUE_STATS
 
   // Registering and unregistering an nmethod (compiled code) with the heap.
   virtual void register_nmethod(nmethod* nm) = 0;

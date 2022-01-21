@@ -473,6 +473,14 @@ public:
   virtual uint tasks() const;
 
   uint size() const { return _n; }
+
+#if TASKQUEUE_STATS
+private:
+  static void print_taskqueue_stats_hdr(outputStream* const st, const char* label);
+public:
+  void print_taskqueue_stats(outputStream* const st, const char* label);
+  void reset_taskqueue_stats();
+#endif // TASKQUEUE_STATS
 };
 
 template<class T, MEMFLAGS F> void

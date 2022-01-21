@@ -134,13 +134,6 @@ class G1YoungCollector {
   // True iff an evacuation has failed in the most-recent collection.
   bool evacuation_failed() const;
 
-#if TASKQUEUE_STATS
-  uint num_task_queues() const;
-  static void print_taskqueue_stats_hdr(outputStream* const st);
-  void print_taskqueue_stats() const;
-  void reset_taskqueue_stats();
-#endif // TASKQUEUE_STATS
-
 public:
   G1YoungCollector(GCCause::Cause gc_cause,
                    double target_pause_time_ms);
