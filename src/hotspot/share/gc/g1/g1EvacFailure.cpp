@@ -104,7 +104,8 @@ public:
   }
 
   // Fill the memory area from start to end with filler objects, and update the BOT
-  // and the mark bitmap accordingly.
+  // accordingly. Since we clear and use the prev bitmap for marking objects that
+  // failed evacuation, there is no work to be done there.
   void zap_dead_objects(HeapWord* start, HeapWord* end) {
     if (start == end) {
       return;
