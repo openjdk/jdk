@@ -184,7 +184,7 @@ public final class Main {
     // Warnings on weak algorithms etc
     private List<String> weakWarnings = new ArrayList<>();
 
-    Set<X509Certificate> trustedCerts = new HashSet<>();
+    private Set<X509Certificate> trustedCerts = new HashSet<>();
 
     private static final DisabledAlgorithmConstraints DISABLED_CHECK =
             new DisabledAlgorithmConstraints(
@@ -1555,7 +1555,7 @@ public final class Main {
 
         checkWeakConstraint(rb.getString("the.issuer"),
                 keyStore.getCertificateChain(alias));
-        cpcp = new CertPathConstraintsParameters(cert, null, null, null);
+        cpcp = buildCertPathConstraint(cert, null);
         checkWeakConstraint(rb.getString("the.generated.certificate"),
                 cert, cpcp);
     }
@@ -1704,7 +1704,7 @@ public final class Main {
         }
         dumpCert(cert, out);
         CertPathConstraintsParameters cpcp =
-                new CertPathConstraintsParameters(cert, null, null, null);
+                buildCertPathConstraint(cert, null);
         checkWeakConstraint(rb.getString("the.certificate"), cert, cpcp);
     }
 
@@ -2255,8 +2255,7 @@ public final class Main {
                 out.println(rb.getString("Certificate.fingerprint.SHA.256.")
                             + getCertFingerPrint("SHA-256", cert));
             }
-            cpcp = new CertPathConstraintsParameters((X509Certificate)cert,
-                    null,null, null);
+            cpcp = buildCertPathConstraint((X509Certificate)cert, null);
             checkWeakConstraint(label, cert, cpcp);
         } else {
             out.println(rb.getString("Unknown.Entry.Type"));
@@ -2485,8 +2484,7 @@ public final class Main {
             Certificate c = srckeystore.getCertificate(alias);
             if (c != null) {
                 CertPathConstraintsParameters cpcp =
-                        new CertPathConstraintsParameters((X509Certificate)c,
-                        null, null, null);
+                        buildCertPathConstraint((X509Certificate)c, null);
                 checkWeakConstraint("<" + newAlias + ">", c, cpcp);
             }
             keyStore.setEntry(newAlias, entry, pp);
@@ -2685,9 +2683,8 @@ public final class Main {
                 if (issuer != null) {
                     signer = caks.getCertificate(issuer);
                     CertPathConstraintsParameters cpcp =
-                            new CertPathConstraintsParameters(
-                            (X509Certificate)signer, null,
-                            null, null);
+                            buildCertPathConstraint((X509Certificate)signer,
+                            null);
                     out.printf(rb.getString(
                             "verified.by.s.in.s.weak"),
                             issuer,
@@ -2701,8 +2698,8 @@ public final class Main {
                 if (issuer != null) {
                     signer = keyStore.getCertificate(issuer);
                     CertPathConstraintsParameters cpcp =
-                            new CertPathConstraintsParameters(
-                            (X509Certificate)signer, null, null, null);
+                            buildCertPathConstraint((X509Certificate)signer,
+                            null);
                     out.printf(rb.getString(
                             "verified.by.s.in.s.weak"),
                             issuer,
@@ -2727,8 +2724,7 @@ public final class Main {
 
             if (signer != null) {
                 CertPathConstraintsParameters cpcp =
-                        new CertPathConstraintsParameters(
-                        (X509Certificate)signer, null, null, null);
+                        buildCertPathConstraint((X509Certificate)signer, null);
                 checkWeakConstraint(rb.getString("the.crl"), crl,
                         signer.getPublicKey(), cpcp);
             } else {
@@ -3004,7 +3000,7 @@ public final class Main {
                         cpcp = buildCertPathConstraint(x, anchor);
                     } else {
                         cpcp = new CertPathConstraintsParameters(
-                                x,null, anchor, null);
+                                x, null, anchor, null);
                     }
                     checkWeakConstraint(oneInManys(rb.getString(
                             "the.certificate"), cc,
@@ -3321,7 +3317,7 @@ public final class Main {
         }
 
         CertPathConstraintsParameters cpcp =
-                new CertPathConstraintsParameters(cert, null, null, null);
+                buildCertPathConstraint(cert, null);
 
         if (noprompt) {
             checkWeakConstraint(rb.getString("the.input"), cert, cpcp);
@@ -3605,7 +3601,7 @@ public final class Main {
         PublicKey pkey = cert.getPublicKey();
         String sigName = cert.getSigAlgName();
         CertPathConstraintsParameters cpcp =
-                new CertPathConstraintsParameters(cert, null, null, null);
+                buildCertPathConstraint(cert, null);
         // No need to warn about sigalg of a trust anchor
         if (!isTrustedCert(cert)) {
             sigName = withWeakConstraint(sigName, cpcp);
@@ -4025,8 +4021,8 @@ public final class Main {
                 tmpCerts[tmpCerts.length-1] = root.snd;
                 replyCerts = tmpCerts;
                 CertPathConstraintsParameters cpcp =
-                        new CertPathConstraintsParameters(
-                        (X509Certificate)root.snd, null, null, null);
+                        buildCertPathConstraint((X509Certificate)root.snd,
+                        null);
                 checkWeakConstraint(String.format(fromKeyStore
                                 ? rb.getString("alias.in.keystore")
                                 : rb.getString("alias.in.cacerts"),
@@ -4097,8 +4093,7 @@ public final class Main {
                 chain, certs)) {
             for (Pair<String,X509Certificate> p : chain) {
                 CertPathConstraintsParameters cpcp =
-                        new CertPathConstraintsParameters(
-                        p.snd, null, null, null);
+                        buildCertPathConstraint(p.snd, null);
                 checkWeakConstraint(p.fst, p.snd, cpcp);
             }
             Certificate[] newChain =
@@ -4907,10 +4902,19 @@ public final class Main {
                             rb.getString("whose.sigalg.weak"), label, sigAlg));
                 }
             } catch (CertPathValidatorException e) {
-                if (e.getMessage().contains("denyAfter constraint check failed") &&
+                String eMessage = e.getMessage();
+                if (eMessage.contains("denyAfter constraint check failed") &&
                         e.getReason() == BasicReason.ALGORITHM_CONSTRAINED) {
+                    String separator = "java.security: ";
+                    int sepPos = eMessage.indexOf(separator);
+                    String denyAfterDate = "0000-00-00";
+                    if (sepPos > 0) {
+                        denyAfterDate = eMessage.substring(sepPos + separator.length(),
+                                sepPos + separator.length() + denyAfterDate.length());
+                    }
                     weakWarnings.add(String.format(
-                            rb.getString("whose.sigalg.usagesignedjar"), label, sigAlg));
+                            rb.getString("whose.sigalg.usagesignedjar"), label, sigAlg,
+                            denyAfterDate));
                 } else {
                     weakWarnings.add(String.format(
                             rb.getString("whose.sigalg.disabled"), label, sigAlg));
@@ -5036,7 +5040,7 @@ public final class Main {
                     try {
                         trustedCerts.add((X509Certificate)caks.getCertificate(a));
                     } catch (Exception e2) {
-                        // ignore, when a SecretkeyEntry does not include a cert
+                        // ignore, if the keystore has not been loaded/initialized properly
                     }
                 }
             }
@@ -5046,6 +5050,10 @@ public final class Main {
     }
 
     private TrustAnchor findTrustAnchor(List<X509Certificate> chain) {
+        if (chain.isEmpty()) {
+            return null;
+        }
+
         X509Certificate last = chain.get(chain.size() - 1);
         Optional<X509Certificate> trusted =
                 trustedCerts.stream()
@@ -5054,24 +5062,18 @@ public final class Main {
         return trusted.isPresent() ? new TrustAnchor(trusted.get(), null) : null;
     }
 
-    private X509Certificate[] convertCerts(Certificate[] certs)
-        throws Exception {
+    private X509Certificate[] convertCerts(Certificate[] certs) {
         X509Certificate[] xcerts = new X509Certificate[certs.length];
 
         for (int i = 0; i < certs.length; i++) {
-            try {
-                CertificateFactory cf = CertificateFactory.getInstance("X.509");
-                ByteArrayInputStream bais =
-                        new ByteArrayInputStream(certs[i].getEncoded());
-                xcerts[i] = (X509Certificate)cf.generateCertificate(bais);
-            } catch (CertificateException e) {
-                throw new RuntimeException(e);
+            if (certs[i] instanceof X509Certificate) {
+                xcerts[i] = (X509Certificate) certs[i];
             }
         }
         return xcerts;
     }
 
-    private CertPathConstraintsParameters buildCertPathConstraint (
+    private CertPathConstraintsParameters buildCertPathConstraint(
         X509Certificate xcert, TrustAnchor anchor) throws Exception{
         List<String> eku = xcert.getExtendedKeyUsage();
         if (eku == null) {
@@ -5092,7 +5094,8 @@ public final class Main {
             return new CertPathConstraintsParameters(xcert,
                     Validator.VAR_TSA_SERVER, anchor, null);
         }
-        return new CertPathConstraintsParameters(xcert, null, anchor, null);
+        return new CertPathConstraintsParameters(xcert, Validator.VAR_GENERIC,
+                anchor, null);
     }
 
     private void printWeakWarnings(boolean newLine) {
