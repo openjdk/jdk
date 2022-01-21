@@ -44,6 +44,7 @@ import java.util.Properties;
 import jdk.internal.access.JavaLangReflectAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
+import jdk.internal.vm.annotation.Stable;
 import sun.security.action.GetPropertyAction;
 import sun.security.util.SecurityConstants;
 
@@ -62,7 +63,8 @@ import sun.security.util.SecurityConstants;
 public class ReflectionFactory {
 
     // volatile ensures static fields set before are published
-    private static volatile boolean initted = false;
+    @Stable
+    private static volatile boolean initted;
     private static final ReflectionFactory soleInstance = new ReflectionFactory();
 
 
