@@ -292,6 +292,8 @@ makeDefaultConfig(JNIEnv *env, int screen) {
 
 static void
 getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
+    // NB: should be invoked only while holding the AWT lock
+    DASSERT(screen >= 0 && screen < awt_numScreens);
 
     int i;
     int n8p=0, n12p=0, n8s=0, n8gs=0, n8sg=0, n1sg=0, nTrue=0;
@@ -313,8 +315,6 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
     else {
         xinawareScreen = screen;
     }
-
-    AWT_LOCK ();
 
     viTmp.screen = xinawareScreen;
 
@@ -372,7 +372,6 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
     if (graphicsConfigs == NULL) {
         JNU_ThrowOutOfMemoryError((JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2),
                                   NULL);
-        AWT_UNLOCK();
         return;
     }
 
@@ -382,6 +381,9 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
          * been reset, so we need to recreate the default config here.
          */
         screenDataPtr->defaultConfig = makeDefaultConfig(env, screen);
+        if (screenDataPtr->defaultConfig == NULL) {
+            return;
+        }
     }
 
     defaultConfig = screenDataPtr->defaultConfig;
@@ -579,8 +581,6 @@ cleanup:
        XFree (pVI8sg);
     if (n1sg != 0)
        XFree (pVI1sg);
-
-    AWT_UNLOCK ();
 }
 
 /*
@@ -769,6 +769,7 @@ JNIEnv *env, jobject this)
 }
 
 static void ensureConfigsInited(JNIEnv* env, int screen) {
+    // NB: should be invoked only while holding the AWT lock
    if (x11Screens[screen].numConfigs == 0) {
        if (env == NULL) {
            env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
@@ -779,6 +780,8 @@ static void ensureConfigsInited(JNIEnv* env, int screen) {
 
 AwtGraphicsConfigDataPtr
 getDefaultConfig(int screen) {
+    // NB: should be invoked only while holding the AWT lock
+    DASSERT(screen >= 0 && screen < awt_numScreens);
     ensureConfigsInited(NULL, screen);
     return x11Screens[screen].defaultConfig;
 }
@@ -972,11 +975,11 @@ JNIEXPORT jint JNICALL
 Java_sun_awt_X11GraphicsDevice_getNumConfigs(
 JNIEnv *env, jobject this, jint screen)
 {
-    AWT_LOCK();
+    // NB: should be invoked only while holding the AWT lock
+    DASSERT(screen >= 0 && screen < awt_numScreens);
     ensureConfigsInited(env, screen);
-    int configs = x11Screens[screen].numConfigs;
-    AWT_UNLOCK();
-    return configs;
+    return x11Screens[screen].numConfigs;
+
 }
 
 /*
@@ -988,12 +991,11 @@ JNIEXPORT jint JNICALL
 Java_sun_awt_X11GraphicsDevice_getConfigVisualId(
 JNIEnv *env, jobject this, jint index, jint screen)
 {
-    int visNum;
-    AWT_LOCK();
+    // NB: should be invoked only while holding the AWT lock
+    DASSERT(screen >= 0 && screen < awt_numScreens);
     ensureConfigsInited(env, screen);
     jint id = (jint) (index == 0 ? x11Screens[screen].defaultConfig
                                  : x11Screens[screen].configs[index])->awt_visInfo.visualid;
-    AWT_UNLOCK();
     return id;
 }
 
@@ -1006,12 +1008,11 @@ JNIEXPORT jint JNICALL
 Java_sun_awt_X11GraphicsDevice_getConfigDepth(
 JNIEnv *env, jobject this, jint index, jint screen)
 {
-    int visNum;
-    AWT_LOCK();
+    // NB: should be invoked only while holding the AWT lock
+    DASSERT(screen >= 0 && screen < awt_numScreens);
     ensureConfigsInited(env, screen);
     jint depth = (jint) (index == 0 ? x11Screens[screen].defaultConfig
                                     : x11Screens[screen].configs[index])->awt_visInfo.depth;
-    AWT_UNLOCK();
     return depth;
 }
 
@@ -1024,12 +1025,11 @@ JNIEXPORT jint JNICALL
 Java_sun_awt_X11GraphicsDevice_getConfigColormap(
 JNIEnv *env, jobject this, jint index, jint screen)
 {
-    int visNum;
-    AWT_LOCK();
+    // NB: should be invoked only while holding the AWT lock
+    DASSERT(screen >= 0 && screen < awt_numScreens);
     ensureConfigsInited(env, screen);
     jint colormap = (jint) (index == 0 ? x11Screens[screen].defaultConfig
                                        : x11Screens[screen].configs[index])->awt_cmap;
-    AWT_UNLOCK();
     return colormap;
 }
 
@@ -1139,8 +1139,10 @@ JNIEXPORT void JNICALL
 Java_sun_awt_X11GraphicsConfig_init(
 JNIEnv *env, jobject this, jint visualNum, jint screen)
 {
+    // NB: should be invoked only while holding the AWT lock
+    DASSERT(screen >= 0 && screen < awt_numScreens);
+
     AwtGraphicsConfigData *adata = NULL;
-    AWT_LOCK();
     AwtScreenData asd = x11Screens[screen];
     int i, n;
     int depth;
@@ -1162,7 +1164,6 @@ JNIEnv *env, jobject this, jint visualNum, jint screen)
 
     /* If didn't find the visual, throw an exception... */
     if (adata == (AwtGraphicsConfigData *) NULL) {
-        AWT_UNLOCK();
         JNU_ThrowIllegalArgumentException(env, "Unknown Visual Specified");
         return;
     }
@@ -1181,7 +1182,6 @@ JNIEnv *env, jobject this, jint visualNum, jint screen)
     (*env)->SetIntField(env, this, x11GraphicsConfigIDs.bitsPerPixel,
                         (jint)tempImage->bits_per_pixel);
     XDestroyImage(tempImage);
-    AWT_UNLOCK();
 }
 
 /*

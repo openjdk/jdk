@@ -64,32 +64,37 @@ class XCanvasPeer extends XComponentPeer implements CanvasPeer {
         }
         // Opt: Only need to do if we're not using the default GC
 
-        int screenNum = ((X11GraphicsDevice)gc.getDevice()).getScreen();
+        XToolkit.awtLock(); // the number of screens may otherwise change during
+        try {
+            int screenNum = ((X11GraphicsDevice) gc.getDevice()).getScreen();
 
-        X11GraphicsConfig parentgc;
-        // save vis id of current gc
-        int visual = graphicsConfig.getVisual();
+            X11GraphicsConfig parentgc;
+            // save vis id of current gc
+            int visual = graphicsConfig.getVisual();
 
-        X11GraphicsDevice newDev = (X11GraphicsDevice) GraphicsEnvironment.
-            getLocalGraphicsEnvironment().
-            getScreenDevices()[screenNum];
+            X11GraphicsDevice newDev = (X11GraphicsDevice) GraphicsEnvironment.
+                    getLocalGraphicsEnvironment().
+                    getScreenDevices()[screenNum];
 
-        for (int i = 0; i < newDev.getNumConfigs(screenNum); i++) {
-            if (visual == newDev.getConfigVisualId(i, screenNum)) {
-                // use that
-                graphicsConfig = (X11GraphicsConfig)newDev.getConfigurations()[i];
-                break;
+            for (int i = 0; i < newDev.getNumConfigs(screenNum); i++) {
+                if (visual == newDev.getConfigVisualId(i, screenNum)) {
+                    // use that
+                    graphicsConfig = (X11GraphicsConfig) newDev.getConfigurations()[i];
+                    break;
+                }
             }
-        }
-        // just in case...
-        if (graphicsConfig == null) {
-            graphicsConfig = (X11GraphicsConfig) GraphicsEnvironment.
-                getLocalGraphicsEnvironment().
-                getScreenDevices()[screenNum].
-                getDefaultConfiguration();
-        }
+            // just in case...
+            if (graphicsConfig == null) {
+                graphicsConfig = (X11GraphicsConfig) GraphicsEnvironment.
+                        getLocalGraphicsEnvironment().
+                        getScreenDevices()[screenNum].
+                        getDefaultConfiguration();
+            }
 
-        return graphicsConfig;
+            return graphicsConfig;
+        } finally {
+            XToolkit.awtUnlock();
+        }
     }
 
     protected boolean shouldFocusOnClick() {
