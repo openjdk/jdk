@@ -565,13 +565,9 @@ public final class Long extends Number
         }
 
         // We know there are at most two digits left at this point.
-        q2 = i2 / 10;
-        r  = (q2 * 10) - i2;
-        buf[--charPos] = (byte)('0' + r);
-
-        // Whatever left is the remaining digit.
-        if (q2 < 0) {
-            buf[--charPos] = (byte)('0' - q2);
+        buf[--charPos] = Integer.DigitOnes[-i2];
+        if (i2 < -9) {
+            buf[--charPos] = Integer.DigitTens[-i2];
         }
 
         if (negative) {

@@ -135,7 +135,7 @@ inline bool StreamWriterHost<Adapter, AP>::is_valid() const {
 template <typename Adapter, typename AP>
 inline void StreamWriterHost<Adapter, AP>::close_fd() {
   assert(this->has_valid_fd(), "closing invalid fd!");
-  os::close(_fd);
+  ::close(_fd);
   _fd = invalid_fd;
 }
 

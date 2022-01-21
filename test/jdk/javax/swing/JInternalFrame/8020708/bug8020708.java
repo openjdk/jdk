@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import javax.swing.UIManager;
  * @summary NLS: mnemonics missing in SwingSet2/JInternalFrame demo
  * @library ../../regtesthelpers
  * @build Util
- * @run main bug8020708
+ * @run main/timeout=300 bug8020708
  */
 public class bug8020708 {
 
@@ -68,6 +68,7 @@ public class bug8020708 {
 
     public static void main(String[] args) throws Exception {
         for (Locale locale : SUPPORTED_LOCALES) {
+            System.out.println("locale: " + locale);
             for (String laf : LOOK_AND_FEELS) {
                 Locale.setDefault(locale);
                 if (!installLookAndFeel(laf)) {
@@ -80,7 +81,7 @@ public class bug8020708 {
 
     static void testInternalFrameMnemonic(Locale locale) throws Exception {
         Robot robot = new Robot();
-        robot.setAutoDelay(250);
+        robot.setAutoDelay(100);
         robot.setAutoWaitForIdle(true);
 
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -142,6 +143,7 @@ public class bug8020708 {
         UIManager.LookAndFeelInfo[] infos = UIManager.getInstalledLookAndFeels();
         for (UIManager.LookAndFeelInfo info : infos) {
             if (info.getClassName().contains(lafName)) {
+                System.out.println("LookAndFeel: " + info.getClassName());
                 UIManager.setLookAndFeel(info.getClassName());
                 return true;
             }

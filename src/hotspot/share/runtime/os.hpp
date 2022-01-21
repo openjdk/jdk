@@ -543,7 +543,6 @@ class os: AllStatic {
   static int open(const char *path, int oflag, int mode);
   static FILE* fdopen(int fd, const char* mode);
   static FILE* fopen(const char* path, const char* mode);
-  static int close(int fd);
   static jlong lseek(int fd, jlong offset, int whence);
   static bool file_exists(const char* file);
   // This function, on Windows, canonicalizes a given path (see os_windows.cpp for details).
@@ -563,7 +562,6 @@ class os: AllStatic {
 
   //File i/o operations
 
-  static ssize_t read(int fd, void *buf, unsigned int nBytes);
   static ssize_t read_at(int fd, void *buf, unsigned int nBytes, jlong offset);
   static ssize_t write(int fd, const void *buf, unsigned int nBytes);
 
@@ -784,15 +782,7 @@ class os: AllStatic {
   // Like strdup, but exit VM when strdup() returns NULL
   static char* strdup_check_oom(const char*, MEMFLAGS flags = mtInternal);
 
-#ifndef PRODUCT
-  static julong num_mallocs;         // # of calls to malloc/realloc
-  static julong alloc_bytes;         // # of bytes allocated
-  static julong num_frees;           // # of calls to free
-  static julong free_bytes;          // # of bytes freed
-#endif
-
   // SocketInterface (ex HPI SocketInterface )
-  static int socket(int domain, int type, int protocol);
   static int socket_close(int fd);
   static int recv(int fd, char* buf, size_t nBytes, uint flags);
   static int send(int fd, char* buf, size_t nBytes, uint flags);
