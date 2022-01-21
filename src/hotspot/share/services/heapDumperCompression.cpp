@@ -46,7 +46,7 @@ char const* FileWriter::open_writer() {
 
 FileWriter::~FileWriter() {
   if (_fd >= 0) {
-    os::close(_fd);
+    ::close(_fd);
     _fd = -1;
   }
 }

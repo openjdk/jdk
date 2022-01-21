@@ -1415,6 +1415,13 @@ public class PNGImageReader extends ImageReader {
         int width = metadata.IHDR_width;
         int height = metadata.IHDR_height;
 
+        if ((long)width * height > Integer.MAX_VALUE - 2) {
+            // We are not able to properly decode image that has number
+            // of pixels greater than Integer.MAX_VALUE - 2
+            throw new IIOException("Can not read image of the size "
+                    + width + " by " + height);
+        }
+
         // Init default values
         sourceXSubsampling = 1;
         sourceYSubsampling = 1;

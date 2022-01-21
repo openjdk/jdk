@@ -183,7 +183,6 @@
   DEBUG_ONLY(LOG_TAG(test)) \
   LOG_TAG(thread) \
   LOG_TAG(throttle) \
-  LOG_TAG(time) \
   LOG_TAG(timer) \
   LOG_TAG(tlab) \
   LOG_TAG(tracking) \

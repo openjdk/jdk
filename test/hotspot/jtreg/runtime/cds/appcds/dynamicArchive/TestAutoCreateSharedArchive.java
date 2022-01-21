@@ -101,7 +101,6 @@
 
 import java.io.IOException;
 import java.io.File;
-
 import java.nio.file.attribute.FileTime;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -110,6 +109,8 @@ import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.cds.CDSArchiveUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.helpers.ClassFileInstaller;
+
+import jtreg.SkippedException;
 
 public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
     private static final String BASE_NAME = CDSTestUtils.getOutputFileName("base.jsa");
@@ -123,6 +124,9 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
     private static int   currentCDSVersion = CDSArchiveUtils.getCurrentCDSArchiveVersion();
 
     public static void main(String[] args) throws Exception {
+        if (isUseSharedSpacesDisabled()) {
+            throw new SkippedException("Skipped -- This test is not applicable when JTREG tests are executed with -Xshare:off, or if the JDK doesn't have a default archive.");
+        }
         if (args.length != 1 || (!args[0].equals("verifySharedSpacesOff") && !args[0].equals("verifySharedSpacesOn"))) {
             throw new RuntimeException("Must run with verifySharedSpacesOff or verifySharedSpacesOn");
         }
