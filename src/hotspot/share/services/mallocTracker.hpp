@@ -314,6 +314,9 @@ class MallocHeader {
   // We discount sizes larger than these
   static const size_t max_reasonable_malloc_size = LP64_ONLY(256 * G) NOT_LP64(3500 * M);
 
+  // If block is broken, print out a report to tty (optionally with
+  // hex dump surrounding the broken block), then trigger a fatal error
+  void assert_block_integrity() const;
   void print_block_on_error(outputStream* st, address bad_address) const;
   void mark_block_as_dead();
 
@@ -359,11 +362,10 @@ class MallocHeader {
   // Cleanup tracking information and mark block as dead before the memory is released.
   void release();
 
-  // Check block integrity.
-  // If fatal_error is true and block is broken, print out a report
-  // to tty (optionally with hex dump surrounding the broken block),
-  // then trigger a fatal error
-  bool check_block_integrity(bool fatal_error = true) const;
+  // If block is broken, fill in a short descriptive text in out,
+  // an option pointer to the corruption in p_corruption, and return false.
+  // Return true if block is fine.
+  bool check_block_integrity(char* msg, size_t msglen, address* p_corruption) const;
 
  private:
   inline void set_size(size_t size) {

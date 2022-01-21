@@ -501,7 +501,9 @@ extern "C" JNIEXPORT void pp(void* p) {
       // Check if it is a malloc'd memory block
       if (CanUseSafeFetchN() && SafeFetchN((intptr_t*)p, 0) != 0) {
         const MallocHeader* mhdr = (const MallocHeader*)MallocTracker::get_base(p, tracking_level);
-        if (SafeFetchN((intptr_t*)mhdr, 0) != 0 && mhdr->check_block_integrity(false /*fatal_error*/)) {
+        char msg[256];
+        address p_corrupted;
+        if (SafeFetchN((intptr_t*)mhdr, 0) != 0 && mhdr->check_block_integrity(msg, sizeof(msg), &p_corrupted)) {
           tty->print_cr(PTR_FORMAT " malloc'd " SIZE_FORMAT " bytes by %s",
             p2i(p), mhdr->size(), NMTUtil::flag_to_name(mhdr->flags()));
           if (tracking_level == NMT_detail) {
