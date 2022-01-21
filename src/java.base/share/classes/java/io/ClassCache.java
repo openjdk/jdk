@@ -39,19 +39,32 @@ abstract class ClassCache<T> {
 
     private static class CacheRef<T> extends SoftReference<T> {
         private final Class<?> type;
+        private T strongReferent;
 
         CacheRef(T referent, ReferenceQueue<T> queue, Class<?> type) {
             super(referent, queue);
             this.type = type;
+            this.strongReferent = referent;
         }
 
         Class<?> getType() {
             return type;
         }
+
+        T getStrong() {
+            return strongReferent;
+        }
+
+        void clearStrong() {
+            // Do a conditional store, in case this is a MT write.
+            if (strongReferent != null) {
+                strongReferent = null;
+            }
+        }
     }
 
     private final ReferenceQueue<T> queue;
-    private final ClassValue<SoftReference<T>> map;
+    private final ClassValue<CacheRef<T>> map;
 
     protected abstract T computeValue(Class<?> cl);
 
@@ -59,7 +72,7 @@ abstract class ClassCache<T> {
         queue = new ReferenceQueue<>();
         map = new ClassValue<>() {
             @Override
-            protected SoftReference<T> computeValue(Class<?> type) {
+            protected CacheRef<T> computeValue(Class<?> type) {
                 T v = ClassCache.this.computeValue(type);
                 Objects.requireNonNull(v);
                 return new CacheRef<>(v, queue, type);
@@ -68,16 +81,32 @@ abstract class ClassCache<T> {
     }
 
     T get(Class<?> cl) {
-        T val;
-        do {
+        while (true) {
             processQueue();
-            SoftReference<T> ref = map.get(cl);
-            val = ref.get();
-            if (val == null) {
-                map.remove(cl);
+
+            CacheRef<T> ref = map.get(cl);
+
+            // Case 1: A recently created CacheRef.
+            // We might still have strong referent, and can return it.
+            // This guarantees progress for at least one thread on every CacheRef.
+            // Clear the strong referent before returning to make the cache soft.
+            T strongVal = ref.getStrong();
+            if (strongVal != null) {
+                ref.clearStrong();
+                return strongVal;
             }
-        } while (val == null);
-        return val;
+
+            // Case 2: Older or recently cleared CacheRef.
+            // Check if its soft referent is still available, and return it.
+            T val = ref.get();
+            if (val != null) {
+                return val;
+            }
+
+            // Case 3: The reference was cleared.
+            // Clear the mapping and retry.
+            map.remove(cl);
+        }
     }
 
     private void processQueue() {
