@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Set;
 
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
@@ -636,21 +635,21 @@ public class Navigation {
                 .put(HtmlAttr.TITLE, rowListTitle);
         addMainNavLinks(navList);
         navDiv.add(navList);
-        HtmlTree ulNavSummaryRight = new HtmlTree(TagName.UL).setStyle(HtmlStyle.subNavListSmall);
+        HtmlTree ulNavSummaryRight = HtmlTree.UL(HtmlStyle.subNavListSmall);
         addSummaryLinks(ulNavSummaryRight, true);
         addDetailLinks(ulNavSummaryRight, true);
         navDiv.add(ulNavSummaryRight);
         tree.add(navDiv);
 
-        HtmlTree subDiv = new HtmlTree(TagName.DIV).setStyle(HtmlStyle.subNav);
+        HtmlTree subDiv = HtmlTree.DIV(HtmlStyle.subNav);
 
         HtmlTree div = new HtmlTree(TagName.DIV).setId(HtmlIds.NAVBAR_SUB_LIST);
         // Add the summary links if present.
-        HtmlTree ulNavSummary = new HtmlTree(TagName.UL).setStyle(HtmlStyle.subNavList);
+        HtmlTree ulNavSummary = HtmlTree.UL(HtmlStyle.subNavList);
         addSummaryLinks(ulNavSummary, false);
         div.add(ulNavSummary);
         // Add the detail links if present.
-        HtmlTree ulNavDetail = new HtmlTree(TagName.UL).setStyle(HtmlStyle.subNavList);
+        HtmlTree ulNavDetail = HtmlTree.UL(HtmlStyle.subNavList);
         addDetailLinks(ulNavDetail, false);
         div.add(ulNavDetail);
         subDiv.add(div);
