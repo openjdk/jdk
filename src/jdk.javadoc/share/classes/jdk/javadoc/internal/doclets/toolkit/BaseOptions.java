@@ -353,10 +353,10 @@ public abstract class BaseOptions {
                 },
 
                 new XOption(resources, "--date", 1) {
-                    // Valid --date range: within a year of now
+                    // Valid --date range: within ten years of now
                     private static final ZonedDateTime now = ZonedDateTime.now();
-                    static final ZonedDateTime DATE_MIN = now.minusYears(1);
-                    static final ZonedDateTime DATE_MAX = now.plusYears(1);
+                    static final ZonedDateTime DATE_MIN = now.minusYears(10);
+                    static final ZonedDateTime DATE_MAX = now.plusYears(10);
 
                     @Override
                     public boolean process(String opt,  List<String> args) {
