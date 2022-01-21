@@ -4832,7 +4832,7 @@ void Compile::print_method(CompilerPhaseType cpt, Node* n, int level) {
   C->print_method_impl(cpt, NOT_PRODUCT(ss.as_string() COMMA) level);
 }
 
-void Compile::print_method_impl(CompilerPhaseType cpt, NOT_PRODUCT(const char *name COMMA) int level) {
+void Compile::print_method_impl(CompilerPhaseType cpt, NOT_PRODUCT(const char* name COMMA) int level) {
   EventCompilerPhase event;
   if (event.should_commit()) {
     CompilerEvent::PhaseEvent::post(event, C->_latest_stage_start_counter, cpt, C->_compile_id, level);
