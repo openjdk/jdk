@@ -150,16 +150,7 @@ public class RecordedObject {
         JdkJfrConsumer.setAccess(access);
     }
 
-    private static final class UnsignedValue {
-        private final Object o;
-
-        UnsignedValue(Object o) {
-            this.o = o;
-        }
-
-        Object value() {
-            return o;
-        }
+    private static final record UnsignedValue(Object value) {
     }
 
     final Object[] objects;

@@ -2752,8 +2752,8 @@ void Parse::do_one_bytecode() {
   }
 
 #ifndef PRODUCT
-  if (C->should_print(1)) {
-    IdealGraphPrinter* printer = C->printer();
+  if (C->should_print_igv(1)) {
+    IdealGraphPrinter* printer = C->igv_printer();
     char buffer[256];
     jio_snprintf(buffer, sizeof(buffer), "Bytecode %d: %s", bci(), Bytecodes::name(bc()));
     bool old = printer->traverse_outs();
