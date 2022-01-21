@@ -71,7 +71,7 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
      */
     @Override
     public Content getMethodsContentHeader(boolean isLastContent) {
-        return new HtmlTree(TagName.LI).setStyle(HtmlStyle.blockList);
+        return new HtmlTree(TagName.LI);
     }
 
     /**
