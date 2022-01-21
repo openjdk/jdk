@@ -48,7 +48,7 @@ typedef struct CDSFileMapRegion {
   int     _is_heap_region;    // Used by SA and debug build.
   int     _is_bitmap_region;  // Relocation bitmap for RO/RW regions (used by SA and debug build).
   int     _mapped_from_file;  // Is this region mapped from a file?
-                              // If false, this region was initialized using os::read().
+                              // If false, this region was initialized using ::read().
   size_t  _file_offset;       // Data for this region starts at this offset in the archive file.
   size_t  _mapping_offset;    // This region should be mapped at this offset from the base address
                               // - for non-heap regions, the base address is SharedBaseAddress
