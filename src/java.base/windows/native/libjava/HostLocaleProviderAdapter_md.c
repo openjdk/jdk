@@ -835,7 +835,7 @@ void replaceCalendarArrayElems(JNIEnv *env, jstring jlangtag, jint calid, jobjec
     WCHAR name[BUFLEN];
     const jchar *langtag = (*env)->GetStringChars(env, jlangtag, JNI_FALSE);
     jstring tmp_string;
-    CALTYPE isGenitive;
+    CALTYPE isGenitive = 0;
 
     CHECK_NULL(langtag);
 
