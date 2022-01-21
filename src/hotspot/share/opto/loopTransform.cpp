@@ -2566,87 +2566,92 @@ bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, jlong* p_scale, BasicType
 //-----------------------------is_scaled_iv_plus_offset------------------------------
 // Return true if exp is a simple induction variable expression: k1*iv + (invar + k2)
 bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, jlong* p_scale, Node** p_offset, BasicType bt, bool* p_converted, int depth) {
-  bool converted = false;
   assert(bt == T_INT || bt == T_LONG, "unexpected int type");
+  BasicType exp_bt = bt;
   if (bt == T_LONG && iv->bottom_type()->isa_int() && exp->Opcode() == Op_ConvI2L) {
     exp = exp->in(1);
-    bt = T_INT;
-    converted = true;
+    exp_bt = T_INT;
   }
-  if (is_scaled_iv(exp, iv, p_scale, bt)) {
+  if (is_scaled_iv(exp, iv, p_scale, exp_bt)) {
     if (p_offset != NULL) {
-      Node *zero = _igvn.integercon(0, bt);
+      Node *zero = _igvn.zerocon(bt);
       set_ctrl(zero, C->root());
       *p_offset = zero;
     }
     if (p_converted != NULL) {
-      *p_converted = converted;
+      *p_converted = exp_bt != bt;
     }
     return true;
   }
   exp = exp->uncast();
   int opc = exp->Opcode();
-  if (opc == Op_Add(bt)) {
-    if (is_scaled_iv(exp->in(1), iv, p_scale, bt)) {
+  if (opc == Op_Add(exp_bt) && bt == exp_bt) {
+    if (is_scaled_iv(exp->in(1), iv, p_scale, exp_bt)) {
       if (p_offset != NULL) {
         *p_offset = exp->in(2);
       }
       if (p_converted != NULL) {
-        *p_converted = converted;
+        *p_converted = false;
       }
       return true;
     }
-    if (is_scaled_iv(exp->in(2), iv, p_scale, bt)) {
+    if (is_scaled_iv(exp->in(2), iv, p_scale, exp_bt)) {
       if (p_offset != NULL) {
         *p_offset = exp->in(1);
       }
       if (p_converted != NULL) {
-        *p_converted = converted;
+        *p_converted = false;
       }
       return true;
     }
-    if (is_scaled_iv_plus_extra_offset(exp->in(1), exp->in(2), iv, p_scale, p_offset, bt, converted, depth)) {
+    bool converted  = false;
+    if (is_scaled_iv_plus_extra_offset(exp->in(1), exp->in(2), iv, p_scale, p_offset, exp_bt, converted, depth)) {
       if (p_converted != NULL) {
         *p_converted = converted;
       }
       return true;
     }
-    if (is_scaled_iv_plus_extra_offset(exp->in(2), exp->in(1), iv, p_scale, p_offset, bt, converted, depth)) {
+    if (is_scaled_iv_plus_extra_offset(exp->in(2), exp->in(1), iv, p_scale, p_offset, exp_bt, converted, depth)) {
       if (p_converted != NULL) {
         *p_converted = converted;
       }
       return true;
     }
-  } else if (opc == Op_Sub(bt)) {
-    if (is_scaled_iv(exp->in(1), iv, p_scale, bt)) {
+  } else if (opc == Op_Sub(exp_bt)) {
+    if (exp_bt == bt && is_scaled_iv(exp->in(1), iv, p_scale, exp_bt)) {
       if (p_offset != NULL) {
-        Node *zero = _igvn.integercon(0, bt);
+        Node *zero = _igvn.integercon(0, exp_bt);
         set_ctrl(zero, C->root());
         Node *ctrl_off = get_ctrl(exp->in(2));
-        Node* offset = SubNode::make(zero, exp->in(2), bt);
+        Node* offset = SubNode::make(zero, exp->in(2), exp_bt);
         register_new_node(offset, ctrl_off);
         *p_offset = offset;
-      }
-      if (p_converted != NULL) {
-        *p_converted = converted;
       }
       return true;
     }
     jlong scale;
-    if (is_scaled_iv(exp->in(2), iv, &scale, bt)) {
-      if (scale == min_signed_integer(bt)) {
+    if (is_scaled_iv(exp->in(2), iv, &scale, exp_bt)) {
+      if (scale == min_signed_integer(exp_bt)) {
+        return false;
+      }
+      if (exp_bt != bt && _igvn.find_int_con(exp->in(1), -1) != 0) {
         return false;
       }
       if (p_offset != NULL) {
         // We can't handle a scale of min_jint (or min_jlong) here as -1 * min_jint = min_jint
         scale *= -1;
-        *p_offset = exp->in(1);
+        if (exp_bt != bt) {
+          *p_offset = _igvn.zerocon(bt);
+          set_ctrl(*p_offset, C->root());
+        } else {
+          *p_offset = exp->in(1);
+        }
       }
       if (p_scale != NULL) {
         *p_scale = scale;
       }
       if (p_converted != NULL) {
-        *p_converted = converted;
+        *p_converted = exp_bt != bt;
       }
       return true;
     }
@@ -2661,15 +2666,6 @@ bool PhaseIdealLoop::is_scaled_iv_plus_extra_offset(Node* exp1, Node* exp2, Node
       is_scaled_iv_plus_offset(exp1, iv, p_scale,
                                &offset2, bt, &converted, depth+1) &&
       offset2->is_Con()) {
-    if (bt == T_LONG && _igvn.type(offset2)->isa_int()) {
-      if (_igvn.type(offset2)->is_int()->is_con() && _igvn.type(offset2)->is_int()->get_con() == 0) {
-        if (p_offset != NULL) {
-          *p_offset = exp2;
-        }
-        return true;
-      }
-      return false;
-    }
     if (p_offset != NULL) {
       Node* ctrl_off2 = get_ctrl(offset2);
       Node* offset = AddNode::make(offset2, exp2, bt);
