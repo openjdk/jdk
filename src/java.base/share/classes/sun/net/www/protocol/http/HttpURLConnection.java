@@ -289,7 +289,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
     static final String httpVersion = "HTTP/1.1";
     static final String acceptString =
-        "text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2";
+        "text/html, image/gif, image/jpeg, */*; q=0.2";
 
     // the following http request headers should NOT have their values
     // returned for security reasons.

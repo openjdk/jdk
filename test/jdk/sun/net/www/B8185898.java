@@ -143,32 +143,32 @@ public class B8185898 {
         // {{inputString1, expectedToString1, expectedPrint1}, {...}}
         String[][] strings = {
                 {"HTTP/1.1 200 OK\r\n"
-                        + "Accept: text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2\r\n"
+                        + "Accept: text/html, image/gif, image/jpeg, */*; q=0.2\r\n"
                         + "Connection: keep-alive\r\n"
                         + "Host: 127.0.0.1:12345\r\n"
                         + "User-agent: Java/12\r\n\r\nfoooo",
                 "pairs: {null: HTTP/1.1 200 OK}"
-                        + "{Accept: text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2}"
+                        + "{Accept: text/html, image/gif, image/jpeg, */*; q=0.2}"
                         + "{Connection: keep-alive}"
                         + "{Host: 127.0.0.1:12345}"
                         + "{User-agent: Java/12}",
-                "Accept: text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2\r\n"
+                "Accept: text/html, image/gif, image/jpeg, */*; q=0.2\r\n"
                         + "Connection: keep-alive\r\n"
                         + "Host: 127.0.0.1:12345\r\n"
                         + "User-agent: Java/12\r\n\r\n"},
                 {"HTTP/1.1 200 OK\r\n"
-                        + "Accept: text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2\r\n"
+                        + "Accept: text/html, image/gif, image/jpeg, */*; q=0.2\r\n"
                         + "Connection: keep-alive\r\n"
                         + "Host: 127.0.0.1:12345\r\n"
                         + "User-agent: Java/12\r\n"
                         + "X-Header:\r\n\r\n",
                 "pairs: {null: HTTP/1.1 200 OK}"
-                        + "{Accept: text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2}"
+                        + "{Accept: text/html, image/gif, image/jpeg, */*; q=0.2}"
                         + "{Connection: keep-alive}"
                         + "{Host: 127.0.0.1:12345}"
                         + "{User-agent: Java/12}"
                         + "{X-Header: }",
-                "Accept: text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2\r\n"
+                "Accept: text/html, image/gif, image/jpeg, */*; q=0.2\r\n"
                         + "Connection: keep-alive\r\n"
                         + "Host: 127.0.0.1:12345\r\n"
                         + "User-agent: Java/12\r\n"
