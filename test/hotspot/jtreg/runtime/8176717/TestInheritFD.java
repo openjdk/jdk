@@ -189,6 +189,7 @@ public class TestInheritFD {
     static Collection<String> outputContainingFilenames() {
         long pid = ProcessHandle.current().pid();
         String[] command = lsofCommand().orElseThrow(() -> new RuntimeException("lsof like command not found"));
+        // Only search the directory in which the VM is running (user.dir property).
         System.out.println("using command: " + command[0] + " -a +d " + USER_DIR + " " + command[1] + " " + pid);
         return run(command[0], "-a", "+d", USER_DIR, command[1], "" + pid).collect(toList());
     }
