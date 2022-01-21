@@ -111,7 +111,7 @@ public class TestDwarf {
                         new DwarfConstraint(0, "Java_TestDwarf_crashNativeDivByZero", "libTestDwarf.c", 59));
             runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "nativeMultipleMethods"),
                         new DwarfConstraint(0, "foo", "libTestDwarf.c", 42),
-                        new DwarfConstraint(1, "Java_TestDwarf_crashNativeMultipleMethods", "libTestDwarf.c", 71));
+                        new DwarfConstraint(1, "Java_TestDwarf_crashNativeMultipleMethods", "libTestDwarf.c", 70));
         }
         runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "nativeDereferenceNull"),
                     new DwarfConstraint(0, "dereference_null", "libTestDwarfHelper.h", 44));

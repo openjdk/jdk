@@ -132,20 +132,20 @@ ElfFile::~ElfFile() {
   }
 
   delete _shdr_string_table;
-  _shdr_string_table = NULL;
+  _shdr_string_table = nullptr;
   delete _next;
-  _next = NULL;
+  _next = nullptr;
   delete _dwarf_file;
   _dwarf_file = nullptr;
 }
 
 void ElfFile::cleanup_tables() {
   delete _string_tables;
-  _string_tables = NULL;
+  _string_tables = nullptr;
   delete _symbol_tables;
-  _symbol_tables = NULL;
+  _symbol_tables = nullptr;
   delete _funcDesc_table;
-  _funcDesc_table = NULL;
+  _funcDesc_table = nullptr;
 }
 
 NullDecoder::decoder_status ElfFile::parse_elf(const char* filepath) {
@@ -319,7 +319,8 @@ bool ElfFile::get_source_info(const uint32_t offset_in_library, char* filename, 
     _dwarf_file = new (std::nothrow) DwarfFile(_filepath);
   }
 
-  if (!_dwarf_file->get_filename_and_line_number(offset_in_library, filename, filename_len, line, is_pc_after_call)) {
+  // Store result in filename and line pointer.
+  if (!_dwarf_file->get_filename_and_line_number(offset_in_library, *filename, filename_len, *line, is_pc_after_call)) {
     log_warning(dwarf)("Failed to retrieve file and line number information for %s at offset: " PTR32_FORMAT, _filepath, offset_in_library);
     return false;
   }
@@ -333,7 +334,7 @@ bool ElfFile::is_valid_dwarf_file() const {
 }
 
 // (1) Load the debuginfo file from the path specified in this ELF file in the .gnu_debuglink section.
-// Adapted from Servicability Agent.
+// Adapted from Serviceability Agent.
 bool ElfFile::load_dwarf_file() {
   if (_dwarf_file != nullptr) {
     return true; // Already opened.
@@ -574,8 +575,8 @@ uint32_t ElfFile::gnu_debuglink_crc32(uint32_t crc, uint8_t* buf, const size_t l
 }
 
 // Starting point of reading line number and filename information from the DWARF file.
-bool DwarfFile::get_filename_and_line_number(uint32_t offset_in_library, char* filename, const size_t filename_len, int* line,
-                                             const bool is_pc_after_call) {
+bool DwarfFile::get_filename_and_line_number(const uint32_t offset_in_library, char& filename, const size_t filename_len,
+                                             int& line, const bool is_pc_after_call) {
   DebugAranges debug_aranges(this);
   uint32_t compilation_unit_offset = 0; // 4-bytes for 32-bit DWARF
   if (!debug_aranges.find_compilation_unit_offset(offset_in_library, &compilation_unit_offset)) {
@@ -986,16 +987,12 @@ bool DwarfFile::CompilationUnit::read_attribute_value(const uint64_t attribute_f
   return true;
 }
 
-bool DwarfFile::LineNumberProgram::find_filename_and_line_number(char* filename, const size_t filename_len, int* line) {
-  _filename = filename;
-  _filename_len = filename_len;
-  _line = line;
+bool DwarfFile::LineNumberProgram::find_filename_and_line_number(char& filename, const size_t filename_len, int& line) {
   if (!read_header()) {
     log_info(dwarf)("Failed to parse the line number program header correctly.");
     return false;
   }
-
-  return read_line_number_program();
+  return run_line_number_program(filename, filename_len, line);
 }
 
 // Parsing header as specified in section 6.2.4 of DWARF 4 spec. We do not read the file_names field, yet.
@@ -1131,7 +1128,7 @@ bool DwarfFile::LineNumberProgram::read_header() {
 //   E.g. x = 0x55d13f -> 0x55d136 < 0x55d13f < 0x55d146 -> Take entry 0x55d136.
 //
 // Enable logging with debug level to print the parsed line number information matrix.
-bool DwarfFile::LineNumberProgram::read_line_number_program() {
+bool DwarfFile::LineNumberProgram::run_line_number_program(char& filename, const size_t filename_len, int& line) {
   log_debug(dwarf)("");
   log_debug(dwarf)("Line Number Information Matrix");
   log_debug(dwarf)("------------------------------");
@@ -1140,7 +1137,7 @@ bool DwarfFile::LineNumberProgram::read_line_number_program() {
 #else
   log_debug(dwarf)("Address:              Line:    Column:   File:");
 #endif
-  _state = new (std::nothrow) LineNumberProgramState(&_header);
+  _state = new (std::nothrow) LineNumberProgramState(_header);
   uintptr_t previous_address = 0;
   uint32_t previous_file = 0;
   uint32_t previous_line = 0;
@@ -1162,7 +1159,9 @@ bool DwarfFile::LineNumberProgram::read_line_number_program() {
         _state->_first_entry_in_sequence = false;
       }
       if (does_offset_match_entry(previous_address, previous_file, previous_line)) {
-        return set_filename_and_line();
+        // We are using an int for the line number which should never be larger than INT_MAX for any files.
+        line = (int)_state->_line;
+        return get_filename_from_header(_state->_file, filename, filename_len);
       }
 
       // We do not actually store the matrix while searching the correct entry. Enable logging to print/debug it.
@@ -1287,9 +1286,9 @@ bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
         // Must be at most 4 bytes because the index register is only 4 bytes wide.
         return false;
       }
-      _state->add_to_address_register(operation_advance);
+      _state->add_to_address_register(operation_advance, _header);
       if (_state->_dwarf_version == 4) {
-        _state->set_index_register(operation_advance);
+        _state->set_index_register(operation_advance, _header);
       }
       log_trace(dwarf)("DW_LNS_advance_pc (" INTPTR_FORMAT ")", _state->_address);
       break;
@@ -1334,9 +1333,9 @@ bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
       uint8_t adjusted_opcode_255 = 255 - _header._opcode_base;
       uint8_t operation_advance = adjusted_opcode_255 / _header._line_range;
       uintptr_t old_address = _state->_address;
-      _state->add_to_address_register(operation_advance);
+      _state->add_to_address_register(operation_advance, _header);
       if (_state->_dwarf_version == 4) {
-        _state->set_index_register(operation_advance);
+        _state->set_index_register(operation_advance, _header);
       }
       log_trace(dwarf)("DW_LNS_const_add_pc (" INTPTR_FORMAT ")", _state->_address - old_address);
       break;
@@ -1380,9 +1379,9 @@ bool DwarfFile::LineNumberProgram::apply_special_opcode(const uint8_t opcode) {
   uint32_t old_line = _state->_line;
   uint8_t adjusted_opcode = opcode - _header._opcode_base;
   uint8_t operation_advance = adjusted_opcode / _header._line_range;
-  _state->add_to_address_register(operation_advance);
+  _state->add_to_address_register(operation_advance, _header);
   if (_state->_dwarf_version == 4) {
-    _state->set_index_register(operation_advance);
+    _state->set_index_register(operation_advance, _header);
     _state->_discriminator = 0;
   }
   _state->_line += _header._line_base + (adjusted_opcode % _header._line_range);
@@ -1438,23 +1437,14 @@ void DwarfFile::LineNumberProgram::print_and_store_prev_entry(const uint32_t pre
                    _state->_column, _state->_file);
 }
 
-bool DwarfFile::LineNumberProgram::set_filename_and_line() {
-  // The correct file and line info is stored in the _state variable.
-  if (!read_filename_from_header(_state->_file)) {
-    return false;
-  }
-  *_line = (int)_state->_line; // We are using an int for _line which should be fine for any files.
-  return true;
-}
-
 // Read field file_names from the header as specified in section 6.2.4 of the DWARF 4 spec.
-bool DwarfFile::LineNumberProgram::read_filename_from_header(uint32_t file_index) {
+bool DwarfFile::LineNumberProgram::get_filename_from_header(const uint32_t file_index, char& filename, const size_t filename_len) {
   // We do not need to restore the position afterwards as this is the last step of parsing from the file for this
   // compilation unit.
   _reader.set_position(_header._file_starting_pos);
   uint32_t current_index = 1; // file_names start at index 1
   while (_reader.has_bytes_left()) {
-    if (!_reader.read_string(_filename, _filename_len)) {
+    if (!_reader.read_string(&filename, filename_len)) {
       // Either an error while reading or we have reached the end of the file_names. Both should not happen.
       return false;
     }
@@ -1495,18 +1485,20 @@ void DwarfFile::LineNumberProgram::LineNumberProgramState::reset_fields() {
 }
 
 // Defined in section 6.2.5.1 of the DWARF 4 spec.
-void DwarfFile::LineNumberProgram::LineNumberProgramState::add_to_address_register(uint32_t operation_advance) {
+void DwarfFile::LineNumberProgram::LineNumberProgramState::add_to_address_register(const uint32_t operation_advance,
+                                                                                   const LineNumberProgramHeader& header) {
   if (_dwarf_version == 3) {
-    _address += (uintptr_t)(operation_advance * _header->_minimum_instruction_length);
+    _address += (uintptr_t)(operation_advance * header._minimum_instruction_length);
   } else if (_dwarf_version == 4) {
-    _address += (uintptr_t)(_header->_minimum_instruction_length *
-                ((_op_index + operation_advance) / _header->_maximum_operations_per_instruction));
+    _address += (uintptr_t)(header._minimum_instruction_length *
+                ((_op_index + operation_advance) / header._maximum_operations_per_instruction));
   }
 }
 
 // Defined in section 6.2.5.1 of the DWARF 4 spec.
-void DwarfFile::LineNumberProgram::LineNumberProgramState::set_index_register(uint32_t operation_advance) {
-  _op_index = (_op_index + operation_advance) % _header->_maximum_operations_per_instruction;
+void DwarfFile::LineNumberProgram::LineNumberProgramState::set_index_register(const uint32_t operation_advance,
+                                                                              const LineNumberProgramHeader& header) {
+  _op_index = (_op_index + operation_advance) % header._maximum_operations_per_instruction;
 }
 
 bool DwarfFile::MarkedDwarfFileReader::set_position(const long new_pos) {

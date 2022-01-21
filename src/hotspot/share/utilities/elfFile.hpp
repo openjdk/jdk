@@ -264,7 +264,7 @@ class ElfFile: public CHeapObj<mtInternal> {
  * Return: Filename and line number for this offset.
  * (1) First, the path to the .debuginfo DWARF file is found by inspecting the .gnu_debuglink section of the library file.
  *     The DWARF file is then opened by calling the constructor of this class. Once this is done, the processing of the
- *     DWARF file is initiated by calling get_filename_and_line_number().
+ *     DWARF file is initiated by calling find_filename_and_line_number().
  * (2) Find the compilation unit offset by reading entries from the section .debug_aranges, which contain address range
  *     descriptors, until we find the correct descriptor that includes the library offset.
  * (3) Find the .debug_line offset for the line number information program from the .debug_info section:
@@ -672,28 +672,30 @@ class DwarfFile : public ElfFile {
       uint32_t _discriminator;
 
       /*
-       * Implementation specific fields and not part of the actual state
+       * Additional fields which are not part of the actual state as described in DWARF spec.
        */
-      LineNumberProgramHeader* _header;
+      // Header fields
       // Specifies which DWARF version is used in the .debug_line section. Currently supported: DWARF 3 + 4.
-      const uint8_t _dwarf_version;
+      const uint16_t _dwarf_version;
       const bool _initial_is_stmt;
+
+      // Implementation specific fields
       bool _append_row;
       bool _do_reset;
       bool _first_entry_in_sequence;
       bool _can_sequence_match_offset;
       bool _found_match;
 
-      LineNumberProgramState(LineNumberProgramHeader* header)
-        : _is_stmt(header->_default_is_stmt != 0), _header(header), _dwarf_version(header->_version),
-          _initial_is_stmt(header->_default_is_stmt != 0), _found_match(false) {
+      LineNumberProgramState(const LineNumberProgramHeader& header)
+        : _is_stmt(header._default_is_stmt != 0), _dwarf_version(header._version),
+        _initial_is_stmt(header._default_is_stmt != 0), _found_match(false) {
         reset_fields();
       }
 
       void reset_fields();
       // Defined in section 6.2.5.1 of the DWARF spec 4. add_to_address_register() must always be executed before set_index_register.
-      void add_to_address_register(uint32_t operation_advance);
-      void set_index_register(uint32_t operation_advance);
+      void add_to_address_register(uint32_t operation_advance, const LineNumberProgramHeader& header);
+      void set_index_register(uint32_t operation_advance, const LineNumberProgramHeader& header);
     };
 
     DwarfFile* _dwarf_file;
@@ -704,32 +706,22 @@ class DwarfFile : public ElfFile {
     const uint64_t _debug_line_offset;
     bool _is_pc_after_call;
 
-    // Result fields of a request.
-    int* _line;
-    char* _filename;
-    size_t _filename_len;
-
     bool read_header();
-    bool read_line_number_program();
+    bool run_line_number_program(char& filename, size_t filename_len, int& line);
     bool apply_opcode();
     bool apply_extended_opcode();
     bool apply_standard_opcode(uint8_t opcode);
     bool apply_special_opcode(uint8_t opcode);
     bool does_offset_match_entry(uintptr_t previous_address, uint32_t previous_file, uint32_t previous_line);
     void print_and_store_prev_entry(uint32_t previous_file, uint32_t previous_line);
-    bool set_filename_and_line();
-    bool read_filename_from_header(uint32_t file_index);
+    bool get_filename_from_header(uint32_t file_index, char& filename, size_t filename_len);
 
    public:
     LineNumberProgram(DwarfFile* dwarf_file, uint32_t offset_in_library, uint64_t debug_line_offset, bool is_pc_after_call)
-      : _dwarf_file(dwarf_file), _reader(dwarf_file->fd()), _state(nullptr), _offset_in_library(offset_in_library),
-        _debug_line_offset(debug_line_offset), _is_pc_after_call(is_pc_after_call) , _line(nullptr), _filename(nullptr), _filename_len(0) {}
-    ~LineNumberProgram() {
-      delete _state;
-      _state = nullptr;
-    }
+      : _dwarf_file(dwarf_file), _reader(dwarf_file->fd()), _offset_in_library(offset_in_library),
+        _debug_line_offset(debug_line_offset), _is_pc_after_call(is_pc_after_call) {}
 
-    bool find_filename_and_line_number(char* filename, size_t filename_len, int* line);
+    bool find_filename_and_line_number(char& filename, size_t filename_len, int& line);
   };
 
  public:
@@ -745,7 +737,7 @@ class DwarfFile : public ElfFile {
    *
    *  More details about the different phases can be found at the associated methods.
    */
-  bool get_filename_and_line_number(uint32_t offset_in_library, char* filename, size_t filename_len, int* line, bool is_pc_after_call);
+  bool get_filename_and_line_number(uint32_t offset_in_library, char& filename, size_t filename_len, int& line, bool is_pc_after_call);
 };
 
 #endif // !_WINDOWS && !__APPLE__
