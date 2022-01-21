@@ -227,7 +227,7 @@ inline HeapWord* HeapRegion::allocate(size_t min_word_size,
   return allocate_impl(min_word_size, desired_word_size, actual_word_size);
 }
 
-inline void HeapRegion::update_bot_if_crossing_boundary(HeapWord* obj_start, size_t obj_size) {
+inline void HeapRegion::update_bot_for_obj(HeapWord* obj_start, size_t obj_size) {
   assert(is_old(), "should only do BOT updates for old regions");
 
   HeapWord* obj_end = obj_start + obj_size;
@@ -237,9 +237,7 @@ inline void HeapRegion::update_bot_if_crossing_boundary(HeapWord* obj_start, siz
          HR_FORMAT_PARAMS(this),
          p2i(obj_start), p2i(obj_end));
 
-  if (G1BlockOffsetTablePart::is_crossing_card_boundary(obj_start, obj_end)) {
-    _bot_part.alloc_block_work(obj_start, obj_end);
-  }
+  _bot_part.alloc_block(obj_start, obj_end);
 }
 
 inline void HeapRegion::note_start_of_marking() {

@@ -203,44 +203,40 @@ void G1BlockOffsetTablePart::check_all_cards(size_t start_card, size_t end_card)
 }
 
 //
-//              threshold_
+//              cur_card_boundary
 //              |   _index_
 //              v   v
 //      +-------+-------+-------+-------+-------+
 //      | i-1   |   i   | i+1   | i+2   | i+3   |
 //      +-------+-------+-------+-------+-------+
 //       ( ^    ]
-//         block-start
+//         blk_start
 //
 void G1BlockOffsetTablePart::alloc_block_work(HeapWord* blk_start,
                                               HeapWord* blk_end) {
-  HeapWord* threshold = align_up_by_card_size(blk_start);
-  size_t    index =  _bot->index_for_raw(threshold);
+  HeapWord* const cur_card_boundary = align_up_by_card_size(blk_start);
+  size_t const index =  _bot->index_for_raw(cur_card_boundary);
 
   assert(blk_start != NULL && blk_end > blk_start,
          "phantom block");
-  assert(blk_end > threshold, "should be past threshold");
-  assert(blk_start <= threshold, "blk_start should be at or before threshold");
-  assert(pointer_delta(threshold, blk_start) < BOTConstants::card_size_in_words(),
+  assert(blk_end > cur_card_boundary, "should be past cur_card_boundary");
+  assert(blk_start <= cur_card_boundary, "blk_start should be at or before cur_card_boundary");
+  assert(pointer_delta(cur_card_boundary, blk_start) < BOTConstants::card_size_in_words(),
          "offset should be < BOTConstants::card_size_in_words()");
   assert(G1CollectedHeap::heap()->is_in_reserved(blk_start),
          "reference must be into the heap");
-  assert(G1CollectedHeap::heap()->is_in_reserved(blk_end-1),
+  assert(G1CollectedHeap::heap()->is_in_reserved(blk_end - 1),
          "limit must be within the heap");
-  assert(threshold == _bot->_reserved.start() + index*BOTConstants::card_size_in_words(),
-         "index must agree with threshold");
+  assert(cur_card_boundary == _bot->_reserved.start() + index*BOTConstants::card_size_in_words(),
+         "index must agree with cur_card_boundary");
 
-  DEBUG_ONLY(size_t orig_index = index;)
+  // Mark the card that holds the offset into the block.
+  _bot->set_offset_array(index, cur_card_boundary, blk_start);
 
-  // Mark the card that holds the offset into the block.  Note
-  // that _next_offset_threshold is not updated until the end
-  // of this method.
-  _bot->set_offset_array(index, threshold, blk_start);
+  // We need to now mark the subsequent cards that this block spans.
 
-  // We need to now mark the subsequent cards that this blk spans.
-
-  // Index of card on which blk ends.
-  size_t end_index   = _bot->index_for(blk_end - 1);
+  // Index of card on which the block ends.
+  size_t end_index = _bot->index_for(blk_end - 1);
 
   // Are there more cards left to be updated?
   if (index + 1 <= end_index) {
@@ -251,25 +247,25 @@ void G1BlockOffsetTablePart::alloc_block_work(HeapWord* blk_start,
     set_remainder_to_point_to_start(rem_st, rem_end);
   }
 
-  // Calculate threshold_ this way because end_index
-  // may be the last valid index in the covered region.
-  threshold = _bot->address_for_index(end_index) + BOTConstants::card_size_in_words();
-  assert(threshold >= blk_end, "Incorrect offset threshold");
-
 #ifdef ASSERT
+  // Calculate new_card_boundary this way because end_index
+  // may be the last valid index in the covered region.
+  HeapWord* new_card_boundary = _bot->address_for_index(end_index) + BOTConstants::card_size_in_words();
+  assert(new_card_boundary >= blk_end, "postcondition");
+
   // The offset can be 0 if the block starts on a boundary.  That
   // is checked by an assertion above.
   size_t start_index = _bot->index_for(blk_start);
   HeapWord* boundary = _bot->address_for_index(start_index);
-  assert((_bot->offset_array(orig_index) == 0 && blk_start == boundary) ||
-         (_bot->offset_array(orig_index) > 0 && _bot->offset_array(orig_index) < BOTConstants::card_size_in_words()),
+  assert((_bot->offset_array(index) == 0 && blk_start == boundary) ||
+         (_bot->offset_array(index) > 0 && _bot->offset_array(index) < BOTConstants::card_size_in_words()),
          "offset array should have been set - "
-         "orig_index offset: %u, "
+         "index offset: %u, "
          "blk_start: " PTR_FORMAT ", "
          "boundary: " PTR_FORMAT,
-         (uint)_bot->offset_array(orig_index),
+         (uint)_bot->offset_array(index),
          p2i(blk_start), p2i(boundary));
-  for (size_t j = orig_index + 1; j <= end_index; j++) {
+  for (size_t j = index + 1; j <= end_index; j++) {
     assert(_bot->offset_array(j) > 0 &&
            _bot->offset_array(j) <=
              (u_char) (BOTConstants::card_size_in_words()+BOTConstants::N_powers-1),

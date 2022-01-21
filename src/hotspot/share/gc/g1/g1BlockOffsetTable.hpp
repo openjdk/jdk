@@ -137,12 +137,7 @@ private:
   inline HeapWord* forward_to_block_containing_addr(HeapWord* q, HeapWord* n,
                                                     const void* addr) const;
 
-  // Requires that "*threshold_" be the first array entry boundary at or
-  // above "blk_start".  If the block starts at or crosses "*threshold_", records
-  // "blk_start" as the appropriate block start for the array index
-  // starting at "*threshold_", and for any other indices crossed by the
-  // block.  Updates "*threshold_" to correspond to the first index after
-  // the block end.
+  // Update BOT entries corresponding to the mem range [blk_start, blk_end).
   void alloc_block_work(HeapWord* blk_start, HeapWord* blk_end);
 
   void check_all_cards(size_t left_card, size_t right_card) const;
@@ -179,8 +174,8 @@ public:
     }
   }
 
-  void alloc_block(HeapWord* blk, size_t size) {
-    alloc_block(blk, blk+size);
+  void alloc_block(HeapWord* blk_start, size_t size) {
+    alloc_block(blk_start, blk_start + size);
   }
 
   void set_for_starts_humongous(HeapWord* obj_top, size_t fill_size);

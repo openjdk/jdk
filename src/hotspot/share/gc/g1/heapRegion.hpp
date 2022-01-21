@@ -163,7 +163,7 @@ public:
   inline HeapWord* allocate(size_t min_word_size, size_t desired_word_size, size_t* actual_size);
 
   // Update BOT if this obj is the first entering a new card (i.e. crossing the card boundary).
-  inline void update_bot_if_crossing_boundary(HeapWord* obj_start, size_t obj_size);
+  inline void update_bot_for_obj(HeapWord* obj_start, size_t obj_size);
 
   // Full GC support methods.
 
