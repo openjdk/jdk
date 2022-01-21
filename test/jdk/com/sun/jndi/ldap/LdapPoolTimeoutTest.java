@@ -23,11 +23,11 @@
 
 /*
  * @test
+ * @bug 8277795
+ * @summary Multi-threaded client timeout tests for ldap pool
  * @library /test/lib
  *          lib/
  * @run testng/othervm LdapPoolTimeoutTest
- * @bug JDK-8277795
- * @summary Multi-threaded client timeout tests for ldap pool
  */
 
 import org.testng.Assert;
