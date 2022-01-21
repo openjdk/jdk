@@ -105,7 +105,7 @@ public:
 
     HeapWord* obj_end = obj_addr + obj_size;
     _last_forwarded_object_end = obj_end;
-    _hr->update_bot_at(obj_addr, obj_size, false);
+    _hr->update_bot_if_crossing_boundary(obj_addr, obj_size, false);
     return obj_size;
   }
 
@@ -123,13 +123,13 @@ public:
 
       size_t dummy_size = cast_to_oop(start)->size();
       HeapWord* end_first_obj = start + cast_to_oop(start)->size();
-      _hr->update_bot_at(start, dummy_size, false);
+      _hr->update_bot_if_crossing_boundary(start, dummy_size, false);
       // Fill_with_objects() may have created multiple (i.e. two)
       // objects, as the max_fill_size() is half a region.
       // After updating the BOT for the first object, also update the
       // BOT for the second object to make the BOT complete.
       if (end_first_obj != end) {
-        _hr->update_bot_at(end_first_obj, cast_to_oop(end_first_obj)->size(), false);
+        _hr->update_bot_if_crossing_boundary(end_first_obj, cast_to_oop(end_first_obj)->size(), false);
 #ifdef ASSERT
         size_t size_second_obj = cast_to_oop(end_first_obj)->size();
         HeapWord* end_of_second_obj = end_first_obj + size_second_obj;

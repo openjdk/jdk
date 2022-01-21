@@ -231,8 +231,8 @@ inline HeapWord* HeapRegion::allocate(size_t min_word_size,
   return allocate_impl(min_word_size, desired_word_size, actual_word_size);
 }
 
-inline void HeapRegion::update_bot_if_crossing_boundary(HeapWord* obj_start, size_t obj_size) {
-  assert(is_old(), "should only do BOT updates for old regions");
+inline void HeapRegion::update_bot_if_crossing_boundary(HeapWord* obj_start, size_t obj_size, bool assert_old) {
+  assert(!assert_old || is_old(), "should only do BOT updates for old regions");
 
   HeapWord* obj_end   = obj_start + obj_size;
 
