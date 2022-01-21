@@ -181,12 +181,14 @@ public class HttpClient extends NetworkClient {
     }
 
     static String normalizeCBT(String s) {
-        if (s == null || ! (s.equals("always") ||
-                s.equals("never") || s.startsWith("domain:"))) {
+        if (s == null || s.equals("never")) {
             return "never";
+        }
+        if (s.equals("always") || s.startsWith("domain:")) {
+            return s;
         } else {
             logError("Unexpected value for \"jdk.https.negotiate.cbt\" system property");
-            return s;
+            return "never";
         }
     }
 

@@ -25,10 +25,12 @@
 
 package sun.security.util;
 
+import java.security.GeneralSecurityException;
+
 /**
  * Thrown by TlsChannelBinding if an error occurs
  */
-public class ChannelBindingException extends Exception {
+public class ChannelBindingException extends GeneralSecurityException {
 
     @java.io.Serial
     private static final long serialVersionUID = -5021387249782788460L;

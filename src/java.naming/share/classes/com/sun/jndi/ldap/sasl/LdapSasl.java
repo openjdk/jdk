@@ -130,7 +130,7 @@ public final class LdapSasl {
                     cbType = TlsChannelBinding.parseType(
                                 (String)env.get(TlsChannelBinding.CHANNEL_BINDING_TYPE));
                 } catch (ChannelBindingException e) {
-                    throw new SaslException(e.getMessage(), e);
+                    throw new NamingException(e.getMessage());
                 }
                 if (cbType == TlsChannelBindingType.TLS_SERVER_END_POINT) {
                     // set tls-server-end-point channel binding
@@ -140,7 +140,7 @@ public final class LdapSasl {
                         try {
                             tlsCB = TlsChannelBinding.create(cert);
                         } catch (ChannelBindingException e) {
-                            throw new SaslException(e.getMessage());
+                            throw new NamingException(e.getMessage());
                         }
                         envProps = (Hashtable<String, Object>) env.clone();
                         envProps.put(TlsChannelBinding.CHANNEL_BINDING, tlsCB.getData());
