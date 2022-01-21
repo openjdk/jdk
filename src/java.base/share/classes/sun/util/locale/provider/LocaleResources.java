@@ -554,7 +554,7 @@ public class LocaleResources {
      * @return format pattern string for this locale, null if not found
      */
     public String getLocalizedPattern(String requested, String calType) {
-        String lPattern = null;
+        String lPattern;
         String cacheKey = SKELETON_PATTERN + calType + "." + requested;
 
         removeEmptyReferences();
@@ -643,7 +643,10 @@ System.out.println("requested: " + requested + ", locale: " + locale + ", caltyp
             CPattern = resolveInputSkeleton(allowedInputSkeletons);
             // hack: "allowed" contains reversed order for hour/period, e.g, "hB" which should be "Bh" as a skeleton
             if (CPattern.length() == 2) {
-                CPattern = String.format("%c%c", CPattern.charAt(1), CPattern.charAt(0));
+                var ba = new byte[2];
+                ba[0] = (byte)CPattern.charAt(1);
+                ba[1] = (byte)CPattern.charAt(0);
+                CPattern = new String(ba);
             }
         }
     }
@@ -652,13 +655,13 @@ System.out.println("requested: " + requested + ", locale: " + locale + ", caltyp
      * Resolve locale specific input skeletons. Fall back method is different from usual
      * resource bundle's, as it has to be "lang-region" -> "region" -> "lang-001" -> "001"
      * @param inputSkeletons
-     * @return
+     * @return resolved skeletons for this locale, defaults to "h" if none found.
      */
     private String resolveInputSkeleton(Map<String, String> inputSkeletons) {
         return inputSkeletons.getOrDefault(locale.getLanguage() + "-" + locale.getCountry(),
             inputSkeletons.getOrDefault(locale.getCountry(),
                 inputSkeletons.getOrDefault(locale.getLanguage() + "-001",
-                    inputSkeletons.getOrDefault("001", ""))));
+                    inputSkeletons.getOrDefault("001", "h"))));
     }
 
     /**
@@ -669,11 +672,11 @@ System.out.println("requested: " + requested + ", locale: " + locale + ", caltyp
      * @return skeleton with j/C substituted with concrete patterns
      */
     private String substituteInputSkeletons(String requested) {
-        return requested.replaceAll("j", jPattern)
-                .replaceFirst("C+",
-                    CPattern.chars()
-                            .mapToObj(c -> String.valueOf((char)c).repeat(requested.lastIndexOf('C') - requested.indexOf('C') + 1))
-                            .collect(Collectors.joining()));
+        var firstC = requested.indexOf('C');
+        var lastC = requested.lastIndexOf('C');
+        var cCount = firstC >= 0 ? lastC - firstC + 1 : 0;
+        return requested.replaceAll("[jJ]", jPattern) // regard 'J' as 'j' for now
+                .replaceFirst("C+", CPattern.replaceAll("([hkHK])", "$1".repeat(cCount)));
     }
 
     private String skeletonFromRB(ResourceBundle r, String calT, String key) {
