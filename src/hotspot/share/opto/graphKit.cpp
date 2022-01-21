@@ -2350,9 +2350,9 @@ void GraphKit::round_double_arguments(ciMethod* dest_method) {
       const Type *targ = tf->domain()->field_at(j + TypeFunc::Parms);
       if (targ->basic_type() == T_DOUBLE) {
         // If any parameters are doubles, they must be rounded before
-        // the call, precision_rounding does gvn.transform
+        // the call, dprecision_rounding does gvn.transform
         Node *arg = argument(j);
-        arg = precision_rounding(arg);
+        arg = dprecision_rounding(arg);
         set_argument(j, arg);
       }
     }
