@@ -2132,19 +2132,6 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
   _gc_tracer.report_object_count_after_gc(is_alive_closure());
 }
 
-#ifdef ASSERT
-void PCAdjustPointerClosure::verify_cm(ParCompactionManager* cm) {
-  assert(cm != NULL, "associate ParCompactionManage should not be NULL");
-  auto vmthread_cm = ParCompactionManager::get_vmthread_cm();
-  if (Thread::current()->is_VM_thread()) {
-    assert(cm == vmthread_cm, "VM threads should use ParCompactionManager from get_vmthread_cm()");
-  } else {
-    assert(Thread::current()->is_Worker_thread(), "Must be a GC thread");
-    assert(cm != vmthread_cm, "GC threads should use ParCompactionManager from gc_thread_compaction_manager()");
-  }
-}
-#endif
-
 class PSAdjustTask final : public WorkerTask {
   SubTasksDone                               _sub_tasks;
   WeakProcessor::Task                        _weak_proc_task;
