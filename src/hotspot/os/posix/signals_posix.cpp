@@ -1202,7 +1202,7 @@ int os::get_signal_number(const char* signal_name) {
   return -1;
 }
 
-void set_signal_handler(int sig) {
+void set_signal_handler(int sig, bool do_check = true) {
   // Check for overwrite.
   struct sigaction oldAct;
   sigaction(sig, (struct sigaction*)NULL, &oldAct);
@@ -1246,7 +1246,7 @@ void set_signal_handler(int sig) {
 
   // Save handler setup for later checking
   vm_handlers.set(sig, &sigAct);
-  do_check_signal_periodically[sig] = true;
+  do_check_signal_periodically[sig] = do_check;
 
   int ret = sigaction(sig, &sigAct, &oldAct);
   assert(ret == 0, "check");
@@ -1285,10 +1285,10 @@ void install_signal_handlers() {
   PPC64_ONLY(set_signal_handler(SIGTRAP);)
   set_signal_handler(SIGXFSZ);
   if (!ReduceSignalUsage) {
-    // This is just for initialization phase. os::initialize_jdk_signal_support() will overwrite
-    // the signal handler of BREAK_SIGNAL later. Intercepting the signal here reduces the risk
-    // that an attach client accidentally forces HotSpot to quit prematurely.
-    set_signal_handler(BREAK_SIGNAL);
+    // This is just for early initialization phase. Intercepting the signal here reduces the risk
+    // that an attach client accidentally forces HotSpot to quit prematurely. We skip the periodic
+    // check because late initialization will overwrite it to UserHandler.
+    set_signal_handler(BREAK_SIGNAL, false);
   }
 #if defined(__APPLE__)
   // lldb (gdb) installs both standard BSD signal handlers, and mach exception
