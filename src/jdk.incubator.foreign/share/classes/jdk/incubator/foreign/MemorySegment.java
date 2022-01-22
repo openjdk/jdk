@@ -266,7 +266,7 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
      * <p>
      * The returned spliterator splits this segment according to the specified element layout; that is,
      * if the supplied layout has size N, then calling {@link Spliterator#trySplit()} will result in a spliterator serving
-     * approximately {@code S/N/2} elements (depending on whether N is even or not), where {@code S} is the size of
+     * approximately {@code S/N} elements (depending on whether N is even or not), where {@code S} is the size of
      * this segment. As such, splitting is possible as long as {@code S/N >= 2}. The spliterator returns segments that
      * are associated with the same scope as this segment.
      * <p>

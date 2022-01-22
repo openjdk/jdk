@@ -101,7 +101,7 @@ import org.xml.sax.ext.LexicalHandler;
  * @author Morten Jorgensen
  * @author G. Todd Miller
  * @author Santiago Pericas-Geertsen
- * @LastModified: June 2021
+ * @LastModified: Sept 2021
  */
 public final class TransformerImpl extends Transformer
     implements DOMCache
@@ -1351,8 +1351,33 @@ public final class TransformerImpl extends Transformer
             }
 
             if (resolvedSource == null)  {
-                StreamSource streamSource = new StreamSource(
-                     SystemIDResolver.getAbsoluteURI(href, baseURI));
+                /**
+                 * Uses the translet to carry over error msg.
+                 * Performs the access check without any interface changes
+                 * (e.g. Translet and DOMCache).
+                 */
+                @SuppressWarnings("unchecked") //AbstractTranslet is the sole impl.
+                AbstractTranslet t = (AbstractTranslet)translet;
+                String systemId = SystemIDResolver.getAbsoluteURI(href, baseURI);
+                String errMsg = null;
+                try {
+                    String accessError = SecuritySupport.checkAccess(systemId,
+                            t.getAllowedProtocols(),
+                            JdkConstants.ACCESS_EXTERNAL_ALL);
+                    if (accessError != null) {
+                        ErrorMsg msg = new ErrorMsg(ErrorMsg.ACCESSING_XSLT_TARGET_ERR,
+                                SecuritySupport.sanitizePath(href), accessError);
+                        errMsg = msg.toString();
+                    }
+                } catch (IOException ioe) {
+                    errMsg = ioe.getMessage();
+                }
+                if (errMsg != null) {
+                    t.setAccessError(errMsg);
+                    return null;
+                }
+
+                StreamSource streamSource = new StreamSource(systemId);
                 return getDOM(streamSource) ;
             }
 

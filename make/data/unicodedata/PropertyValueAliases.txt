@@ -1,6 +1,6 @@
-# PropertyValueAliases-13.0.0.txt
-# Date: 2019-11-13, 21:52:10 GMT
-# Copyright (c) 2019 Unicode, Inc.
+# PropertyValueAliases-14.0.0.txt
+# Date: 2021-05-10, 21:08:53 GMT
+# Copyright (c) 2021 Unicode, Inc.
 # Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 # For terms of use, see http://www.unicode.org/terms_of_use.html
 #
@@ -89,6 +89,7 @@ age; 11.0                             ; V11_0
 age; 12.0                             ; V12_0
 age; 12.1                             ; V12_1
 age; 13.0                             ; V13_0
+age; 14.0                             ; V14_0
 age; NA                               ; Unassigned
 
 # Alphabetic (Alpha)
@@ -160,6 +161,7 @@ blk; Ancient_Greek_Numbers            ; Ancient_Greek_Numbers
 blk; Ancient_Symbols                  ; Ancient_Symbols
 blk; Arabic                           ; Arabic
 blk; Arabic_Ext_A                     ; Arabic_Extended_A
+blk; Arabic_Ext_B                     ; Arabic_Extended_B
 blk; Arabic_Math                      ; Arabic_Mathematical_Alphabetic_Symbols
 blk; Arabic_PF_A                      ; Arabic_Presentation_Forms_A      ; Arabic_Presentation_Forms-A
 blk; Arabic_PF_B                      ; Arabic_Presentation_Forms_B
@@ -216,6 +218,7 @@ blk; Cuneiform                        ; Cuneiform
 blk; Cuneiform_Numbers                ; Cuneiform_Numbers_And_Punctuation
 blk; Currency_Symbols                 ; Currency_Symbols
 blk; Cypriot_Syllabary                ; Cypriot_Syllabary
+blk; Cypro_Minoan                     ; Cypro_Minoan
 blk; Cyrillic                         ; Cyrillic
 blk; Cyrillic_Ext_A                   ; Cyrillic_Extended_A
 blk; Cyrillic_Ext_B                   ; Cyrillic_Extended_B
@@ -246,6 +249,7 @@ blk; Enclosed_Ideographic_Sup         ; Enclosed_Ideographic_Supplement
 blk; Ethiopic                         ; Ethiopic
 blk; Ethiopic_Ext                     ; Ethiopic_Extended
 blk; Ethiopic_Ext_A                   ; Ethiopic_Extended_A
+blk; Ethiopic_Ext_B                   ; Ethiopic_Extended_B
 blk; Ethiopic_Sup                     ; Ethiopic_Supplement
 blk; Geometric_Shapes                 ; Geometric_Shapes
 blk; Geometric_Shapes_Ext             ; Geometric_Shapes_Extended
@@ -285,6 +289,7 @@ blk; Jamo_Ext_B                       ; Hangul_Jamo_Extended_B
 blk; Javanese                         ; Javanese
 blk; Kaithi                           ; Kaithi
 blk; Kana_Ext_A                       ; Kana_Extended_A
+blk; Kana_Ext_B                       ; Kana_Extended_B
 blk; Kana_Sup                         ; Kana_Supplement
 blk; Kanbun                           ; Kanbun
 blk; Kangxi                           ; Kangxi_Radicals
@@ -306,6 +311,8 @@ blk; Latin_Ext_B                      ; Latin_Extended_B
 blk; Latin_Ext_C                      ; Latin_Extended_C
 blk; Latin_Ext_D                      ; Latin_Extended_D
 blk; Latin_Ext_E                      ; Latin_Extended_E
+blk; Latin_Ext_F                      ; Latin_Extended_F
+blk; Latin_Ext_G                      ; Latin_Extended_G
 blk; Lepcha                           ; Lepcha
 blk; Letterlike_Symbols               ; Letterlike_Symbols
 blk; Limbu                            ; Limbu
@@ -372,6 +379,7 @@ blk; Old_Persian                      ; Old_Persian
 blk; Old_Sogdian                      ; Old_Sogdian
 blk; Old_South_Arabian                ; Old_South_Arabian
 blk; Old_Turkic                       ; Old_Turkic
+blk; Old_Uyghur                       ; Old_Uyghur
 blk; Oriya                            ; Oriya
 blk; Ornamental_Dingbats              ; Ornamental_Dingbats
 blk; Osage                            ; Osage
@@ -433,6 +441,7 @@ blk; Tai_Xuan_Jing                    ; Tai_Xuan_Jing_Symbols
 blk; Takri                            ; Takri
 blk; Tamil                            ; Tamil
 blk; Tamil_Sup                        ; Tamil_Supplement
+blk; Tangsa                           ; Tangsa
 blk; Tangut                           ; Tangut
 blk; Tangut_Components                ; Tangut_Components
 blk; Tangut_Sup                       ; Tangut_Supplement
@@ -442,13 +451,16 @@ blk; Thai                             ; Thai
 blk; Tibetan                          ; Tibetan
 blk; Tifinagh                         ; Tifinagh
 blk; Tirhuta                          ; Tirhuta
+blk; Toto                             ; Toto
 blk; Transport_And_Map                ; Transport_And_Map_Symbols
 blk; UCAS                             ; Unified_Canadian_Aboriginal_Syllabics; Canadian_Syllabics
 blk; UCAS_Ext                         ; Unified_Canadian_Aboriginal_Syllabics_Extended
+blk; UCAS_Ext_A                       ; Unified_Canadian_Aboriginal_Syllabics_Extended_A
 blk; Ugaritic                         ; Ugaritic
 blk; Vai                              ; Vai
 blk; Vedic_Ext                        ; Vedic_Extensions
 blk; Vertical_Forms                   ; Vertical_Forms
+blk; Vithkuqi                         ; Vithkuqi
 blk; VS                               ; Variation_Selectors
 blk; VS_Sup                           ; Variation_Selectors_Supplement
 blk; Wancho                           ; Wancho
@@ -458,6 +470,7 @@ blk; Yi_Radicals                      ; Yi_Radicals
 blk; Yi_Syllables                     ; Yi_Syllables
 blk; Yijing                           ; Yijing_Hexagram_Symbols
 blk; Zanabazar_Square                 ; Zanabazar_Square
+blk; Znamenny_Music                   ; Znamenny_Musical_Notation
 
 # Canonical_Combining_Class (ccc)
 
@@ -1032,6 +1045,8 @@ jg ; Taw                              ; Taw
 jg ; Teh_Marbuta                      ; Teh_Marbuta
 jg ; Teh_Marbuta_Goal                 ; Hamza_On_Heh_Goal
 jg ; Teth                             ; Teth
+jg ; Thin_Yeh                         ; Thin_Yeh
+jg ; Vertical_Tail                    ; Vertical_Tail
 jg ; Waw                              ; Waw
 jg ; Yeh                              ; Yeh
 jg ; Yeh_Barree                       ; Yeh_Barree
@@ -1262,6 +1277,7 @@ sc ; Cham                             ; Cham
 sc ; Cher                             ; Cherokee
 sc ; Chrs                             ; Chorasmian
 sc ; Copt                             ; Coptic                           ; Qaac
+sc ; Cpmn                             ; Cypro_Minoan
 sc ; Cprt                             ; Cypriot
 sc ; Cyrl                             ; Cyrillic
 sc ; Deva                             ; Devanagari
@@ -1341,6 +1357,7 @@ sc ; Orkh                             ; Old_Turkic
 sc ; Orya                             ; Oriya
 sc ; Osge                             ; Osage
 sc ; Osma                             ; Osmanya
+sc ; Ougr                             ; Old_Uyghur
 sc ; Palm                             ; Palmyrene
 sc ; Pauc                             ; Pau_Cin_Hau
 sc ; Perm                             ; Old_Permic
@@ -1383,8 +1400,11 @@ sc ; Thaa                             ; Thaana
 sc ; Thai                             ; Thai
 sc ; Tibt                             ; Tibetan
 sc ; Tirh                             ; Tirhuta
+sc ; Tnsa                             ; Tangsa
+sc ; Toto                             ; Toto
 sc ; Ugar                             ; Ugaritic
 sc ; Vaii                             ; Vai
+sc ; Vith                             ; Vithkuqi
 sc ; Wara                             ; Warang_Citi
 sc ; Wcho                             ; Wancho
 sc ; Xpeo                             ; Old_Persian

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ import java.util.Arrays;
  * <P>
  * A JDBC driver implementation should use
  * the constructor {@code BatchUpdateException(String reason, String SQLState,
- * int vendorCode, long []updateCounts,Throwable cause) } instead of
+ * int vendorCode, long []updateCounts, Throwable cause) } instead of
  * constructors that take {@code int[]} for the update counts to avoid the
  * possibility of overflow.
  * <p>
@@ -78,7 +78,7 @@ public class BatchUpdateException extends SQLException {
    * <strong>Note:</strong> There is no validation of {@code updateCounts} for
    * overflow and because of this it is recommended that you use the constructor
    * {@code BatchUpdateException(String reason, String SQLState,
-   * int vendorCode, long []updateCounts,Throwable cause) }.
+   * int vendorCode, long []updateCounts, Throwable cause) }.
    * </p>
    * @param reason a description of the error
    * @param SQLState an XOPEN or SQL:2003 code identifying the exception
@@ -115,7 +115,7 @@ public class BatchUpdateException extends SQLException {
    * <strong>Note:</strong> There is no validation of {@code updateCounts} for
    * overflow and because of this it is recommended that you use the constructor
    * {@code BatchUpdateException(String reason, String SQLState,
-   * int vendorCode, long []updateCounts,Throwable cause) }.
+   * int vendorCode, long []updateCounts, Throwable cause) }.
    * </p>
    * @param reason a description of the exception
    * @param SQLState an XOPEN or SQL:2003 code identifying the exception
@@ -148,7 +148,7 @@ public class BatchUpdateException extends SQLException {
    * <strong>Note:</strong> There is no validation of {@code updateCounts} for
    * overflow and because of this it is recommended that you use the constructor
    * {@code BatchUpdateException(String reason, String SQLState,
-   * int vendorCode, long []updateCounts,Throwable cause) }.
+   * int vendorCode, long []updateCounts, Throwable cause) }.
    * </p>
    * @param reason a description of the exception
    * @param updateCounts an array of {@code int}, with each element
@@ -178,7 +178,7 @@ public class BatchUpdateException extends SQLException {
    * <strong>Note:</strong> There is no validation of {@code updateCounts} for
    * overflow and because of this it is recommended that you use the constructor
    * {@code BatchUpdateException(String reason, String SQLState,
-   * int vendorCode, long []updateCounts,Throwable cause) }.
+   * int vendorCode, long []updateCounts, Throwable cause) }.
    * </p>
    * @param updateCounts an array of {@code int}, with each element
    * indicating the update count, {@code Statement.SUCCESS_NO_INFO} or
@@ -244,7 +244,7 @@ public class BatchUpdateException extends SQLException {
    * <strong>Note:</strong> There is no validation of {@code updateCounts} for
    * overflow and because of this it is recommended that you use the constructor
    * {@code BatchUpdateException(String reason, String SQLState,
-   * int vendorCode, long []updateCounts,Throwable cause) }.
+   * int vendorCode, long []updateCounts, Throwable cause) }.
    * </p>
    * @param updateCounts an array of {@code int}, with each element
    * indicating the update count, {@code Statement.SUCCESS_NO_INFO} or
@@ -274,7 +274,7 @@ public class BatchUpdateException extends SQLException {
    * <strong>Note:</strong> There is no validation of {@code updateCounts} for
    * overflow and because of this it is recommended that you use the constructor
    * {@code BatchUpdateException(String reason, String SQLState,
-   * int vendorCode, long []updateCounts,Throwable cause) }.
+   * int vendorCode, long []updateCounts, Throwable cause) }.
    * </p>
    * @param reason a description of the exception
    * @param updateCounts an array of {@code int}, with each element
@@ -315,7 +315,7 @@ public class BatchUpdateException extends SQLException {
    * <strong>Note:</strong> There is no validation of {@code updateCounts} for
    * overflow and because of this it is recommended that you use the constructor
    * {@code BatchUpdateException(String reason, String SQLState,
-   * int vendorCode, long []updateCounts,Throwable cause) }.
+   * int vendorCode, long []updateCounts, Throwable cause) }.
    * </p>
    * @param cause the underlying reason for this {@code SQLException}
    * (which is saved for later retrieval by the {@code getCause()} method);
@@ -351,7 +351,7 @@ public class BatchUpdateException extends SQLException {
    * <strong>Note:</strong> There is no validation of {@code updateCounts} for
    * overflow and because of this it is recommended that you use the constructor
    * {@code BatchUpdateException(String reason, String SQLState,
-   * int vendorCode, long []updateCounts,Throwable cause) }.
+   * int vendorCode, long []updateCounts, Throwable cause) }.
    * </p>
    * @param cause the underlying reason for this {@code SQLException} (which is saved for later retrieval by the {@code getCause()} method);
    * may be null indicating
