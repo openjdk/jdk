@@ -102,14 +102,14 @@ public:
   FileReader(FILE* const fd) : _fd(fd) {};
   bool read(void* buf, size_t size);
   int  read_buffer(void* buf, size_t size);
-  bool set_position(long offset);
+  bool set_position(int64_t offset);
 };
 
 // Mark current position, so we can get back to it after
 // reads.
 class MarkedFileReader : public FileReader {
 private:
-  long  _marked_pos;
+  int64_t _marked_pos;
 public:
   MarkedFileReader(FILE* const fd);
   ~MarkedFileReader();

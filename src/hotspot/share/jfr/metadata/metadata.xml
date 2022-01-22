@@ -562,7 +562,7 @@
   </Event>
 
   <Event name="SweepCodeCache" category="Java Virtual Machine, Code Sweeper" label="Sweep Code Cache" thread="true" >
-    <Field type="int" name="sweepId" label="Sweep Identifier" relation="SweepId" />
+    <Field type="ulong" name="sweepId" label="Sweep Identifier" relation="SweepId" />
     <Field type="uint" name="sweptCount" label="Methods Swept" />
     <Field type="uint" name="flushedCount" label="Methods Flushed" />
     <Field type="uint" name="zombifiedCount" label="Methods Zombified" />

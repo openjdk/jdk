@@ -91,7 +91,7 @@ int FileReader::read_buffer(void* buf, size_t size) {
   return fread(buf, 1, size, _fd);
 }
 
-bool FileReader::set_position(long offset) {
+bool FileReader::set_position(int64_t offset) {
   return fseek(_fd, offset, SEEK_SET) == 0;
 }
 
