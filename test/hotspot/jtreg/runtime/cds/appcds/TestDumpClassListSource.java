@@ -54,6 +54,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.cds.CDSTestUtils;
@@ -174,6 +175,10 @@ public class TestDumpClassListSource {
 
         fileArchive.delete();
         fileList.delete();
+
+        if (!Platform.areCustomLoadersSupportedForCDS()) {
+            return;
+        }
 
         //    2.3 class loaded by custom loader from shared space.
         //      2.3.1 dump class list
