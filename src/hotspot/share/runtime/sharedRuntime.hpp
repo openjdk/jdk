@@ -29,7 +29,7 @@
 #include "code/vmreg.hpp"
 #include "interpreter/bytecodeTracer.hpp"
 #include "interpreter/linkResolver.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/hashtable.hpp"
 #include "utilities/macros.hpp"

@@ -25,7 +25,7 @@
 #ifndef SHARE_INTERPRETER_BYTECODETRACER_HPP
 #define SHARE_INTERPRETER_BYTECODETRACER_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/ostream.hpp"
 
 // The BytecodeTracer is a helper class used by the interpreter for run-time

@@ -26,7 +26,7 @@
 #define SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEIDLOADBARRIER_HPP
 
 #include "jfr/utilities/jfrTypes.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 class ClassLoaderData;
 class JfrBuffer;

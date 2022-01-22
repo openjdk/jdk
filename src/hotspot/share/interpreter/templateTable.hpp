@@ -26,7 +26,7 @@
 #define SHARE_INTERPRETER_TEMPLATETABLE_HPP
 
 #include "interpreter/bytecodes.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "runtime/frame.hpp"
 #include "utilities/macros.hpp"
 

@@ -28,7 +28,7 @@
 #include "gc/shared/oopStorageParState.hpp"
 #include "gc/shared/oopStorageSetParState.hpp"
 #include "gc/shared/workerThread.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 class WeakProcessorTimes;
 class WorkerThreads;

@@ -27,7 +27,7 @@
 
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 #define OSCONTAINER_ERROR (-2)
 

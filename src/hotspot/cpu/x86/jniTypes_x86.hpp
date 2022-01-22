@@ -26,7 +26,7 @@
 #define CPU_X86_JNITYPES_X86_HPP
 
 #include "jni.h"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "oops/oop.hpp"
 
 // This file holds platform-dependent routines used to write primitive jni

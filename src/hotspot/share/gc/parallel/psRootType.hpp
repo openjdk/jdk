@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_PARALLEL_PSROOTTYPE_HPP
 #define SHARE_GC_PARALLEL_PSROOTTYPE_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/macros.hpp"
 
 class ParallelRootType : public AllStatic {

@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_SHARED_SPACEDECORATOR_HPP
 #define SHARE_GC_SHARED_SPACEDECORATOR_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "memory/memRegion.hpp"
 #include "utilities/globalDefinitions.hpp"
 

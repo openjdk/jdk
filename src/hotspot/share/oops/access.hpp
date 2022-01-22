@@ -25,7 +25,7 @@
 #ifndef SHARE_OOPS_ACCESS_HPP
 #define SHARE_OOPS_ACCESS_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "oops/accessBackend.hpp"
 #include "oops/accessDecorators.hpp"
 #include "oops/oopsHierarchy.hpp"

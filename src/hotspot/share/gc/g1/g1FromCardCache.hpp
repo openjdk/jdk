@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_G1_G1FROMCARDCACHE_HPP
 #define SHARE_GC_G1_G1FROMCARDCACHE_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/ostream.hpp"
 
 // G1FromCardCache remembers the most recently processed card on the heap on

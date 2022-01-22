@@ -24,7 +24,7 @@
 #ifndef SHARE_GC_Z_ZRESURRECTION_HPP
 #define SHARE_GC_Z_ZRESURRECTION_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 class ZResurrection : public AllStatic {
 private:

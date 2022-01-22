@@ -26,7 +26,7 @@
 #define SHARE_JFR_RECORDER_CHECKPOINT_JFRMETADATAEVENT_HPP
 
 #include "jni.h"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 class JfrChunkWriter;
 

@@ -25,7 +25,7 @@
 #ifndef SHARE_JFR_RECORDER_REPOSITORY_JFREMERGENCYDUMP_HPP
 #define SHARE_JFR_RECORDER_REPOSITORY_JFREMERGENCYDUMP_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/ostream.hpp"
 
 //

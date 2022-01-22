@@ -24,8 +24,9 @@
 #ifndef SHARE_GC_Z_ZBITFIELD_HPP
 #define SHARE_GC_Z_ZBITFIELD_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 //
 //  Example

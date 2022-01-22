@@ -24,7 +24,7 @@
 #ifndef SHARE_GC_Z_ZNUMA_HPP
 #define SHARE_GC_Z_ZNUMA_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 class ZNUMA : public AllStatic {
 private:

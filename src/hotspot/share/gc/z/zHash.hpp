@@ -24,7 +24,7 @@
 #ifndef SHARE_GC_Z_ZHASH_HPP
 #define SHARE_GC_Z_ZHASH_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ZHash : public AllStatic {

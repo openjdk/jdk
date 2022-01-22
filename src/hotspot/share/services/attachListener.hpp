@@ -25,7 +25,7 @@
 #ifndef SHARE_SERVICES_ATTACHLISTENER_HPP
 #define SHARE_SERVICES_ATTACHLISTENER_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/debug.hpp"

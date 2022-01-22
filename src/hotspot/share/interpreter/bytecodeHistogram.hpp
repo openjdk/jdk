@@ -26,7 +26,7 @@
 #define SHARE_INTERPRETER_BYTECODEHISTOGRAM_HPP
 
 #include "interpreter/bytecodes.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 // BytecodeCounter counts the number of bytecodes executed
 

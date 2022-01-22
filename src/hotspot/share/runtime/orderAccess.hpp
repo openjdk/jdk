@@ -25,7 +25,7 @@
 #ifndef SHARE_RUNTIME_ORDERACCESS_HPP
 #define SHARE_RUNTIME_ORDERACCESS_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/macros.hpp"
 

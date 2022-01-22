@@ -27,7 +27,7 @@
 
 #include "jfr/leakprofiler/utilities/rootType.hpp"
 #include "jfr/leakprofiler/utilities/unifiedOopRef.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
 
 struct RootCallbackInfo {

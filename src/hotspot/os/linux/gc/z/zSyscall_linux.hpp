@@ -24,7 +24,8 @@
 #ifndef OS_LINUX_GC_Z_ZSYSCALL_LINUX_HPP
 #define OS_LINUX_GC_Z_ZSYSCALL_LINUX_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // Flags for get_mempolicy()
 #ifndef MPOL_F_NODE

@@ -25,7 +25,7 @@
 #ifndef SHARE_JFR_RECORDER_SERVICE_JFRMEMORYSIZER_HPP
 #define SHARE_JFR_RECORDER_SERVICE_JFRMEMORYSIZER_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 extern const julong MIN_BUFFER_COUNT;

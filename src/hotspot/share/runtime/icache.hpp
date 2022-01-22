@@ -25,7 +25,7 @@
 #ifndef SHARE_RUNTIME_ICACHE_HPP
 #define SHARE_RUNTIME_ICACHE_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "utilities/macros.hpp"
 

@@ -26,7 +26,7 @@
 #ifndef SHARE_MEMORY_METASPACE_RUNNINGCOUNTERS_HPP
 #define SHARE_MEMORY_METASPACE_RUNNINGCOUNTERS_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "memory/metaspace/counters.hpp"
 
 namespace metaspace {

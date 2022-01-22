@@ -26,7 +26,7 @@
 #ifndef CPU_S390_BYTES_S390_HPP
 #define CPU_S390_BYTES_S390_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 class Bytes: AllStatic {
  public:

@@ -26,7 +26,7 @@
 #define SHARE_JFR_WRITERS_JFRJAVAEVENTWRITER_HPP
 
 #include "jni.h"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 class JavaThread;
 class Thread;

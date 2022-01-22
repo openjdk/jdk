@@ -26,7 +26,7 @@
 #define SHARE_JFR_LEAKPROFILER_UTILITIES_ROOTTYPE_HPP
 
 #include "gc/shared/oopStorageSet.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/enumIterator.hpp"
 
 class OldObjectRoot : public AllStatic {

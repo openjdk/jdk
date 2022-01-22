@@ -25,7 +25,7 @@
 #ifndef SHARE_RUNTIME_REFLECTIONUTILS_HPP
 #define SHARE_RUNTIME_REFLECTIONUTILS_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oopsHierarchy.hpp"

@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_SHARED_WORKERPOLICY_HPP
 #define SHARE_GC_SHARED_WORKERPOLICY_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class WorkerPolicy : public AllStatic {

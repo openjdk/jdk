@@ -26,7 +26,7 @@
 #ifndef SHARE_MEMORY_METASPACE_METASPACEREPORTER_HPP
 #define SHARE_MEMORY_METASPACE_METASPACEREPORTER_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 namespace metaspace {
 

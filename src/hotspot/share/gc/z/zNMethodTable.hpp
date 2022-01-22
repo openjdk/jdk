@@ -26,7 +26,7 @@
 
 #include "gc/z/zNMethodTableIteration.hpp"
 #include "gc/z/zSafeDelete.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 class nmethod;
 class NMethodClosure;

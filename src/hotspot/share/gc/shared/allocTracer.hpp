@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_SHARED_ALLOCTRACER_HPP
 #define SHARE_GC_SHARED_ALLOCTRACER_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "runtime/handles.hpp"
 
 class AllocTracer : AllStatic {

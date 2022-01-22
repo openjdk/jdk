@@ -25,7 +25,7 @@
 #ifndef SHARE_JFR_LEAKPROFILER_CHAINS_EDGEUTILS_HPP
 #define SHARE_JFR_LEAKPROFILER_CHAINS_EDGEUTILS_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 class Edge;
 class Symbol;

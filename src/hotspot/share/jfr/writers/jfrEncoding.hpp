@@ -26,7 +26,7 @@
 #define SHARE_JFR_WRITERS_JFRENCODING_HPP
 
 #include "jfr/writers/jfrEncoders.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 enum JfrStringEncoding {

@@ -26,7 +26,7 @@
 #ifndef SHARE_INTERPRETER_BYTECODEUTILS_HPP
 #define SHARE_INTERPRETER_BYTECODEUTILS_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class Method;

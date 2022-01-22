@@ -26,7 +26,7 @@
 #define SHARE_JFR_SUPPORT_JFRJDKJFREVENT_HPP
 
 #include "jni.h"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/exceptions.hpp"
 
 class Klass;

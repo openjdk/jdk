@@ -24,7 +24,7 @@
 #ifndef SHARE_GC_Z_ZOOP_HPP
 #define SHARE_GC_Z_ZOOP_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
 
 class ZOop : public AllStatic {

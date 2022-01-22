@@ -25,7 +25,7 @@
 #ifndef CPU_X86_BYTES_X86_HPP
 #define CPU_X86_BYTES_X86_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 

@@ -25,7 +25,7 @@
 #ifndef SHARE_SERVICES_LOWMEMORYDETECTOR_HPP
 #define SHARE_SERVICES_LOWMEMORYDETECTOR_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "oops/oopHandle.hpp"
 #include "runtime/atomic.hpp"
 #include "services/memoryPool.hpp"

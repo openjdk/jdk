@@ -26,7 +26,7 @@
 #ifndef CPU_ZERO_BYTES_ZERO_HPP
 #define CPU_ZERO_BYTES_ZERO_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 typedef union unaligned {
   u4 u;

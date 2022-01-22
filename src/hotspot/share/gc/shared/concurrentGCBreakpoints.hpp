@@ -26,7 +26,7 @@
 #define SHARE_GC_SHARED_CONCURRENTGCBREAKPOINTS_HPP
 
 #include "gc/shared/gcCause.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class Monitor;

@@ -27,7 +27,7 @@
 
 #include "jfr/utilities/jfrSignal.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "runtime/atomic.hpp"
 
 #define BIT                                  1

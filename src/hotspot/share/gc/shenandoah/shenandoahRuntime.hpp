@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHRUNTIME_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHRUNTIME_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
 
 class JavaThread;

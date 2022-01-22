@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_SHARED_GCWHEN_HPP
 #define SHARE_GC_SHARED_GCWHEN_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/debug.hpp"
 
 class GCWhen : AllStatic {

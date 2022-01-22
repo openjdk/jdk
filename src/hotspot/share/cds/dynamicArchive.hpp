@@ -27,7 +27,7 @@
 
 #include "cds/filemap.hpp"
 #include "classfile/compactHashtable.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/virtualspace.hpp"
 #include "oops/oop.hpp"

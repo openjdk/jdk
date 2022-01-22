@@ -25,7 +25,7 @@
 #ifndef SHARE_METAPROGRAMMING_REMOVEEXTENT_HPP
 #define SHARE_METAPROGRAMMING_REMOVEEXTENT_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 template <typename T> struct RemoveExtent: AllStatic { typedef T type; };
 

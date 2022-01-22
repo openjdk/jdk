@@ -25,7 +25,7 @@
 #ifndef SHARE_PRIMS_NATIVELOOKUP_HPP
 #define SHARE_PRIMS_NATIVELOOKUP_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "runtime/handles.hpp"
 
 // NativeLookup provides an interface for finding DLL entry points for

@@ -26,11 +26,13 @@
 #define SHARE_JFR_JFR_HPP
 
 #include "jni.h"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class JavaThread;
 class Thread;
 class Klass;
+class outputStream;
 
 extern "C" void JNICALL jfr_register_natives(JNIEnv*, jclass);
 

@@ -25,7 +25,7 @@
 #ifndef SHARE_JFR_PERIODIC_JFRTHREADDUMPEVENT_HPP
 #define SHARE_JFR_PERIODIC_JFRTHREADDUMPEVENT_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 /*
  *  Helper for generating jfr events using output data from Dcmd's.

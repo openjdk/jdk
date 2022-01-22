@@ -27,7 +27,7 @@
 #define CPU_PPC_JNITYPES_PPC_HPP
 
 #include "jni.h"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "oops/oop.hpp"
 
 // This file holds platform-dependent routines used to write primitive

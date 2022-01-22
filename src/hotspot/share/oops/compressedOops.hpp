@@ -25,7 +25,7 @@
 #ifndef SHARE_OOPS_COMPRESSEDOOPS_HPP
 #define SHARE_OOPS_COMPRESSEDOOPS_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"

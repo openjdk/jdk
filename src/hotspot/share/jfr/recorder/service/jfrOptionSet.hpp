@@ -26,7 +26,7 @@
 #define SHARE_JFR_RECORDER_SERVICE_JFROPTIONSET_HPP
 
 #include "jni.h"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/exceptions.hpp"
 
 template <typename>

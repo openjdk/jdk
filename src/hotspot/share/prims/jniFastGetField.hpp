@@ -25,7 +25,7 @@
 #ifndef SHARE_PRIMS_JNIFASTGETFIELD_HPP
 #define SHARE_PRIMS_JNIFASTGETFIELD_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "prims/jvm_misc.hpp"
 
 // Basic logic of a fast version of jni_Get<Primitive>Field:

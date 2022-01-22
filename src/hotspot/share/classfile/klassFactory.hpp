@@ -25,7 +25,7 @@
 #ifndef SHARE_CLASSFILE_KLASSFACTORY_HPP
 #define SHARE_CLASSFILE_KLASSFACTORY_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "runtime/handles.hpp"
 
 class ClassFileStream;

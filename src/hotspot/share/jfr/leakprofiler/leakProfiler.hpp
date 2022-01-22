@@ -25,7 +25,8 @@
 #ifndef SHARE_JFR_LEAKPROFILER_LEAKPROFILER_HPP
 #define SHARE_JFR_LEAKPROFILER_LEAKPROFILER_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class JavaThread;
 

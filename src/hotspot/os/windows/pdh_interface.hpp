@@ -25,7 +25,7 @@
 #ifndef OS_WINDOWS_PDH_INTERFACE_HPP
 #define OS_WINDOWS_PDH_INTERFACE_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include <pdh.h>
 #include <pdhmsg.h>
 

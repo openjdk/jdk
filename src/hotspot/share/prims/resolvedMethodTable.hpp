@@ -25,7 +25,7 @@
 #ifndef SHARE_PRIMS_RESOLVEDMETHODTABLE_HPP
 #define SHARE_PRIMS_RESOLVEDMETHODTABLE_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "oops/symbol.hpp"
 #include "oops/weakHandle.hpp"
 

@@ -26,6 +26,8 @@
 #include "utilities/debug.hpp"
 #include "utilities/stringUtils.hpp"
 
+#include <string.h>
+
 int StringUtils::replace_no_expand(char* string, const char* from, const char* to) {
   int replace_count = 0;
   size_t from_len = strlen(from);

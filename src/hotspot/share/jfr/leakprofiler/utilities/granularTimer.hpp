@@ -26,7 +26,7 @@
 #define SHARE_JFR_LEAKPROFILER_UTILITIES_GRANULARTIMER_HPP
 
 #include "jfr/utilities/jfrTime.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 class GranularTimer : public AllStatic {
  private:

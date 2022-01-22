@@ -25,7 +25,7 @@
 #ifndef SHARE_RUNTIME_JNIHANDLES_HPP
 #define SHARE_RUNTIME_JNIHANDLES_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "runtime/handles.hpp"
 
 class JavaThread;

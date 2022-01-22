@@ -25,7 +25,7 @@
 #ifndef SHARE_UTILITIES_STRINGUTILS_HPP
 #define SHARE_UTILITIES_STRINGUTILS_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 class StringUtils : AllStatic {
 public:

@@ -26,7 +26,7 @@
 #ifndef SHARE_MEMORY_METASPACECOUNTERS_HPP
 #define SHARE_MEMORY_METASPACECOUNTERS_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 // Perf Counters for Metaspace
 

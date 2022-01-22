@@ -25,12 +25,13 @@
 #define SHARE_LOGGING_LOGCONFIGURATION_HPP
 
 #include "logging/logLevel.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class LogOutput;
 class LogDecorators;
 class LogSelectionList;
+class outputStream;
 
 // Global configuration of logging. Handles parsing and configuration of the logging framework,
 // and manages the list of configured log outputs. The actual tag and level configuration is

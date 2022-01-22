@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHWORKERPOLICY_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHWORKERPOLICY_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 class ShenandoahWorkerPolicy : AllStatic {
 private:

@@ -25,7 +25,8 @@
 #ifndef SHARE_GC_G1_HEAPREGIONBOUNDS_HPP
 #define SHARE_GC_G1_HEAPREGIONBOUNDS_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class HeapRegionBounds : public AllStatic {
 private:

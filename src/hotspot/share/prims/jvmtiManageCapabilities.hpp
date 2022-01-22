@@ -26,7 +26,7 @@
 #define SHARE_PRIMS_JVMTIMANAGECAPABILITIES_HPP
 
 #include "jvmtifiles/jvmti.h"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 class JvmtiManageCapabilities : public AllStatic {
 

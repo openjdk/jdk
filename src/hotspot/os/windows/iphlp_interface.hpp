@@ -25,7 +25,7 @@
 #ifndef OS_WINDOWS_IPHLP_INTERFACE_HPP
 #define OS_WINDOWS_IPHLP_INTERFACE_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/macros.hpp"
 #include <WinSock2.h>
 #include <ws2ipdef.h>

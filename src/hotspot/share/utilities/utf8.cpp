@@ -23,7 +23,11 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/allocation.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/utf8.hpp"
+
 
 // Assume the utf8 string is in legal form and has been
 // checked in the class file parser/format checker.

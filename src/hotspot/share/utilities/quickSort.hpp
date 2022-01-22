@@ -25,7 +25,7 @@
 #ifndef SHARE_UTILITIES_QUICKSORT_HPP
 #define SHARE_UTILITIES_QUICKSORT_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/debug.hpp"
 

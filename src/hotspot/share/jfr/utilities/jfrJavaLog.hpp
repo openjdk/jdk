@@ -25,7 +25,7 @@
 #ifndef SHARE_JFR_UTILITIES_JFRJAVALOG_HPP
 #define SHARE_JFR_UTILITIES_JFRJAVALOG_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/exceptions.hpp"
 
 /*

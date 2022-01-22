@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_SHARED_SCAVENGABLENMETHODS_HPP
 #define SHARE_GC_SHARED_SCAVENGABLENMETHODS_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/macros.hpp"
 
 class BoolObjectClosure;

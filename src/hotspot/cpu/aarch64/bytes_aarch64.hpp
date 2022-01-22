@@ -26,7 +26,7 @@
 #ifndef CPU_AARCH64_BYTES_AARCH64_HPP
 #define CPU_AARCH64_BYTES_AARCH64_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 class Bytes: AllStatic {
  public:

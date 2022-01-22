@@ -25,7 +25,7 @@
 #ifndef SHARE_JFR_RECORDER_SERVICE_JFRRECORDERTHREAD_HPP
 #define SHARE_JFR_RECORDER_SERVICE_JFRRECORDERTHREAD_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/debug.hpp"
 
 class JavaThread;

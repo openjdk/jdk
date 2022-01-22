@@ -25,7 +25,7 @@
 #ifndef SHARE_UTILITIES_GLOBALCOUNTER_HPP
 #define SHARE_UTILITIES_GLOBALCOUNTER_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "memory/padded.hpp"
 
 class Thread;

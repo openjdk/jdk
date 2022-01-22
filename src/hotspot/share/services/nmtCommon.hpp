@@ -25,7 +25,7 @@
 #ifndef SHARE_SERVICES_NMTCOMMON_HPP
 #define SHARE_SERVICES_NMTCOMMON_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allocation.hpp" // for MEMFLAGS only
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 

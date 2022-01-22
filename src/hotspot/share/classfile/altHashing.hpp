@@ -26,7 +26,8 @@
 #define SHARE_CLASSFILE_ALTHASHING_HPP
 
 #include "jni.h"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 /**
  * Implementation of alternate more secure hashing.

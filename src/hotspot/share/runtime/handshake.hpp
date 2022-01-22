@@ -25,7 +25,7 @@
 #ifndef SHARE_RUNTIME_HANDSHAKE_HPP
 #define SHARE_RUNTIME_HANDSHAKE_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "memory/iterator.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/mutex.hpp"

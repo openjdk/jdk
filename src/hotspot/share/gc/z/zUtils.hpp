@@ -24,7 +24,8 @@
 #ifndef SHARE_GC_Z_ZUTILS_HPP
 #define SHARE_GC_Z_ZUTILS_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class ZUtils : public AllStatic {
 public:

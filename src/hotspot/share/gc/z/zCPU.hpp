@@ -24,7 +24,7 @@
 #ifndef SHARE_GC_Z_ZCPU_HPP
 #define SHARE_GC_Z_ZCPU_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "memory/padded.hpp"
 #include "utilities/globalDefinitions.hpp"
 

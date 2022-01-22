@@ -25,7 +25,7 @@
 #ifndef SHARE_RUNTIME_PREFETCH_HPP
 #define SHARE_RUNTIME_PREFETCH_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 // If calls to prefetch methods are in a loop, the loop should be cloned
 // such that if Prefetch{Scan,Copy}Interval and/or PrefetchFieldInterval

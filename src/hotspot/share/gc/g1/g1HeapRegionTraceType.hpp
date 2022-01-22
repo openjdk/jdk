@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_G1_G1HEAPREGIONTRACETYPE_HPP
 #define SHARE_GC_G1_G1HEAPREGIONTRACETYPE_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/debug.hpp"
 
 class G1HeapRegionTraceType : AllStatic {

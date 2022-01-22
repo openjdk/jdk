@@ -25,7 +25,7 @@
 #ifndef SHARE_JFR_PERIODIC_JFRFINALIZERSTATISTICSEVENT_HPP
 #define SHARE_JFR_PERIODIC_JFRFINALIZERSTATISTICSEVENT_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 class InstanceKlass;
 

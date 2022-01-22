@@ -26,7 +26,7 @@
 #define SHARE_OOPS_ACCESSDECORATORS_HPP
 
 #include "gc/shared/barrierSetConfig.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "metaprogramming/integralConstant.hpp"
 #include "utilities/globalDefinitions.hpp"
 

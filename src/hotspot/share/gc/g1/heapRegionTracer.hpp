@@ -26,7 +26,8 @@
 #define SHARE_GC_G1_HEAPREGIONTRACER_HPP
 
 #include "gc/g1/g1HeapRegionTraceType.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class HeapRegionTracer : AllStatic {
   public:

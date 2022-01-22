@@ -26,7 +26,7 @@
 #define SHARE_PRIMS_JVMTIEVENTCONTROLLER_HPP
 
 #include "jvmtifiles/jvmti.h"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // forward declaration

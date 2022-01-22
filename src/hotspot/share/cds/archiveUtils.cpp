@@ -39,7 +39,9 @@
 #include "oops/compressedOops.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 CHeapBitMap* ArchivePtrMarker::_ptrmap = NULL;
 VirtualSpace* ArchivePtrMarker::_vs;

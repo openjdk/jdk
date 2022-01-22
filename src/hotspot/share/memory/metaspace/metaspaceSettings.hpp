@@ -26,7 +26,7 @@
 #ifndef SHARE_MEMORY_METASPACE_METASPACESETTINGS_HPP
 #define SHARE_MEMORY_METASPACE_METASPACESETTINGS_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "memory/metaspace/chunklevel.hpp"
 #include "utilities/globalDefinitions.hpp"
 

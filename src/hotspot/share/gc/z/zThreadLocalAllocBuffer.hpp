@@ -26,7 +26,7 @@
 
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "gc/z/zValue.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 class JavaThread;
 

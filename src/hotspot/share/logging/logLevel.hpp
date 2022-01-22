@@ -24,7 +24,8 @@
 #ifndef SHARE_LOGGING_LOGLEVEL_HPP
 #define SHARE_LOGGING_LOGLEVEL_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
 // The list of log levels:

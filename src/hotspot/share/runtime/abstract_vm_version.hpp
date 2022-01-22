@@ -25,7 +25,7 @@
 #ifndef SHARE_RUNTIME_ABSTRACT_VM_VERSION_HPP
 #define SHARE_RUNTIME_ABSTRACT_VM_VERSION_HPP
 
-#include "memory/allocation.hpp"  // For declaration of class AllStatic
+#include "memory/allStatic.hpp"  // For declaration of class AllStatic
 #include "utilities/globalDefinitions.hpp"
 
 typedef enum {

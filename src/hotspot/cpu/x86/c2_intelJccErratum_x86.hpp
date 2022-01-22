@@ -25,7 +25,7 @@
 #ifndef CPU_X86_INTELJCCERRATUM_X86_HPP
 #define CPU_X86_INTELJCCERRATUM_X86_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class Block;

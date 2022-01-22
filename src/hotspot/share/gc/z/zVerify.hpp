@@ -24,7 +24,7 @@
 #ifndef SHARE_GC_Z_ZVERIFY_HPP
 #define SHARE_GC_Z_ZVERIFY_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 class frame;
 class ZPageAllocator;

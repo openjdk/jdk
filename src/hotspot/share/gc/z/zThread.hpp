@@ -24,7 +24,7 @@
 #ifndef SHARE_GC_Z_ZTHREAD_HPP
 #define SHARE_GC_Z_ZTHREAD_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ZThread : public AllStatic {

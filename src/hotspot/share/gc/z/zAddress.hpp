@@ -24,7 +24,8 @@
 #ifndef SHARE_GC_Z_ZADDRESS_HPP
 #define SHARE_GC_Z_ZADDRESS_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class ZAddress : public AllStatic {
   friend class ZAddressTest;

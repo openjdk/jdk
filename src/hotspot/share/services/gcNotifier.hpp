@@ -25,7 +25,7 @@
 #ifndef SHARE_SERVICES_GCNOTIFIER_HPP
 #define SHARE_SERVICES_GCNOTIFIER_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "services/memoryPool.hpp"
 #include "services/memoryService.hpp"
 #include "services/memoryManager.hpp"

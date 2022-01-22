@@ -24,7 +24,7 @@
 #ifndef SHARE_GC_Z_ZBREAKPOINT_HPP
 #define SHARE_GC_Z_ZBREAKPOINT_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 class ZBreakpoint : public AllStatic {
 private:

@@ -26,7 +26,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHBREAKPOINT_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHBREAKPOINT_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 class ShenandoahBreakpoint : public AllStatic {
 private:

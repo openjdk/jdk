@@ -26,7 +26,7 @@
 #ifndef SHARE_MEMORY_METASPACE_INTERNALSTATS_HPP
 #define SHARE_MEMORY_METASPACE_INTERNALSTATS_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 

@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_HEAPREGIONTYPE_HPP
 
 #include "gc/g1/g1HeapRegionTraceType.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 #define hrt_assert_is_valid(tag) \
   assert(is_valid((tag)), "invalid HR type: %u", (uint) (tag))

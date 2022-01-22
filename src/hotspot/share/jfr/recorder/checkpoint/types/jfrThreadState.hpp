@@ -25,7 +25,7 @@
 #ifndef SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTHREADSTATE_HPP
 #define SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTHREADSTATE_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 class JfrCheckpointWriter;
 class Thread;

@@ -27,7 +27,7 @@
 
 #include "jvmtifiles/jvmti.h"
 #include "jvmtifiles/jvmtiEnv.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 // JvmtiExtensions
 //

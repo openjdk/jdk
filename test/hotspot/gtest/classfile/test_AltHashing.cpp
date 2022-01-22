@@ -24,6 +24,7 @@
 #include "classfile/altHashing.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "unittest.hpp"
 
 class AltHashingTest : public ::testing::Test {

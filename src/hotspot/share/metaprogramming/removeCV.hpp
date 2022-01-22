@@ -25,7 +25,7 @@
 #ifndef SHARE_METAPROGRAMMING_REMOVECV_HPP
 #define SHARE_METAPROGRAMMING_REMOVECV_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 template <typename T>
 struct RemoveCV: AllStatic {

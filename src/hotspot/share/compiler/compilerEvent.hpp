@@ -26,7 +26,7 @@
 
 #include "jni.h"
 #include "compiler/compilerDefinitions.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
 

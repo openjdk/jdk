@@ -25,7 +25,7 @@
 #ifndef SHARE_METAPROGRAMMING_DECAY_HPP
 #define SHARE_METAPROGRAMMING_DECAY_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "metaprogramming/removeCV.hpp"
 #include "metaprogramming/removeReference.hpp"
 

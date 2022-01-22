@@ -25,7 +25,7 @@
 #ifndef SHARE_JFR_RECORDER_REPOSITORY_JFRCHUNKROTATION_HPP
 #define SHARE_JFR_RECORDER_REPOSITORY_JFRCHUNKROTATION_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 class JfrChunkWriter;
 

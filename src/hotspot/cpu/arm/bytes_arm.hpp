@@ -25,7 +25,7 @@
 #ifndef CPU_ARM_BYTES_ARM_HPP
 #define CPU_ARM_BYTES_ARM_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/macros.hpp"
 
 #ifndef VM_LITTLE_ENDIAN

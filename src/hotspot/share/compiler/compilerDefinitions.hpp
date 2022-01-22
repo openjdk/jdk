@@ -27,7 +27,7 @@
 
 #include "compiler/compiler_globals.hpp"
 #include "jvmci/jvmci_globals.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "runtime/globals.hpp"
 
 // The (closed set) of concrete compiler classes.

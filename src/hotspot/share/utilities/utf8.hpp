@@ -25,7 +25,9 @@
 #ifndef SHARE_UTILITIES_UTF8_HPP
 #define SHARE_UTILITIES_UTF8_HPP
 
-#include "memory/allocation.hpp"
+#include "jni.h"
+#include "memory/allStatic.hpp"
+#include "utilities/debug.hpp"
 
 // Low-level interface for UTF8 strings
 

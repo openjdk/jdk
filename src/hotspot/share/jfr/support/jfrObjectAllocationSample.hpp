@@ -25,7 +25,7 @@
 #ifndef SHARE_JFR_SUPPORT_JFROBJECTALLOCATIONSAMPLE_HPP
 #define SHARE_JFR_SUPPORT_JFROBJECTALLOCATIONSAMPLE_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 class Klass;
 class Thread;

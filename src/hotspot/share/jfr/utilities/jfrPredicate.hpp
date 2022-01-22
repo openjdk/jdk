@@ -25,7 +25,7 @@
 #ifndef SHARE_JFR_UTILITIES_JFRPREDICATE_HPP
 #define SHARE_JFR_UTILITIES_JFRPREDICATE_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/growableArray.hpp"
 
 /*

@@ -25,7 +25,7 @@
 #ifndef SHARE_METAPROGRAMMING_REMOVEREFERENCE_HPP
 #define SHARE_METAPROGRAMMING_REMOVEREFERENCE_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 // This metafunction returns for a type T either the underlying type behind
 // the reference iff T is a reference type, or the same type T if T is not

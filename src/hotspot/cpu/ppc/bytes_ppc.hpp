@@ -26,7 +26,7 @@
 #ifndef CPU_PPC_BYTES_PPC_HPP
 #define CPU_PPC_BYTES_PPC_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 class Bytes: AllStatic {
  public:

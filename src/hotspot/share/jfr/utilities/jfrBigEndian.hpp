@@ -25,7 +25,7 @@
 #ifndef SHARE_JFR_UTILITIES_JFRBIGENDIAN_HPP
 #define SHARE_JFR_UTILITIES_JFRBIGENDIAN_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/bytes.hpp"
 #include "utilities/macros.hpp"
 

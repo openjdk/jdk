@@ -28,7 +28,7 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "gc/shared/cardTable.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/virtualspace.hpp"
 #include "runtime/globals.hpp"

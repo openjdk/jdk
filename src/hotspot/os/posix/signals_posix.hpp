@@ -25,7 +25,7 @@
 #ifndef OS_POSIX_SIGNALS_POSIX_HPP
 #define OS_POSIX_SIGNALS_POSIX_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class outputStream;

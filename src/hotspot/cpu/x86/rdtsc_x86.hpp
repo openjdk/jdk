@@ -25,7 +25,8 @@
 #ifndef CPU_X86_RDTSC_X86_HPP
 #define CPU_X86_RDTSC_X86_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 // Interface to the x86 rdtsc() time counter, if available.

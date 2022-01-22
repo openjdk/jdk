@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_G1_G1HEAPREGIONEVENTSENDER_HPP
 #define SHARE_GC_G1_G1HEAPREGIONEVENTSENDER_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 class G1HeapRegionEventSender : public AllStatic {
 public:

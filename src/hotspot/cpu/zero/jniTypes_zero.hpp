@@ -26,7 +26,7 @@
 #define CPU_ZERO_JNITYPES_ZERO_HPP
 
 #include "jni.h"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "oops/oop.hpp"
 
 // This file holds platform-dependent routines used to write primitive jni
