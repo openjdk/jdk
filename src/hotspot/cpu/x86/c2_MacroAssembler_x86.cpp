@@ -1499,7 +1499,7 @@ void C2_MacroAssembler::load_vector(XMMRegister dst, Address src, int vlen_in_by
   case 8:  movq(dst, src);    break;
   case 16: movdqu(dst, src);  break;
   case 32: vmovdqu(dst, src); break;
-  case 64: evmovdquq(dst, src, Assembler::AVX_512bit); break;
+  case 64: evmovdqul(dst, src, Assembler::AVX_512bit); break;
   default: ShouldNotReachHere();
   }
 }
@@ -1519,7 +1519,7 @@ void C2_MacroAssembler::store_vector(Address dst, XMMRegister src, int vlen_in_b
   case 8:  movq(dst, src);    break;
   case 16: movdqu(dst, src);  break;
   case 32: vmovdqu(dst, src); break;
-  case 64: evmovdquq(dst, src, Assembler::AVX_512bit); break;
+  case 64: evmovdqul(dst, src, Assembler::AVX_512bit); break;
   default: ShouldNotReachHere();
   }
 }
@@ -4033,8 +4033,10 @@ void C2_MacroAssembler::masked_op(int ideal_opc, int mask_len, KRegister dst,
 void C2_MacroAssembler::vector_castL2FD(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
                                         Register tmp, KRegister ktmp, BasicType bt, int vlen, int vec_enc) {
   Label slow_path;
+  Label slow_path_loop;
   Label done;
   assert((ktmp == knoreg) != (vlen == 8), "");
+  assert(bt == T_FLOAT || bt == T_DOUBLE, "");
 
   if (vec_enc == AVX_128bit) {
     vpshufd(xtmp1, src, 0x08, vec_enc);
@@ -4042,7 +4044,7 @@ void C2_MacroAssembler::vector_castL2FD(XMMRegister dst, XMMRegister src, XMMReg
     evpmovqd(xtmp1, src, VM_Version::supports_avx512vl() ? vec_enc : AVX_512bit);
   } else {
     vpshufd(xtmp1, src, 0x08, vec_enc);
-    vpermpd(xtmp1, xtmp1, 0x08, vec_enc);
+    vpermq(xtmp1, xtmp1, 0x08, vec_enc);
   }
 
   vpmovsxdq(xtmp2, xtmp1, vec_enc);
@@ -4070,71 +4072,35 @@ void C2_MacroAssembler::vector_castL2FD(XMMRegister dst, XMMRegister src, XMMReg
   jmp(done);
 
   bind(slow_path);
+  subptr(rsp, vlen * (type2aelembytes(T_LONG) + type2aelembytes(bt)));
+  store_vector(Address(rsp, 0), src, vlen * type2aelembytes(T_LONG));
+  movl(tmp, vlen);
 
+  Address src_ele(rsp, tmp, Address::times_8, -type2aelembytes(T_LONG));
+  Address dst_ele(rsp, tmp, bt == T_FLOAT ? Address::times_4 : Address::times_8, vlen * type2aelembytes(T_LONG) - type2aelembytes(bt));
+  bind(slow_path_loop);
 #ifdef _LP64
-  int dst_eles_per_lane = MIN2(vlen, 16 / type2aelembytes(bt));
-  int dst_lane_num = vlen / dst_eles_per_lane;
-  for (int dst_lane = 0; dst_lane < dst_lane_num; dst_lane++) {
-    for (int dst_ele = dst_eles_per_lane - 1; dst_ele >= 0; dst_ele--) {
-      int index = dst_lane * dst_eles_per_lane + dst_ele;
-      int src_lane = index / 2;
-      int src_ele = index % 2;
-      XMMRegister src_tmp;
-      if (src_lane == 0) {
-        src_tmp = src;
-      } else {
-        src_tmp = xtmp1;
-        if (src_ele == 1) {
-          if (vec_enc == AVX_512bit) {
-            vextractf32x4(xtmp1, src, src_lane);
-          } else {
-            vextractf128(xtmp1, src, src_lane);
-          }
-        }
-      }
-      if (src_ele == 0) {
-        movq(tmp, src_tmp);
-      } else {
-        extract(T_LONG, tmp, src_tmp, src_ele);
-      }
-
-      XMMRegister dst_tmp = (dst_lane == 0 ? dst : xtmp2);
-      if (bt == T_FLOAT) {
-        cvtsi2ssq(dst_tmp, tmp);
-      } else {
-        cvtsi2sdq(dst_tmp, tmp);
-      }
-      if (dst_ele == 0) {
-        if (dst_lane != 0) {
-          if (bt == T_DOUBLE && vec_enc == AVX_512bit) {
-            vinsertf32x4(dst, dst, xtmp2, dst_lane);
-          } else {
-            vinsertf128(dst, dst, xtmp2, dst_lane);
-          }
-        }
-      } else {
-        vpshufd(dst_tmp, dst_tmp, bt == T_FLOAT ? 0x90 : 0x40, AVX_128bit);
-      }
-    }
+  if (bt == T_FLOAT) {
+    cvtsi2ssq(xtmp1, src_ele);
+    movflt(dst_ele, xtmp1);
+  } else {
+    cvtsi2sdq(xtmp1, src_ele);
+    movdbl(dst_ele, xtmp1);
   }
 #else // _LP64
-  int src_vlen_in_bytes = vlen * type2aelembytes(T_LONG);
-  int dst_vlen_in_bytes = vlen * type2aelembytes(bt);
-  subptr(rsp, src_vlen_in_bytes + dst_vlen_in_bytes);
-  store_vector(Address(rsp, dst_vlen_in_bytes), src, src_vlen_in_bytes);
-  for (int i = 0; i < vlen; i++) {
-    int src_ele_offset = dst_vlen_in_bytes + i * type2aelembytes(T_LONG);
-    int dst_ele_offset = i * type2aelembytes(bt);
-    fild_d(Address(rsp, src_ele_offset));
-    if (bt == T_FLOAT) {
-      fstp_s(Address(rsp, dst_ele_offset));
-    } else {
-      fstp_d(Address(rsp, dst_ele_offset));
-    }
+  if (bt == T_FLOAT) {
+    fild_d(src_ele);
+    fstp_s(dst_ele);
+  } else {
+    fild_d(src_ele);
+    fstp_d(dst_ele);
   }
-  load_vector(dst, Address(rsp, 0), dst_vlen_in_bytes);
-  addptr(rsp, src_vlen_in_bytes + dst_vlen_in_bytes);
 #endif // _LP64
+  decl(tmp);
+  jccb(Assembler::notZero, slow_path_loop);
+
+  load_vector(dst, Address(rsp, vlen * type2aelembytes(T_LONG)), vlen * type2aelembytes(bt));
+  addptr(rsp, vlen * (type2aelembytes(T_LONG) + type2aelembytes(bt)));
 
   bind(done);
 }

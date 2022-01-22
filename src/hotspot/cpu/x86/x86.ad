@@ -3805,14 +3805,7 @@ instruct loadV(vec dst, memory mem) %{
   ins_cost(125);
   format %{ "load_vector $dst,$mem" %}
   ins_encode %{
-    switch (Matcher::vector_length_in_bytes(this)) {
-      case  4: __ movdl    ($dst$$XMMRegister, $mem$$Address); break;
-      case  8: __ movq     ($dst$$XMMRegister, $mem$$Address); break;
-      case 16: __ movdqu   ($dst$$XMMRegister, $mem$$Address); break;
-      case 32: __ vmovdqu  ($dst$$XMMRegister, $mem$$Address); break;
-      case 64: __ evmovdqul($dst$$XMMRegister, $mem$$Address, Assembler::AVX_512bit); break;
-      default: ShouldNotReachHere();
-    }
+    __ load_vector($dst$$XMMRegister, $mem$$Address, Matcher::vector_length_in_bytes(this));
   %}
   ins_pipe( pipe_slow );
 %}
@@ -3823,14 +3816,7 @@ instruct storeV(memory mem, vec src) %{
   ins_cost(145);
   format %{ "store_vector $mem,$src\n\t" %}
   ins_encode %{
-    switch (Matcher::vector_length_in_bytes(this, $src)) {
-      case  4: __ movdl    ($mem$$Address, $src$$XMMRegister); break;
-      case  8: __ movq     ($mem$$Address, $src$$XMMRegister); break;
-      case 16: __ movdqu   ($mem$$Address, $src$$XMMRegister); break;
-      case 32: __ vmovdqu  ($mem$$Address, $src$$XMMRegister); break;
-      case 64: __ evmovdqul($mem$$Address, $src$$XMMRegister, Assembler::AVX_512bit); break;
-      default: ShouldNotReachHere();
-    }
+    __ store_vector($mem$$Address, $src$$XMMRegister, Matcher::vector_length_in_bytes(this, $src));
   %}
   ins_pipe( pipe_slow );
 %}
@@ -6974,9 +6960,6 @@ instruct vcastStoX_evex(vec dst, vec src) %{
     int vlen_enc = vector_length_encoding(this);
     switch (to_elem_bt) {
       case T_BYTE:
-        if (!VM_Version::supports_avx512vl()) {
-          vlen_enc = Assembler::AVX_512bit;
-        }
         __ evpmovwb($dst$$XMMRegister, $src$$XMMRegister, src_vlen_enc);
         break;
       case T_INT:
@@ -7002,7 +6985,7 @@ instruct vcastStoX_evex(vec dst, vec src) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vcastBStoF(vec dst, vec src, vec xtmp) %{
+instruct vcastBStoF_avx1(vec dst, vec src, vec xtmp) %{
   predicate(UseAVX == 1 &&
             Matcher::vector_element_basic_type(n) == T_FLOAT &&
             Matcher::vector_length_in_bytes(n) == 32);
@@ -7160,11 +7143,11 @@ instruct vcastLtoBS(vec dst, vec src, rRegP scratch) %{
 %}
 
 instruct vcastLtoFD_avx(vec dst, vec src, vec xtmp1, vec xtmp2, rRegI tmp, rFlagsReg cr) %{
-  predicate((UseAVX <= 2 || !VM_Version::supports_avx512dq()) &&
+  predicate(!VM_Version::supports_avx512dq() &&
             is_floating_point_type(Matcher::vector_element_basic_type(n)) &&
             Matcher::vector_length_in_bytes(n->in(1)) <= 32);
   match(Set dst (VectorCastL2X src));
-  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP tmp, KILL cr);
+  effect(TEMP xtmp1, TEMP xtmp2, TEMP tmp, KILL cr);
   format %{ "vector_cast_l2x  $dst,$src\t! using $xtmp1, $xtmp2 and $tmp as TEMP" %}
   ins_encode %{
     BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
@@ -7177,11 +7160,11 @@ instruct vcastLtoFD_avx(vec dst, vec src, vec xtmp1, vec xtmp2, rRegI tmp, rFlag
 %}
 
 instruct vcastLtoFD_evex(vec dst, vec src, vec xtmp1, vec xtmp2, rRegI tmp, kReg ktmp, rFlagsReg cr) %{
-  predicate((UseAVX <= 2 || !VM_Version::supports_avx512dq()) &&
+  predicate(!VM_Version::supports_avx512dq() &&
             is_floating_point_type(Matcher::vector_element_basic_type(n)) &&
             Matcher::vector_length_in_bytes(n->in(1)) == 64);
   match(Set dst (VectorCastL2X src));
-  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP tmp, TEMP ktmp, KILL cr);
+  effect(TEMP xtmp1, TEMP xtmp2, TEMP tmp, TEMP ktmp, KILL cr);
   format %{ "vector_cast_l2x  $dst,$src\t! using $xtmp1, $xtmp2, $tmp and $ktmp as TEMP" %}
   ins_encode %{
     BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
@@ -7196,7 +7179,7 @@ instruct vcastLtoFD_evex(vec dst, vec src, vec xtmp1, vec xtmp2, rRegI tmp, kReg
 instruct vcastLtoX_evex(vec dst, vec src) %{
   predicate((is_subword_type(Matcher::vector_element_basic_type(n)) && UseAVX > 2) ||
             Matcher::vector_element_basic_type(n) == T_INT ||
-            (is_floating_point_type(Matcher::vector_element_basic_type(n)) && UseAVX > 2 && VM_Version::supports_avx512dq()));
+            (is_floating_point_type(Matcher::vector_element_basic_type(n)) && VM_Version::supports_avx512dq()));
   match(Set dst (VectorCastL2X src));
   format %{ "vector_cast_l2x  $dst,$src\t!" %}
   ins_encode %{
