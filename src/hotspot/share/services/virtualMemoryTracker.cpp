@@ -680,7 +680,7 @@ public:
   FindInRegionWalker(void* p) : _p((address)p), _region(nullptr) { }
 
   bool do_allocation_site(const ReservedMemoryRegion* rgn) {
-    if (_p >= rgn->base() && _p < rgn->base() + rgn->size()) {
+    if (rgn->contain_address(_p)) {
       _region = rgn;
       return false;
     }
