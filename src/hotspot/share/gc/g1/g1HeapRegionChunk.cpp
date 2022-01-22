@@ -50,7 +50,7 @@ G1HeapRegionChunk::G1HeapRegionChunk(HeapRegion* region, uint chunk_idx, uint ch
 }
 
 G1HeapRegionChunksClaimer::G1HeapRegionChunksClaimer(uint region_idx, bool region_ready) :
-  _chunk_num(G1HeapRegionChunkNum),
+  _chunk_num(G1YoungGCEvacFailureInjector::evacuation_failure_heap_region_chunk_num()),
   _chunk_size(static_cast<uint>(G1HeapRegionSize / _chunk_num)),
   _region_idx(region_idx),
   _region_claimed(false),

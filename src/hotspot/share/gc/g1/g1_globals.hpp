@@ -35,7 +35,7 @@
 #ifndef PRODUCT
 #define EVAC_FAILURE_INJECTOR 1
 #else
-#define EVAC_FAILURE_INJECTOR 1
+#define EVAC_FAILURE_INJECTOR 0
 #endif
 
 #if EVAC_FAILURE_INJECTOR
@@ -84,7 +84,11 @@
           "The percentage of regions in the collection set starting "       \
           "from the beginning where the forced evacuation failure "         \
           "injection will be applied.")                                     \
-          range(1, 16)
+          range(1, 16)                                                      \
+  product(uint, G1EvacuationFailureHeapRegionChunkNum, 256,                 \
+          "Chunks num per G1 region when process evacuation failure "       \
+          "regions in parallel.")                                           \
+          range(1, 1024)
 #else
 #define GC_G1_EVACUATION_FAILURE_FLAGS(develop,                             \
                                        develop_pd,                          \
@@ -270,10 +274,6 @@
           "Size of the G1 regions.")                                        \
           range(0, NOT_LP64(32*M) LP64_ONLY(512*M))                         \
           constraint(G1HeapRegionSizeConstraintFunc,AfterMemoryInit)        \
-                                                                            \
-    product(uint, G1HeapRegionChunkNum, 256,                                \
-          "Chunks num per G1 region.")                                      \
-          range(1, 1024)                                                    \
                                                                             \
   product(uint, G1ConcRefinementThreads, 0,                                 \
           "The number of parallel remembered set update threads. "          \

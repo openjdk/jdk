@@ -80,6 +80,10 @@ public:
   // Reset the evacuation failure injection counters. Should be called at
   // the end of an evacuation pause in which an evacuation failure occurred.
   void reset() EVAC_FAILURE_INJECTOR_RETURN;
+
+  static uint evacuation_failure_worker_cost() EVAC_FAILURE_INJECTOR_RETURN_( return 2; );
+
+  static uint evacuation_failure_heap_region_chunk_num() EVAC_FAILURE_INJECTOR_RETURN_( return 256; );
 };
 
 #endif /* SHARE_GC_G1_G1YOUNGGCEVACUATIONFAILUREINJECTOR_HPP */

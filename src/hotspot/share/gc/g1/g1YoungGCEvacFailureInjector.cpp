@@ -107,4 +107,12 @@ void G1YoungGCEvacFailureInjector::reset() {
   _inject_evacuation_failure_for_current_gc = false;
 }
 
+uint G1YoungGCEvacFailureInjector::evacuation_failure_worker_cost() {
+  return G1EvacuationFailureALotWorkerCost;
+}
+
+uint G1YoungGCEvacFailureInjector::evacuation_failure_heap_region_chunk_num() {
+  return G1EvacuationFailureHeapRegionChunkNum;
+}
+
 #endif // #if EVAC_FAILURE_INJECTOR
