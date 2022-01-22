@@ -38,7 +38,7 @@ import javax.management.MBeanServer;
  * <code>JMXServerErrorException</code> instance contains the original
  * <code>Error</code> that occurred as its cause.
  *
- * @see java.rmi.ServerError
+ * @see java.rmi/java.rmi.ServerError
  * @since 1.5
  */
 public class JMXServerErrorException extends IOException {

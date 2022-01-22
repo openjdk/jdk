@@ -66,7 +66,7 @@ package java.util;
  * {@code Observable} is unspecified, and state changes are not in
  * one-for-one correspondence with notifications.
  * For a richer event model, consider using the
- * {@link java.beans} package.  For reliable and ordered
+ * {@link java.desktop/java.beans} package.  For reliable and ordered
  * messaging among threads, consider using one of the concurrent data
  * structures in the {@link java.util.concurrent} package.
  * For reactive streams style programming, see the

@@ -32,7 +32,7 @@ package javax.management.remote;
  * Depending on the connector implementation, a {@link JMXConnector}
  * object may implement this interface too.  {@code JMXConnector}
  * objects for the RMI Connector are instances of
- * {@link javax.management.remote.rmi.RMIConnector RMIConnector} which
+ * {@link java.management.rmi/javax.management.remote.rmi.RMIConnector RMIConnector} which
  * implements this interface.</p>
  *
  * <p>An object implementing this interface might not have an address

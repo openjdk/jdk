@@ -2002,7 +2002,7 @@ public class MethodHandles {
          * there is no internal form available to record in any class's constant pool.
          * A hidden class or interface is not discoverable by {@link Class#forName(String, boolean, ClassLoader)},
          * {@link ClassLoader#loadClass(String, boolean)}, or {@link #findClass(String)}, and
-         * is not {@linkplain java.lang.instrument.Instrumentation#isModifiableClass(Class)
+         * is not {@linkplain java.instrument/java.lang.instrument.Instrumentation#isModifiableClass(Class)
          * modifiable} by Java agents or tool agents using the <a href="{@docRoot}/../specs/jvmti.html">
          * JVM Tool Interface</a>.
          *

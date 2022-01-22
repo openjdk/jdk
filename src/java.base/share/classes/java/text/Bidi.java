@@ -121,9 +121,9 @@ public final class Bidi {
      *
      * @param paragraph a paragraph of text with optional character and paragraph attribute information
      *
-     * @see java.awt.font.TextAttribute#BIDI_EMBEDDING
-     * @see java.awt.font.TextAttribute#NUMERIC_SHAPING
-     * @see java.awt.font.TextAttribute#RUN_DIRECTION
+     * @see java.desktop/java.awt.font.TextAttribute#BIDI_EMBEDDING
+     * @see java.desktop/java.awt.font.TextAttribute#NUMERIC_SHAPING
+     * @see java.desktop/java.awt.font.TextAttribute#RUN_DIRECTION
      */
     public Bidi(AttributedCharacterIterator paragraph) {
         if (paragraph == null) {
