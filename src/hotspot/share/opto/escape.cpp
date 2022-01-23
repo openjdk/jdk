@@ -2829,15 +2829,10 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
   const TypeOopPtr *toop = C->get_adr_type(alias_idx)->isa_oopptr();
   bool is_instance = (toop != NULL) && toop->is_known_instance();
   Node *start_mem = C->start()->proj_out_or_null(TypeFunc::Memory);
-  Node *result;
-
+  Node *prev = NULL;
+  Node *result = orig_mem;
+  // Remember all mergemem nodes encountered and update them in the end
   Node_List mmem_nodes(Thread::current()->resource_area(), 4);
-  bool finished = false;
-
-  while (!finished) {
-    Node *prev = NULL;
-    result = orig_mem;
-    finished = true;
 
   while (prev != result) {
     prev = result;
@@ -2901,11 +2896,15 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
       result = step_through_mergemem(mmem, alias_idx, toop);
       if (result == mmem->base_memory()) {
         // Didn't find instance memory, search through general slice recursively.
+        //
+        // result = find_inst_mem(mmem->memory_at(C->get_general_index(alias_idx)), alias_idx, orig_phis);
+        // mmem->set_memory_at(alias_idx, result);
+        //
+        // We remove the self-recursion here by resetting the current frame.
         mmem_nodes.push(mmem);
-        orig_mem = mmem->memory_at(C->get_general_index(alias_idx));
-        finished = false;
-        result = NULL;
-        break;
+        prev = NULL;
+        result = mmem->memory_at(C->get_general_index(alias_idx));
+        continue;
       }
     } else if (result->is_Phi() &&
                C->get_alias_index(result->as_Phi()->adr_type()) != alias_idx) {
@@ -2959,6 +2958,7 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
       result = result->in(MemNode::Memory);
     }
   }
+
   if (result != NULL && result->is_Phi()) {
     PhiNode *mphi = result->as_Phi();
     assert(mphi->bottom_type() == Type::MEMORY, "memory phi required");
@@ -2972,7 +2972,6 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
       result = split_memory_phi(mphi, alias_idx, orig_phis);
     }
   }
-  } // finished
 
   if (C->failing()) {
     return NULL;
