@@ -377,7 +377,7 @@ class AddressLiteral {
  private:
 
   address target() { return _target; }
-  bool is_lval() { return _is_lval; }
+  bool is_lval() const { return _is_lval; }
 
   relocInfo::relocType reloc() const { return _rspec.type(); }
   const RelocationHolder& rspec() const { return _rspec; }
@@ -1467,6 +1467,7 @@ private:
   void movb(Register dst, Address src);
 
   void movddup(XMMRegister dst, XMMRegister src);
+  void vmovddup(XMMRegister dst, Address src, int vector_len);
 
   void kandbl(KRegister dst, KRegister src1, KRegister src2);
   void kandwl(KRegister dst, KRegister src1, KRegister src2);
@@ -1869,6 +1870,7 @@ private:
   void popcntl(Register dst, Register src);
 
   void vpopcntd(XMMRegister dst, XMMRegister src, int vector_len);
+  void vpopcntq(XMMRegister dst, XMMRegister src, int vector_len);
 
 #ifdef _LP64
   void popcntq(Register dst, Address src);

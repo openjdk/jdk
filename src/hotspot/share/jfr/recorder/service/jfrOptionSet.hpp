@@ -45,7 +45,6 @@ class JfrOptionSet : public AllStatic {
   static jlong _num_global_buffers;
   static jlong _old_object_queue_size;
   static u4 _stack_depth;
-  static jboolean _sample_threads;
   static jboolean _retransform;
   static jboolean _sample_protection;
 
@@ -68,8 +67,6 @@ class JfrOptionSet : public AllStatic {
   static void set_old_object_queue_size(jlong value);
   static u4 stackdepth();
   static void set_stackdepth(u4 depth);
-  static bool sample_threads();
-  static void set_sample_threads(jboolean sample);
   static bool can_retransform();
   static void set_retransform(jboolean value);
   static bool compressed_integers();

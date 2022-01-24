@@ -162,13 +162,8 @@ public:
   inline HeapWord* allocate(size_t word_size);
   inline HeapWord* allocate(size_t min_word_size, size_t desired_word_size, size_t* actual_size);
 
-  // Update the BOT for the given address if it crosses the next
-  // BOT threshold at or after obj_start.
-  inline void update_bot_at(HeapWord* obj_start, size_t obj_size);
-  // Update BOT at the given threshold for the given object. The
-  // given object must cross the threshold.
-  inline void update_bot_crossing_threshold(HeapWord** threshold, HeapWord* obj_start, HeapWord* obj_end);
-  inline HeapWord* bot_threshold_for_addr(const void* addr);
+  // Update BOT if this obj is the first entering a new card (i.e. crossing the card boundary).
+  inline void update_bot_if_crossing_boundary(HeapWord* obj_start, size_t obj_size);
 
   // Full GC support methods.
 
