@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZNUMA_HPP
 
 #include "memory/allStatic.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class ZNUMA : public AllStatic {
 private:
