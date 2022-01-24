@@ -955,7 +955,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
      * Paints a tab.
      * @param g the graphics
      * @param tabPlacement the tab placement
-     * @param rects rectangles
+     * @param rects the tab rectangles
      * @param tabIndex the tab index
      * @param iconRect the icon rectangle
      * @param textRect the text rectangle
@@ -1301,7 +1301,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
      * Paints the focus indicator.
      * @param g the graphics
      * @param tabPlacement the tab placement
-     * @param rects rectangles
+     * @param rects the tab rectangles
      * @param tabIndex the tab index
      * @param iconRect the icon rectangle
      * @param textRect the text rectangle
@@ -1346,9 +1346,9 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
     }
 
     /**
-      * this function draws the border around each tab
-      * note that this function does now draw the background of the tab.
-      * that is done elsewhere
+      * Paints the border around a tab.
+      * Note that this function does not paint the background of the tab,
+      * that is done elsewhere.
       *
       * @param g             the graphics context in which to paint
       * @param tabPlacement  the placement (left, right, bottom, top) of the tab
@@ -1878,7 +1878,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
     }
 
     /**
-     * Assure the rectangles are created.
+     * Assures the tab rectangles are created.
      * @param tabCount the tab count
      */
     protected void assureRectsCreated(int tabCount) {
