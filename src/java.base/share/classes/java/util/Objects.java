@@ -166,25 +166,6 @@ public final class Objects {
 
     /**
      * {@return a string equivalent to the string returned by {@code
-     * Object.toString} if that method is not overridden}
-     *
-     * @implSpec
-     * The method returns a string equivalent to:<br>
-     * {@code o.getClass().getName() + "@" + Integer.toHexString(o.hashCode())}
-     *
-     * @param o an object
-     * @throws NullPointerException if the argument is null
-     * @see Object#toString
-     * @see #toIdentityString(Object)
-     * @since 19
-     */
-    public static String toDefaultString(Object o) {
-        requireNonNull(o);
-        return o.getClass().getName() + "@" + Integer.toHexString(o.hashCode());
-    }
-
-    /**
-     * {@return a string equivalent to the string returned by {@code
      * Object.toString} if that method and {@code hashCode} are not
      * overridden}
      *
@@ -200,7 +181,6 @@ public final class Objects {
      * @throws NullPointerException if the argument is null
      * @see Object#toString
      * @see System#identityHashCode(Object)
-     * @see #toDefaultString(Object)
      * @since 19
      */
     public static String toIdentityString(Object o) {

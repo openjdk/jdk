@@ -40,7 +40,6 @@ public class BasicObjectsTest {
         errors += testHash();
         errors += testToString();
         errors += testToString2();
-        errors += testToDefaultString();
         errors += testToIdentityString();
         errors += testCompare();
         errors += testRequireNonNull();
@@ -133,35 +132,6 @@ public class BasicObjectsTest {
         String s = "not the default";
         errors += (s.equals(Objects.toString(null, s)) ) ? 0 : 1;
         errors += (s.equals(Objects.toString(s, "another string")) ) ? 0 : 1;
-        return errors;
-    }
-
-    private static int testToDefaultString() {
-        int errors = 0;
-        // Test null behavior
-        try {
-            Objects.toDefaultString(null);
-            errors++;
-        } catch (NullPointerException npe) {
-            ; // Expected
-        }
-        // Behavior on typical objects
-        Object o = new Object(){};
-        errors += (Objects.toDefaultString(o).equals(o.toString()))? 0 : 1;
-        // Verify object's toString is *not* called
-        Object badToString = new Object() {
-                @Override
-                public String toString() {
-                    throw new RuntimeException();
-                }
-            };
-        Objects.toDefaultString(badToString);
-        // Verify object's hashCode is called
-        errors +=
-            ("java.math.BigInteger@0"
-             .equals(Objects.toDefaultString(java.math.BigInteger.ZERO))) ?
-            0 : 1;
-
         return errors;
     }
 

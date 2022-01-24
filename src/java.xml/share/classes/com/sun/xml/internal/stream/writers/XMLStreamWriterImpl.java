@@ -2225,7 +2225,7 @@ public final class XMLStreamWriterImpl extends AbstractMap<Object, Object>
      */
     @Override
     public String toString() {
-        return Objects.toDefaultString(this);
+        return getClass().getName() + "@" + Integer.toHexString(hashCode());
     }
 
     /**
