@@ -88,6 +88,7 @@ public class SSLParameters {
     private boolean enableRetransmissions = true;
     private int maximumPacketSize = 0;
     private String[] applicationProtocols = new String[0];
+    private String[] signatureSchemes = new String[0];
 
     /**
      * Constructs SSLParameters.
@@ -696,4 +697,53 @@ public class SSLParameters {
         }
         applicationProtocols = tempProtocols;
     }
+
+    /**
+     * Returns a prioritized array of signature scheme names that can be used
+     * over the SSL/TLS/DTLS protocols.
+     * <p>
+     * The returned array includes {@code String} names from the list of
+     * standard signature schemes in the <a href=
+     * "{@docRoot}/../specs/security/standard-names.html#signature-schemes">
+     * Signature Schemes</a> section of the Java Cryptography
+     * Architecture Standard Algorithm Name Documentation, and may also
+     * include other signature schemes that the provider supports.
+     * <p>
+     * The array could be empty (zero-length), in which case the underlying
+     * provider-specific default signature schemes will be used.
+     *
+     * @implSpec
+     * This method will return a new array each time it is invoked.
+     *
+     * @return a non-null, possibly zero-length array of signature scheme
+     *         {@code String}s.  The array is placed in descending order of
+     *         signature scheme preference.
+     * @see #setSignatureSchemes
+     *
+     * @since 19
+     */
+    public String[] getSignatureSchemes() {
+        return signatureSchemes.clone();
+    }
+
+    /**
+     * Sets the prioritized array of application-layer protocol names that
+     * can be negotiated over the SSL/TLS/DTLS protocols.
+     */
+    public void setSignatureSchemes(String[] signatureSchemes) {
+        if (protocols == null) {
+            throw new IllegalArgumentException("protocols was null");
+        }
+
+        String[] tempProtocols = protocols.clone();
+
+        for (String p : tempProtocols) {
+            if (p == null || p.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "An element of protocols was null/empty");
+            }
+        }
+        applicationProtocols = tempProtocols;
+    }
+
 }
