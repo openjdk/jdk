@@ -35,14 +35,13 @@
 
 template<bool is_humongous>
 void G1DetermineCompactionQueueClosure::free_pinned_region(HeapRegion* hr) {
-  _found_empty_regions = true;
   if (is_humongous) {
     _g1h->free_humongous_region(hr, nullptr);
   } else {
     _g1h->free_region(hr, nullptr);
   }
   _collector->set_free(hr->hrm_index());
-  add_to_compaction_queue(next_compaction_point(), hr);
+  add_to_compaction_queue(hr);
 }
 
 inline bool G1DetermineCompactionQueueClosure::should_compact(HeapRegion* hr) const {
@@ -67,8 +66,9 @@ inline G1FullGCCompactionPoint* G1DetermineCompactionQueueClosure::next_compacti
   return _collector->compaction_point(next_worker());
 }
 
-inline void G1DetermineCompactionQueueClosure::add_to_compaction_queue(G1FullGCCompactionPoint* cp, HeapRegion* hr) {
+inline void G1DetermineCompactionQueueClosure::add_to_compaction_queue(HeapRegion* hr) {
   hr->set_compaction_top(hr->bottom());
+  G1FullGCCompactionPoint* cp = next_compaction_point();
   if (!cp->is_initialized()) {
     cp->initialize(hr, true);
   }
@@ -79,7 +79,7 @@ inline void G1DetermineCompactionQueueClosure::add_to_compaction_queue(G1FullGCC
 inline bool G1DetermineCompactionQueueClosure::do_heap_region(HeapRegion* hr) {
   if (should_compact(hr)) {
     assert(!hr->is_humongous(), "moving humongous objects not supported.");
-    add_to_compaction_queue(next_compaction_point(), hr);
+    add_to_compaction_queue(hr);
   } else {
     assert(hr->containing_set() == nullptr, "already cleared by PrepareRegionsClosure");
     if (hr->is_humongous()) {

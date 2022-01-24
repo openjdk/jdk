@@ -41,7 +41,6 @@ class G1DetermineCompactionQueueClosure : public HeapRegionClosure {
   G1CollectedHeap* _g1h;
   G1FullCollector* _collector;
   uint _cur_worker;
-  bool _found_empty_regions;
 
   template<bool is_humongous>
   inline void free_pinned_region(HeapRegion* hr);
@@ -54,14 +53,12 @@ class G1DetermineCompactionQueueClosure : public HeapRegionClosure {
 
   inline G1FullGCCompactionPoint* next_compaction_point();
 
-  inline void add_to_compaction_queue(G1FullGCCompactionPoint* cp, HeapRegion* hr);
+  inline void add_to_compaction_queue(HeapRegion* hr);
 
 public:
   G1DetermineCompactionQueueClosure(G1FullCollector* collector);
 
   inline bool do_heap_region(HeapRegion* hr) override;
-
-  inline bool found_empty_regions() { return _found_empty_regions; }
 };
 
 class G1FullGCPrepareTask : public G1FullGCTask {

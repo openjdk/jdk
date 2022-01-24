@@ -42,8 +42,7 @@
 G1DetermineCompactionQueueClosure::G1DetermineCompactionQueueClosure(G1FullCollector* collector) :
   _g1h(G1CollectedHeap::heap()),
   _collector(collector),
-  _cur_worker(0),
-  _found_empty_regions(false) { }
+  _cur_worker(0) { }
 
 bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion* hr) {
   uint region_idx = hr->hrm_index();
@@ -131,7 +130,7 @@ bool G1FullGCPrepareTask::G1ResetMetadataClosure::do_heap_region(HeapRegion* hr)
   uint const region_idx = hr->hrm_index();
   if (!_collector->is_compaction_target(region_idx)) {
     assert(!hr->is_free(), "all free regions should be compaction targets");
-    assert(_collector->is_skip_compacting(region_idx) || hr->is_closed_archive(), "must be"); // FIXME: second clause
+    assert(_collector->is_skip_compacting(region_idx) || hr->is_closed_archive(), "must be");
     if (hr->is_young()) {
       // G1 updates the BOT for old region contents incrementally, but young regions
       // lack BOT information for performance reasons.

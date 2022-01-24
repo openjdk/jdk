@@ -299,23 +299,23 @@ void G1FullCollector::phase1_mark_live_objects() {
 void G1FullCollector::phase2_prepare_compaction() {
   GCTraceTime(Info, gc, phases) info("Phase 2: Prepare compaction", scope()->timer());
 
-  bool found_new_empty_regions = phase2a_determine_worklists();
+  phase2a_determine_worklists();
 
   bool has_free_compaction_targets = phase2b_forward_oops();
 
-  // To avoid OOM when there is memory left.
-  if (!found_new_empty_regions && !has_free_compaction_targets) {
+  // Try to avoid OOM immediately after Full GC in case there are no free regions
+  // left after determining the result locations (i.e. this phase). Prepare to
+  // maximally compact the tail regions of the compaction queues serially.
+  if (!has_free_compaction_targets) {
     phase2c_prepare_serial_compaction();
   }
 }
 
-bool G1FullCollector::phase2a_determine_worklists() {
+void G1FullCollector::phase2a_determine_worklists() {
   GCTraceTime(Debug, gc, phases) debug("Phase 2: Determine work lists", scope()->timer());
 
   G1DetermineCompactionQueueClosure cl(this);
   _heap->heap_region_iterate(&cl);
-
-  return cl.found_empty_regions();
 }
 
 bool G1FullCollector::phase2b_forward_oops() {

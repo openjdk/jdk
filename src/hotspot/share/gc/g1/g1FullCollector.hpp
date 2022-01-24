@@ -132,7 +132,7 @@ private:
   void phase1_mark_live_objects();
   void phase2_prepare_compaction();
 
-  bool phase2a_determine_worklists();
+  void phase2a_determine_worklists();
   bool phase2b_forward_oops();
   void phase2c_prepare_serial_compaction();
 
