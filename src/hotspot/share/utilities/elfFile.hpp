@@ -645,8 +645,8 @@ class DwarfFile : public ElfFile {
       // opcode_base-1. DWARF 3 and 4 use 12 standard opcodes.
       uint8_t _standard_opcode_lengths[12];
 
-      // Not part of the real header, implementation only
-      long _file_starting_pos;
+      // Not part of the real header, implementation only. Offset where the filename strings are starting in header.
+      long _file_names_offset;
     };
 
     // The line number program state consists of several registers that hold the current state of the line number program

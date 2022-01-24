@@ -1117,7 +1117,7 @@ bool DwarfFile::LineNumberProgram::read_header() {
   // Delay reading file_names until we found the correct file index in the line number program. Store the position where
   // the file names start to parse them later. We directly jump to the line number program which starts at offset
   // _debug_line_offset + 10 (=sizeof(_unit_length) + sizeof(_version) + sizeof(_header_length)) + _header_length.
-  _header._file_starting_pos = _reader.get_position();
+  _header._file_names_offset = _reader.get_position();
   if (!_reader.set_position(shdr.sh_offset + _debug_line_offset + 10 + _header._header_length)) {
     return false;
   }
@@ -1134,14 +1134,16 @@ bool DwarfFile::LineNumberProgram::read_header() {
 // the line number from the line register and the filename by parsing the file_names list from the header until we reach
 // the correct filename as specified by the file register.
 //
-// If space as not a problem, the .debug_line section could provide a large matrix that contains an entry for each
+// If space was not a problem, the .debug_line section could provide a large matrix that contains an entry for each
 // compiler instruction that contains the line number, the column number, the filename etc. But that's impractical.
-// Two techniques optimizes such a matrix:
+// Two techniques optimize such a matrix:
 // (1) If two offsets share the same file, line and column (and discriminator) information, the row is dropped.
 // (2) We store a stream of bytes that represent opcodes to be executed in a well-defined state machine language
 //     instead of actually storing the entire matrix row by row.
 //
 // Let's consider a simple example:
+// 25: int iFld = 42;
+// 26:
 // 27: void bar(int i) {
 // 28: }
 // 29:
@@ -1163,7 +1165,7 @@ bool DwarfFile::LineNumberProgram::read_header() {
 //           0x55d147:       5d                      pop    rbp
 //           0x55d148:       c3                      ret
 //
-// This would produce the following matrix for foo() where duplicated lines (55d133, 55d13d, 55d13f) were removed
+// This would produce the following matrix for foo() where duplicated lines (0x55d133, 0x55d13d, 0x55d13f) were removed
 // according to (1):
 // Address:    Line:    Column:   File:
 // 0x55d132    30       12        1
@@ -1173,11 +1175,11 @@ bool DwarfFile::LineNumberProgram::read_header() {
 // When trying to get the line number for a PC, which is translated into an offset address x into the library file, we can either:
 // - Directly find the last entry in the matrix for which address == x (there could be multiple entries with the same address).
 // - If there is no matching address for x:
-//   Find two consecutive entries in the matrix for which: address_entry_1 < x < address_entry_2.
-//   Then take the entry of address_entry_1.
-//   E.g. x = 0x55d13f -> 0x55d136 < 0x55d13f < 0x55d146 -> Take entry 0x55d136.
+//   1. Find two consecutive entries in the matrix for which: address_entry_1 < x < address_entry_2.
+//   2. Then take the entry of address_entry_1.
+//      E.g. x = 0x55d13f -> 0x55d136 < 0x55d13f < 0x55d146 -> Take entry 0x55d136.
 //
-// Enable logging with debug level to print the parsed line number information matrix.
+// Enable logging with debug level to print the generated line number information matrix.
 bool DwarfFile::LineNumberProgram::run_line_number_program(char& filename, const size_t filename_len, int& line) {
   log_debug(dwarf)("");
   log_debug(dwarf)("Line Number Information Matrix");
@@ -1232,14 +1234,14 @@ bool DwarfFile::LineNumberProgram::run_line_number_program(char& filename, const
   return false;
 }
 
-// Apply next opcode to update state machine.
+// Apply next opcode to update the state machine.
 bool DwarfFile::LineNumberProgram::apply_opcode() {
   uint8_t opcode;
   if (!_reader.read_byte(&opcode)) {
     return false;
   }
 
-  log_trace(dwarf)("Opcode: 0x%02x ", opcode);
+  log_trace(dwarf)("  Opcode: 0x%02x ", opcode);
   if (opcode == 0) {
     // Extended opcodes start with a zero byte.
     if (!apply_extended_opcode()) {
@@ -1269,7 +1271,7 @@ bool DwarfFile::LineNumberProgram::apply_extended_opcode() {
 
   switch (extended_opcode) {
     case DW_LNE_end_sequence: // No operands
-      log_trace(dwarf)("DW_LNE_end_sequence");
+      log_trace(dwarf)("    DW_LNE_end_sequence");
       _state->_end_sequence = true;
       _state->_append_row = true;
       _state->_do_reset = true;
@@ -1278,13 +1280,13 @@ bool DwarfFile::LineNumberProgram::apply_extended_opcode() {
       if (!_reader.read_address_sized(&_state->_address)) {
         return false;
       }
-      log_trace(dwarf)("DW_LNE_set_address " INTPTR_FORMAT, _state->_address);
+      log_trace(dwarf)("    DW_LNE_set_address " INTPTR_FORMAT, _state->_address);
       if (_state->_dwarf_version == 4) {
         _state->_op_index = 0;
       }
       break;
     case DW_LNE_define_file: // 4 operands
-    log_trace(dwarf)("DW_LNE_define_file");
+    log_trace(dwarf)("    DW_LNE_define_file");
       if (!_reader.read_string()) {
         return false;
       }
@@ -1296,7 +1298,7 @@ bool DwarfFile::LineNumberProgram::apply_extended_opcode() {
       }
       break;
     case DW_LNE_set_discriminator: // 1 operand
-      log_trace(dwarf)("DW_LNE_set_discriminator");
+      log_trace(dwarf)("    DW_LNE_set_discriminator");
       uint64_t discriminator;
       // For some reason, GCC emits this opcode even for earlier versions than DWARF 4 which introduced this opcode.
       // We need to consume it.
@@ -1317,7 +1319,7 @@ bool DwarfFile::LineNumberProgram::apply_extended_opcode() {
 bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
   switch (opcode) {
     case DW_LNS_copy: // No operands
-      log_trace(dwarf)("DW_LNS_copy");
+      log_trace(dwarf)("    DW_LNS_copy");
       _state->_append_row = true;
       _state->_basic_block = false;
       _state->_prologue_end = false;
@@ -1336,7 +1338,7 @@ bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
       if (_state->_dwarf_version == 4) {
         _state->set_index_register(operation_advance, _header);
       }
-      log_trace(dwarf)("DW_LNS_advance_pc (" INTPTR_FORMAT ")", _state->_address);
+      log_trace(dwarf)("    DW_LNS_advance_pc (" INTPTR_FORMAT ")", _state->_address);
       break;
     }
     case DW_LNS_advance_line: // 1 operand
@@ -1346,7 +1348,7 @@ bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
         return false;
       }
       _state->_line += line;
-      log_trace(dwarf)("DW_LNS_advance_line (%d)", _state->_line);
+      log_trace(dwarf)("    DW_LNS_advance_line (%d)", _state->_line);
       break;
     case DW_LNS_set_file: // 1 operand
       uint64_t file;
@@ -1355,7 +1357,7 @@ bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
         return false;
       }
       _state->_file = file;
-      log_trace(dwarf)("DW_LNS_set_file (%u)", _state->_file);
+      log_trace(dwarf)("    DW_LNS_set_file (%u)", _state->_file);
       break;
     case DW_LNS_set_column: // 1 operand
       uint64_t column;
@@ -1364,14 +1366,14 @@ bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
         return false;
       }
       _state->_column = column;
-      log_trace(dwarf)("DW_LNS_set_column (%u)", _state->_column);
+      log_trace(dwarf)("    DW_LNS_set_column (%u)", _state->_column);
       break;
     case DW_LNS_negate_stmt: // No operands
-      log_trace(dwarf)("DW_LNS_negate_stmt");
+      log_trace(dwarf)("    DW_LNS_negate_stmt");
       _state->_is_stmt = !_state->_is_stmt;
       break;
     case DW_LNS_set_basic_block: // No operands
-      log_trace(dwarf)("DW_LNS_set_basic_block");
+      log_trace(dwarf)("    DW_LNS_set_basic_block");
       _state->_basic_block = true;
       break;
     case DW_LNS_const_add_pc: { // No operands
@@ -1383,7 +1385,7 @@ bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
       if (_state->_dwarf_version == 4) {
         _state->set_index_register(operation_advance, _header);
       }
-      log_trace(dwarf)("DW_LNS_const_add_pc (" INTPTR_FORMAT ")", _state->_address - old_address);
+      log_trace(dwarf)("    DW_LNS_const_add_pc (" INTPTR_FORMAT ")", _state->_address - old_address);
       break;
     }
     case DW_LNS_fixed_advance_pc: // 1 operand
@@ -1393,14 +1395,14 @@ bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
       }
       _state->_address += operand;
       _state->_op_index = 0;
-      log_trace(dwarf)("DW_LNS_fixed_advance_pc (" INTPTR_FORMAT ")", _state->_address);
+      log_trace(dwarf)("    DW_LNS_fixed_advance_pc (" INTPTR_FORMAT ")", _state->_address);
       break;
     case DW_LNS_set_prologue_end: // No operands
-      log_trace(dwarf)("DW_LNS_set_basic_block");
+      log_trace(dwarf)("    DW_LNS_set_basic_block");
       _state->_prologue_end = true;
       break;
     case DW_LNS_set_epilogue_begin: // No operands
-      log_trace(dwarf)("DW_LNS_set_epilogue_begin");
+      log_trace(dwarf)("    DW_LNS_set_epilogue_begin");
       _state->_epilogue_begin = true;
       break;
     case DW_LNS_set_isa: // 1 operand
@@ -1410,7 +1412,7 @@ bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
         return false;
       }
       _state->_isa = isa;
-      log_trace(dwarf)("DW_LNS_set_isa (%u)", _state->_isa);
+      log_trace(dwarf)("    DW_LNS_set_isa (%u)", _state->_isa);
       break;
     default:
       log_warning(dwarf)("Unknown standard opcode");
@@ -1431,7 +1433,7 @@ bool DwarfFile::LineNumberProgram::apply_special_opcode(const uint8_t opcode) {
     _state->_discriminator = 0;
   }
   _state->_line += _header._line_base + (adjusted_opcode % _header._line_range);
-  log_trace(dwarf)("address += " INTPTR_FORMAT ", line += %d", _state->_address - old_address, _state->_line - old_line);
+  log_trace(dwarf)("    address += " INTPTR_FORMAT ", line += %d", _state->_address - old_address, _state->_line - old_line);
   _state->_append_row = true;
   _state->_basic_block = false;
   _state->_prologue_end = false;
@@ -1485,9 +1487,8 @@ void DwarfFile::LineNumberProgram::print_and_store_prev_entry(const uint32_t pre
 
 // Read field file_names from the header as specified in section 6.2.4 of the DWARF 4 spec.
 bool DwarfFile::LineNumberProgram::get_filename_from_header(const uint32_t file_index, char& filename, const size_t filename_len) {
-  // We do not need to restore the position afterwards as this is the last step of parsing from the file for this
-  // compilation unit.
-  _reader.set_position(_header._file_starting_pos);
+  // We do not need to restore the position afterwards as this is the last step of parsing from the file for this compilation unit.
+  _reader.set_position(_header._file_names_offset);
   uint32_t current_index = 1; // file_names start at index 1
   while (_reader.has_bytes_left()) {
     if (!_reader.read_string(&filename, filename_len)) {
