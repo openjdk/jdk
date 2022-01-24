@@ -612,46 +612,43 @@ bool DwarfFile::get_filename_and_line_number(const uint32_t offset_in_library, c
 // 'offset_in_library'. Read the debug_info_offset field from the header of this set which defines the offset for the compilation unit.
 // This process is described in section 6.1.2 of the DWARF 4 spec.
 bool DwarfFile::DebugAranges::find_compilation_unit_offset(const uint32_t offset_in_library, uint32_t* compilation_unit_offset) {
-  uint32_t section_start;
-  if (!read_section_header(&section_start)) {
+  if (!read_section_header()) {
     log_info(dwarf)("Failed to read a .debug_aranges header.");
     return false;
   }
 
+  DebugArangesSetHeader set_header;
+  bool found_matching_set = false;
   while (_reader.has_bytes_left()) {
     // Read multiple sets and therefore multiple headers.
-    if (!read_header(section_start)) {
+    if (!read_set_header(set_header)) {
       log_info(dwarf)("Failed to read a .debug_aranges header.");
       return false;
     }
 
-    uintptr_t beginning_address = 0;
-    uintptr_t range_length = 0;
-    do {
-      if (!_reader.read_address_sized(&beginning_address) || !_reader.read_address_sized(&range_length)) {
-        return false;
-      }
+    if (!read_set_address_descriptors(set_header, offset_in_library, found_matching_set)) {
+      return false;
+    }
 
-      if (beginning_address <= offset_in_library && offset_in_library < beginning_address + range_length) {
-        // Found the correct set, read the debug_info_offset from the header of this set.
-        log_debug(dwarf)(".debug_aranges offset: " PTR32_FORMAT, (uint32_t)_reader.get_position());
-        *compilation_unit_offset = _header._debug_info_offset;
-        return true;
-      }
-    } while (!is_terminating_set(beginning_address, range_length) && _reader.has_bytes_left());
+    if (found_matching_set) {
+      // Found the correct set, read the debug_info_offset from the header of this set.
+      log_debug(dwarf)(".debug_aranges offset: " PTR32_FORMAT, (uint32_t)_reader.get_position());
+      *compilation_unit_offset = set_header._debug_info_offset;
+      return true;
+    }
   }
 
-  // No compilation unit found for offset_in_library.
+  log_info(dwarf)("No address descriptor found containing offset_in_library.");
   return false;
 }
 
-bool DwarfFile::DebugAranges::read_section_header(uint32_t* section_start) {
+bool DwarfFile::DebugAranges::read_section_header() {
   Elf_Shdr shdr;
   if (!_dwarf_file->read_section_header(".debug_aranges", shdr)) {
     return false;
   }
 
-  *section_start = shdr.sh_offset;
+  _section_start_address = shdr.sh_offset;
   _reader.set_max_pos(shdr.sh_offset + shdr.sh_size);
   if (!_reader.set_position(shdr.sh_offset)) {
     return false;
@@ -660,28 +657,28 @@ bool DwarfFile::DebugAranges::read_section_header(uint32_t* section_start) {
 }
 
 // Parsing header as specified in section 6.1.2 of the DWARF 4 spec.
-bool DwarfFile::DebugAranges::read_header(const uint32_t section_start) {
-  if (!_reader.read_dword(&_header._unit_length) || _header._unit_length == 0xFFFFFFFF) {
+bool DwarfFile::DebugAranges::read_set_header(DebugArangesSetHeader& header) {
+  if (!_reader.read_dword(&header._unit_length) || header._unit_length == 0xFFFFFFFF) {
     // For 64-bit DWARF, the first 32-bit value is 0xFFFFFFFF. The current implementation only supports 32-bit DWARF format since GCC
     // only emits 32-bit DWARF.
     return false;
   }
 
-  if (!_reader.read_word(&_header._version) || _header._version != 2) {
+  if (!_reader.read_word(&header._version) || header._version != 2) {
     // DWARF 4 uses version 2 as specified in Appendix F of the DWARF 4 spec.
     return false;
   }
 
-  if (!_reader.read_dword(&_header._debug_info_offset)) {
+  if (!_reader.read_dword(&header._debug_info_offset)) {
     return false;
   }
 
-  if (!_reader.read_byte(&_header._address_size) || NOT_LP64(_header._address_size != 4) LP64_ONLY( _header._address_size != 8)) {
+  if (!_reader.read_byte(&header._address_size) || NOT_LP64(header._address_size != 4) LP64_ONLY( header._address_size != 8)) {
     // Addresses must be either 4 bytes for 32-bit architectures or 8 bytes for 64-bit architectures.
     return false;
   }
 
-  if (!_reader.read_byte(&_header._segment_size) || _header._segment_size != 0) {
+  if (!_reader.read_byte(&header._segment_size) || header._segment_size != 0) {
     // Segment size should be 0.
     return false;
   }
@@ -694,11 +691,42 @@ bool DwarfFile::DebugAranges::read_header(const uint32_t section_start) {
   // 16 byte alignment for 64-bit.
   uint8_t alignment = 16;
 #endif
-  uint8_t padding = alignment - (_reader.get_position() - section_start) % alignment;
+  uint8_t padding = alignment - (_reader.get_position() - _section_start_address) % alignment;
   if (!_reader.move_position(padding)) {
     return false;
   }
   return true;
+}
+
+bool DwarfFile::DebugAranges::read_set_address_descriptors(const DwarfFile::DebugAranges::DebugArangesSetHeader& header,
+                                                           const uint32_t offset_in_library, bool& found_matching_set) {
+  AddressDescriptor descriptor;
+  do {
+    if (!read_address_descriptor(descriptor)) {
+      return false;
+    }
+
+    if (does_match_offset(offset_in_library, descriptor)) {
+      found_matching_set = true;
+      return true;
+    }
+  } while (!is_last_entry(descriptor) && _reader.has_bytes_left());
+
+  // Set does not match offset_in_library. Continue with next.
+  return true;
+}
+
+bool DwarfFile::DebugAranges::read_address_descriptor(AddressDescriptor& descriptor) {
+  return _reader.read_address_sized(&descriptor.beginning_address) && _reader.read_address_sized(&descriptor.range_length);
+}
+
+bool DwarfFile::DebugAranges::does_match_offset(const uint32_t offset_in_library, const AddressDescriptor& descriptor) {
+  return descriptor.beginning_address <= offset_in_library
+         && offset_in_library < descriptor.beginning_address + descriptor.range_length;
+}
+
+bool DwarfFile::DebugAranges::is_last_entry(const AddressDescriptor& descriptor) {
+  return descriptor.beginning_address == 0 && descriptor.range_length == 0;
 }
 
 // Find the .debug_line offset for the line number program by reading from the .debug_abbrev and .debug_info section.

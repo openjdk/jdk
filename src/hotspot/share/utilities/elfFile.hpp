@@ -372,19 +372,30 @@ class DwarfFile : public ElfFile {
       uint8_t _segment_size;
     };
 
+    // Address descriptor defining a range that is covered by a compilation unit. It is defined in section 6.1.2 after
+    // the set header in the DWARF 4 spec.
+    struct AddressDescriptor {
+      uintptr_t beginning_address = 0;
+      uintptr_t range_length = 0;
+    };
+
     DwarfFile* _dwarf_file;
     MarkedDwarfFileReader _reader;
-    DebugArangesSetHeader _header;
+    uint32_t _section_start_address;
 
-    bool read_header(uint32_t section_start);
-    bool read_section_header(uint32_t* section_start);
+    bool read_section_header();
+    bool read_set_header(DebugArangesSetHeader& header);
+    bool read_set_address_descriptors(const DwarfFile::DebugAranges::DebugArangesSetHeader& header,
+                                      uint32_t offset_in_library, bool& found_matching_set);
 
-    static bool is_terminating_set(uintptr_t beginning_address, uintptr_t length) {
-      return beginning_address == 0 && length == 0;
-    }
+
+    static bool does_match_offset(uint32_t offset_in_library, const AddressDescriptor& descriptor) ;
+    bool read_address_descriptor(AddressDescriptor& descriptor);
+    static bool is_last_entry(const AddressDescriptor& descriptor);
    public:
-    DebugAranges(DwarfFile* dwarf_file) : _dwarf_file(dwarf_file), _reader(dwarf_file->fd()) {}
+    DebugAranges(DwarfFile* dwarf_file) : _dwarf_file(dwarf_file), _reader(dwarf_file->fd()), _section_start_address(0) {}
     bool find_compilation_unit_offset(uint32_t offset_in_library, uint32_t* compilation_unit_offset);
+
   };
 
   // (3a-c,e) The compilation unit is read from the .debug_info section. The structure of .debug_info is shown in the
