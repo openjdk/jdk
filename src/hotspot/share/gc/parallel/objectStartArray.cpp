@@ -132,8 +132,10 @@ bool ObjectStartArray::object_starts_in_range(HeapWord* start_addr,
          "Range is wrong. start_addr (" PTR_FORMAT ") is after end_addr (" PTR_FORMAT ")",
          p2i(start_addr), p2i(end_addr));
 
+  assert(is_aligned(start_addr, _card_size), "precondition");
+
   if (start_addr == end_addr) {
-    // empty
+    // No objects in empty range.
     return false;
   }
 
