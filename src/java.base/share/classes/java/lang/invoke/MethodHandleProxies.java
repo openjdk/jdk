@@ -28,6 +28,9 @@ package java.lang.invoke;
 import java.lang.reflect.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+
+import jdk.internal.access.JavaLangReflectAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.invoke.WrapperInstance;
 import java.util.ArrayList;
 
@@ -199,7 +202,8 @@ public class MethodHandleProxies {
                     if (isObjectMethod(method))
                         return callObjectMethod(proxy, method, args);
                     if (isDefaultMethod(method)) {
-                        return InvocationHandler.invokeDefault(proxy, method, args);
+                        // no additional access check is performed
+                        return JLRA.invokeDefault(proxy, method, null, args);
                     }
                     throw newInternalError("bad proxy method: "+method);
                 }
@@ -316,4 +320,6 @@ public class MethodHandleProxies {
     private static boolean isDefaultMethod(Method m) {
         return !Modifier.isAbstract(m.getModifiers());
     }
+
+    private static final JavaLangReflectAccess JLRA = SharedSecrets.getJavaLangReflectAccess();
 }

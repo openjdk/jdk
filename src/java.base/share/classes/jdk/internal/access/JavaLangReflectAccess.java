@@ -102,4 +102,7 @@ public interface JavaLangReflectAccess {
     /** Returns a new instance created by the given constructor with access check */
     public <T> T newInstance(Constructor<T> ctor, Object[] args, Class<?> caller)
         throws IllegalAccessException, InstantiationException, InvocationTargetException;
+
+    public Object invokeDefault(Object proxy, Method method, Object[] args, Class<?> caller)
+        throws Throwable;
 }

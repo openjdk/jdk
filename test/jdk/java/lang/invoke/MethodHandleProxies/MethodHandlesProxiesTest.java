@@ -43,14 +43,12 @@ public class MethodHandlesProxiesTest {
         default String a() {
             return "A";
         }
-        default String aConcat(Object... objs) { return Arrays.deepToString(objs); }
     }
 
     public interface B {
         default String b() {
             return "B";
         }
-        default String bConcat(Object[] objs) { return Arrays.deepToString(objs); }
     }
 
     public interface C extends A, B {
@@ -91,11 +89,6 @@ public class MethodHandlesProxiesTest {
         assertEquals(proxy.b(), "B");
         assertEquals(proxy.c(), "C");
         assertEquals(proxy.concat(), "ABC");
-
-        // test varargs
-        assertEquals(proxy.aConcat("a", "b", "c"), "[a, b, c]");
-        assertEquals(proxy.aConcat(new Object[] { "a", "b", "c" }), "[a, b, c]");
-        assertEquals(proxy.bConcat(new Object[] { "a", "b", "c" }), "[a, b, c]");
     }
 
     @Test
