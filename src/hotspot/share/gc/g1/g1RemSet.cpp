@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionRemSet.inline.hpp"
+#include "gc/shared/bufferNodeList.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/ptrQueue.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
@@ -1429,7 +1430,7 @@ public:
   {
     if (initial_evacuation) {
       G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-      G1BufferNodeList buffers = dcqs.take_all_completed_buffers();
+      BufferNodeList buffers = dcqs.take_all_completed_buffers();
       if (buffers._entry_count != 0) {
         _dirty_card_buffers.prepend(*buffers._head, *buffers._tail);
       }
