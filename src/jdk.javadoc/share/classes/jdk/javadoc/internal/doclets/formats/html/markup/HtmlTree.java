@@ -226,16 +226,16 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Adds each of a list of items, using a map function to create the content for each item.
+     * Adds each of a collection of items, using a map function to create the content for each item.
      *
-     * @param list   the list
+     * @param items  the items
      * @param mapper the map function to generate the content for each item
      *
      * @return this object
      */
     @Override
-    public <T> HtmlTree addAll(Collection<T> list, Function<T, Content> mapper) {
-        list.forEach(item -> add(mapper.apply(item)));
+    public <T> HtmlTree addAll(Collection<T> items, Function<T, Content> mapper) {
+        items.forEach(item -> add(mapper.apply(item)));
         return this;
     }
 

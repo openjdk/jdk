@@ -95,6 +95,8 @@ public abstract class Content {
      * Adds content to the existing content, generated from a collection of items
      * This is an optional operation.
      *
+     * @implSpec This implementation delegates to {@link #add(Content)}.
+     *
      * @param items  the items to be added
      * @param mapper the function to create content for each item
      *
@@ -102,10 +104,10 @@ public abstract class Content {
      * @throws UnsupportedOperationException if this operation is not supported by
      *                                       a particular implementation
      * @throws IllegalArgumentException      if the content is not suitable to be added
-     * @implSpec This implementation delegates to {@link #add(Content)}.
      */
     public <T> Content addAll(Collection<T> items, Function<T, Content> mapper) {
-        throw new UnsupportedOperationException();
+        items.forEach(item -> add(mapper.apply(item)));
+        return this;
     }
 
     /**
