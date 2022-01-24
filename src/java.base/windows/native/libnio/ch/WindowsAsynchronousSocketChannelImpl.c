@@ -66,6 +66,10 @@ Java_sun_nio_ch_WindowsAsynchronousSocketChannelImpl_initIDs(JNIEnv* env, jclass
     DWORD dwBytes;
 
     s = socket(AF_INET, SOCK_STREAM, 0);
+    if (s == INVALID_SOCKET && WSAGetLastError() == WSAEAFNOSUPPORT) {
+        /* IPv4 unavailable... try IPv6 instead */
+        s = socket(AF_INET6, SOCK_STREAM, 0);
+    }
     if (s == INVALID_SOCKET) {
         JNU_ThrowIOExceptionWithLastError(env, "socket failed");
         return;
