@@ -212,7 +212,10 @@ class ElfFile: public CHeapObj<mtInternal> {
   bool load_dwarf_file_from_env_path(const char* debug_filename, uint32_t crc);
   bool load_dwarf_file_from_env_path_folder(const char* env_path, const char* folder, const char* debug_filename, uint32_t crc);
   const char* get_debug_filename() const;
+  static uint32_t get_file_crc(FILE* const file);
   static uint gnu_debuglink_crc32(uint32_t crc, uint8_t* buf, size_t len);
+  bool create_new_dwarf_file(const char* filepath);
+
 
  protected:
   FILE* const fd() const { return _file; }

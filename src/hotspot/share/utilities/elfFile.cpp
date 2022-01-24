@@ -524,7 +524,7 @@ static const uint32_t crc32_table[256] = {
 
 bool ElfFile::open_valid_debuginfo_file(const char* filepath, const uint32_t crc) {
   if (_dwarf_file != nullptr) {
-    // Return cached file.
+    // Already opened.
     return true;
   }
 
@@ -534,34 +534,30 @@ bool ElfFile::open_valid_debuginfo_file(const char* filepath, const uint32_t crc
     return false;
   }
 
-  uint32_t file_crc = 0;
-  uint8_t buffer[8 * 1024];
-  {
-    MarkedFileReader reader(file);
-    while (true) {
-      size_t len = reader.read_buffer(buffer, sizeof(buffer));
-      if (len == 0) {
-        break;
-      }
-      file_crc = gnu_debuglink_crc32(file_crc, buffer, len);
-    }
-  }
-
+  uint32_t file_crc = get_file_crc(file);
   fclose(file); // Close it here to reopen it again when the DwarfFile object is created below.
 
   if (crc == file_crc) {
     // Must be equal, otherwise the file is corrupted.
-    log_info(dwarf)("Open DWARF file: %s", filepath);
-    _dwarf_file = new (std::nothrow) DwarfFile(filepath);
-    if (!_dwarf_file->is_valid_dwarf_file()) {
-      log_info(dwarf)("Did not find required DWARF sections in %s", filepath);
-      return false;
-    }
-    return true;
+    return create_new_dwarf_file(filepath);
   }
 
   log_info(dwarf)("CRC did not match. Expected: " PTR32_FORMAT ", found: " PTR32_FORMAT, crc, file_crc);
   return false;
+}
+
+uint32_t ElfFile::get_file_crc(FILE* const file) {
+  uint32_t file_crc = 0;
+  uint8_t buffer[8 * 1024];
+  MarkedFileReader reader(file);
+  while (true) {
+    size_t len = reader.read_buffer(buffer, sizeof(buffer));
+    if (len == 0) {
+      break;
+    }
+    file_crc = gnu_debuglink_crc32(file_crc, buffer, len);
+  }
+  return file_crc;
 }
 
 // The CRC used in gnu_debuglink, retrieved from
@@ -572,6 +568,16 @@ uint32_t ElfFile::gnu_debuglink_crc32(uint32_t crc, uint8_t* buf, const size_t l
     crc = crc32_table[(crc ^ *buf) & 0xffu] ^ (crc >> 8u);
   }
   return ~crc & 0xffffffff;
+}
+
+bool ElfFile::create_new_dwarf_file(const char* filepath) {
+  log_info(dwarf)("Open DWARF file: %s", filepath);
+  _dwarf_file = new (std::nothrow) DwarfFile(filepath);
+  if (!_dwarf_file->is_valid_dwarf_file()) {
+    log_info(dwarf)("Did not find required DWARF sections in %s", filepath);
+    return false;
+  }
+  return true;
 }
 
 // Starting point of reading line number and filename information from the DWARF file.
