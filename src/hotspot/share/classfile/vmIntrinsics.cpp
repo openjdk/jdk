@@ -230,6 +230,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     case vmIntrinsics::_storeFence:
     case vmIntrinsics::_fullFence:
     case vmIntrinsics::_hasNegatives:
+    case vmIntrinsics::_countPositives:
     case vmIntrinsics::_Reference_get:
       break;
     default:

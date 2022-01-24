@@ -828,7 +828,8 @@ bool IdealLoopTree::policy_maximally_unroll(PhaseIdealLoop* phase) const {
       case Op_StrIndexOfChar:
       case Op_EncodeISOArray:
       case Op_AryEq:
-      case Op_HasNegatives: {
+      case Op_HasNegatives:
+      case Op_CountPositives: {
         return false;
       }
 #if INCLUDE_RTM_OPT

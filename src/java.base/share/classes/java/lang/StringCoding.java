@@ -36,12 +36,23 @@ class StringCoding {
 
     @IntrinsicCandidate
     public static boolean hasNegatives(byte[] ba, int off, int len) {
-        for (int i = off; i < off + len; i++) {
+        return countPositives(ba, off, len) != len;
+    }
+
+    /**
+     * Count the approximate number of positive bytes. Implementations are allowed to
+     * be imprecise if this allows for more efficient code, but must return a value l
+     * so that there are no negative bytes ba in the range from off to off + l, exclusive.
+     */
+    @IntrinsicCandidate
+    public static int countPositives(byte[] ba, int off, int len) {
+        int limit = off + len;
+        for (int i = off; i < limit; i++) {
             if (ba[i] < 0) {
-                return true;
+                return i - off;
             }
         }
-        return false;
+        return len;
     }
 
     @IntrinsicCandidate

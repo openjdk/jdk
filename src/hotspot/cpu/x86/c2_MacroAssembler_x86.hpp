@@ -279,7 +279,10 @@ public:
   void has_negatives(Register ary1, Register len,
                      Register result, Register tmp1,
                      XMMRegister vec1, XMMRegister vec2, KRegister mask1 = knoreg, KRegister mask2 = knoreg);
-
+  // approximately count number of positive bytes (allow bailing out on first negative)
+  void count_positives(Register ary1, Register len,
+                       Register result, Register tmp1,
+                       XMMRegister vec1, XMMRegister vec2, KRegister mask1 = knoreg, KRegister mask2 = knoreg);
   // Compare char[] or byte[] arrays.
   void arrays_equals(bool is_array_equ, Register ary1, Register ary2,
                      Register limit, Register result, Register chr,

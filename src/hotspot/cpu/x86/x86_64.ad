@@ -11717,6 +11717,38 @@ instruct has_negatives_evex(rsi_RegP ary1, rcx_RegI len, rax_RegI result,
   ins_pipe( pipe_slow );
 %}
 
+instruct count_positives(rsi_RegP ary1, rcx_RegI len, rax_RegI result,
+                         legRegD tmp1, legRegD tmp2, rbx_RegI tmp3, rFlagsReg cr,)
+%{
+  predicate(!VM_Version::supports_avx512vlbw() || !VM_Version::supports_bmi2());
+  match(Set result (CountPositives ary1 len));
+  effect(TEMP tmp1, TEMP tmp2, USE_KILL ary1, USE_KILL len, KILL tmp3, KILL cr);
+
+  format %{ "countPositives byte[] $ary1,$len -> $result   // KILL $tmp1, $tmp2, $tmp3" %}
+  ins_encode %{
+    __ count_positives($ary1$$Register, $len$$Register,
+                       $result$$Register, $tmp3$$Register,
+                       $tmp1$$XMMRegister, $tmp2$$XMMRegister, knoreg, knoreg);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct count_positives_evex(rsi_RegP ary1, rcx_RegI len, rax_RegI result,
+                              legRegD tmp1, legRegD tmp2, kReg ktmp1, kReg ktmp2, rbx_RegI tmp3, rFlagsReg cr,)
+%{
+  predicate(VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2());
+  match(Set result (CountPositives ary1 len));
+  effect(TEMP tmp1, TEMP tmp2, TEMP ktmp1, TEMP ktmp2, USE_KILL ary1, USE_KILL len, KILL tmp3, KILL cr);
+
+  format %{ "countPositives byte[] $ary1,$len -> $result   // KILL $tmp1, $tmp2, $tmp3" %}
+  ins_encode %{
+    __ count_positives($ary1$$Register, $len$$Register,
+                       $result$$Register, $tmp3$$Register,
+                       $tmp1$$XMMRegister, $tmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 // fast char[] to byte[] compression
 instruct string_compress(rsi_RegP src, rdi_RegP dst, rdx_RegI len, legRegD tmp1, legRegD tmp2, legRegD tmp3,
                          legRegD tmp4, rcx_RegI tmp5, rax_RegI result, rFlagsReg cr) %{

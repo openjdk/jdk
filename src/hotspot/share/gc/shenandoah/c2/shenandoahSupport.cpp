@@ -568,6 +568,8 @@ void ShenandoahBarrierC2Support::verify(RootNode* root) {
         { { 2, ShenandoahLoad },                  { 3, ShenandoahStore } },
         Op_HasNegatives,
         { { 2, ShenandoahLoad },                  { -1, ShenandoahNone} },
+        Op_IndexOfFirstNegative,
+        { { 2, ShenandoahLoad },                  { -1, ShenandoahNone} },
         Op_CastP2X,
         { { 1, ShenandoahLoad },                  { -1, ShenandoahNone} },
         Op_StrIndexOfChar,

@@ -620,6 +620,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_hasNegatives:
     return inline_hasNegatives();
 
+  case vmIntrinsics::_countPositives:
+    return inline_countPositives();
+
   case vmIntrinsics::_fmaD:
   case vmIntrinsics::_fmaF:
     return inline_fma(intrinsic_id());
@@ -1032,6 +1035,31 @@ bool LibraryCallKit::inline_hasNegatives() {
   }
   Node* ba_start = array_element_address(ba, offset, T_BYTE);
   Node* result = new HasNegativesNode(control(), memory(TypeAryPtr::BYTES), ba_start, len);
+  set_result(_gvn.transform(result));
+  return true;
+}
+
+//------------------------------inline_countPositives------------------------------
+bool LibraryCallKit::inline_countPositives() {
+  if (too_many_traps(Deoptimization::Reason_intrinsic)) {
+    return false;
+  }
+
+  assert(callee()->signature()->size() == 3, "countPositives has 3 parameters");
+  // no receiver since it is static method
+  Node* ba         = argument(0);
+  Node* offset     = argument(1);
+  Node* len        = argument(2);
+
+  ba = must_be_not_null(ba, true);
+
+  // Range checks
+  generate_string_range_check(ba, offset, len, false);
+  if (stopped()) {
+    return true;
+  }
+  Node* ba_start = array_element_address(ba, offset, T_BYTE);
+  Node* result = new CountPositivesNode(control(), memory(TypeAryPtr::BYTES), ba_start, len);
   set_result(_gvn.transform(result));
   return true;
 }

@@ -55,6 +55,8 @@ public class StringDecode {
     private byte[] longUtf16String;
     private byte[] longUtf16StartString;
     private byte[] longLatin1String;
+    private byte[] longLatin1EndString;
+    private byte[] longLatin1StartString;
 
     @Setup
     public void setup() {
@@ -106,19 +108,51 @@ public class StringDecode {
 
         longLatin1String = """
              a\u00B6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6
-             b\u00F6\u00F6\u00B6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6
-             c\u00F6\u00F6\u00F6\u00B6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6
-             d\u00F6\u00F6\u00F6\u00F6\u00B6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6
-             e\u00F6\u00F6\u00F6\u00F6\u00F6\u00B6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6
-             f\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00B6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6
-             g\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00B6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6
-             h\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00B6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6
-             i\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00B6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6
-             j\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00B6\u00F6\u00F6\u00F6\u00F6\u00F6
-             k\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00B6\u00F6\u00F6\u00F6\u00F6
-             l\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00B6\u00F6\u00F6\u00F6
-             m\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00F6\u00B6\u00F6\u00F6
             """.getBytes(charset);
+
+        longLatin1EndString = """
+             Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam ac sem eu
+             urna egestas placerat. Etiam finibus ipsum nulla, non mattis dolor cursus a.
+             Nulla nec nisl consectetur, lacinia neque id, accumsan ante. Curabitur et
+             sapien in magna porta ultricies. Sed vel pellentesque nibh. Pellentesque dictum
+             dignissim diam eu ultricies. Class aptent taciti sociosqu ad litora torquent
+             per conubia nostra, per inceptos himenaeos. Suspendisse erat diam, fringilla
+             sed massa sed, posuere viverra orci. Suspendisse tempor libero non gravida
+             efficitur. Vivamus lacinia risus non orci viverra, at consectetur odio laoreet.
+             Suspendisse potenti.
+
+             Phasellus vel nisi iaculis, accumsan quam sed, bibendum eros. Sed venenatis
+             nulla tortor, et eleifend urna sodales id. Nullam tempus ac metus sit amet
+             sollicitudin. Nam sed ex diam. Praesent vitae eros et neque condimentum
+             consectetur eget non tortor. Praesent bibendum vel felis nec dignissim.
+             Maecenas a enim diam. Suspendisse quis ligula at nisi accumsan lacinia id
+             hendrerit sapien. \u00F6Donec aliquam mattis lectus eu ultrices. Duis eu nisl\u00F6
+             euismod, blandit mauris vel, \u00F6placerat urna. Etiam malesuada enim purus,
+             tristique mollis odio blandit quis.\u00B6 Vivamus posuere. \u00F6
+             \u00F6
+            """.getBytes(charset);
+        longLatin1StartString = """
+             \u00F6
+             Lorem ipsum dolor sit amet, \u00B6consectetur adipiscing elit. Aliquam ac sem eu
+             urna egestas \u00F6placerat. Etiam finibus ipsum nulla, non mattis dolor cursus a.
+             Nulla \u00F6nec nisl consectetur, lacinia neque id, accumsan ante. Curabitur et
+             sapien in \u00F6magna porta ultricies. \u00F6Sed vel pellentesque nibh. Pellentesque dictum
+             dignissim diam eu ultricies. Class aptent taciti sociosqu ad litora torquent
+             per conubia nostra, per inceptos himenaeos. Suspendisse erat diam, fringilla
+             sed massa sed, posuere viverra orci. Suspendisse tempor libero non gravida
+             efficitur. Vivamus lacinia risus non orci viverra, at consectetur odio laoreet.
+             Suspendisse potenti.
+
+             Phasellus vel nisi iaculis, accumsan quam sed, bibendum eros. Sed venenatis
+             nulla tortor, et eleifend urna sodales id. Nullam tempus ac metus sit amet
+             sollicitudin. Nam sed ex diam. Praesent vitae eros et neque condimentum
+             consectetur eget non tortor. Praesent bibendum vel felis nec dignissim.
+             Maecenas a enim diam. Suspendisse quis ligula at nisi accumsan lacinia id
+             hendrerit sapien. Donec aliquam mattis lectus eu ultrices. Duis eu nisl
+             euismod, blandit mauris vel, placerat urna. Etiam malesuada enim purus,
+             tristique mollis odio blandit quis. Vivamus posuere.
+            """.getBytes(charset);
+
     }
 
     @Benchmark
@@ -132,8 +166,18 @@ public class StringDecode {
     }
 
     @Benchmark
-    public String decodeLatin1Long() throws Exception {
+    public String decodeLatin1Short() throws Exception {
         return new String(longLatin1String, charset);
+    }
+
+    @Benchmark
+    public String decodeLatin1StartLong() throws Exception {
+        return new String(longLatin1StartString, charset);
+    }
+
+    @Benchmark
+    public String decodeLatin1EndLong() throws Exception {
+        return new String(longLatin1EndString, charset);
     }
 
     @Benchmark

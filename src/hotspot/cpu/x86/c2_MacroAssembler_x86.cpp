@@ -3622,16 +3622,14 @@ void C2_MacroAssembler::has_negatives(Register ary1, Register len,
   load_unsigned_short(tmp1, Address(ary1, 0));
   andl(tmp1, 0x00008080);
   jccb(Assembler::notZero, TRUE_LABEL);
-  subptr(result, 2);
   lea(ary1, Address(ary1, 2));
 
   bind(COMPARE_BYTE);
   testl(result, 0x1);   // tail  byte
   jccb(Assembler::zero, FALSE_LABEL);
   load_unsigned_byte(tmp1, Address(ary1, 0));
-  andl(tmp1, 0x00000080);
-  jccb(Assembler::notEqual, TRUE_LABEL);
-  jmpb(FALSE_LABEL);
+  testl(tmp1, 0x00000080);
+  jccb(Assembler::zero, FALSE_LABEL);
 
   bind(TRUE_LABEL);
   movl(result, 1);   // return true
@@ -3648,6 +3646,221 @@ void C2_MacroAssembler::has_negatives(Register ary1, Register len,
     vpxor(vec2, vec2);
   }
 }
+
+void C2_MacroAssembler::count_positives(Register ary1, Register len,
+  Register result, Register tmp1,
+  XMMRegister vec1, XMMRegister vec2, KRegister mask1, KRegister mask2) {
+  // rsi: byte array
+  // rcx: len
+  // rax: result
+  ShortBranchVerifier sbv(this);
+  assert_different_registers(ary1, len, result, tmp1);
+  assert_different_registers(vec1, vec2);
+  Label TRUE_LABEL, FALSE_LABEL, DONE, COMPARE_CHAR, COMPARE_VECTORS, COMPARE_BYTE;
+
+  movl(result, len); // copy
+  // len == 0
+  testl(len, len);
+  jcc(Assembler::zero, FALSE_LABEL);
+
+  int tail_mask = 0xfffffffc;
+  if ((AVX3Threshold == 0) && (UseAVX > 2) && // AVX512
+    VM_Version::supports_avx512vlbw() &&
+    VM_Version::supports_bmi2()) {
+
+    Label test_64_loop, test_tail;
+    Register tmp3_aliased = len;
+
+    tail_mask = 0xffffffc0;
+
+    movl(tmp1, len);
+    vpxor(vec2, vec2, vec2, Assembler::AVX_512bit);
+
+    andl(tmp1, 64 - 1);   // tail count (in chars) 0x3F
+    andl(len, ~(64 - 1));    // vector count (in chars)
+    jccb(Assembler::zero, test_tail);
+
+    lea(ary1, Address(ary1, len, Address::times_1));
+    negptr(len);
+
+    bind(test_64_loop);
+    // Check whether our 64 elements of size byte contain negatives
+    evpcmpgtb(mask1, vec2, Address(ary1, len, Address::times_1), Assembler::AVX_512bit);
+    kortestql(mask1, mask1);
+    jcc(Assembler::notZero, TRUE_LABEL);
+
+    addptr(len, 64);
+    jccb(Assembler::notZero, test_64_loop);
+
+
+    bind(test_tail);
+    // bail out when there is nothing to be done
+    testl(tmp1, -1);
+    jcc(Assembler::zero, FALSE_LABEL);
+
+    // ~(~0 << len) applied up to two times (for 32-bit scenario)
+#ifdef _LP64
+    mov64(tmp3_aliased, 0xFFFFFFFFFFFFFFFF);
+    shlxq(tmp3_aliased, tmp3_aliased, tmp1);
+    notq(tmp3_aliased);
+    kmovql(mask2, tmp3_aliased);
+#else
+    Label k_init;
+    jmp(k_init);
+
+    // We could not read 64-bits from a general purpose register thus we move
+    // data required to compose 64 1's to the instruction stream
+    // We emit 64 byte wide series of elements from 0..63 which later on would
+    // be used as a compare targets with tail count contained in tmp1 register.
+    // Result would be a k register having tmp1 consecutive number or 1
+    // counting from least significant bit.
+    address tmp = pc();
+    emit_int64(0x0706050403020100);
+    emit_int64(0x0F0E0D0C0B0A0908);
+    emit_int64(0x1716151413121110);
+    emit_int64(0x1F1E1D1C1B1A1918);
+    emit_int64(0x2726252423222120);
+    emit_int64(0x2F2E2D2C2B2A2928);
+    emit_int64(0x3736353433323130);
+    emit_int64(0x3F3E3D3C3B3A3938);
+
+    bind(k_init);
+    lea(len, InternalAddress(tmp));
+    // create mask to test for negative byte inside a vector
+    evpbroadcastb(vec1, tmp1, Assembler::AVX_512bit);
+    evpcmpgtb(mask2, vec1, Address(len, 0), Assembler::AVX_512bit);
+
+#endif
+    evpcmpgtb(mask1, mask2, vec2, Address(ary1, 0), Assembler::AVX_512bit);
+    ktestq(mask1, mask2);
+    jcc(Assembler::notZero, TRUE_LABEL);
+
+    jmp(FALSE_LABEL);
+  } else {
+
+    if (UseAVX >= 2 && UseSSE >= 2) {
+      // With AVX2, use 32-byte vector compare
+      Label COMPARE_WIDE_VECTORS, COMPARE_TAIL;
+
+      // Compare 32-byte vectors
+      tail_mask = 0xffffffe0;
+      andl(len, 0xffffffe0);   // vector count (in bytes)
+      jccb(Assembler::zero, COMPARE_TAIL);
+
+      lea(ary1, Address(ary1, len, Address::times_1));
+      negptr(len);
+
+      movl(tmp1, 0x80808080);   // create mask to test for Unicode chars in vector
+      movdl(vec2, tmp1);
+      vpbroadcastd(vec2, vec2, Assembler::AVX_256bit);
+
+      bind(COMPARE_WIDE_VECTORS);
+      vmovdqu(vec1, Address(ary1, len, Address::times_1));
+      vptest(vec1, vec2);
+      jccb(Assembler::notZero, TRUE_LABEL);
+      addptr(len, 32);
+      jcc(Assembler::notZero, COMPARE_WIDE_VECTORS);
+
+      movl(tmp1, result);
+      andl(tmp1, 0x0000001f);  //   tail count (in bytes)
+      testl(tmp1, tmp1);
+      jccb(Assembler::zero, FALSE_LABEL);
+
+      vmovdqu(vec1, Address(ary1, tmp1, Address::times_1, -32));
+      vptest(vec1, vec2);
+      jccb(Assembler::notZero, TRUE_LABEL);
+      jmpb(FALSE_LABEL);
+
+      bind(COMPARE_TAIL); // len is zero
+      movl(len, result);
+      andl(len, 0x0000001f);  //   tail count (in bytes)
+      // Fallthru to tail compare
+    } else if (UseSSE42Intrinsics) {
+      // With SSE4.2, use double quad vector compare
+      Label COMPARE_WIDE_VECTORS, COMPARE_TAIL;
+
+      tail_mask = 0xfffffff0;
+      // Compare 16-byte vectors
+      andl(len, 0xfffffff0);   // vector count (in bytes)
+      jcc(Assembler::zero, COMPARE_TAIL);
+
+      lea(ary1, Address(ary1, len, Address::times_1));
+      negptr(len);
+
+      movl(tmp1, 0x80808080);
+      movdl(vec2, tmp1);
+      pshufd(vec2, vec2, 0);
+
+      bind(COMPARE_WIDE_VECTORS);
+      movdqu(vec1, Address(ary1, len, Address::times_1));
+      ptest(vec1, vec2);
+      jcc(Assembler::notZero, TRUE_LABEL);
+      addptr(len, 16);
+      jcc(Assembler::notZero, COMPARE_WIDE_VECTORS);
+
+      movl(tmp1, result);
+      andl(tmp1, 0x0000000f);  //   tail count (in bytes)
+      testl(tmp1, tmp1);
+      jcc(Assembler::zero, FALSE_LABEL);
+
+      movdqu(vec1, Address(ary1, tmp1, Address::times_1, -16));
+      ptest(vec1, vec2);
+      jccb(Assembler::notZero, TRUE_LABEL);
+      jmpb(FALSE_LABEL);
+
+      bind(COMPARE_TAIL); // len is zero
+      movl(len, result);
+      andl(len, 0x0000000f);  //   tail count (in bytes)
+      // Fallthru to tail compare
+    }
+  }
+  // Compare 4-byte vectors
+  andl(len, 0xfffffffc); // vector count (in bytes)
+  jccb(Assembler::zero, COMPARE_CHAR);
+
+  lea(ary1, Address(ary1, len, Address::times_1));
+  negptr(len);
+
+  bind(COMPARE_VECTORS);
+  movl(tmp1, Address(ary1, len, Address::times_1));
+  andl(tmp1, 0x80808080);
+  jccb(Assembler::notZero, TRUE_LABEL);
+  addptr(len, 4);
+  jcc(Assembler::notZero, COMPARE_VECTORS);
+
+  // Compare trailing char (final 2 bytes), if any
+  bind(COMPARE_CHAR);
+
+  testl(result, 0x2);   // tail  char
+  jccb(Assembler::zero, COMPARE_BYTE);
+  load_unsigned_short(tmp1, Address(ary1, 0));
+  andl(tmp1, 0x00008080);
+  jccb(Assembler::notZero, TRUE_LABEL);
+  lea(ary1, Address(ary1, 2));
+
+  bind(COMPARE_BYTE);
+  testl(result, 0x1);   // tail  byte
+  jccb(Assembler::zero, FALSE_LABEL);
+  load_unsigned_byte(tmp1, Address(ary1, 0));
+  testl(tmp1, 0x00000080);
+  jccb(Assembler::zero, FALSE_LABEL);
+
+  bind(TRUE_LABEL);
+  // there are negative bits: len holds the number of bytes left to scan in the main loop,
+  // also drop the tail from the result
+  addptr(result, len);  
+  andl(result, tail_mask);
+
+  bind(FALSE_LABEL);
+  // That's it
+  bind(DONE);
+  if (UseAVX >= 2 && UseSSE >= 2) {
+    // clean upper bits of YMM registers
+    vpxor(vec1, vec1);
+    vpxor(vec2, vec2);
+  }
+}
+
 // Compare char[] or byte[] arrays aligned to 4 bytes or substrings.
 void C2_MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register ary2,
                                       Register limit, Register result, Register chr,

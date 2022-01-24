@@ -358,6 +358,10 @@ class methodHandle;
    do_name(     hasNegatives_name,                               "hasNegatives")                                        \
    do_signature(hasNegatives_signature,                          "([BII)Z")                                             \
                                                                                                                         \
+  do_intrinsic(_countPositives,     java_lang_StringCoding, countPositives_name, countPositives_signature, F_S)         \
+   do_name(     countPositives_name,                       "countPositives")                                            \
+   do_signature(countPositives_signature,                  "([BII)I")                                                   \
+                                                                                                                        \
   do_class(sun_nio_cs_iso8859_1_Encoder,  "sun/nio/cs/ISO_8859_1$Encoder")                                              \
   do_intrinsic(_encodeISOArray,     sun_nio_cs_iso8859_1_Encoder, encodeISOArray_name, encodeISOArray_signature, F_S)   \
    do_name(     encodeISOArray_name,                             "implEncodeISOArray")                                  \
