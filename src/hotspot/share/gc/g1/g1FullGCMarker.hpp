@@ -71,8 +71,6 @@ class G1FullGCMarker : public CHeapObj<mtGC> {
   G1RegionMarkStatsCache _mark_stats_cache;
 
   inline bool is_empty();
-  inline bool pop_object(oop& obj);
-  inline bool pop_objarray(ObjArrayTask& array);
   inline void push_objarray(oop obj, size_t index);
   inline bool mark_object(oop obj);
 

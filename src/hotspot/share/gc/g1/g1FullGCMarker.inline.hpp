@@ -91,18 +91,10 @@ inline bool G1FullGCMarker::is_empty() {
   return _oop_stack.is_empty() && _objarray_stack.is_empty();
 }
 
-inline bool G1FullGCMarker::pop_object(oop& oop) {
-  return _oop_stack.pop_overflow(oop) || _oop_stack.pop_local(oop);
-}
-
 inline void G1FullGCMarker::push_objarray(oop obj, size_t index) {
   ObjArrayTask task(obj, index);
   assert(task.is_valid(), "bad ObjArrayTask");
   _objarray_stack.push(task);
-}
-
-inline bool G1FullGCMarker::pop_objarray(ObjArrayTask& arr) {
-  return _objarray_stack.pop_overflow(arr) || _objarray_stack.pop_local(arr);
 }
 
 inline void G1FullGCMarker::follow_array(objArrayOop array) {
