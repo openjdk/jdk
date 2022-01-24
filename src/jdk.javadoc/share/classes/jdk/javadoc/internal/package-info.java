@@ -161,5 +161,9 @@
  *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
+ *
+ * @see <a href="https://openjdk.java.net/groups/compiler/javadoc-architecture.html">JavaDoc Architecture</a>
+ * @see <a href="https://openjdk.java.net/groups/compiler/using-new-doclet.html">Using the new Doclet API</a>
+ * @see <a href="https://openjdk.java.net/groups/compiler/processing-code.html">Processing Code</a>
  */
 package jdk.javadoc.internal;
