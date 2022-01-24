@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import java.util.concurrent.Flow;
 import java.util.function.BiPredicate;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
-import jdk.internal.net.http.Http1Exchange.Http1BodySubscriber;
+import jdk.internal.net.http.Http1Exchange.Http1RequestBodySubscriber;
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
@@ -314,8 +314,8 @@ class Http1Request {
         return List.of(b);
     }
 
-    Http1BodySubscriber continueRequest()  {
-        Http1BodySubscriber subscriber;
+    Http1RequestBodySubscriber continueRequest()  {
+        Http1RequestBodySubscriber subscriber;
         if (streaming) {
             subscriber = new StreamSubscriber();
             requestPublisher.subscribe(subscriber);
@@ -329,7 +329,7 @@ class Http1Request {
         return subscriber;
     }
 
-    final class StreamSubscriber extends Http1BodySubscriber {
+    final class StreamSubscriber extends Http1RequestBodySubscriber {
 
         StreamSubscriber() { super(debug); }
 
@@ -392,7 +392,7 @@ class Http1Request {
         }
     }
 
-    final class FixedContentSubscriber extends Http1BodySubscriber {
+    final class FixedContentSubscriber extends Http1RequestBodySubscriber {
 
         private volatile long contentWritten;
         FixedContentSubscriber() { super(debug); }

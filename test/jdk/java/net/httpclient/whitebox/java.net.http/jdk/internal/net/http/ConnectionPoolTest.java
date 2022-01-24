@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -62,7 +63,6 @@ import jdk.internal.net.http.common.FlowTube;
  *          connection deadlines and purges the right connections
  *          from the cache.
  * @bug 8187044 8187111 8221395
- * @author danielfuchs
  */
 public class ConnectionPoolTest {
 
@@ -441,6 +441,8 @@ public class ConnectionPoolTest {
     // Emulates an HttpConnection that has a strong reference to its HttpClient.
     static class HttpConnectionStub extends HttpConnection {
 
+        static final AtomicLong IDS = new AtomicLong();
+
         public HttpConnectionStub(
                 HttpClient client,
                 InetSocketAddress address,
@@ -472,6 +474,12 @@ public class ConnectionPoolTest {
         final FlowTubeStub flow;
         final SocketChannel channel;
         volatile boolean closed, finished;
+
+        // Called from within super constructor
+        @Override
+        long newConnectionId(HttpClientImpl client) {
+            return IDS.incrementAndGet();
+        }
 
         // Used for testing closeOrReturnToPool.
         void finish(boolean finished) { this.finished = finished; }

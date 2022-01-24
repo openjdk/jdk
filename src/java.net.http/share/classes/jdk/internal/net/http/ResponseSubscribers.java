@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@ import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.Utils;
+import jdk.internal.net.http.HttpClientImpl.DelegatingExecutor;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class ResponseSubscribers {
@@ -1141,8 +1142,8 @@ public class ResponseSubscribers {
             assert cf != null;
 
             if (TrustedSubscriber.needsExecutor(bs)) {
-                e = (e instanceof HttpClientImpl.DelegatingExecutor)
-                        ? ((HttpClientImpl.DelegatingExecutor) e).delegate() : e;
+                e = (e instanceof DelegatingExecutor exec)
+                        ? exec::ensureExecutedAsync : e;
             }
 
             e.execute(() -> {
@@ -1155,12 +1156,14 @@ public class ResponseSubscribers {
                         }
                     });
                 } catch (Throwable t) {
+                    // the errorHandler will complete the CF
                     errorHandler.accept(t);
                 }
             });
             return cf;
 
         } catch (Throwable t) {
+            // the errorHandler will complete the CF
             errorHandler.accept(t);
         }
         return cf;
