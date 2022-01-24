@@ -83,6 +83,8 @@ public:
     _bytes [which][type] += byte_size;
   }
 
+  DEBUG_ONLY(void verify(int expected_byte_size, bool read_only) const;)
+
   void record_modules(int byte_size, bool read_only) {
     int which = (read_only) ? RO : RW;
     _bytes [which][ModulesNativesType] += byte_size;

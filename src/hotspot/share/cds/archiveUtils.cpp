@@ -202,12 +202,26 @@ void DumpRegion::commit_to(char* newtop) {
 }
 
 
-char* DumpRegion::allocate(size_t num_bytes) {
-  char* p = (char*)align_up(_top, (size_t)SharedSpaceObjectAlignment);
-  char* newtop = p + align_up(num_bytes, (size_t)SharedSpaceObjectAlignment);
+char* DumpRegion::allocate(size_t num_bytes, size_t alignment) {
+  // We align the starting address of each allocation.
+  char* p = (char*)align_up(_top, alignment);
+  char* newtop = p + num_bytes;
+  // Leave _top always SharedSpaceObjectAlignment aligned. But not more -
+  //  if we allocate with large alignments, lets not waste the gaps.
+  // Ideally we would not need to align _top to anything here but CDS has
+  //  a number of implicit alignment assumptions. Leaving this unaligned
+  //  here will trip of at least ReadClosure (assuming word alignment) and
+  //  DumpAllocStats (will get confused about counting bytes on 32-bit
+  //  platforms if we align to anything less than SharedSpaceObjectAlignment
+  //  here).
+  newtop = align_up(newtop, SharedSpaceObjectAlignment);
   expand_top_to(newtop);
-  memset(p, 0, newtop - p);
+  memset(p, 0, newtop - p); // todo: needed? debug_only?
   return p;
+}
+
+char* DumpRegion::allocate(size_t num_bytes) {
+  return allocate(num_bytes, SharedSpaceObjectAlignment);
 }
 
 void DumpRegion::append_intptr_t(intptr_t n, bool need_to_mark) {
@@ -301,7 +315,7 @@ void ReadClosure::do_tag(int tag) {
   int old_tag;
   old_tag = (int)(intptr_t)nextPtr();
   // do_int(&old_tag);
-  assert(tag == old_tag, "old tag doesn't match");
+  assert(tag == old_tag, "tag doesn't match (%d, expected %d)", old_tag, tag);
   FileMapInfo::assert_mark(tag == old_tag);
 }
 

@@ -142,10 +142,14 @@ private:
 public:
   DumpRegion(const char* name, uintx max_delta = 0)
     : _name(name), _base(NULL), _top(NULL), _end(NULL),
-      _max_delta(max_delta), _is_packed(false) {}
+      _max_delta(max_delta), _is_packed(false),
+      _rs(NULL), _vs(NULL) {}
 
   char* expand_top_to(char* newtop);
+  // Allocate with default alignment (SharedSpaceObjectAlignment)
   char* allocate(size_t num_bytes);
+  // Allocate with an arbitrary alignment.
+  char* allocate(size_t num_bytes, size_t alignment);
 
   void append_intptr_t(intptr_t n, bool need_to_mark = false);
 
