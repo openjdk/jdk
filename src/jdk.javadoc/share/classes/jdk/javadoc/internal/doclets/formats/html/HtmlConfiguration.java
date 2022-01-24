@@ -168,7 +168,7 @@ public class HtmlConfiguration extends BaseConfiguration {
     public final Set<ConditionalPage> conditionalPages;
 
     /**
-     * TRhe build date, to be recorded in generated files.
+     * The build date, to be recorded in generated files.
      */
     private Date buildDate;
 

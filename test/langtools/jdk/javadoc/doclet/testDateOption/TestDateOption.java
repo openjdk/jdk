@@ -31,13 +31,10 @@
  * @run main TestDateOption
  */
 
-import java.io.BufferedReader;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
-import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
 
 import javadoc.tester.JavadocTester;
 import toolbox.ToolBox;
