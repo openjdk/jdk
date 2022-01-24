@@ -928,7 +928,7 @@ public class BasicMenuItemUI extends MenuItemUI
      * All its functionality has been moved into Handler.
      * @deprecated
      */
-    @Deprecated(since = "17")
+    @Deprecated(since = "17", forRemoval = true)
     protected class MouseInputHandler implements MouseInputListener {
         // NOTE: This class exists only for backward compatibility. All
         // its functionality has been moved into Handler. If you need to add
