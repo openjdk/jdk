@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2022, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,6 +32,8 @@
 
 #ifndef OS_AIX_LOADLIB_AIX_HPP
 #define OS_AIX_LOADLIB_AIX_HPP
+
+#include "misc_aix.hpp"
 
 #include <stddef.h>
 
@@ -68,6 +71,37 @@ struct loaded_module_t {
 
 };
 
+// A linked-list storage container for loaded modules
+class LoadedModuleList {
+
+  private:
+    const loaded_module_t _module;
+    const LoadedModuleList* _next;
+
+  public:
+    LoadedModuleList(loaded_module_t module, LoadedModuleList* next) :
+      _module(module),
+      _next(next)
+    {}
+    ~LoadedModuleList() {
+      if (_next) {
+        delete _next;
+      }
+    }
+    const LoadedModuleList* next() const {
+      return _next;
+    }
+    const char* get_shortname() const {
+      return _module.shortname;
+    }
+    const uintptr_t get_text_area_base() const {
+      return (uintptr_t) _module.text;
+    }
+    const uintptr_t get_text_area_top() const {
+      return (uintptr_t) _module.text + _module.text_len;
+    }
+};
+
 // This class is a singleton holding a map of all loaded binaries
 // in the AIX process space.
 class LoadedLibraries
@@ -98,6 +132,9 @@ class LoadedLibraries
 
     // Output debug info
     static void print(outputStream* os);
+
+    // Copy information from the current list into a list starting from the given head.
+    static bool copy_list(LoadedModuleList**);
 
 };
 

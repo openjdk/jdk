@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1131,8 +1131,24 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
 }
 
 int os::get_loaded_modules_info(os::LoadedModulesCallbackFunc callback, void *param) {
-  // Not yet implemented.
-  return 0;
+  LoadedModuleList* head = nullptr;
+
+  if (!LoadedLibraries::copy_list(&head)) {
+    return -1;
+  }
+
+  for (const LoadedModuleList* entry = head; entry; entry = entry->next()) {
+    // const char* name -> address base -> address top -> void* param -> int
+    callback(entry->get_shortname(),
+             (address) entry->get_text_area_base(),
+             (address) entry->get_text_area_top(),
+             param);
+  }
+
+  if (!head) {
+    delete head;
+  }
+  return 0; // What value indicates success (>= 0)?
 }
 
 void os::print_os_info_brief(outputStream* st) {

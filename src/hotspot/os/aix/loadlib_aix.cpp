@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -304,6 +304,15 @@ cleanup:
 
 } // end LoadedLibraries::reload()
 
+static bool copy_list_internal(LoadedModuleList** head) {
+  *head = nullptr;
+
+  for (entry_t* e = g_first; e; e = e->next) {
+    *head = new LoadedModuleList(e->info, *head);
+  }
+
+  return true;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Externals
@@ -361,5 +370,19 @@ bool LoadedLibraries::find_for_data_address (
     return true;
   }
   return false;
+}
+
+bool LoadedLibraries::copy_list(LoadedModuleList** head) {
+  MiscUtils::AutoCritSect lck(&g_cs);
+
+  if (!g_first) {
+    if (!reload_table()) {
+      // If the table is not loaded and cannot be initialized,
+      // then we must quit.
+      return false;
+    }
+  }
+
+  return copy_list_internal(head);
 }
 
