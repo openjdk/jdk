@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -292,8 +292,7 @@ public class IndexWriter extends HtmlDocletWriter {
      */
     protected void addComment(Element element, Content contentTree) {
         Content span = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(element));
-        HtmlTree div = new HtmlTree(TagName.DIV);
-        div.setStyle(HtmlStyle.deprecationBlock);
+        HtmlTree div = HtmlTree.DIV(HtmlStyle.deprecationBlock);
         if (utils.isDeprecated(element)) {
             div.add(span);
             List<? extends DeprecatedTree> tags = utils.getDeprecatedTrees(element);

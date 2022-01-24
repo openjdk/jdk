@@ -1290,7 +1290,7 @@ public class Hashtable<K,V>
         // no larger than the clamped original length.  Make the length
         // odd if it's large enough, this helps distribute the entries.
         // Guard against the length ending up zero, that's not valid.
-        int length = (int)((elements + elements / 20) / lf) + 3;
+        int length = (int)(elements * 1.05f / lf) + 3;
         if (length > elements && (length & 1) == 0)
             length--;
         length = Math.min(length, origlength);
