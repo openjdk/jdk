@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,8 +181,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
     protected void addClassList(Content contentTree) {
         TableHeader classTableHeader = new TableHeader(
                 contents.classLabel, contents.descriptionLabel);
-        HtmlTree ul = new HtmlTree(TagName.UL);
-        ul.setStyle(HtmlStyle.blockList);
+        HtmlTree ul = HtmlTree.UL(HtmlStyle.blockList);
         for (String packageName : usingPackageToUsedClasses.keySet()) {
             PackageElement usingPackage = utils.elementUtils.getPackageElement(packageName);
             HtmlTree section = HtmlTree.SECTION(HtmlStyle.detail)

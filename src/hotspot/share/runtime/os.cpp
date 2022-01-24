@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1292,10 +1292,6 @@ FILE* os::fopen(const char* path, const char* mode) {
 #endif
 
   return file;
-}
-
-ssize_t os::read(int fd, void *buf, unsigned int nBytes) {
-  return ::read(fd, buf, nBytes);
 }
 
 bool os::set_boot_path(char fileSep, char pathSep) {

@@ -190,7 +190,7 @@ FileMapInfo::~FileMapInfo() {
     _dynamic_archive_info = NULL;
   }
   if (_file_open) {
-    os::close(_fd);
+    ::close(_fd);
   }
 }
 
@@ -767,6 +767,21 @@ int FileMapInfo::num_paths(const char* path) {
   return npaths;
 }
 
+// Returns true if a path within the paths exists and has non-zero size.
+bool FileMapInfo::check_paths_existence(const char* paths) {
+  ClasspathStream cp_stream(paths);
+  bool exist = false;
+  struct stat st;
+  while (cp_stream.has_next()) {
+    const char* path = cp_stream.get_next();
+    if (os::stat(path, &st) == 0 && st.st_size > 0) {
+      exist = true;
+      break;
+    }
+  }
+  return exist;
+}
+
 GrowableArray<const char*>* FileMapInfo::create_path_array(const char* paths) {
   GrowableArray<const char*>* path_array = new GrowableArray<const char*>(10);
   JavaThread* current = JavaThread::current();
@@ -850,7 +865,12 @@ bool FileMapInfo::validate_boot_class_paths() {
     if (relaxed_check) {
       return true;   // ok, relaxed check, runtime has extra boot append path entries
     } else {
-      mismatch = true;
+      ResourceMark rm;
+      if (check_paths_existence(rp)) {
+        // If a path exists in the runtime boot paths, it is considered a mismatch
+        // since there's no boot path specified during dump time.
+        mismatch = true;
+      }
     }
   } else if (dp_len > 0 && rp != NULL) {
     int num;
@@ -1070,7 +1090,7 @@ public:
 
   ~FileHeaderHelper() {
     if (_fd != -1) {
-      os::close(_fd);
+      ::close(_fd);
     }
   }
 
@@ -1092,7 +1112,7 @@ public:
     GenericCDSFileMapHeader gen_header;
     size_t size = sizeof(GenericCDSFileMapHeader);
     os::lseek(fd, 0, SEEK_SET);
-    size_t n = os::read(fd, (void*)&gen_header, (unsigned int)size);
+    size_t n = ::read(fd, (void*)&gen_header, (unsigned int)size);
     if (n != size) {
       FileMapInfo::fail_continue("Unable to read generic CDS file map header from shared archive");
       return false;
@@ -1125,7 +1145,7 @@ public:
     size = gen_header._header_size;
     _header = (GenericCDSFileMapHeader*)NEW_C_HEAP_ARRAY(char, size, mtInternal);
     os::lseek(fd, 0, SEEK_SET);
-    n = os::read(fd, (void*)_header, (unsigned int)size);
+    n = ::read(fd, (void*)_header, (unsigned int)size);
     if (n != size) {
       FileMapInfo::fail_continue("Unable to read actual CDS file map header from shared archive");
       return false;
@@ -1279,7 +1299,7 @@ bool FileMapInfo::init_from_file(int fd) {
   _header = (FileMapHeader*)os::malloc(gen_header->_header_size, mtInternal);
   os::lseek(fd, 0, SEEK_SET); // reset to begin of the archive
   size_t size = gen_header->_header_size;
-  size_t n = os::read(fd, (void*)_header, (unsigned int)size);
+  size_t n = ::read(fd, (void*)_header, (unsigned int)size);
   if (n != size) {
     fail_continue("Failed to read file header from the top archive file\n");
     return false;
@@ -1650,7 +1670,7 @@ void FileMapInfo::write_bytes_aligned(const void* buffer, size_t nbytes) {
 
 void FileMapInfo::close() {
   if (_file_open) {
-    if (os::close(_fd) < 0) {
+    if (::close(_fd) < 0) {
       fail_stop("Unable to close the shared archive file.");
     }
     _file_open = false;
@@ -1778,7 +1798,7 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
   if (MetaspaceShared::use_windows_memory_mapping() && rs.is_reserved()) {
     // This is the second time we try to map the archive(s). We have already created a ReservedSpace
     // that covers all the FileMapRegions to ensure all regions can be mapped. However, Windows
-    // can't mmap into a ReservedSpace, so we just os::read() the data. We're going to patch all the
+    // can't mmap into a ReservedSpace, so we just ::read() the data. We're going to patch all the
     // regions anyway, so there's no benefit for mmap anyway.
     if (!read_region(i, requested_addr, size, /* do_commit = */ true)) {
       log_info(cds)("Failed to read %s shared space into reserved space at " INTPTR_FORMAT,
@@ -1884,7 +1904,7 @@ bool FileMapInfo::relocate_pointers_in_core_regions(intx addr_delta) {
 
 size_t FileMapInfo::read_bytes(void* buffer, size_t count) {
   assert(_file_open, "Archive file is not open");
-  size_t n = os::read(_fd, buffer, (unsigned int)count);
+  size_t n = ::read(_fd, buffer, (unsigned int)count);
   if (n != count) {
     // Close the file if there's a problem reading it.
     close();
