@@ -91,8 +91,6 @@ class oopDesc {
   static inline void release_set_klass(HeapWord* mem, Klass* k);
 
   // For klass field compression
-  inline int klass_gap() const;
-  inline void set_klass_gap(int z);
   static inline void set_klass_gap(HeapWord* mem, int z);
 
   // size of object header, aligned to platform wordSize
