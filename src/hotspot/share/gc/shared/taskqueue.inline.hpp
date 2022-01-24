@@ -27,6 +27,8 @@
 
 #include "gc/shared/taskqueue.hpp"
 
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
@@ -79,6 +81,19 @@ void GenericTaskQueueSet<T, F>::reset_taskqueue_stats() {
   for (uint i = 0; i < n; ++i) {
     queue(i)->stats.reset();
   }
+}
+
+template <class T, MEMFLAGS F>
+inline void GenericTaskQueueSet<T, F>::print_and_reset_taskqueue_stats(const char* label) {
+  if (!log_is_enabled(Trace, gc, task, stats)) {
+    return;
+  }
+  Log(gc, task, stats) log;
+  ResourceMark rm;
+  LogStream ls(log.trace());
+
+  print_taskqueue_stats(&ls, label);
+  reset_taskqueue_stats();
 }
 #endif // TASKQUEUE_STATS
 

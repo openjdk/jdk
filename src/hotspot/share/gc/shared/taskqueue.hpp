@@ -480,6 +480,10 @@ private:
 public:
   void print_taskqueue_stats(outputStream* const st, const char* label);
   void reset_taskqueue_stats();
+
+  // Prints taskqueue set statistics into gc+task+stats=trace and resets
+  // its statistics.
+  void print_and_reset_taskqueue_stats(const char* label);
 #endif // TASKQUEUE_STATS
 };
 

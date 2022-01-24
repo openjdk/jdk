@@ -28,10 +28,6 @@
 #include "gc/shared/collectedHeap.hpp"
 
 #include "gc/shared/memAllocator.hpp"
-#include "gc/shared/taskqueue.inline.hpp"
-#include "logging/log.hpp"
-#include "logging/logStream.hpp"
-#include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/align.hpp"
 
@@ -49,20 +45,5 @@ inline oop CollectedHeap::class_allocate(Klass* klass, size_t size, TRAPS) {
   ClassAllocator allocator(klass, size, THREAD);
   return allocator.allocate();
 }
-
-#if TASKQUEUE_STATS
-template <class T, MEMFLAGS F>
-inline void CollectedHeap::print_and_reset_taskqueue_stats(GenericTaskQueueSet<T, F>* queue_set, const char* label) const {
-  if (!log_is_enabled(Trace, gc, task, stats)) {
-    return;
-  }
-  Log(gc, task, stats) log;
-  ResourceMark rm;
-  LogStream ls(log.trace());
-
-  queue_set->print_taskqueue_stats(&ls, label);
-  queue_set->reset_taskqueue_stats();
-}
-#endif // TASKQUEUE_STATS
 
 #endif // SHARE_GC_SHARED_COLLECTEDHEAP_INLINE_HPP

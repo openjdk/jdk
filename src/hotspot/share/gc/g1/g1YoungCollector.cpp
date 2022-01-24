@@ -1106,5 +1106,5 @@ void G1YoungCollector::collect() {
 
     policy()->record_young_collection_end(_concurrent_operation_is_full_mark, evacuation_failed());
   }
-  TASKQUEUE_STATS_ONLY(_g1h->print_and_reset_taskqueue_stats(_g1h->task_queues(), "Oop Queue");)
+  TASKQUEUE_STATS_ONLY(_g1h->task_queues()->print_and_reset_taskqueue_stats("Oop Queue");)
 }
