@@ -26,7 +26,6 @@
 package sun.net.www.protocol.http.spnego;
 
 import java.io.IOException;
-import java.security.cert.Certificate;
 
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSException;

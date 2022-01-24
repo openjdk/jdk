@@ -46,14 +46,6 @@ import java.util.Hashtable;
 
 public class TlsChannelBinding {
 
-    // TLS channel binding type property
-    public static final String CHANNEL_BINDING_TYPE =
-            "com.sun.jndi.ldap.tls.cbtype";
-
-    // internal TLS channel binding property
-    public static final String CHANNEL_BINDING =
-            "jdk.internal.sasl.tlschannelbinding";
-
     public enum TlsChannelBindingType {
 
         /**
@@ -76,25 +68,6 @@ public class TlsChannelBinding {
         TlsChannelBindingType(String name) {
             this.name = name;
         }
-    }
-
-    /**
-     * Parse value of "com.sun.jndi.ldap.tls.cbtype" property
-     * @param  cbType
-     * @return TLS Channel Binding type or null if
-     *         "com.sun.jndi.ldap.tls.cbtype" property has not been set.
-     * @throws ChannelBindingException
-     */
-    public static TlsChannelBindingType parseType(String cbType) throws ChannelBindingException {
-        if (cbType != null) {
-            if (cbType.equals(TlsChannelBindingType.TLS_SERVER_END_POINT.getName())) {
-                return TlsChannelBindingType.TLS_SERVER_END_POINT;
-            } else {
-                throw new ChannelBindingException("Illegal value for " +
-                        CHANNEL_BINDING_TYPE + " property.");
-            }
-        }
-        return null;
     }
 
     private final TlsChannelBindingType cbType;

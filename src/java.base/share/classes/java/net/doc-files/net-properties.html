@@ -216,7 +216,7 @@ of proxies.</P>
 	</OL>
 	<LI><P><B>{@systemProperty jdk.https.negotiate.cbt}</B> (default: &lt;never&gt;)<BR>
 	This controls the generation and sending of TLS channel binding tokens (CBT) when Kerberos 
-        or the Negotiate authentication scheme using Kerberos are employed over HTTPS with 
+        or the Negotiate authentication scheme using Kerberos are employed over HTTPS with
         {@code HttpsURLConnection}. There are three possible settings:</P>
         <OL>
           <LI><P>"never". This is also the default value if the property is not set. In this case,
@@ -227,6 +227,8 @@ of proxies.</P>
               or wildcards like *.foo.com which matches all hosts under foo.com and its sub-domains.
               CBTs are not sent to any destinations that don't match one of the list entries</P>
 	</OL>
+	<P>The channel binding tokens generated are of the type "tls-server-end-point" as defined in
+           RFC 5929.</P>
 </UL>
 <P>All these properties are checked only once at startup.</P>
 <a id="AddressCache"></a>

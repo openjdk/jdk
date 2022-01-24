@@ -26,7 +26,12 @@
  * @bug 8245527
  * @library lib/ /test/lib
  * @modules java.base/sun.security.util
+ * @run main/othervm LdapCBPropertiesTest true  true  com.sun.jndi.ldap.tls.cbtype tls-server-end-point
+ * @run main/othervm LdapCBPropertiesTest false false com.sun.jndi.ldap.tls.cbtype tls-server-end-point
+ * @run main/othervm LdapCBPropertiesTest true  true  com.sun.jndi.ldap.tls.cbtype tls-server-end-point com.sun.jndi.ldap.connect.timeout 2000
+ * @run main/othervm LdapCBPropertiesTest false false com.sun.jndi.ldap.tls.cbtype tls-server-end-point com.sun.jndi.ldap.connect.timeout 2000
  * @run main/othervm LdapCBPropertiesTest false true  com.sun.jndi.ldap.tls.cbtype tls-unknown
+ * @run main/othervm LdapCBPropertiesTest false true  jdk.internal.sasl.tlschannelbinding value
  * @summary test new JNDI property to control the Channel Binding data
  */
 
@@ -185,7 +190,8 @@ public class LdapCBPropertiesTest {
                 }
             }
         }
-        if (!shouldPass && ne.getRootCause() instanceof ChannelBindingException) {
+        Throwable rc = ne.getRootCause();
+        if (!shouldPass && (rc == null || rc instanceof ChannelBindingException)) {
             // Expected exception caused by Channel Binding parameter inconsistency
             return true;
         }
