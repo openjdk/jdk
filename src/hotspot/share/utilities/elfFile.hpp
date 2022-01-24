@@ -391,7 +391,7 @@ class DwarfFile : public ElfFile {
 
     static bool does_match_offset(uint32_t offset_in_library, const AddressDescriptor& descriptor) ;
     bool read_address_descriptor(AddressDescriptor& descriptor);
-    static bool is_last_entry(const AddressDescriptor& descriptor);
+    static bool is_terminating_entry(const AddressDescriptor& descriptor);
    public:
     DebugAranges(DwarfFile* dwarf_file) : _dwarf_file(dwarf_file), _reader(dwarf_file->fd()), _section_start_address(0) {}
     bool find_compilation_unit_offset(uint32_t offset_in_library, uint32_t* compilation_unit_offset);
@@ -517,6 +517,17 @@ class DwarfFile : public ElfFile {
   //         => Specifies Offset to line number program for this compilation unit in .debug_line
   class DebugAbbrev {
 
+    struct AbbreviationDeclaration {
+      uint64_t _abbrev_code;
+      uint64_t _tag;
+      uint8_t _has_children;
+    };
+
+    struct AttributeSpecification {
+      uint64_t _name;
+      uint64_t _form;
+    };
+
     // Tag encoding from Figure 18 in section 7.5 of the DWARF 4 spec.
     static constexpr uint8_t DW_TAG_compile_unit = 0x11;
 
@@ -535,7 +546,11 @@ class DwarfFile : public ElfFile {
     // Result field of a request
     uint32_t* _debug_line_offset;
 
+    bool read_declaration(AbbreviationDeclaration& declaration);
+    static bool is_wrong_or_unsupported_format(const AbbreviationDeclaration& declaration);
     bool read_attribute_specifications(bool is_DW_TAG_compile_unit);
+    bool read_attribute_specification(AttributeSpecification& specification);
+    static bool is_terminating_specification(const AttributeSpecification& attribute_specification) ;
 
    public:
     DebugAbbrev(DwarfFile* dwarf_file, CompilationUnit* compilation_unit) :
