@@ -503,7 +503,9 @@ public class TrueTypeFont extends FileFont {
                 /* checksum */ ibuffer.get();
                 table.offset = ibuffer.get() & 0x7FFFFFFF;
                 table.length = ibuffer.get() & 0x7FFFFFFF;
-                if (table.offset + table.length > fileSize) {
+                if ((table.offset + table.length < table.length) ||
+                    (table.offset + table.length > fileSize))
+                {
                     throw new FontFormatException("bad table, tag="+table.tag);
                 }
             }
@@ -798,8 +800,11 @@ public class TrueTypeFont extends FileFont {
                 break;
             }
         }
+
         if (entry == null || entry.length == 0 ||
-            entry.offset+entry.length > fileSize) {
+            (entry.offset + entry.length < entry.length) ||
+            (entry.offset + entry.length > fileSize))
+        {
             return null;
         }
 
@@ -888,6 +893,9 @@ public class TrueTypeFont extends FileFont {
             return false;
         }
         ByteBuffer eblcTable = getTableBuffer(EBLCTag);
+        if (eblcTable == null) {
+            return false;
+        }
         int numSizes = eblcTable.getInt(4);
         /* The bitmapSizeTable's start at offset of 8.
          * Each bitmapSizeTable entry is 48 bytes.

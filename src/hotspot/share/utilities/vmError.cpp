@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1654,7 +1654,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     _current_step_info = "";
 
     if (fd_log > 3) {
-      close(fd_log);
+      ::close(fd_log);
       fd_log = -1;
     }
 
@@ -1676,7 +1676,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
       const bool overwrite = false; // We do not overwrite an existing replay file.
       int fd = prepare_log_file(ReplayDataFile, "replay_pid%p.log", overwrite, buffer, sizeof(buffer));
       if (fd != -1) {
-        FILE* replay_data_file = os::open(fd, "w");
+        FILE* replay_data_file = os::fdopen(fd, "w");
         if (replay_data_file != NULL) {
           fileStream replay_data_stream(replay_data_file, /*need_close=*/true);
           env->dump_replay_data_unsafe(&replay_data_stream);

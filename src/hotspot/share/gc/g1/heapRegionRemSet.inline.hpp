@@ -123,10 +123,7 @@ void HeapRegionRemSet::split_card(OopOrNarrowOopStar from, uint& card_region, ui
 }
 
 void HeapRegionRemSet::add_reference(OopOrNarrowOopStar from, uint tid) {
-  RemSetState state = _state;
-  if (state == Untracked) {
-    return;
-  }
+  assert(_state != Untracked, "must be");
 
   uint cur_idx = _hr->hrm_index();
   uintptr_t from_card = uintptr_t(from) >> CardTable::card_shift();

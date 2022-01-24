@@ -2833,7 +2833,7 @@ public class Cipher {
                 break;
             default:
                 // should never happen
-                sb.append("error:").append(Integer.toString(opmode));
+                sb.append("error:").append(opmode);
         }
         sb.append(", algorithm from: ").append(getProviderName());
         return sb.toString();

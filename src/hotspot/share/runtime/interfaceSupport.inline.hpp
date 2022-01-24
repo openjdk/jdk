@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -120,29 +120,6 @@ class ThreadStateTransition : public StackObj {
   }
 };
 
-class ThreadInVMForHandshake : public ThreadStateTransition {
-  const JavaThreadState _original_state;
- public:
-  ThreadInVMForHandshake(JavaThread* thread) : ThreadStateTransition(thread),
-      _original_state(thread->thread_state()) {
-
-    if (thread->has_last_Java_frame()) {
-      thread->frame_anchor()->make_walkable(thread);
-    }
-
-    thread->set_thread_state(_thread_in_vm);
-
-    // Threads shouldn't block if they are in the middle of printing, but...
-    ttyLocker::break_tty_lock_for_safepoint(os::current_thread_id());
-  }
-
-  ~ThreadInVMForHandshake() {
-    assert(_thread->thread_state() == _thread_in_vm, "should only call when leaving VM after handshake");
-    _thread->set_thread_state(_original_state);
-  }
-
-};
-
 class ThreadInVMfromJava : public ThreadStateTransition {
   bool _check_asyncs;
  public:
@@ -222,7 +199,7 @@ class ThreadBlockInVMPreprocess : public ThreadStateTransition {
   PRE_PROC& _pr;
   bool _allow_suspend;
  public:
-  ThreadBlockInVMPreprocess(JavaThread* thread, PRE_PROC& pr = emptyOp, bool allow_suspend = false)
+  ThreadBlockInVMPreprocess(JavaThread* thread, PRE_PROC& pr, bool allow_suspend = false)
     : ThreadStateTransition(thread), _pr(pr), _allow_suspend(allow_suspend) {
     transition_from_vm(thread, _thread_blocked);
   }
@@ -236,11 +213,15 @@ class ThreadBlockInVMPreprocess : public ThreadStateTransition {
       SafepointMechanism::process_if_requested(_thread, _allow_suspend);
     }
   }
-
-  static void emptyOp(JavaThread* current) {}
 };
 
-typedef ThreadBlockInVMPreprocess<> ThreadBlockInVM;
+class ThreadBlockInVM  : public ThreadBlockInVMPreprocess<> {
+ public:
+  ThreadBlockInVM(JavaThread* thread, bool allow_suspend = false)
+    : ThreadBlockInVMPreprocess(thread, emptyOp, allow_suspend) {}
+ private:
+  static void emptyOp(JavaThread* current) {}
+};
 
 
 // Debug class instantiated in JRT_ENTRY macro.
