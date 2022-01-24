@@ -178,16 +178,16 @@ inline bool G1FullGCMarker::transfer_objArray_overflow_stack(ObjArrayTask& task)
 
 void G1FullGCMarker::drain_stack() {
   do {
+    // First, drain regular oop stack.
     drain_oop_stack();
 
-    // Process ObjArrays one at a time to avoid marking stack bloat.
+    // Then process ObjArrays one at a time to avoid marking stack bloat.
     ObjArrayTask task;
     if (transfer_objArray_overflow_stack(task) ||
       _objarray_stack.pop_local(task)) {
       follow_array_chunk(objArrayOop(task.obj()), task.index());
     }
   } while (!is_empty());
-  return;
 }
 
 inline void G1FullGCMarker::follow_klass(Klass* k) {
