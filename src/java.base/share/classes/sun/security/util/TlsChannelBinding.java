@@ -70,6 +70,24 @@ public class TlsChannelBinding {
         }
     }
 
+    /**
+     * Parse given value to see if it is a recognized and supported channel binding type
+     *
+     * @param  cbType
+     * @return TLS Channel Binding type or null if given string is null
+     * @throws ChannelBindingException
+     */
+    public static TlsChannelBindingType parseType(String cbType) throws ChannelBindingException {
+        if (cbType != null) {
+            if (cbType.equals(TlsChannelBindingType.TLS_SERVER_END_POINT.getName())) {
+                return TlsChannelBindingType.TLS_SERVER_END_POINT;
+            } else {
+                throw new ChannelBindingException("Illegal value for channel binding type: " + cbType);
+            }
+        }
+        return null;
+    }
+
     private final TlsChannelBindingType cbType;
     private final byte[] cbData;
 
