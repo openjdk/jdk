@@ -1126,7 +1126,7 @@ public final class Main {
             }
         }
 
-        buildTrustedCerts();
+        KeyStore cakstore = buildTrustedCerts();
         // -trustcacerts can be specified on -importcert, -printcert or -printcrl.
         // Reset it so that warnings on CA cert will remain for other command.
         if (command != IMPORTCERT && command != PRINTCERT
@@ -1135,7 +1135,7 @@ public final class Main {
         }
 
         if (trustcacerts) {
-            caks = KeyStoreUtil.getCacertsKeyStore();
+            caks = cakstore;
         }
 
         // Perform the specified command
@@ -4902,16 +4902,18 @@ public final class Main {
                             rb.getString("whose.sigalg.weak"), label, sigAlg));
                 }
             } catch (CertPathValidatorException e) {
-                String eMessage = e.getMessage();
-                if (eMessage.contains("denyAfter constraint check failed") &&
+                if (e.getMessage().contains("denyAfter constraint check failed") &&
                         e.getReason() == BasicReason.ALGORITHM_CONSTRAINED) {
-                    String separator = "java.security: ";
-                    int sepPos = eMessage.indexOf(separator);
+
+                    String prop = Security.getProperty("jdk.certpath.disabledAlgorithms");
+                    String separator = "denyAfter ";
+                    int sepPos = prop.indexOf(separator);
                     String denyAfterDate = "0000-00-00";
                     if (sepPos > 0) {
-                        denyAfterDate = eMessage.substring(sepPos + separator.length(),
+                        denyAfterDate = prop.substring(sepPos + separator.length(),
                                 sepPos + separator.length() + denyAfterDate.length());
                     }
+
                     weakWarnings.add(String.format(
                             rb.getString("whose.sigalg.usagesignedjar"), label, sigAlg,
                             denyAfterDate));
@@ -5030,9 +5032,10 @@ public final class Main {
         }
     }
 
-    private void buildTrustedCerts() {
+    private KeyStore buildTrustedCerts() {
+        KeyStore caks = null;
         try {
-            KeyStore caks = KeyStoreUtil.getCacertsKeyStore();
+            caks = KeyStoreUtil.getCacertsKeyStore();
             if (caks != null) {
                 Enumeration<String> aliases = caks.aliases();
                 while (aliases.hasMoreElements()) {
@@ -5047,6 +5050,7 @@ public final class Main {
         } catch (Exception e) {
             // Ignore, if cacerts cannot be loaded
         }
+        return caks;
     }
 
     private TrustAnchor findTrustAnchor(List<X509Certificate> chain) {
