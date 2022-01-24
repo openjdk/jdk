@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,9 +121,9 @@ public final class Bidi {
      *
      * @param paragraph a paragraph of text with optional character and paragraph attribute information
      *
-     * @see java.awt.font.TextAttribute#BIDI_EMBEDDING
-     * @see java.awt.font.TextAttribute#NUMERIC_SHAPING
-     * @see java.awt.font.TextAttribute#RUN_DIRECTION
+     * @see java.desktop/java.awt.font.TextAttribute#BIDI_EMBEDDING
+     * @see java.desktop/java.awt.font.TextAttribute#NUMERIC_SHAPING
+     * @see java.desktop/java.awt.font.TextAttribute#RUN_DIRECTION
      */
     public Bidi(AttributedCharacterIterator paragraph) {
         if (paragraph == null) {

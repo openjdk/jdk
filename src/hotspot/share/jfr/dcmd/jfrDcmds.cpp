@@ -420,9 +420,6 @@ void JfrConfigureFlightRecorderDCmd::print_help(const char* name) const {
   out->print_cr("                     performance and is not recommended. This value cannot be changed");
   out->print_cr("                     once JFR has been initialized. (STRING, 8k)");
   out->print_cr("");
-  out->print_cr("  samplethreads      (Optional) Flag for activating thread sampling. This value cannot");
-  out->print_cr("                     be changed once JFR has been initialized. (BOOLEAN, true)");
-  out->print_cr("");
   out->print_cr("Options must be specified using the <key> or <key>=<value> syntax.");
   out->print_cr("");
   out->print_cr("Example usage:");
@@ -477,7 +474,6 @@ void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, TRAPS) {
   jobject thread_buffer_size = NULL;
   jobject max_chunk_size = NULL;
   jobject memory_size = NULL;
-  jobject sample_threads = NULL;
 
   if (!JfrRecorder::is_created()) {
     if (_stack_depth.is_set()) {
@@ -499,7 +495,13 @@ void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, TRAPS) {
       memory_size = JfrJavaSupport::new_java_lang_Long(_memory_size.value()._size, CHECK);
     }
     if (_sample_threads.is_set()) {
-      sample_threads = JfrJavaSupport::new_java_lang_Boolean(_sample_threads.value(), CHECK);
+      bool startup = DCmd_Source_Internal == source;
+      if (startup) {
+        log_warning(jfr,startup)("%s", "Option samplethreads is deprecated. Use -XX:StartFlightRecording:method-profiling=<off|normal|high|max>");
+      } else {
+        output()->print_cr("%s", "Option samplethreads is deprecated. Use JFR.start method-profiling=<off|normal|high|max>");
+        output()->print_cr("");
+      }
     }
   }
 
@@ -507,7 +509,7 @@ void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, TRAPS) {
   static const char method[] = "execute";
   static const char signature[] = "(ZLjava/lang/String;Ljava/lang/String;Ljava/lang/Integer;"
     "Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;"
-    "Ljava/lang/Long;Ljava/lang/Boolean;)[Ljava/lang/String;";
+    "Ljava/lang/Long;)[Ljava/lang/String;";
 
   JfrJavaArguments execute_args(&result, klass, method, signature, CHECK);
   execute_args.set_receiver(h_dcmd_instance);
@@ -522,7 +524,6 @@ void JfrConfigureFlightRecorderDCmd::execute(DCmdSource source, TRAPS) {
   execute_args.push_jobject(thread_buffer_size);
   execute_args.push_jobject(memory_size);
   execute_args.push_jobject(max_chunk_size);
-  execute_args.push_jobject(sample_threads);
 
   JfrJavaSupport::call_virtual(&execute_args, THREAD);
   handle_dcmd_result(output(), result.get_oop(), source, THREAD);

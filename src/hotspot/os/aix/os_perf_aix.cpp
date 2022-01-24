@@ -451,6 +451,7 @@ SystemProcessInterface::SystemProcesses::SystemProcesses() {
 
 bool SystemProcessInterface::SystemProcesses::initialize() {
   return initialize_libperfstat();
+
 }
 
 SystemProcessInterface::SystemProcesses::~SystemProcesses() {

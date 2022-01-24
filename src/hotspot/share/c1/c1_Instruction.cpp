@@ -529,9 +529,10 @@ void BlockBegin::set_end(BlockEnd* new_end) { // Assumes that no predecessor of 
   if (new_end == _end) return;
 
   // Remove this block as predecessor of its current successors
-  if (_end != NULL)
-  for (int i = 0; i < number_of_sux(); i++) {
-    sux_at(i)->remove_predecessor(this);
+  if (_end != NULL) {
+    for (int i = 0; i < number_of_sux(); i++) {
+      sux_at(i)->remove_predecessor(this);
+    }
   }
 
   _end = new_end;
@@ -800,6 +801,11 @@ bool BlockBegin::try_merge(ValueStack* new_state) {
           existing_phi->make_illegal();
           existing_state->invalidate_local(index);
           TRACE_PHI(tty->print_cr("invalidating local %d because of type mismatch", index));
+        }
+
+        if (existing_value != new_state->local_at(index) && existing_value->as_Phi() == NULL) {
+          TRACE_PHI(tty->print_cr("required phi for local %d is missing, irreducible loop?", index));
+          return false; // BAILOUT in caller
         }
       }
 

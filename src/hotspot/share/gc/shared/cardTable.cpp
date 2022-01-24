@@ -162,16 +162,6 @@ int CardTable::find_covering_region_by_base(HeapWord* base) {
   return res;
 }
 
-int CardTable::find_covering_region_containing(HeapWord* addr) {
-  for (int i = 0; i < _cur_covered_regions; i++) {
-    if (_covered[i].contains(addr)) {
-      return i;
-    }
-  }
-  assert(0, "address outside of heap?");
-  return -1;
-}
-
 HeapWord* CardTable::largest_prev_committed_end(int ind) const {
   HeapWord* max_end = NULL;
   for (int j = 0; j < ind; j++) {

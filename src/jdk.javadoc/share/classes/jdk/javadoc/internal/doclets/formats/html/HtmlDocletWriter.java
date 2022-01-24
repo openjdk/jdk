@@ -2380,8 +2380,7 @@ public class HtmlDocletWriter {
                 Content leadingNote = contents.getContent("doclet.PreviewLeadingNote", nameCode);
                 previewDiv.add(HtmlTree.SPAN(HtmlStyle.previewLabel,
                                              leadingNote));
-                HtmlTree ul = new HtmlTree(TagName.UL);
-                ul.setStyle(HtmlStyle.previewComment);
+                HtmlTree ul = HtmlTree.UL(HtmlStyle.previewComment);
                 for (Content note : previewNotes) {
                     ul.add(HtmlTree.LI(note));
                 }

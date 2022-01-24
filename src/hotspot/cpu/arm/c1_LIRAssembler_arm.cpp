@@ -1680,6 +1680,9 @@ void LIR_Assembler::logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
     } else {
       assert(right->is_constant(), "must be");
       const uint c = (uint)right->as_constant_ptr()->as_jint();
+      if (!Assembler::is_arith_imm_in_range(c)) {
+        BAILOUT("illegal arithmetic operand");
+      }
       switch (code) {
         case lir_logic_and: __ and_32(res, lreg, c); break;
         case lir_logic_or:  __ orr_32(res, lreg, c); break;
@@ -1820,8 +1823,8 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
         __ teq(xhi, yhi);
         __ teq(xlo, ylo, eq);
       } else {
-        __ subs(xlo, xlo, ylo);
-        __ sbcs(xhi, xhi, yhi);
+        __ subs(Rtemp, xlo, ylo);
+        __ sbcs(Rtemp, xhi, yhi);
       }
     } else {
       ShouldNotReachHere();

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -847,6 +847,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_HSDIS],
       AC_CHECK_LIB(opcodes, disassembler, [ HSDIS_LIBS="$HSDIS_LIBS -lopcodes" ], [ binutils_system_error="libopcodes not found" ])
       AC_CHECK_LIB(iberty, xmalloc, [ HSDIS_LIBS="$HSDIS_LIBS -liberty" ], [ binutils_system_error="libiberty not found" ])
       AC_CHECK_LIB(z, deflate, [ HSDIS_LIBS="$HSDIS_LIBS -lz" ], [ binutils_system_error="libz not found" ])
+      HSDIS_CFLAGS="-DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB"
     elif test "x$BINUTILS_DIR" != x; then
       if test -e $BINUTILS_DIR/bfd/libbfd.a && \
           test -e $BINUTILS_DIR/opcodes/libopcodes.a && \
@@ -864,7 +865,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_HSDIS],
           AC_MSG_ERROR([binutils on system is supported for Linux only])
         elif test "x$binutils_system_error" = x; then
           AC_MSG_RESULT([system])
-          HSDIS_CFLAGS="-DSYSTEM_BINUTILS"
+          HSDIS_CFLAGS="$HSDIS_CFLAGS -DSYSTEM_BINUTILS"
         else
           AC_MSG_RESULT([invalid])
           AC_MSG_ERROR([$binutils_system_error])
