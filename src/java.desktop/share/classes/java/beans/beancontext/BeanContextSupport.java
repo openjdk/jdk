@@ -310,11 +310,11 @@ public class      BeanContextSupport extends BeanContextChildSupport
      */
     protected class BCSChild implements Serializable {
 
-    /**
-     * Use serialVersionUID from JDK 1.7 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -5815286101609939109L;
+        /**
+         * Use serialVersionUID from JDK 1.7 for interoperability.
+         */
+        @Serial
+        private static final long serialVersionUID = -5815286101609939109L;
 
         BCSChild(Object bcc, Object peer) {
             super();

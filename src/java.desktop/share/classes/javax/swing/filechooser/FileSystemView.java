@@ -350,7 +350,7 @@ public abstract class FileSystemView {
      * Returns a <code>File</code> object which is normally constructed with <code>new
      * File(parent, fileName)</code> except when the parent and child are both
      * special folders, in which case the <code>File</code> is a wrapper containing
-     * a <code>ShellFolder</code> object.
+     * a ShellFolder object.
      *
      * @param parent a <code>File</code> object representing a directory or special folder
      * @param fileName a name of a file or folder which exists in <code>parent</code>
