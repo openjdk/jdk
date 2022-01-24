@@ -487,13 +487,13 @@ extern "C" JNIEXPORT void pp(void* p) {
     // With NMT
     if (MemTracker::enabled()) {
       const NMT_TrackingLevel tracking_level = MemTracker::tracking_level();
-      // Check if it is in a known mmap'd memory region
-      const ReservedMemoryRegion* rgn = VirtualMemoryTracker::find_region(p);
-      if (rgn != nullptr) {
+      ReservedMemoryRegion region(0, 0);
+      // Check and snapshot a mmap'd region that contains the pointer
+      if (VirtualMemoryTracker::snapshot_region_contains(p, region)) {
         tty->print_cr(PTR_FORMAT " in mmap'd memory region [" PTR_FORMAT " - " PTR_FORMAT "] by %s",
-          p2i(p), p2i(rgn->base()), p2i(rgn->base() + rgn->size()), rgn->flag_name());
+          p2i(p), p2i(region.base()), p2i(region.base() + region.size()), region.flag_name());
         if (tracking_level == NMT_detail) {
-          rgn->call_stack()->print_on(tty);
+          region.call_stack()->print_on(tty);
           tty->cr();
         }
         return;
