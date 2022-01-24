@@ -2689,6 +2689,8 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                             else
                                 prev = right;
                         } else {
+                            if (curr == null)
+                                throw error("Bad intersection syntax");
                             prev = prev.and(curr);
                         }
                     } else {

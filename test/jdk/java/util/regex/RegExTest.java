@@ -4547,4 +4547,13 @@ public class RegExTest {
                 Pattern.compile(pattern));
         assertTrue(e.getMessage().contains("Unescaped trailing backslash"));
     }
+
+    //This test is for
+    @Test
+    public static void badIntersectionSyntax() {
+        String pattern = "[˜\\H +F&&]";
+        var e = expectThrows(PatternSyntaxException.class, () ->
+                Pattern.compile(pattern));
+        assertTrue(e.getMessage().contains("Bad intersection syntax"));
+    }
 }
