@@ -562,6 +562,8 @@ public:
   virtual IfFalseNode* outer_loop_exit() const;
   virtual SafePointNode* outer_safepoint() const;
   void adjust_strip_mined_loop(PhaseIterGVN* igvn);
+
+  void remove_outer_loop_and_safepoint(PhaseIterGVN* igvn) const;
 };
 
 class OuterStripMinedLoopEndNode : public IfNode {
