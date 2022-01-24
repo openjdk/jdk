@@ -68,13 +68,7 @@ void ObjectStartArray::initialize(MemRegion reserved_region) {
   _virtual_space.initialize(backing_store);
 
   _raw_base = (jbyte*)_virtual_space.low_boundary();
-
-  if (_raw_base == NULL) {
-    vm_exit_during_initialization("Could not get raw_base address");
-  }
-
-  MemTracker::record_virtual_memory_type((address)_raw_base, mtGC);
-
+  assert(_raw_base != nullptr, "set from the backing_store");
 
   _offset_base = _raw_base - (size_t(reserved_region.start()) >> _card_shift);
 

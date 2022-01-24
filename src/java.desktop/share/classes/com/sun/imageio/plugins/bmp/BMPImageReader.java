@@ -52,6 +52,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import javax.imageio.IIOException;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReadParam;
@@ -223,6 +224,33 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
         }
     }
 
+    private void readColorPalette(int sizeOfPalette) throws IOException {
+        final int UNIT_SIZE = 1024000;
+        if (sizeOfPalette < UNIT_SIZE) {
+            palette = new byte[sizeOfPalette];
+            iis.readFully(palette, 0, sizeOfPalette);
+        } else {
+            int bytesToRead = sizeOfPalette;
+            int bytesRead = 0;
+            List<byte[]> bufs = new ArrayList<>();
+            while (bytesToRead != 0) {
+                int sz = Math.min(bytesToRead, UNIT_SIZE);
+                byte[] unit = new byte[sz];
+                iis.readFully(unit, 0, sz);
+                bufs.add(unit);
+                bytesRead += sz;
+                bytesToRead -= sz;
+            }
+            byte[] paletteData = new byte[bytesRead];
+            int copiedBytes = 0;
+            for (byte[] ba : bufs) {
+                System.arraycopy(ba, 0, paletteData, copiedBytes, ba.length);
+                copiedBytes += ba.length;
+            }
+            palette = paletteData;
+        }
+    }
+
     /**
      * Process the image header.
      *
@@ -305,8 +333,7 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
             // Read in the palette
             int numberOfEntries = (int)((bitmapOffset - 14 - size) / 3);
             int sizeOfPalette = numberOfEntries*3;
-            palette = new byte[sizeOfPalette];
-            iis.readFully(palette, 0, sizeOfPalette);
+            readColorPalette(sizeOfPalette);
             metadata.palette = palette;
             metadata.paletteSize = numberOfEntries;
         } else {
@@ -343,8 +370,7 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
                     }
                     int numberOfEntries = (int)((bitmapOffset-14-size) / 4);
                     int sizeOfPalette = numberOfEntries * 4;
-                    palette = new byte[sizeOfPalette];
-                    iis.readFully(palette, 0, sizeOfPalette);
+                    readColorPalette(sizeOfPalette);
 
                     metadata.palette = palette;
                     metadata.paletteSize = numberOfEntries;
@@ -404,8 +430,7 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
                     if (colorsUsed != 0) {
                         // there is a palette
                         sizeOfPalette = (int)colorsUsed*4;
-                        palette = new byte[sizeOfPalette];
-                        iis.readFully(palette, 0, sizeOfPalette);
+                        readColorPalette(sizeOfPalette);
 
                         metadata.palette = palette;
                         metadata.paletteSize = (int)colorsUsed;
@@ -430,8 +455,7 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
                 // Read in the palette
                 int numberOfEntries = (int)((bitmapOffset-14-size) / 4);
                 int sizeOfPalette = numberOfEntries*4;
-                palette = new byte[sizeOfPalette];
-                iis.readFully(palette, 0, sizeOfPalette);
+                readColorPalette(sizeOfPalette);
                 metadata.palette = palette;
                 metadata.paletteSize = numberOfEntries;
 
@@ -529,8 +553,7 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
                 // Read in the palette
                 int numberOfEntries = (int)((bitmapOffset-14-size) / 4);
                 int sizeOfPalette = numberOfEntries*4;
-                palette = new byte[sizeOfPalette];
-                iis.readFully(palette, 0, sizeOfPalette);
+                readColorPalette(sizeOfPalette);
                 metadata.palette = palette;
                 metadata.paletteSize = numberOfEntries;
 
@@ -592,7 +615,7 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
         }
 
         if (metadata.compression == BI_RGB) {
-            long imageDataSize = (width * height * (bitsPerPixel / 8));
+            long imageDataSize = ((long)width * height * (bitsPerPixel / 8));
             if (imageDataSize > (bitmapFileSize - bitmapOffset)) {
                 throw new IIOException(I18N.getString("BMPImageReader9"));
             }

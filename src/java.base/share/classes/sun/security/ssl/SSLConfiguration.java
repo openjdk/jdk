@@ -97,7 +97,7 @@ final class SSLConfiguration implements Cloneable {
     static final boolean allowLegacyMasterSecret =
         Utilities.getBooleanProperty("jdk.tls.allowLegacyMasterSecret", true);
 
-    // Allow full handshake without Extended Master Secret extension.
+    // Use TLS1.3 middlebox compatibility mode.
     static final boolean useCompatibilityMode = Utilities.getBooleanProperty(
             "jdk.tls.client.useCompatibilityMode", true);
 

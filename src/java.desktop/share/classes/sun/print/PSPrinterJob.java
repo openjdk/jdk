@@ -393,11 +393,10 @@ public class PSPrinterJob extends RasterPrinterJob {
                 }
 
                 // Load property file
-                InputStream in =
-                    new BufferedInputStream(new FileInputStream(f.getPath()));
                 Properties props = new Properties();
-                props.load(in);
-                in.close();
+                try (FileInputStream in = new FileInputStream(f.getPath())) {
+                    props.load(in);
+                }
                 return props;
             } catch (Exception e){
                 return (Properties)null;
