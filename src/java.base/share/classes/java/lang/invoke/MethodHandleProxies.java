@@ -203,7 +203,7 @@ public class MethodHandleProxies {
                         return callObjectMethod(proxy, method, args);
                     if (isDefaultMethod(method)) {
                         // no additional access check is performed
-                        return JLRA.invokeDefault(proxy, method, null, args);
+                        return JLRA.invokeDefault(proxy, method, args, null);
                     }
                     throw newInternalError("bad proxy method: "+method);
                 }
