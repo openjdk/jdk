@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ public class MethodHandleProxies {
      * Therefore, each instance must implement a unique single-method interface.
      * Implementations may not bundle together
      * multiple single-method interfaces onto single implementation classes
-     * in the style of {@link java.awt.AWTEventMulticaster}.
+     * in the style of {@link java.desktop/java.awt.AWTEventMulticaster}.
      * <p>
      * The method handle may throw an <em>undeclared exception</em>,
      * which means any checked exception (or other checked throwable)

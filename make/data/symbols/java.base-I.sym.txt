@@ -393,6 +393,16 @@ header extends java/util/AbstractSet implements java/util/Set,java/lang/Cloneabl
 innerclass innerClass java/io/ObjectInputStream$GetField outerClass java/io/ObjectInputStream innerClassName GetField flags 409
 innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassName Entry flags 609
 
+class name java/util/Hashtable
+header extends java/util/Dictionary implements java/util/Map,java/lang/Cloneable,java/io/Serializable flags 21 signature <K:Ljava/lang/Object;V:Ljava/lang/Object;>Ljava/util/Dictionary<TK;TV;>;Ljava/util/Map<TK;TV;>;Ljava/lang/Cloneable;Ljava/io/Serializable;
+innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassName Entry flags 609
+innerclass innerClass java/io/ObjectInputStream$GetField outerClass java/io/ObjectInputStream innerClassName GetField flags 409
+
+class name java/util/IdentityHashMap
+header extends java/util/AbstractMap implements java/util/Map,java/io/Serializable,java/lang/Cloneable flags 21 signature <K:Ljava/lang/Object;V:Ljava/lang/Object;>Ljava/util/AbstractMap<TK;TV;>;Ljava/util/Map<TK;TV;>;Ljava/io/Serializable;Ljava/lang/Cloneable;
+innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassName Entry flags 609
+innerclass innerClass java/io/ObjectInputStream$GetField outerClass java/io/ObjectInputStream innerClassName GetField flags 409
+
 class name java/util/Locale$IsoCountryCode
 header extends java/lang/Enum nestHost java/util/Locale sealed true flags 4421 signature Ljava/lang/Enum<Ljava/util/Locale$IsoCountryCode;>;
 innerclass innerClass java/util/Locale$IsoCountryCode outerClass java/util/Locale innerClassName IsoCountryCode flags 4409

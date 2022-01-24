@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@ public class DeserializedLength {
         );
 
         for (int elements : new int[]{10, 50, 500, 5000}) {
-            for (float loadFactor : new float[]{0.15f, 0.5f, 0.75f, 1.0f, 2.5f}) {
+            for (float loadFactor : new float[]{0.25f, 0.5f, 0.75f, 1.0f, 2.5f}) {
                 ok &= testDeserializedLength(elements, loadFactor);
             }
         }

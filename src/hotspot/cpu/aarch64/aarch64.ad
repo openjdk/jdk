@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, 2021, Red Hat, Inc. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -2732,11 +2732,8 @@ bool is_vector_arith_imm_pattern(Node* n, Node* m) {
 // Should the matcher clone input 'm' of node 'n'?
 bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
   // ShiftV src (ShiftCntV con)
-  // StoreVector (VectorStoreMask src)
   // Binary src (Replicate con)
-  if (is_vshift_con_pattern(n, m) ||
-      (UseSVE > 0 && m->Opcode() == Op_VectorStoreMask && n->Opcode() == Op_StoreVector) ||
-      is_vector_arith_imm_pattern(n, m)) {
+  if (is_vshift_con_pattern(n, m) || is_vector_arith_imm_pattern(n, m)) {
     mstack.push(m, Visit);
     return true;
   }
