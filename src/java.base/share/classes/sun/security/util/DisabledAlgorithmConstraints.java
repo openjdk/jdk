@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -400,8 +400,6 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                     } else if (entry.startsWith("denyAfter") &&
                             (matcher = Holder.DENY_AFTER_PATTERN.matcher(entry))
                                     .matches()) {
-                        String denyAfterDate = entry.substring(entry.indexOf(" ") + 1);
-
                         if (debug != null) {
                             debug.println("Constraints set to denyAfter");
                         }
@@ -414,7 +412,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                         int month = Integer.parseInt(matcher.group(2));
                         int day = Integer.parseInt(matcher.group(3));
                         c = new DenyAfterConstraint(algorithm, year, month,
-                                day, denyAfterDate);
+                                day);
                         denyAfterLimit = true;
                     } else if (entry.startsWith("usage")) {
                         String s[] = (entry.substring(5)).trim().split(" ");
@@ -688,11 +686,9 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
      * timezone.
      */
     private static class DenyAfterConstraint extends Constraint {
-        private String denyAfterString;
         private Date denyAfterDate;
 
-        DenyAfterConstraint(String algo, int year, int month, int day,
-                String dateString) {
+        DenyAfterConstraint(String algo, int year, int month, int day) {
             Calendar c;
 
             algorithm = algo;
@@ -721,7 +717,6 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                         "Invalid Day of Month given in constraint: " + day);
             }
 
-            denyAfterString = dateString;
             denyAfterDate = c.getTime();
             if (debug != null) {
                 debug.println("DenyAfterConstraint date set to: " +
@@ -756,8 +751,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 throw new CertPathValidatorException(
                         "denyAfter constraint check failed: " + algorithm +
                         " used with Constraint date: " +
-                        denyAfterDate + " (in java.security: " + denyAfterString +
-                        "); params date: " +
+                        denyAfterDate + "; params date: " +
                         currentDate + cp.extendedExceptionMsg(),
                         null, null, -1, BasicReason.ALGORITHM_CONSTRAINED);
             }
