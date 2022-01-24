@@ -229,8 +229,8 @@ public class HtmlTree extends Content {
      * Adds each of a list of items, using a map function to create the content for each item.
      *
      * @param list   the list
-	 * @param mapper the map function to generate the content for each item
-	 *
+     * @param mapper the map function to generate the content for each item
+     *
      * @return this object
      */
     @Override
