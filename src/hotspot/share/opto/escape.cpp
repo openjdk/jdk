@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2824,9 +2824,6 @@ void ConnectionGraph::move_inst_mem(Node* n, GrowableArray<PhiNode *>  &orig_phi
 // is the specified alias index.
 //
 Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArray<PhiNode *>  &orig_phis) {
-  if (orig_mem == NULL) {
-    return orig_mem;
-  }
   Compile* C = _compile;
   PhaseGVN* igvn = _igvn;
   const TypeOopPtr *toop = C->get_adr_type(alias_idx)->isa_oopptr();
@@ -2834,6 +2831,9 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
   Node *start_mem = C->start()->proj_out_or_null(TypeFunc::Memory);
   Node *prev = NULL;
   Node *result = orig_mem;
+  // Remember all mergemem nodes encountered and update them in the end
+  Node_List mmem_nodes(Thread::current()->resource_area(), 4);
+
   while (prev != result) {
     prev = result;
     if (result == start_mem) {
@@ -2896,12 +2896,15 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
       result = step_through_mergemem(mmem, alias_idx, toop);
       if (result == mmem->base_memory()) {
         // Didn't find instance memory, search through general slice recursively.
+        //
+        //result = find_inst_mem(mmem->memory_at(C->get_general_index(alias_idx)), alias_idx, orig_phis);
+        //mmem->set_memory_at(alias_idx, result);
+        //
+        // We remove the self-recursion here by resetting the current frame.
+        mmem_nodes.push(mmem);
+        prev = NULL;
         result = mmem->memory_at(C->get_general_index(alias_idx));
-        result = find_inst_mem(result, alias_idx, orig_phis);
-        if (C->failing()) {
-          return NULL;
-        }
-        mmem->set_memory_at(alias_idx, result);
+        continue;
       }
     } else if (result->is_Phi() &&
                C->get_alias_index(result->as_Phi()->adr_type()) != alias_idx) {
@@ -2955,7 +2958,8 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
       result = result->in(MemNode::Memory);
     }
   }
-  if (result->is_Phi()) {
+
+  if (result != NULL && result->is_Phi()) {
     PhiNode *mphi = result->as_Phi();
     assert(mphi->bottom_type() == Type::MEMORY, "memory phi required");
     const TypePtr *t = mphi->adr_type();
@@ -2968,7 +2972,15 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
       result = split_memory_phi(mphi, alias_idx, orig_phis);
     }
   }
-  // the result is either MemNode, PhiNode, InitializeNode.
+
+  if (C->failing()) {
+    return NULL;
+  }
+
+  for (uint i = 0; i < mmem_nodes.size(); ++i) {
+    mmem_nodes[i]->as_MergeMem()->set_memory_at(alias_idx, result);
+  }
+  // the result is either NULL, MemNode, PhiNode, InitializeNode.
   return result;
 }
 

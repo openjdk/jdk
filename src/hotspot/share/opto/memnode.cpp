@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4975,7 +4975,6 @@ Node* MergeMemNode::memory_at(uint alias_idx) const {
 
   // Otherwise, it is a narrow slice.
   Node* n = alias_idx < req() ? in(alias_idx) : empty_memory();
-  Compile *C = Compile::current();
   if (is_empty_memory(n)) {
     // the array is sparse; empty slots are the "top" node
     n = base_memory();
@@ -4990,7 +4989,7 @@ Node* MergeMemNode::memory_at(uint alias_idx) const {
     // See verify_memory_slice for comments on TypeRawPtr::BOTTOM.
   } else {
     // make sure the stored slice is sane
-    #ifdef ASSERT
+#ifdef ASSERT
     if (VMError::is_error_reported() || Node::in_dump()) {
     } else if (might_be_same(n, base_memory())) {
       // Give it a pass:  It is a mostly harmless repetition of the base.
@@ -4998,7 +4997,7 @@ Node* MergeMemNode::memory_at(uint alias_idx) const {
     } else {
       verify_memory_slice(this, alias_idx, n);
     }
-    #endif
+#endif
   }
   return n;
 }
