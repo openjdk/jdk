@@ -31,18 +31,9 @@
 #include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "runtime/atomic.hpp"
 
-inline HeapWord* G1BlockOffsetTablePart::threshold_for_addr(const void* addr) {
+inline HeapWord* G1BlockOffsetTablePart::align_up_by_card_size(HeapWord* const addr) const {
   assert(addr >= _hr->bottom() && addr < _hr->top(), "invalid address");
-  size_t index = _bot->index_for(addr);
-  HeapWord* card_boundary = _bot->address_for_index(index);
-  // Address at card boundary, use as threshold.
-  if (card_boundary == addr) {
-    return card_boundary;
-  }
-
-  // Calculate next threshold.
-  HeapWord* threshold = card_boundary + BOTConstants::card_size_in_words();
-  return threshold;
+  return align_up(addr, BOTConstants::card_size());
 }
 
 inline HeapWord* G1BlockOffsetTablePart::block_start(const void* addr) {

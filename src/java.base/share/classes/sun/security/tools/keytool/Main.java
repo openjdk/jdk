@@ -4161,18 +4161,18 @@ public final class Main {
                 }
                 if (date != null) {
                     if (date.matches("\\d\\d\\d\\d\\/\\d\\d\\/\\d\\d")) {
-                        c.set(Integer.valueOf(date.substring(0, 4)),
-                                Integer.valueOf(date.substring(5, 7))-1,
-                                Integer.valueOf(date.substring(8, 10)));
+                        c.set(Integer.parseInt(date.substring(0, 4)),
+                                Integer.parseInt(date.substring(5, 7))-1,
+                                Integer.parseInt(date.substring(8, 10)));
                     } else {
                         throw ioe;
                     }
                 }
                 if (time != null) {
                     if (time.matches("\\d\\d:\\d\\d:\\d\\d")) {
-                        c.set(Calendar.HOUR_OF_DAY, Integer.valueOf(time.substring(0, 2)));
-                        c.set(Calendar.MINUTE, Integer.valueOf(time.substring(3, 5)));
-                        c.set(Calendar.SECOND, Integer.valueOf(time.substring(6, 8)));
+                        c.set(Calendar.HOUR_OF_DAY, Integer.parseInt(time.substring(0, 2)));
+                        c.set(Calendar.MINUTE, Integer.parseInt(time.substring(3, 5)));
+                        c.set(Calendar.SECOND, Integer.parseInt(time.substring(6, 8)));
                         c.set(Calendar.MILLISECOND, 0);
                     } else {
                         throw ioe;

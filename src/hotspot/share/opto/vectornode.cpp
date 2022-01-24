@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,6 +154,8 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     // Unimplemented for subword types since bit count changes
     // depending on size of lane (and sign bit).
     return (bt == T_INT ? Op_PopCountVI : 0);
+  case Op_PopCountL:
+    return Op_PopCountVL;
   case Op_LShiftI:
     switch (bt) {
     case T_BOOLEAN:
@@ -296,6 +298,16 @@ bool VectorNode::is_muladds2i(Node* n) {
   }
   return false;
 }
+
+bool VectorNode::is_vpopcnt_long(Node* n) {
+  if (n->Opcode() == Op_PopCountL) {
+    return true;
+  }
+  return false;
+}
+
+
+
 
 bool VectorNode::is_roundopD(Node* n) {
   if (n->Opcode() == Op_RoundDoubleMode) {
@@ -531,6 +543,7 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, b
   case Op_SqrtVD: return new SqrtVDNode(n1, vt);
 
   case Op_PopCountVI: return new PopCountVINode(n1, vt);
+  case Op_PopCountVL: return new PopCountVLNode(n1, vt);
   case Op_RotateLeftV: return new RotateLeftVNode(n1, n2, vt);
   case Op_RotateRightV: return new RotateRightVNode(n1, n2, vt);
 
@@ -1201,13 +1214,14 @@ bool ReductionNode::implemented(int opc, uint vlen, BasicType bt) {
 }
 
 MacroLogicVNode* MacroLogicVNode::make(PhaseGVN& gvn, Node* in1, Node* in2, Node* in3,
-                                       uint truth_table, const TypeVect* vt) {
+                                       Node* mask, uint truth_table, const TypeVect* vt) {
   assert(truth_table <= 0xFF, "invalid");
   assert(in1->bottom_type()->is_vect()->length_in_bytes() == vt->length_in_bytes(), "mismatch");
   assert(in2->bottom_type()->is_vect()->length_in_bytes() == vt->length_in_bytes(), "mismatch");
   assert(in3->bottom_type()->is_vect()->length_in_bytes() == vt->length_in_bytes(), "mismatch");
+  assert(!mask || mask->bottom_type()->isa_vectmask(), "predicated register type expected");
   Node* fn = gvn.intcon(truth_table);
-  return new MacroLogicVNode(in1, in2, in3, fn, vt);
+  return new MacroLogicVNode(in1, in2, in3, fn, mask, vt);
 }
 
 Node* VectorNode::degenerate_vector_rotate(Node* src, Node* cnt, bool is_rotate_left,

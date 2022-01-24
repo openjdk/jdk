@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -230,16 +230,12 @@ Java_sun_net_spi_DefaultProxySelector_getSystemProxies(JNIEnv *env,
         auto_proxy_options.dwFlags = WINHTTP_AUTOPROXY_AUTO_DETECT;
         auto_proxy_options.fAutoLogonIfChallenged = TRUE;
         use_auto_proxy = TRUE;
-    } else if (ie_proxy_config.lpszAutoConfigUrl != NULL) {
+    }
+    if (ie_proxy_config.lpszAutoConfigUrl != NULL) {
         /* Windows uses PAC file */
         auto_proxy_options.lpszAutoConfigUrl = ie_proxy_config.lpszAutoConfigUrl;
-        auto_proxy_options.dwFlags = WINHTTP_AUTOPROXY_CONFIG_URL;
+        auto_proxy_options.dwFlags |= WINHTTP_AUTOPROXY_CONFIG_URL;
         use_auto_proxy = TRUE;
-    } else if (ie_proxy_config.lpszProxy != NULL) {
-        /* Windows uses manually entered proxy. */
-        use_auto_proxy = FALSE;
-        win_bypass_proxy = ie_proxy_config.lpszProxyBypass;
-        win_proxy = ie_proxy_config.lpszProxy;
     }
 
     if (use_auto_proxy) {
@@ -252,6 +248,12 @@ Java_sun_net_spi_DefaultProxySelector_getSystemProxies(JNIEnv *env,
             win_proxy = proxy_info.lpszProxy;
             win_bypass_proxy = proxy_info.lpszProxyBypass;
         }
+    }
+
+    if (!use_auto_proxy && ie_proxy_config.lpszProxy != NULL) {
+        /* Windows uses manually entered proxy. */
+        win_bypass_proxy = ie_proxy_config.lpszProxyBypass;
+        win_proxy = ie_proxy_config.lpszProxy;
     }
 
     /* Check the bypass entry. */

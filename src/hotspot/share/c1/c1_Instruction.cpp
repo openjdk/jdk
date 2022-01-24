@@ -529,9 +529,10 @@ void BlockBegin::set_end(BlockEnd* new_end) { // Assumes that no predecessor of 
   if (new_end == _end) return;
 
   // Remove this block as predecessor of its current successors
-  if (_end != NULL)
-  for (int i = 0; i < number_of_sux(); i++) {
-    sux_at(i)->remove_predecessor(this);
+  if (_end != NULL) {
+    for (int i = 0; i < number_of_sux(); i++) {
+      sux_at(i)->remove_predecessor(this);
+    }
   }
 
   _end = new_end;
