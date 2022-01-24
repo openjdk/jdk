@@ -1734,10 +1734,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
   _gc_timer.register_gc_start();
   _gc_tracer.report_gc_start(heap->gc_cause(), _gc_timer.gc_start());
 
-  TimeStamp marking_start;
-  TimeStamp compaction_start;
-  TimeStamp collection_exit;
-
   GCCause::Cause gc_cause = heap->gc_cause();
   PSYoungGen* young_gen = heap->young_gen();
   PSOldGen* old_gen = heap->old_gen();
@@ -1787,8 +1783,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
     ref_processor()->start_discovery(maximum_heap_compaction);
 
-    marking_start.update();
-    marking_phase(&_gc_tracer);
+    marking_phase(vmthread_cm, &_gc_tracer);
 
     bool max_on_system_gc = UseMaximumCompactionOnSystemGC
       && GCCause::is_user_requested_gc(gc_cause);
@@ -1803,7 +1798,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     // needed by the compaction for filling holes in the dense prefix.
     adjust_roots();
 
-    compaction_start.update();
     compact();
 
     ParCompactionManager::verify_all_region_stack_empty();
@@ -1918,14 +1912,8 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     old_gen->object_space()->check_mangled_unused_area_complete();
   }
 
-  collection_exit.update();
-
   heap->print_heap_after_gc();
   heap->trace_heap_after_gc(&_gc_tracer);
-
-  log_debug(gc, task, time)("VM-Thread " JLONG_FORMAT " " JLONG_FORMAT " " JLONG_FORMAT,
-                         marking_start.ticks(), compaction_start.ticks(),
-                         collection_exit.ticks());
 
   AdaptiveSizePolicyOutput::print(size_policy, heap->total_collections());
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,6 +217,16 @@ public class OptimizeModuleHandlingTest {
         tty("10. run with CDS on, --module-path, with -Xbootclasspath/a: .");
         TestCommon.run("-Xlog:cds",
                        "-Xbootclasspath/a:", ".",
+                       "--module-path", libsDir.toString(),
+                       MAIN_CLASS)
+            .assertAbnormalExit(out -> {
+                out.shouldNotContain(CLASS_FOUND_MESSAGE)
+                   .shouldContain(OPTIMIZE_DISABLED)           // mapping info
+                   .shouldContain("Error: Could not find or load main class .");
+            });
+        tty("11. run with CDS on, --module-path, with -Xbootclasspath/a:.");
+        TestCommon.run("-Xlog:cds",
+                       "-Xbootclasspath/a:.",
                        "--module-path", libsDir.toString(),
                        MAIN_CLASS)
             .assertAbnormalExit(out -> {

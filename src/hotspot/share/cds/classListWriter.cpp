@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,11 +59,6 @@ void ClassListWriter::write(const InstanceKlass* k, const ClassFileStream* cfs) 
     return;
   }
 
-  // filter out java/lang/invoke/BoundMethodHandle$Species....
-  if (cfs != NULL && strcmp(cfs->source(), "_ClassSpecializer_generateConcreteSpeciesCode") == 0) {
-    return;
-  }
-
   ClassListWriter w;
   write_to_stream(k, w.stream(), cfs);
 }
@@ -107,10 +102,21 @@ void ClassListWriter::handle_class_unloading(const InstanceKlass* klass) {
 
 void ClassListWriter::write_to_stream(const InstanceKlass* k, outputStream* stream, const ClassFileStream* cfs) {
   assert_locked();
-  ClassLoaderData* loader_data = k->class_loader_data();
 
-  if (!SystemDictionaryShared::is_builtin_loader(loader_data)) {
-    if (cfs == NULL || strncmp(cfs->source(), "file:", 5) != 0) {
+  ClassLoaderData* loader_data = k->class_loader_data();
+  bool is_builtin_loader = SystemDictionaryShared::is_builtin_loader(loader_data);
+  if (!is_builtin_loader) {
+    // class may be loaded from shared archive
+    if (!k->is_shared()) {
+      if (cfs == nullptr || cfs->source() == nullptr) {
+        // CDS static dump only handles unregistered class with known source.
+        return;
+      }
+      if (strncmp(cfs->source(), "file:", 5) != 0) {
+        return;
+      }
+    } else {
+      // Shared unregistered classes are skipped since their real source are not recorded in shared space.
       return;
     }
     if (!SystemDictionaryShared::add_unregistered_class(Thread::current(), (InstanceKlass*)k)) {
@@ -118,6 +124,10 @@ void ClassListWriter::write_to_stream(const InstanceKlass* k, outputStream* stre
     }
   }
 
+  // filter out java/lang/invoke/BoundMethodHandle$Species...
+  if (cfs != nullptr && cfs->source() != nullptr && strcmp(cfs->source(), "_ClassSpecializer_generateConcreteSpeciesCode") == 0) {
+    return;
+  }
 
   {
     InstanceKlass* super = k->java_super();
@@ -145,7 +155,7 @@ void ClassListWriter::write_to_stream(const InstanceKlass* k, outputStream* stre
 
   ResourceMark rm;
   stream->print("%s id: %d", k->name()->as_C_string(), get_id(k));
-  if (!SystemDictionaryShared::is_builtin_loader(loader_data)) {
+  if (!is_builtin_loader) {
     InstanceKlass* super = k->java_super();
     assert(super != NULL, "must be");
     stream->print(" super: %d", get_id(super));

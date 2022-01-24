@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,11 @@
  * @run main/othervm/timeout=240 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. CommandLineFlagCombo
  */
 
+import java.io.File;
+
 import jdk.test.lib.BuildHelper;
 import jdk.test.lib.Platform;
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
 import sun.hotspot.code.Compiler;
@@ -47,6 +50,7 @@ import sun.hotspot.WhiteBox;
 
 public class CommandLineFlagCombo {
 
+    private static String HELLO_WORLD = "Hello World";
     // shared base address test table
     private static final String[] testTable = {
         "-XX:+UseG1GC", "-XX:+UseSerialGC", "-XX:+UseParallelGC",
@@ -83,7 +87,7 @@ public class CommandLineFlagCombo {
             if ((TestCommon.isDynamicArchive() && !testEntry.contains("ObjectAlignmentInBytes")) ||
                 !TestCommon.isDynamicArchive()) {
                 OutputAnalyzer execOutput = TestCommon.exec(appJar, testEntry, "Hello");
-                TestCommon.checkExec(execOutput, "Hello World");
+                TestCommon.checkExec(execOutput, HELLO_WORLD);
             }
         }
 
@@ -105,8 +109,10 @@ public class CommandLineFlagCombo {
             TestCommon.checkDump(dumpOutput, "Loading classes to share");
 
             OutputAnalyzer execOutput = TestCommon.exec(appJar, run_g1Flag, run_serialFlag, "Hello");
-            TestCommon.checkExec(execOutput, "Hello World");
+            TestCommon.checkExec(execOutput, HELLO_WORLD);
         }
+
+        testExtraCase(appJar, classList);
     }
 
     private static boolean skipTestCase(String testEntry) throws Exception {
@@ -127,5 +133,42 @@ public class CommandLineFlagCombo {
             return true;
         }
         return false;
+    }
+
+    // { -Xshare:dump, -XX:ArchiveClassesAtExit} x { -XX:DumpLoadedClassList }
+    private static void testExtraCase(String jarFile, String[] classList) throws Exception {
+        // 1. -Xshare:dump -XX:-XX:DumpLoadedClassFile
+        String dumpedListName = "tmpClassList.list";
+        File listFile = new File(dumpedListName);
+        if (listFile.exists()) {
+            listFile.delete();
+        }
+        OutputAnalyzer dumpOutput = TestCommon.dump(jarFile, classList, "-XX:DumpLoadedClassList=" + dumpedListName);
+        TestCommon.checkDump(dumpOutput, "Loading classes to share");
+        if (!listFile.exists()) {
+            throw new RuntimeException("ClassList file " + dumpedListName + " should be created");
+        }
+
+        // 2. -XX:ArchiveClassesAtExit -XX:DumpLoadedClassFile
+        String dynName = "tmpDyn.jsa";
+        File dynFile = new File(dynName);
+        if (dynFile.exists()) {
+            dynFile.delete();
+        }
+        if (listFile.exists()) {
+            listFile.delete();
+        }
+        String[] args = new String[] {
+            "-cp", jarFile, "-XX:ArchiveClassesAtExit=" + dynName, "-XX:DumpLoadedClassList=" + dumpedListName, "Hello"};
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
+        OutputAnalyzer output = TestCommon.executeAndLog(pb, "combo");
+        output.shouldHaveExitValue(0)
+              .shouldContain(HELLO_WORLD);
+        if (!dynFile.exists()) {
+            throw new RuntimeException("Dynamic archive file " + dynName + " should be created");
+        }
+        if (!listFile.exists()) {
+            throw new RuntimeException("ClassList file " + dumpedListName + " should be created");
+        }
     }
 }

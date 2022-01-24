@@ -352,139 +352,158 @@ Node *PhaseIdealLoop::has_local_phi_input( Node *n ) {
   return n_ctrl;
 }
 
-//------------------------------remix_address_expressions----------------------
-// Rework addressing expressions to get the most loop-invariant stuff
-// moved out.  We'd like to do all associative operators, but it's especially
-// important (common) to do address expressions.
-Node *PhaseIdealLoop::remix_address_expressions( Node *n ) {
-  if (!has_ctrl(n))  return NULL;
-  Node *n_ctrl = get_ctrl(n);
-  IdealLoopTree *n_loop = get_loop(n_ctrl);
-
-  // See if 'n' mixes loop-varying and loop-invariant inputs and
-  // itself is loop-varying.
-
-  // Only interested in binary ops (and AddP)
-  if( n->req() < 3 || n->req() > 4 ) return NULL;
-
-  Node *n1_ctrl = get_ctrl(n->in(                    1));
-  Node *n2_ctrl = get_ctrl(n->in(                    2));
-  Node *n3_ctrl = get_ctrl(n->in(n->req() == 3 ? 2 : 3));
-  IdealLoopTree *n1_loop = get_loop( n1_ctrl );
-  IdealLoopTree *n2_loop = get_loop( n2_ctrl );
-  IdealLoopTree *n3_loop = get_loop( n3_ctrl );
-
-  // Does one of my inputs spin in a tighter loop than self?
-  if( (n_loop->is_member( n1_loop ) && n_loop != n1_loop) ||
-      (n_loop->is_member( n2_loop ) && n_loop != n2_loop) ||
-      (n_loop->is_member( n3_loop ) && n_loop != n3_loop) )
-    return NULL;                // Leave well enough alone
-
-  // Is at least one of my inputs loop-invariant?
-  if( n1_loop == n_loop &&
-      n2_loop == n_loop &&
-      n3_loop == n_loop )
-    return NULL;                // No loop-invariant inputs
-
-
+// Replace expressions like ((V+I) << 2) with (V<<2 + I<<2).
+Node* PhaseIdealLoop::remix_address_expressions_add_left_shift(Node* n, IdealLoopTree* n_loop, Node* n_ctrl, BasicType bt) {
+  assert(bt == T_INT || bt == T_LONG, "only for integers");
   int n_op = n->Opcode();
 
-  // Replace expressions like ((V+I) << 2) with (V<<2 + I<<2).
-  if( n_op == Op_LShiftI ) {
+  if (n_op == Op_LShift(bt)) {
     // Scale is loop invariant
-    Node *scale = n->in(2);
-    Node *scale_ctrl = get_ctrl(scale);
-    IdealLoopTree *scale_loop = get_loop(scale_ctrl );
-    if( n_loop == scale_loop || !scale_loop->is_member( n_loop ) )
+    Node* scale = n->in(2);
+    Node* scale_ctrl = get_ctrl(scale);
+    IdealLoopTree* scale_loop = get_loop(scale_ctrl);
+    if (n_loop == scale_loop || !scale_loop->is_member(n_loop)) {
       return NULL;
-    const TypeInt *scale_t = scale->bottom_type()->isa_int();
-    if( scale_t && scale_t->is_con() && scale_t->get_con() >= 16 )
+    }
+    const TypeInt* scale_t = scale->bottom_type()->isa_int();
+    if (scale_t != NULL && scale_t->is_con() && scale_t->get_con() >= 16) {
       return NULL;              // Dont bother with byte/short masking
+    }
     // Add must vary with loop (else shift would be loop-invariant)
-    Node *add = n->in(1);
-    Node *add_ctrl = get_ctrl(add);
-    IdealLoopTree *add_loop = get_loop(add_ctrl);
-    //assert( n_loop == add_loop, "" );
-    if( n_loop != add_loop ) return NULL;  // happens w/ evil ZKM loops
+    Node* add = n->in(1);
+    Node* add_ctrl = get_ctrl(add);
+    IdealLoopTree* add_loop = get_loop(add_ctrl);
+    if (n_loop != add_loop) {
+      return NULL;  // happens w/ evil ZKM loops
+    }
 
     // Convert I-V into I+ (0-V); same for V-I
-    if( add->Opcode() == Op_SubI &&
-        _igvn.type( add->in(1) ) != TypeInt::ZERO ) {
-      Node *zero = _igvn.intcon(0);
+    if (add->Opcode() == Op_Sub(bt) &&
+        _igvn.type(add->in(1)) != TypeInteger::zero(bt)) {
+      assert(add->Opcode() == Op_SubI || add->Opcode() == Op_SubL, "");
+      Node* zero = _igvn.integercon(0, bt);
       set_ctrl(zero, C->root());
-      Node *neg = new SubINode( _igvn.intcon(0), add->in(2) );
-      register_new_node( neg, get_ctrl(add->in(2) ) );
-      add = new AddINode( add->in(1), neg );
-      register_new_node( add, add_ctrl );
+      Node* neg = SubNode::make(zero, add->in(2), bt);
+      register_new_node(neg, get_ctrl(add->in(2)));
+      add = AddNode::make(add->in(1), neg, bt);
+      register_new_node(add, add_ctrl);
     }
-    if( add->Opcode() != Op_AddI ) return NULL;
+    if (add->Opcode() != Op_Add(bt)) return NULL;
+    assert(add->Opcode() == Op_AddI || add->Opcode() == Op_AddL, "");
     // See if one add input is loop invariant
-    Node *add_var = add->in(1);
-    Node *add_var_ctrl = get_ctrl(add_var);
-    IdealLoopTree *add_var_loop = get_loop(add_var_ctrl );
-    Node *add_invar = add->in(2);
-    Node *add_invar_ctrl = get_ctrl(add_invar);
-    IdealLoopTree *add_invar_loop = get_loop(add_invar_ctrl );
-    if( add_var_loop == n_loop ) {
-    } else if( add_invar_loop == n_loop ) {
+    Node* add_var = add->in(1);
+    Node* add_var_ctrl = get_ctrl(add_var);
+    IdealLoopTree* add_var_loop = get_loop(add_var_ctrl);
+    Node* add_invar = add->in(2);
+    Node* add_invar_ctrl = get_ctrl(add_invar);
+    IdealLoopTree* add_invar_loop = get_loop(add_invar_ctrl);
+    if (add_invar_loop == n_loop) {
       // Swap to find the invariant part
       add_invar = add_var;
       add_invar_ctrl = add_var_ctrl;
       add_invar_loop = add_var_loop;
       add_var = add->in(2);
-      Node *add_var_ctrl = get_ctrl(add_var);
-      IdealLoopTree *add_var_loop = get_loop(add_var_ctrl );
-    } else                      // Else neither input is loop invariant
+    } else if (add_var_loop != n_loop) { // Else neither input is loop invariant
       return NULL;
-    if( n_loop == add_invar_loop || !add_invar_loop->is_member( n_loop ) )
+    }
+    if (n_loop == add_invar_loop || !add_invar_loop->is_member(n_loop)) {
       return NULL;              // No invariant part of the add?
+    }
 
     // Yes!  Reshape address expression!
-    Node *inv_scale = new LShiftINode( add_invar, scale );
-    Node *inv_scale_ctrl =
-      dom_depth(add_invar_ctrl) > dom_depth(scale_ctrl) ?
-      add_invar_ctrl : scale_ctrl;
-    register_new_node( inv_scale, inv_scale_ctrl );
-    Node *var_scale = new LShiftINode( add_var, scale );
-    register_new_node( var_scale, n_ctrl );
-    Node *var_add = new AddINode( var_scale, inv_scale );
-    register_new_node( var_add, n_ctrl );
-    _igvn.replace_node( n, var_add );
+    Node* inv_scale = LShiftNode::make(add_invar, scale, bt);
+    Node* inv_scale_ctrl =
+            dom_depth(add_invar_ctrl) > dom_depth(scale_ctrl) ?
+            add_invar_ctrl : scale_ctrl;
+    register_new_node(inv_scale, inv_scale_ctrl);
+    Node* var_scale = LShiftNode::make(add_var, scale, bt);
+    register_new_node(var_scale, n_ctrl);
+    Node* var_add = AddNode::make(var_scale, inv_scale, bt);
+    register_new_node(var_add, n_ctrl);
+    _igvn.replace_node(n, var_add);
     return var_add;
   }
+  return NULL;
+}
 
+//------------------------------remix_address_expressions----------------------
+// Rework addressing expressions to get the most loop-invariant stuff
+// moved out.  We'd like to do all associative operators, but it's especially
+// important (common) to do address expressions.
+Node* PhaseIdealLoop::remix_address_expressions(Node* n) {
+  if (!has_ctrl(n))  return NULL;
+  Node* n_ctrl = get_ctrl(n);
+  IdealLoopTree* n_loop = get_loop(n_ctrl);
+
+  // See if 'n' mixes loop-varying and loop-invariant inputs and
+  // itself is loop-varying.
+
+  // Only interested in binary ops (and AddP)
+  if (n->req() < 3 || n->req() > 4) return NULL;
+
+  Node* n1_ctrl = get_ctrl(n->in(                    1));
+  Node* n2_ctrl = get_ctrl(n->in(                    2));
+  Node* n3_ctrl = get_ctrl(n->in(n->req() == 3 ? 2 : 3));
+  IdealLoopTree* n1_loop = get_loop(n1_ctrl);
+  IdealLoopTree* n2_loop = get_loop(n2_ctrl);
+  IdealLoopTree* n3_loop = get_loop(n3_ctrl);
+
+  // Does one of my inputs spin in a tighter loop than self?
+  if ((n_loop->is_member(n1_loop) && n_loop != n1_loop) ||
+      (n_loop->is_member(n2_loop) && n_loop != n2_loop) ||
+      (n_loop->is_member(n3_loop) && n_loop != n3_loop)) {
+    return NULL;                // Leave well enough alone
+  }
+
+  // Is at least one of my inputs loop-invariant?
+  if (n1_loop == n_loop &&
+      n2_loop == n_loop &&
+      n3_loop == n_loop) {
+    return NULL;                // No loop-invariant inputs
+  }
+
+  Node* res = remix_address_expressions_add_left_shift(n, n_loop, n_ctrl, T_INT);
+  if (res != NULL) {
+    return res;
+  }
+  res = remix_address_expressions_add_left_shift(n, n_loop, n_ctrl, T_LONG);
+  if (res != NULL) {
+    return res;
+  }
+
+  int n_op = n->Opcode();
   // Replace (I+V) with (V+I)
-  if( n_op == Op_AddI ||
+  if (n_op == Op_AddI ||
       n_op == Op_AddL ||
       n_op == Op_AddF ||
       n_op == Op_AddD ||
       n_op == Op_MulI ||
       n_op == Op_MulL ||
       n_op == Op_MulF ||
-      n_op == Op_MulD ) {
-    if( n2_loop == n_loop ) {
-      assert( n1_loop != n_loop, "" );
+      n_op == Op_MulD) {
+    if (n2_loop == n_loop) {
+      assert(n1_loop != n_loop, "");
       n->swap_edges(1, 2);
     }
   }
 
   // Replace ((I1 +p V) +p I2) with ((I1 +p I2) +p V),
   // but not if I2 is a constant.
-  if( n_op == Op_AddP ) {
-    if( n2_loop == n_loop && n3_loop != n_loop ) {
-      if( n->in(2)->Opcode() == Op_AddP && !n->in(3)->is_Con() ) {
-        Node *n22_ctrl = get_ctrl(n->in(2)->in(2));
-        Node *n23_ctrl = get_ctrl(n->in(2)->in(3));
-        IdealLoopTree *n22loop = get_loop( n22_ctrl );
-        IdealLoopTree *n23_loop = get_loop( n23_ctrl );
-        if( n22loop != n_loop && n22loop->is_member(n_loop) &&
-            n23_loop == n_loop ) {
-          Node *add1 = new AddPNode( n->in(1), n->in(2)->in(2), n->in(3) );
+  if (n_op == Op_AddP) {
+    if (n2_loop == n_loop && n3_loop != n_loop) {
+      if (n->in(2)->Opcode() == Op_AddP && !n->in(3)->is_Con()) {
+        Node* n22_ctrl = get_ctrl(n->in(2)->in(2));
+        Node* n23_ctrl = get_ctrl(n->in(2)->in(3));
+        IdealLoopTree* n22loop = get_loop(n22_ctrl);
+        IdealLoopTree* n23_loop = get_loop(n23_ctrl);
+        if (n22loop != n_loop && n22loop->is_member(n_loop) &&
+            n23_loop == n_loop) {
+          Node* add1 = new AddPNode(n->in(1), n->in(2)->in(2), n->in(3));
           // Stuff new AddP in the loop preheader
-          register_new_node( add1, n_loop->_head->in(LoopNode::EntryControl) );
-          Node *add2 = new AddPNode( n->in(1), add1, n->in(2)->in(3) );
-          register_new_node( add2, n_ctrl );
-          _igvn.replace_node( n, add2 );
+          register_new_node(add1, n_loop->_head->in(LoopNode::EntryControl));
+          Node* add2 = new AddPNode(n->in(1), add1, n->in(2)->in(3));
+          register_new_node(add2, n_ctrl);
+          _igvn.replace_node(n, add2);
           return add2;
         }
       }
@@ -493,17 +512,17 @@ Node *PhaseIdealLoop::remix_address_expressions( Node *n ) {
     // Replace (I1 +p (I2 + V)) with ((I1 +p I2) +p V)
     if (n2_loop != n_loop && n3_loop == n_loop) {
       if (n->in(3)->Opcode() == Op_AddX) {
-        Node *V = n->in(3)->in(1);
-        Node *I = n->in(3)->in(2);
+        Node* V = n->in(3)->in(1);
+        Node* I = n->in(3)->in(2);
         if (is_member(n_loop,get_ctrl(V))) {
         } else {
           Node *tmp = V; V = I; I = tmp;
         }
         if (!is_member(n_loop,get_ctrl(I))) {
-          Node *add1 = new AddPNode(n->in(1), n->in(2), I);
+          Node* add1 = new AddPNode(n->in(1), n->in(2), I);
           // Stuff new AddP in the loop preheader
           register_new_node(add1, n_loop->_head->in(LoopNode::EntryControl));
-          Node *add2 = new AddPNode(n->in(1), add1, V);
+          Node* add2 = new AddPNode(n->in(1), add1, V);
           register_new_node(add2, n_ctrl);
           _igvn.replace_node(n, add2);
           return add2;

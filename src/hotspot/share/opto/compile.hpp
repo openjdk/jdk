@@ -327,7 +327,6 @@ class Compile : public Phase {
 #ifndef PRODUCT
   uint                  _igv_idx;               // Counter for IGV node identifiers
   bool                  _trace_opto_output;
-  bool                  _print_ideal;
   bool                  _parsed_irreducible_loop; // True if ciTypeFlow detected irreducible loops during parsing
 #endif
   bool                  _has_irreducible_loop;  // Found irreducible loops
@@ -354,7 +353,7 @@ class Compile : public Phase {
   GrowableArray<Node_List*> _coarsened_locks;   // List of coarsened Lock and Unlock nodes
   ConnectionGraph*      _congraph;
 #ifndef PRODUCT
-  IdealGraphPrinter*    _printer;
+  IdealGraphPrinter*    _igv_printer;
   static IdealGraphPrinter* _debug_file_printer;
   static IdealGraphPrinter* _debug_network_printer;
 #endif
@@ -489,7 +488,7 @@ class Compile : public Phase {
   }
 
 #ifndef PRODUCT
-  IdealGraphPrinter* printer() { return _printer; }
+  IdealGraphPrinter* igv_printer() { return _igv_printer; }
 #endif
 
   void log_late_inline(CallGenerator* cg);
@@ -636,7 +635,9 @@ class Compile : public Phase {
 #ifndef PRODUCT
   uint          next_igv_idx()                  { return _igv_idx++; }
   bool          trace_opto_output() const       { return _trace_opto_output; }
-  bool          print_ideal() const             { return _print_ideal; }
+  void          print_ideal_ir(const char* phase_name);
+  bool          should_print_ideal() const      { return _directive->PrintIdealOption; }
+  bool          should_print_ideal(uint level) const { return _directive->PrintIdealLevelOption >= level; }
   bool              parsed_irreducible_loop() const { return _parsed_irreducible_loop; }
   void          set_parsed_irreducible_loop(bool z) { _parsed_irreducible_loop = z; }
   int _in_dump_cnt;  // Required for dumping ir nodes.
@@ -652,7 +653,7 @@ class Compile : public Phase {
 
   void begin_method();
   void end_method();
-  bool should_print(int level);
+  bool should_print_igv(int level);
 
   void print_method(CompilerPhaseType cpt, int level);
   void print_method(CompilerPhaseType cpt, Node* n, int level = 3);
