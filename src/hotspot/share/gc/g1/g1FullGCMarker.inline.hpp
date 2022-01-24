@@ -151,30 +151,39 @@ inline void G1FullGCMarker::follow_object(oop obj) {
   }
 }
 
-void G1FullGCMarker::drain_stack() {
-  do {
-    oop obj;
-    while (_oop_stack.pop_overflow(obj)) {
-      if (!_oop_stack.try_push_to_taskqueue(obj)) {
-        assert(_bitmap->is_marked(obj), "must be marked");
-        follow_object(obj);
-      }
-    }
-    while (_oop_stack.pop_local(obj)) {
+inline void G1FullGCMarker::drain_oop_stack() {
+  oop obj;
+  while (_oop_stack.pop_overflow(obj)) {
+    if (!_oop_stack.try_push_to_taskqueue(obj)) {
       assert(_bitmap->is_marked(obj), "must be marked");
       follow_object(obj);
     }
-    // Process ObjArrays one at a time to avoid marking stack bloat, but it is
-    // fine to try to move work from the overflow queue to the shared queue as
-    // quickly as possible.
-    ObjArrayTask task;
-    while (_objarray_stack.pop_overflow(task)) {
-      if (!_objarray_stack.try_push_to_taskqueue(task)) {
-        follow_array_chunk(objArrayOop(task.obj()), task.index());
-        break;
-      }
+  }
+  while (_oop_stack.pop_local(obj)) {
+    assert(_bitmap->is_marked(obj), "must be marked");
+    follow_object(obj);
+  }
+}
+
+inline bool G1FullGCMarker::transfer_objArray_overflow_stack(ObjArrayTask& task) {
+  // It is desirable to move as much as possible work from the overflow queue to
+  // the shared queue as quickly as possible.
+  while (_objarray_stack.pop_overflow(task)) {
+    if (!_objarray_stack.try_push_to_taskqueue(task)) {
+      return true;
     }
-    if (_objarray_stack.pop_local(task)) {
+  }
+  return false;
+}
+
+void G1FullGCMarker::drain_stack() {
+  do {
+    drain_oop_stack();
+
+    // Process ObjArrays one at a time to avoid marking stack bloat.
+    ObjArrayTask task;
+    if (transfer_objArray_overflow_stack(task) ||
+      _objarray_stack.pop_local(task)) {
       follow_array_chunk(objArrayOop(task.obj()), task.index());
     }
   } while (!is_empty());

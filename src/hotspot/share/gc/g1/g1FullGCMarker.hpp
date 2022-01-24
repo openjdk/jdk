@@ -78,6 +78,13 @@ class G1FullGCMarker : public CHeapObj<mtGC> {
   inline void follow_object(oop obj);
   inline void follow_array(objArrayOop array);
   inline void follow_array_chunk(objArrayOop array, int index);
+
+  inline void drain_oop_stack();
+  // Transfer contents from the objArray overflow stack to the shared objArray stack.
+  // Returns true and a valid task if there has not been enough space in the shared
+  // objArray stack, otherwise the task is invalid.
+  inline bool transfer_objArray_overflow_stack(ObjArrayTask& task);
+
 public:
   G1FullGCMarker(G1FullCollector* collector,
                  uint worker_id,
@@ -94,6 +101,9 @@ public:
   template <class T> inline void mark_and_push(T* p);
   inline void follow_klass(Klass* k);
   inline void follow_cld(ClassLoaderData* cld);
+
+  template <class T>
+  bool transfer_from_overflow_stack(T& elem);
 
   inline void drain_stack();
   void complete_marking(OopQueueSet* oop_stacks,
