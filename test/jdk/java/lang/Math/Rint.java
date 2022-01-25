@@ -39,7 +39,7 @@ public class Rint {
         return failures;
     }
 
-    public static void main(String args[]) {
+    public static void main(String... args) {
         int failures = 0;
         double twoToThe52 = Math.scalb(1.0, 52); // 2^52
 

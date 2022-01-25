@@ -333,18 +333,18 @@ public class Tests {
         return test(testName, input, func.applyAsDouble(input), expected);
     }
 
-     public static int test(String testName, double input,
-                            double result, double expected) {
-         if (Double.compare(expected, result ) != 0) {
-             System.err.println("Failure for " + testName + ":\n" +
-                                "\tFor input " + input    + "\t(" + toHexString(input) + ")\n" +
-                                "\texpected  " + expected + "\t(" + toHexString(expected) + ")\n" +
-                                "\tgot       " + result   + "\t(" + toHexString(result) + ").");
-             return 1;
-         } else {
-             return 0;
-         }
-     }
+    public static int test(String testName, double input,
+                           double result, double expected) {
+        if (Double.compare(expected, result ) != 0) {
+            System.err.println("Failure for " + testName + ":\n" +
+                               "\tFor input " + input    + "\t(" + toHexString(input) + ")\n" +
+                               "\texpected  " + expected + "\t(" + toHexString(expected) + ")\n" +
+                               "\tgot       " + result   + "\t(" + toHexString(result) + ").");
+            return 1;
+        } else {
+            return 0;
+        }
+    }
 
     public static int test(String testName,
                            float input1, double input2,
@@ -485,6 +485,11 @@ public class Tests {
 
     // One input argument.
     public static int testUlpDiff(String testName, double input,
+                                  DoubleUnaryOperator func, double expected, double ulps) {
+        return testUlpDiff(testName, input, func.applyAsDouble(input), expected, ulps);
+    }
+
+    public static int testUlpDiff(String testName, double input,
                                   double result, double expected, double ulps) {
         int code = testUlpCore(result, expected, ulps);
         if (code == 1) {
@@ -498,6 +503,11 @@ public class Tests {
     }
 
     // Two input arguments.
+    public static int testUlpDiff(String testName, double input1, double input2,
+                                  DoubleBinaryOperator func, double expected, double ulps) {
+        return testUlpDiff(testName, input1, input2, func.applyAsDouble(input1, input2), expected, ulps);
+    }
+
     public static int testUlpDiff(String testName, double input1, double input2,
                                   double result, double expected, double ulps) {
         int code = testUlpCore(result, expected, ulps);
@@ -515,6 +525,14 @@ public class Tests {
     // For a successful test, the result must be within the ulp bound of
     // expected AND the result must have absolute value less than or
     // equal to absBound.
+    public static int testUlpDiffWithAbsBound(String testName, double input,
+                                              DoubleUnaryOperator func, double expected,
+                                              double ulps, double absBound) {
+        return testUlpDiffWithAbsBound(testName, input,
+                                       func.applyAsDouble(input), expected,
+                                       ulps, absBound);
+    }
+
     public static int testUlpDiffWithAbsBound(String testName, double input,
                                               double result, double expected,
                                               double ulps, double absBound) {
@@ -541,6 +559,14 @@ public class Tests {
     // expected AND the result must have absolute value greater than
     // or equal to the lowerBound.
     public static int testUlpDiffWithLowerBound(String testName, double input,
+                                                DoubleUnaryOperator func, double expected,
+                                                double ulps, double lowerBound) {
+        return testUlpDiffWithLowerBound(testName, input,
+                                         func.applyAsDouble(input), expected,
+                                         ulps, lowerBound);
+    }
+
+    public static int testUlpDiffWithLowerBound(String testName, double input,
                                                 double result, double expected,
                                                 double ulps, double lowerBound) {
         int code = 0;   // return code value
@@ -564,6 +590,11 @@ public class Tests {
     }
 
     public static int testTolerance(String testName, double input,
+                                    DoubleUnaryOperator func, double expected, double tolerance) {
+        return testTolerance(testName, input, func.applyAsDouble(input), expected, tolerance);
+        
+    }
+    public static int testTolerance(String testName, double input,
                                     double result, double expected, double tolerance) {
         if (Double.compare(expected, result ) != 0) {
             double difference = expected - result;
@@ -586,6 +617,11 @@ public class Tests {
 
     // For a successful test, the result must be within the upper and
     // lower bounds.
+    public static int testBounds(String testName, double input, DoubleUnaryOperator func,
+                                 double bound1, double bound2) {
+        return testBounds(testName, input, func.applyAsDouble(input), bound1, bound2);
+    }
+
     public static int testBounds(String testName, double input, double result,
                                  double bound1, double bound2) {
         if ((result >= bound1 && result <= bound2) ||

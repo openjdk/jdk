@@ -46,16 +46,11 @@ public class CubeRootTests {
         int failures=0;
 
         double minus_input = -input;
-        double minus_expected = -expected;
 
-        failures+=Tests.test("Math.cbrt(double)", input,
-                             Math::cbrt, expected);
-        failures+=Tests.test("Math.cbrt(double)", minus_input,
-                             Math::cbrt, minus_expected);
-        failures+=Tests.test("StrictMath.cbrt(double)", input,
-                             StrictMath::cbrt, expected);
-        failures+=Tests.test("StrictMath.cbrt(double)", minus_input,
-                             StrictMath::cbrt, minus_expected);
+        failures+=Tests.test("Math.cbrt",        input, Math::cbrt,        expected);
+        failures+=Tests.test("Math.cbrt",       -input, Math::cbrt,       -expected);
+        failures+=Tests.test("StrictMath.cbrt",  input, StrictMath::cbrt,  expected);
+        failures+=Tests.test("StrictMath.cbrt", -input, StrictMath::cbrt, -expected);
 
         return failures;
     }

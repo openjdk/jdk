@@ -365,16 +365,12 @@ public class FusedMultiplyAddTests {
 
     private static int testFusedMacCase(double input1, double input2, double input3, double expected) {
         int failures = 0;
-        failures += Tests.test("Math.fma(double)", input1, input2, input3,
-                               Math::fma, expected);
-        failures += Tests.test("StrictMath.fma(double)", input1, input2, input3,
-                               StrictMath::fma, expected);
+        failures += Tests.test("Math.fma",       input1, input2, input3, Math::fma,       expected);
+        failures += Tests.test("StrictMath.fma", input1, input2, input3, StrictMath::fma, expected);
 
         // Permute first two inputs
-        failures += Tests.test("Math.fma(double)", input2, input1, input3,
-                               Math::fma, expected);
-        failures += Tests.test("StrictMath.fma(double)", input2, input1, input3,
-                               StrictMath::fma, expected);
+        failures += Tests.test("Math.fma",       input2, input1, input3, Math::fma,       expected);
+        failures += Tests.test("StrictMath.fma", input2, input1, input3, StrictMath::fma, expected);
         return failures;
     }
 

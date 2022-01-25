@@ -32,10 +32,8 @@ public class Atan2Tests {
 
     static int testAtan2Case(double input1, double input2, double expected) {
         int failures = 0;
-        failures += Tests.test("StrictMath.atan2(double, double)", input1, input2,
-                               StrictMath::atan2, expected);
-        failures += Tests.test("Math.atan2(double, double)", input1, input2,
-                               Math::atan2, expected);
+        failures += Tests.test("StrictMath.atan2", input1, input2, StrictMath::atan2, expected);
+        failures += Tests.test("Math.atan2",       input1, input2, Math::atan2,       expected);
 
         return failures;
     }

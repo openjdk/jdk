@@ -117,8 +117,6 @@ public class Log10Tests {
                                            "log(input)/log(10): log10(input) = " + result +
                                            "\tlog(input)/log(10) = " + expected);
                     }
-
-
                 }
             }
         }
@@ -212,5 +210,4 @@ public class Log10Tests {
             throw new RuntimeException();
         }
     }
-
 }
