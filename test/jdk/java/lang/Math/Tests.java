@@ -438,7 +438,7 @@ public class Tests {
                            double input1, double input2, double input3,
                            DoubleTernaryOperator func, double expected) {
         return test(testName, input1, input2, input3, func.applyAsDouble(input1, input2, input3), expected);
-        
+
     }
 
     public static int test(String testName,
@@ -592,7 +592,7 @@ public class Tests {
     public static int testTolerance(String testName, double input,
                                     DoubleUnaryOperator func, double expected, double tolerance) {
         return testTolerance(testName, input, func.applyAsDouble(input), expected, tolerance);
-        
+
     }
     public static int testTolerance(String testName, double input,
                                     double result, double expected, double tolerance) {
