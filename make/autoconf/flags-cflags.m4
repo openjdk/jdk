@@ -133,7 +133,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       BUILD_CC_DISABLE_WARNING_PREFIX="-wd"
       CFLAGS_WARNINGS_ARE_ERRORS="-WX"
 
-      WARNINGS_ENABLE_ALL="-W3"
+      WARNINGS_ENABLE_ALL="-W3 -Zc:strictStrings"
       DISABLED_WARNINGS="4800"
       if test "x$TOOLCHAIN_VERSION" = x2017; then
         # VS2017 incorrectly triggers this warning for constexpr

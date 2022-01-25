@@ -84,7 +84,7 @@ DEF_STATIC_JNI_OnLoad
 
 void showProperty(NCRYPT_HANDLE hKey);
 
-void dump(LPSTR title, PBYTE data, DWORD len)
+void dump(LPCSTR title, PBYTE data, DWORD len)
 {
     if (trace) {
         printf("==== %s ====\n", title);
@@ -533,7 +533,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
             // Build certificate chain by using system certificate store.
             // Add cert chain into collection for any key usage.
             //
-            if (GetCertificateChain(OID_EKU_ANY, pCertContext, &pCertChainContext))
+            if (GetCertificateChain((LPSTR)OID_EKU_ANY, pCertContext, &pCertChainContext))
             {
                 for (DWORD i = 0; i < pCertChainContext->cChain; i++)
                 {
@@ -1267,7 +1267,7 @@ void showProperty(NCRYPT_HANDLE hKey) {
     BCryptBuffer bb;
     bb.BufferType = NCRYPTBUFFER_PKCS_SECRET;
     bb.cbBuffer = 18;
-    bb.pvBuffer = L"changeit";
+    bb.pvBuffer = (LPWSTR)L"changeit";
     BCryptBufferDesc bbd;
     bbd.ulVersion = 0;
     bbd.cBuffers = 1;
