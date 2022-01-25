@@ -1276,8 +1276,8 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
       // could be shared and have already been taken care of
       continue;
     }
-    bool converted = false;
-    bool ok = is_scaled_iv_plus_offset(rc_cmp->in(1), iv_add, &scale, &offset, T_LONG, &converted);
+    bool short_scale = false;
+    bool ok = is_scaled_iv_plus_offset(rc_cmp->in(1), iv_add, &scale, &offset, T_LONG, &short_scale);
     assert(ok, "inconsistent: was tested before");
     Node* range = rc_cmp->in(2);
     Node* c = rc->in(0);
@@ -1289,9 +1289,9 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
 
     Node* L = offset;
 
-    if (converted) {
+    if (short_scale) {
       // This converts:
-      // i*K + L <u64 R
+      // (int)i*K + L <u64 R
       // with K an int into:
       // i*(long)K + L <u64 unsigned_min((long)max_jint + L + 1, R)
       // to protect against an overflow of i*K
