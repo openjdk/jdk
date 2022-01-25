@@ -463,9 +463,8 @@ class methodHandle;
                                                                                                                         \
   /* support for sun.security.provider.DigestBase */                                                                    \
   do_class(sun_security_provider_digestbase,                       "sun/security/provider/DigestBase")                  \
-  do_intrinsic(_digestBase_implCompressMB, sun_security_provider_digestbase, implCompressMB_name, implCompressMB_signature, F_R)   \
+  do_intrinsic(_digestBase_implCompressMB, sun_security_provider_digestbase, implCompressMB_name, countPositives_signature, F_R)   \
    do_name(     implCompressMB_name,                               "implCompressMultiBlock0")                           \
-   do_signature(implCompressMB_signature,                          "([BII)I")                                           \
                                                                                                                         \
    /* support for java.util.Base64.Encoder*/                                                                            \
   do_class(java_util_Base64_Encoder, "java/util/Base64$Encoder")                                                        \
