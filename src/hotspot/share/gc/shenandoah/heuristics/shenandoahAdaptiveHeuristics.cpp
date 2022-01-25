@@ -80,8 +80,8 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
   //      too fragmented. In non-overloaded non-fragmented heap min_garbage would be around zero.
   //
   // Therefore, we start by sorting the regions by garbage. Then we unconditionally add the best candidates
-  // before we meet min_garbage. Then we add all candidates that fit with a garbage threshold before
-  // we hit max_cset. When max_cset is hit, we terminate the cset selection. Note that in this scheme,
+  // before we meet min_garbage. Then we add all candidates that fit with a garbage threshold.
+  // If max_cset is hit during that phase, we terminate the cset selection. Note that in this scheme,
   // ShenandoahGarbageThreshold is the soft threshold which would be ignored until min_garbage is hit.
 
   size_t capacity    = ShenandoahHeap::heap()->soft_max_capacity();
@@ -116,6 +116,15 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
       cset->add_region(r);
       cur_cset = new_cset;
       cur_garbage = new_garbage;
+    } else if (cur_garbage >= min_garbage) {
+      // Min garbage condition satisfied, and the regions left would never meet
+      // the garbage threshold, because we sorted by garbage. Can break here.
+#ifdef ASSERT
+      for (size_t c_idx = idx; c_idx < size; c_idx++) {
+        assert(data[c_idx]._region->garbage() <= garbage_threshold, "Sorting invariant");
+      }
+#endif
+      break;
     }
   }
 }
