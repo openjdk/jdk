@@ -162,7 +162,7 @@ public class TestDwarf {
                             matcher = pattern.matcher(crashOutputString);
                             Asserts.assertTrue(matcher.find(), "Could not find filename or line number in \"" + line + "\"");
                             System.out.println("Did not find symbols for " + library + ". If they are not in the same directory as " + library + " consider setting " +
-                                               "the environmental variable JVM_DWARF_PATH to point to the debug symbols directory.");
+                                               "the environmental variable _JVM_DWARF_PATH to point to the debug symbols directory.");
                         }
 
                         // Check additional DWARF constraints
