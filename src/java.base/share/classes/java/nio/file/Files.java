@@ -824,9 +824,8 @@ public final class Files {
      * java.io.File#createTempFile(String,String,File)} method.
      *
      * <p> As with the {@code File.createTempFile} methods, this method is only
-     * part of a temporary-file facility. Where the resulting file is used
-     * as a <em>work file</em> solely by a single instance of the Java virtual
-     * machine, it may be opened using the {@link
+     * part of a temporary-file facility. Where used as a <em>work file</em>,
+     * the resulting file may be opened using the {@link
      * StandardOpenOption#DELETE_ON_CLOSE DELETE_ON_CLOSE} option so that the
      * file is deleted when the appropriate {@code close} method is invoked.
      * Alternatively, a {@link Runtime#addShutdownHook shutdown-hook}, or the
