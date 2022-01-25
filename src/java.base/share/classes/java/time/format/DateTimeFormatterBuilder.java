@@ -1454,7 +1454,7 @@ public final class DateTimeFormatterBuilder {
      * {@code yMMM} will format the date '2020-06-16' to 'Jun 2020' in the {@link Locale#US US locale}.
      * If the localized pattern symbols for the given {@code requestedTemplate} is not
      * available, {@code DateTimeException} is thrown.
-     * <p>
+     *
      * @param requestedTemplate the requested template to use, not null
      * @param locale the locale to use, not null
      * @param chrono the chronology to use, not null

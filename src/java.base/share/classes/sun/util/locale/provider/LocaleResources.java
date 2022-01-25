@@ -575,13 +575,13 @@ public class LocaleResources {
     private String getLocalizedPatternImpl(String requested, String calType) {
         initSkeletonIfNeeded();
 
-        // input skeleton substitution
-        final String skeleton = substituteInputSkeletons(requested);
-
         // validity check
-        if (!validSkeletons.contains(skeleton)) {
+        if (!VALID_SKELETON_PATTERN.matcher(requested).matches()) {
             throw new IllegalArgumentException("Requested pattern is invalid: " + requested);
         }
+
+        // input skeleton substitution
+        final String skeleton = substituteInputSkeletons(requested);
 
         // Expand it with possible inferred skeleton stream based on its priority
         var inferred = possibleInferred(skeleton);
@@ -601,8 +601,22 @@ System.out.println("requested: " + requested + ", locale: " + locale + ", caltyp
         return matched;
     }
 
-    // Possible valid skeleton patterns.
-    private Set<String> validSkeletons;
+    // For validity check
+    private static final Pattern VALID_SKELETON_PATTERN = Pattern.compile(
+        "G{0,5}" +        // Era
+        "y*" +            // Year
+        "Q{0,5}" +        // Quarter
+        "M{0,5}" +        // Month
+        "w*" +            // Week of Week Based Year
+        "E{0,5}" +        // Day of Week
+        "d{0,2}" +        // Day of Month
+        "B{0,5}" +        // Period/AmPm of Day
+        "[hHjC]{0,2}" +   // Hour of Day/AmPm (refer to LDML for 'j' and 'C')
+        "m{0,2}" +        // Minute of Hour
+        "s{0,2}" +        // Second of Minute
+        "[vz]{0,4}");     // Zone
+    // Available skeleton patterns.
+    private Set<String> availableSkeletons;
     // Input Skeleton map for "preferred" and "allowed"
     // Map<"region", "skeleton">
     private Map<String, String> preferredInputSkeletons;
@@ -611,12 +625,12 @@ System.out.println("requested: " + requested + ", locale: " + locale + ", caltyp
     private String jPattern;
     private String CPattern;
     private void initSkeletonIfNeeded() {
-        if (validSkeletons == null) {
+        if (availableSkeletons == null) {
             preferredInputSkeletons = new HashMap<>();
             allowedInputSkeletons = new HashMap<>();
             Pattern p = Pattern.compile("([^:]+):([^;]+);");
             ResourceBundle r = localeData.getDateFormatData(Locale.ROOT);
-            validSkeletons = r.containsKey(SKELETON_VALID_PATTERNS_KEY) ?
+            availableSkeletons = r.containsKey(SKELETON_VALID_PATTERNS_KEY) ?
                 Arrays.stream(r.getString(SKELETON_VALID_PATTERNS_KEY).split(","))
                     .map(String::trim)
                     .collect(Collectors.toUnmodifiableSet()) :
@@ -714,7 +728,7 @@ System.out.println("requested: " + requested + ", locale: " + locale + ", caltyp
                 return List.of(s).stream();
             })
             .distinct()
-            .filter(validSkeletons::contains);
+            .filter(availableSkeletons::contains);
     }
 
     /**
