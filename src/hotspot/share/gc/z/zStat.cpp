@@ -1153,7 +1153,7 @@ void ZStatCycle::at_start() {
   _start_of_last = Ticks::now();
 }
 
-void ZStatCycle::at_end(ZStatWorkers* stat_workers) {
+void ZStatCycle::at_end(ZStatWorkers* stat_workers, bool record_stats) {
   _end_of_last = Ticks::now();
 
   if (ZCollectedHeap::heap()->gc_cause() == GCCause::_z_warmup && _nwarmup_cycles < 3) {
@@ -1167,9 +1167,12 @@ void ZStatCycle::at_end(ZStatWorkers* stat_workers) {
   const double serial_time = duration - workers_duration;
 
   _last_active_workers = workers_time / workers_duration;
-  _serial_time.add(serial_time);
-  _parallelizable_time.add(workers_time);
-  _parallelizable_duration.add(workers_duration);
+
+  if (record_stats) {
+    _serial_time.add(serial_time);
+    _parallelizable_time.add(workers_time);
+    _parallelizable_duration.add(workers_duration);
+  }
 }
 
 bool ZStatCycle::is_warm() {

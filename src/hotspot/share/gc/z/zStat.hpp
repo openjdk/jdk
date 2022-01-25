@@ -426,7 +426,7 @@ public:
   ZStatCycle();
 
   void at_start();
-  void at_end(ZStatWorkers* stats_workers);
+  void at_end(ZStatWorkers* stats_workers, bool record_stats);
 
   bool is_warm();
   uint64_t nwarmup_cycles();

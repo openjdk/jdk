@@ -138,7 +138,7 @@ public:
   ZStatRelocation* stat_relocation();
 
   void at_collection_start(ConcurrentGCTimer* gc_timer);
-  void at_collection_end();
+  void at_collection_end(bool record_stats);
 
   // Workers
   ZWorkers* workers();
