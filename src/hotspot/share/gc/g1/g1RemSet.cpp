@@ -1958,7 +1958,7 @@ public:
       HeapWord* const top_at_mark_start = hr->prev_top_at_mark_start();
 
       HeapWord* cur = hr->bottom();
-      while (cur < hr->end()) {
+      while (true) {
         // After every iteration (yield point) we need to check whether the region's
         // TARS changed due to e.g. eager reclaim.
         HeapWord* const top_at_rebuild_start = _cm->top_at_rebuild_start(region_idx);
