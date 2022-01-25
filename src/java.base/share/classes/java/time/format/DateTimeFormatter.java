@@ -721,8 +721,8 @@ public final class DateTimeFormatter {
     /**
      * Creates a locale specific formatter derived from the requested template and
      * the specified locale. The requested template is a series of typical pattern
-     * symbols in canonical order from the largest date or time unit to the smallest.
-     * The requested template can be expressed with the following regular expression:
+     * symbols in canonical order from the largest date or time unit to the smallest,
+     * which can be expressed with the following regular expression:
      * {@snippet :
      *      "G{0,5}" +        // Era
      *      "y*" +            // Year
@@ -737,14 +737,16 @@ public final class DateTimeFormatter {
      *      "s{0,2}" +        // Second of Minute
      *      "[vz]{0,4}"       // Zone
      * }
-     * The mapping of the requested template to the closest of the available localized
-     * formats is defined by the
+     * All pattern symbols are optional, and each pattern symbol represents the field it is in,
+     * e.g., 'M' represents the Month field. Other pattern symbols in the requested template are
+     * invalid, resulting an {@code IllegalArgumentException}.
+     * <p>
+     * The mapping of the requested template to the closest of the available localized formats
+     * is defined by the
      * <a href="https://www.unicode.org/reports/tr35/tr35-dates.html#availableFormats_appendItems">
-     * Unicode LDML specification</a>. The requested template is mapped to the closest
-     * available localized format pattern that contains the requested date and time
-     * pattern symbols as described by LDML. For example, {@code yMMM} will format the
-     * date '2020-06-16' to 'Jun 2020' in the {@link Locale#US US locale}. If the
-     * localized pattern symbols for the given {@code requestedTemplate} is not
+     * Unicode LDML specification</a>. For example, the formatter created from the requested template
+     * {@code yMMM} will format the date '2020-06-16' to 'Jun 2020' in the {@link Locale#US US locale}.
+     * If the localized pattern symbols for the given {@code requestedTemplate} is not
      * available, {@code DateTimeException} is thrown.
      * <p>
      * The formatter will use the specified locale and
