@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -366,15 +366,15 @@ public class FusedMultiplyAddTests {
     private static int testFusedMacCase(double input1, double input2, double input3, double expected) {
         int failures = 0;
         failures += Tests.test("Math.fma(double)", input1, input2, input3,
-                               Math.fma(input1, input2, input3), expected);
+                               Math::fma, expected);
         failures += Tests.test("StrictMath.fma(double)", input1, input2, input3,
-                               StrictMath.fma(input1, input2, input3), expected);
+                               StrictMath::fma, expected);
 
         // Permute first two inputs
         failures += Tests.test("Math.fma(double)", input2, input1, input3,
-                               Math.fma(input2, input1, input3), expected);
+                               Math::fma, expected);
         failures += Tests.test("StrictMath.fma(double)", input2, input1, input3,
-                               StrictMath.fma(input2, input1, input3), expected);
+                               StrictMath::fma, expected);
         return failures;
     }
 

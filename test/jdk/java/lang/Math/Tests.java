@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,9 +237,9 @@ public class Tests {
                                "\texpected  " + expected + "\n"  +
                                "\tgot       " + result   + ").");
             return 1;
-        }
-        else
+        } else {
             return 0;
+        }
     }
 
     public static int test(String testName, double input,
@@ -250,9 +250,9 @@ public class Tests {
                                "\texpected  " + expected + "\n"  +
                                "\tgot       " + result   + ").");
             return 1;
-        }
-        else
+        } else {
             return 0;
+        }
     }
 
     public static int test(String testName, float input1, float input2,
@@ -279,18 +279,6 @@ public class Tests {
             return 1;
         }
         return 0;
-    }
-
-    @FunctionalInterface
-    public interface FloatToIntFunction {
-        int applyAsInt(float value);
-    }
-
-    public static int test(String testName,
-                           float input,
-                           FloatToIntFunction func,
-                           int expected) {
-        return test(testName, input, func.applyAsInt(input), expected);
     }
 
     public static int test(String testName, float input,
@@ -320,22 +308,10 @@ public class Tests {
                                "\texpected  " + expected + "\n"  +
                                "\tgot       " + result   + ").");
             return 1;
-        }
-        else
+        } else {
             return 0;
+        }
     }
-
-     @FunctionalInterface
-     public interface FloatUnaryOperator {
-         float applyAsFloat(float operand);
-     }
-
-     public static int test(String testName,
-                            float input,
-                            FloatUnaryOperator func,
-                            float expected) {
-         return test(testName, input, func.applyAsFloat(input), expected);
-     }
 
     public static int test(String testName, float input,
                            float result, float expected) {
@@ -345,9 +321,9 @@ public class Tests {
                                "\texpected  " + expected + "\t(" + toHexString(expected) + ")\n" +
                                "\tgot       " + result   + "\t(" + toHexString(result) + ").");
             return 1;
-        }
-        else
+        } else {
             return 0;
+        }
     }
 
     public static int test(String testName,
@@ -369,18 +345,6 @@ public class Tests {
              return 0;
          }
      }
-
-    @FunctionalInterface
-    public interface FloatBinaryOperator {
-        float applyAsFloat(float left, float right);
-    }
-
-    public static int test(String testName,
-                           float input1, float input2,
-                           FloatBinaryOperator func,
-                           float expected) {
-        return test(testName, input1, input2, func.applyAsFloat(input1, input2), expected);
-    }
 
     public static int test(String testName,
                            float input1, double input2,
@@ -463,6 +427,18 @@ public class Tests {
         } else {
             return 0;
         }
+    }
+
+    @FunctionalInterface
+    public interface DoubleTernaryOperator {
+        double applyAsDouble(double input1, double input2, double input3);
+    }
+
+    public static int test(String testName,
+                           double input1, double input2, double input3,
+                           DoubleTernaryOperator func, double expected) {
+        return test(testName, input1, input2, input3, func.applyAsDouble(input1, input2, input3), expected);
+        
     }
 
     public static int test(String testName,
@@ -571,8 +547,9 @@ public class Tests {
 
         if (!(result >= lowerBound) && !Double.isNaN(expected)) {
             code = 1;
-        } else
+        } else {
             code = testUlpCore(result, expected, ulps);
+        }
 
         if (code == 1) {
             System.err.println("Failure for " + testName +
