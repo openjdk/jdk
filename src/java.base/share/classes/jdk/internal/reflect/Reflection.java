@@ -423,9 +423,9 @@ public class Reflection {
             ((Modifier.PRIVATE |
               Modifier.PROTECTED |
               Modifier.PUBLIC) & modifiers) == 0;
-        return (packageAccess ?
+        return packageAccess ?
             " with package access" :
-            " with modifiers \"" + Modifier.toString(modifiers) + "\"" );
+            " with modifiers \"" + Modifier.toString(modifiers) + "\"";
     }
 
     /**
