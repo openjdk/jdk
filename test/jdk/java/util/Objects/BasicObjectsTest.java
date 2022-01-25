@@ -25,7 +25,6 @@
  * @test
  * @bug 6797535 6889858 6891113 8013712 8011800 8014365 8280168
  * @summary Basic tests for methods in java.util.Objects
- * @author  Joseph D. Darcy
  */
 
 import java.util.*;
