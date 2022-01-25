@@ -56,10 +56,7 @@ abstract class ClassCache<T> {
         }
 
         void clearStrong() {
-            // Do a conditional store, in case this is a MT write.
-            if (strongReferent != null) {
-                strongReferent = null;
-            }
+            strongReferent = null;
         }
     }
 
