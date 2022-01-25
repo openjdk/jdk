@@ -2404,9 +2404,6 @@ class StubGenerator: public StubCodeGenerator {
 
  public:
   StubGenerator(CodeBuffer* code, bool all) : StubCodeGenerator(code) {
-    // Replace the standard masm with a special one:
-    _masm = new MacroAssembler(code);
-
     _stub_count = !all ? 0x100 : 0x200;
     if (all) {
       generate_all();
