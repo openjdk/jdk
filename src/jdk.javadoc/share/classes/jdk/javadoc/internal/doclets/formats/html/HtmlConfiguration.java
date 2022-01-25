@@ -170,7 +170,7 @@ public class HtmlConfiguration extends BaseConfiguration {
     /**
      * The build date, to be recorded in generated files.
      */
-    private Date buildDate;
+    private ZonedDateTime buildDate;
 
     /**
      * Constructs the full configuration needed by the doclet, including
@@ -267,7 +267,7 @@ public class HtmlConfiguration extends BaseConfiguration {
         }
 
         ZonedDateTime zdt = options.date();
-        buildDate = zdt != null ? new Date(zdt.toEpochSecond() * 1000) : new Date();
+        buildDate = zdt != null ? zdt : ZonedDateTime.now();
 
         if (!getSpecifiedTypeElements().isEmpty()) {
             Map<String, PackageElement> map = new HashMap<>();
@@ -292,7 +292,7 @@ public class HtmlConfiguration extends BaseConfiguration {
     /**
      * {@return the date to be recorded in generated files}
      */
-    public Date getBuildDate() {
+    public ZonedDateTime getBuildDate() {
         return buildDate;
     }
 

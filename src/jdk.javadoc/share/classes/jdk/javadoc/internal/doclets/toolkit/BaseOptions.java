@@ -366,8 +366,7 @@ public abstract class BaseOptions {
                         }
                         String arg = args.get(0);
                         try {
-                            date = ZonedDateTime.parse(arg, DateTimeFormatter.ISO_ZONED_DATE_TIME)
-                                    .withZoneSameInstant(ZoneOffset.UTC);
+                            date = ZonedDateTime.parse(arg, DateTimeFormatter.ISO_ZONED_DATE_TIME);
                             if (date.isBefore(DATE_MIN) || date.isAfter(DATE_MAX)) {
                                 messages.error("doclet.Option_date_out_of_range", arg);
                                 return false;
