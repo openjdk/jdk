@@ -30,7 +30,7 @@
 #include "cds/heapShared.hpp"
 #include "cds/lambdaFormInvokers.hpp"
 #include "classfile/classFileStream.hpp"
-#include "classfile/classLoader.hpp"
+#include "classfile/classLoader.inline.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoadInfo.hpp"
@@ -3372,6 +3372,11 @@ JVM_END
 
 
 // Library support ///////////////////////////////////////////////////////////////////////////
+
+JVM_LEAF(void*, JVM_LoadZipLibrary())
+  ClassLoader::load_zip_library_if_needed();
+  return ClassLoader::zip_library_handle();
+JVM_END
 
 JVM_ENTRY_NO_ENV(void*, JVM_LoadLibrary(const char* name, jboolean throwException))
   //%note jvm_ct
