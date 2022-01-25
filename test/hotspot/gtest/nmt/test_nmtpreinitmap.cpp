@@ -31,8 +31,6 @@
 #include "utilities/ostream.hpp"
 #include "unittest.hpp"
 
-#if INCLUDE_NMT
-
 // This tests the NMTPreInitAllocationTable hash table used to store C-heap allocations before NMT initialization ran.
 
 static size_t small_random_nonzero_size() {
@@ -132,5 +130,3 @@ TEST_VM_ASSERT_MSG(NMTPreInit, assert_on_lu_table_overflow, ".*NMT preinit looku
   table.verify();
 }
 #endif // ASSERT
-
-#endif // INCLUDE_NMT

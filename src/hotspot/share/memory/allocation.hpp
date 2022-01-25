@@ -170,15 +170,7 @@ MEMORY_TYPES_DO(MEMORY_TYPE_SHORTNAME)
 // Make an int version of the sentinel end value.
 constexpr int mt_number_of_types = static_cast<int>(MEMFLAGS::mt_number_of_types);
 
-#if INCLUDE_NMT
-
 extern bool NMT_track_callsite;
-
-#else
-
-const bool NMT_track_callsite = false;
-
-#endif // INCLUDE_NMT
 
 class NativeCallStack;
 

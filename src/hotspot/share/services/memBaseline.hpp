@@ -25,8 +25,6 @@
 #ifndef SHARE_SERVICES_MEMBASELINE_HPP
 #define SHARE_SERVICES_MEMBASELINE_HPP
 
-#if INCLUDE_NMT
-
 #include "memory/metaspaceStats.hpp"
 #include "runtime/mutex.hpp"
 #include "services/mallocSiteTable.hpp"
@@ -211,7 +209,5 @@ class MemBaseline {
   // Sort allocation sites in call site address order
   void virtual_memory_sites_to_reservation_site_order();
 };
-
-#endif // INCLUDE_NMT
 
 #endif // SHARE_SERVICES_MEMBASELINE_HPP

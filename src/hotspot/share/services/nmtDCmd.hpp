@@ -25,8 +25,6 @@
 #ifndef SHARE_SERVICES_NMTDCMD_HPP
 #define SHARE_SERVICES_NMTDCMD_HPP
 
-#if INCLUDE_NMT
-
 #include "services/diagnosticArgument.hpp"
 #include "services/diagnosticFramework.hpp"
 #include "services/memBaseline.hpp"
@@ -70,7 +68,5 @@ class NMTDCmd: public DCmdWithParser {
   // check if NMT running at detail tracking level
   bool check_detail_tracking_level(outputStream* out);
 };
-
-#endif // INCLUDE_NMT
 
 #endif // SHARE_SERVICES_NMTDCMD_HPP

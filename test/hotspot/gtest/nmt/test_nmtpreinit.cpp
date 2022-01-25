@@ -54,8 +54,6 @@
 //   us. So inside that scope VM initialization ran and with it the NMT initialization.
 // To be sure, we assert those assumptions.
 
-#if INCLUDE_NMT
-
 // Some shorts to save writing out the flags every time
 static void* os_malloc(size_t s)              { return os::malloc(s, mtTest); }
 static void* os_realloc(void* old, size_t s)  { return os::realloc(old, s, mtTest); }
@@ -127,5 +125,3 @@ TEST_VM(NMTPreInit, pre_to_post_allocs) {
   g_test_allocations.test_post();
   g_test_allocations.free_all();
 }
-
-#endif // INCLUDE_NMT

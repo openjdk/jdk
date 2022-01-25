@@ -137,9 +137,8 @@ Monitor* ThreadsSMRDelete_lock        = NULL;
 Mutex*   ThreadIdTableCreate_lock     = NULL;
 Mutex*   SharedDecoder_lock           = NULL;
 Mutex*   DCmdFactory_lock             = NULL;
-#if INCLUDE_NMT
 Mutex*   NMTQuery_lock                = NULL;
-#endif
+
 #if INCLUDE_CDS
 #if INCLUDE_JVMTI
 Mutex*   CDSClassFileStream_lock      = NULL;
@@ -320,9 +319,7 @@ void mutex_init() {
   def(ThreadIdTableCreate_lock     , PaddedMutex  , safepoint);
   def(SharedDecoder_lock           , PaddedMutex  , tty-1);
   def(DCmdFactory_lock             , PaddedMutex  , nosafepoint);
-#if INCLUDE_NMT
   def(NMTQuery_lock                , PaddedMutex  , safepoint);
-#endif
 #if INCLUDE_CDS
 #if INCLUDE_JVMTI
   def(CDSClassFileStream_lock      , PaddedMutex  , safepoint);

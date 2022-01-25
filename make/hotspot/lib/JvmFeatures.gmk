@@ -130,13 +130,6 @@ ifneq ($(call check-jvm-feature, cds), true)
   JVM_EXCLUDE_PATTERNS += cds/
 endif
 
-ifneq ($(call check-jvm-feature, nmt), true)
-  JVM_CFLAGS_FEATURES += -DINCLUDE_NMT=0
-  JVM_EXCLUDE_FILES += \
-      memBaseline.cpp memReporter.cpp mallocTracker.cpp virtualMemoryTracker.cpp nmtCommon.cpp \
-      memTracker.cpp nmtDCmd.cpp mallocSiteTable.cpp threadStackTracker.cpp
-endif
-
 ifneq ($(call check-jvm-feature, g1gc), true)
   JVM_CFLAGS_FEATURES += -DINCLUDE_G1GC=0
   JVM_EXCLUDE_PATTERNS += gc/g1

@@ -25,8 +25,6 @@
 #ifndef SHARE_SERVICES_MEMREPORTER_HPP
 #define SHARE_SERVICES_MEMREPORTER_HPP
 
-#if INCLUDE_NMT
-
 #include "memory/metaspace.hpp"
 #include "oops/instanceKlass.hpp"
 #include "services/memBaseline.hpp"
@@ -238,7 +236,5 @@ class MemDetailDiffReporter : public MemSummaryDiffReporter {
   void diff_virtual_memory_site(const NativeCallStack* stack, size_t current_reserved,
     size_t current_committed, size_t early_reserved, size_t early_committed, MEMFLAGS flag) const;
 };
-
-#endif // INCLUDE_NMT
 
 #endif // SHARE_SERVICES_MEMREPORTER_HPP

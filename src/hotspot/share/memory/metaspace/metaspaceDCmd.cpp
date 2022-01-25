@@ -77,7 +77,7 @@ void MetaspaceDCmd::execute(DCmdSource source, TRAPS) {
     if (strcasecmp("dynamic", scale_value) == 0) {
       scale = 0;
     } else {
-      scale = NMT_ONLY(NMTUtil::scale_from_name(scale_value)) NOT_NMT(0);
+      scale = NMTUtil::scale_from_name(scale_value);
       if (scale == 0) {
         output()->print_cr("Invalid scale: \"%s\". Will use dynamic scaling.", scale_value);
       }

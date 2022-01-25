@@ -31,8 +31,6 @@
 #include "utilities/ostream.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#if INCLUDE_NMT
-
 // Obviously we cannot use os::malloc for any dynamic allocation during pre-NMT-init, so we must use
 // raw malloc; to make this very clear, wrap them.
 static void* raw_malloc(size_t s)               { return ::malloc(s); }
@@ -190,5 +188,3 @@ void NMTPreInit::print_state(outputStream* st) {
   st->print_cr("pre-init mallocs: %u, pre-init reallocs: %u, pre-init frees: %u",
                _num_mallocs_pre, _num_reallocs_pre, _num_frees_pre);
 }
-
-#endif // INCLUDE_NMT

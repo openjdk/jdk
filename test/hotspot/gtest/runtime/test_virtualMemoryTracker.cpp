@@ -32,16 +32,13 @@
 
 #include "precompiled.hpp"
 
-// Included early because the NMT flags don't include it.
-#include "utilities/macros.hpp"
-
-#if INCLUDE_NMT
-
 #include "memory/virtualspace.hpp"
 #include "services/memTracker.hpp"
 #include "services/virtualMemoryTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 #include "unittest.hpp"
+
 #include <stdio.h>
 
 // #define LOG(...) printf(__VA_ARGS__); printf("\n"); fflush(stdout);
@@ -566,5 +563,3 @@ TEST_VM(NMT_VirtualMemoryTracker, remove_uncommitted_region) {
     tty->print_cr("skipped.");
   }
 }
-
-#endif // INCLUDE_NMT

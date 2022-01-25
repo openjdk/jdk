@@ -34,8 +34,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-#if INCLUDE_NMT
-
 class outputStream;
 
 // NMTPreInit is the solution to a specific problem:
@@ -352,8 +350,6 @@ public:
   static void print_map(outputStream* st);
   DEBUG_ONLY(static void verify();)
 };
-
-#endif // INCLUDE_NMT
 
 #endif // SHARE_SERVICES_NMT_PREINIT_HPP
 
