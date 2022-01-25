@@ -378,11 +378,14 @@ public class Reflection {
         String memberPackageName = memberClass.getPackageName();
 
         String msg = currentClass + currentSuffix + " cannot access ";
+        boolean packageAccess = ((Modifier.PRIVATE | Modifier.PROTECTED | Modifier.PUBLIC) & modifiers) == 0;
         if (m2.isExported(memberPackageName, m1)) {
 
             // module access okay so include the modifiers in the message
             msg += "a member of " + memberClass + memberSuffix +
-                    " with modifiers \"" + Modifier.toString(modifiers) + "\"";
+                (packageAccess ?
+                 " package access" :
+                 " with modifiers \"" + Modifier.toString(modifiers) + "\"" );
 
         } else {
             // module access failed
