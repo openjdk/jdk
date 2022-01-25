@@ -554,10 +554,9 @@ public abstract class FileChannel
      * actually done is system-dependent and is therefore unspecified.
      *
      * <p> This method is only guaranteed to force changes that were made to
-     * this channel's file via the methods defined in this class or, if this
-     * channel was derived from a {@link FileOutputStream} or
-     * {@link RandomAccessFile} using the {@code getChannel} method,
-     * via the methods defined in those classes.  It may or
+     * this channel's file via the methods defined in this class, or the methods
+     * defined by {@link FileOutputStream} or {@link RandomAccessFile} when the
+     * channel was obtained with the {@code getChannel} method. It may or
      * may not force changes that were made by modifying the content of a
      * {@link MappedByteBuffer <i>mapped byte buffer</i>} obtained by
      * invoking the {@link #map map} method.  Invoking the {@link
