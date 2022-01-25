@@ -21,6 +21,8 @@
  * questions.
  */
 
+import java.util.function.*;
+
 /*
  * Shared static test methods for numerical tests.  Sharing these
  * helper test methods avoids repeated functions in the various test
@@ -279,6 +281,18 @@ public class Tests {
         return 0;
     }
 
+    @FunctionalInterface
+    public interface FloatToIntFunction {
+        int applyAsInt(float value);
+    }
+
+    public static int test(String testName,
+                           float input,
+                           FloatToIntFunction func,
+                           int expected) {
+        return test(testName, input, func.applyAsInt(input), expected);
+    }
+
     public static int test(String testName, float input,
                            int result, int expected) {
         if (expected != result) {
@@ -289,6 +303,13 @@ public class Tests {
             return 1;
         }
         return 0;
+    }
+
+    public static int test(String testName,
+                           double input,
+                           DoubleToIntFunction func,
+                           int expected) {
+        return test(testName, input, func.applyAsInt(input), expected);
     }
 
     public  static int test(String testName, double input,
@@ -304,6 +325,18 @@ public class Tests {
             return 0;
     }
 
+     @FunctionalInterface
+     public interface FloatUnaryOperator {
+         float applyAsFloat(float operand);
+     }
+
+     public static int test(String testName,
+                            float input,
+                            FloatUnaryOperator func,
+                            float expected) {
+         return test(testName, input, func.applyAsFloat(input), expected);
+     }
+
     public static int test(String testName, float input,
                            float result, float expected) {
         if (Float.compare(expected, result) != 0 ) {
@@ -317,18 +350,36 @@ public class Tests {
             return 0;
     }
 
+    public static int test(String testName,
+                           double input,
+                           DoubleUnaryOperator func,
+                           double expected) {
+        return test(testName, input, func.applyAsDouble(input), expected);
+    }
 
-    public static int test(String testName, double input,
-                           double result, double expected) {
-        if (Double.compare(expected, result ) != 0) {
-            System.err.println("Failure for " + testName + ":\n" +
-                               "\tFor input " + input    + "\t(" + toHexString(input) + ")\n" +
-                               "\texpected  " + expected + "\t(" + toHexString(expected) + ")\n" +
-                               "\tgot       " + result   + "\t(" + toHexString(result) + ").");
-            return 1;
-        }
-        else
-            return 0;
+     public static int test(String testName, double input,
+                            double result, double expected) {
+         if (Double.compare(expected, result ) != 0) {
+             System.err.println("Failure for " + testName + ":\n" +
+                                "\tFor input " + input    + "\t(" + toHexString(input) + ")\n" +
+                                "\texpected  " + expected + "\t(" + toHexString(expected) + ")\n" +
+                                "\tgot       " + result   + "\t(" + toHexString(result) + ").");
+             return 1;
+         } else {
+             return 0;
+         }
+     }
+
+    @FunctionalInterface
+    public interface FloatBinaryOperator {
+        float applyAsFloat(float left, float right);
+    }
+
+    public static int test(String testName,
+                           float input1, float input2,
+                           FloatBinaryOperator func,
+                           float expected) {
+        return test(testName, input1, input2, func.applyAsFloat(input1, input2), expected);
     }
 
     public static int test(String testName,
@@ -341,9 +392,16 @@ public class Tests {
                                "\texpected  "  + expected + "\t(" + toHexString(expected) + ")\n" +
                                "\tgot       "  + result   + "\t(" + toHexString(result) + ").");
             return 1;
-        }
-        else
+        } else {
             return 0;
+        }
+    }
+
+    public static int test(String testName,
+                           double input1, double input2,
+                           DoubleBinaryOperator func,
+                           double expected) {
+        return test(testName, input1, input2, func.applyAsDouble(input1, input2), expected);
     }
 
     public static int test(String testName,
@@ -356,9 +414,9 @@ public class Tests {
                                "\texpected  "  + expected + "\t(" + toHexString(expected) + ")\n" +
                                "\tgot       "  + result   + "\t(" + toHexString(result) + ").");
             return 1;
-        }
-        else
+        } else {
             return 0;
+        }
     }
 
     public static int test(String testName,
@@ -371,9 +429,9 @@ public class Tests {
                                "\texpected  "  + expected + "\t(" + toHexString(expected) + ")\n" +
                                "\tgot       "  + result   + "\t(" + toHexString(result) + ").");
             return 1;
-        }
-        else
+        } else {
             return 0;
+        }
     }
 
     public static int test(String testName,
@@ -386,9 +444,9 @@ public class Tests {
                                "\texpected  "  + expected + "\t(" + toHexString(expected) + ")\n" +
                                "\tgot       "  + result   + "\t(" + toHexString(result) + ").");
             return 1;
-        }
-        else
+        } else {
             return 0;
+        }
     }
 
     public static int test(String testName,
@@ -402,9 +460,9 @@ public class Tests {
                                "\texpected  "  + expected + "\t(" + toHexString(expected) + ")\n" +
                                "\tgot       "  + result   + "\t(" + toHexString(result) + ").");
             return 1;
-        }
-        else
+        } else {
             return 0;
+        }
     }
 
     public static int test(String testName,
@@ -418,9 +476,9 @@ public class Tests {
                                "\texpected  "  + expected + "\t(" + toHexString(expected) + ")\n" +
                                "\tgot       "  + result   + "\t(" + toHexString(result) + ").");
             return 1;
-        }
-        else
+        } else {
             return 0;
+        }
     }
 
     static int testUlpCore(double result, double expected, double ulps) {
@@ -442,9 +500,9 @@ public class Tests {
                     // fail if greater than or unordered
                     !(Math.abs( difference/Math.ulp(expected) ) <= Math.abs(ulps)) ) {
                     return 1;
-                }
-                else
+                } else {
                     return 0;
+                }
             }
         }
     }
@@ -544,9 +602,9 @@ public class Tests {
                 return 1;
             }
             return 0;
-        }
-        else
+        } else {
             return 0;
+        }
     }
 
     // For a successful test, the result must be within the upper and

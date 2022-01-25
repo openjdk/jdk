@@ -61,8 +61,8 @@ public class ExpCornerCaseTests {
 
     private static int testExp(double input, double expected) {
         int failures = 0;
-        failures += Tests.test("StrictMath.exp", input, StrictMath.exp(input), expected);
-        failures += Tests.test("Math.exp", input, Math.exp(input), expected);
+        failures += Tests.test("StrictMath.exp", input, StrictMath::exp, expected);
+        failures += Tests.test("Math.exp",       input, Math::exp,       expected);
         return failures;
     }
 }

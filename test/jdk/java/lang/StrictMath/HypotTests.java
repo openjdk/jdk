@@ -72,28 +72,28 @@ public class HypotTests {
     static int testHypotCase(double input1, double input2, double expected) {
         int failures = 0;
         failures += Tests.test("StrictMath.hypot(double)", input1, input2,
-                               StrictMath.hypot(input1, input2), expected);
+                               StrictMath::hypot, expected);
 
         failures += Tests.test("StrictMath.hypot(double)", input2, input1,
-                          StrictMath.hypot(input2, input1), expected);
+                               StrictMath::hypot, expected);
 
         failures += Tests.test("StrictMath.hypot(double)", -input1, input2,
-                               StrictMath.hypot(-input1, input2), expected);
+                               StrictMath::hypot, expected);
 
         failures += Tests.test("StrictMath.hypot(double)", input2, -input1,
-                          StrictMath.hypot(input2, -input1), expected);
+                               StrictMath::hypot, expected);
 
         failures += Tests.test("StrictMath.hypot(double)", input1, -input2,
-                               StrictMath.hypot(input1, -input2), expected);
+                               StrictMath::hypot, expected);
 
         failures += Tests.test("StrictMath.hypot(double)", -input2, input1,
-                          StrictMath.hypot(-input2, input1), expected);
+                               StrictMath::hypot, expected);
 
         failures += Tests.test("StrictMath.hypot(double)", -input1, -input2,
-                               StrictMath.hypot(-input1, -input2), expected);
+                               StrictMath::hypot, expected);
 
         failures +=  Tests.test("StrictMath.hypot(double)", -input2, -input1,
-                          StrictMath.hypot(-input2, -input1), expected);
+                                StrictMath::hypot, expected);
         return failures;
     }
 

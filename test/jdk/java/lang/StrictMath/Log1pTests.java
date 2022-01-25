@@ -44,7 +44,7 @@ public class Log1pTests {
 
     static int testLog1pCase(double input, double expected) {
         return Tests.test("StrictMath.log1p(double)", input,
-                          StrictMath.log1p(input), expected);
+                          StrictMath::log1p, expected);
     }
 
     static int testLog1p() {

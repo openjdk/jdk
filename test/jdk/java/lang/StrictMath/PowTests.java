@@ -295,7 +295,7 @@ public class PowTests {
     private static int testPowCase(double input1, double input2, double expected) {
         int failures = 0;
         failures += Tests.test("StrictMath.pow(double)", input1, input2,
-                               StrictMath.pow(input1, input2), expected);
+                               StrictMath::pow, expected);
         return failures;
     }
 }

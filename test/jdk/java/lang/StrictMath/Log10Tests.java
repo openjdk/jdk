@@ -45,7 +45,7 @@ public class Log10Tests {
 
     static int testLog10Case(double input, double expected) {
         return Tests.test("StrictMath.log10(double)", input,
-                          StrictMath.log10(input), expected);
+                          StrictMath::log10, expected);
     }
 
     static int testLog10() {

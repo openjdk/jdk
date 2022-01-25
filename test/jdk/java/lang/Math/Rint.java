@@ -32,15 +32,12 @@ public class Rint {
     static int testRintCase(double input, double expected) {
         int failures = 0;
         double result;
-        failures += Tests.test("Math.rint",  input, Math.rint(input),   expected);
-        failures += Tests.test("Math.rint", -input, Math.rint(-input), -expected);
-        failures += Tests.test("StrictMath.rint",
-                               input, StrictMath.rint(input),   expected);
-        failures += Tests.test("StrictMath.rint", -input,
-                               StrictMath.rint(-input), -expected);
+        failures += Tests.test("Math.rint",        input, Math::rint,        expected);
+        failures += Tests.test("Math.rint",       -input, Math::rint,       -expected);
+        failures += Tests.test("StrictMath.rint",  input, StrictMath::rint,  expected);
+        failures += Tests.test("StrictMath.rint", -input, StrictMath::rint, -expected);
         return failures;
     }
-
 
     public static void main(String args[]) {
         int failures = 0;
@@ -96,7 +93,6 @@ public class Rint {
             {Double.NaN,                        Double.NaN}
 
         };
-
 
         for(int i = 0; i < testCases.length; i++) {
             failures += testRintCase(testCases[i][0], testCases[i][1]);

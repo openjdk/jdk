@@ -26,6 +26,8 @@
  * @bug 4851638
  * @summary Tests for StrictMath.expm1
  * @author Joseph D. Darcy
+ * @compile -Xdiags:verbose Expm1Tests.java
+ * @run main Expm1Tests
  */
 
 /**
@@ -44,7 +46,7 @@ public class Expm1Tests {
 
     static int testExpm1Case(double input, double expected) {
         return Tests.test("StrictMath.expm1(double)", input,
-                          StrictMath.expm1(input), expected);
+                          StrictMath::expm1, expected);
     }
 
     static int testExpm1() {

@@ -364,14 +364,14 @@ public class IeeeRecommendedTests {
         double minus_expected = -expected;
 
         failures+=Tests.test("Math.nextAfter(double,double)", start, direction,
-                             Math.nextAfter(start, direction), expected);
+                             Math::nextAfter, expected);
         failures+=Tests.test("Math.nextAfter(double,double)", minus_start, minus_direction,
-                             Math.nextAfter(minus_start, minus_direction), minus_expected);
+                             Math::nextAfter, minus_expected);
 
         failures+=Tests.test("StrictMath.nextAfter(double,double)", start, direction,
-                             StrictMath.nextAfter(start, direction), expected);
+                             StrictMath::nextAfter, expected);
         failures+=Tests.test("StrictMath.nextAfter(double,double)", minus_start, minus_direction,
-                             StrictMath.nextAfter(minus_start, minus_direction), minus_expected);
+                             StrictMath::nextAfter, minus_expected);
         return failures;
     }
 
@@ -586,10 +586,10 @@ public class IeeeRecommendedTests {
 
         for(int i = 0; i < testCases.length; i++) {
             failures+=Tests.test("Math.nextUp(double)",
-                                 testCases[i][0], Math.nextUp(testCases[i][0]), testCases[i][1]);
+                                 testCases[i][0], Math::nextUp, testCases[i][1]);
 
             failures+=Tests.test("StrictMath.nextUp(double)",
-                                 testCases[i][0], StrictMath.nextUp(testCases[i][0]), testCases[i][1]);
+                                 testCases[i][0], StrictMath::nextUp, testCases[i][1]);
         }
 
         return failures;
@@ -665,10 +665,10 @@ public class IeeeRecommendedTests {
 
         for(int i = 0; i < testCases.length; i++) {
             failures+=Tests.test("Math.nextDown(double)",
-                                 testCases[i][0], Math.nextDown(testCases[i][0]), testCases[i][1]);
+                                 testCases[i][0], Math::nextDown, testCases[i][1]);
 
             failures+=Tests.test("StrictMath.nextDown(double)",
-                                 testCases[i][0], StrictMath.nextDown(testCases[i][0]), testCases[i][1]);
+                                 testCases[i][0], StrictMath::nextDown, testCases[i][1]);
         }
 
         return failures;
@@ -906,12 +906,12 @@ public class IeeeRecommendedTests {
                         // copySign(magnitude, sign)
                         failures+=Tests.test("MathcopySign(double,double)",
                                              testCases[i][m],testCases[j][n],
-                                             Math.copySign(testCases[i][m], testCases[j][n]),
+                                             Math::copySign,
                                              (j==0?1.0f:-1.0f)*Math.abs(testCases[i][m]) );
 
                         failures+=Tests.test("StrictMath.copySign(double,double)",
                                              testCases[i][m],testCases[j][n],
-                                             StrictMath.copySign(testCases[i][m], testCases[j][n]),
+                                             StrictMath::copySign,
                                              (j==0?1.0f:-1.0f)*Math.abs(testCases[i][m]) );
                     }
                 }
@@ -932,7 +932,7 @@ public class IeeeRecommendedTests {
 
                     failures+=Tests.test("StrictMath.copySign(double,double)",
                                          testCases[i][m], NaNs[j],
-                                         StrictMath.copySign(testCases[i][m], NaNs[j]),
+                                         StrictMath::copySign,
                                          Math.abs(testCases[i][m]) );
                 }
             }
@@ -1384,13 +1384,13 @@ public class IeeeRecommendedTests {
         int failures=0;
 
         failures+=Tests.test("Math.ulp(double)", d,
-                             Math.ulp(d), expected);
+                             Math::ulp, expected);
         failures+=Tests.test("Math.ulp(double)", minus_d,
-                             Math.ulp(minus_d), expected);
+                             Math::ulp, expected);
         failures+=Tests.test("StrictMath.ulp(double)", d,
-                             StrictMath.ulp(d), expected);
+                             StrictMath::ulp, expected);
         failures+=Tests.test("StrictMath.ulp(double)", minus_d,
-                             StrictMath.ulp(minus_d), expected);
+                             StrictMath::ulp, expected);
         return failures;
     }
 
@@ -1664,9 +1664,9 @@ public class IeeeRecommendedTests {
 
         for(int i = 0; i < testCases.length; i++) {
             failures+=Tests.test("Math.signum(double)",
-                                 testCases[i][0], Math.signum(testCases[i][0]), testCases[i][1]);
+                                 testCases[i][0], Math::signum, testCases[i][1]);
             failures+=Tests.test("StrictMath.signum(double)",
-                                 testCases[i][0], StrictMath.signum(testCases[i][0]), testCases[i][1]);
+                                 testCases[i][0], StrictMath::signum, testCases[i][1]);
         }
 
         return failures;

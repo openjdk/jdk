@@ -36,9 +36,9 @@ public class PowTests {
     static int testPowCase(double input1, double input2, double expected) {
         int failures = 0;
         failures += Tests.test("StrictMath.pow(double, double)", input1, input2,
-                               StrictMath.pow(input1, input2), expected);
+                               StrictMath::pow, expected);
         failures += Tests.test("Math.pow(double, double)", input1, input2,
-                               Math.pow(input1, input2), expected);
+                               Math::pow, expected);
         return failures;
     }
 
@@ -46,14 +46,14 @@ public class PowTests {
     static int testStrictPowCase(double input1, double input2, double expected) {
         int failures = 0;
         failures += Tests.test("StrictMath.pow(double, double)", input1, input2,
-                               StrictMath.pow(input1, input2), expected);
+                               StrictMath::pow, expected);
         return failures;
     }
 
     static int testNonstrictPowCase(double input1, double input2, double expected) {
         int failures = 0;
         failures += Tests.test("Math.pow(double, double)", input1, input2,
-                               Math.pow(input1, input2), expected);
+                               Math::pow, expected);
         return failures;
     }
 

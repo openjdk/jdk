@@ -45,17 +45,17 @@ public class HyperbolicTests {
 
     static int testSinhCase(double input, double expected) {
         return Tests.test("StrictMath.sinh(double)", input,
-                          StrictMath.sinh(input), expected);
+                          StrictMath::sinh, expected);
     }
 
     static int testCoshCase(double input, double expected) {
         return Tests.test("StrictMath.cosh(double)", input,
-                          StrictMath.cosh(input), expected);
+                          StrictMath::cosh, expected);
     }
 
     static int testTanhCase(double input, double expected) {
         return Tests.test("StrictMath.tanh(double)", input,
-                          StrictMath.tanh(input), expected);
+                          StrictMath::tanh, expected);
     }
 
     static int testSinh() {
