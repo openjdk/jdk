@@ -292,7 +292,7 @@ public class MethodHandleProxies {
     private static Object callObjectMethod(Object self, Method m, Object[] args) {
         assert(isObjectMethod(m)) : m;
         return switch (m.getName()) {
-            case "toString" -> self.getClass().getName() + "@" + Integer.toHexString(self.hashCode());
+            case "toString" -> java.util.Objects.toIdentityString(self);
             case "hashCode" -> System.identityHashCode(self);
             case "equals"   -> (self == args[0]);
             default -> null;
