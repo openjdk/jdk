@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -304,15 +304,18 @@ public class PointerLocation {
         if (Assert.ASSERTS_ENABLED) {
           Assert.that(isInBlobUnknownLocation(), "Should have known location in CodeBlob");
         }
-        tty.print("unknown location");
+        tty.print("unknown CodeCache location");
       }
-      tty.print(" in ");
-      if (verbose) {
-          b.printOn(tty); // includes "\n"
+      if (b == null) {
+          tty.println();
       } else {
-          tty.println(b.toString());
+          tty.print(" in ");
+          if (verbose) {
+              b.printOn(tty); // includes "\n"
+          } else {
+              tty.println(b.toString());
+          }
       }
-
       // FIXME: add more detail
     } else if (isInStrongGlobalJNIHandles()) {
       tty.println("In JNI strong global");
