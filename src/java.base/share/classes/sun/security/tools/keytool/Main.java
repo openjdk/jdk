@@ -1135,7 +1135,13 @@ public final class Main {
         }
 
         if (trustcacerts) {
-            caks = cakstore;
+            if (cakstore != null) {
+                caks = cakstore;
+            } else {
+                // try to load cacerts again, and let exception propagate
+                // if it cannot be loaded
+                caks = KeyStoreUtil.getCacertsKeyStore();
+            }
         }
 
         // Perform the specified command
@@ -4902,15 +4908,14 @@ public final class Main {
                             rb.getString("whose.sigalg.weak"), label, sigAlg));
                 }
             } catch (CertPathValidatorException e) {
-                if (e.getMessage().contains("denyAfter constraint check failed") &&
+                String eMessage = e.getMessage();
+                if (eMessage.contains("denyAfter constraint check failed") &&
                         e.getReason() == BasicReason.ALGORITHM_CONSTRAINED) {
-
-                    String prop = Security.getProperty("jdk.certpath.disabledAlgorithms");
-                    String separator = "denyAfter ";
-                    int sepPos = prop.indexOf(separator);
+                    String separator = "java.security: ";
+                    int sepPos = eMessage.indexOf(separator);
                     String denyAfterDate = "0000-00-00";
                     if (sepPos > 0) {
-                        denyAfterDate = prop.substring(sepPos + separator.length(),
+                        denyAfterDate = eMessage.substring(sepPos + separator.length(),
                                 sepPos + separator.length() + denyAfterDate.length());
                     }
 
