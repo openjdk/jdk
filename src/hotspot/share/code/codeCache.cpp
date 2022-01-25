@@ -105,7 +105,7 @@ class CodeBlob_sizes {
   bool is_empty()                                { return count == 0; }
 
   void print(const char* title) {
-    tty->print_cr(" #%d %s = %dK (hdr %d%%,  loc %d%%, code %d%%, stub %d%%, [oops %d%%, metadata %d%%, data %d%%, pcs %d%%])",
+    tty->print_cr(" #%d %s = %dK (hdr %d%%, loc %d%%, code %d%%, stub %d%%, [oops %d%%, metadata %d%%, data %d%%, pcs %d%%])",
                   count,
                   title,
                   (int)(total() / K),
@@ -117,6 +117,16 @@ class CodeBlob_sizes {
                   scopes_metadata_size    * 100 / total_size,
                   scopes_data_size        * 100 / total_size,
                   scopes_pcs_size         * 100 / total_size);
+    tty->print_cr("          %d (hdr %d, loc %d, code %d, stub %d, [oops %d, metadata %d, data %d, pcs %d])",
+                  total(),
+                  header_size,
+                  relocation_size,
+                  code_size,
+                  stub_size,
+                  scopes_oop_size,
+                  scopes_metadata_size,
+                  scopes_data_size,
+                  scopes_pcs_size);
   }
 
   void add(CodeBlob* cb) {
@@ -1290,11 +1300,18 @@ PRAGMA_DIAG_POP
 
 void CodeCache::print_memory_overhead() {
   size_t wasted_bytes = 0;
+  size_t runtime_stub_bytes = 0;
+  size_t buffer_blob_bytes = 0;
   FOR_ALL_ALLOCABLE_HEAPS(heap) {
       CodeHeap* curr_heap = *heap;
       for (CodeBlob* cb = (CodeBlob*)curr_heap->first(); cb != NULL; cb = (CodeBlob*)curr_heap->next(cb)) {
         HeapBlock* heap_block = ((HeapBlock*)cb) - 1;
         wasted_bytes += heap_block->length() * CodeCacheSegmentSize - cb->size();
+        if (cb->is_runtime_stub()) {
+          runtime_stub_bytes += cb->size();
+        } else if (cb->is_buffer_blob()) {
+          buffer_blob_bytes += cb->size();
+        }
       }
   }
   // Print bytes that are allocated in the freelist
@@ -1303,6 +1320,8 @@ void CodeCache::print_memory_overhead() {
   tty->print_cr("Allocated in freelist:          " SSIZE_FORMAT "kB",  bytes_allocated_in_freelists()/K);
   tty->print_cr("Unused bytes in CodeBlobs:      " SSIZE_FORMAT "kB",  (wasted_bytes/K));
   tty->print_cr("Segment map size:               " SSIZE_FORMAT "kB",  allocated_segments()/K); // 1 byte per segment
+  tty->print_cr("Runtime stub size:              " SSIZE_FORMAT "kB",  runtime_stub_bytes/K);
+  tty->print_cr("Buffer blob size:               " SSIZE_FORMAT "kB",  buffer_blob_bytes/K);
 }
 
 //------------------------------------------------------------------------------------------------
@@ -1430,15 +1449,34 @@ void CodeCache::print() {
 #ifndef PRODUCT
   if (!Verbose) return;
 
+  const bool is_segment_cache = _allocable_heaps->length() > 1;
   CodeBlob_sizes live;
   CodeBlob_sizes dead;
 
   FOR_ALL_ALLOCABLE_HEAPS(heap) {
+    CodeBlob_sizes segment_live;
+    CodeBlob_sizes segment_dead;
+
     FOR_ALL_BLOBS(cb, *heap) {
       if (!cb->is_alive()) {
         dead.add(cb);
+        segment_dead.add(cb);
       } else {
         live.add(cb);
+        segment_live.add(cb);
+      }
+    }
+
+    if (is_segment_cache)
+    {
+      tty->print_cr("CodeCache %s:", (*heap)->name());
+      tty->print_cr("nmethod dependency checking time %fs", dependentCheckTime.seconds());
+
+      if (!segment_live.is_empty()) {
+        segment_live.print("live");
+      }
+      if (!segment_dead.is_empty()) {
+        segment_dead.print("dead");
       }
     }
   }
