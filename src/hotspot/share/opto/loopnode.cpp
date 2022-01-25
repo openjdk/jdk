@@ -1277,7 +1277,7 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
       continue;
     }
     bool short_scale = false;
-    bool ok = is_scaled_iv_plus_offset(rc_cmp->in(1), iv_add, &scale, &offset, T_LONG, &short_scale);
+    bool ok = is_scaled_iv_plus_offset(rc_cmp->in(1), iv_add, T_LONG, &scale, &offset, &short_scale);
     assert(ok, "inconsistent: was tested before");
     Node* range = rc_cmp->in(2);
     Node* c = rc->in(0);

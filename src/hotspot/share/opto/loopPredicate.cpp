@@ -759,7 +759,7 @@ bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, BasicT
   }
   scale  = 0;
   offset = NULL;
-  if (!phase->is_scaled_iv_plus_offset(cmp->in(1), iv, &scale, &offset, bt)) {
+  if (!phase->is_scaled_iv_plus_offset(cmp->in(1), iv, bt, &scale, &offset)) {
     return false;
   }
   return true;

@@ -1262,7 +1262,7 @@ public:
   void mark_reductions( IdealLoopTree *loop );
 
   // Return true if exp is a constant times an induction var
-  bool is_scaled_iv(Node* exp, Node* iv, BasicType bt, jlong* p_scale = NULL, int depth = 0);
+  bool is_scaled_iv(Node* exp, Node* iv, BasicType bt, jlong* p_scale, bool* p_short_scale, int depth = 0);
 
   bool is_iv(Node* exp, Node* iv, BasicType bt);
 

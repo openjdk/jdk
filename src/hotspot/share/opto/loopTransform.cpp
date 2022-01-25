@@ -1126,8 +1126,8 @@ bool IdealLoopTree::policy_range_check(PhaseIdealLoop* phase, bool provisional, 
         // Try to pattern match with either cmp inputs, do not check
         // whether one of the inputs is loop independent as it may not
         // have had a chance to be hoisted yet.
-        if (!phase->is_scaled_iv_plus_offset(cmp->in(1), trip_counter, NULL, NULL, bt) &&
-            !phase->is_scaled_iv_plus_offset(cmp->in(2), trip_counter, NULL, NULL, bt)) {
+        if (!phase->is_scaled_iv_plus_offset(cmp->in(1), trip_counter, bt, NULL, NULL) &&
+            !phase->is_scaled_iv_plus_offset(cmp->in(2), trip_counter, bt, NULL, NULL)) {
           continue;
         }
       } else {
@@ -1147,7 +1147,7 @@ bool IdealLoopTree::policy_range_check(PhaseIdealLoop* phase, bool provisional, 
           }
         }
 
-        if (!phase->is_scaled_iv_plus_offset(rc_exp, trip_counter, NULL, NULL, bt)) {
+        if (!phase->is_scaled_iv_plus_offset(rc_exp, trip_counter, bt, NULL, NULL)) {
           continue;
         }
       }
@@ -2522,21 +2522,13 @@ void PhaseIdealLoop::add_constraint(jlong stride_con, jlong scale_con, Node* off
   }
 }
 
-// REVIEW: Lines marked this way are for review only and should be stripped.
-// REVIEW: Add header comment to is_iv and daughter functions.
 //----------------------------------is_iv------------------------------------
 // Return true if exp is the value (of type bt) of the given induction var.
 // This grammar of cases is recognized, where X is I|L according to bt:
 //    VIV[iv] = iv | (CastXX VIV[iv]) | (ConvI2X VIV[iv])
 bool PhaseIdealLoop::is_iv(Node* exp, Node* iv, BasicType bt) {
-  // REVIEW: Following line is hoisted from all use points of is_iv.
   exp = exp->uncast();
-  if (exp == iv) {
-    assert(bt == T_LONG
-           ? !iv->bottom_type()->isa_int()
-           : !iv->bottom_type()->isa_long(),  "int-vs-long clash on iv type");
-    // REVIEW: Add previous assert if possible, or else add comment:
-    // if there is no explicit ConvI2L node, assume iv matches bt w/o checking
+  if (exp == iv && iv->bottom_type()->isa_integer(bt)) {
     return true;
   }
 
@@ -2556,60 +2548,77 @@ bool PhaseIdealLoop::is_iv(Node* exp, Node* iv, BasicType bt) {
 //            | (SubX 0 SIV[iv])  -- same as MulX(iv, -1)
 //            | VIV[iv] | (ConvI2X VIV[iv])  -- from is_iv() above
 // On success, the constant scale value is stored back to ret_scale.
-// REVIEW: I moved the bt argument to be uniformly after the iv argument in this group of functions.
-// REVIEW: It is clearer to handle the special case of (SubI 0 iv) as (MulI -1 iv) here, rather than try to fold it into the general handling of (SubX E iv).  This leads to a redundant check for min_signed_integer, but that seems worth it to me.
-bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, BasicType bt, jlong* p_scale, int depth) {
+bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, BasicType bt, jlong* p_scale, bool* p_short_scale, int depth) {
+  BasicType exp_bt = bt;
   exp = exp->uncast();  //strip casts
-  assert(bt == T_INT || bt == T_LONG, "unexpected int type");
-  if (is_iv(exp, iv, bt)) {
+  assert(exp_bt == T_INT || exp_bt == T_LONG, "unexpected int type");
+  if (is_iv(exp, iv, exp_bt)) {
     if (p_scale != NULL) {
       *p_scale = 1;
     }
     return true;
   }
+  if (exp_bt == T_LONG && iv->bottom_type()->isa_int() && exp->Opcode() == Op_ConvI2L) {
+    exp = exp->in(1);
+    exp_bt = T_INT;
+  }
   int opc = exp->Opcode();
   int which = 0;  // this is which subexpression we find the iv in
   // Can't use is_Mul() here as it's true for AndI and AndL
-  if (opc == Op_Mul(bt)) {
-    if (is_iv(exp->in(which = 1), iv, bt) && exp->in(2)->is_Con() ||
-        is_iv(exp->in(which = 2), iv, bt) && exp->in(1)->is_Con()) {
+  if (opc == Op_Mul(exp_bt)) {
+    if (is_iv(exp->in(which = 1), iv, exp_bt) && exp->in(2)->is_Con() ||
+        is_iv(exp->in(which = 2), iv, exp_bt) && exp->in(1)->is_Con()) {
       Node* factor = exp->in(which == 1 ? 2 : 1);  // the other argument
-      jlong scale = factor->find_integer_as_long(bt, 0);
+      jlong scale = factor->find_integer_as_long(exp_bt, 0);
       if (scale == 0) {
         return false;  // might be top
       }
       if (p_scale != NULL) {
         *p_scale = scale;
       }
+      if (p_short_scale != NULL) {
+        // (ConvI2L (MulI iv K)) can be 64-bit linear if iv is kept small enough...
+        *p_short_scale = (exp_bt != bt && scale != 1);
+      }
       return true;
     }
-  } else if (opc == Op_LShift(bt)) {
-    if (is_iv(exp->in(1), iv, bt) && exp->in(2)->is_Con()) {
+  } else if (opc == Op_LShift(exp_bt)) {
+    if (is_iv(exp->in(1), iv, exp_bt) && exp->in(2)->is_Con()) {
       jint shift_amount = exp->in(2)->find_int_con(min_jint);
       if (shift_amount == min_jint) {
         return false;  // might be top
       }
+      jlong scale;
+      if (exp_bt == T_INT) {
+        scale = java_shift_left((jint)1, (juint)shift_amount);
+      } else if (exp_bt == T_LONG) {
+        scale = java_shift_left((jlong)1, (julong)shift_amount);
+      }
       if (p_scale != NULL) {
-        if (bt == T_INT) {
-          *p_scale = java_shift_left((jint)1, (juint)shift_amount);
-        } else if (bt == T_LONG) {
-          *p_scale = java_shift_left((jlong)1, (julong)shift_amount);
-        }
+        *p_scale = scale;
+      }
+      if (p_short_scale != NULL) {
+        // (ConvI2L (MulI iv K)) can be 64-bit linear if iv is kept small enough...
+        *p_short_scale = (exp_bt != bt && scale != 1);
       }
       return true;
     }
-  } else if (opc == Op_Sub(bt) &&
-             exp->in(1)->find_integer_as_long(bt, -1) == 0) {
+  } else if (opc == Op_Sub(exp_bt) &&
+             exp->in(1)->find_integer_as_long(exp_bt, -1) == 0) {
     jlong scale = 0;
-    if (depth == 0 && is_scaled_iv(exp->in(2), iv, bt, &scale, depth+1)) {
+    if (depth == 0 && is_scaled_iv(exp->in(2), iv, exp_bt, &scale, p_short_scale, depth + 1)) {
       // SubX(0, iv*K) => iv*(-K)
-      if (scale == min_signed_integer(bt)) {
+      if (scale == min_signed_integer(exp_bt)) {
         // This should work even if -K overflows, but let's not.
         return false;
       }
-      scale = java_multiply(scale, -1);
+      scale = java_multiply(scale, (jlong)-1);
       if (p_scale != NULL) {
         *p_scale = scale;
+      }
+      if (p_short_scale != NULL) {
+        // (ConvI2L (MulI iv K)) can be 64-bit linear if iv is kept small enough...
+        *p_short_scale = (exp_bt != bt && scale != 1);
       }
       return true;
     }
@@ -2639,12 +2648,7 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, BasicType bt,
   jlong scale = 0;  // to catch result from is_scaled_iv()
   BasicType exp_bt = bt;
   exp = exp->uncast();
-  if (bt == T_LONG && iv->bottom_type()->isa_int() && exp->Opcode() == Op_ConvI2L) {
-    exp = exp->in(1);
-    exp_bt = T_INT;
-    // We are looking for a 64-bit iv*K+L, but we might find a 32-bit iv*K.
-  }
-  if (is_scaled_iv(exp, iv, exp_bt, scale)) {
+  if (is_scaled_iv(exp, iv, exp_bt, &scale, p_short_scale)) {
     if (p_scale != NULL) {
       *p_scale = scale;
     }
@@ -2652,10 +2656,6 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, BasicType bt,
       Node *zero = _igvn.zerocon(bt);
       set_ctrl(zero, C->root());
       *p_offset = zero;
-    }
-    if (p_short_scale != NULL) {
-      // (ConvI2L (MulI iv K)) can be 64-bit linear if iv is kept small enough...
-      *p_short_scale = (exp_bt != bt && scale != 1);
     }
     return true;
   }
@@ -2671,18 +2671,14 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, BasicType bt,
   Node* offset = NULL;
   if (opc == Op_Add(exp_bt)) {
     // Check for a scaled IV in (AddX (MulX iv S) E) or (AddX E (MulX iv S)).
-    if (is_scaled_iv(exp->in(which = 1), iv, bt, scale) ||
-        is_scaled_iv(exp->in(which = 2), iv, bt, scale)) {
+    if (is_scaled_iv(exp->in(which = 1), iv, bt, &scale, p_short_scale) ||
+        is_scaled_iv(exp->in(which = 2), iv, bt, &scale, p_short_scale)) {
       offset = exp->in(which == 1 ? 2 : 1);  // the other argument
-      // REVIEW: Why don't we check for offset->is_Con here?  We check below.
       if (p_scale != NULL) {
         *p_scale = scale;
       }
       if (p_offset != NULL) {
         *p_offset = offset;
-      }
-      if (p_short_scale != NULL) {
-        *p_short_scale = false;
       }
       return true;
     }
@@ -2692,8 +2688,8 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, BasicType bt,
       return true;
     }
   } else if (opc == Op_Sub(exp_bt)) {
-    if (is_scaled_iv(exp->in(which = 1), iv, scale, bt) ||
-        is_scaled_iv(exp->in(which = 2), iv, scale, bt)) {
+    if (is_scaled_iv(exp->in(which = 1), iv, bt, &scale, p_short_scale) ||
+        is_scaled_iv(exp->in(which = 2), iv, bt, &scale, p_short_scale)) {
       // Match (SubX SIV[iv] E) as if (AddX SIV[iv] (SubX 0 E)), and
       // match (SubX E SIV[iv]) as if (AddX E (SubX 0 SIV[iv])).
       offset = exp->in(which == 1 ? 2 : 1);  // the other argument
@@ -2702,7 +2698,7 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, BasicType bt,
         if (scale == min_signed_integer(bt)) {
           return false;   // cannot negate the scale of the iv
         }
-        scale = java_multiply(scale, -1);
+        scale = java_multiply(scale, (jlong)-1);
       }
       if (p_scale != NULL) {
         *p_scale = scale;
@@ -2716,9 +2712,6 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, BasicType bt,
           register_new_node(offset, ctrl_off);
         }
         *p_offset = offset;
-      }
-      if (p_short_scale != NULL) {
-        *p_short_scale = false;
       }
       return true;
     }
@@ -2738,16 +2731,12 @@ bool PhaseIdealLoop::is_scaled_iv_plus_extra_offset(Node* exp1, Node* offset3, N
   // If is a linear iv transform, it is probably an add or subtract.
   // Let's collect the internal offset2 from it.
   Node* offset2 = NULL;
-  if (depth < 2 &&
+  if (offset3->is_Con() &&
+      depth < 2 &&
       is_scaled_iv_plus_offset(exp1, iv, bt, p_scale,
-                               &offset2, p_short_scale, depth+1) &&
-      offset2->is_Con()) {
-    // REVIEW: Why do we check for offset2->is_Con here?  We don't check above.
+                               &offset2, p_short_scale, depth+1)) {
     if (p_offset != NULL) {
       Node* ctrl_off2 = get_ctrl(offset2);
-      // REVIEW: If offset2 is a constant, then ctrl_off2 is trivial (C->root()).
-      // REVIEW: It is offset3 that might need control placement.
-      // REVIEW: Suggest `ctrl_off2 = get_ctrl(offset3)` instead.
       Node* offset = AddNode::make(offset2, offset3, bt);
       register_new_node(offset, ctrl_off2);
       *p_offset = offset;
