@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1346,11 +1346,6 @@ const intx ObjectAlignmentInBytes = 8;
           "(using CompileCommand or marked w/ @ForceInline)")               \
           range(0, max_jint)                                                \
                                                                             \
-  product(intx, MinInliningThreshold, 0,                                    \
-          "(Deprecated) The minimum invocation count a method needs to"     \
-          "have to be inlined")                                             \
-          range(0, max_jint)                                                \
-                                                                            \
   develop(intx, MethodHistogramCutoff, 100,                                 \
           "The cutoff value for method invocation histogram (+CountCalls)") \
                                                                             \
@@ -1806,6 +1801,9 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, RecordDynamicDumpInfo, false,                               \
           "Record class info for jcmd VM.cds dynamic_dump")                 \
+                                                                            \
+  product(bool, AutoCreateSharedArchive, false,                             \
+          "Create shared archive at exit if cds mapping failed")            \
                                                                             \
   product(bool, PrintSharedArchiveAndExit, false,                           \
           "Print shared archive file contents")                             \

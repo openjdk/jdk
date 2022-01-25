@@ -1869,6 +1869,7 @@ private:
   void popcntl(Register dst, Register src);
 
   void vpopcntd(XMMRegister dst, XMMRegister src, int vector_len);
+  void vpopcntq(XMMRegister dst, XMMRegister src, int vector_len);
 
 #ifdef _LP64
   void popcntq(Register dst, Address src);

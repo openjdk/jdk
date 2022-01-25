@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -412,7 +412,7 @@ void Arguments::init_system_properties() {
   // It can only be set by either:
   //    - -Xbootclasspath/a:
   //    - AddToBootstrapClassLoaderSearch during JVMTI OnLoad phase
-  _jdk_boot_class_path_append = new SystemProperty("jdk.boot.class.path.append", "", false, true);
+  _jdk_boot_class_path_append = new SystemProperty("jdk.boot.class.path.append", NULL, false, true);
 
   // Add to System Property list.
   PropertyList_add(&_system_properties, _sun_boot_library_path);
@@ -530,7 +530,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "AllowRedefinitionToAddDeleteMethods", JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "FlightRecorder",               JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
-  { "MinInliningThreshold",         JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
   { "DumpSharedSpaces",             JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "DynamicDumpSharedSpaces",      JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "RequireSharedSpaces",          JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
@@ -547,6 +546,7 @@ static SpecialFlag const special_jvm_flags[] = {
   // -------------- Obsolete Flags - sorted by expired_in --------------
 
   { "FilterSpuriousWakeups",        JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
+  { "MinInliningThreshold",         JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
 #endif
@@ -1244,7 +1244,7 @@ bool Arguments::process_argument(const char* arg,
 }
 
 bool Arguments::process_settings_file(const char* file_name, bool should_exist, jboolean ignore_unrecognized) {
-  FILE* stream = fopen(file_name, "rb");
+  FILE* stream = os::fopen(file_name, "rb");
   if (stream == NULL) {
     if (should_exist) {
       jio_fprintf(defaultStream::error_stream(),
@@ -3140,6 +3140,17 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
     DynamicDumpSharedSpaces = true;
   }
 
+  if (AutoCreateSharedArchive) {
+    if (SharedArchiveFile == NULL) {
+      log_warning(cds)("-XX:+AutoCreateSharedArchive requires -XX:SharedArchiveFile");
+      return JNI_ERR;
+    }
+    if (ArchiveClassesAtExit != NULL) {
+      log_warning(cds)("-XX:+AutoCreateSharedArchive does not work with ArchiveClassesAtExit");
+      return JNI_ERR;
+    }
+  }
+
   if (UseSharedSpaces && patch_mod_javabase) {
     no_shared_spaces("CDS is disabled when " JAVA_BASE_NAME " module is patched.");
   }
@@ -3487,9 +3498,6 @@ void Arguments::extract_shared_archive_paths(const char* archive_path,
   char* cur_path = NEW_C_HEAP_ARRAY(char, len + 1, mtInternal);
   strncpy(cur_path, begin_ptr, len);
   cur_path[len] = '\0';
-  if (!FileMapInfo::check_archive((const char*)cur_path, true /*is_static*/)) {
-    return;
-  }
   *base_archive_path = cur_path;
 
   begin_ptr = ++end_ptr;
@@ -3501,9 +3509,6 @@ void Arguments::extract_shared_archive_paths(const char* archive_path,
   len = end_ptr - begin_ptr;
   cur_path = NEW_C_HEAP_ARRAY(char, len + 1, mtInternal);
   strncpy(cur_path, begin_ptr, len + 1);
-  if (!FileMapInfo::check_archive((const char*)cur_path, false /*is_static*/)) {
-    return;
-  }
   *top_archive_path = cur_path;
 }
 
@@ -3556,7 +3561,16 @@ void Arguments::init_shared_archive_paths() {
         bool success =
           FileMapInfo::get_base_archive_name_from_header(SharedArchiveFile, &base_archive_path);
         if (!success) {
-          no_shared_spaces("invalid archive");
+          // If +AutoCreateSharedArchive and the specified shared archive does not exist,
+          // regenerate the dynamic archive base on default archive.
+          if (AutoCreateSharedArchive && !os::file_exists(SharedArchiveFile)) {
+            DynamicDumpSharedSpaces = true;
+            ArchiveClassesAtExit = const_cast<char *>(SharedArchiveFile);
+            SharedArchivePath = get_default_shared_archive_path();
+            SharedArchiveFile = nullptr;
+          } else {
+            no_shared_spaces("invalid archive");
+          }
         } else if (base_archive_path == NULL) {
           // User has specified a single archive, which is a static archive.
           SharedArchivePath = const_cast<char *>(SharedArchiveFile);

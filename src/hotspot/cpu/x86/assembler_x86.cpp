@@ -4829,6 +4829,14 @@ void Assembler::vpopcntd(XMMRegister dst, XMMRegister src, int vector_len) {
   emit_int16(0x55, (0xC0 | encode));
 }
 
+void Assembler::vpopcntq(XMMRegister dst, XMMRegister src, int vector_len) {
+  assert(VM_Version::supports_avx512_vpopcntdq(), "must support vpopcntdq feature");
+  InstructionAttr attributes(vector_len, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
+  attributes.set_is_evex_instruction();
+  int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int16(0x55, (0xC0 | encode));
+}
+
 void Assembler::popf() {
   emit_int8((unsigned char)0x9D);
 }
@@ -7594,6 +7602,9 @@ void Assembler::pxor(XMMRegister dst, XMMRegister src) {
 
 void Assembler::vpxor(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
   assert(UseAVX > 0, "requires some form of AVX");
+  assert(vector_len == AVX_128bit ? VM_Version::supports_avx() :
+         vector_len == AVX_256bit ? VM_Version::supports_avx2() :
+         vector_len == AVX_512bit ? VM_Version::supports_evex() : 0, "");
   InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
   int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
   emit_int16((unsigned char)0xEF, (0xC0 | encode));
@@ -7601,6 +7612,9 @@ void Assembler::vpxor(XMMRegister dst, XMMRegister nds, XMMRegister src, int vec
 
 void Assembler::vpxor(XMMRegister dst, XMMRegister nds, Address src, int vector_len) {
   assert(UseAVX > 0, "requires some form of AVX");
+  assert(vector_len == AVX_128bit ? VM_Version::supports_avx() :
+         vector_len == AVX_256bit ? VM_Version::supports_avx2() :
+         vector_len == AVX_512bit ? VM_Version::supports_evex() : 0, "");
   InstructionMark im(this);
   InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
   attributes.set_address_attributes(/* tuple_type */ EVEX_FV, /* input_size_in_bits */ EVEX_32bit);

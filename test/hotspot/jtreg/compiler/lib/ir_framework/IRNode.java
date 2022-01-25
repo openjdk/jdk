@@ -115,6 +115,7 @@ public class IRNode {
     public static final String LOOP   = START + "Loop" + MID + END;
     public static final String COUNTEDLOOP = START + "CountedLoop\\b" + MID + END;
     public static final String COUNTEDLOOP_MAIN = START + "CountedLoop\\b" + MID + "main" + END;
+    public static final String IF = START + "If\\b" + MID + END;
 
     public static final String CALL = START + "Call.*Java" + MID + END;
     public static final String CALL_OF_METHOD = COMPOSITE_PREFIX + START + "Call.*Java" + MID + IS_REPLACED + " " +  END;
