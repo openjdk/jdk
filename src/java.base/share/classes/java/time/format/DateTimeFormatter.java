@@ -722,11 +722,26 @@ public final class DateTimeFormatter {
      * Creates a locale specific formatter derived from the requested template and
      * the specified locale. The requested template is a series of typical pattern
      * symbols in canonical order from the largest date or time unit to the smallest.
+     * The requested template can be expressed with the following regular expression:
+     * {@snippet :
+     *      "G{0,5}" +        // Era
+     *      "y*" +            // Year
+     *      "Q{0,5}" +        // Quarter
+     *      "M{0,5}" +        // Month
+     *      "w*" +            // Week of Week Based Year
+     *      "E{0,5}" +        // Day of Week
+     *      "d{0,2}" +        // Day of Month
+     *      "B{0,5}" +        // Period/AmPm of Day
+     *      "[hHjC]{0,2}" +   // Hour of Day/AmPm (refer to LDML for 'j' and 'C')
+     *      "m{0,2}" +        // Minute of Hour
+     *      "s{0,2}" +        // Second of Minute
+     *      "[vz]{0,4}"       // Zone
+     * }
      * The mapping of the requested template to the closest of the available localized
      * formats is defined by the
      * <a href="https://www.unicode.org/reports/tr35/tr35-dates.html#availableFormats_appendItems">
      * Unicode LDML specification</a>. The requested template is mapped to the closest
-     * available localized format skeleton that contains the requested date and time
+     * available localized format pattern that contains the requested date and time
      * pattern symbols as described by LDML. For example, {@code yMMM} will format the
      * date '2020-06-16' to 'Jun 2020' in the {@link Locale#US US locale}. If the
      * localized pattern symbols for the given {@code requestedTemplate} is not
