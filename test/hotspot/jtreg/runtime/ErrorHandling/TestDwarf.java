@@ -27,7 +27,7 @@
  * @library / /test/lib
  * @summary Test DWARF parser with various crashes if debug symbols are available. If the libjvm debug symbols are not
  *          in the same directory as the libjvm.so file, in a subdirectory called .debug, or in the path specified
- *          by the environment variable JVM_DWARF_PATH, then no verification of the hs_err_file is done for libjvm.so.
+ *          by the environment variable _JVM_DWARF_PATH, then no verification of the hs_err_file is done for libjvm.so.
  * @requires vm.flagless & vm.compMode != "Xint" & os.family == "linux" & !vm.graal.enabled & vm.gc.G1
  * @modules java.base/jdk.internal.misc
  * @run main/native/othervm -Xbootclasspath/a:. -XX:-CreateCoredumpOnCrash TestDwarf
