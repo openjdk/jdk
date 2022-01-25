@@ -134,6 +134,8 @@ public:
 #endif
       }
     }
+    assert(!_cm->is_marked_in_prev_bitmap(cast_to_oop(start)), "should not be marked in prev bitmap");
+    assert(!_cm->is_marked_in_next_bitmap(cast_to_oop(start)), "should not be marked in next bitmap");
   }
 
   void zap_remainder() {
