@@ -62,7 +62,6 @@ public class Bug8016524
                 scrollableTable = new JScrollPane(table);
                 frame = new JFrame();
                 frame.getContentPane().add(scrollableTable);
-                //bounds = table.getTableHeader().getBounds();
                 frame.setSize(300, 300);
                 frame.setLocationRelativeTo(null);
                 frame.pack();
