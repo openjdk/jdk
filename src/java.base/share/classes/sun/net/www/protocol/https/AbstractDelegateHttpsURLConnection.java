@@ -314,7 +314,7 @@ public abstract class AbstractDelegateHttpsURLConnection extends
         return ((HttpsClient)http).getSSLSession();
     }
 
-    /**
+    /*
      * If no SSL Session available or if the system config does not allow it
      * don't use the extended caller info (the server cert).
      * Otherwise return true to include the server cert

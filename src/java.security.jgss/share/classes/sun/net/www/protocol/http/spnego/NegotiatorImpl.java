@@ -121,7 +121,7 @@ public class NegotiatorImpl extends Negotiator {
     public NegotiatorImpl(HttpCallerInfo hci) throws IOException {
         try {
             init(hci);
-        } catch (GSSException | ChannelBindingException  e) {
+        } catch (GSSException | ChannelBindingException e) {
             if (DEBUG) {
                 System.out.println("Negotiate support not initiated, will " +
                         "fallback to other scheme if allowed. Reason:");
