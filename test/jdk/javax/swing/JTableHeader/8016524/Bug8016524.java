@@ -26,7 +26,6 @@
 @bug 8016524
 @key headful
 @summary Tests whether the Bottom border of JTableHeader is visible for MacOS default LAF
-@author
 @run main Bug8016524
 */
 
