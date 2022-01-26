@@ -19,12 +19,14 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/* @test
+/*
+ * @test
  * @bug 8280684
  * @summary JfrRecorderService failes with guarantee(num_written > 0) when no space left on device.
- * @library /test/lib 
+ * @library /test/lib
  * @run main/manual TestJFRDiskFull
  */
 
@@ -55,7 +57,7 @@ public class TestJFRDiskFull {
         @Label("Message")
         String message;
     }
-    
+
     private static final long LEFT_SIZE = 307200L;
 
     public static void main(String[] args) throws Exception {
@@ -74,7 +76,7 @@ public class TestJFRDiskFull {
                 }
             }
             recording.stop();
-            System.out.println("should not reach here");  
+            System.out.println("should not reach here");
         } else {
             runtest();
         }
@@ -93,7 +95,7 @@ public class TestJFRDiskFull {
         System.out.println("spaceavailable = " + file.getUsableSpace());
 
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:FlightRecorderOptions=maxchunksize=1M",
-                "TestJFRDiskFull", "Recording"); 
+                "TestJFRDiskFull", "Recording");
         OutputAnalyzer oa = ProcessTools.executeProcess(pb);
         long pid = oa.pid();
         oa.shouldMatch(
