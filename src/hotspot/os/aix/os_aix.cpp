@@ -1131,24 +1131,12 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
 }
 
 int os::get_loaded_modules_info(os::LoadedModulesCallbackFunc callback, void *param) {
-  LoadedModuleList* head = nullptr;
 
-  if (!LoadedLibraries::copy_list(&head)) {
+  if (!LoadedLibraries::for_each(callback, param)) {
     return -1;
   }
 
-  for (const LoadedModuleList* entry = head; entry; entry = entry->next()) {
-    // const char* name -> address base -> address top -> void* param -> int
-    callback(entry->get_shortname(),
-             (address) entry->get_text_area_base(),
-             (address) entry->get_text_area_top(),
-             param);
-  }
-
-  if (!head) {
-    delete head;
-  }
-  return 0; // What value indicates success (>= 0)?
+  return 0;
 }
 
 void os::print_os_info_brief(outputStream* st) {

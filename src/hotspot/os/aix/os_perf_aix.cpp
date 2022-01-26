@@ -22,9 +22,11 @@
  *
  */
 
+#include "utilities/debug.hpp"
 #include "jvm.h"
 #include "libperfstat_aix.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
 #include "os_aix.inline.hpp"
 #include "precompiled.hpp"
 #include "runtime/os.hpp"
@@ -91,15 +93,14 @@ static bool read_psinfo(const u_longlong_t& pid, psinfo_t& psinfo) {
   char buf[BUF_LENGTH];
   int len;
 
-  memset(buf, 0, BUF_LENGTH);
-  snprintf(buf, BUF_LENGTH, "/proc/%llu/psinfo", pid);
+  jio_snprintf(buf, BUF_LENGTH, "/proc/%llu/psinfo", pid);
   fp = fopen(buf, "r");
 
   if (!fp) {
     return false;
   }
 
-  len = fread(&psinfo, sizeof(char), sizeof(psinfo_t), fp);
+  len = fread(&psinfo, 1, sizeof(psinfo_t), fp);
   return len == sizeof(psinfo_t);
 }
 
@@ -115,10 +116,7 @@ static OSReturn get_lcpu_ticks(perfstat_id_t* lcpu_name, CPUPerfTicks* pticks) {
 
   // populate cpu_stats
   if (libperfstat::perfstat_cpu(lcpu_name, &lcpu_stats, sizeof(perfstat_cpu_t), 1) < 1) {
-    pticks->user = 0;
-    pticks->sys  = 0;
-    pticks->idle = 0;
-    pticks->wait = 0;
+    memset(pticks, 0, sizeof(CPUPerfTicks));
     return OS_ERR;
   }
 
@@ -143,7 +141,7 @@ static OSReturn get_jvm_load(double* jvm_uload, double* jvm_sload) {
 
   assert(initialize_libperfstat(), "perfstat lib not available");
 
-  snprintf(name_holder.name, IDENTIFIER_LENGTH, "%d", getpid());
+  jio_snprintf(name_holder.name, IDENTIFIER_LENGTH, "%d", getpid());
   if (libperfstat::perfstat_process(&name_holder, &jvm_stats, sizeof(perfstat_process_t), 1) < 1) {
     return OS_ERR;
   }
@@ -198,6 +196,7 @@ static void calculate_updated_load(CPUPerfTicks* update, CPUPerfTicks* prev, dou
  * Look up lcpu names for later re-use.
  */
 static bool populate_lcpu_names(int ncpus, perfstat_id_t* lcpu_names) {
+  ResourceMark rm;
   perfstat_cpu_t* all_lcpu_stats;
   perfstat_cpu_t* lcpu_stats;
   perfstat_id_t   name_holder;
@@ -211,7 +210,6 @@ static bool populate_lcpu_names(int ncpus, perfstat_id_t* lcpu_names) {
 
   // populate cpu_stats && check that the expected number of records have been populated
   if (ncpus != libperfstat::perfstat_cpu(&name_holder, all_lcpu_stats, sizeof(perfstat_cpu_t), ncpus)) {
-    FREE_RESOURCE_ARRAY(perfstat_cpu_t, all_lcpu_stats, ncpus);
     return false;
   }
 
@@ -219,7 +217,6 @@ static bool populate_lcpu_names(int ncpus, perfstat_id_t* lcpu_names) {
     strncpy(lcpu_names[n].name, all_lcpu_stats[n].name, IDENTIFIER_LENGTH);
   }
 
-  FREE_RESOURCE_ARRAY(perfstat_cpu_t, all_lcpu_stats, ncpus);
   return true;
 }
 
@@ -465,6 +462,7 @@ char* SystemProcessInterface::SystemProcesses::allocate_string(const char* str) 
 }
 
 int SystemProcessInterface::SystemProcesses::system_processes(SystemProcess** system_processes, int* nprocs) const {
+  ResourceMark rm;
   perfstat_process_t* proc_stats;
   SystemProcess* head;
   perfstat_id_t name_holder;
@@ -512,8 +510,6 @@ int SystemProcessInterface::SystemProcesses::system_processes(SystemProcess** sy
     // update head.
     head = sp;
   }
-
-  FREE_RESOURCE_ARRAY(perfstat_process_t, proc_stats, records_allocated);
 
   *system_processes = head;
   return OS_OK;
@@ -599,8 +595,8 @@ bool NetworkPerformanceInterface::NetworkPerformance::initialize() {
 
 NetworkPerformanceInterface::NetworkPerformance::~NetworkPerformance() {}
 
-int NetworkPerformanceInterface::NetworkPerformance::network_utilization(NetworkInterface** network_interfaces) const
-{
+int NetworkPerformanceInterface::NetworkPerformance::network_utilization(NetworkInterface** network_interfaces) const {
+  ResourceMark rm;
   int n_records = 0;
   perfstat_netinterface_t* net_stats;
   perfstat_id_t name_holder;
@@ -636,7 +632,6 @@ int NetworkPerformanceInterface::NetworkPerformance::network_utilization(Network
     *network_interfaces = new_interface;
   }
 
-  FREE_RESOURCE_ARRAY(perfstat_netinterface_t, net_stats, records_allocated);
   return OS_OK;
 }
 

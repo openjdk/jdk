@@ -34,6 +34,7 @@
 #define OS_AIX_LOADLIB_AIX_HPP
 
 #include "misc_aix.hpp"
+#include "runtime/os.hpp"
 
 #include <stddef.h>
 
@@ -69,37 +70,9 @@ struct loaded_module_t {
   // True if this module is part of the vm.
   bool is_in_vm;
 
-};
+  // Next item in the list, or NULL if no such item exits
+  loaded_module_t* next;
 
-// A linked-list storage container for loaded modules
-class LoadedModuleList {
-
-  private:
-    const loaded_module_t _module;
-    const LoadedModuleList* _next;
-
-  public:
-    LoadedModuleList(loaded_module_t module, LoadedModuleList* next) :
-      _module(module),
-      _next(next)
-    {}
-    ~LoadedModuleList() {
-      if (_next) {
-        delete _next;
-      }
-    }
-    const LoadedModuleList* next() const {
-      return _next;
-    }
-    const char* get_shortname() const {
-      return _module.shortname;
-    }
-    const uintptr_t get_text_area_base() const {
-      return (uintptr_t) _module.text;
-    }
-    const uintptr_t get_text_area_top() const {
-      return (uintptr_t) _module.text + _module.text_len;
-    }
 };
 
 // This class is a singleton holding a map of all loaded binaries
@@ -133,9 +106,11 @@ class LoadedLibraries
     // Output debug info
     static void print(outputStream* os);
 
-    // Copy information from the current list into a list starting from the given head.
-    static bool copy_list(LoadedModuleList**);
+    // Apply the callback to each loaded_module_t in the list
+    // Return false if module table is empty and cannot be loaded.
+    static bool for_each(os::LoadedModulesCallbackFunc cb, void* param);
 
 };
+
 
 #endif // OS_AIX_LOADLIB_AIX_HPP
