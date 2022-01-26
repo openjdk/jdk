@@ -47,6 +47,8 @@ import java.security.interfaces.EdECKey;
 import java.security.spec.ECParameterSpec;
 import java.text.Collator;
 import java.text.MessageFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.jar.JarEntry;
@@ -4897,7 +4899,7 @@ public final class Main {
     }
 
     private void checkWeakConstraint(String label, String sigAlg, Key key,
-            CertPathConstraintsParameters cpcp) {
+            CertPathConstraintsParameters cpcp) throws Exception {
         if (sigAlg != null) {
             try {
                 DISABLED_CHECK.permits(sigAlg, cpcp, false);
@@ -4911,13 +4913,23 @@ public final class Main {
                 String eMessage = e.getMessage();
                 if (eMessage.contains("denyAfter constraint check failed") &&
                         e.getReason() == BasicReason.ALGORITHM_CONSTRAINED) {
-                    String separator = "java.security: ";
-                    int sepPos = eMessage.indexOf(separator);
-                    String denyAfterDate = "0000-00-00";
-                    if (sepPos > 0) {
-                        denyAfterDate = eMessage.substring(sepPos + separator.length(),
-                                sepPos + separator.length() + denyAfterDate.length());
+                    String startSeparator = "Constraint date: ";
+                    int startSepPos = eMessage.indexOf(startSeparator);
+                    String endSeparator = "; params date";
+                    int endSepPos = eMessage.indexOf(endSeparator);
+                    String denyAfterDate = eMessage.substring(startSepPos + startSeparator.length(),
+                            endSepPos);
+
+                    SimpleDateFormat formatter = new SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy");
+                    Date dateObj = null;
+                    try {
+                        dateObj = formatter.parse(denyAfterDate);
+                    } catch (ParseException e1) {
+                        throw new Exception(rb.getString(
+                                "Unable.to.parse.denyAfter.string.in.exception.message"));
                     }
+                    formatter = new SimpleDateFormat("yyyy-MM-dd");
+                    denyAfterDate = formatter.format(dateObj);
 
                     weakWarnings.add(String.format(
                             rb.getString("whose.sigalg.usagesignedjar"), label, sigAlg,
@@ -5007,7 +5019,7 @@ public final class Main {
 
     private void checkWeakConstraint(String label, Certificate cert,
             CertPathConstraintsParameters cpcp)
-            throws KeyStoreException {
+            throws KeyStoreException, Exception {
         if (cert instanceof X509Certificate) {
             X509Certificate xc = (X509Certificate)cert;
             // No need to check the sigalg of a trust anchor
@@ -5017,13 +5029,13 @@ public final class Main {
     }
 
     private void checkWeakConstraint(String label, PKCS10 p10,
-            CertPathConstraintsParameters cpcp) {
+            CertPathConstraintsParameters cpcp) throws Exception {
         checkWeakConstraint(label, p10.getSigAlg(),
                 p10.getSubjectPublicKeyInfo(), cpcp);
     }
 
     private void checkWeakConstraint(String label, CRL crl, Key key,
-            CertPathConstraintsParameters cpcp) {
+            CertPathConstraintsParameters cpcp) throws Exception {
         if (crl instanceof X509CRLImpl) {
             X509CRLImpl impl = (X509CRLImpl)crl;
             checkWeakConstraint(label, impl.getSigAlgName(), key, cpcp);
