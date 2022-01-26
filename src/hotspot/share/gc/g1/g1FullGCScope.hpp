@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public:
   STWGCTimer* timer();
   G1FullGCTracer* tracer();
   G1HeapTransition* heap_transition();
-  size_t region_compaction_threshold();
+  size_t region_compaction_threshold() const;
 };
 
 #endif // SHARE_GC_G1_G1FULLGCSCOPE_HPP
