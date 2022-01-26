@@ -545,7 +545,7 @@ const char* make_log_name(const char* log_name, const char* force_directory) {
 }
 
 fileStream::fileStream(const char* file_name) {
-  _file = fopen(file_name, "w");
+  _file = os::fopen(file_name, "w");
   if (_file != NULL) {
     _need_close = true;
   } else {
@@ -555,7 +555,7 @@ fileStream::fileStream(const char* file_name) {
 }
 
 fileStream::fileStream(const char* file_name, const char* opentype) {
-  _file = fopen(file_name, opentype);
+  _file = os::fopen(file_name, opentype);
   if (_file != NULL) {
     _need_close = true;
   } else {
@@ -1079,7 +1079,7 @@ networkStream::networkStream() : bufferedStream(1024*10, 1024*10) {
 
   _socket = -1;
 
-  int result = os::socket(AF_INET, SOCK_STREAM, 0);
+  int result = ::socket(AF_INET, SOCK_STREAM, 0);
   if (result <= 0) {
     assert(false, "Socket could not be created!");
   } else {

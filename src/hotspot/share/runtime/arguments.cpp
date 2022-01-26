@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1244,7 +1244,7 @@ bool Arguments::process_argument(const char* arg,
 }
 
 bool Arguments::process_settings_file(const char* file_name, bool should_exist, jboolean ignore_unrecognized) {
-  FILE* stream = fopen(file_name, "rb");
+  FILE* stream = os::fopen(file_name, "rb");
   if (stream == NULL) {
     if (should_exist) {
       jio_fprintf(defaultStream::error_stream(),
@@ -3140,6 +3140,17 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
     DynamicDumpSharedSpaces = true;
   }
 
+  if (AutoCreateSharedArchive) {
+    if (SharedArchiveFile == NULL) {
+      log_warning(cds)("-XX:+AutoCreateSharedArchive requires -XX:SharedArchiveFile");
+      return JNI_ERR;
+    }
+    if (ArchiveClassesAtExit != NULL) {
+      log_warning(cds)("-XX:+AutoCreateSharedArchive does not work with ArchiveClassesAtExit");
+      return JNI_ERR;
+    }
+  }
+
   if (UseSharedSpaces && patch_mod_javabase) {
     no_shared_spaces("CDS is disabled when " JAVA_BASE_NAME " module is patched.");
   }
@@ -3312,13 +3323,13 @@ jint Arguments::parse_vm_options_file(const char* file_name, ScopedVMInitArgs* v
     jio_fprintf(defaultStream::error_stream(),
                 "Could not stat options file '%s'\n",
                 file_name);
-    os::close(fd);
+    ::close(fd);
     return JNI_ERR;
   }
 
   if (stbuf.st_size == 0) {
     // tell caller there is no option data and that is ok
-    os::close(fd);
+    ::close(fd);
     return JNI_OK;
   }
 
@@ -3329,15 +3340,15 @@ jint Arguments::parse_vm_options_file(const char* file_name, ScopedVMInitArgs* v
   if (NULL == buf) {
     jio_fprintf(defaultStream::error_stream(),
                 "Could not allocate read buffer for options file parse\n");
-    os::close(fd);
+    ::close(fd);
     return JNI_ENOMEM;
   }
 
   memset(buf, 0, bytes_alloc);
 
   // Fill buffer
-  ssize_t bytes_read = os::read(fd, (void *)buf, (unsigned)bytes_alloc);
-  os::close(fd);
+  ssize_t bytes_read = ::read(fd, (void *)buf, (unsigned)bytes_alloc);
+  ::close(fd);
   if (bytes_read < 0) {
     FREE_C_HEAP_ARRAY(char, buf);
     jio_fprintf(defaultStream::error_stream(),
@@ -3487,9 +3498,6 @@ void Arguments::extract_shared_archive_paths(const char* archive_path,
   char* cur_path = NEW_C_HEAP_ARRAY(char, len + 1, mtInternal);
   strncpy(cur_path, begin_ptr, len);
   cur_path[len] = '\0';
-  if (!FileMapInfo::check_archive((const char*)cur_path, true /*is_static*/)) {
-    return;
-  }
   *base_archive_path = cur_path;
 
   begin_ptr = ++end_ptr;
@@ -3501,9 +3509,6 @@ void Arguments::extract_shared_archive_paths(const char* archive_path,
   len = end_ptr - begin_ptr;
   cur_path = NEW_C_HEAP_ARRAY(char, len + 1, mtInternal);
   strncpy(cur_path, begin_ptr, len + 1);
-  if (!FileMapInfo::check_archive((const char*)cur_path, false /*is_static*/)) {
-    return;
-  }
   *top_archive_path = cur_path;
 }
 
@@ -3556,7 +3561,16 @@ void Arguments::init_shared_archive_paths() {
         bool success =
           FileMapInfo::get_base_archive_name_from_header(SharedArchiveFile, &base_archive_path);
         if (!success) {
-          no_shared_spaces("invalid archive");
+          // If +AutoCreateSharedArchive and the specified shared archive does not exist,
+          // regenerate the dynamic archive base on default archive.
+          if (AutoCreateSharedArchive && !os::file_exists(SharedArchiveFile)) {
+            DynamicDumpSharedSpaces = true;
+            ArchiveClassesAtExit = const_cast<char *>(SharedArchiveFile);
+            SharedArchivePath = get_default_shared_archive_path();
+            SharedArchiveFile = nullptr;
+          } else {
+            no_shared_spaces("invalid archive");
+          }
         } else if (base_archive_path == NULL) {
           // User has specified a single archive, which is a static archive.
           SharedArchivePath = const_cast<char *>(SharedArchiveFile);

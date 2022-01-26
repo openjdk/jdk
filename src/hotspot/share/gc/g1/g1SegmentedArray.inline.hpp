@@ -34,12 +34,12 @@ template<MEMFLAGS flag>
 G1SegmentedArraySegment<flag>::G1SegmentedArraySegment(uint slot_size, uint num_slots, G1SegmentedArraySegment* next) :
   _slot_size(slot_size), _num_slots(num_slots), _next(next), _next_allocate(0) {
 
-  _segment = NEW_C_HEAP_ARRAY(char, (size_t)_num_slots * slot_size, mtGCCardSet);
+  _segment = NEW_C_HEAP_ARRAY(char, (size_t)_num_slots * slot_size, flag);
 }
 
 template<MEMFLAGS flag>
 G1SegmentedArraySegment<flag>::~G1SegmentedArraySegment() {
-  FREE_C_HEAP_ARRAY(mtGCCardSet, _segment);
+  FREE_C_HEAP_ARRAY(flag, _segment);
 }
 
 template<MEMFLAGS flag>

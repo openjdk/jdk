@@ -139,6 +139,15 @@ void G1ConcurrentMarkThread::run_service() {
 }
 
 void G1ConcurrentMarkThread::stop_service() {
+  if (in_progress()) {
+    // We are not allowed to abort the marking threads during root region scan.
+    // Needs to be done separately.
+    _cm->root_regions()->abort();
+    _cm->root_regions()->wait_until_scan_finished();
+
+    _cm->abort_marking_threads();
+  }
+
   MutexLocker ml(CGC_lock, Mutex::_no_safepoint_check_flag);
   CGC_lock->notify_all();
 }

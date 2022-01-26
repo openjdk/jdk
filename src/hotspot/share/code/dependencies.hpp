@@ -143,6 +143,9 @@ class Dependencies: public ResourceObj {
     // of the analysis.
     unique_concrete_method_4, // one unique concrete method under CX
 
+    // This dependency asserts that interface CX has a unique implementor class.
+    unique_implementor, // one unique implementor under CX
+
     // This dependency asserts that no instances of class or it's
     // subclasses require finalization registration.
     no_finalizable_subclasses,
@@ -329,7 +332,10 @@ class Dependencies: public ResourceObj {
     assert(!is_concrete_klass(ctxk->as_instance_klass()), "must be abstract");
   }
   static void check_unique_method(ciKlass* ctxk, ciMethod* m) {
-    assert(!m->can_be_statically_bound(ctxk->as_instance_klass()), "redundant");
+    assert(!m->can_be_statically_bound(ctxk->as_instance_klass()) || ctxk->is_interface(), "redundant");
+  }
+  static void check_unique_implementor(ciInstanceKlass* ctxk, ciInstanceKlass* uniqk) {
+    assert(ctxk->implementor() == uniqk, "not a unique implementor");
   }
 
   void assert_common_1(DepType dept, ciBaseObject* x);
@@ -343,9 +349,9 @@ class Dependencies: public ResourceObj {
   void assert_abstract_with_unique_concrete_subtype(ciKlass* ctxk, ciKlass* conck);
   void assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm);
   void assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm, ciKlass* resolved_klass, ciMethod* resolved_method);
+  void assert_unique_implementor(ciInstanceKlass* ctxk, ciInstanceKlass* uniqk);
   void assert_has_no_finalizable_subclasses(ciKlass* ctxk);
   void assert_call_site_target_value(ciCallSite* call_site, ciMethodHandle* method_handle);
-
 #if INCLUDE_JVMCI
  private:
   static void check_ctxk(Klass* ctxk) {
@@ -366,6 +372,7 @@ class Dependencies: public ResourceObj {
   void assert_evol_method(Method* m);
   void assert_has_no_finalizable_subclasses(Klass* ctxk);
   void assert_leaf_type(Klass* ctxk);
+  void assert_unique_implementor(InstanceKlass* ctxk, InstanceKlass* uniqk);
   void assert_unique_concrete_method(Klass* ctxk, Method* uniqm);
   void assert_abstract_with_unique_concrete_subtype(Klass* ctxk, Klass* conck);
   void assert_call_site_target_value(oop callSite, oop methodHandle);
@@ -413,6 +420,7 @@ class Dependencies: public ResourceObj {
   static Klass* check_evol_method(Method* m);
   static Klass* check_leaf_type(InstanceKlass* ctxk);
   static Klass* check_abstract_with_unique_concrete_subtype(InstanceKlass* ctxk, Klass* conck, NewKlassDepChange* changes = NULL);
+  static Klass* check_unique_implementor(InstanceKlass* ctxk, Klass* uniqk, NewKlassDepChange* changes = NULL);
   static Klass* check_unique_concrete_method(InstanceKlass* ctxk, Method* uniqm, NewKlassDepChange* changes = NULL);
   static Klass* check_unique_concrete_method(InstanceKlass* ctxk, Method* uniqm, Klass* resolved_klass, Method* resolved_method, KlassDepChange* changes = NULL);
   static Klass* check_has_no_finalizable_subclasses(InstanceKlass* ctxk, NewKlassDepChange* changes = NULL);

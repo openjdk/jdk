@@ -2560,6 +2560,18 @@ static inline jlong replicate8_imm(int con, int width) {
   return val;
 }
 
+static inline jlong high_bit_set(BasicType bt) {
+  switch (bt) {
+    case T_BYTE:  return 0x8080808080808080;
+    case T_SHORT: return 0x8000800080008000;
+    case T_INT:   return 0x8000000080000000;
+    case T_LONG:  return 0x8000000000000000;
+    default:
+      ShouldNotReachHere();
+      return 0;
+  }
+}
+
 #ifndef PRODUCT
   void MachNopNode::format(PhaseRegAlloc*, outputStream* st) const {
     st->print("nop \t# %d bytes pad for loops and calls", _count);
@@ -7313,62 +7325,75 @@ instruct evcmpFD(kReg dst, vec src1, vec src2, immI8 cond) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vcmp(legVec dst, legVec src1, legVec src2, immI8 cond, rRegP scratch) %{
+instruct vcmp_direct(legVec dst, legVec src1, legVec src2, immI8 cond) %{
   predicate(n->bottom_type()->isa_vectmask() == NULL &&
             !is_unsigned_booltest_pred(n->in(2)->get_int()) &&
             Matcher::vector_length_in_bytes(n->in(1)->in(1)) >=  4 && // src1
             Matcher::vector_length_in_bytes(n->in(1)->in(1)) <= 32 && // src1
-            is_integral_type(Matcher::vector_element_basic_type(n->in(1)->in(1)))); // src1
+            is_integral_type(Matcher::vector_element_basic_type(n->in(1)->in(1))) &&
+            (n->in(2)->get_int() == BoolTest::eq ||
+             n->in(2)->get_int() == BoolTest::lt ||
+             n->in(2)->get_int() == BoolTest::gt)); // cond
   match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  effect(TEMP scratch);
-  format %{ "vector_compare $dst,$src1,$src2,$cond\t! using $scratch as TEMP" %}
+  format %{ "vector_compare $dst,$src1,$src2,$cond\t!" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this, $src1);
     Assembler::ComparisonPredicate cmp = booltest_pred_to_comparison_pred($cond$$constant);
     Assembler::Width ww = widthForType(Matcher::vector_element_basic_type(this, $src1));
-    __ vpcmpCCW($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, cmp, ww, vlen_enc, $scratch$$Register);
+    __ vpcmpCCW($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, xnoreg, cmp, ww, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct vcmpu(legVec dst, legVec src1, legVec src2, immI8 cond, legVec vtmp1, legVec vtmp2, rRegP scratch) %{
+instruct vcmp_negate(legVec dst, legVec src1, legVec src2, immI8 cond, legVec xtmp) %{
+  predicate(n->bottom_type()->isa_vectmask() == NULL &&
+            !is_unsigned_booltest_pred(n->in(2)->get_int()) &&
+            Matcher::vector_length_in_bytes(n->in(1)->in(1)) >=  4 && // src1
+            Matcher::vector_length_in_bytes(n->in(1)->in(1)) <= 32 && // src1
+            is_integral_type(Matcher::vector_element_basic_type(n->in(1)->in(1))) &&
+            (n->in(2)->get_int() == BoolTest::ne ||
+             n->in(2)->get_int() == BoolTest::le ||
+             n->in(2)->get_int() == BoolTest::ge)); // cond
+  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
+  effect(TEMP dst, TEMP xtmp);
+  format %{ "vector_compare $dst,$src1,$src2,$cond\t! using $xtmp as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this, $src1);
+    Assembler::ComparisonPredicate cmp = booltest_pred_to_comparison_pred($cond$$constant);
+    Assembler::Width ww = widthForType(Matcher::vector_element_basic_type(this, $src1));
+    __ vpcmpCCW($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, $xtmp$$XMMRegister, cmp, ww, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vcmpu(legVec dst, legVec src1, legVec src2, immI8 cond, legVec xtmp) %{
   predicate(n->bottom_type()->isa_vectmask() == NULL &&
             is_unsigned_booltest_pred(n->in(2)->get_int()) &&
-            Matcher::vector_length_in_bytes(n->in(1)->in(1)) >=  8 && // src1
-            Matcher::vector_length_in_bytes(n->in(1)->in(1)) <= 16 && // src1
+            Matcher::vector_length_in_bytes(n->in(1)->in(1)) >=  4 && // src1
+            Matcher::vector_length_in_bytes(n->in(1)->in(1)) <= 32 && // src1
             is_integral_type(Matcher::vector_element_basic_type(n->in(1)->in(1)))); // src1
   match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  effect(TEMP vtmp1, TEMP vtmp2, TEMP scratch);
-  format %{ "vector_compareu $dst,$src1,$src2,$cond\t! using $scratch as TEMP" %}
+  effect(TEMP dst, TEMP xtmp);
+  format %{ "vector_compareu $dst,$src1,$src2,$cond\t! using $xtmp as TEMP" %}
   ins_encode %{
-    int vlen = Matcher::vector_length_in_bytes(this, $src1);
+    InternalAddress flip_bit = $constantaddress(high_bit_set(Matcher::vector_element_basic_type(this, $src1)));
+    int vlen_enc = vector_length_encoding(this, $src1);
     Assembler::ComparisonPredicate cmp = booltest_pred_to_comparison_pred($cond$$constant);
-    BasicType bt = Matcher::vector_element_basic_type(this, $src1);
-    __ vpcmpu(bt, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, cmp, vlen, $vtmp1$$XMMRegister,
-              $vtmp2$$XMMRegister, $scratch$$Register);
+    Assembler::Width ww = widthForType(Matcher::vector_element_basic_type(this, $src1));
+
+    if (vlen_enc == Assembler::AVX_128bit) {
+      __ vmovddup($xtmp$$XMMRegister, flip_bit, vlen_enc, noreg);
+    } else {
+      __ vbroadcastsd($xtmp$$XMMRegister, flip_bit, vlen_enc, noreg);
+    }
+    __ vpxor($dst$$XMMRegister, $xtmp$$XMMRegister, $src1$$XMMRegister, vlen_enc);
+    __ vpxor($xtmp$$XMMRegister, $xtmp$$XMMRegister, $src2$$XMMRegister, vlen_enc);
+    __ vpcmpCCW($dst$$XMMRegister, $dst$$XMMRegister, $xtmp$$XMMRegister, $xtmp$$XMMRegister, cmp, ww, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct vcmpu32(legVec dst, legVec src1, legVec src2, immI8 cond, legVec vtmp1, legVec vtmp2, legVec vtmp3, rRegP scratch) %{
-  predicate(n->bottom_type()->isa_vectmask() == NULL &&
-            is_unsigned_booltest_pred(n->in(2)->get_int()) &&
-            Matcher::vector_length_in_bytes(n->in(1)->in(1)) == 32 && // src1
-            is_integral_type(Matcher::vector_element_basic_type(n->in(1)->in(1)))); // src1
-  match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
-  effect(TEMP dst, TEMP vtmp1, TEMP vtmp2, TEMP vtmp3, TEMP scratch);
-  format %{ "vector_compareu $dst,$src1,$src2,$cond\t! using $scratch as TEMP" %}
-  ins_encode %{
-    int vlen = Matcher::vector_length_in_bytes(this, $src1);
-    Assembler::ComparisonPredicate cmp = booltest_pred_to_comparison_pred($cond$$constant);
-    BasicType bt = Matcher::vector_element_basic_type(this, $src1);
-    __ vpcmpu32(bt, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, cmp, vlen, $vtmp1$$XMMRegister,
-                $vtmp2$$XMMRegister, $vtmp3$$XMMRegister, $scratch$$Register);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vcmpu64(vec dst, vec src1, vec src2, immI8 cond, rRegP scratch, kReg ktmp) %{
+instruct vcmp64(vec dst, vec src1, vec src2, immI8 cond, rRegP scratch, kReg ktmp) %{
   predicate((n->bottom_type()->isa_vectmask() == NULL &&
              Matcher::vector_length_in_bytes(n->in(1)->in(1)) == 64) && // src1
              is_integral_type(Matcher::vector_element_basic_type(n->in(1)->in(1)))); // src1
