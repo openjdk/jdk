@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2192,84 +2192,6 @@ void C2_MacroAssembler::evpcmp(BasicType typ, KRegister kdmask, KRegister ksmask
   }
 }
 
-void C2_MacroAssembler::vpcmpu(BasicType typ, XMMRegister dst, XMMRegister src1, XMMRegister src2, ComparisonPredicate comparison,
-                            int vlen_in_bytes, XMMRegister vtmp1, XMMRegister vtmp2, Register scratch) {
-  int vlen_enc = vector_length_encoding(vlen_in_bytes*2);
-  switch (typ) {
-  case T_BYTE:
-    vpmovzxbw(vtmp1, src1, vlen_enc);
-    vpmovzxbw(vtmp2, src2, vlen_enc);
-    vpcmpCCW(dst, vtmp1, vtmp2, comparison, Assembler::W, vlen_enc, scratch);
-    vpacksswb(dst, dst, dst, vlen_enc);
-    break;
-  case T_SHORT:
-    vpmovzxwd(vtmp1, src1, vlen_enc);
-    vpmovzxwd(vtmp2, src2, vlen_enc);
-    vpcmpCCW(dst, vtmp1, vtmp2, comparison, Assembler::D, vlen_enc, scratch);
-    vpackssdw(dst, dst, dst, vlen_enc);
-    break;
-  case T_INT:
-    vpmovzxdq(vtmp1, src1, vlen_enc);
-    vpmovzxdq(vtmp2, src2, vlen_enc);
-    vpcmpCCW(dst, vtmp1, vtmp2, comparison, Assembler::Q, vlen_enc, scratch);
-    vpermilps(dst, dst, 8, vlen_enc);
-    break;
-  default:
-    assert(false, "Should not reach here");
-  }
-  if (vlen_in_bytes == 16) {
-    vpermpd(dst, dst, 0x8, vlen_enc);
-  }
-}
-
-void C2_MacroAssembler::vpcmpu32(BasicType typ, XMMRegister dst, XMMRegister src1, XMMRegister src2, ComparisonPredicate comparison, int vlen_in_bytes,
-                              XMMRegister vtmp1, XMMRegister vtmp2, XMMRegister vtmp3, Register scratch) {
-  int vlen_enc = vector_length_encoding(vlen_in_bytes);
-  switch (typ) {
-  case T_BYTE:
-    vpmovzxbw(vtmp1, src1, vlen_enc);
-    vpmovzxbw(vtmp2, src2, vlen_enc);
-    vpcmpCCW(dst, vtmp1, vtmp2, comparison, Assembler::W, vlen_enc, scratch);
-    vextracti128(vtmp1, src1, 1);
-    vextracti128(vtmp2, src2, 1);
-    vpmovzxbw(vtmp1, vtmp1, vlen_enc);
-    vpmovzxbw(vtmp2, vtmp2, vlen_enc);
-    vpcmpCCW(vtmp3, vtmp1, vtmp2, comparison, Assembler::W, vlen_enc, scratch);
-    vpacksswb(dst, dst, vtmp3, vlen_enc);
-    vpermpd(dst, dst, 0xd8, vlen_enc);
-    break;
-  case T_SHORT:
-    vpmovzxwd(vtmp1, src1, vlen_enc);
-    vpmovzxwd(vtmp2, src2, vlen_enc);
-    vpcmpCCW(dst, vtmp1, vtmp2, comparison, Assembler::D, vlen_enc, scratch);
-    vextracti128(vtmp1, src1, 1);
-    vextracti128(vtmp2, src2, 1);
-    vpmovzxwd(vtmp1, vtmp1, vlen_enc);
-    vpmovzxwd(vtmp2, vtmp2, vlen_enc);
-    vpcmpCCW(vtmp3, vtmp1, vtmp2, comparison, Assembler::D,  vlen_enc, scratch);
-    vpackssdw(dst, dst, vtmp3, vlen_enc);
-    vpermpd(dst, dst, 0xd8, vlen_enc);
-    break;
-  case T_INT:
-    vpmovzxdq(vtmp1, src1, vlen_enc);
-    vpmovzxdq(vtmp2, src2, vlen_enc);
-    vpcmpCCW(dst, vtmp1, vtmp2, comparison, Assembler::Q, vlen_enc, scratch);
-    vpshufd(dst, dst, 8, vlen_enc);
-    vpermq(dst, dst, 8, vlen_enc);
-    vextracti128(vtmp1, src1, 1);
-    vextracti128(vtmp2, src2, 1);
-    vpmovzxdq(vtmp1, vtmp1, vlen_enc);
-    vpmovzxdq(vtmp2, vtmp2, vlen_enc);
-    vpcmpCCW(vtmp3, vtmp1, vtmp2, comparison, Assembler::Q,  vlen_enc, scratch);
-    vpshufd(vtmp3, vtmp3, 8, vlen_enc);
-    vpermq(vtmp3, vtmp3, 0x80, vlen_enc);
-    vpblendd(dst, dst, vtmp3, 0xf0, vlen_enc);
-    break;
-  default:
-    assert(false, "Should not reach here");
-  }
-}
-
 void C2_MacroAssembler::evpblend(BasicType typ, XMMRegister dst, KRegister kmask, XMMRegister src1, XMMRegister src2, bool merge, int vector_len) {
   switch(typ) {
     case T_BYTE:
@@ -4150,6 +4072,26 @@ void C2_MacroAssembler::vector_castF2I_evex(XMMRegister dst, XMMRegister src, XM
   vpternlogd(xtmp2, 0x11, xtmp1, xtmp1, vec_enc);
   evmovdqul(dst, ktmp1, xtmp2, true, vec_enc);
   bind(done);
+}
+
+void C2_MacroAssembler::evpternlog(XMMRegister dst, int func, KRegister mask, XMMRegister src2, XMMRegister src3,
+                                   bool merge, BasicType bt, int vlen_enc) {
+  if (bt == T_INT) {
+    evpternlogd(dst, func, mask, src2, src3, merge, vlen_enc);
+  } else {
+    assert(bt == T_LONG, "");
+    evpternlogq(dst, func, mask, src2, src3, merge, vlen_enc);
+  }
+}
+
+void C2_MacroAssembler::evpternlog(XMMRegister dst, int func, KRegister mask, XMMRegister src2, Address src3,
+                                   bool merge, BasicType bt, int vlen_enc) {
+  if (bt == T_INT) {
+    evpternlogd(dst, func, mask, src2, src3, merge, vlen_enc);
+  } else {
+    assert(bt == T_LONG, "");
+    evpternlogq(dst, func, mask, src2, src3, merge, vlen_enc);
+  }
 }
 
 #ifdef _LP64

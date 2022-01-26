@@ -102,4 +102,11 @@ public interface JavaLangReflectAccess {
     /** Returns a new instance created by the given constructor with access check */
     public <T> T newInstance(Constructor<T> ctor, Object[] args, Class<?> caller)
         throws IllegalAccessException, InstantiationException, InvocationTargetException;
+
+    /** Invokes the given default method if the method's declaring interface is
+     *  accessible to the given caller.  Otherwise, IllegalAccessException will
+     *  be thrown.  If the caller is null, no access check is performed.
+     */
+    public Object invokeDefault(Object proxy, Method method, Object[] args, Class<?> caller)
+        throws Throwable;
 }

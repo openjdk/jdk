@@ -70,7 +70,7 @@ void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
   uint parallel_gc_threads = ParallelScavengeHeap::heap()->workers().max_workers();
 
   assert(_manager_array == NULL, "Attempt to initialize twice");
-  _manager_array = NEW_C_HEAP_ARRAY(ParCompactionManager*, parallel_gc_threads+1, mtGC);
+  _manager_array = NEW_C_HEAP_ARRAY(ParCompactionManager*, parallel_gc_threads, mtGC);
 
   _oop_task_queues = new OopTaskQueueSet(parallel_gc_threads);
   _objarray_task_queues = new ObjArrayTaskQueueSet(parallel_gc_threads);
@@ -84,9 +84,6 @@ void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
     region_task_queues()->register_queue(i, _manager_array[i]->region_stack());
   }
 
-  // The VMThread gets its own ParCompactionManager, which is not available
-  // for work stealing.
-  _manager_array[parallel_gc_threads] = new ParCompactionManager();
   assert(ParallelScavengeHeap::heap()->workers().max_workers() != 0,
     "Not initialized?");
 
@@ -97,14 +94,14 @@ void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
 
 void ParCompactionManager::reset_all_bitmap_query_caches() {
   uint parallel_gc_threads = ParallelScavengeHeap::heap()->workers().max_workers();
-  for (uint i=0; i<=parallel_gc_threads; i++) {
+  for (uint i=0; i<parallel_gc_threads; i++) {
     _manager_array[i]->reset_bitmap_query_cache();
   }
 }
 
 void ParCompactionManager::flush_all_string_dedup_requests() {
   uint parallel_gc_threads = ParallelScavengeHeap::heap()->workers().max_workers();
-  for (uint i=0; i<=parallel_gc_threads; i++) {
+  for (uint i=0; i<parallel_gc_threads; i++) {
     _manager_array[i]->flush_string_dedup_requests();
   }
 }
@@ -184,14 +181,14 @@ void ParCompactionManager::remove_all_shadow_regions() {
 #ifdef ASSERT
 void ParCompactionManager::verify_all_marking_stack_empty() {
   uint parallel_gc_threads = ParallelGCThreads;
-  for (uint i = 0; i <= parallel_gc_threads; i++) {
+  for (uint i = 0; i < parallel_gc_threads; i++) {
     assert(_manager_array[i]->marking_stacks_empty(), "Marking stack should be empty");
   }
 }
 
 void ParCompactionManager::verify_all_region_stack_empty() {
   uint parallel_gc_threads = ParallelGCThreads;
-  for (uint i = 0; i <= parallel_gc_threads; i++) {
+  for (uint i = 0; i < parallel_gc_threads; i++) {
     assert(_manager_array[i]->region_stack()->is_empty(), "Region stack should be empty");
   }
 }

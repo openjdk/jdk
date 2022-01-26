@@ -738,6 +738,18 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return MulNode::Ideal(phase, can_reshape);
 }
 
+LShiftNode* LShiftNode::make(Node* in1, Node* in2, BasicType bt) {
+  switch (bt) {
+    case T_INT:
+      return new LShiftINode(in1, in2);
+    case T_LONG:
+      return new LShiftLNode(in1, in2);
+    default:
+      fatal("Not implemented for %s", type2name(bt));
+  }
+  return NULL;
+}
+
 //=============================================================================
 
 static bool const_shift_count(PhaseGVN* phase, Node* shiftNode, int* count) {

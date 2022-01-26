@@ -67,6 +67,7 @@
 NOT_PRODUCT(cflags(TraceOptoPipelining, bool, TraceOptoPipelining, TraceOptoPipelining)) \
 NOT_PRODUCT(cflags(TraceOptoOutput,     bool, TraceOptoOutput, TraceOptoOutput)) \
 NOT_PRODUCT(cflags(PrintIdeal,          bool, PrintIdeal, PrintIdeal)) \
+NOT_PRODUCT(cflags(PrintIdealLevel,     uintx, PrintIdealLevel, PrintIdealLevel)) \
     cflags(TraceSpilling,           bool, TraceSpilling, TraceSpilling) \
     cflags(Vectorize,               bool, false, Vectorize) \
     cflags(CloneMapDebug,           bool, false, CloneMapDebug) \

@@ -316,7 +316,9 @@ void IdealGraphPrinter::begin_method() {
   }
 
   if (C->is_osr_compilation()) {
-      print_prop(COMPILATION_OSR_PROPERTY, TRUE_VALUE);
+      stringStream ss;
+      ss.print("bci: %d, line: %d", C->entry_bci(), method->line_number_from_bci(C->entry_bci()));
+      print_prop(COMPILATION_OSR_PROPERTY, ss.as_string());
   }
 
   print_prop(COMPILATION_ID_PROPERTY, C->compile_id());
@@ -480,6 +482,8 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
       print_prop("idealOpcode", (const char *)NodeClassNames[node->as_Mach()->ideal_Opcode()]);
     }
 
+    print_field(node);
+
     buffer[0] = 0;
     stringStream s2(buffer, sizeof(buffer) - 1);
 
@@ -628,9 +632,96 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
   }
 }
 
-void IdealGraphPrinter::walk_nodes(Node *start, bool edges, VectorSet* temp_set) {
+void IdealGraphPrinter::print_field(const Node* node) {
+  buffer[0] = 0;
+  stringStream ss(buffer, sizeof(buffer) - 1);
+  ciField* field = get_field(node);
+  uint depth = 0;
+  if (field == NULL) {
+    depth++;
+    field = find_source_field_of_array_access(node, depth);
+  }
 
+  if (field != NULL) {
+    // Either direct field access or array access
+    field->print_name_on(&ss);
+    for (uint i = 0; i < depth; i++) {
+      // For arrays: Add [] for each dimension
+      ss.print("[]");
+    }
+    if (node->is_Store()) {
+      print_prop("destination", buffer);
+    } else {
+      print_prop("source", buffer);
+    }
+  }
+}
 
+ciField* IdealGraphPrinter::get_field(const Node* node) {
+  const TypePtr* adr_type = node->adr_type();
+  Compile::AliasType* atp = NULL;
+  if (C->have_alias_type(adr_type)) {
+    atp = C->alias_type(adr_type);
+  }
+  if (atp != NULL) {
+    ciField* field = atp->field();
+    if (field != NULL) {
+      // Found field associated with 'node'.
+      return field;
+    }
+  }
+  return NULL;
+}
+
+// Try to find the field that is associated with a memory node belonging to an array access.
+ciField* IdealGraphPrinter::find_source_field_of_array_access(const Node* node, uint& depth) {
+  if (!node->is_Mem()) {
+    // Not an array access
+    return NULL;
+  }
+
+  do {
+    if (node->adr_type() != NULL && node->adr_type()->isa_aryptr()) {
+      // Only process array accesses. Pattern match to find actual field source access.
+      node = get_load_node(node);
+      if (node != NULL) {
+        ciField* field = get_field(node);
+        if (field != NULL) {
+          return field;
+        }
+        // Could be a multi-dimensional array. Repeat loop.
+        depth++;
+        continue;
+      }
+    }
+    // Not an array access with a field source.
+    break;
+  } while (depth < 256); // Cannot have more than 255 dimensions
+
+  return NULL;
+}
+
+// Pattern match on the inputs of 'node' to find load node for the field access.
+Node* IdealGraphPrinter::get_load_node(const Node* node) {
+  Node* load = NULL;
+  Node* addr = node->as_Mem()->in(MemNode::Address);
+  if (addr != NULL && addr->is_AddP()) {
+    Node* base = addr->as_AddP()->base_node();
+    if (base != NULL) {
+      base = base->uncast();
+      if (base->is_Load()) {
+        // Mem(AddP([ConstraintCast*](LoadP))) for non-compressed oops.
+        load = base;
+      } else if (base->is_DecodeN() && base->in(1)->is_Load()) {
+        // Mem(AddP([ConstraintCast*](DecodeN(LoadN)))) for compressed oops.
+        load = base->in(1);
+      }
+    }
+  }
+  return load;
+}
+
+void IdealGraphPrinter::walk_nodes(Node* start, bool edges, VectorSet* temp_set) {
   VectorSet visited;
   GrowableArray<Node *> nodeStack(Thread::current()->resource_area(), 0, 0, NULL);
   nodeStack.push(start);
@@ -671,7 +762,7 @@ void IdealGraphPrinter::walk_nodes(Node *start, bool edges, VectorSet* temp_set)
 }
 
 void IdealGraphPrinter::print_method(const char *name, int level) {
-  if (C->should_print(level)) {
+  if (C->should_print_igv(level)) {
     print(name, (Node *) C->root());
   }
 }

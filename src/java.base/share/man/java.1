@@ -512,6 +512,15 @@ of the release.
 .RS
 .RE
 .TP
+.B \f[CB]\-\-finalization=\f[R]\f[I]value\f[R]
+Controls whether the JVM performs finalization of objects.
+Valid values are "enabled" and "disabled".
+Finalization is enabled by default, so the value "enabled" does nothing.
+The value "disabled" disables finalization, so that no finalizers are
+invoked.
+.RS
+.RE
+.TP
 .B \f[CB]\-\-module\-path\f[R] \f[I]modulepath\f[R]... or \f[CB]\-p\f[R] \f[I]modulepath\f[R]
 A semicolon (\f[CB];\f[R]) separated list of directories in which each
 directory is a directory of modules.
@@ -1427,14 +1436,6 @@ By default, the system\[aq]s temporary directory is used.
 .B \f[CB]retransform=\f[R]{\f[CB]true\f[R]|\f[CB]false\f[R]}
 Specifies whether event classes should be retransformed using JVMTI.
 If false, instrumentation is added when event classes are loaded.
-By default, this parameter is enabled.
-.RS
-.RE
-.TP
-.B \f[CB]samplethreads=\f[R]{\f[CB]true\f[R]|\f[CB]false\f[R]}
-Specifies whether thread sampling is enabled.
-Thread sampling occurs only if the sampling event is enabled along with
-this parameter.
 By default, this parameter is enabled.
 .RS
 .RE

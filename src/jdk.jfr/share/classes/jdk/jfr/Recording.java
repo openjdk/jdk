@@ -424,25 +424,6 @@ public final class Recording implements Closeable {
         internal.setMaxSize(maxSize);
     }
 
-        /**
-         * Determines how often events are made available for streaming.
-         *
-         * @param interval the interval at which events are made available for streaming.
-         *
-         * @throws IllegalArgumentException if {@code interval} is negative
-         *
-         * @throws IllegalStateException if the recording is in the {@code CLOSED} state
-         *
-         * @since 14
-         */
-        /*package private*/ void setFlushInterval(Duration interval) {
-            Objects.requireNonNull(interval);
-            if (interval.isNegative()) {
-                throw new IllegalArgumentException("Stream interval can't be negative");
-            }
-            internal.setFlushInterval(interval);
-        }
-
     /**
      * Returns how often events are made available for streaming purposes.
      *

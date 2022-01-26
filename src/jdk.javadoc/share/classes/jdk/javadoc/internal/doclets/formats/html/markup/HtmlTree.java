@@ -846,6 +846,17 @@ public class HtmlTree extends Content {
     }
 
     /**
+     * Creates an HTML {@code UL} element with the given style.
+     *
+     * @param style the style
+     * @return the element
+     */
+    public static HtmlTree UL(HtmlStyle style) {
+        return new HtmlTree(TagName.UL)
+                .setStyle(style);
+    }
+
+    /**
      * Creates an HTML {@code UL} element with the given style and some content.
      *
      * @param style the style

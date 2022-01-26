@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,9 @@
 #include "oops/compressedOops.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 CHeapBitMap* ArchivePtrMarker::_ptrmap = NULL;
 VirtualSpace* ArchivePtrMarker::_vs;
