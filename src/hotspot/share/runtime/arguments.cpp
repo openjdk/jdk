@@ -3451,7 +3451,7 @@ void Arguments::set_shared_spaces_flags_and_archive_paths() {
   }
 
   if (DumpSharedSpaces && !UseCompressedOops) {
-    FLAG_SET_CMDLINE(MaxHeapSize, (julong)4 * G);
+    FLAG_SET_CMDLINE(MaxHeapSize, (size_t)4 * G);
     log_info(cds)("Dumping CDS archive with compressed oops disabled, setting MaxHeapSize to 4G");
   }
 #endif  // INCLUDE_CDS
