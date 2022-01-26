@@ -190,7 +190,7 @@ public class DocLintReferencesTest extends TestRunner {
      * Returns the expected diagnostic, if any, based on the parameters of the test case.
      *
      * The "interesting" cases are those for which the module name is not found,
-     * in which case an error or "reference not found" is reduced to warning,\
+     * in which case an error for "reference not found" is reduced to warning,
      * which may be suppressed.
      *
      * @param sk whether @SuppressWarnings is present of not
