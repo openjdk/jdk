@@ -140,7 +140,11 @@ public interface RandomGenerator {
         return of("L32X64MixRandom");
     }
     /**
-     * Returns a wrapper to use {@link java.util.Random}
+     * Returns an instance of {@link java.util.Random} based on this {@code RandomGenerator}.
+     * If this generator is already an instance of {@code Random}, it is returned. Otherwise, this method
+     * returns an instance of {@code Random} that delegates all methods except setSeed to this
+     * generator. Its setSeed method always throws {@link UnsupportedOperationException}.
+     * 
      * @return {@link java.util.Random}
      */
     default Random asRandom() {
