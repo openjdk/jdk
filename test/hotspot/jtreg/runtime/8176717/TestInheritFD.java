@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,7 @@ public class TestInheritFD {
     public static final String RETAINS_FD = "VM RESULT => RETAINS FD";
     public static final String EXIT = "VM RESULT => VM EXIT";
     public static final String LOG_SUFFIX = ".strangelogsuffixthatcanbecheckedfor";
+    public static final String USER_DIR = System.getProperty("user.dir");
 
     // first VM
     public static void main(String[] args) throws Exception {
@@ -187,10 +188,10 @@ public class TestInheritFD {
 
     static Collection<String> outputContainingFilenames() {
         long pid = ProcessHandle.current().pid();
-
         String[] command = lsofCommand().orElseThrow(() -> new RuntimeException("lsof like command not found"));
-        System.out.println("using command: " + command[0] + " " + command[1]);
-        return run(command[0], command[1], "" + pid).collect(toList());
+        // Only search the directory in which the VM is running (user.dir property).
+        System.out.println("using command: " + command[0] + " -a +d " + USER_DIR + " " + command[1] + " " + pid);
+        return run(command[0], "-a", "+d", USER_DIR, command[1], "" + pid).collect(toList());
     }
 
     static boolean findOpenLogFile(Collection<String> fileNames) {

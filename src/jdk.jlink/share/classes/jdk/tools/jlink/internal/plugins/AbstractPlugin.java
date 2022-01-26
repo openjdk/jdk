@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import jdk.internal.org.objectweb.asm.ClassReader;
+import jdk.tools.jlink.plugin.ResourcePoolEntry;
 
 public abstract class AbstractPlugin implements Plugin {
 
@@ -83,16 +84,31 @@ public abstract class AbstractPlugin implements Plugin {
         }
     }
 
+    ClassReader newClassReader(String path, ResourcePoolEntry resource) {
+        byte[] content = resource.contentBytes();
+        try {
+            return new ClassReader(content);
+        } catch (Exception e) {
+            if (JlinkTask.DEBUG) {
+                System.err.printf("Failed to parse class file: %s from resource of type %s\n", path,
+                        resource.getClass().getName());
+                e.printStackTrace();
+                dumpClassFile(path, content);
+            }
+            throw e;
+        }
+    }
+
     protected ClassReader newClassReader(String path, byte[] buf) {
         try {
             return new ClassReader(buf);
-        } catch (IllegalArgumentException iae) {
+        } catch (Exception e) {
             if (JlinkTask.DEBUG) {
                 System.err.printf("Failed to parse class file: %s\n", path);
-                iae.printStackTrace();
+                e.printStackTrace();
                 dumpClassFile(path, buf);
             }
-            throw iae;
+            throw e;
         }
     }
 

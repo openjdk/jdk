@@ -690,7 +690,6 @@ public class JmodTask {
                         .filter(path -> isResource(path.toString()))
                         .map(path -> toPackageName(path))
                         .filter(pkg -> pkg.length() > 0)
-                        .distinct()
                         .collect(Collectors.toSet());
             } catch (IOException ioe) {
                 throw new UncheckedIOException(ioe);
@@ -705,7 +704,6 @@ public class JmodTask {
                      .filter(e -> !e.isDirectory() && isResource(e.getName()))
                      .map(e -> toPackageName(e))
                      .filter(pkg -> pkg.length() > 0)
-                     .distinct()
                      .collect(Collectors.toSet());
         }
 
