@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,12 +63,12 @@ import jdk.javadoc.internal.doclets.toolkit.PropertyUtils;
 /**
  * This class computes the main data structure for the doclet's
  * operations. Essentially, the implementation encapsulating the
- * javax.lang.models view of what can be documented about a
+ * javax.lang.model's view of what can be documented about a
  * type element's members.
  * <p>
  * The general operations are as follows:
  * <p>
- * Members: these are the members from jx.l.m's view but
+ * Members: these are the members from j.l.m's view but
  * are structured along the kinds of this class.
  * <p>
  * Extra Members: these are members enclosed in an undocumented
@@ -146,23 +146,23 @@ public class VisibleMemberTable {
         }
     }
 
-    final TypeElement te;
-    final TypeElement parent;
+    private final TypeElement te;
+    private final TypeElement parent;
 
-    final BaseConfiguration config;
-    final BaseOptions options;
-    final Utils utils;
-    final VisibleMemberCache mcache;
+    private final BaseConfiguration config;
+    private final BaseOptions options;
+    private final Utils utils;
+    private final VisibleMemberCache mcache;
 
     private final List<VisibleMemberTable> allSuperclasses;
     private final List<VisibleMemberTable> allSuperinterfaces;
     private final List<VisibleMemberTable> parents;
 
-    private Map<Kind, List<Element>> visibleMembers = null;
+    private Map<Kind, List<Element>> visibleMembers;
     private final Map<ExecutableElement, PropertyMembers> propertyMap = new HashMap<>();
 
     // Keeps track of method overrides
-    Map<ExecutableElement, OverriddenMethodInfo> overriddenMethodTable
+    private final Map<ExecutableElement, OverriddenMethodInfo> overriddenMethodTable
             = new LinkedHashMap<>();
 
     protected VisibleMemberTable(TypeElement typeElement, BaseConfiguration configuration,
@@ -178,7 +178,7 @@ public class VisibleMemberTable {
         parents = new ArrayList<>();
     }
 
-    private synchronized void ensureInitialized() {
+    private void ensureInitialized() {
         if (visibleMembers != null)
             return;
 
@@ -208,7 +208,7 @@ public class VisibleMemberTable {
      * a. The list may or may not contain simple overridden methods.
      * A simple overridden method is one that overrides a super method
      * with no specification changes as indicated by the existence of a
-     * sole &commat;inheritDoc or devoid of any API comments.
+     * sole {@code @inheritDoc} or devoid of any API comments.
      * <p>
      * b.The list may contain (extra) members, inherited by inaccessible
      * super types, primarily package private types. These members are
@@ -279,7 +279,7 @@ public class VisibleMemberTable {
         OverriddenMethodInfo found = overriddenMethodTable.get(e);
         if (found != null
                 && (found.simpleOverride || utils.isUndocumentedEnclosure(utils.getEnclosingTypeElement(e)))) {
-            return found.overridden;
+            return found.overriddenMethod;
         }
         return null;
     }
@@ -294,7 +294,7 @@ public class VisibleMemberTable {
 
         OverriddenMethodInfo found = overriddenMethodTable.get(e);
         if (found != null && found.simpleOverride) {
-            return found.overridden;
+            return found.overriddenMethod;
         }
         return null;
     }
@@ -306,7 +306,7 @@ public class VisibleMemberTable {
      * order C, B, A, j.l.O. The super-interfaces however are
      * alpha sorted and appended to the resulting set.
      *
-     * @return the list of visible classes in this map.
+     * @return the set of visible classes in this map
      */
     public Set<TypeElement> getVisibleTypeElements() {
         ensureInitialized();
@@ -527,12 +527,11 @@ public class VisibleMemberTable {
         Map<ExecutableElement, List<ExecutableElement>> overriddenByTable = new HashMap<>();
         for (VisibleMemberTable pvmt : parents) {
             // Merge the lineage overrides into local table
-            pvmt.overriddenMethodTable.entrySet().forEach(e -> {
-                OverriddenMethodInfo p = e.getValue();
-                if (!p.simpleOverride) { // consider only real overrides
-                    List<ExecutableElement> list = overriddenByTable.computeIfAbsent(p.overridden,
+            pvmt.overriddenMethodTable.forEach((method, methodInfo) -> {
+                if (!methodInfo.simpleOverride) { // consider only real overrides
+                    List<ExecutableElement> list = overriddenByTable.computeIfAbsent(methodInfo.overriddenMethod,
                             k -> new ArrayList<>());
-                    list.add(e.getKey());
+                    list.add(method);
                 }
             });
             inheritedMethods.addAll(pvmt.getAllVisibleMembers(Kind.METHODS));
@@ -544,7 +543,7 @@ public class VisibleMemberTable {
         // c. are hidden in the type being considered
         // see allowInheritedMethod, which performs the above actions
         // nb. This statement has side effects that can initialize
-        // members of the overridenMethodTable field, so it must be
+        // members of the overriddenMethodTable field, so it must be
         // evaluated eagerly with toList().
         List<Element> inheritedMethodsList = inheritedMethods.stream()
                 .filter(e -> allowInheritedMethod((ExecutableElement) e, overriddenByTable, lmt))
@@ -565,7 +564,7 @@ public class VisibleMemberTable {
 
         // Merge the above list and stream, making sure the local methods precede the others
         // Final filtration of elements
-        List<Element> list = Stream.concat(localStream,inheritedMethodsList.stream())
+        List<Element> list = Stream.concat(localStream, inheritedMethodsList.stream())
                 .filter(this::mustDocument)
                 .toList();
 
@@ -575,7 +574,6 @@ public class VisibleMemberTable {
         for (VisibleMemberTable pvmt : parents) {
             overriddenMethodTable.putAll(pvmt.overriddenMethodTable);
         }
-        overriddenMethodTable = Collections.unmodifiableMap(overriddenMethodTable);
     }
 
     boolean isEnclosureInterface(Element e) {
@@ -850,7 +848,7 @@ public class VisibleMemberTable {
             Map<String, List<Element>> map = memberMap.get(kind);
             return map.getOrDefault(key, Collections.emptyList())
                     .stream()
-                    .map(e -> clazz.cast(e))
+                    .map(clazz::cast)
                     .toList();
         }
 
@@ -967,7 +965,8 @@ public class VisibleMemberTable {
 
     // Future cleanups
 
-    Map<ExecutableElement, SoftReference<ImplementedMethods>> implementMethodsFinders = new HashMap<>();
+    private final Map<ExecutableElement, SoftReference<ImplementedMethods>>
+            implementMethodsFinders = new HashMap<>();
 
     private ImplementedMethods getImplementedMethodsFinder(ExecutableElement method) {
         SoftReference<ImplementedMethods> ref = implementMethodsFinders.get(method);
@@ -1028,9 +1027,9 @@ public class VisibleMemberTable {
          *    implementing. Do it recursively for the superinterfaces as well.
          * 2. Traverse all the superclasses and search recursively in the
          *    interfaces which those superclasses implement.
-         *</pre>
+         * </pre>
          *
-         * @return SortedSet<ExecutableElement> of implemented methods.
+         * @return a list of implemented methods
          */
         List<ExecutableElement> getImplementedMethods() {
             return methlist;
@@ -1086,22 +1085,7 @@ public class VisibleMemberTable {
         }
     }
 
-    /**
-     * A simple container to encapsulate an overridden method
-     * and the type of override.
-     */
-    static class OverriddenMethodInfo {
-        final ExecutableElement overridden;
-        final boolean simpleOverride;
-
-        public OverriddenMethodInfo(ExecutableElement overridden, boolean simpleOverride) {
-            this.overridden = overridden;
-            this.simpleOverride = simpleOverride;
-        }
-
-        @Override
-        public String toString() {
-            return "OverriddenMethodInfo[" + overridden + ",simple:" + simpleOverride + "]";
-        }
+    private record OverriddenMethodInfo(ExecutableElement overriddenMethod,
+                                        boolean simpleOverride) {
     }
 }
