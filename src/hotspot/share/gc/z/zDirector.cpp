@@ -29,28 +29,20 @@
 #include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zHeuristics.hpp"
+#include "gc/z/zLock.inline.hpp"
 #include "gc/z/zStat.hpp"
 #include "logging/log.hpp"
 
+ZDirector* ZDirector::_director;
+
 constexpr double one_in_1000 = 3.290527;
-constexpr double sample_interval = 1.0 / ZStatMutatorAllocRate::sample_hz;
 
 ZDirector::ZDirector() :
-    _metronome(ZStatMutatorAllocRate::sample_hz) {
+    _monitor(),
+    _stopped(false) {
+  _director = this;
   set_name("ZDirector");
   create_and_start();
-}
-
-static void sample_mutator_allocation_rate() {
-  // Sample allocation rate. This is needed by rule_allocation_rate()
-  // below to estimate the time we have until we run out of memory.
-  const double bytes_per_second = ZStatMutatorAllocRate::sample_and_reset();
-
-  log_debug(gc, alloc)("Mutator Allocation Rate: %.1fMB/s, Predicted: %.1fMB/s, Avg: %.1f(+/-%.1f)MB/s",
-                       bytes_per_second / M,
-                       ZStatMutatorAllocRate::predict() / M,
-                       ZStatMutatorAllocRate::avg() / M,
-                       ZStatMutatorAllocRate::sd() / M);
 }
 
 // Minor GC rules
@@ -99,7 +91,7 @@ static double select_young_gc_workers(double serial_gc_time, double parallelizab
     // next GC cycle will need to increase it again. If so, use the same number of GC workers
     // that will be needed in the next cycle.
     const double gc_duration_delta = (parallelizable_gc_time / actual_gc_workers) - (parallelizable_gc_time / last_gc_workers);
-    const double additional_time_for_allocations = ZGeneration::young()->stat_cycle()->time_since_last() - gc_duration_delta - sample_interval;
+    const double additional_time_for_allocations = ZGeneration::young()->stat_cycle()->time_since_last() - gc_duration_delta;
     const double next_time_until_oom = time_until_oom + additional_time_for_allocations;
     const double next_avoid_oom_gc_workers = estimated_gc_workers(serial_gc_time, parallelizable_gc_time, next_time_until_oom);
 
@@ -141,9 +133,10 @@ ZDriverRequest rule_minor_allocation_rate_dynamic(double serial_gc_time_passed, 
   // phase changes in the allocate rate. We then add ~3.3 sigma to account for
   // the allocation rate variance, which means the probability is 1 in 1000
   // that a sample is outside of the confidence interval.
-  const double alloc_rate_predict = ZStatMutatorAllocRate::predict();
-  const double alloc_rate_avg = ZStatMutatorAllocRate::avg();
-  const double alloc_rate_sd = ZStatMutatorAllocRate::sd();
+  const ZStatMutatorAllocRateStats alloc_rate_stats = ZStatMutatorAllocRate::stats();
+  const double alloc_rate_predict = alloc_rate_stats._predict;
+  const double alloc_rate_avg = alloc_rate_stats._avg;
+  const double alloc_rate_sd = alloc_rate_stats._sd;
   const double alloc_rate_sd_percent = alloc_rate_sd / (alloc_rate_avg + 1.0);
   const double alloc_rate = (MAX2(alloc_rate_predict, alloc_rate_avg) * ZAllocationSpikeTolerance) + (alloc_rate_sd * one_in_1000) + 1.0;
   const double time_until_oom = (free / alloc_rate) / (1.0 + alloc_rate_sd_percent);
@@ -163,9 +156,7 @@ ZDriverRequest rule_minor_allocation_rate_dynamic(double serial_gc_time_passed, 
   const double actual_gc_duration = serial_gc_time + (parallelizable_gc_time / actual_gc_workers);
 
   // Calculate time until GC given the time until OOM and GC duration.
-  // We also subtract the sample interval, so that we don't overshoot the
-  // target time and end up starting the GC too late in the next interval.
-  const double time_until_gc = time_until_oom - actual_gc_duration - sample_interval;
+  const double time_until_gc = time_until_oom - actual_gc_duration;
 
   log_debug(gc, director)("Rule Minor: Allocation Rate (Dynamic GC Workers), "
                           "MaxAllocRate: %.1fMB/s (+/-%.1f%%), Free: " SIZE_FORMAT "MB, GCCPUTime: %.3f, "
@@ -179,7 +170,11 @@ ZDriverRequest rule_minor_allocation_rate_dynamic(double serial_gc_time_passed, 
                           time_until_gc,
                           actual_gc_workers);
 
-  if (time_until_gc > 0.0) {
+  // Bail out if we are not "close" to needing the GC to start yet, where
+  // close is 5% of the time left until OOM. If we don't check that we
+  // are "close", then the heuristics instead add more threads and we
+  // end up not triggering GCs until we have the max number of threads.
+  if (time_until_gc > time_until_oom * 0.05) {
     return ZDriverRequest(GCCause::_no_gc, actual_gc_workers, 0);
   }
 
@@ -214,7 +209,8 @@ static bool rule_minor_allocation_rate_static() {
   // phase changes in the allocate rate. We then add ~3.3 sigma to account for
   // the allocation rate variance, which means the probability is 1 in 1000
   // that a sample is outside of the confidence interval.
-  const double max_alloc_rate = (ZStatMutatorAllocRate::avg() * ZAllocationSpikeTolerance) + (ZStatMutatorAllocRate::sd() * one_in_1000);
+  const ZStatMutatorAllocRateStats alloc_rate_stats = ZStatMutatorAllocRate::stats();
+  const double max_alloc_rate = (alloc_rate_stats._avg * ZAllocationSpikeTolerance) + (alloc_rate_stats._sd * one_in_1000);
   const double time_until_oom = free / (max_alloc_rate + 1.0); // Plus 1.0B/s to avoid division by zero
 
   // Calculate max serial/parallel times of a GC cycle. The times are
@@ -228,7 +224,7 @@ static bool rule_minor_allocation_rate_static() {
   // Calculate time until GC given the time until OOM and max duration of GC.
   // We also deduct the sample interval, so that we don't overshoot the target
   // time and end up starting the GC too late in the next interval.
-  const double time_until_gc = time_until_oom - gc_duration - sample_interval;
+  const double time_until_gc = time_until_oom - gc_duration;
 
   log_debug(gc, director)("Rule Minor: Allocation Rate (Static GC Workers), MaxAllocRate: %.1fMB/s, Free: " SIZE_FORMAT "MB, GCDuration: %.3fs, TimeUntilGC: %.3fs",
                           max_alloc_rate / M, free / M, gc_duration, time_until_gc);
@@ -711,10 +707,29 @@ static bool start_gc() {
   return false;
 }
 
+void ZDirector::evaluate_rules() {
+  ZLocker<ZConditionLock> locker(&_director->_monitor);
+  _director->_monitor.notify();
+}
+
+bool ZDirector::wait_for_tick() {
+  const uint64_t interval_ms = MILLIUNITS / decision_hz;
+
+  ZLocker<ZConditionLock> locker(&_monitor);
+
+  if (_stopped) {
+    // Stopped
+    return false;
+  }
+
+  // Wait
+  _monitor.wait(interval_ms);
+  return true;
+}
+
 void ZDirector::run_service() {
   // Main loop
-  while (_metronome.wait_for_tick()) {
-    sample_mutator_allocation_rate();
+  while (wait_for_tick()) {
     if (!start_gc()) {
       adjust_gc();
     }
@@ -722,5 +737,7 @@ void ZDirector::run_service() {
 }
 
 void ZDirector::stop_service() {
-  _metronome.stop();
+  ZLocker<ZConditionLock> locker(&_monitor);
+  _stopped = true;
+  _monitor.notify();
 }

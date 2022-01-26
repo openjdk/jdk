@@ -733,9 +733,8 @@ retry:
   if (!flags.gc_relocation() && is_init_completed()) {
     // Note that there are two allocation rate counters, which have
     // different purposes and are sampled at different frequencies.
-    const size_t bytes = page->size();
-    ZStatInc(ZCounterMutatorAllocationRate, bytes);
-    ZStatInc(ZStatMutatorAllocRate::counter(), bytes);
+    ZStatInc(ZCounterMutatorAllocationRate, size);
+    ZStatMutatorAllocRate::sample_allocation(size);
   }
 
   // Send event

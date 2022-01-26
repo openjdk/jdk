@@ -25,6 +25,7 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zAbort.inline.hpp"
 #include "gc/z/zCollectedHeap.hpp"
+#include "gc/z/zDirector.hpp"
 #include "gc/z/zDriver.hpp"
 #include "gc/z/zCPU.inline.hpp"
 #include "gc/z/zGeneration.inline.hpp"
@@ -909,34 +910,86 @@ void ZStatInc(const ZStatUnsampledCounter& counter, uint64_t increment) {
 //
 // Stat mutator allocation rate
 //
-const ZStatUnsampledCounter ZStatMutatorAllocRate::_counter("Mutator Allocation Rate");
-TruncatedSeq                ZStatMutatorAllocRate::_samples(ZStatMutatorAllocRate::sample_hz);
-TruncatedSeq                ZStatMutatorAllocRate::_rate(ZStatMutatorAllocRate::sample_hz);
+ZLock*          ZStatMutatorAllocRate::_stat_lock;
+jlong           ZStatMutatorAllocRate::_last_sample_time;
+volatile size_t ZStatMutatorAllocRate::_sampling_granule;
+volatile size_t ZStatMutatorAllocRate::_allocated_since_sample;
+TruncatedSeq    ZStatMutatorAllocRate::_samples_time(100);
+TruncatedSeq    ZStatMutatorAllocRate::_samples_bytes(100);
+TruncatedSeq    ZStatMutatorAllocRate::_rate(100);
 
-const ZStatUnsampledCounter& ZStatMutatorAllocRate::counter() {
-  return _counter;
+void ZStatMutatorAllocRate::initialize() {
+  _last_sample_time = os::elapsed_counter();
+  _stat_lock = new ZLock();
+  update_sampling_granule();
 }
 
-uint64_t ZStatMutatorAllocRate::sample_and_reset() {
-  const ZStatCounterData bytes_per_sample = _counter.collect_and_reset();
-  _samples.add(bytes_per_sample._counter);
+void ZStatMutatorAllocRate::update_sampling_granule() {
+  const size_t sampling_heap_granules = 128;
+  const size_t soft_max_capacity = ZHeap::heap()->soft_max_capacity();
+  _sampling_granule = align_up(soft_max_capacity / sampling_heap_granules, ZGranuleSize);
+}
 
-  const uint64_t bytes_per_second = _samples.sum();
+void ZStatMutatorAllocRate::sample_allocation(size_t allocation_bytes) {
+  const size_t allocated = Atomic::add(&_allocated_since_sample, allocation_bytes);
+
+  if (allocated < Atomic::load(&_sampling_granule)) {
+    // No need for sampling yet
+    return;
+  }
+
+  if (!_stat_lock->try_lock()) {
+    // Someone beat us to it
+    return;
+  }
+
+  size_t allocated_sample = Atomic::load(&_allocated_since_sample);
+
+  if (allocated_sample < _sampling_granule) {
+    // Someone beat us to it
+    _stat_lock->unlock();
+    return;
+  }
+
+  const jlong now = os::elapsed_counter();
+  const jlong elapsed = now - _last_sample_time;
+
+  if (elapsed <= 0) {
+    // Avoid sampling nonsense allocation rates
+    _stat_lock->unlock();
+    return;
+  }
+
+  Atomic::sub(&_allocated_since_sample, allocated_sample);
+
+  _samples_time.add(elapsed);
+  _samples_bytes.add(allocated_sample);
+
+  const double last_sample_bytes = _samples_bytes.sum();
+  const double elapsed_time = _samples_time.sum();
+
+  const double elapsed_seconds = elapsed_time / os::elapsed_frequency();
+  const double bytes_per_second = double(last_sample_bytes) / elapsed_seconds;
   _rate.add(bytes_per_second);
 
-  return bytes_per_second;
+  update_sampling_granule();
+
+  _last_sample_time = now;
+
+  log_debug(gc, alloc)("Mutator Allocation Rate: %.1fMB/s Predicted: %.1fMB/s, Avg: %.1f(+/-%.1f)MB/s",
+                       bytes_per_second,
+                       _rate.predict_next() / M,
+                       _rate.avg() / M,
+                       _rate.sd() / M);
+
+  _stat_lock->unlock();
+
+  ZDirector::evaluate_rules();
 }
 
-double ZStatMutatorAllocRate::predict() {
-  return _rate.predict_next();
-}
-
-double ZStatMutatorAllocRate::avg() {
-  return _rate.avg();
-}
-
-double ZStatMutatorAllocRate::sd() {
-  return _rate.sd();
+ZStatMutatorAllocRateStats ZStatMutatorAllocRate::stats() {
+  ZLocker<ZLock> locker(_stat_lock);
+  return {_rate.avg(), _rate.predict_next(), _rate.sd()};
 }
 
 //
@@ -946,6 +999,7 @@ ZStat::ZStat() :
     _metronome(sample_hz) {
   set_name("ZStat");
   create_and_start();
+  ZStatMutatorAllocRate::initialize();
 }
 
 void ZStat::sample_and_collect(ZStatSamplerHistory* history) const {

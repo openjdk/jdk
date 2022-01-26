@@ -28,6 +28,7 @@
 #include "gc/z/zAbort.inline.hpp"
 #include "gc/z/zBreakpoint.hpp"
 #include "gc/z/zCollectedHeap.hpp"
+#include "gc/z/zDirector.hpp"
 #include "gc/z/zDriver.hpp"
 #include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
@@ -183,6 +184,9 @@ void ZDriverMinor::run_service() {
 
     // Handle allocation stalls
     handle_alloc_stalls();
+
+    // Good point to consider back-to-back GC
+    ZDirector::evaluate_rules();
   }
 }
 
