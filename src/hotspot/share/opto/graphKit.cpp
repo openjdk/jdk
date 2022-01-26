@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2350,9 +2350,9 @@ void GraphKit::round_double_arguments(ciMethod* dest_method) {
       const Type *targ = tf->domain()->field_at(j + TypeFunc::Parms);
       if (targ->basic_type() == T_DOUBLE) {
         // If any parameters are doubles, they must be rounded before
-        // the call, dstore_rounding does gvn.transform
+        // the call, dprecision_rounding does gvn.transform
         Node *arg = argument(j);
-        arg = dstore_rounding(arg);
+        arg = dprecision_rounding(arg);
         set_argument(j, arg);
       }
     }
@@ -2375,20 +2375,6 @@ Node* GraphKit::precision_rounding(Node* n) {
 
 // rounding for strict double precision conformance
 Node* GraphKit::dprecision_rounding(Node *n) {
-  if (Matcher::strict_fp_requires_explicit_rounding) {
-#ifdef IA32
-    if (UseSSE < 2) {
-      return _gvn.transform(new RoundDoubleNode(0, n));
-    }
-#else
-    Unimplemented();
-#endif // IA32
-  }
-  return n;
-}
-
-// rounding for non-strict double stores
-Node* GraphKit::dstore_rounding(Node* n) {
   if (Matcher::strict_fp_requires_explicit_rounding) {
 #ifdef IA32
     if (UseSSE < 2) {
