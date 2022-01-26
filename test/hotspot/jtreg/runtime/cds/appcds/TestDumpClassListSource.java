@@ -81,6 +81,7 @@ public class TestDumpClassListSource {
     static final String mainInvokeClass = "ClassSpecializerTestApp";
     static final String mainCutomClass  = "ClassListWithCustomClassNoSource";
     static final String sourceTarget    = "_ClassSpecializer_generateConcreteSpeciesCode";
+    static final String warningMessage  = "Skipping java/lang/invoke/BoundMethodHandle$Species_";
 
     private static void checkFileExistence(String type, File file) throws Exception {
         if (!file.exists()) {
@@ -117,8 +118,27 @@ public class TestDumpClassListSource {
         checkFileExistence("Archive", fileArchive);
         checkFileExistence("ClassList", fileList);
 
-        output.shouldHaveExitValue(0);
+        output.shouldHaveExitValue(0)
+              .shouldContain(warningMessage);
         checkMatch(listFileName, sourceTarget, EXPECT_NOMATCH, "Failed to filter " + sourceTarget + " in class list file");
+
+        fileArchive.delete();
+
+        launchArgs  = new String[] {
+                "-Xshare:dump",
+                "-XX:DumpLoadedClassList=" + listFileName,
+                "-XX:SharedArchiveFile=" + archiveName,
+                "-Xlog:cds",
+                "-cp",
+                jarFile,
+                mainInvokeClass};
+
+        pb = ProcessTools.createJavaProcessBuilder(launchArgs);
+        output = TestCommon.executeAndLog(pb, "dump-invoke-class");
+        output.shouldHaveExitValue(0)
+              .shouldNotContain(warningMessage);
+
+        checkFileExistence("Archive", fileArchive);
 
         fileArchive.delete();
         fileList.delete();
