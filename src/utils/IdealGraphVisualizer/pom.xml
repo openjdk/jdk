@@ -89,7 +89,7 @@
         <module>View</module>
     </modules>
     <properties>
-        <netbeans.version>RELEASE123</netbeans.version>
+        <netbeans.version>RELEASE126</netbeans.version>
         <swinglayouts.version>1.0.2</swinglayouts.version>
         <nbmmvnplugin.version>4.6</nbmmvnplugin.version>
         <mvncompilerplugin.version>3.8.1</mvncompilerplugin.version>
