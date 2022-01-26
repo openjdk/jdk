@@ -2357,7 +2357,7 @@ void Compile::inline_vector_reboxing_calls() {
       CallGenerator* cg = _vector_reboxing_late_inlines.pop();
       cg->do_late_inline();
       if (failing())  return;
-      print_method(PHASE_INLINE_VECTOR_REBOX, cg->call_node());
+      print_method(PHASE_INLINE_VECTOR_REBOX, cg->call_node(), 3);
     }
     _vector_reboxing_late_inlines.trunc_to(0);
   }
@@ -4815,10 +4815,11 @@ void Compile::sort_macro_nodes() {
 }
 
 void Compile::print_method(CompilerPhaseType cpt, int level) {
-  print_method_impl(cpt, CompilerPhaseTypeHelper::to_string(cpt), level);
+  print_method_impl(cpt, NOT_PRODUCT(CompilerPhaseTypeHelper::to_string(cpt) COMMA) level);
 }
 
 void Compile::print_method(CompilerPhaseType cpt, Node* n, int level) {
+#ifndef PRODUCT
   ResourceMark rm;
   stringStream ss;
   ss.print_raw(CompilerPhaseTypeHelper::to_string(cpt));
@@ -4827,10 +4828,11 @@ void Compile::print_method(CompilerPhaseType cpt, Node* n, int level) {
   } else {
     ss.print_raw(": NULL");
   }
-  C->print_method_impl(cpt, ss.as_string(), level);
+#endif
+  C->print_method_impl(cpt, NOT_PRODUCT(ss.as_string() COMMA) level);
 }
 
-void Compile::print_method_impl(CompilerPhaseType cpt, const char *name, int level) {
+void Compile::print_method_impl(CompilerPhaseType cpt, NOT_PRODUCT(const char* name COMMA) int level) {
   EventCompilerPhase event;
   if (event.should_commit()) {
     CompilerEvent::PhaseEvent::post(event, C->_latest_stage_start_counter, cpt, C->_compile_id, level);

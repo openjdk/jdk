@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,24 +19,9 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
-
-#ifndef SHARE_GC_G1_G1BUFFERNODELIST_HPP
-#define SHARE_GC_G1_G1BUFFERNODELIST_HPP
-
-#include "utilities/globalDefinitions.hpp"
-
-class BufferNode;
-
-struct G1BufferNodeList {
-  BufferNode* _head;            // First node in list or NULL if empty.
-  BufferNode* _tail;            // Last node in list or NULL if empty.
-  size_t _entry_count;          // Sum of entries in nodes in list.
-
-  G1BufferNodeList();
-  G1BufferNodeList(BufferNode* head, BufferNode* tail, size_t entry_count);
-};
-
-#endif // SHARE_GC_G1_G1BUFFERNODELIST_HPP
-
+module m1 {
+    requires m2;
+    requires org.testng;
+    exports p1;
+}

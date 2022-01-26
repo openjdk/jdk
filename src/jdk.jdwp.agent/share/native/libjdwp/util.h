@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,8 @@ typedef struct RefNode {
     jobject      ref;           /* could be strong or weak */
     struct RefNode *next;       /* next RefNode* in bucket chain */
     jint         count;         /* count of references */
-    unsigned     strongCount;   /* count of strong reference */
+    jboolean     isPinAll;      /* true if this is a strong reference due to a commonRef_pinAll() */
+    jboolean     isCommonPin;   /* true if this is a strong reference due to a commonRef_pin() */
 } RefNode;
 
 /* Value of a NULL ID */

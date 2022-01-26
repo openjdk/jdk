@@ -90,7 +90,7 @@ public:
 //   ShenandoahHeap
 //   ZCollectedHeap
 //
-class CollectedHeap : public CHeapObj<mtInternal> {
+class CollectedHeap : public CHeapObj<mtGC> {
   friend class VMStructs;
   friend class JVMCIVMStructs;
   friend class IsGCActiveMark; // Block structured external access to _is_gc_active
