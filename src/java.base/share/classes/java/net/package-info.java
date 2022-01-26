@@ -122,7 +122,7 @@
  *       <li>{@link java.net.HttpURLConnection} is a subclass of URLConnection
  *            and provides some additional functionalities specific to the
  *            HTTP protocol. This API has been superseded by the newer
- *            {@linkplain java.net.http/java.net.http HTTP Client API}.</li>
+ *            HTTP Client API.</li>
  * </ul>
  * <p>The recommended usage is to use {@link java.net.URI} to identify
  *    resources, then convert it into a {@link java.net.URL} when it is time to
