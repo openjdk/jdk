@@ -4815,29 +4815,23 @@ void Compile::sort_macro_nodes() {
 }
 
 void Compile::print_method(CompilerPhaseType cpt, int level) {
-  print_method_impl(cpt, NOT_PRODUCT(CompilerPhaseTypeHelper::to_string(cpt) COMMA) level);
+  print_method(cpt, NULL, level);
 }
 
 void Compile::print_method(CompilerPhaseType cpt, Node* n, int level) {
+  EventCompilerPhase event;
+  if (event.should_commit()) {
+    CompilerEvent::PhaseEvent::post(event, C->_latest_stage_start_counter, cpt, C->_compile_id, level);
+  }
 #ifndef PRODUCT
   ResourceMark rm;
   stringStream ss;
   ss.print_raw(CompilerPhaseTypeHelper::to_string(cpt));
   if (n != NULL) {
     ss.print(": %d %s ", n->_idx, NodeClassNames[n->Opcode()]);
-  } else {
-    ss.print_raw(": NULL");
   }
-#endif
-  C->print_method_impl(cpt, NOT_PRODUCT(ss.as_string() COMMA) level);
-}
 
-void Compile::print_method_impl(CompilerPhaseType cpt, NOT_PRODUCT(const char* name COMMA) int level) {
-  EventCompilerPhase event;
-  if (event.should_commit()) {
-    CompilerEvent::PhaseEvent::post(event, C->_latest_stage_start_counter, cpt, C->_compile_id, level);
-  }
-#ifndef PRODUCT
+  const char *name = ss.as_string();
   if (should_print_igv(level)) {
     _igv_printer->print_method(name, level);
   }
