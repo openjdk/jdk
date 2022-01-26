@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,13 +219,15 @@ bool SystemDictionaryShared::check_for_exclusion(InstanceKlass* k, DumpTimeClass
   }
 
   if (!info->has_checked_exclusion()) {
-    if (check_for_exclusion_impl(k)) {
-      info->set_excluded();
+    if (!info->is_excluded()) {
+      if (check_for_exclusion_impl(k)) {
+        info->set_excluded();
+      }
     }
     info->set_has_checked_exclusion();
   }
 
-  return info->is_excluded();
+  return info->should_be_excluded();
 }
 
 // Returns true so the caller can do:    return warn_excluded(".....");
@@ -597,7 +599,7 @@ void SystemDictionaryShared::validate_before_archiving(InstanceKlass* k) {
   DumpTimeClassInfo* info = _dumptime_table->get(k);
   assert(_no_class_loading_should_happen, "class loading must be disabled");
   guarantee(info != NULL, "Class %s must be entered into _dumptime_table", name);
-  guarantee(!info->is_excluded(), "Should not attempt to archive excluded class %s", name);
+  guarantee(!info->should_be_excluded(), "Should not attempt to archive excluded class %s", name);
   if (is_builtin(k)) {
     if (k->is_hidden()) {
       assert(is_registered_lambda_proxy_class(k), "unexpected hidden class %s", name);
@@ -686,7 +688,7 @@ bool SystemDictionaryShared::is_excluded_class(InstanceKlass* k) {
   assert_lock_strong(DumpTimeTable_lock);
   Arguments::assert_is_dumping_archive();
   DumpTimeClassInfo* p = find_or_allocate_info_for_locked(k);
-  return (p == NULL) ? true : p->is_excluded();
+  return (p == NULL) ? true : p->should_be_excluded();
 }
 
 void SystemDictionaryShared::set_excluded_locked(InstanceKlass* k) {
@@ -732,7 +734,7 @@ public:
 
   bool do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
     assert_lock_strong(DumpTimeTable_lock);
-    if (k->is_loader_alive() && !info.is_excluded()) {
+    if (k->is_loader_alive() && !info.should_be_excluded()) {
       info.metaspace_pointers_do(_it);
     }
     return true; // keep on iterating
@@ -1173,7 +1175,7 @@ public:
   }
 
   bool do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
-    if (!info.is_excluded()) {
+    if (!info.should_be_excluded()) {
       size_t byte_size = RunTimeClassInfo::byte_size(info._klass, info.num_verifier_constraints(), info.num_loader_constraints());
       _shared_class_info_size += align_up(byte_size, SharedSpaceObjectAlignment);
     }
@@ -1230,7 +1232,7 @@ public:
     // The following check has been moved to SystemDictionaryShared::check_excluded_classes(), which
     // happens before the classes are copied.
     //
-    // if (SystemDictionaryShared::is_excluded_class(info._proxy_klasses->at(0))) {
+    // if (SystemDictionaryShared::should_be_excluded_class(info._proxy_klasses->at(0))) {
     //  return true;
     //}
     ResourceMark rm;
@@ -1282,7 +1284,7 @@ public:
     : _writer(writer), _is_builtin(is_builtin), _builder(ArchiveBuilder::current()) {}
 
   bool do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
-    if (!info.is_excluded() && info.is_builtin() == _is_builtin) {
+    if (!info.should_be_excluded() && info.is_builtin() == _is_builtin) {
       size_t byte_size = RunTimeClassInfo::byte_size(info._klass, info.num_verifier_constraints(), info.num_loader_constraints());
       RunTimeClassInfo* record;
       record = (RunTimeClassInfo*)ArchiveBuilder::ro_region_alloc(byte_size);
@@ -1554,7 +1556,7 @@ class CloneDumpTimeClassTable: public StackObj {
     assert(_cloned_table != NULL, "_cloned_table is NULL");
   }
   bool do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
-    if (!info.is_excluded()) {
+    if (!info.should_be_excluded()) {
       bool created;
       _cloned_table->put_if_absent(k, info.clone(), &created);
     }

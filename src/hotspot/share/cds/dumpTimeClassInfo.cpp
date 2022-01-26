@@ -173,7 +173,7 @@ class CountClassByCategory : StackObj {
 public:
   CountClassByCategory(DumpTimeSharedClassTable* table) : _table(table) {}
   bool do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
-    if (!info.is_excluded()) {
+    if (!info.should_be_excluded()) {
       if (info.is_builtin()) {
         _table->inc_builtin_count();
       } else {
