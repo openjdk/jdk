@@ -45,8 +45,7 @@ public class TestSha1Usage {
                 "-ext eku=codeSigning -sigalg SHA1withRSA")
                 .shouldContain("Warning:")
                 .shouldMatch("The generated certificate.*SHA1withRSA.*considered a security risk")
-                .shouldMatch("cannot be used to sign JARs after 2018-12-31")
-                .shouldNotContain("0000-00-00")
+                .shouldMatch("cannot be used to sign JARs")
                 .shouldHaveExitValue(0);
 
         kt("-genkeypair -keyalg rsa -alias e1 -dname CN=E1", "ks");
@@ -55,8 +54,7 @@ public class TestSha1Usage {
                 "-gencert -alias ca -infile tmp.req -outfile tmp.cert")
                 .shouldContain("Warning:")
                 .shouldMatch("The issuer.*SHA1withRSA.*considered a security risk")
-                .shouldMatch("cannot be used to sign JARs after 2018-12-31")
-                .shouldNotContain("0000-00-00")
+                .shouldMatch("cannot be used to sign JARs")
                 .shouldHaveExitValue(0);
     }
 }

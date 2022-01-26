@@ -4917,14 +4917,20 @@ public final class Main {
                     int startSepPos = eMessage.indexOf(startSeparator);
                     String endSeparator = "; params date";
                     int endSepPos = eMessage.indexOf(endSeparator);
-                    String denyAfterDate = eMessage.substring(startSepPos + startSeparator.length(),
-                            endSepPos);
+                    String denyAfterDate = null;
+                    try {
+                        denyAfterDate = eMessage.substring(startSepPos + startSeparator.length(),
+                                endSepPos);
+                    } catch (IndexOutOfBoundsException e1) {
+                        throw new Exception(rb.getString(
+                                "Unable.to.parse.denyAfter.string.in.exception.message"));
+                    }
 
                     SimpleDateFormat formatter = new SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy");
                     Date dateObj = null;
                     try {
                         dateObj = formatter.parse(denyAfterDate);
-                    } catch (ParseException e1) {
+                    } catch (ParseException e2) {
                         throw new Exception(rb.getString(
                                 "Unable.to.parse.denyAfter.string.in.exception.message"));
                     }
