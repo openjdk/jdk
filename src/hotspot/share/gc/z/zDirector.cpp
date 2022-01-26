@@ -171,7 +171,6 @@ ZDriverRequest rule_minor_allocation_rate_dynamic(double serial_gc_time_passed, 
 
   // Calculate GC duration given number of GC workers needed.
   const double actual_gc_duration = serial_gc_time + (parallelizable_gc_time / actual_gc_workers);
-  const double last_gc_workers = young->stat_cycle()->last_active_workers();
 
   // Calculate time until GC given the time until OOM and GC duration.
   // We also subtract the sample interval, so that we don't overshoot the
@@ -180,7 +179,7 @@ ZDriverRequest rule_minor_allocation_rate_dynamic(double serial_gc_time_passed, 
 
   log_debug(gc, director)("Rule Minor: Allocation Rate (Dynamic GC Workers), "
                           "MaxAllocRate: %.1fMB/s (+/-%.1f%%), Free: " SIZE_FORMAT "MB, GCCPUTime: %.3f, "
-                          "GCDuration: %.3fs, TimeUntilOOM: %.3fs, TimeUntilGC: %.3fs, GCWorkers: %.3fs -> %u",
+                          "GCDuration: %.3fs, TimeUntilOOM: %.3fs, TimeUntilGC: %.3fs, GCWorkers: %u",
                           alloc_rate / M,
                           alloc_rate_sd_percent * 100,
                           free / M,
@@ -188,10 +187,9 @@ ZDriverRequest rule_minor_allocation_rate_dynamic(double serial_gc_time_passed, 
                           serial_gc_time + (parallelizable_gc_time / actual_gc_workers),
                           time_until_oom,
                           time_until_gc,
-                          last_gc_workers,
                           actual_gc_workers);
 
-  if ((double)actual_gc_workers <= last_gc_workers && time_until_gc > 0.0) {
+  if (time_until_gc > 0.0) {
     return ZDriverRequest(GCCause::_no_gc, actual_gc_workers, 0);
   }
 
