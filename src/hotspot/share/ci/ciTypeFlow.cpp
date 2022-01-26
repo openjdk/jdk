@@ -2472,7 +2472,9 @@ int ciTypeFlow::profiled_count(ciTypeFlow::Loop* loop) {
   iter.reset_to_bci(tail->control());
 
   bool is_an_if = false;
-  switch (iter.next()) {
+  bool wide = false;
+  Bytecodes::Code bc = iter.next();
+  switch (bc) {
     case Bytecodes::_ifeq:
     case Bytecodes::_ifne:
     case Bytecodes::_iflt:
@@ -2491,10 +2493,12 @@ int ciTypeFlow::profiled_count(ciTypeFlow::Loop* loop) {
     case Bytecodes::_ifnonnull:
       is_an_if = true;
       break;
-    case Bytecodes::_goto:
     case Bytecodes::_goto_w:
-    case Bytecodes::_jsr:
     case Bytecodes::_jsr_w:
+      wide = true;
+      break;
+    case Bytecodes::_goto:
+    case Bytecodes::_jsr:
       break;
     default:
       fatal(" invalid bytecode: %s", Bytecodes::name(iter.cur_bc()));
@@ -2503,7 +2507,7 @@ int ciTypeFlow::profiled_count(ciTypeFlow::Loop* loop) {
   GrowableArray<ciTypeFlow::Block*>* succs = tail->successors();
 
   if (!is_an_if) {
-    assert((iter.get_dest() == loop->head()->start()) == (succs->at(ciTypeFlow::GOTO_TARGET) == loop->head()), "branch should lead to loop head");
+    assert(((wide ? iter.get_far_dest() : iter.get_dest()) == loop->head()->start()) == (succs->at(ciTypeFlow::GOTO_TARGET) == loop->head()), "branch should lead to loop head");
     if (succs->at(ciTypeFlow::GOTO_TARGET) == loop->head()) {
       return method()->scale_count(data->as_JumpData()->taken());
     }
