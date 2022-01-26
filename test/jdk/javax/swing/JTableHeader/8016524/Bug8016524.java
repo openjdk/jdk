@@ -25,77 +25,92 @@
 @test
 @bug 8016524
 @key headful
-@summary Tests whether the Bottom border of JTableHeader is visible for MacOS default LAF
+@summary Tests whether the bottom line of JTableHeader border is visible for MacOS default LAF
 @run main Bug8016524
 */
 
-import javax.swing.*;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.Color;
+import javax.swing.JFrame;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.UIManager;
+import javax.swing.SwingUtilities;
 import javax.swing.table.JTableHeader;
-import java.awt.*;
 
-public class Bug8016524
-{
+public class Bug8016524 {
+
     private static JFrame frame;
     private static JTable table;
     private static JScrollPane scrollableTable;
     private static JTableHeader header;
+    private static Point point;
 
     // added so as to get the correct pixel value of the bottom border
     public static final int X_OFFSET = 10;
     public static final int Y_OFFSET = 1;
-    public static final int WHITE_RGB = Color.WHITE.getRGB();
+
+    public static final int FRAME_HT = 300;
+    public static final int FRAME_WT = 300;
+    public static final int TABLE_COLS = 5;
+    public static final int TABLE_ROWS = 2;
+
+    private static final int WHITE_RGB = Color.WHITE.getRGB();
 
     public static void main(String[] args) throws Exception {
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (ClassNotFoundException | InstantiationException |
-                IllegalAccessException e) {
-             throw new RuntimeException("Unsupported LookAndFeel: " + UIManager.getSystemLookAndFeelClassName());
-        }
+
+        //to keep track of header dimensions
+        final int header_dim[] = new int[2];
         Robot robot = new Robot();
         robot.setAutoDelay(20);
 
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                table = new JTable(2, 5);
-                scrollableTable = new JScrollPane(table);
-                frame = new JFrame();
-                frame.getContentPane().add(scrollableTable);
-                frame.setSize(300, 300);
-                frame.setLocationRelativeTo(null);
-                frame.pack();
-                frame.setVisible(true);
-                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            }
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+             throw new RuntimeException("Unsupported LookAndFeel Class: ");
+        }
+
+        SwingUtilities.invokeAndWait(() -> {
+            table = new JTable(TABLE_ROWS, TABLE_COLS);
+            scrollableTable = new JScrollPane(table);
+            frame = new JFrame();
+            frame.getContentPane().add(scrollableTable);
+            frame.setSize(FRAME_WT, FRAME_HT);
+            frame.setLocationRelativeTo(null);
+            frame.pack();
+            frame.setVisible(true);
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+            // retrieve JTableHeader coordinate position on screen (x,y)
+            point = table.getTableHeader().getLocationOnScreen();
+            // retrieve height and width of the table
+            header = table.getTableHeader();
+            header_dim[0] = header.getHeight();
+            header_dim[1] = header.getWidth();
         });
+
         robot.waitForIdle();
 
-        // get JTableHeader coordinate position on screen (x,y)
-        Point point = table.getTableHeader().getLocationOnScreen();
-
-        //to retrieve height and width of the table
-        header = table.getTableHeader();
-        int height = header.getHeight();
-        int width= header.getWidth();
-
         // to check mouse pointer position on screen
-        robot.mouseMove(point.x + X_OFFSET, point.y + height -Y_OFFSET);
+        robot.mouseMove(point.x + X_OFFSET, point.y + header_dim[0] - Y_OFFSET);
         robot.waitForIdle();
 
         // get pixel color at lower left and lower right on the JTableHeader border
-        Color lowerLeft = robot.getPixelColor(point.x + X_OFFSET, point.y + height - Y_OFFSET);
-        Color lowerRight = robot.getPixelColor(point.x + width - X_OFFSET, point.y + height - Y_OFFSET);
+        Color lowerLeft = robot.getPixelColor(point.x + X_OFFSET, point.y + header_dim[0] - Y_OFFSET);
+        Color lowerRight = robot.getPixelColor(point.x + header_dim[1] - X_OFFSET, point.y + header_dim[0] - Y_OFFSET);
 
         // if pixel color is white then border not visible, throw Exception
         if(lowerLeft.getRGB() == WHITE_RGB || lowerRight.getRGB() == WHITE_RGB)
         {
-            throw new RuntimeException("Bottom Border not visible");
+            throw new RuntimeException("JTableHeader Bottom Border not visible");
         }
         try {
-            Thread.sleep(2000);
+            Thread.sleep(1000);
         } catch (InterruptedException e)
         {
             throw new RuntimeException(e);
         }
+        frame.dispose();
     }
 }
