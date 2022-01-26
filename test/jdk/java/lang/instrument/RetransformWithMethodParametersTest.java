@@ -40,18 +40,24 @@ import java.lang.reflect.Parameter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.ProtectionDomain;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.util.ClassTransformer;
 
+/*
+ * The test verifies Instrumentation.retransformClasses() (and JVMTI function RetransformClasses)
+ * correctly handles MethodParameter attribute:
+ * - classfile bytes passed to transformers (and JVMTI ClassFileLoadHook event callback) contain the attribute;
+ * - the attribute is updated.
+ */
+
+// See ClassTransformer.transform(int) comment for @1 tag explanations.
 class MethodParametersTarget {
+    // The class contains the only method, so we don't have issue with method sorting
+    // and ClassFileReconstituter should restore the same bytes as original classbytes.
     public void method1(
             int intParam1, String stringParam1 // @1 commentout
             // @1 uncomment   int intParam2, String stringParam2
@@ -84,18 +90,13 @@ public class RetransformWithMethodParametersTest extends ATransformerManagementT
         log("Reading test class from " + origClassFile);
         originalClassBytes = Files.readAllBytes(origClassFile.toPath());
         log("Read " + originalClassBytes.length + " bytes.");
-
-        DisassembledClassbytes disasm = new DisassembledClassbytes(originalClassBytes);
-        log("original:");
-        disasm.print();
-        assertTrue("MethodParameters not found", !disasm.methodParameters().lines.isEmpty());
     }
 
     private void log(Object o) {
         System.out.println(String.valueOf(o));
     }
 
-    //
+    // Prints and verifies MethodParameters attribute using reflection.
     private void verifyMethodParams(boolean expectedPresent, String... expectedNames) throws Throwable {
         Class cls = Class.forName(targetClassName);
         // the class contains 1 method (method1)
@@ -114,158 +115,24 @@ public class RetransformWithMethodParametersTest extends ATransformerManagementT
         }
     }
 
-    private void reset() {
+    // Retransforms target class using provided class bytes;
+    // Returns class bytes passed to the transformer.
+    private byte[] retransform(byte[] classBytes) throws Throwable {
         seenClassBytes = null;
-        newClassBytes = null;
-    }
-
-    private byte[] getClassBytes() throws Throwable {
-        reset();
+        newClassBytes = classBytes;
         fInst.retransformClasses(targetClass);
         assertTrue(targetClassName + " was not seen by transform()", seenClassBytes != null);
         return seenClassBytes;
     }
 
-    private void setClassBytes(byte[] classBytes) throws Throwable {
-        reset();
-        newClassBytes = classBytes;
-        fInst.retransformClasses(targetClass);
-        assertTrue(targetClassName + " was not seen by transform()", seenClassBytes != null);
-    }
+    // Prints dissassembled class bytes.
+    private void printDisassembled(String description, byte[] bytes) throws Exception {
+        log(description + " -------------------");
 
-    private static final String[] expectedDifferentStrings = {
-            "^Classfile .+$",
-            "^[\\s]+SHA-256 checksum .[^\\s]+$"
-    };
-
-    private boolean expectedDifferent(String line) {
-        for (String s: expectedDifferentStrings) {
-            Pattern p = Pattern.compile(s);
-            if (p.matcher(line).find()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private void compareClassBytes(byte[] bytes1, byte[] bytes2) throws Throwable {
-        if (bytes1.length != bytes2.length) {
-            log("Class bytes have different length: " + bytes1.length + " != " + bytes2.length);
-        } else {
-            int pos = Arrays.mismatch(bytes1, bytes2);
-            if (pos < 0) {
-                log("Class bytes are identical.");
-                return;
-            }
-            log("Class bytes are different (starting from " + pos + "): " + bytes1.length + " != " + bytes2.length);
-        }
-
-        log("Disassembly difference:");
-        // compare 'javap -v' output for the class files
-        List<String> out1 = new DisassembledClassbytes(bytes1).lines;
-        DisassembledClassbytes disasm2 = new DisassembledClassbytes(bytes2);
-        List<String> out2 = disasm2.lines;
-        boolean different = false;
-        boolean orderChanged = false;
-        int lineNum = 0;
-        for (String line: out1) {
-            if (!expectedDifferent(line)) {
-                if (!out2.contains(line)) {
-                    different = true;
-                    System.out.println("< (" + (lineNum + 1) + ") " + line);
-                } else {
-                    if (lineNum < out2.size() && !out1.get(lineNum).equals(out2.get(lineNum))) {
-                        // out2 contains line, but at different position
-                        System.out.println("orig (" + lineNum + "): " + line);
-                        orderChanged = true;
-                    }
-                }
-            }
-            lineNum++;
-        }
-        lineNum = 0;
-        for (String line: out2) {
-            if (!expectedDifferent(line)) {
-                if (!out1.contains(line)) {
-                    different = true;
-                    System.out.println("> (" + (lineNum + 1) + ") " + line);
-                }
-            }
-            lineNum++;
-        }
-
-        if (different) {
-            log("from transformer:");
-            disasm2.print();
-
-            fail(targetClassName + " did not match .class file");
-        }
-        log("Disassembled files are equals" + (orderChanged ? " (order changed)" : ""));
-    }
-
-    private class DisassembledClassbytes {
-        public final List<String> lines;
-
-        public DisassembledClassbytes(List<String> lines) {
-            this.lines = lines;
-        }
-        public DisassembledClassbytes(byte[] classBytes) throws Throwable {
-            this(disassembleClassBytes(classBytes));
-        }
-
-        public void print() {
-            log("DisassembledClassbytes -------------------");
-            lines.forEach(s -> log(s));
-            log("==========================================");
-        }
-
-        public boolean contains(String s) {
-            for (String line: lines) {
-                if (line.contains(s)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public DisassembledClassbytes getSection(String name) {
-            List<String> result = new ArrayList<>();
-            boolean inSection = false;
-            String sectionPrefix = "";
-            Pattern p = Pattern.compile("^( *)" + name + "\\b.*$");
-
-            for (String line: lines) {
-                if (inSection) {
-                    if (line.startsWith(sectionPrefix)) {
-                        result.add(line);
-                    } else {
-                        inSection = false; // and check if new section is started here
-                    }
-                }
-                if (!inSection) {
-                    Matcher m = p.matcher(line);
-                    if (m.find()) {
-                        inSection = true;
-                        sectionPrefix = m.group(1) + " ";
-                        // add section header as well
-                        result.add(line);
-                    }
-                }
-            }
-            return new DisassembledClassbytes(result);
-        }
-
-        public DisassembledClassbytes methodParameters() {
-            return getSection("MethodParameters");
-        }
-    }
-
-    private List<String> disassembleClassBytes(byte[] bytes) throws Throwable {
         File f = new File(classFileName);
         try (FileOutputStream fos = new FileOutputStream(f)) {
             fos.write(bytes);
         }
-
         JDKToolLauncher javap = JDKToolLauncher.create("javap")
                 .addToolArg("-verbose")
                 .addToolArg("-p")       // Shows all classes and members.
@@ -280,60 +147,69 @@ public class RetransformWithMethodParametersTest extends ATransformerManagementT
         } catch (Exception ex) {
             // ignore
         }
-        return out.asLines();
+        out.asLines().forEach(s -> log(s));
+        log("==========================================");
     }
 
+    // Verifies class bytes are equal.
+    private void compareClassBytes(byte[] expected, byte[] actual) throws Exception {
+
+        int pos = Arrays.mismatch(expected, actual);
+        if (pos < 0) {
+            log("Class bytes are identical.");
+            return;
+        }
+        log("Class bytes are different.");
+        printDisassembled("expected", expected);
+        printDisassembled("expected", actual);
+        fail(targetClassName + " did not match .class file");
+    }
 
     protected final void doRunTest() throws Throwable {
         beVerbose();
 
         ClassLoader loader = getClass().getClassLoader();
         targetClass = loader.loadClass(targetClassName);
+        // sanity check
         assertEquals(targetClassName, targetClass.getName());
+        // sanity check
         verifyMethodParams(true, "intParam1", "stringParam1");
-
-        log("(-1)1st arg name = " + targetClass.getMethods()[0].getParameters()[0].getName());
 
         addTransformerToManager(fInst, new Transformer(), true);
 
         {
-            log("Testcase 1: ensure ClassFileReconstiruter restores MethodParameters attribute");
-            byte[] classBytes = getClassBytes();
+            log("Testcase 1: ensure ClassFileReconstituter restores MethodParameters attribute");
 
+            byte[] classBytes = retransform(null);
             compareClassBytes(originalClassBytes, classBytes);
+
             log("");
         }
 
         {
             log("Testcase 2: redefine class with changed parameter names");
+
             byte[] classBytes = Files.readAllBytes(Paths.get(
                     ClassTransformer.fromTestSource(sourceFileName)
                             .transform(1, targetClassName, "-g", "-parameters")));
-            DisassembledClassbytes disasm = new DisassembledClassbytes(classBytes);
-            log("transformed class:");
-            disasm.print();
-            assertTrue("MethodParameters not found", !disasm.methodParameters().lines.isEmpty());
-
-            setClassBytes(classBytes);
-
+            retransform(classBytes);
+            // MethodParameters attribute should be updated.
             verifyMethodParams(true, "intParam2", "stringParam2");
+
+            log("");
         }
 
         {
             log("Testcase 3: redefine class with no parameter names");
+            // compile without "-parameters"
             byte[] classBytes = Files.readAllBytes(Paths.get(
                     ClassTransformer.fromTestSource(sourceFileName)
                             .transform(1, targetClassName, "-g")));
-            DisassembledClassbytes disasm = new DisassembledClassbytes(classBytes);
-            log("transformed class:");
-            disasm.print();
-            // ensure there is no MethodParameters attr.
-            assertTrue("MethodParameters found", disasm.methodParameters().lines.isEmpty());
-
-            setClassBytes(classBytes);
-
-            // MethodParameters attribute should be deleted.
+            retransform(classBytes);
+            // MethodParameters attribute should be dropped.
             verifyMethodParams(false);
+
+            log("");
         }
     }
 
