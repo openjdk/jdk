@@ -2015,16 +2015,23 @@ bool Arguments::check_vm_args_consistency() {
 
 #if !defined(X86) && !defined(AARCH64) && !defined(PPC64)
   if (UseHeavyMonitors) {
-    warning("UseHeavyMonitors is not fully implemented on this architecture");
+    jio_fprintf(defaultStream::error_stream(),
+                "UseHeavyMonitors is not fully implemented on this architecture");
+    return false;
   }
 #endif
 #if (defined(X86) || defined(PPC64)) && !defined(ZERO)
   if (UseHeavyMonitors && UseRTMForStackLocks) {
-    fatal("-XX:+UseHeavyMonitors and -XX:+UseRTMForStackLocks are mutually exclusive");
+    jio_fprintf(defaultStream::error_stream(),
+                "-XX:+UseHeavyMonitors and -XX:+UseRTMForStackLocks are mutually exclusive");
+
+    return false;
   }
 #endif
   if (VerifyHeavyMonitors && !UseHeavyMonitors) {
-    fatal("-XX:+VerifyHeavyMonitors requires -XX:+UseHeavyMonitors");
+    jio_fprintf(defaultStream::error_stream(),
+                "-XX:+VerifyHeavyMonitors requires -XX:+UseHeavyMonitors");
+    return false;
   }
 
   return status;
