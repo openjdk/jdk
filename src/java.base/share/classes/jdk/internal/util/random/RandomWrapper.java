@@ -44,7 +44,7 @@ public class RandomWrapper extends Random implements RandomGenerator {
 	this.generator = randomToWrap;
     }
 
-    public static Random wrapRandom(RandomGenerator random) {
+    public static Random wrap(RandomGenerator random) {
 	// Check to see if its not wrapping another Random instance
 	if (random instanceof Random rand)
 	    return rand;
