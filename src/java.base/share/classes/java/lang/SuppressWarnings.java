@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,9 @@ import static java.lang.annotation.ElementType.*;
  * However, note that if a warning is suppressed in a {@code
  * module-info} file, the suppression applies to elements within the
  * file and <em>not</em> to types contained within the module.
+ * Likewise, if a warning is suppressed in a {@code
+ * package-info} file, the suppression applies to elements within the
+ * file and <em>not</em> to types contained within the package.
  *
  * <p>As a matter of style, programmers should always use this annotation
  * on the most deeply nested element where it is effective.  If you want to
@@ -52,7 +55,7 @@ import static java.lang.annotation.ElementType.*;
  * @jls 5.5 Casting Contexts
  * @jls 9.6.4.5 @SuppressWarnings
  */
-@Target({TYPE, FIELD, METHOD, PARAMETER, CONSTRUCTOR, LOCAL_VARIABLE, MODULE})
+@Target({TYPE, FIELD, METHOD, PARAMETER, CONSTRUCTOR, LOCAL_VARIABLE, PACKAGE, MODULE})
 @Retention(RetentionPolicy.SOURCE)
 public @interface SuppressWarnings {
     /**
