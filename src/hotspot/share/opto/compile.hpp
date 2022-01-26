@@ -655,8 +655,7 @@ class Compile : public Phase {
   void end_method();
   bool should_print_igv(int level);
 
-  void print_method(CompilerPhaseType cpt, int level);
-  void print_method(CompilerPhaseType cpt, Node* n, int level);
+  void print_method(CompilerPhaseType cpt, int level, Node* n = nullptr);
 
 #ifndef PRODUCT
   void igv_print_method_to_file(const char* phase_name = "Debug", bool append = false);
