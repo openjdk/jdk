@@ -811,8 +811,11 @@ final class CipherCore {
             // case of ShortBufferException.
             if (outputCapacity < estOutSize) {
                 cipher.save();
+            }
+            if (outputCapacity < estOutSize || padding != null) {
                 // create temporary output buffer if the estimated size is larger
-                // than the user-provided buffer.
+                // than the user-provided buffer or a padding needs to be removed
+                // before copying the unpadded result to the output buffer
                 internalOutput = new byte[estOutSize];
                 offset = 0;
             }
