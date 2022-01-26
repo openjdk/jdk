@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,22 +29,22 @@ import java.util.function.BiPredicate;
  * Utility class to parse a comparator either in the applyIf* or in the counts properties of an @IR rules.
  */
 public class ParsedComparator<T extends Comparable<T>> {
-    private final String strippedString;
+    private final String numberString;
     private final BiPredicate<T, T> predicate;
     private final String comparator;
 
-    public ParsedComparator(String strippedString, BiPredicate<T, T> predicate, String comparator) {
-        this.strippedString = strippedString;
+    public ParsedComparator(String numberString, BiPredicate<T, T> predicate, String comparator) {
+        this.numberString = numberString;
         this.predicate = predicate;
         this.comparator = comparator;
     }
 
-    public String getStrippedString() {
-        return strippedString;
+    public String getNumberString() {
+        return numberString;
     }
 
-    public BiPredicate<T, T> getPredicate() {
-        return predicate;
+    public boolean compare(T actual, T given) {
+        return predicate.test(actual, given);
     }
 
     public String getComparator() {

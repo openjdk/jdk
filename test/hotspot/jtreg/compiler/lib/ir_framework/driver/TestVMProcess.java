@@ -226,7 +226,7 @@ public class TestVMProcess {
      */
     private void throwTestVMException() {
         String stdErr = oa.getStderr();
-        if (stdErr.contains("TestFormat.reportIfAnyFailures")) {
+        if (stdErr.contains("TestFormat.throwIfAnyFailures")) {
             Pattern pattern = Pattern.compile("Violations \\(\\d+\\)[\\s\\S]*(?=/============/)");
             Matcher matcher = pattern.matcher(stdErr);
             TestFramework.check(matcher.find(), "Must find violation matches");

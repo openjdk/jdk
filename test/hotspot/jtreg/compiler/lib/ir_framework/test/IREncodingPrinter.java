@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -255,17 +255,17 @@ public class IREncodingPrinter {
             return false;
         }
         try {
-            longValue = Long.parseLong(parsedComparator.getStrippedString());
+            longValue = Long.parseLong(parsedComparator.getNumberString());
         } catch (NumberFormatException e) {
             String comparator = parsedComparator.getComparator();
             if (!comparator.isEmpty()) {
                 comparator = "after comparator \"" + parsedComparator.getComparator() + "\"";
             }
-            TestFormat.failNoThrow("Invalid value \"" + parsedComparator.getStrippedString() + "\" "
-                            + comparator + " for integer based flag " + flag + failAt());
+            TestFormat.failNoThrow("Invalid value \"" + parsedComparator.getNumberString() + "\" "
+                                   + comparator + " for integer based flag " + flag + failAt());
             return false;
         }
-        return parsedComparator.getPredicate().test(actualFlagValue, longValue);
+        return parsedComparator.compare(actualFlagValue, longValue);
     }
 
     private boolean checkDoubleFlag(String flag, String value, double actualFlagValue) {
@@ -281,17 +281,17 @@ public class IREncodingPrinter {
             return false;
         }
         try {
-            doubleValue = Double.parseDouble(parsedComparator.getStrippedString());
+            doubleValue = Double.parseDouble(parsedComparator.getNumberString());
         } catch (NumberFormatException e) {
             String comparator = parsedComparator.getComparator();
             if (!comparator.isEmpty()) {
                 comparator = "after comparator \"" + parsedComparator.getComparator() + "\"";
             }
-            TestFormat.failNoThrow("Invalid value \"" + parsedComparator.getStrippedString() + "\" "
-                    + comparator + " for floating point based flag " + flag + failAt());
+            TestFormat.failNoThrow("Invalid value \"" + parsedComparator.getNumberString() + "\" "
+                                   + comparator + " for floating point based flag " + flag + failAt());
             return false;
         }
-        return parsedComparator.getPredicate().test(actualFlagValue, doubleValue);
+        return parsedComparator.compare(actualFlagValue, doubleValue);
     }
 
     private String failAt() {

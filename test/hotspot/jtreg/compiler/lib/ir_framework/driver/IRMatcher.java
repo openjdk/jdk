@@ -164,45 +164,65 @@ public class IRMatcher {
         IR irAnno = irRule.getIRAnno();
         if (irAnno.counts().length != 0) {
             IRMethod irMethod = irRule.getIRMethod();
-            boolean hasFails = false;
             String testOutput = irMethod.getOutput();
             int countsId = 1;
+            StringBuilder failMsg = new StringBuilder();
             final List<String> nodesWithCount = IRNode.mergeNodes(irAnno.counts());
             for (int i = 0; i < nodesWithCount.size(); i += 2) {
                 String node = nodesWithCount.get(i);
                 TestFormat.check(i + 1 < nodesWithCount.size(), "Missing count" + getPostfixErrorMsg(irRule, node));
                 String countString = nodesWithCount.get(i + 1);
-                long expectedCount;
-                ParsedComparator<Long> parsedComparator;
-                try {
-                    parsedComparator = ParsedComparator.parseComparator(countString);
-                    expectedCount = Long.parseLong(parsedComparator.getStrippedString());
-                } catch (NumberFormatException e) {
-                    TestFormat.fail("Provided invalid count \"" + countString + "\"" + getPostfixErrorMsg(irRule, node));
-                    return;
-                } catch (CheckedTestFrameworkException e) {
-                    TestFormat.fail("Invalid comparator \"" + e.getMessage() + "\" in \"" + countString
-                                    + "\" for count" + getPostfixErrorMsg(irRule, node));
-                    return;
-                } catch (IndexOutOfBoundsException e) {
-                    TestFormat.fail("Provided empty value" + getPostfixErrorMsg(irRule, node));
-                    return;
-                }
-                TestFormat.check(expectedCount >= 0,"Provided invalid negative count \"" + countString
-                                                         + "\"" + getPostfixErrorMsg(irRule, node));
+                long givenCount;
+                ParsedComparator<Long> parsedComparator = getParsedComparator(irRule, node, countString);
+                givenCount = parseExpectedCount(irRule, node, countString, parsedComparator.getNumberString());
 
-                Pattern pattern = Pattern.compile(node);
-                Matcher matcher = pattern.matcher(testOutput);
-                long actualCount = matcher.results().count();
-                if (!parsedComparator.getPredicate().test(actualCount, expectedCount)) {
-                    if (!hasFails) {
-                        irRule.appendToFailMsg("- counts: Graph contains wrong number of nodes:").append(System.lineSeparator());
-                        hasFails = true;
-                    }
-                    addCountsFail(irRule, node, pattern, expectedCount, actualCount, countsId);
+                long actualCount = getActualCount(testOutput, node);
+                if (!parsedComparator.compare(actualCount, givenCount)) {
+                    appendSummary(failMsg, countsId, node, givenCount, actualCount);
+                    addCountsFail(failMsg, irMethod, node, actualCount);
                 }
                 countsId++;
             }
+            if (!failMsg.isEmpty()) {
+                irRule.appendToFailMsg("- counts: Graph contains wrong number of nodes:").append(System.lineSeparator())
+                      .append(failMsg);
+            }
+        }
+    }
+
+    private void appendSummary(StringBuilder failMsg, int countsId, String node, long givenCount, long actualCount) {
+        failMsg.append("    Regex ").append(countsId).append(": ").append(node).append(System.lineSeparator());
+        failMsg.append("    Expected ").append(givenCount).append(" but found ").append(actualCount);
+    }
+
+    private long getActualCount(String testOutput, String node) {
+        Pattern pattern = Pattern.compile(node);
+        Matcher matcher = pattern.matcher(testOutput);
+        return matcher.results().count();
+    }
+
+    private long parseExpectedCount(IRRule irRule, String node, String countString, String expectedCountString) {
+        try {
+            long expectedCount = Long.parseLong(expectedCountString);
+            TestFormat.check(expectedCount >= 0, "Provided invalid negative count \"" + countString
+                                                 + "\"" + getPostfixErrorMsg(irRule, node));
+            return expectedCount;
+        } catch (NumberFormatException e) {
+            TestFormat.fail("Provided invalid count \"" + countString + "\"" + getPostfixErrorMsg(irRule, node));
+            throw new UnreachableCodeException();
+        }
+    }
+
+    private ParsedComparator<Long> getParsedComparator(IRRule irRule, String node, String countString) {
+        try {
+            return ParsedComparator.parseComparator(countString);
+        } catch (CheckedTestFrameworkException e) {
+            TestFormat.fail("Invalid comparator \"" + e.getMessage() + "\" in \"" + countString
+                            + "\" for count" + getPostfixErrorMsg(irRule, node));
+            throw new UnreachableCodeException();
+        }  catch (IndexOutOfBoundsException e) {
+            TestFormat.fail("Provided empty value" + getPostfixErrorMsg(irRule, node));
+            throw new UnreachableCodeException();
         }
     }
 
@@ -214,11 +234,9 @@ public class IRMatcher {
      * A counts regex failed. Apply all regexes again to log the exact regex which failed. The failure is later reported
      * to the user.
      */
-    private void addCountsFail(IRRule irRule, String node, Pattern pattern, long expectedCount, long actualCount, int countsId) {
-        irRule.appendToFailMsg("    Regex ").append(countsId).append(": ").append(node).append(System.lineSeparator());
-        irRule.appendToFailMsg("    Expected ").append(expectedCount).append(" but found ").append(actualCount);
-        IRMethod irMethod = irRule.getIRMethod();
+    private void addCountsFail(StringBuilder failMsg, IRMethod irMethod, String node, long actualCount) {
         if (actualCount > 0) {
+            Pattern pattern = Pattern.compile(node);
             Matcher matcher = pattern.matcher(irMethod.getOutput());
             long idealCount = pattern.matcher(irMethod.getIdealOutput()).results().count();
             long optoAssemblyCount = pattern.matcher(irMethod.getOptoAssemblyOutput()).results().count();
@@ -229,11 +247,11 @@ public class IRMatcher {
             } else {
                 irMethod.needsOptoAssembly();
             }
-            irRule.appendToFailMsg(" node").append(actualCount > 1 ? "s" : "").append(":").append(System.lineSeparator());
-            matcher.results().forEach(r -> irRule.appendToFailMsg("      ").append(r.group()).append(System.lineSeparator()));
+            failMsg.append(" node").append(actualCount > 1 ? "s" : "").append(":").append(System.lineSeparator());
+            matcher.results().forEach(r -> failMsg.append("      ").append(r.group()).append(System.lineSeparator()));
         } else {
             irMethod.needsAllOutput();
-            irRule.appendToFailMsg(" nodes.").append(System.lineSeparator());
+            failMsg.append(" nodes.").append(System.lineSeparator());
         }
     }
 
@@ -245,7 +263,7 @@ public class IRMatcher {
      * failures.
      */
     private void reportFailuresIfAny() {
-        TestFormat.reportIfAnyFailures();
+        TestFormat.throwIfAnyFailures();
         if (!fails.isEmpty()) {
             StringBuilder failuresBuilder = new StringBuilder();
             StringBuilder compilationsBuilder = new StringBuilder();
