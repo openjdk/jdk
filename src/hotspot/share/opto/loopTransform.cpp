@@ -2540,14 +2540,16 @@ bool PhaseIdealLoop::is_iv(Node* exp, Node* iv, BasicType bt) {
 
 //------------------------------is_scaled_iv---------------------------------
 // Return true if exp is a constant times the given induction var (of type bt).
-// The multiplication must be done in full precision (exactly of type bt).
+// The multiplication is either done in full precision (exactly of type bt),
+// or else bt is T_LONG but iv is scaled using 32-bit arithmetic followed by a ConvI2L.
 // This grammar of cases is recognized, where X is I|L according to bt:
 //    SIV[iv] = VIV[iv] | (CastXX SIV[iv])
-//            | (MulX SIV[iv] ConX) | (MulX ConX SIV[iv])
-//            | (LShiftX SIV[iv] ConI)
-//            | (SubX 0 SIV[iv])  -- same as MulX(iv, -1)
-//            | VIV[iv] | (ConvI2X VIV[iv])  -- from is_iv() above
-// On success, the constant scale value is stored back to ret_scale.
+//            | (MulX VIV[iv] ConX) | (MulX ConX VIV[iv])
+//            | (LShiftX VIV[iv] ConI)
+//            | (ConvI2L SIV[iv])  -- a "short-scale" can occur here; note recursion
+//            | (SubX 0 SIV[iv])  -- same as MulX(iv, -scale); note recursion
+// On success, the constant scale value is stored back to *p_scale.
+// The value (*p_short_scale) reports if such a ConvI2L conversion was present.
 bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, BasicType bt, jlong* p_scale, bool* p_short_scale, int depth) {
   BasicType exp_bt = bt;
   exp = exp->uncast();  //strip casts
@@ -2555,6 +2557,9 @@ bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, BasicType bt, jlong* p_sc
   if (is_iv(exp, iv, exp_bt)) {
     if (p_scale != NULL) {
       *p_scale = 1;
+    }
+    if (p_short_scale != NULL) {
+      *p_short_scale = false;
     }
     return true;
   }
@@ -2618,7 +2623,7 @@ bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, BasicType bt, jlong* p_sc
       }
       if (p_short_scale != NULL) {
         // (ConvI2L (MulI iv K)) can be 64-bit linear if iv is kept small enough...
-        *p_short_scale = (exp_bt != bt && scale != 1);
+        *p_short_scale = *p_short_scale || (exp_bt != bt && scale != 1);
       }
       return true;
     }
