@@ -28,6 +28,7 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @requires vm.cds.write.archived.java.heap
  * @requires vm.jvmti
+ * @requires vm.opt.final.UseCompressedOops == true
  * @run driver/timeout=240 HumongousDuringDump
  */
 

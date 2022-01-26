@@ -351,9 +351,8 @@ private:
   static bool _memory_mapping_failed;
   static GrowableArray<const char*>* _non_existent_class_paths;
 
-  FileMapHeader *header() const       { return _header; }
-
 public:
+  FileMapHeader *header() const       { return _header; }
   static bool get_base_archive_name_from_header(const char* archive_name,
                                                 char** base_archive_name);
   static SharedPathTable shared_path_table() {
