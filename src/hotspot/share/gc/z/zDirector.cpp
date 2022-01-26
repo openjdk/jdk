@@ -76,8 +76,9 @@ static double estimated_gc_workers(double serial_gc_time, double parallelizable_
   return parallelizable_gc_time / parallelizable_time_until_deadline;
 }
 
-static uint discrete_gc_workers(double gc_workers) {
-  return clamp<uint>(ceil(gc_workers), 1, ConcGCThreads);
+static uint discrete_young_gc_workers(double gc_workers) {
+  const uint max_young_nworkers = ZDriver::major()->is_busy() ? MAX2(ConcGCThreads - 1, 1u) : ConcGCThreads;
+  return clamp<uint>(ceil(gc_workers), 1, max_young_nworkers);
 }
 
 static double select_young_gc_workers(double serial_gc_time, double parallelizable_gc_time, double alloc_rate_sd_percent, double time_until_oom) {
@@ -90,7 +91,7 @@ static double select_young_gc_workers(double serial_gc_time, double parallelizab
 
   // Calculate number of GC workers needed to avoid OOM.
   const double gc_workers = estimated_gc_workers(serial_gc_time, parallelizable_gc_time, time_until_oom);
-  const uint actual_gc_workers = discrete_gc_workers(gc_workers);
+  const uint actual_gc_workers = discrete_young_gc_workers(gc_workers);
   const double last_gc_workers = ZGeneration::young()->stat_cycle()->last_active_workers();
 
   // More than 15% division from the average is considered unsteady
@@ -166,7 +167,7 @@ ZDriverRequest rule_minor_allocation_rate_dynamic(double serial_gc_time_passed, 
   const double gc_workers = select_young_gc_workers(serial_gc_time, parallelizable_gc_time, alloc_rate_sd_percent, time_until_oom);
 
   // Convert to a discrete number of GC workers within limits.
-  const uint actual_gc_workers = discrete_gc_workers(gc_workers);
+  const uint actual_gc_workers = discrete_young_gc_workers(gc_workers);
 
   // Calculate GC duration given number of GC workers needed.
   const double actual_gc_duration = serial_gc_time + (parallelizable_gc_time / actual_gc_workers);
@@ -684,21 +685,16 @@ static uint initial_young_workers() {
     return request.young_nworkers();
   }
 
-  // Save at least one worker for the old generation
-  const uint min_young_nworkers = 1;
-  const uint max_young_nworkers = MAX2(ConcGCThreads - 1, 1u);
-  const uint wanted_young_nworkers = clamp(request.young_nworkers(), min_young_nworkers, max_young_nworkers);
-
   // Force old generation to yield threads if it has too many
   const ZWorkerResizeInfo young_info = {
-    true,                  // _is_active
-    wanted_young_nworkers, // _current_nworkers
-    wanted_young_nworkers  // _desired_nworkers
+    true,                     // _is_active
+    request.young_nworkers(), // _current_nworkers
+    request.young_nworkers()  // _desired_nworkers
   };
 
   adjust_gc(young_info, wanted_old_nworkers());
 
-  return wanted_young_nworkers;
+  return request.young_nworkers();
 }
 
 static bool start_gc() {
