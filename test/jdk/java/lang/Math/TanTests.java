@@ -170,7 +170,7 @@ public class TanTests {
         return failures;
     }
 
-    public static void main(String [] argv) {
+    public static void main(String... argv) {
         int failures = 0;
 
         failures += testTan();

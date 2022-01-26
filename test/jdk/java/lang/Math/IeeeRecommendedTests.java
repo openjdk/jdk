@@ -1672,7 +1672,7 @@ public class IeeeRecommendedTests {
     }
 
 
-    public static void main(String argv[]) {
+    public static void main(String... argv) {
         int failures = 0;
 
         failures += testFloatGetExponent();

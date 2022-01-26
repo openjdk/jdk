@@ -52,7 +52,7 @@ public class Atan2Tests {
         return failures;
     }
 
-    public static void main(String [] argv) {
+    public static void main(String... argv) {
         int failures = 0;
 
         failures += testAtan2();

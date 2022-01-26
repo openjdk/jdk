@@ -32,7 +32,7 @@ public class HyperbolicTests {
 
     static final double NaNd = Double.NaN;
 
-    public static void main(String argv[]) {
+    public static void main(String... argv) {
         int failures = 0;
 
         failures += testSinh();
