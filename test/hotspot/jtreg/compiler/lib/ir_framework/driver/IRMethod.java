@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,16 @@ package compiler.lib.ir_framework.driver;
 import compiler.lib.ir_framework.IR;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Helper class to store information about a method that needs to be IR matched.
  */
 class IRMethod {
     private final Method method;
-    private final int[] ruleIds;
     private final IR[] irAnnos;
+    private final List<IRRule> irRules;
     private final StringBuilder outputBuilder;
     private String output;
     private String idealOutput;
@@ -43,8 +45,11 @@ class IRMethod {
 
     public IRMethod(Method method, int[] ruleIds, IR[] irAnnos) {
         this.method = method;
-        this.ruleIds = ruleIds;
         this.irAnnos = irAnnos;
+        this.irRules = new ArrayList<>();
+        for (int i : ruleIds) {
+            irRules.add(new IRRule(this, i, irAnnos[i]));
+        }
         this.outputBuilder = new StringBuilder();
         this.output = "";
         this.idealOutput = "";
@@ -55,8 +60,8 @@ class IRMethod {
         return method;
     }
 
-    public int[] getRuleIds() {
-        return ruleIds;
+    public List<IRRule> getIRRules() {
+        return irRules;
     }
 
     public IR getIrAnno(int idx) {
