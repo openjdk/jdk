@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -552,7 +552,7 @@ void JfrJavaSupport::throw_runtime_exception(const char* message, TRAPS) {
   create_and_throw(vmSymbols::java_lang_RuntimeException(), message, THREAD);
 }
 
-void JfrJavaSupport::abort(jstring errorMsg, JavaThread* t) {
+void JfrJavaSupport::abort(jstring errorMsg, JavaThread* t, bool dump_core) {
   DEBUG_ONLY(check_java_thread_in_vm(t));
 
   ResourceMark rm(t);
@@ -561,7 +561,7 @@ void JfrJavaSupport::abort(jstring errorMsg, JavaThread* t) {
     log_error(jfr, system)("%s",error_msg);
   }
   log_error(jfr, system)("%s", "An irrecoverable error in Jfr. Shutting down VM...");
-  vm_abort();
+  vm_abort(dump_core);
 }
 
 JfrJavaSupport::CAUSE JfrJavaSupport::_cause = JfrJavaSupport::VM_ERROR;
