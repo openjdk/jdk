@@ -147,7 +147,7 @@ public class HttpClient extends NetworkClient {
     /* "jdk.https.negotiate.cbt" property can be set to "always" (always sent), "never" (never sent) or
      * "domain:a,c.d,*.e.f" (sent to host a, or c.d or to the domain e.f and any of its subdomains). This is
      * a comma separated list of arbitrary length with no white-space allowed.
-     * If enabled (for a particular destination) then SPNEGO authentication requests will include
+     * If enabled (for a particular destination) then Negotiate/SPNEGO authentication requests will include
      * a channel binding token for the destination server. The default behavior and setting for the
      * property is "never"
      */
