@@ -94,16 +94,6 @@ static double select_young_gc_workers(double serial_gc_time, double parallelizab
   const uint actual_gc_workers = discrete_young_gc_workers(gc_workers);
   const double last_gc_workers = ZGeneration::young()->stat_cycle()->last_active_workers();
 
-  // More than 15% division from the average is considered unsteady
-  if (alloc_rate_sd_percent >= 0.15) {
-    const double half_gc_workers = ConcGCThreads / 2.0;
-    const double unsteady_gc_workers = MAX3(gc_workers, last_gc_workers, half_gc_workers);
-    log_debug(gc, director)("Select Minor GC Workers (Unsteady), "
-                            "AvoidOOMGCWorkers: %.3f, LastGCWorkers: %.3f, HalfGCWorkers: %.3f, GCWorkers: %.3f",
-                            gc_workers, last_gc_workers, half_gc_workers, unsteady_gc_workers);
-    return unsteady_gc_workers;
-  }
-
   if ((double)actual_gc_workers < last_gc_workers) {
     // Before decreasing number of GC workers compared to the previous GC cycle, check if the
     // next GC cycle will need to increase it again. If so, use the same number of GC workers
