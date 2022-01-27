@@ -127,7 +127,7 @@ final class Configure extends Command {
     }
 
     private void displayParameters(PrintStream stream, SafePath path, String name) throws ParseException, IOException {
-        JFCModel parameters = new JFCModel(path, l -> stream.println("Warning! " + l));
+        JFCModel parameters = JFCModel.create(path, l -> stream.println("Warning! " + l));
         stream.println();
         stream.println("Options for " + name + ":");
         stream.println();

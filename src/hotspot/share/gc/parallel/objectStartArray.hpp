@@ -166,10 +166,10 @@ class ObjectStartArray : public CHeapObj<mtGC> {
   }
 
   // Return true iff an object starts in
-  //   [start_addr_aligned_down, end_addr_aligned_up)
+  //   [start_addr, end_addr_aligned_up)
   // where
-  //   start_addr_aligned_down = align_down(start_addr, _card_size)
   //   end_addr_aligned_up = align_up(end_addr, _card_size)
+  // Precondition: start_addr is card-size aligned
   bool object_starts_in_range(HeapWord* start_addr, HeapWord* end_addr) const;
 };
 
