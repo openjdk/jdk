@@ -86,7 +86,7 @@ public class TestLocalizedPattern {
     @Test(dataProvider = "Skeletons")
     public void test_ofLocalizedPattern(String skeleton, String expected, Locale l) {
         var now = ZonedDateTime.of(2022, 1, 26, 15, 32, 39, 0, ZoneId.of("America/Los_Angeles"));
-        var dtf = DateTimeFormatter.ofLocalizedPattern(skeleton, l);
+        var dtf = DateTimeFormatter.ofLocalizedPattern(skeleton).localizedBy(l);
         assertEquals(dtf.format(now), expected);
     }
 }

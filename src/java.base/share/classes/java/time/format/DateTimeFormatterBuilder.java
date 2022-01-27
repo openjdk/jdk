@@ -228,6 +228,43 @@ public final class DateTimeFormatterBuilder {
     }
 
     /**
+     * Gets the formatting pattern for the requested template for a locale and chronology.
+     * The locale and chronology are used to lookup the locale specific format
+     * for the requested template.
+     * <p>
+     * If the locale contains the "rg" (region override)
+     * <a href="../../util/Locale.html#def_locale_extension">Unicode extensions</a>,
+     * the formatting pattern is overridden with the one appropriate for the region.
+     * <p>
+     * Refer to {@link #appendLocalized(String)} for the detail of {@code requestedTemplate}
+     * argument.
+     *
+     * @param requestedTemplate the requested template, not null
+     * @param chrono  the Chronology, non-null
+     * @param locale  the locale, non-null
+     * @return the locale and Chronology specific formatting pattern
+     * @throws IllegalArgumentException if {@code requestedTemplate} is invalid
+     * @throws DateTimeException if a match for the localized pattern for
+     *      {@code requestedTemplate} is not available
+     * @see #appendLocalized(String) 
+     * @since 19
+     */
+    public static String getLocalizedDateTimePattern(String requestedTemplate,
+                                                     Chronology chrono, Locale locale) {
+        Objects.requireNonNull(locale, "locale");
+        Objects.requireNonNull(chrono, "chrono");
+        if (requestedTemplate == null) {
+            throw new IllegalArgumentException("requestedTemplate must be non-null");
+        }
+        Locale override = CalendarDataUtility.findRegionOverride(locale);
+        LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(JavaTimeDateTimePatternProvider.class, override);
+        JavaTimeDateTimePatternProvider provider = adapter.getJavaTimeDateTimePatternProvider();
+        return provider.getJavaTimeDateTimePattern(requestedTemplate,
+                chrono.getCalendarType(),
+                override);
+    }
+
+    /**
      * Converts the given FormatStyle to the java.text.DateFormat style.
      *
      * @param style  the FormatStyle style
@@ -1425,8 +1462,25 @@ public final class DateTimeFormatterBuilder {
 
     //-----------------------------------------------------------------------
     /**
-     * Appends a localized pattern to the formatter using the requested template,
-     * locale, and chronology. The requested template is a series of typical pattern
+     * Appends a localized pattern to the formatter using the requested template.
+     * <p>
+     * This appends a localized section to the builder, suitable for outputting
+     * a date, time or date-time combination. The format of the localized
+     * section is lazily looked up based on three items:
+     * <ul>
+     * <li>the {@code requestedTemplate} specified to this method
+     * <li>the {@code Locale} of the {@code DateTimeFormatter}
+     * <li>the {@code Chronology}, selecting the best available
+     * </ul>
+     * During formatting, the chronology is obtained from the temporal object
+     * being formatted, which may have been overridden by
+     * {@link DateTimeFormatter#withChronology(Chronology)}.
+     * <p>
+     * During parsing, if a chronology has already been parsed, then it is used.
+     * Otherwise the default from {@code DateTimeFormatter.withChronology(Chronology)}
+     * is used, with {@code IsoChronology} as the fallback.
+     * <p>
+     * The requested template is a series of typical pattern
      * symbols in canonical order from the largest date or time unit to the smallest,
      * which can be expressed with the following regular expression:
      * {@snippet :
@@ -1444,8 +1498,11 @@ public final class DateTimeFormatterBuilder {
      *      "[vz]{0,4}"       // Zone
      * }
      * All pattern symbols are optional, and each pattern symbol represents the field it is in,
-     * e.g., 'M' represents the Month field. Other pattern symbols in the requested template are
-     * invalid, resulting an {@code IllegalArgumentException}.
+     * e.g., 'M' represents the Month field. The number of the pattern symbol letters follows the
+     * same presentation, such as "number" or "text" as in the
+     * <a href="./DateTimeFormatter.html#patterns">Patterns for Formatting and Parsing</a> section.
+     * Other pattern symbols in the requested template are invalid, resulting an
+     * {@code IllegalArgumentException}.
      * <p>
      * The mapping of the requested template to the closest of the available localized formats
      * is defined by the
@@ -1456,8 +1513,6 @@ public final class DateTimeFormatterBuilder {
      * available, {@code DateTimeException} is thrown.
      *
      * @param requestedTemplate the requested template to use, not null
-     * @param locale the locale to use, not null
-     * @param chrono the chronology to use, not null
      * @return this, for chaining, not null
      * @throws IllegalArgumentException if {@code requestedTemplate} is invalid
      * @throws DateTimeException if a match for the localized pattern for
@@ -1465,17 +1520,9 @@ public final class DateTimeFormatterBuilder {
      * @see #appendPattern(String)
      * @since 19
      */
-    public DateTimeFormatterBuilder appendLocalizedPattern(String requestedTemplate, Locale locale, Chronology chrono) {
+    public DateTimeFormatterBuilder appendLocalized(String requestedTemplate) {
         Objects.requireNonNull(requestedTemplate, "requestedTemplate");
-        Objects.requireNonNull(locale, "locale");
-        Objects.requireNonNull(chrono, "chrono");
-
-        Locale override = CalendarDataUtility.findRegionOverride(locale);
-        LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(JavaTimeDateTimePatternProvider.class, override);
-        JavaTimeDateTimePatternProvider provider = adapter.getJavaTimeDateTimePatternProvider();
-        parsePattern(provider.getJavaTimeDateTimePattern(requestedTemplate,
-                                chrono.getCalendarType(),
-                                CalendarDataUtility.findRegionOverride(override)));
+        appendInternal(new LocalizedPrinterParser(requestedTemplate));
         return this;
     }
 
@@ -5034,6 +5081,7 @@ public final class DateTimeFormatterBuilder {
 
         private final FormatStyle dateStyle;
         private final FormatStyle timeStyle;
+        private final String requestedTemplate;
 
         /**
          * Constructor.
@@ -5042,9 +5090,23 @@ public final class DateTimeFormatterBuilder {
          * @param timeStyle  the time style to use, may be null
          */
         LocalizedPrinterParser(FormatStyle dateStyle, FormatStyle timeStyle) {
+            this(dateStyle, timeStyle, null);
+        }
+
+        /**
+         * Constructor.
+         *
+         * @param requestedTemplate the requested template to use, not null
+         */
+        LocalizedPrinterParser(String requestedTemplate) {
+            this(null, null, requestedTemplate);
+        }
+
+        private LocalizedPrinterParser(FormatStyle dateStyle, FormatStyle timeStyle, String requestedTemplate) {
             // validated by caller
             this.dateStyle = dateStyle;
             this.timeStyle = timeStyle;
+            this.requestedTemplate = requestedTemplate;
         }
 
         @Override
@@ -5071,10 +5133,16 @@ public final class DateTimeFormatterBuilder {
          * @throws IllegalArgumentException if the formatter cannot be found
          */
         private DateTimeFormatter formatter(Locale locale, Chronology chrono) {
-            String key = chrono.getId() + '|' + locale.toString() + '|' + dateStyle + timeStyle;
+            var dtStyle = dateStyle !=null || timeStyle != null;
+            String key = chrono.getId() + '|' + locale.toString() + '|' +
+                    (dtStyle ? Objects.toString(dateStyle) + timeStyle : requestedTemplate);
+
             DateTimeFormatter formatter = FORMATTER_CACHE.get(key);
             if (formatter == null) {
-                String pattern = getLocalizedDateTimePattern(dateStyle, timeStyle, chrono, locale);
+                String pattern = (dtStyle ?
+                        getLocalizedDateTimePattern(dateStyle, timeStyle, chrono, locale) :
+                        getLocalizedDateTimePattern(requestedTemplate, chrono, locale));
+
                 formatter = new DateTimeFormatterBuilder().appendPattern(pattern).toFormatter(locale);
                 DateTimeFormatter old = FORMATTER_CACHE.putIfAbsent(key, formatter);
                 if (old != null) {
