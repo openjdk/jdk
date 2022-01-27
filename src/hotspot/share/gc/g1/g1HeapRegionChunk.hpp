@@ -116,7 +116,7 @@ public:
     return _chunk_num;
   }
 
-  void prepare_region(HeapRegionClosure* prepare_region_closure);
+  void prepare_region(HeapRegionClosure* prepare_region_closure, uint worker_id);
 };
 
 // Iterate through chunks of regions, for each region do single preparation.

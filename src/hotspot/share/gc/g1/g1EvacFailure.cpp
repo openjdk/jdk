@@ -45,6 +45,7 @@ class RemoveSelfForwardPtrObjClosure {
   HeapRegion* _hr;
   G1HeapRegionChunk* _chunk;
   size_t _marked_words;
+  size_t _marked_objects;
   bool _during_concurrent_start;
   uint _worker_id;
   HeapWord* _last_forwarded_object_end;
@@ -59,6 +60,7 @@ public:
     _hr(hr),
     _chunk(chunk),
     _marked_words(0),
+    _marked_objects(0),
     _during_concurrent_start(during_concurrent_start),
     _worker_id(worker_id) {
     _last_forwarded_object_end = _chunk->include_first_obj_in_region() ?
@@ -66,6 +68,7 @@ public:
   }
 
   size_t marked_words() const { return _marked_words; }
+  size_t marked_objects() const { return _marked_objects; }
 
   // Handle the marked objects in the region. These are self-forwarded objects
   // that need to be kept live. We need to update the remembered sets of these
@@ -100,6 +103,7 @@ public:
     }
     size_t obj_size = obj->size();
 
+    _marked_objects++;
     _marked_words += obj_size;
     PreservedMarks::init_forwarded_mark(obj);
 
@@ -173,6 +177,10 @@ class RemoveSelfForwardPtrHRChunkClosure : public G1HeapRegionChunkClosure {
     if (!chunk->empty()) {
       rspc.zap_remainder();
     }
+
+    G1GCPhaseTimes* p = _g1h->phase_times();
+    p->record_or_add_thread_work_item(G1GCPhaseTimes::RemoveSelfForwardsInChunks, _worker_id, rspc.marked_words(), G1GCPhaseTimes::RemoveSelfForwardObjectsBytes);
+    p->record_or_add_thread_work_item(G1GCPhaseTimes::RemoveSelfForwardsInChunks, _worker_id, rspc.marked_objects(), G1GCPhaseTimes::RemoveSelfForwardObjectsNum);
   }
 
 public:
@@ -222,9 +230,9 @@ public:
     hr->reset_bot();
 
     _phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,
-                                                   _worker_id,
-                                                   1,
-                                                   G1GCPhaseTimes::RestoreRetainedRegionsNum);
+                                                 _worker_id,
+                                                 1,
+                                                 G1GCPhaseTimes::RestoreRetainedRegionsNum);
 
     hr->rem_set()->clean_strong_code_roots(hr);
     hr->rem_set()->clear_locked(true);
