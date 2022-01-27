@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,27 +159,22 @@ public class Utils {
     }
 
     // our own little symbol table
-    private HashMap<String, TypeMirror> symtab = new HashMap<>();
+    private final Map<String, TypeMirror> symtab = new HashMap<>();
 
     public TypeMirror getSymbol(String signature) {
-        TypeMirror type = symtab.get(signature);
-        if (type == null) {
-            TypeElement typeElement = elementUtils.getTypeElement(signature);
-            if (typeElement == null)
-                return null;
-            type = typeElement.asType();
-            if (type == null)
-                return null;
-            symtab.put(signature, type);
-        }
-        return type;
+        return symtab.computeIfAbsent(signature, s -> {
+            var typeElement = elementUtils.getTypeElement(s);
+            return typeElement == null ? null : typeElement.asType();
+        });
     }
 
     public TypeMirror getObjectType() {
         return getSymbol("java.lang.Object");
     }
 
-    public TypeMirror getThrowableType() { return getSymbol("java.lang.Throwable"); }
+    public TypeMirror getThrowableType() {
+        return getSymbol("java.lang.Throwable");
+    }
 
     public TypeMirror getSerializableType() {
         return getSymbol("java.io.Serializable");
