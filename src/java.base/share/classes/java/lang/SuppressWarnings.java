@@ -29,14 +29,14 @@ import java.lang.annotation.*;
 import static java.lang.annotation.ElementType.*;
 
 /**
- * Indicates that the compiler warnings to be suppressed in the
+ * Indicates the warnings to be suppressed at compile time in the
  * annotated element, and in all elements contained in the annotated element.
  *
  * <p>The {@code SuppressWarnings} annotation interface is applicable
  * in all declaration contexts, so an {@code @SuppressWarnings}
  * annotation can be used on any element.
  * As a matter of style, programmers should always use this annotation
- * on the most deeply nested element where it is effective.  If you want to
+ * on the most deeply nested element where it is effective. For example, if you want to
  * suppress a warning in a particular method, you should annotate that
  * method rather than its class.
  *
@@ -62,7 +62,7 @@ import static java.lang.annotation.ElementType.*;
  * <li> Preview warnings, specified by the string {@code "preview"}.
  * </ul>
  *
- * Whether or not a Java compiler recognizes other suppression strings
+ * Whether or not a Java compiler recognizes other strings
  * is a quality of implementation concern.
  * Compiler vendors should document the
  * additional warning names they support.
