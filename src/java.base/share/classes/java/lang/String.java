@@ -532,25 +532,25 @@ public final class String
                     this.coder = LATIN1;
                     return;
                 }
+                int sl = offset + length;
                 byte[] dst = new byte[length];
                 System.arraycopy(bytes, offset, dst, 0, dp);
-                int sl = offset + length;
                 offset += dp;
                 while (offset < sl) {
-                    int b1 = bytes[offset++];
+                    int b1 = bytes[offset];
                     if (b1 >= 0) {
                         dst[dp++] = (byte)b1;
+                        offset++;
                         continue;
                     }
-                    if ((b1 & 0xfe) == 0xc2 && offset < sl) { // b1 either 0xc2 or 0xc3
-                        int b2 = bytes[offset];
+                    if ((b1 & 0xfe) == 0xc2 && offset + 1 < sl) { // b1 either 0xc2 or 0xc3
+                        int b2 = bytes[offset + 1];
                         if (!isNotContinuation(b2)) {
                             dst[dp++] = (byte)decode2(b1, b2);
-                            offset++;
+                            offset += 2;
                             continue;
                         }
                     }
-                    offset--;
                     // anything not a latin1, including the repl
                     // we have to go with the utf16
                     break;
@@ -563,13 +563,9 @@ public final class String
                     this.coder = LATIN1;
                     return;
                 }
-                if (dp == 0) {
-                    dst = new byte[length << 1];
-                } else {
-                    byte[] buf = new byte[length << 1];
-                    StringLatin1.inflate(dst, 0, buf, 0, dp);
-                    dst = buf;
-                }
+                byte[] buf = new byte[length << 1];
+                StringLatin1.inflate(dst, 0, buf, 0, dp);
+                dst = buf;
                 dp = decodeUTF8_UTF16(bytes, offset, sl, dst, dp, true);
                 if (dp != length) {
                     dst = Arrays.copyOf(dst, dp << 1);

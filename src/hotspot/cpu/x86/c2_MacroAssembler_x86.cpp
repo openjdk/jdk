@@ -3578,12 +3578,12 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
   ShortBranchVerifier sbv(this);
   assert_different_registers(ary1, len, result, tmp1);
   assert_different_registers(vec1, vec2);
-  Label TRUE_LABEL, FALSE_LABEL, DONE, COMPARE_CHAR, COMPARE_VECTORS, COMPARE_BYTE;
+  Label TRUE_LABEL, DONE, COMPARE_CHAR, COMPARE_VECTORS, COMPARE_BYTE;
 
   movl(result, len); // copy
   // len == 0
   testl(len, len);
-  jcc(Assembler::zero, FALSE_LABEL);
+  jcc(Assembler::zero, DONE);
 
   int tail_mask = 0xfffffffc;
   if ((AVX3Threshold == 0) && (UseAVX > 2) && // AVX512
@@ -3618,7 +3618,7 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
     bind(test_tail);
     // bail out when there is nothing to be done
     testl(tmp1, -1);
-    jcc(Assembler::zero, FALSE_LABEL);
+    jcc(Assembler::zero, DONE);
 
     // ~(~0 << len) applied up to two times (for 32-bit scenario)
 #ifdef _LP64
@@ -3657,7 +3657,7 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
     ktestq(mask1, mask2);
     jcc(Assembler::notZero, TRUE_LABEL);
 
-    jmp(FALSE_LABEL);
+    jmp(DONE);
   } else {
 
     if (UseAVX >= 2 && UseSSE >= 2) {
@@ -3686,12 +3686,12 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
       movl(tmp1, result);
       andl(tmp1, 0x0000001f);  //   tail count (in bytes)
       testl(tmp1, tmp1);
-      jccb(Assembler::zero, FALSE_LABEL);
+      jccb(Assembler::zero, DONE);
 
       vmovdqu(vec1, Address(ary1, tmp1, Address::times_1, -32));
       vptest(vec1, vec2);
       jccb(Assembler::notZero, TRUE_LABEL);
-      jmpb(FALSE_LABEL);
+      jmpb(DONE);
 
       bind(COMPARE_TAIL); // len is zero
       movl(len, result);
@@ -3723,12 +3723,12 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
       movl(tmp1, result);
       andl(tmp1, 0x0000000f);  //   tail count (in bytes)
       testl(tmp1, tmp1);
-      jcc(Assembler::zero, FALSE_LABEL);
+      jcc(Assembler::zero, DONE);
 
       movdqu(vec1, Address(ary1, tmp1, Address::times_1, -16));
       ptest(vec1, vec2);
       jccb(Assembler::notZero, TRUE_LABEL);
-      jmpb(FALSE_LABEL);
+      jmpb(DONE);
 
       bind(COMPARE_TAIL); // len is zero
       movl(len, result);
@@ -3762,18 +3762,17 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
 
   bind(COMPARE_BYTE);
   testl(result, 0x1);   // tail  byte
-  jccb(Assembler::zero, FALSE_LABEL);
+  jccb(Assembler::zero, DONE);
   load_unsigned_byte(tmp1, Address(ary1, 0));
   testl(tmp1, 0x00000080);
-  jccb(Assembler::zero, FALSE_LABEL);
+  jccb(Assembler::zero, DONE);
 
   bind(TRUE_LABEL);
   // there are negative bits: len holds the number of bytes left to scan in the main loop,
-  // also drop the tail from the result
-  addptr(result, len);  
+  addptr(result, len);
+  // subtract the tail length from the result
   andl(result, tail_mask);
 
-  bind(FALSE_LABEL);
   // That's it
   bind(DONE);
   if (UseAVX >= 2 && UseSSE >= 2) {
