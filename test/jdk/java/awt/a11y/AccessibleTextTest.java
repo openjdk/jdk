@@ -125,22 +125,13 @@ public class AccessibleTextTest extends AccessibleComponentTest {
 
     private void createTextArea() {
         AccessibleComponentTest.INSTRUCTIONS = "INSTRUCTIONS:\n"
-                + "Check a11y of JTextArea.\n\n"
+                + "Check a11y of non-editable JTextArea.\n\n"
                 + "Turn screen reader on and press the arrow keys.\n\n"
                 + "If you can hear this instructions, tab further and press PASS, otherwise press FAIL.";
-        String value = """
-                apple
-                orange
-                mango
-                pineapple
-                :)
-                banana""";
 
         JPanel panel = new JPanel();
         panel.setLayout(new FlowLayout());
-        JTextArea textArea = new JTextArea(value);
-        panel.add(textArea);
-        exceptionString = "Simple text area test failed!";
+        exceptionString = "Simple non-editable text area test failed!";
         super.createUI(panel, "AccessibleTextTest");
     }
 
