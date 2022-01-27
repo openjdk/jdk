@@ -959,7 +959,7 @@ static jclass jc_CInputMethod = NULL;
 #ifdef IM_DEBUG
     NSLog(@"insertText kbdlayout %@ ",(NSString *)kbdLayout);
 
-    NSLog(@"utf8Length %lu utf16Lenght %lu", (unsigned long)utf8Length, (unsigned long)utf16Length);
+    NSLog(@"utf8Length %lu utf16Length %lu", (unsigned long)utf8Length, (unsigned long)utf16Length);
     NSLog(@"codePoint %x", codePoint);
 #endif // IM_DEBUG
 
