@@ -54,16 +54,14 @@ public sealed class FunctionDescriptor implements Constable permits FunctionDesc
     }
 
     /**
-     * Returns the return layout associated with this function.
-     * @return the return layout.
+     * {@return the return layout (if any) associated with this function descriptor}
      */
     public Optional<MemoryLayout> returnLayout() {
         return Optional.ofNullable(resLayout);
     }
 
     /**
-     * Returns the argument layouts associated with this function.
-     * @return the argument layouts.
+     * {@return the argument layouts associated with this function descriptor}.
      */
     public List<MemoryLayout> argumentLayouts() {
         return argLayouts;
@@ -166,8 +164,7 @@ public sealed class FunctionDescriptor implements Constable permits FunctionDesc
     }
 
     /**
-     * Returns a string representation of this function descriptor.
-     * @return a string representation of this function descriptor.
+     * {@return the string representation of this function descriptor}
      */
     @Override
     public String toString() {
@@ -201,8 +198,7 @@ public sealed class FunctionDescriptor implements Constable permits FunctionDesc
     }
 
     /**
-     * Returns the hash code value for this function descriptor.
-     * @return the hash code value for this function descriptor.
+     * {@return the hash code value for this function descriptor}
      */
     @Override
     public int hashCode() {
