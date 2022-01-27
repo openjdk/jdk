@@ -197,7 +197,7 @@ public class HttpsCB {
             reader = new BufferedReader(new InputStreamReader(
                     conn.getInputStream()));
             return reader.readLine().equals(CONTENT);
-        } catch (Exception e) {
+        } catch (IOException e) {
             return false;
         }
     }
