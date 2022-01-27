@@ -29,12 +29,21 @@ import java.lang.annotation.*;
 import static java.lang.annotation.ElementType.*;
 
 /**
- * Indicates that the named compiler warnings should be suppressed in the
- * annotated element (and in all program elements contained in the annotated
- * element).  Note that the set of warnings suppressed in a given element is
- * a superset of the warnings suppressed in all containing elements.  For
+ * Indicates that the compiler warnings to be suppressed in the
+ * annotated element, and in all elements contained in the annotated element.
+ *
+ * <p>The {@code SuppressWarnings} annotation interface is applicable
+ * in all declaration contexts, so an {@code @SuppressWarnings}
+ * annotation can be used on any element.
+ * As a matter of style, programmers should always use this annotation
+ * on the most deeply nested element where it is effective.  If you want to
+ * suppress a warning in a particular method, you should annotate that
+ * method rather than its class.
+ *
+ * <p>The set of warnings suppressed in a given element is
+ * a union of the warnings suppressed in all containing elements.  For
  * example, if you annotate a class to suppress one warning and annotate a
- * method to suppress another, both warnings will be suppressed in the method.
+ * method in the class to suppress another, both warnings will be suppressed in the method.
  * However, note that if a warning is suppressed in a {@code
  * module-info} file, the suppression applies to elements within the
  * file and <em>not</em> to types contained within the module.
@@ -42,23 +51,15 @@ import static java.lang.annotation.ElementType.*;
  * package-info} file, the suppression applies to elements within the
  * file and <em>not</em> to types contained within the package.
  *
- * <p>As a matter of style, programmers should always use this annotation
- * on the most deeply nested element where it is effective.  If you want to
- * suppress a warning in a particular method, you should annotate that
- * method rather than its class.
- *
- * <p>{@code SuppressWarnings} annotations are applicable in all
- * declaration contexts.
- *
- * Java compilers must recognize all the kinds of warnings defined in
+ * <p>Java compilers must recognize all the kinds of warnings defined in
  * the <cite>Java Language Specification</cite> (JLS section {@jls
  * 9.6.4.5}) which include:
  *
  * <ul>
- * <li> Unchecked warnings specified by the string {@code "unchecked"}.
- * <li> Deprecation warnings specified by the string {@code "deprecation"}.
- * <li> Removal warnings specified by the string {@code "removal"}.
- * <li> Preview warnings specified by the string {@code "preview"}.
+ * <li> Unchecked warnings, specified by the string {@code "unchecked"}.
+ * <li> Deprecation warnings, specified by the string {@code "deprecation"}.
+ * <li> Removal warnings, specified by the string {@code "removal"}.
+ * <li> Preview warnings, specified by the string {@code "preview"}.
  * </ul>
  *
  * Whether or not a Java compiler recognizes other suppression strings
