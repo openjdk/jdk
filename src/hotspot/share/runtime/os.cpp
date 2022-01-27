@@ -1268,7 +1268,10 @@ FILE* os::fopen(const char* path, const char* mode) {
   char modified_mode[20];
   assert(strlen(mode) + 1 < sizeof(modified_mode), "mode chars plus one extra must fit in buffer");
   sprintf(modified_mode, "%s" LINUX_ONLY("e") BSD_ONLY("e") WINDOWS_ONLY("N"), mode);
+PRAGMA_DIAG_PUSH
+PRAGMA_PERMIT_FORBIDDEN_C_FUNCTION(fopen);
   FILE* file = ::fopen(path, modified_mode);
+PRAGMA_DIAG_POP
 
 #if !(defined LINUX || defined BSD || defined _WINDOWS)
   // assume fcntl FD_CLOEXEC support as a backup solution when 'e' or 'N'

@@ -2608,9 +2608,9 @@ void linux_wrap_code(char* base, size_t size) {
   int fd = ::open(buf, O_CREAT | O_RDWR, S_IRWXU);
 
   if (fd != -1) {
-    off_t rv = ::lseek(fd, size-2, SEEK_SET);
+    off_t rv = os::lseek(fd, size-2, SEEK_SET);
     if (rv != (off_t)-1) {
-      if (::write(fd, "", 1) == 1) {
+      if (os::write(fd, "", 1) == 1) {
         mmap(base, size,
              PROT_READ|PROT_WRITE|PROT_EXEC,
              MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE, fd, 0);
@@ -3620,11 +3620,11 @@ static os::PageSizes scan_multiple_page_support() {
   const char* sys_hugepages = "/sys/kernel/mm/hugepages";
   os::PageSizes page_sizes;
 
-  DIR *dir = opendir(sys_hugepages);
+  DIR *dir = os::opendir(sys_hugepages);
 
   struct dirent *entry;
   size_t page_size;
-  while ((entry = readdir(dir)) != NULL) {
+  while ((entry = os::readdir(dir)) != NULL) {
     if (entry->d_type == DT_DIR &&
         sscanf(entry->d_name, "hugepages-%zukB", &page_size) == 1) {
       // The kernel is using kB, hotspot uses bytes
@@ -3632,7 +3632,7 @@ static os::PageSizes scan_multiple_page_support() {
       page_sizes.add(page_size * K);
     }
   }
-  closedir(dir);
+  os::closedir(dir);
 
   LogTarget(Debug, pagesize) lt;
   if (lt.is_enabled()) {
@@ -4821,17 +4821,17 @@ bool os::dir_is_empty(const char* path) {
   DIR *dir = NULL;
   struct dirent *ptr;
 
-  dir = opendir(path);
+  dir = os::opendir(path);
   if (dir == NULL) return true;
 
   // Scan the directory
   bool result = true;
-  while (result && (ptr = readdir(dir)) != NULL) {
+  while (result && (ptr = os::readdir(dir)) != NULL) {
     if (strcmp(ptr->d_name, ".") != 0 && strcmp(ptr->d_name, "..") != 0) {
       result = false;
     }
   }
-  closedir(dir);
+  os::closedir(dir);
   return result;
 }
 
@@ -5144,7 +5144,7 @@ void os::pause() {
   if (fd != -1) {
     struct stat buf;
     ::close(fd);
-    while (::stat(filename, &buf) == 0) {
+    while (os::stat(filename, &buf) == 0) {
       (void)::poll(NULL, 0, 100);
     }
   } else {

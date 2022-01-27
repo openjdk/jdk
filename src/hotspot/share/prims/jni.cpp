@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012 Red Hat, Inc.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -626,7 +626,7 @@ JNI_ENTRY(void, jni_FatalError(JNIEnv *env, const char *msg))
 
   tty->print_cr("FATAL ERROR in native method: %s", msg);
   thread->print_stack();
-  os::abort(); // Dump core and abort
+  os::abort(true); // Dump core and abort
 JNI_END
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,14 @@
 
 #ifndef PRAGMA_NONNULL_IGNORED
 #define PRAGMA_NONNULL_IGNORED
+#endif
+
+#ifndef FORBID_C_FUNCTION
+#define FORBID_C_FUNCTION(signature, alternative)
+#endif
+
+#ifndef PRAGMA_PERMIT_FORBIDDEN_C_FUNCTION
+#define PRAGMA_PERMIT_FORBIDDEN_C_FUNCTION(name)
 #endif
 
 #endif // SHARE_UTILITIES_COMPILERWARNINGS_HPP

@@ -335,7 +335,7 @@ static DIR *open_directory_secure(const char* dirname) {
   }
 
   // Open the directory.
-  dirp = ::opendir(dirname);
+  dirp = os::opendir(dirname);
   if (dirp == NULL) {
     // The directory doesn't exist, close fd and return.
     ::close(fd);
@@ -868,7 +868,7 @@ static int create_sharedmem_resources(const char* dirname, const char* filename,
   ssize_t result;
 
   // truncate the file to get rid of any existing data
-  RESTARTABLE(::ftruncate(fd, (off_t)0), result);
+  RESTARTABLE(os::ftruncate(fd, (off_t)0), result);
   if (result == OS_ERR) {
     if (PrintMiscellaneous && Verbose) {
       warning("could not truncate shared memory file: %s\n", os::strerror(errno));
@@ -877,7 +877,7 @@ static int create_sharedmem_resources(const char* dirname, const char* filename,
     return -1;
   }
   // set the file size
-  RESTARTABLE(::ftruncate(fd, (off_t)size), result);
+  RESTARTABLE(os::ftruncate(fd, (off_t)size), result);
   if (result == OS_ERR) {
     if (PrintMiscellaneous && Verbose) {
       warning("could not set shared memory file size: %s\n", os::strerror(errno));

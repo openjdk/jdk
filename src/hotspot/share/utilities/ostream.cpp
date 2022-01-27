@@ -611,6 +611,8 @@ void fileStream::flush() {
   }
 }
 
+PRAGMA_DIAG_PUSH
+PRAGMA_PERMIT_FORBIDDEN_C_FUNCTION(write);
 void fdStream::write(const char* s, size_t len) {
   if (_fd != -1) {
     // Make an unused local variable to avoid warning from gcc compiler.
@@ -618,6 +620,7 @@ void fdStream::write(const char* s, size_t len) {
     update_position(s, len);
   }
 }
+PRAGMA_DIAG_POP
 
 defaultStream* defaultStream::instance = NULL;
 int defaultStream::_output_fd = 1;

@@ -5721,7 +5721,7 @@ int os::socket_close(int fd) {
   return ::closesocket(fd);
 }
 
-int os::connect(int fd, struct sockaddr* him, socklen_t len) {
+int os::connect(int fd, const struct sockaddr* him, socklen_t len) {
   return ::connect(fd, him, len);
 }
 

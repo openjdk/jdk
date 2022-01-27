@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2212,17 +2212,17 @@ bool os::dir_is_empty(const char* path) {
   DIR *dir = NULL;
   struct dirent *ptr;
 
-  dir = opendir(path);
+  dir = os::opendir(path);
   if (dir == NULL) return true;
 
   // Scan the directory
   bool result = true;
-  while (result && (ptr = readdir(dir)) != NULL) {
+  while (result && (ptr = os::readdir(dir)) != NULL) {
     if (strcmp(ptr->d_name, ".") != 0 && strcmp(ptr->d_name, "..") != 0) {
       result = false;
     }
   }
-  closedir(dir);
+  os::closedir(dir);
   return result;
 }
 
@@ -2300,12 +2300,12 @@ int os::create_binary_file(const char* path, bool rewrite_existing) {
 
 // return current position of file pointer
 jlong os::current_file_offset(int fd) {
-  return (jlong)::lseek(fd, (off_t)0, SEEK_CUR);
+  return (jlong)os::lseek(fd, (off_t)0, SEEK_CUR);
 }
 
 // move file pointer to the specified offset
 jlong os::seek_to_file_offset(int fd, jlong offset) {
-  return (jlong)::lseek(fd, (off_t)offset, SEEK_SET);
+  return (jlong)os::lseek(fd, (off_t)offset, SEEK_SET);
 }
 
 // This code originates from JDK's sysAvailable
@@ -2326,11 +2326,11 @@ int os::available(int fd, jlong *bytes) {
       }
     }
   }
-  if ((cur = ::lseek(fd, 0L, SEEK_CUR)) == -1) {
+  if ((cur = os::lseek(fd, 0L, SEEK_CUR)) == -1) {
     return 0;
-  } else if ((end = ::lseek(fd, 0L, SEEK_END)) == -1) {
+  } else if ((end = os::lseek(fd, 0L, SEEK_END)) == -1) {
     return 0;
-  } else if (::lseek(fd, cur, SEEK_SET) == -1) {
+  } else if (os::lseek(fd, cur, SEEK_SET) == -1) {
     return 0;
   }
   *bytes = end - cur;
@@ -2487,7 +2487,7 @@ void os::pause() {
   if (fd != -1) {
     struct stat buf;
     ::close(fd);
-    while (::stat(filename, &buf) == 0) {
+    while (os::stat(filename, &buf) == 0) {
       (void)::poll(NULL, 0, 100);
     }
   } else {

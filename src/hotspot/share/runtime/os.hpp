@@ -527,10 +527,10 @@ class os: AllStatic {
   // Terminate the VM, but don't exit the process
   static void shutdown();
 
-  // Terminate with an error.  Default is to generate a core file on platforms
-  // that support such things.  This calls shutdown() and then aborts.
+  // Terminate with an error.  If dump_core is true generate a core file on
+  // platforms that support such things.  This calls shutdown() and then aborts.
   static void abort(bool dump_core, void *siginfo, const void *context);
-  static void abort(bool dump_core = true);
+  static void abort(bool dump_core);
 
   // Die immediately, no exit hook, no abort hook, no cleanup.
   // Dump a core file, if possible, for debugging. os::abort() is the
@@ -787,7 +787,7 @@ class os: AllStatic {
   static int recv(int fd, char* buf, size_t nBytes, uint flags);
   static int send(int fd, char* buf, size_t nBytes, uint flags);
   static int raw_send(int fd, char* buf, size_t nBytes, uint flags);
-  static int connect(int fd, struct sockaddr* him, socklen_t len);
+  static int connect(int fd, const struct sockaddr* him, socklen_t len);
   static struct hostent* get_host_by_name(char* name);
 
   // Support for signals (see JVM_RaiseSignal, JVM_RegisterSignal)

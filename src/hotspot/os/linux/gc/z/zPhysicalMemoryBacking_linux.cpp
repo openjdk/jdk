@@ -130,7 +130,7 @@ ZPhysicalMemoryBacking::ZPhysicalMemoryBacking(size_t max_capacity) :
   }
 
   // Truncate backing file
-  while (ftruncate(_fd, max_capacity) == -1) {
+  while (os::ftruncate(_fd, max_capacity) == -1) {
     if (errno != EINTR) {
       ZErrno err;
       log_error_p(gc)("Failed to truncate backing file (%s)", err.to_string());
