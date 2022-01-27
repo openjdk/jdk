@@ -21,7 +21,9 @@
  * questions.
  */
 
-import java.util.function.*;
+import java.util.function.DoubleBinaryOperator;
+import java.util.function.DoubleUnaryOperator;
+import java.util.function.DoubleToIntFunction;
 
 /*
  * Shared static test methods for numerical tests.  Sharing these

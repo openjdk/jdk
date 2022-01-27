@@ -45,8 +45,6 @@ public class CubeRootTests {
     static int testCubeRootCase(double input, double expected) {
         int failures=0;
 
-        double minus_input = -input;
-
         failures+=Tests.test("Math.cbrt",        input, Math::cbrt,        expected);
         failures+=Tests.test("Math.cbrt",       -input, Math::cbrt,       -expected);
         failures+=Tests.test("StrictMath.cbrt",  input, StrictMath::cbrt,  expected);

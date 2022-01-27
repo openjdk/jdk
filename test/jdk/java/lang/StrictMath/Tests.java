@@ -21,7 +21,8 @@
  * questions.
  */
 
-import java.util.function.*;
+import java.util.function.DoubleBinaryOperator;
+import java.util.function.DoubleUnaryOperator;
 
 /*
  * Shared static test method for StrictMath tests.
