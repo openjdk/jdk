@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (C) 2022 THL A29 Limited, a Tencent company. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -727,23 +728,46 @@ public class SSLParameters {
     }
 
     /**
-     * Sets the prioritized array of application-layer protocol names that
-     * can be negotiated over the SSL/TLS/DTLS protocols.
+     * Sets the prioritized array of signature scheme names that
+     * can be used over the SSL/TLS/DTLS protocols.
+     * <p>
+     * Note that the standard list of signature scheme names may be found in
+     * the <a href=
+     * "{@docRoot}/../specs/security/standard-names.html#signature-schemes">
+     * Signature Schemes</a> section of the Java Cryptography
+     * Architecture Standard Algorithm Name Documentation.  Providers
+     * may support signature schemes not found in this list or might not
+     * use the recommended name for a certain signature scheme.
+     *
+     * @implSpec
+     * This method will make a copy of the {@code signatureSchemes} array.
+     *
+     * @param signatureSchemes an ordered array of signature scheme names,
+     *        with the first entry being the most preferred. If the array
+     *        is empty (zero-length), the prodiver-specific default signature
+     *        schemes will be used for the SSL/TLS/DTLS connection.
+     * @throws IllegalArgumentException if signatureSchemes is null, or if
+     *        any element in a non-empty array is null or an
+     *        empty (zero-length) string.
+     *
+     * @see #getSignatureSchemes
+     *
+     * @since 19
      */
     public void setSignatureSchemes(String[] signatureSchemes) {
-        if (protocols == null) {
-            throw new IllegalArgumentException("protocols was null");
+        if (signatureSchemes == null) {
+            throw new IllegalArgumentException("signatureSchemes was null");
         }
 
-        String[] tempProtocols = protocols.clone();
-
-        for (String p : tempProtocols) {
-            if (p == null || p.isEmpty()) {
+        String[] tempSchemes = signatureSchemes.clone();
+        for (String scheme : tempSchemes) {
+            if (scheme == null || scheme.isEmpty()) {
                 throw new IllegalArgumentException(
-                        "An element of protocols was null/empty");
+                        "An element of signatureSchemes was null/empty");
             }
         }
-        applicationProtocols = tempProtocols;
-    }
 
+        this.signatureSchemes = tempSchemes;
+    }
 }
+
