@@ -117,7 +117,7 @@ template <> void DCmdArgument<jlong>::parse_value(const char* str,
   {
     const int maxprint = 64;
     Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_IllegalArgumentException(),
-      "Integer parsing error in command argument '%s'. Could not parse: \"%.*s%s\".\n", _name,
+      "Integer parsing error in command argument '%s'. Could not parse: %.*s%s.\n", _name,
       MIN2((int)len, maxprint),
       (str == NULL ? "<null>" : str),
       (len > maxprint ? "..." : ""));
