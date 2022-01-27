@@ -3682,14 +3682,14 @@ void VM_RedefineClasses::set_new_constant_pool(
     // Update constant pool indices in the method's method_parameters.
     int mp_length = method->method_parameters_length();
     if (mp_length > 0) {
-        MethodParametersElement* elem = method->method_parameters_start();
-        for (int j = 0; j < mp_length; j++) {
-            const int cp_index = elem[j].name_cp_index;
-            const int new_cp_index = find_new_index(cp_index);
-            if (new_cp_index != 0) {
-                elem[j].name_cp_index = new_cp_index;
-            }
+      MethodParametersElement* elem = method->method_parameters_start();
+      for (int j = 0; j < mp_length; j++) {
+        const int cp_index = elem[j].name_cp_index;
+        const int new_cp_index = find_new_index(cp_index);
+        if (new_cp_index != 0) {
+          elem[j].name_cp_index = (u2)new_cp_index;
         }
+      }
     }
 
     rewrite_cp_refs_in_stack_map_table(method);

@@ -50,8 +50,9 @@ import jdk.test.lib.util.ClassTransformer;
 /*
  * The test verifies Instrumentation.retransformClasses() (and JVMTI function RetransformClasses)
  * correctly handles MethodParameter attribute:
- * - classfile bytes passed to transformers (and JVMTI ClassFileLoadHook event callback) contain the attribute;
- * - the attribute is updated.
+ * 1) classfile bytes passed to transformers (and JVMTI ClassFileLoadHook event callback) contain the attribute;
+ * 2) the attribute is updated if new version has the attribute with different values;
+ * 3) the attribute is removed if new version doesn't contain the attribute.
  */
 
 // See ClassTransformer.transform(int) comment for @1 tag explanations.
