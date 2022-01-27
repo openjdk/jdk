@@ -129,8 +129,14 @@ static inline uint32_t uimm(uint32_t val, int hi, int lo)
 
 uint64_t replicate(uint64_t bits, int nbits, int count)
 {
+  // Special case nbits == 64 since the shift below with that nbits value
+  // would result in undefined behavior.
+  if (nbits == 64) {
+    assert(count <= 1, "must be");
+    return bits;
+  }
+
   uint64_t result = 0;
-  // nbits may be 64 in which case we want mask to be -1
   uint64_t mask = ones(nbits);
   for (int i = 0; i < count ; i++) {
     result <<= nbits;
