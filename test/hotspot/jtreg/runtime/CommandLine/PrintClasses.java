@@ -37,8 +37,14 @@ public class PrintClasses {
   public static void main(String args[]) throws Exception {
     var pid = Long.toString(ProcessHandle.current().pid());
     var pb = new ProcessBuilder();
-    pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.classes", "-verbose"});
+
+    pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.classes"});
     var output = new OutputAnalyzer(pb.start());
+    output.shouldNotContain("instance size");
+    output.shouldContain(PrintClasses.class.getSimpleName());
+
+    pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.classes", "-verbose"});
+    output = new OutputAnalyzer(pb.start());
     output.shouldContain("instance size");
     output.shouldContain(PrintClasses.class.getSimpleName());
   }

@@ -2069,7 +2069,6 @@ PrintClassClosure::PrintClassClosure(outputStream* st, bool verbose)
   _st->print("%-4s  ", "Size");
   _st->print("%-20s  ", "State");
   _st->print("%-7s  ", "Flags");
-  _st->print("%-12s  ", "LoaderName");
   _st->print("%-5s  ", "ClassName");
   _st->cr();
 }
@@ -2101,9 +2100,6 @@ void PrintClassClosure::do_klass(Klass* k)  {
   }
   buf[i++] = '\0';
   _st->print("%-7s  ", buf);
-  // classloader name
-  ClassLoaderData* cld = k->class_loader_data();
-  _st->print("%-12s  ", cld->loader_name());
   // klass name
   _st->print("%-5s  ", k->external_name());
   // end

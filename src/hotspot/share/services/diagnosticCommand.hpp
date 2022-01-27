@@ -867,7 +867,7 @@ public:
     return "VM.classes";
   }
   static const char* description() {
-    return "Prints list of all loaded classes";
+    return "Print all loaded classes";
   }
   static const char* impact() {
       return "Medium: Depends on number of loaded classes.";
