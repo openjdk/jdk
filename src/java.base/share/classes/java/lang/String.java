@@ -1271,10 +1271,9 @@ public final class String
             return Arrays.copyOf(val, val.length);
         }
 
-        byte[] dst = new byte[val.length << 1];
+        byte[] dst = new byte[dp + ((val.length - dp) << 1)];
         int i = dp;
-        StringUTF16.inflate(val, 0, dst, 0, dp);
-        dp <<= 1;
+        System.arraycopy(val, 0, dst, 0, dp);
         while (i < val.length) {
             byte c = val[i++];
             if (c < 0) {
