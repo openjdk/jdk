@@ -283,6 +283,19 @@ public:
   // Not currently used because mutator write barrier does not honor changes to the location of card table.
   void swap_remset() {  _card_table->swap_card_tables(); }
 
+  void merge_write_table(HeapWord* start, size_t word_count) {
+    size_t card_index = card_index_for_addr(start);
+    size_t num_cards = word_count / CardTable::card_size_in_words;
+    size_t iterations = num_cards / (sizeof (intptr_t) / sizeof (CardTable::CardValue));
+    intptr_t* read_table_ptr = (intptr_t*) &(_card_table->read_byte_map())[card_index];
+    intptr_t* write_table_ptr = (intptr_t*) &(_card_table->write_byte_map())[card_index];
+    for (size_t i = 0; i < iterations; i++) {
+      intptr_t card_value = *write_table_ptr;
+      *read_table_ptr++ &= card_value;
+      write_table_ptr++;
+    }
+  }
+
   HeapWord* whole_heap_base() { return _whole_heap_base; }
   HeapWord* whole_heap_end() { return _whole_heap_end; }
 
@@ -915,6 +928,8 @@ public:
   void swap_remset() { _rs->swap_remset(); }
 
   void reset_remset(HeapWord* start, size_t word_count) { _rs->reset_remset(start, word_count); }
+
+  void merge_write_table(HeapWord* start, size_t word_count) { _rs->merge_write_table(start, word_count); }
 
   // Called by GC thread after scanning old remembered set in order to prepare for next GC pass
   void clear_old_remset() { _rs->clear_old_remset(); }

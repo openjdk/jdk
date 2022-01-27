@@ -90,6 +90,9 @@ protected:
   // Used by concurrent and degenerated GC to reset remembered set.
   void swap_remembered_set();
 
+  // Update the read cards with the state of the write table (write table is not cleared).
+  void merge_write_table();
+
   // Used by concurrent and degenerated GC to reset regions.
   virtual void prepare_gc(bool do_old_gc_bootstrap);
 

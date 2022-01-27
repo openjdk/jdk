@@ -72,6 +72,24 @@ class ShenandoahResetBitmapTask : public ShenandoahHeapRegionClosure {
   bool is_thread_safe() { return true; }
 };
 
+class ShenandoahMergeWriteTable: public ShenandoahHeapRegionClosure {
+ private:
+  ShenandoahHeap* _heap;
+  RememberedScanner* _scanner;
+ public:
+  ShenandoahMergeWriteTable() : _heap(ShenandoahHeap::heap()), _scanner(_heap->card_scan()) {}
+
+  virtual void heap_region_do(ShenandoahHeapRegion* r) override {
+    if (r->is_old()) {
+      _scanner->merge_write_table(r->bottom(), ShenandoahHeapRegion::region_size_words());
+    }
+  }
+
+  virtual bool is_thread_safe() override {
+    return true;
+  }
+};
+
 class ShenandoahSquirrelAwayCardTable: public ShenandoahHeapRegionClosure {
  private:
   ShenandoahHeap* _heap;
@@ -168,6 +186,20 @@ void ShenandoahGeneration::swap_remembered_set() {
 
   // TODO: Eventually, we want replace this with a constant-time exchange of pointers.
   ShenandoahSquirrelAwayCardTable task;
+  heap->old_generation()->parallel_heap_region_iterate(&task);
+}
+
+// If a concurrent cycle fails _after_ the card table has been swapped we need to update the read card
+// table with any writes that have occurred during the transition to the degenerated cycle. Without this,
+// newly created objects which are only referenced by old objects could be lost when the remembered set
+// is scanned during the degenerated mark.
+void ShenandoahGeneration::merge_write_table() {
+  // This should only happen for degenerated cycles
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  heap->assert_gc_workers(heap->workers()->active_workers());
+  shenandoah_assert_safepoint();
+
+  ShenandoahMergeWriteTable task;
   heap->old_generation()->parallel_heap_region_iterate(&task);
 }
 

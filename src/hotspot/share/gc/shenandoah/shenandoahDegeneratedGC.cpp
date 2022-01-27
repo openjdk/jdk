@@ -128,6 +128,15 @@ void ShenandoahDegenGC::op_degenerated() {
         heap->cancel_concurrent_mark();
       }
 
+      if (_degen_point == ShenandoahDegenPoint::_degenerated_roots) {
+        // We only need this if the concurrent cycle has already swapped the card tables.
+        // Marking will use the 'read' table, but interesting pointers may have been
+        // recorded in the 'write' table in the time between the cancelled concurrent cycle
+        // and this degenerated cycle. These pointers need to be included the 'read' table
+        // used to scan the remembered set during the STW mark which follows here.
+        _generation->merge_write_table();
+      }
+
       op_reset();
 
       // STW mark
