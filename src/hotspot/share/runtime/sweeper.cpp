@@ -55,9 +55,9 @@
 // Sweeper logging code
 class SweeperRecord {
  public:
-  uint64_t traversal;
+  int64_t traversal;
   int compile_id;
-  uint64_t traversal_mark;
+  int64_t traversal_mark;
   int state;
   const char* kind;
   address vep;
@@ -65,8 +65,8 @@ class SweeperRecord {
   int line;
 
   void print() {
-      tty->print_cr("traversal = " UINT64_FORMAT " compile_id = %d %s uep = " PTR_FORMAT " vep = "
-                    PTR_FORMAT " state = %d traversal_mark " UINT64_FORMAT " line = %d",
+      tty->print_cr("traversal = " INT64_FORMAT " compile_id = %d %s uep = " PTR_FORMAT " vep = "
+                    PTR_FORMAT " state = %d traversal_mark " INT64_FORMAT " line = %d",
                     traversal,
                     compile_id,
                     kind == NULL ? "" : kind,
@@ -107,8 +107,8 @@ void NMethodSweeper::init_sweeper_log() {
 #endif
 
 CompiledMethodIterator NMethodSweeper::_current(CompiledMethodIterator::all_blobs); // Current compiled method
-uint64_t NMethodSweeper::_traversals                   = 0;    // Stack scan count, also sweep ID.
-uint64_t NMethodSweeper::_total_nof_code_cache_sweeps  = 0;    // Total number of full sweeps of the code cache
+int64_t  NMethodSweeper::_traversals                   = 0;    // Stack scan count, also sweep ID.
+int64_t  NMethodSweeper::_total_nof_code_cache_sweeps  = 0;    // Total number of full sweeps of the code cache
 int      NMethodSweeper::_seen                         = 0;    // Nof. nmethod we have currently processed in current pass of CodeCache
 size_t   NMethodSweeper::_sweep_threshold_bytes        = 0;    // Threshold for when to sweep. Updated after ergonomics
 
@@ -187,7 +187,7 @@ CodeBlobClosure* NMethodSweeper::prepare_mark_active_nmethods() {
   _total_time_this_sweep = Tickspan();
 
   if (PrintMethodFlushing) {
-    tty->print_cr("### Sweep: stack traversal " UINT64_FORMAT, _traversals);
+    tty->print_cr("### Sweep: stack traversal " INT64_FORMAT, _traversals);
   }
   return &mark_activation_closure;
 }
@@ -304,7 +304,7 @@ void NMethodSweeper::sweep() {
 static void post_sweep_event(EventSweepCodeCache* event,
                              const Ticks& start,
                              const Ticks& end,
-                             uint64_t traversals,
+                             int64_t traversals,
                              int swept,
                              int flushed,
                              int zombified) {
@@ -646,7 +646,7 @@ void NMethodSweeper::log_sweep(const char* msg, const char* format, ...) {
     CodeCache::log_state(&s);
 
     ttyLocker ttyl;
-    xtty->begin_elem("sweeper state='%s' traversals='" UINT64_FORMAT "' ", msg, traversal_count());
+    xtty->begin_elem("sweeper state='%s' traversals='" INT64_FORMAT "' ", msg, traversal_count());
     if (format != NULL) {
       va_list ap;
       va_start(ap, format);
@@ -664,7 +664,7 @@ void NMethodSweeper::print(outputStream* out) {
   out = (out == NULL) ? tty : out;
   out->print_cr("Code cache sweeper statistics:");
   out->print_cr("  Total sweep time:                %1.0lf ms", (double)_total_time_sweeping.value()/1000000);
-  out->print_cr("  Total number of full sweeps:     " UINT64_FORMAT, _total_nof_code_cache_sweeps);
+  out->print_cr("  Total number of full sweeps:     " INT64_FORMAT, _total_nof_code_cache_sweeps);
   out->print_cr("  Total number of flushed methods: " INT64_FORMAT " (thereof " INT64_FORMAT " C2 methods)",
                                                     _total_nof_methods_reclaimed,
                                                     _total_nof_c2_methods_reclaimed);

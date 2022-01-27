@@ -580,7 +580,7 @@
   notproduct(intx, FullGCALotInterval,     1,                               \
           "Interval between which full gc will occur with +FullGCALot")     \
                                                                             \
-  notproduct(intx, FullGCALotStart,     0,                                  \
+  notproduct(int, FullGCALotStart,     0,                                   \
           "For which invocation to start FullGCAlot")                       \
                                                                             \
   notproduct(intx, FullGCALotDummies,  32*K,                                \
