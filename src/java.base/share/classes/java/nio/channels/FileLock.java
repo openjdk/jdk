@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,6 +263,12 @@ public abstract class FileLock implements AutoCloseable {
 
     /**
      * Tells whether or not this lock overlaps the given lock range.
+     *
+     * @implNote
+     * This method assumes that the parameters are non-negative and that
+     * their sum does not overflow a {@code long}, but does not enforce
+     * these preconditions as do the constructors; hence it is the caller's
+     * responsibility to ensure that these parameters are valid.
      *
      * @param   position
      *          The starting position of the lock range
