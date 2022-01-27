@@ -171,15 +171,12 @@ public class IRMatcher {
             for (int i = 0; i < nodesWithCount.size(); i += 2) {
                 String node = nodesWithCount.get(i);
                 TestFormat.check(i + 1 < nodesWithCount.size(), "Missing count" + getPostfixErrorMsg(irRule, node));
-                String countString = nodesWithCount.get(i + 1);
-                long givenCount;
-                ParsedComparator<Long> parsedComparator = getParsedComparator(irRule, node, countString);
-                givenCount = parseExpectedCount(irRule, node, countString, parsedComparator.getNumberString());
-
-                long actualCount = getActualCount(testOutput, node);
-                if (!parsedComparator.compare(actualCount, givenCount)) {
-                    appendSummary(failMsg, countsId, node, givenCount, actualCount);
-                    addCountsFail(failMsg, irMethod, node, actualCount);
+                String countConstraint = nodesWithCount.get(i + 1);
+                Comparison<Long> comparison = parseComparison(irRule, node, countConstraint);
+                long foundCount = getFoundCount(irRule.getIRMethod().getOutput(), node);
+                if (!comparison.compare(foundCount)) {
+                    appendSummary(failMsg, countsId, node, comparison, foundCount);
+                    addCountsFail(failMsg, irMethod, node,foundCount);
                 }
                 countsId++;
             }
@@ -190,44 +187,24 @@ public class IRMatcher {
         }
     }
 
-    private void appendSummary(StringBuilder failMsg, int countsId, String node, long givenCount, long actualCount) {
+    private void appendSummary(StringBuilder failMsg, int countsId, String node, Comparison<Long> comparison, long foundCount) {
         failMsg.append("    Regex ").append(countsId).append(": ").append(node).append(System.lineSeparator());
-        failMsg.append("    Expected ").append(givenCount).append(" but found ").append(actualCount);
+        failMsg.append("    Expected ").append(comparison.getGivenValue()).append(" but found ").append(foundCount);
     }
 
-    private long getActualCount(String testOutput, String node) {
+    private Comparison<Long> parseComparison(IRRule irRule, String node, String constraint) {
+        String postfixErrorMsg = "in count constraint " + getPostfixErrorMsg(irRule, node);
+        return ComparisonConstraintParser.parse(constraint, Long::parseLong, postfixErrorMsg);
+    }
+
+    private long getFoundCount(String testOutput, String node) {
         Pattern pattern = Pattern.compile(node);
         Matcher matcher = pattern.matcher(testOutput);
         return matcher.results().count();
     }
 
-    private long parseExpectedCount(IRRule irRule, String node, String countString, String expectedCountString) {
-        try {
-            long expectedCount = Long.parseLong(expectedCountString);
-            TestFormat.check(expectedCount >= 0, "Provided invalid negative count \"" + countString
-                                                 + "\"" + getPostfixErrorMsg(irRule, node));
-            return expectedCount;
-        } catch (NumberFormatException e) {
-            TestFormat.fail("Provided invalid count \"" + countString + "\"" + getPostfixErrorMsg(irRule, node));
-            throw new UnreachableCodeException();
-        }
-    }
-
-    private ParsedComparator<Long> getParsedComparator(IRRule irRule, String node, String countString) {
-        try {
-            return ParsedComparator.parseComparator(countString);
-        } catch (CheckedTestFrameworkException e) {
-            TestFormat.fail("Invalid comparator \"" + e.getMessage() + "\" in \"" + countString
-                            + "\" for count" + getPostfixErrorMsg(irRule, node));
-            throw new UnreachableCodeException();
-        }  catch (IndexOutOfBoundsException e) {
-            TestFormat.fail("Provided empty value" + getPostfixErrorMsg(irRule, node));
-            throw new UnreachableCodeException();
-        }
-    }
-
     private String getPostfixErrorMsg(IRRule irRule, String node) {
-        return " for IR rule " + (irRule.getRuleId() + 1) + ", node \"" + node + "\" at " + irRule.getMethod();
+        return "for IR rule " + (irRule.getRuleId() + 1) + ", node \"" + node + "\" at " + irRule.getMethod();
     }
 
     /**
