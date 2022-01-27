@@ -55,6 +55,7 @@
 #include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -886,6 +887,10 @@ void ClassLoaderData::free_deallocate_list_C_heap_structures() {
       // Remove the class so unloading events aren't triggered for
       // this class (scratch or error class) in do_unloading().
       remove_class(ik);
+      // But still have to remove it from the dumptime_table.
+      if (Arguments::is_dumping_archive()) {
+        SystemDictionaryShared::remove_dumptime_info(ik);
+      }
     }
   }
 }
