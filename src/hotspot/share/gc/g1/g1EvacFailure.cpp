@@ -77,7 +77,6 @@ public:
 
     zap_dead_objects(_last_forwarded_object_end, obj_addr);
 
-    // Zapping clears the bitmap, make sure it didn't clear too much.
     assert(_cm->is_marked_in_prev_bitmap(obj), "should be correctly marked");
     if (_during_concurrent_start) {
       // For the next marking info we'll only mark the
