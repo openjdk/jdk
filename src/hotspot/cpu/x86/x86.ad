@@ -1608,9 +1608,14 @@ const bool Matcher::match_rule_supported(int opcode) {
       }
       break;
     case Op_SqrtD:
+#ifdef _LP64
       if (UseSSE < 2) {
         return false;
       }
+#else
+      // x86_32.ad has a special match rule for SqrtD.
+      // Together with common x86 rules, this handles all UseSSE cases.
+#endif
       break;
   }
   return true;  // Match rules are supported by default.

@@ -1892,7 +1892,7 @@ bool Compile::inline_incrementally_one() {
         return false;
       } else if (inlining_progress()) {
         _late_inlines_pos = i+1; // restore the position in case new elements were inserted
-        print_method(PHASE_INCREMENTAL_INLINE_STEP, cg->call_node(), 3);
+        print_method(PHASE_INCREMENTAL_INLINE_STEP, 3, cg->call_node());
         break; // process one call site at a time
       }
     } else {
@@ -2357,7 +2357,7 @@ void Compile::inline_vector_reboxing_calls() {
       CallGenerator* cg = _vector_reboxing_late_inlines.pop();
       cg->do_late_inline();
       if (failing())  return;
-      print_method(PHASE_INLINE_VECTOR_REBOX, cg->call_node(), 3);
+      print_method(PHASE_INLINE_VECTOR_REBOX, 3, cg->call_node());
     }
     _vector_reboxing_late_inlines.trunc_to(0);
   }
@@ -4814,30 +4814,20 @@ void Compile::sort_macro_nodes() {
   }
 }
 
-void Compile::print_method(CompilerPhaseType cpt, int level) {
-  print_method_impl(cpt, NOT_PRODUCT(CompilerPhaseTypeHelper::to_string(cpt) COMMA) level);
-}
-
-void Compile::print_method(CompilerPhaseType cpt, Node* n, int level) {
-#ifndef PRODUCT
-  ResourceMark rm;
-  stringStream ss;
-  ss.print_raw(CompilerPhaseTypeHelper::to_string(cpt));
-  if (n != NULL) {
-    ss.print(": %d %s ", n->_idx, NodeClassNames[n->Opcode()]);
-  } else {
-    ss.print_raw(": NULL");
-  }
-#endif
-  C->print_method_impl(cpt, NOT_PRODUCT(ss.as_string() COMMA) level);
-}
-
-void Compile::print_method_impl(CompilerPhaseType cpt, NOT_PRODUCT(const char* name COMMA) int level) {
+void Compile::print_method(CompilerPhaseType cpt, int level, Node* n) {
   EventCompilerPhase event;
   if (event.should_commit()) {
     CompilerEvent::PhaseEvent::post(event, C->_latest_stage_start_counter, cpt, C->_compile_id, level);
   }
 #ifndef PRODUCT
+  ResourceMark rm;
+  stringStream ss;
+  ss.print_raw(CompilerPhaseTypeHelper::to_string(cpt));
+  if (n != nullptr) {
+    ss.print(": %d %s ", n->_idx, NodeClassNames[n->Opcode()]);
+  }
+
+  const char* name = ss.as_string();
   if (should_print_igv(level)) {
     _igv_printer->print_method(name, level);
   }
