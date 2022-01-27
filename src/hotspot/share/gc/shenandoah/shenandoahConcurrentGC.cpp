@@ -123,6 +123,8 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   // Complete marking under STW, and start evacuation
   vmop_entry_final_mark();
 
+  check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_mark);
+
   // Concurrent stack processing
   if (heap->is_evacuation_in_progress()) {
     entry_thread_roots();
