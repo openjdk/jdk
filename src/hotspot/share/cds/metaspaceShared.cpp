@@ -955,6 +955,9 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
     }
   } else {
     set_shared_metaspace_range(NULL, NULL, NULL);
+    if (DynamicDumpSharedSpaces) {
+      warning("-XX:ArchiveClassesAtExit is unsupported when base CDS archive is not loaded. Run with -Xlog:cds for more info.");
+    }
     UseSharedSpaces = false;
     // The base archive cannot be mapped. We cannot dump the dynamic shared archive.
     AutoCreateSharedArchive = false;
