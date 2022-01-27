@@ -4416,10 +4416,11 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
     /**
      * Invoked when this table's <code>TableModel</code> generates
      * a <code>TableModelEvent</code>.
-     * The <code>TableModelEvent</code> should be constructed in the
-     * coordinate system of the model; the appropriate mapping to the
-     * view coordinate system is performed by this <code>JTable</code>
-     * when it receives the event.
+     * The <code>TableModelEvent</code> should be constructed in
+     * the coordinate system of the model for the column and the
+     * coordinate system of the view for the row; the appropriate
+     * mapping to the view coordinate system is performed by this
+     * <code>JTable</code> when it receives the event.
      * <p>
      * Application code will not use these methods explicitly, they
      * are used internally by <code>JTable</code>.
