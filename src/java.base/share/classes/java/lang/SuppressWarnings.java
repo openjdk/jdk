@@ -47,6 +47,32 @@ import static java.lang.annotation.ElementType.*;
  * suppress a warning in a particular method, you should annotate that
  * method rather than its class.
  *
+ * <p>{@code SuppressWarnings} annotations are applicable in all
+ * declaration contexts.
+ *
+ * Java compilers must recognize all the kinds of warnings defined in
+ * the <cite>Java Language Specification</cite> (JLS section {@jls
+ * 9.6.4.5}) which include:
+ *
+ * <ul>
+ * <li> Unchecked warnings specified by the string {@code "unchecked"}.
+ * <li> Deprecation warnings specified by the string {@code "deprecation"}.
+ * <li> Removal warnings specified by the string {@code "removal"}.
+ * <li> Preview warnings specified by the string {@code "preview"}.
+ * </ul>
+ *
+ * Whether or not a Java compiler recognizes other suppression strings
+ * is a quality of implementation concern.
+ * Compiler vendors should document the
+ * additional warning names they support.
+ * Vendors are encouraged to cooperate to ensure
+ * that the same names work across multiple compilers.
+ *
+ * @implNote
+ * In addition to the mandated suppression strings, the {@code javac}
+ * reference implementation recognizes compilation-related warning
+ * names documented in its {@code --help-lint} output.
+ *
  * @author Josh Bloch
  * @since 1.5
  * @jls 4.8 Raw Types
@@ -55,7 +81,7 @@ import static java.lang.annotation.ElementType.*;
  * @jls 5.5 Casting Contexts
  * @jls 9.6.4.5 @SuppressWarnings
  */
-@Target({TYPE, FIELD, METHOD, PARAMETER, CONSTRUCTOR, LOCAL_VARIABLE, PACKAGE, MODULE})
+// Implicitly target all declaration contexts by omitting a @Target annotation
 @Retention(RetentionPolicy.SOURCE)
 public @interface SuppressWarnings {
     /**
@@ -66,12 +92,6 @@ public @interface SuppressWarnings {
      * ignore any warning names they do not recognize.  They are, however,
      * free to emit a warning if an annotation contains an unrecognized
      * warning name.
-     *
-     * <p> The string {@code "unchecked"} is used to suppress
-     * unchecked warnings. Compiler vendors should document the
-     * additional warning names they support in conjunction with this
-     * annotation type. They are encouraged to cooperate to ensure
-     * that the same names work across multiple compilers.
      * @return the set of warnings to be suppressed
      */
     String[] value();
