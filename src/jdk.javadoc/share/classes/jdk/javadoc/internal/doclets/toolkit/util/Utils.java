@@ -919,7 +919,7 @@ public class Utils {
         List<? extends TypeMirror> intfacs = typeUtils.directSupertypes(type);
         TypeMirror superType = null;
         for (TypeMirror intfac : intfacs) {
-            if (intfac == getObjectType())
+            if (typeUtils.isSameType(intfac, getObjectType()))
                 continue;
             TypeElement e = asTypeElement(intfac);
             if (isInterface(e)) {
