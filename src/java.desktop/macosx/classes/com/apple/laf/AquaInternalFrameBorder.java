@@ -378,7 +378,7 @@ public class AquaInternalFrameBorder implements Border, UIResource {
         final int x = inX;
         final int y = inY;
         final int w = inW;
-        int h = inH;
+        final int h = inH;
 
         // paint the background
         titleBarPainter.state.set(frame.isSelected() ? State.ACTIVE : State.INACTIVE);

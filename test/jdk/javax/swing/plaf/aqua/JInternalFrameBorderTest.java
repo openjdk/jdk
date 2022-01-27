@@ -50,36 +50,36 @@ public class JInternalFrameBorderTest {
     private static JInternalFrame internalFrame;
     private static final int LIMIT = 100;
     private static Robot robot;
+    private static Point pos;
+    private static Rectangle rect;
+    private static Insets insets;
 
     public static void main(String[] args) throws Exception {
         robot = new Robot();
-        try {
-            UIManager.setLookAndFeel("com.apple.laf.AquaLookAndFeel");
-        } catch (Exception e) {
-            throw new RuntimeException("Cannot initialize Aqua L&F");
-        }
-
         createUI();
         robot.waitForIdle();
         robot.delay(1000);
 
-        Point p = internalFrame.getLocationOnScreen();
-        Rectangle rect = internalFrame.getBounds();
-        Insets insets = internalFrame.getInsets();
+        SwingUtilities.invokeAndWait(() -> {
+            pos = internalFrame.getLocationOnScreen();
+            rect = internalFrame.getBounds();
+            insets = internalFrame.getInsets();
+        });
+        robot.waitForIdle();
 
         // bottom
-        int x = p.x + rect.x + rect.width/2;
-        int y = p.y + rect.y + rect.height - insets.bottom + 1;
+        int x = pos.x + rect.x + rect.width/2;
+        int y = pos.y + rect.y + rect.height - insets.bottom + 1;
         Color colorBottom = robot.getPixelColor(x, y);
 
         // left
-        x = p.x + rect.x + insets.left - 1;
-        y = p.y + rect.y + rect.height/2;
+        x = pos.x + rect.x + insets.left - 1;
+        y = pos.y + rect.y + rect.height/2;
         Color colorLeft = robot.getPixelColor(x, y);
 
         // right
-        x = p.x + rect.x + rect.width - insets.left + 1;
-        y = p.y + rect.y + rect.height/2;
+        x = pos.x + rect.x + rect.width - insets.left + 1;
+        y = pos.y + rect.y + rect.height/2;
         Color colorRight = robot.getPixelColor(x, y);
 
         robot.waitForIdle();
@@ -99,6 +99,11 @@ public class JInternalFrameBorderTest {
 
     private static void createUI() throws Exception {
         SwingUtilities.invokeAndWait(() -> {
+            try {
+                UIManager.setLookAndFeel("com.apple.laf.AquaLookAndFeel");
+            } catch (Exception e) {
+                throw new RuntimeException("Cannot initialize Aqua L&F");
+            }
             desktopPane = new JDesktopPane() {
                 @Override
                 protected void paintComponent(Graphics g) {
