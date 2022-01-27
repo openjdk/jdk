@@ -724,7 +724,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         StubFrame f(sasm, "load_klass", dont_gc_arguments);
         save_live_registers_no_oop_map(sasm, true);
         f.load_argument(0, r0); // obj
-        __ call_VM_leaf(CAST_FROM_FN_PTR(address, oopDesc::load_klass_runtime), r0);
+        __ call_VM_leaf(CAST_FROM_FN_PTR(address, oopDesc::load_nklass_runtime), r0);
         restore_live_registers_except_r0(sasm, true);
       }
       break;

@@ -2606,9 +2606,9 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
   // Fast-path: shift and decode Klass*.
   __ mov(result, tmp);
   __ lsr(result, result, markWord::klass_shift);
-  __ decode_klass_not_null(result);
 
   __ bind(*op->stub()->continuation());
+  __ decode_klass_not_null(result);
 }
 
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {

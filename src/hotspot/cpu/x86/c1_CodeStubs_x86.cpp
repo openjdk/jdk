@@ -302,6 +302,7 @@ void MonitorExitStub::emit_code(LIR_Assembler* ce) {
 
 void LoadKlassStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
+#ifdef _LP64
   Register res = _result->as_register();
   ce->store_parameter(_obj->as_register(), 0);
   if (res != rax) {
@@ -315,6 +316,9 @@ void LoadKlassStub::emit_code(LIR_Assembler* ce) {
     __ xchgptr(rax, res);
   }
   __ jmp(_continuation);
+#else
+  __ should_not_reach_here();
+#endif
 }
 
 // Implementation of patching:

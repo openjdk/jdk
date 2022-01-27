@@ -3542,9 +3542,13 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
   // Fast-path: shift and decode Klass*.
   __ movq(result, tmp);
   __ shrq(result, markWord::klass_shift);
+
+  __ bind(*op->stub()->continuation());
   __ decode_klass_not_null(result, tmp);
 #else
   __ movptr(result, Address(obj, oopDesc::klass_offset_in_bytes()));
+  // Not really needed, but bind the label anyway to make compiler happy.
+  __ bind(*op->stub()->continuation());
 #endif
 }
 

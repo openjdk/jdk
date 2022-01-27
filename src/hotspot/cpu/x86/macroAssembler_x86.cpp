@@ -4570,7 +4570,6 @@ void MacroAssembler::load_klass(Register dst, Register src, Register tmp, bool n
 
   movq(dst, tmp);
   shrq(dst, markWord::klass_shift);
-  decode_klass_not_null(dst, tmp);
   jmp(done);
   bind(slow);
 
@@ -4586,7 +4585,7 @@ void MacroAssembler::load_klass(Register dst, Register src, Register tmp, bool n
   push(r10);
   push(r11);
 
-  MacroAssembler::call_VM_leaf(CAST_FROM_FN_PTR(address, oopDesc::load_klass_runtime), src);
+  MacroAssembler::call_VM_leaf(CAST_FROM_FN_PTR(address, oopDesc::load_nklass_runtime), src);
 
   pop(r11);
   pop(r10);
@@ -4602,6 +4601,7 @@ void MacroAssembler::load_klass(Register dst, Register src, Register tmp, bool n
   }
 
   bind(done);
+  decode_klass_not_null(dst, tmp);
 #else
   if (null_check_src) {
     null_check(src, oopDesc::klass_offset_in_bytes());
