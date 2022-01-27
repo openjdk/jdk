@@ -52,13 +52,13 @@
   template(CollectForMetadataAllocation)          \
   template(GC_HeapInspection)                     \
   template(GenCollectFull)                        \
-  template(GenCollectFullConcurrent)              \
   template(GenCollectForAllocation)               \
   template(ParallelGCFailedAllocation)            \
   template(ParallelGCSystemGC)                    \
   template(G1CollectForAllocation)                \
   template(G1CollectFull)                         \
-  template(G1Concurrent)                          \
+  template(G1PauseRemark)                         \
+  template(G1PauseCleanup)                        \
   template(G1TryInitiateConcMark)                 \
   template(ZMarkStart)                            \
   template(ZMarkEnd)                              \

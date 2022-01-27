@@ -54,7 +54,7 @@ void PSPromotionManager::initialize() {
   _old_gen = heap->old_gen();
   _young_space = heap->young_gen()->to_space();
 
-  const uint promotion_manager_num = ParallelGCThreads + 1;
+  const uint promotion_manager_num = ParallelGCThreads;
 
   // To prevent false sharing, we pad the PSPromotionManagers
   // and make sure that the first instance starts at a cache line.
@@ -95,7 +95,7 @@ PSPromotionManager* PSPromotionManager::gc_thread_promotion_manager(uint index) 
 
 PSPromotionManager* PSPromotionManager::vm_thread_promotion_manager() {
   assert(_manager_array != NULL, "Sanity");
-  return &_manager_array[ParallelGCThreads];
+  return &_manager_array[0];
 }
 
 void PSPromotionManager::pre_scavenge() {
@@ -104,7 +104,7 @@ void PSPromotionManager::pre_scavenge() {
   _preserved_marks_set->assert_empty();
   _young_space = heap->young_gen()->to_space();
 
-  for(uint i=0; i<ParallelGCThreads+1; i++) {
+  for(uint i=0; i<ParallelGCThreads; i++) {
     manager_array(i)->reset();
   }
 }
@@ -113,7 +113,7 @@ bool PSPromotionManager::post_scavenge(YoungGCTracer& gc_tracer) {
   bool promotion_failure_occurred = false;
 
   TASKQUEUE_STATS_ONLY(print_taskqueue_stats());
-  for (uint i = 0; i < ParallelGCThreads + 1; i++) {
+  for (uint i = 0; i < ParallelGCThreads; i++) {
     PSPromotionManager* manager = manager_array(i);
     assert(manager->claimed_stack_depth()->is_empty(), "should be empty");
     if (manager->_promotion_failed_info.has_failed()) {
@@ -162,7 +162,7 @@ PSPromotionManager::print_taskqueue_stats() {
   TaskQueueStats totals;
   out->print("thr "); TaskQueueStats::print_header(1, out); out->cr();
   out->print("--- "); TaskQueueStats::print_header(2, out); out->cr();
-  for (uint i = 0; i < ParallelGCThreads + 1; ++i) {
+  for (uint i = 0; i < ParallelGCThreads; ++i) {
     TaskQueueStats& next = manager_array(i)->_claimed_stack_depth.stats;
     out->print("%3d ", i); next.print(out); out->cr();
     totals += next;
@@ -171,7 +171,7 @@ PSPromotionManager::print_taskqueue_stats() {
 
   const uint hlines = sizeof(pm_stats_hdr) / sizeof(pm_stats_hdr[0]);
   for (uint i = 0; i < hlines; ++i) out->print_cr("%s", pm_stats_hdr[i]);
-  for (uint i = 0; i < ParallelGCThreads + 1; ++i) {
+  for (uint i = 0; i < ParallelGCThreads; ++i) {
     manager_array(i)->print_local_stats(out, i);
   }
 }

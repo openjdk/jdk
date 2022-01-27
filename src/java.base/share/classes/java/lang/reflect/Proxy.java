@@ -1314,6 +1314,46 @@ public class Proxy implements java.io.Serializable {
         });
     }
 
+    /*
+     * Invoke the default method of the given proxy with an explicit caller class.
+     *
+     * @throws IllegalAccessException if the proxy interface is inaccessible to the caller
+     *         if caller is non-null
+     */
+    static Object invokeDefault(Object proxy, Method method, Object[] args, Class<?> caller)
+            throws Throwable {
+        // verify that the object is actually a proxy instance
+        if (!Proxy.isProxyClass(proxy.getClass())) {
+            throw new IllegalArgumentException("'proxy' is not a proxy instance");
+        }
+        if (!method.isDefault()) {
+            throw new IllegalArgumentException("\"" + method + "\" is not a default method");
+        }
+        @SuppressWarnings("unchecked")
+        Class<? extends Proxy> proxyClass = (Class<? extends Proxy>)proxy.getClass();
+
+        // skip access check if caller is null
+        if (caller != null) {
+            Class<?> intf = method.getDeclaringClass();
+            // access check on the default method
+            method.checkAccess(caller, intf, proxyClass, method.getModifiers());
+        }
+
+        MethodHandle mh = Proxy.defaultMethodHandle(proxyClass, method);
+        // invoke the super method
+        try {
+            // the args array can be null if the number of formal parameters required by
+            // the method is zero (consistent with Method::invoke)
+            Object[] params = args != null ? args : Proxy.EMPTY_ARGS;
+            return mh.invokeExact(proxy, params);
+        } catch (ClassCastException | NullPointerException e) {
+            throw new IllegalArgumentException(e.getMessage(), e);
+        } catch (Proxy.InvocationException e) {
+            // unwrap and throw the exception thrown by the default method
+            throw e.getCause();
+        }
+    }
+
     /**
      * Internal exception type to wrap the exception thrown by the default method
      * so that it can distinguish CCE and NPE thrown due to the arguments

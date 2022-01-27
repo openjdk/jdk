@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 #include "logging/logLevel.hpp"
 #include "logging/logTag.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
@@ -109,7 +109,8 @@ class SystemProperty : public PathString {
   void set_next(SystemProperty* next) { _next = next; }
 
   bool is_readable() const {
-    return !_internal || strcmp(_key, "jdk.boot.class.path.append") == 0;
+    return !_internal || (strcmp(_key, "jdk.boot.class.path.append") == 0 &&
+                          value() != NULL);
   }
 
   // A system property should only have its value set

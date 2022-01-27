@@ -107,10 +107,6 @@ void HeapRegion::handle_evacuation_failure() {
   _next_marked_bytes = 0;
 }
 
-void HeapRegion::process_and_drop_evac_failure_objs(ObjectClosure* closure) {
-  _evac_failure_objs.process_and_drop(closure);
-}
-
 void HeapRegion::unlink_from_list() {
   set_next(NULL);
   set_prev(NULL);
@@ -246,8 +242,7 @@ HeapRegion::HeapRegion(uint hrm_index,
   _prev_marked_bytes(0), _next_marked_bytes(0),
   _young_index_in_cset(-1),
   _surv_rate_group(NULL), _age_index(G1SurvRateGroup::InvalidAgeIndex), _gc_efficiency(-1.0),
-  _node_index(G1NUMA::UnknownNodeIndex),
-  _evac_failure_objs(hrm_index, _bottom)
+  _node_index(G1NUMA::UnknownNodeIndex)
 {
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
          "invalid space boundaries");
@@ -795,7 +790,7 @@ void HeapRegion::mangle_unused_area() {
 #endif
 
 void HeapRegion::initialize_bot_threshold() {
-  _bot_part.initialize_threshold();
+  _bot_part.reset_bot();
 }
 
 void HeapRegion::alloc_block_in_bot(HeapWord* start, HeapWord* end) {
@@ -815,7 +810,7 @@ void HeapRegion::object_iterate(ObjectClosure* blk) {
 void HeapRegion::fill_with_dummy_object(HeapWord* address, size_t word_size, bool zap) {
   // Keep the BOT in sync for old generation regions.
   if (is_old()) {
-    update_bot_at(address, word_size);
+    update_bot_if_crossing_boundary(address, word_size);
   }
   // Fill in the object.
   CollectedHeap::fill_with_object(address, word_size, zap);

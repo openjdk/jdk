@@ -26,7 +26,6 @@
 #define SHARE_GC_G1_HEAPREGION_HPP
 
 #include "gc/g1/g1BlockOffsetTable.hpp"
-#include "gc/g1/g1EvacFailureObjectsSet.hpp"
 #include "gc/g1/g1HeapRegionTraceType.hpp"
 #include "gc/g1/g1SurvRateGroup.hpp"
 #include "gc/g1/heapRegionTracer.hpp"
@@ -163,13 +162,8 @@ public:
   inline HeapWord* allocate(size_t word_size);
   inline HeapWord* allocate(size_t min_word_size, size_t desired_word_size, size_t* actual_size);
 
-  // Update the BOT for the given address if it crosses the next
-  // BOT threshold at or after obj_start.
-  inline void update_bot_at(HeapWord* obj_start, size_t obj_size);
-  // Update BOT at the given threshold for the given object. The
-  // given object must cross the threshold.
-  inline void update_bot_crossing_threshold(HeapWord** threshold, HeapWord* obj_start, HeapWord* obj_end);
-  inline HeapWord* bot_threshold_for_addr(const void* addr);
+  // Update BOT if this obj is the first entering a new card (i.e. crossing the card boundary).
+  inline void update_bot_if_crossing_boundary(HeapWord* obj_start, size_t obj_size);
 
   // Full GC support methods.
 
@@ -267,8 +261,6 @@ private:
   double _gc_efficiency;
 
   uint _node_index;
-
-  G1EvacFailureObjectsSet _evac_failure_objs;
 
   void report_region_type_change(G1HeapRegionTraceType::Type to);
 
@@ -566,11 +558,6 @@ public:
 
   // Update the region state after a failed evacuation.
   void handle_evacuation_failure();
-  // Record an object that failed evacuation within this region.
-  void record_evac_failure_obj(oop obj);
-  // Applies the given closure to all previously recorded objects
-  // that failed evacuation in ascending address order.
-  void process_and_drop_evac_failure_objs(ObjectClosure* closure);
 
   // Iterate over the objects overlapping the given memory region, applying cl
   // to all references in the region.  This is a helper for

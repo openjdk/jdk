@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,9 @@ package sun.jvm.hotspot.ui;
 import java.awt.*;
 import java.awt.datatransfer.*;
 import java.awt.event.*;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.math.*;
 import java.util.*;
 import javax.swing.*;
@@ -35,9 +37,12 @@ import javax.swing.event.*;
 import javax.swing.table.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.ui.*;
+import sun.jvm.hotspot.utilities.PointerFinder;
+import sun.jvm.hotspot.utilities.PointerLocation;
 
 public class MemoryPanel extends JPanel {
   private boolean is64Bit;
+  private boolean isAnnotated;
   private Debugger debugger;
   private int addressSize;
   private String unmappedAddrString;
@@ -78,10 +83,11 @@ public class MemoryPanel extends JPanel {
     }
   }
 
-  public MemoryPanel(final Debugger debugger, boolean is64Bit) {
+  public MemoryPanel(final Debugger debugger, boolean isAnnotated, boolean is64Bit) {
     super();
     this.debugger = debugger;
     this.is64Bit = is64Bit;
+    this.isAnnotated = isAnnotated;
     if (is64Bit) {
       addressSize = 8;
       unmappedAddrString = "??????????????????";
@@ -98,23 +104,58 @@ public class MemoryPanel extends JPanel {
           return numVisibleRows;
         }
         public int getColumnCount() {
-          return 2;
+          return isAnnotated ? 1 : 2;
         }
         public Object getValueAt(int row, int column) {
-          switch (column) {
-          case 0:  return bigIntToHexString(startVal.add(new BigInteger(Integer.toString((row * addressSize)))));
-          case 1: {
-            try {
-              Address addr = bigIntToAddress(startVal.add(new BigInteger(Integer.toString((row * addressSize)))));
-              if (addr != null) {
-                return addressToString(addr.getAddressAt(0));
+          // When not annotated, we just display the address followed by its contents in two
+          // separate columns. When annotated the format is just one column which contains:
+          //   <address>: <contents> <PointerFinder output>
+          // For example:
+          //   0x00007f7eb010c330: 0x00007f7eb6c9dfb0 vtable for os::PlatformMonitor + 0x10
+          if (!isAnnotated) {
+            switch (column) {
+            case 0:  return bigIntToHexString(startVal.add(new BigInteger(Integer.toString((row * addressSize)))));
+            case 1: {
+              try {
+                Address addr = bigIntToAddress(startVal.add(new BigInteger(Integer.toString((row * addressSize)))));
+                if (addr != null) {
+                  return addressToString(addr.getAddressAt(0));
+                }
+                return unmappedAddrString;
+              } catch (UnmappedAddressException e) {
+                return unmappedAddrString;
               }
-              return unmappedAddrString;
-            } catch (UnmappedAddressException e) {
-              return unmappedAddrString;
             }
-          }
-          default: throw new RuntimeException("Column " + column + " out of bounds");
+            default: throw new RuntimeException("Column " + column + " out of bounds");
+            }
+          } else {
+            switch (column) {
+            case 0: {
+              BigInteger bigaddr = startVal.add(new BigInteger(Integer.toString((row * addressSize))));
+              Address addr = bigIntToAddress(bigaddr);
+
+              String col1 = bigIntToHexString(bigaddr);
+              String col2 = unmappedAddrString;
+              String col3 = "";
+
+              if (addr != null) {
+                try {
+                  col2 = addressToString(addr.getAddressAt(0));
+                  PointerLocation loc = PointerFinder.find(addr.getAddressAt(0));
+                  if (!loc.isUnknown()) {
+                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                    PrintStream tty = new PrintStream(bos);
+                    loc.printOn(tty, false, false);
+                    col3 = bos.toString();
+                  }
+                } catch (UnmappedAddressException e) {
+                }
+              }
+
+              return col1 + ": " + col2 + " " + col3;
+            }
+            default: throw new RuntimeException("Column " + column + " out of bounds");
+            }
           }
         }
         public boolean isCellEditable(int row, int col) {
@@ -198,6 +239,15 @@ public class MemoryPanel extends JPanel {
         private void handleImport(JComponent c, String str) {
           // do whatever you want with the string here
           try {
+            // If someone drag-n-dropped a selection from the Annotated Memory Viewer,
+            // window, it will look like this:
+            //   0x00007f7eb010c330: 0x00007f7eb6c9dfb0 vtable for os::PlatformMonitor + 0x10
+            // We need to grab the second address.
+            int secondAddrStartIndex = str.indexOf("0x", 2);
+            if (secondAddrStartIndex != -1) {
+              str = str.substring(secondAddrStartIndex);
+              str = str.split("\\s")[0];
+            }
             makeVisible(debugger.parseAddress(str));
             clearSelection();
             table.clearSelection();

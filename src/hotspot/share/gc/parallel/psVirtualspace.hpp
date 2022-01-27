@@ -57,25 +57,19 @@ class PSVirtualSpace : public CHeapObj<mtGC> {
 
  public:
   PSVirtualSpace(ReservedSpace rs, size_t alignment);
-  PSVirtualSpace(ReservedSpace rs);
 
   ~PSVirtualSpace();
 
-  // Eventually all instances should be created with the above 1- or 2-arg
-  // constructors.  Then the 1st constructor below should become protected and
-  // the 2nd ctor and initialize() removed.
-  PSVirtualSpace(size_t alignment):
-    _alignment(alignment),
-    _reserved_low_addr(NULL),
-    _reserved_high_addr(NULL),
-    _committed_low_addr(NULL),
-    _committed_high_addr(NULL),
-    _special(false) {
-  }
   PSVirtualSpace();
   void initialize(ReservedSpace rs);
 
-  bool contains(void* p)      const;
+  bool is_in_committed(const void* p) const {
+    return (p >= committed_low_addr()) && (p < committed_high_addr());
+  }
+
+  bool is_in_reserved(const void* p) const {
+    return (p >= reserved_low_addr()) && (p < reserved_high_addr());
+  }
 
   // Accessors (all sizes are bytes).
   size_t alignment()          const { return _alignment; }
@@ -85,6 +79,7 @@ class PSVirtualSpace : public CHeapObj<mtGC> {
   char* committed_high_addr() const { return _committed_high_addr; }
   bool  special()             const { return _special; }
 
+  // Return size in bytes
   inline size_t committed_size()   const;
   inline size_t reserved_size()    const;
   inline size_t uncommitted_size() const;
@@ -103,8 +98,6 @@ class PSVirtualSpace : public CHeapObj<mtGC> {
           bool is_aligned(size_t val) const;
           bool is_aligned(char* val) const;
           void verify() const;
-  virtual bool grows_up() const   { return true; }
-          bool grows_down() const { return !grows_up(); }
 
   // Helper class to verify a space when entering/leaving a block.
   class PSVirtualSpaceVerifier: public StackObj {

@@ -78,10 +78,6 @@ protected:
   // covered regions defined in the constructor are ever in use.
   int find_covering_region_by_base(HeapWord* base);
 
-  // Same as above, but finds the region containing the given address
-  // instead of starting at a given base address.
-  int find_covering_region_containing(HeapWord* addr);
-
   // Returns the leftmost end of a committed region corresponding to a
   // covered region before covered region "ind", or else "NULL" if "ind" is
   // the first covered region.

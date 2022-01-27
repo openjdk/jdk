@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -434,6 +434,14 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Convert "(A+X) - (B+X)" into "A - B"
   if( op1 == Op_AddL && op2 == Op_AddL && in1->in(2) == in2->in(2) )
     return new SubLNode( in1->in(1), in2->in(1) );
+
+  // Convert "(A+X) - (X+B)" into "A - B"
+  if( op1 == Op_AddL && op2 == Op_AddL && in1->in(2) == in2->in(1) )
+    return new SubLNode( in1->in(1), in2->in(2) );
+
+  // Convert "(X+A) - (B+X)" into "A - B"
+  if( op1 == Op_AddL && op2 == Op_AddL && in1->in(1) == in2->in(2) )
+    return new SubLNode( in1->in(2), in2->in(1) );
 
   // Convert "A-(B-C)" into (A+C)-B"
   if( op2 == Op_SubL && in2->outcnt() == 1) {
@@ -1837,6 +1845,64 @@ bool BoolNode::is_counted_loop_exit_test() {
     }
   }
   return false;
+}
+
+//=============================================================================
+//------------------------------Value------------------------------------------
+const Type* AbsNode::Value(PhaseGVN* phase) const {
+  const Type* t1 = phase->type(in(1));
+  if (t1 == Type::TOP) return Type::TOP;
+
+  switch (t1->base()) {
+  case Type::Int: {
+    const TypeInt* ti = t1->is_int();
+    if (ti->is_con()) {
+      return TypeInt::make(uabs(ti->get_con()));
+    }
+    break;
+  }
+  case Type::Long: {
+    const TypeLong* tl = t1->is_long();
+    if (tl->is_con()) {
+      return TypeLong::make(uabs(tl->get_con()));
+    }
+    break;
+  }
+  case Type::FloatCon:
+    return TypeF::make(abs(t1->getf()));
+  case Type::DoubleCon:
+    return TypeD::make(abs(t1->getd()));
+  default:
+    break;
+  }
+
+  return bottom_type();
+}
+
+//------------------------------Identity----------------------------------------
+Node* AbsNode::Identity(PhaseGVN* phase) {
+  Node* in1 = in(1);
+  // No need to do abs for non-negative values
+  if (phase->type(in1)->higher_equal(TypeInt::POS) ||
+      phase->type(in1)->higher_equal(TypeLong::POS)) {
+    return in1;
+  }
+  // Convert "abs(abs(x))" into "abs(x)"
+  if (in1->Opcode() == Opcode()) {
+    return in1;
+  }
+  return this;
+}
+
+//------------------------------Ideal------------------------------------------
+Node* AbsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* in1 = in(1);
+  // Convert "abs(0-x)" into "abs(x)"
+  if (in1->is_Sub() && phase->type(in1->in(1))->is_zero_type()) {
+    set_req_X(1, in1->in(2), phase);
+    return this;
+  }
+  return NULL;
 }
 
 //=============================================================================

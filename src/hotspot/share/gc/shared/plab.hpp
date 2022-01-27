@@ -94,9 +94,6 @@ public:
     }
   }
 
-  // Allocate the object aligned to "alignment_in_bytes".
-  inline HeapWord* allocate_aligned(size_t word_sz, unsigned short alignment_in_bytes);
-
   // Undo any allocation in the buffer, which is required to be of the
   // "obj" of the given "word_sz".
   void undo_allocation(HeapWord* obj, size_t word_sz);
@@ -119,7 +116,7 @@ public:
   }
 
   // Sets the space of the buffer to be [buf, space+word_sz()).
-  virtual void set_buf(HeapWord* buf, size_t new_word_sz) {
+  void set_buf(HeapWord* buf, size_t new_word_sz) {
     assert(new_word_sz > AlignmentReserve, "Too small");
     _word_sz = new_word_sz;
 

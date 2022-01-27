@@ -55,7 +55,7 @@ private:
   volatile u_char* _offset_array;  // byte array keeping backwards offsets
 
   void check_offset(size_t offset, const char* msg) const {
-    assert(offset <= BOTConstants::card_size_in_words(),
+    assert(offset < BOTConstants::card_size_in_words(),
            "%s - offset: " SIZE_FORMAT ", N_words: %u",
            msg, offset, BOTConstants::card_size_in_words());
   }
@@ -129,10 +129,6 @@ private:
   // that is closed: [start_index, end_index]
   void set_remainder_to_point_to_start_incl(size_t start, size_t end);
 
-  // Zero out the entry for _bottom (offset will be zero). Does not check for availability of the
-  // memory first.
-  void zero_bottom_entry_raw();
-
   inline size_t block_size(const HeapWord* p) const;
 
   // Returns the address of a block whose start is at most "addr".
@@ -164,8 +160,7 @@ public:
 
   void verify() const;
 
-  // Given an address calculate where the next threshold needing an update is.
-  inline HeapWord* threshold_for_addr(const void* addr);
+  inline HeapWord* align_up_by_card_size(HeapWord* const addr) const;
 
   // Returns the address of the start of the block containing "addr", or
   // else "null" if it is covered by no block.  (May have side effects,
@@ -177,14 +172,10 @@ public:
   // discussed above.
   inline HeapWord* block_start_const(const void* addr) const;
 
-  // Initialize the threshold to reflect the first boundary after the
-  // bottom of the covered region.
-  void initialize_threshold();
+  // Reset bot to be empty.
+  void reset_bot();
 
-  void reset_bot() {
-    zero_bottom_entry_raw();
-    initialize_threshold();
-  }
+  bool is_empty() const;
 
   // Return the next threshold, the point at which the table should be
   // updated.

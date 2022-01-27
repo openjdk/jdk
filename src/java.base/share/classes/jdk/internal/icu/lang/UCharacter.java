@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ import jdk.internal.icu.util.VersionInfo;
  * <p>
  * Further detail on differences can be determined using the program
  *        <a href=
- * "http://source.icu-project.org/repos/icu/icu4j/trunk/src/com/ibm/icu/dev/test/lang/UCharacterCompare.java">
+ * "https://github.com/unicode-org/icu/blob/main/icu4j/main/tests/core/src/com/ibm/icu/dev/test/lang/UCharacterCompare.java">
  *        com.ibm.icu.dev.test.lang.UCharacterCompare</a>
  * </p>
  * <p>
@@ -101,9 +101,9 @@ import jdk.internal.icu.util.VersionInfo;
  * For more information see
  * <a href="http://www.unicode/org/ucd/">"About the Unicode Character Database"</a>
  * (http://www.unicode.org/ucd/)
- * and the <a href="http://www.icu-project.org/userguide/properties.html">ICU
+ * and the <a href="https://unicode-org.github.io/icu/userguide/strings/properties">ICU
  * User Guide chapter on Properties</a>
- * (http://www.icu-project.org/userguide/properties.html).
+ * (https://unicode-org.github.io/icu/userguide/strings/properties).
  * </p>
  * <p>
  * There are also functions that provide easy migration from C/POSIX functions

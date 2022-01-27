@@ -191,7 +191,7 @@ public class IOUtils {
             PrintStream consumer, boolean writeOutputToFile, long timeout)
             throws IOException {
         exec(pb, testForPresenceOnly, consumer, writeOutputToFile,
-                Executor.INFINITE_TIMEOUT, false);
+                timeout, false);
     }
 
     static void exec(ProcessBuilder pb, boolean testForPresenceOnly,
