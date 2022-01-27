@@ -1384,7 +1384,7 @@ char** os::split_path(const char* path, size_t* elements, size_t file_name_lengt
 // pages, false otherwise.
 bool os::stack_shadow_pages_available(Thread *thread, const methodHandle& method, address sp) {
   if (!thread->is_Java_thread()) return false;
-  // Check if we have StackShadowPages above the yellow zone.  This parameter
+  // Check if we have StackShadowPages above the guard zone. This parameter
   // is dependent on the depth of the maximum VM call stack possible from
   // the handler for stack overflow.  'instanceof' in the stack overflow
   // handler or a println uses at least 8k stack of VM and native code
@@ -1392,9 +1392,7 @@ bool os::stack_shadow_pages_available(Thread *thread, const methodHandle& method
   const int framesize_in_bytes =
     Interpreter::size_top_interpreter_activation(method()) * wordSize;
 
-  address limit = JavaThread::cast(thread)->stack_end() +
-                  (StackOverflow::stack_guard_zone_size() + StackOverflow::stack_shadow_zone_size());
-
+  address limit = JavaThread::cast(thread)->stack_overflow_state()->shadow_zone_safe_limit();
   return sp > (limit + framesize_in_bytes);
 }
 
