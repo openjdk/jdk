@@ -512,6 +512,15 @@ of the release.
 .RS
 .RE
 .TP
+.B \f[CB]\-\-finalization=\f[R]\f[I]value\f[R]
+Controls whether the JVM performs finalization of objects.
+Valid values are "enabled" and "disabled".
+Finalization is enabled by default, so the value "enabled" does nothing.
+The value "disabled" disables finalization, so that no finalizers are
+invoked.
+.RS
+.RE
+.TP
 .B \f[CB]\-\-module\-path\f[R] \f[I]modulepath\f[R]... or \f[CB]\-p\f[R] \f[I]modulepath\f[R]
 A semicolon (\f[CB];\f[R]) separated list of directories in which each
 directory is a directory of modules.

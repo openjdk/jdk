@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 #include "gc/g1/g1FullGCCompactTask.hpp"
 #include "gc/g1/g1FullGCMarker.inline.hpp"
 #include "gc/g1/g1FullGCMarkTask.hpp"
-#include "gc/g1/g1FullGCPrepareTask.hpp"
+#include "gc/g1/g1FullGCPrepareTask.inline.hpp"
 #include "gc/g1/g1FullGCScope.hpp"
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1Policy.hpp"
@@ -297,14 +297,67 @@ void G1FullCollector::phase1_mark_live_objects() {
 }
 
 void G1FullCollector::phase2_prepare_compaction() {
-  GCTraceTime(Info, gc, phases) info("Phase 2: Prepare for compaction", scope()->timer());
+  GCTraceTime(Info, gc, phases) info("Phase 2: Prepare compaction", scope()->timer());
+
+  phase2a_determine_worklists();
+
+  bool has_free_compaction_targets = phase2b_forward_oops();
+
+  // Try to avoid OOM immediately after Full GC in case there are no free regions
+  // left after determining the result locations (i.e. this phase). Prepare to
+  // maximally compact the tail regions of the compaction queues serially.
+  if (!has_free_compaction_targets) {
+    phase2c_prepare_serial_compaction();
+  }
+}
+
+void G1FullCollector::phase2a_determine_worklists() {
+  GCTraceTime(Debug, gc, phases) debug("Phase 2: Determine work lists", scope()->timer());
+
+  G1DetermineCompactionQueueClosure cl(this);
+  _heap->heap_region_iterate(&cl);
+}
+
+bool G1FullCollector::phase2b_forward_oops() {
+  GCTraceTime(Debug, gc, phases) debug("Phase 2: Prepare parallel compaction", scope()->timer());
+
   G1FullGCPrepareTask task(this);
   run_task(&task);
 
-  // To avoid OOM when there is memory left.
-  if (!task.has_freed_regions()) {
-    task.prepare_serial_compaction();
+  return task.has_free_compaction_targets();
+}
+
+void G1FullCollector::phase2c_prepare_serial_compaction() {
+  GCTraceTime(Debug, gc, phases) debug("Phase 2: Prepare serial compaction", scope()->timer());
+  // At this point we know that after parallel compaction there will be no
+  // completely free regions. That means that the last region of
+  // all compaction queues still have data in them. We try to compact
+  // these regions in serial to avoid a premature OOM when the mutator wants
+  // to allocate the first eden region after gc.
+  for (uint i = 0; i < workers(); i++) {
+    G1FullGCCompactionPoint* cp = compaction_point(i);
+    if (cp->has_regions()) {
+      serial_compaction_point()->add(cp->remove_last());
+    }
   }
+
+  // Update the forwarding information for the regions in the serial
+  // compaction point.
+  G1FullGCCompactionPoint* cp = serial_compaction_point();
+  for (GrowableArrayIterator<HeapRegion*> it = cp->regions()->begin(); it != cp->regions()->end(); ++it) {
+    HeapRegion* current = *it;
+    if (!cp->is_initialized()) {
+      // Initialize the compaction point. Nothing more is needed for the first heap region
+      // since it is already prepared for compaction.
+      cp->initialize(current, false);
+    } else {
+      assert(!current->is_humongous(), "Should be no humongous regions in compaction queue");
+      G1SerialRePrepareClosure re_prepare(cp, current);
+      current->set_compaction_top(current->bottom());
+      current->apply_to_marked_objects(mark_bitmap(), &re_prepare);
+    }
+  }
+  cp->update();
 }
 
 void G1FullCollector::phase3_adjust_pointers() {

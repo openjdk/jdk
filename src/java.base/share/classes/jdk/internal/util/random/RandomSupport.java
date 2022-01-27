@@ -645,7 +645,7 @@ public class RandomSupport {
         if (origin < bound) {
             r = r * (bound - origin) + origin;
             if (r >= bound)  // may need to correct a rounding problem
-                r = Double.longBitsToDouble(Double.doubleToLongBits(bound) - 1);
+                r = Math.nextAfter(r, origin);
         }
         return r;
     }
@@ -677,7 +677,7 @@ public class RandomSupport {
         double r = rng.nextDouble();
         r = r * bound;
         if (r >= bound)  // may need to correct a rounding problem
-            r = Double.longBitsToDouble(Double.doubleToLongBits(bound) - 1);
+            r = Math.nextDown(r);
         return r;
     }
 
