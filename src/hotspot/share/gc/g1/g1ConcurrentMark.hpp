@@ -496,6 +496,11 @@ public:
   void concurrent_cycle_abort();
   void concurrent_cycle_end();
 
+  // Notifies marking threads to abort. This is a best-effort notification. Does not
+  // guarantee or update any state after the call. Root region scan must not be
+  // running.
+  void abort_marking_threads();
+
   void update_accum_task_vtime(int i, double vtime) {
     _accum_task_vtime[i] += vtime;
   }

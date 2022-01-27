@@ -102,8 +102,13 @@ public final class PSSParameters extends AlgorithmParametersSpi {
                 if (!val.getOID().equals(AlgorithmId.MGF1_oid)) {
                     throw new IOException("Only MGF1 mgf is supported");
                 }
+
+                byte[] encodedParams = val.getEncodedParams();
+                if (encodedParams == null) {
+                    throw new IOException("Missing MGF1 parameters");
+                }
                 AlgorithmId params = AlgorithmId.parse(
-                        new DerValue(val.getEncodedParams()));
+                        new DerValue(encodedParams));
                 String mgfDigestName = params.getName();
                 switch (mgfDigestName) {
                 case "SHA-1":
