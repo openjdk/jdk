@@ -179,10 +179,10 @@ On Windows, it is important that you pay attention to the instructions in the
 
 Windows is the only non-POSIX OS supported by the JDK, and as such, requires
 some extra care. A POSIX support layer is required to build on Windows.
-Currently, the only supported such layers are Cygwin and Windows Subsystem for
-Linux (WSL). (Msys is no longer supported due to a too old bash; msys2 would
-likely be possible to support in a future version but that would require effort
-to implement.)
+Currently, the only supported such layers are Cygwin, Windows Subsystem for
+Linux (WSL), and MSys 2. (MSys is no longer supported due to an outdated bash;
+OpenJDK supports use of MSys 2 in the build process, but this might result in
+odd instabilities during the build as MSys 2 support is still experimental.)
 
 Internally in the build system, all paths are represented as Unix-style paths,
 e.g. `/cygdrive/c/git/jdk/Makefile` rather than `C:\git\jdk\Makefile`. This
