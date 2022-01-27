@@ -29,9 +29,8 @@
 #include "gc/g1/g1HeapRegionChunk.hpp"
 #include "runtime/atomic.hpp"
 
-bool G1EvacFailureRegions::record(uint region_idx, size_t word_sz, G1RegionMarkStatsCache* mark_stats_cache) {
+bool G1EvacFailureRegions::record(uint region_idx) {
   assert(region_idx < _max_regions, "must be");
-  mark_stats_cache->add_live_words(region_idx, word_sz);
 
   bool success = _regions_failed_evacuation.par_set_bit(region_idx,
                                                         memory_order_relaxed);

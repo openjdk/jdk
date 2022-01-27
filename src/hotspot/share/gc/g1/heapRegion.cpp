@@ -295,11 +295,12 @@ void HeapRegion::note_self_forwarding_removal_start(bool during_concurrent_start
   }
 }
 
-void HeapRegion::note_self_forwarding_removal_end(size_t marked_bytes) {
-  assert(marked_bytes <= used(),
-         "marked: " SIZE_FORMAT " used: " SIZE_FORMAT, marked_bytes, used());
+void HeapRegion::note_self_forwarding_removal_start_2() {
   _prev_top_at_mark_start = top();
-  _prev_marked_bytes = marked_bytes;
+}
+
+void HeapRegion::note_self_forwarding_removal_end_par(size_t marked_bytes) {
+  Atomic::add(&_prev_marked_bytes, marked_bytes, memory_order_relaxed);
 }
 
 // Code roots support

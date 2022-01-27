@@ -65,7 +65,7 @@ public:
                                  _hr->bottom() : _chunk->first_obj_in_chunk();
   }
 
-  size_t marked_bytes() { return _marked_words * HeapWordSize; }
+  size_t marked_words() const { return _marked_words; }
 
   // Handle the marked objects in the region. These are self-forwarded objects
   // that need to be kept live. We need to update the remembered sets of these
@@ -155,6 +155,7 @@ public:
 
 class RemoveSelfForwardPtrHRChunkClosure : public G1HeapRegionChunkClosure {
   G1CollectedHeap* _g1h;
+  size_t* _marked_words_in_regions;
   uint _worker_id;
 
   void remove_self_forward_ptr_by_walking_chunk(G1HeapRegionChunk* chunk,
@@ -167,6 +168,7 @@ class RemoveSelfForwardPtrHRChunkClosure : public G1HeapRegionChunkClosure {
     // All objects that failed evacuation has been marked in the prev bitmap.
     // Use the bitmap to apply the above closure to all failing objects.
     chunk->apply_to_marked_objects(&rspc);
+    _marked_words_in_regions[chunk->heap_region()->hrm_index()] += rspc.marked_words();
     // Need to zap the remainder area of the processed region.
     if (!chunk->empty()) {
       rspc.zap_remainder();
@@ -174,8 +176,10 @@ class RemoveSelfForwardPtrHRChunkClosure : public G1HeapRegionChunkClosure {
   }
 
 public:
-  RemoveSelfForwardPtrHRChunkClosure(uint worker_id) :
+  RemoveSelfForwardPtrHRChunkClosure(size_t* marked_words_in_regions,
+                                     uint worker_id) :
     _g1h(G1CollectedHeap::heap()),
+    _marked_words_in_regions(marked_words_in_regions),
     _worker_id(worker_id) {
   }
 
@@ -222,12 +226,10 @@ public:
                                                    1,
                                                    G1GCPhaseTimes::RestoreRetainedRegionsNum);
 
-    size_t live_bytes = _evac_failure_regions->live_bytes_in_region(hr->hrm_index());
-
     hr->rem_set()->clean_strong_code_roots(hr);
     hr->rem_set()->clear_locked(true);
 
-    hr->note_self_forwarding_removal_end(live_bytes);
+    hr->note_self_forwarding_removal_start_2();
     _g1h->verifier()->check_bitmaps("Self-Forwarding Ptr Removal", hr);
 
     return false;
@@ -242,9 +244,22 @@ G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask(G1EvacFailureRegi
 
 void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
   RemoveSelfForwardPtrHRClosure prepare_region_closure(worker_id, _evac_failure_regions);
-  RemoveSelfForwardPtrHRChunkClosure chunk_closure(worker_id);
+
+  // TODO: maybe only allocate and iterate through evacuation failed regions
+  size_t marked_words_in_regions[_evac_failure_regions->max_regions()];
+  memset(marked_words_in_regions, 0, sizeof marked_words_in_regions);
+  RemoveSelfForwardPtrHRChunkClosure chunk_closure(marked_words_in_regions, worker_id);
+
   // Iterate through all chunks in regions that failed evacuation during the entire collection.
   _evac_failure_regions->par_iterate_chunks_in_regions(&prepare_region_closure, &chunk_closure, worker_id);
+
+  // Sync marked words of regions to HeapRegion.
+  for (uint idx = 0; idx < _evac_failure_regions->max_regions(); idx++) {
+    if (marked_words_in_regions[idx] > 0) {
+      HeapRegion* region = _g1h->region_at(idx);
+      region->note_self_forwarding_removal_end_par(marked_words_in_regions[idx] * BytesPerWord);
+    }
+  }
 }
 
 uint G1ParRemoveSelfForwardPtrsTask::num_failed_regions() const {

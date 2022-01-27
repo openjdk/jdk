@@ -122,9 +122,6 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
   G1BatchedTask("Post Evacuate Cleanup 1", G1CollectedHeap::heap()->phase_times())
 {
   bool evacuation_failed = evac_failure_regions->evacuation_failed();
-  if (evacuation_failed) {
-    per_thread_states->flush_evac_failure_live_data();
-  }
 
   add_serial_task(new MergePssTask(per_thread_states));
   add_serial_task(new RecalculateUsedTask(evacuation_failed));

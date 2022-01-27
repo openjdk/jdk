@@ -512,7 +512,8 @@ public:
 
   // Notify the region that we have finished processing self-forwarded
   // objects during evac failure handling.
-  void note_self_forwarding_removal_end(size_t marked_bytes);
+  void note_self_forwarding_removal_start_2();
+  void note_self_forwarding_removal_end_par(size_t mared_bytes);
 
   uint index_in_opt_cset() const {
     assert(has_index_in_opt_cset(), "Opt cset index not set.");

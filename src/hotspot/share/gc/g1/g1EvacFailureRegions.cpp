@@ -37,17 +37,11 @@ G1EvacFailureRegions::G1EvacFailureRegions() :
   _chunk_claimers(nullptr),
   _evac_failure_regions_cur_length(0),
   _max_regions(0) {
-  _live_stats = NEW_C_HEAP_ARRAY(G1RegionMarkStats, G1CollectedHeap::heap()->max_regions(), mtGC);
-  for (uint j = 0; j < G1CollectedHeap::heap()->max_regions(); j++) {
-    _live_stats[j].clear();
-  }
 }
 
 G1EvacFailureRegions::~G1EvacFailureRegions() {
   assert(_evac_failure_regions == nullptr, "not cleaned up");
   assert(_chunk_claimers == nullptr, "not cleaned up");
-  FREE_C_HEAP_ARRAY(uint, _live_stats);
-  _live_stats = nullptr;
 }
 
 void G1EvacFailureRegions::pre_collection(uint max_regions) {
