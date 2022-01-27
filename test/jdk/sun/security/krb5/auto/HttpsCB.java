@@ -116,8 +116,8 @@ public class HttpsCB {
     public static void main(String[] args)
             throws Exception {
 
-        boolean expected1 = Boolean.parseBoolean(args[0]);
-        boolean expected2 = Boolean.parseBoolean(args[1]);
+        boolean expectCBT = Boolean.parseBoolean(args[0]);
+        boolean expectNoCBT = Boolean.parseBoolean(args[1]);
 
         System.setProperty("sun.security.krb5.debug", "true");
 
@@ -184,8 +184,8 @@ public class HttpsCB {
                 }
         }, null);
 
-        Asserts.assertEQ(visit(sc, cbtURL), expected1);
-        Asserts.assertEQ(visit(sc, normalURL), expected2);
+        Asserts.assertEQ(visit(sc, cbtURL), expectCBT);
+        Asserts.assertEQ(visit(sc, normalURL), expectNoCBT);
     }
 
     static boolean visit(SSLContext sc, URL url) {
