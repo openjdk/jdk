@@ -21,21 +21,40 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6263951
  * @summary Text should be B&W, grayscale, and LCD.
- * @run main/manual=yesno TextAAHintsTest
+ * @run main/manual TextAAHintsTest
  */
-import java.awt.*;
-import java.awt.geom.*;
-import java.awt.image.*;
+import java.awt.AWTException;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.ImageCapabilities;
+import java.awt.Panel;
+import java.awt.RenderingHints;
+import java.awt.TextArea;
+import java.awt.image.BufferedImage;
+import java.awt.image.VolatileImage;
 
-public class TextAAHintsTest extends Component {
+public class TextAAHintsTest  extends Component {
 
-    String black = "This text should be solid black";
-    String gray  = "This text should be gray scale anti-aliased";
-    String lcd   = "This text should be LCD sub-pixel text (coloured).";
+    private static final String black = "This text should be solid black";
+    private static final String gray  = "This text should be gray scale anti-aliased";
+    private static final String lcd   = "This text should be LCD sub-pixel text (coloured).";
+    private static Frame frame;
+    private static Thread mainThread = null;
+    private static boolean testPassed = false;
+    private static boolean isInterrupted = false;
+    private static final int testTimeOut = 300000;
+    private static String failureReason;
 
     public void paint(Graphics g) {
 
@@ -139,11 +158,82 @@ public class TextAAHintsTest extends Component {
         return new Dimension(500,300);
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void createTestUI() {
+        frame = new Frame("Composite and Text Test");
+        TextAAHintsTest textAAHintsTestObject = new TextAAHintsTest();
+        frame.add(textAAHintsTestObject, BorderLayout.NORTH);
 
-        Frame f = new Frame("Composite and Text Test");
-        f.add(new TextAAHintsTest(), BorderLayout.CENTER);
-        f.pack();
-        f.setVisible(true);
+        String instructions = """
+
+                Note: Texts are rendered with different TEXT_ANTIALIASING &
+                   VALUE_TEXT_ANTIALIAS. Text should be B&W, grayscale, and LCD.
+                   Note: The results may be visually the same.
+                1. Verify that first set of text are rendered correctly.
+                2. Second set of text are created using BufferedImage of the first text.
+                3. Third set of text are created using VolatileImage of the first text.
+                """;
+        TextArea instructionTextArea = new TextArea(instructions, 8, 50);
+        instructionTextArea.setEnabled(false);
+        frame.add(instructionTextArea, BorderLayout.CENTER);
+
+        Panel controlPanel = new Panel();
+        Button passButton = new Button("Pass");
+        passButton.addActionListener(e->{
+            testPassed = true;
+            isInterrupted = true;
+            mainThread.interrupt();
+        });
+        Button failButton = new Button("Fail");
+        failButton.addActionListener(e->{
+
+            // Show dialog to read why the testcase was failed and append the
+            // testcase failure reason to the output
+           final Dialog dialog = new Dialog(frame , "TestCase" +
+                    " failure reason", true);
+            TextArea textArea = new TextArea("", 5,60, TextArea.SCROLLBARS_BOTH);
+            dialog.add(textArea, BorderLayout.CENTER);
+
+            Button okButton = new Button("OK");
+            okButton.addActionListener(e1->{
+                failureReason = textArea.getText();
+                dialog.dispose();
+            });
+            Panel ctlPanel = new Panel();
+            ctlPanel.add(okButton);
+            dialog.add(ctlPanel, BorderLayout.SOUTH);
+            dialog.setLocationRelativeTo(null);
+            dialog.pack();
+            dialog.setVisible(true);
+
+            testPassed = false;
+            isInterrupted = true;
+            mainThread.interrupt();
+        });
+        controlPanel.add(passButton);
+        controlPanel.add(failButton);
+        frame.add(controlPanel, BorderLayout.SOUTH);
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        createTestUI();
+        mainThread = Thread.currentThread();
+        try {
+            mainThread.sleep(testTimeOut);
+        } catch (InterruptedException ex) {
+            if (!testPassed) {
+                throw new RuntimeException("Test failed : Reason : " + failureReason);
+            }
+        } finally {
+            frame.dispose();
+        }
+
+        if (!isInterrupted) {
+            throw new RuntimeException("Test Timed out after "
+                    + testTimeOut / 1000 + " seconds");
+        }
     }
 }
+
