@@ -3683,19 +3683,22 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
       addptr(len, 32);
       jcc(Assembler::notZero, COMPARE_WIDE_VECTORS);
 
-      movl(tmp1, result);
-      andl(tmp1, 0x0000001f);  //   tail count (in bytes)
-      testl(tmp1, tmp1);
-      jccb(Assembler::zero, DONE);
-
-      vmovdqu(vec1, Address(ary1, tmp1, Address::times_1, -32));
-      vptest(vec1, vec2);
-      jccb(Assembler::notZero, TRUE_LABEL);
-      jmpb(DONE);
-
-      bind(COMPARE_TAIL); // len is zero
+      // Here the data we compare against is wider than at least one
+      // 16 byte chunk, so we can check the tail by reading 16 bytes
+      // from the end and do one last vector comparison
       movl(len, result);
       andl(len, 0x0000001f);  //   tail count (in bytes)
+      jccb(Assembler::zero, DONE);
+
+      vmovdqu(vec1, Address(ary1, len, Address::times_1, -32));
+      vptest(vec1, vec2);
+      jccb(Assembler::zero, DONE);
+      subptr(result, len);
+      jmpb(DONE);
+
+      bind(COMPARE_TAIL);
+      movl(len, result);
+
       // Fallthru to tail compare
     } else if (UseSSE42Intrinsics) {
       // With SSE4.2, use double quad vector compare
@@ -3720,20 +3723,22 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
       addptr(len, 16);
       jcc(Assembler::notZero, COMPARE_WIDE_VECTORS);
 
-      movl(tmp1, result);
-      andl(tmp1, 0x0000000f);  //   tail count (in bytes)
-      testl(tmp1, tmp1);
-      jcc(Assembler::zero, DONE);
-
-      movdqu(vec1, Address(ary1, tmp1, Address::times_1, -16));
-      ptest(vec1, vec2);
-      jccb(Assembler::notZero, TRUE_LABEL);
-      jmpb(DONE);
-
-      bind(COMPARE_TAIL); // len is zero
+      // Here the data we compare against is wider than at least one
+      // 16 byte chunk, so we can check the tail by reading 16 bytes
+      // from the end and do one last vector comparison
       movl(len, result);
       andl(len, 0x0000000f);  //   tail count (in bytes)
+      jcc(Assembler::zero, DONE);
+
+      movdqu(vec1, Address(ary1, len, Address::times_1, -16));
+      ptest(vec1, vec2);
+      jccb(Assembler::zero, DONE);
+      subptr(result, len);
+      jmpb(DONE);
+
       // Fallthru to tail compare
+      bind(COMPARE_TAIL);
+      movl(len, result);
     }
   }
   // Compare 4-byte vectors
@@ -3768,7 +3773,8 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
   jccb(Assembler::zero, DONE);
 
   bind(TRUE_LABEL);
-  // there are negative bits: len holds the number of bytes left to scan in the main loop,
+  // there are negative bits: len holds the negative number of bytes
+  // left to scan in the main loop,
   addptr(result, len);
   // subtract the tail length from the result
   andl(result, tail_mask);

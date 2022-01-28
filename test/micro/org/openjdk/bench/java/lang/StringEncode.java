@@ -40,6 +40,7 @@ public class StringEncode {
     private String charsetName;
     private Charset charset;
     private String asciiString;
+    private String longAsciiString;
     private String utf16String;
     private String longUtf16String;
     private String longUtf16StartString;
@@ -51,6 +52,26 @@ public class StringEncode {
     public void setup() {
         charset = Charset.forName(charsetName);
         asciiString = "ascii string";
+        longAsciiString = """
+                 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam ac sem eu
+                 urna egestas placerat. Etiam finibus ipsum nulla, non mattis dolor cursus a.
+                 Nulla nec nisl consectetur, lacinia neque id, accumsan ante. Curabitur et
+                 sapien in magna porta ultricies. Sed vel pellentesque nibh. Pellentesque dictum
+                 dignissim diam eu ultricies. Class aptent taciti sociosqu ad litora torquent
+                 per conubia nostra, per inceptos himenaeos. Suspendisse erat diam, fringilla
+                 sed massa sed, posuere viverra orci. Suspendisse tempor libero non gravida
+                 efficitur. Vivamus lacinia risus non orci viverra, at consectetur odio laoreet.
+                 Suspendisse potenti.
+
+                 Phasellus vel nisi iaculis, accumsan quam sed, bibendum eros. Sed venenatis
+                 nulla tortor, et eleifend urna sodales id. Nullam tempus ac metus sit amet
+                 sollicitudin. Nam sed ex diam. Praesent vitae eros et neque condimentum
+                 consectetur eget non tortor. Praesent bibendum vel felis nec dignissim.
+                 Maecenas a enim diam. Suspendisse quis ligula at nisi accumsan lacinia id
+                 hendrerit sapien. Donec aliquam mattis lectus eu ultrices. Duis eu nisl
+                 euismod, blandit mauris vel, placerat urna. Etiam malesuada enim purus,
+                 tristique mollis odio blandit quis. Vivamus posuere.
+                 """;
         utf16String = "UTF-\uFF11\uFF16 string";
         longUtf16String = """
                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam ac sem eu
@@ -143,8 +164,9 @@ public class StringEncode {
     }
 
     @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public byte[] encodeAsciiCharsetName() throws Exception {
-        return asciiString.getBytes(charset);
+        return asciiString.getBytes(charsetName);
     }
 
     @Benchmark
@@ -155,9 +177,8 @@ public class StringEncode {
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public void encodeMix(Blackhole bh) throws Exception {
-        bh.consume(asciiString.getBytes(charset));
-        bh.consume(utf16String.getBytes(charset));
+    public byte[] encodeLongAscii() throws Exception {
+        return longAsciiString.getBytes(charset);
     }
 
     @Benchmark
@@ -176,6 +197,14 @@ public class StringEncode {
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public byte[] encodeUTF16() throws Exception {
         return utf16String.getBytes(charset);
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void encodeUTF16Mixed(Blackhole bh) throws Exception {
+        bh.consume(utf16String.getBytes(charset));
+        bh.consume(longUtf16StartString.getBytes(charset));
+        bh.consume(longUtf16String.getBytes(charset));
     }
 
     @Benchmark
@@ -204,4 +233,16 @@ public class StringEncode {
         bh.consume(latin1String.getBytes(charset));
     }
 
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void encodeAllMixed(Blackhole bh) throws Exception {
+        bh.consume(utf16String.getBytes(charset));
+        bh.consume(longUtf16StartString.getBytes(charset));
+        bh.consume(longUtf16String.getBytes(charset));
+        bh.consume(longLatin1EndString.getBytes(charset));
+        bh.consume(longLatin1StartString.getBytes(charset));
+        bh.consume(latin1String.getBytes(charset));
+        bh.consume(asciiString.getBytes(charset));
+        bh.consume(longA.getBytes(charset));
+    }
 }

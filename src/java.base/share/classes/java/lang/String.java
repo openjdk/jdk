@@ -534,25 +534,27 @@ public final class String
                 }
                 int sl = offset + length;
                 byte[] dst = new byte[length];
-                System.arraycopy(bytes, offset, dst, 0, dp);
-                offset += dp;
+                if (dp > 0) {
+                    System.arraycopy(bytes, offset, dst, 0, dp);
+                    offset += dp;
+                }
                 while (offset < sl) {
-                    int b1 = bytes[offset];
+                    int b1 = bytes[offset++];
                     if (b1 >= 0) {
                         dst[dp++] = (byte)b1;
-                        offset++;
                         continue;
                     }
-                    if ((b1 & 0xfe) == 0xc2 && offset + 1 < sl) { // b1 either 0xc2 or 0xc3
-                        int b2 = bytes[offset + 1];
+                    if ((b1 & 0xfe) == 0xc2 && offset < sl) { // b1 either 0xc2 or 0xc3
+                        int b2 = bytes[offset];
                         if (!isNotContinuation(b2)) {
                             dst[dp++] = (byte)decode2(b1, b2);
-                            offset += 2;
+                            offset++;
                             continue;
                         }
                     }
                     // anything not a latin1, including the repl
                     // we have to go with the utf16
+                    offset--;
                     break;
                 }
                 if (offset == sl) {
@@ -1262,14 +1264,21 @@ public final class String
         if (coder == UTF16)
             return encodeUTF8_UTF16(val, doReplace);
 
+        byte[] dst;
+        int i;
         int dp = StringCoding.countPositives(val, 0, val.length);
         if (dp == val.length) {
             return Arrays.copyOf(val, val.length);
         }
 
-        byte[] dst = new byte[dp + ((val.length - dp) << 1)];
-        int i = dp;
-        System.arraycopy(val, 0, dst, 0, dp);
+        if (dp > 0) {
+            dst = new byte[dp + ((val.length - dp) << 1)];
+            System.arraycopy(val, 0, dst, 0, dp);
+            i = dp;
+        } else {
+            i = 0;
+            dst = new byte[val.length << 1];
+        }
         while (i < val.length) {
             byte c = val[i++];
             if (c < 0) {
