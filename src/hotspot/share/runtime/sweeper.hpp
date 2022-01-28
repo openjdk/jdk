@@ -66,8 +66,8 @@ class NMethodSweeper : public AllStatic {
     MadeZombie,
     Flushed
   };
-  static int64_t  _traversals;                    // Stack scan count, also sweep ID.
-  static int64_t  _total_nof_code_cache_sweeps;   // Total number of full sweeps of the code cache
+  static int64_t   _traversals;                   // Stack scan count, also sweep ID.
+  static int64_t   _total_nof_code_cache_sweeps;  // Total number of full sweeps of the code cache
   static CompiledMethodIterator _current;         // Current compiled method
   static int       _seen;                         // Nof. nmethod we have currently processed in current pass of CodeCache
   static size_t    _sweep_threshold_bytes;        // The threshold for when to invoke sweeps
