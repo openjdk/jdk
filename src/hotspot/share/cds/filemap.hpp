@@ -567,6 +567,8 @@ public:
   bool  can_use_heap_regions();
   bool  load_heap_regions() NOT_CDS_JAVA_HEAP_RETURN_(false);
   bool  map_heap_regions() NOT_CDS_JAVA_HEAP_RETURN_(false);
+  address heap_region_runtime_start_address(FileMapRegion* spc, ptrdiff_t delta) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+  void set_shared_heap_runtime_delta(ptrdiff_t delta) NOT_CDS_JAVA_HEAP_RETURN;
   void  map_heap_regions_impl() NOT_CDS_JAVA_HEAP_RETURN;
   MapArchiveResult map_region(int i, intx addr_delta, char* mapped_base_address, ReservedSpace rs);
   bool  relocate_pointers_in_core_regions(intx addr_delta);

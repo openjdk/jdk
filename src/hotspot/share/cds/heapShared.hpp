@@ -422,9 +422,9 @@ private:
   // Run-time only
   static void clear_root(int index);
 
-  static void set_runtime_delta(ptrdiff_t offset) {
+  static void set_runtime_delta(ptrdiff_t delta) {
     assert(!UseCompressedOops, "must be");
-    _runtime_delta = offset;
+    _runtime_delta = delta;
   }
 
 #endif // INCLUDE_CDS_JAVA_HEAP
