@@ -23,14 +23,16 @@
 
 import jdk.test.lib.apps.LingeredApp;
 
+import java.lang.ref.Reference;
+
 public class LingeredAppWithLargeStringArray extends LingeredApp {
-    public static String[] hugeArray;
-    public static String[] smallArray = {"Just", "for", "testing"};;
     public static void main(String args[]) {
-        hugeArray = new String[Integer.MAX_VALUE/8];
+        String[] hugeArray = new String[Integer.MAX_VALUE/8];
+        String[] smallArray = {"Just", "for", "testing"};
         for (int i = 0; i < hugeArray.length/16; i++) {
             hugeArray[i] = new String(smallArray[i%3]);
         }
         LingeredApp.main(args);
+        Reference.reachabilityFence(hugeArray);
     }
  }
