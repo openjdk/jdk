@@ -279,6 +279,7 @@ void HeapRegion::note_self_forwarding_removal_start(bool during_concurrent_start
   // mark all objects we find to be self-forwarded on the prev
   // bitmap. So all objects need to be below PTAMS.
   _prev_marked_bytes = 0;
+  _prev_top_at_mark_start = top();
 
   if (during_concurrent_start) {
     // During concurrent start, we'll also explicitly mark all objects
@@ -293,10 +294,6 @@ void HeapRegion::note_self_forwarding_removal_start(bool during_concurrent_start
     _next_top_at_mark_start = bottom();
     _next_marked_bytes = 0;
   }
-}
-
-void HeapRegion::note_self_forwarding_removal_start_2() {
-  _prev_top_at_mark_start = top();
 }
 
 void HeapRegion::note_self_forwarding_removal_end_par(size_t marked_bytes) {

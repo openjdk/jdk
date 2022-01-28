@@ -197,53 +197,6 @@ public:
   }
 };
 
-class RemoveSelfForwardPtrHRClosure: public HeapRegionClosure {
-  G1CollectedHeap* _g1h;
-  uint _worker_id;
-
-  G1EvacFailureRegions* _evac_failure_regions;
-
-  G1GCPhaseTimes* _phase_times;
-
-public:
-  RemoveSelfForwardPtrHRClosure(uint worker_id,
-                                G1EvacFailureRegions* evac_failure_regions) :
-    _g1h(G1CollectedHeap::heap()),
-    _worker_id(worker_id),
-    _evac_failure_regions(evac_failure_regions),
-    _phase_times(G1CollectedHeap::heap()->phase_times()) {
-  }
-
-  bool do_heap_region(HeapRegion *hr) {
-    assert(!hr->is_pinned(), "Unexpected pinned region at index %u", hr->hrm_index());
-    assert(hr->in_collection_set(), "bad CS");
-    assert(_evac_failure_regions->contains(hr->hrm_index()), "precondition");
-
-    hr->clear_index_in_opt_cset();
-
-    bool during_concurrent_start = _g1h->collector_state()->in_concurrent_start_gc();
-    bool during_concurrent_mark = _g1h->collector_state()->mark_or_rebuild_in_progress();
-
-    hr->note_self_forwarding_removal_start(during_concurrent_start,
-                                           during_concurrent_mark);
-
-    hr->reset_bot();
-
-    _phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,
-                                                 _worker_id,
-                                                 1,
-                                                 G1GCPhaseTimes::RestoreRetainedRegionsNum);
-
-    hr->rem_set()->clean_strong_code_roots(hr);
-    hr->rem_set()->clear_locked(true);
-
-    hr->note_self_forwarding_removal_start_2();
-    _g1h->verifier()->check_bitmaps("Self-Forwarding Ptr Removal", hr);
-
-    return false;
-  }
-};
-
 G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask(G1EvacFailureRegions* evac_failure_regions) :
   WorkerTask("G1 Remove Self-forwarding Pointers"),
   _g1h(G1CollectedHeap::heap()),
@@ -251,7 +204,6 @@ G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask(G1EvacFailureRegi
   _evac_failure_regions(evac_failure_regions) { }
 
 void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
-  RemoveSelfForwardPtrHRClosure prepare_region_closure(worker_id, _evac_failure_regions);
 
   // TODO: maybe only allocate and iterate through evacuation failed regions
   size_t marked_words_in_regions[_evac_failure_regions->max_regions()];
@@ -259,7 +211,7 @@ void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
   RemoveSelfForwardPtrHRChunkClosure chunk_closure(marked_words_in_regions, worker_id);
 
   // Iterate through all chunks in regions that failed evacuation during the entire collection.
-  _evac_failure_regions->par_iterate_chunks_in_regions(&prepare_region_closure, &chunk_closure, worker_id);
+  _evac_failure_regions->par_iterate_chunks_in_regions(&chunk_closure, worker_id);
 
   // Sync marked words of regions to HeapRegion.
   for (uint idx = 0; idx < _evac_failure_regions->max_regions(); idx++) {

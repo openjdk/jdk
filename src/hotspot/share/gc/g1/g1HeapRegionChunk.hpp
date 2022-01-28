@@ -90,19 +90,7 @@ class G1HeapRegionChunksClaimer {
   const uint _chunk_num;
   const uint _chunk_size;
   const uint _region_idx;
-  volatile bool _region_claimed;
-  volatile bool _region_ready;
   CHeapBitMap _chunks;
-
-  bool claim_prepare_region() {
-    return !Atomic::cmpxchg(&_region_claimed, false, true);
-  }
-  bool region_ready() {
-    return Atomic::load(&_region_ready);
-  }
-  void set_region_ready() {
-    Atomic::store(&_region_ready, true);
-  }
 
 public:
   G1HeapRegionChunksClaimer(uint region_idx, bool region_ready = false);
@@ -115,22 +103,17 @@ public:
   uint chunk_num() {
     return _chunk_num;
   }
-
-  void prepare_region(HeapRegionClosure* prepare_region_closure, uint worker_id);
 };
 
 // Iterate through chunks of regions, for each region do single preparation.
 class G1ScanChunksInHeapRegionClosure : public HeapRegionClosure {
   G1HeapRegionChunksClaimer** _chunk_claimers;
-  // Preparation closure for a single region.
-  HeapRegionClosure* _prepare_region_closure;
   G1HeapRegionChunkClosure* _closure;
   uint _worker_id;
   const G1CMBitMap* const _bitmap;
 
 public:
   G1ScanChunksInHeapRegionClosure(G1HeapRegionChunksClaimer** chunk_claimers,
-                                  HeapRegionClosure* prepare_region_closure,
                                   G1HeapRegionChunkClosure* closure,
                                   uint worker_id);
 

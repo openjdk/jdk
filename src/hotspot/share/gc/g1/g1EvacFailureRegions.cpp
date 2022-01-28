@@ -36,7 +36,9 @@ G1EvacFailureRegions::G1EvacFailureRegions() :
   _evac_failure_regions(nullptr),
   _chunk_claimers(nullptr),
   _evac_failure_regions_cur_length(0),
-  _max_regions(0) {
+  _max_regions(0),
+  _heap(G1CollectedHeap::heap()),
+  _phase_times(_heap->phase_times()) {
 }
 
 G1EvacFailureRegions::~G1EvacFailureRegions() {
@@ -76,10 +78,9 @@ void G1EvacFailureRegions::par_iterate(HeapRegionClosure* closure,
                                                      worker_id);
 }
 
-void G1EvacFailureRegions::par_iterate_chunks_in_regions(HeapRegionClosure* prepare_region_closure,
-                                                         G1HeapRegionChunkClosure* chunk_closure,
+void G1EvacFailureRegions::par_iterate_chunks_in_regions(G1HeapRegionChunkClosure* chunk_closure,
                                                          uint worker_id) const {
-  G1ScanChunksInHeapRegionClosure closure(_chunk_claimers, prepare_region_closure, chunk_closure, worker_id);
+  G1ScanChunksInHeapRegionClosure closure(_chunk_claimers, chunk_closure, worker_id);
 
   G1CollectedHeap::heap()->par_iterate_regions_array(&closure,
                                                      nullptr, // pass null, so every worker thread go through every region.
@@ -91,4 +92,26 @@ void G1EvacFailureRegions::par_iterate_chunks_in_regions(HeapRegionClosure* prep
 bool G1EvacFailureRegions::contains(uint region_idx) const {
   assert(region_idx < _max_regions, "must be");
   return _regions_failed_evacuation.par_at(region_idx, memory_order_relaxed);
+}
+
+void G1EvacFailureRegions::prepare_region(uint region_idx) {
+  HeapRegion* hr = _heap->region_at(region_idx);
+  assert(!hr->is_pinned(), "Unexpected pinned region at index %u", hr->hrm_index());
+  assert(hr->in_collection_set(), "bad CS");
+  assert(contains(hr->hrm_index()), "precondition");
+
+  hr->clear_index_in_opt_cset();
+
+  bool during_concurrent_start = _heap->collector_state()->in_concurrent_start_gc();
+  bool during_concurrent_mark = _heap->collector_state()->mark_or_rebuild_in_progress();
+
+  hr->note_self_forwarding_removal_start(during_concurrent_start,
+                                         during_concurrent_mark);
+
+  hr->reset_bot();
+
+  _phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,
+                                               0,
+                                               1,
+                                               G1GCPhaseTimes::RestoreRetainedRegionsNum);
 }

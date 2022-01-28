@@ -78,8 +78,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     SampleCollectionSetCandidates,
     MergePSS,
     RestoreRetainedRegions,
-    PrepareRetainedRegions,
-    WaitReadyRetainedRegions,
     RemoveSelfForwardsInChunks,
     PrepareChunks,
     ClearCardTable,
@@ -91,6 +89,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 #endif
     EagerlyReclaimHumongousObjects,
     RestorePreservedMarks,
+    VerifyAfterSelfForwardingPtrRemoval,
     CLDClearClaimedMarks,
     ResetMarkingState,
     NoteStartOfMark,

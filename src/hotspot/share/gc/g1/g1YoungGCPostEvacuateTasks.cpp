@@ -67,8 +67,12 @@ public:
 };
 
 class G1PostEvacuateCollectionSetCleanupTask1::SampleCollectionSetCandidatesTask : public G1AbstractSubTask {
+  G1EvacFailureRegions* _evac_failure_regions;
+
 public:
-  SampleCollectionSetCandidatesTask() : G1AbstractSubTask(G1GCPhaseTimes::SampleCollectionSetCandidates) { }
+  SampleCollectionSetCandidatesTask(G1EvacFailureRegions* evac_failure_regions) :
+    G1AbstractSubTask(G1GCPhaseTimes::SampleCollectionSetCandidates),
+    _evac_failure_regions(evac_failure_regions) { }
 
   static bool should_execute() {
     return G1CollectedHeap::heap()->should_sample_collection_set_candidates();
@@ -81,14 +85,26 @@ public:
   void do_work(uint worker_id) override {
 
     class G1SampleCollectionSetCandidatesClosure : public HeapRegionClosure {
+      G1EvacFailureRegions* _evac_failure_regions;
     public:
       G1SegmentedArrayMemoryStats _total;
 
-      bool do_heap_region(HeapRegion* r) override {
-        _total.add(r->rem_set()->card_set_memory_stats());
+      G1SampleCollectionSetCandidatesClosure(G1EvacFailureRegions* evac_failure_regions) :
+        _evac_failure_regions(evac_failure_regions) { }
+
+      bool do_heap_region(HeapRegion* hr) override {
+        _total.add(hr->rem_set()->card_set_memory_stats());
+
+        // Put the clearing code here on purpose to make sure the rem set data
+        // is cleared only after syncing.
+        // It also avoid race condition by putting the clearing code here.
+        if (_evac_failure_regions->contains(hr->hrm_index())) {
+          hr->rem_set()->clean_strong_code_roots(hr);
+          hr->rem_set()->clear_locked(true);
+        }
         return false;
       }
-    } cl;
+    } cl(_evac_failure_regions);
 
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
@@ -126,7 +142,7 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
   add_serial_task(new MergePssTask(per_thread_states));
   add_serial_task(new RecalculateUsedTask(evacuation_failed));
   if (SampleCollectionSetCandidatesTask::should_execute()) {
-    add_serial_task(new SampleCollectionSetCandidatesTask());
+    add_serial_task(new SampleCollectionSetCandidatesTask(evac_failure_regions));
   }
   if (evacuation_failed) {
     add_parallel_task(new RemoveSelfForwardPtrsTask(evac_failure_regions));
@@ -355,6 +371,40 @@ class RedirtyLoggedCardTableEntryClosure : public G1CardTableEntryClosure {
   }
 
   size_t num_dirtied()   const { return _num_dirtied; }
+};
+
+class G1PostEvacuateCollectionSetCleanupTask2::VerifyAfterSelfForwardingPtrRemovalTask : public G1AbstractSubTask {
+  G1EvacFailureRegions* _evac_failure_regions;
+  HeapRegionClaimer _claimer;
+
+  class VerifyRegionClosure : public HeapRegionClosure {
+  public:
+    bool do_heap_region(HeapRegion* hr) override {
+      G1CollectedHeap::heap()->verifier()->check_bitmaps("Self-Forwarding Ptr Removal", hr);
+      return false;
+    }
+  };
+
+public:
+  VerifyAfterSelfForwardingPtrRemovalTask(G1EvacFailureRegions* evac_failure_regions) :
+    G1AbstractSubTask(G1GCPhaseTimes::VerifyAfterSelfForwardingPtrRemoval),
+    _evac_failure_regions(evac_failure_regions),
+    _claimer(0) {
+    assert(G1VerifyBitmaps && _evac_failure_regions->evacuation_failed(), "precondition");
+  }
+
+  void set_max_workers(uint max_workers) override {
+    _claimer.set_n_workers(max_workers);
+  }
+
+  double worker_cost() const override {
+    return _evac_failure_regions->num_regions_failed_evacuation();
+  }
+
+  void do_work(uint worker_id) override {
+    VerifyRegionClosure closure;
+    _evac_failure_regions->par_iterate(&closure, &_claimer, worker_id);
+  }
 };
 
 class G1PostEvacuateCollectionSetCleanupTask2::RedirtyLoggedCardsTask : public G1AbstractSubTask {
@@ -679,6 +729,9 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
 
   if (evac_failure_regions->evacuation_failed()) {
     add_parallel_task(new RestorePreservedMarksTask(per_thread_states->preserved_marks_set()));
+    if (G1VerifyBitmaps) {
+      add_parallel_task(new VerifyAfterSelfForwardingPtrRemovalTask(evac_failure_regions));
+    }
   }
   add_parallel_task(new RedirtyLoggedCardsTask(per_thread_states->rdcqs(), evac_failure_regions));
   add_parallel_task(new FreeCollectionSetTask(evacuation_info,
