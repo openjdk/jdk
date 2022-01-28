@@ -30,29 +30,31 @@ import static java.lang.annotation.ElementType.*;
 
 /**
  * Indicates the warnings to be suppressed at compile time in the
- * annotated element, and in all elements contained in the annotated element.
+ * annotated element, and in all elements contained in the annotated
+ * element.
  *
  * <p>The {@code SuppressWarnings} annotation interface is applicable
  * in all declaration contexts, so an {@code @SuppressWarnings}
- * annotation can be used on any element.
- * As a matter of style, programmers should always use this annotation
- * on the most deeply nested element where it is effective. For example, if you want to
+ * annotation can be used on any element.  As a matter of style,
+ * programmers should always use this annotation on the most deeply
+ * nested element where it is effective. For example, if you want to
  * suppress a warning in a particular method, you should annotate that
  * method rather than its class.
  *
- * <p>The set of warnings suppressed in a given element is
- * a union of the warnings suppressed in all containing elements.  For
- * example, if you annotate a class to suppress one warning and annotate a
- * method in the class to suppress another, both warnings will be suppressed in the method.
- * However, note that if a warning is suppressed in a {@code
- * module-info} file, the suppression applies to elements within the
- * file and <em>not</em> to types contained within the module.
- * Likewise, if a warning is suppressed in a {@code
- * package-info} file, the suppression applies to elements within the
- * file and <em>not</em> to types contained within the package.
+ * <p>The set of warnings suppressed in a given element is a union of
+ * the warnings suppressed in all containing elements.  For example,
+ * if you annotate a class to suppress one warning and annotate a
+ * method in the class to suppress another, both warnings will be
+ * suppressed in the method.  However, note that if a warning is
+ * suppressed in a {@code module-info} file, the suppression applies
+ * to elements within the file and <em>not</em> to types contained
+ * within the module.  Likewise, if a warning is suppressed in a
+ * {@code package-info} file, the suppression applies to elements
+ * within the file and <em>not</em> to types contained within the
+ * package.
  *
- * <p>Java compilers must recognize all the kinds of warnings defined in
- * the <cite>Java Language Specification</cite> (JLS section {@jls
+ * <p>Java compilers must recognize all the kinds of warnings defined
+ * in the <cite>Java Language Specification</cite> (JLS section {@jls
  * 9.6.4.5}) which include:
  *
  * <ul>
@@ -62,12 +64,11 @@ import static java.lang.annotation.ElementType.*;
  * <li> Preview warnings, specified by the string {@code "preview"}.
  * </ul>
  *
- * Whether or not a Java compiler recognizes other strings
- * is a quality of implementation concern.
- * Compiler vendors should document the
- * additional warning names they support.
- * Vendors are encouraged to cooperate to ensure
- * that the same names work across multiple compilers.
+ * Whether or not a Java compiler recognizes other strings is a
+ * quality of implementation concern.  Compiler vendors should
+ * document the additional warning names they support.  Vendors are
+ * encouraged to cooperate to ensure that the same names work across
+ * multiple compilers.
  *
  * @implNote
  * In addition to the mandated suppression strings, the {@code javac}
