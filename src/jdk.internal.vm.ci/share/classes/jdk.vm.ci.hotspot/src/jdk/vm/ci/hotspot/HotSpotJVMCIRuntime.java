@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import jdk.internal.misc.Unsafe;
 import jdk.vm.ci.code.Architecture;
@@ -66,6 +68,7 @@ import jdk.vm.ci.runtime.JVMCICompiler;
 import jdk.vm.ci.runtime.JVMCICompilerFactory;
 import jdk.vm.ci.runtime.JVMCIRuntime;
 import jdk.vm.ci.services.JVMCIServiceLocator;
+import jdk.vm.ci.services.Services;
 
 /**
  * HotSpot implementation of a JVMCI runtime.
@@ -199,14 +202,44 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         return result;
     }
 
+    /**
+     * Decodes the exception encoded in {@code buffer} and throws it.
+     *
+     * @param buffer a native byte buffer containing an exception encoded by
+     *            {@link #encodeThrowable}
+     */
     @VMEntryPoint
-    static Throwable decodeThrowable(String encodedThrowable) throws Throwable {
-        return TranslatedException.decodeThrowable(encodedThrowable);
+    static void decodeAndThrowThrowable(long buffer) throws Throwable {
+        Unsafe unsafe = UnsafeAccess.UNSAFE;
+        int encodingLength = unsafe.getInt(buffer);
+        byte[] encoding = new byte[encodingLength];
+        unsafe.copyMemory(null, buffer + 4, encoding, Unsafe.ARRAY_BYTE_BASE_OFFSET, encodingLength);
+        throw TranslatedException.decodeThrowable(encoding);
     }
 
+    /**
+     * If {@code bufferSize} is large enough, encodes {@code throwable} into a byte array and writes
+     * it to {@code buffer}. The encoding in {@code buffer} can be decoded by
+     * {@link #decodeAndThrowThrowable}.
+     *
+     * @param throwable the exception to encode
+     * @param buffer a native byte buffer
+     * @param bufferSize the size of {@code buffer} in bytes
+     * @return the number of bytes written into {@code buffer} if {@code bufferSize} is large
+     *         enough, otherwise {@code -N} where {@code N} is the value {@code bufferSize} needs to
+     *         be to fit the encoding
+     */
     @VMEntryPoint
-    static String encodeThrowable(Throwable throwable) throws Throwable {
-        return TranslatedException.encodeThrowable(throwable);
+    static int encodeThrowable(Throwable throwable, long buffer, int bufferSize) throws Throwable {
+        byte[] encoding = TranslatedException.encodeThrowable(throwable);
+        int requiredSize = 4 + encoding.length;
+        if (bufferSize < requiredSize) {
+            return -requiredSize;
+        }
+        Unsafe unsafe = UnsafeAccess.UNSAFE;
+        unsafe.putInt(buffer, encoding.length);
+        unsafe.copyMemory(encoding, Unsafe.ARRAY_BYTE_BASE_OFFSET, null, buffer + 4, encoding.length);
+        return requiredSize;
     }
 
     @VMEntryPoint
@@ -235,6 +268,10 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         // Note: The following one is not used (see InitTimer.ENABLED). It is added here
         // so that -XX:+JVMCIPrintProperties shows the option.
         InitTimer(Boolean.class, false, "Specifies if initialization timing is enabled."),
+        ForceTranslateFailure(String.class, null, "Forces HotSpotJVMCIRuntime.translate to throw an exception in the context " +
+                "of the peer runtime. The value is a filter that can restrict the forced failure to matching translated " +
+                "objects. See HotSpotJVMCIRuntime.postTranslation for more details. This option exists soley to test " +
+                "correct handling of translation failure."),
         PrintConfig(Boolean.class, false, "Prints VM configuration available via JVMCI."),
         AuditHandles(Boolean.class, false, "Record stack trace along with scoped foreign object reference wrappers " +
                 "to debug issue with a wrapper being used after its scope has closed."),
@@ -1180,7 +1217,88 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
      * @see "https://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/design.html#global_and_local_references"
      */
     public long translate(Object obj) {
-        return compilerToVm.translate(obj);
+        return compilerToVm.translate(obj, Option.ForceTranslateFailure.getString() != null);
+    }
+
+    private static final Pattern FORCE_TRANSLATE_FAILURE_FILTER_RE = Pattern.compile("(?:(method|type|nmethod)/)?([^:]+)(?::(hotspot|native))?");
+
+    /**
+     * Forces translation failure based on {@code translatedObject} and the value of
+     * {@link Option#ForceTranslateFailure}. The value is zero or more filters separated by a comma.
+     * The syntax for a filter is:
+     *
+     * <pre>
+     *   Filter = [ TypeSelector "/" ] Substring [ ":" JVMCIEnvSelector ] .
+     *   TypeSelector = "type" | "method" | "nmethod"
+     *   JVMCIEnvSelector = "native" | "hotspot"
+     * </pre>
+     *
+     * For example:
+     *
+     * <pre>
+     *   -Djvmci.ForceTranslateFailure=nmethod/StackOverflowError:native,method/computeHash,execute
+     * </pre>
+     *
+     * will cause failure of:
+     * <ul>
+     * <li>translating a {@link HotSpotNmethod} to the libjvmci heap whose fully qualified name
+     * contains "StackOverflowError"</li>
+     * <li>translating a {@link HotSpotResolvedJavaMethodImpl} to the libjvmci or HotSpot heap whose
+     * fully qualified name contains "computeHash"</li>
+     * <li>translating a {@link HotSpotNmethod}, {@link HotSpotResolvedJavaMethodImpl} or
+     * {@link HotSpotResolvedObjectTypeImpl} to the libjvmci or HotSpot heap whose fully qualified
+     * name contains "execute"</li>
+     * </ul>
+     */
+    @VMEntryPoint
+    static void postTranslation(Object translatedObject) {
+        String value = Option.ForceTranslateFailure.getString();
+        String toMatch;
+        String type;
+        if (translatedObject instanceof HotSpotResolvedJavaMethodImpl) {
+            toMatch = ((HotSpotResolvedJavaMethodImpl) translatedObject).format("%H.%n");
+            type = "method";
+        } else if (translatedObject instanceof HotSpotResolvedObjectTypeImpl) {
+            toMatch = ((HotSpotResolvedObjectTypeImpl) translatedObject).toJavaName();
+            type = "type";
+        } else if (translatedObject instanceof HotSpotNmethod) {
+            HotSpotNmethod nmethod = (HotSpotNmethod) translatedObject;
+            if (nmethod.getMethod() != null) {
+                toMatch = nmethod.getMethod().format("%H.%n");
+            } else {
+                toMatch = String.valueOf(nmethod.getName());
+            }
+            type = "nmethod";
+        } else {
+            return;
+        }
+        String[] filters = value.split(",");
+        for (String filter : filters) {
+            Matcher m = FORCE_TRANSLATE_FAILURE_FILTER_RE.matcher(filter);
+            if (!m.matches()) {
+                throw new JVMCIError(Option.ForceTranslateFailure + " filter does not match " + FORCE_TRANSLATE_FAILURE_FILTER_RE + ": " + filter);
+            }
+            String typeSelector = m.group(1);
+            String substring = m.group(2);
+            String jvmciEnvSelector = m.group(3);
+            if (jvmciEnvSelector != null) {
+                if (jvmciEnvSelector.equals("native")) {
+                    if (!Services.IS_IN_NATIVE_IMAGE) {
+                        continue;
+                    }
+                } else {
+                    if (Services.IS_IN_NATIVE_IMAGE) {
+                        continue;
+                    }
+                }
+            }
+            if (typeSelector != null && !typeSelector.equals(type)) {
+                continue;
+            }
+            if (toMatch.contains(substring)) {
+                throw new JVMCIError("translation of " + translatedObject + " failed due to matching " + Option.ForceTranslateFailure + " filter \"" + filter + "\"");
+            }
+        }
     }
 
     /**

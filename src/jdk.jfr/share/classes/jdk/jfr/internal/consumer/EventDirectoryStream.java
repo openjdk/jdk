@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package jdk.jfr.internal.consumer;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.security.AccessControlContext;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -49,7 +48,7 @@ import jdk.jfr.internal.consumer.ChunkParser.ParserConfiguration;
  * with chunk files.
  *
  */
-public class EventDirectoryStream extends AbstractEventStream {
+public final class EventDirectoryStream extends AbstractEventStream {
 
     private static final Comparator<? super RecordedEvent> EVENT_COMPARATOR = JdkJfrConsumer.instance().eventComparator();
 
@@ -60,8 +59,6 @@ public class EventDirectoryStream extends AbstractEventStream {
     private long currentChunkStartNanos;
     private RecordedEvent[] sortedCache;
     private int threadExclusionLevel = 0;
-    protected volatile long maxSize;
-    protected volatile Duration maxAge;
 
     private volatile Consumer<Long> onCompleteHandler;
 
@@ -258,13 +255,5 @@ public class EventDirectoryStream extends AbstractEventStream {
             onMetadata(currentParser);
             c.dispatch(e);
         }
-    }
-
-    public void setMaxSize(long maxSize)  {
-        this.maxSize = maxSize;
-    }
-
-    public void setMaxAge(Duration maxAge)  {
-        this.maxAge = maxAge;
     }
 }

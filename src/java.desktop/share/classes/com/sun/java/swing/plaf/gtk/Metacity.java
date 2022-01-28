@@ -583,15 +583,16 @@ class Metacity implements SynthConstants {
                     URL url = new URL(new File(userHome).toURI().toURL(),
                                       ".gconf/apps/metacity/general/%25gconf.xml");
                     // Pending: verify character encoding spec for gconf
-                    Reader reader = new InputStreamReader(url.openStream(),
-                                                          ISO_8859_1);
-                    char[] buf = new char[1024];
                     StringBuilder sb = new StringBuilder();
-                    int n;
-                    while ((n = reader.read(buf)) >= 0) {
-                        sb.append(buf, 0, n);
+                    try (InputStream in = url.openStream();
+                         Reader reader = new InputStreamReader(in, ISO_8859_1))
+                    {
+                        char[] buf = new char[1024];
+                        int n;
+                        while ((n = reader.read(buf)) >= 0) {
+                            sb.append(buf, 0, n);
+                        }
                     }
-                    reader.close();
                     String str = sb.toString();
                     if (str != null) {
                         String strLowerCase = str.toLowerCase();

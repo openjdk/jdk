@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,6 @@ public:
 
   const MetaWord* base() const  { return _base; }
   size_t word_size() const      { return _word_size; }
-  const MetaWord* end() const   { return _base + word_size(); }
 
   // Given an address, returns true if the address is committed, false if not.
   bool is_committed_address(const MetaWord* p) const {

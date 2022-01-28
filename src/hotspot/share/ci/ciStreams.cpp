@@ -476,8 +476,9 @@ ciKlass* ciBytecodeStream::get_declared_method_holder() {
   constantPoolHandle cpool(THREAD, _method->get_Method()->constants());
   bool ignore;
   // report as MethodHandle for invokedynamic, which is syntactically classless
-  if (cur_bc() == Bytecodes::_invokedynamic)
-    return CURRENT_ENV->get_klass_by_name(_holder, ciSymbols::java_lang_invoke_MethodHandle(), false);
+  if (cur_bc() == Bytecodes::_invokedynamic) {
+    return CURRENT_ENV->MethodHandle_klass();
+  }
   return CURRENT_ENV->get_klass_by_index(cpool, get_method_holder_index(), ignore, _holder);
 }
 

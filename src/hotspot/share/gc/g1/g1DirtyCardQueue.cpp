@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1BarrierSet.inline.hpp"
-#include "gc/g1/g1BufferNodeList.hpp"
 #include "gc/g1/g1CardTableEntryClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
@@ -35,6 +34,7 @@
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegionRemSet.inline.hpp"
+#include "gc/shared/bufferNodeList.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "memory/iterator.hpp"
 #include "runtime/atomic.hpp"
@@ -123,7 +123,13 @@ void G1DirtyCardQueueSet::enqueue_completed_buffer(BufferNode* cbn) {
   // Increment _num_cards before adding to queue, so queue removal doesn't
   // need to deal with _num_cards possibly going negative.
   size_t new_num_cards = Atomic::add(&_num_cards, buffer_size() - cbn->index());
-  _completed.push(*cbn);
+  {
+    // Perform push in CS.  The old tail may be popped while the push is
+    // observing it (attaching it to the new buffer).  We need to ensure it
+    // can't be reused until the push completes, to avoid ABA problems.
+    GlobalCounter::CriticalSection cs(Thread::current());
+    _completed.push(*cbn);
+  }
   if ((new_num_cards > process_cards_threshold()) &&
       (_primary_refinement_thread != NULL)) {
     _primary_refinement_thread->activate();
@@ -307,7 +313,7 @@ void G1DirtyCardQueueSet::enqueue_all_paused_buffers() {
 }
 
 void G1DirtyCardQueueSet::abandon_completed_buffers() {
-  G1BufferNodeList list = take_all_completed_buffers();
+  BufferNodeList list = take_all_completed_buffers();
   BufferNode* buffers_to_delete = list._head;
   while (buffers_to_delete != NULL) {
     BufferNode* bn = buffers_to_delete;
@@ -328,20 +334,20 @@ void G1DirtyCardQueueSet::notify_if_necessary() {
 // result. The queue sets must share the same allocator.
 void G1DirtyCardQueueSet::merge_bufferlists(G1RedirtyCardsQueueSet* src) {
   assert(allocator() == src->allocator(), "precondition");
-  const G1BufferNodeList from = src->take_all_completed_buffers();
+  const BufferNodeList from = src->take_all_completed_buffers();
   if (from._head != NULL) {
     Atomic::add(&_num_cards, from._entry_count);
     _completed.append(*from._head, *from._tail);
   }
 }
 
-G1BufferNodeList G1DirtyCardQueueSet::take_all_completed_buffers() {
+BufferNodeList G1DirtyCardQueueSet::take_all_completed_buffers() {
   enqueue_all_paused_buffers();
   verify_num_cards();
   Pair<BufferNode*, BufferNode*> pair = _completed.take_all();
   size_t num_cards = Atomic::load(&_num_cards);
   Atomic::store(&_num_cards, size_t(0));
-  return G1BufferNodeList(pair.first, pair.second, num_cards);
+  return BufferNodeList(pair.first, pair.second, num_cards);
 }
 
 class G1RefineBufferedCards : public StackObj {

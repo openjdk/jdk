@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -367,12 +367,14 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
     }
   }
 
-  // Convert (~x+1) into -x. Note there isn't a bitwise not bytecode,
-  // "~x" would typically represented as "x^(-1)", so (~x+1) will
-  // be (x^(-1))+1.
-  if (op1 == Op_Xor(bt) && phase->type(in2) == TypeInteger::one(bt) &&
+  // Convert (~x+c) into (c-1)-x. Note there isn't a bitwise not
+  // bytecode, "~x" would typically represented as "x^(-1)", so (~x+c)
+  // will be (x^(-1))+c.
+  if (op1 == Op_Xor(bt) &&
+      (in2->Opcode() == Op_ConI || in2->Opcode() == Op_ConL) &&
       phase->type(in1->in(2)) == TypeInteger::minus_1(bt)) {
-    return SubNode::make(phase->makecon(TypeInteger::zero(bt)), in1->in(1), bt);
+    Node* c_minus_one = phase->makecon(add_ring(phase->type(in(2)), TypeInteger::minus_1(bt)));
+    return SubNode::make(c_minus_one, in1->in(1), bt);
   }
   return AddNode::Ideal(phase, can_reshape);
 }
@@ -874,13 +876,14 @@ Node* XorINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* in1 = in(1);
   Node* in2 = in(2);
   int op1 = in1->Opcode();
-  // Convert ~(x-1) into -x. Note there isn't a bitwise not bytecode,
-  // "~x" would typically represented as "x^(-1)", and "x-c0" would
-  // convert into "x+ -c0" in SubXNode::Ideal. So ~(x-1) will eventually
-  // be (x+(-1))^-1.
+  // Convert ~(x+c) into (-c-1)-x. Note there isn't a bitwise not
+  // bytecode, "~x" would typically represented as "x^(-1)", so ~(x+c)
+  // will eventually be (x+c)^-1.
   if (op1 == Op_AddI && phase->type(in2) == TypeInt::MINUS_1 &&
-      phase->type(in1->in(2)) == TypeInt::MINUS_1) {
-    return new SubINode(phase->makecon(TypeInt::ZERO), in1->in(1));
+      in1->in(2)->Opcode() == Op_ConI) {
+    jint c = phase->type(in1->in(2))->isa_int()->get_con();
+    Node* neg_c_minus_one = phase->intcon(java_add(-c, -1));
+    return new SubINode(neg_c_minus_one, in1->in(1));
   }
   return AddNode::Ideal(phase, can_reshape);
 }
@@ -953,13 +956,14 @@ Node* XorLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* in1 = in(1);
   Node* in2 = in(2);
   int op1 = in1->Opcode();
-  // Convert ~(x-1) into -x. Note there isn't a bitwise not bytecode,
-  // "~x" would typically represented as "x^(-1)", and "x-c0" would
-  // convert into "x+ -c0" in SubXNode::Ideal. So ~(x-1) will eventually
-  // be (x+(-1))^-1.
+  // Convert ~(x+c) into (-c-1)-x. Note there isn't a bitwise not
+  // bytecode, "~x" would typically represented as "x^(-1)", so ~(x+c)
+  // will eventually be (x+c)^-1.
   if (op1 == Op_AddL && phase->type(in2) == TypeLong::MINUS_1 &&
-      phase->type(in1->in(2)) == TypeLong::MINUS_1) {
-    return new SubLNode(phase->makecon(TypeLong::ZERO), in1->in(1));
+      in1->in(2)->Opcode() == Op_ConL) {
+    jlong c = phase->type(in1->in(2))->isa_long()->get_con();
+    Node* neg_c_minus_one = phase->longcon(java_add(-c, (jlong)-1));
+    return new SubLNode(neg_c_minus_one, in1->in(1));
   }
   return AddNode::Ideal(phase, can_reshape);
 }

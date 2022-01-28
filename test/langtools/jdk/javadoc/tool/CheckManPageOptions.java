@@ -54,8 +54,14 @@ import java.util.stream.Collectors;
  * of the javadoc man page against the set of options declared in the source code.
  */
 public class CheckManPageOptions {
+    static class SourceDirNotFound extends Error { }
+
     public static void main(String... args) throws Exception {
-        new CheckManPageOptions().run(args);
+        try {
+            new CheckManPageOptions().run(args);
+        } catch (SourceDirNotFound e) {
+            System.err.println("NOTE: Cannot find src directory; test skipped");
+        }
     }
 
     static final PrintStream out = System.err;
@@ -143,7 +149,7 @@ public class CheckManPageOptions {
             }
             dir = dir.getParent();
         }
-        throw new IllegalStateException("cannot find root dir");
+        throw new SourceDirNotFound();
     }
 
     List<String> getToolOptions() throws Error {

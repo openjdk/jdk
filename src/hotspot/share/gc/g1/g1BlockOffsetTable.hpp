@@ -160,8 +160,7 @@ public:
 
   void verify() const;
 
-  // Given an address calculate where the next threshold needing an update is.
-  inline HeapWord* threshold_for_addr(const void* addr);
+  inline HeapWord* align_up_by_card_size(HeapWord* const addr) const;
 
   // Returns the address of the start of the block containing "addr", or
   // else "null" if it is covered by no block.  (May have side effects,
