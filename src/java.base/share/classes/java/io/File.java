@@ -2012,7 +2012,7 @@ public class File
 
             int prefixLength = prefix.length();
             int nusLength = nus.length();
-            int suffixLength = suffix.length();;
+            int suffixLength = suffix.length();
 
             String name;
             int nameMax = fs.getNameMax(dir.getPath());
