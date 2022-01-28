@@ -223,9 +223,10 @@ of proxies.</P>
               CBTs are never sent.</P>
           <LI><P>"always". CBTs are sent for all Kerberos authentication attempts over HTTPS.</P>
           <LI><P>"domain:&lt;comma separated domain list&gt;" Each domain in the list specifies destination
-              host or hosts for which a CBT is sent. Domains can be single hosts like foo, or foo.com,
-              or wildcards like *.foo.com which matches all hosts under foo.com and its sub-domains.
-              CBTs are not sent to any destinations that don't match one of the list entries</P>
+          host or hosts for which a CBT is sent. Domains can be single hosts like foo, or foo.com,
+          or literal IP addresses as specified in RFC 2732, or wildcards like *.foo.com which matches 
+          all hosts under foo.com and its sub-domains. CBTs are not sent to any destinations 
+          that don't match one of the list entries</P>
 	</OL>
 	<P>The channel binding tokens generated are of the type "tls-server-end-point" as defined in
            RFC 5929.</P>
