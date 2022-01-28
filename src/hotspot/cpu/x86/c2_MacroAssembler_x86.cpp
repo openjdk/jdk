@@ -3578,7 +3578,7 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
   ShortBranchVerifier sbv(this);
   assert_different_registers(ary1, len, result, tmp1);
   assert_different_registers(vec1, vec2);
-  Label TRUE_LABEL, DONE, COMPARE_CHAR, COMPARE_VECTORS, COMPARE_BYTE;
+  Label ADJUST, TAIL_ADJUST, DONE, TAIL_DONE, COMPARE_CHAR, COMPARE_VECTORS, COMPARE_BYTE;
 
   movl(result, len); // copy
   // len == 0
@@ -3609,7 +3609,7 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
     // Check whether our 64 elements of size byte contain negatives
     evpcmpgtb(mask1, vec2, Address(ary1, len, Address::times_1), Assembler::AVX_512bit);
     kortestql(mask1, mask1);
-    jcc(Assembler::notZero, TRUE_LABEL);
+    jcc(Assembler::notZero, ADJUST);
 
     addptr(len, 64);
     jccb(Assembler::notZero, test_64_loop);
@@ -3655,7 +3655,7 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
 #endif
     evpcmpgtb(mask1, mask2, vec2, Address(ary1, 0), Assembler::AVX_512bit);
     ktestq(mask1, mask2);
-    jcc(Assembler::notZero, TRUE_LABEL);
+    jcc(Assembler::notZero, ADJUST);
 
     jmp(DONE);
   } else {
@@ -3679,12 +3679,12 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
       bind(COMPARE_WIDE_VECTORS);
       vmovdqu(vec1, Address(ary1, len, Address::times_1));
       vptest(vec1, vec2);
-      jccb(Assembler::notZero, TRUE_LABEL);
+      jccb(Assembler::notZero, ADJUST);
       addptr(len, 32);
       jcc(Assembler::notZero, COMPARE_WIDE_VECTORS);
 
-      // Here the data we compare against is wider than at least one
-      // 16 byte chunk, so we can check the tail by reading 16 bytes
+      // Here the array segment we're comparing against is at least one
+      // 32 byte chunk, so we can check the tail by reading 32 bytes
       // from the end and do one last vector comparison
       movl(len, result);
       andl(len, 0x0000001f);  //   tail count (in bytes)
@@ -3693,6 +3693,9 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
       vmovdqu(vec1, Address(ary1, len, Address::times_1, -32));
       vptest(vec1, vec2);
       jccb(Assembler::zero, DONE);
+      // The first 32 - len bytes were checked in the COMPARE_WIDE_VECTORS
+      // loop above, so the non-zero byte must be in the last len bytes.
+      // Adjust result and return
       subptr(result, len);
       jmpb(DONE);
 
@@ -3719,7 +3722,7 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
       bind(COMPARE_WIDE_VECTORS);
       movdqu(vec1, Address(ary1, len, Address::times_1));
       ptest(vec1, vec2);
-      jcc(Assembler::notZero, TRUE_LABEL);
+      jcc(Assembler::notZero, ADJUST);
       addptr(len, 16);
       jcc(Assembler::notZero, COMPARE_WIDE_VECTORS);
 
@@ -3733,6 +3736,9 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
       movdqu(vec1, Address(ary1, len, Address::times_1, -16));
       ptest(vec1, vec2);
       jccb(Assembler::zero, DONE);
+      // The first 16 - len bytes were checked in the COMPARE_WIDE_VECTORS
+      // loop above, so the non-zero byte must be in the last len bytes.
+      // Adjust result and return
       subptr(result, len);
       jmpb(DONE);
 
@@ -3751,7 +3757,7 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
   bind(COMPARE_VECTORS);
   movl(tmp1, Address(ary1, len, Address::times_1));
   andl(tmp1, 0x80808080);
-  jccb(Assembler::notZero, TRUE_LABEL);
+  jccb(Assembler::notZero, TAIL_ADJUST);
   addptr(len, 4);
   jcc(Assembler::notZero, COMPARE_VECTORS);
 
@@ -3762,22 +3768,26 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
   jccb(Assembler::zero, COMPARE_BYTE);
   load_unsigned_short(tmp1, Address(ary1, 0));
   andl(tmp1, 0x00008080);
-  jccb(Assembler::notZero, TRUE_LABEL);
+  jccb(Assembler::notZero, TAIL_ADJUST);
   lea(ary1, Address(ary1, 2));
 
   bind(COMPARE_BYTE);
   testl(result, 0x1);   // tail  byte
-  jccb(Assembler::zero, DONE);
+  jccb(Assembler::zero, TAIL_DONE);
   load_unsigned_byte(tmp1, Address(ary1, 0));
   testl(tmp1, 0x00000080);
-  jccb(Assembler::zero, DONE);
+  jccb(Assembler::zero, TAIL_DONE);
+  subptr(result, 1);
+  jmpb(TAIL_DONE);
 
-  bind(TRUE_LABEL);
-  // there are negative bits: len holds the negative number of bytes
-  // left to scan in the main loop,
-  addptr(result, len);
+  bind(ADJUST);
   // subtract the tail length from the result
   andl(result, tail_mask);
+  bind(TAIL_ADJUST);
+  // there are negative bits: len holds the negative number of bytes
+  // left to scan,
+  addptr(result, len);
+  andl(result, 0xfffffffc);
 
   // That's it
   bind(DONE);
@@ -3786,6 +3796,7 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
     vpxor(vec1, vec1);
     vpxor(vec2, vec2);
   }
+  bind(TAIL_DONE);
 }
 
 // Compare char[] or byte[] arrays aligned to 4 bytes or substrings.

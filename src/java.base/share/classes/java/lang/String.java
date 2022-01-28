@@ -539,22 +539,22 @@ public final class String
                     offset += dp;
                 }
                 while (offset < sl) {
-                    int b1 = bytes[offset++];
+                    int b1 = bytes[offset];
                     if (b1 >= 0) {
                         dst[dp++] = (byte)b1;
+                        offset++;
                         continue;
                     }
-                    if ((b1 & 0xfe) == 0xc2 && offset < sl) { // b1 either 0xc2 or 0xc3
-                        int b2 = bytes[offset];
+                    if ((b1 & 0xfe) == 0xc2 && offset + 1 < sl) { // b1 either 0xc2 or 0xc3
+                        int b2 = bytes[offset + 1];
                         if (!isNotContinuation(b2)) {
                             dst[dp++] = (byte)decode2(b1, b2);
-                            offset++;
+                            offset += 2;
                             continue;
                         }
                     }
                     // anything not a latin1, including the repl
                     // we have to go with the utf16
-                    offset--;
                     break;
                 }
                 if (offset == sl) {

@@ -42,7 +42,7 @@ public class StringEncode {
     private String asciiString;
     private String longAsciiString;
     private String utf16String;
-    private String longUtf16String;
+    private String longUtf16EndString;
     private String longUtf16StartString;
     private String latin1String;
     private String longLatin1EndString;
@@ -73,7 +73,7 @@ public class StringEncode {
                  tristique mollis odio blandit quis. Vivamus posuere.
                  """;
         utf16String = "UTF-\uFF11\uFF16 string";
-        longUtf16String = """
+        longUtf16EndString = """
                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam ac sem eu
                  urna egestas placerat. Etiam finibus ipsum nulla, non mattis dolor cursus a.
                  Nulla nec nisl consectetur, lacinia neque id, accumsan ante. Curabitur et
@@ -184,7 +184,7 @@ public class StringEncode {
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public byte[] encodeUTF16LongEnd() throws Exception {
-        return longUtf16String.getBytes(charset);
+        return longUtf16EndString.getBytes(charset);
     }
 
     @Benchmark
@@ -204,7 +204,7 @@ public class StringEncode {
     public void encodeUTF16Mixed(Blackhole bh) throws Exception {
         bh.consume(utf16String.getBytes(charset));
         bh.consume(longUtf16StartString.getBytes(charset));
-        bh.consume(longUtf16String.getBytes(charset));
+        bh.consume(longUtf16EndString.getBytes(charset));
     }
 
     @Benchmark
@@ -238,11 +238,22 @@ public class StringEncode {
     public void encodeAllMixed(Blackhole bh) throws Exception {
         bh.consume(utf16String.getBytes(charset));
         bh.consume(longUtf16StartString.getBytes(charset));
-        bh.consume(longUtf16String.getBytes(charset));
+        bh.consume(longUtf16EndString.getBytes(charset));
         bh.consume(longLatin1EndString.getBytes(charset));
         bh.consume(longLatin1StartString.getBytes(charset));
         bh.consume(latin1String.getBytes(charset));
         bh.consume(asciiString.getBytes(charset));
-        bh.consume(longA.getBytes(charset));
+        bh.consume(longAsciiString.getBytes(charset));
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void encodeStartMixed(Blackhole bh) throws Exception {
+        bh.consume(utf16String.getBytes(charset));
+        bh.consume(longUtf16StartString.getBytes(charset));
+        bh.consume(longLatin1StartString.getBytes(charset));
+        bh.consume(latin1String.getBytes(charset));
+        bh.consume(asciiString.getBytes(charset));
+        bh.consume(longAsciiString.getBytes(charset));
     }
 }
