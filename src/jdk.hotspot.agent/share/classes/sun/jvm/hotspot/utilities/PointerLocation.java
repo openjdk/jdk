@@ -301,19 +301,23 @@ public class PointerLocation {
       } else if (isInBlobOops()) {
         tty.print("oops");
       } else {
-        if (Assert.ASSERTS_ENABLED) {
-          Assert.that(isInBlobUnknownLocation(), "Should have known location in CodeBlob");
-        }
         tty.print("unknown CodeCache location");
       }
       if (b == null) {
           tty.println();
       } else {
           tty.print(" in ");
-          if (verbose) {
-              b.printOn(tty); // includes "\n"
-          } else {
-              tty.println(b.toString());
+          // Since we potentially have a random address in the codecache and therefore could
+          // be dealing with a freed or partialy intialized blob, exceptions are possible.
+          // One known case is an NMethod where the method is still null, resulting in an NPE.
+          try {
+              if (verbose) {
+                  b.printOn(tty); // includes "\n"
+              } else {
+                  tty.println(b.toString());
+              }
+          } catch (Exception e) {
+              tty.println("<unknown>");
           }
       }
       // FIXME: add more detail
