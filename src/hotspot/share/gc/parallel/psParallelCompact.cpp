@@ -1973,29 +1973,24 @@ class MarkFromRootsTask : public WorkerTask {
   OopStorageSetStrongParState<false /* concurrent */, false /* is_const */> _oop_storage_set_par_state;
   TaskTerminator _terminator;
   uint _active_workers;
-  volatile bool _cld_roots_claimed;
 
 public:
   MarkFromRootsTask(uint active_workers) :
       WorkerTask("MarkFromRootsTask"),
       _strong_roots_scope(active_workers),
       _terminator(active_workers, ParCompactionManager::oop_task_queues()),
-      _active_workers(active_workers),
-      _cld_roots_claimed(false) {}
+      _active_workers(active_workers) {}
 
   virtual void work(uint worker_id) {
     ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(worker_id);
     PCMarkAndPushClosure mark_and_push_closure(cm);
 
     {
-      if (!Atomic::load(&_cld_roots_claimed) &&
-          !Atomic::cmpxchg(&_cld_roots_claimed, false, true)) {
-        CLDToOopClosure cld_closure(&mark_and_push_closure, ClassLoaderData::_claim_strong);
-        ClassLoaderDataGraph::always_strong_cld_do(&cld_closure);
+      CLDToOopClosure cld_closure(&mark_and_push_closure, ClassLoaderData::_claim_strong);
+      ClassLoaderDataGraph::always_strong_cld_do(&cld_closure);
 
-        // Do the real work
-        cm->follow_marking_stacks();
-      }
+      // Do the real work
+      cm->follow_marking_stacks();
     }
 
     PCAddThreadRootsMarkingTaskClosure closure(worker_id);
