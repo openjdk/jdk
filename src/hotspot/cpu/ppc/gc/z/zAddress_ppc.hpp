@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +21,14 @@
  * questions.
  */
 
-#ifndef CPU_PPC_GC_Z_ZGLOBALS_PPC_HPP
-#define CPU_PPC_GC_Z_ZGLOBALS_PPC_HPP
+#ifndef CPU_PPC_GC_Z_ZADDRESS_PPC_HPP
+#define CPU_PPC_GC_Z_ZADDRESS_PPC_HPP
 
-#include "globalDefinitions_ppc.hpp"
-const size_t ZPlatformGranuleSizeShift = 21; // 2MB
-const size_t ZPlatformCacheLineSize    = DEFAULT_CACHE_LINE_SIZE;
+#include "utilities/globalDefinitions.hpp"
 
-#endif // CPU_PPC_GC_Z_ZGLOBALS_PPC_HPP
+const size_t ZPointerLoadShift = 16;
+
+size_t ZPlatformAddressOffsetBits();
+size_t ZPlatformAddressHeapBaseShift();
+
+#endif // CPU_PPC_GC_Z_ZADDRESS_PPC_HPP
