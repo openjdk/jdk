@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,15 @@
 
 #include "gc/shared/taskqueue.hpp"
 
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/stack.inline.hpp"
 
 template <class T, MEMFLAGS F>
@@ -47,6 +51,51 @@ template <class T, MEMFLAGS F>
 inline GenericTaskQueueSet<T, F>::~GenericTaskQueueSet() {
   FREE_C_HEAP_ARRAY(T*, _queues);
 }
+
+#if TASKQUEUE_STATS
+template<class T, MEMFLAGS F>
+void GenericTaskQueueSet<T, F>::print_taskqueue_stats_hdr(outputStream* const st, const char* label) {
+  st->print_cr("GC Task Stats %s", label);
+  st->print("thr "); TaskQueueStats::print_header(1, st); st->cr();
+  st->print("--- "); TaskQueueStats::print_header(2, st); st->cr();
+}
+
+template<class T, MEMFLAGS F>
+void GenericTaskQueueSet<T, F>::print_taskqueue_stats(outputStream* const st, const char* label) {
+  print_taskqueue_stats_hdr(st, label);
+
+  TaskQueueStats totals;
+  const uint n = size();
+  for (uint i = 0; i < n; ++i) {
+    st->print("%3u ", i); queue(i)->stats.print(st); st->cr();
+    totals += queue(i)->stats;
+  }
+  st->print_raw("tot "); totals.print(st); st->cr();
+
+  DEBUG_ONLY(totals.verify());
+}
+
+template<class T, MEMFLAGS F>
+void GenericTaskQueueSet<T, F>::reset_taskqueue_stats() {
+  const uint n = size();
+  for (uint i = 0; i < n; ++i) {
+    queue(i)->stats.reset();
+  }
+}
+
+template <class T, MEMFLAGS F>
+inline void GenericTaskQueueSet<T, F>::print_and_reset_taskqueue_stats(const char* label) {
+  if (!log_is_enabled(Trace, gc, task, stats)) {
+    return;
+  }
+  Log(gc, task, stats) log;
+  ResourceMark rm;
+  LogStream ls(log.trace());
+
+  print_taskqueue_stats(&ls, label);
+  reset_taskqueue_stats();
+}
+#endif // TASKQUEUE_STATS
 
 template<class E, MEMFLAGS F, unsigned int N>
 inline GenericTaskQueue<E, F, N>::GenericTaskQueue() :
