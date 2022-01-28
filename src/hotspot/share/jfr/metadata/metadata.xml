@@ -926,7 +926,7 @@
 
   <Event name="CodeSweeperStatistics" category="Java Virtual Machine, Code Sweeper" label="Code Sweeper Statistics" thread="false" period="everyChunk" startTime="false">
     <Field type="long" name="sweepCount" label="Sweeps" />
-    <Field type="int" name="methodReclaimedCount" label="Methods Reclaimed" />
+    <Field type="long" name="methodReclaimedCount" label="Methods Reclaimed" />
     <Field type="Tickspan" name="totalSweepTime" label="Time Spent Sweeping" />
     <Field type="Tickspan" name="peakFractionTime" label="Peak Time Fraction Sweep" />
     <Field type="Tickspan" name="peakSweepTime" label="Peak Time Full Sweep" />
