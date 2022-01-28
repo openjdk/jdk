@@ -50,7 +50,7 @@ static NSString *kbdLayout;
 @end
 
 // Uncomment this line to see fprintfs of each InputMethod API being called on this View
-//#define IM_DEBUG TRUE
+#define IM_DEBUG TRUE
 //#define EXTRA_DEBUG
 
 static BOOL shouldUsePressAndHold() {
@@ -965,6 +965,7 @@ static jclass jc_CInputMethod = NULL;
 
     if ((utf16Length > 2) ||
         ((utf8Length > 1) && [self isCodePointInUnicodeBlockNeedingIMEvent:codePoint]) ||
+        ((codePoint == 0x73) && ([(NSString *)kbdLayout containsString:@"Finnish"])) ||
         ((codePoint == 0x5c) && ([(NSString *)kbdLayout containsString:@"Kotoeri"]))) {
 #ifdef IM_DEBUG
         NSLog(@"string complex ");
