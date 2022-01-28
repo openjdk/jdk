@@ -24,6 +24,7 @@ package test.java.time.format;
 
 import static org.testng.Assert.assertEquals;
 
+import java.time.DateTimeException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -36,43 +37,23 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 /**
- * Test DateTimeFormatter.ofLocalizedPattern() methods.
- * @bug 8085887
+ * Test DateTimeFormatter.ofLocalizedPattern() method.
+ * @bug 8176706
  */
 @Test
 public class TestLocalizedPattern {
 
-    final static String[] testSkeletons = {
-            // Locales should generally provide availableFormats data for a fairly
-            // complete set of time skeletons without B, typically the following:
-            "H", "h", "Hm", "hm", "Hms", "hms", "Hmv", "hmv", "Hmsv", "hmsv",
-            // Locales that use 12-hour-cycle time formats with B may provide
-            // availableFormats data for a smaller set of time skeletons with B:
-            "Bh", "Bhm", "Bhms",
-            // date skeletons
-            "M", "MMM", "MEd", "MMMMEd", "d", "y", "yM", "yMEd", "yMMM", "yMMMMEd",
-            "GyM", "GyMEd", "GyMMM", "GyMMMMEd",
-            "yQQQ", "yQQQQ",
-    };
+    private static final ZonedDateTime ZDT =
+            ZonedDateTime.of(2022, 1, 26, 15, 32, 39, 0, ZoneId.of("America/Los_Angeles"));
 
-    final static String[] invalidSkeletons = {
-            "afo", "BBh", "hB",
-    };
-
-    final static String[] inputSkeletons = {
-            "jm", "jjmm", "jjj", "jjjj", "jjjjj", "jjjjjj",
-            "J", "J",
-            "C", "CC", "CCC", "CCCC", "CCCCC", "CCCCCC"
-    };
-
-    private final static List<Locale> sampleLocs = List.of(
+    private final static List<Locale> SAMPLE_LOCALES = List.of(
             Locale.US,
             Locale.forLanguageTag("ja-JP-u-ca-japanese")
     );
 
-    @DataProvider(name = "Skeletons")
-    Object[][] data_Skeletons() {
-        return sampleLocs.stream()
+    @DataProvider(name = "validSkeletons")
+    Object[][] data_validSkeletons() {
+        return SAMPLE_LOCALES.stream()
                 .flatMap(l -> {
                     var rb = ResourceBundle.getBundle("test.java.time.format.Skeletons", l);
                     var keyset = rb.keySet();
@@ -83,10 +64,33 @@ public class TestLocalizedPattern {
                 .toArray(new Object[0][0]);
     };
 
-    @Test(dataProvider = "Skeletons")
+    @DataProvider(name = "invalidSkeletons")
+    Object[][] data_invalidSkeletons() {
+        return new Object[][] {
+            {"afo"}, {"hB"}, {"MMMMMM"}, {"BhmsyMMM"},
+        };
+    }
+
+    @DataProvider(name = "unavailableSkeletons")
+    Object[][] data_unavailableSkeletons() {
+        return new Object[][] {
+            {"yyyyyy"}, {"BBh"}, {"yMMMMEdBBh"},
+        };
+    }
+
+    @Test(dataProvider = "validSkeletons")
     public void test_ofLocalizedPattern(String skeleton, String expected, Locale l) {
-        var now = ZonedDateTime.of(2022, 1, 26, 15, 32, 39, 0, ZoneId.of("America/Los_Angeles"));
         var dtf = DateTimeFormatter.ofLocalizedPattern(skeleton).localizedBy(l);
-        assertEquals(dtf.format(now), expected);
+        assertEquals(dtf.format(ZDT), expected);
+    }
+
+    @Test(dataProvider = "invalidSkeletons", expectedExceptions = IllegalArgumentException.class)
+    public void test_ofLocalizedPattern_invalid(String skeleton) {
+        DateTimeFormatter.ofLocalizedPattern(skeleton).format(ZDT);
+    }
+
+    @Test(dataProvider = "unavailableSkeletons", expectedExceptions = DateTimeException.class)
+    public void test_ofLocalizedPattern_unavailable(String skeleton) {
+        DateTimeFormatter.ofLocalizedPattern(skeleton).format(ZDT);
     }
 }

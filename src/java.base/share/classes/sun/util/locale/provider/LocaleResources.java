@@ -113,18 +113,20 @@ public class LocaleResources {
 
     // RegEx pattern for skeleton validity checking
     private static final Pattern VALID_SKELETON_PATTERN = Pattern.compile(
+        "(?<date>" +
         "G{0,5}" +        // Era
         "y*" +            // Year
         "Q{0,5}" +        // Quarter
         "M{0,5}" +        // Month
         "w*" +            // Week of Week Based Year
         "E{0,5}" +        // Day of Week
-        "d{0,2}" +        // Day of Month
+        "d{0,2})" +       // Day of Month
+        "(?<time>" +
         "B{0,5}" +        // Period/AmPm of Day
-        "[hHjC]{0,2}" +   // Hour of Day/AmPm (refer to LDML for 'j' and 'C')
+        "[hHjC]{0,2}" +   // Hour of Day/AmPm
         "m{0,2}" +        // Minute of Hour
         "s{0,2}" +        // Second of Minute
-        "[vz]{0,4}");     // Zone
+        "[vz]{0,4})");    // Zone
 
     LocaleResources(ResourceBundleBasedAdapter adapter, Locale locale) {
         this.locale = locale;
@@ -569,35 +571,60 @@ public class LocaleResources {
      * @return format pattern string for this locale, null if not found
      */
     public String getLocalizedPattern(String requested, String calType) {
-        String lPattern;
+        String pattern;
         String cacheKey = SKELETON_PATTERN + calType + "." + requested;
 
         removeEmptyReferences();
         ResourceReference data = cache.get(cacheKey);
 
-        if (data == null || ((lPattern = (String) data.get()) == null)) {
-            lPattern = getLocalizedPatternImpl(requested, calType);
+        if (data == null || ((pattern = (String) data.get()) == null)) {
+            pattern = getLocalizedPatternImpl(requested, calType);
             cache.put(cacheKey,
-                new ResourceReference(cacheKey, lPattern != null ? lPattern : "", referenceQueue));
-        } else if (lPattern.isEmpty()) {
+                new ResourceReference(cacheKey, pattern != null ? pattern : "", referenceQueue));
+        } else if ("".equals(pattern)) {
             // non-existent pattern
-            lPattern = null;
+            pattern = null;
         }
 
-        return lPattern;
+        return pattern;
     }
 
     private String getLocalizedPatternImpl(String requested, String calType) {
         initSkeletonIfNeeded();
 
+        // input skeleton substitution
+        var skeleton = substituteInputSkeletons(requested);
+
         // validity check
-        if (!VALID_SKELETON_PATTERN.matcher(requested).matches()) {
+        var matcher = VALID_SKELETON_PATTERN.matcher(skeleton);
+        if (!matcher.matches()) {
             throw new IllegalArgumentException("Requested pattern is invalid: " + requested);
         }
 
-        // input skeleton substitution
-        final String skeleton = substituteInputSkeletons(requested);
+        // try to match entire request template first
+        String matched = mapSkeleton(skeleton, calType);
+        if (matched == null) {
+            // 2.6.2.2 Missing Skeleton Fields
+            var dateMatched = mapSkeleton(matcher.group("date"), calType);
+            var timeMatched = mapSkeleton(matcher.group("time"), calType);
+            if (dateMatched != null && timeMatched != null) {
+                // combine both matches
+                var style = switch (requested.replaceAll("[^M]+", "").length()) {
+                    case 4 -> requested.indexOf('E') >= 0 ? 0 : 1;
+                    case 3 -> 2;
+                    default -> 3;
+                };
+                var dateTimePattern = getDateTimePattern(null, "DateTimePatterns", style, calType);
+                matched = MessageFormat.format(dateTimePattern.replaceAll("'", "''"), timeMatched, dateMatched);
+            }
+        }
 
+//        System.out.println("requested: " + requested + ", locale: " + locale + ", caltype: " + calType + ", matched: "+matched);
+
+        return matched;
+    }
+
+    private String mapSkeleton(String skeleton, String calType) {
         // Expand it with possible inferred skeleton stream based on its priority
         var inferred = possibleInferred(skeleton);
         ResourceBundle r = localeData.getDateFormatData(locale);
@@ -611,9 +638,6 @@ public class LocaleResources {
                 .findFirst()
                 .orElse(null);
 
-        // TODO: implement "Missing Skeleton Fields", i.e., combination of date/time skeletons.
-
-System.out.println("requested: " + requested + ", locale: " + locale + ", caltype: " + calType + ", matched: "+matched);
         return matched;
     }
 
