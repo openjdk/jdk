@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,42 +135,6 @@ public class HandshakeCompletedEvent extends EventObject
             throws SSLPeerUnverifiedException
     {
         return session.getPeerCertificates();
-    }
-
-
-    /**
-     * Returns the identity of the peer which was identified as part
-     * of defining the session.
-     * Note: This method can be used only when using certificate-based
-     * cipher suites; using it with non-certificate-based cipher suites,
-     * such as Kerberos, will throw an SSLPeerUnverifiedException.
-     * <P>
-     * Note: The returned value may not be a valid certificate chain
-     * and should not be relied on for trust decisions.
-     *
-     * <p><em>Note: this method exists for compatibility with previous
-     * releases. New applications should use
-     * {@link #getPeerCertificates} instead.</em></p>
-     *
-     * @return an ordered array of peer X.509 certificates,
-     *          with the peer's own certificate first followed by any
-     *          certificate authorities.  (The certificates are in
-     *          the original JSSE
-     *          {@link javax.security.cert.X509Certificate} format).
-     * @throws SSLPeerUnverifiedException if the peer is not verified.
-     * @throws UnsupportedOperationException if the underlying provider
-     *         does not implement the
-     *         {@link SSLSession#getPeerCertificateChain} operation.
-     * @see #getPeerPrincipal()
-     * @deprecated The {@link #getPeerCertificates()} method that returns an
-     *               array of {@code java.security.cert.Certificate} should
-     *               be used instead.
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(since="9", forRemoval=true)
-    public javax.security.cert.X509Certificate [] getPeerCertificateChain()
-            throws SSLPeerUnverifiedException {
-        return session.getPeerCertificateChain();
     }
 
     /**
