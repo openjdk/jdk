@@ -72,7 +72,7 @@ int main(int argc, char** args) {
     mid_Field_get = (*env)->GetMethodID(env, fieldClass, "get", "(Ljava/lang/Object;)Ljava/lang/Object;");
     assert(mid_Class_getField != NULL);
     mid_Field_canAccess = (*env)->GetMethodID(env, fieldClass, "canAccess", "(Ljava/lang/Object;)Z");
-    assert(mid_Field_canAcccess != NULL);
+    assert(mid_Field_canAccess != NULL);
     mid_Field_setAccessible = (*env)->GetMethodID(env, fieldClass, "setAccessible", "(Z)V");
     assert(mid_Field_setAccessible != NULL);
     mid_Field_trySetAccessible = (*env)->GetMethodID(env, fieldClass, "trySetAccessible", "()Z");
