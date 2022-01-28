@@ -572,20 +572,20 @@ public:
 
   // Routines for managing a list of code roots (attached to the
   // this region's RSet) that point into this heap region.
-  void add_strong_code_root(nmethod* nm);
-  void add_strong_code_root_locked(nmethod* nm);
-  void remove_strong_code_root(nmethod* nm);
+  void add_code_root(nmethod* nm);
+  void add_code_root_locked(nmethod* nm);
+  void remove_code_root(nmethod* nm);
 
   // Applies blk->do_code_blob() to each of the entries in
-  // the strong code roots list for this region
-  void strong_code_roots_do(CodeBlobClosure* blk) const;
+  // the code roots list for this region
+  void code_roots_do(CodeBlobClosure* blk) const;
 
   uint node_index() const { return _node_index; }
   void set_node_index(uint node_index) { _node_index = node_index; }
 
-  // Verify that the entries on the strong code root list for this
+  // Verify that the entries on the code root list for this
   // region are live and include at least one pointer into this region.
-  void verify_strong_code_roots(VerifyOption vo, bool* failures) const;
+  void verify_code_roots(VerifyOption vo, bool* failures) const;
 
   void print() const;
   void print_on(outputStream* st) const;

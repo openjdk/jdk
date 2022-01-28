@@ -3342,8 +3342,8 @@ public:
              " starting at " HR_FORMAT,
              p2i(_nm), HR_FORMAT_PARAMS(hr), HR_FORMAT_PARAMS(hr->humongous_start_region()));
 
-      // HeapRegion::add_strong_code_root_locked() avoids adding duplicate entries.
-      hr->add_strong_code_root_locked(_nm);
+      // HeapRegion::add_code_root_locked() avoids adding duplicate entries.
+      hr->add_code_root_locked(_nm);
     }
   }
 
@@ -3368,7 +3368,7 @@ public:
              " starting at " HR_FORMAT,
              p2i(_nm), HR_FORMAT_PARAMS(hr), HR_FORMAT_PARAMS(hr->humongous_start_region()));
 
-      hr->remove_strong_code_root(_nm);
+      hr->remove_code_root(_nm);
     }
   }
 
