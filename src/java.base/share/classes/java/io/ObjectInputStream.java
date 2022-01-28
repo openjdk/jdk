@@ -1995,6 +1995,10 @@ public class ObjectInputStream
             }
         } catch (ClassNotFoundException ex) {
             resolveEx = ex;
+        } catch (IllegalAccessError err) {
+            IOException ice = new InvalidObjectException(err.getMessage());
+            ice.initCause(err);
+            throw ice;
         } catch (OutOfMemoryError memerr) {
             IOException ex = new InvalidObjectException("Proxy interface limit exceeded: " +
                     Arrays.toString(ifaces));
