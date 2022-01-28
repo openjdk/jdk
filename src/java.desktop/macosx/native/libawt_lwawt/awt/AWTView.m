@@ -50,7 +50,7 @@ static NSString *kbdLayout;
 @end
 
 // Uncomment this line to see fprintfs of each InputMethod API being called on this View
-#define IM_DEBUG TRUE
+//#define IM_DEBUG TRUE
 //#define EXTRA_DEBUG
 
 static BOOL shouldUsePressAndHold() {
