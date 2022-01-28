@@ -125,7 +125,7 @@ public class JCmdTestDynamicDump extends JCmdTestDumpBase {
         test(null, pid, noBoot, EXPECT_PASS, DYNAMIC_MESSAGES);
         String stdout = app.getProcessStdout();
         if (stdout.contains("Regenerate MethodHandle Holder classes...")) {
-            throw new RuntimeException("jcmd VM.cds dump_dynamic should not regenerate MethodHandle Holder classes");
+            throw new RuntimeException("jcmd VM.cds dynamic_dump should not regenerate MethodHandle Holder classes");
         }
         app.stopApp();
     }
