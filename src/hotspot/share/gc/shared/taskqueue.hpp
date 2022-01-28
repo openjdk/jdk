@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -473,6 +473,18 @@ public:
   virtual uint tasks() const;
 
   uint size() const { return _n; }
+
+#if TASKQUEUE_STATS
+private:
+  static void print_taskqueue_stats_hdr(outputStream* const st, const char* label);
+public:
+  void print_taskqueue_stats(outputStream* const st, const char* label);
+  void reset_taskqueue_stats();
+
+  // Prints taskqueue set statistics into gc+task+stats=trace and resets
+  // its statistics.
+  void print_and_reset_taskqueue_stats(const char* label);
+#endif // TASKQUEUE_STATS
 };
 
 template<class T, MEMFLAGS F> void
