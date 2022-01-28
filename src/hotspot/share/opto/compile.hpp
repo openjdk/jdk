@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -655,9 +655,7 @@ class Compile : public Phase {
   void end_method();
   bool should_print_igv(int level);
 
-  void print_method(CompilerPhaseType cpt, int level);
-  void print_method(CompilerPhaseType cpt, Node* n, int level);
-  void print_method_impl(CompilerPhaseType cpt, NOT_PRODUCT(const char* name COMMA) int level);
+  void print_method(CompilerPhaseType cpt, int level, Node* n = nullptr);
 
 #ifndef PRODUCT
   void igv_print_method_to_file(const char* phase_name = "Debug", bool append = false);
