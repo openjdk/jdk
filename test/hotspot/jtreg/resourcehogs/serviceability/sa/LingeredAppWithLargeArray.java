@@ -23,10 +23,12 @@
 
 import jdk.test.lib.apps.LingeredApp;
 
+import java.lang.ref.Reference;
+
 public class LingeredAppWithLargeArray extends LingeredApp {
-    public static int[] hugeArray;
     public static void main(String args[]) {
-        hugeArray = new int[Integer.MAX_VALUE/2];
+        int[] hugeArray = new int[Integer.MAX_VALUE/2];
         LingeredApp.main(args);
+        Reference.reachabilityFence(hugeArray);
     }
  }
