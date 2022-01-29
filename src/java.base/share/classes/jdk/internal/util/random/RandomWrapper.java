@@ -33,7 +33,7 @@ import java.util.stream.LongStream;
 
 /**
  * Class used to wrap a {@link java.util.random.RandomGenerator} to
- * {@link java.util.Random}
+ * {@link java.util.Random}.
  */
 
 @SuppressWarnings("serial")
@@ -56,7 +56,7 @@ public class RandomWrapper extends Random implements RandomGenerator {
 
     /**
      * setSeed does not exist in {@link java.util.random.RandomGenerator} so can't
-     * use it
+     * use it.
      */
     @Override
     public void setSeed(long seed) {
