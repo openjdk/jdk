@@ -46,7 +46,6 @@ import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -60,7 +59,6 @@ import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import sun.security.action.GetPropertyAction;
@@ -102,7 +100,6 @@ public class LocaleResources {
     private static final String SKELETON_PATTERN = "SP.";
 
     // ResourceBundle key names for skeletons
-    private static final String SKELETON_VALID_PATTERNS_KEY = "DateFormatItemValidPatterns";
     private static final String SKELETON_INPUT_REGIONS_KEY = "DateFormatItemInputRegions";
 
     // TimeZoneNamesBundle exemplar city prefix
@@ -641,8 +638,6 @@ public class LocaleResources {
         return matched;
     }
 
-    // Available skeleton patterns.
-    private Set<String> availableSkeletons;
     // Input Skeleton map for "preferred" and "allowed"
     // Map<"region", "skeleton">
     private Map<String, String> preferredInputSkeletons;
@@ -651,16 +646,11 @@ public class LocaleResources {
     private String jPattern;
     private String CPattern;
     private void initSkeletonIfNeeded() {
-        if (availableSkeletons == null) {
+        if (preferredInputSkeletons == null) {
             preferredInputSkeletons = new HashMap<>();
             allowedInputSkeletons = new HashMap<>();
             Pattern p = Pattern.compile("([^:]+):([^;]+);");
             ResourceBundle r = localeData.getDateFormatData(Locale.ROOT);
-            availableSkeletons = r.containsKey(SKELETON_VALID_PATTERNS_KEY) ?
-                Arrays.stream(r.getString(SKELETON_VALID_PATTERNS_KEY).split(","))
-                    .map(String::trim)
-                    .collect(Collectors.toUnmodifiableSet()) :
-                Collections.emptySet();
             var inputRegionsKey = SKELETON_INPUT_REGIONS_KEY + ".preferred";
             if (r.containsKey(inputRegionsKey)) {
                 p.matcher(r.getString(inputRegionsKey)).results()
@@ -753,8 +743,7 @@ public class LocaleResources {
                 }
                 return List.of(s).stream();
             })
-            .distinct()
-            .filter(availableSkeletons::contains);
+            .distinct();
     }
 
     /**

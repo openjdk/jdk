@@ -111,7 +111,6 @@ class Bundle {
     // DateFormatItem prefix
     final static String DATEFORMATITEM_KEY_PREFIX = "DateFormatItem.";
     final static String DATEFORMATITEM_INPUT_REGIONS_PREFIX = "DateFormatItemInputRegions.";
-    final static String DATEFORMATITEM_VALID_PATTERNS = "DateFormatItemValidPatterns";
 
     // Keys for individual time zone names
     private final static String TZ_GEN_LONG_KEY = "timezone.displayname.generic.long";
@@ -301,10 +300,9 @@ class Bundle {
             handleSkeletonPatterns(myMap, calendarType);
         }
 
-        // Skeleton validation
+        // Skeleton input regions
         if (isRoot()) {
             skeletonInputRegions(myMap);
-            myMap.put(DATEFORMATITEM_VALID_PATTERNS, validSkeletonPatterns());
         }
 
         // First, weed out any empty timezone or metazone names from myMap.
@@ -831,17 +829,5 @@ class Bundle {
                         e -> ((String)e.getValue()).trim()
                 ))
         );
-    }
-
-    // Since there is no way to parse LDML DTD, where valid skeleton patterns
-    // are listed as "comment", let's scrape it in a brute-force way.
-    private static String validSkeletonPatterns() throws IOException {
-        return Files.lines(Path.of(CLDRConverter.LOCAL_LDML_DTD))
-                .dropWhile(line -> !line.equals("<!ATTLIST dateFormatItem id CDATA #REQUIRED >"))
-                .takeWhile(line -> !line.contains("<!ELEMENT"))
-                .filter(line -> line.contains("<!--@MATCH:literal/"))
-                .findFirst()
-                .map(line -> line.replaceFirst("[^<]*<!--@MATCH:literal/", "").replaceFirst("-->", ""))
-                .orElse("");
     }
 }

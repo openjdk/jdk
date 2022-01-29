@@ -71,18 +71,18 @@ public class JavaTimeDateTimePatternImpl extends JavaTimeDateTimePatternProvider
     }
 
     @Override
-    public String getJavaTimeDateTimePattern(String requested, String calType, Locale locale) {
+    public String getJavaTimeDateTimePattern(String requestedTemplate, String calType, Locale locale) {
         LocaleProviderAdapter lpa = LocaleProviderAdapter.getResourceBundleBased();
         // CLDR's 'u'/'U' are not supported in the JDK. Replace them with 'y' instead
-        final var modifiedSkeleton = requested.replaceAll("[uU]", "y");
+        final var modifiedSkeleton = requestedTemplate.replaceAll("[uU]", "y");
         return ((ResourceBundleBasedAdapter)lpa).getCandidateLocales("", locale).stream()
                 .map(lpa::getLocaleResources)
                 .map(lr -> lr.getLocalizedPattern(modifiedSkeleton, calType))
                 .filter(Objects::nonNull)
                 .findFirst()
                 .or(() -> calType.equals("generic") ? Optional.empty():
-                        Optional.of(getJavaTimeDateTimePattern(requested, "generic", locale)))
-                .orElseThrow(() -> new DateTimeException("Request pattern \"" + requested +
+                        Optional.of(getJavaTimeDateTimePattern(requestedTemplate, "generic", locale)))
+                .orElseThrow(() -> new DateTimeException("Requested template \"" + requestedTemplate +
                         "\" cannot be resolved in the locale \"" + locale + "\""));
     }
 

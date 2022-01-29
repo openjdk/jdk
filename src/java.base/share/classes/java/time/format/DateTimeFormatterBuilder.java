@@ -251,11 +251,9 @@ public final class DateTimeFormatterBuilder {
      */
     public static String getLocalizedDateTimePattern(String requestedTemplate,
                                                      Chronology chrono, Locale locale) {
-        Objects.requireNonNull(locale, "locale");
+        Objects.requireNonNull(locale, "requestedTemplate");
         Objects.requireNonNull(chrono, "chrono");
-        if (requestedTemplate == null) {
-            throw new IllegalArgumentException("requestedTemplate must be non-null");
-        }
+        Objects.requireNonNull(locale, "locale");
         Locale override = CalendarDataUtility.findRegionOverride(locale);
         LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(JavaTimeDateTimePatternProvider.class, override);
         JavaTimeDateTimePatternProvider provider = adapter.getJavaTimeDateTimePatternProvider();
