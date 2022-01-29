@@ -772,8 +772,8 @@ public class SSLParameters {
      *        is empty (zero-length), the provider-specific default signature
      *        schemes will be used for the SSL/TLS/DTLS connection.
      * @throws IllegalArgumentException if signatureSchemes is null, or if
-     *        any element in a non-empty array is null or an
-     *        empty (zero-length) string.
+     *        any element in a non-empty array is null or
+     *        {@linkplain String#isBlank() blank}.
      *
      * @see #getSignatureSchemes
      *
@@ -786,9 +786,9 @@ public class SSLParameters {
 
         String[] tempSchemes = signatureSchemes.clone();
         for (String scheme : tempSchemes) {
-            if (scheme == null || scheme.isEmpty()) {
+            if (scheme == null || scheme.isBlank()) {
                 throw new IllegalArgumentException(
-                        "An element of signatureSchemes was null/empty");
+                        "An element of signatureSchemes was null or blank");
             }
         }
 
