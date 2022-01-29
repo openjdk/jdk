@@ -39,7 +39,7 @@ import java.util.stream.LongStream;
 @SuppressWarnings("serial")
 public class RandomWrapper extends Random implements RandomGenerator {
     private final RandomGenerator generator;
-    private boolean initialized;
+    private final boolean initialized;
 
     private RandomWrapper(RandomGenerator randomToWrap) {
         this.generator = randomToWrap;
