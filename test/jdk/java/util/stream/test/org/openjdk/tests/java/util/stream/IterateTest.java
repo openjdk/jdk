@@ -30,6 +30,8 @@ package org.openjdk.tests.java.util.stream;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -96,5 +98,19 @@ public class IterateTest extends OpTestCase {
         checkNPE(() -> LongStream.iterate(0, x -> x < 10, null));
         checkNPE(() -> DoubleStream.iterate(0, null, x -> x + 1));
         checkNPE(() -> DoubleStream.iterate(0, x -> x < 10, null));
+    }
+
+    @Test
+    public void testParallelize() {
+        checkUsesAtLeastTwoThreads(Stream.iterate(0, x -> x < 10, x -> x + 1));
+        checkUsesAtLeastTwoThreads(IntStream.iterate(0, x -> x < 10, x -> x + 1).boxed());
+        checkUsesAtLeastTwoThreads(LongStream.iterate(0, x -> x < 10, x -> x + 1).boxed());
+        checkUsesAtLeastTwoThreads(DoubleStream.iterate(0, x -> x < 10, x -> x + 1).boxed());
+    }
+
+    private void checkUsesAtLeastTwoThreads(Stream<?> stream) {
+        Set<Thread> threads = ConcurrentHashMap.newKeySet();
+        stream.parallel().forEach(s -> threads.add(Thread.currentThread()));
+        assertTrue(threads.size() >= 2);
     }
 }
