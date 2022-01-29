@@ -76,6 +76,8 @@ import java.util.LinkedHashMap;
  */
 public class SSLParameters {
 
+    private static String[] EMPTY_STRING_ARRAY = new String[0];
+
     private String[] cipherSuites;
     private String[] protocols;
     private boolean wantClientAuth;
@@ -87,8 +89,8 @@ public class SSLParameters {
     private boolean preferLocalCipherSuites;
     private boolean enableRetransmissions = true;
     private int maximumPacketSize = 0;
-    private String[] applicationProtocols = new String[0];
-    private String[] signatureSchemes = new String[0];
+    private String[] applicationProtocols = EMPTY_STRING_ARRAY;
+    private String[] signatureSchemes = EMPTY_STRING_ARRAY;
 
     /**
      * Constructs SSLParameters.
@@ -702,22 +704,36 @@ public class SSLParameters {
      * Returns a prioritized array of signature scheme names that can be used
      * over the SSL/TLS/DTLS protocols.
      * <p>
-     * The returned array includes {@code String} names from the list of
-     * standard signature schemes in the <a href=
+     * Note that the standard list of signature scheme names may be found in
+     * the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#signature-schemes">
-     * Signature Schemes</a> section of the Java Cryptography
-     * Architecture Standard Algorithm Name Documentation, and may also
-     * include other signature schemes that the provider supports.
+     * Signature Schemes</a> section of the Java Security Standard Algorithm
+     * Names Specification. Providers may support signature schemes not found
+     * in this list or might not use the recommended name for a certain
+     * signature scheme.
      * <p>
-     * The array could be empty (zero-length), in which case the underlying
-     * provider-specific default signature schemes will be used.
+     * The returned array could be empty (zero-length), in which case the
+     * underlying provider-specific default signature schemes will be used
+     * over the SSL/TLS/DTLS connections.
      *
      * @implSpec
-     * This method will return a new array each time it is invoked.
+     * This method will return a new array each time it is invoked. Providers
+     * should ignore unknown signature scheme names while establishing the
+     * SSL/TLS/DTLS connections.
+     *
+     * @implNote
+     * Note that the underlying provider may define the default signature
+     * schemes for each SSL/TLS/DTLS connection.  Applications may also use
+     * System Property, "jdk.tls.client.SignatureSchemes" and/or
+     * "jdk.tls.server.SignatureSchemes", to customize the provider-specific
+     * default signature schemes. If the {@link #setSignatureSchemes} method
+     * has not been called, this method should return the default signature
+     * schemes for connection populated objects, or an empty array for
+     * pre-populated objects.
      *
      * @return a non-null, possibly zero-length array of signature scheme
-     *         {@code String}s.  The array is placed in descending order of
-     *         signature scheme preference.
+     *         {@code String}s.  The array is ordered based on signature scheme
+     *         preference, with the first entry being the most preferred.
      * @see #setSignatureSchemes
      *
      * @since 19
@@ -733,17 +749,27 @@ public class SSLParameters {
      * Note that the standard list of signature scheme names may be found in
      * the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#signature-schemes">
-     * Signature Schemes</a> section of the Java Cryptography
-     * Architecture Standard Algorithm Name Documentation.  Providers
-     * may support signature schemes not found in this list or might not
-     * use the recommended name for a certain signature scheme.
+     * Signature Schemes</a> section of the Java Security Standard Algorithm
+     * Names Specification. Providers may support signature schemes not found
+     * in this list or might not use the recommended name for a certain
+     * signature scheme.
      *
      * @implSpec
      * This method will make a copy of the {@code signatureSchemes} array.
      *
+     * @implNote
+     * Note that the underlying provider may define the default signature
+     * schemes for each SSL/TLS/DTLS connection.  Applications may also use
+     * System Property, "jdk.tls.client.SignatureSchemes" and/or
+     * "jdk.tls.server.SignatureSchemes", to customize the provider-specific
+     * default signature schemes. If the {@code signatureSchemes} array is
+     * not empty, the {@code signatureSchemes} specified signature schemes
+     * rather than the provider-specific default signature schemes should be
+     * used for the SSL/TLS/DTLS connections.
+     *
      * @param signatureSchemes an ordered array of signature scheme names,
      *        with the first entry being the most preferred. If the array
-     *        is empty (zero-length), the prodiver-specific default signature
+     *        is empty (zero-length), the provider-specific default signature
      *        schemes will be used for the SSL/TLS/DTLS connection.
      * @throws IllegalArgumentException if signatureSchemes is null, or if
      *        any element in a non-empty array is null or an
@@ -769,4 +795,3 @@ public class SSLParameters {
         this.signatureSchemes = tempSchemes;
     }
 }
-
