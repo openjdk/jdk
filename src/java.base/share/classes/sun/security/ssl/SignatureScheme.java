@@ -435,8 +435,7 @@ enum SignatureScheme {
                     ss.supportedProtocols.contains(protocolVersion) &&
                     (config.signatureSchemes == null ||
                         config.signatureSchemes.length == 0 ||
-                        Arrays.asList(config.signatureSchemes)
-                              .contains(ss.name)) &&
+                        Utilities.contains(config.signatureSchemes, ss.name)) &&
                     ss.isPermitted(constraints)) {
                 supported.add(ss);
             } else {
