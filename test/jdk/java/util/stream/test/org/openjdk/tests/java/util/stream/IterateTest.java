@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ForkJoinPool;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -109,8 +110,10 @@ public class IterateTest extends OpTestCase {
     }
 
     private void checkUsesAtLeastTwoThreads(Stream<?> stream) {
+        ForkJoinPool pool = new ForkJoinPool(4);
         Set<Thread> threads = ConcurrentHashMap.newKeySet();
-        stream.parallel().forEach(s -> threads.add(Thread.currentThread()));
+        pool.submit(() -> stream.parallel().forEach(s -> threads.add(Thread.currentThread()))).join();
+        pool.shutdown();
         assertTrue(threads.size() >= 2);
     }
 }
