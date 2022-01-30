@@ -30,9 +30,7 @@ package org.openjdk.tests.java.util.stream;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ForkJoinPool;
+import java.util.stream.Collector;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -103,17 +101,18 @@ public class IterateTest extends OpTestCase {
 
     @Test
     public void testParallelize() {
-        checkUsesAtLeastTwoThreads(Stream.iterate(0, x -> x < 10, x -> x + 1));
-        checkUsesAtLeastTwoThreads(IntStream.iterate(0, x -> x < 10, x -> x + 1).boxed());
-        checkUsesAtLeastTwoThreads(LongStream.iterate(0, x -> x < 10, x -> x + 1).boxed());
-        checkUsesAtLeastTwoThreads(DoubleStream.iterate(0, x -> x < 10, x -> x + 1).boxed());
+        checkHasSplit(Stream.iterate(0, x -> x < 10, x -> x + 1));
+        checkHasSplit(IntStream.iterate(0, x -> x < 10, x -> x + 1).boxed());
+        checkHasSplit(LongStream.iterate(0, x -> x < 10, x -> x + 1).boxed());
+        checkHasSplit(DoubleStream.iterate(0, x -> x < 10, x -> x + 1).boxed());
     }
 
-    private void checkUsesAtLeastTwoThreads(Stream<?> stream) {
-        ForkJoinPool pool = new ForkJoinPool(4);
-        Set<Thread> threads = ConcurrentHashMap.newKeySet();
-        pool.submit(() -> stream.parallel().forEach(s -> threads.add(Thread.currentThread()))).join();
-        pool.shutdown();
-        assertTrue(threads.size() >= 2);
+    private void checkHasSplit(Stream<?> stream) {
+        int[] numberOfNonEmptyParts = stream.parallel().collect(
+                Collector.of(() -> new int[1], (acc, e) -> acc[0] = 1, (acc1, acc2) -> {
+                  acc1[0] += acc2[0];
+                  return acc1;
+                }));
+        assertTrue(numberOfNonEmptyParts[0] >= 2);
     }
 }
