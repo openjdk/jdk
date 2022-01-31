@@ -76,6 +76,6 @@ public abstract class JavaTimeDateTimePatternProvider extends LocaleServiceProvi
      */
     public String getJavaTimeDateTimePattern(String requestedTemplate, String calType, Locale locale) {
         // default implementation throws exception
-        throw new DateTimeException("Formatter is not available for the requested pattern: " + requestedTemplate);
+        throw new DateTimeException("Formatter is not available for the requested template: " + requestedTemplate);
     }
 }
