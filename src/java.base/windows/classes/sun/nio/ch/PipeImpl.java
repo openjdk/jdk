@@ -33,6 +33,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.StandardSocketOptions;
+import java.net.UnixDomainSocketAddress;
+
 import java.nio.*;
 import java.nio.channels.*;
 import java.nio.file.Files;
@@ -44,6 +46,7 @@ import java.security.PrivilegedActionException;
 import java.security.SecureRandom;
 import java.util.Random;
 
+import static java.net.StandardProtocolFamily.UNIX;
 
 /**
  * A simple Pipe implementation based on a socket connection.
@@ -156,6 +159,11 @@ class PipeImpl
                     try {
                         if (sc1 != null)
                             sc1.close();
+
+                        if (sa instanceof UnixDomainSocketAddress uaddr) {
+                            Files.deleteIfExists(uaddr.getPath());
+                        }
+
                         if (sc2 != null)
                             sc2.close();
                     } catch (IOException e2) {}
