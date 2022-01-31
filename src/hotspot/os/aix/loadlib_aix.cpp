@@ -110,11 +110,6 @@ static StringList g_stringlist;
 // eternal - this list is rebuilt on every reload.
 // Note that we do not hand out those entries, but copies of them.
 
-// struct entry_t {
-//   entry_t* next;
-//   loaded_module_t info;
-// };
-
 static void print_entry(const loaded_module_t* lm, outputStream* os) {
   os->print(" %c text: " INTPTR_FORMAT " - " INTPTR_FORMAT
             ", data: " INTPTR_FORMAT " - " INTPTR_FORMAT " "
@@ -321,18 +316,6 @@ static bool for_each_internal(os::LoadedModulesCallbackFunc cb, void* param) {
   return true;
 }
 
-// Helper for copying loaded module info to external callers.
-// To avoid dangling pointers 'next' is set to null
-static bool copy_lm_to_external(const loaded_module_t* const from, loaded_module_t* to) {
-  if (!to || !from) {
-    return false;
-  }
-
-  memcpy(to, from, sizeof(loaded_module_t));
-  to->next = nullptr;
-  return true;
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 // Externals
 
@@ -362,12 +345,17 @@ bool LoadedLibraries::find_for_text_address(const void* p,
   if (!g_first) {
     reload_table();
   }
+
   const loaded_module_t* const lm = find_entry_for_text_address(p);
-  if (lm) {
-    copy_lm_to_external(lm, info);
-    return true;
+  if (!lm) {
+    return false;
   }
-  return false;
+
+  if (info) {
+    memcpy(info, lm, sizeof(loaded_module_t));
+    info->next = nullptr;
+  }
+  return true;
 }
 
 
@@ -379,12 +367,17 @@ bool LoadedLibraries::find_for_data_address (
   if (!g_first) {
     reload_table();
   }
+
   const loaded_module_t* const lm = find_entry_for_data_address(p);
-  if (lm) {
-    copy_lm_to_external(lm, info);
-    return true;
+  if (!lm) {
+    return false;
   }
-  return false;
+
+  if (info) {
+    memcpy(info, lm, sizeof(loaded_module_t));
+    info->next = nullptr;
+  }
+  return true;
 }
 
 bool LoadedLibraries::for_each(os::LoadedModulesCallbackFunc cb, void* param) {

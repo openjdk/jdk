@@ -22,16 +22,16 @@
  *
  */
 
-#include "utilities/debug.hpp"
+#include "precompiled.hpp"
 #include "jvm.h"
 #include "libperfstat_aix.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "os_aix.inline.hpp"
-#include "precompiled.hpp"
 #include "runtime/os.hpp"
 #include "runtime/os_perf.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 #include <dirent.h>
@@ -54,12 +54,12 @@ typedef struct {
   u_longlong_t  sys;
   u_longlong_t  idle;
   u_longlong_t  wait;
-} CPUPerfTicks;
+} cpu_tick_store_t;
 
 typedef struct {
   double utime;
   double stime;
-} JVMTime;
+} jvm_time_store_t;
 
 enum {
   UNDETECTED,
@@ -67,21 +67,6 @@ enum {
   LINUX26_NPTL,
   BAREMETAL
 };
-
-static bool initialize_libperfstat() {
-  static bool is_libperfstat_loaded = false;
-
-  if (!is_libperfstat_loaded) {
-    is_libperfstat_loaded = libperfstat::init();
-  }
-
-  // If library is still not initialized, assume error.
-  if (!is_libperfstat_loaded) {
-    printf("Error: failed to load libperfstat (%s)", dlerror());
-  }
-
-  return is_libperfstat_loaded;
-}
 
 /**
  * Get info for requested PID from /proc/<pid>/psinfo file
@@ -107,7 +92,7 @@ static bool read_psinfo(const u_longlong_t& pid, psinfo_t& psinfo) {
 /**
  * Get and set ticks for the specified lcpu
  */
-static OSReturn get_lcpu_ticks(perfstat_id_t* lcpu_name, CPUPerfTicks* pticks) {
+static OSReturn get_lcpu_ticks(perfstat_id_t* lcpu_name, cpu_tick_store_t* pticks) {
   perfstat_cpu_t lcpu_stats;
 
   if (!pticks) {
@@ -116,7 +101,7 @@ static OSReturn get_lcpu_ticks(perfstat_id_t* lcpu_name, CPUPerfTicks* pticks) {
 
   // populate cpu_stats
   if (libperfstat::perfstat_cpu(lcpu_name, &lcpu_stats, sizeof(perfstat_cpu_t), 1) < 1) {
-    memset(pticks, 0, sizeof(CPUPerfTicks));
+    memset(pticks, 0, sizeof(cpu_tick_store_t));
     return OS_ERR;
   }
 
@@ -139,8 +124,6 @@ static OSReturn get_jvm_load(double* jvm_uload, double* jvm_sload) {
   perfstat_id_t name_holder;
   u_longlong_t timebase_diff;
 
-  assert(initialize_libperfstat(), "perfstat lib not available");
-
   jio_snprintf(name_holder.name, IDENTIFIER_LENGTH, "%d", getpid());
   if (libperfstat::perfstat_process(&name_holder, &jvm_stats, sizeof(perfstat_process_t), 1) < 1) {
     return OS_ERR;
@@ -160,27 +143,23 @@ static OSReturn get_jvm_load(double* jvm_uload, double* jvm_sload) {
   return OS_OK;
 }
 
-static void update_prev_time(JVMTime* from, JVMTime* to) {
+static void update_prev_time(jvm_time_store_t* from, jvm_time_store_t* to) {
   if (from && to) {
-    to->utime = from->utime;
-    to->stime = from->stime;
+    memcpy(to, from, sizeof(jvm_time_store_t));
   }
 }
 
-static void update_prev_ticks(CPUPerfTicks* from, CPUPerfTicks* to) {
+static void update_prev_ticks(cpu_tick_store_t* from, cpu_tick_store_t* to) {
   if (from && to) {
-    to->user = from->user;
-    to->sys  = from->sys;
-    to->idle = from->idle;
-    to->wait = from->wait;
+    memcpy(to, from, sizeof(cpu_tick_store_t));
   }
 }
 
 /**
  * Calculate the current system load from current ticks using previous ticks as a starting point.
  */
-static void calculate_updated_load(CPUPerfTicks* update, CPUPerfTicks* prev, double* load) {
-  CPUPerfTicks diff;
+static void calculate_updated_load(cpu_tick_store_t* update, cpu_tick_store_t* prev, double* load) {
+  cpu_tick_store_t diff;
 
   if (update && prev && load) {
     diff.user = update->user - prev->user;
@@ -202,13 +181,12 @@ static bool populate_lcpu_names(int ncpus, perfstat_id_t* lcpu_names) {
   perfstat_id_t   name_holder;
 
   assert(lcpu_names, "Names pointer NULL");
-  assert(initialize_libperfstat(), "perfstat lib not available");
 
   strncpy(name_holder.name, FIRST_CPU, IDENTIFIER_LENGTH);
 
   all_lcpu_stats = NEW_RESOURCE_ARRAY(perfstat_cpu_t, ncpus);
 
-  // populate cpu_stats && check that the expected number of records have been populated
+  // If perfstat_cpu does not return the expected number of names, signal error to caller
   if (ncpus != libperfstat::perfstat_cpu(&name_holder, all_lcpu_stats, sizeof(perfstat_cpu_t), ncpus)) {
     return false;
   }
@@ -230,8 +208,6 @@ static OSReturn perf_context_switch_rate(double* rate) {
   u_longlong_t ticks;
   perfstat_cpu_total_t cpu_stats;
 
-  assert(initialize_libperfstat(), "perfstat lib not available");
-
    if (libperfstat::perfstat_cpu_total(NULL, &cpu_stats, sizeof(perfstat_cpu_total_t), 1) < 0) {
      return OS_ERR;
    }
@@ -246,7 +222,7 @@ class CPUPerformanceInterface::CPUPerformance : public CHeapObj<mtInternal> {
  private:
   int _ncpus;
   perfstat_id_t* _lcpu_names;
-  CPUPerfTicks* _prev_ticks;
+  cpu_tick_store_t* _prev_ticks;
 
  public:
   CPUPerformance();
@@ -267,9 +243,6 @@ CPUPerformanceInterface::CPUPerformance::CPUPerformance():
 bool CPUPerformanceInterface::CPUPerformance::initialize() {
   perfstat_cpu_total_t cpu_stats;
 
-  if (!initialize_libperfstat()) {
-    return false;
-  }
   if (libperfstat::perfstat_cpu_total(NULL, &cpu_stats, sizeof(perfstat_cpu_total_t), 1) < 0) {
     return false;
   }
@@ -280,9 +253,9 @@ bool CPUPerformanceInterface::CPUPerformance::initialize() {
   _ncpus = cpu_stats.ncpus;
   _lcpu_names = NEW_C_HEAP_ARRAY(perfstat_id_t, _ncpus, mtInternal);
 
-  _prev_ticks = NEW_C_HEAP_ARRAY(CPUPerfTicks, _ncpus, mtInternal);
+  _prev_ticks = NEW_C_HEAP_ARRAY(cpu_tick_store_t, _ncpus, mtInternal);
   // Set all prev-tick values to 0
-  memset(_prev_ticks, 0, _ncpus*sizeof(CPUPerfTicks));
+  memset(_prev_ticks, 0, _ncpus*sizeof(cpu_tick_store_t));
 
   if (!populate_lcpu_names(_ncpus, _lcpu_names)) {
     return false;
@@ -296,7 +269,7 @@ CPUPerformanceInterface::CPUPerformance::~CPUPerformance() {
     FREE_C_HEAP_ARRAY(perfstat_id_t, _lcpu_names);
   }
   if (_prev_ticks) {
-    FREE_C_HEAP_ARRAY(CPUPerfTicks, _prev_ticks);
+    FREE_C_HEAP_ARRAY(cpu_tick_store_t, _prev_ticks);
   }
 }
 
@@ -304,7 +277,7 @@ CPUPerformanceInterface::CPUPerformance::~CPUPerformance() {
  * Get CPU load for all processes on specified logical CPU.
  */
 int CPUPerformanceInterface::CPUPerformance::cpu_load(int lcpu_number, double* lcpu_load) {
-  CPUPerfTicks ticks;
+  cpu_tick_store_t ticks;
 
   assert(lcpu_load != NULL, "NULL pointer passed to cpu_load");
   assert(lcpu_number < _ncpus, "Invalid lcpu passed to cpu_load");
@@ -324,23 +297,16 @@ int CPUPerformanceInterface::CPUPerformance::cpu_load(int lcpu_number, double* l
  * Get CPU load for all processes on all CPUs.
  */
 int CPUPerformanceInterface::CPUPerformance::cpu_load_total_process(double* total_load) {
-  CPUPerfTicks total_ticks;
-  CPUPerfTicks prev_total_ticks;
+  cpu_tick_store_t total_ticks;
+  cpu_tick_store_t prev_total_ticks;
 
   assert(total_load != NULL, "NULL pointer passed to cpu_load_total_process");
 
-  total_ticks.user = 0;
-  total_ticks.sys  = 0;
-  total_ticks.idle = 0;
-  total_ticks.wait = 0;
-
-  prev_total_ticks.user = 0;
-  prev_total_ticks.sys  = 0;
-  prev_total_ticks.idle = 0;
-  prev_total_ticks.wait = 0;
+  memset(&total_ticks, 0, sizeof(cpu_tick_store_t));
+  memset(&prev_total_ticks, 0, sizeof(cpu_tick_store_t));
 
   for (int lcpu = 0; lcpu < _ncpus; lcpu++) {
-    CPUPerfTicks lcpu_ticks;
+    cpu_tick_store_t lcpu_ticks;
 
     if (get_lcpu_ticks(&_lcpu_names[lcpu], &lcpu_ticks) == OS_ERR) {
       *total_load = -1.0;
@@ -447,8 +413,7 @@ SystemProcessInterface::SystemProcesses::SystemProcesses() {
 }
 
 bool SystemProcessInterface::SystemProcesses::initialize() {
-  return initialize_libperfstat();
-
+  return true;
 }
 
 SystemProcessInterface::SystemProcesses::~SystemProcesses() {
@@ -490,6 +455,7 @@ int SystemProcessInterface::SystemProcesses::system_processes(SystemProcess** sy
 
   for (int n = 0; n < *nprocs; n++) {
     psinfo_t psinfo;
+    // Note: SystemProcess with free these in its dtor.
     char* name     = NEW_C_HEAP_ARRAY(char, IDENTIFIER_LENGTH, mtInternal);
     char* exe_name = NEW_C_HEAP_ARRAY(char, PRFNSZ, mtInternal);
     char* cmd_line = NEW_C_HEAP_ARRAY(char, PRARGSZ, mtInternal);
@@ -590,13 +556,12 @@ class NetworkPerformanceInterface::NetworkPerformance : public CHeapObj<mtIntern
 NetworkPerformanceInterface::NetworkPerformance::NetworkPerformance() {}
 
 bool NetworkPerformanceInterface::NetworkPerformance::initialize() {
-  return initialize_libperfstat();
+  return true;
 }
 
 NetworkPerformanceInterface::NetworkPerformance::~NetworkPerformance() {}
 
 int NetworkPerformanceInterface::NetworkPerformance::network_utilization(NetworkInterface** network_interfaces) const {
-  ResourceMark rm;
   int n_records = 0;
   perfstat_netinterface_t* net_stats;
   perfstat_id_t name_holder;
@@ -608,23 +573,27 @@ int NetworkPerformanceInterface::NetworkPerformance::network_utilization(Network
   strncpy(name_holder.name , FIRST_NETINTERFACE, IDENTIFIER_LENGTH);
 
   // calling perfstat_<subsystem>(NULL, NULL, _, 0) returns number of available records
-  if ((n_records = libperfstat::perfstat_netinterface(NULL, NULL, sizeof(perfstat_netinterface_t), 0)) <= 0) {
+  if ((n_records = libperfstat::perfstat_netinterface(NULL, NULL, sizeof(perfstat_netinterface_t), 0)) < 0) {
     return OS_ERR;
   }
 
   records_allocated = n_records;
-  net_stats = NEW_RESOURCE_ARRAY(perfstat_netinterface_t, records_allocated);
+  net_stats = NEW_C_HEAP_ARRAY(perfstat_netinterface_t, records_allocated, mtInternal);
 
-  // populate net_stats && update the number of records that have been populated
   n_records = libperfstat::perfstat_netinterface(&name_holder, net_stats, sizeof(perfstat_netinterface_t), n_records);
 
   // check for error
   if (n_records < 0) {
+    FREE_C_HEAP_ARRAY(perfstat_netinterface_t, net_stats);
     return OS_ERR;
   }
 
   for (int i = 0; i < n_records; i++) {
     // Create new Network interface *with current head as next node*
+    // Note: NetworkInterface makes copies of these string values into RA memory
+    // this means:
+    // (1) we are free to clean our values upon exiting this proc
+    // (2) we avoid using RA-alloced memory here (ie. do not use NEW_RESOURCE_ARRAY)
     NetworkInterface* new_interface = new NetworkInterface(net_stats[i].name,
                                                            net_stats[i].ibytes,
                                                            net_stats[i].obytes,
@@ -632,6 +601,7 @@ int NetworkPerformanceInterface::NetworkPerformance::network_utilization(Network
     *network_interfaces = new_interface;
   }
 
+  FREE_C_HEAP_ARRAY(perfstat_netinterface_t, net_stats);
   return OS_OK;
 }
 
