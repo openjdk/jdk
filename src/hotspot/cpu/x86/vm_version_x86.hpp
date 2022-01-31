@@ -639,8 +639,9 @@ protected:
 
     // Intel features.
     if (is_intel()) {
-      if (_cpuid_info.ext_cpuid1_ecx.bits.lzcnt != 0)
+      if (_cpuid_info.ext_cpuid1_ecx.bits.lzcnt != 0) {
         result |= CPU_LZCNT;
+      }
       if (_cpuid_info.ext_cpuid1_ecx.bits.prefetchw != 0) {
         result |= CPU_3DNOW_PREFETCH;
       }
@@ -653,8 +654,9 @@ protected:
 
     // ZX features.
     if (is_zx()) {
-      if (_cpuid_info.ext_cpuid1_ecx.bits.lzcnt != 0)
+      if (_cpuid_info.ext_cpuid1_ecx.bits.lzcnt != 0) {
         result |= CPU_LZCNT;
+      }
       if (_cpuid_info.ext_cpuid1_ecx.bits.prefetchw != 0) {
         result |= CPU_3DNOW_PREFETCH;
       }
