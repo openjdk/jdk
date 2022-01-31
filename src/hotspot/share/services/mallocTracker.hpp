@@ -356,15 +356,9 @@ class MallocTracker : AllStatic {
   // Initialize malloc tracker for specific tracking level
   static bool initialize(NMT_TrackingLevel level);
 
-  // malloc tracking header size for specific tracking level
-  static inline size_t malloc_header_size(NMT_TrackingLevel level) {
-    return (level == NMT_off) ? 0 : sizeof(MallocHeader);
-  }
-
-  // malloc tracking footer size for specific tracking level
-  static inline size_t malloc_footer_size(NMT_TrackingLevel level) {
-    return (level == NMT_off) ? 0 : sizeof(uint16_t);
-  }
+  // The overhead that is incurred by switching on NMT (we need, per malloc allocation,
+  // space for header and 16-bit footer)
+  static const size_t overhead_per_malloc = sizeof(MallocHeader) + sizeof(uint16_t);
 
   // Parameter name convention:
   // memblock :   the beginning address for user data
@@ -376,15 +370,14 @@ class MallocTracker : AllStatic {
 
   // Record  malloc on specified memory block
   static void* record_malloc(void* malloc_base, size_t size, MEMFLAGS flags,
-    const NativeCallStack& stack, NMT_TrackingLevel level);
+    const NativeCallStack& stack);
 
   // Record free on specified memory block
   static void* record_free(void* memblock);
 
   // Offset memory address to header address
-  static inline void* get_base(void* memblock, NMT_TrackingLevel level) {
-    if (memblock == NULL || level == NMT_off) return memblock;
-    return (char*)memblock - malloc_header_size(level);
+  static inline void* get_base(void* memblock) {
+    return (char*)memblock - sizeof(MallocHeader);
   }
 
   // Get memory size

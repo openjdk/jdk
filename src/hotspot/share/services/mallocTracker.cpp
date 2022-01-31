@@ -234,17 +234,15 @@ bool MallocTracker::initialize(NMT_TrackingLevel level) {
 
 // Record a malloc memory allocation
 void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flags,
-  const NativeCallStack& stack, NMT_TrackingLevel level) {
-  assert(level != NMT_off, "precondition");
-
-  if (malloc_base == NULL) {
-    return NULL;
-  }
+  const NativeCallStack& stack)
+{
+  assert(MemTracker::enabled(), "precondition");
+  assert(malloc_base != NULL, "precondition");
 
   MallocMemorySummary::record_malloc(size, flags);
   MallocMemorySummary::record_new_malloc_header(sizeof(MallocHeader));
   uint32_t mst_marker = 0;
-  if (level == NMT_detail) {
+  if (MemTracker::tracking_level() == NMT_detail) {
     MallocSiteTable::allocation_at(stack, size, &mst_marker, flags);
   }
 
@@ -257,7 +255,7 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flag
   assert(((size_t)memblock & (sizeof(size_t) * 2 - 1)) == 0, "Alignment check");
 
 #ifdef ASSERT
-  if (level > NMT_off) {
+  if (MemTracker::enabled()) {
     // Read back
     assert(get_size(memblock) == size,   "Wrong size");
     assert(get_flags(memblock) == flags, "Wrong flags");

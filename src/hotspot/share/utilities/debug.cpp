@@ -479,6 +479,9 @@ extern "C" JNIEXPORT void verify() {
 extern "C" JNIEXPORT void pp(void* p) {
   Command c("pp");
   FlagSetting fl(DisplayVMOutput, true);
+  if (p == NULL) {
+    tty->print_cr("NULL");
+  }
   if (Universe::heap()->is_in(p)) {
     oop obj = cast_to_oop(p);
     obj->print();
@@ -498,7 +501,7 @@ extern "C" JNIEXPORT void pp(void* p) {
       }
       // Check if it is a malloc'd memory block
       if (CanUseSafeFetchN() && SafeFetchN((intptr_t*)p, 0) != 0) {
-        const MallocHeader* mhdr = (const MallocHeader*)MallocTracker::get_base(p, tracking_level);
+        const MallocHeader* mhdr = (const MallocHeader*)MallocTracker::get_base(p);
         char msg[256];
         address p_corrupted;
         if (SafeFetchN((intptr_t*)mhdr, 0) != 0 && mhdr->check_block_integrity(msg, sizeof(msg), &p_corrupted)) {
