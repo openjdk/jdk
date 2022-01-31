@@ -111,9 +111,9 @@ public class SSLParameters {
      * {@code setCipherSuites(cipherSuites);}.  Note that the
      * standard list of cipher suite names may be found in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
-     * JSSE Cipher Suite Names</a> section of the Java Cryptography
-     * Architecture Standard Algorithm Name Documentation.  Providers
-     * may support cipher suite names not found in this list.
+     * JSSE Cipher Suite Names</a> section of the Java Security Standard
+     * Algorithm Names specification.  Providers may support cipher suite
+     * names not found in this list.
      *
      * @param cipherSuites the array of ciphersuites (or null)
      */
@@ -131,9 +131,9 @@ public class SSLParameters {
      * Note that the standard list of cipher suite names may be found in the
      * <a href=
      * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
-     * JSSE Cipher Suite Names</a> section of the Java Cryptography
-     * Architecture Standard Algorithm Name Documentation.  Providers
-     * may support cipher suite names not found in this list.
+     * JSSE Cipher Suite Names</a> section of the Java Security Standard
+     * Algorithm Names specification.  Providers may support cipher suite
+     * names not found in this list.
      *
      * @param cipherSuites the array of ciphersuites (or null)
      * @param protocols the array of protocols (or null)
@@ -154,9 +154,9 @@ public class SSLParameters {
      * The returned array includes cipher suites from the list of standard
      * cipher suite names in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
-     * JSSE Cipher Suite Names</a> section of the Java Cryptography
-     * Architecture Standard Algorithm Name Documentation, and may also
-     * include other cipher suites that the provider supports.
+     * JSSE Cipher Suite Names</a> section of the Java Security Standard
+     * Algorithm Names specification, and may also include other cipher suites
+     * that the provider supports.
      *
      * @return a copy of the array of ciphersuites or null if none
      * have been set.
@@ -171,10 +171,10 @@ public class SSLParameters {
      * @param cipherSuites the array of ciphersuites (or null).  Note that the
      * standard list of cipher suite names may be found in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
-     * JSSE Cipher Suite Names</a> section of the Java Cryptography
-     * Architecture Standard Algorithm Name Documentation.  Providers
-     * may support cipher suite names not found in this list or might not
-     * use the recommended name for a certain cipher suite.
+     * JSSE Cipher Suite Names</a> section of the Java Security Standard
+     * Algorithm Names specification.  Providers may support cipher suite
+     * names not found in this list or might not use the recommended name
+     * for a certain cipher suite.
      */
     public void setCipherSuites(String[] cipherSuites) {
         this.cipherSuites = clone(cipherSuites);
