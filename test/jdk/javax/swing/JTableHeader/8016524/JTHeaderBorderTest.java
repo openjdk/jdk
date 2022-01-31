@@ -27,7 +27,7 @@
  * @key headful
  * @summary Tests whether the bottom line of JTableHeader border is visible for MacOS default LAF
  * @run main JTHeaderBorderTest
-*/
+ */
 
 import java.awt.Point;
 import java.awt.Robot;
