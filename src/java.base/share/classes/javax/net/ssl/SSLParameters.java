@@ -112,7 +112,7 @@ public class SSLParameters {
      * standard list of cipher suite names may be found in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
      * JSSE Cipher Suite Names</a> section of the Java Security Standard
-     * Algorithm Names specification.  Providers may support cipher suite
+     * Algorithm Names Specification.  Providers may support cipher suite
      * names not found in this list.
      *
      * @param cipherSuites the array of ciphersuites (or null)
@@ -132,7 +132,7 @@ public class SSLParameters {
      * <a href=
      * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
      * JSSE Cipher Suite Names</a> section of the Java Security Standard
-     * Algorithm Names specification.  Providers may support cipher suite
+     * Algorithm Names Specification.  Providers may support cipher suite
      * names not found in this list.
      *
      * @param cipherSuites the array of ciphersuites (or null)
@@ -155,7 +155,7 @@ public class SSLParameters {
      * cipher suite names in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
      * JSSE Cipher Suite Names</a> section of the Java Security Standard
-     * Algorithm Names specification, and may also include other cipher suites
+     * Algorithm Names Specification, and may also include other cipher suites
      * that the provider supports.
      *
      * @return a copy of the array of ciphersuites or null if none
@@ -172,7 +172,7 @@ public class SSLParameters {
      * standard list of cipher suite names may be found in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
      * JSSE Cipher Suite Names</a> section of the Java Security Standard
-     * Algorithm Names specification.  Providers may support cipher suite
+     * Algorithm Names Specification.  Providers may support cipher suite
      * names not found in this list or might not use the recommended name
      * for a certain cipher suite.
      */

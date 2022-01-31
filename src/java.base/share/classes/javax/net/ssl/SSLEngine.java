@@ -921,7 +921,7 @@ public abstract class SSLEngine {
      * cipher suite names in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
      * JSSE Cipher Suite Names</a> section of the Java Security Standard
-     * Algorithm Names specification, and may also include other cipher
+     * Algorithm Names Specification, and may also include other cipher
      * suites that the provider supports.
      *
      * @return  an array of cipher suite names
@@ -947,7 +947,7 @@ public abstract class SSLEngine {
      * cipher suite names in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
      * JSSE Cipher Suite Names</a> section of the Java Security Standard
-     * Algorithm Names specification, and may also include other cipher
+     * Algorithm Names Specification, and may also include other cipher
      * suites that the provider supports.
      *
      * @return  an array of cipher suite names
@@ -969,7 +969,7 @@ public abstract class SSLEngine {
      * <a href=
      * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
      * JSSE Cipher Suite Names</a> section of the Java Security Standard
-     * Algorithm Names specification. Providers may support cipher suite
+     * Algorithm Names Specification. Providers may support cipher suite
      * names not found in this list or might not use the recommended name
      * for a certain cipher suite.
      * <P>

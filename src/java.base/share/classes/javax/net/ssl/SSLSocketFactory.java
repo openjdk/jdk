@@ -114,7 +114,7 @@ public abstract class SSLSocketFactory extends SocketFactory {
      * cipher suite names in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
      * JSSE Cipher Suite Names</a> section of the Java Security Standard
-     * Algorithm Names specification, and may also include other cipher suites
+     * Algorithm Names Specification, and may also include other cipher suites
      * that the provider supports.
      *
      * @see #getSupportedCipherSuites()
@@ -133,7 +133,7 @@ public abstract class SSLSocketFactory extends SocketFactory {
      * cipher suite names in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
      * JSSE Cipher Suite Names</a> section of the Java Security Standard
-     * Algorithm Names specification, and may also include other cipher suites
+     * Algorithm Names Specification, and may also include other cipher suites
      * that the provider supports.
      *
      * @see #getDefaultCipherSuites()
