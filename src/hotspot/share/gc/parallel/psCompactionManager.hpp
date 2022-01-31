@@ -97,6 +97,7 @@ class ParCompactionManager : public CHeapObj<mtGC> {
 
   static void initialize(ParMarkBitMap* mbm);
 
+  bool transfer_from_overflow_stack(ObjArrayTask& task);
  protected:
   // Array of task queues.  Needed by the task terminator.
   static RegionTaskQueueSet* region_task_queues()      { return _region_task_queues; }

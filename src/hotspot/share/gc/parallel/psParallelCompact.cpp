@@ -1984,17 +1984,15 @@ void steal_marking_work(TaskTerminator& terminator, uint worker_id) {
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(worker_id);
 
-  oop obj = NULL;
-  ObjArrayTask task;
   do {
-    while (ParCompactionManager::steal_objarray(worker_id,  task)) {
+    oop obj = NULL;
+    ObjArrayTask task;
+    if (ParCompactionManager::steal_objarray(worker_id,  task)) {
       cm->follow_array((objArrayOop)task.obj(), task.index());
-      cm->follow_marking_stacks();
-    }
-    while (ParCompactionManager::steal(worker_id, obj)) {
+    } else if (ParCompactionManager::steal(worker_id, obj)) {
       cm->follow_contents(obj);
-      cm->follow_marking_stacks();
     }
+    cm->follow_marking_stacks();
   } while (!terminator.offer_termination());
 }
 
@@ -2118,6 +2116,10 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
   }
 
   _gc_tracer.report_object_count_after_gc(is_alive_closure());
+#if TASKQUEUE_STATS
+  ParCompactionManager::oop_task_queues()->print_and_reset_taskqueue_stats("Oop Queue");
+  ParCompactionManager::_objarray_task_queues->print_and_reset_taskqueue_stats("ObjArrayOop Queue");
+#endif
 }
 
 class PSAdjustTask final : public WorkerTask {
