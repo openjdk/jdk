@@ -177,7 +177,7 @@ public class StringEncode {
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public byte[] encodeLongAscii() throws Exception {
+    public byte[] encodeAsciiLong() throws Exception {
         return longAsciiString.getBytes(charset);
     }
 
@@ -255,5 +255,13 @@ public class StringEncode {
         bh.consume(latin1String.getBytes(charset));
         bh.consume(asciiString.getBytes(charset));
         bh.consume(longAsciiString.getBytes(charset));
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void encodeShortMixed(Blackhole bh) throws Exception {
+        bh.consume(utf16String.getBytes(charset));
+        bh.consume(latin1String.getBytes(charset));
+        bh.consume(asciiString.getBytes(charset));
     }
 }

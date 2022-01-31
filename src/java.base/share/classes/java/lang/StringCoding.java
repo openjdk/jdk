@@ -40,7 +40,8 @@ class StringCoding {
     }
 
     /**
-     * Count the number of positive bytes, exactly.
+     * Count the number of consecutive, leading positive bytes in the
+     * range.
      */
     @IntrinsicCandidate
     public static int countPositives(byte[] ba, int off, int len) {

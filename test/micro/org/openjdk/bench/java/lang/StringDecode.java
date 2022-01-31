@@ -248,4 +248,23 @@ public class StringDecode {
         bh.consume(new String(asciiString, charset));
         bh.consume(new String(longAsciiString, charset));
     }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void decodeStartMixed(Blackhole bh) throws Exception {
+        bh.consume(new String(utf16String, charset));
+        bh.consume(new String(longUtf16StartString, charset));
+        bh.consume(new String(longLatin1StartString, charset));
+        bh.consume(new String(latin1String, charset));
+        bh.consume(new String(asciiString, charset));
+        bh.consume(new String(longAsciiString, charset));
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void decodeShortMixed(Blackhole bh) throws Exception {
+        bh.consume(new String(utf16String, charset));
+        bh.consume(new String(latin1String, charset));
+        bh.consume(new String(asciiString, charset));
+    }
 }
