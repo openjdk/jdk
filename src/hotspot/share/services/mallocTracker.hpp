@@ -375,23 +375,6 @@ class MallocTracker : AllStatic {
   // Record free on specified memory block
   static void* record_free(void* memblock);
 
-  // Offset memory address to header address
-  static inline void* get_base(void* memblock) {
-    return (char*)memblock - sizeof(MallocHeader);
-  }
-
-  // Get memory size
-  static inline size_t get_size(void* memblock) {
-    MallocHeader* header = malloc_header(memblock);
-    return header->size();
-  }
-
-  // Get memory type
-  static inline MEMFLAGS get_flags(void* memblock) {
-    MallocHeader* header = malloc_header(memblock);
-    return header->flags();
-  }
-
   static inline void record_new_arena(MEMFLAGS flags) {
     MallocMemorySummary::record_new_arena(flags);
   }
@@ -403,7 +386,7 @@ class MallocTracker : AllStatic {
   static inline void record_arena_size_change(ssize_t size, MEMFLAGS flags) {
     MallocMemorySummary::record_arena_size_change(size, flags);
   }
- private:
+
   static inline MallocHeader* malloc_header(void *memblock) {
     assert(memblock != NULL, "NULL pointer");
     MallocHeader* header = (MallocHeader*)((char*)memblock - sizeof(MallocHeader));

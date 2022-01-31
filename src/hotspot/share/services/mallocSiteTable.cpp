@@ -111,7 +111,6 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t*
   const unsigned int hash = key.calculate_hash();
   const unsigned int index = hash_to_index(hash);
   *marker = 0;
-  unsigned bucket_idx = (size_t)index;
 
   // First entry for this hash bucket
   if (_table[index] == NULL) {
@@ -121,7 +120,7 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t*
 
     // swap in the head
     if (Atomic::replace_if_null(&_table[index], entry)) {
-      *marker = build_marker(bucket_idx, 0);
+      *marker = build_marker(index, 0);
       return entry->data();
     }
 
@@ -130,22 +129,22 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t*
 
   unsigned pos_idx = 0;
   MallocSiteHashtableEntry* head = _table[index];
-  while (head != NULL && pos_idx <= MAX_BUCKET_LENGTH) {
+  while (head != NULL && pos_idx < MAX_BUCKET_LENGTH) {
     if (head->hash() == hash) {
       MallocSite* site = head->data();
       if (site->flag() == flags && site->equals(key)) {
-        *marker = build_marker(bucket_idx, pos_idx);
+        *marker = build_marker(index, pos_idx);
         return head->data();
       }
     }
 
-    if (head->next() == NULL && pos_idx < MAX_BUCKET_LENGTH) {
+    if (head->next() == NULL && pos_idx < (MAX_BUCKET_LENGTH - 1)) {
       MallocSiteHashtableEntry* entry = new_entry(key, flags);
       // OOM check
       if (entry == NULL) return NULL;
       if (head->atomic_insert(entry)) {
         pos_idx ++;
-        *marker = build_marker(bucket_idx, pos_idx);
+        *marker = build_marker(index, pos_idx);
         return entry->data();
       }
       // contended, other thread won

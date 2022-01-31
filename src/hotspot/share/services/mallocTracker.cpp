@@ -255,12 +255,13 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flag
   assert(((size_t)memblock & (sizeof(size_t) * 2 - 1)) == 0, "Alignment check");
 
 #ifdef ASSERT
-  if (MemTracker::enabled()) {
-    // Read back
-    assert(get_size(memblock) == size,   "Wrong size");
-    assert(get_flags(memblock) == flags, "Wrong flags");
+  // Read back
+  {
+    MallocHeader* const header2 = malloc_header(memblock);
+    assert(header2->size() == size, "Wrong size");
+    assert(header2->flags() == flags, "Wrong flags");
+    header2->assert_block_integrity();
   }
-  header->assert_block_integrity();
 #endif
 
   return memblock;

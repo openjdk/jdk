@@ -118,7 +118,10 @@ class MallocSiteTable : AllStatic {
 
   STATIC_ASSERT(table_size <= MAX_MALLOCSITE_TABLE_SIZE);
 
-  static uint32_t build_marker(uint16_t bucket_idx, uint16_t pos_idx) { return (uint32_t)bucket_idx << 16 | pos_idx; }
+  static uint32_t build_marker(unsigned bucket_idx, unsigned pos_idx) {
+    assert(bucket_idx <= MAX_MALLOCSITE_TABLE_SIZE && pos_idx < MAX_BUCKET_LENGTH, "overflow");
+    return (uint32_t)bucket_idx << 16 | pos_idx;
+  }
   static uint16_t bucket_idx_from_marker(uint32_t marker) { return marker >> 16; }
   static uint16_t pos_idx_from_marker(uint32_t marker) { return marker & 0xFFFF; }
 
