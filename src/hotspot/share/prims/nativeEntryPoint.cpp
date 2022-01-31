@@ -34,18 +34,14 @@
 #include "prims/universalNativeInvoker.hpp"
 #include "runtime/jniHandles.inline.hpp"
 
-JNI_LEAF(jlong, NEP_vmStorageToVMReg(JNIEnv* env, jclass _unused, jint type, jint index))
-  return ForeignGlobals::vmstorage_to_vmreg(type, index)->value();
-JNI_END
-
 JNI_ENTRY(jlong, NEP_makeInvoker(JNIEnv* env, jclass _unused, jobject method_type, jobject jabi,
-                                 jlongArray arg_moves, jlongArray ret_moves, jboolean needs_return_buffer))
+                                 jobjectArray arg_moves, jobjectArray ret_moves, jboolean needs_return_buffer))
   ResourceMark rm;
   const ABIDescriptor abi = ForeignGlobals::parse_abi_descriptor(jabi);
 
   oop type = JNIHandles::resolve(method_type);
-  typeArrayOop arg_moves_oop = oop_cast<typeArrayOop>(JNIHandles::resolve(arg_moves));
-  typeArrayOop ret_moves_oop = oop_cast<typeArrayOop>(JNIHandles::resolve(ret_moves));
+  objArrayOop arg_moves_oop = oop_cast<objArrayOop>(JNIHandles::resolve(arg_moves));
+  objArrayOop ret_moves_oop = oop_cast<objArrayOop>(JNIHandles::resolve(ret_moves));
   int pcount = java_lang_invoke_MethodType::ptype_count(type);
   int pslots = java_lang_invoke_MethodType::ptype_slot_count(type);
   BasicType* basic_type = NEW_RESOURCE_ARRAY(BasicType, pslots);
@@ -56,7 +52,7 @@ JNI_ENTRY(jlong, NEP_makeInvoker(JNIEnv* env, jclass _unused, jobject method_typ
     assert(java_lang_Class::is_primitive(type_oop), "Only primitives expected");
     BasicType bt = java_lang_Class::primitive_type(type_oop);
     basic_type[bt_idx++] = bt;
-    input_regs.push(VMRegImpl::as_VMReg(arg_moves_oop->long_at(i)));
+    input_regs.push(ForeignGlobals::parse_vmstorage(arg_moves_oop->obj_at(i)));
 
     if (bt == BasicType::T_DOUBLE || bt == BasicType::T_LONG) {
       basic_type[bt_idx++] = T_VOID;
@@ -74,7 +70,7 @@ JNI_ENTRY(jlong, NEP_makeInvoker(JNIEnv* env, jclass _unused, jobject method_typ
   for (int i = 0; i < outs; i++) {
     // note that we don't care about long/double upper halfs here:
     // we are NOT moving Java values, we are moving register-sized values
-    output_regs.push(VMRegImpl::as_VMReg(ret_moves_oop->long_at(i)));
+    output_regs.push(ForeignGlobals::parse_vmstorage(ret_moves_oop->obj_at(i)));
   }
 
 #ifdef ASSERT
@@ -113,8 +109,7 @@ JNI_END
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
 
 static JNINativeMethod NEP_methods[] = {
-  {CC "vmStorageToVMReg", CC "(II)J", FN_PTR(NEP_vmStorageToVMReg)},
-  {CC "makeInvoker", CC "(Ljava/lang/invoke/MethodType;Ljdk/internal/invoke/ABIDescriptorProxy;[J[JZ)J", FN_PTR(NEP_makeInvoker)},
+  {CC "makeInvoker", CC "(Ljava/lang/invoke/MethodType;Ljdk/internal/invoke/ABIDescriptorProxy;[Ljdk/internal/invoke/VMStorageProxy;[Ljdk/internal/invoke/VMStorageProxy;Z)J", FN_PTR(NEP_makeInvoker)},
 };
 
 JNI_ENTRY(void, JVM_RegisterNativeEntryPointMethods(JNIEnv *env, jclass NEP_class))

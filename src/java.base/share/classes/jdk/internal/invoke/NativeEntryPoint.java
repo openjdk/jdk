@@ -29,79 +29,49 @@ import java.lang.invoke.MethodType;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * This class describes a native call, including arguments/return shuffle moves, PC entry point and
- * various other info which are relevant when the call will be intrinsified by C2.
+ * This class describes a 'native invoker', which is used as an appendix argument to linkToNative calls.
  */
 public class NativeEntryPoint {
     static {
         registerNatives();
     }
 
-    private final int shadowSpace;
-
-    // encoded as VMRegImpl*
-    private final long[] argMoves;
-    private final long[] returnMoves;
-
-    private final boolean needTransition;
-    private final MethodType methodType; // C2 sees erased version (byte -> int), so need this explicitly
-    private final String name;
-
+    private final MethodType methodType;
     private final long invoker;
 
     private static final Map<CacheKey, Long> INVOKER_CACHE = new ConcurrentHashMap<>();
-    private record CacheKey(MethodType mt, int shadowSpaceBytes,
-                            List<VMStorageProxy> argMoves, List<VMStorageProxy> retMoves) {}
+    private record CacheKey(MethodType methodType, ABIDescriptorProxy abi,
+                            List<VMStorageProxy> argMoves, List<VMStorageProxy> retMoves,
+                            boolean needsReturnBuffer) {}
 
-    private NativeEntryPoint(int shadowSpace, long[] argMoves, long[] returnMoves,
-                     boolean needTransition, MethodType methodType, String name, long invoker) {
-        this.shadowSpace = shadowSpace;
-        this.argMoves = Objects.requireNonNull(argMoves);
-        this.returnMoves = Objects.requireNonNull(returnMoves);
-        this.needTransition = needTransition;
+    private NativeEntryPoint(MethodType methodType, long invoker) {
         this.methodType = methodType;
-        this.name = name;
         this.invoker = invoker;
     }
 
-    public static NativeEntryPoint make(String name, ABIDescriptorProxy abi,
+    public static NativeEntryPoint make(ABIDescriptorProxy abi,
                                         VMStorageProxy[] argMoves, VMStorageProxy[] returnMoves,
-                                        boolean needTransition, MethodType methodType, boolean needsReturnBuffer) {
+                                        MethodType methodType, boolean needsReturnBuffer) {
         if (returnMoves.length > 1 != needsReturnBuffer) {
             throw new IllegalArgumentException("Multiple register return, but needsReturnBuffer was false");
         }
 
         assert (methodType.parameterType(0) == long.class) : "Address expected";
-        assert (!needsReturnBuffer || methodType.parameterType(1) == long.class) : "IMR address expected";
+        assert (!needsReturnBuffer || methodType.parameterType(1) == long.class) : "return buffer address expected";
 
-        int shadowSpaceBytes = abi.shadowSpaceBytes();
-        long[] encArgMoves = encodeVMStorages(argMoves);
-        long[] encRetMoves = encodeVMStorages(returnMoves);
-
-        CacheKey key = new CacheKey(methodType, abi.shadowSpaceBytes(),
-                Arrays.asList(argMoves), Arrays.asList(returnMoves));
+        CacheKey key = new CacheKey(methodType, abi, Arrays.asList(argMoves), Arrays.asList(returnMoves), needsReturnBuffer);
         long invoker = INVOKER_CACHE.computeIfAbsent(key, k ->
-            makeInvoker(methodType, abi, encArgMoves, encRetMoves, needsReturnBuffer));
+            makeInvoker(methodType, abi, argMoves, returnMoves, needsReturnBuffer));
 
-        return new NativeEntryPoint(shadowSpaceBytes, encArgMoves, encRetMoves,
-                needTransition, methodType, name, invoker);
+        return new NativeEntryPoint(methodType, invoker);
     }
 
-    private static long[] encodeVMStorages(VMStorageProxy[] moves) {
-        long[] out = new long[moves.length];
-        for (int i = 0; i < moves.length; i++) {
-            out[i] = vmStorageToVMReg(moves[i].type(), moves[i].index());
-        }
-        return out;
-    }
-
-    private static native long vmStorageToVMReg(int type, int index);
-
-    private static native long makeInvoker(MethodType methodType, ABIDescriptorProxy abi, long[] encArgMoves, long[] encRetMoves, boolean needsReturnBuffer);
+    private static native long makeInvoker(MethodType methodType, ABIDescriptorProxy abi,
+                                           VMStorageProxy[] encArgMoves, VMStorageProxy[] encRetMoves,
+                                           boolean needsReturnBuffer);
 
     public MethodType type() {
         return methodType;

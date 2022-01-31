@@ -48,7 +48,6 @@ public class CallingSequenceBuilder {
 
     private final ABIDescriptor abi;
 
-    private boolean isTrivial;
     private final boolean forUpcall;
     private final List<List<Binding>> inputBindings = new ArrayList<>();
     private List<Binding> outputBindings = List.of();
@@ -83,11 +82,6 @@ public class CallingSequenceBuilder {
         return this;
     }
 
-    public CallingSequenceBuilder setTrivial(boolean isTrivial) {
-        this.isTrivial = isTrivial;
-        return this;
-    }
-
     private boolean needsReturnBuffer() {
         return outputBindings.stream()
             .filter(Binding.Move.class::isInstance)
@@ -113,7 +107,7 @@ public class CallingSequenceBuilder {
                 Binding.boxAddress(),
                 Binding.toSegment(returnBufferSize)));
         }
-        return new CallingSequence(mt, desc, isTrivial, needsReturnBuffer, returnBufferSize, allocationSize, inputBindings, outputBindings);
+        return new CallingSequence(mt, desc, needsReturnBuffer, returnBufferSize, allocationSize, inputBindings, outputBindings);
     }
 
     private long computeAllocationSize() {

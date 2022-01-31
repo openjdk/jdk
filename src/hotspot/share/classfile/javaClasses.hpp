@@ -1042,12 +1042,7 @@ class jdk_internal_invoke_NativeEntryPoint: AllStatic {
   friend class JavaClasses;
 
  private:
-  static int _shadow_space_offset;
-  static int _argMoves_offset;
-  static int _returnMoves_offset;
-  static int _need_transition_offset;
   static int _method_type_offset;
-  static int _name_offset;
   static int _invoker_offset;
 
   static void compute_offsets();
@@ -1056,12 +1051,7 @@ class jdk_internal_invoke_NativeEntryPoint: AllStatic {
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 
   // Accessors
-  static jint       shadow_space(oop entry);
-  static oop        argMoves(oop entry);
-  static oop        returnMoves(oop entry);
-  static jboolean   need_transition(oop entry);
   static oop        method_type(oop entry);
-  static oop        name(oop entry);
   static jlong      invoker(oop entry);
 
   // Testers
@@ -1072,12 +1062,7 @@ class jdk_internal_invoke_NativeEntryPoint: AllStatic {
   static bool is_instance(oop obj);
 
   // Accessors for code generation:
-  static int shadow_space_offset_in_bytes()    { return _shadow_space_offset;    }
-  static int argMoves_offset_in_bytes()        { return _argMoves_offset;        }
-  static int returnMoves_offset_in_bytes()     { return _returnMoves_offset;     }
-  static int need_transition_offset_in_bytes() { return _need_transition_offset; }
   static int method_type_offset_in_bytes()     { return _method_type_offset;     }
-  static int name_offset_in_bytes()            { return _name_offset;            }
   static int invoker_offset_in_bytes()         { return _invoker_offset;         }
 };
 

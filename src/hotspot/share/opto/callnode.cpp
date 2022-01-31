@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "compiler/compileLog.hpp"
 #include "ci/bcEscapeAnalyzer.hpp"
-#include "ci/ciNativeEntryPoint.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
@@ -1084,13 +1083,7 @@ Node* CallStaticJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         set_generator(NULL);
       }
     } else if (iid == vmIntrinsics::_linkToNative) {
-      Node* nep_node = in(TypeFunc::Parms + callee->arg_size() - 1);
-      if (nep_node->Opcode() == Op_ConP /* NEP */
-          && in(TypeFunc::Parms + 0)->Opcode() == Op_ConL /* address */
-          && !nep_node->bottom_type()->is_oopptr()->const_oop()->as_native_entry_point()->need_transition()) {
-        phase->C->prepend_late_inline(cg);
-        set_generator(NULL);
-      }
+      // never retry
     } else {
       assert(callee->has_member_arg(), "wrong type of call?");
       if (in(TypeFunc::Parms + callee->arg_size() - 1)->Opcode() == Op_ConP) {
@@ -1226,71 +1219,6 @@ bool CallLeafVectorNode::cmp( const Node &n ) const {
   return CallLeafNode::cmp(call) && _num_bits == call._num_bits;
 }
 
-//=============================================================================
-uint CallNativeNode::size_of() const { return sizeof(*this); }
-bool CallNativeNode::cmp( const Node &n ) const {
-  CallNativeNode &call = (CallNativeNode&)n;
-  return CallNode::cmp(call) && !strcmp(_name,call._name)
-    && _arg_regs == call._arg_regs && _ret_regs == call._ret_regs;
-}
-Node* CallNativeNode::match(const ProjNode *proj, const Matcher *matcher) {
-  switch (proj->_con) {
-    case TypeFunc::Control:
-    case TypeFunc::I_O:
-    case TypeFunc::Memory:
-      return new MachProjNode(this,proj->_con,RegMask::Empty,MachProjNode::unmatched_proj);
-    case TypeFunc::ReturnAdr:
-    case TypeFunc::FramePtr:
-      ShouldNotReachHere();
-    case TypeFunc::Parms: {
-      const Type* field_at_con = tf()->range()->field_at(proj->_con);
-      const BasicType bt = field_at_con->basic_type();
-      OptoReg::Name optoreg = OptoReg::as_OptoReg(_ret_regs.at(proj->_con - TypeFunc::Parms));
-      OptoRegPair regs;
-      if (bt == T_DOUBLE || bt == T_LONG) {
-        regs.set2(optoreg);
-      } else {
-        regs.set1(optoreg);
-      }
-      RegMask rm = RegMask(regs.first());
-      if(OptoReg::is_valid(regs.second()))
-        rm.Insert(regs.second());
-      return new MachProjNode(this, proj->_con, rm, field_at_con->ideal_reg());
-    }
-    case TypeFunc::Parms + 1: {
-      assert(tf()->range()->field_at(proj->_con) == Type::HALF, "Expected HALF");
-      assert(_ret_regs.at(proj->_con - TypeFunc::Parms) == VMRegImpl::Bad(), "Unexpected register for Type::HALF");
-      // 2nd half of doubles and longs
-      return new MachProjNode(this, proj->_con, RegMask::Empty, (uint) OptoReg::Bad);
-    }
-    default:
-      ShouldNotReachHere();
-  }
-  return NULL;
-}
-#ifndef PRODUCT
-void CallNativeNode::print_regs(const GrowableArray<VMReg>& regs, outputStream* st) {
-  st->print("{ ");
-  for (int i = 0; i < regs.length(); i++) {
-    regs.at(i)->print_on(st);
-    if (i < regs.length() - 1) {
-      st->print(", ");
-    }
-  }
-  st->print(" } ");
-}
-
-void CallNativeNode::dump_spec(outputStream *st) const {
-  st->print("# ");
-  st->print("%s ", _name);
-  st->print("_arg_regs: ");
-  print_regs(_arg_regs, st);
-  st->print("_ret_regs: ");
-  print_regs(_ret_regs, st);
-  CallNode::dump_spec(st);
-}
-#endif
-
 //------------------------------calling_convention-----------------------------
 void CallRuntimeNode::calling_convention(BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt) const {
   SharedRuntime::c_calling_convention(sig_bt, parm_regs, /*regs2=*/nullptr, argcnt);
@@ -1309,40 +1237,6 @@ void CallLeafVectorNode::calling_convention( BasicType* sig_bt, VMRegPair *parm_
 #endif
 
   SharedRuntime::vector_calling_convention(parm_regs, _num_bits, argcnt);
-}
-
-void CallNativeNode::calling_convention( BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt ) const {
-  assert((tf()->domain()->cnt() - TypeFunc::Parms) == argcnt, "arg counts must match!");
-#ifdef ASSERT
-  for (uint i = 0; i < argcnt; i++) {
-    assert(tf()->domain()->field_at(TypeFunc::Parms + i)->basic_type() == sig_bt[i], "types must match!");
-  }
-#endif
-  for (uint i = 0; i < argcnt; i++) {
-    switch (sig_bt[i]) {
-      case T_BOOLEAN:
-      case T_CHAR:
-      case T_BYTE:
-      case T_SHORT:
-      case T_INT:
-      case T_FLOAT:
-        parm_regs[i].set1(_arg_regs.at(i));
-        break;
-      case T_LONG:
-      case T_DOUBLE:
-        assert((i + 1) < argcnt && sig_bt[i + 1] == T_VOID, "expecting half");
-        parm_regs[i].set2(_arg_regs.at(i));
-        break;
-      case T_VOID: // Halves of longs and doubles
-        assert(i != 0 && (sig_bt[i - 1] == T_LONG || sig_bt[i - 1] == T_DOUBLE), "expecting half");
-        assert(_arg_regs.at(i) == VMRegImpl::Bad(), "expecting bad reg");
-        parm_regs[i].set_bad();
-        break;
-      default:
-        ShouldNotReachHere();
-        break;
-    }
-  }
 }
 
 //=============================================================================

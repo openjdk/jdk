@@ -117,8 +117,6 @@ public class CallArranger {
             csb.addArgumentBindings(mt.parameterType(i), cDesc.argumentLayouts().get(i), SharedUtils.isVarargsIndex(cDesc, i));
         }
 
-        csb.csb.setTrivial(SharedUtils.isTrivial(cDesc));
-
         return new Bindings(csb.csb.build(), returnInMemory);
     }
 

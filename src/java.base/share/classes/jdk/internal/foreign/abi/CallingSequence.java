@@ -33,7 +33,6 @@ import java.util.stream.Stream;
 public class CallingSequence {
     private final MethodType mt;
     private final FunctionDescriptor desc;
-    private final boolean isTrivial;
     private final boolean needsReturnBuffer;
     private final long returnBufferSize;
     private final long allocationSize;
@@ -42,11 +41,10 @@ public class CallingSequence {
     private final List<List<Binding>> argumentBindings;
 
     public CallingSequence(MethodType mt, FunctionDescriptor desc,
-                           boolean isTrivial, boolean needsReturnBuffer, long returnBufferSize, long allocationSize,
+                           boolean needsReturnBuffer, long returnBufferSize, long allocationSize,
                            List<List<Binding>> argumentBindings, List<Binding> returnBindings) {
         this.mt = mt;
         this.desc = desc;
-        this.isTrivial = isTrivial;
         this.needsReturnBuffer = needsReturnBuffer;
         this.returnBufferSize = returnBufferSize;
         this.allocationSize = allocationSize;
@@ -94,10 +92,6 @@ public class CallingSequence {
 
     public FunctionDescriptor functionDesc() {
         return desc;
-    }
-
-    public boolean isTrivial() {
-        return isTrivial;
     }
 
     public boolean needsReturnBuffer() {

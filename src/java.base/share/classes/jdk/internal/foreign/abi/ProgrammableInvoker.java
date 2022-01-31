@@ -105,11 +105,9 @@ public class ProgrammableInvoker {
         MethodType leafType = methodType(returnType, argMoveTypes);
 
         NativeEntryPoint nep = NativeEntryPoint.make(
-            "native_invoker_" + leafType.descriptorString(),
             abi,
             toStorageArray(argMoves),
             toStorageArray(retMoves),
-            !callingSequence.isTrivial(),
             leafType,
             callingSequence.needsReturnBuffer()
         );

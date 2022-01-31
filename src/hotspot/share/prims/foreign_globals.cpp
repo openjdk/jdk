@@ -61,6 +61,10 @@ const CallRegs ForeignGlobals::parse_call_regs(jobject jconv) {
   return instance().parse_call_regs_impl(jconv);
 }
 
+VMReg ForeignGlobals::parse_vmstorage(oop storage) {
+  return instance().parse_vmstorage_impl(storage);
+}
+
 ForeignGlobals::ForeignGlobals() {
   JavaThread* current_thread = JavaThread::current();
   ResourceMark rm(current_thread);
@@ -115,7 +119,7 @@ const CallRegs ForeignGlobals::parse_call_regs_impl(jobject jconv) const {
   return result;
 }
 
-VMReg ForeignGlobals::parse_vmstorage(oop storage) const {
+VMReg ForeignGlobals::parse_vmstorage_impl(oop storage) const {
   jint index = storage->int_field(VMS.index_offset);
   jint type = storage->int_field(VMS.type_offset);
   return vmstorage_to_vmreg(type, index);

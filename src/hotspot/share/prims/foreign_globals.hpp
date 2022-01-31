@@ -76,13 +76,12 @@ private:
 
   const ABIDescriptor parse_abi_descriptor_impl(jobject jabi) const;
   const CallRegs parse_call_regs_impl(jobject jconv) const;
-
-  VMReg parse_vmstorage(oop storage) const;
+  VMReg parse_vmstorage_impl(oop storage) const;
 public:
   static const ABIDescriptor parse_abi_descriptor(jobject jabi);
   static const CallRegs parse_call_regs(jobject jconv);
-
   static VMReg vmstorage_to_vmreg(int type, int index);
+  static VMReg parse_vmstorage(oop storage);
 };
 
 

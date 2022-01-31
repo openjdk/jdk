@@ -591,10 +591,6 @@ public class SharedUtils {
         }
     }
 
-    public static boolean isTrivial(FunctionDescriptor cDesc) {
-        return false; // FIXME: use system property?
-    }
-
     public static boolean isVarargsIndex(FunctionDescriptor descriptor, int argIndex) {
         int firstPos = descriptor.firstVariadicArgumentIndex();
         return firstPos != -1 && argIndex >= firstPos;
