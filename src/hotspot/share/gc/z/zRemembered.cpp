@@ -145,7 +145,104 @@ static void fill_containing(GrowableArrayCHeap<ZRememberedSetContaining, mtGC>* 
   }
 }
 
-void ZRemembered::scan_forwarding(ZForwarding* forwarding, void* context) const {
+struct ZRememberedScanForwardingContext {
+  GrowableArrayCHeap<ZRememberedSetContaining, mtGC> _containing_array;
+
+  struct Where {
+    static const int                                   NumRecords = 10;
+    Tickspan                                           _duration;
+    int                                                _count;
+    Tickspan                                           _max_durations[NumRecords];
+    int                                                _max_count;
+
+    Where() :
+        _duration(),
+        _count(),
+        _max_durations(),
+        _max_count() {}
+
+    void report(const Tickspan& duration) {
+      _duration += duration;
+      _count++;
+      // Install into max array
+      int i = 0;
+      for (; i < NumRecords; i++) {
+        if (duration > _max_durations[i]) {
+          // Slid to the side
+          for (int j = _max_count - 1; i < j; j--) {
+            _max_durations[j] = _max_durations[j - 1];
+          }
+
+          // Install
+          _max_durations[i] = duration;
+          if (_max_count < NumRecords) {
+            _max_count++;
+          }
+          break;
+        }
+      }
+    }
+
+    void print(const char* name) {
+      log_debug(gc, remset)("Remset forwarding %s: %.3fms count: %d %s",
+          name, TimeHelper::counter_to_millis(_duration.value()), _count, Thread::current()->name());
+      for (int i = 0; i < _max_count; i++) {
+        log_debug(gc, remset)("  %.3fms", TimeHelper::counter_to_millis(_max_durations[i].value()));
+      }
+    }
+  };
+
+  Where _where[2];
+
+  ZRememberedScanForwardingContext() :
+      _containing_array(),
+      _where() {}
+
+  void report_retained(const Tickspan& duration) {
+    _where[0].report(duration);
+  }
+
+  void report_released(const Tickspan& duration) {
+    _where[1].report(duration);
+  }
+
+  void print() {
+    _where[0].print("retained");
+    _where[1].print("released");
+  }
+};
+
+struct ZRememberedScanForwardingMeasureRetained {
+  ZRememberedScanForwardingContext* _context;
+  Ticks                             _start;
+  ZRememberedScanForwardingMeasureRetained(ZRememberedScanForwardingContext* context) :
+      _context(context),
+      _start(Ticks::now()) {
+  }
+  ~ZRememberedScanForwardingMeasureRetained() {
+    Ticks end = Ticks::now();
+    Tickspan duration = end - _start;
+    _context->report_retained(duration);
+  }
+};
+
+struct ZRememberedScanForwardingMeasureReleased {
+  ZRememberedScanForwardingContext* _context;
+  Ticks                             _start;
+  ZRememberedScanForwardingMeasureReleased(ZRememberedScanForwardingContext* context) :
+      _context(context),
+      _start(Ticks::now()) {
+  }
+  ~ZRememberedScanForwardingMeasureReleased() {
+    Ticks end = Ticks::now();
+    Tickspan duration = end - _start;
+    _context->report_released(duration);
+  }
+};
+
+void ZRemembered::scan_forwarding(ZForwarding* forwarding, void* context_void) const {
+  ZRememberedScanForwardingContext* context = (ZRememberedScanForwardingContext*)context_void;
+
   if (forwarding->get_and_set_remset_scanned()) {
     // Scanned last young cycle; implies that the to-space objects
     // are going to be found in the page table scan
@@ -153,8 +250,10 @@ void ZRemembered::scan_forwarding(ZForwarding* forwarding, void* context) const 
   }
 
   if (forwarding->retain_page()) {
+    ZRememberedScanForwardingMeasureRetained measure(context);
+
     // Collect all remset info while the page is retained
-    GrowableArrayCHeap<ZRememberedSetContaining, mtGC>* array = (GrowableArrayCHeap<ZRememberedSetContaining, mtGC>*)context;
+    GrowableArrayCHeap<ZRememberedSetContaining, mtGC>* array = &context->_containing_array;
     array->clear();
     fill_containing(array, forwarding->page());
     forwarding->release_page();
@@ -166,6 +265,8 @@ void ZRemembered::scan_forwarding(ZForwarding* forwarding, void* context) const 
     });
 
   } else {
+    ZRememberedScanForwardingMeasureReleased measure(context);
+
     oops_do_forwarded(forwarding, [&](volatile zpointer* p) {
       scan_field(p);
     });
@@ -184,12 +285,14 @@ public:
       _remembered(remembered) {}
 
   virtual void work() {
-    GrowableArrayCHeap<ZRememberedSetContaining, mtGC> containing_array;
+    ZRememberedScanForwardingContext context;
 
     _iterator.do_forwardings([&](ZForwarding* forwarding) {
-      _remembered.scan_forwarding(forwarding, &containing_array);
+      _remembered.scan_forwarding(forwarding, &context);
       return !ZGeneration::young()->should_worker_stop();
     });
+
+    context.print();
   }
 };
 
