@@ -24,6 +24,7 @@
 package compiler.lib.ir_framework.driver;
 
 import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.TestFramework;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -34,7 +35,6 @@ import java.util.List;
  */
 class IRMethod {
     private final Method method;
-    private final IR[] irAnnos;
     private final List<IRRule> irRules;
     private final StringBuilder outputBuilder;
     private String output;
@@ -45,10 +45,9 @@ class IRMethod {
 
     public IRMethod(Method method, int[] ruleIds, IR[] irAnnos) {
         this.method = method;
-        this.irAnnos = irAnnos;
         this.irRules = new ArrayList<>();
         for (int i : ruleIds) {
-            irRules.add(new IRRule(this, i, irAnnos[i]));
+            irRules.add(new IRRule(this, i, irAnnos[i - 1]));
         }
         this.outputBuilder = new StringBuilder();
         this.output = "";
@@ -64,9 +63,6 @@ class IRMethod {
         return irRules;
     }
 
-    public IR getIrAnno(int idx) {
-        return irAnnos[idx];
-    }
 
     /**
      * The Ideal output comes always before the Opto Assembly output. We might parse multiple C2 compilations of this method.
@@ -118,5 +114,14 @@ class IRMethod {
 
     public boolean usesOptoAssembly() {
         return needsOptoAssembly;
+    }
+
+    public List<MatchResult> applyIRRules() {
+        TestFramework.check(!irRules.isEmpty(), "IRMethod cannot be created if there are no IR rules to apply");
+        List<MatchResult> results = new ArrayList<>();
+        for (IRRule irRule : irRules) {
+            results.add(irRule.apply());
+        }
+        return results;
     }
 }

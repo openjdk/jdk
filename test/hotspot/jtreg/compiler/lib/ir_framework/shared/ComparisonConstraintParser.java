@@ -106,7 +106,7 @@ public class ComparisonConstraintParser<T extends Comparable<T>> {
                 return new ParsedResult<>(constraint.substring(1).trim(), "=", (x, y) -> x.compareTo(y) == 0);
             }
             default -> {
-                return new ParsedResult<>(constraint.trim(), "", (x, y) -> x.compareTo(y) == 0);
+                return new ParsedResult<>(constraint.trim(), "=", (x, y) -> x.compareTo(y) == 0);
             }
         }
     }

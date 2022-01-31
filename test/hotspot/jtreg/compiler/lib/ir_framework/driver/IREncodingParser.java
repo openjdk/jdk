@@ -25,6 +25,7 @@ package compiler.lib.ir_framework.driver;
 
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.shared.TestFormat;
 import compiler.lib.ir_framework.shared.TestFrameworkException;
 import compiler.lib.ir_framework.test.IREncodingPrinter;
 
@@ -49,6 +50,8 @@ class IREncodingParser {
             System.out.println(irEncoding);
         }
         createCompilationsMap(irEncoding, testClass);
+        // We could have found format errors in @IR annotations. Report them now with an exception.
+        TestFormat.throwIfAnyFailures();
     }
 
     /**
@@ -120,7 +123,8 @@ class IREncodingParser {
     private void validateIRRuleIds(Method m, IR[] irAnnos, int[] ids) {
         TestFramework.check(ids != null, "Should find method name in validIrRulesMap for " + m);
         TestFramework.check(ids.length > 0, "Did not find any rule indices for " + m);
-        TestFramework.check(ids[ids.length - 1] < irAnnos.length, "Invalid IR rule index found in validIrRulesMap for " + m);
+        TestFramework.check(ids[0] >= 1 && ids[ids.length - 1] <= irAnnos.length,
+                            "Invalid IR rule index found in validIrRulesMap for " + m);
     }
 
     /**

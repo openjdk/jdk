@@ -38,7 +38,7 @@ public class IRMatcher {
     public static final String SAFEPOINT_WHILE_PRINTING_MESSAGE = "<!-- safepoint while printing -->";
 
     private final Map<String, IRMethod> compilations;
-    private final Map<Method, List<String>> fails;
+    private final Map<IRMethod, List<String>> fails;
 
     public IRMatcher(String hotspotPidFileName, String irEncoding, Class<?> testClass) {
         this.fails = new HashMap<>();
@@ -65,7 +65,7 @@ public class IRMatcher {
             String msg = "Method was not compiled. Did you specify any compiler directives preventing a compilation or used a " +
                          "@Run method in STANDALONE mode? In the latter case, make sure to always trigger a C2 compilation " +
                          "by invoking the test enough times.";
-            fails.computeIfAbsent(irMethod.getMethod(), k -> new ArrayList<>()).add(msg);
+            fails.computeIfAbsent(irMethod, k -> new ArrayList<>()).add(msg);
             return;
         }
 
@@ -73,163 +73,39 @@ public class IRMatcher {
             System.out.println("Output of " + irMethod.getOutput() + ":");
             System.out.println(testOutput);
         }
-        irMethod.getIRRules().forEach(this::applyIRRule);
+        List<MatchResult> matchResults = irMethod.applyIRRules();
+        reportFailures(matchResults, irMethod);
     }
 
-    /**
-     * Apply a single @IR rule as part of a method.
-     */
-    private void applyIRRule(IRRule irRule) {
-        applyFailOn(irRule);
-        try {
-            applyCounts(irRule);
-        } catch (TestFormatException e) {
-            // Logged. Continue to check other rules.
-        }
-        if (irRule.hasFailures()) {
-            // TODO: We can do better instead of using 'fails' like this
-            fails.computeIfAbsent(irRule.getMethod(), k -> new ArrayList<>()).add(irRule.getFailureMessage());
-        }
-    }
-
-    /**
-     * Apply the failOn regexes of the @IR rule.
-     */
-    private void applyFailOn(IRRule irRule) {
-        IR irAnno = irRule.getIRAnno();
-        if (irAnno.failOn().length != 0) {
-            String failOnRegex = String.join("|", IRNode.mergeNodes(irAnno.failOn()));
-            Pattern pattern = Pattern.compile(failOnRegex);
-            Matcher matcher = pattern.matcher(irRule.getIRMethod().getOutput());
-            long matchCount = matcher.results().count();
-            if (matchCount > 0) {
-                addFailOnFailsForOutput(pattern, matchCount, irRule);
+    private void reportFailures(List<MatchResult> results, IRMethod irMethod) {
+        for (MatchResult result : results) {
+            if (result.fail()) {
+                String failMessage = "@IR rule " + result.getIRRule().getRuleId() + ": \"" + result.getIRRule().getIRAnno()
+                                     + "\"" + System.lineSeparator()
+                                     + buildFailureMessage(result);
+                fails.computeIfAbsent(irMethod, k -> new ArrayList<>()).add(failMessage);
             }
         }
     }
-
-    /**
-     * A failOn regex failed. Apply all regexes again to log the exact regex which failed. The failure is later reported
-     * to the user.
-     */
-    private void addFailOnFailsForOutput(Pattern pattern, long matchCount, IRRule irRule) {
-        IRMethod irMethod = irRule.getIRMethod();
-        long idealCount = pattern.matcher(irMethod.getIdealOutput()).results().count();
-        long optoAssemblyCount = pattern.matcher(irMethod.getOptoAssemblyOutput()).results().count();
-        if (matchCount != idealCount + optoAssemblyCount || (idealCount != 0 && optoAssemblyCount != 0)) {
-            // Report with Ideal and Opto Assembly
-            addFailOnFailsForOutput(irMethod.getOutput(), irRule);
-            irMethod.needsAllOutput();
-        } else if (optoAssemblyCount == 0) {
-            // Report with Ideal only
-            addFailOnFailsForOutput(irMethod.getIdealOutput(), irRule);
-            irMethod.needsIdeal();
-        } else {
-            // Report with Opto Assembly only
-            addFailOnFailsForOutput(irMethod.getOptoAssemblyOutput(), irRule);
-            irMethod.needsOptoAssembly();
-        }
-    }
-
-    /**
-     * Apply the regexes to the testOutput and log the failures.
-     */
-    private void addFailOnFailsForOutput(String testOutput, IRRule irRule) {
-        List<String> failOnNodes = IRNode.mergeNodes(irRule.getIRAnno().failOn());
-        Pattern pattern;
-        Matcher matcher;
+    private String buildFailureMessage(MatchResult result) {
         StringBuilder failMsg = new StringBuilder();
-        failMsg.append("- failOn: Graph contains forbidden nodes:").append(System.lineSeparator());
-        int nodeId = 1;
-        for (String nodeRegex : failOnNodes) {
-            pattern = Pattern.compile(nodeRegex);
-            matcher = pattern.matcher(testOutput);
-            long matchCount = matcher.results().count();
-            if (matchCount > 0) {
-                matcher.reset();
-                failMsg.append("    Regex ").append(nodeId).append(": ").append(nodeRegex).append(System.lineSeparator());
-                failMsg.append("    Matched forbidden node").append(matchCount > 1 ? "s (" + matchCount + ")" : "")
-                       .append(":").append(System.lineSeparator());
-                matcher.results().forEach(r -> failMsg.append("      ").append(r.group()).append(System.lineSeparator()));
-            }
-            nodeId++;
+        if (result.hasFailOnFailures()) {
+            failMsg.append("- failOn: Graph contains forbidden nodes:").append(System.lineSeparator());
+            failMsg.append(getFormattedFailureMessage(result.getFailOnFailures()));
         }
-        irRule.appendToFailMsg(failMsg.toString());
-    }
-
-    /**
-     * Apply the counts regexes of the @IR rule.
-     */
-    private void applyCounts(IRRule irRule) {
-        IR irAnno = irRule.getIRAnno();
-        if (irAnno.counts().length != 0) {
-            IRMethod irMethod = irRule.getIRMethod();
-            String testOutput = irMethod.getOutput();
-            int countsId = 1;
-            StringBuilder failMsg = new StringBuilder();
-            final List<String> nodesWithCount = IRNode.mergeNodes(irAnno.counts());
-            for (int i = 0; i < nodesWithCount.size(); i += 2) {
-                String node = nodesWithCount.get(i);
-                TestFormat.check(i + 1 < nodesWithCount.size(), "Missing count" + getPostfixErrorMsg(irRule, node));
-                String countConstraint = nodesWithCount.get(i + 1);
-                Comparison<Long> comparison = parseComparison(irRule, node, countConstraint);
-                long foundCount = getFoundCount(irRule.getIRMethod().getOutput(), node);
-                if (!comparison.compare(foundCount)) {
-                    appendSummary(failMsg, countsId, node, comparison, foundCount);
-                    addCountsFail(failMsg, irMethod, node,foundCount);
-                }
-                countsId++;
-            }
-            if (!failMsg.isEmpty()) {
-                irRule.appendToFailMsg("- counts: Graph contains wrong number of nodes:").append(System.lineSeparator())
-                      .append(failMsg);
-            }
+        if (result.hasCountsFailures()) {
+            failMsg.append("- counts: Graph contains wrong number of nodes:").append(System.lineSeparator());
+            failMsg.append(getFormattedFailureMessage(result.getCountsFailures()));
         }
+        return failMsg.toString();
     }
 
-    private void appendSummary(StringBuilder failMsg, int countsId, String node, Comparison<Long> comparison, long foundCount) {
-        failMsg.append("    Regex ").append(countsId).append(": ").append(node).append(System.lineSeparator());
-        failMsg.append("    Expected ").append(comparison.getGivenValue()).append(" but found ").append(foundCount);
-    }
-
-    private Comparison<Long> parseComparison(IRRule irRule, String node, String constraint) {
-        String postfixErrorMsg = "in count constraint " + getPostfixErrorMsg(irRule, node);
-        return ComparisonConstraintParser.parse(constraint, Long::parseLong, postfixErrorMsg);
-    }
-
-    private long getFoundCount(String testOutput, String node) {
-        Pattern pattern = Pattern.compile(node);
-        Matcher matcher = pattern.matcher(testOutput);
-        return matcher.results().count();
-    }
-
-    private String getPostfixErrorMsg(IRRule irRule, String node) {
-        return "for IR rule " + (irRule.getRuleId() + 1) + ", node \"" + node + "\" at " + irRule.getMethod();
-    }
-
-    /**
-     * A counts regex failed. Apply all regexes again to log the exact regex which failed. The failure is later reported
-     * to the user.
-     */
-    private void addCountsFail(StringBuilder failMsg, IRMethod irMethod, String node, long actualCount) {
-        if (actualCount > 0) {
-            Pattern pattern = Pattern.compile(node);
-            Matcher matcher = pattern.matcher(irMethod.getOutput());
-            long idealCount = pattern.matcher(irMethod.getIdealOutput()).results().count();
-            long optoAssemblyCount = pattern.matcher(irMethod.getOptoAssemblyOutput()).results().count();
-            if (actualCount != idealCount + optoAssemblyCount || (idealCount != 0 && optoAssemblyCount != 0)) {
-                irMethod.needsAllOutput();
-            } else if (optoAssemblyCount == 0) {
-                irMethod.needsIdeal();
-            } else {
-                irMethod.needsOptoAssembly();
-            }
-            failMsg.append(" node").append(actualCount > 1 ? "s" : "").append(":").append(System.lineSeparator());
-            matcher.results().forEach(r -> failMsg.append("      ").append(r.group()).append(System.lineSeparator()));
-        } else {
-            irMethod.needsAllOutput();
-            failMsg.append(" nodes.").append(System.lineSeparator());
+    private String getFormattedFailureMessage(List<? extends Failure> failures) {
+        StringBuilder builder = new StringBuilder();
+        for (Failure failure : failures) {
+            builder.append(failure.getFormattedFailureMessage());
         }
+        return builder.toString();
     }
 
     /**
@@ -240,13 +116,13 @@ public class IRMatcher {
      * failures.
      */
     private void reportFailuresIfAny() {
-        TestFormat.throwIfAnyFailures();
+//        TestFormat.throwIfAnyFailures();
         if (!fails.isEmpty()) {
             StringBuilder failuresBuilder = new StringBuilder();
             StringBuilder compilationsBuilder = new StringBuilder();
             int failures = 0;
-            for (Map.Entry<Method, List<String>> entry : fails.entrySet()) {
-                Method method = entry.getKey();
+            for (Map.Entry<IRMethod, List<String>> entry : fails.entrySet()) {
+                Method method = entry.getKey().getMethod();
                 compilationsBuilder.append(">>> Compilation of ").append(method).append(":").append(System.lineSeparator());
                 IRMethod irMethod = compilations.get(method.getName());
                 String output;

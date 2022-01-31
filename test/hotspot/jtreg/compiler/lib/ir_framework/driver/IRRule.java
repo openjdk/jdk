@@ -24,20 +24,37 @@
 package compiler.lib.ir_framework.driver;
 
 import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.shared.*;
 
 import java.lang.reflect.Method;
+import java.util.List;
 
 class IRRule {
     private final IRMethod irMethod;
     private final int ruleId;
     private final IR irAnno;
     private final StringBuilder failureMessage;
+    private FailOn failOn;
+    private Counts counts;
 
     public IRRule(IRMethod irMethod, int ruleId, IR irAnno) {
         this.irMethod = irMethod;
         this.ruleId = ruleId;
         this.irAnno = irAnno;
         failureMessage = new StringBuilder();
+        String[] failOn = irAnno.failOn();
+        if (failOn.length != 0) {
+            this.failOn = new FailOn(IRNode.mergeNodes(failOn));
+        }
+        String[] counts = irAnno.counts();
+        if (counts.length != 0) {
+            try {
+                this.counts = Counts.create(IRNode.mergeNodes(irAnno.counts()), this);
+            } catch (TestFormatException e) {
+                // Logged and reported later. Continue.
+            }
+        }
     }
 
     public int getRuleId() {
@@ -48,31 +65,50 @@ class IRRule {
         return irAnno;
     }
 
-    public IRMethod getIRMethod() {
-        return irMethod;
-    }
-
     public Method getMethod() {
         return irMethod.getMethod();
     }
 
-    public StringBuilder appendToFailMsg(String message) {
-        if (failureMessage.isEmpty()) {
-            appendHeader();
+    public MatchResult apply() {
+        MatchResult result = new MatchResult(this);
+        applyFailOn(result);
+        applyCounts(result);
+        return result;
+    }
+
+    private void applyFailOn(MatchResult result) {
+        List<? extends Failure> failures = apply(failOn, irMethod.getOutput());
+        if (!failures.isEmpty()) {
+            result.addFailOnFailures(failures);
+            setHowMatched(result, failOn, failures.size());
         }
-        return failureMessage.append(message);
     }
 
-    private void appendHeader() {
-        failureMessage.append("@IR rule ").append(ruleId + 1).append(": \"")
-                      .append(irAnno).append("\"").append(System.lineSeparator());
+    private void applyCounts(MatchResult result) {
+        List<? extends Failure> failures = apply(counts, irMethod.getOutput());
+        if (!failures.isEmpty()) {
+            result.setCountsFailures(failures);
+            setHowMatched(result, counts, failures.size());
+        }
     }
 
-    public boolean hasFailures() {
-        return !failureMessage.isEmpty();
+    private void setHowMatched(MatchResult result, CheckAttribute checkAttribute, int failuresCount) {
+        List<?> idealFailures = apply(checkAttribute, irMethod.getIdealOutput());
+        if (failuresCount == idealFailures.size()) {
+            result.setIdealMatch();
+        } else if (failuresCount == 0) {
+            result.setOptoAssemblyMatch();
+        } else {
+            result.setIdealMatch();
+            result.setOptoAssemblyMatch();
+        }
     }
 
-    public String getFailureMessage() {
-        return failureMessage.toString();
+    private List<? extends Failure> apply(CheckAttribute checkAttribute, String compilation) {
+        if (checkAttribute != null) {
+            return checkAttribute.apply(compilation);
+        }
+        return Failure.NO_FAILURE;
     }
+
 }

@@ -37,7 +37,7 @@ import java.util.function.Function;
 /**
  * Prints an encoding to the dedicated test framework socket whether @IR rules of @Test methods should be applied or not.
  * This is done during the execution of the test VM by checking the active VM flags. This encoding is eventually parsed
- * and checked by the IRMatcher class in the driver VM after the termination of the test VM.
+ * and checked by the IRMatcher class in the driver VM after the termination of the test VM. IR rule indices start at 1.
  */
 public class IREncodingPrinter {
     public static final String START = "##### IRMatchRulesEncoding - used by TestFramework #####";
@@ -73,7 +73,7 @@ public class IREncodingPrinter {
                 ruleIndex = i + 1;
                 try {
                     if (shouldApplyIrRule(irAnno)) {
-                        validRules.add(i);
+                        validRules.add(ruleIndex);
                     }
                 } catch (TestFormatException e) {
                     // Catch logged failure and continue to check other IR annotations.
