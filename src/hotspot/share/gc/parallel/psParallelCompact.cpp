@@ -1984,17 +1984,15 @@ void steal_marking_work(TaskTerminator& terminator, uint worker_id) {
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(worker_id);
 
-  oop obj = NULL;
-  ObjArrayTask task;
   do {
-    while (ParCompactionManager::steal_objarray(worker_id,  task)) {
+    oop obj = NULL;
+    ObjArrayTask task;
+    if (ParCompactionManager::steal_objarray(worker_id,  task)) {
       cm->follow_array((objArrayOop)task.obj(), task.index());
-      cm->follow_marking_stacks();
-    }
-    while (ParCompactionManager::steal(worker_id, obj)) {
+    } else if (ParCompactionManager::steal(worker_id, obj)) {
       cm->follow_contents(obj);
-      cm->follow_marking_stacks();
     }
+    cm->follow_marking_stacks();
   } while (!terminator.offer_termination());
 }
 
