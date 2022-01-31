@@ -741,15 +741,13 @@ public final class DateTimeFormatter {
      * e.g., 'M' represents the Month field. The number of the pattern symbol letters follows the
      * same presentation, such as "number" or "text" as in the <a href="#patterns">Patterns for
      * Formatting and Parsing</a> section. Other pattern symbols in the requested template are
-     * invalid, resulting an {@code IllegalArgumentException}.
+     * invalid.
      * <p>
      * The mapping of the requested template to the closest of the available localized formats
      * is defined by the
      * <a href="https://www.unicode.org/reports/tr35/tr35-dates.html#availableFormats_appendItems">
      * Unicode LDML specification</a>. For example, the formatter created from the requested template
      * {@code yMMM} will format the date '2020-06-16' to 'Jun 2020' in the {@link Locale#US US locale}.
-     * If the localized pattern symbols for the given {@code requestedTemplate} is not
-     * available, {@code DateTimeException} is thrown.
      * <p>
      * The locale is determined from the formatter. The formatter returned directly by
      * this method will use the {@link Locale#getDefault() default FORMAT locale}.
@@ -761,9 +759,6 @@ public final class DateTimeFormatter {
      *
      * @param requestedTemplate the requested template, not null
      * @return the formatter based on the {@code requestedTemplate} pattern, not null
-     * @throws IllegalArgumentException if {@code requestedTemplate} is invalid
-     * @throws DateTimeException if a match for the localized pattern for
-     *      {@code requestedTemplate} is not available
      * @see #ofPattern(String)
      * @since 19
      */

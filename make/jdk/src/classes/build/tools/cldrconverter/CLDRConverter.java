@@ -854,12 +854,11 @@ public class CLDRConverter {
         Map<String, Object> formatData = new LinkedHashMap<>();
         for (CalendarType calendarType : CalendarType.values()) {
             String prefix = calendarType.keyElementName();
-            Arrays.stream(FORMAT_DATA_ELEMENTS)
-                .flatMap(elem -> map.keySet().stream().filter(k -> k.startsWith(prefix + elem)))
-                .forEach(key -> {
-                    copyIfPresent(map, "java.time." + key, formatData);
-                    copyIfPresent(map, key, formatData);
-                });
+            for (String element : FORMAT_DATA_ELEMENTS) {
+                String key = prefix + element;
+                copyIfPresent(map, "java.time." + key, formatData);
+                copyIfPresent(map, key, formatData);
+            }
         }
 
         for (String key : map.keySet()) {
