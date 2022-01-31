@@ -3654,12 +3654,16 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
 #endif
     evpcmpgtb(mask1, mask2, vec2, Address(ary1, 0), Assembler::AVX_512bit);
     ktestq(mask1, mask2);
-    jcc(Assembler::notZero, BREAK_LOOP);
+    jcc(Assembler::zero, DONE);
 
-    jmp(DONE);
     bind(BREAK_LOOP);
+    // At least one byte in the last 64 bytes is negative.
+    // Set up to look at the last 64 bytes as if they were a tail
     lea(ary1, Address(ary1, len, Address::times_1));
     addptr(result, len);
+    // Ignore the very last byte: if all others are positive,
+    // it must be negative, so we can skip right to the 2+1 byte
+    // end comparison at this point
     orl(result, 63);
     movl(len, 63);
     // Fallthru to tail compare
@@ -3695,8 +3699,13 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
       jmpb(TAIL_START);
 
       bind(BREAK_LOOP);
+      // At least one byte in the last 32-byte vector is negative.
+      // Set up to look at the last 32 bytes as if they were a tail
       lea(ary1, Address(ary1, len, Address::times_1));
       addptr(result, len);
+      // Ignore the very last byte: if all others are positive,
+      // it must be negative, so we can skip right to the 2+1 byte
+      // end comparison at this point
       orl(result, 31);
       movl(len, 31);
       // Fallthru to tail compare
@@ -3730,8 +3739,13 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
       jmpb(TAIL_START);
 
       bind(BREAK_LOOP);
+      // At least one byte in the last 16-byte vector is negative.
+      // Set up and look at the last 16 bytes as if they were a tail
       lea(ary1, Address(ary1, len, Address::times_1));
       addptr(result, len);
+      // Ignore the very last byte: if all others are positive,
+      // it must be negative, so we can skip right to the 2+1 byte
+      // end comparison at this point
       orl(result, 15);
       movl(len, 15);
       // Fallthru to tail compare
