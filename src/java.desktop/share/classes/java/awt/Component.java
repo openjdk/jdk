@@ -4134,7 +4134,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         /**
          * Provides direct access to the back buffer as an image.
          *
-         * @return the back buffer as an image.
+         * @return the back buffer as an image
          * @exception IllegalStateException if the buffers have not yet
          * been created
          */
@@ -4698,7 +4698,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * should be ignored.
      *
      * @return whether or not paint messages received from the operating system
-     * should be ignored.
+     * should be ignored
      *
      * @since 1.4
      * @see #setIgnoreRepaint
