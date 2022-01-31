@@ -159,11 +159,6 @@ class PipeImpl
                     try {
                         if (sc1 != null)
                             sc1.close();
-
-                        if (sa instanceof UnixDomainSocketAddress uaddr) {
-                            Files.deleteIfExists(uaddr.getPath());
-                        }
-
                         if (sc2 != null)
                             sc2.close();
                     } catch (IOException e2) {}
@@ -172,6 +167,9 @@ class PipeImpl
                     try {
                         if (ssc != null)
                             ssc.close();
+                        if (sa instanceof UnixDomainSocketAddress uaddr) {
+                            Files.deleteIfExists(uaddr.getPath());
+                        }
                     } catch (IOException e2) {}
                 }
             }
