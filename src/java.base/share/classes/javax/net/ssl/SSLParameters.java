@@ -708,7 +708,7 @@ public class SSLParameters {
      * the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#signature-schemes">
      * Signature Schemes</a> section of the Java Security Standard Algorithm
-     * Names specification. Providers may support signature schemes not found
+     * Names Specification. Providers may support signature schemes not found
      * in this list or might not use the recommended name for a certain
      * signature scheme.
      * <p>
@@ -750,7 +750,7 @@ public class SSLParameters {
      * the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#signature-schemes">
      * Signature Schemes</a> section of the Java Security Standard Algorithm
-     * Names specification. Providers may support signature schemes not found
+     * Names Specification. Providers may support signature schemes not found
      * in this list or might not use the recommended name for a certain
      * signature scheme.
      *
