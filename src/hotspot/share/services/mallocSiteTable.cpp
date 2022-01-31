@@ -106,13 +106,12 @@ bool MallocSiteTable::walk(MallocSiteWalker* walker) {
  *    2. Overflow hash bucket.
  *  Under any of above circumstances, caller should handle the situation.
  */
-MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, size_t* bucket_idx,
-  size_t* pos_idx, MEMFLAGS flags) {
+MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t* marker, MEMFLAGS flags) {
   assert(flags != mtNone, "Should have a real memory type");
   const unsigned int hash = key.calculate_hash();
   const unsigned int index = hash_to_index(hash);
-  *bucket_idx = (size_t)index;
-  *pos_idx = 0;
+  *marker = 0;
+  unsigned bucket_idx = (size_t)index;
 
   // First entry for this hash bucket
   if (_table[index] == NULL) {
@@ -122,41 +121,46 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, size_t* b
 
     // swap in the head
     if (Atomic::replace_if_null(&_table[index], entry)) {
+      *marker = build_marker(bucket_idx, 0);
       return entry->data();
     }
 
     delete entry;
   }
 
+  unsigned pos_idx = 0;
   MallocSiteHashtableEntry* head = _table[index];
-  while (head != NULL && (*pos_idx) <= MAX_BUCKET_LENGTH) {
+  while (head != NULL && pos_idx <= MAX_BUCKET_LENGTH) {
     if (head->hash() == hash) {
       MallocSite* site = head->data();
       if (site->flag() == flags && site->equals(key)) {
+        *marker = build_marker(bucket_idx, pos_idx);
         return head->data();
       }
     }
 
-    if (head->next() == NULL && (*pos_idx) < MAX_BUCKET_LENGTH) {
+    if (head->next() == NULL && pos_idx < MAX_BUCKET_LENGTH) {
       MallocSiteHashtableEntry* entry = new_entry(key, flags);
       // OOM check
       if (entry == NULL) return NULL;
       if (head->atomic_insert(entry)) {
-        (*pos_idx) ++;
+        pos_idx ++;
+        *marker = build_marker(bucket_idx, pos_idx);
         return entry->data();
       }
       // contended, other thread won
       delete entry;
     }
     head = (MallocSiteHashtableEntry*)head->next();
-    (*pos_idx) ++;
+    pos_idx ++;
   }
   return NULL;
 }
 
 // Access malloc site
-MallocSite* MallocSiteTable::malloc_site(size_t bucket_idx, size_t pos_idx) {
-  assert(bucket_idx < table_size, "Invalid bucket index");
+MallocSite* MallocSiteTable::malloc_site(uint32_t marker) {
+  uint16_t bucket_idx = bucket_idx_from_marker(marker);
+  const uint16_t pos_idx = pos_idx_from_marker(marker);
   MallocSiteHashtableEntry* head = _table[bucket_idx];
   for (size_t index = 0;
        index < pos_idx && head != NULL;

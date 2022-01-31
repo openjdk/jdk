@@ -121,7 +121,7 @@ void MallocHeader::release() {
   MallocMemorySummary::record_free(size(), flags());
   MallocMemorySummary::record_free_malloc_header(sizeof(MallocHeader));
   if (MemTracker::tracking_level() == NMT_detail) {
-    MallocSiteTable::deallocation_at(size(), _bucket_idx, _pos_idx);
+    MallocSiteTable::deallocation_at(size(), _mst_marker);
   }
 
   mark_block_as_dead();
@@ -232,12 +232,12 @@ bool MallocHeader::check_block_integrity(char* msg, size_t msglen, address* p_co
 }
 
 bool MallocHeader::record_malloc_site(const NativeCallStack& stack, size_t size,
-  size_t* bucket_idx, size_t* pos_idx, MEMFLAGS flags) const {
-  return MallocSiteTable::allocation_at(stack, size, bucket_idx, pos_idx, flags);
+  uint32_t* marker, MEMFLAGS flags) const {
+  return MallocSiteTable::allocation_at(stack, size, marker, flags);
 }
 
 bool MallocHeader::get_stack(NativeCallStack& stack) const {
-  return MallocSiteTable::access_stack(stack, _bucket_idx, _pos_idx);
+  return MallocSiteTable::access_stack(stack, _mst_marker);
 }
 
 bool MallocTracker::initialize(NMT_TrackingLevel level) {

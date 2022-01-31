@@ -265,7 +265,7 @@ class MallocMemorySummary : AllStatic {
  *
  *           8        9        10       11       12       13       14       15          16 ++
  *       +--------+--------+--------+--------+--------+--------+--------+--------+  ------------------------
- *  ...  |   bucket idx    |     pos idx     | flags  | unused |     canary      |  ... User payload ....
+ *  ...  |   malloc site table marker        | flags  | unused |     canary      |  ... User payload ....
  *       +--------+--------+--------+--------+--------+--------+--------+--------+  ------------------------
  *
  * Layout on 32-bit:
@@ -277,7 +277,7 @@ class MallocMemorySummary : AllStatic {
  *
  *           8        9        10       11       12       13       14       15          16 ++
  *       +--------+--------+--------+--------+--------+--------+--------+--------+  ------------------------
- *  ...  |   bucket idx    |     pos idx     | flags  | unused |     canary      |  ... User payload ....
+ *  ...  |   malloc site table marker        | flags  | unused |     canary      |  ... User payload ....
  *       +--------+--------+--------+--------+--------+--------+--------+--------+  ------------------------
  *
  * Notes:
@@ -293,14 +293,10 @@ class MallocHeader {
 
   NOT_LP64(uint32_t _alt_canary);
   size_t _size;
-  uint16_t _bucket_idx;
-  uint16_t _pos_idx;
+  uint32_t _mst_marker;
   uint8_t _flags;
   uint8_t _unused;
   uint16_t _canary;
-
-#define MAX_MALLOCSITE_TABLE_SIZE (USHRT_MAX - 1)
-#define MAX_BUCKET_LENGTH         (USHRT_MAX - 1)
 
   static const uint16_t _header_canary_life_mark = 0xE99E;
   static const uint16_t _header_canary_dead_mark = 0xD99D;
@@ -332,13 +328,8 @@ class MallocHeader {
     _flags = NMTUtil::flag_to_index(flags);
     set_size(size);
     if (level == NMT_detail) {
-      size_t bucket_idx;
-      size_t pos_idx;
-      if (record_malloc_site(stack, size, &bucket_idx, &pos_idx, flags)) {
-        assert(bucket_idx <= MAX_MALLOCSITE_TABLE_SIZE, "Overflow bucket index");
-        assert(pos_idx <= MAX_BUCKET_LENGTH, "Overflow bucket position index");
-        _bucket_idx = (uint16_t)bucket_idx;
-        _pos_idx = (uint16_t)pos_idx;
+      if (!record_malloc_site(stack, size, &_mst_marker, flags)) {
+        _mst_marker = 0;
       }
     }
 
@@ -370,7 +361,7 @@ class MallocHeader {
     _size = size;
   }
   bool record_malloc_site(const NativeCallStack& stack, size_t size,
-    size_t* bucket_idx, size_t* pos_idx, MEMFLAGS flags) const;
+    uint32_t* marker, MEMFLAGS flags) const;
 };
 
 // This needs to be true on both 64-bit and 32-bit platforms
