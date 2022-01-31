@@ -40,9 +40,7 @@ class StringCoding {
     }
 
     /**
-     * Count the approximate number of positive bytes. Implementations are allowed to
-     * be imprecise if this allows for more efficient code, but must return a value l
-     * so that there are no negative bytes ba in the range from off to off + l, exclusive.
+     * Count the number of positive bytes, exactly.
      */
     @IntrinsicCandidate
     public static int countPositives(byte[] ba, int off, int len) {

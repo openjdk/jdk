@@ -90,9 +90,9 @@ public class TestCountPositives {
                     initialize(off, len, ng);
                     int r = Helper.StringCodingCountPositives(tBa, off, len);
                     int t = countPositives(tBa, off, len);
-                    if (r > t) {
+                    if (r != t) {
                         throw new Exception("Failed test countPositives " + "offset: " + off + " "
-                                + "length: " + len + " " + "return: " + r + " expected <= " + t + " negatives: "
+                                + "length: " + len + " " + "return: " + r + " expected " + t + " negatives: "
                                 + ng);
                     }
                 }
