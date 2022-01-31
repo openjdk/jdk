@@ -304,7 +304,7 @@ void NMethodSweeper::sweep() {
 static void post_sweep_event(EventSweepCodeCache* event,
                              const Ticks& start,
                              const Ticks& end,
-                             int64_t traversals,
+                             s4 traversals,
                              int swept,
                              int flushed,
                              int zombified) {
@@ -408,7 +408,7 @@ void NMethodSweeper::sweep_code_cache() {
 
   EventSweepCodeCache event(UNTIMED);
   if (event.should_commit()) {
-    post_sweep_event(&event, sweep_start_counter, sweep_end_counter, _traversals, swept_count, flushed_count, zombified_count);
+    post_sweep_event(&event, sweep_start_counter, sweep_end_counter, (s4)_traversals, swept_count, flushed_count, zombified_count);
   }
 
 #ifdef ASSERT
