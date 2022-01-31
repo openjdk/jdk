@@ -49,7 +49,7 @@ import java.util.regex.Pattern;
  * The usage is made explicit when it is not clear from the surrounding context.
  *
  * @apiNote
- * The stylized use of {@code editor-fold} comments and line comments (beginning {@code //}
+ * The stylized use of {@code editor-fold} comments and line comments (beginning {@code //})
  * is to support extracting details of declarations with external tools.  Edit with care!
  *
  * @see <a href="https://html.spec.whatwg.org/#classes">WhatWG: {@code class} attribute</a>
