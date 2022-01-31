@@ -2038,14 +2038,14 @@ bool FileMapInfo::can_use_heap_regions() {
 
 // The address where the bottom of this shared heap region should be mapped
 // at runtime
-address FileMapInfo::heap_region_runtime_start_address(FileMapRegion* spc, ptrdiff_t delta) {
+address FileMapInfo::heap_region_runtime_start_address(FileMapRegion* spc) {
   assert(UseSharedSpaces, "runtime only");
   spc->assert_is_heap_region();
   if (UseCompressedOops) {
     return start_address_as_decoded_from_archive(spc);
   } else {
     assert(is_aligned(spc->mapping_offset(), sizeof(HeapWord)), "must be");
-    return header()->heap_begin() + spc->mapping_offset() + delta;
+    return header()->heap_begin() + spc->mapping_offset() + HeapShared::runtime_delta();
   }
 }
 
@@ -2053,9 +2053,7 @@ void FileMapInfo::set_shared_heap_runtime_delta(ptrdiff_t delta) {
   if (UseCompressedOops) {
     HeapShared::init_narrow_oop_decoding(narrow_oop_base() + delta, narrow_oop_shift());
   } else {
-    if (delta != 0) {
-      HeapShared::set_runtime_delta(delta);
-    }
+    HeapShared::set_runtime_delta(delta);
   }
 }
 
@@ -2134,13 +2132,11 @@ void FileMapInfo::map_heap_regions_impl() {
   }
 
   log_info(cds)("CDS heap data relocation delta = " INTX_FORMAT " bytes", delta);
-  if (UseCompressedOops) {
-    // Need to set it for the heap_region_runtime_start_address() call below.
-    HeapShared::init_narrow_oop_decoding(narrow_oop_base() + delta, narrow_oop_shift());
-  }
+
+  set_shared_heap_runtime_delta(delta);
 
   FileMapRegion* si = space_at(MetaspaceShared::first_closed_heap_region);
-  address relocated_closed_heap_region_bottom = heap_region_runtime_start_address(si, delta);
+  address relocated_closed_heap_region_bottom = heap_region_runtime_start_address(si);
 
   if (!is_aligned(relocated_closed_heap_region_bottom, HeapRegion::GrainBytes)) {
     // Align the bottom of the closed archive heap regions at G1 region boundary.
@@ -2153,7 +2149,7 @@ void FileMapInfo::map_heap_regions_impl() {
                   " bytes to " INTX_FORMAT " to be aligned with HeapRegion::GrainBytes",
                   align, delta);
     set_shared_heap_runtime_delta(delta);
-    relocated_closed_heap_region_bottom = heap_region_runtime_start_address(si, delta);
+    relocated_closed_heap_region_bottom = heap_region_runtime_start_address(si);
     _heap_pointers_need_patching = true;
   }
   assert(is_aligned(relocated_closed_heap_region_bottom, HeapRegion::GrainBytes),
@@ -2212,12 +2208,7 @@ bool FileMapInfo::map_heap_regions(int first, int max,  bool is_open_archive,
     si = space_at(i);
     size_t size = si->used();
     if (size > 0) {
-      HeapWord* start;
-      if (UseCompressedOops) {
-        start = (HeapWord*)start_address_as_decoded_from_archive(si);
-      } else {
-        start = (HeapWord*)heap_region_runtime_start_address(si, HeapShared::runtime_delta());
-      }
+      HeapWord* start = (HeapWord*)heap_region_runtime_start_address(si);
       regions[num_regions] = MemRegion(start, size / HeapWordSize);
       num_regions ++;
       log_info(cds)("Trying to map heap data: region[%d] at " INTPTR_FORMAT ", size = " SIZE_FORMAT_W(8) " bytes",
