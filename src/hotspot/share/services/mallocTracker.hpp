@@ -292,10 +292,10 @@ class MallocMemorySummary : AllStatic {
 class MallocHeader {
 
   NOT_LP64(uint32_t _alt_canary);
-  size_t _size;
-  uint32_t _mst_marker;
-  uint8_t _flags;
-  uint8_t _unused;
+  const size_t _size;
+  const uint32_t _mst_marker;
+  const uint8_t _flags;
+  const uint8_t _unused;
   uint16_t _canary;
 
   static const uint16_t _header_canary_life_mark = 0xE99E;
@@ -308,11 +308,7 @@ class MallocHeader {
   // We discount sizes larger than these
   static const size_t max_reasonable_malloc_size = LP64_ONLY(256 * G) NOT_LP64(3500 * M);
 
-  // If block is broken, print out a report to tty (optionally with
-  // hex dump surrounding the broken block), then trigger a fatal error
-  void assert_block_integrity() const;
   void print_block_on_error(outputStream* st, address bad_address) const;
-  void mark_block_as_dead();
 
   static uint16_t build_footer(uint8_t b1, uint8_t b2) { return ((uint16_t)b1 << 8) | (uint16_t)b2; }
 
@@ -322,46 +318,32 @@ class MallocHeader {
 
  public:
 
-  MallocHeader(size_t size, MEMFLAGS flags, const NativeCallStack& stack, NMT_TrackingLevel level) {
+  MallocHeader(size_t size, MEMFLAGS flags, const NativeCallStack& stack, uint32_t mst_marker)
+    : _size(size), _mst_marker(mst_marker), _flags(NMTUtil::flag_to_index(flags)),
+      _unused(0), _canary(_header_canary_life_mark)
+  {
     assert(size < max_reasonable_malloc_size, "Too large allocation size?");
-
-    _flags = NMTUtil::flag_to_index(flags);
-    set_size(size);
-    if (level == NMT_detail) {
-      if (!record_malloc_site(stack, size, &_mst_marker, flags)) {
-        _mst_marker = 0;
-      }
-    }
-
-    _unused = 0;
-    _canary = _header_canary_life_mark;
     // On 32-bit we have some bits more, use them for a second canary
     // guarding the start of the header.
     NOT_LP64(_alt_canary = _header_alt_canary_life_mark;)
     set_footer(_footer_canary_life_mark); // set after initializing _size
-
-    MallocMemorySummary::record_malloc(size, flags);
-    MallocMemorySummary::record_new_malloc_header(sizeof(MallocHeader));
   }
 
   inline size_t   size()  const { return _size; }
   inline MEMFLAGS flags() const { return (MEMFLAGS)_flags; }
+  inline uint32_t mst_marker() const { return _mst_marker; }
   bool get_stack(NativeCallStack& stack) const;
 
-  // Cleanup tracking information and mark block as dead before the memory is released.
-  void release();
+  void mark_block_as_dead();
 
   // If block is broken, fill in a short descriptive text in out,
   // an option pointer to the corruption in p_corruption, and return false.
   // Return true if block is fine.
   bool check_block_integrity(char* msg, size_t msglen, address* p_corruption) const;
 
- private:
-  inline void set_size(size_t size) {
-    _size = size;
-  }
-  bool record_malloc_site(const NativeCallStack& stack, size_t size,
-    uint32_t* marker, MEMFLAGS flags) const;
+  // If block is broken, print out a report to tty (optionally with
+  // hex dump surrounding the broken block), then trigger a fatal error
+  void assert_block_integrity() const;
 };
 
 // This needs to be true on both 64-bit and 32-bit platforms
