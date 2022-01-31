@@ -249,9 +249,6 @@ bool os::Linux::get_tick_information(CPUPerfTicks* pticks, int which_logical_cpu
   uint64_t      iowTicks = 0, irqTicks = 0, sirqTicks= 0;
   // steal (since kernel 2.6.11): time spent in other OS when running in a virtualized environment
   uint64_t      stealTicks = 0;
-  // guest (since kernel 2.6.24): time spent running a virtual CPU for guest OS under the
-  // control of the Linux kernel
-  uint64_t      guestNiceTicks = 0;
   int           logical_cpu = -1;
   const int     required_tickinfo_count = (which_logical_cpu == -1) ? 4 : 5;
   int           n;
@@ -265,10 +262,10 @@ bool os::Linux::get_tick_information(CPUPerfTicks* pticks, int which_logical_cpu
   if (which_logical_cpu == -1) {
     n = fscanf(fh, "cpu " UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " "
             UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " "
-            UINT64_FORMAT " " UINT64_FORMAT " ",
+            UINT64_FORMAT " ",
             &userTicks, &niceTicks, &systemTicks, &idleTicks,
             &iowTicks, &irqTicks, &sirqTicks,
-            &stealTicks, &guestNiceTicks);
+            &stealTicks);
   } else {
     // Move to next line
     next_line(fh);
@@ -280,10 +277,10 @@ bool os::Linux::get_tick_information(CPUPerfTicks* pticks, int which_logical_cpu
 
     n = fscanf(fh, "cpu%u " UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " "
                UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " " UINT64_FORMAT " "
-               UINT64_FORMAT " " UINT64_FORMAT " ",
+               UINT64_FORMAT " ",
                &logical_cpu, &userTicks, &niceTicks,
                &systemTicks, &idleTicks, &iowTicks, &irqTicks, &sirqTicks,
-               &stealTicks, &guestNiceTicks);
+               &stealTicks);
   }
 
   fclose(fh);
@@ -293,7 +290,7 @@ bool os::Linux::get_tick_information(CPUPerfTicks* pticks, int which_logical_cpu
   pticks->used       = userTicks + niceTicks;
   pticks->usedKernel = systemTicks + irqTicks + sirqTicks;
   pticks->total      = userTicks + niceTicks + systemTicks + idleTicks +
-                       iowTicks + irqTicks + sirqTicks + stealTicks + guestNiceTicks;
+                       iowTicks + irqTicks + sirqTicks + stealTicks;
 
   if (n > required_tickinfo_count + 3) {
     pticks->steal = stealTicks;
