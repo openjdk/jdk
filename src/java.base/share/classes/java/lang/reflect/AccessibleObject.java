@@ -257,7 +257,7 @@ public class AccessibleObject implements AnnotatedElement {
      *
      * <p> If this method is invoked by <a href="{@docRoot}/../specs/jni/index.html">JNI code</a>
      * with no caller class on the stack, the {@code accessible} flag can
-     * only set if the member and the declaring class are public, and
+     * only be set if the member and the declaring class are public, and
      * the class is in a package that is exported unconditionally. </p>
      *
      * <p> If there is a security manager, its {@code checkPermission} method
