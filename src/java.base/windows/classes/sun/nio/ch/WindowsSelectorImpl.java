@@ -139,7 +139,7 @@ class WindowsSelectorImpl extends SelectorImpl {
     WindowsSelectorImpl(SelectorProvider sp) throws IOException {
         super(sp);
         pollWrapper = new PollArrayWrapper(INIT_CAP);
-        wakeupPipe = new PipeImpl(sp, false);
+        wakeupPipe = new PipeImpl(sp, false, /* AF_UNIX */ true);
         wakeupSourceFd = ((SelChImpl)wakeupPipe.source()).getFDVal();
         wakeupSinkFd = ((SelChImpl)wakeupPipe.sink()).getFDVal();
         pollWrapper.addWakeupSocket(wakeupSourceFd, 0);

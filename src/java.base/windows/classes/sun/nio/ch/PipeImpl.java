@@ -67,12 +67,14 @@ class PipeImpl
     {
 
         private final SelectorProvider sp;
+        private final boolean useUnixDomain;
         private IOException ioe;
         SourceChannelImpl source;
         SinkChannelImpl sink;
 
-        private Initializer(SelectorProvider sp) {
+        private Initializer(SelectorProvider sp, boolean useUnixDomain) {
             this.sp = sp;
+            this.useUnixDomain = useUnixDomain;
         }
 
         @Override
@@ -120,7 +122,7 @@ class PipeImpl
                         // Bind ServerSocketChannel to a port on the loopback
                         // address
                         if (ssc == null || !ssc.isOpen()) {
-                            ssc = createListener();
+                            ssc = createListener(useUnixDomain);
                             sa = ssc.getLocalAddress();
                         }
 
@@ -172,18 +174,20 @@ class PipeImpl
      * Creates a Pipe implementation that supports buffering.
      */
     PipeImpl(SelectorProvider sp) throws IOException {
-        this(sp, true);
+        this(sp, true, false);
     }
 
     /**
      * Creates Pipe implementation that supports optionally buffering.
      *
+     * @param useAfUnix use Unix domain sockets if supported
+     *
      * @implNote Uses a loopback connection. When buffering is
      * disabled then it sets TCP_NODELAY on the sink channel.
      */
     @SuppressWarnings("removal")
-    PipeImpl(SelectorProvider sp, boolean buffering) throws IOException {
-        Initializer initializer = new Initializer(sp);
+    PipeImpl(SelectorProvider sp, boolean buffering, boolean useAfUnix) throws IOException {
+        Initializer initializer = new Initializer(sp, useAfUnix);
         try {
             AccessController.doPrivileged(initializer);
             SinkChannelImpl sink = initializer.sink;
@@ -205,8 +209,16 @@ class PipeImpl
         return sink;
     }
 
-    private static ServerSocketChannel createListener() throws IOException {
-        ServerSocketChannel listener = ServerSocketChannel.open();
+    private static ServerSocketChannel createListener(boolean unixDomain) throws IOException {
+        ServerSocketChannel listener;
+        if (unixDomain && UnixDomainSockets.isSupported()) {
+            try {
+                listener = ServerSocketChannel.open(UNIX);
+                listener.bind(null);
+                return listener;
+            } catch (IOException | UnsupportedOperationException e) {}
+        }
+        listener = ServerSocketChannel.open();
         InetAddress lb = InetAddress.getLoopbackAddress();
         listener.bind(new InetSocketAddress(lb, 0));
         return listener;
