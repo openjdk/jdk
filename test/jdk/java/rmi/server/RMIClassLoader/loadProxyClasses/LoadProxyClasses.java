@@ -48,8 +48,8 @@ import java.rmi.MarshalledObject;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.io.Serializable;
+import java.io.InvalidClassException;
 import java.io.IOException;
-import java.io.InvalidObjectException;
 
 import java.util.Arrays;
 import java.util.zip.Checksum;
@@ -206,20 +206,20 @@ public class LoadProxyClasses {
                 currentThread.getContextClassLoader();
             currentThread.setContextClassLoader(nonpublicLoaderB);
 
-            InvalidObjectException invalid = null;
+            InvalidClassException invalid = null;
             try {
                 unmarshalProxyClass(proxy4, fnnLoader2, nonpublicLoaderB,
                                     4, null);
-            } catch (InvalidObjectException e) {
+            } catch (InvalidClassException e) {
                 invalid = e;
             }
 
             if (invalid == null) {
-                TestLibrary.bomb("case4: InvalidObjectException not thrown " +
+                TestLibrary.bomb("case4: InvalidClassException not thrown " +
                                  "when multiple nonpublic interfaces have \n" +
                                  "different class loaders");
             } else {
-                System.err.println("\ncase4: InvalidObjectException correctly " +
+                System.err.println("\ncase4: InvalidClassException correctly " +
                                    "thrown \n when trying to load proxy " +
                                    "with multiple nonpublic interfaces in \n" +
                                    "  different class loaders");
