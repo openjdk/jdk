@@ -645,7 +645,7 @@ public class RandomSupport {
         if (origin < bound) {
             r = r * (bound - origin) + origin;
             if (r >= bound)  // may need to correct a rounding problem
-                r = Math.nextAfter(r, origin);
+                r = Math.nextAfter(bound, origin);
         }
         return r;
     }
