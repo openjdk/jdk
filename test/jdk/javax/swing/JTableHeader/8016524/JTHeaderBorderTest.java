@@ -26,6 +26,7 @@
  * @bug 8016524
  * @key headful
  * @summary Tests whether the bottom line of JTableHeader border is visible for MacOS default LAF
+ * @requires (os.family=="mac")
  * @run main JTHeaderBorderTest
  */
 
