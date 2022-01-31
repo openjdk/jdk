@@ -256,20 +256,14 @@ public class Utils {
             List<? extends VariableElement> parameters2 = e2.getParameters();
             if (e1.getSimpleName().equals(e2.getSimpleName()) &&
                     parameters1.size() == parameters2.size()) {
-                int j;
-                for (j = 0 ; j < parameters1.size(); j++) {
+                for (int j = 0; j < parameters1.size(); j++) {
                     VariableElement v1 = parameters1.get(j);
                     VariableElement v2 = parameters2.get(j);
-                    String t1 = getTypeName(v1.asType(), true);
-                    String t2 = getTypeName(v2.asType(), true);
-                    if (!(t1.equals(t2) ||
-                            isTypeVariable(v1.asType()) || isTypeVariable(v2.asType()))) {
-                        break;
+                    if (!typeUtils.isSameType(v1.asType(), v2.asType())) {
+                        return false;
                     }
                 }
-                if (j == parameters1.size()) {
-                    return true;
-                }
+                return true;
             }
             return false;
         } else {
