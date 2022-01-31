@@ -40,8 +40,6 @@ class IRMethod {
     private String output;
     private String idealOutput;
     private String optoAssemblyOutput;
-    private boolean needsIdeal;
-    private boolean needsOptoAssembly;
 
     public IRMethod(Method method, int[] ruleIds, IR[] irAnnos) {
         this.method = method;
@@ -57,10 +55,6 @@ class IRMethod {
 
     public Method getMethod() {
         return method;
-    }
-
-    public List<IRRule> getIRRules() {
-        return irRules;
     }
 
 
@@ -95,33 +89,15 @@ class IRMethod {
         return optoAssemblyOutput;
     }
 
-    public void needsAllOutput() {
-        needsIdeal();
-        needsOptoAssembly();
-    }
-
-    public void needsIdeal() {
-        needsIdeal = true;
-    }
-
-    public boolean usesIdeal() {
-        return needsIdeal;
-    }
-
-    public void needsOptoAssembly() {
-        needsOptoAssembly = true;
-    }
-
-    public boolean usesOptoAssembly() {
-        return needsOptoAssembly;
-    }
-
-    public List<MatchResult> applyIRRules() {
+    public IRMethodMatchResult applyIRRules() {
         TestFramework.check(!irRules.isEmpty(), "IRMethod cannot be created if there are no IR rules to apply");
-        List<MatchResult> results = new ArrayList<>();
+        List<IRRuleMatchResult> results = new ArrayList<>();
         for (IRRule irRule : irRules) {
-            results.add(irRule.apply());
+            IRRuleMatchResult result = irRule.apply();
+            if (result.fail()) {
+                results.add(result);
+            }
         }
-        return results;
+        return new IRMethodMatchResult(this, results);
     }
 }

@@ -123,7 +123,8 @@ class IREncodingParser {
     private void validateIRRuleIds(Method m, IR[] irAnnos, int[] ids) {
         TestFramework.check(ids != null, "Should find method name in validIrRulesMap for " + m);
         TestFramework.check(ids.length > 0, "Did not find any rule indices for " + m);
-        TestFramework.check(ids[0] >= 1 && ids[ids.length - 1] <= irAnnos.length,
+        TestFramework.check((ids[0] >= 1 || ids[0] == IREncodingPrinter.NO_RULE_APPLIED)
+                            && ids[ids.length - 1] <= irAnnos.length,
                             "Invalid IR rule index found in validIrRulesMap for " + m);
     }
 

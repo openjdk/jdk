@@ -34,7 +34,6 @@ class IRRule {
     private final IRMethod irMethod;
     private final int ruleId;
     private final IR irAnno;
-    private final StringBuilder failureMessage;
     private FailOn failOn;
     private Counts counts;
 
@@ -42,7 +41,6 @@ class IRRule {
         this.irMethod = irMethod;
         this.ruleId = ruleId;
         this.irAnno = irAnno;
-        failureMessage = new StringBuilder();
         String[] failOn = irAnno.failOn();
         if (failOn.length != 0) {
             this.failOn = new FailOn(IRNode.mergeNodes(failOn));
@@ -69,39 +67,74 @@ class IRRule {
         return irMethod.getMethod();
     }
 
-    public MatchResult apply() {
-        MatchResult result = new MatchResult(this);
+    public IRRuleMatchResult apply() {
+        IRRuleMatchResult result = new IRRuleMatchResult(this);
         applyFailOn(result);
         applyCounts(result);
         return result;
     }
 
-    private void applyFailOn(MatchResult result) {
+    private void applyFailOn(IRRuleMatchResult result) {
         List<? extends Failure> failures = apply(failOn, irMethod.getOutput());
+        updateFailOnResult(result, failures);
+    }
+
+    private void updateFailOnResult(IRRuleMatchResult result, List<? extends Failure> failures) {
         if (!failures.isEmpty()) {
-            result.addFailOnFailures(failures);
-            setHowMatched(result, failOn, failures.size());
+            result.setFailOnFailures(failures);
+            setWhichOutputMatched(failOn, result, failures);
         }
     }
 
-    private void applyCounts(MatchResult result) {
+    private void applyCounts(IRRuleMatchResult result) {
         List<? extends Failure> failures = apply(counts, irMethod.getOutput());
+        updateCountsResult(result, failures);
+    }
+
+    private void updateCountsResult(IRRuleMatchResult result, List<? extends Failure> failures) {
         if (!failures.isEmpty()) {
             result.setCountsFailures(failures);
-            setHowMatched(result, counts, failures.size());
+            setWhichOutputMatched(counts, result, failures);
         }
     }
 
-    private void setHowMatched(MatchResult result, CheckAttribute checkAttribute, int failuresCount) {
-        List<?> idealFailures = apply(checkAttribute, irMethod.getIdealOutput());
-        if (failuresCount == idealFailures.size()) {
+    private void updateResultHowMatched(IRRuleMatchResult result, int totalMatches, int idealFailuresCount, int optoAssemblyFailuresCount) {
+        if (someRegexMatchOnlyEntireOutput(totalMatches, idealFailuresCount, optoAssemblyFailuresCount) || anyMatchOnIdealAndOptoAssembly(idealFailuresCount, optoAssemblyFailuresCount)) {
             result.setIdealMatch();
-        } else if (failuresCount == 0) {
             result.setOptoAssemblyMatch();
-        } else {
+        } else if (optoAssemblyFailuresCount == 0) {
             result.setIdealMatch();
+        } else {
             result.setOptoAssemblyMatch();
         }
+    }
+
+    private void setWhichOutputMatched(CheckAttribute check, IRRuleMatchResult result, List<? extends Failure> failures) {
+        int totalMatches = failures.stream().map(Failure::getMatchesCount).reduce(0, Integer::sum);
+        int idealFailuresCount = getFailureCounts(check, irMethod.getIdealOutput());
+        int optoAssemblyFailuresCount = getFailureCounts(check, irMethod.getOptoAssemblyOutput());
+        updateResultHowMatched(result, totalMatches, idealFailuresCount, optoAssemblyFailuresCount);
+    }
+
+
+    private int getFailureCounts(CheckAttribute check, String compilation) {
+        List<? extends Failure> failures = apply(check, compilation);
+        return failures.stream().map(Failure::getMatchesCount).reduce(0, Integer::sum);
+    }
+
+
+    /**
+     * Do we have a regex that is only matched on the entire ideal + opto assembly output?
+     */
+    private boolean someRegexMatchOnlyEntireOutput(int totalCount, int idealFailuresCount, int optoAssemblyFailuresCount) {
+        return totalCount != idealFailuresCount + optoAssemblyFailuresCount;
+    }
+
+    /**
+     * Do we have a match on ideal and opto assembly for this rule?
+     */
+    private boolean anyMatchOnIdealAndOptoAssembly(int idealFailuresCount, int optoAssemblyFailuresCount) {
+        return idealFailuresCount > 0 && optoAssemblyFailuresCount > 0;
     }
 
     private List<? extends Failure> apply(CheckAttribute checkAttribute, String compilation) {
@@ -110,5 +143,4 @@ class IRRule {
         }
         return Failure.NO_FAILURE;
     }
-
 }

@@ -31,51 +31,45 @@ import java.util.List;
  * @see Failure
  * @see IRRule
  */
-class MatchResult {
+class IRRuleMatchResult {
     private final IRRule irRule;
     private List<? extends Failure> failOnFailures = null;
     private List<? extends Failure> countsFailures = null;
-    private boolean idealMatch = false;
-    private boolean optoAssemblyMatch = false;
+    private OutputMatch outputMatch;
 
-    public MatchResult(IRRule irRule) {
+    public IRRuleMatchResult(IRRule irRule) {
         this.irRule = irRule;
+        this.outputMatch = OutputMatch.NONE;
     }
 
-    public IRRule getIRRule() {
-        return irRule;
-    }
-
-    public boolean isIdealMatch() {
-        return idealMatch;
+    public OutputMatch getOutputMatch() {
+        return outputMatch;
     }
 
     public void setIdealMatch() {
-        this.idealMatch = true;
-    }
-
-    public boolean isOptoAssemblyMatch() {
-        return optoAssemblyMatch;
+        switch (outputMatch) {
+            case NONE -> outputMatch = OutputMatch.IDEAL;
+            case OPTO_ASSEMBLY -> outputMatch = OutputMatch.BOTH;
+        }
     }
 
     public void setOptoAssemblyMatch() {
-        this.optoAssemblyMatch = true;
+        switch (outputMatch) {
+            case NONE -> outputMatch = OutputMatch.OPTO_ASSEMBLY;
+            case IDEAL -> outputMatch = OutputMatch.BOTH;
+        }
     }
 
 
-    public boolean hasFailOnFailures() {
+    private boolean hasFailOnFailures() {
         return failOnFailures != null;
     }
 
-    public List<? extends Failure> getFailOnFailures() {
-        return failOnFailures;
-    }
-
-    public void addFailOnFailures(List<? extends Failure> failOnFailures) {
+    public void setFailOnFailures(List<? extends Failure> failOnFailures) {
         this.failOnFailures = failOnFailures;
     }
 
-    public boolean hasCountsFailures() {
+    private boolean hasCountsFailures() {
         return countsFailures != null;
     }
 
@@ -92,5 +86,31 @@ class MatchResult {
      */
     public boolean fail() {
         return failOnFailures != null || countsFailures != null;
+    }
+
+    /**
+     * Build a failure message based on the collected failures of this object.
+     */
+    public String buildFailureMessage() {
+        StringBuilder failMsg = new StringBuilder();
+        failMsg.append("   * @IR rule ").append(irRule.getRuleId()).append(": \"")
+               .append(irRule.getIRAnno()).append("\"").append(System.lineSeparator());
+        if (hasFailOnFailures()) {
+            failMsg.append("     - failOn: Graph contains forbidden nodes:").append(System.lineSeparator());
+            failMsg.append(getFormattedFailureMessage(failOnFailures));
+        }
+        if (hasCountsFailures()) {
+            failMsg.append("     - counts: Graph contains wrong number of nodes:").append(System.lineSeparator());
+            failMsg.append(getFormattedFailureMessage(countsFailures));
+        }
+        return failMsg.toString();
+    }
+
+    private String getFormattedFailureMessage(List<? extends Failure> failures) {
+        StringBuilder builder = new StringBuilder();
+        for (Failure failure : failures) {
+            builder.append(failure.getFormattedFailureMessage());
+        }
+        return builder.toString();
     }
 }

@@ -47,7 +47,7 @@ class CountsFailure extends Failure {
     }
 
     private String getFailedComparison() {
-        return "      - Failed comparison: " + failedComparison + System.lineSeparator();
+        return "         - Failed comparison: " + failedComparison + System.lineSeparator();
     }
 
     @Override

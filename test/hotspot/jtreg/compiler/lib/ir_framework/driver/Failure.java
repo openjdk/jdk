@@ -30,7 +30,7 @@ import java.util.List;
  * Base class of a failure found when applying IR matching of an IR rule. This class represents an IR matching failure
  * of a regex of an attribute of an IR rule.
  *
- * @see MatchResult
+ * @see IRRuleMatchResult
  * @see IRRule
  */
 abstract class Failure {
@@ -47,10 +47,14 @@ abstract class Failure {
         this.matches = matches;
     }
 
+    public int getMatchesCount() {
+        return matches.size();
+    }
+
     abstract public String getFormattedFailureMessage();
 
     protected String getRegexLine() {
-        return "    * Regex " + nodeId + ": " + nodeRegex + System.lineSeparator();
+        return "       * Regex " + nodeId + ": " + nodeRegex + System.lineSeparator();
     }
 
     protected String getMatchedNodesBlock() {
@@ -66,12 +70,12 @@ abstract class Failure {
     abstract protected String getMatchedPrefix();
 
     protected String getMatchedNodesWhiteSpace() {
-        return "      ";
+        return "         ";
     }
 
     protected String getMatchesNodeLines() {
         StringBuilder builder = new StringBuilder();
-        matches.forEach(match -> builder.append("          ").append(match).append(System.lineSeparator()));
+        matches.forEach(match -> builder.append("             ").append(match).append(System.lineSeparator()));
         return builder.toString();
     }
 
