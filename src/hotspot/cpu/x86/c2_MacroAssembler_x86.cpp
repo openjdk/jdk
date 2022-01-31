@@ -3658,8 +3658,10 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
 
     jmp(DONE);
     bind(BREAK_LOOP);
-    addptr(len, 64);
+    lea(ary1, Address(ary1, len, Address::times_1));
     addptr(result, len);
+    orl(result, 63);
+    movl(len, 63);
     // Fallthru to tail compare
   } else {
 
@@ -3693,9 +3695,10 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
       jmpb(TAIL_START);
 
       bind(BREAK_LOOP);
-      addptr(len, 32);
+      lea(ary1, Address(ary1, len, Address::times_1));
       addptr(result, len);
-      movl(len, result);
+      orl(result, 31);
+      movl(len, 31);
       // Fallthru to tail compare
     } else if (UseSSE42Intrinsics) {
       // With SSE4.2, use double quad vector compare
@@ -3727,9 +3730,10 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
       jmpb(TAIL_START);
 
       bind(BREAK_LOOP);
-      addptr(len, 16);
+      lea(ary1, Address(ary1, len, Address::times_1));
       addptr(result, len);
-      movl(len, result);
+      orl(result, 15);
+      movl(len, 15);
       // Fallthru to tail compare
     }
   }
@@ -3748,15 +3752,14 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
   jccb(Assembler::notZero, TAIL_ADJUST);
   addptr(len, 4);
   jcc(Assembler::notZero, COMPARE_VECTORS);
+  jmpb(COMPARE_CHAR);
 
   bind(TAIL_ADJUST);
-  // there are negative bits
-  // subtract any 1-3 byte tail
-  andl(result, 0xfffffffc);
-  // len holds the negative number of bytes left to scan, add -len + 3
-  // then fallthrough to a regular char + byte compare at current index
+  // there are negative bits in the last 4 byte block.
+  // Adjust result and check the next three bytes
   addptr(result, len);
-  addptr(result, 3);
+  orl(result, 3);
+  lea(ary1, Address(ary1, len, Address::times_1));
 
   // Compare trailing char (final 2 bytes), if any
   bind(COMPARE_CHAR);
@@ -3774,7 +3777,7 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
   // of the bytes in the char is negative. Mask out the lowest bit from
   // the result, then subtract 1 and fallthrough to check the byte at
   // the current pointer
-  addl(result, 0xfffffffe);
+  andl(result, 0xfffffffe);
   subptr(result, 1);
 
   bind(COMPARE_BYTE);
