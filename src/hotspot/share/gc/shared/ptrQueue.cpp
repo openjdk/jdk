@@ -85,7 +85,7 @@ BufferNodeList BufferNode::Allocator::PendingList::take_all() {
 
 BufferNode::Allocator::Allocator(const char* name, size_t buffer_size) :
   _buffer_size(buffer_size),
-  _pending_lists{},
+  _pending_lists(),
   _active_pending_list(0),
   _free_list(),
   _free_count(0),
