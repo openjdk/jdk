@@ -21,28 +21,30 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver;
+package compiler.lib.ir_framework.driver.irmatching;
 
-import java.util.List;
+import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 
 /**
- * This class represents an IR matching failure of a regex of a failOn attribute of an IR rule.
+ * Enum to describe what kind of compilation output that was matched for a method during IR matching.
  *
- * @see FailOn
+ * @see IRRuleMatchResult
  */
-class FailOnRegexFailure extends RegexFailure {
-    public FailOnRegexFailure(String nodeRegex, int nodeId, List<String> matches) {
-        super(nodeRegex, nodeId, matches);
-    }
-
-    @Override
-    public String getFormattedFailureMessage() {
-        return getRegexLine()
-               + getMatchedNodesBlock();
-    }
-
-    @Override
-    protected String getMatchedPrefix() {
-        return "Matched forbidden";
-    }
+public enum OutputMatch {
+    /**
+     * There was no compilation output. Should not happen and results in a failure.
+     */
+    NONE,
+    /**
+     * Matched on PrintIdeal.
+     */
+    IDEAL,
+    /**
+     * Matched on PrintOptoAssembly.
+     */
+    OPTO_ASSEMBLY,
+    /**
+     * Matched on PrintIdeal and PrintOptoAssembly.
+     */
+    BOTH
 }

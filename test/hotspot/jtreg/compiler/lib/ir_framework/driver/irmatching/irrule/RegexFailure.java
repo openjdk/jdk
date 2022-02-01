@@ -21,7 +21,7 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver;
+package compiler.lib.ir_framework.driver.irmatching.irrule;
 
 import java.util.List;
 

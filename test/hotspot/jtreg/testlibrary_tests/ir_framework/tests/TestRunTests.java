@@ -24,7 +24,7 @@
 package ir_framework.tests;
 
 import compiler.lib.ir_framework.*;
-import compiler.lib.ir_framework.driver.IRViolationException;
+import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
 import compiler.lib.ir_framework.shared.TestRunException;
 import jdk.test.lib.Asserts;
 

@@ -21,16 +21,18 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver;
+package compiler.lib.ir_framework.driver.irmatching.irrule;
 
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
+import compiler.lib.ir_framework.driver.irmatching.OutputMatch;
 import compiler.lib.ir_framework.shared.*;
 
 import java.lang.reflect.Method;
 import java.util.function.Consumer;
 
-class IRRule {
+public class IRRule {
     private final IRMethod irMethod;
     private final int ruleId;
     private final IR irAnno;

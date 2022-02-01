@@ -21,9 +21,13 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver;
+package compiler.lib.ir_framework.driver.irmatching;
 
 import compiler.lib.ir_framework.*;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.parser.HotSpotPidFileParser;
+import compiler.lib.ir_framework.driver.irmatching.parser.IREncodingParser;
 
 import java.util.*;
 
@@ -78,8 +82,8 @@ public class IRMatcher {
      */
     private void reportFailures(List<IRMethodMatchResult> results) {
         Collections.sort(results); // Alphabetically
-        throwIfNoSafepointWhilePrinting(IRMatcherFailureMessageBuilder.build(results),
-                                        IRMatcherCompilationsBuilder.build(results));
+        throwIfNoSafepointWhilePrinting(FailureMessageBuilder.build(results),
+                                        CompilationsBuilder.build(results));
     }
 
     // In some very rare cases, the VM output to regex match on contains "<!-- safepoint while printing -->"

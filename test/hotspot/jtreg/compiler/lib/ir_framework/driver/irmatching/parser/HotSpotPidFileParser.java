@@ -21,8 +21,9 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver;
+package compiler.lib.ir_framework.driver.irmatching.parser;
 
+import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.shared.TestFrameworkException;
 
 import java.io.BufferedReader;
@@ -34,7 +35,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-class HotSpotPidFileParser {
+public class HotSpotPidFileParser {
     private static final Pattern COMPILE_ID_PATTERN = Pattern.compile("compile_id='(\\d+)'");
 
     private final Pattern compileIdPatternForTestClass;

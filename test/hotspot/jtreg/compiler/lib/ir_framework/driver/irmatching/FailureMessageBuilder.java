@@ -21,7 +21,9 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver;
+package compiler.lib.ir_framework.driver.irmatching;
+
+import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
 
 import java.util.List;
 
@@ -30,7 +32,7 @@ import java.util.List;
  *
  * @see IRMethodMatchResult
  */
-class IRMatcherFailureMessageBuilder {
+class FailureMessageBuilder {
 
     public static String build(List<IRMethodMatchResult> results) {
         StringBuilder failuresBuilder = new StringBuilder();

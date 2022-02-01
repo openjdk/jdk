@@ -24,8 +24,7 @@
 package ir_framework.tests;
 
 import compiler.lib.ir_framework.Scenario;
-import compiler.lib.ir_framework.driver.IRMatcher;
-import compiler.lib.ir_framework.driver.TestVMProcess;
+import compiler.lib.ir_framework.driver.irmatching.IRMatcher;
 import jdk.test.lib.Asserts;
 
 import java.util.Arrays;

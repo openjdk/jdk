@@ -21,10 +21,12 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver;
+package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.driver.irmatching.irrule.IRRule;
+import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -33,7 +35,7 @@ import java.util.List;
 /**
  * Helper class to store information about a method that needs to be IR matched.
  */
-class IRMethod {
+public class IRMethod {
     private final Method method;
     private final List<IRRule> irRules;
     private final StringBuilder outputBuilder;

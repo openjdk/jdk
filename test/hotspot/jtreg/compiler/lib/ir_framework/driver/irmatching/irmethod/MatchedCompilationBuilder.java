@@ -21,8 +21,10 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver;
+package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
+import compiler.lib.ir_framework.driver.irmatching.OutputMatch;
+import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 import compiler.lib.ir_framework.shared.TestFrameworkException;
 
 import java.util.List;
@@ -32,11 +34,11 @@ import java.util.List;
  *
  * @see IRMethodMatchResult
  */
-class IRMethodMatchedCompilationBuilder {
+class MatchedCompilationBuilder {
     private final IRMethod irMethod;
     private final OutputMatch outputMatch;
 
-    public IRMethodMatchedCompilationBuilder(IRMethod irMethod, List<IRRuleMatchResult> irRulesMatchResults, boolean missingCompilationOutput) {
+    public MatchedCompilationBuilder(IRMethod irMethod, List<IRRuleMatchResult> irRulesMatchResults, boolean missingCompilationOutput) {
         this.irMethod = irMethod;
         this.outputMatch = getOutputMatch(irRulesMatchResults, missingCompilationOutput);
     }

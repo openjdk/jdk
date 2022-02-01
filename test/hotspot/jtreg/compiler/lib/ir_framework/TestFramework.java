@@ -24,6 +24,8 @@
 package compiler.lib.ir_framework;
 
 import compiler.lib.ir_framework.driver.*;
+import compiler.lib.ir_framework.driver.irmatching.IRMatcher;
+import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
 import compiler.lib.ir_framework.shared.*;
 import compiler.lib.ir_framework.test.*;
 import jdk.test.lib.Platform;

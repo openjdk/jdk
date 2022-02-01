@@ -21,28 +21,27 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver;
+package compiler.lib.ir_framework.driver.irmatching.irrule;
+
+import compiler.lib.ir_framework.IR;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
 
 /**
- * Enum to describe what kind of compilation output that was matched for a method during IR matching.
+ * Base class representing a check attribute of an IR rule.
  *
- * @see IRRuleMatchResult
+ * @see IR
  */
-enum OutputMatch {
-    /**
-     * There was no compilation output. Should not happen and results in a failure.
-     */
-    NONE,
-    /**
-     * Matched on PrintIdeal.
-     */
-    IDEAL,
-    /**
-     * Matched on PrintOptoAssembly.
-     */
-    OPTO_ASSEMBLY,
-    /**
-     * Matched on PrintIdeal and PrintOptoAssembly.
-     */
-    BOTH
+abstract class CheckAttribute {
+    protected List<String> getMatchedNodes(Matcher m) {
+        List<String> matches = new ArrayList<>();
+        do {
+            matches.add(m.group());
+        } while (m.find());
+        return matches;
+    }
+
+    abstract public CheckAttributeMatchResult apply(String compilation);
 }

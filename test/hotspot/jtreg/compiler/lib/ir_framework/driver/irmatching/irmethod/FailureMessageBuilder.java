@@ -21,7 +21,9 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver;
+package compiler.lib.ir_framework.driver.irmatching.irmethod;
+
+import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 
 import java.util.List;
 
@@ -30,12 +32,12 @@ import java.util.List;
  *
  * @see IRMethodMatchResult
  */
-class IRMethodFailureMessageBuilder {
+class FailureMessageBuilder {
     private final IRMethod irMethod;
     private final List<IRRuleMatchResult> irRulesMatchResults;
     private final boolean missingCompilationOutput;
 
-    public IRMethodFailureMessageBuilder(IRMethod irMethod, List<IRRuleMatchResult> irRulesMatchResults, boolean missingCompilationOutput) {
+    public FailureMessageBuilder(IRMethod irMethod, List<IRRuleMatchResult> irRulesMatchResults, boolean missingCompilationOutput) {
         this.irMethod = irMethod;
         this.irRulesMatchResults = irRulesMatchResults;
         this.missingCompilationOutput = missingCompilationOutput;

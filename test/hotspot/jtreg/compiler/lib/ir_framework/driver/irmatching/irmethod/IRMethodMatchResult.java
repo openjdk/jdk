@@ -21,7 +21,10 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver;
+package compiler.lib.ir_framework.driver.irmatching.irmethod;
+
+import compiler.lib.ir_framework.driver.irmatching.MatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 
 import java.util.List;
 
@@ -31,18 +34,18 @@ import java.util.List;
  * @see IRRuleMatchResult
  * @see IRMethod
  */
-class IRMethodMatchResult implements Comparable<IRMethodMatchResult>, MatchResult {
+public class IRMethodMatchResult implements Comparable<IRMethodMatchResult>, MatchResult {
     private final IRMethod irMethod;
     private final List<IRRuleMatchResult> irRulesMatchResults;
-    private final IRMethodFailureMessageBuilder failureMessageBuilder;
-    private final IRMethodMatchedCompilationBuilder matchedCompilationBuilder;
+    private final FailureMessageBuilder failureMessageBuilder;
+    private final MatchedCompilationBuilder matchedCompilationBuilder;
 
     IRMethodMatchResult(IRMethod irMethod, List<IRRuleMatchResult> irRulesMatchResults) {
         this.irMethod = irMethod;
         this.irRulesMatchResults = irRulesMatchResults;
         boolean missingCompilationOutput = irMethod.getOutput().isEmpty();
-        this.failureMessageBuilder = new IRMethodFailureMessageBuilder(irMethod, irRulesMatchResults, missingCompilationOutput);
-        this.matchedCompilationBuilder = new IRMethodMatchedCompilationBuilder(irMethod, irRulesMatchResults, missingCompilationOutput);
+        this.failureMessageBuilder = new FailureMessageBuilder(irMethod, irRulesMatchResults, missingCompilationOutput);
+        this.matchedCompilationBuilder = new MatchedCompilationBuilder(irMethod, irRulesMatchResults, missingCompilationOutput);
     }
 
     public List<IRRuleMatchResult> getIrRulesMatchResults() {

@@ -21,20 +21,30 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver;
+package compiler.lib.ir_framework.driver.irmatching;
+
+import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
+
+import java.util.List;
 
 /**
- * Interface used by all classes which represent a IR match result. A result should also provide a failure message
- * in a pretty format to be used by the {@link IRMatcher}.
+ * Class to build the compilation output of IR matching failures.
+ *
+ * @see IRMethodMatchResult
  */
-interface MatchResult {
-    /**
-     * Does this match result represent a failure?
-     */
-    boolean fail();
+class CompilationsBuilder {
 
-    /**
-     * Builds a failure message in a pretty format to be used by the IR matching failure reporting.
-     */
-    String buildFailureMessage();
+    public static String build(List<IRMethodMatchResult> results) {
+        StringBuilder compilationsBuilder = new StringBuilder();
+        for (IRMethodMatchResult result : results) {
+            if (result.fail()) {
+                compilationsBuilder.append(buildMatchedCompilationMessage(result));
+            }
+        }
+        return compilationsBuilder.toString();
+    }
+
+    private static String buildMatchedCompilationMessage(IRMethodMatchResult result) {
+        return result.getMatchedCompilation() + System.lineSeparator() + System.lineSeparator();
+    }
 }

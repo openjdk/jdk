@@ -21,9 +21,11 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver;
+package compiler.lib.ir_framework.driver.irmatching.irrule;
 
 import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.driver.irmatching.MatchResult;
+import compiler.lib.ir_framework.driver.irmatching.OutputMatch;
 
 /**
  * This class represents an IR matching result of an IR rule.
@@ -31,7 +33,7 @@ import compiler.lib.ir_framework.TestFramework;
  * @see CheckAttributeMatchResult
  * @see IRRule
  */
-class IRRuleMatchResult implements MatchResult {
+public class IRRuleMatchResult implements MatchResult {
     private final IRRule irRule;
     private CheckAttributeMatchResult failOnFailures = null;
     private CheckAttributeMatchResult countsFailures = null;
@@ -83,8 +85,7 @@ class IRRuleMatchResult implements MatchResult {
      */
     public String buildFailureMessage() {
         StringBuilder failMsg = new StringBuilder();
-        failMsg.append("   * @IR rule ").append(irRule.getRuleId()).append(": \"")
-               .append(irRule.getIRAnno()).append("\"").append(System.lineSeparator());
+        failMsg.append(getIRRuleLine());
         if (hasFailOnFailures()) {
             failMsg.append(failOnFailures.buildFailureMessage());
         }
@@ -92,5 +93,9 @@ class IRRuleMatchResult implements MatchResult {
             failMsg.append(countsFailures.buildFailureMessage());
         }
         return failMsg.toString();
+    }
+
+    private String getIRRuleLine() {
+        return "   * @IR rule " + irRule.getRuleId() + ": \"" + irRule.getIRAnno() + "\"" + System.lineSeparator();
     }
 }

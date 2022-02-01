@@ -21,33 +21,31 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver;
+package compiler.lib.ir_framework.driver.irmatching.irrule;
 
 import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 
-import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Class representing a result of an applied counts attribute of an IR rule.
+ * Base class representing a result of an applied check attribute of an IR rule.
  *
- * @see IR#counts()
+ * @see IR
  */
-class CountsMatchResult extends CheckAttributeMatchResult {
+abstract class CheckAttributeMatchResult implements MatchResult {
+    protected List<RegexFailure> regexFailures = null;
 
-    public void addFailure(RegexFailure regexFailure) {
-        if (regexFailures == null) {
-            regexFailures = new ArrayList<>();
+    public int getMatchesCount() {
+        if (fail()) {
+            return regexFailures.stream().map(RegexFailure::getMatchesCount).reduce(0, Integer::sum);
+        } else {
+            return 0;
         }
-        regexFailures.add(regexFailure);
     }
 
     @Override
-    public String buildFailureMessage() {
-        StringBuilder failMsg = new StringBuilder();
-        failMsg.append("     - counts: Graph contains wrong number of nodes:").append(System.lineSeparator());
-        for (RegexFailure regexFailure : regexFailures) {
-            failMsg.append(regexFailure.getFormattedFailureMessage());
-        }
-        return failMsg.toString();
+    public boolean fail() {
+        return regexFailures != null;
     }
 }
