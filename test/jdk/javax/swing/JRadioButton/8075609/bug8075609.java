@@ -62,7 +62,11 @@ public class bug8075609 {
             // Radio button group tab key test
             runTest1();
         } finally {
-            if (mainFrame != null) SwingUtilities.invokeAndWait(() -> mainFrame.dispose());
+            SwingUtilities.invokeAndWait(() -> {
+                if (mainFrame != null) {
+                    mainFrame.dispose();
+                }
+            });
         }
     }
 
