@@ -61,10 +61,12 @@ public:
 
 // Used to scan cards from the DCQS or the remembered sets during garbage collection.
 class G1ScanCardClosure : public G1ScanClosureBase {
+  size_t& _heap_roots_found;
 public:
   G1ScanCardClosure(G1CollectedHeap* g1h,
-                    G1ParScanThreadState* pss) :
-    G1ScanClosureBase(g1h, pss) { }
+                    G1ParScanThreadState* pss,
+                    size_t& heap_roots_found) :
+    G1ScanClosureBase(g1h, pss), _heap_roots_found(heap_roots_found) { }
 
   template <class T> void do_oop_work(T* p);
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
@@ -116,9 +118,9 @@ class G1SkipCardEnqueueSetter : public StackObj {
   G1ScanEvacuatedObjClosure* _closure;
 
 public:
-  G1SkipCardEnqueueSetter(G1ScanEvacuatedObjClosure* closure, bool new_value) : _closure(closure) {
+  G1SkipCardEnqueueSetter(G1ScanEvacuatedObjClosure* closure, bool skip_card_enqueue) : _closure(closure) {
     assert(_closure->_skip_card_enqueue == G1ScanEvacuatedObjClosure::Uninitialized, "Must not be set");
-    _closure->_skip_card_enqueue = new_value ? G1ScanEvacuatedObjClosure::True : G1ScanEvacuatedObjClosure::False;
+    _closure->_skip_card_enqueue = skip_card_enqueue ? G1ScanEvacuatedObjClosure::True : G1ScanEvacuatedObjClosure::False;
   }
 
   ~G1SkipCardEnqueueSetter() {

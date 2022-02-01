@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/modRefBarrierSetAssembler.hpp"
+#include "runtime/jniHandles.hpp"
 
 #define __ masm->
 
@@ -73,4 +74,18 @@ void ModRefBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet deco
                                   tmp1, tmp2, tmp3,
                                   preservation_level);
   }
+}
+
+void ModRefBarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value,
+                                                Register tmp1, Register tmp2,
+                                                MacroAssembler::PreservationLevel preservation_level) {
+  Label done;
+  __ cmpdi(CCR0, value, 0);
+  __ beq(CCR0, done);         // Use NULL as-is.
+
+  __ clrrdi(tmp1, value, JNIHandles::weak_tag_size);
+  __ ld(value, 0, tmp1);      // Resolve (untagged) jobject.
+
+  __ verify_oop(value, FILE_AND_LINE);
+  __ bind(done);
 }

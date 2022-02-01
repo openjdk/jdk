@@ -82,6 +82,11 @@ Assembler::SIMD_RegVariant Assembler::elemType_to_regVariant(BasicType bt) {
   return elemBytes_to_regVariant(type2aelembytes(bt));
 }
 
+unsigned Assembler::regVariant_to_elemBits(Assembler::SIMD_RegVariant T){
+  guarantee(T != Q, "Invalid register variant");
+  return 1 << (T + 3);
+}
+
 void Assembler::emit_data64(jlong data,
                             relocInfo::relocType rtype,
                             int format) {
@@ -339,19 +344,19 @@ void Assembler::wrap_label(Label &L, prfop op, prefetch_insn insn) {
 }
 
 bool Assembler::operand_valid_for_add_sub_immediate(int64_t imm) {
-  bool shift = false;
-  uint64_t uimm = (uint64_t)uabs((jlong)imm);
-  if (uimm < (1 << 12))
-    return true;
-  if (uimm < (1 << 24)
-      && ((uimm >> 12) << 12 == uimm)) {
-    return true;
-  }
-  return false;
+  return operand_valid_for_immediate_bits(imm, 12);
+}
+
+bool Assembler::operand_valid_for_sve_add_sub_immediate(int64_t imm) {
+  return operand_valid_for_immediate_bits(imm, 8);
 }
 
 bool Assembler::operand_valid_for_logical_immediate(bool is32, uint64_t imm) {
   return encode_logical_immediate(is32, imm) != 0xffffffff;
+}
+
+bool Assembler::operand_valid_for_sve_logical_immediate(unsigned elembits, uint64_t imm) {
+  return encode_sve_logical_immediate(elembits, imm) != 0xffffffff;
 }
 
 static uint64_t doubleTo64Bits(jdouble d) {
@@ -383,6 +388,17 @@ int AbstractAssembler::code_fill_byte() {
 // n.b. this is implemented in subclass MacroAssembler
 void Assembler::bang_stack_with_offset(int offset) { Unimplemented(); }
 
+bool asm_util::operand_valid_for_immediate_bits(int64_t imm, unsigned nbits) {
+  guarantee(nbits == 8 || nbits == 12, "invalid nbits value");
+  uint64_t uimm = (uint64_t)uabs((jlong)imm);
+  if (uimm < (UCONST64(1) << nbits))
+    return true;
+  if (uimm < (UCONST64(1) << (2 * nbits))
+      && ((uimm >> nbits) << nbits == uimm)) {
+    return true;
+  }
+  return false;
+}
 
 // and now the routines called by the assembler which encapsulate the
 // above encode and decode functions
@@ -398,6 +414,25 @@ asm_util::encode_logical_immediate(bool is32, uint64_t imm)
     /* Replicate the 32 lower bits to the 32 upper bits.  */
     imm &= 0xffffffff;
     imm |= imm << 32;
+  }
+
+  return encoding_for_logical_immediate(imm);
+}
+
+uint32_t
+asm_util::encode_sve_logical_immediate(unsigned elembits, uint64_t imm) {
+  guarantee(elembits == 8 || elembits == 16 ||
+            elembits == 32 || elembits == 64, "unsupported element size");
+  uint64_t upper = UCONST64(-1) << (elembits/2) << (elembits/2);
+  /* Allow all zeros or all ones in top bits, so that
+   * constant expressions like ~1 are permitted. */
+  if ((imm & ~upper) != imm && (imm | upper) != imm)
+    return 0xffffffff;
+
+  // Replicate the immediate in different element sizes to 64 bits.
+  imm &= ~upper;
+  for (unsigned i = elembits; i < 64; i *= 2) {
+    imm |= (imm << i);
   }
 
   return encoding_for_logical_immediate(imm);

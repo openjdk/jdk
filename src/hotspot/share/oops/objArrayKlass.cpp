@@ -155,19 +155,17 @@ ObjArrayKlass::ObjArrayKlass(int n, Klass* element_klass, Symbol* name) : ArrayK
   assert(is_objArray_klass(), "sanity");
 }
 
-int ObjArrayKlass::oop_size(oop obj) const {
+size_t ObjArrayKlass::oop_size(oop obj) const {
   assert(obj->is_objArray(), "must be object array");
   return objArrayOop(obj)->object_size();
 }
 
 objArrayOop ObjArrayKlass::allocate(int length, TRAPS) {
   check_array_allocation_length(length, arrayOopDesc::max_array_length(T_OBJECT), CHECK_NULL);
-  int size = objArrayOopDesc::object_size(length);
+  size_t size = objArrayOopDesc::object_size(length);
   return (objArrayOop)Universe::heap()->array_allocate(this, size, length,
                                                        /* do_zero */ true, THREAD);
 }
-
-static int multi_alloc_counter = 0;
 
 oop ObjArrayKlass::multi_allocate(int rank, jint* sizes, TRAPS) {
   int length = *sizes;

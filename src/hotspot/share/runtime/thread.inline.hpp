@@ -122,13 +122,20 @@ inline void JavaThread::clear_obj_deopt_flag() {
   clear_suspend_flag(_obj_deopt);
 }
 
+inline bool JavaThread::clear_async_exception_condition() {
+  bool ret = has_async_exception_condition();
+  clear_suspend_flag(_has_async_exception);
+  return ret;
+}
+
 inline void JavaThread::set_pending_async_exception(oop e) {
   _pending_async_exception = e;
-  set_async_exception_condition(_async_exception);
-  // Set _suspend_flags too so we save a comparison in the transition from native to Java
-  // in the native wrappers. It will be cleared in check_and_handle_async_exceptions()
-  // when we actually install the exception.
   set_suspend_flag(_has_async_exception);
+}
+
+inline void JavaThread::set_pending_unsafe_access_error() {
+  set_suspend_flag(_has_async_exception);
+  DEBUG_ONLY(_is_unsafe_access_error = true);
 }
 
 inline JavaThreadState JavaThread::thread_state() const    {

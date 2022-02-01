@@ -94,9 +94,6 @@ public:
     }
   }
 
-  // Allocate the object aligned to "alignment_in_bytes".
-  inline HeapWord* allocate_aligned(size_t word_sz, unsigned short alignment_in_bytes);
-
   // Undo any allocation in the buffer, which is required to be of the
   // "obj" of the given "word_sz".
   void undo_allocation(HeapWord* obj, size_t word_sz);

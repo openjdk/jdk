@@ -182,8 +182,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
             String prefix = getPropertyPrefix();
             Object o = DefaultLookup.get(editor, this,
                 prefix + ".keyBindings");
-            if ((o != null) && (o instanceof JTextComponent.KeyBinding[])) {
-                JTextComponent.KeyBinding[] bindings = (JTextComponent.KeyBinding[]) o;
+            if (o instanceof JTextComponent.KeyBinding[] bindings) {
                 JTextComponent.loadKeymap(map, bindings, getComponent().getActions());
             }
         }
@@ -536,8 +535,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
          * should allow Tab to keyboard - accessibility
          */
         EditorKit editorKit = getEditorKit(editor);
-        if ( editorKit != null
-             && editorKit instanceof DefaultEditorKit) {
+        if (editorKit instanceof DefaultEditorKit) {
             Set<AWTKeyStroke> storedForwardTraversalKeys = editor.
                 getFocusTraversalKeys(KeyboardFocusManager.
                                       FORWARD_TRAVERSAL_KEYS);
@@ -617,9 +615,8 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
         if (getEditorKit(editor) instanceof DefaultEditorKit) {
             if (map != null) {
                 Object obj = map.get(DefaultEditorKit.insertBreakAction);
-                if (obj != null
-                    && obj instanceof DefaultEditorKit.InsertBreakAction) {
-                    Action action =  new TextActionWrapper((TextAction)obj);
+                if (obj instanceof DefaultEditorKit.InsertBreakAction breakAction) {
+                    Action action = new TextActionWrapper(breakAction);
                     componentMap.put(action.getValue(Action.NAME),action);
                 }
             }

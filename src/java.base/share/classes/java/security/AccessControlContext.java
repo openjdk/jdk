@@ -916,7 +916,6 @@ public final class AccessControlContext {
 
     private boolean containsAllLimits(AccessControlContext that) {
         boolean match = false;
-        Permission thisPerm;
 
         if (this.permissions == null && that.permissions == null)
             return true;

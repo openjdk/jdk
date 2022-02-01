@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,8 @@
 #include "os_aix.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/os_perf.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
-
-#include CPU_HEADER(vm_version_ext)
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -240,7 +239,7 @@ static int SCANF_ARGS(2, 0) vread_statdata(const char* procfile, _SCANFMT_ const
   int n;
   char buf[2048];
 
-  if ((f = fopen(procfile, "r")) == NULL) {
+  if ((f = os::fopen(procfile, "r")) == NULL) {
     return -1;
   }
 
@@ -663,7 +662,7 @@ void SystemProcessInterface::SystemProcesses::ProcessIterator::get_exe_name() {
 
   jio_snprintf(buffer, PATH_MAX, "/proc/%s/stat", _entry->d_name);
   buffer[PATH_MAX - 1] = '\0';
-  if ((fp = fopen(buffer, "r")) != NULL) {
+  if ((fp = os::fopen(buffer, "r")) != NULL) {
     if (fgets(buffer, PATH_MAX, fp) != NULL) {
       char* start, *end;
       // exe-name is between the first pair of ( and )
@@ -691,7 +690,7 @@ char* SystemProcessInterface::SystemProcesses::ProcessIterator::get_cmdline() {
 
   jio_snprintf(buffer, PATH_MAX, "/proc/%s/cmdline", _entry->d_name);
   buffer[PATH_MAX - 1] = '\0';
-  if ((fp = fopen(buffer, "r")) != NULL) {
+  if ((fp = os::fopen(buffer, "r")) != NULL) {
     size_t size = 0;
     char   dummy;
 
@@ -863,11 +862,12 @@ CPUInformationInterface::CPUInformationInterface() {
 
 bool CPUInformationInterface::initialize() {
   _cpu_info = new CPUInformation();
-  _cpu_info->set_number_of_hardware_threads(VM_Version_Ext::number_of_threads());
-  _cpu_info->set_number_of_cores(VM_Version_Ext::number_of_cores());
-  _cpu_info->set_number_of_sockets(VM_Version_Ext::number_of_sockets());
-  _cpu_info->set_cpu_name(VM_Version_Ext::cpu_name());
-  _cpu_info->set_cpu_description(VM_Version_Ext::cpu_description());
+  VM_Version::initialize_cpu_information();
+  _cpu_info->set_number_of_hardware_threads(VM_Version::number_of_threads());
+  _cpu_info->set_number_of_cores(VM_Version::number_of_cores());
+  _cpu_info->set_number_of_sockets(VM_Version::number_of_sockets());
+  _cpu_info->set_cpu_name(VM_Version::cpu_name());
+  _cpu_info->set_cpu_description(VM_Version::cpu_description());
   return true;
 }
 

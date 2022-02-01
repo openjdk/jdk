@@ -117,7 +117,7 @@ public final class JDKEvents {
     private static boolean initializationTriggered;
 
     @SuppressWarnings("unchecked")
-    public synchronized static void initialize() {
+    public static synchronized void initialize() {
         try {
             if (initializationTriggered == false) {
                 for (Class<?> mirrorEventClass : mirrorEventClasses) {

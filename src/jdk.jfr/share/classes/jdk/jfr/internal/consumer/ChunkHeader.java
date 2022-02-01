@@ -163,14 +163,6 @@ public final class ChunkHeader {
         }
     }
 
-    public boolean readHeader(byte[] bytes, int count) throws IOException {
-        input.position(absoluteChunkStart);
-        for (int i = 0; i< count; i++) {
-            bytes[i] = input.readPhysicalByte();
-        }
-        return bytes[(int)FILE_STATE_POSITION] != UPDATING_CHUNK_HEADER;
-    }
-
     public void awaitFinished() throws IOException {
         if (finished) {
             return;

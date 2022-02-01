@@ -43,7 +43,7 @@ private:
 
 // Do cleanup of some weakly held data in the same parallel task.
 // Assumes a non-moving context.
-class G1ParallelCleaningTask : public AbstractGangTask {
+class G1ParallelCleaningTask : public WorkerTask {
 private:
   bool                    _unloading_occurred;
   CodeCacheUnloadingTask  _code_cache_task;

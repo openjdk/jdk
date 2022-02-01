@@ -35,7 +35,7 @@ ShenandoahClassUnloadingTask::ShenandoahClassUnloadingTask(ShenandoahPhaseTiming
                                                            BoolObjectClosure* is_alive,
                                                            uint num_workers,
                                                            bool unloading_occurred) :
-  AbstractGangTask("Shenandoah Class Unloading"),
+  WorkerTask("Shenandoah Class Unloading"),
   _phase(phase),
   _unloading_occurred(unloading_occurred),
   _code_cache_task(num_workers, is_alive, unloading_occurred),

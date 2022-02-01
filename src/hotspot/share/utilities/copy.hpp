@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,15 +37,6 @@ extern "C" {
   void _Copy_conjoint_words(const HeapWord* from, HeapWord* to, size_t count);
   void _Copy_disjoint_words(const HeapWord* from, HeapWord* to, size_t count);
 
-  void _Copy_conjoint_words_atomic(const HeapWord* from, HeapWord* to, size_t count);
-  void _Copy_disjoint_words_atomic(const HeapWord* from, HeapWord* to, size_t count);
-
-  void _Copy_aligned_conjoint_words(const HeapWord* from, HeapWord* to, size_t count);
-  void _Copy_aligned_disjoint_words(const HeapWord* from, HeapWord* to, size_t count);
-
-  void _Copy_conjoint_bytes(const void* from, void* to, size_t count);
-
-  void _Copy_conjoint_bytes_atomic  (const void*   from, void*   to, size_t count);
   void _Copy_conjoint_jshorts_atomic(const jshort* from, jshort* to, size_t count);
   void _Copy_conjoint_jints_atomic  (const jint*   from, jint*   to, size_t count);
   void _Copy_conjoint_jlongs_atomic (const jlong*  from, jlong*  to, size_t count);
@@ -55,7 +46,6 @@ extern "C" {
   void _Copy_arrayof_conjoint_jshorts(const HeapWord* from, HeapWord* to, size_t count);
   void _Copy_arrayof_conjoint_jints  (const HeapWord* from, HeapWord* to, size_t count);
   void _Copy_arrayof_conjoint_jlongs (const HeapWord* from, HeapWord* to, size_t count);
-  void _Copy_arrayof_conjoint_oops   (const HeapWord* from, HeapWord* to, size_t count);
 }
 
 class Copy : AllStatic {

@@ -241,7 +241,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
      * of a given type expression. This mapping returns the original type is no changes occurred
      * when recursively mapping the original type's subterms.
      */
-    public static abstract class StructuralTypeMapping<S> extends Types.TypeMapping<S> {
+    public abstract static class StructuralTypeMapping<S> extends Types.TypeMapping<S> {
 
         @Override
         public Type visitClassType(ClassType t, S s) {
@@ -1786,7 +1786,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         }
     }
 
-    public static abstract class DelegatedType extends Type {
+    public abstract static class DelegatedType extends Type {
         public Type qtype;
         public TypeTag tag;
 

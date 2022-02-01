@@ -416,6 +416,13 @@ class LateInlineMHCallGenerator : public LateInlineCallGenerator {
 };
 
 bool LateInlineMHCallGenerator::do_late_inline_check(Compile* C, JVMState* jvms) {
+  // When inlining a virtual call, the null check at the call and the call itself can throw. These 2 paths have different
+  // expression stacks which causes late inlining to break. The MH invoker is not expected to be called from a method wih
+  // exception handlers. When there is no exception handler, GraphKit::builtin_throw() pops the stack which solves the issue
+  // of late inlining with exceptions.
+  assert(!jvms->method()->has_exception_handlers() ||
+         (method()->intrinsic_id() != vmIntrinsics::_linkToVirtual &&
+          method()->intrinsic_id() != vmIntrinsics::_linkToInterface), "no exception handler expected");
   // Even if inlining is not allowed, a virtual call can be strength-reduced to a direct call.
   bool allow_inline = C->inlining_incrementally();
   bool input_not_const = true;
@@ -675,12 +682,13 @@ void CallGenerator::do_late_inline_helper() {
   bool result_not_used = false;
 
   if (is_pure_call()) {
-    if (is_boxing_late_inline() && callprojs.resproj != nullptr) {
-        // replace box node to scalar node only in case it is directly referenced by debug info
-        assert(call->as_CallStaticJava()->is_boxing_method(), "sanity");
-        if (!has_non_debug_usages(callprojs.resproj) && is_box_cache_valid(call)) {
-          scalarize_debug_usages(call, callprojs.resproj);
-        }
+    // Disabled due to JDK-8276112
+    if (false && is_boxing_late_inline() && callprojs.resproj != nullptr) {
+      // replace box node to scalar node only in case it is directly referenced by debug info
+      assert(call->as_CallStaticJava()->is_boxing_method(), "sanity");
+      if (!has_non_debug_usages(callprojs.resproj) && is_box_cache_valid(call)) {
+        scalarize_debug_usages(call, callprojs.resproj);
+      }
     }
 
     // The call is marked as pure (no important side effects), but result isn't used.

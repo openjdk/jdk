@@ -66,7 +66,7 @@ public final class Replace implements Action {
         Matcher matcher = pattern.matcher(textString);
         var replacements = new ArrayList<Replacement>();
         StringBuilder b = new StringBuilder();
-        int off = 0; // offset because of the replacements (can be negative)
+        int off = 0; // cumulative offset caused by replacements (can become negative)
         while (matcher.find()) {
             int start = matcher.start();
             int end = matcher.end();
@@ -79,7 +79,7 @@ public final class Replace implements Action {
         // there's no need to call matcher.appendTail(b)
         for (int i = replacements.size() - 1; i >= 0; i--) {
             Replacement r = replacements.get(i);
-            text.subText(r.start, r.end).replace(Set.of(), r.value);
+            text.subText(r.start(), r.end()).replace(Set.of(), r.value());
         }
     }
 }

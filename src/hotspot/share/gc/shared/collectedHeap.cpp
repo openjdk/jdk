@@ -110,6 +110,18 @@ void GCHeapLog::log_heap(CollectedHeap* heap, bool before) {
   st.print_cr("}");
 }
 
+ParallelObjectIterator::ParallelObjectIterator(uint thread_num) :
+  _impl(Universe::heap()->parallel_object_iterator(thread_num))
+{}
+
+ParallelObjectIterator::~ParallelObjectIterator() {
+  delete _impl;
+}
+
+void ParallelObjectIterator::object_iterate(ObjectClosure* cl, uint worker_id) {
+  _impl->object_iterate(cl, worker_id);
+}
+
 size_t CollectedHeap::unused() const {
   MutexLocker ml(Heap_lock);
   return capacity() - used();
@@ -479,10 +491,6 @@ void CollectedHeap::fill_with_objects(HeapWord* start, size_t words, bool zap)
 
 void CollectedHeap::fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap) {
   CollectedHeap::fill_with_object(start, end, zap);
-}
-
-size_t CollectedHeap::min_dummy_object_size() const {
-  return oopDesc::header_size();
 }
 
 size_t CollectedHeap::tlab_alloc_reserve() const {

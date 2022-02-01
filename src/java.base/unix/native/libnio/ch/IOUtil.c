@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "jlong.h"
 #include "sun_nio_ch_IOUtil.h"
 #include "java_lang_Integer.h"
+#include "java_lang_Long.h"
 #include "nio.h"
 #include "nio_util.h"
 
@@ -171,6 +172,29 @@ Java_sun_nio_ch_IOUtil_iovMax(JNIEnv *env, jclass this)
     if (iov_max == -1)
         iov_max = 16;
     return (jint)iov_max;
+}
+
+JNIEXPORT jlong JNICALL
+Java_sun_nio_ch_IOUtil_writevMax(JNIEnv *env, jclass this)
+{
+#if defined(MACOSX) || defined(__linux__)
+    //
+    // The man pages of writev() on both Linux and macOS specify this
+    // constraint on the sum of all byte lengths in the iovec array:
+    //
+    // [EINVAL] The sum of the iov_len values in the iov array
+    //          overflows a 32-bit integer.
+    //
+    // As of macOS 11 Big Sur, Darwin version 20, writev() started to
+    // actually enforce the constraint which had been previously ignored.
+    //
+    // In practice on Linux writev() has been observed not to write more
+    // than 0x7fff0000 (aarch64) or 0x7ffff000 (x64) bytes in one call.
+    //
+    return java_lang_Integer_MAX_VALUE;
+#else
+    return java_lang_Long_MAX_VALUE;
+#endif
 }
 
 /* Declared in nio_util.h for use elsewhere in NIO */

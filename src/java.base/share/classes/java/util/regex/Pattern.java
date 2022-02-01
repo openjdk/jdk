@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1795,6 +1795,8 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             if (patternLength != cursor) {
                 if (peek() == ')') {
                     throw error("Unmatched closing ')'");
+                } else if (cursor == patternLength + 1 && temp[patternLength - 1] == '\\') {
+                    throw error("Unescaped trailing backslash");
                 } else {
                     throw error("Unexpected internal error");
                 }
@@ -2687,6 +2689,8 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                             else
                                 prev = right;
                         } else {
+                            if (curr == null)
+                                throw error("Bad intersection syntax");
                             prev = prev.and(curr);
                         }
                     } else {
@@ -3438,14 +3442,14 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
     private static final int countChars(CharSequence seq, int index,
                                         int lengthInCodePoints) {
         // optimization
-        if (lengthInCodePoints == 1 && !Character.isHighSurrogate(seq.charAt(index))) {
-            assert (index >= 0 && index < seq.length());
+        if (lengthInCodePoints == 1 && index >= 0 && index < seq.length() &&
+            !Character.isHighSurrogate(seq.charAt(index))) {
             return 1;
         }
         int length = seq.length();
         int x = index;
         if (lengthInCodePoints >= 0) {
-            assert (index >= 0 && index < length);
+            assert ((length == 0 && index == 0) || index >= 0 && index < length);
             for (int i = 0; x < length && i < lengthInCodePoints; i++) {
                 if (Character.isHighSurrogate(seq.charAt(x++))) {
                     if (x < length && Character.isLowSurrogate(seq.charAt(x))) {
@@ -5605,50 +5609,69 @@ NEXT:       while (i <= last) {
         }
     }
 
+    private static CharPredicate and(CharPredicate p1, CharPredicate p2,
+                                     boolean bmpChar) {
+        if (bmpChar) {
+            return (BmpCharPredicate)(ch -> p1.is(ch) && p2.is(ch));
+        } else {
+            return (CharPredicate)(ch -> p1.is(ch) && p2.is(ch));
+        }
+    }
+
+    private static CharPredicate union(CharPredicate p1, CharPredicate p2,
+                                       boolean bmpChar) {
+        if (bmpChar) {
+            return (BmpCharPredicate)(ch -> p1.is(ch) || p2.is(ch));
+        } else {
+            return (CharPredicate)(ch -> p1.is(ch) || p2.is(ch));
+        }
+    }
+
+    private static CharPredicate union(CharPredicate p1, CharPredicate p2,
+                                       CharPredicate p3, boolean bmpChar) {
+        if (bmpChar) {
+            return (BmpCharPredicate)(ch -> p1.is(ch) || p2.is(ch) || p3.is(ch));
+        } else {
+            return (CharPredicate)(ch -> p1.is(ch) || p2.is(ch) || p3.is(ch));
+        }
+    }
+
+    private static CharPredicate negate(CharPredicate p1) {
+        return (CharPredicate)(ch -> !p1.is(ch));
+    }
+
     @FunctionalInterface
     static interface CharPredicate {
         boolean is(int ch);
 
         default CharPredicate and(CharPredicate p) {
-            return ch -> is(ch) && p.is(ch);
+            return Pattern.and(this, p, false);
         }
         default CharPredicate union(CharPredicate p) {
-            return ch -> is(ch) || p.is(ch);
+            return Pattern.union(this, p, false);
         }
         default CharPredicate union(CharPredicate p1,
                                     CharPredicate p2) {
-            return ch -> is(ch) || p1.is(ch) || p2.is(ch);
+            return Pattern.union(this, p1, p2, false);
         }
         default CharPredicate negate() {
-            return ch -> !is(ch);
+            return Pattern.negate(this);
         }
     }
 
     static interface BmpCharPredicate extends CharPredicate {
 
         default CharPredicate and(CharPredicate p) {
-            if (p instanceof BmpCharPredicate)
-                return (BmpCharPredicate)(ch -> is(ch) && p.is(ch));
-            return ch -> is(ch) && p.is(ch);
+            return Pattern.and(this, p, p instanceof BmpCharPredicate);
         }
         default CharPredicate union(CharPredicate p) {
-            if (p instanceof BmpCharPredicate)
-                return (BmpCharPredicate)(ch -> is(ch) || p.is(ch));
-            return ch -> is(ch) || p.is(ch);
+            return Pattern.union(this, p, p instanceof BmpCharPredicate);
         }
-        static CharPredicate union(CharPredicate... predicates) {
-            CharPredicate cp = ch -> {
-                for (CharPredicate p : predicates) {
-                    if (!p.is(ch))
-                        return false;
-                }
-                return true;
-            };
-            for (CharPredicate p : predicates) {
-                if (! (p instanceof BmpCharPredicate))
-                    return cp;
-            }
-            return (BmpCharPredicate)cp;
+        default CharPredicate union(CharPredicate p1,
+                                    CharPredicate p2) {
+            return Pattern.union(this, p1, p2,
+                                 p1 instanceof BmpCharPredicate &&
+                                 p2 instanceof BmpCharPredicate);
         }
     }
 

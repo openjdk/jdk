@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,13 +151,13 @@ public class SourceToHTMLConverter {
         if (pkg == null) {
             return;
         }
-        for (Element te : utils.getAllClasses(pkg)) {
+        for (TypeElement te : utils.getAllClasses(pkg)) {
             // If -nodeprecated option is set and the class is marked as deprecated,
             // do not convert the package files to HTML. We do not check for
             // containing package deprecation since it is already check in
             // the calling method above.
             if (!(options.noDeprecated() && utils.isDeprecated(te)))
-                convertClass((TypeElement)te, outputdir);
+                convertClass(te, outputdir);
         }
     }
 
@@ -232,7 +232,7 @@ public class SourceToHTMLConverter {
      * @param path the path for the file.
      */
     private void writeToFile(Content body, DocPath path, TypeElement te) throws DocFileIOException {
-        Head head = new Head(path, configuration.getDocletVersion(), configuration.startTime)
+        Head head = new Head(path, configuration.getDocletVersion(), configuration.getBuildDate())
 //                .setTimestamp(!options.notimestamp) // temporary: compatibility!
                 .setTitle(resources.getText("doclet.Window_Source_title"))
 //                .setCharset(options.charset) // temporary: compatibility!

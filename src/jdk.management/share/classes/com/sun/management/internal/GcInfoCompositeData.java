@@ -55,6 +55,7 @@ public class GcInfoCompositeData extends LazyCompositeData {
     private final GcInfo info;
     @SuppressWarnings("serial") // Type of field is not Serializable
     private final GcInfoBuilder builder;
+    @SuppressWarnings("serial") // Array component type is not Serializable
     private final Object[] gcExtItemValues;
 
     public GcInfoCompositeData(GcInfo info,

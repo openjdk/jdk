@@ -142,6 +142,7 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Scanned Cards", Level.DEBUG),
         new LogMessageWithLevel("Scanned Blocks", Level.DEBUG),
         new LogMessageWithLevel("Claimed Chunks", Level.DEBUG),
+        new LogMessageWithLevel("Found Roots", Level.DEBUG),
         // Code Roots Scan
         new LogMessageWithLevel("Code Root Scan", Level.DEBUG),
         // Object Copy
@@ -264,7 +265,8 @@ public class TestGCLogMessages {
     LogMessageWithLevel exhFailureMessages[] = new LogMessageWithLevel[] {
         new LogMessageWithLevel("Recalculate Used Memory", Level.DEBUG),
         new LogMessageWithLevel("Restore Preserved Marks", Level.DEBUG),
-        new LogMessageWithLevel("Remove Self Forwards", Level.DEBUG),
+        new LogMessageWithLevel("Restore Retained Regions", Level.DEBUG),
+        new LogMessageWithLevel("Evacuation Failure Regions", Level.DEBUG),
     };
 
     private void testWithEvacuationFailureLogs() throws Exception {

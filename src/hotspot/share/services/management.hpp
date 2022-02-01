@@ -70,20 +70,10 @@ public:
 
   static void  record_vm_startup_time(jlong begin, jlong duration)
       NOT_MANAGEMENT_RETURN;
-  static void  record_vm_init_completed() {
-    // Initialize the timestamp to get the current time
-    _vm_init_done_time->set_value(os::javaTimeMillis());
+  static void  record_vm_init_completed() NOT_MANAGEMENT_RETURN;
 
-    // Update the timestamp to the vm init done time
-    _stamp.update();
-  }
-
-  static jlong begin_vm_creation_time() {
-    return _begin_vm_creation_time->get_value();
-  }
-  static jlong vm_init_done_time() {
-    return _vm_init_done_time->get_value();
-  }
+  static jlong begin_vm_creation_time() NOT_MANAGEMENT_RETURN_(0L);
+  static jlong vm_init_done_time() NOT_MANAGEMENT_RETURN_(0L);
 
   // methods to return a Klass*.
   static InstanceKlass* java_lang_management_ThreadInfo_klass(TRAPS);

@@ -101,31 +101,6 @@ class NamedThread: public NonJavaThread {
   uint gc_id() { return _gc_id; }
 };
 
-// Worker threads are named and have an id of an assigned work.
-class WorkerThread: public NamedThread {
- private:
-  uint _id;
- public:
-  static WorkerThread* current() {
-    return WorkerThread::cast(Thread::current());
-  }
-
-  static WorkerThread* cast(Thread* t) {
-    assert(t->is_Worker_thread(), "incorrect cast to WorkerThread");
-    return static_cast<WorkerThread*>(t);
-  }
-
-  WorkerThread() : _id(0)               { }
-  virtual bool is_Worker_thread() const { return true; }
-
-  void set_id(uint work_id)             { _id = work_id; }
-  uint id() const                       { return _id; }
-
-  // Printing
-  virtual const char* type_name() const { return "WorkerThread"; }
-
-};
-
 // A single WatcherThread is used for simulating timer interrupts.
 class WatcherThread: public NonJavaThread {
   friend class VMStructs;

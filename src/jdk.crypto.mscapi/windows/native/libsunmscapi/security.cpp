@@ -1799,6 +1799,16 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_removeCertificate
     }
 }
 
+JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_removeCngKey
+  (JNIEnv *env, jobject clazz, jlong k)
+{
+    SECURITY_STATUS ss;
+    ss = ::NCryptDeleteKey((NCRYPT_KEY_HANDLE)k, 0);
+    if (ss != ERROR_SUCCESS) {
+        ThrowException(env, KEY_EXCEPTION, ss);
+    }
+}
+
 /*
  * Class:     sun_security_mscapi_CKeyStore
  * Method:    destroyKeyContainer
@@ -1918,6 +1928,69 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CRSACipher_encryptDecrypt
     {
         if (pData)
             delete [] pData;
+    }
+
+    return result;
+}
+
+/*
+ * Class:     sun_security_mscapi_CRSACipher
+ * Method:    cngEncryptDecrypt
+ * Signature: ([BIJZ)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CRSACipher_cngEncryptDecrypt
+  (JNIEnv *env, jclass clazz, jbyteArray jData, jint jDataSize, jlong hKey,
+   jboolean doEncrypt)
+{
+    SECURITY_STATUS ss;
+    jbyteArray result = NULL;
+    jbyte* pData = NULL;
+    DWORD dwDataLen = jDataSize;
+    DWORD dwBufLen = env->GetArrayLength(jData);
+    __try
+    {
+        // Copy data from Java buffer to native buffer
+        pData = new (env) jbyte[dwBufLen];
+        if (pData == NULL) {
+            __leave;
+        }
+        env->GetByteArrayRegion(jData, 0, dwBufLen, pData);
+
+        if (doEncrypt == JNI_TRUE) {
+            // encrypt
+            ss = ::NCryptEncrypt((NCRYPT_KEY_HANDLE) hKey,
+                    (PBYTE)pData, dwDataLen,
+                    0,
+                    (PBYTE)pData, dwBufLen,
+                    &dwBufLen, NCRYPT_PAD_PKCS1_FLAG);
+            if (ss != ERROR_SUCCESS) {
+                ThrowException(env, KEY_EXCEPTION, ss);
+                __leave;
+            }
+        } else {
+            // decrypt
+            ss = ::NCryptDecrypt((NCRYPT_KEY_HANDLE) hKey,
+                    (PBYTE)pData, dwDataLen,
+                    0,
+                    (PBYTE)pData, dwBufLen,
+                    &dwBufLen, NCRYPT_PAD_PKCS1_FLAG);
+            if (ss != ERROR_SUCCESS) {
+                ThrowException(env, KEY_EXCEPTION, ss);
+                __leave;
+            }
+        }
+        // Create new byte array
+        if ((result = env->NewByteArray(dwBufLen)) == NULL) {
+            __leave;
+        }
+
+        // Copy data from native buffer to Java buffer
+        env->SetByteArrayRegion(result, 0, dwBufLen, (jbyte*) pData);
+    }
+    __finally {
+        if (pData) {
+            delete [] pData;
+        }
     }
 
     return result;

@@ -192,7 +192,6 @@ public final class FlightRecorder {
                     Logger.log(JFR, DEBUG, "globalbuffersize: " + Options.getGlobalBufferSize()+ " bytes");
                     Logger.log(JFR, DEBUG, "globalbuffercount: " + Options.getGlobalBufferCount());
                     Logger.log(JFR, DEBUG, "dumppath: " + Options.getDumpPath());
-                    Logger.log(JFR, DEBUG, "samplethreads: " + Options.getSampleThreads());
                     Logger.log(JFR, DEBUG, "stackdepth: " + Options.getStackDepth());
                     Logger.log(JFR, DEBUG, "threadbuffersize: " + Options.getThreadBufferSize());
                 }
