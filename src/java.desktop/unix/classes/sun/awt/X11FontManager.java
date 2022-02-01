@@ -732,14 +732,13 @@ public final class X11FontManager extends FcFontManager {
         /* The name of the font will be that of the physical font in slot,
          * but by setting the handle to that of the CompositeFont it
          * renders as that CompositeFont.
-         * It also needs to be marked as a created font which is the
-         * current mechanism to signal that deriveFont etc must copy
-         * the handle from the original font.
+         * Font is marked as having fallback components to signal that
+         * deriveFont etc must copy the handle from the original font.
          */
         FontUIResource fuir =
             new FontUIResource(font2D.getFamilyName(null), style, size);
         FontAccess.getFontAccess().setFont2D(fuir, font2D.handle);
-        FontAccess.getFontAccess().setCreatedFont(fuir);
+        FontAccess.getFontAccess().setWithFallback(fuir);
         return fuir;
     }
 }
