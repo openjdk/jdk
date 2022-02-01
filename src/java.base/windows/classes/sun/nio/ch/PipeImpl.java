@@ -185,7 +185,7 @@ class PipeImpl
 
     /**
      * Creates Pipe implementation that supports optionally buffering
-     * and is TCP by default, but if Unix domain is supported and 
+     * and is TCP by default, but if Unix domain is supported and
      * preferAfUnix is true, then Unix domain sockets are used.
      *
      * @param buffering if false set TCP_NODELAY on TCP sockets
