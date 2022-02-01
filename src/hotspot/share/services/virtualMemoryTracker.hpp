@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
 
 #ifndef SHARE_SERVICES_VIRTUALMEMORYTRACKER_HPP
 #define SHARE_SERVICES_VIRTUALMEMORYTRACKER_HPP
-
-#if INCLUDE_NMT
 
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp" // For MetadataType
@@ -341,7 +339,7 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
     return *this;
   }
 
-  const char* flag_name() { return NMTUtil::flag_to_name(_flag); }
+  const char* flag_name() const { return NMTUtil::flag_to_name(_flag); }
 
  private:
   // The committed region contains the uncommitted region, subtract the uncommitted
@@ -387,6 +385,8 @@ class VirtualMemoryTracker : AllStatic {
   // Walk virtual memory data structure for creating baseline, etc.
   static bool walk_virtual_memory(VirtualMemoryWalker* walker);
 
+  static const bool snapshot_region_contains(void* p, ReservedMemoryRegion& region);
+
   // Snapshot current thread stacks
   static void snapshot_thread_stacks();
 
@@ -394,6 +394,5 @@ class VirtualMemoryTracker : AllStatic {
   static SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>* _reserved_regions;
 };
 
-#endif // INCLUDE_NMT
-
 #endif // SHARE_SERVICES_VIRTUALMEMORYTRACKER_HPP
+

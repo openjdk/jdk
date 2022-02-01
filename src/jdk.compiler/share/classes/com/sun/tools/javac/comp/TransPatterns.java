@@ -665,11 +665,14 @@ public class TransPatterns extends TreeTranslator {
     @Override
     public void visitClassDef(JCClassDecl tree) {
         ClassSymbol prevCurrentClass = currentClass;
+        MethodSymbol prevMethodSym = currentMethodSym;
         try {
             currentClass = tree.sym;
+            currentMethodSym = null;
             super.visitClassDef(tree);
         } finally {
             currentClass = prevCurrentClass;
+            currentMethodSym = prevMethodSym;
         }
     }
 

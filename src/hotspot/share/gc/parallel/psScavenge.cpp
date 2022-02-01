@@ -358,12 +358,6 @@ bool PSScavenge::invoke_no_policy() {
 
   _gc_timer.register_gc_start();
 
-  TimeStamp scavenge_entry;
-  TimeStamp scavenge_midpoint;
-  TimeStamp scavenge_exit;
-
-  scavenge_entry.update();
-
   if (GCLocker::check_active_before_gc()) {
     return false;
   }
@@ -462,8 +456,6 @@ bool PSScavenge::invoke_no_policy() {
       ScavengeRootsTask task(old_gen, active_workers);
       ParallelScavengeHeap::heap()->workers().run_task(&task);
     }
-
-    scavenge_midpoint.update();
 
     // Process reference objects discovered during scavenge
     {
@@ -669,12 +661,6 @@ bool PSScavenge::invoke_no_policy() {
   heap->print_heap_after_gc();
   heap->trace_heap_after_gc(&_gc_tracer);
 
-  scavenge_exit.update();
-
-  log_debug(gc, task, time)("VM-Thread " JLONG_FORMAT " " JLONG_FORMAT " " JLONG_FORMAT,
-                            scavenge_entry.ticks(), scavenge_midpoint.ticks(),
-                            scavenge_exit.ticks());
-
   AdaptiveSizePolicyOutput::print(size_policy, heap->total_collections());
 
   _gc_timer.register_gc_end();
@@ -684,19 +670,11 @@ bool PSScavenge::invoke_no_policy() {
   return !promotion_failure_occurred;
 }
 
-// This method iterates over all objects in the young generation,
-// removing all forwarding references. It then restores any preserved marks.
 void PSScavenge::clean_up_failed_promotion() {
-  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  PSYoungGen* young_gen = heap->young_gen();
-
-  RemoveForwardedPointerClosure remove_fwd_ptr_closure;
-  young_gen->object_iterate(&remove_fwd_ptr_closure);
-
   PSPromotionManager::restore_preserved_marks();
 
   // Reset the PromotionFailureALot counters.
-  NOT_PRODUCT(heap->reset_promotion_should_fail();)
+  NOT_PRODUCT(ParallelScavengeHeap::heap()->reset_promotion_should_fail();)
 }
 
 bool PSScavenge::should_attempt_scavenge() {

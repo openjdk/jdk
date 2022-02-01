@@ -689,10 +689,6 @@ ssize_t os::read_at(int fd, void *buf, unsigned int nBytes, jlong offset) {
   return ::pread(fd, buf, nBytes, offset);
 }
 
-int os::close(int fd) {
-  return ::close(fd);
-}
-
 void os::flockfile(FILE* fp) {
   ::flockfile(fp);
 }
@@ -718,10 +714,6 @@ int os::closedir(DIR *dirp) {
 
 int os::socket_close(int fd) {
   return ::close(fd);
-}
-
-int os::socket(int domain, int type, int protocol) {
-  return ::socket(domain, type, protocol);
 }
 
 int os::recv(int fd, char* buf, size_t nBytes, uint flags) {

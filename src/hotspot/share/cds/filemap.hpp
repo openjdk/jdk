@@ -554,6 +554,7 @@ public:
   void  seek_to_position(size_t pos);
   char* skip_first_path_entry(const char* path) NOT_CDS_RETURN_(NULL);
   int   num_paths(const char* path) NOT_CDS_RETURN_(0);
+  bool  check_paths_existence(const char* paths) NOT_CDS_RETURN_(false);
   GrowableArray<const char*>* create_path_array(const char* path) NOT_CDS_RETURN_(NULL);
   bool  classpath_failure(const char* msg, const char* name) NOT_CDS_RETURN_(false);
   bool  check_paths(int shared_path_start_idx, int num_paths,

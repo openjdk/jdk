@@ -25,7 +25,7 @@
 #ifndef SHARE_MEMORY_METASPACECRITICALALLOCATION_HPP
 #define SHARE_MEMORY_METASPACECRITICALALLOCATION_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "memory/metaspace.hpp"
 
 class MetadataAllocationRequest;

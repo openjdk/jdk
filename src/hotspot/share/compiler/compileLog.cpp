@@ -225,7 +225,7 @@ void CompileLog::finish_log_on_error(outputStream* file, char* buf, int buflen) 
         if (to_read < (julong)buflen)
               nr = (size_t)to_read;
         else  nr = buflen;
-        bytes_read = os::read(partial_fd, buf, (int)nr);
+        bytes_read = ::read(partial_fd, buf, (int)nr);
         if (bytes_read <= 0) break;
         nr = bytes_read;
         to_read -= (julong)nr;
@@ -235,7 +235,7 @@ void CompileLog::finish_log_on_error(outputStream* file, char* buf, int buflen) 
       // Copy any remaining data inside a quote:
       bool saw_slop = false;
       int end_cdata = 0;  // state machine [0..2] watching for too many "]]"
-      while ((bytes_read = os::read(partial_fd, buf, buflen-1)) > 0) {
+      while ((bytes_read = ::read(partial_fd, buf, buflen-1)) > 0) {
         nr = bytes_read;
         buf[buflen-1] = '\0';
         if (!saw_slop) {
@@ -285,7 +285,7 @@ void CompileLog::finish_log_on_error(outputStream* file, char* buf, int buflen) 
         file->print_raw_cr("</fragment>");
       }
       file->print_raw_cr("</compilation_log>");
-      os::close(partial_fd);
+      ::close(partial_fd);
     }
     CompileLog* next_log = log->_next;
     delete log; // Removes partial file
