@@ -177,23 +177,24 @@ class PipeImpl
     }
 
     /**
-     * Creates a Pipe implementation that supports buffering.
+     * Creates a (TCP) Pipe implementation that supports buffering.
      */
     PipeImpl(SelectorProvider sp) throws IOException {
         this(sp, true, false);
     }
 
     /**
-     * Creates Pipe implementation that supports optionally buffering.
+     * Creates Pipe implementation that supports optionally buffering
+     * and is TCP by default, but if Unix domain is supported and 
+     * preferAfUnix is true, then Unix domain sockets are used.
      *
-     * @param useAfUnix use Unix domain sockets if supported
+     * @param buffering if false set TCP_NODELAY on TCP sockets
      *
-     * @implNote Uses a loopback connection. When buffering is
-     * disabled then it sets TCP_NODELAY on the sink channel.
+     * @param preferAfUnix use Unix domain sockets if supported
      */
     @SuppressWarnings("removal")
-    PipeImpl(SelectorProvider sp, boolean buffering, boolean useAfUnix) throws IOException {
-        Initializer initializer = new Initializer(sp, useAfUnix);
+    PipeImpl(SelectorProvider sp, boolean buffering, boolean preferAfUnix) throws IOException {
+        Initializer initializer = new Initializer(sp, preferAfUnix);
         try {
             AccessController.doPrivileged(initializer);
             SinkChannelImpl sink = initializer.sink;
