@@ -125,6 +125,12 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
 
   check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_mark);
 
+  // Global marking has completed. We need to fill in any unmarked objects in the old generation
+  // so that subsequent remembered set scans will not walk pointers into reclaimed memory.
+  if (!heap->cancelled_gc() && heap->mode()->is_generational() && _generation->generation_mode() == GLOBAL) {
+    entry_global_coalesce_and_fill();
+  }
+
   // Concurrent stack processing
   if (heap->is_evacuation_in_progress()) {
     entry_thread_roots();
@@ -157,10 +163,6 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   // If so, strong_root_in_progress would be unset.
   if (heap->is_concurrent_strong_root_in_progress()) {
     entry_strong_roots();
-  }
-
-  if (!heap->cancelled_gc() && heap->mode()->is_generational() && _generation->generation_mode() == GLOBAL) {
-    entry_global_coalesce_and_fill();
   }
 
   // Continue the cycle with evacuation and optional update-refs.
