@@ -169,6 +169,8 @@ private:
                        size_t word_sz,
                        uint node_index);
 
+  void update_bot_after_copying(oop obj, size_t word_sz);
+
   oop do_copy_to_survivor_space(G1HeapRegionAttr region_attr,
                                 oop obj,
                                 markWord old_mark);

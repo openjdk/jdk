@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.IntFunction;
 
+import static jdk.incubator.foreign.ValueLayout.JAVA_BYTE;
 import static org.testng.Assert.*;
 
 public class TestSegmentCopy {
@@ -81,12 +82,16 @@ public class TestSegmentCopy {
         }
     }
 
-    interface Getter<X> {
-        X get(MemorySegment segment, ValueLayout layout, long index);
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testHyperAlignedSrc() {
+        MemorySegment segment = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
+        MemorySegment.copy(segment, 0, segment, JAVA_BYTE.withBitAlignment(16), 0, 4);
     }
 
-    interface Setter<X> {
-        void set(MemorySegment segment, ValueLayout layout, long index, X val);
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testHyperAlignedDst() {
+        MemorySegment segment = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
+        MemorySegment.copy(segment, JAVA_BYTE.withBitAlignment(16), 0, segment, 0, 4);
     }
 
     enum Type {

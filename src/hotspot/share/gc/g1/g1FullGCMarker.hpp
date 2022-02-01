@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,8 +71,6 @@ class G1FullGCMarker : public CHeapObj<mtGC> {
   G1RegionMarkStatsCache _mark_stats_cache;
 
   inline bool is_empty();
-  inline bool pop_object(oop& obj);
-  inline bool pop_objarray(ObjArrayTask& array);
   inline void push_objarray(oop obj, size_t index);
   inline bool mark_object(oop obj);
 
@@ -80,6 +78,14 @@ class G1FullGCMarker : public CHeapObj<mtGC> {
   inline void follow_object(oop obj);
   inline void follow_array(objArrayOop array);
   inline void follow_array_chunk(objArrayOop array, int index);
+
+  inline void drain_oop_stack();
+  // Transfer contents from the objArray task queue overflow stack to the shared
+  // objArray stack.
+  // Returns true and a valid task if there has not been enough space in the shared
+  // objArray stack, otherwise the task is invalid.
+  inline bool transfer_objArray_overflow_stack(ObjArrayTask& task);
+
 public:
   G1FullGCMarker(G1FullCollector* collector,
                  uint worker_id,
