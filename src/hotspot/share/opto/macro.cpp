@@ -1394,6 +1394,9 @@ void PhaseMacroExpand::expand_allocate_common(
   // Copy debug information and adjust JVMState information, then replace
   // allocate node with the call
   call->copy_call_debug_info(&_igvn, alloc);
+  // For array allocations, copy the valid length check to the call node so Compile::final_graph_reshaping() can verify
+  // that the call has the expected number of CatchProj nodes (in case the allocation always fails and the fallthrough
+  // path dies).
   if (valid_length_test != NULL) {
     call->add_req(valid_length_test);
   }
