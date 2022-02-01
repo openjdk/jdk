@@ -48,11 +48,7 @@ public class bug8075609 {
 
     public static void main(String[] args) throws Throwable {
         try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                public void run() {
-                    createAndShowGUI();
-                }
-            });
+            SwingUtilities.invokeAndWait(bug8075609::createAndShowGUI);
 
             robot = new Robot();
             Thread.sleep(100);
@@ -108,12 +104,10 @@ public class bug8075609 {
         hitKey(KeyEvent.VK_TAB);
 
         robot.delay(1000);
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                if (!textField.hasFocus()) {
-                    System.out.println("Radio Button Group Go To Next Component through Tab Key failed");
-                    throw new RuntimeException("Focus is not on textField as Expected");
-                }
+        SwingUtilities.invokeAndWait(() -> {
+            if (!textField.hasFocus()) {
+                System.out.println("Radio Button Group Go To Next Component through Tab Key failed");
+                throw new RuntimeException("Focus is not on textField as Expected");
             }
         });
     }
