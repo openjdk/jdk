@@ -759,6 +759,7 @@ public final class DateTimeFormatter {
      *
      * @param requestedTemplate the requested template, not null
      * @return the formatter based on the {@code requestedTemplate} pattern, not null
+     * @throws IllegalArgumentException if {@code requestedTemplate} is invalid
      * @see #ofPattern(String)
      * @since 19
      */

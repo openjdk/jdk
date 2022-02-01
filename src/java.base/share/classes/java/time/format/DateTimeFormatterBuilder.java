@@ -1509,11 +1509,11 @@ public final class DateTimeFormatterBuilder {
      *
      * @param requestedTemplate the requested template to use, not null
      * @return this, for chaining, not null
+     * @throws IllegalArgumentException if {@code requestedTemplate} is invalid
      * @see #appendPattern(String)
      * @since 19
      */
     public DateTimeFormatterBuilder appendLocalized(String requestedTemplate) {
-        Objects.requireNonNull(requestedTemplate, "requestedTemplate");
         appendInternal(new LocalizedPrinterParser(requestedTemplate));
         return this;
     }
@@ -5071,6 +5071,21 @@ public final class DateTimeFormatterBuilder {
         /** Cache of formatters. */
         private static final ConcurrentMap<String, DateTimeFormatter> FORMATTER_CACHE = new ConcurrentHashMap<>(16, 0.75f, 2);
 
+        // RegEx pattern for skeleton validity checking
+        private static final Pattern VALID_TEMPLATE_PATTERN = Pattern.compile(
+            "G{0,5}" +        // Era
+            "y*" +            // Year
+            "Q{0,5}" +        // Quarter
+            "M{0,5}" +        // Month
+            "w*" +            // Week of Week Based Year
+            "E{0,5}" +        // Day of Week
+            "d{0,2}" +        // Day of Month
+            "B{0,5}" +        // Period/AmPm of Day
+            "[hHjC]{0,2}" +   // Hour of Day/AmPm
+            "m{0,2}" +        // Minute of Hour
+            "s{0,2}" +        // Second of Minute
+            "[vz]{0,4}");     // Zone
+
         private final FormatStyle dateStyle;
         private final FormatStyle timeStyle;
         private final String requestedTemplate;
@@ -5082,6 +5097,7 @@ public final class DateTimeFormatterBuilder {
          * @param timeStyle  the time style to use, may be null
          */
         LocalizedPrinterParser(FormatStyle dateStyle, FormatStyle timeStyle) {
+            // params validated by caller
             this(dateStyle, timeStyle, null);
         }
 
@@ -5092,13 +5108,20 @@ public final class DateTimeFormatterBuilder {
          */
         LocalizedPrinterParser(String requestedTemplate) {
             this(null, null, requestedTemplate);
+            validateTemplate();
         }
 
         private LocalizedPrinterParser(FormatStyle dateStyle, FormatStyle timeStyle, String requestedTemplate) {
-            // validated by caller
             this.dateStyle = dateStyle;
             this.timeStyle = timeStyle;
             this.requestedTemplate = requestedTemplate;
+        }
+
+        private void validateTemplate() {
+            Objects.requireNonNull(requestedTemplate, "requestedTemplate");
+            if (!VALID_TEMPLATE_PATTERN.matcher(requestedTemplate).matches()) {
+                throw new IllegalArgumentException("Requested template is invalid: " + requestedTemplate);
+            }
         }
 
         @Override

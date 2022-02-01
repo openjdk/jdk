@@ -86,7 +86,7 @@ public class TestLocalizedPattern {
 
     @Test(dataProvider = "invalidSkeletons", expectedExceptions = IllegalArgumentException.class)
     public void test_ofLocalizedPattern_invalid(String skeleton) {
-        DateTimeFormatter.ofLocalizedPattern(skeleton).format(ZDT);
+        DateTimeFormatter.ofLocalizedPattern(skeleton);
     }
 
     @Test(dataProvider = "unavailableSkeletons", expectedExceptions = DateTimeException.class)
