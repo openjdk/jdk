@@ -85,7 +85,7 @@ public class ClhsdbScanOops {
                 snippets = universeOutput.split("old  \\[");
             }
             words = snippets[1].split(",");
-            // Get the addresses from Old
+            // Get the addresses for Old gen
             startAddress = words[0].replace("[", "");
             endAddress = words[1];
             cmd = "scanoops " + startAddress + " " + endAddress;
@@ -98,7 +98,7 @@ public class ClhsdbScanOops {
                 snippets = universeOutput.split("eden \\[");
             }
             words = snippets[1].split(",");
-            // Get the addresses from Eden
+            // Get the addresses for Eden gen
             startAddress = words[0].replace("[", "");
             endAddress = words[1];
             cmd = "scanoops " + startAddress + " " + endAddress;
