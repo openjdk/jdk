@@ -285,20 +285,20 @@ public class TestIRMatching {
         runWithArguments(FlagComparisons.class, "-XX:TLABRefillWasteFraction=50");
         System.out.flush();
         String output = baos.toString();
-        findIrIds(output, "testMatchAllIf50", 0, 21);
+        findIrIds(output, "testMatchAllIf50", 1, 22);
         findIrIds(output, "testMatchNoneIf50", -1, -1);
 
         runWithArguments(FlagComparisons.class, "-XX:TLABRefillWasteFraction=49");
         System.out.flush();
         output = baos.toString();
-        findIrIds(output, "testMatchAllIf50", 4, 6, 13, 18);
-        findIrIds(output, "testMatchNoneIf50", 0, 3, 8, 10, 17, 22);
+        findIrIds(output, "testMatchAllIf50", 5, 7, 14, 19);
+        findIrIds(output, "testMatchNoneIf50", 1, 4, 9, 11, 18, 23);
 
         runWithArguments(FlagComparisons.class, "-XX:TLABRefillWasteFraction=51");
         System.out.flush();
         output = baos.toString();
-        findIrIds(output, "testMatchAllIf50", 7, 12, 19, 21);
-        findIrIds(output, "testMatchNoneIf50", 4, 7, 11, 16, 20, 22);
+        findIrIds(output, "testMatchAllIf50", 8, 13, 20, 22);
+        findIrIds(output, "testMatchNoneIf50", 5, 8, 12, 17, 21, 23);
         System.setOut(oldOut);
         System.setErr(oldErr);
 
@@ -550,20 +550,20 @@ class MultipleFailOnBad {
 class FlagComparisons {
     // Applies all IR rules if TLABRefillWasteFraction=50
     @Test
-    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "50"}) // Index 0
+    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "50"}) // Index 1
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "=50"})
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "= 50"})
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", " =   50"})
-    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "<=50"}) // Index 4
+    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "<=50"}) // Index 5
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "<= 50"})
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", " <=  50"})
-    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", ">=50"}) // Index 7
+    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", ">=50"}) // Index 8
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", ">= 50"})
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", " >=  50"})
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", ">49"})
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "> 49"})
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", " >  49"})
-    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "<51"}) // Index 13
+    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "<51"}) // Index 14
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "< 51"})
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", " <  51"})
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "!=51"})
@@ -571,34 +571,34 @@ class FlagComparisons {
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", " !=  51"})
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "!=49"})
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "!= 49"})
-    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", " !=  49"}) // Index 21
+    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", " !=  49"}) // Index 22
     public void testMatchAllIf50() {}
 
     // Applies no IR rules if TLABRefillWasteFraction=50
     @Test
-    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "49"}) // Index 0
+    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "49"}) // Index 1
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "=49"})
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "= 49"})
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", " =  49"})
-    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "51"}) // Index 4
+    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "51"}) // Index 5
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "=51"})
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "= 51"})
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", " =  51"})
-    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "<=49"}) // Index 8
+    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "<=49"}) // Index 9
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "<= 49"})
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", " <=  49"})
-    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", ">=51"}) // Index 11
+    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", ">=51"}) // Index 12
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", ">= 51"})
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", " >=  51"})
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", ">50"})
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "> 50"})
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", " >  50"})
-    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "<50"}) // Index 17
+    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "<50"}) // Index 18
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "< 50"})
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", " <  50"})
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "!=50"})
     @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", "!= 50"})
-    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", " !=  50"}) // Index 22
+    @IR(failOn = IRNode.CALL, applyIf = {"TLABRefillWasteFraction", " !=  50"}) // Index 23
     public void testMatchNoneIf50() {}
 }
 
@@ -814,14 +814,14 @@ class BadCount {
     int iFld;
     int result;
     @Test
-    @IR(counts = {IRNode.LOAD, "!= 1"})
+    @IR(counts = {IRNode.LOAD, "!= 1"}) // fail
     @IR(counts = {IRNode.STORE, "> 0"})
     public void bad1() {
         result = iFld;
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD, "1"})
+    @IR(counts = {IRNode.LOAD, "1"}) // fail
     @IR(counts = {IRNode.STORE, "< 1"})
     public void bad2() {
         result = iFld;
@@ -829,8 +829,8 @@ class BadCount {
 
 
     @Test
-    @IR(counts = {IRNode.LOAD, "0"})
-    @IR(counts = {IRNode.STORE, " <= 0"})
+    @IR(counts = {IRNode.LOAD, "0"}) // fail
+    @IR(counts = {IRNode.STORE, " <= 0"}) // fail
     public void bad3() {
         result = iFld;
     }
@@ -1732,7 +1732,7 @@ class BadCountsConstraint extends RegexConstraint {
 
     private static List<String> getMatchesList(int foundCount, String[] matches, List<String> strings) {
         List<String> matchesList = new ArrayList<>();
-        matchesList.add("but found " + foundCount);
+        matchesList.add("Failed comparison: [found] " + foundCount);
         if (matches != null) {
             matchesList.addAll(strings);
         }
