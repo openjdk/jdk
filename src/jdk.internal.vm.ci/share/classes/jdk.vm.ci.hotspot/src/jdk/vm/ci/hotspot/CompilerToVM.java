@@ -786,14 +786,14 @@ final class CompilerToVM {
      * object is exptected to be a subtype of {@code expectedType} and extra sanity checking is
      * performed on the offset and kind of the read being performed.
      */
-    native JavaConstant readFieldValue(HotSpotResolvedObjectTypeImpl object, HotSpotResolvedObjectTypeImpl expectedType, long offset, boolean isVolatile, JavaKind kind);
+    native JavaConstant readFieldValue(HotSpotResolvedObjectTypeImpl object, HotSpotResolvedObjectTypeImpl expectedType, long offset, JavaKind kind);
 
     /**
      * Reads the current value of an instance field. If {@code expectedType} is non-null, then the
      * object is exptected to be a subtype of {@code expectedType} and extra sanity checking is
      * performed on the offset and kind of the read being performed.
      */
-    native JavaConstant readFieldValue(HotSpotObjectConstantImpl object, HotSpotResolvedObjectTypeImpl expectedType, long offset, boolean isVolatile, JavaKind kind);
+    native JavaConstant readFieldValue(HotSpotObjectConstantImpl object, HotSpotResolvedObjectTypeImpl expectedType, long offset, JavaKind kind);
 
     /**
      * @see ResolvedJavaType#isInstance(JavaConstant)
