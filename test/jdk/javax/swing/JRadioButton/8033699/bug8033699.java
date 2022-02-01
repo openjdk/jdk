@@ -72,7 +72,7 @@ public class bug8033699 {
         // tab key test non-grouped radio button
         runTest2();
 
-        // shift tab key test grouped and non grouped radio button
+        // shift tab key test grouped and non-grouped radio button
         runTest3();
 
         // left/up key test in grouped radio button
