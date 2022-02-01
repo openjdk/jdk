@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,8 @@ public final class RecordingFile implements Closeable {
 
     /**
      * Creates a recording file.
+     * <p>
+     * Only recording files from trusted sources should be used.
      *
      * @param file the path of the file to open, not {@code null}
      * @throws IOException if it's not a valid recording file, or an I/O error
@@ -209,6 +211,8 @@ public final class RecordingFile implements Closeable {
      * <p>
      * This method is intended for simple cases where it's convenient to read all
      * events in a single operation. It isn't intended for reading large files.
+     * <p>
+     * Only recording files from trusted sources should be used.
      *
      * @param path the path to the file, not {@code null}
      *

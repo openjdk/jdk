@@ -50,6 +50,7 @@ public final class EventFileStream extends AbstractEventStream {
         super(acc, null, Collections.emptyList());
         Objects.requireNonNull(path);
         this.input = new RecordingInput(path.toFile(), FileAccess.UNPRIVILEGED);
+        this.input.setStreamed();
     }
 
     @Override

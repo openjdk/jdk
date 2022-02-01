@@ -31,6 +31,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Path;
+import jdk.jfr.internal.Utils;
 
 public final class RecordingInput implements DataInput, AutoCloseable {
 
@@ -66,6 +67,7 @@ public final class RecordingInput implements DataInput, AutoCloseable {
     }
     private final int blockSize;
     private final FileAccess fileAccess;
+    private long pollCount = 1000;
     private RandomAccessFile file;
     private String filename;
     private Block currentBlock = new Block();
@@ -430,4 +432,18 @@ public final class RecordingInput implements DataInput, AutoCloseable {
         initialize(path.toFile());
     }
 
+    // Marks that it is OK to poll indefinitely for file update
+    // By default, only 1000 polls are allowed
+    public void setStreamed() {
+        this.pollCount = Long.MAX_VALUE;
+    }
+
+    // Wait for file to be updated
+    public void pollWait() throws IOException {
+        pollCount--;
+        if (pollCount < 0) {
+            throw new IOException("Recording file is stuck in locked stream state.");
+        }
+        Utils.takeNap(1);
+    }
 }
