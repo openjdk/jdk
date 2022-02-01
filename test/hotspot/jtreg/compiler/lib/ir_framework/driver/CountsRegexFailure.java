@@ -23,24 +23,51 @@
 
 package compiler.lib.ir_framework.driver;
 
+import compiler.lib.ir_framework.shared.Comparison;
+
 import java.util.List;
 
 /**
- * This class represents an IR matching failure of a regex of a failOn attribute of an IR rule
+ * This class represents an IR matching failure of a regex of a counts attribute of an IR rule.
+ *
+ * @see Counts
  */
-class FailOnFailure extends Failure {
-    public FailOnFailure(String nodeRegex, int nodeId, List<String> matches) {
+class CountsRegexFailure extends RegexFailure {
+    String failedComparison;
+
+    public CountsRegexFailure(String nodeRegex, int nodeId, long foundValue, Comparison<Long> comparison, List<String> matches) {
         super(nodeRegex, nodeId, matches);
+        this.failedComparison = "[found] " + foundValue + " " + comparison.getComparator() + " "
+                                + comparison.getGivenValue() + " [given]";
     }
 
     @Override
     public String getFormattedFailureMessage() {
         return getRegexLine()
+               + getFailedComparison()
                + getMatchedNodesBlock();
+    }
+
+    private String getFailedComparison() {
+        return "         - Failed comparison: " + failedComparison + System.lineSeparator();
+    }
+
+    @Override
+    protected String getMatchedNodesBlock() {
+        if (matches.isEmpty()) {
+            return getEmptyNodeMatchesLine();
+        } else {
+            return super.getMatchedNodesBlock();
+        }
+    }
+
+    private String getEmptyNodeMatchesLine() {
+        return getMatchedNodesWhiteSpace() + "- No nodes matched!" + System.lineSeparator();
     }
 
     @Override
     protected String getMatchedPrefix() {
-        return "Matched forbidden";
+        return "Matched";
     }
+
 }

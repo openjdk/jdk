@@ -47,12 +47,14 @@ class Counts extends CheckAttribute {
 
     public static Counts create(List<String> nodesWithCountConstraint, IRRule irRule) {
         List<Constraint> constraints = new ArrayList<>();
-        for (int i = 0; i < nodesWithCountConstraint.size(); i += 2) {
+        int nodeId = 1;
+        for (int i = 0; i < nodesWithCountConstraint.size(); i += 2, nodeId++) {
             String node = nodesWithCountConstraint.get(i);
-            TestFormat.check(i + 1 < nodesWithCountConstraint.size(), "Missing count " + getPostfixErrorMsg(irRule, node));
+            TestFormat.check(i + 1 < nodesWithCountConstraint.size(),
+                             "Missing count " + getPostfixErrorMsg(irRule, node));
             String countConstraint = nodesWithCountConstraint.get(i + 1);
             Comparison<Long> comparison = parseComparison(irRule, node, countConstraint);
-            constraints.add(new Constraint(node, comparison));
+            constraints.add(new Constraint(node, comparison, nodeId));
         }
         return new Counts(constraints);
     }
@@ -67,28 +69,24 @@ class Counts extends CheckAttribute {
     }
 
     @Override
-    public List<CountsFailure> apply(String compilation) {
-        List<CountsFailure> failures = new ArrayList<>();
-        for (int i = 0; i < constraints.size(); i++) {
-            checkConstraint(compilation, failures, constraints.get(i), i + 1);
-        }
-        return failures;
+    public CheckAttributeMatchResult apply(String compilation) {
+        CountsMatchResult result = new CountsMatchResult();
+        checkConstraints(result, compilation);
+        return result;
     }
 
-    private void checkConstraint(String compilation, List<CountsFailure> failures, Constraint constraint, int nodeId) {
+    private void checkConstraints(CountsMatchResult result, String compilation) {
+        for (Constraint constraint : constraints) {
+            checkConstraint(result, compilation, constraint);
+        }
+    }
+
+    private void checkConstraint(CountsMatchResult result, String compilation, Constraint constraint) {
         String nodeRegex = constraint.nodeRegex;
         long foundCount = getFoundCount(compilation, nodeRegex);
         Comparison<Long> comparison = constraint.comparison;
         if (!comparison.compare(foundCount)) {
-            Pattern p = Pattern.compile(nodeRegex);
-            Matcher m = p.matcher(compilation);
-            List<String> matches;
-            if (m.find()) {
-                matches = getMatchedNodes(m);
-            } else {
-                matches = new ArrayList<>();
-            }
-            failures.add(new CountsFailure(nodeRegex, nodeId, foundCount, comparison, matches));
+            addNewFailure(result, compilation, constraint, foundCount);
         }
     }
 
@@ -98,13 +96,27 @@ class Counts extends CheckAttribute {
         return matcher.results().count();
     }
 
+    private void addNewFailure(CountsMatchResult result, String compilation, Constraint constraint, long foundCount) {
+        Pattern p = Pattern.compile(constraint.nodeRegex);
+        Matcher m = p.matcher(compilation);
+        List<String> matches;
+        if (m.find()) {
+            matches = getMatchedNodes(m);
+        } else {
+            matches = new ArrayList<>();
+        }
+        result.addFailure(new CountsRegexFailure(constraint.nodeRegex, constraint.nodeId, foundCount, constraint.comparison, matches));
+    }
+
     static class Constraint {
         final String nodeRegex;
         final Comparison<Long> comparison;
+        private final int nodeId;
 
-        Constraint(String nodeRegex, Comparison<Long> comparison) {
+        Constraint(String nodeRegex, Comparison<Long> comparison, int nodeId) {
             this.nodeRegex = nodeRegex;
             this.comparison = comparison;
+            this.nodeId = nodeId;
         }
     }
 }

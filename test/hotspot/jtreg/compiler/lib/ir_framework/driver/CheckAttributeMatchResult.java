@@ -23,26 +23,28 @@
 
 package compiler.lib.ir_framework.driver;
 
+import compiler.lib.ir_framework.IR;
+
+import java.util.List;
+
 /**
- * Enum to describe what kind of compilation output that was matched for a method during IR matching.
+ * Base class representing a result of an applied check attribute of an IR rule.
  *
- * @see IRRuleMatchResult
+ * @see IR
  */
-enum OutputMatch {
-    /**
-     * There was no compilation output. Should not happen and results in a failure.
-     */
-    NONE,
-    /**
-     * Matched on PrintIdeal.
-     */
-    IDEAL,
-    /**
-     * Matched on PrintOptoAssembly.
-     */
-    OPTO_ASSEMBLY,
-    /**
-     * Matched on PrintIdeal and PrintOptoAssembly.
-     */
-    BOTH
+abstract class CheckAttributeMatchResult implements MatchResult {
+    protected List<RegexFailure> regexFailures = null;
+
+    public int getMatchesCount() {
+        if (fail()) {
+            return regexFailures.stream().map(RegexFailure::getMatchesCount).reduce(0, Integer::sum);
+        } else {
+            return 0;
+        }
+    }
+
+    @Override
+    public boolean fail() {
+        return regexFailures != null;
+    }
 }

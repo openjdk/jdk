@@ -23,18 +23,18 @@
 
 package compiler.lib.ir_framework.driver;
 
-import java.util.List;
+import compiler.lib.ir_framework.TestFramework;
 
 /**
- * Class used to store an IR matching result of an IR rule.
+ * This class represents an IR matching result of an IR rule.
  *
- * @see Failure
+ * @see CheckAttributeMatchResult
  * @see IRRule
  */
-class IRRuleMatchResult {
+class IRRuleMatchResult implements MatchResult {
     private final IRRule irRule;
-    private List<? extends Failure> failOnFailures = null;
-    private List<? extends Failure> countsFailures = null;
+    private CheckAttributeMatchResult failOnFailures = null;
+    private CheckAttributeMatchResult countsFailures = null;
     private OutputMatch outputMatch;
 
     public IRRuleMatchResult(IRRule irRule) {
@@ -46,26 +46,22 @@ class IRRuleMatchResult {
         return outputMatch;
     }
 
-    public void setIdealMatch() {
+    public void updateOutputMatch(OutputMatch newOutputMatch) {
+        TestFramework.check(newOutputMatch != OutputMatch.NONE, "must be valid state");
         switch (outputMatch) {
-            case NONE -> outputMatch = OutputMatch.IDEAL;
-            case OPTO_ASSEMBLY -> outputMatch = OutputMatch.BOTH;
+            case NONE -> outputMatch = newOutputMatch;
+            case IDEAL -> outputMatch = newOutputMatch != OutputMatch.IDEAL
+                    ? OutputMatch.BOTH : OutputMatch.IDEAL;
+            case OPTO_ASSEMBLY -> outputMatch = newOutputMatch != OutputMatch.OPTO_ASSEMBLY
+                    ? OutputMatch.BOTH : OutputMatch.OPTO_ASSEMBLY;
         }
     }
-
-    public void setOptoAssemblyMatch() {
-        switch (outputMatch) {
-            case NONE -> outputMatch = OutputMatch.OPTO_ASSEMBLY;
-            case IDEAL -> outputMatch = OutputMatch.BOTH;
-        }
-    }
-
 
     private boolean hasFailOnFailures() {
         return failOnFailures != null;
     }
 
-    public void setFailOnFailures(List<? extends Failure> failOnFailures) {
+    public void setFailOnFailures(CheckAttributeMatchResult failOnFailures) {
         this.failOnFailures = failOnFailures;
     }
 
@@ -73,17 +69,11 @@ class IRRuleMatchResult {
         return countsFailures != null;
     }
 
-    public List<? extends Failure> getCountsFailures() {
-        return countsFailures;
-    }
-
-    public void setCountsFailures(List<? extends Failure> countsFailures) {
+    public void setCountsFailures(CheckAttributeMatchResult countsFailures) {
         this.countsFailures = countsFailures;
     }
 
-    /**
-     * Does this result represent a failure?
-     */
+    @Override
     public boolean fail() {
         return failOnFailures != null || countsFailures != null;
     }
@@ -96,21 +86,11 @@ class IRRuleMatchResult {
         failMsg.append("   * @IR rule ").append(irRule.getRuleId()).append(": \"")
                .append(irRule.getIRAnno()).append("\"").append(System.lineSeparator());
         if (hasFailOnFailures()) {
-            failMsg.append("     - failOn: Graph contains forbidden nodes:").append(System.lineSeparator());
-            failMsg.append(getFormattedFailureMessage(failOnFailures));
+            failMsg.append(failOnFailures.buildFailureMessage());
         }
         if (hasCountsFailures()) {
-            failMsg.append("     - counts: Graph contains wrong number of nodes:").append(System.lineSeparator());
-            failMsg.append(getFormattedFailureMessage(countsFailures));
+            failMsg.append(countsFailures.buildFailureMessage());
         }
         return failMsg.toString();
-    }
-
-    private String getFormattedFailureMessage(List<? extends Failure> failures) {
-        StringBuilder builder = new StringBuilder();
-        for (Failure failure : failures) {
-            builder.append(failure.getFormattedFailureMessage());
-        }
-        return builder.toString();
     }
 }

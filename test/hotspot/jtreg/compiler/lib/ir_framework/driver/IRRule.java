@@ -28,31 +28,41 @@ import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.shared.*;
 
 import java.lang.reflect.Method;
-import java.util.List;
+import java.util.function.Consumer;
 
 class IRRule {
     private final IRMethod irMethod;
     private final int ruleId;
     private final IR irAnno;
-    private FailOn failOn;
-    private Counts counts;
+    private final FailOn failOn;
+    private final Counts counts;
 
     public IRRule(IRMethod irMethod, int ruleId, IR irAnno) {
         this.irMethod = irMethod;
         this.ruleId = ruleId;
         this.irAnno = irAnno;
-        String[] failOn = irAnno.failOn();
-        if (failOn.length != 0) {
-            this.failOn = new FailOn(IRNode.mergeNodes(failOn));
-        }
+        this.failOn = initFailOn(irAnno);
+        this.counts = initCounts(irAnno);
+    }
+
+    private Counts initCounts(IR irAnno) {
         String[] counts = irAnno.counts();
         if (counts.length != 0) {
             try {
-                this.counts = Counts.create(IRNode.mergeNodes(irAnno.counts()), this);
+                return Counts.create(IRNode.mergeNodes(irAnno.counts()), this);
             } catch (TestFormatException e) {
                 // Logged and reported later. Continue.
             }
         }
+        return null;
+    }
+
+    private FailOn initFailOn(IR irAnno) {
+        String[] failOn = irAnno.failOn();
+        if (failOn.length != 0) {
+            return new FailOn(IRNode.mergeNodes(failOn));
+        }
+        return null;
     }
 
     public int getRuleId() {
@@ -69,57 +79,47 @@ class IRRule {
 
     public IRRuleMatchResult apply() {
         IRRuleMatchResult result = new IRRuleMatchResult(this);
-        applyFailOn(result);
-        applyCounts(result);
+        if (failOn != null) {
+            apply(failOn, result, result::setFailOnFailures);
+        }
+        if (counts != null) {
+            apply(counts, result, result::setCountsFailures);
+        }
         return result;
     }
 
-    private void applyFailOn(IRRuleMatchResult result) {
-        List<? extends Failure> failures = apply(failOn, irMethod.getOutput());
-        updateFailOnResult(result, failures);
-    }
-
-    private void updateFailOnResult(IRRuleMatchResult result, List<? extends Failure> failures) {
-        if (!failures.isEmpty()) {
-            result.setFailOnFailures(failures);
-            setWhichOutputMatched(failOn, result, failures);
+    private void apply(CheckAttribute check, IRRuleMatchResult result, Consumer<CheckAttributeMatchResult> setFailures) {
+        CheckAttributeMatchResult checkResult = check.apply(irMethod.getOutput());
+        if (checkResult.fail()) {
+            setFailures.accept(checkResult);
+            result.updateOutputMatch(getOutputMatch(check, checkResult));
         }
     }
 
-    private void applyCounts(IRRuleMatchResult result) {
-        List<? extends Failure> failures = apply(counts, irMethod.getOutput());
-        updateCountsResult(result, failures);
+    private OutputMatch getOutputMatch(CheckAttribute check, CheckAttributeMatchResult checkResult) {
+        int totalMatches = checkResult.getMatchesCount();
+        int idealFailuresCount = getMatchesCount(check, irMethod.getIdealOutput());
+        int optoAssemblyFailuresCount = getMatchesCount(check, irMethod.getOptoAssemblyOutput());
+        return findOutputMatch(totalMatches, idealFailuresCount, optoAssemblyFailuresCount);
     }
 
-    private void updateCountsResult(IRRuleMatchResult result, List<? extends Failure> failures) {
-        if (!failures.isEmpty()) {
-            result.setCountsFailures(failures);
-            setWhichOutputMatched(counts, result, failures);
-        }
+
+    private int getMatchesCount(CheckAttribute check, String compilation) {
+        CheckAttributeMatchResult result = check.apply(compilation);
+        return result.getMatchesCount();
     }
 
-    private void updateResultHowMatched(IRRuleMatchResult result, int totalMatches, int idealFailuresCount, int optoAssemblyFailuresCount) {
+    /**
+     * Compare different counts to find out, on what output a failure was matched.
+     */
+    private OutputMatch findOutputMatch(int totalMatches, int idealFailuresCount, int optoAssemblyFailuresCount) {
         if (someRegexMatchOnlyEntireOutput(totalMatches, idealFailuresCount, optoAssemblyFailuresCount) || anyMatchOnIdealAndOptoAssembly(idealFailuresCount, optoAssemblyFailuresCount)) {
-            result.setIdealMatch();
-            result.setOptoAssemblyMatch();
+            return OutputMatch.BOTH;
         } else if (optoAssemblyFailuresCount == 0) {
-            result.setIdealMatch();
+            return OutputMatch.IDEAL;
         } else {
-            result.setOptoAssemblyMatch();
+            return OutputMatch.OPTO_ASSEMBLY;
         }
-    }
-
-    private void setWhichOutputMatched(CheckAttribute check, IRRuleMatchResult result, List<? extends Failure> failures) {
-        int totalMatches = failures.stream().map(Failure::getMatchesCount).reduce(0, Integer::sum);
-        int idealFailuresCount = getFailureCounts(check, irMethod.getIdealOutput());
-        int optoAssemblyFailuresCount = getFailureCounts(check, irMethod.getOptoAssemblyOutput());
-        updateResultHowMatched(result, totalMatches, idealFailuresCount, optoAssemblyFailuresCount);
-    }
-
-
-    private int getFailureCounts(CheckAttribute check, String compilation) {
-        List<? extends Failure> failures = apply(check, compilation);
-        return failures.stream().map(Failure::getMatchesCount).reduce(0, Integer::sum);
     }
 
 
@@ -135,12 +135,5 @@ class IRRule {
      */
     private boolean anyMatchOnIdealAndOptoAssembly(int idealFailuresCount, int optoAssemblyFailuresCount) {
         return idealFailuresCount > 0 && optoAssemblyFailuresCount > 0;
-    }
-
-    private List<? extends Failure> apply(CheckAttribute checkAttribute, String compilation) {
-        if (checkAttribute != null) {
-            return checkAttribute.apply(compilation);
-        }
-        return Failure.NO_FAILURE;
     }
 }

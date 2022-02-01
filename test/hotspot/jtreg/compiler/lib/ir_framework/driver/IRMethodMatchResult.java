@@ -26,12 +26,12 @@ package compiler.lib.ir_framework.driver;
 import java.util.List;
 
 /**
- * Class used to store an IR matching result of an IR rule.
+ * This class represents an IR matching result of all IR rules of a method.
  *
- * @see Failure
- * @see IRRule
+ * @see IRRuleMatchResult
+ * @see IRMethod
  */
-class IRMethodMatchResult implements Comparable<IRMethodMatchResult> {
+class IRMethodMatchResult implements Comparable<IRMethodMatchResult>, MatchResult {
     private final IRMethod irMethod;
     private final List<IRRuleMatchResult> irRulesMatchResults;
     private final IRMethodFailureMessageBuilder failureMessageBuilder;
@@ -57,7 +57,8 @@ class IRMethodMatchResult implements Comparable<IRMethodMatchResult> {
         return matchedCompilationBuilder.build();
     }
 
-    public String getFailureMessage() {
+    @Override
+    public String buildFailureMessage() {
         return failureMessageBuilder.build();
     }
 

@@ -24,25 +24,17 @@
 package compiler.lib.ir_framework.driver;
 
 /**
- * Enum to describe what kind of compilation output that was matched for a method during IR matching.
- *
- * @see IRRuleMatchResult
+ * Interface used by all classes which represent a IR match result. A result should also provide a failure message
+ * in a pretty format to be used by the {@link IRMatcher}.
  */
-enum OutputMatch {
+interface MatchResult {
     /**
-     * There was no compilation output. Should not happen and results in a failure.
+     * Does this match result represent a failure?
      */
-    NONE,
+    boolean fail();
+
     /**
-     * Matched on PrintIdeal.
+     * Builds a failure message in a pretty format to be used by the IR matching failure reporting.
      */
-    IDEAL,
-    /**
-     * Matched on PrintOptoAssembly.
-     */
-    OPTO_ASSEMBLY,
-    /**
-     * Matched on PrintIdeal and PrintOptoAssembly.
-     */
-    BOTH
+    String buildFailureMessage();
 }

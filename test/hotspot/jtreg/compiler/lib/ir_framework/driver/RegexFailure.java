@@ -23,25 +23,22 @@
 
 package compiler.lib.ir_framework.driver;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Base class of a failure found when applying IR matching of an IR rule. This class represents an IR matching failure
- * of a regex of an attribute of an IR rule.
+ * Base class representing an IR matching failure of a regex of a check attribute of an IR rule.
  *
- * @see IRRuleMatchResult
+ * @see CheckAttributeMatchResult
+ * @see CheckAttribute
  * @see IRRule
  */
-abstract class Failure {
-    // Dedicated empty list to use to indicate that there was no failure.
-    public static final List<FailOnFailure> NO_FAILURE = new ArrayList<>();
+abstract class RegexFailure {
 
     protected final String nodeRegex;
     protected final int nodeId;
     protected final List<String> matches;
 
-    public Failure(String nodeRegex, int nodeId, List<String> matches) {
+    public RegexFailure(String nodeRegex, int nodeId, List<String> matches) {
         this.nodeRegex = nodeRegex;
         this.nodeId = nodeId;
         this.matches = matches;

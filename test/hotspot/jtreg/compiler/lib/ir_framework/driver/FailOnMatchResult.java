@@ -23,26 +23,27 @@
 
 package compiler.lib.ir_framework.driver;
 
+import compiler.lib.ir_framework.IR;
+
+import java.util.List;
+
 /**
- * Enum to describe what kind of compilation output that was matched for a method during IR matching.
+ * Class representing a result of an applied failOn attribute of an IR rule.
  *
- * @see IRRuleMatchResult
+ * @see IR#failOn()
  */
-enum OutputMatch {
-    /**
-     * There was no compilation output. Should not happen and results in a failure.
-     */
-    NONE,
-    /**
-     * Matched on PrintIdeal.
-     */
-    IDEAL,
-    /**
-     * Matched on PrintOptoAssembly.
-     */
-    OPTO_ASSEMBLY,
-    /**
-     * Matched on PrintIdeal and PrintOptoAssembly.
-     */
-    BOTH
+class FailOnMatchResult extends CheckAttributeMatchResult {
+    public void setFailures(List<RegexFailure> regexFailures) {
+        this.regexFailures = regexFailures;
+    }
+
+    @Override
+    public String buildFailureMessage() {
+        StringBuilder failMsg = new StringBuilder();
+        failMsg.append("     - failOn: Graph contains forbidden nodes:").append(System.lineSeparator());
+        for (RegexFailure regexFailure : regexFailures) {
+            failMsg.append(regexFailure.getFormattedFailureMessage());
+        }
+        return failMsg.toString();
+    }
 }

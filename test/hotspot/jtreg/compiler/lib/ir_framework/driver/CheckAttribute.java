@@ -43,5 +43,5 @@ abstract class CheckAttribute {
         return matches;
     }
 
-    abstract public List<? extends Failure> apply(String compilation);
+    abstract public CheckAttributeMatchResult apply(String compilation);
 }

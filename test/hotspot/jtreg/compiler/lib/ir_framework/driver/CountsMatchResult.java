@@ -23,26 +23,31 @@
 
 package compiler.lib.ir_framework.driver;
 
+import compiler.lib.ir_framework.IR;
+
+import java.util.ArrayList;
+
 /**
- * Enum to describe what kind of compilation output that was matched for a method during IR matching.
+ * Class representing a result of an applied counts attribute of an IR rule.
  *
- * @see IRRuleMatchResult
+ * @see IR#counts()
  */
-enum OutputMatch {
-    /**
-     * There was no compilation output. Should not happen and results in a failure.
-     */
-    NONE,
-    /**
-     * Matched on PrintIdeal.
-     */
-    IDEAL,
-    /**
-     * Matched on PrintOptoAssembly.
-     */
-    OPTO_ASSEMBLY,
-    /**
-     * Matched on PrintIdeal and PrintOptoAssembly.
-     */
-    BOTH
+class CountsMatchResult extends CheckAttributeMatchResult {
+
+    public void addFailure(RegexFailure regexFailure) {
+        if (regexFailures == null) {
+            regexFailures = new ArrayList<>();
+        }
+        regexFailures.add(regexFailure);
+    }
+
+    @Override
+    public String buildFailureMessage() {
+        StringBuilder failMsg = new StringBuilder();
+        failMsg.append("     - counts: Graph contains wrong number of nodes:").append(System.lineSeparator());
+        for (RegexFailure regexFailure : regexFailures) {
+            failMsg.append(regexFailure.getFormattedFailureMessage());
+        }
+        return failMsg.toString();
+    }
 }

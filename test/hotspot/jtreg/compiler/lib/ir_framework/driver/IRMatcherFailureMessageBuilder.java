@@ -51,12 +51,28 @@ class IRMatcherFailureMessageBuilder {
     }
 
     private static String buildFailureMessage(IRMethodMatchResult result) {
-        return result.getFailureMessage() + System.lineSeparator();
+        return result.buildFailureMessage() + System.lineSeparator();
     }
 
-
     private static String buildHeaderMessage(List<IRMethodMatchResult> results) {
-        int failureCount = results.stream().map(IRMethodMatchResult::getFailedIRRuleCount).reduce(0, Integer::sum);
-        return "One or more @IR rules failed:" + System.lineSeparator() + System.lineSeparator() + "Failed IR Rules (" + failureCount + ")" + System.lineSeparator() + "------------------" + "-".repeat(String.valueOf(failureCount).length()) + System.lineSeparator();
+        int failedIRRulesCount = getFailedIRRulesCount(results);
+        long failedMethodCount = getFailedMethodCount(results);
+        return "One or more @IR rules failed:" + System.lineSeparator() + System.lineSeparator()
+               + "Failed IR Rules (" + failedIRRulesCount + ") of Methods (" + failedMethodCount + ")"
+               + System.lineSeparator()
+               +  "-".repeat(32 + digitCount(failedIRRulesCount) + digitCount(failedMethodCount))
+               + System.lineSeparator();
+    }
+
+    private static int getFailedIRRulesCount(List<IRMethodMatchResult> results) {
+        return results.stream().map(IRMethodMatchResult::getFailedIRRuleCount).reduce(0, Integer::sum);
+    }
+
+    private static long getFailedMethodCount(List<IRMethodMatchResult> results) {
+        return results.stream().filter(IRMethodMatchResult::fail).count();
+    }
+
+    private static int digitCount(long digit) {
+        return String.valueOf(digit).length();
     }
 }

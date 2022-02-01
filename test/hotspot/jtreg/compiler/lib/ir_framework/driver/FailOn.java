@@ -45,25 +45,29 @@ class FailOn extends CheckAttribute {
     }
 
     @Override
-    public List<? extends Failure> apply(String compilation) {
+    public CheckAttributeMatchResult apply(String compilation) {
+        FailOnMatchResult result = new FailOnMatchResult();
         Matcher matcher = quickPattern.matcher(compilation);
         if (matcher.find()) {
-            return getFailureResults(compilation);
+            collectFailures(result, compilation);
         }
-        return Failure.NO_FAILURE;
+        return result;
     }
 
-    private List<FailOnFailure> getFailureResults(String compilation) {
-        List<FailOnFailure> failures = new ArrayList<>();
+    private void collectFailures(FailOnMatchResult result, String compilation) {
+        List<RegexFailure> regexFailures = new ArrayList<>();
         for (int i = 0; i < nodes.size(); i++) {
-            String node = nodes.get(i);
-            Pattern p = Pattern.compile(node);
-            Matcher m = p.matcher(compilation);
-            if (m.find()) {
-                List<String> matches = getMatchedNodes(m);
-                failures.add(new FailOnFailure(node, i + 1, matches));
-            }
+            checkNode(regexFailures, compilation, nodes.get(i), i + 1);
         }
-        return failures;
+        result.setFailures(regexFailures);
+    }
+
+    private void checkNode(List<RegexFailure> regexFailures, String compilation, String node, int nodeId) {
+        Pattern p = Pattern.compile(node);
+        Matcher m = p.matcher(compilation);
+        if (m.find()) {
+            List<String> matches = getMatchedNodes(m);
+            regexFailures.add(new FailOnRegexFailure(node, nodeId, matches));
+        }
     }
 }
