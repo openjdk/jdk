@@ -84,7 +84,7 @@ package java.security;
  * which should not be exposed in untrusted environments.  See the
  * <a href="{@docRoot}/../specs/serialization/security.html">
  * Security Appendix</a>
- * of the Serialization Specification for more information.
+ * of the <cite>Java Object Serialization Specification</cite> for more information.
  *
  * @see PublicKey
  * @see PrivateKey

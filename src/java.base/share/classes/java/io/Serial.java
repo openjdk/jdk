@@ -30,7 +30,8 @@ import java.lang.annotation.*;
 /**
  * Indicates that an annotated field or method is part of the {@linkplain
  * Serializable serialization mechanism} defined by the
- * <cite>Java Object Serialization Specification</cite>. This
+ * <a href="{@docRoot}/../specs/serialization/output.html">
+ * <cite>Java Object Serialization Specification</cite></a>. This
  * annotation type is intended to allow compile-time checking of
  * serialization-related declarations, analogous to the checking
  * enabled by the {@link java.lang.Override} annotation type to
