@@ -163,11 +163,10 @@ public:
   inline HeapWord* allocate(size_t min_word_size, size_t desired_word_size, size_t* actual_size);
 
   // Update BOT if this obj is the first entering a new card (i.e. crossing the card boundary).
-  inline void update_bot_if_crossing_boundary(HeapWord* obj_start, size_t obj_size);
+  inline void update_bot_for_obj(HeapWord* obj_start, size_t obj_size);
 
   // Full GC support methods.
 
-  void initialize_bot_threshold();
   void alloc_block_in_bot(HeapWord* start, HeapWord* end);
 
   // Update heap region that has been compacted to be consistent after Full GC.
@@ -192,16 +191,8 @@ public:
   template<typename ApplyToMarkedClosure>
   inline void apply_to_marked_objects(G1CMBitMap* bitmap, ApplyToMarkedClosure* closure);
 
-  void reset_bot() {
-    _bot_part.reset_bot();
-  }
-
   void update_bot() {
     _bot_part.update();
-  }
-
-  void update_bot_threshold() {
-    _bot_part.set_threshold(top());
   }
 
 private:
