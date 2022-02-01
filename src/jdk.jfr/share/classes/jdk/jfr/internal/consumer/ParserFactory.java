@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,6 +296,7 @@ final class ParserFactory {
         @Override
         public Object parse(RecordingInput input) throws IOException {
             final int size = input.readInt();
+            input.require(size, "Array size %d exceeds available data" );
             final Object[] array = new Object[size];
             for (int i = 0; i < size; i++) {
                 array[i] = elementParser.parse(input);
