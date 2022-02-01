@@ -84,6 +84,8 @@ public class GTestWrapper {
         command.add(Utils.TEST_JDK);
         command.add("--gtest_output=xml:" + resultFile);
         command.add("--gtest_catch_exceptions=0");
+        // Limit heap for all gtests
+        command.add("-Xmx256m");
         for (String a : args) {
             command.add(a);
         }
