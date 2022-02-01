@@ -109,7 +109,7 @@ public:
 // reads.
 class MarkedFileReader : public FileReader {
 private:
-  long _marked_pos;
+  long  _marked_pos;
 public:
   MarkedFileReader(FILE* const fd);
   ~MarkedFileReader();
