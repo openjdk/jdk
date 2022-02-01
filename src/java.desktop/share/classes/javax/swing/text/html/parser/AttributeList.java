@@ -110,18 +110,14 @@ class AttributeList implements DTDConstants, Serializable {
     }
 
     /**
-     * Returns the attribute name.
-     *
-     * @return attribute name
+     * {@return the attribute name}
      */
     public String getName() {
         return name;
     }
 
     /**
-     * Returns the attribute type.
-     *
-     * @return attribute type
+     * {@return the attribute type}
      * @see DTDConstants
      */
     public int getType() {
@@ -129,9 +125,7 @@ class AttributeList implements DTDConstants, Serializable {
     }
 
     /**
-     * Returns attribute modifier.
-     *
-     * @return attribute modifier
+     * {@return the attribute modifier}
      * @see DTDConstants
      */
     public int getModifier() {
@@ -139,27 +133,21 @@ class AttributeList implements DTDConstants, Serializable {
     }
 
     /**
-     * Returns possible attribute values.
-     *
-     * @return possible attribute values
+     * {@return possible attribute values}
      */
     public Enumeration<?> getValues() {
         return (values != null) ? values.elements() : null;
     }
 
     /**
-     * Returns default attribute value.
-     *
-     * @return default attribute value
+     * {@return default attribute value}
      */
     public String getValue() {
         return value;
     }
 
     /**
-     * Returns the next attribute in the list.
-     *
-     * @return the next attribute in the list
+     * {@return the next attribute in the list}
      */
     public AttributeList getNext() {
         return next;
