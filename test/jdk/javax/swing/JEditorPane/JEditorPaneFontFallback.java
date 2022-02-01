@@ -25,7 +25,6 @@
  * @test
  * @bug 8185261
  * @summary Tests that font fallback works reliably in JEditorPane
- * @key headful
  */
 
 import javax.imageio.ImageIO;
