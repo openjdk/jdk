@@ -47,9 +47,6 @@ void G1FullGCCompactionPoint::update() {
 
 void G1FullGCCompactionPoint::initialize_values(bool init_threshold) {
   _compaction_top = _current_region->compaction_top();
-  if (init_threshold) {
-    _current_region->initialize_bot_threshold();
-  }
 }
 
 bool G1FullGCCompactionPoint::has_regions() {

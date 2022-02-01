@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,16 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -81,6 +89,12 @@ public abstract class BaseOptions {
      * Arguments for command-line option {@code -tag} and {@code -taglet}.
      */
     private final LinkedHashSet<List<String>> customTagStrs = new LinkedHashSet<>();
+
+    /**
+     * Argument for command-line option {@code --date}.
+     * {@code null} if option not given.
+     */
+    private ZonedDateTime date;
 
     /**
      * Argument for command-line option {@code -d}.
@@ -338,6 +352,33 @@ public abstract class BaseOptions {
                     }
                 },
 
+                new XOption(resources, "--date", 1) {
+                    // Valid --date range: within ten years of now
+                    private static final ZonedDateTime now = ZonedDateTime.now();
+                    static final ZonedDateTime DATE_MIN = now.minusYears(10);
+                    static final ZonedDateTime DATE_MAX = now.plusYears(10);
+
+                    @Override
+                    public boolean process(String opt,  List<String> args) {
+                        if (noTimestamp) {
+                            messages.error("doclet.Option_conflict", "--date", "-notimestamp");
+                            return false;
+                        }
+                        String arg = args.get(0);
+                        try {
+                            date = ZonedDateTime.parse(arg, DateTimeFormatter.ISO_ZONED_DATE_TIME);
+                            if (date.isBefore(DATE_MIN) || date.isAfter(DATE_MAX)) {
+                                messages.error("doclet.Option_date_out_of_range", arg);
+                                return false;
+                            }
+                            return true;
+                        } catch (DateTimeParseException x) {
+                            messages.error("doclet.Option_date_not_valid", arg);
+                            return false;
+                        }
+                    }
+                },
+
                 new Option(resources, "-docencoding", 1) {
                     @Override
                     public boolean process(String opt, List<String> args) {
@@ -471,6 +512,10 @@ public abstract class BaseOptions {
                     @Override
                     public boolean process(String opt, List<String> args) {
                         noTimestamp = true;
+                        if (date != null) {
+                            messages.error("doclet.Option_conflict", "--date", "-notimestamp");
+                            return false;
+                        }
                         return true;
                     }
                 },
@@ -737,6 +782,13 @@ public abstract class BaseOptions {
      */
     LinkedHashSet<List<String>> customTagStrs() {
         return customTagStrs;
+    }
+
+    /**
+     * Argument for command-line option {@code --date}.
+     */
+    public ZonedDateTime date() {
+        return date;
     }
 
     /**

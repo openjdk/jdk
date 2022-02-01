@@ -1647,6 +1647,7 @@ public final class ServiceLoader<S>
      * @revised 9
      */
     @CallerSensitive
+    @SuppressWarnings("doclint:reference") // cross-module links
     public static <S> ServiceLoader<S> load(Class<S> service,
                                             ClassLoader loader)
     {

@@ -946,8 +946,8 @@ class G1ScanCollectionSetRegionClosure : public HeapRegionClosure {
   size_t _opt_refs_scanned;
   size_t _opt_refs_memory_used;
 
-  Tickspan _strong_code_root_scan_time;
-  Tickspan _strong_code_trim_partially_time;
+  Tickspan _code_root_scan_time;
+  Tickspan _code_trim_partially_time;
 
   Tickspan _rem_set_opt_root_scan_time;
   Tickspan _rem_set_opt_trim_partially_time;
@@ -979,8 +979,8 @@ public:
     _opt_roots_scanned(0),
     _opt_refs_scanned(0),
     _opt_refs_memory_used(0),
-    _strong_code_root_scan_time(),
-    _strong_code_trim_partially_time(),
+    _code_root_scan_time(),
+    _code_trim_partially_time(),
     _rem_set_opt_root_scan_time(),
     _rem_set_opt_trim_partially_time() { }
 
@@ -997,9 +997,9 @@ public:
     if (_scan_state->claim_collection_set_region(region_idx)) {
       EventGCPhaseParallel event;
 
-      G1EvacPhaseWithTrimTimeTracker timer(_pss, _strong_code_root_scan_time, _strong_code_trim_partially_time);
-      // Scan the strong code root list attached to the current region
-      r->strong_code_roots_do(_pss->closures()->weak_codeblobs());
+      G1EvacPhaseWithTrimTimeTracker timer(_pss, _code_root_scan_time, _code_trim_partially_time);
+      // Scan the code root list attached to the current region
+      r->code_roots_do(_pss->closures()->weak_codeblobs());
 
       event.commit(GCId::current(), _worker_id, G1GCPhaseTimes::phase_name(_code_roots_phase));
     }
@@ -1007,8 +1007,8 @@ public:
     return false;
   }
 
-  Tickspan strong_code_root_scan_time() const { return _strong_code_root_scan_time;  }
-  Tickspan strong_code_root_trim_partially_time() const { return _strong_code_trim_partially_time; }
+  Tickspan code_root_scan_time() const { return _code_root_scan_time;  }
+  Tickspan code_root_trim_partially_time() const { return _code_trim_partially_time; }
 
   Tickspan rem_set_opt_root_scan_time() const { return _rem_set_opt_root_scan_time; }
   Tickspan rem_set_opt_trim_partially_time() const { return _rem_set_opt_trim_partially_time; }
@@ -1031,8 +1031,8 @@ void G1RemSet::scan_collection_set_regions(G1ParScanThreadState* pss,
   p->record_or_add_time_secs(scan_phase, worker_id, cl.rem_set_opt_root_scan_time().seconds());
   p->record_or_add_time_secs(scan_phase, worker_id, cl.rem_set_opt_trim_partially_time().seconds());
 
-  p->record_or_add_time_secs(coderoots_phase, worker_id, cl.strong_code_root_scan_time().seconds());
-  p->add_time_secs(objcopy_phase, worker_id, cl.strong_code_root_trim_partially_time().seconds());
+  p->record_or_add_time_secs(coderoots_phase, worker_id, cl.code_root_scan_time().seconds());
+  p->add_time_secs(objcopy_phase, worker_id, cl.code_root_trim_partially_time().seconds());
 
   // At this time we record some metrics only for the evacuations after the initial one.
   if (scan_phase == G1GCPhaseTimes::OptScanHR) {

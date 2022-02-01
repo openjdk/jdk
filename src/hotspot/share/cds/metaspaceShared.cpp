@@ -642,8 +642,10 @@ bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
   return res;
 }
 
-void MetaspaceShared::link_shared_classes(TRAPS) {
-  LambdaFormInvokers::regenerate_holder_classes(CHECK);
+void MetaspaceShared::link_shared_classes(bool jcmd_request, TRAPS) {
+  if (!jcmd_request) {
+    LambdaFormInvokers::regenerate_holder_classes(CHECK);
+  }
 
   // Collect all loaded ClassLoaderData.
   CollectCLDClosure collect_cld(THREAD);
@@ -775,7 +777,7 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
   // were not explicitly specified in the classlist. E.g., if an interface implemented by class K
   // fails verification, all other interfaces that were not specified in the classlist but
   // are implemented by K are not verified.
-  link_shared_classes(CHECK);
+  link_shared_classes(false/*not from jcmd*/, CHECK);
   log_info(cds)("Rewriting and linking classes: done");
 
 #if INCLUDE_CDS_JAVA_HEAP
@@ -955,6 +957,9 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
     }
   } else {
     set_shared_metaspace_range(NULL, NULL, NULL);
+    if (DynamicDumpSharedSpaces) {
+      warning("-XX:ArchiveClassesAtExit is unsupported when base CDS archive is not loaded. Run with -Xlog:cds for more info.");
+    }
     UseSharedSpaces = false;
     // The base archive cannot be mapped. We cannot dump the dynamic shared archive.
     AutoCreateSharedArchive = false;

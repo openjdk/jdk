@@ -57,6 +57,7 @@ private:
 public:
   size_t size() const { return _stack.size(); }
   inline void push_if_necessary(oop obj, markWord m);
+  inline void push_always(oop obj, markWord m);
   // Iterate over the stack, restore all preserved marks, and
   // reclaim the memory taken up by the stack segments.
   void restore();

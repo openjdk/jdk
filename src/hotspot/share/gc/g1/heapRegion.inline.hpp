@@ -183,10 +183,6 @@ inline void HeapRegion::reset_skip_compacting_after_full_gc() {
 }
 
 inline void HeapRegion::reset_after_full_gc_common() {
-  if (is_empty()) {
-    reset_bot();
-  }
-
   // Clear unused heap memory in debug builds.
   if (ZapUnusedHeapArea) {
     mangle_unused_area();
@@ -231,28 +227,17 @@ inline HeapWord* HeapRegion::allocate(size_t min_word_size,
   return allocate_impl(min_word_size, desired_word_size, actual_word_size);
 }
 
-inline void HeapRegion::update_bot_if_crossing_boundary(HeapWord* obj_start, size_t obj_size) {
+inline void HeapRegion::update_bot_for_obj(HeapWord* obj_start, size_t obj_size) {
   assert(is_old(), "should only do BOT updates for old regions");
 
-  HeapWord* obj_end   = obj_start + obj_size;
+  HeapWord* obj_end = obj_start + obj_size;
 
   assert(is_in(obj_start), "obj_start must be in this region: " HR_FORMAT
          " obj_start " PTR_FORMAT " obj_end " PTR_FORMAT,
          HR_FORMAT_PARAMS(this),
          p2i(obj_start), p2i(obj_end));
 
-  HeapWord* cur_card_boundary = _bot_part.align_up_by_card_size(obj_start);
-
-  // strictly greater-than
-  bool cross_card_boundary = (obj_end > cur_card_boundary);
-
-  if (cross_card_boundary) {
-    // Creating a dummy variable inside this `if` as the arg of `&`; this
-    // avoids unnecessary loads in the assembly code on the fast path (the
-    // bot-not-updating case).
-    HeapWord* dummy = cur_card_boundary;
-    _bot_part.alloc_block_work(&dummy, obj_start, obj_end);
-  }
+  _bot_part.alloc_block(obj_start, obj_end);
 }
 
 inline void HeapRegion::note_start_of_marking() {
