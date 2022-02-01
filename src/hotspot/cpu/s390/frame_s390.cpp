@@ -319,8 +319,8 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   // do some validation of frame elements
 
   // first the method
-
-  Method* m = *interpreter_frame_method_addr();
+  // Need to use "unchecked" versions to avoid "z_istate_magic_number" assertion.
+  Method* m = (Method*)(ijava_state_unchecked()->method);
 
   // validate the method we'd find in this potential sender
   if (!Method::is_valid_method(m)) return false;
@@ -335,19 +335,17 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   }
 
   // validate bci/bcx
-
-  address  bcp    = interpreter_frame_bcp();
+  address bcp = (address)(ijava_state_unchecked()->bcp);
   if (m->validate_bci_from_bcp(bcp) < 0) {
     return false;
   }
 
   // validate constantPoolCache*
-  ConstantPoolCache* cp = *interpreter_frame_cache_addr();
+  ConstantPoolCache* cp = (ConstantPoolCache*)(ijava_state_unchecked()->cpoolCache);
   if (MetaspaceObj::is_valid(cp) == false) return false;
 
   // validate locals
-
-  address locals =  (address) *interpreter_frame_locals_addr();
+  address locals = (address)(ijava_state_unchecked()->locals);
   return thread->is_in_stack_range_incl(locals, (address)fp());
 }
 
