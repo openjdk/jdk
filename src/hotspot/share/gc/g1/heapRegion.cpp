@@ -787,8 +787,8 @@ void HeapRegion::mangle_unused_area() {
 }
 #endif
 
-void HeapRegion::alloc_block_in_bot(HeapWord* start, HeapWord* end) {
-  _bot_part.alloc_block(start, end);
+void HeapRegion::update_bot_for_block(HeapWord* start, HeapWord* end) {
+  _bot_part.update_for_block(start, end);
 }
 
 void HeapRegion::object_iterate(ObjectClosure* blk) {
