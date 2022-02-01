@@ -232,6 +232,10 @@ fillInvokeRequest(JNIEnv *env, InvokeRequest *request,
     /*
      * Squirrel away the method signature
      */
+    char* oldSignature = request->methodSignature;
+    if (oldSignature != NULL) {
+      jvmtiDeallocate(oldSignature);
+    }
     error = methodSignature(method, NULL, &request->methodSignature,  NULL);
     if (error != JVMTI_ERROR_NONE) {
         return error;
