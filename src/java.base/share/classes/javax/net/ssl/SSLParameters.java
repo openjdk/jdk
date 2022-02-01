@@ -39,8 +39,9 @@ import java.util.LinkedHashMap;
  * are the list of ciphersuites to be accepted in an SSL/TLS/DTLS handshake,
  * the list of protocols to be allowed, the endpoint identification
  * algorithm during SSL/TLS/DTLS handshaking, the Server Name Indication (SNI),
- * the maximum network packet size, the algorithm constraints and whether
- * SSL/TLS/DTLS servers should request or require client authentication, etc.
+ * the maximum network packet size, the algorithm constraints, the signature
+ * schemes and whether SSL/TLS/DTLS servers should request or require client
+ * authentication, etc.
  * <p>
  * SSLParameters can be created via the constructors in this class.
  * Objects can also be obtained using the {@code getSSLParameters()}
@@ -76,8 +77,6 @@ import java.util.LinkedHashMap;
  */
 public class SSLParameters {
 
-    private static String[] EMPTY_STRING_ARRAY = new String[0];
-
     private String[] cipherSuites;
     private String[] protocols;
     private boolean wantClientAuth;
@@ -89,18 +88,18 @@ public class SSLParameters {
     private boolean preferLocalCipherSuites;
     private boolean enableRetransmissions = true;
     private int maximumPacketSize = 0;
-    private String[] applicationProtocols = EMPTY_STRING_ARRAY;
-    private String[] signatureSchemes = EMPTY_STRING_ARRAY;
+    private String[] applicationProtocols = new String[0];
+    private String[] signatureSchemes = null;
 
     /**
      * Constructs SSLParameters.
      * <p>
      * The values of cipherSuites, protocols, cryptographic algorithm
-     * constraints, endpoint identification algorithm, server names and
-     * server name matchers are set to {@code null}; useCipherSuitesOrder,
-     * wantClientAuth and needClientAuth are set to {@code false};
-     * enableRetransmissions is set to {@code true}; maximum network packet
-     * size is set to {@code 0}.
+     * constraints, endpoint identification algorithm, signature schemes,
+     * server names and server name matchers are set to {@code null};
+     * useCipherSuitesOrder, wantClientAuth and needClientAuth are set
+     * to {@code false}; enableRetransmissions is set to {@code true};
+     * maximum network packet size is set to {@code 0}.
      */
     public SSLParameters() {
         // empty
@@ -712,34 +711,43 @@ public class SSLParameters {
      * in this list or might not use the recommended name for a certain
      * signature scheme.
      * <p>
+     * The returned array could be {@code null}, in which case the underlying
+     * provider-specific default signature schemes will be used over the
+     * SSL/TLS/DTLS connections.
+     * <p>
      * The returned array could be empty (zero-length), in which case the
-     * underlying provider-specific default signature schemes will be used
+     * signature scheme negotiation mechanism is turned off for SSL/TLS/DTLS
+     * protocols, and the connections may not be able estabilished if the
+     * negotiation mechanism is required by a certain SSL/TLS/DTLS protocol.
+     * <p>
+     * The returned array could be neither {@code null} nor empty (zero-length),
+     * in which case the signature schemes in the returned array will be used
      * over the SSL/TLS/DTLS connections.
      *
      * @implSpec
-     * This method will return a new array each time it is invoked. Providers
-     * should ignore unknown signature scheme names while establishing the
-     * SSL/TLS/DTLS connections.
+     * For non-null returns, this method will return a new array each time it
+     * is invoked. Providers should ignore unknown signature scheme names
+     * while establishing the SSL/TLS/DTLS connections.
      *
      * @implNote
      * Note that the underlying provider may define the default signature
      * schemes for each SSL/TLS/DTLS connection.  Applications may also use
-     * System Property, "jdk.tls.client.SignatureSchemes" and/or
-     * "jdk.tls.server.SignatureSchemes", to customize the provider-specific
-     * default signature schemes. If the {@link #setSignatureSchemes} method
-     * has not been called, this method should return the default signature
-     * schemes for connection populated objects, or an empty array for
-     * pre-populated objects.
+     * System Property, {@systemProperty jdk.tls.client.SignatureSchemes}
+     * and/or {@systemProperty jdk.tls.server.SignatureSchemes}, to customize
+     * the provider-specific default signature schemes. If the
+     * {@link #setSignatureSchemes} method has not been called, this method
+     * should return the default signature schemes for connection populated
+     * objects, or {@code null} for pre-populated objects.
      *
-     * @return a non-null, possibly zero-length array of signature scheme
-     *         {@code String}s.  The array is ordered based on signature scheme
-     *         preference, with the first entry being the most preferred.
+     * @return {@code null} or an array of signature scheme {@code String}s.
+     *         The array is ordered based on signature scheme preference, with
+     *         the first entry being the most preferred.
      * @see #setSignatureSchemes
      *
      * @since 19
      */
     public String[] getSignatureSchemes() {
-        return signatureSchemes.clone();
+        return clone(signatureSchemes);
     }
 
     /**
@@ -757,22 +765,10 @@ public class SSLParameters {
      * @implSpec
      * This method will make a copy of the {@code signatureSchemes} array.
      *
-     * @implNote
-     * Note that the underlying provider may define the default signature
-     * schemes for each SSL/TLS/DTLS connection.  Applications may also use
-     * System Property, "jdk.tls.client.SignatureSchemes" and/or
-     * "jdk.tls.server.SignatureSchemes", to customize the provider-specific
-     * default signature schemes. If the {@code signatureSchemes} array is
-     * not empty, the {@code signatureSchemes} specified signature schemes
-     * rather than the provider-specific default signature schemes should be
-     * used for the SSL/TLS/DTLS connections.
-     *
-     * @param signatureSchemes an ordered array of signature scheme names,
-     *        with the first entry being the most preferred. If the array
-     *        is empty (zero-length), the provider-specific default signature
-     *        schemes will be used for the SSL/TLS/DTLS connection.
-     * @throws IllegalArgumentException if signatureSchemes is null, or if
-     *        any element in a non-empty array is null or
+     * @param signatureSchemes {@code null} or an ordered array of signature
+     *        scheme names, with the first entry being the most preferred.
+     * @throws IllegalArgumentException if any element in the non-empty
+     *        {@code signatureSchemes} array is {@code null} or
      *        {@linkplain String#isBlank() blank}.
      *
      * @see #getSignatureSchemes
@@ -780,18 +776,19 @@ public class SSLParameters {
      * @since 19
      */
     public void setSignatureSchemes(String[] signatureSchemes) {
-        if (signatureSchemes == null) {
-            throw new IllegalArgumentException("signatureSchemes was null");
-        }
+        String[] tempSchemes = null;
 
-        String[] tempSchemes = signatureSchemes.clone();
-        for (String scheme : tempSchemes) {
-            if (scheme == null || scheme.isBlank()) {
-                throw new IllegalArgumentException(
+        if (signatureSchemes != null) {
+            tempSchemes = signatureSchemes.clone();
+            for (String scheme : tempSchemes) {
+                if (scheme == null || scheme.isBlank()) {
+                    throw new IllegalArgumentException(
                         "An element of signatureSchemes was null or blank");
+                }
             }
         }
 
         this.signatureSchemes = tempSchemes;
     }
 }
+
