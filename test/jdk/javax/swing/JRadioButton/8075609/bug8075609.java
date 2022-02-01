@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,28 +21,32 @@
  * questions.
  */
 
- /*
+/*
  * @test
  * @key headful
- * @library ../../regtesthelpers
- * @build Util
  * @bug 8075609
  * @summary  IllegalArgumentException when transferring focus from JRadioButton using tab
- * @author Vivi An
  * @run main bug8075609
  */
+import java.awt.BorderLayout;
+import java.awt.Robot;
+import java.awt.event.KeyEvent;
 
-import javax.swing.*;
-import javax.swing.event.*;
-import java.awt.event.*;
-import java.awt.*;
+import javax.swing.ButtonGroup;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
+import javax.swing.JTextField;
+import javax.swing.LayoutFocusTraversalPolicy;
+import javax.swing.SwingUtilities;
 
 public class bug8075609 {
     private static Robot robot;
     private static JTextField textField;
     private static JFrame mainFrame;
 
-    public static void main(String args[]) throws Throwable {
+    public static void main(String[] args) throws Throwable {
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
@@ -96,10 +100,10 @@ public class bug8075609 {
     }
 
     // Radio button Group as a single component when traversing through tab key
-    private static void runTest1() throws Exception{
+    private static void runTest1() throws Exception {
         hitKey(robot, KeyEvent.VK_TAB);
 
-        robot.delay(1000 );
+        robot.delay(1000);
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 if (!textField.hasFocus()) {

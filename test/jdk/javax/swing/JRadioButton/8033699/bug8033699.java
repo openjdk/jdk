@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,9 @@
  * questions.
  */
 
- /*
+/*
  * @test
  * @key headful
- * @library ../../regtesthelpers
- * @build Util
  * @bug 8033699 8154043 8167160 8208640 8226892
  * @summary  Incorrect radio button behavior when pressing tab key
  * @run main bug8033699
@@ -34,8 +32,7 @@ import java.awt.KeyboardFocusManager;
 import java.awt.Robot;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
@@ -45,7 +42,6 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 
 public class bug8033699 {
 
@@ -59,7 +55,7 @@ public class bug8033699 {
     private static JRadioButton radioBtn3;
     private static JRadioButton radioBtnSingle;
 
-    public static void main(String args[]) throws Throwable {
+    public static void main(String[] args) throws Throwable {
         SwingUtilities.invokeAndWait(() -> {
                 changeLAF();
                 createAndShowGUI();
