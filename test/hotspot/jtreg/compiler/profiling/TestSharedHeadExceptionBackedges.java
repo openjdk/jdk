@@ -25,7 +25,7 @@
  * @test
  * bug 8280842
  * @summary Access violation in ciTypeFlow::profiled_count
- * @run main/othervm TestSharedHeadExceptionBackedges
+ * @run main/othervm -XX:-BackgroundCompilation TestSharedHeadExceptionBackedges
  */
 
 public class TestSharedHeadExceptionBackedges {
