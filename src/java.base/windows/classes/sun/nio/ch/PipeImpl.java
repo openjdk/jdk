@@ -70,14 +70,14 @@ class PipeImpl
     {
 
         private final SelectorProvider sp;
-        private final boolean useUnixDomain;
+        private final boolean preferUnixDomain;
         private IOException ioe;
         SourceChannelImpl source;
         SinkChannelImpl sink;
 
-        private Initializer(SelectorProvider sp, boolean useUnixDomain) {
+        private Initializer(SelectorProvider sp, boolean preferUnixDomain) {
             this.sp = sp;
-            this.useUnixDomain = useUnixDomain;
+            this.preferUnixDomain = preferUnixDomain;
         }
 
         @Override
@@ -125,7 +125,7 @@ class PipeImpl
                         // Bind ServerSocketChannel to a port on the loopback
                         // address
                         if (ssc == null || !ssc.isOpen()) {
-                            ssc = createListener(useUnixDomain);
+                            ssc = createListener(preferUnixDomain);
                             sa = ssc.getLocalAddress();
                         }
 
@@ -215,9 +215,9 @@ class PipeImpl
         return sink;
     }
 
-    private static ServerSocketChannel createListener(boolean unixDomain) throws IOException {
+    private static ServerSocketChannel createListener(boolean preferUnixDomain) throws IOException {
         ServerSocketChannel listener;
-        if (unixDomain && UnixDomainSockets.isSupported()) {
+        if (preferUnixDomain && UnixDomainSockets.isSupported()) {
             try {
                 listener = ServerSocketChannel.open(UNIX);
                 listener.bind(null);
