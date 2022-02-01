@@ -414,14 +414,14 @@ void VM_Version::initialize() {
     _rop_protection = false;
     // Enable PAC if this code has been built with branch-protection and the CPU/OS supports it.
 #ifdef __ARM_FEATURE_PAC_DEFAULT
-    if (_features & CPU_PACA) {
+    if ((_features & CPU_PACA) != 0) {
       _rop_protection = true;
     }
 #endif
   } else if (strcmp(UseBranchProtection, "pac-ret") == 0) {
     _rop_protection = true;
 #ifdef __ARM_FEATURE_PAC_DEFAULT
-    if (!(_features & CPU_PACA)) {
+    if ((_features & CPU_PACA) == 0) {
       warning("UseROPProtection specified, but not supported on this CPU.");
     }
 #else

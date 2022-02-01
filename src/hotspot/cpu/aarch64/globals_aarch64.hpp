@@ -120,7 +120,7 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "It cannot be used with OnSpinWaitInst=none.")                \
           range(1, 99)                                                  \
   product(ccstr, UseBranchProtection, "none",                           \
-          "Branch Protection to use: none,standard,pac-ret")            \
+          "Branch Protection to use: none, standard, pac-ret")          \
 
 // end of ARCH_FLAGS
 

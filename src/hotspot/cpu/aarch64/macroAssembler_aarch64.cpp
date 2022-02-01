@@ -5282,24 +5282,21 @@ void MacroAssembler::spin_wait() {
 
 // Stack frame creation/removal
 
-void MacroAssembler::enter()
-{
+void MacroAssembler::enter() {
   protect_return_address();
   stp(rfp, lr, Address(pre(sp, -2 * wordSize)));
   mov(rfp, sp);
 }
 
 // Create an additional frame for a function.
-void MacroAssembler::enter_subframe()
-{
+void MacroAssembler::enter_subframe() {
   // Addresses can only be signed once, so strip it first. PAC safe because the value is not
   // coming from memory.
   strip_return_address();
   enter();
 }
 
-void MacroAssembler::leave()
-{
+void MacroAssembler::leave() {
   mov(sp, rfp);
   ldp(rfp, lr, Address(post(sp, 2 * wordSize)));
   authenticate_return_address();
