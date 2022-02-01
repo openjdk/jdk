@@ -2739,10 +2739,10 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
   bne(flag, cont);
 
   // Current thread already owns the lock. Just increment recursions.
-  addi(R0, displaced_header, ObjectMonitor::recursions_offset_in_bytes()-markWord::monitor_value);
-  ldx(temp, R0);
-  addi(temp, temp, 1);
-  stdx(temp, R0);
+  Register recursions = displaced_header;
+  ld(recursions, ObjectMonitor::recursions_offset_in_bytes()-ObjectMonitor::owner_offset_in_bytes(), temp);
+  addi(recursions, recursions, 1);
+  std(recursions, ObjectMonitor::recursions_offset_in_bytes()-ObjectMonitor::owner_offset_in_bytes(), temp);
 
 #if INCLUDE_RTM_OPT
   } // use_rtm()
