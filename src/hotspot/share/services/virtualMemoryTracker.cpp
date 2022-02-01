@@ -674,26 +674,26 @@ bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
 
 class FindAndSnapshotRegionWalker : public VirtualMemoryWalker {
 private:
-  ReservedMemoryRegion& _region;
-  const address         _p;
-  bool                  _found_region;
+  const ReservedMemoryRegion* _region;
+  const address               _p;
 public:
-  FindAndSnapshotRegionWalker(void* p, ReservedMemoryRegion& region) :
-    _region(region), _p((address)p), _found_region(false) { }
+  FindAndSnapshotRegionWalker(const void* p) :
+    _region(NULL), _p((address)p) { }
 
   bool do_allocation_site(const ReservedMemoryRegion* rgn) {
     if (rgn->contain_address(_p)) {
-      _region = *rgn;
-      _found_region = true;
+      _region = rgn;
       return false;
     }
     return true;
   }
-  bool found_region() const { return _found_region; }
+  const ReservedMemoryRegion* region() const {
+    return _region;
+  }
 };
 
-const bool VirtualMemoryTracker::snapshot_region_contains(void* p, ReservedMemoryRegion& region) {
-  FindAndSnapshotRegionWalker walker(p, region);
+const ReservedMemoryRegion* VirtualMemoryTracker::find_containing_region(const void* p) {
+  FindAndSnapshotRegionWalker walker(p);
   walk_virtual_memory(&walker);
-  return walker.found_region();
+  return walker.region();
 }

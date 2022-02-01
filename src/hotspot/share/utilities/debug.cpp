@@ -485,23 +485,29 @@ extern "C" JNIEXPORT void pp(void* p) {
   } else {
     if (MemTracker::enabled()) {
       const NMT_TrackingLevel tracking_level = MemTracker::tracking_level();
-      ReservedMemoryRegion region(0, 0);
       // Check and snapshot a mmap'd region that contains the pointer
-      if (VirtualMemoryTracker::snapshot_region_contains(p, region)) {
+      const ReservedMemoryRegion* const region =
+          VirtualMemoryTracker::find_containing_region(p);
+      if (region != NULL) {
         tty->print_cr(PTR_FORMAT " in mmap'd memory region [" PTR_FORMAT " - " PTR_FORMAT "] by %s",
-          p2i(p), p2i(region.base()), p2i(region.base() + region.size()), region.flag_name());
+          p2i(p), p2i(region->base()), p2i(region->base() + region->size()), region->flag_name());
         if (tracking_level == NMT_detail) {
-          region.call_stack()->print_on(tty);
+          region->call_stack()->print_on(tty);
           tty->cr();
         }
         return;
       }
       // Check if it is a malloc'd memory block
-      if (CanUseSafeFetchN() && SafeFetchN((intptr_t*)p, 0) != 0) {
+      // GDB note: Before reading the malloc header from the assumed-to-be-malloced address, we do a basic
+      //  SafeFetch test to check if reading is safe. This will generate a signal if it isn't. That signal normally
+      //  is handled quietly by the VM, but it will trip up the debugger. gdb will catch the signal and disable
+      //  the pp() command for further use.
+      // In order to avoid that, before invoking pp(), switch off SIGSEGV handling with "handle SIGSEGV nostop".
+      if (CanUseSafeFetchN() && os::is_readable_pointer(p)) {
         const MallocHeader* mhdr = (const MallocHeader*)MallocTracker::get_base(p, tracking_level);
         char msg[256];
         address p_corrupted;
-        if (SafeFetchN((intptr_t*)mhdr, 0) != 0 && mhdr->check_block_integrity(msg, sizeof(msg), &p_corrupted)) {
+        if (os::is_readable_pointer(mhdr) && mhdr->check_block_integrity(msg, sizeof(msg), &p_corrupted)) {
           tty->print_cr(PTR_FORMAT " malloc'd " SIZE_FORMAT " bytes by %s",
             p2i(p), mhdr->size(), NMTUtil::flag_to_name(mhdr->flags()));
           if (tracking_level == NMT_detail) {
@@ -515,7 +521,7 @@ extern "C" JNIEXPORT void pp(void* p) {
         }
       }
     }
-    tty->print(PTR_FORMAT, p2i(p));
+    tty->print_cr(PTR_FORMAT, p2i(p));
   }
 }
 
