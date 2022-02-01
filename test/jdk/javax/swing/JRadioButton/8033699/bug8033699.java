@@ -149,7 +149,7 @@ public class bug8033699 {
         mainFrame.setLayout(new BoxLayout(mainFrame.getContentPane(), BoxLayout.Y_AXIS));
 
         mainFrame.setSize(300, 300);
-        mainFrame.setLocation(200, 200);
+        mainFrame.setLocationRelativeTo(null);
         mainFrame.setVisible(true);
         mainFrame.toFront();
     }

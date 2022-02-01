@@ -96,6 +96,7 @@ public class bug8075609 {
 
         mainFrame.add(rootPanel);
         mainFrame.pack();
+        mainFrame.setLocationRelativeTo(null);
         mainFrame.setVisible(true);
         mainFrame.toFront();
     }
