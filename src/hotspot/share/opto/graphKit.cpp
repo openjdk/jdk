@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -560,8 +560,7 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
   // let us handle the throw inline, with a preconstructed instance.
   // Note:   If the deopt count has blown up, the uncommon trap
   // runtime is going to flush this nmethod, not matter what.
-  if (treat_throw_as_hot
-      && (!StackTraceInThrowable || OmitStackTraceInFastThrow)) {
+  if (treat_throw_as_hot && method()->can_omit_stack_trace()) {
     // If the throw is local, we use a pre-existing instance and
     // punt on the backtrace.  This would lead to a missing backtrace
     // (a repeat of 4292742) if the backtrace object is ever asked
@@ -613,6 +612,13 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
       Node *adr = basic_plus_adr(ex_node, ex_node, offset);
       const TypeOopPtr* val_type = TypeOopPtr::make_from_klass(env()->String_klass());
       Node *store = access_store_at(ex_node, adr, adr_typ, null(), val_type, T_OBJECT, IN_HEAP);
+
+      if (!method()->has_exception_handlers()) {
+        // We don't need to preserve the stack if there's no handler as the entire frame is going to be popped anyway.
+        // This prevents issues with exception handling and late inlining.
+        set_sp(0);
+        clean_stack(0);
+      }
 
       add_exception_state(make_exception_state(ex_node));
       return;
@@ -2344,9 +2350,9 @@ void GraphKit::round_double_arguments(ciMethod* dest_method) {
       const Type *targ = tf->domain()->field_at(j + TypeFunc::Parms);
       if (targ->basic_type() == T_DOUBLE) {
         // If any parameters are doubles, they must be rounded before
-        // the call, dstore_rounding does gvn.transform
+        // the call, dprecision_rounding does gvn.transform
         Node *arg = argument(j);
-        arg = dstore_rounding(arg);
+        arg = dprecision_rounding(arg);
         set_argument(j, arg);
       }
     }
@@ -2369,20 +2375,6 @@ Node* GraphKit::precision_rounding(Node* n) {
 
 // rounding for strict double precision conformance
 Node* GraphKit::dprecision_rounding(Node *n) {
-  if (Matcher::strict_fp_requires_explicit_rounding) {
-#ifdef IA32
-    if (UseSSE < 2) {
-      return _gvn.transform(new RoundDoubleNode(0, n));
-    }
-#else
-    Unimplemented();
-#endif // IA32
-  }
-  return n;
-}
-
-// rounding for non-strict double stores
-Node* GraphKit::dstore_rounding(Node* n) {
   if (Matcher::strict_fp_requires_explicit_rounding) {
 #ifdef IA32
     if (UseSSE < 2) {
@@ -2488,8 +2480,7 @@ Node* GraphKit::make_runtime_call(int flags,
                                   Node* parm0, Node* parm1,
                                   Node* parm2, Node* parm3,
                                   Node* parm4, Node* parm5,
-                                  Node* parm6, Node* parm7,
-                                  Node* parm8) {
+                                  Node* parm6, Node* parm7) {
   assert(call_addr != NULL, "must not call NULL targets");
 
   // Slow-path call
@@ -2536,8 +2527,7 @@ Node* GraphKit::make_runtime_call(int flags,
   if (parm5 != NULL) { call->init_req(TypeFunc::Parms+5, parm5);
   if (parm6 != NULL) { call->init_req(TypeFunc::Parms+6, parm6);
   if (parm7 != NULL) { call->init_req(TypeFunc::Parms+7, parm7);
-  if (parm8 != NULL) { call->init_req(TypeFunc::Parms+8, parm8);
-  /* close each nested if ===> */  } } } } } } } } }
+  /* close each nested if ===> */  } } } } } } } }
   assert(call->in(call->req()-1) != NULL, "must initialize all parms");
 
   if (!is_leaf) {

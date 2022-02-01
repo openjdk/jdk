@@ -191,10 +191,10 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(RefPro
   // Stop treating discovered references specially.
   disable_discovery();
 
-  ReferenceProcessorStats stats(total_count(_discoveredSoftRefs),
-                                total_count(_discoveredWeakRefs),
-                                total_count(_discoveredFinalRefs),
-                                total_count(_discoveredPhantomRefs));
+  phase_times.set_ref_discovered(REF_SOFT, total_count(_discoveredSoftRefs));
+  phase_times.set_ref_discovered(REF_WEAK, total_count(_discoveredWeakRefs));
+  phase_times.set_ref_discovered(REF_FINAL, total_count(_discoveredFinalRefs));
+  phase_times.set_ref_discovered(REF_PHANTOM, total_count(_discoveredPhantomRefs));
 
   update_soft_ref_master_clock();
 
@@ -220,6 +220,10 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(RefPro
   // Elements on discovered lists were pushed to the pending list.
   verify_no_references_recorded();
 
+  ReferenceProcessorStats stats(phase_times.ref_discovered(REF_SOFT),
+                                phase_times.ref_discovered(REF_WEAK),
+                                phase_times.ref_discovered(REF_FINAL),
+                                phase_times.ref_discovered(REF_PHANTOM));
   return stats;
 }
 
@@ -479,7 +483,7 @@ void RefProcTask::process_discovered_list(uint worker_id,
                                                                        keep_alive,
                                                                        enqueue,
                                                                        do_enqueue_and_clear);
-    _phase_times->add_ref_cleared(ref_type, removed);
+    _phase_times->add_ref_dropped(ref_type, removed);
   }
 }
 
@@ -725,12 +729,10 @@ void ReferenceProcessor::run_task(RefProcTask& task, RefProcProxyTask& proxy_tas
 void ReferenceProcessor::process_soft_weak_final_refs(RefProcProxyTask& proxy_task,
                                                       ReferenceProcessorPhaseTimes& phase_times) {
 
-  size_t const num_soft_refs = total_count(_discoveredSoftRefs);
-  size_t const num_weak_refs = total_count(_discoveredWeakRefs);
-  size_t const num_final_refs = total_count(_discoveredFinalRefs);
+  size_t const num_soft_refs = phase_times.ref_discovered(REF_SOFT);
+  size_t const num_weak_refs = phase_times.ref_discovered(REF_WEAK);
+  size_t const num_final_refs = phase_times.ref_discovered(REF_FINAL);
   size_t const num_total_refs = num_soft_refs + num_weak_refs + num_final_refs;
-  phase_times.set_ref_discovered(REF_WEAK, num_weak_refs);
-  phase_times.set_ref_discovered(REF_FINAL, num_final_refs);
 
   if (num_total_refs == 0) {
     log_debug(gc, ref)("Skipped SoftWeakFinalRefsPhase of Reference Processing: no references");
@@ -745,8 +747,6 @@ void ReferenceProcessor::process_soft_weak_final_refs(RefProcProxyTask& proxy_ta
     maybe_balance_queues(_discoveredWeakRefs);
     maybe_balance_queues(_discoveredFinalRefs);
   }
-
-  RefProcPhaseTimeTracker tt(SoftWeakFinalRefsPhase, &phase_times);
 
   log_reflist("SoftWeakFinalRefsPhase Soft before", _discoveredSoftRefs, _max_num_queues);
   log_reflist("SoftWeakFinalRefsPhase Weak before", _discoveredWeakRefs, _max_num_queues);
@@ -763,7 +763,7 @@ void ReferenceProcessor::process_soft_weak_final_refs(RefProcProxyTask& proxy_ta
 void ReferenceProcessor::process_final_keep_alive(RefProcProxyTask& proxy_task,
                                                   ReferenceProcessorPhaseTimes& phase_times) {
 
-  size_t const num_final_refs = total_count(_discoveredFinalRefs);
+  size_t const num_final_refs = phase_times.ref_discovered(REF_FINAL);
 
   if (num_final_refs == 0) {
     log_debug(gc, ref)("Skipped KeepAliveFinalRefsPhase of Reference Processing: no references");
@@ -778,7 +778,6 @@ void ReferenceProcessor::process_final_keep_alive(RefProcProxyTask& proxy_task,
   }
 
   // Traverse referents of final references and keep them and followers alive.
-  RefProcPhaseTimeTracker tt(KeepAliveFinalRefsPhase, &phase_times);
   RefProcKeepAliveFinalPhaseTask phase_task(*this, &phase_times);
   run_task(phase_task, proxy_task, true);
 
@@ -788,8 +787,7 @@ void ReferenceProcessor::process_final_keep_alive(RefProcProxyTask& proxy_task,
 void ReferenceProcessor::process_phantom_refs(RefProcProxyTask& proxy_task,
                                               ReferenceProcessorPhaseTimes& phase_times) {
 
-  size_t const num_phantom_refs = total_count(_discoveredPhantomRefs);
-  phase_times.set_ref_discovered(REF_PHANTOM, num_phantom_refs);
+  size_t const num_phantom_refs = phase_times.ref_discovered(REF_PHANTOM);
 
   if (num_phantom_refs == 0) {
     log_debug(gc, ref)("Skipped PhantomRefsPhase of Reference Processing: no references");
@@ -802,9 +800,6 @@ void ReferenceProcessor::process_phantom_refs(RefProcProxyTask& proxy_task,
     RefProcBalanceQueuesTimeTracker tt(PhantomRefsPhase, &phase_times);
     maybe_balance_queues(_discoveredPhantomRefs);
   }
-
-  // Walk phantom references appropriately.
-  RefProcPhaseTimeTracker tt(PhantomRefsPhase, &phase_times);
 
   log_reflist("PhantomRefsPhase Phantom before", _discoveredPhantomRefs, _max_num_queues);
 
@@ -820,7 +815,7 @@ inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt)
   if (_discovery_is_mt) {
     // During a multi-threaded discovery phase,
     // each thread saves to its "own" list.
-    id = WorkerThread::current()->id();
+    id = WorkerThread::worker_id();
   } else {
     // single-threaded discovery, we save in round-robin
     // fashion to each of the lists.

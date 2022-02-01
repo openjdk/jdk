@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,7 +207,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             }
 
             // Enter symbols for all files
-            toolEnv.notice("main.Building_tree");
+            toolEnv.printInfo("main.Building_tree");
             javadocEnter.main(allTrees.toList());
 
             if (log.hasErrors()) {
@@ -284,7 +284,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
         for (JavaFileObject fo: files) {
             if (uniquefiles.add(fo)) { // ignore duplicates
                 if (trace)
-                    toolEnv.notice("main.Loading_source_file", fo.getName());
+                    toolEnv.printInfo("main.Loading_source_file", fo.getName());
                 trees.append(parse(fo));
             }
         }

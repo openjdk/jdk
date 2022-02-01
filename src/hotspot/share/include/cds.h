@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,8 @@
 #define NUM_CDS_REGIONS 7 // this must be the same as MetaspaceShared::n_regions
 #define CDS_ARCHIVE_MAGIC 0xf00baba2
 #define CDS_DYNAMIC_ARCHIVE_MAGIC 0xf00baba8
-#define CURRENT_CDS_ARCHIVE_VERSION 12
+#define CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION 13
+#define CURRENT_CDS_ARCHIVE_VERSION 14
 
 typedef struct CDSFileMapRegion {
   int     _crc;               // CRC checksum of this region.
@@ -47,7 +48,7 @@ typedef struct CDSFileMapRegion {
   int     _is_heap_region;    // Used by SA and debug build.
   int     _is_bitmap_region;  // Relocation bitmap for RO/RW regions (used by SA and debug build).
   int     _mapped_from_file;  // Is this region mapped from a file?
-                              // If false, this region was initialized using os::read().
+                              // If false, this region was initialized using ::read().
   size_t  _file_offset;       // Data for this region starts at this offset in the archive file.
   size_t  _mapping_offset;    // This region should be mapped at this offset from the base address
                               // - for non-heap regions, the base address is SharedBaseAddress
@@ -59,12 +60,13 @@ typedef struct CDSFileMapRegion {
   char*   _mapped_base;       // Actually mapped address (NULL if this region is not mapped).
 } CDSFileMapRegion;
 
-// This portion of the archive file header must remain unchanged for _version >= 12.
+// This portion of the archive file header must remain unchanged for
+// _version >= CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION (12).
 // This makes it possible to read important information from a CDS archive created by
 // a different version of HotSpot, so that we can automatically regenerate the archive as necessary.
 typedef struct GenericCDSFileMapHeader {
   unsigned int _magic;                    // identification of file type
-  int          _crc;                      // header crc checksum
+  int          _crc;                      // header crc checksum, start from _base_archive_name_offset
   int          _version;                  // CURRENT_CDS_ARCHIVE_VERSION of the jdk that dumped the this archive
   unsigned int _header_size;              // total size of the header, in bytes
   unsigned int _base_archive_name_offset; // offset where the base archive name is stored

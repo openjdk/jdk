@@ -2142,11 +2142,7 @@ LIR_Opr LinearScan::calc_operand_for_interval(const Interval* interval) {
 #ifdef _LP64
         return LIR_OprFact::double_cpu(assigned_reg, assigned_reg);
 #else
-#if defined(PPC32)
-        return LIR_OprFact::double_cpu(assigned_regHi, assigned_reg);
-#else
         return LIR_OprFact::double_cpu(assigned_reg, assigned_regHi);
-#endif // PPC32
 #endif // LP64
       }
 
@@ -2788,9 +2784,6 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
 #endif
 #ifdef ARM32
       assert(opr->fpu_regnrHi() == opr->fpu_regnrLo() + 1, "assumed in calculation (only fpu_regnrLo is used)");
-#endif
-#ifdef PPC32
-      assert(opr->fpu_regnrLo() == opr->fpu_regnrHi(), "assumed in calculation (only fpu_regnrHi is used)");
 #endif
 
 #ifdef VM_LITTLE_ENDIAN

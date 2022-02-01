@@ -78,10 +78,6 @@ protected:
   // covered regions defined in the constructor are ever in use.
   int find_covering_region_by_base(HeapWord* base);
 
-  // Same as above, but finds the region containing the given address
-  // instead of starting at a given base address.
-  int find_covering_region_containing(HeapWord* addr);
-
   // Returns the leftmost end of a committed region corresponding to a
   // covered region before covered region "ind", or else "NULL" if "ind" is
   // the first covered region.
@@ -111,6 +107,11 @@ protected:
   // a word's worth (row) of clean card values
   static const intptr_t clean_card_row = (intptr_t)(-1);
 
+  // CardTable entry size
+  static uint _card_shift;
+  static uint _card_size;
+  static uint _card_size_in_words;
+
 public:
   CardTable(MemRegion whole_heap);
   virtual ~CardTable();
@@ -133,8 +134,8 @@ public:
   // in, um, words.
   inline size_t cards_required(size_t covered_words) {
     // Add one for a guard card, used to detect errors.
-    const size_t words = align_up(covered_words, card_size_in_words);
-    return words / card_size_in_words + 1;
+    const size_t words = align_up(covered_words, _card_size_in_words);
+    return words / _card_size_in_words + 1;
   }
 
   // Dirty the bytes corresponding to "mr" (not all of which must be
@@ -157,7 +158,7 @@ public:
            "Attempt to access p = " PTR_FORMAT " out of bounds of "
            " card marking array's _whole_heap = [" PTR_FORMAT "," PTR_FORMAT ")",
            p2i(p), p2i(_whole_heap.start()), p2i(_whole_heap.end()));
-    CardValue* result = &_byte_map_base[uintptr_t(p) >> card_shift];
+    CardValue* result = &_byte_map_base[uintptr_t(p) >> _card_shift];
     assert(result >= _byte_map && result < _byte_map + _byte_map_size,
            "out of bounds accessor for card marking array");
     return result;
@@ -189,7 +190,7 @@ public:
            " _byte_map: " PTR_FORMAT " _byte_map + _byte_map_size: " PTR_FORMAT,
            p2i(p), p2i(_byte_map), p2i(_byte_map + _byte_map_size));
     size_t delta = pointer_delta(p, _byte_map_base, sizeof(CardValue));
-    HeapWord* result = (HeapWord*) (delta << card_shift);
+    HeapWord* result = (HeapWord*) (delta << _card_shift);
     assert(_whole_heap.contains(result),
            "Returning result = " PTR_FORMAT " out of bounds of "
            " card marking array's _whole_heap = [" PTR_FORMAT "," PTR_FORMAT ")",
@@ -228,10 +229,17 @@ public:
   MemRegion dirty_card_range_after_reset(MemRegion mr, bool reset,
                                          int reset_val);
 
-  // CardTable entry size
-  static uint card_shift;
-  static uint card_size;
-  static uint card_size_in_words;
+  static uint card_shift() {
+    return _card_shift;
+  }
+
+  static uint card_size() {
+    return _card_size;
+  }
+
+  static uint card_size_in_words() {
+    return _card_size_in_words;
+  }
 
   static constexpr CardValue clean_card_val()          { return clean_card; }
   static constexpr CardValue dirty_card_val()          { return dirty_card; }

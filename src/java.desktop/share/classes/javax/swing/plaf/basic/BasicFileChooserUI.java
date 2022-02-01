@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,58 @@
 
 package javax.swing.plaf.basic;
 
-import javax.swing.*;
-import javax.swing.filechooser.*;
-import javax.swing.filechooser.FileFilter;
-import javax.swing.event.*;
-import javax.swing.plaf.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.datatransfer.*;
-import java.beans.*;
-import java.io.*;
-import java.util.*;
+import java.awt.BorderLayout;
+import java.awt.Toolkit;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.beans.PropertyChangeListener;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Hashtable;
 import java.util.List;
-import java.util.regex.*;
+import java.util.Locale;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
+
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.ActionMap;
+import javax.swing.Icon;
+import javax.swing.InputMap;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JFileChooser;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTable;
+import javax.swing.LookAndFeel;
+import javax.swing.SwingUtilities;
+import javax.swing.TransferHandler;
+import javax.swing.UIDefaults;
+import javax.swing.UIManager;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileSystemView;
+import javax.swing.filechooser.FileView;
+import javax.swing.plaf.ActionMapUIResource;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.FileChooserUI;
+import javax.swing.plaf.UIResource;
+
 import sun.awt.shell.ShellFolder;
-import sun.swing.*;
+import sun.swing.DefaultLookup;
+import sun.swing.FilePane;
+import sun.swing.SwingUtilities2;
+import sun.swing.UIAction;
 
 /**
  * Basic L&amp;F implementation of a FileChooser.
@@ -723,11 +760,12 @@ public class BasicFileChooserUI extends FileChooserUI {
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
         Handler handler;
+
         /**
-         * Constucts a {@code DoubleClickListener}.
-         * @param list the lsit
+         * Constructs a {@code DoubleClickListener}.
+         * @param list the list
          */
-        public  DoubleClickListener(JList<?> list) {
+        public DoubleClickListener(JList<?> list) {
             handler = new Handler(list);
         }
 

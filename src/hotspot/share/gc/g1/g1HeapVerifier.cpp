@@ -114,9 +114,9 @@ class G1VerifyCodeRootOopClosure: public OopClosure {
       // Now fetch the region containing the object
       HeapRegion* hr = _g1h->heap_region_containing(obj);
       HeapRegionRemSet* hrrs = hr->rem_set();
-      // Verify that the strong code root list for this region
+      // Verify that the code root list for this region
       // contains the nmethod
-      if (!hrrs->strong_code_roots_list_contains(_nm)) {
+      if (!hrrs->code_roots_list_contains(_nm)) {
         log_error(gc, verify)("Code root location " PTR_FORMAT " "
                               "from nmethod " PTR_FORMAT " not in strong "
                               "code roots for region [" PTR_FORMAT "," PTR_FORMAT ")",

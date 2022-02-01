@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,6 +180,25 @@ void CE_Eliminator::block_do(BlockBegin* block) {
     return;
   }
 
+#ifdef ASSERT
+#define DO_DELAYED_VERIFICATION
+  /*
+   * We need to verify the internal representation after modifying it.
+   * Verifying only the blocks that have been tampered with is cheaper than verifying the whole graph, but we must
+   * capture blocks_to_verify_later before making the changes, since they might not be reachable afterwards.
+   * DO_DELAYED_VERIFICATION ensures that the code for this is either enabled in full, or not at all.
+   */
+#endif // ASSERT
+
+#ifdef DO_DELAYED_VERIFICATION
+  BlockList blocks_to_verify_later;
+  blocks_to_verify_later.append(block);
+  blocks_to_verify_later.append(t_block);
+  blocks_to_verify_later.append(f_block);
+  blocks_to_verify_later.append(sux);
+  _hir->expand_with_neighborhood(blocks_to_verify_later);
+#endif // DO_DELAYED_VERIFICATION
+
   // 2) substitute conditional expression
   //    with an IfOp followed by a Goto
   // cut if_ away and get node before
@@ -248,7 +267,10 @@ void CE_Eliminator::block_do(BlockBegin* block) {
     tty->print_cr("%d. IfOp in B%d", ifop_count(), block->block_id());
   }
 
-  _hir->verify();
+#ifdef DO_DELAYED_VERIFICATION
+  _hir->verify_local(blocks_to_verify_later);
+#endif // DO_DELAYED_VERIFICATION
+
 }
 
 Value CE_Eliminator::make_ifop(Value x, Instruction::Condition cond, Value y, Value tval, Value fval) {
@@ -312,6 +334,20 @@ void Optimizer::eliminate_conditional_expressions() {
   CE_Eliminator ce(ir());
 }
 
+// This removes others' relation to block, but doesnt empty block's lists
+void disconnect_from_graph(BlockBegin* block) {
+  for (int p = 0; p < block->number_of_preds(); p++) {
+    BlockBegin* pred = block->pred_at(p);
+    int idx;
+    while ((idx = pred->end()->find_sux(block)) >= 0) {
+      pred->end()->remove_sux_at(idx);
+    }
+  }
+  for (int s = 0; s < block->number_of_sux(); s++) {
+    block->sux_at(s)->remove_predecessor(block);
+  }
+}
+
 class BlockMerger: public BlockClosure {
  private:
   IR* _hir;
@@ -369,10 +405,16 @@ class BlockMerger: public BlockClosure {
     for_each_local_value(sux_state, index, sux_value) {
       Phi* sux_phi = sux_value->as_Phi();
       if (sux_phi != NULL && sux_phi->is_illegal()) continue;
-      assert(sux_value == end_state->local_at(index), "locals not equal");
-    }
+        assert(sux_value == end_state->local_at(index), "locals not equal");
+      }
     assert(sux_state->caller_state() == end_state->caller_state(), "caller not equal");
 #endif
+
+#ifdef DO_DELAYED_VERIFICATION
+    BlockList blocks_to_verify_later;
+    blocks_to_verify_later.append(block);
+    _hir->expand_with_neighborhood(blocks_to_verify_later);
+#endif // DO_DELAYED_VERIFICATION
 
     // find instruction before end & append first instruction of sux block
     Instruction* prev = end->prev();
@@ -380,13 +422,21 @@ class BlockMerger: public BlockClosure {
     assert(prev->as_BlockEnd() == NULL, "must not be a BlockEnd");
     prev->set_next(next);
     prev->fixup_block_pointers();
-    sux->disconnect_from_graph();
+
+    // disconnect this block from all other blocks
+    disconnect_from_graph(sux);
+#ifdef DO_DELAYED_VERIFICATION
+    blocks_to_verify_later.remove(sux); // Sux is not part of graph anymore
+#endif // DO_DELAYED_VERIFICATION
     block->set_end(sux->end());
+
+    // TODO Should this be done in set_end universally?
     // add exception handlers of deleted block, if any
     for (int k = 0; k < sux->number_of_exception_handlers(); k++) {
       BlockBegin* xhandler = sux->exception_handler_at(k);
       block->add_exception_handler(xhandler);
 
+      // TODO This should be in disconnect from graph...
       // also substitute predecessor of exception handler
       assert(xhandler->is_predecessor(sux), "missing predecessor");
       xhandler->remove_predecessor(sux);
@@ -402,7 +452,9 @@ class BlockMerger: public BlockClosure {
                     _merge_count, block->block_id(), sux->block_id(), sux->state()->stack_size());
     }
 
-    _hir->verify();
+#ifdef DO_DELAYED_VERIFICATION
+    _hir->verify_local(blocks_to_verify_later);
+#endif // DO_DELAYED_VERIFICATION
 
     If* if_ = block->end()->as_If();
     if (if_) {
@@ -452,7 +504,9 @@ class BlockMerger: public BlockClosure {
                 tty->print_cr("%d. replaced If and IfOp at end of B%d with single If", _merge_count, block->block_id());
               }
 
-              _hir->verify();
+#ifdef DO_DELAYED_VERIFICATION
+              _hir->verify_local(blocks_to_verify_later);
+#endif // DO_DELAYED_VERIFICATION
             }
           }
         }
@@ -468,6 +522,9 @@ class BlockMerger: public BlockClosure {
   }
 };
 
+#ifdef ASSERT
+#undef DO_DELAYED_VERIFICATION
+#endif // ASSERT
 
 void Optimizer::eliminate_blocks() {
   // merge blocks if possible

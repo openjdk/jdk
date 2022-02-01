@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,12 +146,6 @@ public:
 
   void load_iota_indices(XMMRegister dst, Register scratch, int vlen_in_bytes);
 
-  // vector compare
-  void vpcmpu(BasicType typ, XMMRegister dst, XMMRegister src1, XMMRegister src2, ComparisonPredicate comparison, int vlen_in_bytes,
-              XMMRegister vtmp1, XMMRegister vtmp2, Register scratch);
-  void vpcmpu32(BasicType typ, XMMRegister dst, XMMRegister src1, XMMRegister src2, ComparisonPredicate comparison, int vlen_in_bytes,
-                XMMRegister vtmp1, XMMRegister vtmp2, XMMRegister vtmp3, Register scratch);
-
   // Reductions for vectors of bytes, shorts, ints, longs, floats, and doubles.
 
   // dst = src1  reduce(op, src2) using vtmp as temps
@@ -230,7 +224,16 @@ public:
 
   void vector_mask_operation(int opc, Register dst, XMMRegister mask, XMMRegister xtmp,
                              Register tmp, int masklen, BasicType bt, int vec_enc);
+  void vector_long_to_maskvec(XMMRegister dst, Register src, Register rtmp1,
+                              Register rtmp2, XMMRegister xtmp, int mask_len, int vec_enc);
 #endif
+
+  void vector_maskall_operation(KRegister dst, Register src, int mask_len);
+
+#ifndef _LP64
+  void vector_maskall_operation32(KRegister dst, Register src, KRegister ktmp, int mask_len);
+#endif
+
   void string_indexof_char(Register str1, Register cnt1, Register ch, Register result,
                            XMMRegister vec1, XMMRegister vec2, XMMRegister vec3, Register tmp);
 
@@ -290,4 +293,23 @@ public:
 
   void masked_op(int ideal_opc, int mask_len, KRegister dst,
                  KRegister src1, KRegister src2);
+
+  void vector_castF2I_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                          XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4,
+                          AddressLiteral float_sign_flip, Register scratch, int vec_enc);
+
+  void vector_castF2I_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                           KRegister ktmp1, KRegister ktmp2, AddressLiteral float_sign_flip,
+                           Register scratch, int vec_enc);
+
+  void vector_castD2L_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                           KRegister ktmp1, KRegister ktmp2, AddressLiteral double_sign_flip,
+                           Register scratch, int vec_enc);
+
+  void evpternlog(XMMRegister dst, int func, KRegister mask, XMMRegister src2, XMMRegister src3,
+                  bool merge, BasicType bt, int vlen_enc);
+
+  void evpternlog(XMMRegister dst, int func, KRegister mask, XMMRegister src2, Address src3,
+                  bool merge, BasicType bt, int vlen_enc);
+
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,8 @@ final class Grapheme {
      * <p>
      * See Unicode Standard Annex #29 Unicode Text Segmentation for the specification
      * for the extended grapheme cluster boundary rules. The following implementation
-     * is based on version 12.0 of the annex.
-     * (http://www.unicode.org/reports/tr29/tr29-35.html)
+     * is based on the annex for Unicode version 14.0.
+     * (http://www.unicode.org/reports/tr29/tr29-38.html)
      *
      * @param src the {@code CharSequence} to be scanned
      * @param off offset to start looking for the next boundary in the src
@@ -97,7 +97,7 @@ final class Grapheme {
     private static final int FIRST_TYPE = 0;
     private static final int LAST_TYPE = 14;
 
-    private static boolean[][] rules;
+    private static final boolean[][] rules;
     static {
         rules = new boolean[LAST_TYPE + 1][LAST_TYPE + 1];
         // GB 999 Any + Any  -> default
@@ -201,8 +201,9 @@ final class Grapheme {
             if (cp == 0x200D)
                 return ZWJ;
             if (cp >= 0x0600 && cp <= 0x0605 ||
-                cp == 0x06DD || cp == 0x070F || cp == 0x08E2 ||
-                cp == 0x110BD || cp == 0x110CD)
+                cp == 0x06DD || cp == 0x070F ||
+                cp == 0x0890 || cp == 0x0891 ||
+                cp == 0x08E2 || cp == 0x110BD || cp == 0x110CD)
                 return PREPEND;
             return CONTROL;
         case Character.NON_SPACING_MARK:

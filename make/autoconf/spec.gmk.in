@@ -371,6 +371,9 @@ BUILD_JDK:=@BUILD_JDK@
 CREATE_BUILDJDK:=@CREATE_BUILDJDK@
 EXTERNAL_BUILDJDK:=@EXTERNAL_BUILDJDK@
 
+# Whether the boot jdk jar supports --date=TIMESTAMP
+BOOT_JDK_JAR_SUPPORTS_DATE:=@BOOT_JDK_JAR_SUPPORTS_DATE@
+
 # When compiling Java source to be run by the boot jdk
 # use these extra flags, eg -source 6 -target 6
 BOOT_JDK_SOURCETARGET:=@BOOT_JDK_SOURCETARGET@
@@ -416,6 +419,8 @@ GTEST_FRAMEWORK_SRC := @GTEST_FRAMEWORK_SRC@
 
 # Source file for cacerts
 CACERTS_FILE=@CACERTS_FILE@
+# Source folder for user provided cacerts PEM files 
+CACERTS_SRC=@CACERTS_SRC@
 
 # Enable unlimited crypto policy
 UNLIMITED_CRYPTO=@UNLIMITED_CRYPTO@
@@ -705,6 +710,7 @@ CODESIGN:=@CODESIGN@
 CP:=@CP@
 CUT:=@CUT@
 DATE:=@DATE@
+IS_GNU_DATE:=@IS_GNU_DATE@
 DIFF:=@DIFF@
 DIRNAME:=@DIRNAME@
 DSYMUTIL:=@DSYMUTIL@

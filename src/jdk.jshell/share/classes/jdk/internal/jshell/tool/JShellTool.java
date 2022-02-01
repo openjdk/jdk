@@ -254,7 +254,7 @@ public class JShellTool implements MessageHandler {
             Pattern.compile(OPTION_PRE_PATTERN.pattern() + "(?<dd>-??)(?<flag>-([a-z][a-z\\-]*)?)");
     // match an option flag and a (possibly missing or incomplete) value
     private static final Pattern OPTION_VALUE_PATTERN =
-            Pattern.compile(OPTION_PATTERN.pattern() + "\\s+(?<val>\\S*)");
+            Pattern.compile(OPTION_PATTERN.pattern() + "\\s+(?<val>(\\S|\\\\ )*)");
 
     // Tool id (tid) mapping: the three name spaces
     NameSpace mainNamespace;
@@ -1561,13 +1561,13 @@ public class JShellTool implements MessageHandler {
     private static CompletionProvider fileCompletions(Predicate<Path> accept) {
         return (code, cursor, anchor) -> {
             int lastSlash = code.lastIndexOf('/');
-            String path = code.substring(0, lastSlash + 1);
-            String prefix = lastSlash != (-1) ? code.substring(lastSlash + 1) : code;
+            String path = code.substring(0, lastSlash + 1).replace("\\ ", " ");
+            String prefix = (lastSlash != (-1) ? code.substring(lastSlash + 1) : code).replace("\\ ", " ");
             Path current = toPathResolvingUserHome(path);
             List<Suggestion> result = new ArrayList<>();
             try (Stream<Path> dir = Files.list(current)) {
                 dir.filter(f -> accept.test(f) && f.getFileName().toString().startsWith(prefix))
-                   .map(f -> new ArgSuggestion(f.getFileName() + (Files.isDirectory(f) ? "/" : "")))
+                   .map(f -> new ArgSuggestion(f.getFileName().toString().replace(" ", "\\ ") + (Files.isDirectory(f) ? "/" : "")))
                    .forEach(result::add);
             } catch (IOException ex) {
                 //ignore...

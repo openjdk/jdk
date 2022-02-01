@@ -50,19 +50,19 @@ inline G1AddCardResult G1CardSetInlinePtr::add(uint card_idx, uint bits_per_card
 
   uint cur_idx = 0;
   while (true) {
-    uint num_elems = num_cards_in(_value);
-    if (num_elems > 0) {
-      cur_idx = find(card_idx, bits_per_card, cur_idx, num_elems);
+    uint num_cards = num_cards_in(_value);
+    if (num_cards > 0) {
+      cur_idx = find(card_idx, bits_per_card, cur_idx, num_cards);
     }
     // Check if the card is already stored in the pointer.
-    if (cur_idx < num_elems) {
+    if (cur_idx < num_cards) {
       return Found;
     }
     // Check if there is actually enough space.
-    if (num_elems >= max_cards_in_inline_ptr) {
+    if (num_cards >= max_cards_in_inline_ptr) {
       return Overflow;
     }
-    CardSetPtr new_value = merge(_value, card_idx, num_elems, bits_per_card);
+    CardSetPtr new_value = merge(_value, card_idx, num_cards, bits_per_card);
     CardSetPtr old_value = Atomic::cmpxchg(_value_addr, _value, new_value, memory_order_relaxed);
     if (_value == old_value) {
       return Added;
@@ -77,38 +77,38 @@ inline G1AddCardResult G1CardSetInlinePtr::add(uint card_idx, uint bits_per_card
   }
 }
 
-inline uint G1CardSetInlinePtr::find(uint card_idx, uint bits_per_card, uint start_at, uint num_elems) {
-  assert(start_at < num_elems, "Precondition!");
+inline uint G1CardSetInlinePtr::find(uint card_idx, uint bits_per_card, uint start_at, uint num_cards) {
+  assert(start_at < num_cards, "Precondition!");
 
   uintptr_t const card_mask = (1 << bits_per_card) - 1;
   uintptr_t value = ((uintptr_t)_value) >> card_pos_for(start_at, bits_per_card);
 
   // Check if the card is already stored in the pointer.
-  for (uint cur_idx = start_at; cur_idx < num_elems; cur_idx++) {
+  for (uint cur_idx = start_at; cur_idx < num_cards; cur_idx++) {
     if ((value & card_mask) == card_idx) {
       return cur_idx;
     }
     value >>= bits_per_card;
   }
-  return num_elems;
+  return num_cards;
 }
 
 inline bool G1CardSetInlinePtr::contains(uint card_idx, uint bits_per_card) {
-  uint num_elems = num_cards_in(_value);
-  if (num_elems == 0) {
+  uint num_cards = num_cards_in(_value);
+  if (num_cards == 0) {
     return false;
   }
-  uint cur_idx = find(card_idx, bits_per_card, 0, num_elems);
-  return cur_idx < num_elems;
+  uint cur_idx = find(card_idx, bits_per_card, 0, num_cards);
+  return cur_idx < num_cards;
 }
 
 template <class CardVisitor>
 inline void G1CardSetInlinePtr::iterate(CardVisitor& found, uint bits_per_card) {
-  uint const num_elems = num_cards_in(_value);
+  uint const num_cards = num_cards_in(_value);
   uintptr_t const card_mask = (1 << bits_per_card) - 1;
 
   uintptr_t value = ((uintptr_t)_value) >> card_pos_for(0, bits_per_card);
-  for (uint cur_idx = 0; cur_idx < num_elems; cur_idx++) {
+  for (uint cur_idx = 0; cur_idx < num_cards; cur_idx++) {
     found(value & card_mask);
     value >>= bits_per_card;
   }
@@ -136,9 +136,9 @@ inline uintptr_t G1CardSetContainer::decrement_refcount() {
   return Atomic::sub(&_ref_count, 2u);
 }
 
-inline G1CardSetArray::G1CardSetArray(uint card_in_region, EntryCountType num_elems) :
+inline G1CardSetArray::G1CardSetArray(uint card_in_region, EntryCountType num_cards) :
   G1CardSetContainer(),
-  _size(num_elems),
+  _size(num_cards),
   _num_entries(1) {
   assert(_size > 0, "CardSetArray of size 0 not supported.");
   assert(_size < LockBitMask, "Only support CardSetArray of size %u or smaller.", LockBitMask - 1);
@@ -166,7 +166,7 @@ inline G1CardSetArray::G1CardSetArrayLocker::G1CardSetArrayLocker(EntryCountType
 
 inline G1AddCardResult G1CardSetArray::add(uint card_idx) {
   assert(card_idx < (1u << (sizeof(_data[0]) * BitsPerByte)),
-         "Card index %u does not fit card element.", card_idx);
+         "Card index %u does not fit allowed card value range.", card_idx);
   EntryCountType num_entries = Atomic::load_acquire(&_num_entries) & EntryMask;
   EntryCountType idx = 0;
   for (; idx < num_entries; idx++) {
@@ -181,7 +181,7 @@ inline G1AddCardResult G1CardSetArray::add(uint card_idx) {
   // Reload number of entries from the G1CardSetArrayLocker as it might have changed.
   // It already read the actual value with the necessary synchronization.
   num_entries = x.num_entries();
-  // Look if the elements added while waiting for the lock are the same as our card.
+  // Look if the cards added while waiting for the lock are the same as our card.
   for (; idx < num_entries; idx++) {
     if (_data[idx] == card_idx) {
       return Found;

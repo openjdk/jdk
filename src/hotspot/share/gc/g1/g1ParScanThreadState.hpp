@@ -107,7 +107,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   EvacuationFailedInfo _evacuation_failed_info;
   G1EvacFailureRegions* _evac_failure_regions;
 
-  bool inject_evacuation_failure() EVAC_FAILURE_INJECTOR_RETURN_( return false; );
+  bool inject_evacuation_failure(uint region_idx) EVAC_FAILURE_INJECTOR_RETURN_( return false; );
 
 public:
   G1ParScanThreadState(G1CollectedHeap* g1h,
@@ -168,6 +168,8 @@ private:
                        HeapWord* obj_ptr,
                        size_t word_sz,
                        uint node_index);
+
+  void update_bot_after_copying(oop obj, size_t word_sz);
 
   oop do_copy_to_survivor_space(G1HeapRegionAttr region_attr,
                                 oop obj,

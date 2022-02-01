@@ -153,6 +153,9 @@ public:
   // Is the CPU running emulated (for example macOS Rosetta running x86_64 code on M1 ARM (aarch64)
   static bool is_cpu_emulated();
 #endif
+
+  static void initialize_cpu_information(void);
+
 };
 
 #endif // CPU_AARCH64_VM_VERSION_AARCH64_HPP
