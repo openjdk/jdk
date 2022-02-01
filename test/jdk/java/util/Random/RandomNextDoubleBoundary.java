@@ -67,16 +67,16 @@ public class RandomNextDoubleBoundary {
 
     public static void nextDoublesWithRange(double origin, double bound) {
         RandomGenerator rg = new RandomGenerator() {
-                @Override
-                    public double nextDouble() {
-                    return Double.MAX_VALUE;
-                }
+            @Override
+            public double nextDouble() {
+                return Double.MAX_VALUE;
+            }
 
-                @Override
-                    public long nextLong() {
-                    return 0;
-                }
-            };
+            @Override
+            public long nextLong() {
+                return 0;
+            }
+        };
         double value = rg.nextDouble(origin, bound);
 
         assertTrue(value >= origin);
