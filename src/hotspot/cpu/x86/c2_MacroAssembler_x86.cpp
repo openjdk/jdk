@@ -3382,15 +3382,12 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
   testl(len, len);
   jcc(Assembler::zero, DONE);
 
-  int tail_mask = 0xfffffffc;
   if ((AVX3Threshold == 0) && (UseAVX > 2) && // AVX512
     VM_Version::supports_avx512vlbw() &&
     VM_Version::supports_bmi2()) {
 
     Label test_64_loop, test_tail, BREAK_LOOP;
     Register tmp3_aliased = len;
-
-    tail_mask = 0xffffffc0;
 
     movl(tmp1, len);
     vpxor(vec2, vec2, vec2, Assembler::AVX_512bit);
@@ -3471,7 +3468,6 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
       Label COMPARE_WIDE_VECTORS, COMPARE_TAIL, BREAK_LOOP;
 
       // Compare 32-byte vectors
-      tail_mask = 0xffffffe0;
       andl(len, 0xffffffe0);   // vector count (in bytes)
       jccb(Assembler::zero, COMPARE_TAIL);
 
@@ -3510,7 +3506,6 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
       // With SSE4.2, use double quad vector compare
       Label COMPARE_WIDE_VECTORS, COMPARE_TAIL, BREAK_LOOP;
 
-      tail_mask = 0xfffffff0;
       // Compare 16-byte vectors
       andl(len, 0xfffffff0);   // vector count (in bytes)
       jcc(Assembler::zero, COMPARE_TAIL);
