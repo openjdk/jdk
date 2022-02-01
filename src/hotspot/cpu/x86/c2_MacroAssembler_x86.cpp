@@ -3465,12 +3465,13 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
 
     if (UseAVX >= 2 && UseSSE >= 2) {
       // With AVX2, use 32-byte vector compare
-      Label COMPARE_WIDE_VECTORS, COMPARE_TAIL, BREAK_LOOP;
+      Label COMPARE_WIDE_VECTORS, BREAK_LOOP;
 
       // Compare 32-byte vectors
-      andl(len, 0xffffffe0);   // vector count (in bytes)
-      jccb(Assembler::zero, COMPARE_TAIL);
+      testl(len, 0xffffffe0);   // vector count (in bytes)
+      jccb(Assembler::zero, TAIL_START);
 
+      andl(len, 0xffffffe0);
       lea(ary1, Address(ary1, len, Address::times_1));
       negptr(len);
 
@@ -3485,7 +3486,6 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
       addptr(len, 32);
       jcc(Assembler::notZero, COMPARE_WIDE_VECTORS);
 
-      bind(COMPARE_TAIL);
       movl(len, result);
       andl(len, 0x0000001f);   // tail count (in bytes)
       jcc(Assembler::zero, DONE);
@@ -3504,12 +3504,13 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
       // Fallthru to tail compare
     } else if (UseSSE42Intrinsics) {
       // With SSE4.2, use double quad vector compare
-      Label COMPARE_WIDE_VECTORS, COMPARE_TAIL, BREAK_LOOP;
+      Label COMPARE_WIDE_VECTORS, BREAK_LOOP;
 
       // Compare 16-byte vectors
-      andl(len, 0xfffffff0);   // vector count (in bytes)
-      jcc(Assembler::zero, COMPARE_TAIL);
+      testl(len, 0xfffffff0);   // vector count (in bytes)
+      jcc(Assembler::zero, TAIL_START);
 
+      andl(len, 0xfffffff0);
       lea(ary1, Address(ary1, len, Address::times_1));
       negptr(len);
 
@@ -3524,7 +3525,6 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
       addptr(len, 16);
       jcc(Assembler::notZero, COMPARE_WIDE_VECTORS);
 
-      bind(COMPARE_TAIL);
       movl(len, result);
       andl(len, 0x0000000f);   // tail count (in bytes)
       jcc(Assembler::zero, DONE);
@@ -3557,15 +3557,7 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
   andl(tmp1, 0x80808080);
   jccb(Assembler::notZero, TAIL_ADJUST);
   addptr(len, 4);
-  jcc(Assembler::notZero, COMPARE_VECTORS);
-  jmpb(COMPARE_CHAR);
-
-  bind(TAIL_ADJUST);
-  // there are negative bits in the last 4 byte block.
-  // Adjust result and check the next three bytes
-  addptr(result, len);
-  orl(result, 3);
-  lea(ary1, Address(ary1, len, Address::times_1));
+  jccb(Assembler::notZero, COMPARE_VECTORS);
 
   // Compare trailing char (final 2 bytes), if any
   bind(COMPARE_CHAR);
@@ -3576,15 +3568,6 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
   andl(tmp1, 0x00008080);
   jccb(Assembler::notZero, CHAR_ADJUST);
   lea(ary1, Address(ary1, 2));
-  jmpb(COMPARE_BYTE);
-
-  bind(CHAR_ADJUST);
-  // We are looking at a char + optional byte tail, and found that one
-  // of the bytes in the char is negative. Mask out the lowest bit from
-  // the result, then subtract 1 and fallthrough to check the byte at
-  // the current pointer
-  andl(result, 0xfffffffe);
-  subptr(result, 1);
 
   bind(COMPARE_BYTE);
   testl(result, 0x1);   // tail  byte
@@ -3593,6 +3576,24 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
   testl(tmp1, 0x00000080);
   jccb(Assembler::zero, DONE);
   subptr(result, 1);
+  jmpb(DONE);
+
+  bind(TAIL_ADJUST);
+  // there are negative bits in the last 4 byte block.
+  // Adjust result and check the next three bytes
+  addptr(result, len);
+  orl(result, 3);
+  lea(ary1, Address(ary1, len, Address::times_1));
+  jmpb(COMPARE_CHAR);
+
+  bind(CHAR_ADJUST);
+  // We are looking at a char + optional byte tail, and found that one
+  // of the bytes in the char is negative. Adjust the result, check the
+  // highest byte and readjust if needed.
+  andl(result, 0xfffffffc);
+  testl(tmp1, 0x00008000);
+  jccb(Assembler::notZero, DONE);
+  addptr(result, 1);
 
   // That's it
   bind(DONE);
