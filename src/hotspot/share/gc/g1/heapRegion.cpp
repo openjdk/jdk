@@ -304,28 +304,28 @@ void HeapRegion::note_self_forwarding_removal_end(size_t marked_bytes) {
 
 // Code roots support
 
-void HeapRegion::add_strong_code_root(nmethod* nm) {
+void HeapRegion::add_code_root(nmethod* nm) {
   HeapRegionRemSet* hrrs = rem_set();
-  hrrs->add_strong_code_root(nm);
+  hrrs->add_code_root(nm);
 }
 
-void HeapRegion::add_strong_code_root_locked(nmethod* nm) {
+void HeapRegion::add_code_root_locked(nmethod* nm) {
   assert_locked_or_safepoint(CodeCache_lock);
   HeapRegionRemSet* hrrs = rem_set();
-  hrrs->add_strong_code_root_locked(nm);
+  hrrs->add_code_root_locked(nm);
 }
 
-void HeapRegion::remove_strong_code_root(nmethod* nm) {
+void HeapRegion::remove_code_root(nmethod* nm) {
   HeapRegionRemSet* hrrs = rem_set();
-  hrrs->remove_strong_code_root(nm);
+  hrrs->remove_code_root(nm);
 }
 
-void HeapRegion::strong_code_roots_do(CodeBlobClosure* blk) const {
+void HeapRegion::code_roots_do(CodeBlobClosure* blk) const {
   HeapRegionRemSet* hrrs = rem_set();
-  hrrs->strong_code_roots_do(blk);
+  hrrs->code_roots_do(blk);
 }
 
-class VerifyStrongCodeRootOopClosure: public OopClosure {
+class VerifyCodeRootOopClosure: public OopClosure {
   const HeapRegion* _hr;
   bool _failures;
   bool _has_oops_in_region;
@@ -353,7 +353,7 @@ class VerifyStrongCodeRootOopClosure: public OopClosure {
   }
 
 public:
-  VerifyStrongCodeRootOopClosure(const HeapRegion* hr):
+  VerifyCodeRootOopClosure(const HeapRegion* hr):
     _hr(hr), _failures(false), _has_oops_in_region(false) {}
 
   void do_oop(narrowOop* p) { do_oop_work(p); }
@@ -363,11 +363,11 @@ public:
   bool has_oops_in_region() { return _has_oops_in_region; }
 };
 
-class VerifyStrongCodeRootCodeBlobClosure: public CodeBlobClosure {
+class VerifyCodeRootCodeBlobClosure: public CodeBlobClosure {
   const HeapRegion* _hr;
   bool _failures;
 public:
-  VerifyStrongCodeRootCodeBlobClosure(const HeapRegion* hr) :
+  VerifyCodeRootCodeBlobClosure(const HeapRegion* hr) :
     _hr(hr), _failures(false) {}
 
   void do_code_blob(CodeBlob* cb) {
@@ -375,14 +375,14 @@ public:
     if (nm != NULL) {
       // Verify that the nemthod is live
       if (!nm->is_alive()) {
-        log_error(gc, verify)("region [" PTR_FORMAT "," PTR_FORMAT "] has dead nmethod " PTR_FORMAT " in its strong code roots",
+        log_error(gc, verify)("region [" PTR_FORMAT "," PTR_FORMAT "] has dead nmethod " PTR_FORMAT " in its code roots",
                               p2i(_hr->bottom()), p2i(_hr->end()), p2i(nm));
         _failures = true;
       } else {
-        VerifyStrongCodeRootOopClosure oop_cl(_hr);
+        VerifyCodeRootOopClosure oop_cl(_hr);
         nm->oops_do(&oop_cl);
         if (!oop_cl.has_oops_in_region()) {
-          log_error(gc, verify)("region [" PTR_FORMAT "," PTR_FORMAT "] has nmethod " PTR_FORMAT " in its strong code roots with no pointers into region",
+          log_error(gc, verify)("region [" PTR_FORMAT "," PTR_FORMAT "] has nmethod " PTR_FORMAT " in its code roots with no pointers into region",
                                 p2i(_hr->bottom()), p2i(_hr->end()), p2i(nm));
           _failures = true;
         } else if (oop_cl.failures()) {
@@ -397,47 +397,47 @@ public:
   bool failures()       { return _failures; }
 };
 
-void HeapRegion::verify_strong_code_roots(VerifyOption vo, bool* failures) const {
+void HeapRegion::verify_code_roots(VerifyOption vo, bool* failures) const {
   if (!G1VerifyHeapRegionCodeRoots) {
     // We're not verifying code roots.
     return;
   }
   if (vo == VerifyOption_G1UseFullMarking) {
     // Marking verification during a full GC is performed after class
-    // unloading, code cache unloading, etc so the strong code roots
+    // unloading, code cache unloading, etc so the code roots
     // attached to each heap region are in an inconsistent state. They won't
-    // be consistent until the strong code roots are rebuilt after the
-    // actual GC. Skip verifying the strong code roots in this particular
+    // be consistent until the code roots are rebuilt after the
+    // actual GC. Skip verifying the code roots in this particular
     // time.
     assert(VerifyDuringGC, "only way to get here");
     return;
   }
 
   HeapRegionRemSet* hrrs = rem_set();
-  size_t strong_code_roots_length = hrrs->strong_code_roots_list_length();
+  size_t code_roots_length = hrrs->code_roots_list_length();
 
   // if this region is empty then there should be no entries
-  // on its strong code root list
+  // on its code root list
   if (is_empty()) {
-    if (strong_code_roots_length > 0) {
+    if (code_roots_length > 0) {
       log_error(gc, verify)("region " HR_FORMAT " is empty but has " SIZE_FORMAT " code root entries",
-                            HR_FORMAT_PARAMS(this), strong_code_roots_length);
+                            HR_FORMAT_PARAMS(this), code_roots_length);
       *failures = true;
     }
     return;
   }
 
   if (is_continues_humongous()) {
-    if (strong_code_roots_length > 0) {
+    if (code_roots_length > 0) {
       log_error(gc, verify)("region " HR_FORMAT " is a continuation of a humongous region but has " SIZE_FORMAT " code root entries",
-                            HR_FORMAT_PARAMS(this), strong_code_roots_length);
+                            HR_FORMAT_PARAMS(this), code_roots_length);
       *failures = true;
     }
     return;
   }
 
-  VerifyStrongCodeRootCodeBlobClosure cb_cl(this);
-  strong_code_roots_do(&cb_cl);
+  VerifyCodeRootCodeBlobClosure cb_cl(this);
+  code_roots_do(&cb_cl);
 
   if (cb_cl.failures()) {
     *failures = true;
@@ -730,7 +730,7 @@ void HeapRegion::verify(VerifyOption vo,
     return;
   }
 
-  verify_strong_code_roots(vo, failures);
+  verify_code_roots(vo, failures);
 }
 
 void HeapRegion::verify_rem_set(VerifyOption vo, bool* failures) const {
