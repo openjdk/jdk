@@ -245,9 +245,9 @@ public class bug8033699 {
         });
     }
 
-    private static Boolean actRB1 = false;
-    private static Boolean actRB2 = false;
-    private static Boolean actRB3 = false;
+    private static boolean actRB1 = false;
+    private static boolean actRB2 = false;
+    private static boolean actRB3 = false;
 
     // JDK-8226892: Verify that ActionListener is called when a RadioButton is selected using arrow key.
     private static void runTest9() throws Exception {
