@@ -105,7 +105,7 @@ public class bug8075609 {
 
     // Radio button Group as a single component when traversing through tab key
     private static void runTest1() throws Exception {
-        hitKey(robot, KeyEvent.VK_TAB);
+        hitKey(KeyEvent.VK_TAB);
 
         robot.delay(1000);
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -118,7 +118,7 @@ public class bug8075609 {
         });
     }
 
-    private static void hitKey(Robot robot, int keycode) {
+    private static void hitKey(int keycode) {
         robot.keyPress(keycode);
         robot.keyRelease(keycode);
         robot.waitForIdle();
