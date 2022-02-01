@@ -92,6 +92,7 @@ import jdk.internal.org.jline.utils.Display;
 import jdk.internal.org.jline.utils.NonBlocking;
 import jdk.internal.org.jline.utils.NonBlockingInputStreamImpl;
 import jdk.internal.org.jline.utils.NonBlockingReader;
+import jdk.internal.org.jline.utils.OSUtils;
 import jdk.jshell.ExpressionSnippet;
 import jdk.jshell.Snippet;
 import jdk.jshell.Snippet.SubKind;
@@ -132,7 +133,7 @@ class ConsoleIOContext extends IOContext {
         Terminal terminal;
         boolean allowIncompleteInputs = Boolean.getBoolean("jshell.test.allow.incomplete.inputs");
         Consumer<LineReaderImpl> setupReader = r -> {};
-        boolean useCrossOut = false;
+        boolean useComplexDeprecationHighlight = false;
         if (cmdin != System.in) {
             boolean enableHighlighter;
             setupReader = r -> {};
@@ -156,7 +157,7 @@ class ConsoleIOContext extends IOContext {
                 input.setInputStream(in);
                 return nonBlockingInput;
             }).build();
-            useCrossOut = System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("linux");
+            useComplexDeprecationHighlight = !OSUtils.IS_WINDOWS;
         }
         this.allowIncompleteInputs = allowIncompleteInputs;
         originalAttributes = terminal.getAttributes();
@@ -177,7 +178,7 @@ class ConsoleIOContext extends IOContext {
             return new ArgumentLine(line, cursor);
         });
 
-        reader.setHighlighter(new HighlighterImpl(useCrossOut));
+        reader.setHighlighter(new HighlighterImpl(useComplexDeprecationHighlight));
         reader.getKeyMaps().get(LineReader.MAIN)
               .bind((Widget) () -> fixes(), FIXES_SHORTCUT);
         reader.getKeyMaps().get(LineReader.MAIN)
@@ -1342,12 +1343,12 @@ class ConsoleIOContext extends IOContext {
 
     private class HighlighterImpl implements Highlighter {
 
-        private final boolean useCrossOut;
+        private final boolean useComplexDeprecationHighlight;
         private List<UIHighlight> highlights;
         private String prevBuffer;
 
-        public HighlighterImpl(boolean useCrossOut) {
-            this.useCrossOut = useCrossOut;
+        public HighlighterImpl(boolean useComplexDeprecationHighlight) {
+            this.useComplexDeprecationHighlight = useComplexDeprecationHighlight;
         }
 
         @Override
@@ -1399,8 +1400,8 @@ class ConsoleIOContext extends IOContext {
                 result = result.bold();
             }
             if (attributes.contains(Attribute.DEPRECATED)) {
-                result = useCrossOut ? result.crossedOut()
-                                     : result.inverse();
+                result = useComplexDeprecationHighlight ? result.faint().italic()
+                                                        : result.inverse();
             }
             if (attributes.contains(Attribute.KEYWORD)) {
                 result = result.underline();
