@@ -269,11 +269,7 @@ public:
                       XMMRegister vec1, int ae, KRegister mask = knoreg);
 
   // Search for Non-ASCII character (Negative byte value) in a byte array,
-  // return true if it has any and false otherwise.
-  void has_negatives(Register ary1, Register len,
-                     Register result, Register tmp1,
-                     XMMRegister vec1, XMMRegister vec2, KRegister mask1 = knoreg, KRegister mask2 = knoreg);
-  // approximately count number of positive bytes (allow bailing out on first negative)
+  // return index of the first such character, otherwise len.
   void count_positives(Register ary1, Register len,
                        Register result, Register tmp1,
                        XMMRegister vec1, XMMRegister vec2, KRegister mask1 = knoreg, KRegister mask2 = knoreg);
