@@ -683,6 +683,7 @@ class InvokerBytecodeGenerator {
     }
 
     private static MemberName resolveFrom(String name, MethodType type, Class<?> holder) {
+        assert(!UNSAFE.shouldBeInitialized(holder)) : holder + "not initialized";
         MemberName member = new MemberName(holder, name, type, REF_invokeStatic);
         MemberName resolvedMember = MemberName.getFactory().resolveOrNull(REF_invokeStatic, member, holder, LM_TRUSTED);
         traceLambdaForm(name, type, holder, resolvedMember);

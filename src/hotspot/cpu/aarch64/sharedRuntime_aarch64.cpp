@@ -1783,13 +1783,14 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       // Simple recursive lock?
       __ ldr(rscratch1, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
       __ cbz(rscratch1, done);
+    }
 
-      // Must save r0 if if it is live now because cmpxchg must use it
-      if (ret_type != T_FLOAT && ret_type != T_DOUBLE && ret_type != T_VOID) {
-        save_native_result(masm, ret_type, stack_slots);
-      }
+    // Must save r0 if if it is live now because cmpxchg must use it
+    if (ret_type != T_FLOAT && ret_type != T_DOUBLE && ret_type != T_VOID) {
+      save_native_result(masm, ret_type, stack_slots);
+    }
 
-
+    if (!UseHeavyMonitors) {
       // get address of the stack lock
       __ lea(r0, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
       //  get old displaced header

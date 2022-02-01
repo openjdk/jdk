@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,8 +135,7 @@ public:
   }
 
   bool is_excluded() {
-    // _klass may become NULL due to DynamicArchiveBuilder::set_to_null
-    return _excluded || _failed_verification || _klass == NULL;
+    return _excluded || _failed_verification;
   }
 
   // Was this class loaded while JvmtiExport::is_early_phase()==true
@@ -168,13 +167,15 @@ inline unsigned DumpTimeSharedClassTable_hash(InstanceKlass* const& k) {
   }
 }
 
-class DumpTimeSharedClassTable: public ResourceHashtable<
+using DumpTimeSharedClassTableBaseType = ResourceHashtable<
   InstanceKlass*,
   DumpTimeClassInfo,
   15889, // prime number
   ResourceObj::C_HEAP,
   mtClassShared,
-  &DumpTimeSharedClassTable_hash>
+  &DumpTimeSharedClassTable_hash>;
+
+class DumpTimeSharedClassTable: public DumpTimeSharedClassTableBaseType
 {
   int _builtin_count;
   int _unregistered_count;
@@ -194,6 +195,11 @@ public:
       return _unregistered_count;
     }
   }
+
+  // Overrides ResourceHashtable<>::iterate(ITER*)
+  template<class ITER> void iterate(ITER* iter) const;
+private:
+  template<class ITER> class IterationHelper;
 };
 
 #endif // SHARED_CDS_DUMPTIMESHAREDCLASSINFO_HPP

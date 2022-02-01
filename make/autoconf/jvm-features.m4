@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ m4_define(jvm_features_valid, m4_normalize( \
     ifdef([custom_jvm_features_valid], custom_jvm_features_valid) \
     \
     cds compiler1 compiler2 dtrace epsilongc g1gc jfr jni-check \
-    jvmci jvmti link-time-opt management minimal nmt opt-size parallelgc \
+    jvmci jvmti link-time-opt management minimal opt-size parallelgc \
     serialgc services shenandoahgc static-build vm-structs zero zgc \
 ))
 
@@ -68,7 +68,6 @@ m4_define(jvm_feature_desc_jvmti, [enable Java Virtual Machine Tool Interface (J
 m4_define(jvm_feature_desc_link_time_opt, [enable link time optimization])
 m4_define(jvm_feature_desc_management, [enable java.lang.management API support])
 m4_define(jvm_feature_desc_minimal, [support building variant 'minimal'])
-m4_define(jvm_feature_desc_nmt, [include native memory tracking (NMT)])
 m4_define(jvm_feature_desc_opt_size, [optimize the JVM library for size])
 m4_define(jvm_feature_desc_parallelgc, [include the parallel garbage collector])
 m4_define(jvm_feature_desc_serialgc, [include the serial garbage collector])
@@ -443,7 +442,7 @@ AC_DEFUN([JVM_FEATURES_PREPARE_VARIANT],
     JVM_FEATURES_VARIANT_FILTER="compiler2 jvmci link-time-opt opt-size"
   elif test "x$variant" = "xminimal"; then
     JVM_FEATURES_VARIANT_FILTER="cds compiler2 dtrace epsilongc g1gc \
-        jfr jni-check jvmci jvmti management nmt parallelgc services \
+        jfr jni-check jvmci jvmti management parallelgc services \
         shenandoahgc vm-structs zgc"
     if test "x$OPENJDK_TARGET_CPU" = xarm ; then
       JVM_FEATURES_VARIANT_FILTER="$JVM_FEATURES_VARIANT_FILTER opt-size"
@@ -536,10 +535,6 @@ AC_DEFUN([JVM_FEATURES_VERIFY],
 
   if JVM_FEATURES_IS_ACTIVE(jvmti) && ! JVM_FEATURES_IS_ACTIVE(services); then
     AC_MSG_ERROR([Specified JVM feature 'jvmti' requires feature 'services' for variant '$variant'])
-  fi
-
-  if JVM_FEATURES_IS_ACTIVE(management) && ! JVM_FEATURES_IS_ACTIVE(nmt); then
-    AC_MSG_ERROR([Specified JVM feature 'management' requires feature 'nmt' for variant '$variant'])
   fi
 
   # For backwards compatibility, disable a feature "globally" if one variant

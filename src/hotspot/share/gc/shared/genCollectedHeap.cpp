@@ -1045,16 +1045,8 @@ void GenCollectedHeap::release_scratch() {
   _old_gen->reset_scratch();
 }
 
-class GenPrepareForVerifyClosure: public GenCollectedHeap::GenClosure {
-  void do_generation(Generation* gen) {
-    gen->prepare_for_verify();
-  }
-};
-
 void GenCollectedHeap::prepare_for_verify() {
   ensure_parsability(false);        // no need to retire TLABs
-  GenPrepareForVerifyClosure blk;
-  generation_iterate(&blk, false);
 }
 
 void GenCollectedHeap::generation_iterate(GenClosure* cl,

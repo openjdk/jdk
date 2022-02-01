@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -738,6 +738,18 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return MulNode::Ideal(phase, can_reshape);
 }
 
+LShiftNode* LShiftNode::make(Node* in1, Node* in2, BasicType bt) {
+  switch (bt) {
+    case T_INT:
+      return new LShiftINode(in1, in2);
+    case T_LONG:
+      return new LShiftLNode(in1, in2);
+    default:
+      fatal("Not implemented for %s", type2name(bt));
+  }
+  return NULL;
+}
+
 //=============================================================================
 
 static bool const_shift_count(PhaseGVN* phase, Node* shiftNode, int* count) {
@@ -789,16 +801,24 @@ Node *LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return NULL;
   }
 
-  // Left input is an add of a constant?
+  // Left input is an add?
   Node *add1 = in(1);
   int add1_op = add1->Opcode();
   if( add1_op == Op_AddI ) {    // Left input is an add?
     assert( add1 != add1->in(1), "dead loop in LShiftINode::Ideal" );
-    const TypeInt *t12 = phase->type(add1->in(2))->isa_int();
-    if( t12 && t12->is_con() ){ // Left input is an add of a con?
-      // Transform is legal, but check for profit.  Avoid breaking 'i2s'
-      // and 'i2b' patterns which typically fold into 'StoreC/StoreB'.
-      if( con < 16 ) {
+
+    // Transform is legal, but check for profit.  Avoid breaking 'i2s'
+    // and 'i2b' patterns which typically fold into 'StoreC/StoreB'.
+    if( con < 16 ) {
+      // Left input is an add of the same number?
+      if (add1->in(1) == add1->in(2)) {
+        // Convert "(x + x) << c0" into "x << (c0 + 1)"
+        return new LShiftINode(add1->in(1), phase->intcon(con + 1));
+      }
+
+      // Left input is an add of a constant?
+      const TypeInt *t12 = phase->type(add1->in(2))->isa_int();
+      if( t12 && t12->is_con() ){ // Left input is an add of a con?
         // Compute X << con0
         Node *lsh = phase->transform( new LShiftINode( add1->in(1), in(2) ) );
         // Compute X<<con0 + (con1<<con0)
@@ -902,12 +922,20 @@ Node *LShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return NULL;
   }
 
-  // Left input is an add of a constant?
+  // Left input is an add?
   Node *add1 = in(1);
   int add1_op = add1->Opcode();
   if( add1_op == Op_AddL ) {    // Left input is an add?
     // Avoid dead data cycles from dead loops
     assert( add1 != add1->in(1), "dead loop in LShiftLNode::Ideal" );
+
+    // Left input is an add of the same number?
+    if (add1->in(1) == add1->in(2)) {
+      // Convert "(x + x) << c0" into "x << (c0 + 1)"
+      return new LShiftLNode(add1->in(1), phase->intcon(con + 1));
+    }
+
+    // Left input is an add of a constant?
     const TypeLong *t12 = phase->type(add1->in(2))->isa_long();
     if( t12 && t12->is_con() ){ // Left input is an add of a con?
       // Compute X << con0

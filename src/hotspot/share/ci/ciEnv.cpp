@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1688,7 +1688,7 @@ void ciEnv::dump_replay_data(int compile_id) {
   if (ret > 0) {
     int fd = os::open(buffer, O_RDWR | O_CREAT | O_TRUNC, 0666);
     if (fd != -1) {
-      FILE* replay_data_file = os::open(fd, "w");
+      FILE* replay_data_file = os::fdopen(fd, "w");
       if (replay_data_file != NULL) {
         fileStream replay_data_stream(replay_data_file, /*need_close=*/true);
         dump_replay_data(&replay_data_stream);
@@ -1706,7 +1706,7 @@ void ciEnv::dump_inline_data(int compile_id) {
   if (ret > 0) {
     int fd = os::open(buffer, O_RDWR | O_CREAT | O_TRUNC, 0666);
     if (fd != -1) {
-      FILE* inline_data_file = os::open(fd, "w");
+      FILE* inline_data_file = os::fdopen(fd, "w");
       if (inline_data_file != NULL) {
         fileStream replay_data_stream(inline_data_file, /*need_close=*/true);
         GUARDED_VM_ENTRY(
