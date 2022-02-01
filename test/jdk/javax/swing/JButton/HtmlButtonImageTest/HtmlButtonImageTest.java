@@ -29,6 +29,7 @@ public final class HtmlButtonImageTest {
     public static final int BUTTON_WIDTH = 37;
     public static final int SQUARE_HEIGHT = 19;
     public static final int SQUARE_WIDTH = 19;
+    private static final int PIXEL_BUFFER = 3;
 
     public static void main(String[] args) throws Exception {
         try {
@@ -51,18 +52,20 @@ public final class HtmlButtonImageTest {
 
         setupCenterCoord();
         robot.mouseMove(point.x, point.y);
-        robot.mouseMove(point.x - (SQUARE_WIDTH/2) + 1, point.y);
-        Color leftClr = robot.getPixelColor(point.x - (SQUARE_WIDTH/2) + 1, point.y);
-        robot.mouseMove(point.x + (SQUARE_WIDTH/2) - 1, point.y);
-        Color rightClr = robot.getPixelColor(point.x + (SQUARE_WIDTH/2) - 1, point.y);
-        robot.mouseMove(point.x, point.y - (SQUARE_HEIGHT/2) + 1);
-        Color topClr = robot.getPixelColor(point.x, point.y - (SQUARE_HEIGHT/2) + 1);
-        robot.mouseMove(point.x, point.y + (SQUARE_HEIGHT/2) - 1);
-        Color botClr = robot.getPixelColor(point.x, point.y + (SQUARE_HEIGHT/2) - 1);
+
+        // store each pixel color on the edge of each side of the red square
+        robot.mouseMove(point.x - (SQUARE_WIDTH/2) + PIXEL_BUFFER, point.y);
+        Color leftClr = robot.getPixelColor(point.x - (SQUARE_WIDTH/2) + PIXEL_BUFFER, point.y);
+        robot.mouseMove(point.x + (SQUARE_WIDTH/2) - PIXEL_BUFFER, point.y);
+        Color rightClr = robot.getPixelColor(point.x + (SQUARE_WIDTH/2) - PIXEL_BUFFER, point.y);
+        robot.mouseMove(point.x, point.y - (SQUARE_HEIGHT/2) + PIXEL_BUFFER);
+        Color topClr = robot.getPixelColor(point.x, point.y - (SQUARE_HEIGHT/2) + PIXEL_BUFFER);
+        robot.mouseMove(point.x, point.y + (SQUARE_HEIGHT/2) - PIXEL_BUFFER);
+        Color botClr = robot.getPixelColor(point.x, point.y + (SQUARE_HEIGHT/2) - PIXEL_BUFFER);
 
         // check if all colors at points are red
-        if(!leftClr.equals(Color.RED) || !rightClr.equals(Color.RED)
-                || !topClr.equals(Color.RED) || !botClr.equals(Color.RED)) {
+        if(!checkRedness(leftClr) || !checkRedness(rightClr)
+                || !checkRedness(topClr) || !checkRedness(botClr)) {
             throw new RuntimeException("HTML image not centered in button" + leftClr + rightClr + topClr + botClr);
         }
 
@@ -95,10 +98,17 @@ public final class HtmlButtonImageTest {
     }
 
     private static void setupCenterCoord() {
-        point = button.getLocationOnScreen();
-
         // adjust coordinates to be the center of the button
+        point = button.getLocationOnScreen();
         point.x += BUTTON_WIDTH / 2;
         point.y += BUTTON_HEIGHT / 2;
+    }
+
+    private static boolean checkRedness(Color c) {
+        // checks for redness since anti-aliasing causes edges to be not exactly 255,0,0 rgb values
+        if(c.getRed() > 250 && c.getBlue() < 10 && c.getGreen() < 10) {
+            return true;
+        }
+        return false;
     }
 }
