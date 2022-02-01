@@ -52,6 +52,7 @@ public class bug8075609 {
 
             robot = new Robot();
             Thread.sleep(100);
+            robot.waitForIdle();
 
             robot.setAutoDelay(100);
 
