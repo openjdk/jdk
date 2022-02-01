@@ -680,8 +680,7 @@ void DefNewGeneration::remove_forwarding_pointers() {
         obj->init_mark();
       }
     }
-  };
-  ResetForwardedMarkWord cl;
+  } cl;
   eden()->object_iterate(&cl);
   from()->object_iterate(&cl);
 
