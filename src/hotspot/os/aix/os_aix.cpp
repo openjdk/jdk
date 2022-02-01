@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -2496,17 +2496,17 @@ bool os::dir_is_empty(const char* path) {
   DIR *dir = NULL;
   struct dirent *ptr;
 
-  dir = os::opendir(path);
+  dir = opendir(path);
   if (dir == NULL) return true;
 
   /* Scan the directory */
   bool result = true;
-  while (result && (ptr = os::readdir(dir)) != NULL) {
+  while (result && (ptr = readdir(dir)) != NULL) {
     if (strcmp(ptr->d_name, ".") != 0 && strcmp(ptr->d_name, "..") != 0) {
       result = false;
     }
   }
-  os::closedir(dir);
+  closedir(dir);
   return result;
 }
 
@@ -2845,7 +2845,7 @@ void os::pause() {
   if (fd != -1) {
     struct stat buf;
     ::close(fd);
-    while (os::stat(filename, &buf) == 0) {
+    while (::stat(filename, &buf) == 0) {
       (void)::poll(NULL, 0, 100);
     }
   } else {

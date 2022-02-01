@@ -278,7 +278,10 @@ static void runUnitTestsInner(int argc, char** argv) {
     int ret;
     if ((ret = init_jvm(argc, argv, is_vmassert_test, &jvm)) != 0) {
       fprintf(stderr, "ERROR: JNI_CreateJavaVM failed: %d\n", ret);
-      abort();
+PRAGMA_DIAG_PUSH
+PRAGMA_PERMIT_FORBIDDEN_C_FUNCTION(abort);
+      ::abort();
+PRAGMA_DIAG_POP
     }
   } else {
     ::testing::TestEventListeners& listeners = ::testing::UnitTest::GetInstance()->listeners();

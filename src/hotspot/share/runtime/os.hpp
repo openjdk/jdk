@@ -527,10 +527,10 @@ class os: AllStatic {
   // Terminate the VM, but don't exit the process
   static void shutdown();
 
-  // Terminate with an error.  If dump_core is true generate a core file on
-  // platforms that support such things.  This calls shutdown() and then aborts.
+  // Terminate with an error.  Default is to generate a core file on platforms
+  // that support such things.  This calls shutdown() and then aborts.
   static void abort(bool dump_core, void *siginfo, const void *context);
-  static void abort(bool dump_core);
+  static void abort(bool dump_core = true);
 
   // Die immediately, no exit hook, no abort hook, no cleanup.
   // Dump a core file, if possible, for debugging. os::abort() is the
