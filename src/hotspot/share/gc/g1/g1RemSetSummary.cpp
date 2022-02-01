@@ -233,7 +233,7 @@ public:
     HeapRegionRemSet* hrrs = r->rem_set();
 
     // HeapRegionRemSet::mem_size() includes the
-    // size of the strong code roots
+    // size of the code roots
     size_t rs_wasted_mem_sz = hrrs->wasted_mem_size();
     size_t rs_mem_sz = hrrs->mem_size();
     if (rs_mem_sz > _max_rs_mem_sz) {
@@ -300,7 +300,7 @@ public:
     HeapRegionRemSet::print_static_mem_size(out);
     G1CardSetFreePool::free_list_pool()->print_on(out);
 
-    // Strong code root statistics
+    // Code root statistics
     HeapRegionRemSet* max_code_root_rem_set = max_code_root_mem_sz_region()->rem_set();
     out->print_cr("  Total heap region code root sets sizes = " SIZE_FORMAT "%s."
                   "  Max = " SIZE_FORMAT "%s.",

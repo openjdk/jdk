@@ -128,7 +128,7 @@ public:
 
   G1SegmentedArrayMemoryStats card_set_memory_stats() const;
 
-  // The actual # of bytes this hr_remset takes up. Also includes the strong code
+  // The actual # of bytes this hr_remset takes up. Also includes the code
   // root set.
   size_t mem_size() {
     return _card_set.mem_size()

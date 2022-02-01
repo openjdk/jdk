@@ -1042,8 +1042,8 @@ void G1CollectedHeap::prepare_heap_for_mutators() {
   resize_heap_if_necessary();
   uncommit_regions_if_necessary();
 
-  // Rebuild the strong code root lists for each region
-  rebuild_strong_code_roots();
+  // Rebuild the code root lists for each region
+  rebuild_code_roots();
 
   // Purge code root memory
   purge_code_root_memory();
@@ -3411,11 +3411,11 @@ void G1CollectedHeap::purge_code_root_memory() {
   G1CodeRootSet::purge();
 }
 
-class RebuildStrongCodeRootClosure: public CodeBlobClosure {
+class RebuildCodeRootClosure: public CodeBlobClosure {
   G1CollectedHeap* _g1h;
 
 public:
-  RebuildStrongCodeRootClosure(G1CollectedHeap* g1h) :
+  RebuildCodeRootClosure(G1CollectedHeap* g1h) :
     _g1h(g1h) {}
 
   void do_code_blob(CodeBlob* cb) {
@@ -3428,8 +3428,8 @@ public:
   }
 };
 
-void G1CollectedHeap::rebuild_strong_code_roots() {
-  RebuildStrongCodeRootClosure blob_cl(this);
+void G1CollectedHeap::rebuild_code_roots() {
+  RebuildCodeRootClosure blob_cl(this);
   CodeCache::blobs_do(&blob_cl);
 }
 
