@@ -513,71 +513,65 @@ public:
   static const size_t CardsPerCluster = 64;
 
 private:
-  // This bit is set iff at least one object starts within a
-  // particular card region.
-  static const uint16_t ObjectStartsInCardRegion = 0x8000;
-  static const uint16_t FirstStartBits = 0x003f;
-  static const uint16_t LastStartBits = 0x0fc0;
-  static const uint16_t FirstStartShift = 0;
-  static const uint16_t LastStartShift = 6;
+  typedef struct cross_map { uint8_t first; uint8_t last; } xmap;
+  typedef union crossing_info { uint16_t short_word; xmap offsets; } crossing_info;
 
-  uint16_t *object_starts;
+  // ObjectStartsInCardRegion bit is set within a crossing_info.offsets.start iff at least one object starts within
+  // a particular card region.  We pack this bit into start byte under assumption that start byte is accessed less
+  // frequently that last byte.  This is true when number of clean cards is greater than number of dirty cards.
+  static const uint16_t ObjectStartsInCardRegion = 0x80;
+  static const uint16_t FirstStartBits           = 0x3f;
+
+  crossing_info *object_starts;
 
 public:
+  // If we're setting first_start, assume the card has an object.
   inline void set_first_start(size_t card_index, uint8_t value) {
-    object_starts[card_index] &= ~FirstStartBits;
-    object_starts[card_index] |= (FirstStartBits & (value << FirstStartShift));
+    object_starts[card_index].offsets.first = ObjectStartsInCardRegion | value;
   }
 
   inline void set_last_start(size_t card_index, uint8_t value) {
-    object_starts[card_index] &= ~LastStartBits;
-    object_starts[card_index] |= (LastStartBits & (value << LastStartShift));
+    object_starts[card_index].offsets.last = value;
   }
 
   inline void set_has_object_bit(size_t card_index) {
-    object_starts[card_index] |= ObjectStartsInCardRegion;
+    object_starts[card_index].offsets.first |= ObjectStartsInCardRegion;
   }
 
   inline void clear_has_object_bit(size_t card_index) {
-    object_starts[card_index] &= ~ObjectStartsInCardRegion;
+    object_starts[card_index].offsets.first &= ~ObjectStartsInCardRegion;
+  }
+
+  // Returns true iff an object is known to start within the card memory associated with card card_index.
+  inline bool has_object(size_t card_index) {
+    return (object_starts[card_index].offsets.first & ObjectStartsInCardRegion) != 0;
   }
 
   inline void clear_objects_in_range(HeapWord *addr, size_t num_words) {
     size_t card_index = _rs->card_index_for_addr(addr);
     size_t last_card_index = _rs->card_index_for_addr(addr + num_words - 1);
     while (card_index <= last_card_index)
-      object_starts[card_index++] = 0;
+      object_starts[card_index++].short_word = 0;
   }
 
   ShenandoahCardCluster(RememberedSet *rs) {
     _rs = rs;
     // TODO: We don't really need object_starts entries for every card entry.  We only need these for
     // the card entries that correspond to old-gen memory.  But for now, let's be quick and dirty.
-    object_starts = (uint16_t *) malloc(rs->total_cards() * sizeof(uint16_t));
-    if (object_starts == NULL)
+    object_starts = (crossing_info *) malloc(rs->total_cards() * sizeof(crossing_info));
+    if (object_starts == nullptr)
       fatal("Insufficient memory for initializing heap");
     for (size_t i = 0; i < rs->total_cards(); i++)
-      object_starts[i] = 0;
+      object_starts[i].short_word = 0;
   }
 
   ~ShenandoahCardCluster() {
-    if (object_starts != NULL)
+    if (object_starts != nullptr)
       free(object_starts);
+    object_starts = nullptr;
   }
 
-  // There is one entry within the object_starts array for each
-  // card entry.  The interpretation of the data contained within each
-  // object_starts entry is described below:
-  //
-  // Bits 0x003f: Value ranges from 0-63, which is multiplied by 8
-  //              to obtain the offset at which the first object
-  //              beginning within this card region begins.
-  // Bits 0x0fc0: Value ranges from 0-63, which is multiplied by 8 to
-  //              obtain the offset at which the last object beginning
-  //              within this card region begins.
-  // Bits 0x8000: This bit is on if an object starts within this card
-  //              region.
-  // Bits 0x7000: Reserved for future uses
+  // There is one entry within the object_starts array for each card entry.
   //
   // In the most recent implementation of ShenandoahScanRemembered::process_clusters(),
   // there is no need for the get_crossing_object_start() method function, so there is no
@@ -635,7 +629,7 @@ public:
   //   2. The cost can be deferred so that there is no urgency during
   //      mutator copy-on-first-access promotion.  Background GC
   //      threads will update the object_starts array by post-
-  //      processing the contents of retired GCLAB buffers.
+  //      processing the contents of retired PLAB buffers.
   //   3. The bet is that these costs are paid relatively rarely
   //      because:
   //      a) Most objects die young and objects that die in young-gen
@@ -820,12 +814,6 @@ public:
   // To avoid excessive lookups in a sparse array, the API queries
   // the card number pertaining to a particular address and then uses the
   // card noumber for subsequent information lookups and stores.
-
-  // Returns true iff an object is known to start within the card memory
-  // associated with addr p.
-  // Returns true iff an object is known to start within the card memory
-  // associated with addr p.
-  bool has_object(size_t card_index);
 
   // If has_object(card_index), this returns the word offset within this card
   // memory at which the first object begins.  If !has_object(card_index), the

@@ -171,7 +171,7 @@ ShenandoahCardCluster<RememberedSet>::reset_object_range(HeapWord* from, HeapWor
   size_t num_cards = (to - from) / CardTable::card_size_in_words;
 
   for (size_t i = 0; i < num_cards; i++) {
-    object_starts[card_at_start + i] = 0;
+    object_starts[card_at_start + i].short_word = 0;
   }
 }
 
@@ -181,6 +181,7 @@ template<typename RememberedSet>
 inline void
 ShenandoahCardCluster<RememberedSet>::register_object(HeapWord* address) {
   shenandoah_assert_heaplocked();
+
   register_object_wo_lock(address);
 }
 
@@ -191,7 +192,7 @@ ShenandoahCardCluster<RememberedSet>::register_object_wo_lock(HeapWord* address)
   HeapWord *card_start_address = _rs->addr_for_card_index(card_at_start);
   uint8_t offset_in_card = address - card_start_address;
 
-  if ((object_starts[card_at_start] & ObjectStartsInCardRegion) == 0) {
+  if (!has_object(card_at_start)) {
     set_has_object_bit(card_at_start);
     set_first_start(card_at_start, offset_in_card);
     set_last_start(card_at_start, offset_in_card);
@@ -212,11 +213,18 @@ ShenandoahCardCluster<RememberedSet>::coalesce_objects(HeapWord* address, size_t
   size_t card_at_end = card_at_start + ((address + length_in_words) - card_start_address) / CardTable::card_size_in_words;
 
   if (card_at_start == card_at_end) {
-    // No changes to object_starts array.  Either:
-    //  get_first_start(card_at_start) returns this coalesced object,
-    //    or it returns an object that precedes the coalesced object.
-    //  get_last_start(card_at_start) returns the object that immediately follows the coalesced object,
-    //    or it returns an object that comes after the object immediately following the coalesced object.
+    // There are no changes to the get_first_start array.  Either get_first_start(card_at_start) returns this coalesced object,
+    // or it returns an object that precedes the coalesced object.
+    if (card_start_address + get_last_start(card_at_start) < address + length_in_words) {
+      uint8_t coalesced_offset = static_cast<uint8_t>(address - card_start_address);
+      // The object that used to be the last object starting within this card is being subsumed within the coalesced
+      // object.  Since we always coalesce entire objects, this condition only occurs if the last object ends before or at
+      // the end of the card's memory range and there is no object following this object.  In this case, adjust last_start
+      // to represent the start of the coalesced range.
+      set_last_start(card_at_start, coalesced_offset);
+    }
+    // Else, no changes to last_starts information.  Either get_last_start(card_at_start) returns the object that immediately
+    // follows the coalesced object, or it returns an object that follows the object immediately following the coalesced object.
   } else {
     uint8_t coalesced_offset = static_cast<uint8_t>(address - card_start_address);
     if (get_last_start(card_at_start) > coalesced_offset) {
@@ -250,23 +258,17 @@ ShenandoahCardCluster<RememberedSet>::coalesce_objects(HeapWord* address, size_t
 
 
 template<typename RememberedSet>
-inline bool
-ShenandoahCardCluster<RememberedSet>::has_object(size_t card_index) {
-  return object_starts[card_index] & ObjectStartsInCardRegion;
-}
-
-template<typename RememberedSet>
 inline size_t
 ShenandoahCardCluster<RememberedSet>::get_first_start(size_t card_index) {
-  assert(object_starts[card_index] & ObjectStartsInCardRegion, "Can't get first start because no object starts here");
-  return (object_starts[card_index] & FirstStartBits) >> FirstStartShift;
+  assert(has_object(card_index), "Can't get first start because no object starts here");
+  return object_starts[card_index].offsets.first & FirstStartBits;
 }
 
 template<typename RememberedSet>
 inline size_t
 ShenandoahCardCluster<RememberedSet>::get_last_start(size_t card_index) {
-  assert(object_starts[card_index] & ObjectStartsInCardRegion, "Can't get last start because no objects starts here");
-  return (object_starts[card_index] & LastStartBits) >> LastStartShift;
+  assert(has_object(card_index), "Can't get last start because no object starts here");
+  return object_starts[card_index].offsets.last;
 }
 
 template<typename RememberedSet>
