@@ -1264,22 +1264,17 @@ public final class String
         if (coder == UTF16)
             return encodeUTF8_UTF16(val, doReplace);
 
-        byte[] dst;
-        int i;
-        int dp = StringCoding.countPositives(val, 0, val.length);
-        if (dp == val.length) {
-            return Arrays.copyOf(val, val.length);
+        int len = val.length;
+        int dp = StringCoding.countPositives(val, 0, len);
+        if (dp == len) {
+            return Arrays.copyOf(val, len);
         }
 
-        if (dp > 0) {
-            dst = new byte[dp + ((val.length - dp) << 1)];
+        int i = dp;
+        byte[] dst = new byte[dp + ((len - dp) << 1)];
+        if (dp > 0)
             System.arraycopy(val, 0, dst, 0, dp);
-            i = dp;
-        } else {
-            i = 0;
-            dst = new byte[val.length << 1];
-        }
-        while (i < val.length) {
+        while (i < len) {
             byte c = val[i++];
             if (c < 0) {
                 dst[dp++] = (byte) (0xc0 | ((c & 0xff) >> 6));
