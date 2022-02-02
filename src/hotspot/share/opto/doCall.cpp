@@ -332,8 +332,10 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           CallGenerator* miss_cg = CallGenerator::for_uncommon_trap(callee,
               Deoptimization::Reason_class_check, Deoptimization::Action_none);
 
-          CallGenerator* cg = CallGenerator::for_guarded_call(holder, miss_cg, hit_cg);
+          ciKlass* constraint = (holder->is_subclass_of(singleton) ? holder : singleton); // avoid upcasts
+          CallGenerator* cg = CallGenerator::for_guarded_call(constraint, miss_cg, hit_cg);
           if (hit_cg != NULL && cg != NULL) {
+            dependencies()->assert_unique_implementor(declared_interface, singleton);
             dependencies()->assert_unique_concrete_method(declared_interface, cha_monomorphic_target, declared_interface, callee);
             return cg;
           }

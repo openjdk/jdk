@@ -2015,16 +2015,23 @@ bool Arguments::check_vm_args_consistency() {
 
 #if !defined(X86) && !defined(AARCH64) && !defined(PPC64)
   if (UseHeavyMonitors) {
-    warning("UseHeavyMonitors is not fully implemented on this architecture");
+    jio_fprintf(defaultStream::error_stream(),
+                "UseHeavyMonitors is not fully implemented on this architecture");
+    return false;
   }
 #endif
 #if (defined(X86) || defined(PPC64)) && !defined(ZERO)
   if (UseHeavyMonitors && UseRTMForStackLocks) {
-    fatal("-XX:+UseHeavyMonitors and -XX:+UseRTMForStackLocks are mutually exclusive");
+    jio_fprintf(defaultStream::error_stream(),
+                "-XX:+UseHeavyMonitors and -XX:+UseRTMForStackLocks are mutually exclusive");
+
+    return false;
   }
 #endif
   if (VerifyHeavyMonitors && !UseHeavyMonitors) {
-    fatal("-XX:+VerifyHeavyMonitors requires -XX:+UseHeavyMonitors");
+    jio_fprintf(defaultStream::error_stream(),
+                "-XX:+VerifyHeavyMonitors requires -XX:+UseHeavyMonitors");
+    return false;
   }
 
   return status;
@@ -3323,13 +3330,13 @@ jint Arguments::parse_vm_options_file(const char* file_name, ScopedVMInitArgs* v
     jio_fprintf(defaultStream::error_stream(),
                 "Could not stat options file '%s'\n",
                 file_name);
-    os::close(fd);
+    ::close(fd);
     return JNI_ERR;
   }
 
   if (stbuf.st_size == 0) {
     // tell caller there is no option data and that is ok
-    os::close(fd);
+    ::close(fd);
     return JNI_OK;
   }
 
@@ -3340,15 +3347,15 @@ jint Arguments::parse_vm_options_file(const char* file_name, ScopedVMInitArgs* v
   if (NULL == buf) {
     jio_fprintf(defaultStream::error_stream(),
                 "Could not allocate read buffer for options file parse\n");
-    os::close(fd);
+    ::close(fd);
     return JNI_ENOMEM;
   }
 
   memset(buf, 0, bytes_alloc);
 
   // Fill buffer
-  ssize_t bytes_read = os::read(fd, (void *)buf, (unsigned)bytes_alloc);
-  os::close(fd);
+  ssize_t bytes_read = ::read(fd, (void *)buf, (unsigned)bytes_alloc);
+  ::close(fd);
   if (bytes_read < 0) {
     FREE_C_HEAP_ARRAY(char, buf);
     jio_fprintf(defaultStream::error_stream(),
@@ -4012,7 +4019,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   no_shared_spaces("CDS Disabled");
 #endif // INCLUDE_CDS
 
-#if INCLUDE_NMT
   // Verify NMT arguments
   const NMT_TrackingLevel lvl = NMTUtil::parse_tracking_level(NativeMemoryTracking);
   if (lvl == NMT_unknown) {
@@ -4024,13 +4030,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     warning("PrintNMTStatistics is disabled, because native memory tracking is not enabled");
     FLAG_SET_DEFAULT(PrintNMTStatistics, false);
   }
-#else
-  if (!FLAG_IS_DEFAULT(NativeMemoryTracking) || PrintNMTStatistics) {
-    warning("Native Memory Tracking is not supported in this VM");
-    FLAG_SET_DEFAULT(NativeMemoryTracking, "off");
-    FLAG_SET_DEFAULT(PrintNMTStatistics, false);
-  }
-#endif // INCLUDE_NMT
 
   if (TraceDependencies && VerifyDependencies) {
     if (!FLAG_IS_DEFAULT(TraceDependencies)) {

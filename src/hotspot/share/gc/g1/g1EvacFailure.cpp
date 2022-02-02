@@ -77,7 +77,6 @@ public:
 
     zap_dead_objects(_last_forwarded_object_end, obj_addr);
 
-    // Zapping clears the bitmap, make sure it didn't clear too much.
     assert(_cm->is_marked_in_prev_bitmap(obj), "should be correctly marked");
     if (_during_concurrent_start) {
       // For the next marking info we'll only mark the
@@ -104,7 +103,8 @@ public:
   }
 
   // Fill the memory area from start to end with filler objects, and update the BOT
-  // and the mark bitmap accordingly.
+  // accordingly. Since we clear and use the prev bitmap for marking objects that
+  // failed evacuation, there is no work to be done there.
   void zap_dead_objects(HeapWord* start, HeapWord* end) {
     if (start == end) {
       return;
@@ -133,7 +133,7 @@ public:
 #endif
       }
     }
-    _cm->clear_range_in_prev_bitmap(mr);
+    assert(!_cm->is_marked_in_prev_bitmap(cast_to_oop(start)), "should not be marked in prev bitmap");
   }
 
   void zap_remainder() {

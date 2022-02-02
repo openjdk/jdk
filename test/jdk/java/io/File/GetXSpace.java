@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FilePermission;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -108,8 +107,8 @@ public class GetXSpace {
 
         Space(String total, String free, String name) {
             try {
-                this.total = Long.valueOf(total) * KSIZE;
-                this.free = Long.valueOf(free) * KSIZE;
+                this.total = Long.parseLong(total) * KSIZE;
+                this.free = Long.parseLong(free) * KSIZE;
             } catch (NumberFormatException x) {
                 throw new RuntimeException("the regex should have caught this", x);
             }
@@ -157,7 +156,7 @@ public class GetXSpace {
                     }
                     al.add(new Space(m.group(2), m.group(3), name));;
                 }
-                j = m.end() + 1;
+                j = m.end();
             } else {
                 throw new RuntimeException("unrecognized df output format: "
                                            + "charAt(" + j + ") = '"
@@ -227,7 +226,7 @@ public class GetXSpace {
                 // On Linux, ignore the NSFE if the path is one of the
                 // /run/user/$UID mounts created by pam_systemd(8) as it
                 // might be deleted during the test
-                if (!Platform.isLinux() || s.name().indexOf("/run/user") == -1)
+                if (!Platform.isLinux() || !s.name().contains("/run/user"))
                     throw new RuntimeException(nsfe);
             } catch (IOException e) {
                 throw new RuntimeException(e);

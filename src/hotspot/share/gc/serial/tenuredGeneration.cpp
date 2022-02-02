@@ -212,9 +212,6 @@ void TenuredGeneration::assert_correct_size_change_locking() {
   assert_locked_or_safepoint(ExpandHeap_lock);
 }
 
-// Currently nothing to do.
-void TenuredGeneration::prepare_for_verify() {}
-
 void TenuredGeneration::object_iterate(ObjectClosure* blk) {
   _the_space->object_iterate(blk);
 }

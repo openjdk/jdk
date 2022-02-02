@@ -3437,6 +3437,11 @@ bool IdealLoopTree::do_one_iteration_loop(PhaseIdealLoop *phase) {
 //=============================================================================
 //------------------------------iteration_split_impl---------------------------
 bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_new) {
+  if (!_head->is_Loop()) {
+    // Head could be a region with a NeverBranch that was added in beautify loops but the region was not
+    // yet transformed into a LoopNode. Bail out and wait until beautify loops turns it into a Loop node.
+    return false;
+  }
   // Compute loop trip count if possible.
   compute_trip_count(phase);
 

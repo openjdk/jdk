@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4546,5 +4546,14 @@ public class RegExTest {
         var e = expectThrows(PatternSyntaxException.class, () ->
                 Pattern.compile(pattern));
         assertTrue(e.getMessage().contains("Unescaped trailing backslash"));
+    }
+
+    //This test is for 8280403
+    @Test
+    public static void badIntersectionSyntax() {
+        String pattern = "[˜\\H +F&&]";
+        var e = expectThrows(PatternSyntaxException.class, () ->
+                Pattern.compile(pattern));
+        assertTrue(e.getMessage().contains("Bad intersection syntax"));
     }
 }
