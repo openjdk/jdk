@@ -173,6 +173,7 @@ deleteGlobalArgumentRefs(JNIEnv *env, InvokeRequest *request)
     jint argIndex = 0;
     jbyte argumentTag = 0;
     jvalue *argument = request->arguments;
+    methodSignature_init(request->methodSignature, &cursor);
 
     if (request->clazz != NULL) {
         tossGlobalRef(env, &(request->clazz));
