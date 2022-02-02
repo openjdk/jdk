@@ -232,10 +232,7 @@ fillInvokeRequest(JNIEnv *env, InvokeRequest *request,
     /*
      * Squirrel away the method signature
      */
-    char* oldSignature = request->methodSignature;
-    if (oldSignature != NULL) {
-      jvmtiDeallocate(oldSignature);
-    }
+    JDI_ASSERT_MSG(request->methodSignature == NULL, "Request methodSignature not null");
     error = methodSignature(method, NULL, &request->methodSignature,  NULL);
     if (error != JVMTI_ERROR_NONE) {
         return error;
@@ -766,6 +763,10 @@ invoker_completeInvokeRequest(jthread thread)
         mustReleaseReturnValue = request->invokeType == INVOKE_CONSTRUCTOR ||
            isReferenceTag(returnType);
     }
+
+    JDI_ASSERT_MSG(request->methodSignature != NULL, "methodSignature must be != NULL");
+    jvmtiDeallocate(request->methodSignature);
+    request->methodSignature = NULL;
 
     /*
      * At this time, there's no need to retain global references on
