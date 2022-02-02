@@ -57,13 +57,14 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
   // if we were running Java code when SIGPROF came in.
   if (isInJava) {
     ucontext_t* uc = (ucontext_t*) ucontext;
-    frame ret_frame((intptr_t*)uc->uc_mcontext.jmp_context.gpr[1/*REG_SP*/],
-                     (address)uc->uc_mcontext.jmp_context.iar);
+    address pc = (address)uc->uc_mcontext.jmp_context.iar;
 
-    if (ret_frame.pc() == NULL) {
+    if (pc == NULL) {
       // ucontext wasn't useful
       return false;
     }
+
+    frame ret_frame((intptr_t*)uc->uc_mcontext.jmp_context.gpr[1/*REG_SP*/], pc);
 
     if (ret_frame.fp() == NULL) {
       // The found frame does not have a valid frame pointer.
@@ -105,10 +106,9 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
   return false;
 }
 
-// Forte Analyzer AsyncGetCallTrace profiling support is not implemented on Aix/PPC.
+// Forte Analyzer AsyncGetCallTrace profiling support.
 bool JavaThread::pd_get_top_frame_for_signal_handler(frame* fr_addr, void* ucontext, bool isInJava) {
-  Unimplemented();
-  return false;
+  return pd_get_top_frame_for_profiling(fr_addr, ucontext, isInJava);
 }
 
 void JavaThread::cache_global_variables() { }
