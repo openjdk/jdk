@@ -3589,9 +3589,9 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
   bind(CHAR_ADJUST);
   // We are looking at a char + optional byte tail, and found that one
   // of the bytes in the char is negative. Adjust the result, check the
-  // highest byte and readjust if needed.
+  // first byte and readjust if needed.
   andl(result, 0xfffffffc);
-  testl(tmp1, 0x00008000);
+  testl(tmp1, 0x00000080); // little-endian, so lowest byte comes first
   jccb(Assembler::notZero, DONE);
   addptr(result, 1);
 
