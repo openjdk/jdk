@@ -173,7 +173,6 @@ deleteGlobalArgumentRefs(JNIEnv *env, InvokeRequest *request)
     jint argIndex = 0;
     jbyte argumentTag = 0;
     jvalue *argument = request->arguments;
-    methodSignature_init(request->methodSignature, &cursor);
 
     if (request->clazz != NULL) {
         tossGlobalRef(env, &(request->clazz));
@@ -192,6 +191,10 @@ deleteGlobalArgumentRefs(JNIEnv *env, InvokeRequest *request)
         argument++;
         argIndex++;
     }
+
+    JDI_ASSERT_MSG(request->methodSignature != NULL, "methodSignature is NULL");
+    jvmtiDeallocate(request->methodSignature);
+    request->methodSignature = NULL;
 }
 
 static jvmtiError
@@ -763,10 +766,6 @@ invoker_completeInvokeRequest(jthread thread)
         mustReleaseReturnValue = request->invokeType == INVOKE_CONSTRUCTOR ||
            isReferenceTag(returnType);
     }
-
-    JDI_ASSERT_MSG(request->methodSignature != NULL, "methodSignature must be != NULL");
-    jvmtiDeallocate(request->methodSignature);
-    request->methodSignature = NULL;
 
     /*
      * At this time, there's no need to retain global references on
