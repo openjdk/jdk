@@ -673,9 +673,12 @@ int os::fsync(int fd) {
 }
 PRAGMA_DIAG_POP
 
+PRAGMA_DIAG_PUSH
+PRAGMA_PERMIT_FORBIDDEN_C_FUNCTION(ftruncate64);
 int os::ftruncate(int fd, jlong length) {
    return BSD_ONLY(::ftruncate) NOT_BSD(::ftruncate64)(fd, length);
 }
+PRAGMA_DIAG_POP
 
 const char* os::get_current_directory(char *buf, size_t buflen) {
   return getcwd(buf, buflen);

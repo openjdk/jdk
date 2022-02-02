@@ -4921,6 +4921,8 @@ int os::create_binary_file(const char* path, bool rewrite_existing) {
   return ::open64(path, oflags, S_IREAD | S_IWRITE);
 }
 
+PRAGMA_DIAG_PUSH
+PRAGMA_PERMIT_FORBIDDEN_C_FUNCTION(lseek64);
 // return current position of file pointer
 jlong os::current_file_offset(int fd) {
   return (jlong)::lseek64(fd, (off64_t)0, SEEK_CUR);
@@ -4959,6 +4961,7 @@ int os::available(int fd, jlong *bytes) {
   *bytes = end - cur;
   return 1;
 }
+PRAGMA_DIAG_POP
 
 // Map a block of memory.
 char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,

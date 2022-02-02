@@ -80,8 +80,14 @@ FORBID_C_FUNCTION(void     flockfile(FILE*),                          "use os::f
 FORBID_C_FUNCTION(FILE*    fopen(const char*, const char*),           "use os::fopen");
 FORBID_C_FUNCTION(int      fsync(int),                                "use os::fsync");
 FORBID_C_FUNCTION(int      ftruncate(int, off_t),                     "use os::ftruncate");
+#ifndef BSD
+FORBID_C_FUNCTION(int      ftruncate64(int, off_t),                   "use os::ftruncate");
+#endif
 FORBID_C_FUNCTION(void     funlockfile(FILE *),                       "use os::funlockfile");
 FORBID_C_FUNCTION(off_t    lseek(int, off_t, int),                    "use os::lseek");
+#ifndef BSD
+FORBID_C_FUNCTION(off_t    lseek64(int, off_t, int),                  "use os::lseek");
+#endif
 FORBID_C_FUNCTION(long int random(void),                              "use os::random");
 FORBID_C_FUNCTION(ssize_t  recv(int, void*, size_t, int),             "use os::recv");
 FORBID_C_FUNCTION(int      stat(const char*, struct stat*),           "use os::stat");
