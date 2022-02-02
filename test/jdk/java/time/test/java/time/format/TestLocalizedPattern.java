@@ -25,9 +25,11 @@ package test.java.time.format;
 import static org.testng.Assert.assertEquals;
 
 import java.time.DateTimeException;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.ZoneId;
+import java.time.chrono.IsoChronology;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -37,7 +39,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 /**
- * Test DateTimeFormatter.ofLocalizedPattern() method.
+ * Test DateTimeFormatter.ofLocalizedPattern() related methods.
  * @bug 8176706
  */
 @Test
@@ -89,8 +91,18 @@ public class TestLocalizedPattern {
         DateTimeFormatter.ofLocalizedPattern(skeleton);
     }
 
+    @Test(dataProvider = "invalidSkeletons", expectedExceptions = IllegalArgumentException.class)
+    public void test_appendLocalized_invalid(String skeleton) {
+        new DateTimeFormatterBuilder().appendLocalized(skeleton);
+    }
+
     @Test(dataProvider = "unavailableSkeletons", expectedExceptions = DateTimeException.class)
     public void test_ofLocalizedPattern_unavailable(String skeleton) {
         DateTimeFormatter.ofLocalizedPattern(skeleton).format(ZDT);
+    }
+
+    @Test(dataProvider = "unavailableSkeletons", expectedExceptions = DateTimeException.class)
+    public void test_getLocalizedDateTimePattern_unavailable(String skeleton) {
+        DateTimeFormatterBuilder.getLocalizedDateTimePattern(skeleton, IsoChronology.INSTANCE, Locale.US);
     }
 }
