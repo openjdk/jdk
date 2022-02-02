@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -422,10 +422,12 @@ void VM_Version::initialize() {
     _rop_protection = true;
 #ifdef __ARM_FEATURE_PAC_DEFAULT
     if ((_features & CPU_PACA) == 0) {
-      warning("UseROPProtection specified, but not supported on this CPU.");
+      warning("ROP-protection specified, but not supported on this CPU.");
+      // Disable PAC to prevent illegal instruction crashes.
+      _rop_protection = false;
     }
 #else
-    warning("UseROPProtection specified, but not supported in the VM.");
+    warning("ROP-protection specified, but this VM was built without ROP-protection support.");
 #endif
   } else {
     vm_exit_during_initialization(err_msg("Unsupported UseBranchProtection: %s", UseBranchProtection));
