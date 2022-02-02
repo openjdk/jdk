@@ -109,9 +109,12 @@ final class VarForm {
 
     @ForceInline
     final MemberName getMemberName(int mode) {
-        MemberName mn = getMemberNameOrNull(mode);
+        MemberName mn = memberName_table[mode];
         if (mn == null) {
-            throw new UnsupportedOperationException();
+            mn = resolveMemberName(mode);
+            if (mn == null) {
+                throw new UnsupportedOperationException();
+            }
         }
         return mn;
     }
