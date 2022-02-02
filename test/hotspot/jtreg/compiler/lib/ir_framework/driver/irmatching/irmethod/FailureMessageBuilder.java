@@ -50,7 +50,7 @@ class FailureMessageBuilder {
             failMsg.append(getMissingCompilationLine());
             return failMsg.toString();
         }
-        failMsg.append(getIRRulesLines());
+        failMsg.append(getIRRulesFailureMessage());
         return failMsg.toString();
     }
 
@@ -58,7 +58,7 @@ class FailureMessageBuilder {
         return " Method \"" + irMethod.getMethod() + "\":" + System.lineSeparator();
     }
 
-    private String getIRRulesLines() {
+    private String getIRRulesFailureMessage() {
         StringBuilder failMsg = new StringBuilder();
         for (IRRuleMatchResult irRuleResult : irRulesMatchResults) {
             if (irRuleResult.fail()) {
@@ -69,6 +69,8 @@ class FailureMessageBuilder {
     }
 
     private String getMissingCompilationLine() {
-        return "   * Method was not compiled. Did you specify any compiler directives preventing a compilation or used " + "a @Run method in STANDALONE mode? In the latter case, make sure to always trigger a C2 compilation by " + "invoking the test enough times.";
+        return "   * Method was not compiled. Did you specify any compiler directives preventing a compilation "
+               + "or used a @Run method in STANDALONE mode? In the latter case, make sure to always trigger a C2 "
+               + "compilation by " + "invoking the test enough times.";
     }
 }

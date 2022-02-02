@@ -36,6 +36,11 @@ import java.util.List;
 abstract class CheckAttributeMatchResult implements MatchResult {
     protected List<RegexFailure> regexFailures = null;
 
+    @Override
+    public boolean fail() {
+        return regexFailures != null;
+    }
+
     public int getMatchesCount() {
         if (fail()) {
             return regexFailures.stream().map(RegexFailure::getMatchesCount).reduce(0, Integer::sum);
@@ -44,8 +49,11 @@ abstract class CheckAttributeMatchResult implements MatchResult {
         }
     }
 
-    @Override
-    public boolean fail() {
-        return regexFailures != null;
+    protected String collectRegexFailureMessages() {
+        StringBuilder failMsg = new StringBuilder();
+        for (RegexFailure regexFailure : regexFailures) {
+            failMsg.append(regexFailure.buildFailureMessage());
+        }
+        return failMsg.toString();
     }
 }

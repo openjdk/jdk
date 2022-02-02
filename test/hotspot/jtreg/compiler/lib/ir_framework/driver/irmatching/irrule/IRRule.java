@@ -48,10 +48,10 @@ public class IRRule {
     }
 
     private Counts initCounts(IR irAnno) {
-        String[] counts = irAnno.counts();
-        if (counts.length != 0) {
+        String[] countsConstraints = irAnno.counts();
+        if (countsConstraints.length != 0) {
             try {
-                return Counts.create(IRNode.mergeNodes(irAnno.counts()), this);
+                return Counts.create(IRNode.mergeNodes(countsConstraints), this);
             } catch (TestFormatException e) {
                 // Logged and reported later. Continue.
             }
@@ -60,9 +60,9 @@ public class IRRule {
     }
 
     private FailOn initFailOn(IR irAnno) {
-        String[] failOn = irAnno.failOn();
-        if (failOn.length != 0) {
-            return new FailOn(IRNode.mergeNodes(failOn));
+        String[] failOnNodes = irAnno.failOn();
+        if (failOnNodes.length != 0) {
+            return new FailOn(IRNode.mergeNodes(failOnNodes));
         }
         return null;
     }
@@ -79,35 +79,42 @@ public class IRRule {
         return irMethod.getMethod();
     }
 
-    public IRRuleMatchResult apply() {
+    /**
+     * Apply this IR rule by checking any failOn and counts attributes.
+     */
+    public IRRuleMatchResult applyCheckAttribute() {
         IRRuleMatchResult result = new IRRuleMatchResult(this);
         if (failOn != null) {
-            apply(failOn, result, result::setFailOnFailures);
+            applyCheckAttribute(failOn, result, result::setFailOnFailures);
         }
         if (counts != null) {
-            apply(counts, result, result::setCountsFailures);
+            applyCheckAttribute(counts, result, result::setCountsFailures);
         }
         return result;
     }
 
-    private void apply(CheckAttribute check, IRRuleMatchResult result, Consumer<CheckAttributeMatchResult> setFailures) {
-        CheckAttributeMatchResult checkResult = check.apply(irMethod.getOutput());
-        if (checkResult.fail()) {
-            setFailures.accept(checkResult);
-            result.updateOutputMatch(getOutputMatch(check, checkResult));
+    private void applyCheckAttribute(CheckAttribute checkAttribute, IRRuleMatchResult result,
+                                     Consumer<CheckAttributeMatchResult> setFailures) {
+        CheckAttributeMatchResult checkAttributeResult = checkAttribute.apply(irMethod.getOutput());
+        if (checkAttributeResult.fail()) {
+            setFailures.accept(checkAttributeResult);
+            result.updateOutputMatch(getOutputMatch(checkAttribute, checkAttributeResult));
         }
     }
 
-    private OutputMatch getOutputMatch(CheckAttribute check, CheckAttributeMatchResult checkResult) {
-        int totalMatches = checkResult.getMatchesCount();
-        int idealFailuresCount = getMatchesCount(check, irMethod.getIdealOutput());
-        int optoAssemblyFailuresCount = getMatchesCount(check, irMethod.getOptoAssemblyOutput());
+    /**
+     * Determine how the output was matched by reapplying the check attribute for the PrintIdeal and PrintOptoAssembly
+     * output separately.
+     */
+    private OutputMatch getOutputMatch(CheckAttribute checkAttribute, CheckAttributeMatchResult checkAttributeResult) {
+        int totalMatches = checkAttributeResult.getMatchesCount();
+        int idealFailuresCount = getMatchesCount(checkAttribute, irMethod.getIdealOutput());
+        int optoAssemblyFailuresCount = getMatchesCount(checkAttribute, irMethod.getOptoAssemblyOutput());
         return findOutputMatch(totalMatches, idealFailuresCount, optoAssemblyFailuresCount);
     }
 
-
-    private int getMatchesCount(CheckAttribute check, String compilation) {
-        CheckAttributeMatchResult result = check.apply(compilation);
+    private int getMatchesCount(CheckAttribute checkAttribute, String compilation) {
+        CheckAttributeMatchResult result = checkAttribute.apply(compilation);
         return result.getMatchesCount();
     }
 
@@ -115,7 +122,8 @@ public class IRRule {
      * Compare different counts to find out, on what output a failure was matched.
      */
     private OutputMatch findOutputMatch(int totalMatches, int idealFailuresCount, int optoAssemblyFailuresCount) {
-        if (someRegexMatchOnlyEntireOutput(totalMatches, idealFailuresCount, optoAssemblyFailuresCount) || anyMatchOnIdealAndOptoAssembly(idealFailuresCount, optoAssemblyFailuresCount)) {
+        if (someRegexMatchOnlyEntireOutput(totalMatches, idealFailuresCount, optoAssemblyFailuresCount)
+            || anyMatchOnIdealAndOptoAssembly(idealFailuresCount, optoAssemblyFailuresCount)) {
             return OutputMatch.BOTH;
         } else if (optoAssemblyFailuresCount == 0) {
             return OutputMatch.IDEAL;
@@ -123,7 +131,6 @@ public class IRRule {
             return OutputMatch.OPTO_ASSEMBLY;
         }
     }
-
 
     /**
      * Do we have a regex that is only matched on the entire ideal + opto assembly output?

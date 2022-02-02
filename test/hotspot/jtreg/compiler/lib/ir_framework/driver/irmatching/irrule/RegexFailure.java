@@ -33,7 +33,6 @@ import java.util.List;
  * @see IRRule
  */
 abstract class RegexFailure {
-
     protected final String nodeRegex;
     protected final int nodeId;
     protected final List<String> matches;
@@ -44,11 +43,11 @@ abstract class RegexFailure {
         this.matches = matches;
     }
 
+    abstract public String buildFailureMessage();
+
     public int getMatchesCount() {
         return matches.size();
     }
-
-    abstract public String getFormattedFailureMessage();
 
     protected String getRegexLine() {
         return "       * Regex " + nodeId + ": " + nodeRegex + System.lineSeparator();
@@ -64,11 +63,11 @@ abstract class RegexFailure {
                + (matchCount != 1 ? "s (" + matchCount + ")" : "") + ":" + System.lineSeparator();
     }
 
-    abstract protected String getMatchedPrefix();
-
     protected String getMatchedNodesWhiteSpace() {
         return "         ";
     }
+
+    abstract protected String getMatchedPrefix();
 
     protected String getMatchesNodeLines() {
         StringBuilder builder = new StringBuilder();

@@ -45,7 +45,7 @@ public class IRMatcher {
     }
 
     /**
-     * Do an IR matching of all methods with applicable @IR rules fetched during parsing of the hotspot pid file.
+     * Do an IR matching of all methods with applicable @IR rules prepared with by the IRMethodParser.
      */
     private void applyIRRules(Collection<IRMethod> irMethods) {
         List<IRMethodMatchResult> results = new ArrayList<>();
@@ -79,7 +79,7 @@ public class IRMatcher {
      */
     private void reportFailures(List<IRMethodMatchResult> results) {
         Collections.sort(results); // Alphabetically
-        throwIfNoSafepointWhilePrinting(FailureMessageBuilder.build(results),
+        throwIfNoSafepointWhilePrinting(IRMatcherFailureMessageBuilder.build(results),
                                         CompilationsBuilder.build(results));
     }
 

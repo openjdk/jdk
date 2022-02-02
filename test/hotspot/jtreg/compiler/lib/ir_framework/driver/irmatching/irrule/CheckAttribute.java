@@ -35,6 +35,9 @@ import java.util.regex.Matcher;
  * @see IR
  */
 abstract class CheckAttribute {
+
+    abstract public CheckAttributeMatchResult apply(String compilation);
+
     protected List<String> getMatchedNodes(Matcher m) {
         List<String> matches = new ArrayList<>();
         do {
@@ -42,6 +45,4 @@ abstract class CheckAttribute {
         } while (m.find());
         return matches;
     }
-
-    abstract public CheckAttributeMatchResult apply(String compilation);
 }

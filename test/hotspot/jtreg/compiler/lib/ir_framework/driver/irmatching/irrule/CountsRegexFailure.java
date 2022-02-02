@@ -42,7 +42,7 @@ class CountsRegexFailure extends RegexFailure {
     }
 
     @Override
-    public String getFormattedFailureMessage() {
+    public String buildFailureMessage() {
         return getRegexLine()
                + getFailedComparison()
                + getMatchedNodesBlock();

@@ -32,28 +32,20 @@ import java.util.List;
  *
  * @see IRMethodMatchResult
  */
-class FailureMessageBuilder {
+class IRMatcherFailureMessageBuilder {
 
     public static String build(List<IRMethodMatchResult> results) {
         StringBuilder failuresBuilder = new StringBuilder();
         failuresBuilder.append(buildHeaderMessage(results));
-        int failureIndex = 1;
-        for (IRMethodMatchResult result : results) {
-            if (result.fail()) {
-                failuresBuilder.append(failureIndex).append(")").append(buildFailureMessage(result));
-                failureIndex++;
+        int failureNumber = 1;
+        for (IRMethodMatchResult irMethodResult : results) {
+            if (irMethodResult.fail()) {
+                failuresBuilder.append(buildIRMethodFailureMessage(failureNumber, irMethodResult));
+                failureNumber++;
             }
         }
         failuresBuilder.append(buildFooterMessage());
         return failuresBuilder.toString();
-    }
-
-    private static String buildFooterMessage() {
-        return ">>> Check stdout for compilation output of the failed methods" + System.lineSeparator() + System.lineSeparator();
-    }
-
-    private static String buildFailureMessage(IRMethodMatchResult result) {
-        return result.buildFailureMessage() + System.lineSeparator();
     }
 
     private static String buildHeaderMessage(List<IRMethodMatchResult> results) {
@@ -77,4 +69,13 @@ class FailureMessageBuilder {
     private static int digitCount(long digit) {
         return String.valueOf(digit).length();
     }
+
+    private static String buildIRMethodFailureMessage(int failureNumber, IRMethodMatchResult result) {
+        return failureNumber + ")" + result.buildFailureMessage() + System.lineSeparator();
+    }
+
+    private static String buildFooterMessage() {
+        return ">>> Check stdout for compilation output of the failed methods" + System.lineSeparator() + System.lineSeparator();
+    }
+
 }

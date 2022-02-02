@@ -91,11 +91,14 @@ public class IRMethod {
         return optoAssemblyOutput;
     }
 
+    /**
+     * Apply all IR rules of this IR method.
+     */
     public IRMethodMatchResult applyIRRules() {
         TestFramework.check(!irRules.isEmpty(), "IRMethod cannot be created if there are no IR rules to apply");
         List<IRRuleMatchResult> results = new ArrayList<>();
         for (IRRule irRule : irRules) {
-            IRRuleMatchResult result = irRule.apply();
+            IRRuleMatchResult result = irRule.applyCheckAttribute();
             if (result.fail()) {
                 results.add(result);
             }

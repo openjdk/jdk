@@ -31,12 +31,13 @@ import java.util.List;
  * @see FailOn
  */
 class FailOnRegexFailure extends RegexFailure {
+
     public FailOnRegexFailure(String nodeRegex, int nodeId, List<String> matches) {
         super(nodeRegex, nodeId, matches);
     }
 
     @Override
-    public String getFormattedFailureMessage() {
+    public String buildFailureMessage() {
         return getRegexLine()
                + getMatchedNodesBlock();
     }

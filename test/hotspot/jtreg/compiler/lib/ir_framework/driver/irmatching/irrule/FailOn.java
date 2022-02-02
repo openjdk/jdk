@@ -36,8 +36,8 @@ import java.util.regex.Pattern;
  * @see IR#failOn()
  */
 class FailOn extends CheckAttribute {
-    public Pattern quickPattern;
-    public List<String> nodes;
+    private final Pattern quickPattern;
+    private final List<String> nodes;
 
     public FailOn(List<String> nodes) {
         this.nodes = nodes;
@@ -49,17 +49,17 @@ class FailOn extends CheckAttribute {
         FailOnMatchResult result = new FailOnMatchResult();
         Matcher matcher = quickPattern.matcher(compilation);
         if (matcher.find()) {
-            collectFailures(result, compilation);
+            result.setFailures(createFailOnFailures(compilation));
         }
         return result;
     }
 
-    private void collectFailures(FailOnMatchResult result, String compilation) {
+    private List<RegexFailure> createFailOnFailures(String compilation) {
         List<RegexFailure> regexFailures = new ArrayList<>();
         for (int i = 0; i < nodes.size(); i++) {
             checkNode(regexFailures, compilation, nodes.get(i), i + 1);
         }
-        result.setFailures(regexFailures);
+        return regexFailures;
     }
 
     private void checkNode(List<RegexFailure> regexFailures, String compilation, String node, int nodeId) {

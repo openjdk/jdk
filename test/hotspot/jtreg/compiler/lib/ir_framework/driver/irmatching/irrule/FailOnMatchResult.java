@@ -39,11 +39,7 @@ class FailOnMatchResult extends CheckAttributeMatchResult {
 
     @Override
     public String buildFailureMessage() {
-        StringBuilder failMsg = new StringBuilder();
-        failMsg.append("     - failOn: Graph contains forbidden nodes:").append(System.lineSeparator());
-        for (RegexFailure regexFailure : regexFailures) {
-            failMsg.append(regexFailure.getFormattedFailureMessage());
-        }
-        return failMsg.toString();
+        return "     - failOn: Graph contains forbidden nodes:" + System.lineSeparator()
+               + collectRegexFailureMessages();
     }
 }
