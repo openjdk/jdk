@@ -75,11 +75,6 @@ public:
   ~PreservedMarks() { assert_empty(); }
 };
 
-class RemoveForwardedPointerClosure: public ObjectClosure {
-public:
-  virtual void do_object(oop obj);
-};
-
 class PreservedMarksSet : public CHeapObj<mtGC> {
 private:
   // true -> _stacks will be allocated in the C heap
