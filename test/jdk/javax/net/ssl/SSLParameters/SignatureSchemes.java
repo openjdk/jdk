@@ -32,15 +32,10 @@
  * @run main/othervm SignatureSchemes
  */
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InterruptedIOException;
-import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.SocketException;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLSocket;
 import java.security.Security;
-
-import javax.net.ssl.*;
 
 public class SignatureSchemes extends SSLSocketTemplate {
     private final String[] serverSignatureSchemes;
@@ -111,7 +106,7 @@ public class SignatureSchemes extends SSLSocketTemplate {
                         "ecdsa_secp256r1_sha256"
                 },
                 false);
-        runTest(new String[0],
+        runTest(null,
                 new String[] {
                         "ecdsa_secp256r1_sha256"
                 },
@@ -119,8 +114,18 @@ public class SignatureSchemes extends SSLSocketTemplate {
         runTest(new String[] {
                         "ecdsa_secp256r1_sha256"
                 },
-                new String[0],
+                null,
                 false);
+        runTest(new String[0],
+                new String[] {
+                        "ecdsa_secp256r1_sha256"
+                },
+                true);
+        runTest(new String[] {
+                        "ecdsa_secp256r1_sha256"
+                },
+                new String[0],
+                true);
         runTest(new String[] {
                         "ecdsa_secp256r1_shaNA"
                 },

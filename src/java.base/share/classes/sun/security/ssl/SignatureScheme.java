@@ -377,8 +377,7 @@ enum SignatureScheme {
         List<SignatureScheme> supported = new LinkedList<>();
 
         List<SignatureScheme> schemesToCheck =
-                config.signatureSchemes == null ||
-                        config.signatureSchemes.length == 0 ?
+                config.signatureSchemes == null ?
                     Arrays.asList(SignatureScheme.values()) :
                     namesOfAvailable(config.signatureSchemes);
 
@@ -434,7 +433,6 @@ enum SignatureScheme {
             } else if (ss.isAvailable &&
                     ss.supportedProtocols.contains(protocolVersion) &&
                     (config.signatureSchemes == null ||
-                        config.signatureSchemes.length == 0 ||
                         Utilities.contains(config.signatureSchemes, ss.name)) &&
                     ss.isPermitted(constraints)) {
                 supported.add(ss);
@@ -584,7 +582,7 @@ enum SignatureScheme {
             sss.add(scheme);
         }
 
-        return Collections.unmodifiableList(sss);
+        return sss;
     }
 
     // This method is used to get the signature instance of this signature

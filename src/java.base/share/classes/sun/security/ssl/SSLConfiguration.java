@@ -259,7 +259,9 @@ final class SSLConfiguration implements Cloneable {
         }   // otherwise, use the default values
 
         String[] ss = params.getSignatureSchemes();
-        if (ss != null && ss.length != 0) {
+        if (ss != null) {
+            // Note if 'ss' is empty, then no signature schemes should be
+            // specified over the connections.
             this.signatureSchemes = ss;
         }   // Otherwise, use the default values
 
@@ -495,9 +497,15 @@ final class SSLConfiguration implements Cloneable {
                 }
             }
 
-            return signatureSchemes.toArray(new String[0]);
+            // Note that if the System Property value is not defined (JDK
+            // default value) or empty, the provider-specific default is used.
+            if (!signatureSchemes.isEmpty()) {
+                return signatureSchemes.toArray(new String[0]);
+            }
         }
 
-        return new String[0];
+        // Note that if the System Property value is not defined (JDK
+        // default value) or empty, the provider-specific default is used.
+        return null;
     }
 }
