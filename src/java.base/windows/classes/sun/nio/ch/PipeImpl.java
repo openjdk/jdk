@@ -34,7 +34,6 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.StandardSocketOptions;
 import java.net.UnixDomainSocketAddress;
-
 import java.nio.*;
 import java.nio.channels.*;
 import java.nio.file.Files;
@@ -188,12 +187,12 @@ class PipeImpl
      * and is TCP by default, but if Unix domain is supported and
      * preferAfUnix is true, then Unix domain sockets are used.
      *
-     * @param buffering if false set TCP_NODELAY on TCP sockets
-     *
      * @param preferAfUnix use Unix domain sockets if supported
+     *
+     * @param buffering if false set TCP_NODELAY on TCP sockets
      */
     @SuppressWarnings("removal")
-    PipeImpl(SelectorProvider sp, boolean buffering, boolean preferAfUnix) throws IOException {
+    PipeImpl(SelectorProvider sp, boolean preferAfUnix, boolean buffering) throws IOException {
         Initializer initializer = new Initializer(sp, preferAfUnix);
         try {
             AccessController.doPrivileged(initializer);
@@ -223,7 +222,7 @@ class PipeImpl
                 listener = ServerSocketChannel.open(UNIX);
                 listener.bind(null);
                 return listener;
-            } catch (IOException | UnsupportedOperationException e) {}
+            } catch (IOException e) {}
         }
         listener = ServerSocketChannel.open();
         InetAddress lb = InetAddress.getLoopbackAddress();
