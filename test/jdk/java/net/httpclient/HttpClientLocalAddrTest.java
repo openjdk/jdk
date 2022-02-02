@@ -179,26 +179,26 @@ public class HttpClientLocalAddrTest {
 
     @DataProvider(name = "params")
     private Object[][] paramsProvider() throws Exception {
-        final List<Object[]> clients = new ArrayList();
+        final List<Object[]> testMethodParams = new ArrayList();
         final URI[] requestURIs = new URI[]{httpURI, httpsURI, http2URI, https2URI};
         final Predicate<URI> requiresSSLContext = (uri) -> uri.getScheme().equals("https");
         for (var requestURI : requestURIs) {
             final var configureClientSSL = requiresSSLContext.test(requestURI);
             // no localAddr set
-            clients.add(new Object[]{
+            testMethodParams.add(new Object[]{
                     newBuilder(configureClientSSL).build(),
                     requestURI,
                     null
             });
             // null localAddr set
-            clients.add(new Object[]{
+            testMethodParams.add(new Object[]{
                     newBuilder(configureClientSSL).localAddress(null).build(),
                     requestURI,
                     null
             });
             // localAddr set to loopback address
             final var loopbackAddr = InetAddress.getLoopbackAddress();
-            clients.add(new Object[]{
+            testMethodParams.add(new Object[]{
                     newBuilder(configureClientSSL)
                             .localAddress(new InetSocketAddress(loopbackAddr, 0))
                             .build(),
@@ -209,7 +209,7 @@ public class HttpClientLocalAddrTest {
             if (IPSupport.hasIPv6()) {
                 // ipv6 wildcard
                 final var localAddr = InetAddress.getByName("::");
-                clients.add(new Object[]{
+                testMethodParams.add(new Object[]{
                         newBuilder(configureClientSSL)
                                 .localAddress(new InetSocketAddress(localAddr, 0))
                                 .build(),
@@ -220,7 +220,7 @@ public class HttpClientLocalAddrTest {
             if (IPSupport.hasIPv4()) {
                 // ipv4 wildcard
                 final var localAddr = InetAddress.getByName("0.0.0.0");
-                clients.add(new Object[]{
+                testMethodParams.add(new Object[]{
                         newBuilder(configureClientSSL)
                                 .localAddress(new InetSocketAddress(localAddr, 0))
                                 .build(),
@@ -229,7 +229,7 @@ public class HttpClientLocalAddrTest {
                 });
             }
         }
-        return clients.stream().toArray(Object[][]::new);
+        return testMethodParams.stream().toArray(Object[][]::new);
     }
 
     private static HttpClient.Builder newBuilder(boolean configureClientSSL) {
