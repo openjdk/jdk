@@ -46,7 +46,6 @@ import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.Scoped;
 import jdk.internal.foreign.CABI;
 import jdk.internal.foreign.MemoryAddressImpl;
-import jdk.internal.foreign.Utils;
 import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64Linker;
 import jdk.internal.vm.annotation.ForceInline;
 
@@ -67,10 +66,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static java.lang.invoke.MethodHandles.collectArguments;
-import static java.lang.invoke.MethodHandles.constant;
 import static java.lang.invoke.MethodHandles.dropArguments;
 import static java.lang.invoke.MethodHandles.dropReturn;
-import static java.lang.invoke.MethodHandles.empty;
 import static java.lang.invoke.MethodHandles.foldArguments;
 import static java.lang.invoke.MethodHandles.identity;
 import static java.lang.invoke.MethodHandles.insertArguments;
@@ -111,7 +108,7 @@ public class SharedUtils {
                     methodType(MemoryAddress.class));
             MH_BUFFER_COPY = lookup.findStatic(SharedUtils.class, "bufferCopy",
                     methodType(MemoryAddress.class, MemoryAddress.class, MemorySegment.class));
-            MH_MAKE_CONTEXT_NO_ALLOCATOR = lookup.findStatic(Binding.Context.class, "ofScope",
+            MH_MAKE_CONTEXT_NO_ALLOCATOR = lookup.findStatic(Binding.Context.class, "ofSession",
                     methodType(Binding.Context.class));
             MH_MAKE_CONTEXT_BOUNDED_ALLOCATOR = lookup.findStatic(Binding.Context.class, "ofBoundedAllocator",
                     methodType(Binding.Context.class, long.class));
@@ -347,52 +344,6 @@ public class SharedUtils {
             t.printStackTrace();
             JLA.exit(1);
         }
-    }
-
-    static MethodHandle wrapWithAllocator(MethodHandle specializedHandle,
-                                          int allocatorPos, long allocationSize,
-                                          boolean upcall) {
-        // insert try-finally to close the NativeScope used for Binding.Copy
-        MethodHandle closer;
-        int insertPos;
-        if (specializedHandle.type().returnType() == void.class) {
-            if (!upcall) {
-                closer = empty(methodType(void.class, Throwable.class)); // (Throwable) -> void
-            } else {
-                closer = MH_HANDLE_UNCAUGHT_EXCEPTION;
-            }
-            insertPos = 1;
-        } else {
-            closer = identity(specializedHandle.type().returnType()); // (V) -> V
-            if (!upcall) {
-                closer = dropArguments(closer, 0, Throwable.class); // (Throwable, V) -> V
-            } else {
-                closer = collectArguments(closer, 0, MH_HANDLE_UNCAUGHT_EXCEPTION); // (Throwable, V) -> V
-            }
-            insertPos = 2;
-        }
-
-        // downcalls get the leading SegmentAllocator param as well
-        if (!upcall) {
-            closer = dropArguments(closer, insertPos++, SegmentAllocator.class); // (Throwable, V?, SegmentAllocator, Addressable) -> V/void
-        }
-
-        closer = collectArguments(closer, insertPos, MH_CLOSE_CONTEXT); // (Throwable, V?, SegmentAllocator?, BindingContext) -> V/void
-
-        MethodHandle contextFactory;
-
-        if (allocationSize > 0) {
-            contextFactory = MethodHandles.insertArguments(MH_MAKE_CONTEXT_BOUNDED_ALLOCATOR, 0, allocationSize);
-        } else if (upcall) {
-            contextFactory = MH_MAKE_CONTEXT_NO_ALLOCATOR;
-        } else {
-            // this path is probably never used now, since ProgrammableInvoker never calls this routine with bufferCopySize == 0
-            contextFactory = constant(Binding.Context.class, Binding.Context.DUMMY);
-        }
-
-        specializedHandle = tryFinally(specializedHandle, closer);
-        specializedHandle = collectArguments(specializedHandle, allocatorPos, contextFactory);
-        return specializedHandle;
     }
 
     @ForceInline

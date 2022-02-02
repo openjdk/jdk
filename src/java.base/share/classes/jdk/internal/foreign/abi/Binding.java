@@ -44,9 +44,6 @@ import java.util.Objects;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 
-import static java.lang.invoke.MethodHandles.collectArguments;
-import static java.lang.invoke.MethodHandles.filterArguments;
-import static java.lang.invoke.MethodHandles.insertArguments;
 import static java.lang.invoke.MethodType.methodType;
 
 /**
@@ -203,29 +200,6 @@ import static java.lang.invoke.MethodType.methodType;
  * --------------------
  */
 public abstract class Binding {
-    private static final MethodHandle MH_UNBOX_ADDRESS;
-    private static final MethodHandle MH_BOX_ADDRESS;
-    private static final MethodHandle MH_COPY_BUFFER;
-    private static final MethodHandle MH_ALLOCATE_BUFFER;
-    private static final MethodHandle MH_TO_SEGMENT;
-
-    static {
-        try {
-            MethodHandles.Lookup lookup = MethodHandles.lookup();
-            MH_UNBOX_ADDRESS = lookup.findVirtual(MemoryAddress.class, "toRawLongValue",
-                    methodType(long.class));
-            MH_BOX_ADDRESS = lookup.findStatic(MemoryAddress.class, "ofLong",
-                    methodType(MemoryAddress.class, long.class));
-            MH_COPY_BUFFER = lookup.findStatic(Binding.Copy.class, "copyBuffer",
-                    methodType(MemorySegment.class, MemorySegment.class, long.class, long.class, Context.class));
-            MH_ALLOCATE_BUFFER = lookup.findStatic(Binding.Allocate.class, "allocateBuffer",
-                    methodType(MemorySegment.class, long.class, long.class, Context.class));
-            MH_TO_SEGMENT = lookup.findStatic(Binding.ToSegment.class, "toSegment",
-                    methodType(MemorySegment.class, MemoryAddress.class, long.class, Context.class));
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     /**
      * A binding context is used as an helper to carry out evaluation of certain bindings; for instance,
@@ -280,7 +254,7 @@ public abstract class Binding {
          * Create a binding context from given scope. The resulting context will throw when
          * the context's allocator is accessed.
          */
-        public static Context ofScope() {
+        public static Context ofSession() {
             MemorySession scope = MemorySession.openConfined();
             return new Context(null, scope) {
                 @Override
@@ -337,8 +311,6 @@ public abstract class Binding {
 
     public abstract void interpret(Deque<Object> stack, BindingInterpreter.StoreFunc storeFunc,
                                    BindingInterpreter.LoadFunc loadFunc, Context context);
-
-    public abstract MethodHandle specialize(MethodHandle specializedHandle, int insertPos, int allocatorPos);
 
     private static void checkType(Class<?> type) {
         if (!type.isPrimitive() || type == void.class)
@@ -546,11 +518,6 @@ public abstract class Binding {
         }
 
         @Override
-        public MethodHandle specialize(MethodHandle specializedHandle, int insertPos, int allocatorPos) {
-            return specializedHandle; // no-op
-        }
-
-        @Override
         public String toString() {
             return "VMStore{" +
                     "storage=" + storage() +
@@ -578,11 +545,6 @@ public abstract class Binding {
         public void interpret(Deque<Object> stack, BindingInterpreter.StoreFunc storeFunc,
                               BindingInterpreter.LoadFunc loadFunc, Context context) {
             stack.push(loadFunc.load(storage(), type()));
-        }
-
-        @Override
-        public MethodHandle specialize(MethodHandle specializedHandle, int insertPos, int allocatorPos) {
-            return specializedHandle; // no-op
         }
 
         @Override
@@ -638,8 +600,8 @@ public abstract class Binding {
 
     /**
      * BUFFER_STORE([offset into memory region], [type])
-     * Pops a MemorySegment from the operand stack, loads a [type] from
-     * [offset into memory region] from it, and pushes it onto the operand stack.
+     * Pops a [type] from the operand stack, then pops a MemorySegment from the operand stack.
+     * Stores the [type] to [offset into memory region].
      * The [type] must be one of byte, short, char, int, long, float, or double
      */
     public static class BufferStore extends Dereference {
@@ -662,13 +624,6 @@ public abstract class Binding {
             MemorySegment operand = (MemorySegment) stack.pop();
             MemorySegment writeAddress = operand.asSlice(offset());
             SharedUtils.write(writeAddress, type(), value);
-        }
-
-        @Override
-        public MethodHandle specialize(MethodHandle specializedHandle, int insertPos, int allocatorPos) {
-            MethodHandle setter = varHandle().toMethodHandle(VarHandle.AccessMode.SET);
-            setter = setter.asType(methodType(void.class, MemorySegment.class, type()));
-            return collectArguments(specializedHandle, insertPos + 1, setter);
         }
 
         @Override
@@ -708,14 +663,6 @@ public abstract class Binding {
         }
 
         @Override
-        public MethodHandle specialize(MethodHandle specializedHandle, int insertPos, int allocatorPos) {
-            MethodHandle filter = varHandle()
-                    .toMethodHandle(VarHandle.AccessMode.GET)
-                    .asType(methodType(type(), MemorySegment.class));
-            return filterArguments(specializedHandle, insertPos, filter);
-        }
-
-        @Override
         public String toString() {
             return "BufferLoad{" +
                     "offset=" + offset() +
@@ -740,8 +687,7 @@ public abstract class Binding {
             this.alignment = alignment;
         }
 
-        private static MemorySegment copyBuffer(MemorySegment operand, long size, long alignment,
-                                                    Context context) {
+        private static MemorySegment copyBuffer(MemorySegment operand, long size, long alignment, Context context) {
             return context.allocator().allocate(size, alignment)
                             .copyFrom(operand.asSlice(0, size));
         }
@@ -776,13 +722,6 @@ public abstract class Binding {
             MemorySegment operand = (MemorySegment) stack.pop();
             MemorySegment copy = copyBuffer(operand, size, alignment, context);
             stack.push(copy);
-        }
-
-        @Override
-        public MethodHandle specialize(MethodHandle specializedHandle, int insertPos, int allocatorPos) {
-            MethodHandle filter = insertArguments(MH_COPY_BUFFER, 1, size, alignment);
-            specializedHandle = collectArguments(specializedHandle, insertPos, filter);
-            return SharedUtils.mergeArguments(specializedHandle, allocatorPos, insertPos + 1);
         }
 
         @Override
@@ -848,13 +787,6 @@ public abstract class Binding {
         }
 
         @Override
-        public MethodHandle specialize(MethodHandle specializedHandle, int insertPos, int allocatorPos) {
-            MethodHandle allocateBuffer = insertArguments(MH_ALLOCATE_BUFFER, 0, size, alignment);
-            specializedHandle = collectArguments(specializedHandle, insertPos, allocateBuffer);
-            return SharedUtils.mergeArguments(specializedHandle, allocatorPos, insertPos);
-        }
-
-        @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
@@ -911,12 +843,6 @@ public abstract class Binding {
         }
 
         @Override
-        public MethodHandle specialize(MethodHandle specializedHandle, int insertPos, int allocatorPos) {
-            return filterArguments(specializedHandle, insertPos,
-                    MethodHandles.filterReturnValue(toAddress, MH_UNBOX_ADDRESS));
-        }
-
-        @Override
         public String toString() {
             return "UnboxAddress{}";
         }
@@ -947,11 +873,6 @@ public abstract class Binding {
         }
 
         @Override
-        public MethodHandle specialize(MethodHandle specializedHandle, int insertPos, int allocatorPos) {
-            return filterArguments(specializedHandle, insertPos, MH_BOX_ADDRESS);
-        }
-
-        @Override
         public String toString() {
             return "BoxAddress{}";
         }
@@ -971,6 +892,10 @@ public abstract class Binding {
             this.size = size;
         }
 
+        public long size() {
+            return size;
+        }
+
         private static MemorySegment toSegment(MemoryAddress operand, long size, Context context) {
             return MemoryAddressImpl.ofLongUnchecked(operand.toRawLongValue(), size, context.session);
         }
@@ -988,13 +913,6 @@ public abstract class Binding {
             MemoryAddress operand = (MemoryAddress) stack.pop();
             MemorySegment segment = toSegment(operand, size, context);
             stack.push(segment);
-        }
-
-        @Override
-        public MethodHandle specialize(MethodHandle specializedHandle, int insertPos, int allocatorPos) {
-            MethodHandle toSegmentHandle = insertArguments(MH_TO_SEGMENT, 1, size);
-            specializedHandle = collectArguments(specializedHandle, insertPos, toSegmentHandle);
-            return SharedUtils.mergeArguments(specializedHandle, allocatorPos, insertPos + 1);
         }
 
         @Override
@@ -1039,29 +957,6 @@ public abstract class Binding {
         public void interpret(Deque<Object> stack, BindingInterpreter.StoreFunc storeFunc,
                               BindingInterpreter.LoadFunc loadFunc, Context context) {
             stack.push(stack.peekLast());
-        }
-
-        /*
-         * Fixes up Y-shaped data graphs (produced by DEREFERENCE):
-         *
-         * 1. DUP()
-         * 2. BUFFER_LOAD(0, int.class)
-         * 3. VM_STORE  (ignored)
-         * 4. BUFFER_LOAD(4, int.class)
-         * 5. VM_STORE  (ignored)
-         *
-         * (specialized in reverse!)
-         *
-         * 5. (int, int) -> void                       insertPos = 1
-         * 4. (MemorySegment, int) -> void             insertPos = 1
-         * 3. (MemorySegment, int) -> void             insertPos = 0
-         * 2. (MemorySegment, MemorySegment) -> void   insertPos = 0
-         * 1. (MemorySegment) -> void                  insertPos = 0
-         *
-         */
-        @Override
-        public MethodHandle specialize(MethodHandle specializedHandle, int insertPos, int allocatorPos) {
-            return SharedUtils.mergeArguments(specializedHandle, insertPos, insertPos + 1);
         }
 
         @Override
