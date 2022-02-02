@@ -53,7 +53,7 @@ public final class HtmlButtonImageTest {
     public static final int BUTTON_WIDTH = 37;
     public static final int SQUARE_HEIGHT = 19;
     public static final int SQUARE_WIDTH = 19;
-    private static final int PIXEL_BUFFER = 3;
+    public static final int PIXEL_BUFFER = 3;
 
     public static void main(String[] args) throws Exception {
         try {
