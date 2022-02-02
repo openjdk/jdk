@@ -3473,6 +3473,24 @@ int os::Linux::hugetlbfs_page_size_flag(size_t page_size) {
   return 0;
 }
 
+bool os::Linux::setup_large_page(size_t page_size) {
+  int flags = MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | hugetlbfs_page_size_flag(page_size);
+  void *p = mmap(NULL, page_size, PROT_READ|PROT_WRITE, flags, -1, 0);
+  if (p != MAP_FAILED) {
+    // Mapping succeeded, sanity check passed.
+    log_info(pagesize)("Large page size (" SIZE_FORMAT "%s) passed sanity check",
+                        byte_size_in_exact_unit(page_size),
+                        exact_unit_for_byte_size(page_size));
+    munmap(p, page_size);
+    return true;
+  }
+  log_info(pagesize)("Large page size (" SIZE_FORMAT "%s) failed sanity check, "
+                     "checking if smaller large page sizes are usable",
+                     byte_size_in_exact_unit(page_size),
+                     exact_unit_for_byte_size(page_size));
+  return false;
+}
+
 bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
   // Include the page size flag to ensure we sanity check the correct page size.
   int flags = MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | hugetlbfs_page_size_flag(page_size);
@@ -3482,25 +3500,6 @@ bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
     // Mapping succeeded, sanity check passed.
     munmap(p, page_size);
     return true;
-  } else {
-      log_info(pagesize)("Large page size (" SIZE_FORMAT "%s) failed sanity check, "
-                         "checking if smaller large page sizes are usable",
-                         byte_size_in_exact_unit(page_size),
-                         exact_unit_for_byte_size(page_size));
-      for (size_t page_size_ = _page_sizes.next_smaller(page_size);
-          page_size_ != (size_t)os::vm_page_size();
-          page_size_ = _page_sizes.next_smaller(page_size_)) {
-        flags = MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | hugetlbfs_page_size_flag(page_size_);
-        p = mmap(NULL, page_size_, PROT_READ|PROT_WRITE, flags, -1, 0);
-        if (p != MAP_FAILED) {
-          // Mapping succeeded, sanity check passed.
-          munmap(p, page_size_);
-          log_info(pagesize)("Large page size (" SIZE_FORMAT "%s) passed sanity check",
-                             byte_size_in_exact_unit(page_size_),
-                             exact_unit_for_byte_size(page_size_));
-          return true;
-        }
-      }
   }
 
   if (warn) {
@@ -3654,7 +3653,7 @@ void warn_no_large_pages_configured() {
   }
 }
 
-bool os::Linux::setup_large_page_type(size_t page_size) {
+bool os::Linux::large_page_sanity_check(size_t page_size) {
   if (FLAG_IS_DEFAULT(UseHugeTLBFS) &&
       FLAG_IS_DEFAULT(UseSHM) &&
       FLAG_IS_DEFAULT(UseTransparentHugePages)) {
@@ -3773,8 +3772,15 @@ void os::large_page_init() {
 
   // Populate _page_sizes with large page sizes less than or equal to
   // _large_page_size.
+  bool large_page_found = false;
   for (size_t page_size = _large_page_size; page_size != 0;
          page_size = all_large_pages.next_smaller(page_size)) {
+    if (!large_page_found &&
+      page_size != (size_t)os::vm_page_size() &&
+      os::Linux::setup_large_page(page_size)) {
+      _large_page_size = page_size;
+      large_page_found = true;
+    }
     _page_sizes.add(page_size);
   }
 
@@ -3786,7 +3792,7 @@ void os::large_page_init() {
   }
 
   // Now determine the type of large pages to use:
-  UseLargePages = os::Linux::setup_large_page_type(_large_page_size);
+  UseLargePages = os::Linux::large_page_sanity_check(_large_page_size);
 
   set_coredump_filter(LARGEPAGES_BIT);
 }
@@ -4028,18 +4034,16 @@ char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
   char* small_start = aligned_start + large_bytes;
   size_t small_size = bytes - large_bytes;
   if (!large_committed) {
-    // Failed to commit large pages, so we need to unmap the
-    // reminder of the orinal reservation.
-    ::munmap(small_start, small_size);
+    // Failed to commit large pages, so we need to unmap the whole reservation.
+    ::munmap(aligned_start, bytes);
     return NULL;
   }
 
   // Commit the remaining bytes using small pages.
   bool small_committed = commit_memory_special(small_size, os::vm_page_size(), small_start, exec);
   if (!small_committed) {
-    // Failed to commit the remaining size, need to unmap
-    // the large pages part of the reservation.
-    ::munmap(aligned_start, large_bytes);
+    // Failed to commit the remaining size, need to unmap the whole reservation
+    ::munmap(aligned_start, bytes);
     return NULL;
   }
   return aligned_start;
