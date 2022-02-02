@@ -893,10 +893,13 @@ void ZMark::mark_roots() {
 }
 
 void ZMark::mark_follow() {
-  do {
+  for (;;) {
     ZMarkTask task(this);
     workers()->run(&task);
-  } while (!ZAbort::should_abort() && try_terminate_flush());
+    if (ZAbort::should_abort() || !try_terminate_flush()) {
+      break;
+    }
+  }
 }
 
 bool ZMark::try_end() {
