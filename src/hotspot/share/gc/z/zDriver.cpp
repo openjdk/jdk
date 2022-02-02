@@ -39,6 +39,23 @@
 static const ZStatPhaseCollection ZPhaseCollectionMinor("Minor Garbage Collection", true /* minor */);
 static const ZStatPhaseCollection ZPhaseCollectionMajor("Major Garbage Collection", false /* minor */);
 
+template <typename DriverT>
+class ZGCCauseSetter : public GCCauseSetter {
+private:
+  DriverT* _driver;
+
+public:
+  ZGCCauseSetter(DriverT* driver, GCCause::Cause cause) :
+      GCCauseSetter(ZCollectedHeap::heap(), cause),
+      _driver(driver) {
+    _driver->set_gc_cause(cause);
+  }
+
+  ~ZGCCauseSetter() {
+    _driver->set_gc_cause(GCCause::_no_gc);
+  }
+};
+
 ZLock*        ZDriver::_lock;
 ZDriverMinor* ZDriver::_minor;
 ZDriverMajor* ZDriver::_major;
@@ -87,7 +104,20 @@ ZDriverUnlocker::~ZDriverUnlocker() {
   ZDriver::lock();
 }
 
+ZDriver::ZDriver() :
+    _gc_cause(GCCause::_no_gc) {
+}
+
+void ZDriver::set_gc_cause(GCCause::Cause cause) {
+  _gc_cause = cause;
+}
+
+GCCause::Cause ZDriver::gc_cause() {
+  return _gc_cause;
+}
+
 ZDriverMinor::ZDriverMinor() :
+    ZDriver(),
     _port(),
     _gc_timer(),
     _jfr_tracer(),
@@ -133,17 +163,17 @@ size_t ZDriverMinor::used_at_start() const {
 
 class ZDriverScopeMinor : public StackObj {
 private:
-  GCIdMark                   _gc_id;
-  GCCause::Cause             _gc_cause;
-  GCCauseSetter              _gc_cause_setter;
-  ZStatTimer                 _stat_timer;
-  ZServiceabilityCycleTracer _tracer;
+  GCIdMark                     _gc_id;
+  GCCause::Cause               _gc_cause;
+  ZGCCauseSetter<ZDriverMinor> _gc_cause_setter;
+  ZStatTimer                   _stat_timer;
+  ZServiceabilityCycleTracer   _tracer;
 
 public:
   ZDriverScopeMinor(const ZDriverRequest& request, ConcurrentGCTimer* gc_timer) :
       _gc_id(),
       _gc_cause(request.cause()),
-      _gc_cause_setter(ZCollectedHeap::heap(), _gc_cause),
+      _gc_cause_setter(ZDriver::minor(), _gc_cause),
       _stat_timer(ZPhaseCollectionMinor, gc_timer),
       _tracer(true /* minor */) {
     // Select number of worker threads to use
@@ -264,6 +294,7 @@ static bool should_preclean_young(GCCause::Cause cause) {
 }
 
 ZDriverMajor::ZDriverMajor() :
+    ZDriver(),
     _port(),
     _gc_timer(),
     _jfr_tracer(),
@@ -324,17 +355,17 @@ size_t ZDriverMajor::used_at_start() const {
 
 class ZDriverScopeMajor : public StackObj {
 private:
-  GCIdMark                   _gc_id;
-  GCCause::Cause             _gc_cause;
-  GCCauseSetter              _gc_cause_setter;
-  ZStatTimer                 _stat_timer;
-  ZServiceabilityCycleTracer _tracer;
+  GCIdMark                     _gc_id;
+  GCCause::Cause               _gc_cause;
+  ZGCCauseSetter<ZDriverMajor> _gc_cause_setter;
+  ZStatTimer                   _stat_timer;
+  ZServiceabilityCycleTracer   _tracer;
 
 public:
   ZDriverScopeMajor(const ZDriverRequest& request, ConcurrentGCTimer* gc_timer) :
       _gc_id(),
       _gc_cause(request.cause()),
-      _gc_cause_setter(ZCollectedHeap::heap(), _gc_cause),
+      _gc_cause_setter(ZDriver::major(), _gc_cause),
       _stat_timer(ZPhaseCollectionMajor, gc_timer),
       _tracer(false /* minor */) {
     // Set up soft reference policy

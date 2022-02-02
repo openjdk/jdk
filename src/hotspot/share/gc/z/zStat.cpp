@@ -649,19 +649,23 @@ size_t ZStatPhaseCollection::used_at_start() const {
 }
 
 void ZStatPhaseCollection::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
+  const GCCause::Cause cause = _minor ? ZDriver::minor()->gc_cause() : ZDriver::major()->gc_cause();
+
   timer->register_gc_start(start);
 
-  jfr_tracer()->report_gc_start(ZCollectedHeap::heap()->gc_cause(), start);
+  jfr_tracer()->report_gc_start(cause, start);
   ZCollectedHeap::heap()->trace_heap_before_gc(jfr_tracer());
 
   set_used_at_start(ZHeap::heap()->used());
 
-  log_info(gc, start)("%s (%s)", name(), GCCause::to_string(ZCollectedHeap::heap()->gc_cause()));
+  log_info(gc, start)("%s (%s)", name(), GCCause::to_string(cause));
 }
 
 void ZStatPhaseCollection::register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const {
+  const GCCause::Cause cause = _minor ? ZDriver::minor()->gc_cause() : ZDriver::major()->gc_cause();
+
   if (ZAbort::should_abort()) {
-    log_info(gc)("%s (%s) Aborted", name(), GCCause::to_string(ZCollectedHeap::heap()->gc_cause()));
+    log_info(gc)("%s (%s) Aborted", name(), GCCause::to_string(cause));
     return;
   }
 
@@ -677,7 +681,7 @@ void ZStatPhaseCollection::register_end(ConcurrentGCTimer* timer, const Ticks& s
 
   log_info(gc)("%s (%s) " ZSIZE_FMT "->" ZSIZE_FMT,
                name(),
-               GCCause::to_string(ZCollectedHeap::heap()->gc_cause()),
+               GCCause::to_string(cause),
                ZSIZE_ARGS(used_at_start()),
                ZSIZE_ARGS(used_at_end));
 }
@@ -1210,7 +1214,7 @@ void ZStatCycle::at_start() {
 void ZStatCycle::at_end(ZStatWorkers* stat_workers, bool record_stats) {
   _end_of_last = Ticks::now();
 
-  if (ZCollectedHeap::heap()->gc_cause() == GCCause::_z_warmup && _nwarmup_cycles < 3) {
+  if (ZDriver::major()->gc_cause() == GCCause::_z_warmup && _nwarmup_cycles < 3) {
     _nwarmup_cycles++;
   }
 

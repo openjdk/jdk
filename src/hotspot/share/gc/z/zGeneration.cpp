@@ -484,7 +484,7 @@ public:
   ~ZGenerationCollectionScopeYoung() {
     // Update statistics and clear the GC timer
     const bool record_stats = ZGeneration::young()->type() == ZYoungType::minor ||
-                              ZCollectedHeap::heap()->gc_cause() == GCCause::_z_warmup;
+                              ZDriver::major()->gc_cause() == GCCause::_z_warmup;
     ZGeneration::young()->at_collection_end(record_stats);
   }
 };

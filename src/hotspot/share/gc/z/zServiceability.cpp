@@ -25,6 +25,7 @@
 #include "gc/shared/generationCounters.hpp"
 #include "gc/shared/hSpaceCounters.hpp"
 #include "gc/z/zCollectedHeap.hpp"
+#include "gc/z/zDriver.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zServiceability.hpp"
 #include "memory/metaspaceCounters.hpp"
@@ -215,7 +216,7 @@ bool ZServiceabilityCycleTracer::_minor_is_active;
 
 ZServiceabilityCycleTracer::ZServiceabilityCycleTracer(bool minor) :
     _memory_manager_stats(ZHeap::heap()->serviceability_cycle_memory_manager(minor),
-                          ZCollectedHeap::heap()->gc_cause(),
+                          minor ? ZDriver::minor()->gc_cause() : ZDriver::major()->gc_cause(),
                           true /* allMemoryPoolsAffected */,
                           true /* recordGCBeginTime */,
                           true /* recordPreGCUsage */,
@@ -247,7 +248,7 @@ ZServiceabilityPauseTracer::ZServiceabilityPauseTracer() :
     _svc_gc_marker(SvcGCMarker::CONCURRENT),
     _counters_stats(ZHeap::heap()->serviceability_counters()->collector_counters(minor_is_active())),
     _memory_manager_stats(ZHeap::heap()->serviceability_pause_memory_manager(minor_is_active()),
-                          ZCollectedHeap::heap()->gc_cause(),
+                          minor_is_active() ? ZDriver::minor()->gc_cause() : ZDriver::major()->gc_cause(),
                           true  /* allMemoryPoolsAffected */,
                           true  /* recordGCBeginTime */,
                           false /* recordPreGCUsage */,

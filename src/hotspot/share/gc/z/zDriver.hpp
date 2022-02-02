@@ -34,7 +34,7 @@ class ZDriverMajor;
 class ZLock;
 class VM_ZOperation;
 
-class ZDriver : public AllStatic {
+class ZDriver : public ConcurrentGCThread {
   friend class ZDriverLocker;
   friend class ZDriverUnlocker;
 
@@ -42,6 +42,8 @@ private:
   static ZLock*        _lock;
   static ZDriverMinor* _minor;
   static ZDriverMajor* _major;
+
+  GCCause::Cause    _gc_cause;
 
   static void lock();
   static void unlock();
@@ -54,9 +56,14 @@ public:
 
   static ZDriverMinor* minor();
   static ZDriverMajor* major();
+
+  ZDriver();
+
+  void set_gc_cause(GCCause::Cause cause);
+  GCCause::Cause gc_cause();
 };
 
-class ZDriverMinor : public ConcurrentGCThread {
+class ZDriverMinor : public ZDriver {
 private:
   ZDriverPort       _port;
   ConcurrentGCTimer _gc_timer;
@@ -83,7 +90,7 @@ public:
   size_t used_at_start() const;
 };
 
-class ZDriverMajor : public ConcurrentGCThread {
+class ZDriverMajor : public ZDriver {
 private:
   ZDriverPort       _port;
   ConcurrentGCTimer _gc_timer;
