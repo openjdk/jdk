@@ -33,7 +33,6 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.stream.Collectors;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -60,11 +59,11 @@ public class TestLocalizedPattern {
                     var rb = ResourceBundle.getBundle("test.java.time.format.Skeletons", l);
                     var keyset = rb.keySet();
                     return keyset.stream()
-                            .map(key -> new Object[] {key, rb.getString(key), l});
+                            .map(key -> new Object[]{key, rb.getString(key), l});
                 })
-                .collect(Collectors.toList())
+                .toList()
                 .toArray(new Object[0][0]);
-    };
+    }
 
     @DataProvider(name = "invalidSkeletons")
     Object[][] data_invalidSkeletons() {

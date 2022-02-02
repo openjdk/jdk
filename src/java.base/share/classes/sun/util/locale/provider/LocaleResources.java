@@ -126,9 +126,8 @@ public class LocaleResources {
         "[vz]{0,4})");    // Zone
 
     // Input Skeleton map for "preferred" and "allowed"
-    // Map<"region", "skeleton">
-    private static Map<String, String> preferredInputSkeletons;
-    private static Map<String, String> allowedInputSkeletons;
+    // Map<"preferred"/"allowed", Map<"region", "skeleton">>
+    private static Map<String, Map<String, String>> inputSkeletons;
 
     // Skeletons for "j" and "C" input skeleton symbols for this locale
     private String jPattern;
@@ -625,6 +624,8 @@ public class LocaleResources {
             }
         }
 
+        trace("requested: %s, locale: %s, calType: %s, matched: %s\n", requestedTemplate, locale, calType, matched);
+
         return matched;
     }
 
@@ -644,33 +645,28 @@ public class LocaleResources {
 
     private void initSkeletonIfNeeded() {
         // "preferred"/"allowed" input skeleton maps
-        if (preferredInputSkeletons == null) {
-            preferredInputSkeletons = new HashMap<>();
-            allowedInputSkeletons = new HashMap<>();
+        if (inputSkeletons == null) {
+            inputSkeletons = new HashMap<>();
             Pattern p = Pattern.compile("([^:]+):([^;]+);");
             ResourceBundle r = localeData.getDateFormatData(Locale.ROOT);
-            var inputRegionsKey = SKELETON_INPUT_REGIONS_KEY + ".preferred";
-            if (r.containsKey(inputRegionsKey)) {
-                p.matcher(r.getString(inputRegionsKey)).results()
-                    .forEach(mr -> {
-                        Arrays.stream(mr.group(2).split(" "))
-                                .forEach(region -> preferredInputSkeletons.put(region, mr.group(1)));
-                    });
-            }
-            inputRegionsKey = SKELETON_INPUT_REGIONS_KEY + ".allowed";
-            if (r.containsKey(inputRegionsKey)) {
-                p.matcher(r.getString(inputRegionsKey)).results()
-                    .forEach(mr -> {
-                        Arrays.stream(mr.group(2).split(" "))
-                            .forEach(region -> allowedInputSkeletons.put(region, mr.group(1)));
-                    });
-            }
+            Stream.of("preferred", "allowed").forEach(type -> {
+                var inputRegionsKey = SKELETON_INPUT_REGIONS_KEY + "." + type;
+                Map<String, String> typeMap = new HashMap<>();
+
+                if (r.containsKey(inputRegionsKey)) {
+                    p.matcher(r.getString(inputRegionsKey)).results()
+                        .forEach(mr ->
+                            Arrays.stream(mr.group(2).split(" "))
+                                .forEach(region -> typeMap.put(region, mr.group(1))));
+                }
+                inputSkeletons.put(type, typeMap);
+            });
         }
 
         // j/C patterns for this locale
         if (jPattern == null) {
-            jPattern = resolveInputSkeleton(preferredInputSkeletons);
-            CPattern = resolveInputSkeleton(allowedInputSkeletons);
+            jPattern = resolveInputSkeleton("preferred");
+            CPattern = resolveInputSkeleton("allowed");
             // hack: "allowed" contains reversed order for hour/period, e.g, "hB" which should be "Bh" as a skeleton
             if (CPattern.length() == 2) {
                 var ba = new byte[2];
@@ -684,14 +680,15 @@ public class LocaleResources {
     /**
      * Resolve locale specific input skeletons. Fall back method is different from usual
      * resource bundle's, as it has to be "lang-region" -> "region" -> "lang-001" -> "001"
-     * @param inputSkeletons input skeletons map
+     * @param type type of the input skeleton
      * @return resolved skeletons for this locale, defaults to "h" if none found.
      */
-    private String resolveInputSkeleton(Map<String, String> inputSkeletons) {
-        return inputSkeletons.getOrDefault(locale.getLanguage() + "-" + locale.getCountry(),
-            inputSkeletons.getOrDefault(locale.getCountry(),
-                inputSkeletons.getOrDefault(locale.getLanguage() + "-001",
-                    inputSkeletons.getOrDefault("001", "h"))));
+    private String resolveInputSkeleton(String type) {
+        var regionToSkeletonMap = inputSkeletons.get(type);
+        return regionToSkeletonMap.getOrDefault(locale.getLanguage() + "-" + locale.getCountry(),
+            regionToSkeletonMap.getOrDefault(locale.getCountry(),
+                regionToSkeletonMap.getOrDefault(locale.getLanguage() + "-001",
+                    regionToSkeletonMap.getOrDefault("001", "h"))));
     }
 
     /**
@@ -702,11 +699,9 @@ public class LocaleResources {
      * @return skeleton with j/C substituted with concrete patterns
      */
     private String substituteInputSkeletons(String requestedTemplate) {
-        var firstC = requestedTemplate.indexOf('C');
-        var lastC = requestedTemplate.lastIndexOf('C');
-        var cCount = firstC >= 0 ? lastC - firstC + 1 : 0;
-        return requestedTemplate.replaceAll("[jJ]", jPattern) // regard 'J' as 'j' for now
-                .replaceFirst("C+", CPattern.replaceAll("([hkHK])", "$1".repeat(cCount)));
+        var cCount = requestedTemplate.chars().filter(c -> c == 'C').count();
+        return requestedTemplate.replaceAll("j", jPattern)
+                .replaceFirst("C+", CPattern.replaceAll("([hkHK])", "$1".repeat((int)cCount)));
     }
 
     /**
@@ -717,24 +712,9 @@ public class LocaleResources {
      * @return inferred Stream of skeletons in its priority order
      */
     private Stream<String> possibleInferred(String skeleton) {
-        return List.of(skeleton).stream()
-            .flatMap(s -> {
-                if (s.indexOf('M') >= 0) {
-                    return Stream.concat(priorityList(s, "M", "M"), priorityList(s, "M", "L"));
-                } else if (s.indexOf('L') >= 0) {
-                    return Stream.concat(priorityList(s, "L", "L"), priorityList(s, "L", "M"));
-                }
-                return List.of(s).stream();
-            })
-            .flatMap(s -> {
-                if (s.indexOf('E') >= 0) {
-                    return Stream.concat(priorityList(s, "E", "E"), priorityList(s, "E", "c"));
-                } else if (s.indexOf('c') >= 0) {
-                    return Stream.concat(priorityList(s, "c", "c"), priorityList(s, "c", "E"));
-                }
-                return List.of(s).stream();
-            })
-            .distinct();
+        return priorityList(skeleton, "M", "L").stream()
+                .flatMap(s -> priorityList(s, "E", "c").stream())
+                .distinct();
     }
 
     /**
@@ -744,12 +724,16 @@ public class LocaleResources {
      * @param skeleton skeleton
      * @param pChar pattern character string
      * @param subChar substitute character string
-     * @return stream of skeletons
+     * @return list of skeletons
      */
-    private Stream<String> priorityList(String skeleton, String pChar, String subChar) {
-        List<String> list;
+    private List<String> priorityList(String skeleton, String pChar, String subChar) {
+        int first = skeleton.indexOf(pChar);
         int last = skeleton.lastIndexOf(pChar);
-        if (last >= 0) {
+
+        if (first >= 0) {
+            var prefix = skeleton.substring(0, first);
+            var suffix= skeleton.substring(last + 1);
+
             // Priority are based on this chart. First column is the original count of `pChar`,
             // then it is followed by inferred skeletons base on priority.
             //
@@ -757,22 +741,23 @@ public class LocaleResources {
             // 2->1->3->4
             // 3->4->2->1
             // 4->3->2->1
-            final String s1 = skeleton.replaceFirst(pChar + "+", subChar);
-            final String s2 = skeleton.replaceFirst(pChar + "+", subChar.repeat(2));
-            final String s3 = skeleton.replaceFirst(pChar + "+", subChar.repeat(3));
-            final String s4 = skeleton.replaceFirst(pChar + "+", subChar.repeat(4));
-            list = switch (last - skeleton.indexOf(pChar) + 1) {
-                case 1 -> List.of(s1, s2, s3, s4);
-                case 2 -> List.of(s2, s1, s3, s4);
-                case 3 -> List.of(s3, s4, s2, s1);
-                case 4 -> List.of(s4, s3, s2, s1);
-                default -> List.of(skeleton);
+            var o1 = prefix + pChar + suffix;
+            var o2 = prefix + pChar.repeat(2) + suffix;
+            var o3 = prefix + pChar.repeat(3) + suffix;
+            var o4 = prefix + pChar.repeat(4) + suffix;
+            var s1 = prefix + subChar + suffix;
+            var s2 = prefix + subChar.repeat(2) + suffix;
+            var s3 = prefix + subChar.repeat(3) + suffix;
+            var s4 = prefix + subChar.repeat(4) + suffix;
+            return switch (last - first) {
+                case 1 -> List.of(skeleton, o1, o2, o3, o4, s1, s2, s3, s4);
+                case 2 -> List.of(skeleton, o2, o1, o3, o4, s2, s1, s3, s4);
+                case 3 -> List.of(skeleton, o3, o4, o2, o1, s3, s4, s2, s1);
+                default -> List.of(skeleton, o4, o3, o2, o1, s4, s3, s2, s1);
             };
         } else {
-            list = List.of(skeleton);
+            return List.of(skeleton);
         }
-
-        return list.stream();
     }
 
     private String getDateTimePattern(String prefix, String key, int styleIndex, String calendarType) {
