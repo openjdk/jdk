@@ -670,19 +670,11 @@ bool PSScavenge::invoke_no_policy() {
   return !promotion_failure_occurred;
 }
 
-// This method iterates over all objects in the young generation,
-// removing all forwarding references. It then restores any preserved marks.
 void PSScavenge::clean_up_failed_promotion() {
-  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  PSYoungGen* young_gen = heap->young_gen();
-
-  RemoveForwardedPointerClosure remove_fwd_ptr_closure;
-  young_gen->object_iterate(&remove_fwd_ptr_closure);
-
   PSPromotionManager::restore_preserved_marks();
 
   // Reset the PromotionFailureALot counters.
-  NOT_PRODUCT(heap->reset_promotion_should_fail();)
+  NOT_PRODUCT(ParallelScavengeHeap::heap()->reset_promotion_should_fail();)
 }
 
 bool PSScavenge::should_attempt_scavenge() {

@@ -30,7 +30,7 @@
  * <h2>Foreign memory access</h2>
  *
  * <p>
- * The main abstractions introduced to support foreign memory access is {@link jdk.incubator.foreign.MemorySegment}, which
+ * The main abstraction introduced to support foreign memory access is {@link jdk.incubator.foreign.MemorySegment}, which
  * models a contiguous memory region, which can reside either inside or outside the Java heap.
  * A memory segment represents the main access coordinate of a memory access var handle, which can be obtained
  * using the combinator methods defined in the {@link jdk.incubator.foreign.MemoryHandles} class; a set of
