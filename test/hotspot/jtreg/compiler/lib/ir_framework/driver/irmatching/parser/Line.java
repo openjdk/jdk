@@ -78,7 +78,6 @@ class Line extends AbstractLine {
         return isPrintIdealStart() || isPrintOptoAssemblyStart();
     }
 
-
     /**
      * Is this line a start of a PrintIdeal output block?
      */

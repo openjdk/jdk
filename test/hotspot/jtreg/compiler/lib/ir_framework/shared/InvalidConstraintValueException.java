@@ -24,9 +24,9 @@
 package compiler.lib.ir_framework.shared;
 
 /**
- * Exception threw when {@link ComparisonConstraintParser} parses an invalid value.
+ * Exception thrown when {@link ComparisonConstraintParser} parses an invalid value.
  */
-public class InvalidConstraintValueException extends Exception {
+class InvalidConstraintValueException extends Exception {
     private final String invalidValue;
     private final String comparator;
 

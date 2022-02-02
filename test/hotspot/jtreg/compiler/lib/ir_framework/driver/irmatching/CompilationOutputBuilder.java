@@ -32,7 +32,7 @@ import java.util.List;
  *
  * @see IRMethodMatchResult
  */
-class CompilationsBuilder {
+class CompilationOutputBuilder {
 
     public static String build(List<IRMethodMatchResult> results) {
         StringBuilder compilationsBuilder = new StringBuilder();
@@ -45,6 +45,6 @@ class CompilationsBuilder {
     }
 
     private static String buildMatchedCompilationMessage(IRMethodMatchResult result) {
-        return result.getMatchedCompilation() + System.lineSeparator() + System.lineSeparator();
+        return result.getMatchedCompilationOutput() + System.lineSeparator() + System.lineSeparator();
     }
 }

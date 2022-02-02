@@ -24,7 +24,7 @@
 package compiler.lib.ir_framework.shared;
 
 /**
- * Exception threw when {@link ComparisonConstraintParser} cannot find a constraint.
+ * Exception thrown when {@link ComparisonConstraintParser} cannot find a constraint.
  */
-public class EmptyConstraintException extends Exception {
+class EmptyConstraintException extends Exception {
 }

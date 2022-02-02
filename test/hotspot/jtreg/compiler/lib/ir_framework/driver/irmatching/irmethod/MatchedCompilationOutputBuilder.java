@@ -34,11 +34,11 @@ import java.util.List;
  *
  * @see IRMethodMatchResult
  */
-class MatchedCompilationBuilder {
+class MatchedCompilationOutputBuilder {
     private final IRMethod irMethod;
     private final OutputMatch outputMatch;
 
-    public MatchedCompilationBuilder(IRMethod irMethod, List<IRRuleMatchResult> irRulesMatchResults, boolean missingCompilationOutput) {
+    public MatchedCompilationOutputBuilder(IRMethod irMethod, List<IRRuleMatchResult> irRulesMatchResults, boolean missingCompilationOutput) {
         this.irMethod = irMethod;
         this.outputMatch = getOutputMatch(irRulesMatchResults, missingCompilationOutput);
     }

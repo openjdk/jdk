@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,13 @@
 package compiler.lib.ir_framework.shared;
 
 /**
- * The error reporting of the IR framework is throwing exceptions unconditionally separate methods. The calling methods,
- * however, do not see these exceptions. As a result, some IDEs could complain about impossible states (e.g. null pointer
- * dereferences, even though an exception will be thrown earlier). To avoid that, throw an instance of this class instead.
+ * The error reporting of the IR framework is throwing exceptions unconditionally in separate methods. The calling methods,
+ * however, do not see these exceptions. As a result, Java and/or some IDEs could complain about impossible states
+ * (e.g. uninitialized variables, null pointer dereferences etc. even though an exception will be thrown earlier).
+ * To avoid that, throw an instance of this class instead.
  */
-public class UnreachableCodeException extends RuntimeException {
+class UnreachableCodeException extends RuntimeException {
     public UnreachableCodeException() {
-        super("Code should have been unreachable");
+        super("Unreachable code");
     }
 }

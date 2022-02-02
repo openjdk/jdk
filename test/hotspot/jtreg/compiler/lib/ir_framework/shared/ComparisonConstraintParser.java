@@ -124,7 +124,6 @@ public class ComparisonConstraintParser<T extends Comparable<T>> {
                 }
             }
         }
-
     }
 
     private static <T extends Comparable<T>> T parseGivenValue(Function<String, T> parseFunction, ParsedResult<T> result)

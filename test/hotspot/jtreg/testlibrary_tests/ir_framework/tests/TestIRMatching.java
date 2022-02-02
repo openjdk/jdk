@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public class TestIRMatching {
     private static void addException(Exception e) {
         System.out.flush();
         System.err.flush();
-        exceptions.put(e, baos.toString() + System.lineSeparator() + baosErr.toString());
+        exceptions.put(e, baos + System.lineSeparator() + baosErr);
     }
 
     public static void main(String[] args) {
@@ -395,7 +395,7 @@ public class TestIRMatching {
             }
         }
         if (!output.contains(builder.toString())) {
-            addException(new RuntimeException("Could not find encoding: \"" + builder.toString() + System.lineSeparator()));
+            addException(new RuntimeException("Could not find encoding: \"" + builder + System.lineSeparator()));
         }
     }
 }
@@ -1514,7 +1514,7 @@ abstract class Constraint {
                 }
             }
         }
-        Asserts.assertTrue(matched, toString() + " should have been matched");
+        Asserts.assertTrue(matched, this + " should have been matched");
     }
 
     abstract protected void checkIRRule(String irRule);

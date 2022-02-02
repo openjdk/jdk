@@ -31,7 +31,7 @@ import compiler.lib.ir_framework.driver.irmatching.parser.IRMethodParser;
 import java.util.*;
 
 /**
- * Parse the hotspot pid file of the test VM to match all @IR rules.
+ * This class parses the hotspot_pid* file of the test VM to match all applicable @IR rules afterwards.
  */
 public class IRMatcher {
     public static final String SAFEPOINT_WHILE_PRINTING_MESSAGE = "<!-- safepoint while printing -->";
@@ -45,7 +45,7 @@ public class IRMatcher {
     }
 
     /**
-     * Do an IR matching of all methods with applicable @IR rules prepared with by the IRMethodParser.
+     * Do an IR matching of all methods with applicable @IR rules prepared with by the {@link IRMethodParser}.
      */
     private void applyIRRules(Collection<IRMethod> irMethods) {
         List<IRMethodMatchResult> results = new ArrayList<>();
@@ -80,7 +80,7 @@ public class IRMatcher {
     private void reportFailures(List<IRMethodMatchResult> results) {
         Collections.sort(results); // Alphabetically
         throwIfNoSafepointWhilePrinting(IRMatcherFailureMessageBuilder.build(results),
-                                        CompilationsBuilder.build(results));
+                                        CompilationOutputBuilder.build(results));
     }
 
     // In some very rare cases, the VM output to regex match on contains "<!-- safepoint while printing -->"

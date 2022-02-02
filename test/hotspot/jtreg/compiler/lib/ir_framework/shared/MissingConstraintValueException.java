@@ -24,9 +24,9 @@
 package compiler.lib.ir_framework.shared;
 
 /**
- * Exception threw when {@link ComparisonConstraintParser} cannot find a value in a constraint after a comparator.
+ * Exception thrown when {@link ComparisonConstraintParser} cannot find a value in a constraint after a comparator.
  */
-public class MissingConstraintValueException extends Exception {
+class MissingConstraintValueException extends Exception {
     private final String comparator;
 
     public MissingConstraintValueException(String comparator) {

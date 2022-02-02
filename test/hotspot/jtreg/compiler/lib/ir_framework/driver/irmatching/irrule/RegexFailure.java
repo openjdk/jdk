@@ -74,6 +74,4 @@ abstract class RegexFailure {
         matches.forEach(match -> builder.append("             ").append(match).append(System.lineSeparator()));
         return builder.toString();
     }
-
-
 }

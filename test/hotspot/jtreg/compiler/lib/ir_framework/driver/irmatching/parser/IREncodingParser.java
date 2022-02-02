@@ -74,7 +74,6 @@ class IREncodingParser {
         createIRMethodsWithEncoding(testClass, irRulesMap);
     }
 
-
     /**
      * Read the IR encoding emitted by the test VM to decide if an @IR rule must be checked for a method.
      */

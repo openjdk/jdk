@@ -38,14 +38,14 @@ public class IRMethodMatchResult implements Comparable<IRMethodMatchResult>, Mat
     private final IRMethod irMethod;
     private final List<IRRuleMatchResult> irRulesMatchResults;
     private final FailureMessageBuilder failureMessageBuilder;
-    private final MatchedCompilationBuilder matchedCompilationBuilder;
+    private final MatchedCompilationOutputBuilder matchedCompilationOutputBuilder;
 
     IRMethodMatchResult(IRMethod irMethod, List<IRRuleMatchResult> irRulesMatchResults) {
         this.irMethod = irMethod;
         this.irRulesMatchResults = irRulesMatchResults;
         boolean missingCompilationOutput = irMethod.getOutput().isEmpty();
         this.failureMessageBuilder = new FailureMessageBuilder(irMethod, irRulesMatchResults, missingCompilationOutput);
-        this.matchedCompilationBuilder = new MatchedCompilationBuilder(irMethod, irRulesMatchResults, missingCompilationOutput);
+        this.matchedCompilationOutputBuilder = new MatchedCompilationOutputBuilder(irMethod, irRulesMatchResults, missingCompilationOutput);
     }
 
     public List<IRRuleMatchResult> getIrRulesMatchResults() {
@@ -56,8 +56,8 @@ public class IRMethodMatchResult implements Comparable<IRMethodMatchResult>, Mat
         return !irRulesMatchResults.isEmpty();
     }
 
-    public String getMatchedCompilation() {
-        return matchedCompilationBuilder.build();
+    public String getMatchedCompilationOutput() {
+        return matchedCompilationOutputBuilder.build();
     }
 
     @Override
@@ -69,6 +69,9 @@ public class IRMethodMatchResult implements Comparable<IRMethodMatchResult>, Mat
         return irRulesMatchResults.size();
     }
 
+    /**
+     * Used to sort the failed IR methods alphabetically.
+     */
     @Override
     public int compareTo(IRMethodMatchResult other) {
         return this.irMethod.getMethod().getName().compareTo(other.irMethod.getMethod().getName());

@@ -26,6 +26,9 @@ package compiler.lib.ir_framework.driver.irmatching.parser;
 import java.io.BufferedReader;
 import java.io.IOException;
 
+/**
+ * Class to read all lines of a PrintIdeal or PrintOptoAssembly block.
+ */
 class BlockOutputReader {
     private final BufferedReader reader;
 

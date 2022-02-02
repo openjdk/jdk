@@ -31,6 +31,8 @@ import java.util.Map;
 /**
  * Class to parse the PrintIdeal and PrintOptoAssembly outputs of the test class and store them into a collection
  * of dedicated IRMethod objects used throughout IR matching.
+ *
+ * @see IRMethod
  */
 public class IRMethodParser {
     private final IREncodingParser irEncodingParser;
@@ -41,6 +43,10 @@ public class IRMethodParser {
         this.hotSpotPidFileParser = new HotSpotPidFileParser(testClass.getName());
     }
 
+    /**
+     * Parse the IR encoding and hotspot_pid* file to create a collection of {@link IRMethod} objects.
+     * Return null if there are no applicable @IR rules in any method of the test class.
+     */
     public Collection<IRMethod> parse(String hotspotPidFileName, String irEncoding) {
         Map<String, IRMethod> compilationsMap = irEncodingParser.parseIRMethods(irEncoding);
         if (!compilationsMap.isEmpty()) {

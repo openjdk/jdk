@@ -44,21 +44,6 @@ public class IRRuleMatchResult implements MatchResult {
         this.outputMatch = OutputMatch.NONE;
     }
 
-    public OutputMatch getOutputMatch() {
-        return outputMatch;
-    }
-
-    public void updateOutputMatch(OutputMatch newOutputMatch) {
-        TestFramework.check(newOutputMatch != OutputMatch.NONE, "must be valid state");
-        switch (outputMatch) {
-            case NONE -> outputMatch = newOutputMatch;
-            case IDEAL -> outputMatch = newOutputMatch != OutputMatch.IDEAL
-                    ? OutputMatch.BOTH : OutputMatch.IDEAL;
-            case OPTO_ASSEMBLY -> outputMatch = newOutputMatch != OutputMatch.OPTO_ASSEMBLY
-                    ? OutputMatch.BOTH : OutputMatch.OPTO_ASSEMBLY;
-        }
-    }
-
     private boolean hasFailOnFailures() {
         return failOnFailures != null;
     }
@@ -75,14 +60,30 @@ public class IRRuleMatchResult implements MatchResult {
         this.countsFailures = countsFailures;
     }
 
+    public OutputMatch getOutputMatch() {
+        return outputMatch;
+    }
+
     @Override
     public boolean fail() {
         return failOnFailures != null || countsFailures != null;
     }
 
+    public void updateOutputMatch(OutputMatch newOutputMatch) {
+        TestFramework.check(newOutputMatch != OutputMatch.NONE, "must be valid state");
+        switch (outputMatch) {
+            case NONE -> outputMatch = newOutputMatch;
+            case IDEAL -> outputMatch = newOutputMatch != OutputMatch.IDEAL
+                    ? OutputMatch.BOTH : OutputMatch.IDEAL;
+            case OPTO_ASSEMBLY -> outputMatch = newOutputMatch != OutputMatch.OPTO_ASSEMBLY
+                    ? OutputMatch.BOTH : OutputMatch.OPTO_ASSEMBLY;
+        }
+    }
+
     /**
      * Build a failure message based on the collected failures of this object.
      */
+    @Override
     public String buildFailureMessage() {
         StringBuilder failMsg = new StringBuilder();
         failMsg.append(getIRRuleLine());
