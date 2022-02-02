@@ -36,16 +36,26 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class IREncodingParser {
+/**
+ * Class to parse the IR encoding emitted by the test VM and creating {@link IRMethod} objects for each entry.
+ *
+ * @see IRMethod
+ */
+class IREncodingParser {
 
     private static final boolean PRINT_IR_ENCODING = Boolean.parseBoolean(System.getProperty("PrintIREncoding", "false"));
     private static final Pattern IR_ENCODING_PATTERN =
             Pattern.compile("(?<=" + IREncodingPrinter.START + "\r?\n).*\\R([\\s\\S]*)(?=" + IREncodingPrinter.END + ")");
 
     private final Map<String, IRMethod> compilations;
+    private final Class<?> testClass;
 
-    public IREncodingParser(String irEncoding, Class<?> testClass) {
+    public IREncodingParser(Class<?> testClass) {
+        this.testClass = testClass;
         this.compilations = new HashMap<>();
+    }
+
+    public Map<String, IRMethod> parseIRMethods(String irEncoding) {
         if (TestFramework.VERBOSE || PRINT_IR_ENCODING) {
             System.out.println("Read IR encoding from test VM:");
             System.out.println(irEncoding);
@@ -53,6 +63,7 @@ public class IREncodingParser {
         createCompilationsMap(irEncoding, testClass);
         // We could have found format errors in @IR annotations. Report them now with an exception.
         TestFormat.throwIfAnyFailures();
+        return compilations;
     }
 
     /**
@@ -60,18 +71,9 @@ public class IREncodingParser {
      */
     private void createCompilationsMap(String irEncoding, Class<?> testClass) {
         Map<String, int[]> irRulesMap = parseIREncoding(irEncoding);
-        for (Method m : testClass.getDeclaredMethods()) {
-            IR[] irAnnos = m.getAnnotationsByType(IR.class);
-            if (irAnnos.length > 0) {
-                // Validation of legal @IR attributes and placement of the annotation was already done in Test VM.
-                int[] irRuleIds = irRulesMap.get(m.getName());
-                validateIRRuleIds(m, irAnnos, irRuleIds);
-                if (hasAnyApplicableIRRules(irRuleIds)) {
-                    compilations.put(m.getName(), new IRMethod(m, irRuleIds, irAnnos));
-                }
-            }
-        }
+        createIRMethodsWithEncoding(testClass, irRulesMap);
     }
+
 
     /**
      * Read the IR encoding emitted by the test VM to decide if an @IR rule must be checked for a method.
@@ -121,6 +123,20 @@ public class IREncodingParser {
         return irRulesIdx;
     }
 
+    private void createIRMethodsWithEncoding(Class<?> testClass, Map<String, int[]> irRulesMap) {
+        for (Method m : testClass.getDeclaredMethods()) {
+            IR[] irAnnos = m.getAnnotationsByType(IR.class);
+            if (irAnnos.length > 0) {
+                // Validation of legal @IR attributes and placement of the annotation was already done in Test VM.
+                int[] irRuleIds = irRulesMap.get(m.getName());
+                validateIRRuleIds(m, irAnnos, irRuleIds);
+                if (hasAnyApplicableIRRules(irRuleIds)) {
+                    compilations.put(m.getName(), new IRMethod(m, irRuleIds, irAnnos));
+                }
+            }
+        }
+    }
+
     private void validateIRRuleIds(Method m, IR[] irAnnos, int[] ids) {
         TestFramework.check(ids != null, "Should find method name in validIrRulesMap for " + m);
         TestFramework.check(ids.length > 0, "Did not find any rule indices for " + m);
@@ -134,9 +150,5 @@ public class IREncodingParser {
      */
     private boolean hasAnyApplicableIRRules(int[] irRuleIds) {
         return irRuleIds[0] != IREncodingPrinter.NO_RULE_APPLIED;
-    }
-
-    public Map<String, IRMethod> getCompilations() {
-        return compilations;
     }
 }

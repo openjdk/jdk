@@ -23,48 +23,47 @@
 
 package compiler.lib.ir_framework.driver.irmatching.parser;
 
+import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.shared.TestFrameworkException;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class HotSpotPidFileParser {
+/**
+ * Class to parse the PrintIdeal and PrintOptoAssembly outputs of the test class from the hotspot_pid* file and add them
+ * to the collection of {@link IRMethod} created by {@link IREncodingParser}.
+ *
+ * @see IRMethod
+ * @see IREncodingParser
+ */
+class HotSpotPidFileParser {
     private static final Pattern COMPILE_ID_PATTERN = Pattern.compile("compile_id='(\\d+)'");
 
     private final Pattern compileIdPatternForTestClass;
-    private final Map<String, IRMethod> compilations;
+    private Map<String, IRMethod> compilationsMap;
 
-    public HotSpotPidFileParser(Map<String, IRMethod> compilations, String className) {
-        this.compilations = compilations;
-        this.compileIdPatternForTestClass = Pattern.compile("compile_id='(\\d+)'.*" + Pattern.quote(className) + " (\\S+)");
+    public HotSpotPidFileParser(String testClass) {
+        this.compileIdPatternForTestClass = Pattern.compile("compile_id='(\\d+)'.*" + Pattern.quote(testClass) + " (\\S+)");
     }
 
+    public void setCompilationsMap(Map<String, IRMethod> compilationsMap) {
+        this.compilationsMap = compilationsMap;
+    }
     /**
-     * Parse the hotspot_pid*.log file from the test VM. Read the PrintIdeal and PrintOptoAssembly entries for all
-     * methods of the test class that need to be IR matched (according to IR encoding).
+     * Parse the hotspot_pid*.log file from the test VM. Read the PrintIdeal and PrintOptoAssembly outputs for all
+     * methods of the test class that need to be IR matched (found in compilations map).
      */
-    public void parseCompilations(String hotspotPidFileName) {
-        Map<Integer, IRMethod> compileIdMap = new HashMap<>();
-        try (var br = Files.newBufferedReader(Paths.get(hotspotPidFileName))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                IRMethod irMethod = getIRMethodForTestCompilationHeader(line);
-                if (isTestCompilationHeader(irMethod)) {
-                    addTestMethodCompileId(irMethod, compileIdMap, line);
-                } else {
-                    Block block = getBlockForBlockHeaderLine(line, compileIdMap);
-                    if (isBlockHeader(block)) {
-                        block.readBlockLinesForIRMethod(br);
-                    }
-                }
-            }
+    public Collection<IRMethod> parseCompilations(String hotspotPidFileName) {
+        try {
+            processFileLines(hotspotPidFileName);
+            return compilationsMap.values();
         } catch (IOException e) {
             throw new TestFrameworkException("Error while reading " + hotspotPidFileName, e);
         } catch (FileCorruptedException e) {
@@ -72,86 +71,45 @@ public class HotSpotPidFileParser {
         }
     }
 
-    private static boolean isBlockHeader(Block block) {
-        return block != null;
-    }
-
-    private static boolean isTestCompilationHeader(IRMethod irMethod) {
-        return irMethod != null;
-    }
-
-    /**
-     * Returns a block object if line is a start of an ideal or opto assembly block. Otherwise,
-     * return null.
-     */
-    private Block getBlockForBlockHeaderLine(String line, Map<Integer, IRMethod> compileIdMap) {
-        if (isNotBlockStart(line)) {
-            return null;
-        }
-        IRMethod irMethod = compileIdMap.get(getCompileId(line));
-        if (irMethod != null) {
-            // Is a test method block.
-            if (isPrintIdealStart(line)) {
-                return new IdealBlock(irMethod);
-            } else {
-                return new OptoBlock(irMethod);
+    private void processFileLines(String hotspotPidFileName) throws IOException {
+        Map<Integer, IRMethod> compileIdMap = new HashMap<>();
+        try (var reader = Files.newBufferedReader(Paths.get(hotspotPidFileName))) {
+            Line line = new Line(reader, compileIdPatternForTestClass);
+            BlockOutputReader blockOutputReader = new BlockOutputReader(reader);
+            while (line.readLine()) {
+                if (line.isTestClassCompilation()) {
+                    parseTestMethodCompileId(compileIdMap, line.getLine());
+                } else if (isTestMethodBlockStart(line, compileIdMap)) {
+                    String blockOutput = blockOutputReader.readBlock();
+                    setIRMethodOutput(blockOutput, line, compileIdMap);
+                }
             }
         }
-        return null;
     }
 
-    private boolean isNotBlockStart(String line) {
-        return !isPrintIdealStart(line) && !isPrintOptoAssemblyStart(line);
-    }
-
-    /**
-     * Make sure that line does not contain compile_kind which is used for OSR compilations which we are not
-     * interested in.
-     */
-    private static boolean isPrintIdealStart(String line) {
-        return line.startsWith("<ideal") && !line.contains("compile_kind='");
-    }
-
-    /**
-     * Make sure that line does not contain compile_kind which is used for OSR compilations which we are not
-     * interested in.
-     */
-    private static boolean isPrintOptoAssemblyStart(String line) {
-        return line.startsWith("<opto_assembly") && !line.contains("compile_kind='");
-    }
-
-    /**
-     * Is this line a start of a @Test annotated method?
-     */
-    private IRMethod getIRMethodForTestCompilationHeader(String line) {
-        if (isCompilationHeader(line)) {
-            Matcher matcher = compileIdPatternForTestClass.matcher(line);
-            if (matcher.find()) {
-                // Only care about test class entries. Might have non-class entries as well if user specified additional
-                // compile commands. Ignore these.
-                String methodName = matcher.group(2);
-                return compilations.get(methodName);
-            }
+    private void parseTestMethodCompileId(Map<Integer, IRMethod> compileIdMap, String line) {
+        String methodName = parseMethodName(line);
+        if (isTestAnnotatedMethod(methodName)) {
+            int compileId = getCompileId(line);
+            compileIdMap.put(compileId, getIrMethod(methodName));
         }
-        return null;
     }
 
-    /**
-     * Only consider non-osr (no "compile_kind") and compilations with C2 (no "level")
-     */
-    private boolean isCompilationHeader(String line) {
-        return line.startsWith("<task_queued") && !line.contains("compile_kind='") && !line.contains("level='");
+    private String parseMethodName(String line) {
+        Matcher matcher = compileIdPatternForTestClass.matcher(line);
+        TestFramework.check(matcher.find(), "must find match");
+        return matcher.group(2);
     }
 
-    /**
-     * Parse the compile id from this line if it belongs to a method that needs to be IR tested (part of test class
-     * and IR encoding from the test VM specifies that this method has @IR rules to be checked).
-     */
-    private void addTestMethodCompileId(IRMethod irMethod, Map<Integer, IRMethod> compileIdMap, String line) {
-        // We only care about methods that we are actually gonna IR match based on IR encoding.
-        int compileId = getCompileId(line);
-        compileIdMap.put(compileId, irMethod);
+    private boolean isTestAnnotatedMethod(String testMethodName) {
+        return compilationsMap.containsKey(testMethodName);
     }
+
+    private IRMethod getIrMethod(String testMethodName) {
+        return compilationsMap.get(testMethodName);
+    }
+
+
 
     private int getCompileId(String line) {
         Matcher matcher = COMPILE_ID_PATTERN.matcher(line);
@@ -161,70 +119,27 @@ public class HotSpotPidFileParser {
         return Integer.parseInt(matcher.group(1));
     }
 
-    static class FileCorruptedException extends RuntimeException {
-        public FileCorruptedException(String s) {
-            super(s);
+    private boolean isTestMethodBlockStart(Line line, Map<Integer, IRMethod> compileIdMap) {
+        if (line.isBlockStart() && isTestClassMethodBlock(line, compileIdMap)) {
+            System.out.println(line.getLine());
         }
+        return line.isBlockStart() && isTestClassMethodBlock(line, compileIdMap);
     }
 
-    abstract static class Block {
-        protected final IRMethod irMethod;
-
-        public Block(IRMethod irMethod) {
-            this.irMethod = irMethod;
-        }
-
-        protected String readBlockLinesToString(BufferedReader reader) throws IOException {
-            StringBuilder builder = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null && !line.startsWith("</")) {
-                builder.append(escapeXML(line)).append(System.lineSeparator());
-            }
-            return builder.toString();
-        }
-
-        /**
-         * Need to escape XML special characters.
-         */
-        private static String escapeXML(String line) {
-            if (line.contains("&")) {
-                line = line.replace("&lt;", "<");
-                line = line.replace("&gt;", ">");
-                line = line.replace("&quot;", "\"");
-                line = line.replace("&apos;", "'");
-                line = line.replace("&amp;", "&");
-            }
-            return line;
-        }
-
-        /**
-         * Read all lines belonging to this block and store the output in the IR method.
-         */
-        abstract public void readBlockLinesForIRMethod(BufferedReader br) throws IOException;
+    private boolean isTestClassMethodBlock(Line line, Map<Integer, IRMethod> compileIdMap) {
+        return compileIdMap.containsKey(getCompileId(line.getLine()));
     }
 
-    static class IdealBlock extends Block {
-        public IdealBlock(IRMethod irMethod) {
-            super(irMethod);
-        }
-
-        @Override
-        public void readBlockLinesForIRMethod(BufferedReader br) throws IOException {
-            String lines = readBlockLinesToString(br);
-            irMethod.setIdealOutput(lines);
-        }
+    public void setIRMethodOutput(String blockOutput, Line blockStartLine, Map<Integer, IRMethod> compileIdMap) {
+        IRMethod irMethod = compileIdMap.get(getCompileId(blockStartLine.getLine()));
+        setIRMethodOutput(blockOutput, blockStartLine, irMethod);
     }
 
-    static class OptoBlock extends Block {
-        public OptoBlock(IRMethod irMethod) {
-            super(irMethod);
-        }
-
-        @Override
-        public void readBlockLinesForIRMethod(BufferedReader br) throws IOException {
-            String lines = readBlockLinesToString(br);
-            irMethod.setOptoAssemblyOutput(lines);
+    private void setIRMethodOutput(String blockOutput, Line blockStartLine, IRMethod irMethod) {
+        if (blockStartLine.isPrintIdealStart()) {
+            irMethod.setIdealOutput(blockOutput);
+        } else {
+            irMethod.setOptoAssemblyOutput(blockOutput);
         }
     }
-
 }

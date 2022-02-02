@@ -26,8 +26,7 @@ package compiler.lib.ir_framework.driver.irmatching;
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
-import compiler.lib.ir_framework.driver.irmatching.parser.HotSpotPidFileParser;
-import compiler.lib.ir_framework.driver.irmatching.parser.IREncodingParser;
+import compiler.lib.ir_framework.driver.irmatching.parser.IRMethodParser;
 
 import java.util.*;
 
@@ -38,21 +37,19 @@ public class IRMatcher {
     public static final String SAFEPOINT_WHILE_PRINTING_MESSAGE = "<!-- safepoint while printing -->";
 
     public IRMatcher(String hotspotPidFileName, String irEncoding, Class<?> testClass) {
-        Map<String, IRMethod> compilations = new IREncodingParser(irEncoding, testClass).getCompilations();
-
-        if (!compilations.isEmpty()) {
-            HotSpotPidFileParser parser = new HotSpotPidFileParser(compilations, testClass.getCanonicalName());
-            parser.parseCompilations(hotspotPidFileName);
-            applyIRRules(compilations);
+        IRMethodParser irMethodParser = new IRMethodParser(testClass);
+        Collection<IRMethod> irMethods = irMethodParser.parse(hotspotPidFileName, irEncoding);
+        if (irMethods != null) {
+            applyIRRules(irMethods);
         }
     }
 
     /**
      * Do an IR matching of all methods with applicable @IR rules fetched during parsing of the hotspot pid file.
      */
-    private void applyIRRules(Map<String, IRMethod> compilations) {
+    private void applyIRRules(Collection<IRMethod> irMethods) {
         List<IRMethodMatchResult> results = new ArrayList<>();
-        compilations.values().forEach(m -> applyIRRule(m, results));
+        irMethods.forEach(irMethod -> applyIRRule(irMethod, results));
         if (!results.isEmpty()) {
             reportFailures(results);
         }
