@@ -164,11 +164,14 @@ public:
   void object_iterate(Function function);
 
   void remember(volatile zpointer* p);
-  void clear_remset_non_par(uintptr_t l_offset);
-  void clear_remset_range_non_par(uintptr_t l_offset, size_t size);
+  void clear_current_remset_non_par(uintptr_t l_offset);
+  void clear_previous_remset_non_par(uintptr_t l_offset);
+  void clear_current_remset_range_non_par(uintptr_t l_offset, size_t size);
+  void clear_previous_remset_range_non_par(uintptr_t l_offset, size_t size);
 
   ZRememberedSetReverseIterator remset_reverse_iterator();
   ZRememberedSetIterator remset_iterator_current_limited(uintptr_t l_offset, size_t size);
+  ZRememberedSetIterator remset_iterator_previous_limited(uintptr_t l_offset, size_t size);
 
   zaddress_unsafe find_base(volatile zpointer* p);
 

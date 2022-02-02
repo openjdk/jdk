@@ -24,6 +24,7 @@
 #ifndef SHARE_GC_Z_ZFORWARDING_HPP
 #define SHARE_GC_Z_ZFORWARDING_HPP
 
+#include "gc/z/zArray.hpp"
 #include "gc/z/zAttachedArray.hpp"
 #include "gc/z/zForwardingEntry.hpp"
 #include "gc/z/zGenerationId.hpp"
@@ -44,6 +45,7 @@ class ZForwarding {
 
 private:
   typedef ZAttachedArray<ZForwarding, ZForwardingEntry> AttachedArray;
+  typedef ZArray<volatile zpointer*> PointerArray;
 
   const ZVirtualMemory   _virtual;
   const size_t           _object_alignment_shift;
@@ -55,7 +57,10 @@ private:
   mutable ZConditionLock _ref_lock;
   volatile int32_t       _ref_count;
   bool                   _ref_abort;
-  bool                   _remset_scanned;
+
+  // Relocated remembered set fields support
+  int                    _relocated_remembered_fields_state;
+  PointerArray           _relocated_remembered_fields_array;
 
   // In-place relocation support
   bool                   _in_place;
@@ -72,8 +77,6 @@ private:
 
   template <typename Function>
   void object_iterate_forwarded_via_livemap(Function function);
-  template <typename Function>
-  void object_iterate_forwarded_via_table(Function function);
 
   ZForwarding(ZPage* page, ZPageAge to_age, size_t nentries);
 
@@ -85,6 +88,7 @@ public:
   ZPageAge from_age() const;
   ZPageAge to_age() const;
   zoffset start() const;
+  zoffset_end end() const;
   size_t size() const;
   size_t object_alignment_shift() const;
 
@@ -97,6 +101,9 @@ public:
   // Visit to-objects
   template <typename Function>
   void object_iterate_forwarded(Function function);
+
+  template <typename Function>
+  void object_iterate_forwarded_via_table(Function function);
 
   template <typename Function>
   void oops_do_in_forwarded(Function function);
@@ -128,9 +135,15 @@ public:
   ZForwardingEntry find(uintptr_t from_index, ZForwardingCursor* cursor) const;
   zoffset insert(uintptr_t from_index, zoffset to_offset, ZForwardingCursor* cursor);
 
-  void verify() const;
+  // Relocated remembered set fields support
+  void relocated_remembered_fields_register(volatile zpointer* p);
+  void relocated_remembered_fields_publish();
+  void relocated_remembered_fields_notify_concurrent_scan_of();
+  bool relocated_remembered_fields_is_concurrently_scanned() const;
+  template <typename Function>
+  void relocated_remembered_fields_apply_to_published(Function function);
 
-  bool get_and_set_remset_scanned();
+  void verify() const;
 };
 
 #endif // SHARE_GC_Z_ZFORWARDING_HPP

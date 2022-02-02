@@ -62,15 +62,31 @@ inline bool ZRememberedSet::set(uintptr_t offset) {
   return current()->par_set_bit(index, memory_order_relaxed);
 }
 
-inline void ZRememberedSet::unset_non_par(uintptr_t offset) {
+inline void ZRememberedSet::unset_non_par(CHeapBitMap* bitmap, uintptr_t offset) {
   const BitMap::idx_t index = to_index(offset);
-  current()->clear_bit(index);
+  bitmap->clear_bit(index);
 }
 
-inline void ZRememberedSet::unset_range_non_par(uintptr_t offset, size_t size) {
+inline void ZRememberedSet::unset_current_non_par(uintptr_t offset) {
+  return unset_non_par(current(), offset);
+}
+
+inline void ZRememberedSet::unset_previous_non_par(uintptr_t offset) {
+  return unset_non_par(previous(), offset);
+}
+
+inline void ZRememberedSet::unset_range_non_par(CHeapBitMap* bitmap, uintptr_t offset, size_t size) {
   const BitMap::idx_t start_index = to_index(offset);
   const BitMap::idx_t end_index = to_index(offset + size);
-  current()->clear_range(start_index, end_index);
+  bitmap->clear_range(start_index, end_index);
+}
+
+inline void ZRememberedSet::unset_current_range_non_par(uintptr_t offset, size_t size) {
+  unset_range_non_par(current(), offset, size);
+}
+
+inline void ZRememberedSet::unset_previous_range_non_par(uintptr_t offset, size_t size) {
+  unset_range_non_par(previous(), offset, size);
 }
 
 template <typename Function>

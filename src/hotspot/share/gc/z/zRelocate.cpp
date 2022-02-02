@@ -556,19 +556,61 @@ private:
     // could have been overwritten during in-place relocation.
     const size_t size = ZUtils::object_size(to_addr);
 
-    ZRememberedSetIterator iter = from_page->remset_iterator_current_limited(from_local_offset, size);
+    // If a young generation collection started while the old generation
+    // relocated  objects, the remember set bits were flipped from "current"
+    // to "previous".
+    //
+    // We need to select the correct remembered sets bitmap to ensure that the
+    // old remset bits are found.
+    //
+    // Note that if the young generation marking (remset scanning) finishes
+    // before the old generation relocation has relocated this page, then the
+    // young generation will visit this page's previous remembered set bits and
+    // moved them over to the current bitmap.
+    //
+    // If the young generation runs multiple cycles while the old generation is
+    // relocating, then the first cycle will have consume the the old remset,
+    // bits and moved associated objects to a new old page. The old relocation
+    // could find either the the two bitmaps. So, either it will find the original
+    // remset bits for the page, or it will find an empty bitmap for the page. It
+    // doesn't matter for correctness, because the young generation marking has
+    // already taken care of the bits.
+    ZRememberedSetIterator iter = ZGeneration::young()->is_phase_mark()
+        ? from_page->remset_iterator_previous_limited(from_local_offset, size)
+        : from_page->remset_iterator_current_limited(from_local_offset, size);
+
+    if (ZGeneration::young()->is_phase_mark()) {
+      ZRememberedSetIterator iter = from_page->remset_iterator_current_limited(from_local_offset, size);
+      for (uintptr_t field_local_offset; iter.next(&field_local_offset);) {
+        log_debug(gc, remset)("Multiple minor collections flipped the remset bitmaps");
+      }
+    }
+
     for (uintptr_t field_local_offset; iter.next(&field_local_offset);) {
       if (in_place) {
         // Need to forget the bit in the from-page. This is performed during
         // in-place relocation, which will slide the objects in the current page.
-        from_page->clear_remset_non_par(field_local_offset);
+        if (ZGeneration::young()->is_phase_mark()) {
+          from_page->clear_previous_remset_non_par(field_local_offset);
+        } else {
+          from_page->clear_current_remset_non_par(field_local_offset);
+        }
       }
 
       // Add remset entry in the to-page
       const uintptr_t offset = field_local_offset - from_local_offset;
       const zaddress to_field = to_addr + offset;
       log_trace(gc, reloc)("Remember: " PTR_FORMAT, untype(to_field));
-      to_page->remember((volatile zpointer*)to_field);
+
+      volatile zpointer* const p = (volatile zpointer*)to_field;
+
+      if (ZGeneration::young()->is_phase_mark()) {
+        // Young generation remembered set scanning needs to know about this
+        // field. It will take responsibility to add a new remember set entry if needed.
+        _forwarding->relocated_remembered_fields_register(p);
+      } else {
+        to_page->remember(p);
+      }
     }
 
     if (in_place) {
@@ -746,8 +788,16 @@ public:
       return;
     }
 
+    if (forwarding->from_age() == ZPageAge::old) {
+      log_trace(gc, page)("Relocate old from: " PTR_FORMAT " " PTR_FORMAT, untype(forwarding->page()->start()), untype(forwarding->page()->end()));
+    }
+
     // Relocate objects
     _forwarding->object_iterate([&](oop obj) { relocate_object(obj); });
+
+    if (forwarding->from_age() == ZPageAge::old) {
+      log_trace(gc, page)("Relocate old from: " PTR_FORMAT " " PTR_FORMAT " done", untype(forwarding->page()->start()), untype(forwarding->page()->end()));
+    }
 
     // Verify
     if (ZVerifyForwarding) {
@@ -761,6 +811,12 @@ public:
     if (in_place) {
       // We are done with the from_space copy of the page
       _forwarding->in_place_relocation_finish();
+    }
+
+    // Publish relocated remembered fields to the young collector.
+    // Needs to be done before the page is released.
+    if (_forwarding->from_age() == ZPageAge::old && ZGeneration::young()->is_phase_mark()) {
+      _forwarding->relocated_remembered_fields_publish();
     }
 
     // Release relocated page

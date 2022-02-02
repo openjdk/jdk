@@ -92,6 +92,13 @@ ZRememberedSetIterator ZRememberedSet::iterator_current_limited(uintptr_t offset
   return ZRememberedSetIterator(current(), index, index + bit_size);
 }
 
+ZRememberedSetIterator ZRememberedSet::iterator_previous_limited(uintptr_t offset, size_t size) {
+  const size_t index = to_index(offset);;
+  const size_t bit_size = to_bit_size(size);
+
+  return ZRememberedSetIterator(previous(), index, index + bit_size);
+}
+
 ZRememberedSetIterator::ZRememberedSetIterator(BitMap* bitmap) :
     ZRememberedSetIterator(bitmap, 0, bitmap->size() - 1) {}
 

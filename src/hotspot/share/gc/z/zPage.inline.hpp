@@ -353,12 +353,20 @@ inline void ZPage::remember(volatile zpointer* p) {
   _remembered_set.set(l_offset);
 }
 
-inline void ZPage::clear_remset_non_par(uintptr_t l_offset) {
-  _remembered_set.unset_non_par(l_offset);
+inline void ZPage::clear_current_remset_non_par(uintptr_t l_offset) {
+  _remembered_set.unset_current_non_par(l_offset);
 }
 
-inline void ZPage::clear_remset_range_non_par(uintptr_t l_offset, size_t size) {
-  _remembered_set.unset_range_non_par(l_offset, size);
+inline void ZPage::clear_previous_remset_non_par(uintptr_t l_offset) {
+  _remembered_set.unset_previous_non_par(l_offset);
+}
+
+inline void ZPage::clear_current_remset_range_non_par(uintptr_t l_offset, size_t size) {
+  _remembered_set.unset_current_range_non_par(l_offset, size);
+}
+
+inline void ZPage::clear_previous_remset_range_non_par(uintptr_t l_offset, size_t size) {
+  _remembered_set.unset_previous_range_non_par(l_offset, size);
 }
 
 inline ZRememberedSetReverseIterator ZPage::remset_reverse_iterator() {
@@ -367,6 +375,10 @@ inline ZRememberedSetReverseIterator ZPage::remset_reverse_iterator() {
 
 inline ZRememberedSetIterator ZPage::remset_iterator_current_limited(uintptr_t l_offset, size_t size) {
   return _remembered_set.iterator_current_limited(l_offset, size);
+}
+
+inline ZRememberedSetIterator ZPage::remset_iterator_previous_limited(uintptr_t l_offset, size_t size) {
+  return _remembered_set.iterator_previous_limited(l_offset, size);
 }
 
 inline bool ZPage::is_remembered(volatile zpointer* p) {

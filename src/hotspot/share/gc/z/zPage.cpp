@@ -115,7 +115,11 @@ void ZPage::reset_remembered_set(ZPageAge prev_age, ZPageResetType type) {
   case ZPageResetType::InPlaceRelocation:
     // Relocation failed and page is being compacted in-place. Current bits
     // are needed to copy the remset incrementally. It will get cleared later on.
-    _remembered_set.clear_previous();
+    if (ZGeneration::young()->is_phase_mark()) {
+      _remembered_set.clear_current();
+    } else {
+      _remembered_set.clear_previous();
+    }
     break;
 
   case ZPageResetType::FlipAging:

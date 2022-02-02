@@ -82,13 +82,6 @@ void ZRemembered::oops_do_forwarded_via_containing(GrowableArrayView<ZRemembered
   }
 }
 
-template <typename Function>
-void ZRemembered::oops_do_forwarded(ZForwarding* forwarding, Function function) const {
-  // All objects have been forwarded, and the page could have been detached.
-  // Visit all objects via the forwarding table.
-  forwarding->oops_do_in_forwarded_via_table(function);
-}
-
 bool ZRemembered::should_scan_page(ZPage* page) const {
   if (!ZGeneration::old()->is_phase_relocate()) {
     // If the old generation collection is not in the relocation phase, then it
@@ -96,21 +89,42 @@ bool ZRemembered::should_scan_page(ZPage* page) const {
     return true;
   }
 
-  if (page->is_allocating()) {
-    // If the page is old and was allocated after old marking start, then it
-    // can't be part of the old relocation set.
+  ZForwarding* const forwarding = ZGeneration::old()->forwarding(ZOffset::address_unsafe(page->start()));
+
+  if (forwarding == NULL) {
+    // This page was provably not part of the old relocation set
     return true;
   }
 
-  // If we get here, we know that the old collection is concurrently
-  // relocating objects, and the page was allocated at a time that makes it
-  // possible for it to be in the relocation set.
-
-  if (ZGeneration::old()->forwarding(ZOffset::address_unsafe(page->start())) == NULL) {
-    // This page was provably not part of the old relocation set.
+  if (!forwarding->relocated_remembered_fields_is_concurrently_scanned()) {
+    // Safe to scan
     return true;
   }
 
+  // If we get, we know that the old collection is concurrently relocating
+  // objects. We need to be extremely careful not to scan a page that is
+  // concurrently being in-place relocated because it's objects and previous
+  // bits could be concurrently be moving around.
+  //
+  // Before calling this function ZRemembered::scan_forwarding ensures
+  // that all forwardings that have not already been fully relocated,
+  // will have had their "previous" remembered set bits scanned.
+  //
+  // The current page we're currently scanning could either be the same page
+  // that was found during scan_forwarding, or it could have been replaced
+  // by a new "allocating" page. There are two situations we have to consider:
+  //
+  // 1) If it is a proper new allocating page, then all objects where copied
+  // after scan_forwarding ran, and we are guaranteed that no "previous"
+  // remembered set bits are set. So, there's no need to scan this page.
+  //
+  // 2) If this is an in-place relocated page, then the entire page could
+  // be concurrently relocated. Meaning that both objects and previous
+  // remembered set bits could be moving around. However, if the in-place
+  // relocation is ongoing, we've already scanned all relevant "previous"
+  // bits when calling scan_forwarding. So, this page *must* not be scanned.
+  //
+  // Don't scan the page.
   return false;
 }
 
@@ -243,14 +257,13 @@ struct ZRememberedScanForwardingMeasureReleased {
 void ZRemembered::scan_forwarding(ZForwarding* forwarding, void* context_void) const {
   ZRememberedScanForwardingContext* context = (ZRememberedScanForwardingContext*)context_void;
 
-  if (forwarding->get_and_set_remset_scanned()) {
-    // Scanned last young cycle; implies that the to-space objects
-    // are going to be found in the page table scan
-    return;
-  }
-
   if (forwarding->retain_page()) {
     ZRememberedScanForwardingMeasureRetained measure(context);
+
+    // We don't want to wait for the old relocation to finish and publish all
+    // relocated remembered fields. Reject its fields and collect enough data
+    // up-front.
+    forwarding->relocated_remembered_fields_notify_concurrent_scan_of();
 
     // Collect all remset info while the page is retained
     GrowableArrayCHeap<ZRememberedSetContaining, mtGC>* array = &context->_containing_array;
@@ -267,9 +280,10 @@ void ZRemembered::scan_forwarding(ZForwarding* forwarding, void* context_void) c
   } else {
     ZRememberedScanForwardingMeasureReleased measure(context);
 
-    oops_do_forwarded(forwarding, [&](volatile zpointer* p) {
-      scan_field(p);
-    });
+    // The page has been released. If the page was relocated while this young
+    // generation collection was running, the old generation relocation will
+    // have published all addresses of fields that had a remembered set entry.
+    forwarding->relocated_remembered_fields_apply_to_published([&](volatile zpointer* p) { scan_field(p); });
   }
 }
 

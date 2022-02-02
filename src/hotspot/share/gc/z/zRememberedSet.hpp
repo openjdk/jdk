@@ -138,8 +138,12 @@ public:
 
   bool get(uintptr_t offset) const;
   bool set(uintptr_t offset);
-  void unset_non_par(uintptr_t offset);
-  void unset_range_non_par(uintptr_t offset, size_t size);
+  void unset_non_par(CHeapBitMap* bitmap, uintptr_t offset);
+  void unset_current_non_par(uintptr_t offset);
+  void unset_previous_non_par(uintptr_t offset);
+  void unset_range_non_par(CHeapBitMap* bitmap, uintptr_t offset, size_t size);
+  void unset_current_range_non_par(uintptr_t offset, size_t size);
+  void unset_previous_range_non_par(uintptr_t offset, size_t size);
 
   // Visit all set offsets.
   template <typename Function /* void(uintptr_t offset) */>
@@ -155,6 +159,7 @@ public:
 
   ZRememberedSetReverseIterator iterator_reverse();
   ZRememberedSetIterator iterator_current_limited(uintptr_t offset, size_t size);
+  ZRememberedSetIterator iterator_previous_limited(uintptr_t offset, size_t size);
 };
 
 #endif // SHARE_GC_Z_ZREMEMBEREDSET_HPP

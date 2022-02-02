@@ -67,7 +67,8 @@ inline ZForwarding::ZForwarding(ZPage* page, ZPageAge to_age, size_t nentries) :
     _ref_lock(),
     _ref_count(1),
     _ref_abort(false),
-    _remset_scanned(false),
+    _relocated_remembered_fields_state(0),
+    _relocated_remembered_fields_array(),
     _in_place(false),
     _in_place_clear_remset_watermark(0),
     _in_place_top_at_start(),
@@ -87,6 +88,10 @@ inline ZPageAge ZForwarding::to_age() const {
 
 inline zoffset ZForwarding::start() const {
   return _virtual.start();
+}
+
+inline zoffset_end ZForwarding::end() const {
+  return _virtual.end();
 }
 
 inline size_t ZForwarding::size() const {
@@ -247,12 +252,60 @@ inline zoffset ZForwarding::insert(uintptr_t from_index, zoffset to_offset, ZFor
   }
 }
 
-inline bool ZForwarding::get_and_set_remset_scanned() {
-  if (_remset_scanned) {
-    return true;
+inline void ZForwarding::relocated_remembered_fields_register(volatile zpointer* p) {
+  // Invariant: Page is being retained
+  assert(ZGeneration::young()->is_phase_mark(), "Only called when");
+
+  const int res = Atomic::load(&_relocated_remembered_fields_state);
+
+  // 0: Gather remembered fields
+  // 1: Have already published fields - not possible since they haven't been
+  //    collected yet
+  // 2: YC rejected fields collected by the OC
+  // 3: YC has marked that there's no more concurrent scanning of relocated
+  //    fields - not possible since this code is still relocating objects
+
+  if (res == 0) {
+    _relocated_remembered_fields_array.push(p);
+    return;
   }
-  _remset_scanned = true;
-  return false;
+
+  assert(res == 2, "Unexpected value");
+}
+
+// Returns true iff the page is being (or about to be) relocated by the OC
+// while the YC gathered the remembered fields of the "from" page.
+inline bool ZForwarding::relocated_remembered_fields_is_concurrently_scanned() const {
+  return Atomic::load(&_relocated_remembered_fields_state) == 2;
+}
+
+template <typename Function>
+inline void ZForwarding::relocated_remembered_fields_apply_to_published(Function function) {
+  // Invariant: Page is not being retained
+  assert(ZGeneration::young()->is_phase_mark(), "Only called when");
+
+  const int res = Atomic::load_acquire(&_relocated_remembered_fields_state);
+
+  // 0: Nothing published - page had already been relocated before YC started
+  // 1: OC relocated and published relocated remembered fields
+  // 2: A previous YC concurrently scanned relocated remembered fields of the "from" page
+  // 3: A previous YC marked that it didn't do (2)
+
+  if (res == 1) {
+    log_debug(gc, remset)("Forwarding remset accept          : " PTR_FORMAT " " PTR_FORMAT " (" PTR_FORMAT ", %s)",
+        untype(start()), untype(end()), p2i(this), Thread::current()->name());
+
+    // OC published relocated remembered fields
+    ZArrayIterator<volatile zpointer*> iter(&_relocated_remembered_fields_array);
+    for (volatile zpointer* to_field_addr; iter.next(&to_field_addr);) {
+      function(to_field_addr);
+    }
+
+    // YC responsible for the array - eagerly deallocate
+    _relocated_remembered_fields_array.clear_and_deallocate();
+  }
+
+  Atomic::store(&_relocated_remembered_fields_state, 3);
 }
 
 #endif // SHARE_GC_Z_ZFORWARDING_INLINE_HPP

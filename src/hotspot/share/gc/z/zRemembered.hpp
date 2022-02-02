@@ -41,9 +41,6 @@ private:
   ZPageAllocator* const _page_allocator;
 
   template <typename Function>
-  void oops_do_forwarded(ZForwarding* forwarding, Function function) const;
-
-  template <typename Function>
   void oops_do_forwarded_via_containing(GrowableArrayView<ZRememberedSetContaining>* array, Function function) const;
 
   bool should_scan_page(ZPage* page) const;
