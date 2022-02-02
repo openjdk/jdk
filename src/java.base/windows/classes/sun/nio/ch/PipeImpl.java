@@ -216,13 +216,16 @@ class PipeImpl
     }
 
     private static ServerSocketChannel createListener(boolean preferUnixDomain) throws IOException {
-        ServerSocketChannel listener;
+        ServerSocketChannel listener = null;
         if (preferUnixDomain && UnixDomainSockets.isSupported()) {
             try {
                 listener = ServerSocketChannel.open(UNIX);
                 listener.bind(null);
                 return listener;
-            } catch (IOException e) {}
+            } catch (IOException | UnsupportedOperationException e) {
+                if (listener != null)
+                    listener.close();
+            }
         }
         listener = ServerSocketChannel.open();
         InetAddress lb = InetAddress.getLoopbackAddress();
