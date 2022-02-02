@@ -461,7 +461,12 @@ public class Main {
         try {
             if (ok) {
                 if (fname != null) {
-                    Files.move(path, Paths.get(fname), StandardCopyOption.REPLACE_EXISTING);
+                    Path target = Paths.get(fname);
+                    Path parent = target.getParent();
+                    if (parent != null) {
+                        Files.createDirectories(parent);
+                    }
+                    Files.move(path, target, StandardCopyOption.REPLACE_EXISTING);
                 } else {
                     Files.copy(path, new FileOutputStream(FileDescriptor.out));
                 }
