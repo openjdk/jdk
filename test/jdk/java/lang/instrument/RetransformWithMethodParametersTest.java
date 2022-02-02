@@ -97,22 +97,34 @@ public class RetransformWithMethodParametersTest extends ATransformerManagementT
         System.out.println(String.valueOf(o));
     }
 
-    // Prints and verifies MethodParameters attribute using reflection.
-    private void verifyMethodParams(boolean expectedPresent, String... expectedNames) throws Throwable {
+    private Parameter[] getTargetClassParameters() throws ClassNotFoundException {
         Class cls = Class.forName(targetClassName);
         // the class contains 1 method (method1)
         Method method = cls.getDeclaredMethods()[0];
         Parameter[] params = method.getParameters();
         log("Params of " + method.getName() + " method (" + params.length + "):");
-        if (expectedPresent) {
-            assertEquals(expectedNames.length, params.length);
-        }
         for (int i = 0; i < params.length; i++) {
-            log("  " + i + ": " + params[i].getName());
-            assertEquals(expectedPresent, params[i].isNamePresent());
-            if (expectedPresent) {
-                assertEquals(expectedNames[i], params[i].getName());
-            }
+            log("  " + i + ": " + params[i].getName()
+                    + " (" + (params[i].isNamePresent() ? "present" : "absent") + ")");
+        }
+        return params;
+    }
+
+    // Verifies MethodParameters attribute is present and contains the expected values.
+    private void verifyPresentMethodParams(String... expectedNames) throws Throwable {
+        Parameter[] params = getTargetClassParameters();
+        assertEquals(expectedNames.length, params.length);
+        for (int i = 0; i < params.length; i++) {
+            assertTrue(params[i].isNamePresent());
+            assertEquals(expectedNames[i], params[i].getName());
+        }
+    }
+
+    // Verifies MethodParameters attribute is absent.
+    private void verifyAbsentMethodParams() throws Throwable {
+        Parameter[] params = getTargetClassParameters();
+        for (int i = 0; i < params.length; i++) {
+            assertTrue(!params[i].isNamePresent());
         }
     }
 
@@ -174,7 +186,7 @@ public class RetransformWithMethodParametersTest extends ATransformerManagementT
         // sanity check
         assertEquals(targetClassName, targetClass.getName());
         // sanity check
-        verifyMethodParams(true, "intParam1", "stringParam1");
+        verifyPresentMethodParams("intParam1", "stringParam1");
 
         addTransformerToManager(fInst, new Transformer(), true);
 
@@ -195,7 +207,7 @@ public class RetransformWithMethodParametersTest extends ATransformerManagementT
                             .transform(1, targetClassName, "-g", "-parameters")));
             retransform(classBytes);
             // MethodParameters attribute should be updated.
-            verifyMethodParams(true, "intParam2", "stringParam2");
+            verifyPresentMethodParams("intParam2", "stringParam2");
 
             log("");
         }
@@ -208,7 +220,7 @@ public class RetransformWithMethodParametersTest extends ATransformerManagementT
                             .transform(1, targetClassName, "-g")));
             retransform(classBytes);
             // MethodParameters attribute should be dropped.
-            verifyMethodParams(false);
+            verifyAbsentMethodParams();
 
             log("");
         }
