@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,12 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
 #if INCLUDE_CDS && INCLUDE_JVMTI
   assert(ik != NULL, "sanity");
   assert(ik->is_shared(), "expecting a shared class");
+  // CFLH check is skipped for VM hidden classes (see KlassFactory::create_from_stream).
+  // It will be skipped for shared VM hidden lambda proxy classes.
+  // Also skipped for shared regenerated classes.
+  if (ik->is_hidden() || ik->is_regenerated()) {
+    return NULL;
+  }
   if (JvmtiExport::should_post_class_file_load_hook()) {
 
     // Post the CFLH

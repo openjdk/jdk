@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -261,15 +261,6 @@ void SystemDictionaryShared::reset_registered_lambda_proxy_class(InstanceKlass* 
 bool SystemDictionaryShared::is_early_klass(InstanceKlass* ik) {
   DumpTimeClassInfo* info = _dumptime_table->get(ik);
   return (info != NULL) ? info->is_early_klass() : false;
-}
-
-bool SystemDictionaryShared::is_hidden_lambda_proxy(InstanceKlass* ik) {
-  assert(ik->is_shared(), "applicable to only a shared class");
-  if (ik->is_hidden()) {
-    return true;
-  } else {
-    return false;
-  }
 }
 
 bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
