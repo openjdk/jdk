@@ -46,6 +46,10 @@ hotspot_gc = \
 hotspot_runtime = \
   runtime
 
+hotspot_runtime_no_cds = \
+  runtime \
+  -runtime/cds
+
 hotspot_handshake = \
   runtime/handshake
 
@@ -384,6 +388,8 @@ hotspot_cds = \
   runtime/cds/ \
   runtime/CompressedOops/
 
+hotspot_cds_only = \
+  runtime/cds/
 
 hotspot_appcds_dynamic = \
   runtime/cds/appcds/ \
@@ -405,6 +411,7 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/BadBSM.java \
  -runtime/cds/appcds/DumpClassList.java \
  -runtime/cds/appcds/DumpClassListWithLF.java \
+ -runtime/cds/appcds/DumpingWithNoCoops.java \
  -runtime/cds/appcds/ExtraSymbols.java \
  -runtime/cds/appcds/LambdaContainsOldInf.java \
  -runtime/cds/appcds/LambdaEagerInit.java \

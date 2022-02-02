@@ -2563,6 +2563,7 @@ public class LogManager {
      *
      * @since 1.5
      */
+    @SuppressWarnings("doclint:reference")
     public static final String LOGGING_MXBEAN_NAME
         = "java.util.logging:type=Logging";
 
@@ -2581,6 +2582,7 @@ public class LogManager {
      * @since 1.5
      */
     @Deprecated(since="9")
+    @SuppressWarnings("doclint:reference")
     public static synchronized LoggingMXBean getLoggingMXBean() {
         return Logging.getInstance();
     }

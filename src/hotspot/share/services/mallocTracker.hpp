@@ -25,8 +25,6 @@
 #ifndef SHARE_SERVICES_MALLOCTRACKER_HPP
 #define SHARE_SERVICES_MALLOCTRACKER_HPP
 
-#if INCLUDE_NMT
-
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/threadCritical.hpp"
@@ -447,8 +445,5 @@ class MallocTracker : AllStatic {
     return header;
   }
 };
-
-#endif // INCLUDE_NMT
-
 
 #endif // SHARE_SERVICES_MALLOCTRACKER_HPP
