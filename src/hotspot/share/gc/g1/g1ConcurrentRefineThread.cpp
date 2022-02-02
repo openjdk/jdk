@@ -185,7 +185,7 @@ void G1PrimaryConcurrentRefineThread::notify(size_t num_cards) {
     // the primary thread if needed.  Non-GC safepoints are expected to
     // rarely (if ever) dirty cards, so defer activation to a post-safepoint
     // notification.
-    if (SafepointSynchronize::is_at_safepoint()) {
+    if (!SafepointSynchronize::is_at_safepoint()) {
       activate();
     }
   }
