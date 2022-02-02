@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,32 +23,38 @@
  * questions.
  */
 
-package java.io;
+package sun.security.util;
+
+import java.security.GeneralSecurityException;
 
 /**
- * Instances of classes that implement this interface are used to
- * filter filenames. These instances are used to filter directory
- * listings in the {@code list} method of class
- * {@code File}, and by the Abstract Window Toolkit's file
- * dialog component.
- *
- * @author  Arthur van Hoff
- * @author  Jonathan Payne
- * @see     java.desktop/java.awt.FileDialog#setFilenameFilter(java.io.FilenameFilter)
- * @see     java.io.File
- * @see     java.io.File#list(java.io.FilenameFilter)
- * @since   1.0
+ * Thrown by TlsChannelBinding if an error occurs
  */
-@SuppressWarnings("doclint:reference") // cross-module links
-@FunctionalInterface
-public interface FilenameFilter {
+public class ChannelBindingException extends GeneralSecurityException {
+
+    @java.io.Serial
+    private static final long serialVersionUID = -5021387249782788460L;
+
     /**
-     * Tests if a specified file should be included in a file list.
-     *
-     * @param   dir    the directory in which the file was found.
-     * @param   name   the name of the file.
-     * @return  {@code true} if and only if the name should be
-     * included in the file list; {@code false} otherwise.
+     * Constructs a ChannelBindingException with no detail message. A detail
+     * message is a String that describes this particular exception.
      */
-    boolean accept(File dir, String name);
+    public ChannelBindingException() {
+        super();
+    }
+
+    /**
+     * Constructs a ChannelBindingException with a detail message and
+     * specified cause.
+     */
+    public ChannelBindingException(String msg, Exception e) {
+        super(msg, e);
+    }
+
+    /**
+     * Constructs a ChannelBindingException with a detail message
+     */
+    public ChannelBindingException(String msg) {
+        super(msg);
+    }
 }
