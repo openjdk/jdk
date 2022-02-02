@@ -2833,6 +2833,9 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
   Node *result = orig_mem;
   // Remember all mergemem nodes encountered and update them in the end
   Node_List mmem_nodes(Thread::current()->resource_area(), 4);
+#ifdef ASSERT
+  Node_List mmem_results(Thread::current()->resource_area(), 4);
+#endif
 
   while (prev != result) {
     prev = result;
@@ -2900,6 +2903,10 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
         //result = find_inst_mem(mmem->memory_at(C->get_general_index(alias_idx)), alias_idx, orig_phis);
         //mmem->set_memory_at(alias_idx, result);
         //
+#ifdef ASSERT
+        mmem_results.push(find_inst_mem(mmem->memory_at(C->get_general_index(alias_idx)),
+                                        alias_idx, orig_phis));
+#endif
         // We remove the self-recursion here by resetting the current frame.
         mmem_nodes.push(mmem);
         prev = NULL;
@@ -2978,6 +2985,7 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
   }
 
   for (uint i = 0; i < mmem_nodes.size(); ++i) {
+    assert(mmem_results[i] == result, "different result from recursion.");
     mmem_nodes[i]->as_MergeMem()->set_memory_at(alias_idx, result);
   }
   // the result is either NULL, MemNode, PhiNode, InitializeNode.
