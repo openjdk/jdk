@@ -192,10 +192,6 @@ deleteGlobalArgumentRefs(JNIEnv *env, InvokeRequest *request)
         argument++;
         argIndex++;
     }
-
-    JDI_ASSERT_MSG(request->methodSignature != NULL, "methodSignature is NULL");
-    jvmtiDeallocate(request->methodSignature);
-    request->methodSignature = NULL;
 }
 
 static jvmtiError
@@ -779,6 +775,10 @@ invoker_completeInvokeRequest(jthread thread)
      * after writing the respone.
      */
     deleteGlobalArgumentRefs(env, request);
+
+    JDI_ASSERT_MSG(request->methodSignature != NULL, "methodSignature is NULL");
+    jvmtiDeallocate(request->methodSignature);
+    request->methodSignature = NULL;
 
     /* From now on, do not access the request structure anymore
      * for this request id, because once we give up the invokerLock it may
