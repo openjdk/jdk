@@ -95,7 +95,7 @@ public class Handler extends URLStreamHandler {
 //     }
     */
 
-    public synchronized URLConnection openConnection(URL u) {
+    public URLConnection openConnection(URL u) {
         return new MailToURLConnection(u);
     }
 

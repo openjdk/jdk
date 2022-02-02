@@ -1042,8 +1042,8 @@ void G1CollectedHeap::prepare_heap_for_mutators() {
   resize_heap_if_necessary();
   uncommit_regions_if_necessary();
 
-  // Rebuild the strong code root lists for each region
-  rebuild_strong_code_roots();
+  // Rebuild the code root lists for each region
+  rebuild_code_roots();
 
   // Purge code root memory
   purge_code_root_memory();
@@ -3289,7 +3289,6 @@ void G1CollectedHeap::retire_gc_alloc_region(HeapRegion* alloc_region,
   _bytes_used_during_gc += allocated_bytes;
   if (dest.is_old()) {
     old_set_add(alloc_region);
-    alloc_region->update_bot_threshold();
   } else {
     assert(dest.is_young(), "Retiring alloc region should be young (%d)", dest.type());
     _survivor.add_used_bytes(allocated_bytes);
@@ -3336,8 +3335,8 @@ public:
              " starting at " HR_FORMAT,
              p2i(_nm), HR_FORMAT_PARAMS(hr), HR_FORMAT_PARAMS(hr->humongous_start_region()));
 
-      // HeapRegion::add_strong_code_root_locked() avoids adding duplicate entries.
-      hr->add_strong_code_root_locked(_nm);
+      // HeapRegion::add_code_root_locked() avoids adding duplicate entries.
+      hr->add_code_root_locked(_nm);
     }
   }
 
@@ -3362,7 +3361,7 @@ public:
              " starting at " HR_FORMAT,
              p2i(_nm), HR_FORMAT_PARAMS(hr), HR_FORMAT_PARAMS(hr->humongous_start_region()));
 
-      hr->remove_strong_code_root(_nm);
+      hr->remove_code_root(_nm);
     }
   }
 
@@ -3405,11 +3404,11 @@ void G1CollectedHeap::purge_code_root_memory() {
   G1CodeRootSet::purge();
 }
 
-class RebuildStrongCodeRootClosure: public CodeBlobClosure {
+class RebuildCodeRootClosure: public CodeBlobClosure {
   G1CollectedHeap* _g1h;
 
 public:
-  RebuildStrongCodeRootClosure(G1CollectedHeap* g1h) :
+  RebuildCodeRootClosure(G1CollectedHeap* g1h) :
     _g1h(g1h) {}
 
   void do_code_blob(CodeBlob* cb) {
@@ -3422,8 +3421,8 @@ public:
   }
 };
 
-void G1CollectedHeap::rebuild_strong_code_roots() {
-  RebuildStrongCodeRootClosure blob_cl(this);
+void G1CollectedHeap::rebuild_code_roots() {
+  RebuildCodeRootClosure blob_cl(this);
   CodeCache::blobs_do(&blob_cl);
 }
 

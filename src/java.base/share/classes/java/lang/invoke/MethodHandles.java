@@ -2105,6 +2105,7 @@ public class MethodHandles {
          * @jvms 5.5 Initialization
          * @jls 12.7 Unloading of Classes and Interfaces
          */
+        @SuppressWarnings("doclint:reference") // cross-module links
         public Lookup defineHiddenClass(byte[] bytes, boolean initialize, ClassOption... options)
                 throws IllegalAccessException
         {

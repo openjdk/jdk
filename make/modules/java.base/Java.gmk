@@ -23,7 +23,7 @@
 # questions.
 #
 
-DOCLINT += -Xdoclint:all/protected,-reference \
+DOCLINT += -Xdoclint:all/protected \
     '-Xdoclint/package:java.*,javax.*'
 JAVAC_FLAGS += -XDstringConcat=inline
 COPY += .icu .dat .spp .nrm content-types.properties \

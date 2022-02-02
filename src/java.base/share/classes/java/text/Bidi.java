@@ -125,6 +125,7 @@ public final class Bidi {
      * @see java.desktop/java.awt.font.TextAttribute#NUMERIC_SHAPING
      * @see java.desktop/java.awt.font.TextAttribute#RUN_DIRECTION
      */
+    @SuppressWarnings("doclint:reference") // cross-module links
     public Bidi(AttributedCharacterIterator paragraph) {
         if (paragraph == null) {
             throw new IllegalArgumentException("paragraph is null");
