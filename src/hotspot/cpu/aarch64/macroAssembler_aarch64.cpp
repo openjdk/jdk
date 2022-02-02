@@ -3692,13 +3692,47 @@ void MacroAssembler::load_method_holder(Register holder, Register method) {
   ldr(holder, Address(holder, ConstantPool::pool_holder_offset_in_bytes())); // InstanceKlass*
 }
 
-void MacroAssembler::load_klass(Register dst, Register src) {
-  if (UseCompressedClassPointers) {
-    ldrw(dst, Address(src, oopDesc::klass_offset_in_bytes()));
-    decode_klass_not_null(dst);
-  } else {
-    ldr(dst, Address(src, oopDesc::klass_offset_in_bytes()));
+// Loads the obj's Klass* into dst.
+// src and dst must be distinct registers
+// Preserves all registers (incl src, rscratch1 and rscratch2), but clobbers condition flags
+void MacroAssembler::load_nklass(Register dst, Register src) {
+  assert(UseCompressedClassPointers, "expects UseCompressedClassPointers");
+
+  assert_different_registers(src, dst);
+
+  Label slow, done;
+
+  // Check if we can take the (common) fast path, if obj is unlocked.
+  ldr(dst, Address(src, oopDesc::mark_offset_in_bytes()));
+  eor(dst, dst, markWord::unlocked_value);
+  tst(dst, markWord::lock_mask_in_place);
+  br(Assembler::NE, slow);
+
+  // Fast-path: shift and decode Klass*.
+  lsr(dst, dst, markWord::klass_shift);
+  b(done);
+
+  bind(slow);
+  enter();
+  // We need r0 as argument and return register for the call. Preserve it, if necessary.
+  if (dst != r0) {
+    push(RegSet::of(r0), sp);
   }
+  mov(r0, src);
+  assert(StubRoutines::load_nklass() != NULL, "Must have stub");
+  far_call(RuntimeAddress(StubRoutines::load_nklass()));
+  if (dst != r0) {
+    mov(dst, r0);
+    pop(RegSet::of(r0), sp);
+  }
+  leave();
+
+  bind(done);
+}
+
+void MacroAssembler::load_klass(Register dst, Register src) {
+  load_nklass(dst, src);
+  decode_klass_not_null(dst);
 }
 
 // ((OopHandle)result).resolve();
@@ -3733,21 +3767,18 @@ void MacroAssembler::load_mirror(Register dst, Register method, Register tmp) {
 }
 
 void MacroAssembler::cmp_klass(Register oop, Register trial_klass, Register tmp) {
-  if (UseCompressedClassPointers) {
-    ldrw(tmp, Address(oop, oopDesc::klass_offset_in_bytes()));
-    if (CompressedKlassPointers::base() == NULL) {
-      cmp(trial_klass, tmp, LSL, CompressedKlassPointers::shift());
-      return;
-    } else if (((uint64_t)CompressedKlassPointers::base() & 0xffffffff) == 0
-               && CompressedKlassPointers::shift() == 0) {
-      // Only the bottom 32 bits matter
-      cmpw(trial_klass, tmp);
-      return;
-    }
-    decode_klass_not_null(tmp);
-  } else {
-    ldr(tmp, Address(oop, oopDesc::klass_offset_in_bytes()));
+  assert(UseCompressedClassPointers, "Lilliput");
+  load_nklass(tmp, oop);
+  if (CompressedKlassPointers::base() == NULL) {
+    cmp(trial_klass, tmp, LSL, CompressedKlassPointers::shift());
+    return;
+  } else if (((uint64_t)CompressedKlassPointers::base() & 0xffffffff) == 0
+             && CompressedKlassPointers::shift() == 0) {
+    // Only the bottom 32 bits matter
+    cmpw(trial_klass, tmp);
+    return;
   }
+  decode_klass_not_null(tmp);
   cmp(trial_klass, tmp);
 }
 

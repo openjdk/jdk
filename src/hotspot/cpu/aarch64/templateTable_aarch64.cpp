@@ -3235,7 +3235,7 @@ void TemplateTable::invokevirtual_helper(Register index,
   __ bind(notFinal);
 
   // get receiver klass
-  __ null_check(recv, oopDesc::klass_offset_in_bytes());
+  __ null_check(recv, oopDesc::mark_offset_in_bytes());
   __ load_klass(r0, recv);
 
   // profile this call
@@ -3325,7 +3325,7 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ tbz(r3, ConstantPoolCacheEntry::is_vfinal_shift, notVFinal);
 
   // Get receiver klass into r3 - also a null check
-  __ null_check(r2, oopDesc::klass_offset_in_bytes());
+  __ null_check(r2, oopDesc::mark_offset_in_bytes());
   __ load_klass(r3, r2);
 
   Label subtype;
@@ -3342,7 +3342,7 @@ void TemplateTable::invokeinterface(int byte_no) {
 
   // Get receiver klass into r3 - also a null check
   __ restore_locals();
-  __ null_check(r2, oopDesc::klass_offset_in_bytes());
+  __ null_check(r2, oopDesc::mark_offset_in_bytes());
   __ load_klass(r3, r2);
 
   Label no_such_method;
@@ -3686,7 +3686,8 @@ void TemplateTable::instanceof() {
   __ get_vm_result_2(r0, rthread);
   __ pop(r3); // restore receiver
   __ verify_oop(r3);
-  __ load_klass(r3, r3);
+  __ load_klass(rscratch1, r3);
+  __ mov(r3, rscratch1);
   __ b(resolved);
 
   // Get superklass in r0 and subklass in r3
