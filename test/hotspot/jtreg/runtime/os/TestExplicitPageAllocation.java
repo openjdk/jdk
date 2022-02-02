@@ -68,14 +68,14 @@ public class TestExplicitPageAllocation {
 
 
     public static void main(String args[]) throws Exception {
-	try {
+        try {
             doSetup();
             testCase1();
             testCase2();
             testCase3();
             testCase4();
         } catch(Exception e) {
-	     System.out.println("Exception"+e);
+           System.out.println("Exception"+e);
         }
         if (errorMessage!=null) {
             throw new AssertionError(errorMessage);
@@ -96,7 +96,7 @@ public class TestExplicitPageAllocation {
         Pattern traceLinePattern = Pattern.compile(traceLinePatternString);
         for (int i = 0; i < lines.size(); ++i) {
             String line = lines.get(i);
-	    System.out.println(line);
+            System.out.println(line);
             if (matchPattern(line)) {
                 Matcher trace = traceLinePattern.matcher(line);
                 trace.find();
