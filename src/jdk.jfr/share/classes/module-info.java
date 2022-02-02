@@ -31,8 +31,6 @@
  */
 module jdk.jfr {
 
-    requires static jdk.jlink;
-
     exports jdk.jfr;
     exports jdk.jfr.consumer;
 

@@ -45,7 +45,11 @@ public final class JFRPlugin extends AbstractPlugin {
     }
 
     public Set<State> getState() {
-        return EnumSet.of(State.AUTO_ENABLED, State.FUNCTIONAL);
+        if (ModuleLayer.boot().findModule("jdk.jfr").isPresent()) {
+            return EnumSet.of(State.AUTO_ENABLED, State.FUNCTIONAL);
+        } else {
+            return EnumSet.of(State.DISABLED);
+        }
     }
 
     public Category getType() {
@@ -72,7 +76,7 @@ public final class JFRPlugin extends AbstractPlugin {
             Class<?> c = Class.forName("jdk.jfr.internal.startup.ArchiveWriter");
             return (byte[]) c.getMethod("write").invoke(null);
         } catch (ClassNotFoundException e1) {
-            throw new PluginException("Could not find JFR classes jfr startup archive: " + e1.getMessage(), e1);
+            throw new PluginException("Could not find JFR classes for jfr startup archive: " + e1.getMessage(), e1);
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException | SecurityException e2) {
             throw new PluginException("Could not generate jfr startup archive: " + e2.getMessage(), e2);
         }

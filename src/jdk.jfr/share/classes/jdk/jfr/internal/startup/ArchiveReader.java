@@ -40,6 +40,7 @@ public class ArchiveReader {
             String key = dais.readUTF();
             String value = dais.readUTF();
             settings.put(key, value);
+            System.out.println(key + "=" + value);
         }
         return settings;
     }
