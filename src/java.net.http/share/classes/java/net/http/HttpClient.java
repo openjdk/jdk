@@ -364,15 +364,15 @@ public abstract class HttpClient {
          * HTTP client will be bound to an automatically
          * assigned socket address.
          *
-         * <p> Common usages of the {@code HTTPClient} do not require
+         * <p> Common usages of the {@code HttpClient} do not require
          * this method to be called. Setting a local address, through this
-         * method, is only for advanced usages where users of the {@code HTTPClient}
+         * method, is only for advanced usages where users of the {@code HttpClient}
          * require specific control on which network interface gets used
          * for the HTTP communication. Callers of this method are expected to
          * be aware of the networking configurations of the system where the
-         * {@code HTTPClient} will be used and care should be taken to ensure the
+         * {@code HttpClient} will be used and care should be taken to ensure the
          * correct {@code localAddr} is passed. Failure to do so can result in
-         * requests sent through the {@code HTTPClient} to fail.
+         * requests sent through the {@code HttpClient} to fail.
          *
          * @implSpec The default implementation of this method throws
          * {@code UnsupportedOperationException}. {@code Builder}s obtained
