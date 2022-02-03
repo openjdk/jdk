@@ -21,12 +21,12 @@
  * questions.
  */
 
-import java.awt.FlowLayout;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -35,22 +35,16 @@ import javax.swing.UnsupportedLookAndFeelException;
  * @test
  * @key headful
  * @bug 8280913
- * @summary Check whether the default button is honored when <Enter> key is
- * pressed while the focus is on the frame.
+ * @summary Check whether the default button is honored when <Enter> key is typed.
  * @run main DefaultButtonTest
  */
 public class DefaultButtonTest {
-    volatile boolean buttonPressed = false;
-    JFrame frame;
+    private volatile boolean buttonPressed;
+    private JFrame frame;
 
     public static void main(String[] s) throws Exception {
         DefaultButtonTest test = new DefaultButtonTest();
-        try {
-            test.runTest();
-        } finally {
-            test.disposeFrame();
-        }
-
+        test.runTest();
     }
 
     private static void setLookAndFeel(String lafName) {
@@ -72,21 +66,16 @@ public class DefaultButtonTest {
     }
 
     private void createUI() {
-        frame = new JFrame();
+        frame = new JFrame("Default Button Test");
         JPanel panel = new JPanel();
-        panel.setLayout(new FlowLayout());
-        JButton button1 = new JButton("button1");
+        panel.add(new JTextField("Text field"));
+        JButton button1 = new JButton("Default");
         button1.addActionListener(e -> buttonPressed = true);
         panel.add(button1);
-
-        JButton button2 = new JButton("button2");
-        panel.add(button2);
+        panel.add(new JButton("Button2"));
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setLayout(new FlowLayout());
-
         frame.add(panel);
-
-        frame.setSize(200, 200);
+        frame.pack();
         frame.setLocationRelativeTo(null);
         frame.getRootPane().setDefaultButton(button1);
         frame.setVisible(true);
@@ -94,28 +83,29 @@ public class DefaultButtonTest {
 
     public void runTest() throws Exception {
         Robot robot = new Robot();
+        robot.setAutoDelay(100);
         for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
-            buttonPressed = false;
-            String lafName = laf.getClassName();
-            System.out.println("Testing L&F: " + lafName);
-            SwingUtilities.invokeAndWait(() -> {
-                setLookAndFeel(lafName);
-                createUI();
-                frame.getRootPane().requestFocus();
-            });
-            robot.waitForIdle();
-            robot.keyPress(KeyEvent.VK_ENTER);
-            robot.delay(100);
-            robot.keyRelease(KeyEvent.VK_ENTER);
-            robot.waitForIdle();
+            try {
+                buttonPressed = false;
+                String lafName = laf.getClassName();
+                System.out.println("Testing L&F: " + lafName);
+                SwingUtilities.invokeAndWait(() -> {
+                    setLookAndFeel(lafName);
+                    createUI();
+                });
+                robot.waitForIdle();
+                robot.keyPress(KeyEvent.VK_ENTER);
+                robot.keyRelease(KeyEvent.VK_ENTER);
+                robot.waitForIdle();
 
-            if (buttonPressed) {
-                System.out.println("Test Passed for L&F: " + lafName);
-            } else {
-                throw new RuntimeException("Test Failed, button not pressed for L&F: " + lafName);
+                if (buttonPressed) {
+                    System.out.println("Test Passed for L&F: " + lafName);
+                } else {
+                    throw new RuntimeException("Test Failed, Default Button not pressed for L&F: " + lafName);
+                }
+            } finally {
+                SwingUtilities.invokeAndWait(this::disposeFrame);
             }
-            disposeFrame();
         }
     }
-
 }
