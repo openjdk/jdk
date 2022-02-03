@@ -28,7 +28,6 @@ package jdk.internal.net.http.websocket;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
-import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.WebSocketHandshakeException;
@@ -62,7 +61,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
@@ -281,7 +279,7 @@ public class OpeningHandshake {
             throws CheckFailedException
     {
         Optional<String> opt = responseHeaders.firstValue(HEADER_PROTOCOL);
-        if (!opt.isPresent()) {
+        if (opt.isEmpty()) {
             // If there is no such header in the response, then the server
             // doesn't want to use any subprotocol
             return "";
@@ -363,7 +361,7 @@ public class OpeningHandshake {
      * or {@code null} if none is required or applicable.
      */
     private static Proxy proxyFor(Optional<ProxySelector> selector, URI uri) {
-        if (!selector.isPresent()) {
+        if (selector.isEmpty()) {
             return null;
         }
         URI requestURI = createRequestURI(uri); // Based on the HTTP scheme

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,10 @@ bool G1FullCollector::is_skip_compacting(uint region_index) const {
 
 bool G1FullCollector::is_skip_marking(oop obj) const {
   return _region_attr_table.is_skip_marking(cast_from_oop<HeapWord*>(obj));
+}
+
+bool G1FullCollector::is_compaction_target(uint region_index) const {
+  return _region_attr_table.is_compacting(region_index) || is_free(region_index);
 }
 
 void G1FullCollector::set_free(uint region_idx) {

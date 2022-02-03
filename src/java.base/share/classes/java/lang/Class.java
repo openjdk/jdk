@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1582,7 +1582,7 @@ public final class Class<T> implements java.io.Serializable,
      * representing the class in which it was declared.  This method returns
      * null if this class or interface is not a member of any other class.  If
      * this {@code Class} object represents an array class, a primitive
-     * type, or void,then this method returns null.
+     * type, or void, then this method returns null.
      *
      * @return the declaring class for this class
      * @throws SecurityException

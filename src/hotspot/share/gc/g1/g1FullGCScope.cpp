@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,6 @@ G1FullGCTracer* G1FullGCScope::tracer() {
   return &_tracer;
 }
 
-size_t G1FullGCScope::region_compaction_threshold() {
+size_t G1FullGCScope::region_compaction_threshold() const {
   return _region_compaction_threshold;
 }

@@ -69,8 +69,7 @@ final class DCmdConfigure extends AbstractDCmd {
             Long globalBufferSize,
             Long threadBufferSize,
             Long memorySize,
-            Long maxChunkSize,
-            Boolean sampleThreads
+            Long maxChunkSize
 
     ) throws DCmdException {
         if (Logger.shouldLog(LogTag.JFR_DCMD, LogLevel.DEBUG)) {
@@ -81,8 +80,7 @@ final class DCmdConfigure extends AbstractDCmd {
                     ", globalbuffersize=" + globalBufferSize +
                     ", thread_buffer_size=" + threadBufferSize +
                     ", memorysize=" + memorySize +
-                    ", maxchunksize=" + maxChunkSize +
-                    ", samplethreads=" + sampleThreads);
+                    ", maxchunksize=" + maxChunkSize);
         }
 
 
@@ -172,14 +170,6 @@ final class DCmdConfigure extends AbstractDCmd {
             updated = true;
         }
 
-        if (sampleThreads != null)  {
-            Options.setSampleThreads(sampleThreads);
-            Logger.log(LogTag.JFR, LogLevel.INFO, "Sample threads set to " + sampleThreads);
-            if (verbose) {
-                printSampleThreads();
-            }
-            updated = true;
-        }
         if (!verbose) {
             return new String[0];
         }
@@ -194,7 +184,6 @@ final class DCmdConfigure extends AbstractDCmd {
             printThreadBufferSize();
             printMemorySize();
             printMaxChunkSize();
-            printSampleThreads();
         }
         return getResult();
     }
@@ -209,10 +198,6 @@ final class DCmdConfigure extends AbstractDCmd {
         print("Dump path: ");
         printPath(Options.getDumpPath());
         println();
-    }
-
-    private void printSampleThreads() {
-        println("Sample threads: " + Options.getSampleThreads());
     }
 
     private void printStackDepth() {

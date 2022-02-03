@@ -496,6 +496,11 @@ public:
   void concurrent_cycle_abort();
   void concurrent_cycle_end();
 
+  // Notifies marking threads to abort. This is a best-effort notification. Does not
+  // guarantee or update any state after the call. Root region scan must not be
+  // running.
+  void abort_marking_threads();
+
   void update_accum_task_vtime(int i, double vtime) {
     _accum_task_vtime[i] += vtime;
   }
@@ -842,8 +847,8 @@ class G1PrintRegionLivenessInfoClosure : public HeapRegionClosure {
   // Accumulator for the remembered set size
   size_t _total_remset_bytes;
 
-  // Accumulator for strong code roots memory size
-  size_t _total_strong_code_roots_bytes;
+  // Accumulator for code roots memory size
+  size_t _total_code_roots_bytes;
 
   static double bytes_to_mb(size_t val) {
     return (double) val / (double) M;
