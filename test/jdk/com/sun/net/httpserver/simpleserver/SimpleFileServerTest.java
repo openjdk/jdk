@@ -52,11 +52,11 @@ import com.sun.net.httpserver.SimpleFileServer.OutputLevel;
 import jdk.test.lib.Platform;
 import jdk.test.lib.net.URIBuilder;
 import jdk.test.lib.util.FileUtils;
-import jtreg.SkippedException;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import org.testng.SkipException;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.CREATE;
@@ -438,9 +438,9 @@ public class SimpleFileServerTest {
             Files.createSymbolicLink(symlink, target);
             return true;
         } catch (UnsupportedOperationException uoe) {
-            throw new SkippedException("sym link creation not supported", uoe);
+            throw new SkipException("sym link creation not supported", uoe);
         } catch (IOException ioe) {
-            throw new SkippedException("probably insufficient privileges to create sym links (Windows)", ioe);
+            throw new SkipException("probably insufficient privileges to create sym links (Windows)", ioe);
         }
     }
 
