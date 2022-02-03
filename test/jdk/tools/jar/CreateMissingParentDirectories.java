@@ -61,9 +61,11 @@ public class CreateMissingParentDirectories {
         Path topDir = Files.createTempDirectory("delete");
         try {
             Path entry = Files.writeString(topDir.resolve("test.txt"), "Some text...");
+
             doHappyPathTest(topDir.resolve("test.jar"), entry);
             doHappyPathTest(topDir.resolve("a/test.jar"), entry);
             doHappyPathTest(topDir.resolve("a/b/test.jar"), entry);
+
             doFailingTest(topDir.toString() + "/a/*/test.jar", entry);
             Path blocker = Files.writeString(topDir.resolve("blocker.txt"), "Blocked!");
             doFailingTest(topDir.resolve("blocker.txt/test.jar").toString(), entry);
@@ -90,7 +92,8 @@ public class CreateMissingParentDirectories {
             fail("Should have failed creating jar file: " + jar);
             return;
         }
-        // non-zero exit code expected, so fall through
+        // non-zero exit code expected, check error message contains jar file's name
+        check(err.toString().contains(jar));
         pass();
     }
 
