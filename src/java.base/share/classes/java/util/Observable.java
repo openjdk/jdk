@@ -73,6 +73,7 @@ package java.util;
  * {@link java.util.concurrent.Flow} API.
  */
 @Deprecated(since="9")
+@SuppressWarnings("doclint:reference") // cross-module links
 public class Observable {
     private boolean changed = false;
     private Vector<Observer> obs;
