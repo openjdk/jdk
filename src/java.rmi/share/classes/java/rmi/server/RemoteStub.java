@@ -40,7 +40,7 @@ package java.rmi.server;
  * for information about dynamic stub generation.
  */
 @Deprecated
-abstract public class RemoteStub extends RemoteObject {
+public abstract class RemoteStub extends RemoteObject {
 
     /** indicate compatibility with JDK 1.1.x version of class */
     private static final long serialVersionUID = -1585587260594494182L;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/thread.hpp"
 #include "services/diagnosticArgument.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 StringArrayArgument::StringArrayArgument() {
   _array = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<char *>(32, mtServiceability);
@@ -114,13 +115,12 @@ template <> void DCmdArgument<jlong>::parse_value(const char* str,
       || sscanf(str, JLONG_FORMAT "%n", &_value, &scanned) != 1
       || (size_t)scanned != len)
   {
-    ResourceMark rm;
-
-    char* buf = NEW_RESOURCE_ARRAY(char, len + 1);
-    strncpy(buf, str, len);
-    buf[len] = '\0';
+    const int maxprint = 64;
     Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_IllegalArgumentException(),
-      "Integer parsing error in command argument '%s'. Could not parse: %s.\n", _name, buf);
+      "Integer parsing error in command argument '%s'. Could not parse: %.*s%s.\n", _name,
+      MIN2((int)len, maxprint),
+      (str == NULL ? "<null>" : str),
+      (len > maxprint ? "..." : ""));
   }
 }
 

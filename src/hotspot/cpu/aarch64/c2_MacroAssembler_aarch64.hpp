@@ -32,7 +32,8 @@
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
                       Register tmp1, Register tmp2, FloatRegister vtmp1,
-                      FloatRegister vtmp2, FloatRegister vtmp3, int ae);
+                      FloatRegister vtmp2, FloatRegister vtmp3,
+                      PRegister pgtmp1, PRegister pgtmp2, int ae);
 
   void string_indexof(Register str1, Register str2,
                       Register cnt1, Register cnt2,
@@ -54,6 +55,15 @@
                                FloatRegister ztmp1, FloatRegister ztmp2,
                                PRegister pgtmp, PRegister ptmp, bool isL);
 
+  // Compress the least significant bit of each byte to the rightmost and clear
+  // the higher garbage bits.
+  void bytemask_compress(Register dst);
+
+  // Pack the lowest-numbered bit of each mask element in src into a long value
+  // in dst, at most the first 64 lane elements.
+  void sve_vmask_tolong(Register dst, PRegister src, BasicType bt, int lane_cnt,
+                        FloatRegister vtmp1, FloatRegister vtmp2, PRegister pgtmp);
+
   // SIMD&FP comparison
   void neon_compare(FloatRegister dst, BasicType bt, FloatRegister src1,
                     FloatRegister src2, int cond, bool isQ);
@@ -61,8 +71,26 @@
   void sve_compare(PRegister pd, BasicType bt, PRegister pg,
                    FloatRegister zn, FloatRegister zm, int cond);
 
-  void sve_vmask_reduction(int opc, Register dst, SIMD_RegVariant size, FloatRegister src,
-                           PRegister pg, PRegister pn, int length = MaxVectorSize);
+  void sve_vmask_lasttrue(Register dst, BasicType bt, PRegister src, PRegister ptmp);
+
+  void sve_vector_extend(FloatRegister dst, SIMD_RegVariant dst_size,
+                         FloatRegister src, SIMD_RegVariant src_size);
+
+  void sve_vector_narrow(FloatRegister dst, SIMD_RegVariant dst_size,
+                         FloatRegister src, SIMD_RegVariant src_size, FloatRegister tmp);
+
+  void sve_vmaskcast_extend(PRegister dst, PRegister src,
+                            uint dst_element_length_in_bytes, uint src_element_lenght_in_bytes);
+
+  void sve_vmaskcast_narrow(PRegister dst, PRegister src,
+                            uint dst_element_length_in_bytes, uint src_element_lenght_in_bytes);
+
+  void sve_reduce_integral(int opc, Register dst, BasicType bt, Register src1,
+                           FloatRegister src2, PRegister pg, FloatRegister tmp);
+
+  // Set elements of the dst predicate to true if the element number is
+  // in the range of [0, lane_cnt), or to false otherwise.
+  void sve_ptrue_lanecnt(PRegister dst, SIMD_RegVariant size, int lane_cnt);
 
   // Generate predicate through whilelo, by comparing ZR with an unsigned
   // immediate. rscratch1 will be clobbered.

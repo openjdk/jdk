@@ -56,7 +56,7 @@ public class LookupTest {
         try {
             MethodHandles.class.getMethod("lookup").invoke(null);
         } catch (InvocationTargetException e) {
-            if (!(e.getCause() instanceof IllegalArgumentException)) {
+            if (!(e.getCause() instanceof InternalError)) {
                 throw e.getCause();
             }
         }

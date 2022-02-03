@@ -315,6 +315,7 @@ private:
   MacroAssembler* const _masm;
   RegSet                _gp_regs;
   FloatRegSet           _fp_regs;
+  PRegSet               _p_regs;
 
 public:
   void initialize(ZLoadBarrierStubC2* stub) {
@@ -328,6 +329,8 @@ public:
           _gp_regs += RegSet::of(vm_reg->as_Register());
         } else if (vm_reg->is_FloatRegister()) {
           _fp_regs += FloatRegSet::of(vm_reg->as_FloatRegister());
+        } else if (vm_reg->is_PRegister()) {
+          _p_regs += PRegSet::of(vm_reg->as_PRegister());
         } else {
           fatal("Unknown register type");
         }
@@ -341,7 +344,8 @@ public:
   ZSaveLiveRegisters(MacroAssembler* masm, ZLoadBarrierStubC2* stub) :
       _masm(masm),
       _gp_regs(),
-      _fp_regs() {
+      _fp_regs(),
+      _p_regs() {
 
     // Figure out what registers to save/restore
     initialize(stub);
@@ -349,10 +353,12 @@ public:
     // Save registers
     __ push(_gp_regs, sp);
     __ push_fp(_fp_regs, sp);
+    __ push_p(_p_regs, sp);
   }
 
   ~ZSaveLiveRegisters() {
     // Restore registers
+    __ pop_p(_p_regs, sp);
     __ pop_fp(_fp_regs, sp);
 
     // External runtime call may clobber ptrue reg

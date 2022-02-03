@@ -3261,7 +3261,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class ScrollableTabButton extends javax.swing.plaf.basic.BasicArrowButton implements UIResource, SwingConstants {
+    private static class ScrollableTabButton extends javax.swing.plaf.basic.BasicArrowButton implements UIResource, SwingConstants {
         public ScrollableTabButton(final int direction) {
             super(direction, UIManager.getColor("TabbedPane.selected"), UIManager.getColor("TabbedPane.shadow"), UIManager.getColor("TabbedPane.darkShadow"), UIManager.getColor("TabbedPane.highlight"));
         }

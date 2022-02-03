@@ -151,6 +151,8 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register t
 
   assert_different_registers(tmp, R0);
 
+  __ block_comment("nmethod_entry_barrier (nmethod_entry_barrier) {");
+
   // Load stub address using toc (fixed instruction size, unlike load_const_optimized)
   __ calculate_address_from_global_toc(tmp, StubRoutines::ppc::nmethod_entry_barrier(),
                                        true, true, false); // 2 instructions
@@ -167,6 +169,8 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register t
 
   // Oops may have been changed; exploiting isync semantics (used as acquire) to make those updates observable.
   __ isync();
+
+  __ block_comment("} nmethod_entry_barrier (nmethod_entry_barrier)");
 }
 
 void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler *masm, Register tmp1, Register tmp2, Register tmp3) {
@@ -176,6 +180,8 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler *masm, Register tmp1,
   }
 
   assert_different_registers(tmp1, tmp2, tmp3);
+
+  __ block_comment("c2i_entry_barrier (c2i_entry_barrier) {");
 
   Register tmp1_class_loader_data = tmp1;
 
@@ -207,4 +213,6 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler *masm, Register tmp1,
   __ bctr();
 
   __ bind(skip_barrier);
+
+  __ block_comment("} c2i_entry_barrier (c2i_entry_barrier)");
 }

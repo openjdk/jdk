@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "gc/z/zErrno.hpp"
 #include "gc/z/zMountPoint_linux.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/os.hpp"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -70,7 +71,7 @@ char* ZMountPoint::get_mountpoint(const char* line, const char* filesystem) cons
 }
 
 void ZMountPoint::get_mountpoints(const char* filesystem, ZArray<char*>* mountpoints) const {
-  FILE* fd = fopen(PROC_SELF_MOUNTINFO, "r");
+  FILE* fd = os::fopen(PROC_SELF_MOUNTINFO, "r");
   if (fd == NULL) {
     ZErrno err;
     log_error_p(gc)("Failed to open %s: %s", PROC_SELF_MOUNTINFO, err.to_string());

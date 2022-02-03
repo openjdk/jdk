@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 #include "jni.h"
 #include "code/debugInfo.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "runtime/registerMap.hpp"
 #include "utilities/exceptions.hpp"
@@ -82,10 +82,11 @@ class VectorSupport : AllStatic {
     VECTOR_OP_MASK_TRUECOUNT = 19,
     VECTOR_OP_MASK_FIRSTTRUE = 20,
     VECTOR_OP_MASK_LASTTRUE  = 21,
+    VECTOR_OP_MASK_TOLONG    = 22,
 
     // Rotate operations
-    VECTOR_OP_LROTATE = 22,
-    VECTOR_OP_RROTATE = 23,
+    VECTOR_OP_LROTATE = 23,
+    VECTOR_OP_RROTATE = 24,
 
     // Vector Math Library
     VECTOR_OP_TAN   = 101,
@@ -118,6 +119,11 @@ class VectorSupport : AllStatic {
     VEC_SIZE_256 = 2,
     VEC_SIZE_512 = 3,
     NUM_VEC_SIZES = 4
+  };
+
+  enum {
+    MODE_BROADCAST = 0,
+    MODE_BITS_COERCED_LONG_TO_MASK = 1
   };
 
   static const char* svmlname[VectorSupport::NUM_SVML_OP];

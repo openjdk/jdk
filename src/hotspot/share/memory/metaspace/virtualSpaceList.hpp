@@ -128,10 +128,6 @@ public:
   // Returns true if this pointer is contained in one of our nodes.
   bool contains(const MetaWord* p) const;
 
-  // Returns true if the list is not expandable and no more root chunks
-  // can be allocated.
-  bool is_full() const;
-
   // Convenience methods to return the global class-space vslist
   //  and non-class vslist, respectively.
   static VirtualSpaceList* vslist_class();

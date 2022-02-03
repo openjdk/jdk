@@ -3409,11 +3409,6 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 # shall [end] on Oct 24th 2020 at 01:00AM by delaying the clock by 60 minutes.
 # http://www.palestinecabinet.gov.ps/portal/Meeting/Details/51584
 
-# From Tim Parenti (2020-10-20):
-# Predict future fall transitions at 01:00 on the Saturday preceding October's
-# last Sunday (i.e., Sat>=24).  This is consistent with our predictions since
-# 2016, although the time of the change differed slightly in 2019.
-
 # From Pierre Cashon (2020-10-20):
 # The summer time this year started on March 28 at 00:00.
 # https://wafa.ps/ar_page.aspx?id=GveQNZa872839351758aGveQNZ
@@ -3425,6 +3420,17 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 # From Paul Eggert (2019-04-10):
 # For now, guess spring-ahead transitions are at 00:00 on the Saturday
 # preceding March's last Sunday (i.e., Sat>=24).
+
+# From P Chan (2021-10-18):
+# http://wafa.ps/Pages/Details/34701
+# Palestine winter time will start from midnight 2021-10-29 (Thursday-Friday).
+#
+# From Heba Hemad, Palestine Ministry of Telecom & IT (2021-10-20):
+# ... winter time will begin in Palestine from Friday 10-29, 01:00 AM
+# by 60 minutes backwards.
+#
+# From Paul Eggert (2021-10-20):
+# Guess future fall transitions on October's last Friday at 01:00.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule EgyptAsia	1957	only	-	May	10	0:00	1:00	S
@@ -3461,7 +3467,8 @@ Rule Palestine	2016	2018	-	Oct	Sat>=24	1:00	0	-
 Rule Palestine	2019	only	-	Mar	29	0:00	1:00	S
 Rule Palestine	2019	only	-	Oct	Sat>=24	0:00	0	-
 Rule Palestine	2020	max	-	Mar	Sat>=24	0:00	1:00	S
-Rule Palestine	2020	max	-	Oct	Sat>=24	1:00	0	-
+Rule Palestine	2020	only	-	Oct	24	1:00	0	-
+Rule Palestine	2021	max	-	Oct	lastFri	1:00	0	-
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Gaza	2:17:52	-	LMT	1900 Oct

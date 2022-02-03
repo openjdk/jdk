@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,7 +152,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     /**
-     * Given an array of {@code @param DocTree}s,return its string representation.
+     * Given an array of {@code @param DocTree}s, return its string representation.
      * Try to inherit the param tags that are missing.
      *
      * @param holder            the element that holds the param tags.
@@ -165,54 +165,29 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
     private Content getTagletOutput(ParamKind kind, Element holder,
             TagletWriter writer, List<? extends Element> formalParameters, List<? extends ParamTree> paramTags) {
         Content result = writer.getOutputInstance();
-        Set<String> alreadyDocumented = new HashSet<>();
-        if (!paramTags.isEmpty()) {
-            result.add(
-                processParamTags(holder, kind, paramTags,
-                getRankMap(writer.configuration().utils, formalParameters), writer, alreadyDocumented)
-            );
-        }
-        if (alreadyDocumented.size() != formalParameters.size()) {
-            //Some parameters are missing corresponding @param tags.
-            //Try to inherit them.
-            result.add(getInheritedTagletOutput(kind, holder,
-                writer, formalParameters, alreadyDocumented));
-        }
+        result.add(processParamTags(holder, kind, paramTags, formalParameters, writer));
         return result;
     }
 
     /**
-     * Loop through each individual parameter, despite not having a
-     * corresponding param tag, try to inherit it.
+     * Try to get the inherited taglet documentation for a specific parameter.
      */
     private Content getInheritedTagletOutput(ParamKind kind, Element holder,
-            TagletWriter writer, List<? extends Element> formalParameters,
-            Set<String> alreadyDocumented) {
+                                             TagletWriter writer, Element param, int rank,
+                                             boolean isFirst) {
         Utils utils = writer.configuration().utils;
         Content result = writer.getOutputInstance();
-        if ((!alreadyDocumented.contains(null)) && utils.isExecutableElement(holder)) {
-            for (int i = 0; i < formalParameters.size(); i++) {
-                if (alreadyDocumented.contains(String.valueOf(i))) {
-                    continue;
-                }
-                // This parameter does not have any @param documentation.
-                // Try to inherit it.
-                Input input = new DocFinder.Input(writer.configuration().utils, holder, this,
-                        Integer.toString(i), kind == ParamKind.TYPE_PARAMETER);
-                DocFinder.Output inheritedDoc = DocFinder.search(writer.configuration(), input);
-                if (inheritedDoc.inlineTags != null && !inheritedDoc.inlineTags.isEmpty()) {
-                    Element e = formalParameters.get(i);
-                    String lname = kind != ParamKind.TYPE_PARAMETER
-                            ? utils.getSimpleName(e)
-                            : utils.getTypeName(e.asType(), false);
-                    Content content = processParamTag(inheritedDoc.holder, kind, writer,
-                            (ParamTree) inheritedDoc.holderTag,
-                            lname,
-                            alreadyDocumented.isEmpty());
-                    result.add(content);
-                }
-                alreadyDocumented.add(String.valueOf(i));
-            }
+        Input input = new DocFinder.Input(writer.configuration().utils, holder, this,
+                Integer.toString(rank), kind == ParamKind.TYPE_PARAMETER);
+        DocFinder.Output inheritedDoc = DocFinder.search(writer.configuration(), input);
+        if (inheritedDoc.inlineTags != null && !inheritedDoc.inlineTags.isEmpty()) {
+            String lname = kind != ParamKind.TYPE_PARAMETER
+                    ? utils.getSimpleName(param)
+                    : utils.getTypeName(param.asType(), false);
+            Content content = processParamTag(inheritedDoc.holder, kind, writer,
+                    (ParamTree) inheritedDoc.holderTag,
+                    lname, isFirst);
+            result.add(content);
         }
         return result;
     }
@@ -225,23 +200,15 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
      *
      * @param paramTags the array of {@code @param DocTree} to convert.
      * @param writer the TagletWriter that will write this tag.
-     * @param alreadyDocumented the set of exceptions that have already
-     *        been documented.
-     * @param rankMap a {@link java.util.Map} which holds ordering
-     *                    information about the parameters.
-     * @param rankMap a {@link java.util.Map} which holds a mapping
-                of a rank of a parameter to its name.  This is
-                used to ensure that the right name is used
-                when parameter documentation is inherited.
      * @return the Content representation of this {@code @param DocTree}.
      */
-    private Content processParamTags(Element e, ParamKind kind,
-            List<? extends ParamTree> paramTags, Map<String, String> rankMap, TagletWriter writer,
-            Set<String> alreadyDocumented) {
+    private Content processParamTags(Element e, ParamKind kind, List<? extends ParamTree> paramTags,
+                                     List<? extends Element> formalParameters, TagletWriter writer) {
+        Map<String, ParamTree> documented = new HashMap<>();
         Messages messages = writer.configuration().getMessages();
-        Content result = writer.getOutputInstance();
+        CommentHelper ch = writer.configuration().utils.getCommentHelper(e);
         if (!paramTags.isEmpty()) {
-            CommentHelper ch = writer.configuration().utils.getCommentHelper(e);
+            Map<String,String> rankMap = getRankMap(writer.configuration().utils, formalParameters);
             for (ParamTree dt : paramTags) {
                 String name = ch.getParameterName(dt);
                 String paramName = kind == ParamKind.TYPE_PARAMETER ? "<" + name + ">" : name;
@@ -250,23 +217,45 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                         case PARAMETER        -> "doclet.Parameters_warn";
                         case TYPE_PARAMETER   -> "doclet.TypeParameters_warn";
                         case RECORD_COMPONENT -> "doclet.RecordComponents_warn";
-                        default -> throw new IllegalArgumentException(kind.toString());
                     };
                     messages.warning(ch.getDocTreePath(dt), key, paramName);
                 }
                 String rank = rankMap.get(name);
-                if (rank != null && alreadyDocumented.contains(rank)) {
-                    String key = switch (kind) {
-                        case PARAMETER        -> "doclet.Parameters_dup_warn";
-                        case TYPE_PARAMETER   -> "doclet.TypeParameters_dup_warn";
-                        case RECORD_COMPONENT -> "doclet.RecordComponents_dup_warn";
-                        default -> throw new IllegalArgumentException(kind.toString());
-                    };
-                    messages.warning(ch.getDocTreePath(dt), key, paramName);
+                if (rank != null) {
+                    if (documented.containsKey(rank)) {
+                        String key = switch (kind) {
+                            case PARAMETER -> "doclet.Parameters_dup_warn";
+                            case TYPE_PARAMETER -> "doclet.TypeParameters_dup_warn";
+                            case RECORD_COMPONENT -> "doclet.RecordComponents_dup_warn";
+                        };
+                        messages.warning(ch.getDocTreePath(dt), key, paramName);
+                    } else {
+                        documented.put(rank, dt);
+                    }
                 }
+            }
+        }
+        // Document declared parameters for which taglet documentation is available
+        // (either directly or inherited) in order of their declaration.
+        Content result = writer.getOutputInstance();
+        for (int i = 0; i < formalParameters.size(); i++) {
+            ParamTree dt = documented.get(String.valueOf(i));
+            if (dt != null) {
                 result.add(processParamTag(e, kind, writer, dt,
-                        name, alreadyDocumented.isEmpty()));
-                alreadyDocumented.add(rank);
+                        ch.getParameterName(dt), result.isEmpty()));
+            } else if (writer.configuration().utils.isExecutableElement(e)) {
+                result.add(getInheritedTagletOutput(kind, e, writer,
+                        formalParameters.get(i), i, result.isEmpty()));
+            }
+        }
+        if (paramTags.size() > documented.size()) {
+            // Generate documentation for remaining taglets that do not match a declared parameter.
+            // These are erroneous but we generate them anyway.
+            for (ParamTree dt : paramTags) {
+                if (!documented.containsValue(dt)) {
+                    result.add(processParamTag(e, kind, writer, dt,
+                            ch.getParameterName(dt), result.isEmpty()));
+                }
             }
         }
         return result;

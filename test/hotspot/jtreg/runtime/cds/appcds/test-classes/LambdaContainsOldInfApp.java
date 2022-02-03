@@ -24,9 +24,18 @@
 public class LambdaContainsOldInfApp {
     public static void main(final String... args) {
         getProvider();
+        if (args.length == 1 && args[0].equals("addLambda")) {
+            getProvider2();
+        }
     }
 
     public static OldProvider getProvider() {
+        return () -> {
+            return null;
+        };
+    }
+
+    public static OldProvider getProvider2() {
         return () -> {
             return null;
         };

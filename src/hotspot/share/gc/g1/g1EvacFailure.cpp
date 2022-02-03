@@ -28,6 +28,7 @@
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacFailure.hpp"
 #include "gc/g1/g1EvacFailureRegions.hpp"
+#include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/heapRegion.hpp"
@@ -37,11 +38,11 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 
-class RemoveSelfForwardPtrObjClosure: public ObjectClosure {
+class RemoveSelfForwardPtrObjClosure {
   G1CollectedHeap* _g1h;
   G1ConcurrentMark* _cm;
   HeapRegion* _hr;
-  size_t _marked_bytes;
+  size_t _marked_words;
   bool _during_concurrent_start;
   uint _worker_id;
   HeapWord* _last_forwarded_object_end;
@@ -53,59 +54,57 @@ public:
     _g1h(G1CollectedHeap::heap()),
     _cm(_g1h->concurrent_mark()),
     _hr(hr),
-    _marked_bytes(0),
+    _marked_words(0),
     _during_concurrent_start(during_concurrent_start),
     _worker_id(worker_id),
     _last_forwarded_object_end(hr->bottom()) { }
 
-  size_t marked_bytes() { return _marked_bytes; }
+  size_t marked_bytes() { return _marked_words * HeapWordSize; }
 
-  // Iterate over the live objects in the region to find self-forwarded objects
+  // Handle the marked objects in the region. These are self-forwarded objects
   // that need to be kept live. We need to update the remembered sets of these
   // objects. Further update the BOT and marks.
   // We can coalesce and overwrite the remaining heap contents with dummy objects
   // as they have either been dead or evacuated (which are unreferenced now, i.e.
   // dead too) already.
-  void do_object(oop obj) {
+  size_t apply(oop obj) {
     HeapWord* obj_addr = cast_from_oop<HeapWord*>(obj);
+    assert(_last_forwarded_object_end <= obj_addr, "should iterate in ascending address order");
     assert(_hr->is_in(obj_addr), "sanity");
 
-    if (obj->is_forwarded() && obj->forwardee() == obj) {
-      // The object failed to move.
+    // The object failed to move.
+    assert(obj->is_forwarded() && obj->forwardee() == obj, "sanity");
 
-      zap_dead_objects(_last_forwarded_object_end, obj_addr);
-      // We consider all objects that we find self-forwarded to be
-      // live. What we'll do is that we'll update the prev marking
-      // info so that they are all under PTAMS and explicitly marked.
-      if (!_cm->is_marked_in_prev_bitmap(obj)) {
-        _cm->mark_in_prev_bitmap(obj);
-      }
-      if (_during_concurrent_start) {
-        // For the next marking info we'll only mark the
-        // self-forwarded objects explicitly if we are during
-        // concurrent start (since, normally, we only mark objects pointed
-        // to by roots if we succeed in copying them). By marking all
-        // self-forwarded objects we ensure that we mark any that are
-        // still pointed to be roots. During concurrent marking, and
-        // after concurrent start, we don't need to mark any objects
-        // explicitly and all objects in the CSet are considered
-        // (implicitly) live. So, we won't mark them explicitly and
-        // we'll leave them over NTAMS.
-        _cm->mark_in_next_bitmap(_worker_id, _hr, obj);
-      }
-      size_t obj_size = obj->size();
+    zap_dead_objects(_last_forwarded_object_end, obj_addr);
 
-      _marked_bytes += (obj_size * HeapWordSize);
-      PreservedMarks::init_forwarded_mark(obj);
-
-      HeapWord* obj_end = obj_addr + obj_size;
-      _last_forwarded_object_end = obj_end;
-      _hr->alloc_block_in_bot(obj_addr, obj_end);
+    assert(_cm->is_marked_in_prev_bitmap(obj), "should be correctly marked");
+    if (_during_concurrent_start) {
+      // For the next marking info we'll only mark the
+      // self-forwarded objects explicitly if we are during
+      // concurrent start (since, normally, we only mark objects pointed
+      // to by roots if we succeed in copying them). By marking all
+      // self-forwarded objects we ensure that we mark any that are
+      // still pointed to be roots. During concurrent marking, and
+      // after concurrent start, we don't need to mark any objects
+      // explicitly and all objects in the CSet are considered
+      // (implicitly) live. So, we won't mark them explicitly and
+      // we'll leave them over NTAMS.
+      _cm->mark_in_next_bitmap(_worker_id, obj);
     }
+    size_t obj_size = obj->size();
+
+    _marked_words += obj_size;
+    PreservedMarks::init_forwarded_mark(obj);
+
+    HeapWord* obj_end = obj_addr + obj_size;
+    _last_forwarded_object_end = obj_end;
+    _hr->alloc_block_in_bot(obj_addr, obj_end);
+    return obj_size;
   }
 
   // Fill the memory area from start to end with filler objects, and update the BOT
-  // and the mark bitmap accordingly.
+  // accordingly. Since we clear and use the prev bitmap for marking objects that
+  // failed evacuation, there is no work to be done there.
   void zap_dead_objects(HeapWord* start, HeapWord* end) {
     if (start == end) {
       return;
@@ -134,7 +133,7 @@ public:
 #endif
       }
     }
-    _cm->clear_range_in_prev_bitmap(mr);
+    assert(!_cm->is_marked_in_prev_bitmap(cast_to_oop(start)), "should not be marked in prev bitmap");
   }
 
   void zap_remainder() {
@@ -146,17 +145,17 @@ class RemoveSelfForwardPtrHRClosure: public HeapRegionClosure {
   G1CollectedHeap* _g1h;
   uint _worker_id;
 
-  uint volatile* _num_failed_regions;
   G1EvacFailureRegions* _evac_failure_regions;
+
+  G1GCPhaseTimes* _phase_times;
 
 public:
   RemoveSelfForwardPtrHRClosure(uint worker_id,
-                                uint volatile* num_failed_regions,
                                 G1EvacFailureRegions* evac_failure_regions) :
     _g1h(G1CollectedHeap::heap()),
     _worker_id(worker_id),
-    _num_failed_regions(num_failed_regions),
-    _evac_failure_regions(evac_failure_regions) {
+    _evac_failure_regions(evac_failure_regions),
+    _phase_times(G1CollectedHeap::heap()->phase_times()) {
   }
 
   size_t remove_self_forward_ptr_by_walking_hr(HeapRegion* hr,
@@ -164,7 +163,11 @@ public:
     RemoveSelfForwardPtrObjClosure rspc(hr,
                                         during_concurrent_start,
                                         _worker_id);
-    hr->object_iterate(&rspc);
+
+    // All objects that failed evacuation has been marked in the prev bitmap.
+    // Use the bitmap to apply the above closure to all failing objects.
+    G1CMBitMap* bitmap = const_cast<G1CMBitMap*>(_g1h->concurrent_mark()->prev_mark_bitmap());
+    hr->apply_to_marked_objects(bitmap, &rspc);
     // Need to zap the remainder area of the processed region.
     rspc.zap_remainder();
 
@@ -174,28 +177,29 @@ public:
   bool do_heap_region(HeapRegion *hr) {
     assert(!hr->is_pinned(), "Unexpected pinned region at index %u", hr->hrm_index());
     assert(hr->in_collection_set(), "bad CS");
+    assert(_evac_failure_regions->contains(hr->hrm_index()), "precondition");
 
-    if (_evac_failure_regions->contains(hr->hrm_index())) {
-      hr->clear_index_in_opt_cset();
+    hr->clear_index_in_opt_cset();
 
-      bool during_concurrent_start = _g1h->collector_state()->in_concurrent_start_gc();
-      bool during_concurrent_mark = _g1h->collector_state()->mark_or_rebuild_in_progress();
+    bool during_concurrent_start = _g1h->collector_state()->in_concurrent_start_gc();
+    bool during_concurrent_mark = _g1h->collector_state()->mark_or_rebuild_in_progress();
 
-      hr->note_self_forwarding_removal_start(during_concurrent_start,
-                                             during_concurrent_mark);
-      _g1h->verifier()->check_bitmaps("Self-Forwarding Ptr Removal", hr);
+    hr->note_self_forwarding_removal_start(during_concurrent_start,
+                                           during_concurrent_mark);
 
-      hr->reset_bot();
+    _phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,
+                                                   _worker_id,
+                                                   1,
+                                                   G1GCPhaseTimes::RestoreRetainedRegionsNum);
 
-      size_t live_bytes = remove_self_forward_ptr_by_walking_hr(hr, during_concurrent_start);
+    size_t live_bytes = remove_self_forward_ptr_by_walking_hr(hr, during_concurrent_start);
 
-      hr->rem_set()->clean_strong_code_roots(hr);
-      hr->rem_set()->clear_locked(true);
+    hr->rem_set()->clean_code_roots(hr);
+    hr->rem_set()->clear_locked(true);
 
-      hr->note_self_forwarding_removal_end(live_bytes);
+    hr->note_self_forwarding_removal_end(live_bytes);
+    _g1h->verifier()->check_bitmaps("Self-Forwarding Ptr Removal", hr);
 
-      Atomic::inc(_num_failed_regions, memory_order_relaxed);
-    }
     return false;
   }
 };
@@ -204,16 +208,15 @@ G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask(G1EvacFailureRegi
   WorkerTask("G1 Remove Self-forwarding Pointers"),
   _g1h(G1CollectedHeap::heap()),
   _hrclaimer(_g1h->workers()->active_workers()),
-  _evac_failure_regions(evac_failure_regions),
-  _num_failed_regions(0) { }
+  _evac_failure_regions(evac_failure_regions) { }
 
 void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
-  RemoveSelfForwardPtrHRClosure rsfp_cl(worker_id, &_num_failed_regions, _evac_failure_regions);
+  RemoveSelfForwardPtrHRClosure rsfp_cl(worker_id, _evac_failure_regions);
 
   // Iterate through all regions that failed evacuation during the entire collection.
   _evac_failure_regions->par_iterate(&rsfp_cl, &_hrclaimer, worker_id);
 }
 
 uint G1ParRemoveSelfForwardPtrsTask::num_failed_regions() const {
-  return Atomic::load(&_num_failed_regions);
+  return _evac_failure_regions->num_regions_failed_evacuation();
 }

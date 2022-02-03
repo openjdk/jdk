@@ -3891,18 +3891,18 @@ public class Container extends Component {
 
             public void componentAdded(ContainerEvent e) {
                 Component c = e.getChild();
-                if (c != null && c instanceof Accessible) {
+                if (c instanceof Accessible accessible) {
                     AccessibleAWTContainer.this.firePropertyChange(
                         AccessibleContext.ACCESSIBLE_CHILD_PROPERTY,
-                        null, ((Accessible) c).getAccessibleContext());
+                        null, accessible.getAccessibleContext());
                 }
             }
             public void componentRemoved(ContainerEvent e) {
                 Component c = e.getChild();
-                if (c != null && c instanceof Accessible) {
+                if (c instanceof Accessible accessible) {
                     AccessibleAWTContainer.this.firePropertyChange(
                         AccessibleContext.ACCESSIBLE_CHILD_PROPERTY,
-                        ((Accessible) c).getAccessibleContext(), null);
+                        accessible.getAccessibleContext(), null);
                 }
             }
         }

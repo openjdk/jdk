@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 
 import jdk.internal.misc.Unsafe;
@@ -74,10 +75,22 @@ public class TestDumpOnCrash {
     }
 
     public static void main(String[] args) throws Exception {
+        // Test without dumppath
         test(CrasherIllegalAccess.class, "", true);
         test(CrasherIllegalAccess.class, "", false);
         test(CrasherHalt.class, "", true);
         test(CrasherHalt.class, "", false);
+
+        // Test with dumppath
+        Path dumppath = Files.createTempDirectory(null);
+        try {
+            test(CrasherIllegalAccess.class, "", true, dumppath.toString());
+            test(CrasherIllegalAccess.class, "", false, dumppath.toString());
+            test(CrasherHalt.class, "", true, dumppath.toString());
+            test(CrasherHalt.class, "", false, dumppath.toString());
+        } finally {
+            dumppath.toFile().delete();
+        }
 
         // Test is excluded until 8219680 is fixed
         // @ignore 8219680
@@ -85,11 +98,19 @@ public class TestDumpOnCrash {
     }
 
     private static void test(Class<?> crasher, String signal, boolean disk) throws Exception {
+        test(crasher, signal, disk, null);
+    }
+
+    private static void test(Class<?> crasher, String signal, boolean disk, String dumppath) throws Exception {
+        test(crasher, signal, disk, dumppath, dumppath);
+    }
+
+    private static void test(Class<?> crasher, String signal, boolean disk, String dumppath, String expectedPath) throws Exception {
         // The JVM may be in a state it can't recover from, so try three times
         // before concluding functionality is not working.
         for (int attempt = 0; attempt < ATTEMPTS; attempt++) {
             try {
-                verify(runProcess(crasher, signal, disk));
+                verify(runProcess(crasher, signal, disk, dumppath), expectedPath);
                 return;
             } catch (Exception e) {
                 System.out.println("Attempt " + attempt + ". Verification failed:");
@@ -105,17 +126,19 @@ public class TestDumpOnCrash {
         throw new Exception(ATTEMPTS + " attempts with failure!");
     }
 
-    private static long runProcess(Class<?> crasher, String signal, boolean disk) throws Exception {
+    private static long runProcess(Class<?> crasher, String signal, boolean disk, String dumppath) throws Exception {
         System.out.println("Test case for crasher " + crasher.getName());
-        final String flightRecordingOptions = "dumponexit=true,disk=" + Boolean.toString(disk);
-        Process p = ProcessTools.createTestJvm(
-                "-Xmx64m",
-                "-XX:-CreateCoredumpOnCrash",
-                "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
-                "-XX:StartFlightRecording:" + flightRecordingOptions,
-                crasher.getName(),
-                signal)
-            .start();
+        List<String> options = new ArrayList<>();
+        options.add("-Xmx64m");
+        options.add("-XX:-CreateCoredumpOnCrash");
+        options.add("--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED");
+        options.add("-XX:StartFlightRecording:dumponexit=true,disk=" + Boolean.toString(disk));
+        if (dumppath != null) {
+            options.add("-XX:FlightRecorderOptions=dumppath=" + dumppath);
+        }
+        options.add(crasher.getName());
+        options.add(signal);
+        Process p = ProcessTools.createTestJvm(options).start();
 
         OutputAnalyzer output = new OutputAnalyzer(p);
         System.out.println("========== Crasher process output:");
@@ -125,9 +148,10 @@ public class TestDumpOnCrash {
         return p.pid();
     }
 
-    private static void verify(long pid) throws IOException {
+    private static void verify(long pid, String dumppath) throws IOException {
         String fileName = "hs_err_pid" + pid + ".jfr";
-        Path file = Paths.get(fileName).toAbsolutePath().normalize();
+        Path file = (dumppath == null) ? Paths.get(fileName) : Paths.get(dumppath, fileName);
+        file = file.toAbsolutePath().normalize();
 
         Asserts.assertTrue(Files.exists(file), "No emergency jfr recording file " + file + " exists");
         Asserts.assertNotEquals(Files.size(file), 0L, "File length 0. Should at least be some bytes");

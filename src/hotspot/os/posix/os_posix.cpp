@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@
 #include <sys/mman.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
+#include <spawn.h>
 #include <sys/time.h>
 #include <sys/times.h>
 #include <sys/types.h>
@@ -674,22 +675,18 @@ const char* os::get_current_directory(char *buf, size_t buflen) {
   return getcwd(buf, buflen);
 }
 
-FILE* os::open(int fd, const char* mode) {
+FILE* os::fdopen(int fd, const char* mode) {
   return ::fdopen(fd, mode);
 }
 
-size_t os::write(int fd, const void *buf, unsigned int nBytes) {
-  size_t res;
-  RESTARTABLE((size_t) ::write(fd, buf, (size_t) nBytes), res);
+ssize_t os::write(int fd, const void *buf, unsigned int nBytes) {
+  ssize_t res;
+  RESTARTABLE(::write(fd, buf, (size_t) nBytes), res);
   return res;
 }
 
 ssize_t os::read_at(int fd, void *buf, unsigned int nBytes, jlong offset) {
   return ::pread(fd, buf, nBytes, offset);
-}
-
-int os::close(int fd) {
-  return ::close(fd);
 }
 
 void os::flockfile(FILE* fp) {
@@ -717,10 +714,6 @@ int os::closedir(DIR *dirp) {
 
 int os::socket_close(int fd) {
   return ::close(fd);
-}
-
-int os::socket(int domain, int type, int protocol) {
-  return ::socket(domain, type, protocol);
 }
 
 int os::recv(int fd, char* buf, size_t nBytes, uint flags) {
@@ -1609,9 +1602,7 @@ int os::PlatformEvent::park(jlong millis) {
       status = pthread_cond_timedwait(_cond, _mutex, &abst);
       assert_status(status == 0 || status == ETIMEDOUT,
                     status, "cond_timedwait");
-      // OS-level "spurious wakeups" are ignored unless the archaic
-      // FilterSpuriousWakeups is set false. That flag should be obsoleted.
-      if (!FilterSpuriousWakeups) break;
+      // OS-level "spurious wakeups" are ignored
       if (status == ETIMEDOUT) break;
     }
     --_nParked;
@@ -1955,40 +1946,16 @@ char** os::get_environ() { return environ; }
 //         doesn't block SIGINT et al.
 //        -this function is unsafe to use in non-error situations, mainly
 //         because the child process will inherit all parent descriptors.
-int os::fork_and_exec(const char* cmd, bool prefer_vfork) {
-  const char * argv[4] = {"sh", "-c", cmd, NULL};
-
-  pid_t pid ;
-
+int os::fork_and_exec(const char* cmd) {
+  const char* argv[4] = {"sh", "-c", cmd, NULL};
+  pid_t pid = -1;
   char** env = os::get_environ();
-
-  // Use always vfork on AIX, since its safe and helps with analyzing OOM situations.
-  // Otherwise leave it up to the caller.
-  AIX_ONLY(prefer_vfork = true;)
-  #ifdef __APPLE__
-  pid = ::fork();
-  #else
-  pid = prefer_vfork ? ::vfork() : ::fork();
-  #endif
-
-  if (pid < 0) {
-    // fork failed
-    return -1;
-
-  } else if (pid == 0) {
-    // child process
-
-    ::execve("/bin/sh", (char* const*)argv, env);
-
-    // execve failed
-    ::_exit(-1);
-
-  } else  {
-    // copied from J2SE ..._waitForProcessExit() in UNIXProcess_md.c; we don't
-    // care about the actual exit code, for now.
-
+  // Note: cast is needed because posix_spawn() requires - for compatibility with ancient
+  // C-code - a non-const argv/envp pointer array. But it is fine to hand in literal
+  // strings and just cast the constness away. See also ProcessImpl_md.c.
+  int rc = ::posix_spawn(&pid, "/bin/sh", NULL, NULL, (char**) argv, env);
+  if (rc == 0) {
     int status;
-
     // Wait for the child process to exit.  This returns immediately if
     // the child has already exited. */
     while (::waitpid(pid, &status, 0) < 0) {
@@ -1998,7 +1965,6 @@ int os::fork_and_exec(const char* cmd, bool prefer_vfork) {
       default: return -1;
       }
     }
-
     if (WIFEXITED(status)) {
       // The child exited normally; get its exit code.
       return WEXITSTATUS(status);
@@ -2013,6 +1979,9 @@ int os::fork_and_exec(const char* cmd, bool prefer_vfork) {
       // Unknown exit code; pass it through
       return status;
     }
+  } else {
+    // Don't log, we are inside error handling
+    return -1;
   }
 }
 

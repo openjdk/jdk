@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,6 +96,10 @@ class JarVerifier {
     /** collect -DIGEST-MANIFEST values for deny list */
     private List<Object> manifestDigests;
 
+    /* A cache mapping code signers to the algorithms used to digest jar
+       entries, and whether or not the algorithms are permitted. */
+    private Map<CodeSigner[], Map<String, Boolean>> signersToAlgs;
+
     public JarVerifier(String name, byte[] rawBytes) {
         manifestName = name;
         manifestRawBytes = rawBytes;
@@ -105,6 +109,7 @@ class JarVerifier {
         pendingBlocks = new ArrayList<>();
         baos = new ByteArrayOutputStream();
         manifestDigests = new ArrayList<>();
+        signersToAlgs = new HashMap<>();
     }
 
     /**
@@ -244,7 +249,8 @@ class JarVerifier {
         if (!parsingBlockOrSF) {
             JarEntry je = mev.getEntry();
             if ((je != null) && (je.signers == null)) {
-                je.signers = mev.verify(verifiedSigners, sigFileSigners);
+                je.signers = mev.verify(verifiedSigners, sigFileSigners,
+                                        signersToAlgs);
                 je.certs = mapSignersToCertArray(je.signers);
             }
         } else {

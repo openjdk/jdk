@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,13 +90,23 @@ public interface WriterFactory {
     MethodWriter getMethodWriter(ClassWriter classWriter);
 
     /**
+     * Return the annotation type member writer for a given annotation
+     * type, or null if this writer is not supported by the doclet.
+     *
+     * @param classWriter the writer for the annotation type being documented
+     * @return the member writer
+     */
+    AnnotationTypeMemberWriter getAnnotationTypeMemberWriter(
+            ClassWriter classWriter);
+
+    /**
      * Return the annotation type optional member writer for a given annotation
      * type, or null if this writer is not supported by the doclet.
      *
      * @param classWriter the writer for the annotation type being documented
      * @return the member writer
      */
-    AnnotationTypeOptionalMemberWriter getAnnotationTypeOptionalMemberWriter(
+    AnnotationTypeMemberWriter getAnnotationTypeOptionalMemberWriter(
             ClassWriter classWriter);
 
     /**
@@ -106,7 +116,7 @@ public interface WriterFactory {
      * @param classWriter the writer for the annotation type being documented
      * @return the member writer
      */
-    AnnotationTypeRequiredMemberWriter getAnnotationTypeRequiredMemberWriter(
+    AnnotationTypeMemberWriter getAnnotationTypeRequiredMemberWriter(
             ClassWriter classWriter);
 
     /**

@@ -639,11 +639,8 @@ JNI_ENTRY(jint, jni_PushLocalFrame(JNIEnv *env, jint capacity))
     HOTSPOT_JNI_PUSHLOCALFRAME_RETURN((uint32_t)JNI_ERR);
     return JNI_ERR;
   }
-  JNIHandleBlock* old_handles = thread->active_handles();
-  JNIHandleBlock* new_handles = JNIHandleBlock::allocate_block(thread);
-  assert(new_handles != NULL, "should not be NULL");
-  new_handles->set_pop_frame_link(old_handles);
-  thread->set_active_handles(new_handles);
+
+  thread->push_jni_handle_block();
   jint ret = JNI_OK;
   HOTSPOT_JNI_PUSHLOCALFRAME_RETURN(ret);
   return ret;

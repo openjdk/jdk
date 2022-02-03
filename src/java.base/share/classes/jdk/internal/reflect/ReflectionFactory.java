@@ -85,6 +85,15 @@ public class ReflectionFactory {
     private static boolean noInflation        = false;
     private static int     inflationThreshold = 15;
 
+    //
+    // New implementation uses direct invocation of method handles
+    private static final int METHOD_MH_ACCESSOR      = 0x1;
+    private static final int FIELD_MH_ACCESSOR       = 0x2;
+    private static final int ALL_MH_ACCESSORS        = METHOD_MH_ACCESSOR|FIELD_MH_ACCESSOR;
+
+    private static int     useDirectMethodHandle = ALL_MH_ACCESSORS;
+    private static boolean useNativeAccessorOnly = false;  // for testing only
+
     // true if deserialization constructor checking is disabled
     private static boolean disableSerialConstructorChecks = false;
 
@@ -137,24 +146,6 @@ public class ReflectionFactory {
         return soleInstance;
     }
 
-    /**
-     * Returns an alternate reflective Method instance for the given method
-     * intended for reflection to invoke, if present.
-     *
-     * A trusted method can define an alternate implementation for a method `foo`
-     * by defining a method named "reflected$foo" that will be invoked
-     * reflectively.
-     */
-    private static Method findMethodForReflection(Method method) {
-        String altName = "reflected$" + method.getName();
-        try {
-           return method.getDeclaringClass()
-                        .getDeclaredMethod(altName, method.getParameterTypes());
-        } catch (NoSuchMethodException ex) {
-            return null;
-        }
-    }
-
     //--------------------------------------------------------------------------
     //
     // Routines used by java.lang.reflect
@@ -181,18 +172,15 @@ public class ReflectionFactory {
         }
         boolean isFinal = Modifier.isFinal(field.getModifiers());
         boolean isReadOnly = isFinal && (!override || langReflectAccess.isTrustedFinalField(field));
-        return UnsafeFieldAccessorFactory.newFieldAccessor(field, isReadOnly);
+        if (useFieldHandleAccessor()) {
+            return MethodHandleAccessorFactory.newFieldAccessor(field, isReadOnly);
+        } else {
+            return UnsafeFieldAccessorFactory.newFieldAccessor(field, isReadOnly);
+        }
     }
 
-    public MethodAccessor newMethodAccessor(Method method) {
+    public MethodAccessor newMethodAccessor(Method method, boolean callerSensitive) {
         checkInitted();
-
-        if (Reflection.isCallerSensitive(method)) {
-            Method altMethod = findMethodForReflection(method);
-            if (altMethod != null) {
-                method = altMethod;
-            }
-        }
 
         // use the root Method that will not cache caller class
         Method root = langReflectAccess.getRoot(method);
@@ -200,18 +188,30 @@ public class ReflectionFactory {
             method = root;
         }
 
-        if (noInflation && !method.getDeclaringClass().isHidden()) {
-            return new MethodAccessorGenerator().
-                generateMethod(method.getDeclaringClass(),
-                               method.getName(),
-                               method.getParameterTypes(),
-                               method.getReturnType(),
-                               method.getExceptionTypes(),
-                               method.getModifiers());
+        if (useMethodHandleAccessor()) {
+            return MethodHandleAccessorFactory.newMethodAccessor(method, callerSensitive);
         } else {
-            NativeMethodAccessorImpl acc = new NativeMethodAccessorImpl(method);
-            return acc.getParent();
+            if (noInflation && !method.getDeclaringClass().isHidden()) {
+                return generateMethodAccessor(method);
+            } else {
+                NativeMethodAccessorImpl acc = new NativeMethodAccessorImpl(method);
+                return acc.getParent();
+            }
         }
+    }
+
+    /**
+     * Generate the MethodAccessor that invokes the given method with
+     * bytecode invocation.
+     */
+    static MethodAccessorImpl generateMethodAccessor(Method method) {
+        return (MethodAccessorImpl)new MethodAccessorGenerator()
+                .generateMethod(method.getDeclaringClass(),
+                                method.getName(),
+                                method.getParameterTypes(),
+                                method.getReturnType(),
+                                method.getExceptionTypes(),
+                                method.getModifiers());
     }
 
     public ConstructorAccessor newConstructorAccessor(Constructor<?> c) {
@@ -232,23 +232,26 @@ public class ReflectionFactory {
             c = root;
         }
 
-        // Bootstrapping issue: since we use Class.newInstance() in
-        // the ConstructorAccessor generation process, we have to
-        // break the cycle here.
-        if (Reflection.isSubclassOf(declaringClass,
-                                    ConstructorAccessorImpl.class)) {
-            return new BootstrapConstructorAccessorImpl(c);
-        }
-
-        if (noInflation && !c.getDeclaringClass().isHidden()) {
-            return new MethodAccessorGenerator().
-                generateConstructor(c.getDeclaringClass(),
-                                    c.getParameterTypes(),
-                                    c.getExceptionTypes(),
-                                    c.getModifiers());
+        if (useMethodHandleAccessor()) {
+            return MethodHandleAccessorFactory.newConstructorAccessor(c);
         } else {
-            NativeConstructorAccessorImpl acc = new NativeConstructorAccessorImpl(c);
-            return acc.getParent();
+            // Bootstrapping issue: since we use Class.newInstance() in
+            // the ConstructorAccessor generation process, we have to
+            // break the cycle here.
+            if (Reflection.isSubclassOf(declaringClass, ConstructorAccessorImpl.class)) {
+                return new BootstrapConstructorAccessorImpl(c);
+            }
+
+            if (noInflation && !c.getDeclaringClass().isHidden()) {
+                return new MethodAccessorGenerator().
+                        generateConstructor(c.getDeclaringClass(),
+                                            c.getParameterTypes(),
+                                            c.getExceptionTypes(),
+                                            c.getModifiers());
+            } else {
+                NativeConstructorAccessorImpl acc = new NativeConstructorAccessorImpl(c);
+                return acc.getParent();
+            }
         }
     }
 
@@ -624,6 +627,22 @@ public class ReflectionFactory {
         return inflationThreshold;
     }
 
+    static boolean noInflation() {
+        return noInflation;
+    }
+
+    static boolean useMethodHandleAccessor() {
+        return (useDirectMethodHandle & METHOD_MH_ACCESSOR) == METHOD_MH_ACCESSOR;
+    }
+
+    static boolean useFieldHandleAccessor() {
+        return (useDirectMethodHandle & FIELD_MH_ACCESSOR) == FIELD_MH_ACCESSOR;
+    }
+
+    static boolean useNativeAccessorOnly() {
+        return useNativeAccessorOnly;
+    }
+
     /** We have to defer full initialization of this class until after
         the static initializer is run since java.lang.reflect.Method's
         static initializer (more properly, that for
@@ -652,6 +671,20 @@ public class ReflectionFactory {
             } catch (NumberFormatException e) {
                 throw new RuntimeException("Unable to parse property sun.reflect.inflationThreshold", e);
             }
+        }
+        val = props.getProperty("jdk.reflect.useDirectMethodHandle");
+        if (val != null) {
+            if (val.equals("false")) {
+                useDirectMethodHandle = 0;
+            } else if (val.equals("methods")) {
+                useDirectMethodHandle = METHOD_MH_ACCESSOR;
+            } else if (val.equals("fields")) {
+                useDirectMethodHandle = FIELD_MH_ACCESSOR;
+            }
+        }
+        val = props.getProperty("jdk.reflect.useNativeAccessorOnly");
+        if (val != null && val.equals("true")) {
+            useNativeAccessorOnly = true;
         }
 
         disableSerialConstructorChecks =

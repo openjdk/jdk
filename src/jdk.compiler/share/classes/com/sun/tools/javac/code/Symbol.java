@@ -794,7 +794,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
 
     /** A base class for Symbols representing types.
      */
-    public static abstract class TypeSymbol extends Symbol {
+    public abstract static class TypeSymbol extends Symbol {
         public TypeSymbol(Kind kind, long flags, Name name, Type type, Symbol owner) {
             super(kind, flags, name, type, owner);
         }
@@ -2279,6 +2279,11 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         }
 
         @Override
+        public Name name() {
+            return name;
+        }
+
+        @Override
         public boolean isDynamic() {
             return true;
         }
@@ -2314,6 +2319,11 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             super(0, name, type, owner);
             this.bsm = bsm;
             this.staticArgs = staticArgs;
+        }
+
+        @Override
+        public Name name() {
+            return name;
         }
 
         @Override

@@ -69,6 +69,17 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   AC_SUBST(JDK_RC_PLATFORM_NAME)
   AC_SUBST(HOTSPOT_VM_DISTRO)
 
+  # Setup username (for use in adhoc version strings etc)
+  AC_ARG_WITH([build-user], [AS_HELP_STRING([--with-build-user],
+      [build username to use in version strings])])
+  if test "x$with_build_user" != x; then
+    USERNAME="$with_build_user"
+  else
+    # Outer [ ] to quote m4.
+    [ USERNAME=`$ECHO "$USER" | $TR -d -c '[a-z][A-Z][0-9]'` ]
+  fi
+  AC_SUBST(USERNAME)
+
   # Set the JDK RC name
   AC_ARG_WITH(jdk-rc-name, [AS_HELP_STRING([--with-jdk-rc-name],
       [Set JDK RC name. This is used for FileDescription and ProductName properties

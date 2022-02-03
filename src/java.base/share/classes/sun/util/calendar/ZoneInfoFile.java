@@ -605,9 +605,8 @@ public final class ZoneInfoFile {
                     params[7] = 0;
                 } else {
                     // hacking: see comment above
-                    if (dom < 0 || dom >= 24 &&
-                                   !(zoneId.equals("Asia/Gaza") ||
-                                     zoneId.equals("Asia/Hebron"))) {
+                    // No need of hacking for Asia/Gaza and Asia/Hebron from tz2021e
+                    if (dom < 0 || dom >= 24) {
                         params[6] = -1;
                         params[7] = toCalendarDOW[dow];
                     } else {

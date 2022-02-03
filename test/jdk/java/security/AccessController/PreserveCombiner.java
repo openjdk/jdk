@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  */
 
 import java.security.*;
+import java.util.concurrent.Callable;
 import javax.security.auth.Subject;
 import javax.security.auth.x500.X500Principal;
 
@@ -38,16 +39,15 @@ public class PreserveCombiner {
         Subject s = new Subject();
         s.getPrincipals().add(new X500Principal("cn=duke"));
 
-        String result = (String)Subject.doAs(s, new PrivilegedAction() {
-            public Object run() {
+        String result = Subject.callAs(s, new Callable<String>() {
+            public String call() {
 
                 // get subject from current ACC - this always worked
-                Subject doAsSubject =
-                        Subject.getSubject(AccessController.getContext());
-                if (doAsSubject == null) {
+                Subject callAsSubject = Subject.current();
+                if (callAsSubject == null) {
                     return "test 1 failed";
                 } else {
-                    System.out.println(doAsSubject);
+                    System.out.println(callAsSubject);
                     System.out.println("test 1 passed");
                 }
 
@@ -56,8 +56,7 @@ public class PreserveCombiner {
                     (new PrivilegedAction<String>() {
                     public String run() {
                         // get subject after doPriv
-                        Subject doPrivSubject =
-                            Subject.getSubject(AccessController.getContext());
+                        Subject doPrivSubject = Subject.current();
                         if (doPrivSubject == null) {
                             return "test 2 failed";
                         } else {
@@ -79,8 +78,7 @@ public class PreserveCombiner {
                         (new PrivilegedExceptionAction<String>() {
                         public String run() throws PrivilegedActionException {
                             // get subject after doPriv
-                            Subject doPrivSubject = Subject.getSubject
-                                (AccessController.getContext());
+                            Subject doPrivSubject = Subject.current();
                             if (doPrivSubject == null) {
                                 return "test 3 failed";
                             } else {

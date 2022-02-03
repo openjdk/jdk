@@ -90,6 +90,7 @@ class AbstractInterpreter: AllStatic {
     java_lang_Float_floatToRawIntBits,                          // implementation of java.lang.Float.floatToRawIntBits()
     java_lang_Double_longBitsToDouble,                          // implementation of java.lang.Double.longBitsToDouble()
     java_lang_Double_doubleToRawLongBits,                       // implementation of java.lang.Double.doubleToRawLongBits()
+    java_lang_Thread_currentThread,                             // implementation of java.lang.Thread.currentThread()
     number_of_method_entries,
     invalid = -1
   };
@@ -149,6 +150,7 @@ class AbstractInterpreter: AllStatic {
       case vmIntrinsics::_dtan  : // fall thru
       case vmIntrinsics::_dabs  : // fall thru
       case vmIntrinsics::_dsqrt : // fall thru
+      case vmIntrinsics::_dsqrt_strict : // fall thru
       case vmIntrinsics::_dlog  : // fall thru
       case vmIntrinsics::_dlog10: // fall thru
       case vmIntrinsics::_dpow  : // fall thru
