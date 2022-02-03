@@ -65,12 +65,22 @@ inline ZForwardingTableParallelIterator::ZForwardingTableParallelIterator(const 
     _table(table),
     _index_distributor(int(ZAddressOffsetMax >> ZGranuleSizeShift)) {}
 
+static bool should_visit(ZForwarding* forwarding, int index) {
+  if (forwarding == NULL) {
+    return false;
+  }
+
+  // Medium sized pages the same forwarding installed as multiple consecutive entries.
+  // Visit only the first entry.
+  const int start_index = int(untype(forwarding->start()) >> ZGranuleSizeShift);
+  return start_index == index;
+}
+
 template <typename Function>
 inline void ZForwardingTableParallelIterator::do_forwardings(Function function) {
   _index_distributor.do_indices([&](int index) {
     ZForwarding* const forwarding = _table->at(index);
-    if (forwarding != NULL) {
-      // Next forwarding found
+    if (should_visit(forwarding, index)) {
       return function(forwarding);
     }
     return true;
