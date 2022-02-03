@@ -153,6 +153,9 @@
             <plugin>
                 <groupId>org.apache.netbeans.utilities</groupId>
                 <artifactId>nbm-maven-plugin</artifactId>
+                <configuration>
+                    <etcConfFile>src/main/resources/${brandingToken}.conf</etcConfFile>
+                </configuration>
             </plugin>
             <!-- Permits NbModuleSuite to be run in integration-test phase: -->
             <plugin>
