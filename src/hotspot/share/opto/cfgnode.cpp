@@ -1366,9 +1366,12 @@ Node* PhiNode::Identity(PhaseGVN* phase) {
   }
 
   int true_path = is_diamond_phi();
-  if (true_path != 0) {
+  // Delay CMove'ing identity if Ideal has not had the chance to handle unsafe cases, yet.
+  if (true_path != 0 && !(phase->is_IterGVN() && wait_for_region_igvn(phase))) {
     Node* id = is_cmove_id(phase, true_path);
-    if (id != NULL)  return id;
+    if (id != NULL) {
+      return id;
+    }
   }
 
   // Looking for phis with identical inputs.  If we find one that has
