@@ -120,10 +120,7 @@ class HotSpotPidFileParser {
     }
 
     private boolean isTestMethodBlockStart(Line line, Map<Integer, IRMethod> compileIdMap) {
-        if (line.isBlockStart() && isTestClassMethodBlock(line, compileIdMap)) {
-            System.out.println(line.getLine());
-        }
-        return line.isBlockStart() && isTestClassMethodBlock(line, compileIdMap);
+      return line.isBlockStart() && isTestClassMethodBlock(line, compileIdMap);
     }
 
     private boolean isTestClassMethodBlock(Line line, Map<Integer, IRMethod> compileIdMap) {
