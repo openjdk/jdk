@@ -1591,12 +1591,20 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Returns a BigInteger whose value is {@code (this * val)}.
      * When both {@code this} and {@code val} are large, typically
      * in the thousands of bits, parallel multiply might be used.
+     * This method returns the exact same mathematical result as
+     * {@link #multiply}.
      *
-     * @implNote An implementation may offer better algorithmic
+     * @implNote This implementation may offer better algorithmic
      * performance when {@code val == this}.
+     *
+     * @implNote Compared to {@link #multiply}, this implementation's
+     * parallel multiplication algorithm will use more CPU resources
+     * to compute the result faster, with no increase in memory
+     * consumption.
      *
      * @param  val value to be multiplied by this BigInteger.
      * @return {@code this * val}
+     * @see #multiply
      */
     public BigInteger parallelMultiply(BigInteger val) {
         return multiply(val, false, true, 0);
