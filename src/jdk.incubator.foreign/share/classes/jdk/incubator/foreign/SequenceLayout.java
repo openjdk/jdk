@@ -82,18 +82,14 @@ public final class SequenceLayout extends AbstractLayout implements MemoryLayout
     }
 
     /**
-     * Returns the element layout associated with this sequence layout.
-     *
-     * @return The element layout associated with this sequence layout.
+     * {@return the element layout associated with this sequence layout}
      */
     public MemoryLayout elementLayout() {
         return elementLayout;
     }
 
     /**
-     * Returns the element count of this sequence layout (if any).
-     *
-     * @return the element count of this sequence layout (if any).
+     * {@return the element count of this sequence layout (if any)}
      */
     public OptionalLong elementCount() {
         return elemCount;

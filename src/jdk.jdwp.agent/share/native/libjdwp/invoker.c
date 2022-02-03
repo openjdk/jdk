@@ -232,6 +232,7 @@ fillInvokeRequest(JNIEnv *env, InvokeRequest *request,
     /*
      * Squirrel away the method signature
      */
+    JDI_ASSERT_MSG(request->methodSignature == NULL, "Request methodSignature not null");
     error = methodSignature(method, NULL, &request->methodSignature,  NULL);
     if (error != JVMTI_ERROR_NONE) {
         return error;
@@ -774,6 +775,10 @@ invoker_completeInvokeRequest(jthread thread)
      * after writing the respone.
      */
     deleteGlobalArgumentRefs(env, request);
+
+    JDI_ASSERT_MSG(request->methodSignature != NULL, "methodSignature is NULL");
+    jvmtiDeallocate(request->methodSignature);
+    request->methodSignature = NULL;
 
     /* From now on, do not access the request structure anymore
      * for this request id, because once we give up the invokerLock it may

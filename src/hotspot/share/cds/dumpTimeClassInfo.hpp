@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,8 +135,7 @@ public:
   }
 
   bool is_excluded() {
-    // _klass may become NULL due to DynamicArchiveBuilder::set_to_null
-    return _excluded || _failed_verification || _klass == NULL;
+    return _excluded || _failed_verification;
   }
 
   // Was this class loaded while JvmtiExport::is_early_phase()==true

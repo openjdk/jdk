@@ -77,7 +77,6 @@ public:
 
     zap_dead_objects(_last_forwarded_object_end, obj_addr);
 
-    // Zapping clears the bitmap, make sure it didn't clear too much.
     assert(_cm->is_marked_in_prev_bitmap(obj), "should be correctly marked");
     if (_during_concurrent_start) {
       // For the next marking info we'll only mark the
@@ -188,8 +187,6 @@ public:
     hr->note_self_forwarding_removal_start(during_concurrent_start,
                                            during_concurrent_mark);
 
-    hr->reset_bot();
-
     _phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,
                                                    _worker_id,
                                                    1,
@@ -197,7 +194,7 @@ public:
 
     size_t live_bytes = remove_self_forward_ptr_by_walking_hr(hr, during_concurrent_start);
 
-    hr->rem_set()->clean_strong_code_roots(hr);
+    hr->rem_set()->clean_code_roots(hr);
     hr->rem_set()->clear_locked(true);
 
     hr->note_self_forwarding_removal_end(live_bytes);

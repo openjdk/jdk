@@ -25,13 +25,13 @@
 #ifndef SHARE_SERVICES_MALLOCTRACKER_HPP
 #define SHARE_SERVICES_MALLOCTRACKER_HPP
 
-#if INCLUDE_NMT
-
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/threadCritical.hpp"
 #include "services/nmtCommon.hpp"
 #include "utilities/nativeCallStack.hpp"
+
+class outputStream;
 
 /*
  * This counter class counts memory allocation and deallocation,
@@ -440,6 +440,14 @@ class MallocTracker : AllStatic {
   static inline void record_arena_size_change(ssize_t size, MEMFLAGS flags) {
     MallocMemorySummary::record_arena_size_change(size, flags);
   }
+
+  // Given a pointer, if it seems to point to the start of a valid malloced block,
+  // print the block. Note that since there is very low risk of memory looking
+  // accidentally like a valid malloc block header (canaries and all) this is not
+  // totally failproof. Only use this during debugging or when you can afford
+  // signals popping up, e.g. when writing an hs_err file.
+  static bool print_pointer_information(const void* p, outputStream* st);
+
  private:
   static inline MallocHeader* malloc_header(void *memblock) {
     assert(memblock != NULL, "NULL pointer");
@@ -447,8 +455,5 @@ class MallocTracker : AllStatic {
     return header;
   }
 };
-
-#endif // INCLUDE_NMT
-
 
 #endif // SHARE_SERVICES_MALLOCTRACKER_HPP
