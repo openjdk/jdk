@@ -816,9 +816,7 @@ public final class Main {
         if (providerClasses != null) {
             ClassLoader cl = null;
             if (pathlist != null) {
-                String path = null;
-                path = PathList.appendPath(
-                        path, System.getProperty("java.class.path"));
+                String path = System.getProperty("java.class.path");
                 path = PathList.appendPath(
                         path, System.getProperty("env.class.path"));
                 path = PathList.appendPath(path, pathlist);
