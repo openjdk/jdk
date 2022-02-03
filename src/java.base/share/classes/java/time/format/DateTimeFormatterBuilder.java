@@ -246,7 +246,7 @@ public final class DateTimeFormatterBuilder {
      * @throws IllegalArgumentException if {@code requestedTemplate} is invalid
      * @throws DateTimeException if a match for the localized pattern for
      *      {@code requestedTemplate} is not available
-     * @see #appendLocalized(String) 
+     * @see #appendLocalized(String)
      * @since 19
      */
     public static String getLocalizedDateTimePattern(String requestedTemplate,
