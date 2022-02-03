@@ -195,6 +195,32 @@ class ResourceHashtable : public ResourceObj {
       ++bucket;
     }
   }
+
+  // ITER contains bool do_entry(K const&, V const&), which will be
+  // called for each entry in the table.  If do_entry() returns true,
+  // the entry is deleted.
+  template<class ITER>
+  void unlink(ITER* iter) {
+    Node** bucket =  const_cast<Node**>(_table);
+    while (bucket < &_table[SIZE]) {
+      Node** ptr = bucket;
+      while (*ptr != NULL) {
+        Node* node = *ptr;
+        // do_entry must clean up the key and value in Node.
+        bool clean = iter->do_entry(node->_key, node->_value);
+        if (clean) {
+          *ptr = node->_next;
+          if (ALLOC_TYPE == ResourceObj::C_HEAP) {
+            delete node;
+          }
+        } else {
+          ptr = &(node->_next);
+        }
+      }
+      ++bucket;
+    }
+  }
+
 };
 
 

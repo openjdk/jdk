@@ -60,6 +60,21 @@ class CommonResourceHashtableTest : public ::testing::Test {
     }
   };
 
+  class DeleterTestIter {
+    int _val;
+   public:
+    DeleterTestIter(int i) : _val(i) {}
+
+    bool do_entry(K const& k, V const& v) {
+      if ((uintptr_t) k == (uintptr_t) _val) {
+        // Delete me!
+        return true;
+      } else {
+        return false; // continue iteration
+      }
+    }
+  };
+
 };
 
 class SmallResourceHashtableTest : public CommonResourceHashtableTest {
@@ -233,6 +248,15 @@ class GenericResourceHashtableTest : public CommonResourceHashtableTest {
         ASSERT_FALSE(rh.remove(as_K(index)));
       }
       rh.iterate(&et);
+
+      // Add more entries in and then delete one.
+      for (uintptr_t i = 10; i > 0; --i) {
+        uintptr_t index = i - 1;
+        ASSERT_TRUE(rh.put(as_K(index), index));
+      }
+      DeleterTestIter dt(5);
+      rh.unlink(&dt);
+      ASSERT_FALSE(rh.get(as_K(5)));
     }
   };
 };
