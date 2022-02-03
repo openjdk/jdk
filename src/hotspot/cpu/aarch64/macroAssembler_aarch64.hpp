@@ -1068,17 +1068,22 @@ public:
 
   address trampoline_call(Address entry, CodeBuffer* cbuf = NULL);
 
-  static bool far_branches() {
+  // Jumps that can reach anywhere in the code cache.
+  static bool codecache_branch_needs_far_jump() {
     return ReservedCodeCacheSize > branch_range;
   }
 
-  // Jumps that can reach anywhere in the code cache.
+  // Jumps that can reach a nonmethod stub
+  static bool codestub_branch_needs_far_jump() {
+    return CodeCache::max_distance_to_codestub() > branch_range;
+  }
+
   // Trashes tmp.
   void far_call(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
-  void far_jump(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
+  void far_jump(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1, bool fixed_size = false);
 
-  static int far_branch_size() {
-    if (far_branches()) {
+  static int far_codestub_branch_size() {
+    if (codestub_branch_needs_far_jump()) {
       return 3 * 4;  // adrp, add, br
     } else {
       return 4;

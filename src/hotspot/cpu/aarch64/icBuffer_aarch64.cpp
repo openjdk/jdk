@@ -34,7 +34,7 @@
 #include "oops/oop.inline.hpp"
 
 int InlineCacheBuffer::ic_stub_code_size() {
-  return (MacroAssembler::far_branches() ? 6 : 4) * NativeInstruction::instruction_size;
+  return (MacroAssembler::codecache_branch_needs_far_jump() ? 6 : 4) * NativeInstruction::instruction_size;
 }
 
 #define __ masm->
@@ -52,7 +52,7 @@ void InlineCacheBuffer::assemble_ic_buffer_code(address code_begin, void* cached
   address start = __ pc();
   Label l;
   __ ldr(rscratch2, l);
-  __ far_jump(ExternalAddress(entry_point));
+  __ far_jump(ExternalAddress(entry_point), NULL, rscratch1, true);
   __ align(wordSize);
   __ bind(l);
   __ emit_int64((int64_t)cached_value);
