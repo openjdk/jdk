@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,6 +130,12 @@ public interface ExecutableElement extends Element, Parameterizable {
      * @return the default value, or {@code null} if none
      */
     AnnotationValue getDefaultValue();
+
+    /**
+     * {@return the class or interface defining the executable}
+     */
+    @Override
+    Element getEnclosingElement();
 
     /**
      * {@return the simple name of a constructor, method, or

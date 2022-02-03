@@ -597,7 +597,7 @@ Zone America/Argentina/Ushuaia -4:33:12 - LMT	1894 Oct 31
 			-3:00	-	-03
 
 # Aruba
-Link America/Curacao America/Aruba
+# See America/Puerto_Rico.
 
 # Bolivia
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
@@ -1392,35 +1392,14 @@ Zone	America/Bogota	-4:56:16 -	LMT	1884 Mar 13
 # no information; probably like America/Bogota
 
 # Curaçao
-
-# Milne gives 4:35:46.9 for Curaçao mean time; round to nearest.
+# See America/Puerto_Rico.
 #
-# From Paul Eggert (2006-03-22):
-# Shanks & Pottenger say that The Bottom and Philipsburg have been at
-# -4:00 since standard time was introduced on 1912-03-02; and that
-# Kralendijk and Rincon used Kralendijk Mean Time (-4:33:08) from
-# 1912-02-02 to 1965-01-01.  The former is dubious, since S&P also say
-# Saba Island has been like Curaçao.
-# This all predates our 1970 cutoff, though.
-#
-# By July 2007 Curaçao and St Maarten are planned to become
-# associated states within the Netherlands, much like Aruba;
-# Bonaire, Saba and St Eustatius would become directly part of the
-# Netherlands as Kingdom Islands.  This won't affect their time zones
-# though, as far as we know.
-#
-# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	America/Curacao	-4:35:47 -	LMT	1912 Feb 12 # Willemstad
-			-4:30	-	-0430	1965
-			-4:00	-	AST
-
 # From Arthur David Olson (2011-06-15):
 # use links for places with new iso3166 codes.
 # The name "Lower Prince's Quarter" is both longer than fourteen characters
-# and contains an apostrophe; use "Lower_Princes" below.
-
-Link	America/Curacao	America/Lower_Princes	# Sint Maarten
-Link	America/Curacao	America/Kralendijk	# Caribbean Netherlands
+# and contains an apostrophe; use "Lower_Princes"....
+# From Paul Eggert (2021-09-29):
+# These backward-compatibility links now are in the 'northamerica' file.
 
 # Ecuador
 #
@@ -1563,11 +1542,40 @@ Zone America/Cayenne	-3:29:20 -	LMT	1911 Jul
 			-3:00	-	-03
 
 # Guyana
+
+# From P Chan (2020-11-27):
+# https://books.google.com/books?id=5-5CAQAAMAAJ&pg=SA1-PA547
+# The Official Gazette of British Guiana. (New Series.) Vol. XL. July to
+# December, 1915, p 1547, lists as several notes:
+# "Local Mean Time 3 hours 52 mins. 39 secs. slow of Greenwich Mean Time
+# (Georgetown.) From 1st August, 1911, British Guiana Standard Mean Time 4
+# hours slow of Greenwich Mean Time, by notice in Official Gazette on 1st July,
+# 1911.  From 1st March, 1915, British Guiana Standard Mean Time 3 hours 45
+# mins. 0 secs. slow of Greenwich Mean Time, by notice in Official Gazette on
+# 23rd January, 1915."
+#
+# https://parliament.gov.gy/documents/acts/10923-act_no._27_of_1975_-_interpretation_and_general_clauses_(amendment)_act_1975.pdf
+# Interpretation and general clauses (Amendment) Act 1975 (Act No. 27 of 1975)
+# [dated 1975-07-31]
+# "This Act...shall come into operation on 1st August, 1975."
+# "...where any expression of time occurs...the time referred to shall signify
+# the standard time of Guyana which shall be three hours behind Greenwich Mean
+# Time."
+#
+# Circular No. 10/1992 dated 1992-03-20
+# https://dps.gov.gy/wp-content/uploads/2018/12/1992-03-20-Circular-010.pdf
+# "...cabinet has decided that with effect from Sunday 29th March, 1992, Guyana
+# Standard Time would be re-established at 01:00 hours by adjusting the hands
+# of the clock back to 24:00 hours."
+# Legislated in the Interpretation and general clauses (Amendment) Act 1992
+# (Act No. 6 of 1992) [passed 1992-03-27, published 1992-04-18]
+# https://parliament.gov.gy/documents/acts/5885-6_of_1992_interpretation_and_general_clauses_(amendment)_act_1992.pdf
+
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	America/Guyana	-3:52:40 -	LMT	1915 Mar    # Georgetown
-			-3:45	-	-0345	1975 Jul 31
-			-3:00	-	-03	1991
-# IATA SSIM (1996-06) says -4:00.  Assume a 1991 switch.
+Zone	America/Guyana	-3:52:39 -	LMT	1911 Aug  1 # Georgetown
+			-4:00	-	-04	1915 Mar  1
+			-3:45	-	-0345	1975 Aug  1
+			-3:00	-	-03	1992 Mar 29  1:00
 			-4:00	-	-04
 
 # Paraguay
@@ -1708,24 +1716,7 @@ Zone America/Paramaribo	-3:40:40 -	LMT	1911
 			-3:00	-	-03
 
 # Trinidad and Tobago
-# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone America/Port_of_Spain -4:06:04 -	LMT	1912 Mar 2
-			-4:00	-	AST
-
-# These all agree with Trinidad and Tobago since 1970.
-Link America/Port_of_Spain America/Anguilla
-Link America/Port_of_Spain America/Antigua
-Link America/Port_of_Spain America/Dominica
-Link America/Port_of_Spain America/Grenada
-Link America/Port_of_Spain America/Guadeloupe
-Link America/Port_of_Spain America/Marigot	# St Martin (French part)
-Link America/Port_of_Spain America/Montserrat
-Link America/Port_of_Spain America/St_Barthelemy # St Barthélemy
-Link America/Port_of_Spain America/St_Kitts	# St Kitts & Nevis
-Link America/Port_of_Spain America/St_Lucia
-Link America/Port_of_Spain America/St_Thomas	# Virgin Islands (US)
-Link America/Port_of_Spain America/St_Vincent
-Link America/Port_of_Spain America/Tortola	# Virgin Islands (UK)
+# See America/Puerto_Rico.
 
 # Uruguay
 # From Paul Eggert (1993-11-18):

@@ -46,6 +46,7 @@ class Deoptimization : AllStatic {
 
  public:
   // What condition caused the deoptimization?
+  // Note: Keep this enum in sync. with Deoptimization::_trap_reason_name.
   enum DeoptReason {
     Reason_many = -1,             // indicates presence of several reasons
     Reason_none = 0,              // indicates absence of a relevant deopt.
@@ -98,20 +99,22 @@ class Deoptimization : AllStatic {
     Reason_jsr_mismatch,
 #endif
 
+    // Used to define MethodData::_trap_hist_limit where Reason_tenured isn't included
+    Reason_TRAP_HISTORY_LENGTH,
+
     // Reason_tenured is counted separately, add normal counted Reasons above.
-    // Related to MethodData::_trap_hist_limit where Reason_tenured isn't included
-    Reason_tenured,               // age of the code has reached the limit
+    Reason_tenured = Reason_TRAP_HISTORY_LENGTH, // age of the code has reached the limit
     Reason_LIMIT,
 
-    // Note:  Keep this enum in sync. with _trap_reason_name.
-    Reason_RECORDED_LIMIT = Reason_profile_predicate  // some are not recorded per bc
     // Note:  Reason_RECORDED_LIMIT should fit into 31 bits of
     // DataLayout::trap_bits.  This dependency is enforced indirectly
     // via asserts, to avoid excessive direct header-to-header dependencies.
     // See Deoptimization::trap_state_reason and class DataLayout.
+    Reason_RECORDED_LIMIT = Reason_profile_predicate,  // some are not recorded per bc
   };
 
   // What action must be taken by the runtime?
+  // Note: Keep this enum in sync. with Deoptimization::_trap_action_name.
   enum DeoptAction {
     Action_none,                  // just interpret, do not invalidate nmethod
     Action_maybe_recompile,       // recompile the nmethod; need not invalidate
@@ -119,7 +122,6 @@ class Deoptimization : AllStatic {
     Action_make_not_entrant,      // invalidate the nmethod, recompile (probably)
     Action_make_not_compilable,   // invalidate the nmethod and do not compile
     Action_LIMIT
-    // Note:  Keep this enum in sync. with _trap_action_name.
   };
 
   enum {
@@ -433,6 +435,7 @@ class Deoptimization : AllStatic {
                                          int trap_request);
 
   static jint total_deoptimization_count();
+  static jint deoptimization_count(const char* reason_str, const char* action_str);
 
   // JVMTI PopFrame support
 

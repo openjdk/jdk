@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -342,13 +342,23 @@ void Handshake::execute(HandshakeClosure* hs_cl) {
 }
 
 void Handshake::execute(HandshakeClosure* hs_cl, JavaThread* target) {
+  // tlh == nullptr means we rely on a ThreadsListHandle somewhere
+  // in the caller's context (and we sanity check for that).
+  Handshake::execute(hs_cl, nullptr, target);
+}
+
+void Handshake::execute(HandshakeClosure* hs_cl, ThreadsListHandle* tlh, JavaThread* target) {
   JavaThread* self = JavaThread::current();
   HandshakeOperation op(hs_cl, target, Thread::current());
 
   jlong start_time_ns = os::javaTimeNanos();
 
-  ThreadsListHandle tlh;
-  if (tlh.includes(target)) {
+  guarantee(target != nullptr, "must be");
+  if (tlh == nullptr) {
+    guarantee(Thread::is_JavaThread_protected_by_TLH(target),
+              "missing ThreadsListHandle in calling context.");
+    target->handshake_state()->add_operation(&op);
+  } else if (tlh->includes(target)) {
     target->handshake_state()->add_operation(&op);
   } else {
     char buf[128];
@@ -396,19 +406,25 @@ void Handshake::execute(AsyncHandshakeClosure* hs_cl, JavaThread* target) {
   jlong start_time_ns = os::javaTimeNanos();
   AsyncHandshakeOperation* op = new AsyncHandshakeOperation(hs_cl, target, start_time_ns);
 
-  ThreadsListHandle tlh;
-  if (tlh.includes(target)) {
-    target->handshake_state()->add_operation(op);
-  } else {
-    log_handshake_info(start_time_ns, op->name(), 0, 0, "(thread dead)");
-    delete op;
+  guarantee(target != nullptr, "must be");
+
+  Thread* current = Thread::current();
+  if (current != target) {
+    // Another thread is handling the request and it must be protecting
+    // the target.
+    guarantee(Thread::is_JavaThread_protected_by_TLH(target),
+              "missing ThreadsListHandle in calling context.");
   }
+  // Implied else:
+  // The target is handling the request itself so it can't be dead.
+
+  target->handshake_state()->add_operation(op);
 }
 
 HandshakeState::HandshakeState(JavaThread* target) :
   _handshakee(target),
   _queue(),
-  _lock(Monitor::nosafepoint, "HandshakeState_lock", Monitor::_safepoint_check_never),
+  _lock(Monitor::nosafepoint, "HandshakeState_lock"),
   _active_handshaker(),
   _suspended(false),
   _async_suspend_handshake(false)
@@ -472,10 +488,11 @@ void HandshakeState::remove_op(HandshakeOperation* op) {
 bool HandshakeState::process_by_self(bool allow_suspend) {
   assert(Thread::current() == _handshakee, "should call from _handshakee");
   assert(!_handshakee->is_terminated(), "should not be a terminated thread");
-  assert(_handshakee->thread_state() != _thread_blocked, "should not be in a blocked state");
-  assert(_handshakee->thread_state() != _thread_in_native, "should not be in native");
 
-  ThreadInVMForHandshake tivm(_handshakee);
+  _handshakee->frame_anchor()->make_walkable(_handshakee);
+  // Threads shouldn't block if they are in the middle of printing, but...
+  ttyLocker::break_tty_lock_for_safepoint(os::current_thread_id());
+
   // Handshakes cannot safely safepoint.
   // The exception to this rule is the asynchronous suspension handshake.
   // It by-passes the NSV by manually doing the transition.

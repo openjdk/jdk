@@ -180,12 +180,18 @@ public:
   {}
 
   virtual void main_run() {
+    bool shutdown_requested = false;
     while (true) {
       BufferNode* node = _cbl->pop();
       if (node != NULL) {
         _allocator->release(node);
-      } else if (!Atomic::load_acquire(_continue_running)) {
+      } else if (shutdown_requested) {
         return;
+      } else if (!Atomic::load_acquire(_continue_running)) {
+        // To avoid a race that could leave buffers in the list after this
+        // thread has shut down, continue processing until the list is empty
+        // *after* the shut down request has been received.
+        shutdown_requested = true;
       }
       ThreadBlockInVM tbiv(this); // Safepoint check.
     }

@@ -371,7 +371,7 @@ public class X509CRLSelector implements CRLSelector {
                 try {
                     x500Principals.add(new X500Principal((byte[])nameObject));
                 } catch (IllegalArgumentException e) {
-                    throw (IOException)new IOException("Invalid name").initCause(e);
+                    throw new IOException("Invalid name", e);
                 }
             }
         }

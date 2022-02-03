@@ -66,7 +66,7 @@ class MetaspaceArenaTestHelper {
 
   void initialize(const ArenaGrowthPolicy* growth_policy, const char* name = "gtest-MetaspaceArena") {
     _growth_policy = growth_policy;
-    _lock = new Mutex(Monitor::nosafepoint, "gtest-MetaspaceArenaTest_lock", Monitor::_safepoint_check_never);
+    _lock = new Mutex(Monitor::nosafepoint, "gtest-MetaspaceArenaTest_lock");
     // Lock during space creation, since this is what happens in the VM too
     //  (see ClassLoaderData::metaspace_non_null(), which we mimick here).
     {
@@ -739,3 +739,48 @@ TEST_VM(metaspace, MetaspaceArena_growth_boot_nc_not_inplace) {
                          word_size_for_level(CHUNK_LEVEL_4M), false);
 }
 */
+
+// Test that repeated allocation-deallocation cycles with the same block size
+//  do not increase metaspace usage after the initial allocation (the deallocated
+//  block should be reused by the next allocation).
+static void test_repeatedly_allocate_and_deallocate(bool is_topmost) {
+  // Test various sizes, including (important) the max. possible block size = 1 root chunk
+  for (size_t blocksize = Metaspace::max_allocation_word_size(); blocksize >= 1; blocksize /= 2) {
+    size_t used1 = 0, used2 = 0, committed1 = 0, committed2 = 0;
+    MetaWord* p = NULL, *p2 = NULL;
+
+    MetaspaceGtestContext context;
+    MetaspaceArenaTestHelper helper(context, Metaspace::StandardMetaspaceType, false);
+
+    // First allocation
+    helper.allocate_from_arena_with_tests_expect_success(&p, blocksize);
+    if (!is_topmost) {
+      // another one on top, size does not matter.
+      helper.allocate_from_arena_with_tests_expect_success(0x10);
+    }
+
+    // Measure
+    helper.usage_numbers_with_test(&used1, &committed1, NULL);
+
+    // Dealloc, alloc several times with the same size.
+    for (int i = 0; i < 5; i ++) {
+      helper.deallocate_with_tests(p, blocksize);
+      helper.allocate_from_arena_with_tests_expect_success(&p2, blocksize);
+      // We should get the same pointer back.
+      EXPECT_EQ(p2, p);
+    }
+
+    // Measure again
+    helper.usage_numbers_with_test(&used2, &committed2, NULL);
+    EXPECT_EQ(used2, used1);
+    EXPECT_EQ(committed1, committed2);
+  }
+}
+
+TEST_VM(metaspace, MetaspaceArena_test_repeatedly_allocate_and_deallocate_top_allocation) {
+  test_repeatedly_allocate_and_deallocate(true);
+}
+
+TEST_VM(metaspace, MetaspaceArena_test_repeatedly_allocate_and_deallocate_nontop_allocation) {
+  test_repeatedly_allocate_and_deallocate(false);
+}

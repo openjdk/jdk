@@ -92,9 +92,9 @@ ifeq ($(call isTargetOs, linux), true)
   JPACKAGE_LIBAPPLAUNCHER_INCLUDES := $(addprefix -I, $(JPACKAGE_LIBAPPLAUNCHER_SRC))
 
   $(eval $(call SetupJdkLibrary, BUILD_JPACKAGE_LIBAPPLAUNCHER, \
-      NAME := jpackageapplauncher, \
+      NAME := jpackageapplauncheraux, \
       OUTPUT_DIR := $(JPACKAGE_OUTPUT_DIR), \
-      SYMBOLS_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjpackageapplauncher, \
+      SYMBOLS_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjpackageapplauncheraux, \
       SRC := $(JPACKAGE_LIBAPPLAUNCHER_SRC), \
       EXCLUDE_FILES := LinuxLauncher.c LinuxPackage.c, \
       TOOLCHAIN := TOOLCHAIN_LINK_CXX, \

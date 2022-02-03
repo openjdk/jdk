@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,7 +127,7 @@ public abstract class SunToolkit extends Toolkit
         if (AccessController.doPrivileged(new GetBooleanAction("sun.awt.nativedebug"))) {
             DebugSettings.init();
         }
-        touchKeyboardAutoShowIsEnabled = Boolean.valueOf(
+        touchKeyboardAutoShowIsEnabled = Boolean.parseBoolean(
             GetPropertyAction.privilegedGetProperty(
                 "awt.touchKeyboardAutoShowIsEnabled", "true"));
     };
@@ -204,7 +204,7 @@ public abstract class SunToolkit extends Toolkit
      * access to Xlib, OpenGL, etc.  However, these methods are implemented
      * in SunToolkit so that they can be called from shared code (e.g.
      * from the OGL pipeline) or from the X11 pipeline regardless of whether
-     * XToolkit or MToolkit is currently in use.  There are native macros
+     * XToolkit is currently in use.  There are native macros
      * (such as AWT_LOCK) defined in awt.h, so if the implementation of these
      * methods is changed, make sure it is compatible with the native macros.
      *
@@ -1767,8 +1767,7 @@ public abstract class SunToolkit extends Toolkit
                          new GetPropertyAction("awt.useSystemAAFontSettings"));
             }
             if (systemAAFonts != null) {
-                useSystemAAFontSettings =
-                    Boolean.valueOf(systemAAFonts).booleanValue();
+                useSystemAAFontSettings = Boolean.parseBoolean(systemAAFonts);
                 /* If it is anything other than "true", then it may be
                  * a hint name , or it may be "off, "default", etc.
                  */
@@ -1803,8 +1802,8 @@ public abstract class SunToolkit extends Toolkit
         if (useSystemAAFontSettings()) {
              Toolkit tk = Toolkit.getDefaultToolkit();
              if (tk instanceof SunToolkit) {
-                 Object map = ((SunToolkit)tk).getDesktopAAHints();
-                 return (RenderingHints)map;
+                 RenderingHints map = ((SunToolkit)tk).getDesktopAAHints();
+                 return map;
              } else { /* Headless Toolkit */
                  return null;
              }

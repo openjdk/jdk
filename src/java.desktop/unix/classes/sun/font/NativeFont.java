@@ -133,14 +133,14 @@ public class NativeFont extends PhysicalFont {
 
             String styleStr = null;
 
-            if (tmpWeight.indexOf("bold") >= 0 ||
-                tmpWeight.indexOf("demi") >= 0) {
+            if (tmpWeight.contains("bold") ||
+                tmpWeight.contains("demi")) {
                 style |= Font.BOLD;
                 styleStr = "Bold";
             }
 
             if (tmpSlant.equals("i") ||
-                tmpSlant.indexOf("italic") >= 0) {
+                tmpSlant.contains("italic")) {
                 style |= Font.ITALIC;
 
                 if (styleStr == null) {
@@ -150,7 +150,7 @@ public class NativeFont extends PhysicalFont {
                 }
             }
             else if (tmpSlant.equals("o") ||
-                tmpSlant.indexOf("oblique") >= 0) {
+                tmpSlant.contains("oblique")) {
                 style |= Font.ITALIC;
                 if (styleStr == null) {
                     styleStr = "Oblique";
@@ -169,10 +169,10 @@ public class NativeFont extends PhysicalFont {
             if (encoding.startsWith("-")) {
                 encoding = xlfd.substring(hPos[13]+1);
             }
-            if (encoding.indexOf("fontspecific") >= 0) {
-                if (tmpFamily.indexOf("dingbats") >= 0) {
+            if (encoding.contains("fontspecific")) {
+                if (tmpFamily.contains("dingbats")) {
                     encoding = "dingbats";
-                } else if (tmpFamily.indexOf("symbol") >= 0) {
+                } else if (tmpFamily.contains("symbol")) {
                     encoding = "symbol";
                 } else {
                     encoding = "iso8859-1";

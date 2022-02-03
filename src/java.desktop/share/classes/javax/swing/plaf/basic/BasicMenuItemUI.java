@@ -256,6 +256,7 @@ public class BasicMenuItemUI extends MenuItemUI
     }
 
     /**
+     * Registers the subcomponents of the menu.
      *
      * @param menuItem a menu item
      * @since 1.3

@@ -233,8 +233,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
      */
     protected void buildSerialUIDInfo(Content classTree) {
         Content serialUidTree = writer.getSerialUIDInfoHeader();
-        for (Element e : utils.getFieldsUnfiltered(currentTypeElement)) {
-            VariableElement field = (VariableElement)e;
+        for (VariableElement field : utils.getFieldsUnfiltered(currentTypeElement)) {
             if (field.getSimpleName().toString().compareTo(SERIAL_VERSION_UID) == 0 &&
                 field.getConstantValue() != null) {
                 writer.addSerialUIDInfo(SERIAL_VERSION_UID_HEADER,

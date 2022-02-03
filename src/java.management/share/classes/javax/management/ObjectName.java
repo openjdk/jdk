@@ -351,7 +351,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
     /**
      * a shared empty array for empty property lists
      */
-    static final private Property[] _Empty_property_array = new Property[0];
+    private static final Property[] _Empty_property_array = new Property[0];
 
 
     // Class private fields <==============================

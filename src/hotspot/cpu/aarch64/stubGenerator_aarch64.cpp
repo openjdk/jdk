@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3094,7 +3094,7 @@ class StubGenerator: public StubCodeGenerator {
   // key = c_rarg4
   // state = c_rarg5 - GHASH.state
   // subkeyHtbl = c_rarg6 - powers of H
-  // counter = c_rarg7 - pointer to 16 bytes of CTR
+  // counter = c_rarg7 - 16 bytes of CTR
   // return - number of processed bytes
   address generate_galoisCounterMode_AESCrypt() {
     address ghash_polynomial = __ pc();
@@ -3107,6 +3107,8 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
      StubCodeMark mark(this, "StubRoutines", "galoisCounterMode_AESCrypt");
     address start = __ pc();
+    __ enter();
+
     const Register in = c_rarg0;
     const Register len = c_rarg1;
     const Register ct = c_rarg2;
@@ -3121,7 +3123,6 @@ class StubGenerator: public StubCodeGenerator {
     const Register counter = c_rarg7;
 
     const Register keylen = r10;
-    __ enter();
     // Save state before entering routine
     __ sub(sp, sp, 4 * 16);
     __ st1(v12, v13, v14, v15, __ T16B, Address(sp));
@@ -3203,6 +3204,194 @@ class StubGenerator: public StubCodeGenerator {
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(lr);
      return start;
+  }
+
+  // Arguments:
+  //
+  // Inputs:
+  //   c_rarg0   - byte[]  source+offset
+  //   c_rarg1   - int[]   SHA.state
+  //   c_rarg2   - int     offset
+  //   c_rarg3   - int     limit
+  //
+  address generate_md5_implCompress(bool multi_block, const char *name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    address start = __ pc();
+
+    Register buf       = c_rarg0;
+    Register state     = c_rarg1;
+    Register ofs       = c_rarg2;
+    Register limit     = c_rarg3;
+    Register a         = r4;
+    Register b         = r5;
+    Register c         = r6;
+    Register d         = r7;
+    Register rscratch3 = r10;
+    Register rscratch4 = r11;
+
+    Label keys;
+    Label md5_loop;
+
+    __ BIND(md5_loop);
+
+    // Save hash values for addition after rounds
+    __ ldrw(a, Address(state,  0));
+    __ ldrw(b, Address(state,  4));
+    __ ldrw(c, Address(state,  8));
+    __ ldrw(d, Address(state, 12));
+
+#define FF(r1, r2, r3, r4, k, s, t)              \
+    __ eorw(rscratch3, r3, r4);                  \
+    __ movw(rscratch2, t);                       \
+    __ andw(rscratch3, rscratch3, r2);           \
+    __ addw(rscratch4, r1, rscratch2);           \
+    __ ldrw(rscratch1, Address(buf, k*4));       \
+    __ eorw(rscratch3, rscratch3, r4);           \
+    __ addw(rscratch3, rscratch3, rscratch1);    \
+    __ addw(rscratch3, rscratch3, rscratch4);    \
+    __ rorw(rscratch2, rscratch3, 32 - s);       \
+    __ addw(r1, rscratch2, r2);
+
+#define GG(r1, r2, r3, r4, k, s, t)              \
+    __ eorw(rscratch2, r2, r3);                  \
+    __ ldrw(rscratch1, Address(buf, k*4));       \
+    __ andw(rscratch3, rscratch2, r4);           \
+    __ movw(rscratch2, t);                       \
+    __ eorw(rscratch3, rscratch3, r3);           \
+    __ addw(rscratch4, r1, rscratch2);           \
+    __ addw(rscratch3, rscratch3, rscratch1);    \
+    __ addw(rscratch3, rscratch3, rscratch4);    \
+    __ rorw(rscratch2, rscratch3, 32 - s);       \
+    __ addw(r1, rscratch2, r2);
+
+#define HH(r1, r2, r3, r4, k, s, t)              \
+    __ eorw(rscratch3, r3, r4);                  \
+    __ movw(rscratch2, t);                       \
+    __ addw(rscratch4, r1, rscratch2);           \
+    __ ldrw(rscratch1, Address(buf, k*4));       \
+    __ eorw(rscratch3, rscratch3, r2);           \
+    __ addw(rscratch3, rscratch3, rscratch1);    \
+    __ addw(rscratch3, rscratch3, rscratch4);    \
+    __ rorw(rscratch2, rscratch3, 32 - s);       \
+    __ addw(r1, rscratch2, r2);
+
+#define II(r1, r2, r3, r4, k, s, t)              \
+    __ movw(rscratch3, t);                       \
+    __ ornw(rscratch2, r2, r4);                  \
+    __ addw(rscratch4, r1, rscratch3);           \
+    __ ldrw(rscratch1, Address(buf, k*4));       \
+    __ eorw(rscratch3, rscratch2, r3);           \
+    __ addw(rscratch3, rscratch3, rscratch1);    \
+    __ addw(rscratch3, rscratch3, rscratch4);    \
+    __ rorw(rscratch2, rscratch3, 32 - s);       \
+    __ addw(r1, rscratch2, r2);
+
+    // Round 1
+    FF(a, b, c, d,  0,  7, 0xd76aa478)
+    FF(d, a, b, c,  1, 12, 0xe8c7b756)
+    FF(c, d, a, b,  2, 17, 0x242070db)
+    FF(b, c, d, a,  3, 22, 0xc1bdceee)
+    FF(a, b, c, d,  4,  7, 0xf57c0faf)
+    FF(d, a, b, c,  5, 12, 0x4787c62a)
+    FF(c, d, a, b,  6, 17, 0xa8304613)
+    FF(b, c, d, a,  7, 22, 0xfd469501)
+    FF(a, b, c, d,  8,  7, 0x698098d8)
+    FF(d, a, b, c,  9, 12, 0x8b44f7af)
+    FF(c, d, a, b, 10, 17, 0xffff5bb1)
+    FF(b, c, d, a, 11, 22, 0x895cd7be)
+    FF(a, b, c, d, 12,  7, 0x6b901122)
+    FF(d, a, b, c, 13, 12, 0xfd987193)
+    FF(c, d, a, b, 14, 17, 0xa679438e)
+    FF(b, c, d, a, 15, 22, 0x49b40821)
+
+    // Round 2
+    GG(a, b, c, d,  1,  5, 0xf61e2562)
+    GG(d, a, b, c,  6,  9, 0xc040b340)
+    GG(c, d, a, b, 11, 14, 0x265e5a51)
+    GG(b, c, d, a,  0, 20, 0xe9b6c7aa)
+    GG(a, b, c, d,  5,  5, 0xd62f105d)
+    GG(d, a, b, c, 10,  9, 0x02441453)
+    GG(c, d, a, b, 15, 14, 0xd8a1e681)
+    GG(b, c, d, a,  4, 20, 0xe7d3fbc8)
+    GG(a, b, c, d,  9,  5, 0x21e1cde6)
+    GG(d, a, b, c, 14,  9, 0xc33707d6)
+    GG(c, d, a, b,  3, 14, 0xf4d50d87)
+    GG(b, c, d, a,  8, 20, 0x455a14ed)
+    GG(a, b, c, d, 13,  5, 0xa9e3e905)
+    GG(d, a, b, c,  2,  9, 0xfcefa3f8)
+    GG(c, d, a, b,  7, 14, 0x676f02d9)
+    GG(b, c, d, a, 12, 20, 0x8d2a4c8a)
+
+    // Round 3
+    HH(a, b, c, d,  5,  4, 0xfffa3942)
+    HH(d, a, b, c,  8, 11, 0x8771f681)
+    HH(c, d, a, b, 11, 16, 0x6d9d6122)
+    HH(b, c, d, a, 14, 23, 0xfde5380c)
+    HH(a, b, c, d,  1,  4, 0xa4beea44)
+    HH(d, a, b, c,  4, 11, 0x4bdecfa9)
+    HH(c, d, a, b,  7, 16, 0xf6bb4b60)
+    HH(b, c, d, a, 10, 23, 0xbebfbc70)
+    HH(a, b, c, d, 13,  4, 0x289b7ec6)
+    HH(d, a, b, c,  0, 11, 0xeaa127fa)
+    HH(c, d, a, b,  3, 16, 0xd4ef3085)
+    HH(b, c, d, a,  6, 23, 0x04881d05)
+    HH(a, b, c, d,  9,  4, 0xd9d4d039)
+    HH(d, a, b, c, 12, 11, 0xe6db99e5)
+    HH(c, d, a, b, 15, 16, 0x1fa27cf8)
+    HH(b, c, d, a,  2, 23, 0xc4ac5665)
+
+    // Round 4
+    II(a, b, c, d,  0,  6, 0xf4292244)
+    II(d, a, b, c,  7, 10, 0x432aff97)
+    II(c, d, a, b, 14, 15, 0xab9423a7)
+    II(b, c, d, a,  5, 21, 0xfc93a039)
+    II(a, b, c, d, 12,  6, 0x655b59c3)
+    II(d, a, b, c,  3, 10, 0x8f0ccc92)
+    II(c, d, a, b, 10, 15, 0xffeff47d)
+    II(b, c, d, a,  1, 21, 0x85845dd1)
+    II(a, b, c, d,  8,  6, 0x6fa87e4f)
+    II(d, a, b, c, 15, 10, 0xfe2ce6e0)
+    II(c, d, a, b,  6, 15, 0xa3014314)
+    II(b, c, d, a, 13, 21, 0x4e0811a1)
+    II(a, b, c, d,  4,  6, 0xf7537e82)
+    II(d, a, b, c, 11, 10, 0xbd3af235)
+    II(c, d, a, b,  2, 15, 0x2ad7d2bb)
+    II(b, c, d, a,  9, 21, 0xeb86d391)
+
+#undef FF
+#undef GG
+#undef HH
+#undef II
+
+    // write hash values back in the correct order
+    __ ldrw(rscratch1, Address(state,  0));
+    __ addw(rscratch1, rscratch1, a);
+    __ strw(rscratch1, Address(state,  0));
+
+    __ ldrw(rscratch2, Address(state,  4));
+    __ addw(rscratch2, rscratch2, b);
+    __ strw(rscratch2, Address(state,  4));
+
+    __ ldrw(rscratch3, Address(state,  8));
+    __ addw(rscratch3, rscratch3, c);
+    __ strw(rscratch3, Address(state,  8));
+
+    __ ldrw(rscratch4, Address(state, 12));
+    __ addw(rscratch4, rscratch4, d);
+    __ strw(rscratch4, Address(state, 12));
+
+    if (multi_block) {
+      __ add(buf, buf, 64);
+      __ add(ofs, ofs, 64);
+      __ cmp(ofs, limit);
+      __ br(Assembler::LE, md5_loop);
+      __ mov(c_rarg0, ofs); // return ofs
+    }
+
+    __ ret(lr);
+
+    return start;
   }
 
   // Arguments:
@@ -4834,18 +5023,6 @@ class StubGenerator: public StubCodeGenerator {
     return entry;
   }
 
-  // code for comparing 16 bytes of strings with same encoding
-  void compare_string_16_bytes_same(Label &DIFF1, Label &DIFF2) {
-    Register result = r0, str1 = r1, cnt1 = r2, str2 = r3, tmp1 = r10, tmp2 = r11;
-    __ ldr(rscratch1, Address(__ post(str1, 8)));
-    __ eor(rscratch2, tmp1, tmp2);
-    __ ldr(cnt1, Address(__ post(str2, 8)));
-    __ cbnz(rscratch2, DIFF1);
-    __ ldr(tmp1, Address(__ post(str1, 8)));
-    __ eor(rscratch2, rscratch1, cnt1);
-    __ ldr(tmp2, Address(__ post(str2, 8)));
-    __ cbnz(rscratch2, DIFF2);
-  }
 
   // code for comparing 16 characters of strings with Latin1 and Utf16 encoding
   void compare_string_16_x_LU(Register tmpL, Register tmpU, Label &DIFF1,
@@ -5038,6 +5215,97 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  enum string_compare_mode {
+    LL,
+    LU,
+    UL,
+    UU,
+  };
+
+  // The following registers are declared in aarch64.ad
+  // r0  = result
+  // r1  = str1
+  // r2  = cnt1
+  // r3  = str2
+  // r4  = cnt2
+  // r10 = tmp1
+  // r11 = tmp2
+  // z0  = ztmp1
+  // z1  = ztmp2
+  // p0  = pgtmp1
+  // p1  = pgtmp2
+  address generate_compare_long_string_sve(string_compare_mode mode) {
+    __ align(CodeEntryAlignment);
+    address entry = __ pc();
+    Register result = r0, str1 = r1, cnt1 = r2, str2 = r3, cnt2 = r4,
+             tmp1 = r10, tmp2 = r11;
+
+    Label LOOP, MATCH, DONE, NOMATCH;
+    Register vec_len = tmp1;
+    Register idx = tmp2;
+    // The minimum of the string lengths has been stored in cnt2.
+    Register cnt = cnt2;
+    FloatRegister ztmp1 = z0, ztmp2 = z1;
+    PRegister pgtmp1 = p0, pgtmp2 = p1;
+
+    if (mode == LL) {
+      __ sve_cntb(vec_len);
+    } else {
+      __ sve_cnth(vec_len);
+    }
+
+    __ mov(idx, 0);
+    __ sve_whilelt(pgtmp1, mode == LL ? __ B : __ H, idx, cnt);
+
+    __ bind(LOOP);
+      switch (mode) {
+        case LL:
+          __ sve_ld1b(ztmp1, __ B, pgtmp1, Address(str1, idx));
+          __ sve_ld1b(ztmp2, __ B, pgtmp1, Address(str2, idx));
+          break;
+        case LU:
+          __ sve_ld1b(ztmp1, __ H, pgtmp1, Address(str1, idx));
+          __ sve_ld1h(ztmp2, __ H, pgtmp1, Address(str2, idx, Address::lsl(1)));
+          break;
+        case UL:
+          __ sve_ld1h(ztmp1, __ H, pgtmp1, Address(str1, idx, Address::lsl(1)));
+          __ sve_ld1b(ztmp2, __ H, pgtmp1, Address(str2, idx));
+          break;
+        case UU:
+          __ sve_ld1h(ztmp1, __ H, pgtmp1, Address(str1, idx, Address::lsl(1)));
+          __ sve_ld1h(ztmp2, __ H, pgtmp1, Address(str2, idx, Address::lsl(1)));
+          break;
+        default: ShouldNotReachHere();
+      }
+      __ add(idx, idx, vec_len);
+
+      // Compare strings.
+      __ sve_cmp(Assembler::NE, pgtmp2, mode == LL ? __ B : __ H, pgtmp1, ztmp1, ztmp2);
+      __ br(__ NE, MATCH);
+      __ sve_whilelt(pgtmp1, mode == LL ? __ B : __ H, idx, cnt);
+      __ br(__ LT, LOOP);
+
+      // The result has been computed in the caller prior to entering this stub.
+      __ b(DONE);
+
+    __ bind(MATCH);
+
+      // Crop the vector to find its location.
+      __ sve_brkb(pgtmp2, pgtmp1, pgtmp2, false /* isMerge */);
+
+      // Extract the first different characters of each string.
+      __ sve_lasta(rscratch1, mode == LL ? __ B : __ H, pgtmp2, ztmp1);
+      __ sve_lasta(rscratch2, mode == LL ? __ B : __ H, pgtmp2, ztmp2);
+
+      // Compute the difference of the first different characters.
+      __ sub(result, rscratch1, rscratch2);
+
+    __ bind(DONE);
+      __ ret(lr);
+
+    return entry;
+  }
+
   // r0  = result
   // r1  = str1
   // r2  = cnt1
@@ -5052,103 +5320,115 @@ class StubGenerator: public StubCodeGenerator {
         : "compare_long_string_same_encoding UU");
     address entry = __ pc();
     Register result = r0, str1 = r1, cnt1 = r2, str2 = r3, cnt2 = r4,
-        tmp1 = r10, tmp2 = r11;
-    Label SMALL_LOOP, LARGE_LOOP_PREFETCH, CHECK_LAST, DIFF2, TAIL,
-        LENGTH_DIFF, DIFF, LAST_CHECK_AND_LENGTH_DIFF,
-        DIFF_LAST_POSITION, DIFF_LAST_POSITION2;
+        tmp1 = r10, tmp2 = r11, tmp1h = rscratch1, tmp2h = rscratch2;
+
+    Label LARGE_LOOP_PREFETCH, LOOP_COMPARE16, DIFF, LESS16, LESS8, CAL_DIFFERENCE, LENGTH_DIFF;
+
     // exit from large loop when less than 64 bytes left to read or we're about
     // to prefetch memory behind array border
     int largeLoopExitCondition = MAX2(64, SoftwarePrefetchHintDistance)/(isLL ? 1 : 2);
-    // cnt1/cnt2 contains amount of characters to compare. cnt1 can be re-used
-    // update cnt2 counter with already loaded 8 bytes
+
+    // before jumping to stub, pre-load 8 bytes already, so do comparison directly
+    __ eor(rscratch2, tmp1, tmp2);
+    __ cbnz(rscratch2, CAL_DIFFERENCE);
+
     __ sub(cnt2, cnt2, wordSize/(isLL ? 1 : 2));
     // update pointers, because of previous read
     __ add(str1, str1, wordSize);
     __ add(str2, str2, wordSize);
     if (SoftwarePrefetchHintDistance >= 0) {
+      __ align(OptoLoopAlignment);
       __ bind(LARGE_LOOP_PREFETCH);
         __ prfm(Address(str1, SoftwarePrefetchHintDistance));
         __ prfm(Address(str2, SoftwarePrefetchHintDistance));
-        compare_string_16_bytes_same(DIFF, DIFF2);
-        compare_string_16_bytes_same(DIFF, DIFF2);
+
+        for (int i = 0; i < 4; i++) {
+          __ ldp(tmp1, tmp1h, Address(str1, i * 16));
+          __ ldp(tmp2, tmp2h, Address(str2, i * 16));
+          __ cmp(tmp1, tmp2);
+          __ ccmp(tmp1h, tmp2h, 0, Assembler::EQ);
+          __ br(Assembler::NE, DIFF);
+        }
         __ sub(cnt2, cnt2, isLL ? 64 : 32);
-        compare_string_16_bytes_same(DIFF, DIFF2);
+        __ add(str1, str1, 64);
+        __ add(str2, str2, 64);
         __ subs(rscratch2, cnt2, largeLoopExitCondition);
-        compare_string_16_bytes_same(DIFF, DIFF2);
-        __ br(__ GT, LARGE_LOOP_PREFETCH);
-        __ cbz(cnt2, LAST_CHECK_AND_LENGTH_DIFF); // no more chars left?
+        __ br(Assembler::GE, LARGE_LOOP_PREFETCH);
+        __ cbz(cnt2, LENGTH_DIFF); // no more chars left?
     }
-    // less than 16 bytes left?
-    __ subs(cnt2, cnt2, isLL ? 16 : 8);
-    __ br(__ LT, TAIL);
+
+    __ subs(rscratch1, cnt2, isLL ? 16 : 8);
+    __ br(Assembler::LE, LESS16);
     __ align(OptoLoopAlignment);
-    __ bind(SMALL_LOOP);
-      compare_string_16_bytes_same(DIFF, DIFF2);
-      __ subs(cnt2, cnt2, isLL ? 16 : 8);
-      __ br(__ GE, SMALL_LOOP);
-    __ bind(TAIL);
-      __ adds(cnt2, cnt2, isLL ? 16 : 8);
-      __ br(__ EQ, LAST_CHECK_AND_LENGTH_DIFF);
+    __ bind(LOOP_COMPARE16);
+      __ ldp(tmp1, tmp1h, Address(__ post(str1, 16)));
+      __ ldp(tmp2, tmp2h, Address(__ post(str2, 16)));
+      __ cmp(tmp1, tmp2);
+      __ ccmp(tmp1h, tmp2h, 0, Assembler::EQ);
+      __ br(Assembler::NE, DIFF);
+      __ sub(cnt2, cnt2, isLL ? 16 : 8);
+      __ subs(rscratch2, cnt2, isLL ? 16 : 8);
+      __ br(Assembler::LT, LESS16);
+
+      __ ldp(tmp1, tmp1h, Address(__ post(str1, 16)));
+      __ ldp(tmp2, tmp2h, Address(__ post(str2, 16)));
+      __ cmp(tmp1, tmp2);
+      __ ccmp(tmp1h, tmp2h, 0, Assembler::EQ);
+      __ br(Assembler::NE, DIFF);
+      __ sub(cnt2, cnt2, isLL ? 16 : 8);
+      __ subs(rscratch2, cnt2, isLL ? 16 : 8);
+      __ br(Assembler::GE, LOOP_COMPARE16);
+      __ cbz(cnt2, LENGTH_DIFF);
+
+    __ bind(LESS16);
+      // each 8 compare
       __ subs(cnt2, cnt2, isLL ? 8 : 4);
-      __ br(__ LE, CHECK_LAST);
-      __ eor(rscratch2, tmp1, tmp2);
-      __ cbnz(rscratch2, DIFF);
+      __ br(Assembler::LE, LESS8);
       __ ldr(tmp1, Address(__ post(str1, 8)));
       __ ldr(tmp2, Address(__ post(str2, 8)));
-      __ sub(cnt2, cnt2, isLL ? 8 : 4);
-    __ bind(CHECK_LAST);
-      if (!isLL) {
-        __ add(cnt2, cnt2, cnt2); // now in bytes
-      }
       __ eor(rscratch2, tmp1, tmp2);
-      __ cbnz(rscratch2, DIFF);
-      __ ldr(rscratch1, Address(str1, cnt2));
-      __ ldr(cnt1, Address(str2, cnt2));
-      __ eor(rscratch2, rscratch1, cnt1);
-      __ cbz(rscratch2, LENGTH_DIFF);
-      // Find the first different characters in the longwords and
-      // compute their difference.
-    __ bind(DIFF2);
-      __ rev(rscratch2, rscratch2);
-      __ clz(rscratch2, rscratch2);
-      __ andr(rscratch2, rscratch2, isLL ? -8 : -16);
-      __ lsrv(rscratch1, rscratch1, rscratch2);
-      if (isLL) {
-        __ lsrv(cnt1, cnt1, rscratch2);
-        __ uxtbw(rscratch1, rscratch1);
-        __ uxtbw(cnt1, cnt1);
-      } else {
-        __ lsrv(cnt1, cnt1, rscratch2);
-        __ uxthw(rscratch1, rscratch1);
-        __ uxthw(cnt1, cnt1);
+      __ cbnz(rscratch2, CAL_DIFFERENCE);
+      __ sub(cnt2, cnt2, isLL ? 8 : 4);
+
+    __ bind(LESS8); // directly load last 8 bytes
+      if (!isLL) {
+        __ add(cnt2, cnt2, cnt2);
       }
-      __ subw(result, rscratch1, cnt1);
-      __ b(LENGTH_DIFF);
+      __ ldr(tmp1, Address(str1, cnt2));
+      __ ldr(tmp2, Address(str2, cnt2));
+      __ eor(rscratch2, tmp1, tmp2);
+      __ cbz(rscratch2, LENGTH_DIFF);
+      __ b(CAL_DIFFERENCE);
+
     __ bind(DIFF);
+      __ cmp(tmp1, tmp2);
+      __ csel(tmp1, tmp1, tmp1h, Assembler::NE);
+      __ csel(tmp2, tmp2, tmp2h, Assembler::NE);
+      // reuse rscratch2 register for the result of eor instruction
+      __ eor(rscratch2, tmp1, tmp2);
+
+    __ bind(CAL_DIFFERENCE);
       __ rev(rscratch2, rscratch2);
       __ clz(rscratch2, rscratch2);
       __ andr(rscratch2, rscratch2, isLL ? -8 : -16);
       __ lsrv(tmp1, tmp1, rscratch2);
+      __ lsrv(tmp2, tmp2, rscratch2);
       if (isLL) {
-        __ lsrv(tmp2, tmp2, rscratch2);
         __ uxtbw(tmp1, tmp1);
         __ uxtbw(tmp2, tmp2);
       } else {
-        __ lsrv(tmp2, tmp2, rscratch2);
         __ uxthw(tmp1, tmp1);
         __ uxthw(tmp2, tmp2);
       }
       __ subw(result, tmp1, tmp2);
-      __ b(LENGTH_DIFF);
-    __ bind(LAST_CHECK_AND_LENGTH_DIFF);
-      __ eor(rscratch2, tmp1, tmp2);
-      __ cbnz(rscratch2, DIFF);
+
     __ bind(LENGTH_DIFF);
       __ ret(lr);
     return entry;
   }
 
   void generate_compare_long_strings() {
+    if (UseSVE == 0) {
       StubRoutines::aarch64::_compare_long_string_LL
           = generate_compare_long_string_same_encoding(true);
       StubRoutines::aarch64::_compare_long_string_UU
@@ -5157,6 +5437,16 @@ class StubGenerator: public StubCodeGenerator {
           = generate_compare_long_string_different_encoding(true);
       StubRoutines::aarch64::_compare_long_string_UL
           = generate_compare_long_string_different_encoding(false);
+    } else {
+      StubRoutines::aarch64::_compare_long_string_LL
+          = generate_compare_long_string_sve(LL);
+      StubRoutines::aarch64::_compare_long_string_UU
+          = generate_compare_long_string_sve(UU);
+      StubRoutines::aarch64::_compare_long_string_LU
+          = generate_compare_long_string_sve(LU);
+      StubRoutines::aarch64::_compare_long_string_UL
+          = generate_compare_long_string_sve(UL);
+    }
   }
 
   // R0 = result
@@ -6103,6 +6393,18 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // Support for spin waits.
+  address generate_spin_wait() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "spin_wait");
+    address start = __ pc();
+
+    __ spin_wait();
+    __ ret(lr);
+
+    return start;
+  }
+
 #ifdef LINUX
 
   // ARMv8.1 LSE versions of the atomic stubs used by Atomic::PlatformXX.
@@ -6205,10 +6507,16 @@ class StubGenerator: public StubCodeGenerator {
     __ ret(lr);
   }
 
-  void gen_ldaddal_entry(Assembler::operand_size size) {
+  void gen_ldadd_entry(Assembler::operand_size size, atomic_memory_order order) {
     Register prev = r2, addr = c_rarg0, incr = c_rarg1;
-    __ ldaddal(size, incr, prev, addr);
-    __ membar(Assembler::StoreStore|Assembler::StoreLoad);
+    // If not relaxed, then default to conservative.  Relaxed is the only
+    // case we use enough to be worth specializing.
+    if (order == memory_order_relaxed) {
+      __ ldadd(size, incr, prev, addr);
+    } else {
+      __ ldaddal(size, incr, prev, addr);
+      __ membar(Assembler::StoreStore|Assembler::StoreLoad);
+    }
     if (size == Assembler::xword) {
       __ mov(r0, prev);
     } else {
@@ -6238,12 +6546,21 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", "atomic entry points");
     address first_entry = __ pc();
 
-    // All memory_order_conservative
+    // ADD, memory_order_conservative
     AtomicStubMark mark_fetch_add_4(_masm, &aarch64_atomic_fetch_add_4_impl);
-    gen_ldaddal_entry(Assembler::word);
+    gen_ldadd_entry(Assembler::word, memory_order_conservative);
     AtomicStubMark mark_fetch_add_8(_masm, &aarch64_atomic_fetch_add_8_impl);
-    gen_ldaddal_entry(Assembler::xword);
+    gen_ldadd_entry(Assembler::xword, memory_order_conservative);
 
+    // ADD, memory_order_relaxed
+    AtomicStubMark mark_fetch_add_4_relaxed
+      (_masm, &aarch64_atomic_fetch_add_4_relaxed_impl);
+    gen_ldadd_entry(MacroAssembler::word, memory_order_relaxed);
+    AtomicStubMark mark_fetch_add_8_relaxed
+      (_masm, &aarch64_atomic_fetch_add_8_relaxed_impl);
+    gen_ldadd_entry(MacroAssembler::xword, memory_order_relaxed);
+
+    // XCHG, memory_order_conservative
     AtomicStubMark mark_xchg_4(_masm, &aarch64_atomic_xchg_4_impl);
     gen_swpal_entry(Assembler::word);
     AtomicStubMark mark_xchg_8_impl(_masm, &aarch64_atomic_xchg_8_impl);
@@ -7356,12 +7673,6 @@ class StubGenerator: public StubCodeGenerator {
     }
 #endif // COMPILER2
 
-    // generate GHASH intrinsics code
-    if (UseGHASHIntrinsics) {
-      // StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
-      StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks_wide();
-    }
-
     if (UseBASE64Intrinsics) {
         StubRoutines::_base64_encodeBlock = generate_base64_encodeBlock();
         StubRoutines::_base64_decodeBlock = generate_base64_decodeBlock();
@@ -7376,10 +7687,20 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_aescrypt_decryptBlock = generate_aescrypt_decryptBlock();
       StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_encryptAESCrypt();
       StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptAESCrypt();
-      StubRoutines::_galoisCounterMode_AESCrypt = generate_galoisCounterMode_AESCrypt();
       StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt();
     }
+    if (UseGHASHIntrinsics) {
+      // StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
+      StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks_wide();
+    }
+    if (UseAESIntrinsics && UseGHASHIntrinsics) {
+      StubRoutines::_galoisCounterMode_AESCrypt = generate_galoisCounterMode_AESCrypt();
+    }
 
+    if (UseMD5Intrinsics) {
+      StubRoutines::_md5_implCompress      = generate_md5_implCompress(false,    "md5_implCompress");
+      StubRoutines::_md5_implCompressMB    = generate_md5_implCompress(true,     "md5_implCompressMB");
+    }
     if (UseSHA1Intrinsics) {
       StubRoutines::_sha1_implCompress     = generate_sha1_implCompress(false,   "sha1_implCompress");
       StubRoutines::_sha1_implCompressMB   = generate_sha1_implCompress(true,    "sha1_implCompressMB");
@@ -7401,6 +7722,8 @@ class StubGenerator: public StubCodeGenerator {
     if (UseAdler32Intrinsics) {
       StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
     }
+
+    StubRoutines::aarch64::_spin_wait = generate_spin_wait();
 
 #ifdef LINUX
 
@@ -7443,6 +7766,8 @@ void StubGenerator_generate(CodeBuffer* code, bool all) {
 
 DEFAULT_ATOMIC_OP(fetch_add, 4, )
 DEFAULT_ATOMIC_OP(fetch_add, 8, )
+DEFAULT_ATOMIC_OP(fetch_add, 4, _relaxed)
+DEFAULT_ATOMIC_OP(fetch_add, 8, _relaxed)
 DEFAULT_ATOMIC_OP(xchg, 4, )
 DEFAULT_ATOMIC_OP(xchg, 8, )
 DEFAULT_ATOMIC_OP(cmpxchg, 1, )

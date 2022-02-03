@@ -54,7 +54,7 @@ import static jdk.internal.net.http.frame.SettingsFrame.MAX_FRAME_SIZE;
  */
 class Http2ClientImpl {
 
-    final static Logger debug =
+    static final Logger debug =
             Utils.getDebugLogger("Http2ClientImpl"::toString, Utils.DEBUG);
 
     private final HttpClientImpl client;

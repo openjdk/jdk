@@ -26,7 +26,7 @@
 # This file is in the public domain, so clarified as of
 # 2009-05-17 by Arthur David Olson.
 #
-# From Paul Eggert (2018-06-27):
+# From Paul Eggert (2021-09-20):
 # This file is intended as a backward-compatibility aid for older programs.
 # New programs should use zone1970.tab.  This file is like zone1970.tab (see
 # zone1970.tab's comments), but with the following additional restrictions:
@@ -38,6 +38,9 @@
 # of a region identified by a country code and of a timezone where civil
 # clocks have agreed since 1970; this is a narrower definition than
 # that of zone1970.tab.
+#
+# Unlike zone1970.tab, a row's third column can be a Link from
+# 'backward' instead of a Zone.
 #
 # This table is intended as an aid for users, to help them select timezones
 # appropriate for their practical needs.  It is not intended to take or
@@ -251,7 +254,7 @@ KE	-0117+03649	Africa/Nairobi
 KG	+4254+07436	Asia/Bishkek
 KH	+1133+10455	Asia/Phnom_Penh
 KI	+0125+17300	Pacific/Tarawa	Gilbert Islands
-KI	-0308-17105	Pacific/Enderbury	Phoenix Islands
+KI	-0247-17143	Pacific/Kanton	Phoenix Islands
 KI	+0152-15720	Pacific/Kiritimati	Line Islands
 KM	-1141+04316	Indian/Comoro
 KN	+1718-06243	America/St_Kitts
@@ -414,7 +417,7 @@ TK	-0922-17114	Pacific/Fakaofo
 TL	-0833+12535	Asia/Dili
 TM	+3757+05823	Asia/Ashgabat
 TN	+3648+01011	Africa/Tunis
-TO	-2110-17510	Pacific/Tongatapu
+TO	-210800-1751200	Pacific/Tongatapu
 TR	+4101+02858	Europe/Istanbul
 TT	+1039-06131	America/Port_of_Spain
 TV	-0831+17913	Pacific/Funafuti

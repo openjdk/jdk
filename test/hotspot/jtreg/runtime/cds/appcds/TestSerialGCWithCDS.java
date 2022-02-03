@@ -97,7 +97,8 @@ public class TestSerialGCWithCDS {
             // a small SerialGC heap that may be too small.
             String[] sizes = {
                 "4m",   // usually this will success load the archived heap
-                "2m",   // usually this will fail to loade th archived heap, but app can launch
+                "2m",   // usually this will fail to load the archived heap, but app can launch
+                        // or fail with "GC triggered before VM initialization completed"
                 "1m"    // usually this will cause VM launch to fail with "Too small maximum heap"
             };
             for (String sz : sizes) {
@@ -113,7 +114,12 @@ public class TestSerialGCWithCDS {
                 if (out.getExitValue() == 0) {
                     out.shouldContain(HELLO);
                 } else {
-                    out.shouldContain("Too small maximum heap");
+                    String output = out.getStdout() + out.getStderr();
+                    String exp1 = "Too small maximum heap";
+                    String exp2 = "GC triggered before VM initialization completed";
+                    if (!output.contains(exp1) && !output.contains(exp2)) {
+                        throw new RuntimeException("Either '" + exp1 + "' or '" + exp2 + "' must be in stdout/stderr \n");
+                    }
                 }
                 n++;
             }

@@ -190,14 +190,24 @@ public class IOUtils {
     static void exec(ProcessBuilder pb, boolean testForPresenceOnly,
             PrintStream consumer, boolean writeOutputToFile, long timeout)
             throws IOException {
+        exec(pb, testForPresenceOnly, consumer, writeOutputToFile,
+                timeout, false);
+    }
+
+    static void exec(ProcessBuilder pb, boolean testForPresenceOnly,
+            PrintStream consumer, boolean writeOutputToFile,
+            long timeout, boolean quiet) throws IOException {
         List<String> output = new ArrayList<>();
-        Executor exec = Executor.of(pb).setWriteOutputToFile(writeOutputToFile)
-                .setTimeout(timeout).setOutputConsumer(lines -> {
-            lines.forEach(output::add);
-            if (consumer != null) {
-                output.forEach(consumer::println);
-            }
-        });
+        Executor exec = Executor.of(pb)
+                .setWriteOutputToFile(writeOutputToFile)
+                .setTimeout(timeout)
+                .setQuiet(quiet)
+                .setOutputConsumer(lines -> {
+                    lines.forEach(output::add);
+                    if (consumer != null) {
+                        output.forEach(consumer::println);
+                    }
+                });
 
         if (testForPresenceOnly) {
             exec.execute();

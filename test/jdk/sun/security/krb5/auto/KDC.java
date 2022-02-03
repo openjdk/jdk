@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.*;
 import java.io.*;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
@@ -249,6 +252,14 @@ public class KDC {
          * If true, will check if TGS-REQ contains a non-null addresses field.
          */
         CHECK_ADDRESSES,
+        /**
+         * If true, S4U2self ticket is not set forwardable.
+         */
+        S4U2SELF_NOT_FORWARDABLE,
+        /**
+         * If true, allow S4U2self ticket not forwardable.
+         */
+        S4U2SELF_ALLOW_NOT_FORWARDABLE,
     };
 
     /**
@@ -441,12 +452,12 @@ public class KDC {
     }
 
     /**
-     * Adds a new principal to this realm with a random password
+     * Adds a new principal to this realm with a generated password
      * @param user the principal's name. For a service principal, use the
      *        form of host/f.q.d.n
      */
     public void addPrincipalRandKey(String user) {
-        addPrincipal(user, randomPassword());
+        addPrincipal(user, randomPassword(user + "@" + realm));
     }
 
     /**
@@ -607,14 +618,29 @@ public class KDC {
         startServer(port, asDaemon);
     }
     /**
-     * Generates a 32-char random password
+     * Generates a 32-char password
+     * @param user the string to generate from, random is null
      * @return the password
      */
-    private static char[] randomPassword() {
-        char[] pass = new char[32];
-        Random r = new Random();
-        for (int i=0; i<31; i++)
-            pass[i] = (char)('a' + r.nextInt(26));
+    private static char[] randomPassword(String user) {
+        char[] pass;
+        if (user == null) {
+            pass = new char[32];
+            Random r = new Random();
+            for (int i = 0; i < 31; i++) {
+                pass[i] = (char) ('a' + r.nextInt(26));
+            }
+        } else {
+            try {
+                pass = Base64.getEncoder().encodeToString(
+                        MessageDigest.getInstance("SHA-256").digest((user)
+                                .getBytes(StandardCharsets.UTF_8)))
+                        .substring(0, 32)
+                        .toCharArray();
+            } catch (NoSuchAlgorithmException e) {
+                throw new AssertionError(e);
+            }
+        }
         // The last char cannot be a number, otherwise, keyForUser()
         // believes it's a sign of kvno
         pass[31] = 'Z';
@@ -629,7 +655,7 @@ public class KDC {
      */
     private static EncryptionKey generateRandomKey(int eType)
             throws KrbException  {
-        return genKey0(randomPassword(), "NOTHING", null, eType, null);
+        return genKey0(randomPassword(null), "NOTHING", null, eType, null);
     }
 
     /**
@@ -790,7 +816,7 @@ public class KDC {
                     service.getNameStrings(), service.getRealm());
         }
         try {
-            System.out.println(realm + "> " + tgsReq.reqBody.cname +
+            log(tgsReq.reqBody.cname +
                     " sends TGS-REQ for " +
                     service + ", " + tgsReq.reqBody.kdcOptions);
             KDCReqBody body = tgsReq.reqBody;
@@ -810,7 +836,7 @@ public class KDC {
             boolean allowForwardable = true;
             boolean isReferral = false;
             if (body.kdcOptions.get(KDCOptions.CANONICALIZE)) {
-                System.out.println(realm + "> verifying referral for " +
+                log("verifying referral for " +
                         body.sname.getNameString());
                 KDC referral = aliasReferrals.get(body.sname.getNameString());
                 if (referral != null) {
@@ -819,7 +845,7 @@ public class KDC {
                             PrincipalName.NAME_COMPONENT_SEPARATOR_STR +
                             referral.getRealm(), PrincipalName.KRB_NT_SRV_INST,
                             this.getRealm());
-                    System.out.println(realm + "> referral to " +
+                    log("referral to " +
                             referral.getRealm());
                     isReferral = true;
                 }
@@ -842,14 +868,14 @@ public class KDC {
                         // Finally, cname will be overwritten by PA-FOR-USER
                         // if it exists.
                         cname = etp.cname;
-                        System.out.println(realm + "> presenting a ticket of "
+                        log("presenting a ticket of "
                                 + etp.cname + " to " + tkt.sname);
                     } else if (pa.getType() == Krb5.PA_FOR_USER) {
                         if (options.containsKey(Option.ALLOW_S4U2SELF)) {
                             PAForUserEnc p4u = new PAForUserEnc(
                                     new DerValue(pa.getValue()), null);
                             forUserCName = p4u.name;
-                            System.out.println(realm + "> See PA_FOR_USER "
+                            log("See PA_FOR_USER "
                                     + " in the name of " + p4u.name);
                         }
                     }
@@ -861,6 +887,9 @@ public class KDC {
                         // Mimic the normal KDC behavior. When a server is not
                         // allowed to send S4U2self, do not send an error.
                         // Instead, send a ticket which is useless later.
+                        allowForwardable = false;
+                    } else if (options.get(Option.S4U2SELF_NOT_FORWARDABLE) == Boolean.TRUE) {
+                        // Requsted not forwardable
                         allowForwardable = false;
                     }
                     cname = forUserCName;
@@ -936,15 +965,16 @@ public class KDC {
                     DerInputStream derIn = new DerInputStream(bb);
                     DerValue der = derIn.getDerValue();
                     EncTicketPart tktEncPart = new EncTicketPart(der.toByteArray());
-                    if (!tktEncPart.flags.get(Krb5.TKT_OPTS_FORWARDABLE)) {
-                        //throw new KrbException(Krb5.KDC_ERR_BADOPTION);
+                    if (!tktEncPart.flags.get(Krb5.TKT_OPTS_FORWARDABLE)
+                            && options.get(Option.S4U2SELF_ALLOW_NOT_FORWARDABLE) != Boolean.TRUE) {
+                        throw new KrbException(Krb5.KDC_ERR_BADOPTION);
                     }
                     PrincipalName client = tktEncPart.cname;
-                    System.out.println(realm + "> and an additional ticket of "
+                    log("and an additional ticket of "
                             + client + " to " + second.sname);
                     if (map.containsKey(cname.toString())) {
                         if (map.get(cname.toString()).contains(service.toString())) {
-                            System.out.println(realm + "> S4U2proxy OK");
+                            log("S4U2proxy OK");
                         } else {
                             throw new KrbException(Krb5.KDC_ERR_BADOPTION);
                         }
@@ -1066,7 +1096,7 @@ public class KDC {
                     Realm.getDefault());
         }
         try {
-            System.out.println(realm + "> " + asReq.reqBody.cname +
+            log(asReq.reqBody.cname +
                     " sends AS-REQ for " +
                     service + ", " + asReq.reqBody.kdcOptions);
 
@@ -1599,6 +1629,10 @@ public class KDC {
 
     boolean isReady() {
         return udpConsumerReady && tcpConsumerReady && dispatcherReady;
+    }
+
+    void log(String s) {
+        System.out.println(realm + ":" + port + "> " + s);
     }
 
     public void terminate() {

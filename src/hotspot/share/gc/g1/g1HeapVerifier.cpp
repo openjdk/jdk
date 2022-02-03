@@ -114,9 +114,9 @@ class G1VerifyCodeRootOopClosure: public OopClosure {
       // Now fetch the region containing the object
       HeapRegion* hr = _g1h->heap_region_containing(obj);
       HeapRegionRemSet* hrrs = hr->rem_set();
-      // Verify that the strong code root list for this region
+      // Verify that the code root list for this region
       // contains the nmethod
-      if (!hrrs->strong_code_roots_list_contains(_nm)) {
+      if (!hrrs->code_roots_list_contains(_nm)) {
         log_error(gc, verify)("Code root location " PTR_FORMAT " "
                               "from nmethod " PTR_FORMAT " not in strong "
                               "code roots for region [" PTR_FORMAT "," PTR_FORMAT ")",
@@ -426,7 +426,7 @@ public:
 
 // This is the task used for parallel verification of the heap regions
 
-class G1ParVerifyTask: public AbstractGangTask {
+class G1ParVerifyTask: public WorkerTask {
 private:
   G1CollectedHeap*  _g1h;
   VerifyOption      _vo;
@@ -438,7 +438,7 @@ public:
   // _vo == UseNextMarking -> use "next" marking information,
   // _vo == UseFullMarking -> use "next" marking bitmap but no TAMS
   G1ParVerifyTask(G1CollectedHeap* g1h, VerifyOption vo) :
-      AbstractGangTask("Parallel verify task"),
+      WorkerTask("Parallel verify task"),
       _g1h(g1h),
       _vo(vo),
       _failures(false),

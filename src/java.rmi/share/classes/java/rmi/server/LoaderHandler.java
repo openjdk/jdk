@@ -42,7 +42,7 @@ import java.net.URL;
 public interface LoaderHandler {
 
     /** package of system <code>LoaderHandler</code> implementation. */
-    final static String packagePrefix = "sun.rmi.server";
+    static final String packagePrefix = "sun.rmi.server";
 
     /**
      * Loads a class from the location specified by the

@@ -887,11 +887,11 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
         boolean stopPostProcessing = false;
         java.util.List<KeyEventPostProcessor> processors = getKeyEventPostProcessors();
         if (processors != null) {
-            for (java.util.Iterator<KeyEventPostProcessor> iter = processors.iterator();
-                 !stopPostProcessing && iter.hasNext(); )
-            {
-                stopPostProcessing = iter.next().
-                            postProcessKeyEvent(e);
+            for (KeyEventPostProcessor processor : processors) {
+                stopPostProcessing = processor.postProcessKeyEvent(e);
+                if (stopPostProcessing) {
+                    break;
+                }
             }
         }
         if (!stopPostProcessing) {

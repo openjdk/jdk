@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,9 @@
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/taskqueue.hpp"
 
-class AbstractGangTask;
+class WorkerTask;
 class G1Allocator;
-class G1BatchedGangTask;
-class G1CardSetMemoryStats;
+class G1BatchedTask;
 class G1CollectedHeap;
 class G1CollectionSet;
 class G1CollectorState;
@@ -49,10 +48,11 @@ class G1ParScanThreadStateSet;
 class G1Policy;
 class G1RedirtyCardsQueueSet;
 class G1RemSet;
+class G1SegmentedArrayMemoryStats;
 class G1SurvivorRegions;
 class G1YoungGCEvacFailureInjector;
 class STWGCTimer;
-class WorkGang;
+class WorkerThreads;
 
 class outputStream;
 
@@ -78,7 +78,7 @@ class G1YoungCollector {
   G1ScannerTasksQueueSet* task_queues() const;
   G1SurvivorRegions* survivor_regions() const;
   ReferenceProcessor* ref_processor_stw() const;
-  WorkGang* workers() const;
+  WorkerThreads* workers() const;
   G1YoungGCEvacFailureInjector* evac_failure_injector() const;
 
   GCCause::Cause _gc_cause;
@@ -89,9 +89,9 @@ class G1YoungCollector {
   // Evacuation failure tracking.
   G1EvacFailureRegions _evac_failure_regions;
 
-  // Runs the given AbstractGangTask with the current active workers,
+  // Runs the given WorkerTask with the current active workers,
   // returning the total time taken.
-  Tickspan run_task_timed(AbstractGangTask* task);
+  Tickspan run_task_timed(WorkerTask* task);
 
   void wait_for_root_region_scanning();
 
@@ -134,15 +134,7 @@ class G1YoungCollector {
   // True iff an evacuation has failed in the most-recent collection.
   bool evacuation_failed() const;
 
-#if TASKQUEUE_STATS
-  uint num_task_queues() const;
-  static void print_taskqueue_stats_hdr(outputStream* const st);
-  void print_taskqueue_stats() const;
-  void reset_taskqueue_stats();
-#endif // TASKQUEUE_STATS
-
 public:
-
   G1YoungCollector(GCCause::Cause gc_cause,
                    double target_pause_time_ms);
   void collect();

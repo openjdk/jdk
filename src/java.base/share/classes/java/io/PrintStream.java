@@ -68,6 +68,7 @@ public class PrintStream extends FilterOutputStream
     private final boolean autoFlush;
     private boolean trouble = false;
     private Formatter formatter;
+    private final Charset charset;
 
     /**
      * Track both the text- and character-output streams, so that their buffers
@@ -108,7 +109,8 @@ public class PrintStream extends FilterOutputStream
     private PrintStream(boolean autoFlush, OutputStream out) {
         super(out);
         this.autoFlush = autoFlush;
-        this.charOut = new OutputStreamWriter(this);
+        this.charset = out instanceof PrintStream ps ? ps.charset() : Charset.defaultCharset();
+        this.charOut = new OutputStreamWriter(this, charset);
         this.textOut = new BufferedWriter(charOut);
     }
 
@@ -124,7 +126,8 @@ public class PrintStream extends FilterOutputStream
     /**
      * Creates a new print stream, without automatic line flushing, with the
      * specified OutputStream. Characters written to the stream are converted
-     * to bytes using the default charset.
+     * to bytes using the default charset, or where {@code out} is a
+     * {@code PrintStream}, the charset used by the print stream.
      *
      * @param  out        The output stream to which values and objects will be
      *                    printed
@@ -139,7 +142,8 @@ public class PrintStream extends FilterOutputStream
     /**
      * Creates a new print stream, with the specified OutputStream and line
      * flushing. Characters written to the stream are converted to bytes using
-     * the default charset.
+     * the default charset, or where {@code out} is a {@code PrintStream},
+     * the charset used by the print stream.
      *
      * @param  out        The output stream to which values and objects will be
      *                    printed
@@ -201,6 +205,7 @@ public class PrintStream extends FilterOutputStream
         this.autoFlush = autoFlush;
         this.charOut = new OutputStreamWriter(this, charset);
         this.textOut = new BufferedWriter(charOut);
+        this.charset = charset;
     }
 
     /**
@@ -1374,4 +1379,12 @@ public class PrintStream extends FilterOutputStream
         return this;
     }
 
+    /**
+     * {@return the charset used in this {@code PrintStream} instance}
+     *
+     * @since 18
+     */
+    public Charset charset() {
+        return charset;
+    }
 }

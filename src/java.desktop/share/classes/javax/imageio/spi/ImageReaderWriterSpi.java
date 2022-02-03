@@ -25,18 +25,12 @@
 
 package javax.imageio.spi;
 
-import java.io.IOException;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.Arrays;
-import java.util.Iterator;
-import javax.imageio.ImageReader;
 import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.metadata.IIOMetadataFormat;
 import javax.imageio.metadata.IIOMetadataFormatImpl;
-import javax.imageio.stream.ImageInputStream;
 
 /**
  * A superclass containing instance variables and methods common to
@@ -597,10 +591,7 @@ public abstract class ImageReaderWriterSpi extends IIOServiceProvider {
             Method meth = cls.getMethod("getInstance");
             return (IIOMetadataFormat) meth.invoke(null);
         } catch (Exception e) {
-            RuntimeException ex =
-                new IllegalStateException ("Can't obtain format");
-            ex.initCause(e);
-            throw ex;
+            throw new IllegalStateException("Can't obtain format", e);
         }
     }
 

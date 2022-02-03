@@ -77,7 +77,7 @@ bool java_lang_String::is_latin1(oop java_string) {
 uint8_t* java_lang_String::flags_addr(oop java_string) {
   assert(_initialized, "Must be initialized");
   assert(is_instance(java_string), "Must be java string");
-  return java_string->obj_field_addr<uint8_t>(_flags_offset);
+  return java_string->field_addr<uint8_t>(_flags_offset);
 }
 
 bool java_lang_String::is_flag_set(oop java_string, uint8_t flag_mask) {
@@ -146,7 +146,7 @@ void java_lang_ref_Reference::clear_referent(oop ref) {
 }
 
 HeapWord* java_lang_ref_Reference::referent_addr_raw(oop ref) {
-  return ref->obj_field_addr<HeapWord>(_referent_offset);
+  return ref->field_addr<HeapWord>(_referent_offset);
 }
 
 oop java_lang_ref_Reference::next(oop ref) {
@@ -162,7 +162,7 @@ void java_lang_ref_Reference::set_next_raw(oop ref, oop value) {
 }
 
 HeapWord* java_lang_ref_Reference::next_addr_raw(oop ref) {
-  return ref->obj_field_addr<HeapWord>(_next_offset);
+  return ref->field_addr<HeapWord>(_next_offset);
 }
 
 oop java_lang_ref_Reference::discovered(oop ref) {
@@ -178,7 +178,7 @@ void java_lang_ref_Reference::set_discovered_raw(oop ref, oop value) {
 }
 
 HeapWord* java_lang_ref_Reference::discovered_addr_raw(oop ref) {
-  return ref->obj_field_addr<HeapWord>(_discovered_offset);
+  return ref->field_addr<HeapWord>(_discovered_offset);
 }
 
 bool java_lang_ref_Reference::is_final(oop ref) {
@@ -261,7 +261,7 @@ inline bool java_lang_Class::is_primitive(oop java_class) {
   return is_primitive;
 }
 
-inline int java_lang_Class::oop_size(oop java_class) {
+inline size_t java_lang_Class::oop_size(oop java_class) {
   assert(_oop_size_offset != 0, "must be set");
   int size = java_class->int_field(_oop_size_offset);
   assert(size > 0, "Oop size must be greater than zero, not %d", size);

@@ -31,10 +31,10 @@ import jdk.test.lib.Asserts;
 import java.util.Arrays;
 
 public class Utils {
-    public static void shouldHaveThrownException() {
+    public static void shouldHaveThrownException(String s) {
         // Do not throw an exception if we hit a safepoint while printing which could possibly let the IR matching fail.
         // This happens very rarely. If there is a problem with the test, then we will catch that on the next test invocation.
-        if (!TestVMProcess.getLastTestVMOutput().contains(IRMatcher.SAFEPOINT_WHILE_PRINTING_MESSAGE)) {
+        if (!s.contains(IRMatcher.SAFEPOINT_WHILE_PRINTING_MESSAGE)) {
             Asserts.fail("Should have thrown exception");
         }
     }

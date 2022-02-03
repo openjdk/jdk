@@ -40,7 +40,7 @@ import sun.hotspot.WhiteBox;
  * @test
  * @summary Test jdk.jfr.consumer.RecordedFrame::getType()
  * @key jfr
- * @requires vm.hasJFR
+ * @requires vm.hasJFR & vm.compiler1.enabled
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox

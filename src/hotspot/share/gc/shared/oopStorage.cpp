@@ -811,10 +811,10 @@ const size_t initial_active_array_size = 8;
 
 static Mutex* make_oopstorage_mutex(const char* storage_name,
                                     const char* kind,
-                                    int rank) {
+                                    Mutex::Rank rank) {
   char name[256];
   os::snprintf(name, sizeof(name), "%s %s lock", storage_name, kind);
-  return new PaddedMutex(rank, name, Mutex::_safepoint_check_never);
+  return new PaddedMutex(rank, name);
 }
 
 void* OopStorage::operator new(size_t size, MEMFLAGS memflags) {
@@ -844,10 +844,6 @@ OopStorage::OopStorage(const char* name, MEMFLAGS memflags) :
          "%s: active_mutex must have lower rank than allocation_mutex", _name);
   assert(Service_lock->rank() < _active_mutex->rank(),
          "%s: active_mutex must have higher rank than Service_lock", _name);
-  assert(_active_mutex->_safepoint_check_required == Mutex::_safepoint_check_never,
-         "%s: active mutex requires never safepoint check", _name);
-  assert(_allocation_mutex->_safepoint_check_required == Mutex::_safepoint_check_never,
-         "%s: allocation mutex requires never safepoint check", _name);
 }
 
 void OopStorage::delete_empty_block(const Block& block) {
