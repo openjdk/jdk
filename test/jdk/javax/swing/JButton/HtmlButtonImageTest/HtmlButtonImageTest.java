@@ -32,7 +32,11 @@
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Point;
+import java.awt.Insets;
 import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 import java.awt.Robot;
 import java.net.URL;
 import java.nio.file.Path;
@@ -42,6 +46,10 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.SwingConstants;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.imageio.ImageIO;
+import java.io.IOException;
+import java.io.File;
+
 
 public final class HtmlButtonImageTest {
     private static JFrame frame;
@@ -58,49 +66,44 @@ public final class HtmlButtonImageTest {
     public static final int PIXEL_BUFFER = 3;
 
     public static void main(String[] args) throws Exception {
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-//            UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-            throw new RuntimeException("Unsupported LookAndFeel: " + e);
-        }
-
         Robot robot = new Robot();
         robot.setAutoDelay(2000);
         robot.setAutoWaitForIdle(true);
 
+        // store path to source directory to locate image
+        srcDir = Path.of(System.getProperty("test.src", "."));
+
+        // generate red_square.png image to use as JButton text
         SwingUtilities.invokeAndWait(() -> {
-            createAndShowGUI();
+            generateImage();
         });
 
-        button.setText("<html><img src='" + srcDir.resolve("red_square.png").toUri() + "'></html>");
+        // cycle test through all available LAFs
+        for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
+            SwingUtilities.invokeAndWait(() -> {
+                setLookAndFeel(laf);
+                createAndShowGUI();
+            });
 
-        // retrieve color of pixels at each edge of square image by starting at the center of the button
-        robot.mouseMove(frame.getLocationOnScreen().x, frame.getLocationOnScreen().y);
-        robot.mouseMove(button.getLocationOnScreen().x, button.getLocationOnScreen().y);
+            // retrieve color of pixels at each edge of square image by starting at the center of the button
+            robot.mouseMove(frame.getLocationOnScreen().x, frame.getLocationOnScreen().y);
+            robot.mouseMove(button.getLocationOnScreen().x, button.getLocationOnScreen().y);
 
-        setupCenterCoord();
-        robot.mouseMove(point.x, point.y);
+            setupCenterCoord();
+            robot.mouseMove(point.x, point.y);
 
-        // store each pixel color on the edge of each side of the red square
-        robot.mouseMove(point.x - (SQUARE_WIDTH/2) + PIXEL_BUFFER, point.y);
-        Color leftClr = robot.getPixelColor(point.x - (SQUARE_WIDTH/2) + PIXEL_BUFFER, point.y);
-        robot.mouseMove(point.x + (SQUARE_WIDTH/2) - PIXEL_BUFFER, point.y);
-        Color rightClr = robot.getPixelColor(point.x + (SQUARE_WIDTH/2) - PIXEL_BUFFER, point.y);
-        robot.mouseMove(point.x, point.y - (SQUARE_HEIGHT/2) + PIXEL_BUFFER);
-        Color topClr = robot.getPixelColor(point.x, point.y - (SQUARE_HEIGHT/2) + PIXEL_BUFFER);
-        robot.mouseMove(point.x, point.y + (SQUARE_HEIGHT/2) - PIXEL_BUFFER);
-        Color botClr = robot.getPixelColor(point.x, point.y + (SQUARE_HEIGHT/2) - PIXEL_BUFFER);
+            // store each pixel color on the edge of each side of the red square
+            Color leftClr = robot.getPixelColor(point.x - (SQUARE_WIDTH/2) + PIXEL_BUFFER, point.y);
+            Color rightClr = robot.getPixelColor(point.x + (SQUARE_WIDTH/2) - PIXEL_BUFFER, point.y);
+            Color topClr = robot.getPixelColor(point.x, point.y - (SQUARE_HEIGHT/2) + PIXEL_BUFFER);
+            Color botClr = robot.getPixelColor(point.x, point.y + (SQUARE_HEIGHT/2) - PIXEL_BUFFER);
 
-        // close frame when complete
-        SwingUtilities.invokeAndWait(() -> {
-            frame.dispose();
-        });
+            // close frame when complete
+            SwingUtilities.invokeAndWait(() -> {
+                frame.dispose();
+            });
 
-        // check if all colors at points are red
-        if(!checkRedness(leftClr) || !checkRedness(rightClr)
-                || !checkRedness(topClr) || !checkRedness(botClr)) {
-            throw new RuntimeException("HTML image not centered in button" + leftClr + rightClr + topClr + botClr);
+            testImageCentering(leftClr, rightClr, topClr, botClr);
         }
 
     }
@@ -115,9 +118,7 @@ public final class HtmlButtonImageTest {
         button = new JButton();
         button.setFocusPainted(false);
         button.setPreferredSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
-
-        // create path to button text's image to find valid path when using jtreg as well
-        srcDir = Path.of(System.getProperty("test.src", "."));
+        button.setText("<html><img src='" + srcDir.resolve("red_square.png").toUri() + "'></html>");
 
         frame.add(button);
         frame.pack();
@@ -138,5 +139,44 @@ public final class HtmlButtonImageTest {
             return true;
         }
         return false;
+    }
+
+    private static void testImageCentering(Color left, Color right, Color top, Color bottom) {
+        // check if all colors at each edge of square are red
+        if(!checkRedness(left) || !checkRedness(right) || !checkRedness(top) || !checkRedness(bottom)) {
+            System.out.println("-- Failed");
+//            throw new RuntimeException("HTML image not centered in button" + left + right + top + bottom);
+        }
+        else {
+            System.out.println("-- Passed");
+        }
+    }
+
+    private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
+        try {
+            UIManager.setLookAndFeel(laf.getClassName());
+            System.out.println("-- " + laf.getName());
+        } catch (UnsupportedLookAndFeelException ignored){
+            System.out.println("Unsupported LookAndFeel: " + laf.getClassName());
+        } catch (ClassNotFoundException | InstantiationException |
+                IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void generateImage() {
+        BufferedImage bImg = new BufferedImage(SQUARE_WIDTH, SQUARE_HEIGHT, BufferedImage.TYPE_INT_RGB);
+        Graphics2D cg = bImg.createGraphics();
+        // paint a red square onto cg
+        cg.setColor(Color.RED);
+        cg.fillRect(0, 0, SQUARE_WIDTH, SQUARE_HEIGHT);
+        try {
+            if (ImageIO.write(bImg, "png", new File(srcDir + "/red_square.png")))
+            {
+                System.out.println("-- Saved Image");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
