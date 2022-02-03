@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -274,7 +274,7 @@ void klassVtable::initialize_vtable(GrowableArray<InstanceKlass*>* supers) {
 }
 
 // Returns true iff super_method can be overridden by a method in targetclassname
-// See JLS 3rd edition 8.4.6.1
+// See JLS 8.4.8.1
 // Assumes name-signature match
 // Note that the InstanceKlass of the method in the targetclassname has not always been created yet
 static bool can_be_overridden(Method* super_method, Handle targetclassloader, Symbol* targetclassname) {

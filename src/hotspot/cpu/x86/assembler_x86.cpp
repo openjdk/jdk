@@ -9301,7 +9301,7 @@ void Assembler::evpsraq(XMMRegister dst, KRegister mask, XMMRegister src, int sh
     attributes.reset_is_clear_context();
   }
   int encode = vex_prefix_and_encode(xmm4->encoding(), dst->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
-  emit_int24(0x73, (0xC0 | encode), shift & 0xFF);
+  emit_int24(0x72, (0xC0 | encode), shift & 0xFF);
 }
 
 void Assembler::evpsllw(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len) {

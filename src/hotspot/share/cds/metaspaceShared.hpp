@@ -82,6 +82,9 @@ class MetaspaceShared : AllStatic {
 
   static void prepare_for_dumping() NOT_CDS_RETURN;
   static void preload_and_dump() NOT_CDS_RETURN;
+#ifdef _LP64
+  static void adjust_heap_sizes_for_dumping() NOT_CDS_JAVA_HEAP_RETURN;
+#endif
 
 private:
   static void preload_and_dump_impl(TRAPS) NOT_CDS_RETURN;

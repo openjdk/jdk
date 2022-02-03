@@ -45,7 +45,7 @@ void G1FullGCCompactionPoint::update() {
   }
 }
 
-void G1FullGCCompactionPoint::initialize_values(bool init_threshold) {
+void G1FullGCCompactionPoint::initialize_values() {
   _compaction_top = _current_region->compaction_top();
 }
 
@@ -57,9 +57,9 @@ bool G1FullGCCompactionPoint::is_initialized() {
   return _current_region != NULL;
 }
 
-void G1FullGCCompactionPoint::initialize(HeapRegion* hr, bool init_threshold) {
+void G1FullGCCompactionPoint::initialize(HeapRegion* hr) {
   _current_region = hr;
-  initialize_values(init_threshold);
+  initialize_values();
 }
 
 HeapRegion* G1FullGCCompactionPoint::current_region() {
@@ -86,7 +86,7 @@ void G1FullGCCompactionPoint::switch_region() {
   _current_region->set_compaction_top(_compaction_top);
   // Get the next region and re-initialize the values.
   _current_region = next_region();
-  initialize_values(true);
+  initialize_values();
 }
 
 void G1FullGCCompactionPoint::forward(oop object, size_t size) {

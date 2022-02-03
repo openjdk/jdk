@@ -748,6 +748,10 @@ jint universe_init() {
 
   GCLogPrecious::initialize();
 
+#ifdef _LP64
+  MetaspaceShared::adjust_heap_sizes_for_dumping();
+#endif // _LP64
+
   GCConfig::arguments()->initialize_heap_sizes();
 
   jint status = Universe::initialize_heap();
