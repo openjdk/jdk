@@ -163,11 +163,10 @@ public:
   inline HeapWord* allocate(size_t min_word_size, size_t desired_word_size, size_t* actual_size);
 
   // Update BOT if this obj is the first entering a new card (i.e. crossing the card boundary).
-  inline void update_bot_if_crossing_boundary(HeapWord* obj_start, size_t obj_size);
+  inline void update_bot_for_obj(HeapWord* obj_start, size_t obj_size);
 
   // Full GC support methods.
 
-  void initialize_bot_threshold();
   void alloc_block_in_bot(HeapWord* start, HeapWord* end);
 
   // Update heap region that has been compacted to be consistent after Full GC.
@@ -192,16 +191,8 @@ public:
   template<typename ApplyToMarkedClosure>
   inline void apply_to_marked_objects(G1CMBitMap* bitmap, ApplyToMarkedClosure* closure);
 
-  void reset_bot() {
-    _bot_part.reset_bot();
-  }
-
   void update_bot() {
     _bot_part.update();
-  }
-
-  void update_bot_threshold() {
-    _bot_part.set_threshold(top());
   }
 
 private:
@@ -572,20 +563,20 @@ public:
 
   // Routines for managing a list of code roots (attached to the
   // this region's RSet) that point into this heap region.
-  void add_strong_code_root(nmethod* nm);
-  void add_strong_code_root_locked(nmethod* nm);
-  void remove_strong_code_root(nmethod* nm);
+  void add_code_root(nmethod* nm);
+  void add_code_root_locked(nmethod* nm);
+  void remove_code_root(nmethod* nm);
 
   // Applies blk->do_code_blob() to each of the entries in
-  // the strong code roots list for this region
-  void strong_code_roots_do(CodeBlobClosure* blk) const;
+  // the code roots list for this region
+  void code_roots_do(CodeBlobClosure* blk) const;
 
   uint node_index() const { return _node_index; }
   void set_node_index(uint node_index) { _node_index = node_index; }
 
-  // Verify that the entries on the strong code root list for this
+  // Verify that the entries on the code root list for this
   // region are live and include at least one pointer into this region.
-  void verify_strong_code_roots(VerifyOption vo, bool* failures) const;
+  void verify_code_roots(VerifyOption vo, bool* failures) const;
 
   void print() const;
   void print_on(outputStream* st) const;

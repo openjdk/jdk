@@ -1287,9 +1287,9 @@ public:
   // Free up superfluous code root memory.
   void purge_code_root_memory();
 
-  // Rebuild the strong code root lists for each region
+  // Rebuild the code root lists for each region
   // after a full GC.
-  void rebuild_strong_code_roots();
+  void rebuild_code_roots();
 
   // Performs cleaning of data structures after class unloading.
   void complete_cleaning(BoolObjectClosure* is_alive, bool class_unloading_occurred);

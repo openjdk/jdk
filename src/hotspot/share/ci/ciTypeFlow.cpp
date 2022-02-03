@@ -2462,9 +2462,8 @@ int ciTypeFlow::profiled_count(ciTypeFlow::Loop* loop) {
   }
 
   ciProfileData* data = methodData->bci_to_data(tail->control());
-  assert(data != NULL, "some profile data expected at branch");
 
-  if (!data->is_JumpData()) {
+  if (data == NULL || !data->is_JumpData()) {
     return 0;
   }
 

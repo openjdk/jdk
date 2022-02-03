@@ -294,6 +294,10 @@ void G1FullCollector::phase1_mark_live_objects() {
   }
 
   scope()->tracer()->report_object_count_after_gc(&_is_alive);
+#if TASKQUEUE_STATS
+  oop_queue_set()->print_and_reset_taskqueue_stats("Oop Queue");
+  array_queue_set()->print_and_reset_taskqueue_stats("ObjArrayOop Queue");
+#endif
 }
 
 void G1FullCollector::phase2_prepare_compaction() {
@@ -349,7 +353,7 @@ void G1FullCollector::phase2c_prepare_serial_compaction() {
     if (!cp->is_initialized()) {
       // Initialize the compaction point. Nothing more is needed for the first heap region
       // since it is already prepared for compaction.
-      cp->initialize(current, false);
+      cp->initialize(current);
     } else {
       assert(!current->is_humongous(), "Should be no humongous regions in compaction queue");
       G1SerialRePrepareClosure re_prepare(cp, current);
