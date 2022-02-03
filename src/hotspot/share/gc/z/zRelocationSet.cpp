@@ -50,9 +50,21 @@ private:
     const size_t index = Atomic::fetch_and_add(next, 1u);
     assert(index < _nforwardings, "Invalid index");
 
-    forwarding->page()->log_msg(" (relocation selected)");
+    ZPage* const page = forwarding->page();
+
+    page->log_msg(" (relocation selected)");
 
     _forwardings[index] = forwarding;
+
+    if (forwarding->is_promotion()) {
+      // Before promoting an object (and before relocate start), we must ensure that all
+      // contained zpointers are store good. The marking code ensures that for non-null
+      // pointers, but null pointers are ignored. This code ensures that even null pointers
+      // are made store good, for the promoted objects.
+      page->object_iterate([&](oop obj) {
+        ZIterator::basic_oop_iterate_safe(obj, ZBarrier::promote_barrier_on_young_oop_field);
+      });
+    }
   }
 
   void install_small(ZForwarding* forwarding) {

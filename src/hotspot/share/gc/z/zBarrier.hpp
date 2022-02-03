@@ -89,6 +89,7 @@ private:
   static bool is_load_good_fast_path(zpointer ptr);
   static bool is_mark_good_fast_path(zpointer ptr);
   static bool is_store_good_fast_path(zpointer ptr);
+  static bool is_store_good_or_null_any_fast_path(zpointer ptr);
 
   static bool is_mark_young_good_fast_path(zpointer ptr);
   static bool is_finalizable_good_fast_path(zpointer ptr);
@@ -108,6 +109,8 @@ private:
   static zaddress keep_alive_slow_path(zaddress addr);
   static zaddress heap_store_slow_path(volatile zpointer* p, zaddress addr, zpointer prev, bool heal);
   static zaddress native_store_slow_path(zaddress addr);
+
+  static zaddress promote_slow_path(zaddress addr);
 
   // Helpers for non-strong oop refs barriers
   static zaddress blocking_keep_alive_load_barrier_on_weak_oop_field_preloaded(volatile zpointer* p, zpointer o);
@@ -154,6 +157,7 @@ public:
 
   // Mark barrier
   static void mark_barrier_on_young_oop_field(volatile zpointer* p);
+  static void promote_barrier_on_young_oop_field(volatile zpointer* p);
   static void mark_barrier_on_oop_field(volatile zpointer* p, bool finalizable);
   static zaddress mark_young_good_barrier_on_oop_field(volatile zpointer* p);
 

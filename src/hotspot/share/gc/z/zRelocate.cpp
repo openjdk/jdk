@@ -1088,6 +1088,16 @@ public:
       // Figure out if this is proper promotion
       const bool promotion = to_age == ZPageAge::old;
 
+      if (promotion) {
+        // Before promoting an object (and before relocate start), we must ensure that all
+        // contained zpointers are store good. The marking code ensures that for non-null
+        // pointers, but null pointers are ignored. This code ensures that even null pointers
+        // are made store good, for the promoted objects.
+        prev_page->object_iterate([&](oop obj) {
+          ZIterator::basic_oop_iterate_safe(obj, ZBarrier::promote_barrier_on_young_oop_field);
+        });
+      }
+
       // Logging
       prev_page->log_msg(promotion ? " (flip promoted)" : " (flip survived)");
 
