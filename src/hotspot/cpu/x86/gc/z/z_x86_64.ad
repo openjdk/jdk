@@ -80,8 +80,11 @@ static void z_load_barrier(MacroAssembler& _masm, const MachNode* node, Address 
 
 static void z_store_barrier(MacroAssembler& _masm, const MachNode* node, Address ref_addr, Register rnew_zaddress, Register rnew_zpointer, bool is_atomic) {
   if (node->barrier_data() == ZBarrierElided) {
-    __ movptr(rnew_zpointer, rnew_zaddress);
-    z_color(_masm, node, rnew_zpointer);
+    if (rnew_zaddress != noreg) {
+      // noreg means null; no need to color
+      __ movptr(rnew_zpointer, rnew_zaddress);
+      z_color(_masm, node, rnew_zpointer);
+    }
   } else {
     ZStoreBarrierStubC2* const stub = ZStoreBarrierStubC2::create(node, ref_addr, rnew_zaddress, rnew_zpointer, is_atomic);
     ZBarrierSetAssembler* bs_asm = ZBarrierSet::assembler();
@@ -122,6 +125,26 @@ instruct zStoreP(memory mem, any_RegP src, rRegP tmp, rFlagsReg cr)
   ins_encode %{
     z_store_barrier(_masm, this, $mem$$Address, $src$$Register, $tmp$$Register, false /* is_atomic */);
     __ movq($mem$$Address, $tmp$$Register);
+  %}
+  ins_pipe(ialu_mem_reg);
+%}
+
+// Store Null Pointer
+instruct zStorePNull(memory mem, immP0 zero, rRegP tmp, rFlagsReg cr)
+%{
+  predicate(UseZGC && n->as_Store()->barrier_data() != 0);
+  match(Set mem (StoreP mem zero));
+  effect(TEMP tmp, KILL cr);
+
+  ins_cost(125); // XXX
+  format %{ "movq    $mem, 0\t# ptr" %}
+  ins_encode %{
+    z_store_barrier(_masm, this, $mem$$Address, noreg, $tmp$$Register, false /* is_atomic */);
+    // Store a colored null - barrier code above does not need to color
+    __ movq($mem$$Address, barrier_Relocation::unpatched);
+    // The relocation cant be fully after the mov, as that is the beginning of a random subsequent
+    // instruction, which violates assumptions made by unrelated code. Hence the end() - 1
+    __ code_section()->relocate(__ code_section()->end() - 1, barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodAfterMov);
   %}
   ins_pipe(ialu_mem_reg);
 %}

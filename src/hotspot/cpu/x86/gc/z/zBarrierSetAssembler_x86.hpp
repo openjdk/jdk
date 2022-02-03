@@ -54,6 +54,7 @@ const int ZBarrierRelocationFormatMarkBadAfterTest  = 1;
 const int ZBarrierRelocationFormatStoreGoodAfterCmp = 2;
 const int ZBarrierRelocationFormatStoreBadAfterTest = 3;
 const int ZBarrierRelocationFormatStoreGoodAfterOr  = 4;
+const int ZBarrierRelocationFormatStoreGoodAfterMov = 5;
 
 class ZBarrierSetAssembler : public ZBarrierSetAssemblerBase {
 public:

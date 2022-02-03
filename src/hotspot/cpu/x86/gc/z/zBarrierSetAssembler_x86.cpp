@@ -397,11 +397,14 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
       emit_store_fast_path_check(masm, ref_addr, is_atomic, medium_path);
     }
     __ bind(medium_path_continuation);
-    __ movptr(rnew_zpointer, rnew_zaddress);
-    __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeShl);
-    __ shlq(rnew_zpointer, barrier_Relocation::unpatched);
-    __ orq(rnew_zpointer, barrier_Relocation::unpatched, false /* compress_encoding */);
-    __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodAfterOr);
+    if (rnew_zaddress != noreg) {
+      // noreg means null; no need to color
+      __ movptr(rnew_zpointer, rnew_zaddress);
+      __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeShl);
+      __ shlq(rnew_zpointer, barrier_Relocation::unpatched);
+      __ orq(rnew_zpointer, barrier_Relocation::unpatched, false /* compress_encoding */);
+      __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodAfterOr);
+    }
   } else {
     __ movzwq(rnew_zpointer, ref_addr);
     __ cmpq(Address(r15_thread, ZThreadLocalData::store_good_mask_offset()), rnew_zpointer);
@@ -1371,6 +1374,8 @@ static int patch_barrier_relocation_offset(int format) {
 
   case ZBarrierRelocationFormatStoreGoodAfterOr:
     return -4;
+  case ZBarrierRelocationFormatStoreGoodAfterMov:
+    return -3;
 
   default:
     ShouldNotReachHere();
@@ -1388,6 +1393,7 @@ static uint16_t patch_barrier_relocation_value(int format) {
 
   case ZBarrierRelocationFormatStoreGoodAfterCmp:
   case ZBarrierRelocationFormatStoreGoodAfterOr:
+  case ZBarrierRelocationFormatStoreGoodAfterMov:
     return (uint16_t)ZPointerStoreGoodMask;
 
   case ZBarrierRelocationFormatStoreBadAfterTest:
