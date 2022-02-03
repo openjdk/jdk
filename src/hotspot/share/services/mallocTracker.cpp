@@ -298,7 +298,7 @@ void* MallocTracker::record_free(void* memblock) {
 // signals popping up, e.g. when writing an hs_err file.
 bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
   assert(MemTracker::enabled(), "NMT must be enabled");
-  if (CanUseSafeFetchN() && os::is_readable_pointer(p)) {
+  if (CanUseSafeFetch32() && os::is_readable_pointer(p)) {
     const NMT_TrackingLevel tracking_level = MemTracker::tracking_level();
     const MallocHeader* mhdr = (const MallocHeader*)MallocTracker::get_base(const_cast<void*>(p), tracking_level);
     char msg[256];
