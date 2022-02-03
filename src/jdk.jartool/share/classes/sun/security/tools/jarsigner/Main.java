@@ -2165,7 +2165,7 @@ public class Main {
                     && !KeyStoreUtil.isWindowsKeyStore(storetype)) {
                 storepass = getPass
                         (rb.getString("Enter.Passphrase.for.keystore."));
-            } else if (!token && storepass == null && prompt) {
+            } else if (!token && storepass == null && prompt && !protectedPath) {
                 storepass = getPass
                         (rb.getString("Enter.Passphrase.for.keystore."));
             }
