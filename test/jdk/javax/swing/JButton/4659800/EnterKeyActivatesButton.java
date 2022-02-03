@@ -42,7 +42,7 @@ import javax.swing.UnsupportedLookAndFeelException;
  * @run main EnterKeyActivatesButton
  */
 public class EnterKeyActivatesButton {
-    private volatile boolean buttonPressed = false;
+    private volatile boolean buttonPressed;
     private JFrame frame;
 
     public static void main(String[] s) throws Exception {
