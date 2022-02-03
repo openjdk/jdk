@@ -49,6 +49,8 @@ public final class HtmlButtonImageTest {
     private static URL urlImage;
     private static JButton button;
 
+    private static Path srcDir;
+
     public static final int BUTTON_HEIGHT = 37;
     public static final int BUTTON_WIDTH = 37;
     public static final int SQUARE_HEIGHT = 19;
@@ -58,6 +60,7 @@ public final class HtmlButtonImageTest {
     public static void main(String[] args) throws Exception {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+//            UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
             throw new RuntimeException("Unsupported LookAndFeel: " + e);
         }
@@ -69,6 +72,8 @@ public final class HtmlButtonImageTest {
         SwingUtilities.invokeAndWait(() -> {
             createAndShowGUI();
         });
+
+        button.setText("<html><img src='" + srcDir.resolve("red_square.png").toUri() + "'></html>");
 
         // retrieve color of pixels at each edge of square image by starting at the center of the button
         robot.mouseMove(frame.getLocationOnScreen().x, frame.getLocationOnScreen().y);
@@ -87,16 +92,16 @@ public final class HtmlButtonImageTest {
         robot.mouseMove(point.x, point.y + (SQUARE_HEIGHT/2) - PIXEL_BUFFER);
         Color botClr = robot.getPixelColor(point.x, point.y + (SQUARE_HEIGHT/2) - PIXEL_BUFFER);
 
+        // close frame when complete
+        SwingUtilities.invokeAndWait(() -> {
+            frame.dispose();
+        });
+
         // check if all colors at points are red
         if(!checkRedness(leftClr) || !checkRedness(rightClr)
                 || !checkRedness(topClr) || !checkRedness(botClr)) {
             throw new RuntimeException("HTML image not centered in button" + leftClr + rightClr + topClr + botClr);
         }
-
-        // close frame when complete
-        SwingUtilities.invokeAndWait(() -> {
-            frame.dispose();
-        });
 
     }
 
@@ -112,8 +117,7 @@ public final class HtmlButtonImageTest {
         button.setPreferredSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
 
         // create path to button text's image to find valid path when using jtreg as well
-        Path srcDir = Path.of(System.getProperty("test.src", "."));
-        button.setText("<html><img src='" + srcDir.resolve("red_square.png").toUri() + "'></html>");
+        srcDir = Path.of(System.getProperty("test.src", "."));
 
         frame.add(button);
         frame.pack();
