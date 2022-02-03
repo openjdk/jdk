@@ -97,7 +97,7 @@ public class RetransformWithMethodParametersTest extends ATransformerManagementT
         System.out.println(String.valueOf(o));
     }
 
-    private Parameter[] getTargetClassParameters() throws ClassNotFoundException {
+    private Parameter[] getTargetMethodParameters() throws ClassNotFoundException {
         Class cls = Class.forName(targetClassName);
         // the class contains 1 method (method1)
         Method method = cls.getDeclaredMethods()[0];
@@ -112,7 +112,7 @@ public class RetransformWithMethodParametersTest extends ATransformerManagementT
 
     // Verifies MethodParameters attribute is present and contains the expected values.
     private void verifyPresentMethodParams(String... expectedNames) throws Throwable {
-        Parameter[] params = getTargetClassParameters();
+        Parameter[] params = getTargetMethodParameters();
         assertEquals(expectedNames.length, params.length);
         for (int i = 0; i < params.length; i++) {
             assertTrue(params[i].isNamePresent());
@@ -122,7 +122,7 @@ public class RetransformWithMethodParametersTest extends ATransformerManagementT
 
     // Verifies MethodParameters attribute is absent.
     private void verifyAbsentMethodParams() throws Throwable {
-        Parameter[] params = getTargetClassParameters();
+        Parameter[] params = getTargetMethodParameters();
         for (int i = 0; i < params.length; i++) {
             assertTrue(!params[i].isNamePresent());
         }
