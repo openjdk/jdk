@@ -263,6 +263,15 @@ bool SystemDictionaryShared::is_early_klass(InstanceKlass* ik) {
   return (info != NULL) ? info->is_early_klass() : false;
 }
 
+bool SystemDictionaryShared::is_hidden_lambda_proxy(InstanceKlass* ik) {
+  assert(ik->is_shared(), "applicable to only a shared class");
+  if (ik->is_hidden()) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
   if (k->is_in_error_state()) {
     return warn_excluded(k, "In error state");
@@ -1406,6 +1415,10 @@ InstanceKlass* SystemDictionaryShared::find_builtin_class(Symbol* name) {
   if (record != NULL) {
     assert(!record->_klass->is_hidden(), "hidden class cannot be looked up by name");
     assert(check_alignment(record->_klass), "Address not aligned");
+    // The regenerated lamdbda Holder classes are not saved, should avoid call CFLH
+    if (record->_klass->is_regenerated() && JvmtiExport::should_post_class_file_load_hook()) {
+       return NULL;
+    }
     return record->_klass;
   } else {
     return NULL;

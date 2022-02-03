@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,6 +191,7 @@ private:
                        outputStream* st) NOT_CDS_RETURN;
 
 public:
+  static bool is_hidden_lambda_proxy(InstanceKlass* ik);
   static bool is_early_klass(InstanceKlass* k);   // Was k loaded while JvmtiExport::is_early_phase()==true
   static InstanceKlass* find_builtin_class(Symbol* class_name);
 

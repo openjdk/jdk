@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1149,8 +1149,13 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
     return NULL;
   }
 
-  InstanceKlass* new_ik = KlassFactory::check_shared_class_file_load_hook(ik, class_name,
-                            class_loader, protection_domain, cfs, CHECK_NULL);
+  InstanceKlass* new_ik = NULL;
+  // CFLH check is skipped for VM hidden classes (see KlassFactory::create_from_stream).
+  // It will be skipped for shared VM hidden lambda proxy classes.
+  if (!SystemDictionaryShared::is_hidden_lambda_proxy(ik)) {
+    new_ik = KlassFactory::check_shared_class_file_load_hook(
+      ik, class_name, class_loader, protection_domain, cfs, CHECK_NULL);
+  }
   if (new_ik != NULL) {
     // The class is changed by CFLH. Return the new class. The shared class is
     // not used.
