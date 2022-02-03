@@ -427,10 +427,10 @@ public class Main {
             fatalError(e);
             ok = false;
         } catch (Error ee) {
-            ee.printStackTrace();
+            ee.printStackTrace(err);
             ok = false;
         } catch (Throwable t) {
-            t.printStackTrace();
+            t.printStackTrace(err);
             ok = false;
         } finally {
             if (tmpFile != null && tmpFile.exists())
@@ -1658,7 +1658,7 @@ public class Main {
      * A fatal exception has been caught.  No recovery possible
      */
     void fatalError(Exception e) {
-        e.printStackTrace();
+        e.printStackTrace(err);
     }
 
     /**
