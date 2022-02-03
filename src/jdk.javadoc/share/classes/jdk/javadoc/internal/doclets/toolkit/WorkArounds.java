@@ -201,11 +201,11 @@ public class WorkArounds {
     // TODO:  need to re-implement this using j.l.m. correctly!, this has
     //        implications on testInterface, the note here is that javac's supertype
     //        does the right thing returning Parameters in scope.
-    /**
-     * Returns the type containing the method that the specified method overrides.
-     * It may be a <code>TypeElement</code> or a <code>TypeParameterElement</code>.
-     * @param method target
-     * @return a type
+    /*
+     * Returns the type (TypeElement) containing the method that both:
+     *   - overrides the specified method
+     *   - has documentation
+     * If no such method can be found, returns null.
      */
     public TypeMirror overriddenType(ExecutableElement method) {
         if (utils.isStatic(method)) {

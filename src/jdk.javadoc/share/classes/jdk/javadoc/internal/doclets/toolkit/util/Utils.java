@@ -772,9 +772,11 @@ public class Utils {
                !((DeclaredType)e.getEnclosingElement().asType()).getTypeArguments().isEmpty();
     }
 
-    /**
-     * Return the type containing the method that this method overrides.
-     * It may be a {@code TypeElement} or a {@code TypeParameterElement}.
+    /*
+     * Returns the type (TypeElement) containing the method that both:
+     *   - overrides the specified method
+     *   - has documentation
+     * If no such method can be found, returns null.
      */
     public TypeMirror overriddenType(ExecutableElement method) {
         return configuration.workArounds.overriddenType(method);
@@ -1470,10 +1472,10 @@ public class Utils {
         return hasBlockTag(e, DocTree.Kind.HIDDEN);
     }
 
-    /**
-     * Returns true if the method has no comments, or a lone &commat;inheritDoc.
-     * @param m a method
-     * @return true if there are no comments, false otherwise
+    /*
+     * Returns true if the specified method does not change its parent specification.
+     * If the specified method is not deprecated and has either no comment or a lone
+     * {@inheritDoc}, this method returns true; otherwise this method returns false.
      */
     public boolean isSimpleOverride(ExecutableElement m) {
         if (!options.summarizeOverriddenMethods() || !isIncluded(m)) {
