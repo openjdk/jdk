@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -389,8 +389,15 @@ Java_sun_nio_ch_FileDispatcherImpl_lock0(JNIEnv *env, jobject this, jobject fdo,
     HANDLE h = (HANDLE)(handleval(env, fdo));
     DWORD lowPos = (DWORD)pos;
     long highPos = (long)(pos >> 32);
-    DWORD lowNumBytes = (DWORD)size;
-    DWORD highNumBytes = (DWORD)(size >> 32);
+    DWORD lowNumBytes;
+    DWORD highNumBytes;
+    if (size == 0) {
+        lowNumBytes = MAXDWORD;
+        highNumBytes = MAXDWORD;
+    } else {
+        lowNumBytes = (DWORD)size;
+        highNumBytes = (DWORD)(size >> 32);
+    }
     BOOL result;
     DWORD flags = 0;
     OVERLAPPED o;
@@ -434,8 +441,15 @@ Java_sun_nio_ch_FileDispatcherImpl_release0(JNIEnv *env, jobject this,
     HANDLE h = (HANDLE)(handleval(env, fdo));
     DWORD lowPos = (DWORD)pos;
     long highPos = (long)(pos >> 32);
-    DWORD lowNumBytes = (DWORD)size;
-    DWORD highNumBytes = (DWORD)(size >> 32);
+    DWORD lowNumBytes;
+    DWORD highNumBytes;
+    if (size == 0) {
+        lowNumBytes = MAXDWORD;
+        highNumBytes = MAXDWORD;
+    } else {
+        lowNumBytes = (DWORD)size;
+        highNumBytes = (DWORD)(size >> 32);
+    }
     BOOL result = 0;
     OVERLAPPED o;
     o.hEvent = 0;

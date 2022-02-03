@@ -127,6 +127,9 @@ public abstract class FileLock implements AutoCloseable {
     /**
      * Initializes a new instance of this class.
      *
+     * <p> If {@code size} is zero, the entire file from {@code position}
+     * onward is locked.
+     *
      * @param  channel
      *         The file channel upon whose file this lock is held
      *
@@ -163,6 +166,9 @@ public abstract class FileLock implements AutoCloseable {
 
     /**
      * Initializes a new instance of this class.
+     *
+     * <p> If {@code size} is zero, the entire file from {@code position}
+     * onward is locked.
      *
      * @param  channel
      *         The channel upon whose file this lock is held
@@ -264,25 +270,49 @@ public abstract class FileLock implements AutoCloseable {
     /**
      * Tells whether or not this lock overlaps the given lock range.
      *
-     * @implNote
-     * This method assumes that the parameters are non-negative and that
-     * their sum does not overflow a {@code long}, but does not enforce
-     * these preconditions as do the constructors; hence it is the caller's
-     * responsibility to ensure that these parameters are valid.
+     * <p> If {@code size} is negative, {@code false} is returned regardless
+     * of the value of {@code position}. If {@code size} is zero, it means the
+     * lock range is unbounded.
      *
      * @param   position
      *          The starting position of the lock range
      * @param   size
      *          The size of the lock range
      *
-     * @return  {@code true} if, and only if, this lock and the given lock
-     *          range overlap by at least one byte
+     * @return  {@code false} if, and only if, {@code size} is negative or this
+     *          lock and the given lock range do <em>not</em> overlap by at
+     *          least one byte
      */
     public final boolean overlaps(long position, long size) {
-        if (position + size <= this.position)
-            return false;               // That is below this
-        if (this.position + this.size <= position)
-            return false;               // This is below that
+        System.out.printf("%d %d %d %d%n", this.position, this.size,
+            position, size);
+        if (size < 0)
+            return false;
+
+        // if size == 0 then the specified lock range is unbounded and
+        // cannot be below the range of this lock
+        if (size > 0) {
+            try {
+                if (Math.addExact(position, size) <= this.position)
+                    return false;               // That is below this
+            } catch (ArithmeticException ignored) {
+                // the sum of position and size overflows the range of long
+                // hence their mathematical sum is greater than this.position
+            }
+        }
+
+        // if this.size == 0 then the range of this lock is unbounded and
+        // cannot be below the specified lock range
+        if (this.size > 0) {
+            try {
+                if (Math.addExact(this.position, this.size) <= position)
+                    return false;               // This is below that
+            } catch (ArithmeticException ignored) {
+                // the sum of this.position and this.size overflows the range of
+                // long hence their mathematical sum is greater than position
+            }
+        }
+
         return true;
     }
 
