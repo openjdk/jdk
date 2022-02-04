@@ -196,6 +196,14 @@ of proxies.</P>
 	value reduces the computational overhead on both client and server
 	by reducing the amount of material that has to be hashed for each
 	HTTP request.</P>
+	<LI><P><B>{@systemProperty http.keepAlive.time.server}</B> and
+        <B>{@systemProperty http.keepAlive.time.proxy}</B> </P>
+	<P>These properties modify the behavior of the {@code HttpURLConnection} keep alive cache 
+        for idle server and proxy connections respectively. If the server (or proxy) has not specified 
+        a keep alive time, and this property is set, then idle connections will be closed after the 
+        specified number of seconds. Note, that if the property is set, and the server 
+        specifies a keep alive time in a "Keep-Alive" response header, then the time specified 
+        by the server (or proxy) is used.</P>
 	<LI><P><B>{@systemProperty http.auth.ntlm.domain}</B> (default: &lt;none&gt;)<BR>
 	NTLM is another authentication scheme. It uses the
 	{@code java.net.Authenticator} class to acquire usernames and passwords when
