@@ -388,20 +388,19 @@ public class SimpleFileServerTest {
         var root = Files.createDirectory(TEST_DIR.resolve("testSymlinkGET"));
         var symlink = root.resolve("symlink");
         var target = Files.writeString(root.resolve("target.txt"), "some text", CREATE);
-        if (createSymLink(symlink, target)) {  // sym link creation succeeded
+        createSymLink(symlink, target);
 
-            var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-            server.start();
-            try {
-                var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-                var request = HttpRequest.newBuilder(uri(server, "symlink")).build();
-                var response = client.send(request, BodyHandlers.ofString());
-                assertEquals(response.statusCode(), 404);
-                assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
-                assertEquals(response.body(), expectedBody);
-            } finally {
-                server.stop(0);
-            }
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(server, "symlink")).build();
+            var response = client.send(request, BodyHandlers.ofString());
+            assertEquals(response.statusCode(), 404);
+            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
+            assertEquals(response.body(), expectedBody);
+        } finally {
+            server.stop(0);
         }
     }
 
@@ -416,27 +415,25 @@ public class SimpleFileServerTest {
         var symlink = root.resolve("symlink");
         var target = Files.createDirectory(root.resolve("target"));
         Files.writeString(target.resolve("aFile.txt"), "some text", CREATE);
-        if (createSymLink(symlink, target)) {  // sym link creation succeeded
+        createSymLink(symlink, target);
 
-            var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-            server.start();
-            try {
-                var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-                var request = HttpRequest.newBuilder(uri(server, "symlink/aFile.txt")).build();
-                var response = client.send(request, BodyHandlers.ofString());
-                assertEquals(response.statusCode(), 404);
-                assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
-                assertEquals(response.body(), expectedBody);
-            } finally {
-                server.stop(0);
-            }
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(server, "symlink/aFile.txt")).build();
+            var response = client.send(request, BodyHandlers.ofString());
+            assertEquals(response.statusCode(), 404);
+            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
+            assertEquals(response.body(), expectedBody);
+        } finally {
+            server.stop(0);
         }
     }
 
-    private boolean createSymLink(Path symlink, Path target) {
+    private void createSymLink(Path symlink, Path target) {
         try {
             Files.createSymbolicLink(symlink, target);
-            return true;
         } catch (UnsupportedOperationException uoe) {
             throw new SkipException("sym link creation not supported", uoe);
         } catch (IOException ioe) {
