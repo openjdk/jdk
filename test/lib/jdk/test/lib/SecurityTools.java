@@ -66,7 +66,7 @@ public class SecurityTools {
             } else if (Platform.isWindows() && arg.isEmpty()) {
                 // JDK-6518827: special handling for empty argument on Windows
                 launcher.addToolArg("\"\"");
-            } else if (arg.charAt(0) == '$') {
+            } else if (arg.length() > 1 && arg.charAt(0) == '$') {
                 launcher.addToolArg(System.getProperty(arg.substring(1)));
             } else {
                 launcher.addToolArg(arg);
