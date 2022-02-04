@@ -3472,8 +3472,9 @@ int os::Linux::hugetlbfs_page_size_flag(size_t page_size) {
   }
   return 0;
 }
+static size_t _large_page_size = 0;
 
-bool os::Linux::setup_large_page(size_t page_size) {
+bool os::Linux::try_commit_using_large_page(size_t page_size) {
   int flags = MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | hugetlbfs_page_size_flag(page_size);
   void *p = mmap(NULL, page_size, PROT_READ|PROT_WRITE, flags, -1, 0);
   if (p != MAP_FAILED) {
@@ -3492,21 +3493,20 @@ bool os::Linux::setup_large_page(size_t page_size) {
 }
 
 bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
+   bool large_page_found = false;
   // Include the page size flag to ensure we sanity check the correct page size.
-  int flags = MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | hugetlbfs_page_size_flag(page_size);
-  void *p = mmap(NULL, page_size, PROT_READ|PROT_WRITE, flags, -1, 0);
-
-  if (p != MAP_FAILED) {
-    // Mapping succeeded, sanity check passed.
-    munmap(p, page_size);
-    return true;
+  for (size_t local_page_size = page_size; local_page_size != (size_t)os::vm_page_size(); local_page_size = _page_sizes.next_smaller(local_page_size)) {
+    if (os::Linux::try_commit_using_large_page(local_page_size) && !large_page_found) {
+      _large_page_size = local_page_size;
+      large_page_found = true;
+    }
   }
 
   if (warn) {
     warning("HugeTLBFS is not configured or not supported by the operating system.");
   }
 
-  return false;
+  return large_page_found;
 }
 
 bool os::Linux::shm_hugetlbfs_sanity_check(bool warn, size_t page_size) {
@@ -3571,8 +3571,6 @@ static void set_coredump_filter(CoredumpFilterBit bit) {
 }
 
 // Large page support
-
-static size_t _large_page_size = 0;
 
 static size_t scan_default_large_page_size() {
   size_t default_large_page_size = 0;
@@ -3653,7 +3651,7 @@ void warn_no_large_pages_configured() {
   }
 }
 
-bool os::Linux::large_page_sanity_check(size_t page_size) {
+bool os::Linux::setup_large_page_type(size_t page_size) {
   if (FLAG_IS_DEFAULT(UseHugeTLBFS) &&
       FLAG_IS_DEFAULT(UseSHM) &&
       FLAG_IS_DEFAULT(UseTransparentHugePages)) {
@@ -3772,15 +3770,8 @@ void os::large_page_init() {
 
   // Populate _page_sizes with large page sizes less than or equal to
   // _large_page_size.
-  bool large_page_found = false;
   for (size_t page_size = _large_page_size; page_size != 0;
          page_size = all_large_pages.next_smaller(page_size)) {
-    if (!large_page_found &&
-      page_size != (size_t)os::vm_page_size() &&
-      os::Linux::setup_large_page(page_size)) {
-      _large_page_size = page_size;
-      large_page_found = true;
-    }
     _page_sizes.add(page_size);
   }
 
@@ -3792,7 +3783,7 @@ void os::large_page_init() {
   }
 
   // Now determine the type of large pages to use:
-  UseLargePages = os::Linux::large_page_sanity_check(_large_page_size);
+  UseLargePages = os::Linux::setup_large_page_type(_large_page_size);
 
   set_coredump_filter(LARGEPAGES_BIT);
 }

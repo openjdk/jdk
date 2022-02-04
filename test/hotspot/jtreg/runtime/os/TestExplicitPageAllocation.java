@@ -50,8 +50,8 @@ import java.util.Scanner;
 import java.io.FileWriter;
 
 public class TestExplicitPageAllocation {
-    private static String file1GHugePages = "/sys/kernel/mm/hugepages/hugepages-1048576kB/nr_hugepages";
-    private static String file2MHugePages = "/sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages";
+    private static String file1GHugePages = "/sys/kernel/mm/hugepages/hugepages-1048576kB/free_hugepages";
+    private static String file2MHugePages = "/sys/kernel/mm/hugepages/hugepages-2048kB/free_hugepages";
     private static String file1GHugePagesResv = "/sys/kernel/mm/hugepages/hugepages-1048576kB/resv_hugepages";
     private static String file2MHugePagesResv = "/sys/kernel/mm/hugepages/hugepages-2048kB/resv_hugepages";
 
