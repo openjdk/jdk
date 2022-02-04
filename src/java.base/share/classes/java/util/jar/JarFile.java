@@ -837,26 +837,34 @@ public class JarFile extends ZipFile {
     public synchronized InputStream getInputStream(ZipEntry ze)
         throws IOException
     {
-        maybeInstantiateVerifier();
-        if (jv == null) {
-            return super.getInputStream(ze);
-        }
-        if (!jvInitialized) {
-            initializeVerifier();
-            jvInitialized = true;
-            // could be set to null after a call to
-            // initializeVerifier if we have nothing to
-            // verify
-            if (jv == null)
+        Objects.requireNonNull(ze, "ze");
+        try {
+            maybeInstantiateVerifier();
+            if (jv == null) {
                 return super.getInputStream(ze);
-        }
+            }
+            if (!jvInitialized) {
+                initializeVerifier();
+                jvInitialized = true;
+                // could be set to null after a call to
+                // initializeVerifier if we have nothing to
+                // verify
+                if (jv == null)
+                    return super.getInputStream(ze);
+            }
 
-        // wrap a verifier stream around the real stream
-        return new JarVerifier.VerifierStream(
-            getManifestFromReference(),
-            verifiableEntry(ze),
-            super.getInputStream(ze),
-            jv);
+            // wrap a verifier stream around the real stream
+            return new JarVerifier.VerifierStream(
+                    getManifestFromReference(),
+                    verifiableEntry(ze),
+                    super.getInputStream(ze),
+                    jv);
+        } catch (IOException | IllegalStateException | SecurityException e) {
+            throw e;
+        } catch (Exception e2) {
+            // Any other Exception should be a ZipException
+            throw (ZipException) new ZipException("Zip file format error").initCause(e2);
+        }
     }
 
     private JarEntry verifiableEntry(ZipEntry ze) {

@@ -352,45 +352,52 @@ public class ZipFile implements ZipConstants, Closeable {
      */
     public InputStream getInputStream(ZipEntry entry) throws IOException {
         Objects.requireNonNull(entry, "entry");
-        int pos;
-        ZipFileInputStream in;
-        Source zsrc = res.zsrc;
-        Set<InputStream> istreams = res.istreams;
-        synchronized (this) {
-            ensureOpen();
-            if (Objects.equals(lastEntryName, entry.name)) {
-                pos = lastEntryPos;
-            } else {
-                pos = zsrc.getEntryPos(entry.name, false);
+        try {
+            int pos;
+            ZipFileInputStream in;
+            Source zsrc = res.zsrc;
+            Set<InputStream> istreams = res.istreams;
+            synchronized (this) {
+                ensureOpen();
+                if (Objects.equals(lastEntryName, entry.name)) {
+                    pos = lastEntryPos;
+                } else {
+                    pos = zsrc.getEntryPos(entry.name, false);
+                }
+                if (pos == -1) {
+                    return null;
+                }
+                in = new ZipFileInputStream(zsrc.cen, pos);
+                switch (CENHOW(zsrc.cen, pos)) {
+                    case STORED:
+                        synchronized (istreams) {
+                            istreams.add(in);
+                        }
+                        return in;
+                    case DEFLATED:
+                        // Inflater likes a bit of slack
+                        // MORE: Compute good size for inflater stream:
+                        long size = CENLEN(zsrc.cen, pos) + 2;
+                        if (size > 65536) {
+                            size = 8192;
+                        }
+                        if (size <= 0) {
+                            size = 4096;
+                        }
+                        InputStream is = new ZipFileInflaterInputStream(in, res, (int) size);
+                        synchronized (istreams) {
+                            istreams.add(is);
+                        }
+                        return is;
+                    default:
+                        throw new ZipException("invalid compression method");
+                }
             }
-            if (pos == -1) {
-                return null;
-            }
-            in = new ZipFileInputStream(zsrc.cen, pos);
-            switch (CENHOW(zsrc.cen, pos)) {
-            case STORED:
-                synchronized (istreams) {
-                    istreams.add(in);
-                }
-                return in;
-            case DEFLATED:
-                // Inflater likes a bit of slack
-                // MORE: Compute good size for inflater stream:
-                long size = CENLEN(zsrc.cen, pos) + 2;
-                if (size > 65536) {
-                    size = 8192;
-                }
-                if (size <= 0) {
-                    size = 4096;
-                }
-                InputStream is = new ZipFileInflaterInputStream(in, res, (int)size);
-                synchronized (istreams) {
-                    istreams.add(is);
-                }
-                return is;
-            default:
-                throw new ZipException("invalid compression method");
-            }
+        } catch (IOException | IllegalStateException e) {
+            throw e;
+        } catch (Exception e2) {
+            // Any other Exception should be a ZipException
+            throw (ZipException) new ZipException("Zip file format error").initCause(e2);
         }
     }
 
