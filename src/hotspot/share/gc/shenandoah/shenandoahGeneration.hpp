@@ -142,8 +142,6 @@ protected:
   void increase_used(size_t bytes);
   void decrease_used(size_t bytes);
 
-protected:
-
   virtual bool is_concurrent_mark_in_progress() = 0;
 
 private:

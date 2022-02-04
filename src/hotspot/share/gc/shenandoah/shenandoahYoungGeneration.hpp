@@ -54,7 +54,6 @@ public:
 
   void reserve_task_queues(uint workers) override;
 
- protected:
   bool is_concurrent_mark_in_progress() override;
 };
 

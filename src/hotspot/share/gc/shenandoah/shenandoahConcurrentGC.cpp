@@ -123,7 +123,18 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   // Complete marking under STW, and start evacuation
   vmop_entry_final_mark();
 
-  check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_mark);
+  // If GC was cancelled before final mark, then the safepoint operation will do nothing
+  // and the concurrent mark will still be in progress. In this case it is safe to resume
+  // the degenerated cycle from the marking phase. On the other hand, if the GC is cancelled
+  // after final mark (but before this check), then the final mark safepoint operation
+  // will have finished the mark (setting concurrent mark in progress to false). Final mark
+  // will also have setup state (in concurrent stack processing) that will not be safe to
+  // resume from the marking phase in the degenerated cycle. That is, if the cancellation
+  // occurred after final mark, we must resume the degenerated cycle after the marking phase.
+  if (_generation->is_concurrent_mark_in_progress() && check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_mark)) {
+    assert(!heap->is_concurrent_weak_root_in_progress(), "Weak roots should not be in progress when concurrent mark is in progress");
+    return false;
+  }
 
   // Global marking has completed. We need to fill in any unmarked objects in the old generation
   // so that subsequent remembered set scans will not walk pointers into reclaimed memory.

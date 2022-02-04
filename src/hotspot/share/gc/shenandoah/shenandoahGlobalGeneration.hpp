@@ -54,7 +54,6 @@ public:
 
   void heap_region_iterate(ShenandoahHeapRegionClosure* cl)  override;
 
- protected:
   bool is_concurrent_mark_in_progress()  override;
 };
 
