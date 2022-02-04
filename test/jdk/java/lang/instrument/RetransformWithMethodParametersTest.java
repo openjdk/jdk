@@ -63,7 +63,7 @@ class MethodParametersTarget {
     public MethodParametersTarget(
             int intParam1, String stringParam1 // @1 commentout
             // @1 uncomment   int intParam2, String stringParam2
-    )
+            )
     {
         // @1 uncomment System.out.println(stringParam2);   // change CP
     }
