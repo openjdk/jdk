@@ -43,19 +43,26 @@ using namespace testing;
 class ZForwardingTest : public Test {
 public:
   // Setup and tear down
-  ZHeap* _old_heap;
+  ZHeap*       _old_heap;
+  ZGenerationOld* _old_old;
+  ZGenerationYoung* _old_young;
 
   virtual void SetUp() {
     ZGlobalsPointers::initialize();
     _old_heap = ZHeap::_heap;
     ZHeap::_heap = (ZHeap*)os::malloc(sizeof(ZHeap), mtTest);
 
-    *(ZGenerationId*)&ZHeap::_heap->_old._id = ZGenerationId::old;
-    *(ZGenerationId*)&ZHeap::_heap->_young._id = ZGenerationId::young;
+    _old_old = ZGeneration::_old;
+    _old_young = ZGeneration::_young;
 
-    ZHeap::_heap->_old._seqnum = 1;
-    ZHeap::_heap->_young._seqnum = 2;
+    ZGeneration::_old = &ZHeap::_heap->_old;
+    ZGeneration::_young = &ZHeap::_heap->_young;
 
+    *const_cast<ZGenerationId*>(&ZGeneration::_old->_id) = ZGenerationId::old;
+    *const_cast<ZGenerationId*>(&ZGeneration::_young->_id) = ZGenerationId::young;
+
+    ZGeneration::_old->_seqnum = 1;
+    ZGeneration::_young->_seqnum = 2;
 
     bool reserved = os::attempt_reserve_memory_at((char*)ZAddressHeapBase, ZGranuleSize, false /* executable */);
     ASSERT_TRUE(reserved);
@@ -65,6 +72,8 @@ public:
   virtual void TearDown() {
     os::free(ZHeap::_heap);
     ZHeap::_heap = _old_heap;
+    ZGeneration::_old = _old_old;
+    ZGeneration::_young = _old_young;
     os::uncommit_memory((char*)ZAddressHeapBase, ZGranuleSize, false /* executable */);
     os::release_memory((char*)ZAddressHeapBase, ZGranuleSize);
   }
@@ -182,6 +191,8 @@ public:
 
     const size_t object_size = 16;
     const zaddress object = page.alloc_object(object_size);
+
+    ZGeneration::young()->_seqnum++;
 
     ZGeneration::young()->set_phase(ZGeneration::Phase::Mark);
     ZGeneration::young()->set_phase(ZGeneration::Phase::MarkComplete);

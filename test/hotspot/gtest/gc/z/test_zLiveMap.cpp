@@ -29,26 +29,36 @@
 
 class ZLiveMapTest : public ::testing::Test {
 private:
-  ZHeap* _old_heap;
+  // Setup and tear down
+  ZHeap*            _old_heap;
+  ZGenerationOld*   _old_old;
+  ZGenerationYoung* _old_young;
 
 public:
-  // Setup and tear down
 
   virtual void SetUp() {
     ZGlobalsPointers::initialize();
     _old_heap = ZHeap::_heap;
     ZHeap::_heap = (ZHeap*)os::malloc(sizeof(ZHeap), mtTest);
 
-    *(ZGenerationId*)&ZHeap::_heap->_old._id = ZGenerationId::old;
-    *(ZGenerationId*)&ZHeap::_heap->_young._id = ZGenerationId::young;
+    _old_old = ZGeneration::_old;
+    _old_young = ZGeneration::_young;
 
-    ZHeap::_heap->_old._seqnum = 1;
-    ZHeap::_heap->_young._seqnum = 2;
+    ZGeneration::_old = &ZHeap::_heap->_old;
+    ZGeneration::_young = &ZHeap::_heap->_young;
+
+    *const_cast<ZGenerationId*>(&ZGeneration::_old->_id) = ZGenerationId::old;
+    *const_cast<ZGenerationId*>(&ZGeneration::_young->_id) = ZGenerationId::young;
+
+    ZGeneration::_old->_seqnum = 1;
+    ZGeneration::_young->_seqnum = 2;
   }
 
   virtual void TearDown() {
     os::free(ZHeap::_heap);
     ZHeap::_heap = _old_heap;
+    ZGeneration::_old = _old_old;
+    ZGeneration::_young = _old_young;
   }
 
 protected:
