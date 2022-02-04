@@ -73,7 +73,7 @@ public class LoopLocals {
                  sed massa sed, posuere viverra orci. Suspendisse tempor libero non gravida
                  efficitur. Vivamus lacinia risus non orci viverra, at consectetur odio laoreet.
                  Suspendisse potenti.
-    
+
                  Phasellus vel nisi iaculis, accumsan quam sed, bibendum eros. Sed venenatis
                  nulla tortor, et eleifend urna sodales id. Nullam tempus ac metus sit amet
                  sollicitudin. Nam sed ex diam. Praesent vitae eros et neque condimentum
