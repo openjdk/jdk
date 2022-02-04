@@ -62,10 +62,11 @@
   template(ZMarkFlushOperation)                   \
   template(ZMarkStartYoung)                       \
   template(ZMarkStartYoungAndOld)                 \
-  template(ZMarkEndYoung)                         \
-  template(ZRelocateStartYoung)                   \
   template(ZMarkEndOld)                           \
+  template(ZMarkEndYoung)                         \
   template(ZRelocateStartOld)                     \
+  template(ZRelocateStartYoung)                   \
+  template(ZRendezvousGCThreads)                  \
   template(ZVerifyOld)                            \
   template(HandshakeAllThreads)                   \
   template(PopulateDumpSharedSpace)               \

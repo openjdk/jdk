@@ -1038,15 +1038,38 @@ void ZGenerationOld::set_soft_reference_policy(bool clear) {
   _reference_processor.set_soft_reference_policy(clear);
 }
 
-class ZRendezvousClosure : public HandshakeClosure {
+class ZRendezvousHandshakeClosure : public HandshakeClosure {
 public:
-  ZRendezvousClosure() :
+  ZRendezvousHandshakeClosure() :
     HandshakeClosure("ZRendezvous") {}
 
   void do_thread(Thread* thread) {
     // Does nothing
   }
 };
+
+class ZRendezvousGCThreads: public VM_Operation {
+ public:
+  VMOp_Type type() const { return VMOp_ZRendezvousGCThreads; }
+
+  virtual bool evaluate_at_safepoint() const {
+    // We only care about synchronizing the GC threads.
+    // Leave the Java threads running.
+    return false;
+  }
+
+  virtual bool skip_thread_oop_barriers() const {
+    fatal("Concurrent VMOps should not call this");
+    return true;
+  }
+
+  void doit() {
+    // Light weight "handshake" of the GC threads
+    SuspendibleThreadSet::synchronize();
+    SuspendibleThreadSet::desynchronize();
+  };
+};
+
 
 void ZGenerationOld::process_non_strong_references() {
   // Process Soft/Weak/Final/PhantomReferences
@@ -1066,10 +1089,12 @@ void ZGenerationOld::process_non_strong_references() {
   // this point the mutator could see the unblocked state and pass
   // this invalid oop through the normal barrier path, which would
   // incorrectly try to mark the oop.
-  ZRendezvousClosure cl;
+  ZRendezvousHandshakeClosure cl;
   Handshake::execute(&cl);
 
-  VM_None op("Handshake GC threads");
+  // GC threads are not part of the handshake above.
+  // Explicitly "handshake" them.
+  ZRendezvousGCThreads op;
   VMThread::execute(&op);
 
   // Unblock resurrection of weak/phantom references
