@@ -7435,6 +7435,46 @@ address generate_avx_ghash_processBlocks() {
 
   }
 
+  // Call stub to call runtime oopDesc::load_nklass_runtime().
+  // rax: call argument (object)
+  // rax: return object's narrowKlass
+  // Preserves all caller-saved registers, except rax
+#ifdef _LP64
+  address generate_load_nklass() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark(this, "StubRoutines", "load_nklass");
+    address start = __ pc();
+    __ enter(); // save rbp
+
+    __ andptr(rsp, -(StackAlignmentInBytes));    // Align stack
+    __ push_FPU_state();
+
+    __ push(rdi);
+    __ push(rsi);
+    __ push(rdx);
+    __ push(rcx);
+    __ push(r8);
+    __ push(r9);
+    __ push(r10);
+    __ push(r11);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, oopDesc::load_nklass_runtime), rax);
+    __ pop(r11);
+    __ pop(r10);
+    __ pop(r9);
+    __ pop(r8);
+    __ pop(rcx);
+    __ pop(rdx);
+    __ pop(rsi);
+    __ pop(rdi);
+
+    __ pop_FPU_state();
+
+    __ leave();
+    __ ret(0);
+    return start;
+  }
+#endif // _LP64
+
 #undef __
 #define __ masm->
 
@@ -7661,6 +7701,10 @@ address generate_avx_ghash_processBlocks() {
     generate_safefetch("SafeFetchN", sizeof(intptr_t), &StubRoutines::_safefetchN_entry,
                                                        &StubRoutines::_safefetchN_fault_pc,
                                                        &StubRoutines::_safefetchN_continuation_pc);
+
+#ifdef _LP64
+    StubRoutines::_load_nklass = generate_load_nklass();
+#endif
   }
 
   void generate_all() {
