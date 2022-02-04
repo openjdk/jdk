@@ -213,9 +213,7 @@ public class WeakHashMap<K,V>
         if (loadFactor <= 0 || Float.isNaN(loadFactor))
             throw new IllegalArgumentException("Illegal Load factor: "+
                                                loadFactor);
-        int capacity = 1;
-        while (capacity < initialCapacity)
-            capacity <<= 1;
+        int capacity = HashMap.tableSizeFor(initialCapacity);
         table = newTable(capacity);
         this.loadFactor = loadFactor;
         threshold = (int)(capacity * loadFactor);
@@ -241,6 +239,15 @@ public class WeakHashMap<K,V>
     }
 
     /**
+     * use for calculate HashMap capacity, using default load factor 0.75
+     * @param size size
+     * @return HashMap capacity under default load factor
+     */
+    private static int calculateHashMapCapacity(int size){
+        return size + (size + 2) / 3;
+    }
+
+    /**
      * Constructs a new {@code WeakHashMap} with the same mappings as the
      * specified map.  The {@code WeakHashMap} is created with the default
      * load factor (0.75) and an initial capacity sufficient to hold the
@@ -251,7 +258,7 @@ public class WeakHashMap<K,V>
      * @since   1.3
      */
     public WeakHashMap(Map<? extends K, ? extends V> m) {
-        this(Math.max((int) ((float)m.size() / DEFAULT_LOAD_FACTOR + 1.0F),
+        this(Math.max(calculateHashMapCapacity(m.size()),
                 DEFAULT_INITIAL_CAPACITY),
              DEFAULT_LOAD_FACTOR);
         putAll(m);
