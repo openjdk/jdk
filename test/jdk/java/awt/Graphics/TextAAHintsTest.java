@@ -25,6 +25,7 @@
  * @test
  * @bug 6263951
  * @summary Text should be B&W, grayscale, and LCD.
+ * @requires (os.family != "mac")
  * @run main/manual TextAAHintsTest
  */
 import java.awt.AWTException;
