@@ -773,10 +773,13 @@ public class Utils {
     }
 
     /*
-     * Returns the type (TypeElement) containing the method that both:
-     *   - overrides the specified method
-     *   - has documentation
-     * If no such method can be found, returns null.
+     * Returns the closest supertype (TypeElement) that contains a method that
+     * is both:
+     *
+     *   - overridden by the specified method, and
+     *   - is not itself a *simple* override
+     *
+     * If no such type can be found, returns null.
      */
     public TypeMirror overriddenType(ExecutableElement method) {
         return configuration.workArounds.overriddenType(method);
