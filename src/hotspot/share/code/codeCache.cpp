@@ -101,10 +101,10 @@ class CodeBlob_sizes {
     scopes_pcs_size  = 0;
   }
 
-  int total()                                    { return total_size; }
-  bool is_empty()                                { return count == 0; }
+  int total() const                              { return total_size; }
+  bool is_empty() const                          { return count == 0; }
 
-  void print(const char* title) {
+  void print(const char* title) const {
     tty->print_cr(" #%d %s = %dK (hdr %dK, loc %dK, code %dK, stub %dK, [oops %dK, metadata %dK, data %dK, pcs %dK])",
                   count,
                   title,
@@ -1333,10 +1333,6 @@ void CodeCache::print_internals() {
   int nmethodJava = 0;
   int nmethodNative = 0;
   int max_nm_size = 0;
-  int runtime_stub_size = 0;
-  int deoptimization_stub_size = 0;
-  int uncommon_trap_stub_size = 0;
-  int buffer_blob_size = 0;
   ResourceMark rm;
 
   int i = 0;
@@ -1372,18 +1368,14 @@ void CodeCache::print_internals() {
         }
       } else if (cb->is_runtime_stub()) {
         runtimeStubCount++;
-        runtime_stub_size += cb->size();
       } else if (cb->is_deoptimization_stub()) {
         deoptimizationStubCount++;
-        deoptimization_stub_size += cb->size();
       } else if (cb->is_uncommon_trap_stub()) {
         uncommonTrapStubCount++;
-        uncommon_trap_stub_size += cb->size();
       } else if (cb->is_adapter_blob()) {
         adapterCount++;
       } else if (cb->is_buffer_blob()) {
         bufferBlobCount++;
-        buffer_blob_size += cb->size();
       }
     }
   }
@@ -1410,11 +1402,11 @@ void CodeCache::print_internals() {
   tty->print_cr("\tunloaded: %d",nmethodUnloaded);
   tty->print_cr("\tjava: %d",nmethodJava);
   tty->print_cr("\tnative: %d",nmethodNative);
-  tty->print_cr("runtime_stubs: %d (%dkB)",runtimeStubCount, (int)(runtime_stub_size / K));
+  tty->print_cr("runtime_stubs: %d",runtimeStubCount);
   tty->print_cr("adapters: %d",adapterCount);
-  tty->print_cr("buffer blobs: %d (%dkB)",bufferBlobCount, (int)(buffer_blob_size / K));
-  tty->print_cr("deoptimization_stubs: %d (%dK)",deoptimizationStubCount, (int)(deoptimization_stub_size / K));
-  tty->print_cr("uncommon_traps: %d (%dkB)",uncommonTrapStubCount, (int)(uncommon_trap_stub_size / K));
+  tty->print_cr("buffer blobs: %d",bufferBlobCount);
+  tty->print_cr("deoptimization_stubs: %d",deoptimizationStubCount);
+  tty->print_cr("uncommon_traps: %d",uncommonTrapStubCount);
   tty->print_cr("\nnmethod size distribution (non-zombie java)");
   tty->print_cr("-------------------------------------------------");
 
@@ -1438,26 +1430,65 @@ void CodeCache::print() {
 #ifndef PRODUCT
   if (!Verbose) return;
 
-  FOR_ALL_ALLOCABLE_HEAPS(heap) {
-    CodeBlob_sizes live;
-    CodeBlob_sizes dead;
+  static_assert(0 < CompLevel_simple && CompLevel_simple <= CompLevel_full_optimization, "tier range check");
+  CodeBlob_sizes live[CompLevel_full_optimization];
+  CodeBlob_sizes dead[CompLevel_full_optimization];
+  CodeBlob_sizes runtimeStub;
+  CodeBlob_sizes uncommonTrapStub;
+  CodeBlob_sizes deoptimizationStub;
+  CodeBlob_sizes adapter;
+  CodeBlob_sizes bufferBlob;
 
+  FOR_ALL_ALLOCABLE_HEAPS(heap) {
     FOR_ALL_BLOBS(cb, *heap) {
-      if (!cb->is_alive()) {
-        dead.add(cb);
-      } else {
-        live.add(cb);
+      if (cb->is_nmethod()) {
+        const int level = cb->as_nmethod_or_null()->comp_level();
+        if (CompLevel_simple <= level && level <= CompLevel_full_optimization) {
+          if (!cb->is_alive()) {
+            dead[level - 1].add(cb);
+          } else {
+            live[level - 1].add(cb);
+          }
+        }
+      } else if (cb->is_runtime_stub()) {
+        runtimeStub.add(cb);
+      } else if (cb->is_deoptimization_stub()) {
+        deoptimizationStub.add(cb);
+      } else if (cb->is_uncommon_trap_stub()) {
+        uncommonTrapStub.add(cb);
+      } else if (cb->is_adapter_blob()) {
+        adapter.add(cb);
+      } else if (cb->is_buffer_blob()) {
+        bufferBlob.add(cb);
       }
     }
+  }
 
-    tty->print_cr("%s:", (*heap)->name());
-    tty->print_cr("nmethod dependency checking time %fs", dependentCheckTime.seconds());
-
-    if (!live.is_empty()) {
-      live.print("live");
+  tty->print_cr("nmethod dependency checking time %fs", dependentCheckTime.seconds());
+  for (int i = CompLevel_simple; i <= CompLevel_full_optimization; i++) {
+    tty->print_cr("Tier %d:", i);
+    if (!live[i - 1].is_empty()) {
+      live[i - 1].print("live");
     }
-    if (!dead.is_empty()) {
-      dead.print("dead");
+    if (!dead[i - 1].is_empty()) {
+      dead[i - 1].print("dead");
+    }
+  }
+
+  struct {
+    const char *name;
+    const CodeBlob_sizes *sizes;
+  } stubs[] = {
+    { "runtime", &runtimeStub },
+    { "uncommon trap", &uncommonTrapStub },
+    { "deoptimization", &deoptimizationStub },
+    { "adapter", &adapter },
+    { "buffer blob", &bufferBlob },
+  };
+  tty->print_cr("Stubs:");
+  for (auto &stub: stubs) {
+    if (!stub.sizes->is_empty()) {
+      stub.sizes->print(stub.name);
     }
   }
 
