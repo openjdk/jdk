@@ -164,7 +164,6 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   size_t capacity() const;
   size_t used() const;
-  MemoryUsage memory_usage();
 
   // Return "true" if all generations have reached the
   // maximal committed limit that they can reach, without a garbage

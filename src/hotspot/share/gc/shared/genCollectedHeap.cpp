@@ -249,13 +249,6 @@ size_t GenCollectedHeap::max_capacity() const {
   return _young_gen->max_capacity() + _old_gen->max_capacity();
 }
 
-MemoryUsage GenCollectedHeap::memory_usage() {
-  return MemoryUsage(_young_gen->initial_capacity() + _old_gen->initial_capacity(),
-                     used(),
-                     capacity(),
-                     max_capacity());
-}
-
 // Update the _full_collections_completed counter
 // at the end of a stop-world full GC.
 unsigned int GenCollectedHeap::update_full_collections_completed() {

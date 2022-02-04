@@ -439,11 +439,6 @@ size_t DefNewGeneration::free() const {
        + from()->free();      // to() is only used during scavenge
 }
 
-size_t DefNewGeneration::initial_capacity() const {
-  const size_t initial_bytes = initial_size();
-  return initial_bytes - compute_survivor_size(initial_bytes, SpaceAlignment);
-}
-
 size_t DefNewGeneration::max_capacity() const {
   const size_t reserved_bytes = reserved().byte_size();
   return reserved_bytes - compute_survivor_size(reserved_bytes, SpaceAlignment);

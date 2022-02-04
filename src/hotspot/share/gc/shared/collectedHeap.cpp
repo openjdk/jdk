@@ -371,7 +371,10 @@ MetaWord* CollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loa
 }
 
 MemoryUsage CollectedHeap::memory_usage() {
-  return MemoryUsage(InitialHeapSize, used(), capacity(), max_capacity());
+  return MemoryUsage(MIN2(InitialHeapSize, capacity()),
+                     used(),
+                     capacity(),
+                     max_capacity());
 }
 
 void CollectedHeap::set_gc_cause(GCCause::Cause v) {

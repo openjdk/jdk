@@ -173,7 +173,6 @@ public:
 
   size_t capacity() const;
   size_t used() const;
-  MemoryUsage memory_usage();
 
   // Save the "used_region" for both generations.
   void save_used_regions();
