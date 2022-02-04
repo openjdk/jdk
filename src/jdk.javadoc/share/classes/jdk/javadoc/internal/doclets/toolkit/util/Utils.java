@@ -1476,9 +1476,13 @@ public class Utils {
     }
 
     /*
-     * Returns true if the specified method does not change its parent specification.
-     * If the specified method is not deprecated and has either no comment or a lone
-     * {@inheritDoc}, this method returns true; otherwise this method returns false.
+     * Returns true if the passed method does not change the specification it
+     * inherited.
+     *
+     * If the passed method is not deprecated and has either no comment or a
+     * comment consisting of single {@inheritDoc} tag, the inherited
+     * specification is deemed unchanged and this method returns true;
+     * otherwise this method returns false.
      */
     public boolean isSimpleOverride(ExecutableElement m) {
         if (!options.summarizeOverriddenMethods() || !isIncluded(m)) {
