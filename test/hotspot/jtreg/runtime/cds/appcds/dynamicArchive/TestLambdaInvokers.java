@@ -57,6 +57,7 @@ public class TestLambdaInvokers extends DynamicArchiveTestBase {
              jarFile,
              mainClass)
              .assertNormalExit(output -> {
+                 // java.lang.invoke.BoundMethodHandle$Species_JL is generated from CDSLambdaInvoker
                  output.shouldContain("java.lang.invoke.BoundMethodHandle$Species_JL source: shared objects file (top)");
              });
     }
