@@ -730,7 +730,8 @@ public class SSLParameters {
      *
      * @apiNote
      * Note that a provider may not have been updated to support this method
-     * and in that case may ignore the schemes that are set.
+     * and in that case may return {@code null} instead of the default
+     * signature schemes for connection populated objects.
      *
      * @implNote
      * The SunJSSE provider supports this method.
