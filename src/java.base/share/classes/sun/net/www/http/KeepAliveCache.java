@@ -41,6 +41,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import jdk.internal.misc.InnocuousThread;
 import sun.security.action.GetIntegerAction;
+import sun.net.www.protocol.http.HttpURLConnection;
+import sun.util.logging.PlatformLogger;
 
 /**
  * A class that implements a cache of idle Http connections for keep-alive
@@ -54,22 +56,30 @@ public class KeepAliveCache
     @java.io.Serial
     private static final long serialVersionUID = -2937172892064557949L;
 
-    // The default time to keep connections alive, if not specified
-    // by the server/proxy. Propname has ".server" or ".proxy" appended
-    private static final String keepAliveProp = "http.KeepAlive.defSeconds.";
+    // Keep alive time set according to priority specified here:
+    // 1. If server specifies a time with a Keep-Alive header
+    // 2. If user specifies a time with system property below
+    // 3. Default values which depend on proxy vs server and whether
+    //    a Connection: keep-alive header was sent by server
 
-    private static final int defKeepAliveServer;
-    private static final int defKeepAliveProxy;
+    // name suffixed with "server" or "proxy"
+    private static final String keepAliveProp = "http.keepAlive.time.";
+
+    private static final int userKeepAliveServer;
+    private static final int userKeepAliveProxy;
+
+    static final PlatformLogger logger = HttpURLConnection.getHttpLogger();
 
     @SuppressWarnings("removal")
-    static int getDefaultKeepAliveSeconds(String type, int defVal) {
-        return AccessController.doPrivileged(
-	    new GetIntegerAction(keepAliveProp+type, defVal)).intValue();
+    static int getUserKeepAliveSeconds(String type) {
+        int v = AccessController.doPrivileged(
+            new GetIntegerAction(keepAliveProp+type, -1)).intValue();
+        return v < -1 ? -1 : v;
     }
 
     static {
-        defKeepAliveServer = getDefaultKeepAliveSeconds("server", 5);
-        defKeepAliveProxy = getDefaultKeepAliveSeconds("proxy", 60);
+        userKeepAliveServer = getUserKeepAliveSeconds("server");
+        userKeepAliveProxy = getUserKeepAliveSeconds("proxy");
     }
 
     /* maximum # keep-alive connections to maintain at once
@@ -93,6 +103,7 @@ public class KeepAliveCache
         return result;
     }
 
+    // The default period of the Keep Alive timer thread
     static final int LIFETIME = 5000;
 
     // This class is never serialized (see writeObject/readObject).
@@ -145,8 +156,21 @@ public class KeepAliveCache
 
             if (v == null) {
                 int keepAliveTimeout = http.getKeepAliveTimeout();
-                v = new ClientVector(keepAliveTimeout > 0 ?
-                        keepAliveTimeout * 1000 : LIFETIME);
+                if (keepAliveTimeout == 0) {
+                    keepAliveTimeout = getUserKeepAlive(http.getUsingProxy());
+                    if (keepAliveTimeout == -1) {
+                        // same default for server and proxy
+                        keepAliveTimeout = 5;
+                    }
+                } else if (keepAliveTimeout == -1) {
+                    keepAliveTimeout = getUserKeepAlive(http.getUsingProxy());
+                    if (keepAliveTimeout == -1) {
+                        // different default for server and proxy
+                        keepAliveTimeout = http.getUsingProxy() ? 60 : 5;
+                    }
+                }
+                assert keepAliveTimeout > 0;
+                v = new ClientVector(keepAliveTimeout * 1000);
                 v.put(http);
                 super.put(key, v);
             } else {
@@ -155,6 +179,11 @@ public class KeepAliveCache
         } finally {
             cacheLock.unlock();
         }
+    }
+
+    // returns the keep alive set by user in system property or -1 if not set
+    private static int getUserKeepAlive(boolean isProxy) {
+        return isProxy ? userKeepAliveProxy : userKeepAliveServer;
     }
 
     /* remove an obsolete HttpClient from its VectorCache */
@@ -199,6 +228,20 @@ public class KeepAliveCache
         }
     }
 
+
+    // By default the thread wakes up every LIFETIME = 5 seconds
+    // If the user properties are set then we may need to wake up
+    // more often than that
+    private static int getKACPeriod() {
+        if (userKeepAliveServer == -1 && userKeepAliveProxy == -1)
+            return LIFETIME;
+
+        if ((userKeepAliveServer < LIFETIME) || (userKeepAliveProxy < LIFETIME))
+            return 1;
+
+        return LIFETIME;
+    }
+
     /* Sleeps for an alloted timeout, then checks for timed out connections.
      * Errs on the side of caution (leave connections idle for a relatively
      * short time).
@@ -207,7 +250,7 @@ public class KeepAliveCache
     public void run() {
         do {
             try {
-                Thread.sleep(LIFETIME);
+                Thread.sleep(getKACPeriod());
             } catch (InterruptedException e) {}
 
             // Remove all outdated HttpClients.
@@ -295,6 +338,11 @@ class ClientVector extends ArrayDeque<KeepAliveEntry> {
                     e.hc.closeServer();
                 } else {
                     hc = e.hc;
+                    if (KeepAliveCache.logger.isLoggable(PlatformLogger.Level.FINEST)) {
+                        String msg = "cached HttpClient was idle for "
+                                + Long.toString(currentTime - e.idleStartTime);
+                        KeepAliveCache.logger.finest(msg);
+                    }
                 }
             } while ((hc == null) && (!isEmpty()));
             return hc;

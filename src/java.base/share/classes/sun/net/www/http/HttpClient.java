@@ -122,6 +122,14 @@ public class HttpClient extends NetworkClient {
                                          recomputing the value of keepingAlive */
     int keepAliveConnections = -1;    /* number of keep-alives left */
 
+    /*
+     * The timeout if specified by the server. Following values possible
+     *  0: the server specified no keep alive headers
+     * -1: the server provided "Connection: keep-alive" but did not specify a
+     *     a particular time in a "Keep-Alive:" headers
+     * Positive values are the number of seconds specified by the server
+     * in a "Keep-Alive" header
+     */
     int keepAliveTimeout = 0;
 
     /** whether the response is to be cached */
