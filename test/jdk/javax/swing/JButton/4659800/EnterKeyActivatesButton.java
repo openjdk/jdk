@@ -25,7 +25,6 @@ import java.awt.event.KeyEvent;
 import java.awt.Robot;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -33,6 +32,8 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+
+import static java.util.stream.Collectors.toList;
 
 /*
  * @test
@@ -45,12 +46,11 @@ import javax.swing.UnsupportedLookAndFeelException;
  * @run main EnterKeyActivatesButton
  */
 public class EnterKeyActivatesButton {
-    private volatile boolean buttonPressed;
-    private JFrame frame;
+    private static volatile boolean buttonPressed;
+    private static JFrame frame;
 
     public static void main(String[] s) throws Exception {
-        EnterKeyActivatesButton test = new EnterKeyActivatesButton();
-        test.runTest();
+        runTest();
     }
 
     private static void setLookAndFeel(String lafName) {
@@ -64,14 +64,14 @@ public class EnterKeyActivatesButton {
         }
     }
 
-    private void disposeFrame() {
+    private static void disposeFrame() {
         if (frame != null) {
             frame.dispose();
             frame = null;
         }
     }
 
-    private void createUI() {
+    private static void createUI() {
         frame = new JFrame();
         JPanel panel = new JPanel();
         JButton focusedButton = new JButton("Button1");
@@ -86,14 +86,14 @@ public class EnterKeyActivatesButton {
         focusedButton.requestFocusInWindow();
     }
 
-    public void runTest() throws Exception {
+    public static void runTest() throws Exception {
         Robot robot = new Robot();
         robot.setAutoDelay(100);
-        //Filter out Windows related LnFs.
+        // Consider only Windows and Windows Classic LnFs.
         List<String> winlafs = Arrays.stream(UIManager.getInstalledLookAndFeels())
                 .filter(laf -> laf.getName().startsWith("Windows"))
                 .map(laf -> laf.getClassName())
-                .collect(Collectors.toList());
+                .collect(toList());
 
         for (String laf : winlafs) {
             try {
@@ -116,7 +116,7 @@ public class EnterKeyActivatesButton {
                 }
 
             } finally {
-                SwingUtilities.invokeAndWait(this::disposeFrame);
+                SwingUtilities.invokeAndWait(EnterKeyActivatesButton::disposeFrame);
             }
         }
 
