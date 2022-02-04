@@ -107,7 +107,7 @@ public class ProgrammableInvoker {
             if (callingSequence.needsReturnBuffer()) {
                 // Return buffer is supplied by invokeInterpBindings
                 assert interpType.parameterType(0) == MemorySegment.class;
-                interpType.dropParameterTypes(0, 1);
+                interpType = interpType.dropParameterTypes(0, 1);
             }
             MethodHandle collectorInterp = makeCollectorHandle(interpType);
             handle = collectArguments(handle, 1, collectorInterp);
