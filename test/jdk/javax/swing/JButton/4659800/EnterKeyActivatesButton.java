@@ -91,9 +91,9 @@ public class EnterKeyActivatesButton {
         robot.setAutoDelay(100);
         // Consider only Windows and Windows Classic LnFs.
         List<String> winlafs = Arrays.stream(UIManager.getInstalledLookAndFeels())
-                .filter(laf -> laf.getName().startsWith("Windows"))
-                .map(laf -> laf.getClassName())
-                .collect(toList());
+                                     .filter(laf -> laf.getName().startsWith("Windows"))
+                                     .map(laf -> laf.getClassName())
+                                     .collect(toList());
 
         for (String laf : winlafs) {
             try {
