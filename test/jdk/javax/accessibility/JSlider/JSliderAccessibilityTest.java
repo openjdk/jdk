@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8262981
  * @summary Test JSlider Accessibility
  * @run main JSliderAccessibilityTest
