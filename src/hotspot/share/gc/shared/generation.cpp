@@ -45,7 +45,8 @@
 
 Generation::Generation(ReservedSpace rs, size_t initial_size) :
   _gc_manager(NULL),
-  _ref_processor(NULL) {
+  _ref_processor(NULL),
+  _initial_size(initial_size) {
   if (!_virtual_space.initialize(rs, initial_size)) {
     vm_exit_during_initialization("Could not reserve enough space for "
                     "object heap");
@@ -60,12 +61,8 @@ Generation::Generation(ReservedSpace rs, size_t initial_size) :
           (HeapWord*)_virtual_space.high_boundary());
 }
 
-size_t Generation::initial_size() {
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
-  if (gch->is_young_gen(this)) {
-    return gch->young_gen_spec()->init_size();
-  }
-  return gch->old_gen_spec()->init_size();
+size_t Generation::initial_capacity() const {
+  return _initial_size;
 }
 
 size_t Generation::max_capacity() const {

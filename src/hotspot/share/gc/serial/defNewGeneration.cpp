@@ -360,7 +360,7 @@ void DefNewGeneration::compute_new_size() {
 
   size_t old_size = gch->old_gen()->capacity();
   size_t new_size_before = _virtual_space.committed_size();
-  size_t min_new_size = initial_size();
+  size_t min_new_size = _initial_size;
   size_t max_new_size = reserved().byte_size();
   assert(min_new_size <= new_size_before &&
          new_size_before <= max_new_size,
@@ -421,7 +421,6 @@ void DefNewGeneration::compute_new_size() {
       }
 }
 
-
 size_t DefNewGeneration::capacity() const {
   return eden()->capacity()
        + from()->capacity();  // to() is only used during scavenge
@@ -437,6 +436,11 @@ size_t DefNewGeneration::used() const {
 size_t DefNewGeneration::free() const {
   return eden()->free()
        + from()->free();      // to() is only used during scavenge
+}
+
+size_t DefNewGeneration::initial_capacity() const {
+  const size_t initial_bytes = _initial_size;
+  return initial_bytes - compute_survivor_size(initial_bytes, SpaceAlignment);
 }
 
 size_t DefNewGeneration::max_capacity() const {

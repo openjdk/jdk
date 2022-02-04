@@ -97,6 +97,9 @@ class Generation: public CHeapObj<mtGC> {
   // Statistics for garbage collection
   GCStats* _gc_stats;
 
+  // Initial generation size
+  size_t _initial_size;
+
   // Initialize the generation.
   Generation(ReservedSpace rs, size_t initial_byte_size);
 
@@ -127,14 +130,18 @@ class Generation: public CHeapObj<mtGC> {
   virtual Generation::Name kind() { return Generation::Other; }
 
   // Space inquiries (results in bytes)
-  size_t initial_size();
   virtual size_t capacity() const = 0;  // The maximum number of object bytes the
                                         // generation can currently hold.
   virtual size_t used() const = 0;      // The number of used bytes in the gen.
   virtual size_t free() const = 0;      // The number of free bytes in the gen.
 
   // Support for java.lang.Runtime.maxMemory(); see CollectedHeap.
-  // Returns the total number of bytes  available in a generation
+
+  // Returns the initial number of bytes available in a generation
+  // for the allocation of objects.
+  virtual size_t initial_capacity() const;
+
+  // Returns the total number of bytes available in a generation
   // for the allocation of objects.
   virtual size_t max_capacity() const;
 
