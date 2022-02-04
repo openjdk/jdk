@@ -223,6 +223,13 @@ size_t ParallelScavengeHeap::max_capacity() const {
   return MAX2(estimated, capacity());
 }
 
+MemoryUsage ParallelScavengeHeap::memory_usage() {
+  return MemoryUsage(MIN2(InitialHeapSize, capacity()),
+                     used(),
+                     capacity(),
+                     max_capacity());
+}
+
 bool ParallelScavengeHeap::is_in(const void* p) const {
   return young_gen()->is_in(p) || old_gen()->is_in(p);
 }
