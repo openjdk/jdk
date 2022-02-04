@@ -3475,6 +3475,7 @@ int os::Linux::hugetlbfs_page_size_flag(size_t page_size) {
 static size_t _large_page_size = 0;
 
 bool os::Linux::try_commit_using_large_page(size_t page_size) {
+  // Include the page size flag to ensure we sanity check the correct page size.
   int flags = MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | hugetlbfs_page_size_flag(page_size);
   void *p = mmap(NULL, page_size, PROT_READ|PROT_WRITE, flags, -1, 0);
   if (p != MAP_FAILED) {
@@ -3493,12 +3494,11 @@ bool os::Linux::try_commit_using_large_page(size_t page_size) {
 }
 
 bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
-   bool large_page_found = false;
-  // Include the page size flag to ensure we sanity check the correct page size.
+
   for (size_t local_page_size = page_size; local_page_size != (size_t)os::vm_page_size(); local_page_size = _page_sizes.next_smaller(local_page_size)) {
-    if (os::Linux::try_commit_using_large_page(local_page_size) && !large_page_found) {
+    if (os::Linux::try_commit_using_large_page(local_page_size)) {
       _large_page_size = local_page_size;
-      large_page_found = true;
+      return true;
     }
   }
 
@@ -3506,7 +3506,7 @@ bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
     warning("HugeTLBFS is not configured or not supported by the operating system.");
   }
 
-  return large_page_found;
+  return false;
 }
 
 bool os::Linux::shm_hugetlbfs_sanity_check(bool warn, size_t page_size) {
@@ -4025,16 +4025,18 @@ char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
   char* small_start = aligned_start + large_bytes;
   size_t small_size = bytes - large_bytes;
   if (!large_committed) {
-    // Failed to commit large pages, so we need to unmap the whole reservation.
-    ::munmap(aligned_start, bytes);
+    // Failed to commit large pages, so we need to unmap the
+    // reminder of the orinal reservation.
+    ::munmap(small_start, small_size);
     return NULL;
   }
 
   // Commit the remaining bytes using small pages.
   bool small_committed = commit_memory_special(small_size, os::vm_page_size(), small_start, exec);
   if (!small_committed) {
-    // Failed to commit the remaining size, need to unmap the whole reservation
-    ::munmap(aligned_start, bytes);
+    // Failed to commit the remaining size, need to unmap
+    // the large pages part of the reservation.
+    ::munmap(aligned_start, large_bytes);
     return NULL;
   }
   return aligned_start;
