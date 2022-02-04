@@ -77,6 +77,9 @@ class Generation: public CHeapObj<mtGC> {
 
   GCMemoryManager* _gc_manager;
 
+  // Initial generation size
+  size_t _initial_size;
+
  protected:
   // Minimum and maximum addresses for memory reserved (not necessarily
   // committed) for generation.
@@ -96,9 +99,6 @@ class Generation: public CHeapObj<mtGC> {
 
   // Statistics for garbage collection
   GCStats* _gc_stats;
-
-  // Initial generation size
-  size_t _initial_size;
 
   // Initialize the generation.
   Generation(ReservedSpace rs, size_t initial_byte_size);
@@ -130,6 +130,7 @@ class Generation: public CHeapObj<mtGC> {
   virtual Generation::Name kind() { return Generation::Other; }
 
   // Space inquiries (results in bytes)
+  size_t initial_size() const { return _initial_size; }
   virtual size_t capacity() const = 0;  // The maximum number of object bytes the
                                         // generation can currently hold.
   virtual size_t used() const = 0;      // The number of used bytes in the gen.

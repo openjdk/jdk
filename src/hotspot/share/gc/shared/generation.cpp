@@ -45,8 +45,8 @@
 
 Generation::Generation(ReservedSpace rs, size_t initial_size) :
   _gc_manager(NULL),
-  _ref_processor(NULL),
-  _initial_size(initial_size) {
+  _initial_size(initial_size),
+  _ref_processor(NULL) {
   if (!_virtual_space.initialize(rs, initial_size)) {
     vm_exit_during_initialization("Could not reserve enough space for "
                     "object heap");
