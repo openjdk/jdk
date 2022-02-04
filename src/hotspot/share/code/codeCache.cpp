@@ -105,28 +105,18 @@ class CodeBlob_sizes {
   bool is_empty()                                { return count == 0; }
 
   void print(const char* title) {
-    tty->print_cr(" #%d %s = %dK (hdr %d%%, loc %d%%, code %d%%, stub %d%%, [oops %d%%, metadata %d%%, data %d%%, pcs %d%%])",
+    tty->print_cr(" #%d %s = %dK (hdr %dK, loc %dK, code %dK, stub %dK, [oops %dK, metadata %dK, data %dK, pcs %dK])",
                   count,
                   title,
-                  (int)(total() / K),
-                  header_size             * 100 / total_size,
-                  relocation_size         * 100 / total_size,
-                  code_size               * 100 / total_size,
-                  stub_size               * 100 / total_size,
-                  scopes_oop_size         * 100 / total_size,
-                  scopes_metadata_size    * 100 / total_size,
-                  scopes_data_size        * 100 / total_size,
-                  scopes_pcs_size         * 100 / total_size);
-    tty->print_cr("          %d (hdr %d, loc %d, code %d, stub %d, [oops %d, metadata %d, data %d, pcs %d])",
-                  total(),
-                  header_size,
-                  relocation_size,
-                  code_size,
-                  stub_size,
-                  scopes_oop_size,
-                  scopes_metadata_size,
-                  scopes_data_size,
-                  scopes_pcs_size);
+                  (int)(total()               / K),
+                  (int)(header_size           / K),
+                  (int)(relocation_size       / K),
+                  (int)(code_size             / K),
+                  (int)(stub_size             / K),
+                  (int)(scopes_oop_size       / K),
+                  (int)(scopes_metadata_size  / K),
+                  (int)(scopes_data_size      / K),
+                  (int)(scopes_pcs_size       / K));
   }
 
   void add(CodeBlob* cb) {
@@ -1300,18 +1290,11 @@ PRAGMA_DIAG_POP
 
 void CodeCache::print_memory_overhead() {
   size_t wasted_bytes = 0;
-  size_t runtime_stub_bytes = 0;
-  size_t buffer_blob_bytes = 0;
   FOR_ALL_ALLOCABLE_HEAPS(heap) {
       CodeHeap* curr_heap = *heap;
       for (CodeBlob* cb = (CodeBlob*)curr_heap->first(); cb != NULL; cb = (CodeBlob*)curr_heap->next(cb)) {
         HeapBlock* heap_block = ((HeapBlock*)cb) - 1;
         wasted_bytes += heap_block->length() * CodeCacheSegmentSize - cb->size();
-        if (cb->is_runtime_stub()) {
-          runtime_stub_bytes += cb->size();
-        } else if (cb->is_buffer_blob()) {
-          buffer_blob_bytes += cb->size();
-        }
       }
   }
   // Print bytes that are allocated in the freelist
@@ -1320,8 +1303,6 @@ void CodeCache::print_memory_overhead() {
   tty->print_cr("Allocated in freelist:          " SSIZE_FORMAT "kB",  bytes_allocated_in_freelists()/K);
   tty->print_cr("Unused bytes in CodeBlobs:      " SSIZE_FORMAT "kB",  (wasted_bytes/K));
   tty->print_cr("Segment map size:               " SSIZE_FORMAT "kB",  allocated_segments()/K); // 1 byte per segment
-  tty->print_cr("Runtime stub size:              " SSIZE_FORMAT "kB",  runtime_stub_bytes/K);
-  tty->print_cr("Buffer blob size:               " SSIZE_FORMAT "kB",  buffer_blob_bytes/K);
 }
 
 //------------------------------------------------------------------------------------------------
@@ -1352,6 +1333,10 @@ void CodeCache::print_internals() {
   int nmethodJava = 0;
   int nmethodNative = 0;
   int max_nm_size = 0;
+  int runtime_stub_size = 0;
+  int deoptimization_stub_size = 0;
+  int uncommon_trap_stub_size = 0;
+  int buffer_blob_size = 0;
   ResourceMark rm;
 
   int i = 0;
@@ -1387,14 +1372,18 @@ void CodeCache::print_internals() {
         }
       } else if (cb->is_runtime_stub()) {
         runtimeStubCount++;
+        runtime_stub_size += cb->size();
       } else if (cb->is_deoptimization_stub()) {
         deoptimizationStubCount++;
+        deoptimization_stub_size += cb->size();
       } else if (cb->is_uncommon_trap_stub()) {
         uncommonTrapStubCount++;
+        uncommon_trap_stub_size += cb->size();
       } else if (cb->is_adapter_blob()) {
         adapterCount++;
       } else if (cb->is_buffer_blob()) {
         bufferBlobCount++;
+        buffer_blob_size += cb->size();
       }
     }
   }
@@ -1421,11 +1410,11 @@ void CodeCache::print_internals() {
   tty->print_cr("\tunloaded: %d",nmethodUnloaded);
   tty->print_cr("\tjava: %d",nmethodJava);
   tty->print_cr("\tnative: %d",nmethodNative);
-  tty->print_cr("runtime_stubs: %d",runtimeStubCount);
+  tty->print_cr("runtime_stubs: %d (%dkB)",runtimeStubCount, (int)(runtime_stub_size / K));
   tty->print_cr("adapters: %d",adapterCount);
-  tty->print_cr("buffer blobs: %d",bufferBlobCount);
-  tty->print_cr("deoptimization_stubs: %d",deoptimizationStubCount);
-  tty->print_cr("uncommon_traps: %d",uncommonTrapStubCount);
+  tty->print_cr("buffer blobs: %d (%dkB)",bufferBlobCount, (int)(buffer_blob_size / K));
+  tty->print_cr("deoptimization_stubs: %d (%dK)",deoptimizationStubCount, (int)(deoptimization_stub_size / K));
+  tty->print_cr("uncommon_traps: %d (%dkB)",uncommonTrapStubCount, (int)(uncommon_trap_stub_size / K));
   tty->print_cr("\nnmethod size distribution (non-zombie java)");
   tty->print_cr("-------------------------------------------------");
 
@@ -1449,46 +1438,27 @@ void CodeCache::print() {
 #ifndef PRODUCT
   if (!Verbose) return;
 
-  const bool is_segment_cache = _allocable_heaps->length() > 1;
-  CodeBlob_sizes live;
-  CodeBlob_sizes dead;
-
   FOR_ALL_ALLOCABLE_HEAPS(heap) {
-    CodeBlob_sizes segment_live;
-    CodeBlob_sizes segment_dead;
+    CodeBlob_sizes live;
+    CodeBlob_sizes dead;
 
     FOR_ALL_BLOBS(cb, *heap) {
       if (!cb->is_alive()) {
         dead.add(cb);
-        segment_dead.add(cb);
       } else {
         live.add(cb);
-        segment_live.add(cb);
       }
     }
 
-    if (is_segment_cache)
-    {
-      tty->print_cr("CodeCache %s:", (*heap)->name());
-      tty->print_cr("nmethod dependency checking time %fs", dependentCheckTime.seconds());
+    tty->print_cr("%s:", (*heap)->name());
+    tty->print_cr("nmethod dependency checking time %fs", dependentCheckTime.seconds());
 
-      if (!segment_live.is_empty()) {
-        segment_live.print("live");
-      }
-      if (!segment_dead.is_empty()) {
-        segment_dead.print("dead");
-      }
+    if (!live.is_empty()) {
+      live.print("live");
     }
-  }
-
-  tty->print_cr("CodeCache:");
-  tty->print_cr("nmethod dependency checking time %fs", dependentCheckTime.seconds());
-
-  if (!live.is_empty()) {
-    live.print("live");
-  }
-  if (!dead.is_empty()) {
-    dead.print("dead");
+    if (!dead.is_empty()) {
+      dead.print("dead");
+    }
   }
 
   if (WizardMode) {
