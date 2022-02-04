@@ -4028,18 +4028,16 @@ char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
   char* small_start = aligned_start + large_bytes;
   size_t small_size = bytes - large_bytes;
   if (!large_committed) {
-    // Failed to commit large pages, so we need to unmap the
-    // reminder of the orinal reservation.
-    ::munmap(small_start, small_size);
+    // Failed to commit large pages, so we need to unmap the whole reservation.
+    ::munmap(aligned_start, bytes);
     return NULL;
   }
 
   // Commit the remaining bytes using small pages.
   bool small_committed = commit_memory_special(small_size, os::vm_page_size(), small_start, exec);
   if (!small_committed) {
-    // Failed to commit the remaining size, need to unmap
-    // the large pages part of the reservation.
-    ::munmap(aligned_start, large_bytes);
+    // Failed to commit the remaining size, need to unmap the whole reservation.
+    ::munmap(aligned_start, bytes);
     return NULL;
   }
   return aligned_start;
