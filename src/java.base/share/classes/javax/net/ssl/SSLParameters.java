@@ -728,6 +728,13 @@ public class SSLParameters {
      * method should return the default signature schemes for connection
      * populated objects, or {@code null} for pre-populated objects.
      *
+     * @apiNote
+     * Note that a provider may not have been updated to support this method
+     * and in that case may ignore the schemes that are set.
+     *
+     * @implNote
+     * The SunJSSE provider supports this method.
+     *
      * @implNote
      * Note that the underlying provider may define the default signature
      * schemes for each SSL/TLS/DTLS connection.  Applications may also use
