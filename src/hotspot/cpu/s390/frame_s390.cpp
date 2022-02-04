@@ -117,8 +117,8 @@ bool frame::safe_for_sender(JavaThread *thread) {
       return false;
     }
 
-    z_abi_160* sender_abi = (z_abi_160*) fp;
-    intptr_t* sender_sp = (intptr_t*) sender_abi->callers_sp;
+    z_abi_16* sender_abi = (z_abi_16*)fp;
+    intptr_t* sender_sp = (intptr_t*) fp;
     address   sender_pc = (address)   sender_abi->return_pc;
 
     // We must always be able to find a recognizable pc.
@@ -142,7 +142,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
     // sender_fp must be within the stack and above (but not
     // equal) current frame's fp.
     if (!thread->is_in_stack_range_excl(sender_fp, fp)) {
-        return false;
+      return false;
     }
 
     // If the potential sender is the interpreter then we can do some more checking.
