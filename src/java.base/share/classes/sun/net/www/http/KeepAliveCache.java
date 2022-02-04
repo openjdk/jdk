@@ -103,7 +103,6 @@ public class KeepAliveCache
         return result;
     }
 
-    // The default period of the Keep Alive timer thread
     static final int LIFETIME = 5000;
 
     // This class is never serialized (see writeObject/readObject).
@@ -229,19 +228,6 @@ public class KeepAliveCache
     }
 
 
-    // By default the thread wakes up every LIFETIME = 5 seconds
-    // If the user properties are set then we may need to wake up
-    // more often than that
-    private static int getKACPeriod() {
-        if (userKeepAliveServer == -1 && userKeepAliveProxy == -1)
-            return LIFETIME;
-
-        if ((userKeepAliveServer < LIFETIME) || (userKeepAliveProxy < LIFETIME))
-            return 1;
-
-        return LIFETIME;
-    }
-
     /* Sleeps for an alloted timeout, then checks for timed out connections.
      * Errs on the side of caution (leave connections idle for a relatively
      * short time).
@@ -250,7 +236,7 @@ public class KeepAliveCache
     public void run() {
         do {
             try {
-                Thread.sleep(getKACPeriod());
+                Thread.sleep(LIFETIME);
             } catch (InterruptedException e) {}
 
             // Remove all outdated HttpClients.
