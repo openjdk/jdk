@@ -1415,7 +1415,8 @@ InstanceKlass* SystemDictionaryShared::find_builtin_class(Symbol* name) {
   if (record != NULL) {
     assert(!record->_klass->is_hidden(), "hidden class cannot be looked up by name");
     assert(check_alignment(record->_klass), "Address not aligned");
-    // The regenerated lamdbda Holder classes are not saved, should avoid call CFLH
+    // We did not save the classfile data of the regenerated LambdaForm invoker classes,
+    // so we cannot support CLFH for such classes.
     if (record->_klass->is_regenerated() && JvmtiExport::should_post_class_file_load_hook()) {
        return NULL;
     }
