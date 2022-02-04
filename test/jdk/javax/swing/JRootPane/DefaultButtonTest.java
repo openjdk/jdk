@@ -35,7 +35,7 @@ import javax.swing.UnsupportedLookAndFeelException;
  * @test
  * @key headful
  * @bug 8280913
- * @summary Check whether the default button is honored when <Enter> key is typed.
+ * @summary Check whether the default button is honored when <Enter> key is pressed.
  * @run main DefaultButtonTest
  */
 public class DefaultButtonTest {
