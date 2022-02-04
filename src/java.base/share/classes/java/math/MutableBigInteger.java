@@ -990,7 +990,7 @@ class MutableBigInteger {
             a.value[a.offset+x] = (int)diff;
         }
         // Subtract remainder of longer number
-        while (x > 0) {
+        while (diff < 0 && x > 0) {
             x--;
             diff = (a.value[a.offset+ x] & LONG_MASK) + (diff >> 32);
             a.value[a.offset+x] = (int)diff;
