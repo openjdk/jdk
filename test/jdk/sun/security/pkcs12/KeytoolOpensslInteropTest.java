@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -462,7 +462,7 @@ public class KeytoolOpensslInteropTest {
                 "pkcs12", "-in", "ksnormal", "-passin", "pass:changeit",
                 "-info", "-nokeys", "-nocerts");
         output1.shouldHaveExitValue(0)
-            .shouldContain("MAC:").shouldContain("sha256").shouldContain("Iteration 10000")
+            .shouldMatch("MAC:.*sha256.*Iteration 10000")
             .shouldContain("Shrouded Keybag: PBES2, PBKDF2, AES-256-CBC,"
                     + " Iteration 10000, PRF hmacWithSHA256")
             .shouldContain("PKCS7 Encrypted data: PBES2, PBKDF2, AES-256-CBC,"
@@ -505,7 +505,7 @@ public class KeytoolOpensslInteropTest {
                 "ksnewic", "-passin", "pass:changeit", "-info", "-nokeys",
                 "-nocerts");
         output1.shouldHaveExitValue(0)
-            .shouldContain("MAC:").shouldContain("sha256").shouldContain("Iteration 5555")
+            .shouldMatch("MAC:.*sha256.*Iteration 5555")
             .shouldContain("Shrouded Keybag: PBES2, PBKDF2, AES-256-CBC,"
                     + " Iteration 7777, PRF hmacWithSHA256")
             .shouldContain("Shrouded Keybag: pbeWithSHA1And128BitRC4,"
