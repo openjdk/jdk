@@ -487,7 +487,7 @@ struct NUMASwitcher {
   }
   PRINT_MAPPINGS("B");
 
-  // ...re-reserve the middle stripes. This should work unless release failed.
+  // ...re-reserve the middle stripes. This should work unless release silently failed.
   address p2 = (address)os::attempt_reserve_memory_at((char*)p_middle_stripes, middle_stripe_len);
   ASSERT_EQ(p2, p_middle_stripes);
   PRINT_MAPPINGS("C");
