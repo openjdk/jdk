@@ -743,12 +743,13 @@ public class SSLParameters {
      * {@systemProperty jdk.tls.server.SignatureSchemes} system properties to
      * customize the provider-specific default signature schemes.
      *
-     * @return an array of signature scheme {@code Strings} or {@null} if none
-     *         have been set.  For non-null returns, this method will return
-     *         a new array each time it is invoked.  The array is ordered based
-     *         on signature scheme preference, with the first entry being the
-     *         most preferred.  Providers should ignore unknown signature
-     *         scheme names while establishing the SSL/TLS/DTLS connections.
+     * @return an array of signature scheme {@code Strings} or {@code null} if
+     *         none have been set.  For non-null returns, this method willu
+     *         return a new array each time it is invoked.  The array is
+     *         ordered based on signature scheme preference, with the first
+     *         entry being the most preferred.  Providers should ignore unknown
+     *         signature scheme names while establishing the SSL/TLS/DTLS
+     *         connections.
      * @see #setSignatureSchemes
      *
      * @since 19
@@ -799,7 +800,7 @@ public class SSLParameters {
      * customize the provider-specific default signature schemes.
      *
      * @param signatureSchemes an ordered array of signature scheme names with
-     *        the first entry being the most preferred, or {@null}.  This
+     *        the first entry being the most preferred, or {@code null}.  This
      *        method will make a copy of this array.  Providers should ignore
      *        unknown signature scheme names while establishing the
      *        SSL/TLS/DTLS connections.
