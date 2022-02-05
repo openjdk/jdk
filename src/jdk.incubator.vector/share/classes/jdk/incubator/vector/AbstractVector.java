@@ -639,6 +639,25 @@ abstract class AbstractVector<E> extends Vector<E> {
         throw new AssertionError();
     }
 
+    /**
+     * Helper function for all sorts of lane-wise unsigned conversions.
+     * This function kicks in after intrinsic failure.
+     */
+    /*package-private*/
+    @ForceInline
+    final <F>
+    AbstractVector<F> defaultUCast(AbstractSpecies<F> dsp) {
+        AbstractSpecies<?> vsp = this.vspecies();
+        if (vsp.elementSize() >= dsp.elementSize()) {
+            // clip in place
+            return this.convert0('C', dsp);
+        } else {
+            // extend in place, but remove unwanted sign extension
+            long mask = -1L >>> -vsp.elementSize();
+            return (AbstractVector<F>) this.convert0('C', dsp).lanewise(AND, dsp.broadcast(mask));
+        }
+    }
+
     // Constant-folded access to conversion intrinsics:
 
     /**
@@ -665,9 +684,22 @@ abstract class AbstractVector<E> extends Vector<E> {
         int rlength;
         switch (kind) {
         case 'Z':  // lane-wise size change, maybe with sign clip
-            // Maybe this should be an intrinsic also.
             AbstractSpecies<?> rspi = rsp.asIntegral();
-            AbstractVector<?> bitv = resizeLanes0(this, rspi);
+            AbstractSpecies<?> vsp = this.vspecies();
+            AbstractSpecies<?> vspi = vsp.asIntegral();
+            AbstractVector<?> biti = vspi == vsp ? this.check0(vspi) : this.convert0('X', vspi);
+            rtype = rspi.elementType();
+            rlength = rspi.laneCount();
+            etype = vspi.elementType();
+            vlength = vspi.laneCount();
+            Class<?> vtype = vspi.dummyVector().getClass();
+            rvtype = rspi.dummyVector().getClass();
+            int opc = vspi.elementSize() < rspi.elementSize() ? VectorSupport.VECTOR_OP_UCAST : VectorSupport.VECTOR_OP_CAST;
+            AbstractVector<?> bitv = VectorSupport.convert(opc,
+                    vtype, etype, vlength,
+                    rvtype, rtype, rlength,
+                    biti, rspi,
+                    AbstractVector::defaultUCast);
             return (rspi == rsp ? bitv.check0(rsp) : bitv.convert0('X', rsp));
         case 'C':  // lane-wise cast (but not identity)
             rtype = rsp.elementType();
@@ -693,24 +725,6 @@ abstract class AbstractVector<E> extends Vector<E> {
                     AbstractVector::defaultReinterpret);
         }
         throw new AssertionError();
-    }
-
-    @ForceInline
-    private static <F>
-    AbstractVector<F>
-    resizeLanes0(AbstractVector<?> v, AbstractSpecies<F> rspi) {
-        AbstractSpecies<?> dsp = v.vspecies();
-        int sizeChange = rspi.elementSize() - dsp.elementSize();
-        AbstractSpecies<?> dspi = dsp.asIntegral();
-        if (dspi != dsp)  v = v.convert0('R', dspi);
-        if (sizeChange <= 0) {  // clip in place
-            return v.convert0('C', rspi);
-        }
-        // extend in place, but remove unwanted sign extension
-        long mask = -1L >>> -dsp.elementSize();
-        return (AbstractVector<F>)
-            v.convert0('C', rspi)
-            .lanewise(AND, rspi.broadcast(mask));
     }
 
     // Byte buffer wrappers.

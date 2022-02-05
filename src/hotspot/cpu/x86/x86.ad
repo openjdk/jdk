@@ -1457,6 +1457,9 @@ const bool Matcher::match_rule_supported(int opcode) {
     case Op_VectorCastL2X:
     case Op_VectorCastF2X:
     case Op_VectorCastD2X:
+    case Op_VectorUCastB2X:
+    case Op_VectorUCastS2X:
+    case Op_VectorUCastI2X:
       if (UseAVX < 1) { // enabled for AVX only
         return false;
       }
@@ -7259,6 +7262,64 @@ instruct vcastDtoL_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, 
     __ vector_castD2L_evex($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
                            $xtmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister,
                            ExternalAddress(vector_double_signflip()), $scratch$$Register, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vucastBtoX(vec dst, vec src) %{
+  match(Set dst (VectorUCastB2X src));
+  format %{ "vector_ucast_b2x $dst,$src\t!" %}
+  ins_encode %{
+    assert(UseAVX > 0, "required");
+
+    BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
+    int vlen_enc = vector_length_encoding(this);
+    switch (to_elem_bt) {
+      case T_SHORT:
+        __ vpmovzxbw($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
+        break;
+      case T_INT:
+        __ vpmovzxbd($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
+        break;
+      case T_LONG:
+        __ vpmovzxbq($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
+        break;
+      default: assert(false, "%s", type2name(to_elem_bt));
+    }
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vucastStoX(vec dst, vec src) %{
+  match(Set dst (VectorUCastS2X src));
+  format %{ "vector_ucast_s2x $dst,$src\t!" %}
+  ins_encode %{
+    assert(UseAVX > 0, "required");
+
+    BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
+    int vlen_enc = vector_length_encoding(this);
+    switch (to_elem_bt) {
+      case T_INT:
+        __ vpmovzxwd($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
+        break;
+      case T_LONG:
+        __ vpmovzxwq($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
+        break;
+      default: assert(false, "%s", type2name(to_elem_bt));
+    }
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vucastItoX(vec dst, vec src) %{
+  match(Set dst (VectorUCastI2X src));
+  format %{ "vector_ucast_i2x $dst,$src\t!" %}
+  ins_encode %{
+    assert(UseAVX > 0, "required");
+    assert(Matcher::vector_element_basic_type(this) == T_LONG, "");
+
+    int vlen_enc = vector_length_encoding(this);
+    __ vpmovzxdq($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
