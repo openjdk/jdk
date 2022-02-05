@@ -262,7 +262,7 @@ void InstructionPrinter::print_inline_level(BlockBegin* block) {
 
 
 void InstructionPrinter::print_unsafe_op(UnsafeOp* op, const char* name) {
-  output()->print("%s", name);
+  output()->print("%s(", name);
   print_value(op->object());
   output()->print(", ");
   print_value(op->offset());
