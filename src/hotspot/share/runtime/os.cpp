@@ -1754,6 +1754,7 @@ void os::print_memory_mappings(outputStream* st) {
 // to wait until the entire range has been touched.  This is technically
 // a UB data race, but doesn't cause any problems for us.
 void os::pretouch_memory(void* start, void* end, size_t page_size) {
+  assert(start <= end, "invalid range: " PTR_FORMAT " -> " PTR_FORMAT, p2i(start), p2i(end));
   assert(is_power_of_2(page_size), "page size misaligned: %zu", page_size);
   assert(page_size >= sizeof(int), "page size too small: %zu", page_size);
   if (start < end) {
