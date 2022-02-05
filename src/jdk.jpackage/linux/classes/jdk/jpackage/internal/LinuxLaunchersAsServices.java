@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,68 +26,44 @@ package jdk.jpackage.internal;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.AppImageFile.LauncherInfo;
 import static jdk.jpackage.internal.OverridableResource.createResource;
 import static jdk.jpackage.internal.ShellCustomAction.escapedInstalledLauncherPath;
-import static jdk.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS;
-import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
-import static jdk.jpackage.internal.StandardBundlerParam.LAUNCHER_AS_SERVICE;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 
 /**
  * Helper to install launchers as services.
  */
-final class LaunchersAsServices extends ShellCustomAction {
+final class LinuxLaunchersAsServices extends ShellCustomAction {
 
     private static final String COMMANDS_INSTALL = "LAUNCHER_AS_SERVICE_COMMANDS_INSTALL";
     private static final String COMMANDS_UNINSTALL = "LAUNCHER_AS_SERVICE_COMMANDS_UNINSTALL";
     private static final String SCRIPTS = "LAUNCHER_AS_SERVICE_SCRIPTS";
 
-    private LaunchersAsServices(PlatformPackage thePackage,
+    private LinuxLaunchersAsServices(PlatformPackage thePackage,
             Map<String, ? super Object> params) throws IOException {
-
-        List<Map<String, ? super Object>> allLaunchers = ADD_LAUNCHERS.fetchFrom(
-                params, false);
 
         this.thePackage = thePackage;
 
-        // Read launchers information from predefine app image
-        if (allLaunchers == null && PREDEFINED_APP_IMAGE.fetchFrom(params)
-                != null) {
-            launchers = AppImageFile.getLaunchers(
-                    PREDEFINED_APP_IMAGE.fetchFrom(params), params).stream().filter(
-                    LauncherInfo::isService).map(
-                            li -> new Launcher(li.getName(), params)).toList();
-        } else {
-            launchers = new ArrayList<>();
-            if (LAUNCHER_AS_SERVICE.fetchFrom(params)) {
-                this.launchers.add(new Launcher(null, params));
-            }
-            for (var launcherParams : Optional.ofNullable(allLaunchers).orElse(
-                    Collections.emptyList())) {
-                if (LAUNCHER_AS_SERVICE.fetchFrom(launcherParams)) {
-                    launchers.add(new Launcher(
-                            APP_NAME.fetchFrom(launcherParams), params));
-                }
-            }
-        }
+        // Read launchers information
+        launchers = AppImageFile.getLaunchers(PREDEFINED_APP_IMAGE.fetchFrom(
+                params), params).stream().filter(LauncherInfo::isService).map(
+                li -> new Launcher(li.getName(), params)).toList();
     }
 
-    static LaunchersAsServices create(PlatformPackage thePackage,
+    static LinuxLaunchersAsServices create(PlatformPackage thePackage,
             Map<String, ? super Object> params) throws IOException {
         if (StandardBundlerParam.isRuntimeInstaller(params)) {
             return null;
         }
-        return new LaunchersAsServices(thePackage, params);
+        return new LinuxLaunchersAsServices(thePackage, params);
     }
 
     @Override
