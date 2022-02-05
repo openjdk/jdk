@@ -236,14 +236,14 @@ public final class AppImageFile {
      * Following items in the list are names of additional launchers.
      */
     static List<LauncherInfo> getLaunchers(Path appImageDir,
-            Map<String, ? super Object> params) {
+            Map<String, Object> params) {
         List<LauncherInfo> launchers = new ArrayList<>();
         if (appImageDir != null) {
             try {
                 AppImageFile appImageInfo = AppImageFile.load(appImageDir);
                 if (appImageInfo != null) {
-                    launchers.add(new LauncherInfo(appImageInfo.getLauncherName(),
-                            params));
+                    launchers.add(new LauncherInfo(
+                            appImageInfo.getLauncherName(), params));
                     launchers.addAll(appImageInfo.getAddLaunchers());
                     return launchers;
                 }
@@ -321,11 +321,11 @@ public final class AppImageFile {
         private final boolean menu;
         private final boolean service;
 
-        private LauncherInfo(Map<String, ? super Object> params) {
+        private LauncherInfo(Map<String, Object> params) {
             this(APP_NAME.fetchFrom(params), params);
         }
 
-        private LauncherInfo(String name, Map<String, ? super Object> params) {
+        private LauncherInfo(String name, Map<String, Object> params) {
             this.name = name;
             this.shortcut = SHORTCUT_HINT.fetchFrom(params);
             this.menu = MENU_HINT.fetchFrom(params);
@@ -342,12 +342,15 @@ public final class AppImageFile {
         public String getName() {
             return name;
         }
+
         public boolean isShortcut() {
             return shortcut;
         }
+
         public boolean isMenu() {
             return menu;
         }
+
         public boolean isService() {
             return service;
         }

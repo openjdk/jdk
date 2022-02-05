@@ -52,7 +52,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         appImageBundler = new LinuxAppBundler().setDependentTask(true);
         customActions = List.of(new CustomActionInstance(
                 DesktopIntegration::create), new CustomActionInstance(
-                LaunchersAsServices::create));
+                LinuxLaunchersAsServices::create));
     }
 
     @Override
