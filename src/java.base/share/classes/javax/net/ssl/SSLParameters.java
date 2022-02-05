@@ -29,7 +29,6 @@ import java.security.AlgorithmConstraints;
 import java.util.Map;
 import java.util.List;
 import java.util.HashMap;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -391,8 +390,7 @@ public class SSLParameters {
     public final List<SNIServerName> getServerNames() {
         if (sniNames != null) {
             if (!sniNames.isEmpty()) {
-                return Collections.<SNIServerName>unmodifiableList(
-                                        new ArrayList<>(sniNames.values()));
+                return List.copyOf(sniNames.values());
             } else {
                 return Collections.<SNIServerName>emptyList();
             }
@@ -466,8 +464,7 @@ public class SSLParameters {
     public final Collection<SNIMatcher> getSNIMatchers() {
         if (sniMatchers != null) {
             if (!sniMatchers.isEmpty()) {
-                return Collections.<SNIMatcher>unmodifiableList(
-                                        new ArrayList<>(sniMatchers.values()));
+                return List.copyOf(sniMatchers.values());
             } else {
                 return Collections.<SNIMatcher>emptyList();
             }
