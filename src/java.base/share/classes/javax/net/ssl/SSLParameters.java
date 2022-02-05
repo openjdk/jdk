@@ -696,4 +696,19 @@ public class SSLParameters {
         }
         applicationProtocols = tempProtocols;
     }
+
+    record CompressionFunction(
+            Function<ByteBuffer, ByteBuffer> encoder,
+            Function<ByteBuffer, ByteBuffer> decoder) {
+    }
+
+    public Map<String, CompressionFunction> getCertificateCompressionFunctions() {
+            return null;
+    }
+
+    public void setCertificateCompressionAlgorithms(
+            Map<String, CompressionFunction> certificateCompressionFunctions) {
+        // blank
+    }
+
 }
