@@ -63,11 +63,13 @@ public class SignedJarWithCustomClassLoader {
 
         // create signer's keypair
         SecurityTools.keytool("-genkeypair -keyalg RSA -keystore ks " +
-                              "-storepass changeit -dname CN=test -alias test");
+                              "-storepass changeit -dname CN=test -alias test")
+                     .shouldHaveExitValue(0);
 
         // sign jar
         SecurityTools.jarsigner("-keystore ks -storepass changeit " +
-                                "-signedjar signed.jar test.jar test");
+                                "-signedjar signed.jar test.jar test")
+                     .shouldHaveExitValue(0);
 
         // run app with system class loader set to custom classloader
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
@@ -79,7 +81,8 @@ public class SignedJarWithCustomClassLoader {
         // sign jar again, but this time with SHA-1 which is disabled
         SecurityTools.jarsigner("-keystore ks -storepass changeit " +
                                 "-digestalg SHA-1 -sigalg SHA1withRSA " +
-                                "-signedjar signed.jar test.jar test");
+                                "-signedjar signed.jar test.jar test")
+                     .shouldHaveExitValue(0);
 
         // run app again, should still succeed even though SHA-1 is disabled
         pb = ProcessTools.createJavaProcessBuilder(
