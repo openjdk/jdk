@@ -163,8 +163,10 @@ class StackOverflow {
   //     If SP is very low, banging at the edge of shadow zone (SP+shadow-zone-size) can slip
   //     into adjacent thread stack, or even into other readable memory. This would potentially
   //     pass the check by accident.
-  //  c) Allow for incremental stack growth by handling traps from not yet committed thread
-  //     stacks. See for example handling of os::map_stack_shadow_pages().
+  //  c) Allow for incremental stack growth on some OSes. This is enabled by handling traps
+  //     from not yet committed thread stacks, even outside the guard zone. The banging should
+  //     not allow uncommitted "gaps" on thread stack. See for example the uses of
+  //     os::map_stack_shadow_pages().
   //  d) Make sure the stack overflow trap happens in the code that is known to runtime, so
   //     the traps can be reasonably handled: handling a spurious trap from executing Java code
   //     is hard, while properly handling the trap from VM/native code is nearly impossible.
