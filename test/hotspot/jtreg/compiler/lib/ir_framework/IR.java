@@ -84,6 +84,8 @@ public @interface IR {
      */
     String[] counts() default {};
 
+    CompilePhase[] phase() default {};
+
     /**
      * Define a single VM flag precondition which <i>must hold</i> when applying the IR rule. If the VM flag precondition
      * fails, then the IR rule is not applied. This is useful if a commonly used flag alters the IR in such a way that an IR rule

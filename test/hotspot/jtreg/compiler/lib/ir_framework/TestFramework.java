@@ -708,7 +708,7 @@ public class TestFramework {
     }
 
     private boolean hasIRAnnotations() {
-        return Arrays.stream(testClass.getDeclaredMethods()).anyMatch(m -> m.getAnnotationsByType(IR.class) != null);
+        return Arrays.stream(testClass.getDeclaredMethods()).anyMatch(m -> m.getAnnotationsByType(IR.class).length > 0);
     }
 
     private boolean onlyWhitelistedJTregVMAndJavaOptsFlags() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * This class' main method is called from {@link TestFramework} and represents the so-called "flag VM". It uses the
@@ -75,10 +76,6 @@ public class FlagVM {
     private static final boolean REQUESTED_VERIFY_IR = Boolean.parseBoolean(System.getProperty("VerifyIR", "true"));
     private static final boolean VERIFY_IR = REQUESTED_VERIFY_IR && USE_COMPILER && !EXCLUDE_RANDOM && !FLIP_C1_C2 && !TEST_C1 && Platform.isServer();
 
-    private static String[] getPrintFlags() {
-        return new String[] {"-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions"};
-    }
-
     /**
      * Main entry point of the flag VM.
      */
@@ -115,22 +112,32 @@ public class FlagVM {
     private static ArrayList<String> setupIrVerificationFlags(Class<?> testClass) {
         ArrayList<String> cmds = new ArrayList<>();
         if (VERIFY_IR) {
-            // Add print flags for IR verification
-            cmds.addAll(Arrays.asList(getPrintFlags()));
-            cmds.add("-XX:+LogCompilation");
-            cmds.add("-XX:CompileCommand=log," + testClass.getCanonicalName() + "::*");
-            addBoolOptionForClass(cmds, testClass, "PrintIdeal");
-            addBoolOptionForClass(cmds, testClass, "PrintOptoAssembly");
-            // Always trap for exception throwing to not confuse IR verification
-            cmds.add("-XX:-OmitStackTraceInFastThrow");
-            cmds.add("-DShouldDoIRVerification=true");
+            addIRVerificationflags(cmds, testClass);
         } else {
             cmds.add("-DShouldDoIRVerification=false");
         }
         return cmds;
     }
 
-    private static void addBoolOptionForClass(ArrayList<String> cmds, Class<?> testClass, String option) {
-        cmds.add("-XX:CompileCommand=option," + testClass.getCanonicalName() + "::*,bool," + option + ",true");
+    private static void addIRVerificationflags(ArrayList<String> cmds, Class<?> testClass) {
+        cmds.addAll(Arrays.asList(getPrintFlags()));
+        cmds.add("-XX:+LogCompilation");
+        cmds.add("-XX:CompileCommand=log," + testClass.getCanonicalName() + "::*");
+        cmds.addAll(getCompilationOutputFlags(testClass));
+        // Always trap for exception throwing to not confuse IR verification
+        cmds.add("-XX:-OmitStackTraceInFastThrow");
+        cmds.add("-DShouldDoIRVerification=true");
     }
+
+    private static String[] getPrintFlags() {
+        return new String[] {"-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions"};
+    }
+
+    private static List<String> getCompilationOutputFlags(Class<?> testClass) {
+        CompilationOutputFlags compilationOutputFlags = new CompilationOutputFlags(testClass);
+        List<String> flags = compilationOutputFlags.getFlags();
+        TestFramework.check(flags.size() > 0, "must add at least one flag");
+        return flags;
+    }
+
 }
