@@ -35,6 +35,7 @@ import java.util.Formatter;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
 import static org.testng.Assert.*;
@@ -64,6 +65,14 @@ public class GetInputStreamNPETest {
     public static final int SINGLETON_CEN_FILENAME_OFFSET = 37;
     // CEN filename which will be modified to validate a ZipException is thrown
     public static final String CEN_FILENAME_TO_MODIFY = "javax/inject/Singleton.class";
+    // Error message from JarFile::verifiableEntry when ZipEntry::getName
+    // returns null
+    public static final String ZIPENTRY_GETNAME_NULL_ERROR_MSG
+            = "Error: ZipEntry::getName returned null!";
+    // Error message from JarFile::verifiableEntry when JarFile::getJarEntry
+    // returns null
+    public static final String ZIPENTRY_NULL_ERROR_MSG
+            = "Error: ZipEntry should not be null!";
 
     /**
      * Byte array representing valid jar file prior modifying a filename in the
@@ -955,6 +964,42 @@ public class GetInputStreamNPETest {
     }
 
     /**
+     * Validate that JarFile::verifiableEntry will throw the correct ZipException
+     * if the ZipEntry returned from JarFile::getJarEntry is null.
+     * @throws Exception if an error occurs
+     */
+    @Test
+    public static void verifiableEntryZipEntryNullTest() throws Exception {
+        try (JarFile jf = new JarFile(SIGNED_VALID_ENTRY_NAME_JAR.toFile(), true)) {
+            var ze = new InvalidZipEntry("javax/inject/Singleton.class");
+            var ex= expectThrows(ZipException.class,
+                    () -> jf.getInputStream(ze) );
+            // Validate that we receive the expected message from
+            // JarFile::verifiableEntry when JarFile::getJarEntry returns null
+            assertTrue( ex != null &&
+                    ex.getMessage().equals(ZIPENTRY_NULL_ERROR_MSG));
+        }
+    }
+
+    /**
+     * Validate that JarFile::verifiableEntry will throw the correct ZipException
+     * if the ZipEntry passed to it returns null when ZipEntry::getName is invoked.
+     * @throws Exception if an error occurs
+     */
+    @Test
+    public static void verifiableEntryZipEntryGetNameNullTest() throws Exception {
+        try (JarFile jf = new JarFile(SIGNED_VALID_ENTRY_NAME_JAR.toFile(), true)) {
+            var ze = new InvalidZipEntry2("jjavax/inject/Singleton.class");
+            var ex= expectThrows(ZipException.class,
+                    () -> jf.getInputStream(ze) );
+            // Validate that we receive the expected message from
+            // JarFile::verifiableEntry when ZipEntry::getName returns null
+            assertTrue( ex != null &&
+                    ex.getMessage().equals(ZIPENTRY_GETNAME_NULL_ERROR_MSG));
+        }
+    }
+
+    /**
      * Utility method which takes a byte array and converts to byte array
      * declaration.  For example:
      * <pre>
@@ -982,4 +1027,31 @@ public class GetInputStreamNPETest {
         fmt.format("%n    };%n");
         return sb.toString();
     }
+
+    /**
+     * Overridden ZipEntry class which will always return an invalid name
+     * for the Zip entry
+     */
+    public static class InvalidZipEntry extends ZipEntry {
+        public InvalidZipEntry(String name) {
+            super(name);
+        }
+        public String getName() {
+            return "NameDoesNotExist";
+        }
+    }
+
+    /**
+     * Overridden ZipEntry class which will always return null
+     * for the Zip entry name
+     */
+    public static class InvalidZipEntry2 extends ZipEntry {
+        public InvalidZipEntry2(String name) {
+            super(name);
+        }
+        public String getName() {
+            return null;
+        }
+    }
+
 }

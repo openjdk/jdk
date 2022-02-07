@@ -838,41 +838,45 @@ public class JarFile extends ZipFile {
         throws IOException
     {
         Objects.requireNonNull(ze, "ze");
-        try {
-            maybeInstantiateVerifier();
-            if (jv == null) {
-                return super.getInputStream(ze);
-            }
-            if (!jvInitialized) {
-                initializeVerifier();
-                jvInitialized = true;
-                // could be set to null after a call to
-                // initializeVerifier if we have nothing to
-                // verify
-                if (jv == null)
-                    return super.getInputStream(ze);
-            }
 
-            // wrap a verifier stream around the real stream
-            return new JarVerifier.VerifierStream(
-                    getManifestFromReference(),
-                    verifiableEntry(ze),
-                    super.getInputStream(ze),
-                    jv);
-        } catch (IOException | IllegalStateException | SecurityException e) {
-            throw e;
-        } catch (Exception e2) {
-            // Any other Exception should be a ZipException
-            throw (ZipException) new ZipException("Zip file format error").initCause(e2);
+        maybeInstantiateVerifier();
+        if (jv == null) {
+            return super.getInputStream(ze);
         }
+        if (!jvInitialized) {
+            initializeVerifier();
+            jvInitialized = true;
+            // could be set to null after a call to
+            // initializeVerifier if we have nothing to
+            // verify
+            if (jv == null)
+                return super.getInputStream(ze);
+        }
+
+        // wrap a verifier stream around the real stream
+        return new JarVerifier.VerifierStream(
+                getManifestFromReference(),
+                verifiableEntry(ze),
+                super.getInputStream(ze),
+                jv);
+
     }
 
-    private JarEntry verifiableEntry(ZipEntry ze) {
+    private JarEntry verifiableEntry(ZipEntry ze) throws ZipException {
         if (ze instanceof JarFileEntry) {
             // assure the name and entry match for verification
             return ((JarFileEntry)ze).realEntry();
         }
-        ze = getJarEntry(ze.getName());
+        // ZipEntry::getName should not return null
+        if(ze.getName() != null) {
+            ze = getJarEntry(ze.getName());
+        } else {
+            throw new ZipException("Error: ZipEntry::getName returned null!");
+        }
+        // ZipEntry returned from JarFile::getJarEntry should not be null
+        if(ze == null) {
+            throw new ZipException("Error: ZipEntry should not be null!");
+        }
         if (ze instanceof JarFileEntry) {
             return ((JarFileEntry)ze).realEntry();
         }
