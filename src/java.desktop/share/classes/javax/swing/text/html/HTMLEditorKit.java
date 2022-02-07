@@ -216,8 +216,7 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
  *
  * @author  Timothy Prinzing
  */
-@SuppressWarnings({"serial", // Same-version serialization only
-                   "doclint:missing"})
+@SuppressWarnings({"serial"}) // Same-version serialization only
 public class HTMLEditorKit extends StyledEditorKit implements Accessible {
 
     private JEditorPane theEditor;
@@ -1684,6 +1683,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
         }
 
         /**
+         * Returns <code>HTMLDocument</code> of the given <code>JEditorPane</code>.
+         *
          * @param e the JEditorPane
          * @return HTMLDocument of <code>e</code>.
          */
@@ -1696,6 +1697,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
         }
 
         /**
+         * Returns <code>HTMLEditorKit</code> of the given <code>JEditorPane</code>.
+         *
          * @param e the JEditorPane
          * @return HTMLEditorKit for <code>e</code>.
          */

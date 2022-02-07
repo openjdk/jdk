@@ -677,7 +677,7 @@ public class RandomSupport {
         double r = rng.nextDouble();
         r = r * bound;
         if (r >= bound)  // may need to correct a rounding problem
-            r = Math.nextDown(r);
+            r = Math.nextDown(bound);
         return r;
     }
 
