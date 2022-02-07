@@ -28,49 +28,21 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 import java.util.List;
 
 /**
- * Class to build the failure message output for an IR method.
+ * Base class to build the failure message output for an IR method.
  *
  * @see IRMethodMatchResult
  */
-class FailureMessageBuilder {
+abstract class FailureMessageBuilder {
     private final IRMethod irMethod;
-    private final List<IRRuleMatchResult> irRulesMatchResults;
-    private final boolean missingCompilationOutput;
 
-    public FailureMessageBuilder(IRMethod irMethod, List<IRRuleMatchResult> irRulesMatchResults, boolean missingCompilationOutput) {
+    public FailureMessageBuilder(IRMethod irMethod) {
         this.irMethod = irMethod;
-        this.irRulesMatchResults = irRulesMatchResults;
-        this.missingCompilationOutput = missingCompilationOutput;
     }
 
-    public String build() {
-        StringBuilder failMsg = new StringBuilder();
-        failMsg.append(getMethodLine());
-        if (missingCompilationOutput) {
-            failMsg.append(getMissingCompilationLine());
-            return failMsg.toString();
-        }
-        failMsg.append(getIRRulesFailureMessage());
-        return failMsg.toString();
-    }
+    abstract public String build();
 
-    private String getMethodLine() {
+    protected String getMethodLine() {
         return " Method \"" + irMethod.getMethod() + "\":" + System.lineSeparator();
     }
 
-    private String getIRRulesFailureMessage() {
-        StringBuilder failMsg = new StringBuilder();
-        for (IRRuleMatchResult irRuleResult : irRulesMatchResults) {
-            if (irRuleResult.fail()) {
-                failMsg.append(irRuleResult.buildFailureMessage());
-            }
-        }
-        return failMsg.toString();
-    }
-
-    private String getMissingCompilationLine() {
-        return "   * Method was not compiled. Did you specify any compiler directives preventing a compilation "
-               + "or used a @Run method in STANDALONE mode? In the latter case, make sure to always trigger a C2 "
-               + "compilation by " + "invoking the test enough times.";
-    }
 }

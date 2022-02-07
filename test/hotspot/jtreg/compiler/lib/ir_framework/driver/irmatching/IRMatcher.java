@@ -24,8 +24,8 @@
 package compiler.lib.ir_framework.driver.irmatching;
 
 import compiler.lib.ir_framework.*;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.parser.IRMethodParser;
 
 import java.util.*;

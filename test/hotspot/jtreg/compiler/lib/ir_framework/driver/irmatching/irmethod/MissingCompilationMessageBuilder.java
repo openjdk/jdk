@@ -23,31 +23,30 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
-import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 
+import java.util.List;
+
 /**
- * This base class represents an IR matching result of all IR rules of a method.
+ * Class to build the failure message output for an IR method with a missing compilation output.
  *
- * @see IRRuleMatchResult
- * @see IRMethod
+ * @see IRMethodMatchResult
  */
-abstract public class IRMethodMatchResult implements Comparable<IRMethodMatchResult>, MatchResult {
-    protected final IRMethod irMethod;
+class MissingCompilationMessageBuilder extends FailureMessageBuilder {
 
-    IRMethodMatchResult(IRMethod irMethod) {
-        this.irMethod = irMethod;
+    public MissingCompilationMessageBuilder(IRMethod irMethod) {
+        super(irMethod);
     }
 
-    abstract public String getMatchedCompilationOutput();
-
-    abstract public int getFailedIRRuleCount();
-
-    /**
-     * Used to sort the failed IR methods alphabetically.
-     */
     @Override
-    public int compareTo(IRMethodMatchResult other) {
-        return this.irMethod.getMethod().getName().compareTo(other.irMethod.getMethod().getName());
+    public String build() {
+        return getMethodLine() + getMissingCompilationMessage();
     }
+
+    private String getMissingCompilationMessage() {
+        return "   * Method was not compiled. Did you specify any compiler directives preventing a compilation "
+               + "or used a @Run method in STANDALONE mode? In the latter case, make sure to always trigger a C2 "
+               + "compilation by " + "invoking the test enough times.";
+    }
+
 }

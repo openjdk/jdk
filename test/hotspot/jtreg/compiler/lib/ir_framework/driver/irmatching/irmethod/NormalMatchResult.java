@@ -23,31 +23,45 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
-import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 
+import java.util.List;
+
 /**
- * This base class represents an IR matching result of all IR rules of a method.
+ * This class represents a normal IR matching result of all IR rules of a method.
  *
  * @see IRRuleMatchResult
  * @see IRMethod
  */
-abstract public class IRMethodMatchResult implements Comparable<IRMethodMatchResult>, MatchResult {
-    protected final IRMethod irMethod;
+class NormalMatchResult extends IRMethodMatchResult {
+    private final List<IRRuleMatchResult> irRulesMatchResults;
+    private final NormalFailureMessageBuilder failureMessageBuilder;
+    private final MatchedCompilationOutputBuilder matchedCompilationOutputBuilder;
 
-    IRMethodMatchResult(IRMethod irMethod) {
-        this.irMethod = irMethod;
+    NormalMatchResult(IRMethod irMethod, List<IRRuleMatchResult> irRulesMatchResults) {
+        super(irMethod);
+        this.irRulesMatchResults = irRulesMatchResults;
+        this.failureMessageBuilder = new NormalFailureMessageBuilder(irMethod, irRulesMatchResults);
+        this.matchedCompilationOutputBuilder = new MatchedCompilationOutputBuilder(irMethod, irRulesMatchResults);
     }
 
-    abstract public String getMatchedCompilationOutput();
-
-    abstract public int getFailedIRRuleCount();
-
-    /**
-     * Used to sort the failed IR methods alphabetically.
-     */
     @Override
-    public int compareTo(IRMethodMatchResult other) {
-        return this.irMethod.getMethod().getName().compareTo(other.irMethod.getMethod().getName());
+    public boolean fail() {
+        return !irRulesMatchResults.isEmpty();
+    }
+
+    @Override
+    public String getMatchedCompilationOutput() {
+        return matchedCompilationOutputBuilder.build();
+    }
+
+    @Override
+    public String buildFailureMessage() {
+        return failureMessageBuilder.build();
+    }
+
+    @Override
+    public int getFailedIRRuleCount() {
+        return irRulesMatchResults.size();
     }
 }

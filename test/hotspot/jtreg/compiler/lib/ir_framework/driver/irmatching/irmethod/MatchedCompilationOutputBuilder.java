@@ -38,16 +38,14 @@ class MatchedCompilationOutputBuilder {
     private final IRMethod irMethod;
     private final OutputMatch outputMatch;
 
-    public MatchedCompilationOutputBuilder(IRMethod irMethod, List<IRRuleMatchResult> irRulesMatchResults, boolean missingCompilationOutput) {
+    public MatchedCompilationOutputBuilder(IRMethod irMethod, List<IRRuleMatchResult> irRulesMatchResults) {
         this.irMethod = irMethod;
-        this.outputMatch = getOutputMatch(irRulesMatchResults, missingCompilationOutput);
+        this.outputMatch = getOutputMatch(irRulesMatchResults);
     }
 
-    private OutputMatch getOutputMatch(List<IRRuleMatchResult> irRulesMatchResults, boolean missingCompilationOutput) {
+    private OutputMatch getOutputMatch(List<IRRuleMatchResult> irRulesMatchResults) {
         OutputMatch outputMatch;
-        if (missingCompilationOutput) {
-            outputMatch = OutputMatch.NONE;
-        } else if (allMatchesOn(irRulesMatchResults, OutputMatch.IDEAL)) {
+        if (allMatchesOn(irRulesMatchResults, OutputMatch.IDEAL)) {
             outputMatch = OutputMatch.IDEAL;
         } else if (allMatchesOn(irRulesMatchResults, OutputMatch.OPTO_ASSEMBLY)) {
             outputMatch = OutputMatch.OPTO_ASSEMBLY;
@@ -68,7 +66,6 @@ class MatchedCompilationOutputBuilder {
             case IDEAL -> builder.append(irMethod.getIdealOutput());
             case OPTO_ASSEMBLY -> builder.append(irMethod.getOptoAssemblyOutput());
             case BOTH -> builder.append(irMethod.getOutput());
-            case NONE -> builder.append("<empty>");
             default -> throw new TestFrameworkException("found unexpected OutputMatch " + outputMatch.name());
         }
         return builder.toString();

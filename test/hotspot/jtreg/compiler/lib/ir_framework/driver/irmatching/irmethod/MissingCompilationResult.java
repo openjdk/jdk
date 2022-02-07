@@ -23,31 +23,46 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
-import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 
 /**
- * This base class represents an IR matching result of all IR rules of a method.
+ * This class represents an IR matching result where the compilation output was empty.
  *
  * @see IRRuleMatchResult
  * @see IRMethod
  */
-abstract public class IRMethodMatchResult implements Comparable<IRMethodMatchResult>, MatchResult {
-    protected final IRMethod irMethod;
+public class MissingCompilationResult extends IRMethodMatchResult {
+    private final int failedIRRules;
+    private final MissingCompilationMessageBuilder failureMessageBuilder;
 
-    IRMethodMatchResult(IRMethod irMethod) {
-        this.irMethod = irMethod;
+    MissingCompilationResult(IRMethod irMethod, int failedIRRules) {
+        super(irMethod);
+        this.failedIRRules = failedIRRules;
+        this.failureMessageBuilder = new MissingCompilationMessageBuilder(irMethod);
     }
 
-    abstract public String getMatchedCompilationOutput();
-
-    abstract public int getFailedIRRuleCount();
-
-    /**
-     * Used to sort the failed IR methods alphabetically.
-     */
     @Override
-    public int compareTo(IRMethodMatchResult other) {
-        return this.irMethod.getMethod().getName().compareTo(other.irMethod.getMethod().getName());
+    public boolean fail() {
+        return true;
     }
+
+    @Override
+    public String getMatchedCompilationOutput() {
+        return "<empty>";
+    }
+
+    @Override
+    public String buildFailureMessage() {
+        return failureMessageBuilder.build();
+    }
+
+    private String getMethodLine() {
+        return " Method \"" + irMethod.getMethod() + "\":" + System.lineSeparator();
+    }
+
+    @Override
+    public int getFailedIRRuleCount() {
+        return failedIRRules;
+    }
+
 }

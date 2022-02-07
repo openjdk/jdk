@@ -97,12 +97,20 @@ public class IRMethod {
     public IRMethodMatchResult applyIRRules() {
         TestFramework.check(!irRules.isEmpty(), "IRMethod cannot be created if there are no IR rules to apply");
         List<IRRuleMatchResult> results = new ArrayList<>();
+        if (!output.isEmpty()) {
+            return getNormalMatchResult(results);
+        } else {
+            return new MissingCompilationResult(this, irRules.size());
+        }
+    }
+
+    private NormalMatchResult getNormalMatchResult(List<IRRuleMatchResult> results) {
         for (IRRule irRule : irRules) {
             IRRuleMatchResult result = irRule.applyCheckAttribute();
             if (result.fail()) {
                 results.add(result);
             }
         }
-        return new IRMethodMatchResult(this, results);
+        return new NormalMatchResult(this, results);
     }
 }
