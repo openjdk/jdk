@@ -322,6 +322,16 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
     }
   }
 
+  // Convert "c - (~x)" into "x + (c + 1)". Note there isn't a bitwise
+  // not bytecode, "~x" would typically represented as "x^(-1)", so
+  // c-(~x) will eventually be c-x^(-1).
+  if (in(2)->Opcode() == Op_XorI
+      && phase->type(in(2)->in(2)) == TypeInt::MINUS_1
+      && in(1)->Opcode() == Op_ConI) {
+    jint c = phase->type(in(1))->isa_int()->get_con();
+    return new AddINode(in(2)->in(1), phase->intcon(java_add(c, 1)));
+  }
+
   return NULL;
 }
 
@@ -493,6 +503,16 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if ( t21 && t22 && zero == TypeLong::ZERO && t22->is_con(63) ) {
       return new URShiftLNode(in21, in22);
     }
+  }
+
+  // Convert "c - (~x)" into "x + (c + 1)". Note there isn't a bitwise
+  // not bytecode, "~x" would typically represented as "x^(-1)", so
+  // c-(~x) will eventually be c-x^(-1).
+  if (in(2)->Opcode() == Op_XorL
+      && phase->type(in(2)->in(2)) == TypeLong::MINUS_1
+      && in(1)->Opcode() == Op_ConL) {
+    jlong c = phase->type(in(1))->isa_long()->get_con();
+    return new AddLNode(in(2)->in(1), phase->longcon(java_add(c, (jlong)1)));
   }
 
   return NULL;
