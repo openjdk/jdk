@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,14 @@ public class Common {
         return opts;
     }
 
+    public static DockerRunOptions newOpts(String imageNameAndTag, String testClass, String addJavaOpts) {
+        DockerRunOptions opts =
+            new DockerRunOptions(imageNameAndTag, "/jdk/bin/java", testClass);
+        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/");
+        opts.addJavaOpts("-Xlog:os+container=trace", "-cp", "/test-classes/");
+        opts.addJavaOpts(addJavaOpts);
+        return opts;
+    }
 
     public static DockerRunOptions addWhiteBoxOpts(DockerRunOptions opts) {
         opts.addJavaOpts("-Xbootclasspath/a:/test-classes/whitebox.jar",

@@ -2175,7 +2175,7 @@ bool os::Linux::print_container_info(outputStream* st) {
   st->print("active_processor_count: ");
   if (i > 0) {
     if (ActiveProcessorCount > 0) {
-      st->print_cr("%d, but overridden by -XX:ActiveProcessorCount", i);
+      st->print_cr("%d, but overridden by -XX:ActiveProcessorCount %d", i, ActiveProcessorCount);
     } else {
       st->print_cr("%d", i);
     }
