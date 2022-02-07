@@ -183,4 +183,13 @@
   // Implements a variant of EncodeISOArrayNode that encode ASCII only
   static const bool supports_encode_ascii_array = true;
 
+  // Returns pre-selection estimated cost of a vector operation.
+  static int vector_op_cost(int vopc, BasicType ety, int vlen) {
+    switch(vopc) {
+      default: return 1;
+      case Op_PopCountVI: return VM_Version::supports_avx512_vpopcntdq() ? 1 : 50;
+      case Op_PopCountVL: return VM_Version::supports_avx512_vpopcntdq() ? 1 : 40;
+    }
+  }
+
 #endif // CPU_X86_MATCHER_X86_HPP
