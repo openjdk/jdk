@@ -39,9 +39,10 @@ void StackOverflow::initialize_stack_zone_sizes() {
   // Stack zone sizes must be page aligned.
   size_t page_size = os::vm_page_size();
 
-  // We need to adapt the configured number of stack protection pages given
-  // in 4K pages to the actual os page size. We must do this before setting
-  // up minimal stack sizes etc. in os::init_2().
+  // We need to adapt the configured number of stack protection pages to the
+  // actual OS page size. We must do this before setting up minimal stack
+  // sizes etc. in os::init_2(). The option values are given in the 4K units,
+  // matching the smallest page size in supported platforms.
   size_t unit = 4*K;
 
   assert(_stack_red_zone_size == 0, "This should be called only once.");
