@@ -2590,7 +2590,7 @@ public class Utils {
 
     /**
      * A cache of doc comment info objects for elements.
-     * The entries may come from the AST and DocCommentParser, or may be autromatically
+     * The entries may come from the AST and DocCommentParser, or may be automatically
      * generated comments for mandated elements and JavaFX properties.
      *
      * @see CommentUtils#dcInfoMap
