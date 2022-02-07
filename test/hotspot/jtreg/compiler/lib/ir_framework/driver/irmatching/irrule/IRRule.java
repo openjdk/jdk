@@ -23,6 +23,7 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule;
 
+import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
@@ -95,7 +96,7 @@ public class IRRule {
 
     private void applyCheckAttribute(CheckAttribute checkAttribute, IRRuleMatchResult result,
                                      Consumer<CheckAttributeMatchResult> setFailures) {
-        CheckAttributeMatchResult checkAttributeResult = checkAttribute.apply(irMethod.getOutput());
+        CheckAttributeMatchResult checkAttributeResult = checkAttribute.apply(irMethod.getCompleteOutput());
         if (checkAttributeResult.fail()) {
             setFailures.accept(checkAttributeResult);
             result.updateOutputMatch(getOutputMatch(checkAttribute, checkAttributeResult));
@@ -108,7 +109,7 @@ public class IRRule {
      */
     private OutputMatch getOutputMatch(CheckAttribute checkAttribute, CheckAttributeMatchResult checkAttributeResult) {
         int totalMatches = checkAttributeResult.getMatchesCount();
-        int idealFailuresCount = getMatchesCount(checkAttribute, irMethod.getIdealOutput());
+        int idealFailuresCount = getMatchesCount(checkAttribute, irMethod.getIdealOutput(CompilePhase.DEFAULT));
         int optoAssemblyFailuresCount = getMatchesCount(checkAttribute, irMethod.getOptoAssemblyOutput());
         return findOutputMatch(totalMatches, idealFailuresCount, optoAssemblyFailuresCount);
     }

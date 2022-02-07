@@ -23,6 +23,7 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
+import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.driver.irmatching.OutputMatch;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 import compiler.lib.ir_framework.shared.TestFrameworkException;
@@ -63,9 +64,9 @@ class MatchedCompilationOutputBuilder {
         StringBuilder builder = new StringBuilder();
         builder.append(getMethodLine());
         switch (outputMatch) {
-            case IDEAL -> builder.append(irMethod.getIdealOutput());
+            case IDEAL -> builder.append(irMethod.getIdealOutput(CompilePhase.DEFAULT));
             case OPTO_ASSEMBLY -> builder.append(irMethod.getOptoAssemblyOutput());
-            case BOTH -> builder.append(irMethod.getOutput());
+            case BOTH -> builder.append(irMethod.getCompleteOutput());
             default -> throw new TestFrameworkException("found unexpected OutputMatch " + outputMatch.name());
         }
         return builder.toString();

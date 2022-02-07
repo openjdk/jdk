@@ -149,7 +149,7 @@ class HotSpotPidFileParser {
 
     private void setIRMethodOutput(String blockOutput, Line blockStartLine, IRMethod irMethod) {
         if (blockStartLine.isPrintIdealStart()) {
-            irMethod.setIdealOutput(blockOutput);
+            irMethod.setIdealOutput(blockOutput, blockStartLine.getCompilePhase());
         } else {
             irMethod.setOptoAssemblyOutput(blockOutput);
         }

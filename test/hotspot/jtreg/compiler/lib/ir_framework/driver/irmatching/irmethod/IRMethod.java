@@ -23,6 +23,7 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
+import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRule;
@@ -30,7 +31,9 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Helper class to store information about a method that needs to be IR matched.
@@ -38,9 +41,9 @@ import java.util.List;
 public class IRMethod {
     private final Method method;
     private final List<IRRule> irRules;
-    private final StringBuilder outputBuilder;
-    private String output;
-    private String idealOutput;
+    private final StringBuilder completeOutputBuilder;
+    private String completeOutput;
+    private Map<CompilePhase, String> idealOutputMap;
     private String optoAssemblyOutput;
 
     public IRMethod(Method method, int[] ruleIds, IR[] irAnnos) {
@@ -49,9 +52,9 @@ public class IRMethod {
         for (int i : ruleIds) {
             irRules.add(new IRRule(this, i, irAnnos[i - 1]));
         }
-        this.outputBuilder = new StringBuilder();
-        this.output = "";
-        this.idealOutput = "";
+        this.completeOutputBuilder = new StringBuilder();
+        this.completeOutput = "";
+        this.idealOutputMap = new HashMap<>();
         this.optoAssemblyOutput = "";
     }
 
@@ -64,10 +67,20 @@ public class IRMethod {
      * The Ideal output comes always before the Opto Assembly output. We might parse multiple C2 compilations of this method.
      * Only keep the very last one by overriding 'output'.
      */
-    public void setIdealOutput(String idealOutput) {
-        outputBuilder.setLength(0);
-        this.idealOutput = "PrintIdeal:" + System.lineSeparator() + idealOutput;
-        outputBuilder.append(this.idealOutput);
+    public void setIdealOutput(String idealOutput, CompilePhase phase) {
+        String idealOutputWithHeader = "PrintIdeal" + getPhaseNameString(phase) + ":" + System.lineSeparator() + idealOutput;
+        idealOutputMap.put(phase, idealOutputWithHeader);
+        completeOutputBuilder.append(idealOutputWithHeader);
+    }
+
+    private String getPhaseNameString(CompilePhase phase) {
+        String result;
+        if (phase == CompilePhase.DEFAULT) {
+            result = "";
+        } else {
+            result = " - " + phase.getName();
+        }
+        return result;
     }
 
     /**
@@ -75,16 +88,18 @@ public class IRMethod {
      */
     public void setOptoAssemblyOutput(String optoAssemblyOutput) {
         this.optoAssemblyOutput = "PrintOptoAssembly:" + System.lineSeparator() + optoAssemblyOutput;
-        outputBuilder.append(System.lineSeparator()).append(System.lineSeparator()).append(this.optoAssemblyOutput);
-        output = outputBuilder.toString();
+        completeOutputBuilder.append(System.lineSeparator()).append(System.lineSeparator()).append(this.optoAssemblyOutput);
     }
 
-    public String getOutput() {
-        return output;
+    public String getCompleteOutput() {
+        if (completeOutput.isEmpty()) {
+            completeOutput = completeOutputBuilder.toString();
+        }
+        return completeOutput;
     }
 
-    public String getIdealOutput() {
-        return idealOutput;
+    public String getIdealOutput(CompilePhase phase) {
+        return idealOutputMap.get(phase);
     }
 
     public String getOptoAssemblyOutput() {
@@ -97,7 +112,7 @@ public class IRMethod {
     public IRMethodMatchResult applyIRRules() {
         TestFramework.check(!irRules.isEmpty(), "IRMethod cannot be created if there are no IR rules to apply");
         List<IRRuleMatchResult> results = new ArrayList<>();
-        if (!output.isEmpty()) {
+        if (!getCompleteOutput().isEmpty()) {
             return getNormalMatchResult(results);
         } else {
             return new MissingCompilationResult(this, irRules.size());

@@ -66,8 +66,8 @@ public class IRMatcher {
     }
 
     private void printMethodOutput(IRMethod irMethod) {
-        System.out.println("Output of " + irMethod.getOutput() + ":");
-        System.out.println(irMethod.getOutput());
+        System.out.println("Output of " + irMethod.getCompleteOutput() + ":");
+        System.out.println(irMethod.getCompleteOutput());
     }
 
     /**

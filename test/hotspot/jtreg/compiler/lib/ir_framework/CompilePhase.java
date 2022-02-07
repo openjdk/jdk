@@ -1,7 +1,10 @@
 package compiler.lib.ir_framework;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public enum CompilePhase {
-    DEFAULT("Default", 0), // PrintIdeal/PrintOptoAssembly flags, as we know it today
+    DEFAULT("print_ideal", 0), // PrintIdeal/PrintOptoAssembly flags, as we know it today
 
     // All available phases found in phasetype.hpp with the corresponding levels found throughout the C2 code
     BEFORE_STRINGOPTS("Before StringOpts", 3),
@@ -46,6 +49,14 @@ public enum CompilePhase {
     ALL("All", 3), // Apply for all phases if custom regex or all applicable phases if default regex (some might be unsupported, skip in this case)
     ;
 
+    private static final Map<String, CompilePhase> PHASES_BY_NAME = new HashMap<>();
+
+    static {
+        for (CompilePhase phase : CompilePhase.values()) {
+            PHASES_BY_NAME.put(phase.name, phase);
+        }
+    }
+
     private final String name;
     private final int level;
 
@@ -60,5 +71,11 @@ public enum CompilePhase {
 
     public String getName() {
         return name;
+    }
+
+    public static CompilePhase forName(String phaseName) {
+        CompilePhase phase = PHASES_BY_NAME.get(phaseName);
+        TestFramework.check(phase != null, "Could not find phase with name \"" + phaseName + "\"");
+        return phase;
     }
 }
