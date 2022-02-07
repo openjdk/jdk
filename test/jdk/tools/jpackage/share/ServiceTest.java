@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.Consumer;
-import jdk.jpackage.test.LauncherAsServiceVerifier;
+import java.util.stream.Stream;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.JavaTool;
+import static jdk.jpackage.test.LauncherAsServiceVerifier.build;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
 
@@ -54,10 +56,27 @@ public class ServiceTest {
     public ServiceTest() {
         if (TKit.isWindows()) {
             final String propName = "jpackage.test.ServiceTest.service-installer";
-            winServiceInstaller = Optional.ofNullable(System.getProperty(
-                    propName)).map(Path::of).orElseThrow(
-                    () -> TKit.throwSkippedException(String.format(
-                            "%s system property not set", propName)));
+            String serviceInstallerExec = System.getProperty(propName);
+            if (serviceInstallerExec == null) {
+                if (Stream.of(RunnablePackageTest.Action.CREATE,
+                        RunnablePackageTest.Action.INSTALL).allMatch(
+                                RunnablePackageTest::hasAction)) {
+                    TKit.throwSkippedException(String.format(
+                            "%s system property not set", propName));
+                } else {
+                    // Use cmd.exe as a stub as the output packages will not be
+                    // created and installed in the test run
+                    serviceInstallerExec = Optional.ofNullable(System.getenv(
+                            "COMSPEC")).orElseGet(() -> {
+                                return JavaTool.JAVA.getPath().toString();
+                            });
+                    TKit.trace(
+                            String.format("Using [%s] as a service installer",
+                                    serviceInstallerExec));
+                }
+            }
+
+            winServiceInstaller = Path.of(serviceInstallerExec);
 
         } else {
             winServiceInstaller = null;
@@ -68,7 +87,7 @@ public class ServiceTest {
     public void test() throws IOException {
         var pkgInitializer = configureWinServiceInstaller();
         var pkg = new PackageTest().addHelloAppInitializer(null);
-        new LauncherAsServiceVerifier("A1").applyTo(pkg);
+        build().setExpectedValue("A1").applyTo(pkg);
         pkgInitializer.accept(pkg);
         pkg.run();
     }
@@ -87,7 +106,7 @@ public class ServiceTest {
         }));
         pkgInitializer.accept(pkg);
 
-        new LauncherAsServiceVerifier("Default").applyTo(pkg);
+        build().setExpectedValue("Default").applyTo(pkg);
 
         var pkg2 = new PackageTest()
                 .addHelloAppInitializer(null)
@@ -99,12 +118,18 @@ public class ServiceTest {
         }));
         pkgInitializer.accept(pkg2);
 
-        new LauncherAsServiceVerifier("foo", "foo-launcher-as-service.txt",
-                "Foo").applyTo(pkg);
-        new LauncherAsServiceVerifier("foo", "foo-launcher-as-service.txt",
-                "Foo2").applyTo(pkg2);
-        new LauncherAsServiceVerifier("bar", "bar-launcher-as-service.txt",
-                "Bar").applyTo(pkg2);
+        var builder = build()
+                .setLauncherName("foo")
+                .setAppOutputFileName("foo-launcher-as-service.txt");
+
+        builder.setExpectedValue("Foo").applyTo(pkg);
+
+        builder.setExpectedValue("Foo2").applyTo(pkg2);
+
+        builder.setExpectedValue("Bar")
+                .setLauncherName("bar")
+                .setAppOutputFileName("bar-launcher-as-service.txt")
+                .applyTo(pkg2);
 
         new PackageTest.Group(pkg, pkg2).run();
     }
@@ -112,7 +137,8 @@ public class ServiceTest {
     private Consumer<PackageTest> configureWinServiceInstaller() throws
             IOException {
         if (winServiceInstaller == null) {
-            return null;
+            return test -> {
+            };
         }
 
         var resourceDir = TKit.createTempDirectory("resource-dir");
