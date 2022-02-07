@@ -1,3 +1,26 @@
+/*
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
 import java.awt.ComponentOrientation;
 import java.awt.Point;
 import java.awt.Robot;
@@ -27,10 +50,17 @@ import static javax.swing.UIManager.getInstalledLookAndFeels;
  * @run main JSpinnerMouseAndKeyPressTest
  */
 public class JSpinnerMouseAndKeyPressTest {
-    //2 days in milliseconds
+    // 2 days in milliseconds
     private static final int EXPECTED_VALUE_2_DAYS = 2 * 24 * 60 * 60 * 1000;
+
     private static JFrame frame;
     private static JSpinner spinner;
+    private static volatile Point spinnerLocationOnScreen;
+    private static volatile Date spinnerValue;
+    private static volatile int spinnerEditorWidth;
+    private static volatile int spinnerButtonWidth;
+    private static volatile int spinnerQuarterHeight;
+
 
     public static void main(String[] s) throws Exception {
         runTest();
@@ -71,57 +101,58 @@ public class JSpinnerMouseAndKeyPressTest {
                                   .map(UIManager.LookAndFeelInfo::getClassName)
                                   .collect(Collectors.toList());
         for (final String laf : lafs) {
-            SwingUtilities.invokeAndWait(() -> {
-                setLookAndFeel(laf);
-                createUI();
-            });
             try {
-                final Point spinnerLocationOnScreen = spinner.getLocationOnScreen();
-                final int spinnerEditorWidth = spinner.getEditor().getWidth();
-                final int spinnerButtonWidth = spinner.getWidth() -
-                        spinnerEditorWidth;
-                final int spinnerQuarterHeight = spinner.getHeight() / 4;
+                SwingUtilities.invokeAndWait(() -> {
+                    setLookAndFeel(laf);
+                    createUI();
+                    spinnerLocationOnScreen = spinner.getLocationOnScreen();
+                    spinnerEditorWidth = spinner.getEditor().getWidth();
+                    spinnerButtonWidth = spinner.getWidth() - spinnerEditorWidth;
+                    spinnerQuarterHeight = spinner.getHeight() / 4;
+                });
 
                 Point spinnerUpButtonCenter = new Point();
-                spinnerUpButtonCenter.x = spinnerLocationOnScreen.x + spinnerEditorWidth +
-                        (spinnerButtonWidth / 2);
-                spinnerUpButtonCenter.y = spinnerLocationOnScreen.y +
-                        spinnerQuarterHeight;
+                spinnerUpButtonCenter.x = spinnerLocationOnScreen.x + spinnerEditorWidth
+                        + (spinnerButtonWidth / 2);
+                spinnerUpButtonCenter.y = spinnerLocationOnScreen.y + spinnerQuarterHeight;
 
                 Point spinnerDownButtonCenter = new Point();
                 spinnerDownButtonCenter.x = spinnerUpButtonCenter.x;
-                spinnerDownButtonCenter.y = spinnerLocationOnScreen.y +
-                        3 * spinnerQuarterHeight;
+                spinnerDownButtonCenter.y = spinnerLocationOnScreen.y + (3 * spinnerQuarterHeight);
 
-                //Mouse press use-case
+                // Mouse press use-case
                 // Move Mouse pointer to UP button center and click it
                 robot.mouseMove(spinnerUpButtonCenter.x, spinnerUpButtonCenter.y);
-                robot.mousePress(InputEvent.BUTTON1_MASK);
-                robot.mouseRelease(InputEvent.BUTTON1_MASK);
+                robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+                robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
-                long upValue = ((Date) spinner.getValue()).getTime();
+                updateSpinnerValue();
+                long upValue = spinnerValue.getTime();
 
                 // Move Mouse pointer to DOWN button center and click it
                 robot.mouseMove(spinnerDownButtonCenter.x, spinnerDownButtonCenter.y);
-                robot.mousePress(InputEvent.BUTTON1_MASK);
-                robot.mouseRelease(InputEvent.BUTTON1_MASK);
+                robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+                robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
-                long downValue = ((Date) spinner.getValue()).getTime();
+                updateSpinnerValue();
+                long downValue = spinnerValue.getTime();
 
                 long mouseIncrement = upValue - downValue;
 
-                //Key press use-case
-                //Up Key press
+                // Key press use-case
+                // Up Key press
                 robot.keyPress(KeyEvent.VK_UP);
                 robot.keyRelease(KeyEvent.VK_UP);
 
-                upValue = ((Date) spinner.getValue()).getTime();
+                updateSpinnerValue();
+                upValue = spinnerValue.getTime();
 
-                //Down Key press
+                // Down Key press
                 robot.keyPress(KeyEvent.VK_DOWN);
                 robot.keyRelease(KeyEvent.VK_DOWN);
 
-                downValue = ((Date) spinner.getValue()).getTime();
+                updateSpinnerValue();
+                downValue = spinnerValue.getTime();
 
                 long keyIncrement = upValue - downValue;
 
@@ -139,6 +170,10 @@ public class JSpinnerMouseAndKeyPressTest {
                 SwingUtilities.invokeAndWait(JSpinnerMouseAndKeyPressTest::disposeFrame);
             }
         }
+    }
+
+    private static void updateSpinnerValue() throws Exception {
+        SwingUtilities.invokeAndWait(() -> spinnerValue = (Date) spinner.getValue());
     }
 
     private static void disposeFrame() {
