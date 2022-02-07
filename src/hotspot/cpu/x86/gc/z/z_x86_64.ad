@@ -113,6 +113,22 @@ instruct zLoadP(rRegP dst, memory mem, rFlagsReg cr)
   ins_pipe(ialu_reg_mem);
 %}
 
+// Load Pointer and Null Check
+instruct zLoadPNullCheck(rFlagsReg cr, memory op, immP0 zero)
+%{
+  predicate(UseZGC && n->in(1)->as_Load()->barrier_data() != 0);
+  match(Set cr (CmpP (LoadP op) zero));
+
+  ins_cost(500); // XXX
+  format %{ "testq   $op, 0xffffffffffff0000\t# ptr" %}
+  ins_encode %{
+    // A null pointer will have all address bits 0. This mask sign extends
+    // all address bits, so we can test if the address is 0.
+    __ testq($op$$Address, 0xFFFF0000);
+  %}
+  ins_pipe(ialu_cr_reg_imm);
+%}
+
 // Store Pointer
 instruct zStoreP(memory mem, any_RegP src, rRegP tmp, rFlagsReg cr)
 %{
