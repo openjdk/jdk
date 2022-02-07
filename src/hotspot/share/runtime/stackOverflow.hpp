@@ -195,7 +195,8 @@ class StackOverflow {
   // 3. Check the current SP in relation to the shadow zone growth watermark.
   //
   // Define "shadow zone growth watermark" as the highest SP where we banged already.
-  // Note that growth watermark is always above the safe limit.
+  // Invariant: growth watermark is always above the safe limit, which allows testing
+  // for watermark and safe limit at the same time in the most frequent case.
   //
   // Easy and overwhelmingly frequent case: SP is above the growth watermark, and
   // by extension above the safe limit. In this case, we know that the guard zone is far away
