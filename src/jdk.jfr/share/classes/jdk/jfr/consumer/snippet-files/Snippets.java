@@ -119,7 +119,7 @@ public class Snippets {
     }
 
     void RecordingStreamOverview() throws Exception {
-     // @start region="RecordingStreamOverview"
+        // @start region="RecordingStreamOverview"
         Configuration c = Configuration.getConfiguration("default");
         try (var rs = new RecordingStream(c)) {
             rs.onEvent("jdk.GarbageCollection", System.out::println);
@@ -127,7 +127,7 @@ public class Snippets {
             rs.onEvent("jdk.JVMInformation", System.out::println);
             rs.start();
         }
-     // @end
+        // @end
     }
 
     void RecordingStreamConstructor() throws Exception {

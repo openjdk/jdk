@@ -136,7 +136,7 @@ public class Snippets {
     }
 
     void FlightRecorderTakeSnapshot() throws Exception {
-        //@start region="FlightRecorderTakeSnapshot"
+        // @start region="FlightRecorderTakeSnapshot"
         try (Recording snapshot = FlightRecorder.getFlightRecorder().takeSnapshot()) {
             if (snapshot.getSize() > 0) {
                 snapshot.setMaxSize(100_000_000);
@@ -144,7 +144,7 @@ public class Snippets {
                 snapshot.dump(Paths.get("snapshot.jfr"));
             }
         }
-      //@end
+        // @end
     }
 
     // @start region="MetadataDefinitionOverview"
@@ -179,7 +179,7 @@ public class Snippets {
     // @end
 
  void RecordingnOverview() throws Exception {
-  // @start region="RecordingOverview"
+     // @start region="RecordingOverview"
      Configuration c = Configuration.getConfiguration("default");
      Recording r = new Recording(c);
      r.start();
@@ -187,10 +187,10 @@ public class Snippets {
      Thread.sleep(5000);
      r.stop();
      r.dump(Files.createTempFile("my-recording", ".jfr"));
-  // @end
+     // @end
  }
 
-//@start region="SettingControlOverview1"
+ // @start region="SettingControlOverview1"
  final class RegExpControl extends SettingControl {
      private Pattern pattern = Pattern.compile(".*");
 
@@ -213,7 +213,7 @@ public class Snippets {
          return pattern.matcher(s).find();
      }
  }
-//@end
+ // @end
 
  class HttpServlet {
  }
@@ -227,7 +227,7 @@ public class Snippets {
  class HttpServletResponse {
  }
 
-//@start region="SettingControlOverview2"
+ // @start region="SettingControlOverview2"
  abstract class HTTPRequest extends Event {
      @Label("Request URI")
      protected String uri;
@@ -264,7 +264,7 @@ public class Snippets {
          request.commit();
      }
  }
-//@end
+ // @end
 
  void SettingControlOverview3() {
      // @start region="SettingControlOverview3"
@@ -275,7 +275,7 @@ public class Snippets {
      // @end
  }
 
- //@start region="SettingDefinitionOverview"
+ // @start region="SettingDefinitionOverview"
  class HelloWorld extends Event {
 
      @Label("Message")
@@ -287,5 +287,5 @@ public class Snippets {
          return regExp.matches(message);
      }
  }
-//@end
+ // @end
 }
