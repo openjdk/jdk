@@ -41,7 +41,7 @@ void StackOverflow::initialize_stack_zone_sizes() {
 
   // We need to adapt the configured number of stack protection pages to the
   // actual OS page size. We must do this before setting up minimal stack
-  // sizes etc. in os::init_2(). The option values are given in the 4K units,
+  // sizes etc. in os::init_2(). The option values are given in 4K units,
   // matching the smallest page size in supported platforms.
   size_t unit = 4*K;
 
