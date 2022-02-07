@@ -1272,7 +1272,7 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
   for (int i = 1; i < ((int)StackOverflow::stack_shadow_zone_size() / os::vm_page_size()); i++) {
     // this could be any sized move but this is can be a debugging crumb
     // so the bigger the better.
-    testptr(tmp, Address(tmp, (-i*os::vm_page_size())));
+    bang_stack_with_offset(i*os::vm_page_size());
   }
 }
 

@@ -2012,6 +2012,9 @@ const intx ObjectAlignmentInBytes = 8;
   JFR_ONLY(product(ccstr, StartFlightRecording, NULL,                       \
           "Start flight recording with options"))                           \
                                                                             \
+  product(int, StackBangStyle, 0, EXPERIMENTAL,                             \
+          "Use a particular stack bang style")                              \
+                                                                            \
   product(bool, UseFastUnorderedTimeStamps, false, EXPERIMENTAL,            \
           "Use platform unstable time where supported for timestamps only") \
                                                                             \
