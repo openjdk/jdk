@@ -84,7 +84,7 @@ public @interface IR {
      */
     String[] counts() default {};
 
-    CompilePhase[] phase() default {};
+    CompilePhase[] phase() default { CompilePhase.DEFAULT };
 
     /**
      * Define a single VM flag precondition which <i>must hold</i> when applying the IR rule. If the VM flag precondition

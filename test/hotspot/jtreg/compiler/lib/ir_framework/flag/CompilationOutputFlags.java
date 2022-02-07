@@ -57,15 +57,9 @@ class CompilationOutputFlags {
     private int[] getCompilePhaseLevels() {
         return Arrays.stream(testClass.getDeclaredMethods())
                      .flatMap(m -> Stream.of(m.getAnnotationsByType(IR.class))) // Stream<IR>
-                     .map(IR::phase) // Stream<CompilationPhase[]>
-                     .map(this::replaceEmptyArrayByArrayWithDefault) // Stream<CompilationPhase[]>
-                     .flatMap(Arrays::stream) // Stream<CompilePhase>
+                     .flatMap(irAnno -> Stream.of(irAnno.phase())) // Stream<CompilePhase>
                      .mapToInt(CompilePhase::getLevel) // Stream<int> of levels
                      .toArray();
-    }
-
-    private CompilePhase[] replaceEmptyArrayByArrayWithDefault(CompilePhase[] phase) {
-        return phase.length == 0 ? new CompilePhase[] {CompilePhase.DEFAULT} : phase;
     }
 
     private void addDefaultFlags(List<String> cmds, int[] compilePhaseLevels) {

@@ -57,6 +57,7 @@ public class TestBadFormat {
         expectTestFormatException(BadRunTests.class);
         expectTestFormatException(BadCheckTest.class);
         expectTestFormatException(BadIRAnnotations.class);
+        expectTestFormatException(BadIRAnnotationBeforeFlagVM.class);
         expectTestFormatException(BadInnerClassTest.class);
         expectTestFormatException(BadCompileClassInitializer.class, BadCompileClassInitializerHelper1.class,
                                   BadCompileClassInitializerHelper2.class, BadCompileClassInitializerHelper3.class);
@@ -895,6 +896,13 @@ class BadIRAnnotations {
     public void anyValueForStringFlags() {}
 }
 
+class BadIRAnnotationBeforeFlagVM {
+
+    @Test
+    @IR(failOn = IRNode.CALL, phase = {})
+    public void emptyCompilePhases() {}
+}
+
 @ClassFail
 class BadInnerClassTest {
 
@@ -982,7 +990,7 @@ class ClassNoDefaultConstructor {
 }
 
 // Class specific annotation:
-// All classes with such an annotation have exactly one violation with the clas name in it.
+// All classes with such an annotation have exactly one violation with the class name in it.
 @Retention(RetentionPolicy.RUNTIME)
 @interface ClassFail {}
 
