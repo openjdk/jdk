@@ -1,13 +1,10 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2021, JetBrains s.r.o.. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -24,12 +21,43 @@
  * questions.
  */
 
-#import "ListAccessibility.h"
+package compiler/interpreter;
 
-// This is a tree representation. See: https://developer.apple.com/documentation/appkit/nsoutlineview
+/* JASM simplified from the following Java pattern:
+ *
+ * public class Custom {
+ *
+ *  static void test(int v) {
+ *      int i8 = 1;
+ *      try {
+ *          v += 1;
+ *      } catch (ArithmeticException exc1) {
+ *      } finally {
+ *          for (; i8 < 100; i8++) {
+ *          }
+ *      }
+ *  }
+ *
+ */
 
-@interface OutlineAccessibility : ListAccessibility <NSAccessibilityOutline>
+super public class Custom {
 
-@property(readonly) BOOL isTreeRootVisible;
+    public static Method test:"(I)V" stack 2 locals 3 {
+        iconst_1;
+        istore_1;
+    try t0;
+        iinc          0, 1;
+    endtry t0;
+Loop:
+        iload_1;
+        bipush        100;
+        if_icmpge     Lexit;
+        iinc          1, 1;
+        goto          Loop;                 // deoptimize here on backwards branch
+    catch t0 java/lang/ArithmeticException; // unreachable block
+        astore_2;
+Lexit:
+        return
+    }
 
-@end
+}
