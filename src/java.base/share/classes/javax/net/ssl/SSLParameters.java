@@ -43,15 +43,16 @@ import java.util.LinkedHashMap;
  * schemes and whether SSL/TLS/DTLS servers should request or require client
  * authentication, etc.
  * <p>
- * SSLParameters can be created via the constructors in this class.
- * Objects can also be obtained using the {@code getSSLParameters()}
- * methods in
+ * {@code SSLParameter} objects can be created via the constructors in this
+ * class, and can be described as pre-populated objects. {@code SSLParameter}
+ * objects can also be obtained using the {@code getSSLParameters()} methods in
  * {@link SSLSocket#getSSLParameters SSLSocket} and
  * {@link SSLServerSocket#getSSLParameters SSLServerSocket} and
  * {@link SSLEngine#getSSLParameters SSLEngine} or the
  * {@link SSLContext#getDefaultSSLParameters getDefaultSSLParameters()} and
  * {@link SSLContext#getSupportedSSLParameters getSupportedSSLParameters()}
- * methods in {@code SSLContext}.
+ * methods in {@code SSLContext}, and can be described as connection populated
+ * objects.
  * <p>
  * SSLParameters can be applied to a connection via the methods
  * {@link SSLSocket#setSSLParameters SSLSocket.setSSLParameters()} and
@@ -744,7 +745,7 @@ public class SSLParameters {
      * customize the provider-specific default signature schemes.
      *
      * @return an array of signature scheme {@code Strings} or {@code null} if
-     *         none have been set.  For non-null returns, this method willu
+     *         none have been set.  For non-null returns, this method will
      *         return a new array each time it is invoked.  The array is
      *         ordered based on signature scheme preference, with the first
      *         entry being the most preferred.  Providers should ignore unknown
