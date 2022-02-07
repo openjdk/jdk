@@ -1,3 +1,5 @@
+package awt;
+
 /*
  * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -44,6 +46,8 @@ import java.awt.RenderingHints;
 import java.awt.TextArea;
 import java.awt.image.BufferedImage;
 import java.awt.image.VolatileImage;
+import java.lang.reflect.InvocationTargetException;
+import javax.swing.SwingUtilities;
 
 public class TextAAHintsTest  extends Component {
 
@@ -165,7 +169,6 @@ public class TextAAHintsTest  extends Component {
         frame.add(textAAHintsTestObject, BorderLayout.NORTH);
 
         String instructions = """
-
                 Note: Texts are rendered with different TEXT_ANTIALIASING &
                    VALUE_TEXT_ANTIALIAS. Text should be B&W, grayscale, and LCD.
                    Note: The results may be visually the same.
@@ -218,7 +221,7 @@ public class TextAAHintsTest  extends Component {
         frame.setVisible(true);
     }
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws InterruptedException, InvocationTargetException {
         createTestUI();
         mainThread = Thread.currentThread();
         try {
@@ -228,7 +231,11 @@ public class TextAAHintsTest  extends Component {
                 throw new RuntimeException("Test failed : Reason : " + failureReason);
             }
         } finally {
-            frame.dispose();
+            SwingUtilities.invokeAndWait(()->{
+                if ( frame != null) {
+                    frame.dispose();
+                }
+            });
         }
 
         if (!isInterrupted) {
