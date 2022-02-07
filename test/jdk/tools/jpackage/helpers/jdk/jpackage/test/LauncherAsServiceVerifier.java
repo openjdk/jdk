@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,52 @@
  */
 package jdk.jpackage.test;
 
-
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.Optional;
-
 
 public final class LauncherAsServiceVerifier {
 
-    public LauncherAsServiceVerifier(String expectedArgValue) {
-        this(null, "launcher-as-service.txt", expectedArgValue);
+    public final static class Builder {
+
+        public Builder setExpectedValue(String v) {
+            expectedValue = v;
+            return this;
+        }
+
+        public Builder setLauncherName(String v) {
+            launcherName = v;
+            return this;
+        }
+
+        public Builder setAppOutputFileName(String v) {
+            appOutputFileName = v;
+            return this;
+        }
+
+        public LauncherAsServiceVerifier create() {
+            Objects.requireNonNull(expectedValue);
+            return new LauncherAsServiceVerifier(launcherName, appOutputFileName,
+                    expectedValue);
+        }
+
+        public Builder applyTo(PackageTest pkg) {
+            create().applyTo(pkg);
+            return this;
+        }
+
+        private String launcherName;
+        private String expectedValue;
+        private String appOutputFileName = "launcher-as-service.txt";
     }
 
-    public LauncherAsServiceVerifier(String launcherName, String appOutputFileName,
+    public static Builder build() {
+        return new Builder();
+    }
+
+    private LauncherAsServiceVerifier(String launcherName,
+            String appOutputFileName,
             String expectedArgValue) {
         this.expectedValue = expectedArgValue;
         this.launcherName = launcherName;
@@ -45,6 +78,7 @@ public final class LauncherAsServiceVerifier {
         if (launcherName == null) {
             pkg.forTypes(PackageType.WINDOWS, () -> {
                 pkg.addInitializer(cmd -> {
+                    // Remove parameter added to jpackage command line in HelloApp.addTo()
                     cmd.removeArgument("--win-console");
                 });
             });
@@ -55,16 +89,18 @@ public final class LauncherAsServiceVerifier {
     }
 
     private boolean canVerifyInstall(JPackageCommand cmd) throws IOException {
-        String msg = String.format("Not verifying contents of test output file [%s] for %s launcher",
+        String msg = String.format(
+                "Not verifying contents of test output file [%s] for %s launcher",
                 appOutputPath,
                 Optional.ofNullable(launcherName).orElse("the main"));
         if (cmd.isPackageUnpacked(msg)) {
             return false;
         }
-        jdk.jpackage.test.CfgFile cfgFile = CfgFile.readFromFile(cmd.appLauncherCfgPath(launcherName));
+        var cfgFile = CfgFile.readFromFile(cmd.appLauncherCfgPath(launcherName));
         if (!expectedValue.equals(cfgFile.getValueUnchecked("ArgOptions",
                 "arguments"))) {
-            TKit.trace(String.format("%s because different version of the package is installed",
+            TKit.trace(String.format(
+                    "%s because different version of the package is installed",
                     msg));
             return false;
         }
@@ -83,8 +119,10 @@ public final class LauncherAsServiceVerifier {
         pkg.addInstallVerifier(cmd -> {
             if (canVerifyInstall(cmd)) {
                 delayInstallVerify();
-                HelloApp.assertApp(cmd.appLauncherPath()).addParam("jpackage.test.appOutput",
-                        appOutputPath.toString()).addDefaultArguments(expectedValue).verifyOutput();
+                HelloApp.assertApp(cmd.appLauncherPath())
+                        .addParam("jpackage.test.appOutput", appOutputPath.toString())
+                        .addDefaultArguments(expectedValue)
+                        .verifyOutput();
             }
         });
     }
