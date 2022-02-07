@@ -42,16 +42,16 @@ void StackOverflow::initialize_stack_zone_sizes() {
   // We need to adapt the configured number of stack protection pages given
   // in 4K pages to the actual os page size. We must do this before setting
   // up minimal stack sizes etc. in os::init_2().
-  size_t alignment = 4*K;
+  size_t unit = 4*K;
 
   assert(_stack_red_zone_size == 0, "This should be called only once.");
-  _stack_red_zone_size = align_up(StackRedPages * alignment, page_size);
+  _stack_red_zone_size = align_up(StackRedPages * unit, page_size);
 
   assert(_stack_yellow_zone_size == 0, "This should be called only once.");
-  _stack_yellow_zone_size = align_up(StackYellowPages * alignment, page_size);
+  _stack_yellow_zone_size = align_up(StackYellowPages * unit, page_size);
 
   assert(_stack_reserved_zone_size == 0, "This should be called only once.");
-  _stack_reserved_zone_size = align_up(StackReservedPages * alignment, page_size);
+  _stack_reserved_zone_size = align_up(StackReservedPages * unit, page_size);
 
   // The shadow area is not allocated or protected, so
   // it needs not be page aligned.
@@ -63,7 +63,7 @@ void StackOverflow::initialize_stack_zone_sizes() {
   // suffices to touch all pages. (Some pages are banged
   // several times, though.)
   assert(_stack_shadow_zone_size == 0, "This should be called only once.");
-  _stack_shadow_zone_size = align_up(StackShadowPages * alignment, page_size);
+  _stack_shadow_zone_size = align_up(StackShadowPages * unit, page_size);
 }
 
 bool StackOverflow::stack_guards_enabled() const {
