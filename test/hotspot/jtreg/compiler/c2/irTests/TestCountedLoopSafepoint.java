@@ -27,8 +27,8 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * bug 123445
- * @summary 
+ * bug 8281322
+ * @summary check counted loop is properly constructed with/without safepoint
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestCountedLoopSafepoint
  */
