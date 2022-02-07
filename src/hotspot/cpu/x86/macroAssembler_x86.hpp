@@ -661,18 +661,21 @@ class MacroAssembler: public Assembler {
     assert(offset > 0, "must bang with negative offset");
     switch (StackBangStyle) {
       case 0:
-        movptr(Address(rsp, (-offset)), rax);
+        // Dangerous.
         break;
       case 1:
-        movptr(Address(rsp, (-offset)), rsp);
+        movptr(Address(rsp, (-offset)), rax);
         break;
       case 2:
-        testptr(rax, Address(rsp, (-offset)));
+        movptr(Address(rsp, (-offset)), rsp);
         break;
       case 3:
-        testptr(rsp, Address(rsp, (-offset)));
+        testptr(rax, Address(rsp, (-offset)));
         break;
       case 4:
+        testptr(rsp, Address(rsp, (-offset)));
+        break;
+      case 5:
         prefetchnta(Address(rsp, (-offset)));
         break;
       default:
