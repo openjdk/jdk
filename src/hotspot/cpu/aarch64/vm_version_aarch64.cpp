@@ -433,6 +433,11 @@ void VM_Version::initialize() {
     vm_exit_during_initialization(err_msg("Unsupported UseBranchProtection: %s", UseBranchProtection));
   }
 
+  // The frame pointer must be preserved for ROP protection.
+  if (_rop_protection == true) {
+    PreserveFramePointer = true;
+  }
+
 #ifdef COMPILER2
   if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
     UseMultiplyToLenIntrinsic = true;

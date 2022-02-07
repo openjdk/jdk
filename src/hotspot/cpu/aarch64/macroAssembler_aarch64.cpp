@@ -5325,6 +5325,7 @@ void MacroAssembler::protect_return_address() {
 //
 void MacroAssembler::protect_return_address(Register return_reg, Register temp_reg) {
   if (VM_Version::use_rop_protection()) {
+    assert(PreserveFramePointer, "PreserveFramePointer must be set for ROP protection");
     check_return_address(return_reg);
     ldr(temp_reg, Address(rfp));
     pacia(return_reg, temp_reg);
@@ -5333,10 +5334,10 @@ void MacroAssembler::protect_return_address(Register return_reg, Register temp_r
 
 // Authenticate the LR. Use before function return, after restoring FP and loading LR from memory.
 //
-void MacroAssembler::authenticate_return_address() {
+void MacroAssembler::authenticate_return_address(Register return_reg) {
   if (VM_Version::use_rop_protection()) {
-    autia(lr, rfp);
-    check_return_address();
+    autia(return_reg, rfp);
+    check_return_address(return_reg);
   }
 }
 
@@ -5347,6 +5348,7 @@ void MacroAssembler::authenticate_return_address() {
 //
 void MacroAssembler::authenticate_return_address(Register return_reg, Register temp_reg) {
   if (VM_Version::use_rop_protection()) {
+    assert(PreserveFramePointer, "PreserveFramePointer must be set for ROP protection");
     ldr(temp_reg, Address(rfp));
     autia(return_reg, temp_reg);
     check_return_address(return_reg);

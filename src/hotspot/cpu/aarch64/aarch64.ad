@@ -1369,8 +1369,8 @@ source %{
       _NO_SPECIAL_PTR_REG_mask.SUBTRACT(_HEAPBASE_REG_mask);
     }
 
-    // r29 is not allocatable when PreserveFramePointer or ROP protection is on
-    if (PreserveFramePointer || VM_Version::use_rop_protection()) {
+    // r29 is not allocatable when PreserveFramePointer is on
+    if (PreserveFramePointer) {
       _NO_SPECIAL_REG32_mask.Remove(OptoReg::as_OptoReg(r29->as_VMReg()));
       _NO_SPECIAL_REG_mask.SUBTRACT(_FP_REG_mask);
       _NO_SPECIAL_PTR_REG_mask.SUBTRACT(_FP_REG_mask);
@@ -1856,6 +1856,10 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   if (C->output()->need_stack_bang(framesize))
     st->print("# stack bang size=%d\n\t", framesize);
 
+  if (VM_Version::use_rop_protection()) {
+    st->print("ldr zr, [lr]\n\t");
+    st->print("pacia  lr, rfp\n\t");
+  }
   if (framesize < ((1 << 9) + 2 * wordSize)) {
     st->print("sub  sp, sp, #%d\n\t", framesize);
     st->print("stp  rfp, lr, [sp, #%d]", framesize - 2 * wordSize);
@@ -1963,6 +1967,10 @@ void MachEpilogNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
     st->print("mov  rscratch1, #%d\n\t", framesize - 2 * wordSize);
     st->print("add  sp, sp, rscratch1\n\t");
     st->print("ldp  lr, rfp, [sp],#%d\n\t", (2 * wordSize));
+  }
+  if (VM_Version::use_rop_protection()) {
+    st->print("autia lr, rfp\n\t");
+    st->print("ldr zr, [lr]\n\t");
   }
 
   if (do_polling() && C->is_method_compilation()) {

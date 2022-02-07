@@ -2923,6 +2923,7 @@ void OptoRuntime::generate_exception_blob() {
   // there are no callee save registers now that adapter frames are gone.
   // and we dont' expect an arg reg save area
   __ ldp(rfp, r3, Address(__ post(sp, 2 * wordSize)));
+  __ authenticate_return_address(r3);
 
   // r0: exception handler
 
