@@ -79,6 +79,8 @@ int getAdapters (JNIEnv *env, int flags, IP_ADAPTER_ADDRESSES **adapters) {
     ULONG len;
     int try;
 
+    *adapters = NULL;
+
     adapterInfo = (IP_ADAPTER_ADDRESSES *) malloc(BUFF_SIZE);
     if (adapterInfo == NULL) {
         JNU_ThrowByName(env, "java/lang/OutOfMemoryError",

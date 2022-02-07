@@ -176,6 +176,8 @@ int enumInterfaces(JNIEnv *env, netif **netifPP)
     DWORD i;
     int lo=0, eth=0, tr=0, fddi=0, ppp=0, sl=0, wlan=0, net=0, wlen=0;
 
+    *netifPP = NULL;
+
     /*
      * Ask the IP Helper library to enumerate the adapters
      */
@@ -371,6 +373,9 @@ int lookupIPAddrTable(JNIEnv *env, MIB_IPADDRTABLE **tablePP)
     MIB_IPADDRTABLE *tableP;
     ULONG size;
     DWORD ret;
+
+    *tablePP = NULL;
+
     /*
      * Use GetIpAddrTable to enumerate the IP Addresses
      */
@@ -432,12 +437,13 @@ int enumAddresses_win_ipaddrtable(JNIEnv *env, netif *netifP, netaddr **netaddrP
     int count = 0;
     unsigned long mask;
 
+    *netaddrPP = NULL;
+
     /*
      * Iterate through the table to find the addresses with the
      * matching dwIndex. Ignore 0.0.0.0 addresses.
      */
     if (tableP == NULL) {
-        *netaddrPP = NULL;
         return 0;
     }
     count = 0;
@@ -517,6 +523,9 @@ int enumAddresses_win_ipaddrtable(JNIEnv *env, netif *netifP, netaddr **netaddrP
 int enumAddresses_win(JNIEnv *env, netif *netifP, netaddr **netaddrPP) {
     MIB_IPADDRTABLE *tableP;
     int count;
+
+    *netaddrPP = NULL;
+
     int ret = lookupIPAddrTable(env, &tableP);
     if (ret < 0) {
       return ret;
