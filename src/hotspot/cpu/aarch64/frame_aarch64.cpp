@@ -270,14 +270,18 @@ void frame::patch_pc(Thread* thread, address pc) {
   address* pc_addr = &(((address*) sp())[-1]);
   address signing_sp = (((address*) sp())[-2]);
   address signed_pc = pauth_sign_return_address(pc, (address)signing_sp);
+  address pc_old = pauth_strip_verifiable(*pc_addr, (address)signing_sp);
   if (TracePcPatching) {
-    tty->print_cr("patch_pc at address " INTPTR_FORMAT " [" INTPTR_FORMAT " -> " INTPTR_FORMAT "]",
-                  p2i(pc_addr), p2i(*pc_addr), p2i(signed_pc));
+    tty->print("patch_pc at address " INTPTR_FORMAT " [" INTPTR_FORMAT " -> " INTPTR_FORMAT "]",
+                  p2i(pc_addr), p2i(pc_old), p2i(pc));
+    if (VM_Version::use_rop_protection()) {
+      tty->print(" [signed " INTPTR_FORMAT " -> " INTPTR_FORMAT "]", p2i(*pc_addr), p2i(signed_pc));
+    }
+    tty->print_cr("");
   }
 
   // Either the return address is the original one or we are going to
   // patch in the same address that's already there.
-  address pc_old = pauth_strip_verifiable(*pc_addr, (address)signing_sp);
   assert(_pc == pc_old || pc == pc_old, "must be");
   *pc_addr = signed_pc;
   address original_pc = CompiledMethod::get_deopt_original_pc(this);

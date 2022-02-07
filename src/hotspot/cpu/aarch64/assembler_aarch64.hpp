@@ -1001,7 +1001,6 @@ public:
   INSN(sev,   0b000, 0b0100);
   INSN(sevl,  0b000, 0b0101);
 
-  // PAC instructions
   INSN(autia1716, 0b0001, 0b100);
   INSN(autiasp,   0b0011, 0b101);
   INSN(autiaz,    0b0011, 0b100);
@@ -1102,6 +1101,7 @@ public:
   }
 
   // Unconditional branch (register)
+
   void branch_reg(int OP, int A, int M, Register RN, Register RM) {
     starti;
     f(0b1101011, 31, 25);
@@ -1136,7 +1136,6 @@ public:
 
 #undef INSN
 
-  // PAC return instructions
 #define INSN(NAME, M)                                  \
   void NAME() {                                        \
     branch_reg(0b0010, 1, M, dummy_reg, dummy_reg);    \
@@ -1147,7 +1146,6 @@ public:
 
 #undef INSN
 
-  // PAC branch instructions (with zero modifier)
 #define INSN(NAME, OP, M)                   \
   void NAME(Register rn) {                  \
     branch_reg(OP, 1, M, rn, dummy_reg);    \
@@ -1160,7 +1158,6 @@ public:
 
 #undef INSN
 
-  // PAC branch instructions (with register modifier)
 #define INSN(NAME, OP, M)                  \
   void NAME(Register rn, Register rm) {    \
     branch_reg(OP, 1, M, rn, rm);          \
@@ -1172,7 +1169,6 @@ public:
   INSN(blrab, 0b1001, 1);
 
 #undef INSN
-
 
   // Load/store exclusive
   enum operand_size { byte, halfword, word, xword };

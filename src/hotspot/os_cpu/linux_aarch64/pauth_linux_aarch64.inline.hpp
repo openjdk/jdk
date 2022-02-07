@@ -54,7 +54,7 @@ inline address pauth_sign_return_address(address ret_addr, address sp) {
     guarantee(pauth_ptr_is_raw(ret_addr), "Return address is already signed");
     register address r17 __asm("r17") = ret_addr;
     register address r16 __asm("r16") = sp;
-    asm volatile (PACIA1716 : "+r"(r17) : "r"(r16));
+    asm (PACIA1716 : "+r"(r17) : "r"(r16));
     ret_addr = r17;
   }
   return ret_addr;
@@ -66,7 +66,7 @@ inline address pauth_authenticate_return_address(address ret_addr, address sp) {
   if (VM_Version::use_rop_protection()) {
     register address r17 __asm("r17") = ret_addr;
     register address r16 __asm("r16") = sp;
-    asm volatile (AUTIA1716 : "+r"(r17) : "r"(r16));
+    asm (AUTIA1716 : "+r"(r17) : "r"(r16));
     ret_addr = r17;
     // Ensure that the pointer authenticated.
     guarantee(pauth_ptr_is_raw(ret_addr), "Return address did not authenticate");
