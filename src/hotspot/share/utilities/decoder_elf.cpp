@@ -64,12 +64,12 @@ bool ElfDecoder::get_source_info(address pc, char* filename, size_t filename_len
   int offset_in_library = -1;
   if (!os::dll_address_to_library_name(pc, filepath, sizeof(filepath), &offset_in_library) || offset_in_library < 0) {
     // Method not found. offset_in_library should not overflow.
-    log_info(dwarf)("Did not find library for address " INTPTR_FORMAT, p2i(pc));
+    log_develop_info(dwarf)("Did not find library for address " INTPTR_FORMAT, p2i(pc));
     return false;
   }
 
   const uint32_t unsigned_offset_in_library = (uint32_t)offset_in_library;
-  log_debug(dwarf)("##### Find filename and line number for offset " PTR32_FORMAT " in library %s #####", unsigned_offset_in_library, filepath);
+  log_develop_debug(dwarf)("##### Find filename and line number for offset " PTR32_FORMAT " in library %s #####", unsigned_offset_in_library, filepath);
 
   ElfFile* file = get_elf_file(filepath);
   if (file == NULL) {
@@ -80,8 +80,8 @@ bool ElfDecoder::get_source_info(address pc, char* filename, size_t filename_len
     return false;
   }
 
-  log_info(dwarf)("pc: " INTPTR_FORMAT ", offset: " PTR32_FORMAT ", filename: %s, line: %u", p2i(pc), offset_in_library, filename, *line);
-  log_debug(dwarf)(""); // To structure the debug output better.
+  log_develop_info(dwarf)("pc: " INTPTR_FORMAT ", offset: " PTR32_FORMAT ", filename: %s, line: %u", p2i(pc), offset_in_library, filename, *line);
+  log_develop_debug(dwarf)(""); // To structure the debug output better.
   return true;
 }
 

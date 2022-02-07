@@ -58,7 +58,7 @@ NullDecoder::decoder_status ElfSection::load_section(FILE* const fd, const Elf_S
   memcpy((void*)&_section_hdr, (const void*)&shdr, sizeof(shdr));
 
   if (ElfFile::_do_not_cache_elf_section) {
-    log_debug(decoder)("Elf section cache is disabled");
+    log_develop_debug(decoder)("Elf section cache is disabled");
     return NullDecoder::no_error;
   }
 
@@ -312,16 +312,16 @@ bool ElfFile::get_source_info(const uint32_t offset_in_library, char* filename, 
     // DWARF sections. If so, treat the current ELF file as DWARF file.
     Elf_Shdr shdr;
     if (!is_valid_dwarf_file()) {
-      log_info(dwarf)("Failed to load DWARF file for library %s or find DWARF sections directly inside it.", _filepath);
+      log_develop_info(dwarf)("Failed to load DWARF file for library %s or find DWARF sections directly inside it.", _filepath);
       return false;
     }
-    log_info(dwarf)("No separate .debuginfo file for library %s. It already contains the required DWARF sections.", _filepath);
+    log_develop_info(dwarf)("No separate .debuginfo file for library %s. It already contains the required DWARF sections.", _filepath);
     _dwarf_file = new (std::nothrow) DwarfFile(_filepath);
   }
 
   // Store result in filename and line pointer.
   if (!_dwarf_file->get_filename_and_line_number(offset_in_library, *filename, filename_len, *line, is_pc_after_call)) {
-    log_warning(dwarf)("Failed to retrieve file and line number information for %s at offset: " PTR32_FORMAT, _filepath, offset_in_library);
+    log_develop_info(dwarf)("Failed to retrieve file and line number information for %s at offset: " PTR32_FORMAT, _filepath, offset_in_library);
     return false;
   }
   return true;
@@ -393,7 +393,7 @@ bool ElfFile::load_dwarf_file() {
 bool ElfFile::load_dwarf_file_from_env_path(const char* debug_filename, const uint32_t crc) {
   const char* dwarf_path = ::getenv("_JVM_DWARF_PATH");
   if (dwarf_path != nullptr) {
-    log_debug(dwarf)("_JVM_DWARF_PATH: %s", dwarf_path);
+    log_develop_debug(dwarf)("_JVM_DWARF_PATH: %s", dwarf_path);
     return (load_dwarf_file_from_env_path_folder(dwarf_path, "/lib/server/", debug_filename, crc)
             || load_dwarf_file_from_env_path_folder(dwarf_path, "/lib/", debug_filename, crc)
             || load_dwarf_file_from_env_path_folder(dwarf_path, "/bin/", debug_filename, crc)
@@ -414,7 +414,7 @@ const char* ElfFile::get_debug_filename() const {
   Elf_Shdr shdr;
   if (!read_section_header(".gnu_debuglink", shdr)) {
     // Section not found.
-    log_debug(dwarf)("Failed to read the .gnu_debuglink header.");
+    log_develop_debug(dwarf)("Failed to read the .gnu_debuglink header.");
     return nullptr;
   }
 
@@ -530,7 +530,7 @@ bool ElfFile::open_valid_debuginfo_file(const char* filepath, const uint32_t crc
 
   FILE* file = fopen(filepath, "r");
   if (file == nullptr) {
-    log_debug(dwarf)("Could not open dwarf file %s (%s)", filepath, os::strerror(errno));
+    log_develop_debug(dwarf)("Could not open dwarf file %s (%s)", filepath, os::strerror(errno));
     return false;
   }
 
@@ -542,7 +542,7 @@ bool ElfFile::open_valid_debuginfo_file(const char* filepath, const uint32_t crc
     return create_new_dwarf_file(filepath);
   }
 
-  log_info(dwarf)("CRC did not match. Expected: " PTR32_FORMAT ", found: " PTR32_FORMAT, crc, file_crc);
+  log_develop_info(dwarf)("CRC did not match. Expected: " PTR32_FORMAT ", found: " PTR32_FORMAT, crc, file_crc);
   return false;
 }
 
@@ -571,10 +571,10 @@ uint32_t ElfFile::gnu_debuglink_crc32(uint32_t crc, uint8_t* buf, const size_t l
 }
 
 bool ElfFile::create_new_dwarf_file(const char* filepath) {
-  log_info(dwarf)("Open DWARF file: %s", filepath);
+  log_develop_info(dwarf)("Open DWARF file: %s", filepath);
   _dwarf_file = new (std::nothrow) DwarfFile(filepath);
   if (!_dwarf_file->is_valid_dwarf_file()) {
-    log_info(dwarf)("Did not find required DWARF sections in %s", filepath);
+    log_develop_info(dwarf)("Did not find required DWARF sections in %s", filepath);
     return false;
   }
   return true;
@@ -586,22 +586,22 @@ bool DwarfFile::get_filename_and_line_number(const uint32_t offset_in_library, c
   DebugAranges debug_aranges(this);
   uint32_t compilation_unit_offset = 0; // 4-bytes for 32-bit DWARF
   if (!debug_aranges.find_compilation_unit_offset(offset_in_library, &compilation_unit_offset)) {
-    log_info(dwarf)("Failed to find .debug_info offset for the compilation unit.");
+    log_develop_info(dwarf)("Failed to find .debug_info offset for the compilation unit.");
     return false;
   }
-  log_debug(dwarf)(".debug_info offset:    " PTR32_FORMAT, compilation_unit_offset);
+  log_develop_debug(dwarf)(".debug_info offset:    " PTR32_FORMAT, compilation_unit_offset);
 
   CompilationUnit compilation_unit(this, compilation_unit_offset);
   uint32_t debug_line_offset = 0;  // 4-bytes for 32-bit DWARF
   if (!compilation_unit.find_debug_line_offset(&debug_line_offset)) {
-    log_info(dwarf)("Failed to find .debug_line offset for the line number program.");
+    log_develop_info(dwarf)("Failed to find .debug_line offset for the line number program.");
     return false;
   }
-  log_debug(dwarf)(".debug_line offset:    " PTR32_FORMAT, debug_line_offset);
+  log_develop_debug(dwarf)(".debug_line offset:    " PTR32_FORMAT, debug_line_offset);
 
   LineNumberProgram line_number_program(this, offset_in_library, debug_line_offset, is_pc_after_call);
   if (!line_number_program.find_filename_and_line_number(filename, filename_len, line)) {
-    log_info(dwarf)("Failed to process the line number program correctly.");
+    log_develop_info(dwarf)("Failed to process the line number program correctly.");
     return false;
   }
   return true;
@@ -613,7 +613,7 @@ bool DwarfFile::get_filename_and_line_number(const uint32_t offset_in_library, c
 // This process is described in section 6.1.2 of the DWARF 4 spec.
 bool DwarfFile::DebugAranges::find_compilation_unit_offset(const uint32_t offset_in_library, uint32_t* compilation_unit_offset) {
   if (!read_section_header()) {
-    log_info(dwarf)("Failed to read a .debug_aranges header.");
+    log_develop_info(dwarf)("Failed to read a .debug_aranges header.");
     return false;
   }
 
@@ -622,7 +622,7 @@ bool DwarfFile::DebugAranges::find_compilation_unit_offset(const uint32_t offset
   while (_reader.has_bytes_left()) {
     // Read multiple sets and therefore multiple headers.
     if (!read_set_header(set_header)) {
-      log_info(dwarf)("Failed to read a .debug_aranges header.");
+      log_develop_info(dwarf)("Failed to read a .debug_aranges header.");
       return false;
     }
 
@@ -632,13 +632,13 @@ bool DwarfFile::DebugAranges::find_compilation_unit_offset(const uint32_t offset
 
     if (found_matching_set) {
       // Found the correct set, read the debug_info_offset from the header of this set.
-      log_debug(dwarf)(".debug_aranges offset: " PTR32_FORMAT, (uint32_t)_reader.get_position());
+      log_develop_debug(dwarf)(".debug_aranges offset: " PTR32_FORMAT, (uint32_t)_reader.get_position());
       *compilation_unit_offset = set_header._debug_info_offset;
       return true;
     }
   }
 
-  log_info(dwarf)("No address descriptor found containing offset_in_library.");
+  log_develop_info(dwarf)("No address descriptor found containing offset_in_library.");
   return false;
 }
 
@@ -730,7 +730,7 @@ bool DwarfFile::DebugAranges::is_terminating_entry(const AddressDescriptor& desc
 bool DwarfFile::CompilationUnit::find_debug_line_offset(uint32_t* debug_line_offset) {
   // (3a,b)
   if (!read_header()) {
-    log_info(dwarf)("Failed to read the compilation unit header.");
+    log_develop_info(dwarf)("Failed to read the compilation unit header.");
     return false;
   }
 
@@ -743,7 +743,7 @@ bool DwarfFile::CompilationUnit::find_debug_line_offset(uint32_t* debug_line_off
 
   DebugAbbrev debug_abbrev(_dwarf_file, this);
   if (!debug_abbrev.read_section_header(_header._debug_abbrev_offset)) {
-    log_info(dwarf)("Failed to read the .debug_abbrev header at " PTR32_FORMAT, _header._debug_abbrev_offset);
+    log_develop_info(dwarf)("Failed to read the .debug_abbrev header at " PTR32_FORMAT, _header._debug_abbrev_offset);
     return false;
   }
   if (!debug_abbrev.find_debug_line_offset(abbrev_code)) {
@@ -757,7 +757,7 @@ bool DwarfFile::CompilationUnit::find_debug_line_offset(uint32_t* debug_line_off
 bool DwarfFile::CompilationUnit::read_header() {
   Elf_Shdr shdr;
   if (!_dwarf_file->read_section_header(".debug_info", shdr)) {
-    log_info(dwarf)("Failed to read the .debug_info section header.");
+    log_develop_info(dwarf)("Failed to read the .debug_info section header.");
     return false;
   }
 
@@ -809,7 +809,7 @@ bool DwarfFile::DebugAbbrev::read_section_header(uint32_t debug_abbrev_offset) {
 // Read the attribute values from the compilation unit in .debug_info by using the format described in the declaration.
 // This process is described in section 7.5 and 7.5.3 of the DWARF 4 spec.
 bool DwarfFile::DebugAbbrev::find_debug_line_offset(const uint64_t abbrev_code) {
-  log_trace(dwarf)("Series of declarations [code, tag]:");
+  log_develop_trace(dwarf)("Series of declarations [code, tag]:");
   AbbreviationDeclaration declaration;
   bool found_matching_declaration = false;
   while (_reader.has_bytes_left()) {
@@ -817,14 +817,14 @@ bool DwarfFile::DebugAbbrev::find_debug_line_offset(const uint64_t abbrev_code) 
       return false;
     }
 
-    log_trace(dwarf)("  Series of attributes [name, form]:");
+    log_develop_trace(dwarf)("  Series of attributes [name, form]:");
     if (declaration._abbrev_code == abbrev_code) {
       // Found the correct declaration.
       if (is_wrong_or_unsupported_format(declaration)) {
         return false;
       }
-      log_debug(dwarf)(".debug_abbrev offset:  " PTR32_FORMAT, (uint32_t)_reader.get_position());
-      log_trace(dwarf)("  Read the following attribute values from compilation unit:");
+      log_develop_debug(dwarf)(".debug_abbrev offset:  " PTR32_FORMAT, (uint32_t)_reader.get_position());
+      log_develop_trace(dwarf)("  Read the following attribute values from compilation unit:");
       return read_attribute_specifications(true);
     } else {
       // Not the correct declaration. Read its attributes and continue with next declaration.
@@ -834,7 +834,7 @@ bool DwarfFile::DebugAbbrev::find_debug_line_offset(const uint64_t abbrev_code) 
     }
   }
 
-  log_info(dwarf)(".debug_line offset not found");
+  log_develop_info(dwarf)(".debug_line offset not found");
   return false;
 }
 
@@ -845,7 +845,7 @@ bool DwarfFile::DebugAbbrev::read_declaration(DwarfFile::DebugAbbrev::Abbreviati
 
   if (declaration._abbrev_code == 0) {
     // Reached the end of the abbreviation declarations for this compilation unit.
-    log_info(dwarf)("abbrev_code not found in any declaration");
+    log_develop_info(dwarf)("abbrev_code not found in any declaration");
     return false;
   }
 
@@ -853,7 +853,7 @@ bool DwarfFile::DebugAbbrev::read_declaration(DwarfFile::DebugAbbrev::Abbreviati
     return false;
   }
 
-  log_trace(dwarf)("Code: 0x" UINT64_FORMAT_X ", Tag: 0x" UINT64_FORMAT_X, declaration._abbrev_code, declaration._tag);
+  log_develop_trace(dwarf)("Code: 0x" UINT64_FORMAT_X ", Tag: 0x" UINT64_FORMAT_X, declaration._abbrev_code, declaration._tag);
   return true;
 }
 
@@ -862,7 +862,7 @@ bool DwarfFile::DebugAbbrev::is_wrong_or_unsupported_format(const DwarfFile::Deb
     // Is not DW_TAG_compile_unit as specified in Figure 18 in section 7.5 of the DWARF 4 spec. It could also
     // be DW_TAG_partial_unit (0x3c) which is currently not supported by this parser. Must have children.
     if (declaration._tag != DW_TAG_compile_unit) {
-      log_info(dwarf)("Found unsupported tag in compilation unit: " UINT64_FORMAT_X, declaration._tag);
+      log_develop_info(dwarf)("Found unsupported tag in compilation unit: " UINT64_FORMAT_X, declaration._tag);
     }
     return true;
   }
@@ -882,7 +882,7 @@ bool DwarfFile::DebugAbbrev::read_attribute_specifications(const bool is_DW_TAG_
     if (is_terminating_specification(attribute_specification)) {
       // Parsed all attributes of this declaration.
       if (is_DW_TAG_compile_unit) {
-        log_info(dwarf)("Did not find DW_AT_stmt_list in .debug_abbrev");
+        log_develop_info(dwarf)("Did not find DW_AT_stmt_list in .debug_abbrev");
         return false;
       } else {
         // Continue with next declaration if this was not DW_TAG_compile_unit.
@@ -904,13 +904,13 @@ bool DwarfFile::DebugAbbrev::read_attribute_specifications(const bool is_DW_TAG_
     }
   }
 
-  log_info(dwarf)(".debug_abbrev section appears to be corrupted");
+  log_develop_info(dwarf)(".debug_abbrev section appears to be corrupted");
   return false;
 }
 
 bool DwarfFile::DebugAbbrev::read_attribute_specification(DwarfFile::DebugAbbrev::AttributeSpecification& specification) {
   bool result = _reader.read_uleb128(&specification._name) && _reader.read_uleb128(&specification._form);
-  log_trace(dwarf)("  Name: 0x" UINT64_FORMAT_X ", Form: 0x" UINT64_FORMAT_X,
+  log_develop_trace(dwarf)("  Name: 0x" UINT64_FORMAT_X ", Form: 0x" UINT64_FORMAT_X,
                    specification._name, specification._form);
   return result;
 }
@@ -1016,8 +1016,8 @@ bool DwarfFile::CompilationUnit::read_attribute_value(const uint64_t attribute_f
       if (is_DW_AT_stmt_list_attribute) {
         // DW_AT_stmt_list has the DW_FORM_sec_offset attribute encoding. Store the result in _debug_line_offset.
         // 4 bytes for 32-bit DWARF.
-        log_trace(dwarf)("    Name: DW_AT_stmt_list, Form: DW_FORM_sec_offset");
-        log_trace(dwarf)("    Reading .debug_line offset from compilation unit at " PTR32_FORMAT, (uint32_t)_reader.get_position());
+        log_develop_trace(dwarf)("    Name: DW_AT_stmt_list, Form: DW_FORM_sec_offset");
+        log_develop_trace(dwarf)("    Reading .debug_line offset from compilation unit at " PTR32_FORMAT, (uint32_t)_reader.get_position());
         if (!_reader.read_dword(&_debug_line_offset)) {
           return false;
         }
@@ -1029,7 +1029,7 @@ bool DwarfFile::CompilationUnit::read_attribute_value(const uint64_t attribute_f
         break;
       }
     default:
-      log_warning(dwarf)("Unknown DW_FORM_* attribute encoding.");
+      log_develop_info(dwarf)("Unknown DW_FORM_* attribute encoding.");
       return false;
   }
   // Reset the index into the file to the original position where the DebugAbbrev reader stopped reading before calling this method.
@@ -1039,7 +1039,7 @@ bool DwarfFile::CompilationUnit::read_attribute_value(const uint64_t attribute_f
 
 bool DwarfFile::LineNumberProgram::find_filename_and_line_number(char& filename, const size_t filename_len, int& line) {
   if (!read_header()) {
-    log_info(dwarf)("Failed to parse the line number program header correctly.");
+    log_develop_info(dwarf)("Failed to parse the line number program header correctly.");
     return false;
   }
   return run_line_number_program(filename, filename_len, line);
@@ -1049,7 +1049,7 @@ bool DwarfFile::LineNumberProgram::find_filename_and_line_number(char& filename,
 bool DwarfFile::LineNumberProgram::read_header() {
   Elf_Shdr shdr;
   if (!_dwarf_file->read_section_header(".debug_line", shdr)) {
-    log_info(dwarf)("Failed to read the .debug_line section header.");
+    log_develop_info(dwarf)("Failed to read the .debug_line section header.");
     return false;
   }
 
@@ -1181,13 +1181,13 @@ bool DwarfFile::LineNumberProgram::read_header() {
 //
 // Enable logging with debug level to print the generated line number information matrix.
 bool DwarfFile::LineNumberProgram::run_line_number_program(char& filename, const size_t filename_len, int& line) {
-  log_debug(dwarf)("");
-  log_debug(dwarf)("Line Number Information Matrix");
-  log_debug(dwarf)("------------------------------");
+  log_develop_debug(dwarf)("");
+  log_develop_debug(dwarf)("Line Number Information Matrix");
+  log_develop_debug(dwarf)("------------------------------");
 #ifndef _LP64
-  log_debug(dwarf)("Address:      Line:    Column:   File:");
+  log_develop_debug(dwarf)("Address:      Line:    Column:   File:");
 #else
-  log_debug(dwarf)("Address:              Line:    Column:   File:");
+  log_develop_debug(dwarf)("Address:              Line:    Column:   File:");
 #endif
   _state = new (std::nothrow) LineNumberProgramState(_header);
   uintptr_t previous_address = 0;
@@ -1217,7 +1217,7 @@ bool DwarfFile::LineNumberProgram::run_line_number_program(char& filename, const
       }
 
       // We do not actually store the matrix while searching the correct entry. Enable logging to print/debug it.
-      log_debug(dwarf)(INTPTR_FORMAT "    %-5u    %-3u       %-4u",
+      log_develop_debug(dwarf)(INTPTR_FORMAT "    %-5u    %-3u       %-4u",
                        _state->_address, _state->_line, _state->_column, _state->_file);
       previous_file = _state->_file;
       previous_line = _state->_line;
@@ -1230,7 +1230,7 @@ bool DwarfFile::LineNumberProgram::run_line_number_program(char& filename, const
     }
   }
 
-  log_debug(dwarf)("Did not find an entry in the line number information matrix that matches " PTR32_FORMAT, _offset_in_library);
+  log_develop_debug(dwarf)("Did not find an entry in the line number information matrix that matches " PTR32_FORMAT, _offset_in_library);
   return false;
 }
 
@@ -1241,7 +1241,7 @@ bool DwarfFile::LineNumberProgram::apply_opcode() {
     return false;
   }
 
-  log_trace(dwarf)("  Opcode: 0x%02x ", opcode);
+  log_develop_trace(dwarf)("  Opcode: 0x%02x ", opcode);
   if (opcode == 0) {
     // Extended opcodes start with a zero byte.
     if (!apply_extended_opcode()) {
@@ -1271,7 +1271,7 @@ bool DwarfFile::LineNumberProgram::apply_extended_opcode() {
 
   switch (extended_opcode) {
     case DW_LNE_end_sequence: // No operands
-      log_trace(dwarf)("    DW_LNE_end_sequence");
+      log_develop_trace(dwarf)("    DW_LNE_end_sequence");
       _state->_end_sequence = true;
       _state->_append_row = true;
       _state->_do_reset = true;
@@ -1280,13 +1280,13 @@ bool DwarfFile::LineNumberProgram::apply_extended_opcode() {
       if (!_reader.read_address_sized(&_state->_address)) {
         return false;
       }
-      log_trace(dwarf)("    DW_LNE_set_address " INTPTR_FORMAT, _state->_address);
+      log_develop_trace(dwarf)("    DW_LNE_set_address " INTPTR_FORMAT, _state->_address);
       if (_state->_dwarf_version == 4) {
         _state->_op_index = 0;
       }
       break;
     case DW_LNE_define_file: // 4 operands
-    log_trace(dwarf)("    DW_LNE_define_file");
+    log_develop_trace(dwarf)("    DW_LNE_define_file");
       if (!_reader.read_string()) {
         return false;
       }
@@ -1298,7 +1298,7 @@ bool DwarfFile::LineNumberProgram::apply_extended_opcode() {
       }
       break;
     case DW_LNE_set_discriminator: // 1 operand
-      log_trace(dwarf)("    DW_LNE_set_discriminator");
+      log_develop_trace(dwarf)("    DW_LNE_set_discriminator");
       uint64_t discriminator;
       // For some reason, GCC emits this opcode even for earlier versions than DWARF 4 which introduced this opcode.
       // We need to consume it.
@@ -1309,7 +1309,7 @@ bool DwarfFile::LineNumberProgram::apply_extended_opcode() {
       _state->_discriminator = discriminator;
       break;
     default:
-      log_warning(dwarf)("Unknown extended opcode");
+      log_develop_info(dwarf)("Unknown extended opcode");
       return false;
   }
   return true;
@@ -1319,7 +1319,7 @@ bool DwarfFile::LineNumberProgram::apply_extended_opcode() {
 bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
   switch (opcode) {
     case DW_LNS_copy: // No operands
-      log_trace(dwarf)("    DW_LNS_copy");
+      log_develop_trace(dwarf)("    DW_LNS_copy");
       _state->_append_row = true;
       _state->_basic_block = false;
       _state->_prologue_end = false;
@@ -1338,7 +1338,7 @@ bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
       if (_state->_dwarf_version == 4) {
         _state->set_index_register(operation_advance, _header);
       }
-      log_trace(dwarf)("    DW_LNS_advance_pc (" INTPTR_FORMAT ")", _state->_address);
+      log_develop_trace(dwarf)("    DW_LNS_advance_pc (" INTPTR_FORMAT ")", _state->_address);
       break;
     }
     case DW_LNS_advance_line: // 1 operand
@@ -1348,7 +1348,7 @@ bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
         return false;
       }
       _state->_line += line;
-      log_trace(dwarf)("    DW_LNS_advance_line (%d)", _state->_line);
+      log_develop_trace(dwarf)("    DW_LNS_advance_line (%d)", _state->_line);
       break;
     case DW_LNS_set_file: // 1 operand
       uint64_t file;
@@ -1357,7 +1357,7 @@ bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
         return false;
       }
       _state->_file = file;
-      log_trace(dwarf)("    DW_LNS_set_file (%u)", _state->_file);
+      log_develop_trace(dwarf)("    DW_LNS_set_file (%u)", _state->_file);
       break;
     case DW_LNS_set_column: // 1 operand
       uint64_t column;
@@ -1366,14 +1366,14 @@ bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
         return false;
       }
       _state->_column = column;
-      log_trace(dwarf)("    DW_LNS_set_column (%u)", _state->_column);
+      log_develop_trace(dwarf)("    DW_LNS_set_column (%u)", _state->_column);
       break;
     case DW_LNS_negate_stmt: // No operands
-      log_trace(dwarf)("    DW_LNS_negate_stmt");
+      log_develop_trace(dwarf)("    DW_LNS_negate_stmt");
       _state->_is_stmt = !_state->_is_stmt;
       break;
     case DW_LNS_set_basic_block: // No operands
-      log_trace(dwarf)("    DW_LNS_set_basic_block");
+      log_develop_trace(dwarf)("    DW_LNS_set_basic_block");
       _state->_basic_block = true;
       break;
     case DW_LNS_const_add_pc: { // No operands
@@ -1385,7 +1385,7 @@ bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
       if (_state->_dwarf_version == 4) {
         _state->set_index_register(operation_advance, _header);
       }
-      log_trace(dwarf)("    DW_LNS_const_add_pc (" INTPTR_FORMAT ")", _state->_address - old_address);
+      log_develop_trace(dwarf)("    DW_LNS_const_add_pc (" INTPTR_FORMAT ")", _state->_address - old_address);
       break;
     }
     case DW_LNS_fixed_advance_pc: // 1 operand
@@ -1395,14 +1395,14 @@ bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
       }
       _state->_address += operand;
       _state->_op_index = 0;
-      log_trace(dwarf)("    DW_LNS_fixed_advance_pc (" INTPTR_FORMAT ")", _state->_address);
+      log_develop_trace(dwarf)("    DW_LNS_fixed_advance_pc (" INTPTR_FORMAT ")", _state->_address);
       break;
     case DW_LNS_set_prologue_end: // No operands
-      log_trace(dwarf)("    DW_LNS_set_basic_block");
+      log_develop_trace(dwarf)("    DW_LNS_set_basic_block");
       _state->_prologue_end = true;
       break;
     case DW_LNS_set_epilogue_begin: // No operands
-      log_trace(dwarf)("    DW_LNS_set_epilogue_begin");
+      log_develop_trace(dwarf)("    DW_LNS_set_epilogue_begin");
       _state->_epilogue_begin = true;
       break;
     case DW_LNS_set_isa: // 1 operand
@@ -1412,10 +1412,10 @@ bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
         return false;
       }
       _state->_isa = isa;
-      log_trace(dwarf)("    DW_LNS_set_isa (%u)", _state->_isa);
+      log_develop_trace(dwarf)("    DW_LNS_set_isa (%u)", _state->_isa);
       break;
     default:
-      log_warning(dwarf)("Unknown standard opcode");
+      log_develop_info(dwarf)("Unknown standard opcode");
       return false;
   }
   return true;
@@ -1433,7 +1433,7 @@ bool DwarfFile::LineNumberProgram::apply_special_opcode(const uint8_t opcode) {
     _state->_discriminator = 0;
   }
   _state->_line += _header._line_base + (adjusted_opcode % _header._line_range);
-  log_trace(dwarf)("    address += " INTPTR_FORMAT ", line += %d", _state->_address - old_address, _state->_line - old_line);
+  log_develop_trace(dwarf)("    address += " INTPTR_FORMAT ", line += %d", _state->_address - old_address, _state->_line - old_line);
   _state->_append_row = true;
   _state->_basic_block = false;
   _state->_prologue_end = false;
@@ -1457,7 +1457,7 @@ bool DwarfFile::LineNumberProgram::does_offset_match_entry(const uintptr_t previ
         return true;
       } else if (!_reader.has_bytes_left()) {
         // We take the current entry when this is the very last entry in the matrix (i.e. must be the right one).
-        log_debug(dwarf)("^^^ Found line for requested offset " PTR32_FORMAT " ^^^", _offset_in_library);
+        log_develop_debug(dwarf)("^^^ Found line for requested offset " PTR32_FORMAT " ^^^", _offset_in_library);
         return true;
       }
       // Else: Exact match. We cannot take this entry because we do not know if there are more entries following this
@@ -1479,9 +1479,9 @@ bool DwarfFile::LineNumberProgram::does_offset_match_entry(const uintptr_t previ
 void DwarfFile::LineNumberProgram::print_and_store_prev_entry(const uint32_t previous_file, const uint32_t previous_line) {
   _state->_file = previous_file;
   _state->_line = previous_line;
-  log_debug(dwarf)("^^^ Found line for requested offset " PTR32_FORMAT " ^^^", _offset_in_library);
+  log_develop_debug(dwarf)("^^^ Found line for requested offset " PTR32_FORMAT " ^^^", _offset_in_library);
   // Also print the currently parsed entry.
-  log_debug(dwarf)(INTPTR_FORMAT "    %-5u    %-3u       %-4u", _state->_address, _state->_line,
+  log_develop_debug(dwarf)(INTPTR_FORMAT "    %-5u    %-3u       %-4u", _state->_address, _state->_line,
                    _state->_column, _state->_file);
 }
 
@@ -1509,7 +1509,7 @@ bool DwarfFile::LineNumberProgram::get_filename_from_header(const uint32_t file_
     }
     current_index++;
   }
-  log_debug(dwarf)("Did not find filename entry at index " UINT32_FORMAT " in .debug_line header", file_index);
+  log_develop_debug(dwarf)("Did not find filename entry at index " UINT32_FORMAT " in .debug_line header", file_index);
   return false;
 }
 
@@ -1700,7 +1700,7 @@ bool DwarfFile::MarkedDwarfFileReader::read_string(char* result, const size_t re
     if (next_byte == 0) {
       if (exceeded_buffer) {
         result[result_len - 1] = '\0'; // Mark end of string.
-        log_info(dwarf)("Tried to read " SIZE_FORMAT " bytes but exceeded buffer size of " SIZE_FORMAT ". Truncating string.",
+        log_develop_info(dwarf)("Tried to read " SIZE_FORMAT " bytes but exceeded buffer size of " SIZE_FORMAT ". Truncating string.",
                         char_index, result_len);
       }
       return true;
