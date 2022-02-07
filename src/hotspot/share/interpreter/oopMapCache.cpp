@@ -276,26 +276,28 @@ bool OopMapCacheEntry::verify_mask(CellTypeState* vars, CellTypeState* stack, in
 
   // Check if map is generated correctly
   // (Use ?: operator to make sure all 'true' & 'false' are represented exactly the same so we can use == afterwards)
-  Log(interpreter, oopmap) logv;
-  LogStream st(logv.trace());
+  typedef LogTargetImpl<LogLevel::Trace, LOG_TAGS(interpreter, oopmap) > log_type;
+  bool const is_log_enabled = log_type::is_enabled();
+  static const log_type log;
+  LogStream st(log);
 
-  st.print("Locals (%d): ", max_locals);
+  if (is_log_enabled) st.print("Locals (%d): ", max_locals);
   for(int i = 0; i < max_locals; i++) {
     bool v1 = is_oop(i)               ? true : false;
     bool v2 = vars[i].is_reference()  ? true : false;
     assert(v1 == v2, "locals oop mask generation error");
-    st.print("%d", v1 ? 1 : 0);
+    if (is_log_enabled) st.print("%d", v1 ? 1 : 0);
   }
-  st.cr();
+  if (is_log_enabled) st.cr();
 
-  st.print("Stack (%d): ", stack_top);
+  if (is_log_enabled) st.print("Stack (%d): ", stack_top);
   for(int j = 0; j < stack_top; j++) {
     bool v1 = is_oop(max_locals + j)  ? true : false;
     bool v2 = stack[j].is_reference() ? true : false;
     assert(v1 == v2, "stack oop mask generation error");
-    st.print("%d", v1 ? 1 : 0);
+    if (is_log_enabled) st.print("%d", v1 ? 1 : 0);
   }
-  st.cr();
+  if (is_log_enabled) st.cr();
   return true;
 }
 
