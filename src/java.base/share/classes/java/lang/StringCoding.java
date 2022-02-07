@@ -36,7 +36,13 @@ class StringCoding {
 
     @IntrinsicCandidate
     public static boolean hasNegatives(byte[] ba, int off, int len) {
-        return countPositives(ba, off, len) != len;
+        int limit = off + len;
+        for (int i = off; i < limit; i++) {
+            if (ba[i] < 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -45,6 +51,9 @@ class StringCoding {
      */
     @IntrinsicCandidate
     public static int countPositives(byte[] ba, int off, int len) {
+        if (!hasNegatives(ba, off, len))
+            return len;
+
         int limit = off + len;
         for (int i = off; i < limit; i++) {
             if (ba[i] < 0) {

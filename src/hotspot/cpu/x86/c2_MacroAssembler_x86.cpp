@@ -3559,7 +3559,7 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
   addptr(len, 4);
   jccb(Assembler::notZero, COMPARE_VECTORS);
 
-  // Compare trailing char (final 2 bytes), if any
+  // Compare trailing char (final 2-3 bytes), if any
   bind(COMPARE_CHAR);
 
   testl(result, 0x2);   // tail  char
