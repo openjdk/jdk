@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,14 @@ import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
 
 class LauncherAsService {
 
-    LauncherAsService(String name, Map<String, ? super Object> mainParams,
+    LauncherAsService(String name, Map<String, Object> mainParams,
             OverridableResource resource) {
         if (name == null || APP_NAME.fetchFrom(mainParams).equals(name)) {
             // Main launcher
             name = APP_NAME.fetchFrom(mainParams);
             this.description = DESCRIPTION.fetchFrom(mainParams);
         } else {
+            // Additional launcher
             this.description = String.format("%s (%s)", DESCRIPTION.fetchFrom(
                     mainParams), name);
         }
