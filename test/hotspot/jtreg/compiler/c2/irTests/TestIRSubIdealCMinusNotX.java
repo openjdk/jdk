@@ -28,6 +28,7 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
+ * @bug 8281453
  * @summary Test that transformation from c - (~x) to x + (c + 1) and
  *          from ~(c - x) to x + (-c - 1) works as intended.
  * @library /test/lib /
@@ -121,7 +122,7 @@ public class TestIRSubIdealCMinusNotX {
         Asserts.assertEquals(9, testIntConIsZero2(10));
     }
 
-    
+
     @Test
     @IR(failOn = {IRNode.SUB_L, IRNode.XOR_L})
     @IR(counts = {IRNode.ADD_L, "1"})
