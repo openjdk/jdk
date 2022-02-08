@@ -237,7 +237,7 @@ inline void HeapRegion::update_bot_for_obj(HeapWord* obj_start, size_t obj_size)
          HR_FORMAT_PARAMS(this),
          p2i(obj_start), p2i(obj_end));
 
-  _bot_part.alloc_block(obj_start, obj_end);
+  _bot_part.update_for_block(obj_start, obj_end);
 }
 
 inline void HeapRegion::note_start_of_marking() {
