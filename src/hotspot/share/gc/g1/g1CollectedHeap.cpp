@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1725,12 +1725,6 @@ jint G1CollectedHeap::initialize() {
 
   _free_segmented_array_memory_task = new G1SegmentedArrayFreeMemoryTask("Card Set Free Memory Task");
   _service_thread->register_task(_free_segmented_array_memory_task);
-
-  {
-    G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-    dcqs.set_process_cards_threshold(concurrent_refine()->yellow_zone());
-    dcqs.set_max_cards(concurrent_refine()->red_zone());
-  }
 
   // Here we allocate the dummy HeapRegion that is required by the
   // G1AllocRegion class.
