@@ -75,34 +75,6 @@ hotspot_native_sanity = \
 hotspot_containers = \
   containers
 
-# Temporary group for stack banging changes
-hotspot_stack = \
-  compiler/interpreter/TestVerifyStackAfterDeopt.java \
-  compiler/interpreter/cr7116216/StackOverflow.java \
-  compiler/osr/TestOSRWithNonEmptyStack.java \
-  compiler/runtime/TestFloatsOnStackDeopt.java \
-  compiler/runtime/StackOverflowBug.java \
-  compiler/uncommontrap/StackOverflowGuardPagesOff.java \
-  compiler/uncommontrap/TestStackBangRbp.java \
-  compiler/uncommontrap/TestStackBangMonitorOwned.java \
-  compiler/uncommontrap/UncommonTrapStackBang.java \
-  runtime/ErrorHandling/BadNativeStackInErrorHandlingTest.java \
-  runtime/Locals/TestLargeLocalVarsStackRegion.java \
-  runtime/ReservedStack \
-  runtime/NMT/CheckForProperDetailStackTrace.java \
-  runtime/StackGuardPages \
-  runtime/StackTrace \
-  runtime/Thread/TestThreadStackSizes.java \
-  runtime/Thread/TooSmallStackSize.java \
-  runtime/Throwable/TestMaxJavaStackTraceDepth.java \
-  runtime/Throwable/StackTraceLogging.java \
-  runtime/handshake/ \
-  runtime/logging/StackWalkTest.java \
-  runtime/reflect/ReflectStackOverflow.java \
-  runtime/whitebox/WBStackSize.java \
-  serviceability/jvmti/GetLocalVariable/GetLocalWithoutSuspendTest.java \
-  serviceability/threads/TestFalseDeadLock.java
-
 # Test sets for running inside container environment
 hotspot_containers_extended = \
   runtime \
