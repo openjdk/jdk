@@ -68,11 +68,11 @@ public class GetInputStreamNPETest {
     // Error message from JarFile::verifiableEntry when ZipEntry::getName
     // returns null
     public static final String ZIPENTRY_GETNAME_NULL_ERROR_MSG
-            = "Error: ZipEntry::getName returned null!";
+            = "ZipEntry::getName returned null";
     // Error message from JarFile::verifiableEntry when JarFile::getJarEntry
     // returns null
     public static final String ZIPENTRY_NULL_ERROR_MSG
-            = "Error: ZipEntry should not be null!";
+            = "ZipEntry should not be null";
 
     /**
      * Byte array representing valid jar file prior modifying a filename in the

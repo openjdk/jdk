@@ -868,14 +868,15 @@ public class JarFile extends ZipFile {
             return ((JarFileEntry)ze).realEntry();
         }
         // ZipEntry::getName should not return null
-        if(ze.getName() != null) {
-            ze = getJarEntry(ze.getName());
+        var entryName = ze.getName();
+        if (entryName != null) {
+            ze = getJarEntry(entryName);
         } else {
-            throw new ZipException("Error: ZipEntry::getName returned null!");
+            throw new ZipException("ZipEntry::getName returned null");
         }
         // ZipEntry returned from JarFile::getJarEntry should not be null
-        if(ze == null) {
-            throw new ZipException("Error: ZipEntry should not be null!");
+        if (ze == null) {
+            throw new ZipException("ZipEntry should not be null");
         }
         if (ze instanceof JarFileEntry) {
             return ((JarFileEntry)ze).realEntry();
