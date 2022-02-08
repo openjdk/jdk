@@ -278,6 +278,7 @@ bool OopMapCacheEntry::verify_mask(CellTypeState* vars, CellTypeState* stack, in
   // (Use ?: operator to make sure all 'true' & 'false' are represented exactly the same so we can use == afterwards)
   if (log_is_enabled(Trace, interpreter, oopmap)) {
     LogStream st(Log(interpreter, oopmap)::trace());
+
     st.print("Locals (%d): ", max_locals);
     for(int i = 0; i < max_locals; i++) {
       bool v1 = is_oop(i)               ? true : false;
@@ -286,8 +287,23 @@ bool OopMapCacheEntry::verify_mask(CellTypeState* vars, CellTypeState* stack, in
       st.print("%d", v1 ? 1 : 0);
     }
     st.cr();
+
+    st.print("Stack (%d): ", stack_top);
+    for(int j = 0; j < stack_top; j++) {
+      bool v1 = is_oop(max_locals + j)  ? true : false;
+      bool v2 = stack[j].is_reference() ? true : false;
+      assert(v1 == v2, "stack oop mask generation error");
+      st.print("%d", v1 ? 1 : 0);
+    }
+    st.cr();
   }
   else {
+    for(int i = 0; i < max_locals; i++) {
+      bool v1 = is_oop(i)               ? true : false;
+      bool v2 = vars[i].is_reference()  ? true : false;
+      assert(v1 == v2, "locals oop mask generation error");
+    }
+
     for(int j = 0; j < stack_top; j++) {
       bool v1 = is_oop(max_locals + j)  ? true : false;
       bool v2 = stack[j].is_reference() ? true : false;
