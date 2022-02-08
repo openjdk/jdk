@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -454,7 +454,8 @@ public abstract class AsynchronousFileChannel
      *          non-negative
      * @param   size
      *          The size of the locked region; must be non-negative, and the sum
-     *          {@code position}&nbsp;+&nbsp;{@code size} must be non-negative
+     *          {@code position}&nbsp;+&nbsp;{@code size} must be non-negative.
+     *          A value of zero indicates the remainder of the file.
      * @param   shared
      *          {@code true} to request a shared lock, in which case this
      *          channel must be open for reading (and possibly writing);
@@ -532,7 +533,8 @@ public abstract class AsynchronousFileChannel
      *          non-negative
      * @param   size
      *          The size of the locked region; must be non-negative, and the sum
-     *          {@code position}&nbsp;+&nbsp;{@code size} must be non-negative
+     *          {@code position}&nbsp;+&nbsp;{@code size} must be non-negative.
+     *          A value of zero indicates the remainder of the file.
      * @param   shared
      *          {@code true} to request a shared lock, in which case this
      *          channel must be open for reading (and possibly writing);
@@ -594,7 +596,8 @@ public abstract class AsynchronousFileChannel
      *
      * @param  size
      *         The size of the locked region; must be non-negative, and the sum
-     *         {@code position}&nbsp;+&nbsp;{@code size} must be non-negative
+     *         {@code position}&nbsp;+&nbsp;{@code size} must be non-negative.
+     *         A value of zero indicates the remainder of the file.
      *
      * @param  shared
      *         {@code true} to request a shared lock,

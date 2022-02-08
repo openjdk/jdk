@@ -127,9 +127,6 @@ public abstract class FileLock implements AutoCloseable {
     /**
      * Initializes a new instance of this class.
      *
-     * <p> If {@code size} is zero, the entire file from {@code position}
-     * onward is locked.
-     *
      * @param  channel
      *         The file channel upon whose file this lock is held
      *
@@ -139,7 +136,8 @@ public abstract class FileLock implements AutoCloseable {
      *
      * @param  size
      *         The size of the locked region; must be non-negative, and the sum
-     *         {@code position}&nbsp;+&nbsp;{@code size} must be non-negative
+     *         {@code position}&nbsp;+&nbsp;{@code size} must be non-negative.
+     *         A value of zero indicates the remainder of the file.
      *
      * @param  shared
      *         {@code true} if this lock is shared,
@@ -160,15 +158,12 @@ public abstract class FileLock implements AutoCloseable {
             throw new IllegalArgumentException("Negative position + size");
         this.channel = channel;
         this.position = position;
-        this.size = size == 0 ? Long.MAX_VALUE - position : size;
+        this.size = size;
         this.shared = shared;
     }
 
     /**
      * Initializes a new instance of this class.
-     *
-     * <p> If {@code size} is zero, the entire file from {@code position}
-     * onward is locked.
      *
      * @param  channel
      *         The channel upon whose file this lock is held
@@ -179,7 +174,8 @@ public abstract class FileLock implements AutoCloseable {
      *
      * @param  size
      *         The size of the locked region; must be non-negative, and the sum
-     *         {@code position}&nbsp;+&nbsp;{@code size} must be non-negative
+     *         {@code position}&nbsp;+&nbsp;{@code size} must be non-negative.
+     *         A value of zero indicates the remainder of the file.
      *
      * @param  shared
      *         {@code true} if this lock is shared,
@@ -202,7 +198,7 @@ public abstract class FileLock implements AutoCloseable {
             throw new IllegalArgumentException("Negative position + size");
         this.channel = channel;
         this.position = position;
-        this.size = size == 0 ? Long.MAX_VALUE - position : size;
+        this.size = size;
         this.shared = shared;
     }
 
@@ -271,17 +267,16 @@ public abstract class FileLock implements AutoCloseable {
      * Tells whether or not this lock overlaps the given lock range.
      *
      * <p> If {@code size} is negative, {@code false} is returned regardless
-     * of the value of {@code position}. If {@code size} is zero, it means the
-     * lock range is unbounded.
+     * of the value of {@code position}. A {@code size} of zero indicates the
+     * remainder of the file.
      *
      * @param   position
      *          The starting position of the lock range
      * @param   size
      *          The size of the lock range
      *
-     * @return  {@code false} if, and only if, {@code size} is negative or this
-     *          lock and the given lock range do <em>not</em> overlap by at
-     *          least one byte
+     * @return  {@code true} if, and only if, this lock and the given lock
+     *          range overlap by at least one byte
      */
     public final boolean overlaps(long position, long size) {
         if (size < 0)
