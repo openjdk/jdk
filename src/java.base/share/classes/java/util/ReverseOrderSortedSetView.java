@@ -36,9 +36,11 @@ import java.util.stream.StreamSupport;
  */
 class ReverseOrderSortedSetView<E> implements SortedSet<E> {
     final SortedSet<E> base;
+    final Comparator<? super E> comp;
 
     ReverseOrderSortedSetView(SortedSet<E> set) {
         base = set;
+        comp = Collections.reverseOrder(set.comparator());
     }
 
     public static <T> SortedSet<T> of(SortedSet<T> set) {
@@ -71,7 +73,7 @@ class ReverseOrderSortedSetView<E> implements SortedSet<E> {
                 if (prev == null) {
                     throw new IllegalStateException();
                 } else {
-                    view.remove(prev);
+                    root.remove(prev);
                     prev = null;
                 }
             }
@@ -359,7 +361,7 @@ class ReverseOrderSortedSetView<E> implements SortedSet<E> {
     // ========== SortedSet ==========
 
     public Comparator<? super E> comparator() {
-        return Collections.reverseOrder(base.comparator());
+        return comp;
     }
 
     public E first() { return base.last(); }

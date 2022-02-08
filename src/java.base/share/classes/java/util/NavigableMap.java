@@ -423,4 +423,16 @@ public interface NavigableMap<K,V> extends SortedMap<K,V> {
      * @throws IllegalArgumentException {@inheritDoc}
      */
     SortedMap<K,V> tailMap(K fromKey);
+
+    /**
+     * Returns a reverse-ordered view of this map. If the implementation
+     * permits modifications to this view, the modifications "write through"
+     * to the underlying map. Depending upon the implementation's
+     * concurrent modification policy, changes to the underlying map
+     * may be visible in this reversed view.
+     * @return a reverse-ordered view of this map
+     */
+    default NavigableMap<K, V> reversed() {
+        return this.descendingMap();
+    }
 }

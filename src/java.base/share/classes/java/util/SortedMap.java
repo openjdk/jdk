@@ -110,7 +110,7 @@ package java.util;
  * @since 1.2
  */
 
-public interface SortedMap<K,V> extends Map<K,V> {
+public interface SortedMap<K,V> extends ReversibleMap<K,V> {
     /**
      * Returns the comparator used to order the keys in this map, or
      * {@code null} if this map uses the {@linkplain Comparable
@@ -281,4 +281,16 @@ public interface SortedMap<K,V> extends Map<K,V> {
      *         sorted in ascending key order
      */
     Set<Map.Entry<K, V>> entrySet();
+
+    /**
+     * Returns a reversed-order view of this collection. If the implementation
+     * permits modifications to this view, the modifications "write through"
+     * to the underlying collection. Depending upon the implementation's
+     * concurrent modification policy, changes to the underlying collection
+     * may be visible in this reversed view.
+     * @return a reversed-order view
+     */
+    default SortedMap<K, V> reversed() {
+        return ReverseOrderSortedMapView.of(this);
+    }
 }
