@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1936,7 +1936,6 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
   bool skip_operation() const;
 
   // writes a HPROF_LOAD_CLASS record
-  class ClassesDo;
   static void do_load_class(Klass* k);
 
   // writes a HPROF_GC_CLASS_DUMP record for the given class
@@ -2027,37 +2026,30 @@ void DumperSupport::end_of_dump(AbstractDumpWriter* writer) {
   writer->write_u4(0);
 }
 
-// writes a HPROF_LOAD_CLASS record for the class (and each of its
-// array classes)
+// writes a HPROF_LOAD_CLASS record for the class
 void VM_HeapDumper::do_load_class(Klass* k) {
   static u4 class_serial_num = 0;
 
   // len of HPROF_LOAD_CLASS record
   u4 remaining = 2*oopSize + 2*sizeof(u4);
 
-  // write a HPROF_LOAD_CLASS for the class and each array class
-  do {
-    DumperSupport::write_header(writer(), HPROF_LOAD_CLASS, remaining);
+  DumperSupport::write_header(writer(), HPROF_LOAD_CLASS, remaining);
 
-    // class serial number is just a number
-    writer()->write_u4(++class_serial_num);
+  // class serial number is just a number
+  writer()->write_u4(++class_serial_num);
 
-    // class ID
-    Klass* klass = k;
-    writer()->write_classID(klass);
+  // class ID
+  Klass* klass = k;
+  writer()->write_classID(klass);
 
-    // add the Klass* and class serial number pair
-    dumper()->add_class_serial_number(klass, class_serial_num);
+  // add the Klass* and class serial number pair
+  dumper()->add_class_serial_number(klass, class_serial_num);
 
-    writer()->write_u4(STACK_TRACE_ID);
+  writer()->write_u4(STACK_TRACE_ID);
 
-    // class name ID
-    Symbol* name = klass->name();
-    writer()->write_symbolID(name);
-
-    // write a LOAD_CLASS record for the array type (if it exists)
-    k = klass->array_klass_or_null();
-  } while (k != NULL);
+  // class name ID
+  Symbol* name = klass->name();
+  writer()->write_symbolID(name);
 }
 
 // writes a HPROF_GC_CLASS_DUMP record for the given class
@@ -2291,17 +2283,19 @@ void VM_HeapDumper::work(uint worker_id) {
       LockedClassesDo locked_load_classes(&do_load_class);
       ClassLoaderDataGraph::classes_do(&locked_load_classes);
     }
-    Universe::basic_type_classes_do(&do_load_class);
 
     // write HPROF_FRAME and HPROF_TRACE records
     // this must be called after _klass_map is built when iterating the classes above.
     dump_stack_traces();
 
     // Writes HPROF_GC_CLASS_DUMP records
+    // For array classes we need signers and protection domain from their bottom classes
+    // so do_class_dump skips array classes and dumps array classes with corresponding instance class.
     {
       LockedClassesDo locked_dump_class(&do_class_dump);
       ClassLoaderDataGraph::classes_do(&locked_dump_class);
     }
+    // Need additionally dump basic array classes.
     Universe::basic_type_classes_do(&do_basic_type_array_class_dump);
 
     // HPROF_GC_ROOT_THREAD_OBJ + frames + jni locals
