@@ -83,12 +83,12 @@ public class EncryptedPrivateKeyInfo {
                 "must be non-null");
         }
 
-        DerValue val = new DerValue(encoded);
+        this.encoded = encoded.clone();
+        DerValue val = DerValue.wrap(this.encoded);
         if (val.tag != DerValue.tag_Sequence) {
             throw new IOException("DER header error: no SEQ tag");
         }
 
-        this.encoded = encoded.clone();
         DerValue[] seq = new DerValue[2];
 
         seq[0] = val.data.getDerValue();
