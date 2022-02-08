@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @bug 8281338
  * @summary Test for an element that has more than one Accessibility Action
  * @author Artem.Semenov@jetbrains.com
  * @run main/manual AccessibleActionsTest
