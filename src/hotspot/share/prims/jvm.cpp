@@ -3689,9 +3689,9 @@ JVM_ENTRY(void, JVM_LogLambdaFormInvoker(JNIEnv *env, jstring line))
     Handle h_line (THREAD, JNIHandles::resolve_non_null(line));
     char* c_line = java_lang_String::as_utf8_string(h_line());
     if (DynamicDumpSharedSpaces) {
-      // Note: LambdaFormInvokers::append_filtered and LambdaFormInvokers::append take same format which is not
+      // Note: LambdaFormInvokers::append take same format which is not
       // same as below the print format. The line does not include LAMBDA_FORM_TAG.
-      LambdaFormInvokers::append_filtered(os::strdup((const char*)c_line, mtInternal));
+      LambdaFormInvokers::append(os::strdup((const char*)c_line, mtInternal));
     }
     if (ClassListWriter::is_enabled()) {
       ClassListWriter w;
