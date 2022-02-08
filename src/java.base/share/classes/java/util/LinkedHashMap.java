@@ -163,7 +163,7 @@ import java.util.function.Function;
  */
 public class LinkedHashMap<K,V>
     extends HashMap<K,V>
-    implements ReversibleMap<K,V>
+    implements SequencedMap<K,V>
 {
 
     /*
@@ -601,8 +601,8 @@ public class LinkedHashMap<K,V>
      *
      * @return a set view of the keys contained in this map
      */
-    public ReversibleSet<K> keySet() {
-        ReversibleSet<K> ks = (ReversibleSet<K>) keySet;
+    public SequencedSet<K> keySet() {
+        SequencedSet<K> ks = (SequencedSet<K>) keySet;
         if (ks == null) {
             ks = new LinkedKeySet(false);
             keySet = ks;
@@ -651,7 +651,7 @@ public class LinkedHashMap<K,V>
         return a;
     }
 
-    final class LinkedKeySet extends AbstractSet<K> implements ReversibleSet<K> {
+    final class LinkedKeySet extends AbstractSet<K> implements SequencedSet<K> {
         final boolean reversed;
         LinkedKeySet(boolean reversed)          { this.reversed = reversed; }
         public final int size()                 { return size; }
@@ -705,7 +705,7 @@ public class LinkedHashMap<K,V>
             removeNode(node.hash, node.key, null, false, false);
             return node.key;
         }
-        public ReversibleSet<K> reversed() {
+        public SequencedSet<K> reversed() {
             if (reversed) {
                 return LinkedHashMap.this.keySet();
             } else {
@@ -732,8 +732,8 @@ public class LinkedHashMap<K,V>
      *
      * @return a view of the values contained in this map
      */
-    public ReversibleCollection<V> values() {
-        ReversibleCollection<V> vs = (ReversibleCollection<V>) values;
+    public SequencedCollection<V> values() {
+        SequencedCollection<V> vs = (SequencedCollection<V>) values;
         if (vs == null) {
             vs = new LinkedValues(false);
             values = vs;
@@ -741,7 +741,7 @@ public class LinkedHashMap<K,V>
         return vs;
     }
 
-    final class LinkedValues extends AbstractCollection<V> implements ReversibleCollection<V> {
+    final class LinkedValues extends AbstractCollection<V> implements SequencedCollection<V> {
         final boolean reversed;
         LinkedValues(boolean reversed)          { this.reversed = reversed; }
         public final int size()                 { return size; }
@@ -791,7 +791,7 @@ public class LinkedHashMap<K,V>
             removeNode(node.hash, node.key, null, false, false);
             return node.value;
         }
-        public ReversibleCollection<V> reversed() {
+        public SequencedCollection<V> reversed() {
             if (reversed) {
                 return LinkedHashMap.this.values();
             } else {
@@ -819,8 +819,8 @@ public class LinkedHashMap<K,V>
      *
      * @return a set view of the mappings contained in this map
      */
-    public ReversibleSet<Map.Entry<K,V>> entrySet() {
-        ReversibleSet<Map.Entry<K,V>> es = (ReversibleSet<Map.Entry<K,V>>) entrySet;
+    public SequencedSet<Map.Entry<K,V>> entrySet() {
+        SequencedSet<Map.Entry<K,V>> es = (SequencedSet<Map.Entry<K,V>>) entrySet;
         if (es == null) {
             entrySet = es = new LinkedEntrySet(false);
         }
@@ -828,7 +828,7 @@ public class LinkedHashMap<K,V>
     }
 
     final class LinkedEntrySet extends AbstractSet<Map.Entry<K,V>>
-        implements ReversibleSet<Map.Entry<K,V>> {
+        implements SequencedSet<Map.Entry<K,V>> {
         final boolean reversed;
         LinkedEntrySet(boolean reversed)        { this.reversed = reversed; }
         public final int size()                 { return size; }
@@ -890,7 +890,7 @@ public class LinkedHashMap<K,V>
             removeNode(node.hash, node.key, null, false, false);
             return node;
         }
-        public ReversibleSet<Map.Entry<K,V>> reversed() {
+        public SequencedSet<Map.Entry<K,V>> reversed() {
             if (reversed) {
                 return LinkedHashMap.this.entrySet();
             } else {
@@ -983,12 +983,12 @@ public class LinkedHashMap<K,V>
 
     // Reversed View
 
-    public ReversibleMap<K, V> reversed() {
+    public SequencedMap<K, V> reversed() {
         return new ReversedLinkedHashMapView<>(this);
     }
 
     static class ReversedLinkedHashMapView<K, V> extends AbstractMap<K, V>
-                                                 implements ReversibleMap<K, V> {
+                                                 implements SequencedMap<K, V> {
         final LinkedHashMap<K, V> base;
 
         ReversedLinkedHashMapView(LinkedHashMap<K, V> lhm) {
@@ -1118,9 +1118,9 @@ public class LinkedHashMap<K,V>
             return base.merge(key, value, remappingFunction);
         }
 
-        // ReversibleMap
+        // SequencedMap
 
-        public ReversibleMap<K, V> reversed() {
+        public SequencedMap<K, V> reversed() {
             return base;
         }
 

@@ -37,7 +37,7 @@ package java.util;
  *
  * @since XXX
  */
-public interface ReversibleMap<K, V> extends Map<K, V> {
+public interface SequencedMap<K, V> extends Map<K, V> {
     /**
      * Returns a reverse-ordered view of this map. If the implementation
      * permits modifications to this view, the modifications "write through"
@@ -46,7 +46,7 @@ public interface ReversibleMap<K, V> extends Map<K, V> {
      * may be visible in this reversed view.
      * @return a reverse-ordered view of this map
      */
-    ReversibleMap<K, V> reversed();
+    SequencedMap<K, V> reversed();
 
     /**
      * Returns the first key currently in this map.

@@ -117,7 +117,7 @@ package java.util;
 
 public class LinkedHashSet<E>
     extends HashSet<E>
-    implements ReversibleSet<E>, Cloneable, java.io.Serializable {
+    implements SequencedSet<E>, Cloneable, java.io.Serializable {
 
     @java.io.Serial
     private static final long serialVersionUID = -2851667679971038690L;
@@ -259,8 +259,8 @@ public class LinkedHashSet<E>
      * may be visible in this reversed view.
      * @return a reversed-order view
      */
-    public ReversibleSet<E> reversed() {
-        class ReverseLinkedHashSetView extends AbstractSet<E> implements ReversibleSet<E> {
+    public SequencedSet<E> reversed() {
+        class ReverseLinkedHashSetView extends AbstractSet<E> implements SequencedSet<E> {
             public int size()                  { return LinkedHashSet.this.size(); }
             public Iterator<E> iterator()      { return map().keySet().reversed().iterator(); }
             public void addFirst(E e)          { LinkedHashSet.this.addLast(e); }
@@ -269,7 +269,7 @@ public class LinkedHashSet<E>
             public E getLast()                 { return LinkedHashSet.this.getFirst(); }
             public E removeFirst()             { return LinkedHashSet.this.removeLast(); }
             public E removeLast()              { return LinkedHashSet.this.removeFirst(); }
-            public ReversibleSet<E> reversed() { return LinkedHashSet.this; }
+            public SequencedSet<E> reversed()  { return LinkedHashSet.this; }
             public Object[] toArray() { return map().keysToArray(new Object[map.size()], true); }
             public <T> T[] toArray(T[] a) { return map().keysToArray(map.prepareArray(a), true); }
 

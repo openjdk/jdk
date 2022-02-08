@@ -105,7 +105,7 @@ package java.util;
  * @since 1.2
  */
 
-public interface SortedSet<E> extends Set<E>, ReversibleSet<E> {
+public interface SortedSet<E> extends Set<E>, SequencedSet<E> {
     /**
      * Returns the comparator used to order the elements in this set,
      * or {@code null} if this set uses the {@linkplain Comparable

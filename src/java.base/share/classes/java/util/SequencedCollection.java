@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ package java.util;
  * @param <E> the type of elements in this collection
  * @since XXX
  */
-public interface ReversibleCollection<E> extends Collection<E> {
+public interface SequencedCollection<E> extends Collection<E> {
     /**
      * Returns a reversed-order view of this collection. If the implementation
      * permits modifications to this view, the modifications "write through"
@@ -42,7 +42,7 @@ public interface ReversibleCollection<E> extends Collection<E> {
      * may be visible in this reversed view.
      * @return a reversed-order view of this collection
      */
-    ReversibleCollection<E> reversed();
+    SequencedCollection<E> reversed();
 
     /**
      * Adds an element at the front of this collection (optional operation).

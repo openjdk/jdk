@@ -33,7 +33,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
-import java.util.ReversibleCollection;
 
 /**
  * Linked list implementation of the {@code List} interface.  Implements all

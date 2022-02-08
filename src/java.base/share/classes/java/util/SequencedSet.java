@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,6 @@ package java.util;
  * @param <E> the type of elements in this collection
  * @since XXX
  */
-public interface ReversibleSet<E> extends ReversibleCollection<E>, Set<E> {
-    ReversibleSet<E> reversed();
+public interface SequencedSet<E> extends SequencedCollection<E>, Set<E> {
+    SequencedSet<E> reversed();
 }

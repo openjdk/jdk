@@ -139,7 +139,7 @@ import java.util.function.UnaryOperator;
  * @since 1.2
  */
 
-public interface List<E> extends ReversibleCollection<E> {
+public interface List<E> extends SequencedCollection<E> {
     // Query Operations
 
     /**

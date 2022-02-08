@@ -110,7 +110,7 @@ package java.util;
  * @since 1.2
  */
 
-public interface SortedMap<K,V> extends ReversibleMap<K,V> {
+public interface SortedMap<K,V> extends SequencedMap<K,V> {
     /**
      * Returns the comparator used to order the keys in this map, or
      * {@code null} if this map uses the {@linkplain Comparable

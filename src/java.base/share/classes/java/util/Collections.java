@@ -1114,7 +1114,7 @@ public class Collections {
 
     /**
      * Returns an <a href="Collection.html#unmodview">unmodifiable view</a> of the
-     * specified ReversibleCollection. Query operations on the returned collection "read through"
+     * specified SequencedCollection. Query operations on the returned collection "read through"
      * to the specified collection, and attempts to modify the returned
      * collection, whether direct or via its iterator, result in an
      * {@code UnsupportedOperationException}.<p>
@@ -1135,33 +1135,33 @@ public class Collections {
      * @return an unmodifiable view of the specified collection.
      */
     @SuppressWarnings("unchecked")
-    public static <T> ReversibleCollection<T> unmodifiableReversibleCollection(ReversibleCollection<? extends T> c) {
-        if (c.getClass() == UnmodifiableReversibleCollection.class) {
-            return (ReversibleCollection<T>) c;
+    public static <T> SequencedCollection<T> unmodifiableSequencedCollection(SequencedCollection<? extends T> c) {
+        if (c.getClass() == UnmodifiableSequencedCollection.class) {
+            return (SequencedCollection<T>) c;
         }
-        return new UnmodifiableReversibleCollection<>(c);
+        return new UnmodifiableSequencedCollection<>(c);
     }
 
     /**
      * @serial include
      */
-    static class UnmodifiableReversibleCollection<E> extends UnmodifiableCollection<E>
-            implements ReversibleCollection<E>, Serializable {
+    static class UnmodifiableSequencedCollection<E> extends UnmodifiableCollection<E>
+            implements SequencedCollection<E>, Serializable {
 
         @java.io.Serial
         private static final long serialVersionUID = -6060065079711684830L;
 
-        UnmodifiableReversibleCollection(ReversibleCollection<? extends E> c) {
+        UnmodifiableSequencedCollection(SequencedCollection<? extends E> c) {
             super(c);
         }
 
         @SuppressWarnings("unchecked")
-        private ReversibleCollection<E> rc() {
-            return (ReversibleCollection<E>) c;
+        private SequencedCollection<E> rc() {
+            return (SequencedCollection<E>) c;
         }
 
-        public ReversibleCollection<E> reversed() {
-            return new UnmodifiableReversibleCollection<>(rc().reversed());
+        public SequencedCollection<E> reversed() {
+            return new UnmodifiableSequencedCollection<>(rc().reversed());
         }
 
         public void addFirst(E e) {
@@ -1227,7 +1227,7 @@ public class Collections {
 
     /**
      * Returns an <a href="Collection.html#unmodview">unmodifiable view</a> of the
-     * specified reversible set. Query operations on the returned set "read through" to the specified
+     * specified sequenced set. Query operations on the returned set "read through" to the specified
      * set, and attempts to modify the returned set, whether direct or via its
      * iterator, result in an {@code UnsupportedOperationException}.<p>
      *
@@ -1237,36 +1237,36 @@ public class Collections {
      * @implNote This method may return its argument if the argument is already unmodifiable.
      * @param  <T> the class of the objects in the set
      * @param  s the set for which an unmodifiable view is to be returned.
-     * @return an unmodifiable view of the specified reversible set.
+     * @return an unmodifiable view of the specified sequenced set.
      */
     @SuppressWarnings("unchecked")
-    public static <T> ReversibleSet<T> unmodifiableReversibleSet(ReversibleSet<? extends T> s) {
+    public static <T> SequencedSet<T> unmodifiableSequencedSet(SequencedSet<? extends T> s) {
         // Not checking for subclasses because of heap pollution and information leakage.
-        if (s.getClass() == UnmodifiableReversibleSet.class) {
-            return (ReversibleSet<T>) s;
+        if (s.getClass() == UnmodifiableSequencedSet.class) {
+            return (SequencedSet<T>) s;
         }
-        return new UnmodifiableReversibleSet<>(s);
+        return new UnmodifiableSequencedSet<>(s);
     }
 
     /**
      * @serial include
      */
-    static class UnmodifiableReversibleSet<E> extends UnmodifiableReversibleCollection<E>
-                                              implements ReversibleSet<E>, Serializable {
+    static class UnmodifiableSequencedSet<E> extends UnmodifiableSequencedCollection<E>
+                                             implements SequencedSet<E>, Serializable {
         @java.io.Serial
         private static final long serialVersionUID = -2153469532349793522L;
 
-        UnmodifiableReversibleSet(ReversibleSet<? extends E> s)  {super(s);}
+        UnmodifiableSequencedSet(SequencedSet<? extends E> s)    {super(s);}
         public boolean equals(Object o)                          {return o == this || c.equals(o);}
         public int hashCode()                                    {return c.hashCode();}
 
         @SuppressWarnings("unchecked")
-        private ReversibleSet<E> rs() {
-            return (ReversibleSet<E>) c;
+        private SequencedSet<E> ss() {
+            return (SequencedSet<E>) c;
         }
 
-        public ReversibleSet<E> reversed() {
-            return new UnmodifiableReversibleSet<>(rs().reversed());
+        public SequencedSet<E> reversed() {
+            return new UnmodifiableSequencedSet<>(ss().reversed());
         }
     }
 
@@ -1609,7 +1609,7 @@ public class Collections {
         private static final long serialVersionUID = -1034234728574286014L;
 
         @SuppressWarnings("serial") // Conditionally serializable
-        private final Map<? extends K, ? extends V> m;
+        final Map<? extends K, ? extends V> m;
 
         UnmodifiableMap(Map<? extends K, ? extends V> m) {
             if (m==null)
@@ -1930,6 +1930,68 @@ public class Collections {
                 }
                 public String toString() {return e.toString();}
             }
+        }
+    }
+
+    /**
+     * Returns an <a href="Collection.html#unmodview">unmodifiable view</a> of the
+     * specified sequenced map. Query operations on the returned map "read through"
+     * to the specified map, and attempts to modify the returned
+     * map, whether direct or via its collection views, result in an
+     * {@code UnsupportedOperationException}.<p>
+     *
+     * The returned map will be serializable if the specified map
+     * is serializable.
+     *
+     * @implNote This method may return its argument if the argument is already unmodifiable.
+     * @param <K> the class of the map keys
+     * @param <V> the class of the map values
+     * @param  m the map for which an unmodifiable view is to be returned.
+     * @return an unmodifiable view of the specified map.
+     */
+    @SuppressWarnings("unchecked")
+    public static <K,V> SequencedMap<K,V> unmodifiableSequencedMap(SequencedMap<? extends K, ? extends V> m) {
+        // Not checking for subclasses because of heap pollution and information leakage.
+        if (m.getClass() == UnmodifiableSequencedMap.class) {
+            return (SequencedMap<K,V>) m;
+        }
+        return new UnmodifiableSequencedMap<>(m);
+    }
+
+    /**
+     * @serial include
+     */
+    private static class UnmodifiableSequencedMap<K,V> extends UnmodifiableMap<K,V> implements SequencedMap<K,V>, Serializable {
+        @java.io.Serial
+        private static final long serialVersionUID = -8171676257373950636L;
+
+        UnmodifiableSequencedMap(Map<? extends K, ? extends V> m) {
+            super(m);
+        }
+
+        @SuppressWarnings("unchecked")
+        private SequencedMap<K, V> sm() {
+            return (SequencedMap<K, V>) m;
+        }
+
+        public SequencedMap<K, V> reversed() {
+            return new UnmodifiableSequencedMap<>(sm().reversed());
+        }
+
+        public Entry<K, V> pollFirstEntry() {
+            throw new UnsupportedOperationException();
+        }
+
+        public Entry<K, V> pollLastEntry() {
+            throw new UnsupportedOperationException();
+        }
+
+        public V putFirst(K k, V v) {
+            throw new UnsupportedOperationException();
+        }
+
+        public V putLast(K k, V v) {
+            throw new UnsupportedOperationException();
         }
     }
 
