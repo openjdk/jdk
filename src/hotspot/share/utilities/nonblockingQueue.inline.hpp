@@ -196,13 +196,13 @@ bool NonblockingQueue<T, next_ptr>::try_pop(T** node_ptr) {
 
     // Attempt to change the queue head from result to NULL.  Failure of the
     // cmpxchg indicates a concurrent operation updated _head first.  That
-    // could be either a push/extend or a try_pop in [Clause 1b].
+    // could be either a push/append or a try_pop in [Clause 1b].
     Atomic::cmpxchg(&_head, result, (T*)NULL);
 
     // Attempt to change the queue tail from result to NULL.  Failure of the
-    // cmpxchg indicates that a concurrent push/append updated the tail first.
+    // cmpxchg indicates that a concurrent push/append updated _tail first.
     // That operation will eventually recognize the old tail (our result) is
-    // no longer in the list and update head from the list being appended.
+    // no longer in the list and update _head from the list being appended.
     Atomic::cmpxchg(&_tail, result, (T*)NULL);
 
     // The queue has been restored to order, and we can return the result.
