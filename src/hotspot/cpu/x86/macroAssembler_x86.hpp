@@ -664,19 +664,22 @@ class MacroAssembler: public Assembler {
         // Dangerous.
         break;
       case 1:
-        movptr(Address(rsp, (-offset)), rax);
+        movl(Address(rsp, (-offset)), rax);
         break;
       case 2:
-        movptr(Address(rsp, (-offset)), rsp);
+        movb(Address(rsp, (-offset)), 0);
         break;
       case 3:
-        testptr(rax, Address(rsp, (-offset)));
+        movptr(Address(rsp, (-offset)), rax);
         break;
       case 4:
-        testptr(rsp, Address(rsp, (-offset)));
+        testl(rax, Address(rsp, (-offset)));
         break;
       case 5:
-        prefetchnta(Address(rsp, (-offset)));
+        testb(Address(rsp, (-offset)), 0);
+        break;
+      case 6:
+        testptr(rax, Address(rsp, (-offset)));
         break;
       default:
         ShouldNotReachHere();

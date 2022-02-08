@@ -1258,7 +1258,33 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
   // red zones.
   Label loop;
   bind(loop);
-  movl(Address(tmp, (-os::vm_page_size())), size );
+
+  switch (StackBangStyle) {
+    case 0:
+      // Dangerous.
+      break;
+    case 1:
+      movl(Address(tmp, (-os::vm_page_size())), size);
+      break;
+    case 2:
+      movb(Address(tmp, (-os::vm_page_size())), 0);
+      break;
+    case 3:
+      movptr(Address(tmp, (-os::vm_page_size())), size);
+      break;
+    case 4:
+      testl(size, Address(tmp, (-os::vm_page_size())));
+      break;
+    case 5:
+      testb(Address(tmp, (-os::vm_page_size())), 0);
+      break;
+    case 6:
+      testptr(size, Address(tmp, (-os::vm_page_size())));
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+
   subptr(tmp, os::vm_page_size());
   subl(size, os::vm_page_size());
   jcc(Assembler::greater, loop);
@@ -1272,7 +1298,31 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
   for (int i = 1; i < ((int)StackOverflow::stack_shadow_zone_size() / os::vm_page_size()); i++) {
     // this could be any sized move but this is can be a debugging crumb
     // so the bigger the better.
-    bang_stack_with_offset(i*os::vm_page_size());
+    switch (StackBangStyle) {
+      case 0:
+        // Dangerous.
+        break;
+      case 1:
+        movl(Address(tmp, (-os::vm_page_size())), size);
+        break;
+      case 2:
+        movb(Address(tmp, (-os::vm_page_size())), 0);
+        break;
+      case 3:
+        movptr(Address(tmp, (-os::vm_page_size())), size);
+        break;
+      case 4:
+        testl(size, Address(tmp, (-os::vm_page_size())));
+        break;
+      case 5:
+        testb(Address(tmp, (-os::vm_page_size())), 0);
+        break;
+      case 6:
+        testptr(size, Address(tmp, (-os::vm_page_size())));
+        break;
+      default:
+        ShouldNotReachHere();
+    }
   }
 }
 
