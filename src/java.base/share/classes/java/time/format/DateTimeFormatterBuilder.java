@@ -5157,8 +5157,9 @@ public final class DateTimeFormatterBuilder {
 
         @Override
         public String toString() {
-            return "Localized(" + (dateStyle != null ? dateStyle : "") + "," +
-                (timeStyle != null ? timeStyle : "") + ")";
+            return "Localized(" + (requestedTemplate != null ? requestedTemplate :
+                (dateStyle != null ? dateStyle : "") + "," +
+                (timeStyle != null ? timeStyle : "")) + ")";
         }
     }
 
