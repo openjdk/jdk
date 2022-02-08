@@ -66,7 +66,7 @@
   LOG_TAG(defaultmethods) \
   LOG_TAG(director) \
   LOG_TAG(dump) \
-  LOG_TAG(dwarf) \
+  NOT_PRODUCT(LOG_TAG(dwarf)) \
   LOG_TAG(dynamic) \
   LOG_TAG(ergo) \
   LOG_TAG(event) \
