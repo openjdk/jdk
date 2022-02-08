@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import jdk.test.lib.apps.LingeredApp;
+import jdk.test.lib.Platform;
 import jtreg.SkippedException;
 
 /**
@@ -82,15 +83,22 @@ public class ClhsdbThreadContext {
             cmdStr = "threadcontext -v " + threadID;
             cmds = List.of(cmdStr);
             expStrMap = new HashMap<>();
-            expStrMap.put(cmdStr, List.of(
-                    "Thread \"SteadyStateThread\"",
-                    "java.lang.Thread.State: BLOCKED",
-                    "In java stack \\[0x\\p{XDigit}+,0x\\p{XDigit}+,0x\\p{XDigit}+\\] for thread"));
             unexpStrMap = new HashMap<>();
-            unexpStrMap.put(cmdStr, List.of(
-                    "Thread \"Common-Cleaner\"",
-                    "Thread \"Service Thread\"",
-                    "Thread \"Finalizer\""));
+            if (Platform.isWindows()) {
+                // On windows thread IDs are not guaranteed to be the same each time you attach,
+                // so the ID we gleaned above for SteadyStateThread may not actually be for
+                // SteadyStateThread when we attach for the next threadcontext command, so we
+                // choose not to check the result on Windows.
+            } else {
+                expStrMap.put(cmdStr, List.of(
+                        "Thread \"SteadyStateThread\"",
+                        "java.lang.Thread.State: BLOCKED",
+                        "In java stack \\[0x\\p{XDigit}+,0x\\p{XDigit}+,0x\\p{XDigit}+\\] for thread"));
+                unexpStrMap.put(cmdStr, List.of(
+                        "Thread \"Common-Cleaner\"",
+                        "Thread \"Service Thread\"",
+                        "Thread \"Finalizer\""));
+            }
             test.run(theApp.getPid(), cmds, expStrMap, unexpStrMap);
 
             // Run threadcontext on all threads in verbose mode

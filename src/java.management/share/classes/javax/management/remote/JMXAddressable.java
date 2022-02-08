@@ -41,6 +41,7 @@ package javax.management.remote;
  *
  * @since 1.6
  */
+@SuppressWarnings("doclint:reference") // cross-module links
 public interface JMXAddressable {
     /**
      * <p>The address of this object.</p>

@@ -38,21 +38,9 @@ import jdk.jfr.internal.management.EventSettingsModifier;
  * chaining.
  * <p>
  * The following example shows how to use the {@code EventSettings} class.
- * <pre>
- * {@code
- * Recording r = new Recording();
- * r.enable("jdk.CPULoad")
- *    .withPeriod(Duration.ofSeconds(1));
- * r.enable("jdk.FileWrite")
- *    .withoutStackTrace()
- *    .withThreshold(Duration.ofNanos(10));
- * r.start();
- * Thread.sleep(10_000);
- * r.stop();
- * r.dump(Files.createTempFile("recording", ".jfr"));
  *
- * }
- * </pre>
+ * {@snippet class="Snippets" region="EventSettingOverview"}
+ *
  * @since 9
  */
 public abstract class EventSettings {
