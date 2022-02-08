@@ -765,6 +765,7 @@ javax/swing/JTree/4908142/bug4908142.java 8278348 macosx-all
 # core_tools
 
 tools/jlink/plugins/CompressorPluginTest.java                   8247407 generic-all
+tools/jar/CreateMissingParentDirectories.java                   8281470 generic-all
 
 ############################################################################
 
