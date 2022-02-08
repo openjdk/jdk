@@ -24,8 +24,8 @@
  */
 package jdk.internal.foreign.abi;
 
-import jdk.incubator.foreign.MemoryLayouts;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.ValueLayout;
 import jdk.internal.foreign.MemoryAddressImpl;
 
 import java.io.PrintStream;
@@ -34,7 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 class BufferLayout {
-    static final VarHandle VH_LONG = MemoryLayouts.JAVA_LONG.varHandle(long.class);
+    static final VarHandle VH_LONG = ValueLayout.JAVA_LONG.varHandle();
 
     final long size;
     final long arguments_next_pc;

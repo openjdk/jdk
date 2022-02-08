@@ -52,7 +52,7 @@ import static sun.java2d.cmm.lcms.LCMSImageLayout.ImageLayoutException;
 
 final class LCMSTransform implements ColorTransform {
 
-    private final static class NativeTransform {
+    private static final class NativeTransform {
         private long ID;
         private int inFormatter;
         private boolean isInIntPacked;

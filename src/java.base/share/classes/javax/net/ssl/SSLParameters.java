@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,7 @@
 package javax.net.ssl;
 
 import java.security.AlgorithmConstraints;
-import java.util.Map;
-import java.util.List;
-import java.util.HashMap;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.*;
 
 /**
  * Encapsulates parameters for an SSL/TLS/DTLS connection. The parameters
@@ -82,8 +76,8 @@ public class SSLParameters {
     private boolean needClientAuth;
     private String identificationAlgorithm;
     private AlgorithmConstraints algorithmConstraints;
-    private Map<Integer, SNIServerName> sniNames = null;
-    private Map<Integer, SNIMatcher> sniMatchers = null;
+    private List<SNIServerName> sniNames = null;        // immutable list
+    private Collection<SNIMatcher> sniMatchers = null;  // immutable collection
     private boolean preferLocalCipherSuites;
     private boolean enableRetransmissions = true;
     private int maximumPacketSize = 0;
@@ -111,9 +105,9 @@ public class SSLParameters {
      * {@code setCipherSuites(cipherSuites);}.  Note that the
      * standard list of cipher suite names may be found in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
-     * JSSE Cipher Suite Names</a> section of the Java Cryptography
-     * Architecture Standard Algorithm Name Documentation.  Providers
-     * may support cipher suite names not found in this list.
+     * JSSE Cipher Suite Names</a> section of the Java Security Standard
+     * Algorithm Names Specification.  Providers may support cipher suite
+     * names not found in this list.
      *
      * @param cipherSuites the array of ciphersuites (or null)
      */
@@ -131,9 +125,9 @@ public class SSLParameters {
      * Note that the standard list of cipher suite names may be found in the
      * <a href=
      * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
-     * JSSE Cipher Suite Names</a> section of the Java Cryptography
-     * Architecture Standard Algorithm Name Documentation.  Providers
-     * may support cipher suite names not found in this list.
+     * JSSE Cipher Suite Names</a> section of the Java Security Standard
+     * Algorithm Names Specification.  Providers may support cipher suite
+     * names not found in this list.
      *
      * @param cipherSuites the array of ciphersuites (or null)
      * @param protocols the array of protocols (or null)
@@ -154,9 +148,9 @@ public class SSLParameters {
      * The returned array includes cipher suites from the list of standard
      * cipher suite names in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
-     * JSSE Cipher Suite Names</a> section of the Java Cryptography
-     * Architecture Standard Algorithm Name Documentation, and may also
-     * include other cipher suites that the provider supports.
+     * JSSE Cipher Suite Names</a> section of the Java Security Standard
+     * Algorithm Names Specification, and may also include other cipher suites
+     * that the provider supports.
      *
      * @return a copy of the array of ciphersuites or null if none
      * have been set.
@@ -171,10 +165,10 @@ public class SSLParameters {
      * @param cipherSuites the array of ciphersuites (or null).  Note that the
      * standard list of cipher suite names may be found in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
-     * JSSE Cipher Suite Names</a> section of the Java Cryptography
-     * Architecture Standard Algorithm Name Documentation.  Providers
-     * may support cipher suite names not found in this list or might not
-     * use the recommended name for a certain cipher suite.
+     * JSSE Cipher Suite Names</a> section of the Java Security Standard
+     * Algorithm Names Specification.  Providers may support cipher suite
+     * names not found in this list or might not use the recommended name
+     * for a certain cipher suite.
      */
     public void setCipherSuites(String[] cipherSuites) {
         this.cipherSuites = clone(cipherSuites);
@@ -332,22 +326,29 @@ public class SSLParameters {
      * @since 1.8
      */
     public final void setServerNames(List<SNIServerName> serverNames) {
-        if (serverNames != null) {
-            if (!serverNames.isEmpty()) {
-                sniNames = new LinkedHashMap<>(serverNames.size());
-                for (SNIServerName serverName : serverNames) {
-                    if (sniNames.put(serverName.getType(),
-                                                serverName) != null) {
-                        throw new IllegalArgumentException(
-                                    "Duplicated server name of type " +
-                                    serverName.getType());
-                    }
-                }
-            } else {
-                sniNames = Collections.<Integer, SNIServerName>emptyMap();
-            }
-        } else {
+        if (this.sniNames == serverNames) {
+            return;
+        }
+
+        if (serverNames == null) {
             sniNames = null;
+        } else if (serverNames.isEmpty()) {
+            sniNames = Collections.emptyList();
+        } else {
+            List<Integer> sniTypes = new ArrayList<>(serverNames.size());
+            List<SNIServerName> sniValues = new ArrayList<>(serverNames.size());
+            for (SNIServerName serverName : serverNames) {
+                if (sniTypes.contains(serverName.getType())) {
+                    throw new IllegalArgumentException(
+                            "Duplicated server name of type " +
+                                    serverName.getType());
+                } else {
+                    sniTypes.add(serverName.getType());
+                    sniValues.add(serverName);
+                }
+            }
+
+            sniNames = Collections.unmodifiableList(sniValues);
         }
     }
 
@@ -389,16 +390,7 @@ public class SSLParameters {
      * @since 1.8
      */
     public final List<SNIServerName> getServerNames() {
-        if (sniNames != null) {
-            if (!sniNames.isEmpty()) {
-                return Collections.<SNIServerName>unmodifiableList(
-                                        new ArrayList<>(sniNames.values()));
-            } else {
-                return Collections.<SNIServerName>emptyList();
-            }
-        }
-
-        return null;
+        return sniNames;
     }
 
     /**
@@ -426,22 +418,29 @@ public class SSLParameters {
      * @since 1.8
      */
     public final void setSNIMatchers(Collection<SNIMatcher> matchers) {
-        if (matchers != null) {
-            if (!matchers.isEmpty()) {
-                sniMatchers = new HashMap<>(matchers.size());
-                for (SNIMatcher matcher : matchers) {
-                    if (sniMatchers.put(matcher.getType(),
-                                                matcher) != null) {
-                        throw new IllegalArgumentException(
-                                    "Duplicated server name of type " +
-                                    matcher.getType());
-                    }
-                }
-            } else {
-                sniMatchers = Collections.<Integer, SNIMatcher>emptyMap();
-            }
+        if (this.sniMatchers == matchers) {
+            return;
+        }
+
+        if (matchers == null) {
+            this.sniMatchers = null;
+        } else if (matchers.isEmpty()) {
+            sniMatchers = Collections.emptyList();
         } else {
-            sniMatchers = null;
+            List<Integer> matcherTypes = new ArrayList<>(matchers.size());
+            List<SNIMatcher> matcherValues = new ArrayList<>(matchers.size());
+            for (SNIMatcher matcher : matchers) {
+                if (matcherTypes.contains(matcher.getType())) {
+                    throw new IllegalArgumentException(
+                                "Duplicated server name of type " +
+                                matcher.getType());
+                } else {
+                    matcherTypes.add(matcher.getType());
+                    matcherValues.add(matcher);
+                }
+            }
+
+            this.sniMatchers = Collections.unmodifiableList(matcherValues);
         }
     }
 
@@ -464,16 +463,7 @@ public class SSLParameters {
      * @since 1.8
      */
     public final Collection<SNIMatcher> getSNIMatchers() {
-        if (sniMatchers != null) {
-            if (!sniMatchers.isEmpty()) {
-                return Collections.<SNIMatcher>unmodifiableList(
-                                        new ArrayList<>(sniMatchers.values()));
-            } else {
-                return Collections.<SNIMatcher>emptyList();
-            }
-        }
-
-        return null;
+        return sniMatchers;
     }
 
     /**
@@ -617,7 +607,7 @@ public class SSLParameters {
      *
      * @return a non-null, possibly zero-length array of application protocol
      *         {@code String}s.  The array is ordered based on protocol
-     *         preference, with {@code protocols[0]} being the most preferred.
+     *         preference, with the first entry being the most preferred.
      * @see #setApplicationProtocols
      * @since 9
      */

@@ -25,8 +25,7 @@
 
 package java.lang.invoke;
 
-import jdk.internal.access.JavaLangAccess;
-import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.VM;
 import jdk.internal.ref.CleanerFactory;
 import sun.invoke.util.Wrapper;
 
@@ -35,7 +34,6 @@ import java.lang.reflect.Field;
 
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.MethodHandleStatics.TRACE_METHOD_LINKAGE;
-import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
 /**
@@ -248,6 +246,7 @@ class MethodHandleNatives {
         return true;
     }
     static {
+        VM.setJavaLangInvokeInited();
         assert(verifyConstants());
     }
 
@@ -665,8 +664,7 @@ class MethodHandleNatives {
 
     static boolean canBeCalledVirtual(MemberName mem) {
         assert(mem.isInvocable());
-        return mem.getName().equals("getContextClassLoader") &&
-            canBeCalledVirtual(mem, java.lang.Thread.class);
+        return mem.getName().equals("getContextClassLoader") && canBeCalledVirtual(mem, java.lang.Thread.class);
     }
 
     static boolean canBeCalledVirtual(MemberName symbolicRef, Class<?> definingClass) {
@@ -675,17 +673,5 @@ class MethodHandleNatives {
         if (symbolicRef.isStatic() || symbolicRef.isPrivate())  return false;
         return (definingClass.isAssignableFrom(symbolicRefClass) ||  // Msym overrides Mdef
                 symbolicRefClass.isInterface());                     // Mdef implements Msym
-    }
-
-    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
-    /*
-     * Returns the class data set by the VM in the Class::classData field.
-     *
-     * This is also invoked by LambdaForms as it cannot use condy via
-     * MethodHandles.classData due to bootstrapping issue.
-     */
-    static Object classData(Class<?> c) {
-        UNSAFE.ensureClassInitialized(c);
-        return JLA.classData(c);
     }
 }

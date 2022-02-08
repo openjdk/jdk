@@ -272,25 +272,43 @@ dnl             $1 $2 $3 $4 $5
 VECTOR_CAST_F2I(2, F, I, D, 2S)
 VECTOR_CAST_F2I(4, F, I, X, 4S)
 VECTOR_CAST_F2I(2, D, L, X, 2D)
-dnl
-define(`VECTOR_CAST_F2I_L', `
-instruct vcvt$1$2to$1$3`'(vec$4 dst, vec$5 src)
+
+instruct vcvt4Fto4S(vecD dst, vecX src)
 %{
-  predicate(n->as_Vector()->length() == $1 && n->bottom_type()->is_vect()->element_basic_type() == T_`'TYPE2DATATYPE($3));
-  match(Set dst (VectorCast$2`'2X src));
-  format %{ "fcvtzs  $dst, T$6, $src\n\t"
-            "xtn     $dst, T$7, $dst, T$6\t# convert $1$2 to $1$3 vector"
+  predicate(n->as_Vector()->length() == 4 && n->bottom_type()->is_vect()->element_basic_type() == T_SHORT);
+  match(Set dst (VectorCastF2X src));
+  format %{ "fcvtzs  $dst, T4S, $src\n\t"
+            "xtn     $dst, T4H, $dst, T4S\t# convert 4F to 4S vector"
   %}
   ins_encode %{
-    __ fcvtzs(as_FloatRegister($dst$$reg), __ T$6, as_FloatRegister($src$$reg));
-    __ xtn(as_FloatRegister($dst$$reg), __ T$7, as_FloatRegister($dst$$reg), __ T$6);
+    __ fcvtzs(as_FloatRegister($dst$$reg), __ T4S, as_FloatRegister($src$$reg));
+    __ xtn(as_FloatRegister($dst$$reg), __ T4H, as_FloatRegister($dst$$reg), __ T4S);
   %}
   ins_pipe(pipe_slow);
-%}')dnl
-dnl               $1 $2 $3 $4 $5 $6  $7
-VECTOR_CAST_F2I_L(4, F, S, D, X, 4S, 4H)
-VECTOR_CAST_F2I_L(2, D, I, D, X, 2D, 2S)
-dnl
+%}
+
+instruct vcvt2Dto2I(vecD dst, vecX src)
+%{
+  predicate(n->as_Vector()->length() == 2 && n->bottom_type()->is_vect()->element_basic_type() == T_INT);
+  match(Set dst (VectorCastD2X src));
+  effect(TEMP_DEF dst);
+  format %{ "ins      $dst, D, $src, 0, 1\n\t"
+            "fcvtzdw  rscratch1, $src\n\t"
+            "fcvtzdw  rscratch2, $dst\n\t"
+            "fmovs    $dst, rscratch1\n\t"
+            "mov      $dst, S, 1, rscratch2\t#convert 2D to 2I vector"
+  %}
+  ins_encode %{
+    __ ins(as_FloatRegister($dst$$reg), __ D, as_FloatRegister($src$$reg), 0, 1);
+    // We can't use fcvtzs(vector, integer) instruction here because we need
+    // saturation arithmetic. See JDK-8276151.
+    __ fcvtzdw(rscratch1, as_FloatRegister($src$$reg));
+    __ fcvtzdw(rscratch2, as_FloatRegister($dst$$reg));
+    __ fmovs(as_FloatRegister($dst$$reg), rscratch1);
+    __ mov(as_FloatRegister($dst$$reg), __ S, 1, rscratch2);
+  %}
+  ins_pipe(pipe_slow);
+%}
 
 instruct vcvt4Fto4B(vecD dst, vecX src)
 %{
@@ -850,13 +868,13 @@ instruct insert$1$2`'(vec$3 dst, vec$3 src, iReg$4`'ORL2I($4) val, immI idx)
   match(Set dst (VectorInsert (Binary src val) idx));
   ins_cost(INSN_COST);
   format %{ "orr    $dst, T$5, $src, $src\n\t"
-            "mov    $dst, T$1`'iTYPE2SIMD($2), $idx, $val\t# insert into vector($1$2)" %}
+            "mov    $dst, iTYPE2SIMD($2), $idx, $val\t# insert into vector($1$2)" %}
   ins_encode %{
     if (as_FloatRegister($dst$$reg) != as_FloatRegister($src$$reg)) {
       __ orr(as_FloatRegister($dst$$reg), __ T$5,
              as_FloatRegister($src$$reg), as_FloatRegister($src$$reg));
     }
-    __ mov(as_FloatRegister($dst$$reg), __ T$1`'iTYPE2SIMD($2), $idx$$constant, $val$$Register);
+    __ mov(as_FloatRegister($dst$$reg), __ iTYPE2SIMD($2), $idx$$constant, $val$$Register);
   %}
   ins_pipe(pipe_slow);
 %}')dnl
@@ -985,11 +1003,11 @@ instruct vmul2L(vecX dst, vecX src1, vecX src2, iRegLNoSp tmp1, iRegLNoSp tmp2)
     __ umov($tmp1$$Register, as_FloatRegister($src1$$reg), __ D, 0);
     __ umov($tmp2$$Register, as_FloatRegister($src2$$reg), __ D, 0);
     __ mul(as_Register($tmp2$$reg), as_Register($tmp2$$reg), as_Register($tmp1$$reg));
-    __ mov(as_FloatRegister($dst$$reg), __ T2D, 0, $tmp2$$Register);
+    __ mov(as_FloatRegister($dst$$reg), __ D, 0, $tmp2$$Register);
     __ umov($tmp1$$Register, as_FloatRegister($src1$$reg), __ D, 1);
     __ umov($tmp2$$Register, as_FloatRegister($src2$$reg), __ D, 1);
     __ mul(as_Register($tmp2$$reg), as_Register($tmp2$$reg), as_Register($tmp1$$reg));
-    __ mov(as_FloatRegister($dst$$reg), __ T2D, 1, $tmp2$$Register);
+    __ mov(as_FloatRegister($dst$$reg), __ D, 1, $tmp2$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -2460,6 +2478,38 @@ instruct vmask_lasttrue16B(iRegINoSp dst, vecX src) %{
     __ bind(LAST_TRUE_INDEX);
     __ clz($dst$$Register, $dst$$Register);
     __ subw($dst$$Register, rscratch1, $dst$$Register, Assembler::LSR, 3);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmask_tolong8B(iRegLNoSp dst, vecD src) %{
+  match(Set dst (VectorMaskToLong src));
+  ins_cost(5 * INSN_COST);
+  format %{ "vmask_tolong $dst, $src\t# convert mask to long (8B)" %}
+  ins_encode %{
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
+
+    __ fmovd(as_Register($dst$$reg), as_FloatRegister($src$$reg));
+    __ bytemask_compress(as_Register($dst$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmask_tolong16B(iRegLNoSp dst, vecX src) %{
+  match(Set dst (VectorMaskToLong src));
+  ins_cost(11 * INSN_COST);
+  format %{ "vmask_tolong $dst, $src\t# convert mask to long (16B)" %}
+  ins_encode %{
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
+
+    __ umov(as_Register($dst$$reg), as_FloatRegister($src$$reg), __ D, 0);
+    __ umov(rscratch1, as_FloatRegister($src$$reg), __ D, 1);
+    __ bytemask_compress(as_Register($dst$$reg));
+    __ bytemask_compress(rscratch1);
+    __ orr(as_Register($dst$$reg), as_Register($dst$$reg),
+           rscratch1, Assembler::LSL, 8);
   %}
   ins_pipe(pipe_slow);
 %}

@@ -37,6 +37,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -102,7 +103,7 @@ public class Depend implements Plugin {
             private final MessageDigest apiHash;
             {
                 try {
-                    apiHash = MessageDigest.getInstance("MD5");
+                    apiHash = MessageDigest.getInstance("SHA-256");
                 } catch (NoSuchAlgorithmException ex) {
                     throw new IllegalStateException(ex);
                 }
@@ -156,13 +157,7 @@ public class Depend implements Plugin {
     }
 
     private String toString(byte[] digest) {
-        StringBuilder result = new StringBuilder();
-
-        for (byte b : digest) {
-            result.append(String.format("%X", b));
-        }
-
-        return result.toString();
+        return HexFormat.of().withUpperCase().formatHex(digest);
     }
 
     private static final class APIVisitor implements ElementVisitor<Void, Void>,

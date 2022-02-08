@@ -208,7 +208,7 @@
           "Maximum size of marking stack")                                  \
           range(1, (max_jint - 1))                                          \
                                                                             \
-  product(size_t, MarkStackSize, NOT_LP64(32*K) LP64_ONLY(4*M),             \
+  product(size_t, MarkStackSize, NOT_LP64(64*K) LP64_ONLY(4*M),             \
           "Size of marking stack")                                          \
           constraint(MarkStackSizeConstraintFunc,AfterErgo)                 \
           range(1, (max_jint - 1))                                          \
@@ -692,9 +692,13 @@
   product(uintx, GCDrainStackTargetSize, 64,                                \
           "Number of entries we will try to leave on the stack "            \
           "during parallel gc")                                             \
-          range(0, max_juint)
-
-// end of GC_FLAGS
+          range(0, max_juint)                                               \
+                                                                            \
+  product(uint, GCCardSizeInBytes, 512,                                     \
+          "Card table entry size (in bytes) for card based collectors")     \
+          range(128, NOT_LP64(512) LP64_ONLY(1024))                         \
+          constraint(GCCardSizeInBytesConstraintFunc,AtParse)
+  // end of GC_FLAGS
 
 DECLARE_FLAGS(GC_FLAGS)
 

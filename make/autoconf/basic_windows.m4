@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,10 @@ AC_DEFUN([BASIC_SETUP_PATHS_WINDOWS],
       OPENJDK_BUILD_OS_ENV=windows.wsl1
     else
       # This test is not guaranteed, but there is no documented way of
-      # distinguishing between WSL1 and WSL2. Assume only WSL2 has WSL_INTEROP
-      # in /run/WSL
-      if test -d "/run/WSL" ; then
+      # distinguishing between WSL1 and WSL2.
+      # Check whether "Hyper-V" appears in /proc/interrupts because WSL2 runs on Hyper-V.
+      $GREP -q Hyper-V /proc/interrupts
+      if test $? -eq 0; then
         OPENJDK_BUILD_OS_ENV=windows.wsl2
       else
         OPENJDK_BUILD_OS_ENV=windows.wsl1

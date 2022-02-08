@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -672,19 +672,32 @@ bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
   return true;
 }
 
-// Transition virtual memory tracking level.
-bool VirtualMemoryTracker::transition(NMT_TrackingLevel from, NMT_TrackingLevel to) {
-  assert (from != NMT_minimal, "cannot convert from the lowest tracking level to anything");
-  if (to == NMT_minimal) {
-    assert(from == NMT_summary || from == NMT_detail, "Just check");
-    // Clean up virtual memory tracking data structures.
-    ThreadCritical tc;
-    // Check for potential race with other thread calling transition
-    if (_reserved_regions != NULL) {
-      delete _reserved_regions;
-      _reserved_regions = NULL;
-    }
-  }
+class PrintRegionWalker : public VirtualMemoryWalker {
+private:
+  const address               _p;
+  outputStream*               _st;
+public:
+  PrintRegionWalker(const void* p, outputStream* st) :
+    _p((address)p), _st(st) { }
 
-  return true;
+  bool do_allocation_site(const ReservedMemoryRegion* rgn) {
+    if (rgn->contain_address(_p)) {
+      _st->print_cr(PTR_FORMAT " in mmap'd memory region [" PTR_FORMAT " - " PTR_FORMAT "] by %s",
+        p2i(_p), p2i(rgn->base()), p2i(rgn->base() + rgn->size()), rgn->flag_name());
+      if (MemTracker::tracking_level() == NMT_detail) {
+        rgn->call_stack()->print_on(_st);
+        _st->cr();
+      }
+      return false;
+    }
+    return true;
+  }
+};
+
+// If p is contained within a known memory region, print information about it to the
+// given stream and return true; false otherwise.
+bool VirtualMemoryTracker::print_containing_region(const void* p, outputStream* st) {
+  PrintRegionWalker walker(p, st);
+  return !walk_virtual_memory(&walker);
+
 }

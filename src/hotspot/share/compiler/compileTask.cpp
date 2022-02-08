@@ -236,13 +236,11 @@ void CompileTask::print_tty() {
 // CompileTask::print_impl
 void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, int comp_level,
                              bool is_osr_method, int osr_bci, bool is_blocking,
-                             const char* msg, bool short_form, bool cr, bool timestamp,
+                             const char* msg, bool short_form, bool cr,
                              jlong time_queued, jlong time_started) {
   if (!short_form) {
-    if (timestamp) {
-      // Print current time
-      st->print("%7d ", (int)tty->time_stamp().milliseconds());
-    }
+    // Print current time
+    st->print("%7d ", (int)tty->time_stamp().milliseconds());
     if (Verbose && time_queued != 0) {
       // Print time in queue and time being processed by compiler thread
       jlong now = os::elapsed_counter();

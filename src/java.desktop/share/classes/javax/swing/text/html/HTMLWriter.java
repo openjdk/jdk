@@ -308,9 +308,7 @@ public class HTMLWriter extends AbstractWriter {
             // If an instance of an UNKNOWN Tag, or an instance of a
             // tag that is only visible during editing
             //
-            if (nameTag != null && endTag != null &&
-                (endTag instanceof String) &&
-                endTag.equals("true")) {
+            if (nameTag != null && "true".equals(endTag)) {
                 outputEndTag = true;
             }
 
@@ -732,8 +730,8 @@ public class HTMLWriter extends AbstractWriter {
                 write('<');
                 write(tag.toString());
                 Object o = attr.getAttribute(tag);
-                if (o != null && o instanceof AttributeSet) {
-                    writeAttributes((AttributeSet)o);
+                if (o instanceof AttributeSet as) {
+                    writeAttributes(as);
                 }
                 write('>');
                 tags.addElement(tag);
@@ -813,8 +811,8 @@ public class HTMLWriter extends AbstractWriter {
                 write('<');
                 write(t.toString());
                 Object o = tagValues.elementAt(i);
-                if (o != null && o instanceof AttributeSet) {
-                    writeAttributes((AttributeSet)o);
+                if (o instanceof AttributeSet as) {
+                    writeAttributes(as);
                 }
                 write('>');
             }

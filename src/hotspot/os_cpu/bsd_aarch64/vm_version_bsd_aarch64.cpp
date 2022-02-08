@@ -60,8 +60,8 @@ void VM_Version::get_os_cpu_info() {
   assert(cpu_has("hw.optional.neon"), "should be");
   _features = CPU_FP | CPU_ASIMD;
 
-  // All Apple-darwin Arm processors have AES.
-  _features |= CPU_AES;
+  // All Apple-darwin Arm processors have AES and PMULL.
+  _features |= CPU_AES | CPU_PMULL;
 
   // Only few features are available via sysctl, see line 614
   // https://opensource.apple.com/source/xnu/xnu-6153.141.1/bsd/kern/kern_mib.c.auto.html

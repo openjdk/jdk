@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Set;
 
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
@@ -389,19 +388,9 @@ public class Navigation {
         if (documentedPage == PageMode.CLASS) {
             List<Content> listContents = new ArrayList<>();
             VisibleMemberTable vmt = configuration.getVisibleMemberTable((TypeElement) element);
-            if (element.getKind() == ElementKind.ANNOTATION_TYPE) {
-                // Handle annotation interfaces separately as required and optional elements
-                // share a combined details section.
-                addTypeDetailLink(FIELDS, !vmt.getVisibleMembers(FIELDS).isEmpty(), listContents);
-                boolean hasAnnotationElements =
-                        !vmt.getVisibleMembers(ANNOTATION_TYPE_MEMBER_OPTIONAL).isEmpty()
-                                || !vmt.getVisibleMembers(ANNOTATION_TYPE_MEMBER_REQUIRED).isEmpty();
-                addTypeDetailLink(ANNOTATION_TYPE_MEMBER_REQUIRED, hasAnnotationElements, listContents);
-            } else {
-                Set<VisibleMemberTable.Kind> detailSet = VisibleMemberTable.Kind.forDetailsOf(element.getKind());
-                for (VisibleMemberTable.Kind kind : detailSet) {
-                    addTypeDetailLink(kind, !vmt.getVisibleMembers(kind).isEmpty(), listContents);
-                }
+            Set<VisibleMemberTable.Kind> detailSet = VisibleMemberTable.Kind.forDetailsOf(element.getKind());
+            for (VisibleMemberTable.Kind kind : detailSet) {
+                addTypeDetailLink(kind, !vmt.getVisibleMembers(kind).isEmpty(), listContents);
             }
             if (!listContents.isEmpty()) {
                 if (nested) {
@@ -432,10 +421,8 @@ public class Navigation {
             case FIELDS -> links.createLink(HtmlIds.FIELD_DETAIL, contents.navField, link);
             case METHODS -> links.createLink(HtmlIds.METHOD_DETAIL, contents.navMethod, link);
             case PROPERTIES -> links.createLink(HtmlIds.PROPERTY_DETAIL, contents.navProperty, link);
-            case ANNOTATION_TYPE_MEMBER_REQUIRED,
-                 ANNOTATION_TYPE_MEMBER_OPTIONAL ->
-                    links.createLink(HtmlIds.ANNOTATION_TYPE_ELEMENT_DETAIL,
-                            contents.navAnnotationTypeMember, link);
+            case ANNOTATION_TYPE_MEMBER -> links.createLink(HtmlIds.ANNOTATION_TYPE_ELEMENT_DETAIL,
+                    contents.navAnnotationTypeMember, link);
             default -> Text.EMPTY;
         });
     }
@@ -647,21 +634,21 @@ public class Navigation {
                 .put(HtmlAttr.TITLE, rowListTitle);
         addMainNavLinks(navList);
         navDiv.add(navList);
-        HtmlTree ulNavSummaryRight = new HtmlTree(TagName.UL).setStyle(HtmlStyle.subNavListSmall);
+        HtmlTree ulNavSummaryRight = HtmlTree.UL(HtmlStyle.subNavListSmall);
         addSummaryLinks(ulNavSummaryRight, true);
         addDetailLinks(ulNavSummaryRight, true);
         navDiv.add(ulNavSummaryRight);
         tree.add(navDiv);
 
-        HtmlTree subDiv = new HtmlTree(TagName.DIV).setStyle(HtmlStyle.subNav);
+        HtmlTree subDiv = HtmlTree.DIV(HtmlStyle.subNav);
 
         HtmlTree div = new HtmlTree(TagName.DIV).setId(HtmlIds.NAVBAR_SUB_LIST);
         // Add the summary links if present.
-        HtmlTree ulNavSummary = new HtmlTree(TagName.UL).setStyle(HtmlStyle.subNavList);
+        HtmlTree ulNavSummary = HtmlTree.UL(HtmlStyle.subNavList);
         addSummaryLinks(ulNavSummary, false);
         div.add(ulNavSummary);
         // Add the detail links if present.
-        HtmlTree ulNavDetail = new HtmlTree(TagName.UL).setStyle(HtmlStyle.subNavList);
+        HtmlTree ulNavDetail = HtmlTree.UL(HtmlStyle.subNavList);
         addDetailLinks(ulNavDetail, false);
         div.add(ulNavDetail);
         subDiv.add(div);

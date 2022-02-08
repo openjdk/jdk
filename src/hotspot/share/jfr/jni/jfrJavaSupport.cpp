@@ -71,7 +71,7 @@ static void check_new_unstarted_java_thread(JavaThread* t) {
  */
 jobject JfrJavaSupport::local_jni_handle(const oop obj, JavaThread* t) {
   DEBUG_ONLY(check_java_thread_in_vm(t));
-  return t->active_handles()->allocate_handle(obj);
+  return t->active_handles()->allocate_handle(t, obj);
 }
 
 jobject JfrJavaSupport::local_jni_handle(const jobject handle, JavaThread* t) {

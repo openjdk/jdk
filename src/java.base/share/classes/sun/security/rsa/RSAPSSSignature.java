@@ -59,7 +59,7 @@ public class RSAPSSSignature extends SignatureSpi {
     private boolean isDigestEqual(String stdAlg, String givenAlg) {
         if (stdAlg == null || givenAlg == null) return false;
 
-        if (givenAlg.indexOf("-") != -1) {
+        if (givenAlg.contains("-")) {
             return stdAlg.equalsIgnoreCase(givenAlg);
         } else {
             if (stdAlg.equals("SHA-1")) {
@@ -255,7 +255,6 @@ public class RSAPSSSignature extends SignatureSpi {
      * internal signature parameters.
      */
     private void isValid(RSAKey rsaKey) throws InvalidKeyException {
-        AlgorithmParameterSpec keyParams = rsaKey.getParams();
         // validate key parameters
         if (!isCompatible(rsaKey.getParams(), this.sigParams)) {
             throw new InvalidKeyException

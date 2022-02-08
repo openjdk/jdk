@@ -509,7 +509,7 @@ public class DefaultHighlighter extends LayeredHighlighter {
     }
 
 
-    class HighlightInfo implements Highlighter.Highlight {
+    static class HighlightInfo implements Highlighter.Highlight {
 
         public int getStartOffset() {
             return p0.getOffset();
@@ -533,7 +533,7 @@ public class DefaultHighlighter extends LayeredHighlighter {
      * LayeredHighlightPainter is used when a drawsLayeredHighlights is
      * true. It maintains a rectangle of the region to paint.
      */
-    class LayeredHighlightInfo extends HighlightInfo {
+    static class LayeredHighlightInfo extends HighlightInfo {
 
         void union(Shape bounds) {
             if (bounds == null)

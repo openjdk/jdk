@@ -326,6 +326,12 @@ void JvmtiManageCapabilities::update() {
        || avail.can_generate_field_modification_events)
   {
     RewriteFrequentPairs = false;
+#ifdef ZERO
+    // The BytecodeInterpreter is specialized only with RewriteBytecodes
+    // for simplicity. If we want to disable RewriteFrequentPairs, we
+    // need to disable RewriteBytecodes as well.
+    RewriteBytecodes = false;
+#endif
   }
 
   // If can_redefine_classes is enabled in the onload phase then we know that the

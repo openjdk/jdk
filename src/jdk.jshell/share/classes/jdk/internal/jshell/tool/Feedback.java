@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -372,7 +372,7 @@ class Feedback {
                 return "";
             }
             Matcher m = FIELD_PATTERN.matcher(format);
-            StringBuffer sb = new StringBuffer(format.length());
+            StringBuilder sb = new StringBuilder(format.length());
             while (m.find()) {
                 String fieldName = m.group(1);
                 String sub = format(fieldName, selector);
@@ -626,7 +626,7 @@ class Feedback {
         }
 
         /**
-         * Set mode. Create, changed, or delete a feedback mode. For @{code /set
+         * Set mode. Create, changed, or delete a feedback mode. For {@code /set
          * mode <mode> [<old-mode>] [-command|-quiet|-delete|-retain]}.
          *
          * @return true if successful

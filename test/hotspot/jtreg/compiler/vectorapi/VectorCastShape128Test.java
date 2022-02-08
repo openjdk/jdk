@@ -24,6 +24,7 @@
 package compiler.vectorapi;
 
 import java.util.Random;
+import jdk.test.lib.Utils;
 
 import jdk.incubator.vector.ByteVector;
 import jdk.incubator.vector.DoubleVector;
@@ -39,9 +40,11 @@ import org.testng.annotations.Test;
 /**
  * @test
  * @bug 8268966
+ * @key randomness
  * @summary AArch64: 'bad AD file' in some vector conversion tests
+ * @library /test/lib
  * @modules jdk.incubator.vector
- * @run testng/othervm -XX:-TieredCompilation compiler.vectorapi.VectorCastShape128Test
+ * @run testng/othervm -XX:-TieredCompilation -XX:CompileThreshold=100 compiler.vectorapi.VectorCastShape128Test
  */
 
 
@@ -54,8 +57,8 @@ public class VectorCastShape128Test {
     private static final VectorSpecies<Float> fspec = FloatVector.SPECIES_128;
     private static final VectorSpecies<Double> dspec = DoubleVector.SPECIES_128;
 
-    private static final int NUM_ITER = 50000;
-    private static final int LENGTH = 512;
+    private static final int NUM_ITER = 10000;
+    private static final int LENGTH = 1024;
     private static int[] ia;
     private static int[] ib;
     private static byte[] ba;
@@ -68,6 +71,51 @@ public class VectorCastShape128Test {
     private static double[] db;
     private static float[] fa;
     private static float[] fb;
+
+    public static float [] fspecial = {
+        0.0f,
+        -0.0f,
+        Float.MAX_VALUE,
+        Float.MIN_VALUE,
+        -Float.MAX_VALUE,
+        -Float.MIN_VALUE,
+        Float.NaN,
+        Float.POSITIVE_INFINITY,
+        Float.NEGATIVE_INFINITY,
+        Integer.MAX_VALUE,
+        Integer.MIN_VALUE,
+        Long.MAX_VALUE,
+        Long.MIN_VALUE,
+    };
+
+    public static double [] dspecial = {
+        0.0,
+        -0.0,
+        Double.MAX_VALUE,
+        Double.MIN_VALUE,
+        -Double.MAX_VALUE,
+        -Double.MIN_VALUE,
+        Double.NaN,
+        Double.POSITIVE_INFINITY,
+        Double.NEGATIVE_INFINITY,
+        Integer.MAX_VALUE,
+        Integer.MIN_VALUE,
+        Long.MIN_VALUE,
+        Long.MAX_VALUE,
+    };
+
+    public static int [] ispecial = {
+        0,
+        Integer.MAX_VALUE,
+        Integer.MIN_VALUE,
+    };
+
+    public static long [] lspecial = {
+        0,
+        Long.MAX_VALUE,
+        Long.MIN_VALUE,
+    };
+
 
     private static void initialize() {
         ia = new int[LENGTH];
@@ -82,14 +130,23 @@ public class VectorCastShape128Test {
         fb = new float[LENGTH];
         da = new double[LENGTH];
         db = new double[LENGTH];
-        Random r = new Random();
+        Random r = Utils.getRandomInstance();
         for (int i = 0; i < LENGTH; i++) {
             ia[i] = r.nextInt();
             la[i] = r.nextLong();
             sa[i] = (short) r.nextInt();
             ba[i] = (byte) r.nextInt();
-            fa[i] = r.nextFloat();
-            da[i] = r.nextDouble();
+            fa[i] = ia[i] + r.nextFloat();
+            da[i] = la[i] + r.nextDouble();
+        }
+
+        // Replicate to make sure the values get tested, as some elements may be
+        // ignored for some vector conversions.
+        for (int i = 0; i < 4; i++) {
+            System.arraycopy(ispecial, 0, ia, ispecial.length * i, ispecial.length);
+            System.arraycopy(lspecial, 0, la, lspecial.length * i, lspecial.length);
+            System.arraycopy(fspecial, 0, fa, fspecial.length * i, fspecial.length);
+            System.arraycopy(dspecial, 0, da, dspecial.length * i, dspecial.length);
         }
     }
 
