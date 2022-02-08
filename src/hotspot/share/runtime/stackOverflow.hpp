@@ -111,14 +111,23 @@ class StackOverflow {
   //                                               |   size
   //                                               v
   //                                              ---   <--  shadow_zone_safe_limit()
+  // (Here and below: not yet touched stack)
   //
-  // (some usable, but not yet touched memory)
+  //
+  // (Here and below: touched at least once)      ---
+  //                                               ^
+  //                                               |  shadow
+  //                                               |   zone
+  //                                               |   size
+  //                                               v
+  //                                              ---   <--  shadow_zone_growth_watermark()
+  //
   //
   //  --
   //  |
   //  |  shadow zone
   //  |
-  //  --                                          ---   <--  shadow_zone_growth_watermark()
+  //  --
   //  x    frame n
   //  --
   //  x    frame n-1
