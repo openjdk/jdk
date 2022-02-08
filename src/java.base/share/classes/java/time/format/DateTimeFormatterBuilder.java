@@ -251,7 +251,7 @@ public final class DateTimeFormatterBuilder {
      */
     public static String getLocalizedDateTimePattern(String requestedTemplate,
                                                      Chronology chrono, Locale locale) {
-        Objects.requireNonNull(locale, "requestedTemplate");
+        Objects.requireNonNull(requestedTemplate, "requestedTemplate");
         Objects.requireNonNull(chrono, "chrono");
         Objects.requireNonNull(locale, "locale");
         Locale override = CalendarDataUtility.findRegionOverride(locale);
@@ -1459,6 +1459,20 @@ public final class DateTimeFormatterBuilder {
     }
 
     //-----------------------------------------------------------------------
+    // RegEx pattern for skeleton validity checking
+    private static final Pattern VALID_TEMPLATE_PATTERN = Pattern.compile(
+        "G{0,5}" +        // Era
+        "y*" +            // Year
+        "Q{0,5}" +        // Quarter
+        "M{0,5}" +        // Month
+        "w*" +            // Week of Week Based Year
+        "E{0,5}" +        // Day of Week
+        "d{0,2}" +        // Day of Month
+        "B{0,5}" +        // Period/AmPm of Day
+        "[hHjC]{0,2}" +   // Hour of Day/AmPm
+        "m{0,2}" +        // Minute of Hour
+        "s{0,2}" +        // Second of Minute
+        "[vz]{0,4}");     // Zone
     /**
      * Appends a localized pattern to the formatter using the requested template.
      * <p>
@@ -1514,6 +1528,10 @@ public final class DateTimeFormatterBuilder {
      * @since 19
      */
     public DateTimeFormatterBuilder appendLocalized(String requestedTemplate) {
+        Objects.requireNonNull(requestedTemplate, "requestedTemplate");
+        if (!VALID_TEMPLATE_PATTERN.matcher(requestedTemplate).matches()) {
+            throw new IllegalArgumentException("Requested template is invalid: " + requestedTemplate);
+        }
         appendInternal(new LocalizedPrinterParser(requestedTemplate));
         return this;
     }
@@ -5071,21 +5089,6 @@ public final class DateTimeFormatterBuilder {
         /** Cache of formatters. */
         private static final ConcurrentMap<String, DateTimeFormatter> FORMATTER_CACHE = new ConcurrentHashMap<>(16, 0.75f, 2);
 
-        // RegEx pattern for skeleton validity checking
-        private static final Pattern VALID_TEMPLATE_PATTERN = Pattern.compile(
-            "G{0,5}" +        // Era
-            "y*" +            // Year
-            "Q{0,5}" +        // Quarter
-            "M{0,5}" +        // Month
-            "w*" +            // Week of Week Based Year
-            "E{0,5}" +        // Day of Week
-            "d{0,2}" +        // Day of Month
-            "B{0,5}" +        // Period/AmPm of Day
-            "[hHjC]{0,2}" +   // Hour of Day/AmPm
-            "m{0,2}" +        // Minute of Hour
-            "s{0,2}" +        // Second of Minute
-            "[vz]{0,4}");     // Zone
-
         private final FormatStyle dateStyle;
         private final FormatStyle timeStyle;
         private final String requestedTemplate;
@@ -5098,7 +5101,9 @@ public final class DateTimeFormatterBuilder {
          */
         LocalizedPrinterParser(FormatStyle dateStyle, FormatStyle timeStyle) {
             // params validated by caller
-            this(dateStyle, timeStyle, null);
+            this.dateStyle = dateStyle;
+            this.timeStyle = timeStyle;
+            this.requestedTemplate = null;
         }
 
         /**
@@ -5107,21 +5112,10 @@ public final class DateTimeFormatterBuilder {
          * @param requestedTemplate the requested template to use, not null
          */
         LocalizedPrinterParser(String requestedTemplate) {
-            this(null, null, requestedTemplate);
-            validateTemplate();
-        }
-
-        private LocalizedPrinterParser(FormatStyle dateStyle, FormatStyle timeStyle, String requestedTemplate) {
-            this.dateStyle = dateStyle;
-            this.timeStyle = timeStyle;
+            // param validated by caller
+            this.dateStyle = null;
+            this.timeStyle = null;
             this.requestedTemplate = requestedTemplate;
-        }
-
-        private void validateTemplate() {
-            Objects.requireNonNull(requestedTemplate, "requestedTemplate");
-            if (!VALID_TEMPLATE_PATTERN.matcher(requestedTemplate).matches()) {
-                throw new IllegalArgumentException("Requested template is invalid: " + requestedTemplate);
-            }
         }
 
         @Override
@@ -5139,7 +5133,8 @@ public final class DateTimeFormatterBuilder {
         /**
          * Gets the formatter to use.
          * <p>
-         * The formatter will be the most appropriate to use for the date and time style in the locale.
+         * The formatter will be the most appropriate to use for the date and time style, or
+         * the requested template for the locale.
          * For example, some locales will use the month name while others will use the number.
          *
          * @param locale  the locale to use, not null
@@ -5148,23 +5143,16 @@ public final class DateTimeFormatterBuilder {
          * @throws IllegalArgumentException if the formatter cannot be found
          */
         private DateTimeFormatter formatter(Locale locale, Chronology chrono) {
-            var dtStyle = dateStyle !=null || timeStyle != null;
+            var useRequestedTemplate = requestedTemplate != null;
             String key = chrono.getId() + '|' + locale.toString() + '|' +
-                    (dtStyle ? Objects.toString(dateStyle) + timeStyle : requestedTemplate);
+                    (useRequestedTemplate ? requestedTemplate : Objects.toString(dateStyle) + timeStyle);
 
-            DateTimeFormatter formatter = FORMATTER_CACHE.get(key);
-            if (formatter == null) {
-                String pattern = (dtStyle ?
-                        getLocalizedDateTimePattern(dateStyle, timeStyle, chrono, locale) :
-                        getLocalizedDateTimePattern(requestedTemplate, chrono, locale));
-
-                formatter = new DateTimeFormatterBuilder().appendPattern(pattern).toFormatter(locale);
-                DateTimeFormatter old = FORMATTER_CACHE.putIfAbsent(key, formatter);
-                if (old != null) {
-                    formatter = old;
-                }
-            }
-            return formatter;
+            return FORMATTER_CACHE.computeIfAbsent(key, k ->
+                new DateTimeFormatterBuilder()
+                    .appendPattern(useRequestedTemplate ?
+                        getLocalizedDateTimePattern(requestedTemplate, chrono, locale) :
+                        getLocalizedDateTimePattern(dateStyle, timeStyle, chrono, locale))
+                    .toFormatter(locale));
         }
 
         @Override

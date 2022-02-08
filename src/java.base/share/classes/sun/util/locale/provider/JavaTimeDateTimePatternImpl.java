@@ -73,11 +73,9 @@ public class JavaTimeDateTimePatternImpl extends JavaTimeDateTimePatternProvider
     @Override
     public String getJavaTimeDateTimePattern(String requestedTemplate, String calType, Locale locale) {
         LocaleProviderAdapter lpa = LocaleProviderAdapter.getResourceBundleBased();
-        // CLDR's 'u'/'U' are not supported in the JDK. Replace them with 'y' instead
-        final var modifiedSkeleton = requestedTemplate.replaceAll("[uU]", "y");
         return ((ResourceBundleBasedAdapter)lpa).getCandidateLocales("", locale).stream()
                 .map(lpa::getLocaleResources)
-                .map(lr -> lr.getLocalizedPattern(modifiedSkeleton, calType))
+                .map(lr -> lr.getLocalizedPattern(requestedTemplate, calType))
                 .filter(Objects::nonNull)
                 .findFirst()
                 .or(() -> calType.equals("generic") ? Optional.empty():

@@ -57,9 +57,7 @@ public class TestLocalizedPattern {
         return SAMPLE_LOCALES.stream()
                 .flatMap(l -> {
                     var rb = ResourceBundle.getBundle("test.java.time.format.Skeletons", l);
-                    var keyset = rb.keySet();
-                    return keyset.stream()
-                            .map(key -> new Object[]{key, rb.getString(key), l});
+                    return rb.keySet().stream().map(key -> new Object[]{key, rb.getString(key), l});
                 })
                 .toList()
                 .toArray(new Object[0][0]);
@@ -68,7 +66,7 @@ public class TestLocalizedPattern {
     @DataProvider(name = "invalidSkeletons")
     Object[][] data_invalidSkeletons() {
         return new Object[][] {
-            {"afo"}, {"hB"}, {"MMMMMM"}, {"BhmsyMMM"},
+            {"afo"}, {"hB"}, {"uMMM"}, {"MMMMMM"}, {"BhmsyMMM"},
         };
     }
 

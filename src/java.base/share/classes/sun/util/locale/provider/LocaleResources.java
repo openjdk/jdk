@@ -603,7 +603,9 @@ public class LocaleResources {
         // validity check
         var matcher = VALID_SKELETON_PATTERN.matcher(skeleton);
         if (!matcher.matches()) {
-            throw new IllegalArgumentException("Requested template is invalid: " + requestedTemplate);
+            throw new IllegalArgumentException("Requested template \"%s\" is invalid".formatted(requestedTemplate) +
+                    (requestedTemplate.equals(skeleton) ? "." : ", which translated into \"%s\"".formatted(skeleton) +
+                            " after the 'j' or 'C' substitution."));
         }
 
         // try to match entire requested template first
@@ -732,7 +734,7 @@ public class LocaleResources {
 
         if (first >= 0) {
             var prefix = skeleton.substring(0, first);
-            var suffix= skeleton.substring(last + 1);
+            var suffix = skeleton.substring(last + 1);
 
             // Priority are based on this chart. First column is the original count of `pChar`,
             // then it is followed by inferred skeletons base on priority.
