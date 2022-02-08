@@ -55,12 +55,9 @@ public class JSpinnerMouseAndKeyPressTest {
 
     private static JFrame frame;
     private static JSpinner spinner;
-    private static volatile Point spinnerLocationOnScreen;
+    private static volatile Point spinnerUpButtonCenter;
+    private static volatile Point spinnerDownButtonCenter;
     private static volatile Date spinnerValue;
-    private static volatile int spinnerEditorWidth;
-    private static volatile int spinnerButtonWidth;
-    private static volatile int spinnerQuarterHeight;
-
 
     public static void main(String[] s) throws Exception {
         runTest();
@@ -105,20 +102,20 @@ public class JSpinnerMouseAndKeyPressTest {
                 SwingUtilities.invokeAndWait(() -> {
                     setLookAndFeel(laf);
                     createUI();
-                    spinnerLocationOnScreen = spinner.getLocationOnScreen();
-                    spinnerEditorWidth = spinner.getEditor().getWidth();
-                    spinnerButtonWidth = spinner.getWidth() - spinnerEditorWidth;
-                    spinnerQuarterHeight = spinner.getHeight() / 4;
                 });
 
-                Point spinnerUpButtonCenter = new Point();
-                spinnerUpButtonCenter.x = spinnerLocationOnScreen.x + spinnerEditorWidth
-                        + (spinnerButtonWidth / 2);
-                spinnerUpButtonCenter.y = spinnerLocationOnScreen.y + spinnerQuarterHeight;
+                SwingUtilities.invokeAndWait(() -> {
+                    Point loc = spinner.getLocationOnScreen();
+                    int editorWidth = spinner.getEditor().getWidth();
+                    int buttonWidth = spinner.getWidth() - editorWidth;
+                    int quarterHeight = spinner.getHeight() / 4;
 
-                Point spinnerDownButtonCenter = new Point();
-                spinnerDownButtonCenter.x = spinnerUpButtonCenter.x;
-                spinnerDownButtonCenter.y = spinnerLocationOnScreen.y + (3 * spinnerQuarterHeight);
+                    spinnerUpButtonCenter = new Point(loc.x + editorWidth
+                            + (buttonWidth / 2),
+                            loc.y + quarterHeight);
+                    spinnerDownButtonCenter = new Point(spinnerUpButtonCenter.x,
+                            loc.y + (3 * quarterHeight));
+                });
 
                 // Mouse press use-case
                 // Move Mouse pointer to UP button center and click it
