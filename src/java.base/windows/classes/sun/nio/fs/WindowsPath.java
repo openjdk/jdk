@@ -599,6 +599,9 @@ class WindowsPath implements Path {
         if (other.isAbsolute())
             return other;
 
+        System.out.println("JUBO - WindowsPath::resolve l 601 root: " + root);
+        System.out.println("JUBO - WindowsPath::resolve l 602 other: " + other.path);
+        System.out.println("JUBO - WindowsPath::resolve l 603 other.type: " + other.type);
         switch (other.type) {
             case RELATIVE: {
                 String result;
@@ -621,10 +624,13 @@ class WindowsPath implements Path {
             }
 
             case DRIVE_RELATIVE: {
-                if (!root.endsWith("\\"))
+                if (!root.endsWith("\\")) {
+                    System.out.println("JUBO - WindowsPath::resolve l 628 root.endsWith): " + root.endsWith("\\"));
                     return other;
+                }
                 // if different roots then return other
                 String thisRoot = root.substring(0, root.length()-1);
+                System.out.println("JUBO - WindowsPath::resolve l 633 thisRoot): " + thisRoot);
                 if (!thisRoot.equalsIgnoreCase(other.root))
                     return other;
                 // same roots
@@ -635,6 +641,7 @@ class WindowsPath implements Path {
                 } else {
                     result = path + "\\" + remaining;
                 }
+                System.out.println("JUBO - WindowsPath::resolve l 644 createFromNormalizedPath(getFileSystem(), result)): " + createFromNormalizedPath(getFileSystem(), result).path);
                 return createFromNormalizedPath(getFileSystem(), result);
             }
 

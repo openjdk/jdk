@@ -226,8 +226,13 @@ public final class FileServerHandler implements HttpHandler {
 
             // resolve each path segment against the root
             Path path = root;
+            System.out.println("JUBO - FileServerHandler::mapToPath l 229 path: " + path);
             for (var segment : pathSegment) {
                 path = path.resolve(segment);
+                System.out.println("JUBO - FileServerHandler::mapToPath l 232 path: " + path);
+                System.out.println("JUBO - FileServerHandler::mapToPath l 233 Files.isReadable(path): " + Files.isReadable(path));
+                System.out.println("JUBO - FileServerHandler::mapToPath l 234 isHiddenOrSymLink(path): " + isHiddenOrSymLink(path));
+                System.out.println("JUBO - FileServerHandler::mapToPath l 235 checkPathWithinRoot(path, root): " + checkPathWithinRoot(path, root));
                 if (!Files.isReadable(path) || isHiddenOrSymLink(path)) {
                     return null;  // stop resolution, null results in 404 response
                 }
@@ -331,6 +336,8 @@ public final class FileServerHandler implements HttpHandler {
 
     private static boolean isHiddenOrSymLink(Path path) {
         try {
+            System.out.println("JUBO - FileServerHandler::isHiddenOrSymLink l 339 Files.isHidden(path): " + Files.isHidden(path));
+            System.out.println("JUBO - FileServerHandler::isHiddenOrSymLink l 340 Files.isSymbolicLink(path): " + Files.isSymbolicLink(path));
             return Files.isHidden(path) || Files.isSymbolicLink(path);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
