@@ -53,4 +53,32 @@ bool ShenandoahCollectionSet::is_in_loc(void* p) const {
   return _biased_cset_map[index] == 1;
 }
 
+void ShenandoahCollectionSet::set_immediate_trash(size_t immediate_trash) {
+  _immediate_trash = immediate_trash;
+}
+
+size_t ShenandoahCollectionSet::get_immediate_trash() {
+  return _immediate_trash;
+}
+
+size_t ShenandoahCollectionSet::get_old_bytes_reserved_for_evacuation() {
+  return _old_bytes_to_evacuate;
+}
+
+size_t ShenandoahCollectionSet::get_young_bytes_reserved_for_evacuation() {
+  return _young_bytes_to_evacuate;
+}
+
+size_t ShenandoahCollectionSet::get_bytes_reserved_for_evacuation() {
+  return _young_bytes_to_evacuate + _old_bytes_to_evacuate;
+}
+
+size_t ShenandoahCollectionSet::get_old_region_count() {
+  return _old_region_count;
+}
+
+size_t ShenandoahCollectionSet::get_young_region_count() {
+  return _young_region_count;
+}
+
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCOLLECTIONSET_INLINE_HPP

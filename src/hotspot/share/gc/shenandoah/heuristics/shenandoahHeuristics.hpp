@@ -99,6 +99,9 @@ protected:
   intx _gc_time_penalties;
   TruncatedSeq* _gc_time_history;
 
+  size_t _live_memory_last_cycle;
+  size_t _live_memory_penultimate_cycle;
+
   // There may be many threads that contend to set this flag
   ShenandoahSharedFlag _metaspace_oom;
 
@@ -126,6 +129,10 @@ public:
 
   void set_guaranteed_gc_interval(size_t guaranteed_gc_interval) {
     _guaranteed_gc_interval = guaranteed_gc_interval;
+  }
+
+  uint degenerated_cycles_in_a_row() {
+    return _degenerated_cycles_in_a_row;
   }
 
   virtual void record_cycle_start();
@@ -159,6 +166,10 @@ public:
   virtual void initialize();
 
   double time_since_last_gc() const;
+
+  void save_last_live_memory(size_t live_memory);
+  size_t get_last_live_memory();
+  size_t get_penultimate_live_memory();
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHHEURISTICS_HPP

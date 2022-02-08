@@ -33,10 +33,12 @@
 
 // If next available memory is not aligned on address that is multiple of alignment, fill the empty space
 // so that returned object is aligned on an address that is a multiple of alignment_in_words.  Requested
-// size is in words.
+// size is in words.  It is assumed that this->is_old().  A pad object is allocated, filled, and registered
+// if necessary to assure the new allocation is properly aligned.
 HeapWord* ShenandoahHeapRegion::allocate_aligned(size_t size, ShenandoahAllocRequest req, size_t alignment_in_bytes) {
   shenandoah_assert_heaplocked_or_safepoint();
   assert(is_object_aligned(size), "alloc size breaks alignment: " SIZE_FORMAT, size);
+  assert(is_old(), "aligned allocations are only taken from OLD regions to support PLABs");
 
   HeapWord* obj = top();
   uintptr_t addr_as_int = (uintptr_t) obj;

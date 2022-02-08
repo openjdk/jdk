@@ -53,6 +53,8 @@ protected:
   size_t _max_capacity;
   size_t _soft_max_capacity;
 
+  size_t _adjusted_capacity;
+
   ShenandoahHeuristics* _heuristics;
  public:
   ShenandoahGeneration(GenerationMode generation_mode, uint max_workers, size_t max_capacity, size_t soft_max_capacity);
@@ -70,9 +72,22 @@ protected:
 
   virtual size_t soft_max_capacity() const { return _soft_max_capacity; }
   virtual size_t max_capacity() const      { return _max_capacity; }
+  virtual size_t used_regions() const;
   virtual size_t used_regions_size() const;
+  virtual size_t free_unaffiliated_regions() const;
   virtual size_t used() const { return _used; }
   virtual size_t available() const;
+
+  // During evacuation and update-refs, some memory may be shifted between generations.  In particular, memory
+  // may be loaned by old-gen to young-gen based on the promise the loan will be promptly repaid from the memory reclaimed
+  // when the current collection set is recycled.  The capacity adjustment also takes into consideration memory that is
+  // set aside within each generation to hold the results of evacuation, but not promotion, into that region.  Promotions
+  // into old-gen are bounded by adjusted_available() whereas evacuations into old-gen are pre-committed.
+  virtual size_t adjusted_available() const;
+
+  // Both of following return new value of available
+  virtual size_t adjust_available(intptr_t adjustment);
+  virtual size_t unadjust_available();
 
   size_t bytes_allocated_since_gc_start();
   void reset_bytes_allocated_since_gc_start();
@@ -143,8 +158,6 @@ protected:
   void decrease_used(size_t bytes);
 
   virtual bool is_concurrent_mark_in_progress() = 0;
-
-private:
   void confirm_heuristics_mode();
 };
 

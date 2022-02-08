@@ -79,5 +79,23 @@ void VM_ShenandoahFinalUpdateRefs::doit() {
 
 void VM_ShenandoahFinalRoots::doit() {
   ShenandoahGCPauseMark mark(_gc_id, SvcGCMarker::CONCURRENT);
+  if (_incr_region_ages) {
+    // TODO: Do we even care about this?  Do we want to parallelize it?
+    ShenandoahHeap* heap = ShenandoahHeap::heap();
+    ShenandoahMarkingContext* ctx = heap->complete_marking_context();
+
+    for (size_t i = 0; i < heap->num_regions(); i++) {
+      ShenandoahHeapRegion *r = heap->get_region(i);
+      if (r->is_active() && r->is_young()) {
+        HeapWord* tams = ctx->top_at_mark_start(r);
+        HeapWord* top = r->top();
+        if (top > tams) {
+          r->reset_age();
+        } else {
+          r->increment_age();
+        }
+      }
+    }
+  }
   _gc->entry_final_roots();
 }

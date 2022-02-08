@@ -94,13 +94,15 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
   // Free set maintains mutator and collector views, and normally they allocate in their views only,
   // unless we special cases for stealing and mixed allocations.
 
+  // Overwrite with non-zero (non-NULL) values only if necessary for allocation bookkeeping.
+
   switch (req.type()) {
     case ShenandoahAllocRequest::_alloc_tlab:
     case ShenandoahAllocRequest::_alloc_shared: {
-
       // Try to allocate in the mutator view
       for (size_t idx = _mutator_leftmost; idx <= _mutator_rightmost; idx++) {
         if (is_mutator_free(idx)) {
+          // try_allocate_in() increases used if the allocation is successful.
           HeapWord* result = try_allocate_in(_heap->get_region(idx), req, in_new_region);
           if (result != NULL) {
             return result;
@@ -112,7 +114,12 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
       break;
     }
     case ShenandoahAllocRequest::_alloc_gclab:
+      // GCLABs are for evacuation so we must be in evacuation phase.  If this allocation is successful, increment
+      // the relevant evac_expended rather than used value.
+
     case ShenandoahAllocRequest::_alloc_plab:
+      // PLABs always reside in old-gen and are only allocated during evacuation phase.
+
     case ShenandoahAllocRequest::_alloc_shared_gc: {
       // First try to fit into a region that is already in use in the same generation.
       HeapWord* result = allocate_with_affiliation(req.affiliation(), req, in_new_region);
@@ -198,12 +205,16 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
   HeapWord* result = NULL;
   size_t size = req.size();
 
-  // req.size() is in words, free() is in bytes.
+  // req.size() is in words, r->free() is in bytes.
   if (ShenandoahElasticTLAB && req.is_lab_alloc()) {
     if (req.type() == ShenandoahAllocRequest::_alloc_plab) {
       // Need to assure that plabs are aligned on multiple of card region.
       size_t free = r->free();
       size_t usable_free = (free / CardTable::card_size) << CardTable::card_shift;
+      if ((free != usable_free) && (free - usable_free < ShenandoahHeap::min_fill_size() * HeapWordSize)) {
+        // We'll have to add another card's memory to the padding
+        usable_free -= CardTable::card_size;
+      }
       free /= HeapWordSize;
       usable_free /= HeapWordSize;
       if (size > usable_free) {
@@ -222,6 +233,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
         }
       }
     } else {
+      // This is a GCLAB or a TLAB allocation
       size_t free = align_down(r->free() >> LogHeapWordSize, MinObjAlignment);
       if (size > free) {
         size = free;
@@ -236,6 +248,10 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     size_t usable_free = (free / CardTable::card_size) << CardTable::card_shift;
     free /= HeapWordSize;
     usable_free /= HeapWordSize;
+    if ((free != usable_free) && (free - usable_free < ShenandoahHeap::min_fill_size() * HeapWordSize)) {
+      // We'll have to add another card's memory to the padding
+      usable_free -= CardTable::card_size;
+    }
     if (size <= usable_free) {
       assert(size % CardTable::card_size_in_words == 0, "PLAB size must be multiple of remembered set card size");
 
@@ -260,8 +276,12 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
 
     // Allocation successful, bump stats:
     if (req.is_mutator_alloc()) {
+      // Mutator allocations always pull from young gen.
+      _heap->young_generation()->increase_used(size * HeapWordSize);
       increase_used(size * HeapWordSize);
-    } else if (req.is_gc_alloc()) {
+    } else {
+      // assert(req.is_gc_alloc(), "Should be gc_alloc since req wasn't mutator alloc");
+
       // For GC allocations, we advance update_watermark because the objects relocated into this memory during
       // evacuation are not updated during evacuation.  For both young and old regions r, it is essential that all
       // PLABs be made parsable at the end of evacuation.  This is enabled by retiring all plabs at end of evacuation.
@@ -270,22 +290,29 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
       // PLABs parsable while still allowing the PLAB to serve future allocation requests that arise during the
       // next evacuation pass.
       r->set_update_watermark(r->top());
-    }
 
-    if (r->affiliation() == ShenandoahRegionAffiliation::YOUNG_GENERATION) {
-      _heap->young_generation()->increase_used(size * HeapWordSize);
-    } else if (r->affiliation() == ShenandoahRegionAffiliation::OLD_GENERATION) {
-      _heap->old_generation()->increase_used(size * HeapWordSize);
+      if (r->affiliation() == ShenandoahRegionAffiliation::YOUNG_GENERATION) {
+        // This is either a GCLAB or it is a shared evacuation allocation.  In either case, we expend young evac.
+        // At end of update refs, we'll add expended young evac into young_gen->used.  We hide this usage
+        // from current accounting because memory reserved for evacuation is not part of adjusted capacity.
+        _heap->expend_young_evac(size * HeapWordSize);
+      } else {
+        assert(r->affiliation() == ShenandoahRegionAffiliation::OLD_GENERATION, "GC Alloc was not YOUNG so must be OLD");
+
+        assert(req.type() != _alloc_gclab, "old-gen allocations use PLAB or shared allocation");
+        _heap->old_generation()->increase_used(size * HeapWordSize);
+        // for plabs, we'll sort the difference between evac and promotion usage when we retire the plab
+      }
     }
   }
-
   if (result == NULL || has_no_alloc_capacity(r)) {
     // Region cannot afford this or future allocations. Retire it.
     //
     // While this seems a bit harsh, especially in the case when this large allocation does not
     // fit, but the next small one would, we are risking to inflate scan times when lots of
-    // almost-full regions precede the fully-empty region where we want allocate the entire TLAB.
-    // TODO: Record first fully-empty region, and use that for large allocations
+    // almost-full regions precede the fully-empty region where we want to allocate the entire TLAB.
+    // TODO: Record first fully-empty region, and use that for large allocations and/or organize
+    // available free segments within regions for more efficient searches for "good fit".
 
     // Record the remainder as allocation waste
     if (req.is_mutator_alloc()) {
@@ -426,7 +453,6 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
   // While individual regions report their true use, all humongous regions are
   // marked used in the free set.
   increase_used(ShenandoahHeapRegion::region_size_bytes() * num);
-
   if (req.affiliation() == ShenandoahRegionAffiliation::YOUNG_GENERATION) {
     _heap->young_generation()->increase_used(words_size * HeapWordSize);
   } else if (req.affiliation() == ShenandoahRegionAffiliation::OLD_GENERATION) {
@@ -551,7 +577,7 @@ void ShenandoahFreeSet::rebuild() {
   }
 
   // Evac reserve: reserve trailing space for evacuations
-  size_t to_reserve = _heap->max_capacity() / 100 * ShenandoahEvacReserve;
+  size_t to_reserve = (_heap->max_capacity() / 100) * ShenandoahEvacReserve;
   size_t reserved = 0;
 
   for (size_t idx = _heap->num_regions() - 1; idx > 0; idx--) {
@@ -667,6 +693,7 @@ HeapWord* ShenandoahFreeSet::allocate(ShenandoahAllocRequest& req, bool& in_new_
   shenandoah_assert_heaplocked();
   assert_bounds();
 
+  // Allocation request is known to satisfy all memory budgeting constraints.
   if (req.size() > ShenandoahHeapRegion::humongous_threshold_words()) {
     switch (req.type()) {
       case ShenandoahAllocRequest::_alloc_shared:

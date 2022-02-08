@@ -29,6 +29,7 @@
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 #include "utilities/quickSort.hpp"
@@ -84,38 +85,62 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
   // we hit max_cset. When max_cset is hit, we terminate the cset selection. Note that in this scheme,
   // ShenandoahGarbageThreshold is the soft threshold which would be ignored until min_garbage is hit.
 
-  size_t capacity    = _generation->soft_max_capacity();
-  size_t max_cset    = (size_t)((1.0 * capacity / 100 * ShenandoahEvacReserve) / ShenandoahEvacWaste);
-  size_t free_target = (capacity / 100 * ShenandoahMinFreeThreshold) + max_cset;
-  size_t min_garbage = (free_target > actual_free ? (free_target - actual_free) : 0);
+  size_t max_cset    = (ShenandoahHeap::heap()->get_young_evac_reserve() / ShenandoahEvacWaste);
+  size_t capacity    = ShenandoahHeap::heap()->young_generation()->soft_max_capacity();
 
-  log_info(gc, ergo)("Adaptive CSet Selection. Target Free: " SIZE_FORMAT "%s, Actual Free: "
-                     SIZE_FORMAT "%s, Max CSet: " SIZE_FORMAT "%s, Min Garbage: " SIZE_FORMAT "%s",
-                     byte_size_in_proper_unit(free_target), proper_unit_for_byte_size(free_target),
-                     byte_size_in_proper_unit(actual_free), proper_unit_for_byte_size(actual_free),
+  // As currently implemented, we are not enforcing that new_garbage > min_garbage
+  // size_t free_target = (capacity / 100) * ShenandoahMinFreeThreshold + max_cset;
+  // size_t min_garbage = (free_target > actual_free ? (free_target - actual_free) : 0);
+
+  log_info(gc, ergo)("Adaptive CSet Selection. Max CSet: " SIZE_FORMAT "%s, Actual Free: " SIZE_FORMAT "%s.",
                      byte_size_in_proper_unit(max_cset),    proper_unit_for_byte_size(max_cset),
-                     byte_size_in_proper_unit(min_garbage), proper_unit_for_byte_size(min_garbage));
+                     byte_size_in_proper_unit(actual_free), proper_unit_for_byte_size(actual_free));
 
   // Better select garbage-first regions
   QuickSort::sort<RegionData>(data, (int)size, compare_by_garbage, false);
 
   size_t cur_cset = 0;
-  size_t cur_garbage = 0;
+  // size_t cur_garbage = 0;
+
+  // In generational mode, the sort order within the data array is not strictly descending amounts of garbage.  In
+  // particular, regions that have reached tenure age will be sorted into this array before younger regions that contain
+  // more garbage.  This represents one of the reasons why we keep looking at regions even after we decide, for example,
+  // to exclude one of the regions because it might require evacuation of too much live data.
 
   for (size_t idx = 0; idx < size; idx++) {
     ShenandoahHeapRegion* r = data[idx]._region;
+    size_t biased_garbage = data[idx]._garbage;
 
     size_t new_cset    = cur_cset + r->get_live_data_bytes();
-    size_t new_garbage = cur_garbage + r->garbage();
 
-    if (new_cset > max_cset) {
-      break;
-    }
+    // As currently implemented, we are not enforcing that new_garbage > min_garbage
+    // size_t new_garbage = cur_garbage + r->garbage();
 
-    if ((new_garbage < min_garbage) || (r->garbage() > garbage_threshold)) {
+    // Note that live data bytes within a region is not the same as heap_region_size - garbage.  This is because
+    // each region contains a combination of used memory (which is garbage plus live) and unused memory, which has not
+    // yet been allocated.  It may be the case that the region on this iteration has too much live data to be added to
+    // the collection set while one or more regions seen on subsequent iterations of this loop can be added to the collection
+    // set because they have smaller live memory, even though they also have smaller garbage (and necessarily a larger
+    // amount of unallocated memory).
+
+    // BANDAID: In an earlier version of this code, this was written:
+    //   if ((new_cset <= max_cset) && ((new_garbage < min_garbage) || (r->garbage() > garbage_threshold)))
+    // The problem with the original code is that in some cases the collection set would include hundreds of regions,
+    // each with less than 100 bytes of garbage.  Evacuating these regions is counterproductive.
+
+    // TODO: Think about changing the description and defaults for ShenandoahGarbageThreshold and ShenandoahMinFreeThreshold.
+    // If "customers" want to evacuate regions with smaller amounts of garbage contained therein, they should specify a lower
+    // value of ShenandoahGarbageThreshold.  As implemented currently, we may experience back-to-back collections if there is
+    // not enough memory to be reclaimed.  Let's not let pursuit of min_garbage drive us to make poor decisions.  Maybe we
+    // want yet another global parameter to allow a region to be placed into the collection set if
+    // (((new_garbage < min_garbage) && (r->garbage() > ShenandoahSmallerGarbageThreshold)) || (r->garbage() > garbage_threshold))
+
+    if ((new_cset <= max_cset) && ((r->garbage() > garbage_threshold) || (r->age() >= InitialTenuringThreshold))) {
       cset->add_region(r);
       cur_cset = new_cset;
-      cur_garbage = new_garbage;
+      // cur_garbage = new_garbage;
+    } else if (biased_garbage == 0) {
+      break;
     }
   }
 }
@@ -215,9 +240,6 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 
   size_t min_threshold = capacity / 100 * ShenandoahMinFreeThreshold;
 
-  log_debug(gc)("  available adjusted to: " SIZE_FORMAT ", min_threshold: " SIZE_FORMAT ", ShenandoahMinFreeThreshold: " SIZE_FORMAT,
-                available, min_threshold, ShenandoahMinFreeThreshold);
-
   if (available < min_threshold) {
     log_info(gc)("Trigger (%s): Free (" SIZE_FORMAT "%s) is below minimum threshold (" SIZE_FORMAT "%s)",
                  _generation->name(),
@@ -244,18 +266,96 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   //   2. Accumulated penalties from Degenerated and Full GC
   size_t allocation_headroom = available;
 
+  // ShenandoahAllocSpikeFactor is the percentage of capacity that we endeavor to assure to be free at the end of the GC
+  // cycle.
+  // TODO: Correct the representation of this quantity
+  //       (and dive deeper into _gc_time_penalties as this may also need to be corrected)
+  //
+  //       Allocation spikes are a characteristic of both the application ahd the JVM configuration.  On the JVM command line,
+  //       the application developer may want to supply a hint of the nature of spikes that are inherent in the application
+  //       workload, and this information would normally be independent of heap size (not a percentage thereof).  On the
+  //       other hand, some allocation spikes are correlated with JVM configuration.  For example, there are allocation
+  //       spikes at the starts of concurrent marking and evacuation to refresh all local allocation buffers.  The nature
+  //       of these spikes is determined by LAB min and max sizes and numbers of threads, but also on frequency of GC passes,
+  //       and on "periodic" behavior of these threads  If GC frequency is much higher than the periodic trigger for mutator
+  //       threads, then many of the mutator threads may be able to "sit out" of most GC passes.  Though the thread's stack
+  //       must be scanned, the thread does not need to refresh its LABs if it sits idle throughout the duration of the GC
+  //       pass.  The best prediction for this aspect of spikes in allocation patterns is probably recent past history.
+  //
+  //  Rationale:
+  //    The idea is that there is an average allocation rate and there are occassional abnormal bursts (or spikes) of
+  //    allocations that exceed the average allocation rate.  What do these spikes look like?
+  //
+  //    1. At certain phase changes, we may discard large amounts of data and replace it with large numbers of newly
+  //       allocated objects.  This "spike" looks more like a phase change.  We were in steady state at M bytes/sec
+  //       allocation rate and now we're in a "reinitialization phase" that looks like N bytes/sec.  We need the "spike"
+  //       accomodation to give us enough runway to recalibrate our "average allocation rate".
+  //
+  //   2. The typical workload changes.  "Suddenly", our typical workload of N TPS increases to N+delta TPS.  This means
+  //       our average allocation rate needs to be adjusted.  Once again, we need the "spike" accomodation to give us
+  //       enough runway to recalibrate our "average allocation rate".
+  //
+  //    3. Though there is an "average" allocation rate, a given workload's demand for allocation may be very bursty.  We
+  //       allocate a bunch of LABs during the 5 ms that follow completion of a GC, then we perform no more allocations for
+  //       the next 150 ms.  It seems we want the "spike" to represent the maximum divergence from average within the
+  //       period of time between consecutive evaluation of the should_start_gc() service.  Here's the thinking:
+  //
+  //       a) Between now and the next time I ask whether should_start_gc(), we might experience a spike representing
+  //          the anticipated burst of allocations.  If that would put us over budget, then we should start GC immediately.
+  //       b) Between now and the anticipated depletion of allocation pool, there may be two or more bursts of allocations.
+  //          If there are more than one of these bursts, we can "approximate" that these will be separated by spans of
+  //          time with very little or no allocations so the "average" allocation rate should be a suitable approximation
+  //          of how this will behave.
+  //
+  //    For cases 1 and 2, we need to "quickly" recalibrate the average allocation rate whenever we detect a change
+  //    in operation mode.  We want some way to decide that the average rate has changed.  Make average allocation rate
+  //    computations an independent effort.
+
   size_t spike_headroom = capacity / 100 * ShenandoahAllocSpikeFactor;
   size_t penalties      = capacity / 100 * _gc_time_penalties;
+
+  // TODO: Account for inherent delays in responding to GC triggers
+  //  1. It has been observed that delays of 200 ms or greater are common between the moment we return true from should_start_gc()
+  //     and the moment at which we begin execution of the concurrent reset phase.  Add this time into the calculation of
+  //     avg_cycle_time below.  (What is "this time"?  Perhaps we should remember recent history of this delay for the
+  //     running workload and use the maximum delay recently seen for "this time".)
+  //  2. The frequency of inquiries to should_start_gc() is adaptive, ranging between ShenandoahControlIntervalMin and
+  //     ShenandoahControlIntervalMax.  The current control interval (or the max control interval) should also be added into
+  //     the calculation of avg_cycle_time below.
 
   allocation_headroom -= MIN2(allocation_headroom, spike_headroom);
   allocation_headroom -= MIN2(allocation_headroom, penalties);
 
   double avg_cycle_time = _gc_time_history->davg() + (_margin_of_error_sd * _gc_time_history->dsd());
+
+  size_t last_live_memory = get_last_live_memory();
+  size_t penultimate_live_memory = get_penultimate_live_memory();
+  double original_cycle_time = avg_cycle_time;
+  if ((penultimate_live_memory < last_live_memory) && (penultimate_live_memory != 0)) {
+    // If the live-memory size is growing, our estimates of cycle time are based on lighter workload, so adjust.
+    // TODO: Be more precise about how to scale when live memory is growing.  Existing code is a very rough approximation
+    // tuned with very limited workload observations.
+    avg_cycle_time = (avg_cycle_time * 2 * last_live_memory) / penultimate_live_memory;
+  } else {
+    int degen_cycles = degenerated_cycles_in_a_row();
+    if (degen_cycles > 0) {
+      // If we've degenerated recently, we might be waiting too long between triggers so adjust trigger forward.
+      // TODO: Be more precise about how to scale when we've experienced recent degenerated GC.  Existing code is a very
+      // rough approximation tuned with very limited workload observations.
+      avg_cycle_time += degen_cycles * avg_cycle_time;
+    }
+  }
+
   double avg_alloc_rate = _allocation_rate.upper_bound(_margin_of_error_sd);
   log_debug(gc)("%s: average GC time: %.2f ms, allocation rate: %.0f %s/s",
     _generation->name(), avg_cycle_time * 1000, byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate));
 
   if (avg_cycle_time > allocation_headroom / avg_alloc_rate) {
+    if (avg_cycle_time > original_cycle_time) {
+      log_debug(gc)("%s: average GC time adjusted from: %.2f ms to %.2f ms because upward trend in live memory retention",
+                    _generation->name(), original_cycle_time, avg_cycle_time);
+    }
+
     log_info(gc)("Trigger (%s): Average GC time (%.2f ms) is above the time for average allocation rate (%.0f %sB/s) to deplete free headroom (" SIZE_FORMAT "%s) (margin of error = %.2f)",
                  _generation->name(), avg_cycle_time * 1000,
                  byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate),
@@ -278,6 +378,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                  _generation->name(), avg_cycle_time * 1000,
                  byte_size_in_proper_unit(rate), proper_unit_for_byte_size(rate),
                  byte_size_in_proper_unit(allocation_headroom), proper_unit_for_byte_size(allocation_headroom),
+
                  _spike_threshold_sd);
     _last_trigger = SPIKE;
     return true;

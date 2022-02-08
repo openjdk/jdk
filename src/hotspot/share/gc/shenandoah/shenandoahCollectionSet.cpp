@@ -87,6 +87,15 @@ void ShenandoahCollectionSet::add_region(ShenandoahHeapRegion* r) {
   assert(!r->is_humongous(), "Only add regular regions to the collection set");
 
   _cset_map[r->index()] = 1;
+
+  if (r->affiliation() == YOUNG_GENERATION) {
+    _young_region_count++;
+    _young_bytes_to_evacuate += r->get_live_data_bytes();
+  } else if (r->affiliation() == OLD_GENERATION) {
+    _old_region_count++;
+    _old_bytes_to_evacuate += r->get_live_data_bytes();
+  }
+
   _region_count++;
   _has_old_regions |= r->is_old();
   _garbage += r->garbage();
@@ -110,6 +119,11 @@ void ShenandoahCollectionSet::clear() {
 
   _region_count = 0;
   _current_index = 0;
+
+  _young_region_count = 0;
+  _old_region_count = 0;
+  _young_bytes_to_evacuate = 0;
+  _old_bytes_to_evacuate = 0;
 
   _has_old_regions = false;
 }

@@ -44,6 +44,7 @@ private:
   // Evacuation OOM state
   uint8_t                 _oom_scope_nesting_level;
   bool                    _oom_during_evac;
+  bool                    _plab_allows_promotion; // If false, no more promotion by this thread during this evacuation phase.
   SATBMarkQueue           _satb_mark_queue;
 
   // Thread-local allocation buffer for object evacuations.
@@ -58,6 +59,9 @@ private:
   PLAB* _plab;
   size_t _plab_size;
 
+  size_t _plab_evacuated;
+  size_t _plab_promoted;
+
   uint  _worker_id;
   int  _disarmed_value;
   double _paced_time;
@@ -71,6 +75,8 @@ private:
     _gclab_size(0),
     _plab(NULL),
     _plab_size(0),
+    _plab_evacuated(0),
+    _plab_promoted(0),
     _worker_id(INVALID_WORKER_ID),
     _disarmed_value(0),
     _paced_time(0) {
@@ -85,6 +91,7 @@ private:
       delete _gclab;
     }
     if (_plab != NULL) {
+      ShenandoahHeap::heap()->retire_plab(_plab);
       delete _plab;
     }
   }
@@ -160,6 +167,50 @@ public:
 
   static void set_plab_size(Thread* thread, size_t v) {
     data(thread)->_plab_size = v;
+  }
+
+  static void enable_plab_promotions(Thread* thread) {
+    data(thread)->_plab_allows_promotion = true;
+  }
+
+  static void disable_plab_promotions(Thread* thread) {
+    data(thread)->_plab_allows_promotion = false;
+  }
+
+  static bool allow_plab_promotions(Thread* thread) {
+    return data(thread)->_plab_allows_promotion;
+  }
+
+  static void reset_plab_evacuated(Thread* thread) {
+    data(thread)->_plab_evacuated = 0;
+  }
+
+  static void add_to_plab_evacuated(Thread* thread, size_t increment) {
+    data(thread)->_plab_evacuated += increment;
+  }
+
+  static void subtract_from_plab_evacuated(Thread* thread, size_t increment) {
+    data(thread)->_plab_evacuated -= increment;
+  }
+
+  static size_t get_plab_evacuated(Thread* thread) {
+    return data(thread)->_plab_evacuated;
+  }
+
+  static void reset_plab_promoted(Thread* thread) {
+    data(thread)->_plab_promoted = 0;
+  }
+
+  static void add_to_plab_promoted(Thread* thread, size_t increment) {
+    data(thread)->_plab_promoted += increment;
+  }
+
+  static void subtract_from_plab_promoted(Thread* thread, size_t increment) {
+    data(thread)->_plab_promoted -= increment;
+  }
+
+  static size_t get_plab_promoted(Thread* thread) {
+    return data(thread)->_plab_promoted;
   }
 
   static void add_paced_time(Thread* thread, double v) {

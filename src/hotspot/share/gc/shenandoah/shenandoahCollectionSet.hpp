@@ -47,6 +47,15 @@ private:
   size_t                _garbage;
   size_t                _used;
   size_t                _region_count;
+  size_t                _immediate_trash;
+  size_t                _evacuation_reserve; // How many bytes reserved in generation for evacuation replicas.  This does
+                                             // not include bytes reserved for old-generation replicas.  The value is
+                                             // conservative in that memory may be reserved for objects that will be promoted.
+  size_t                _young_bytes_to_evacuate;
+  size_t                _old_bytes_to_evacuate;
+
+  size_t                _young_region_count;
+  size_t                _old_region_count;
 
   shenandoah_padding(0);
   volatile size_t       _current_index;
@@ -77,6 +86,25 @@ public:
   inline bool is_in_loc(void* loc)           const;
 
   void print_on(outputStream* out) const;
+
+  inline size_t get_immediate_trash();
+  inline void set_immediate_trash(size_t immediate_trash);
+
+  // This represents total amount of work to be performed by evacuation, including evacuations to young, to old,
+  // and promotions from young to old.  This equals get_young_bytes_reserved_for_evacuation() plus
+  // get_old_bytes_reserved_for_evacuation().
+  inline size_t get_bytes_reserved_for_evacuation();
+
+  // It is not known how many of these bytes will be promoted.
+  inline size_t get_young_bytes_reserved_for_evacuation();
+  inline void reserve_young_bytes_for_evacuation(size_t byte_count);
+
+  inline size_t get_old_bytes_reserved_for_evacuation();
+  inline void reserve_old_bytes_for_evacuation(size_t byte_count);
+
+  inline size_t get_old_region_count();
+
+  inline size_t get_young_region_count();
 
   bool has_old_regions() const { return _has_old_regions; }
   size_t used()          const { return _used; }

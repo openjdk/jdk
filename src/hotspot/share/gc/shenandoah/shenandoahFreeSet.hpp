@@ -69,9 +69,6 @@ private:
   void increase_used(size_t amount);
   void clear_internal();
 
-  size_t collector_count() const { return _collector_free_bitmap.count_one_bits(); }
-  size_t mutator_count()   const { return _mutator_free_bitmap.count_one_bits();   }
-
   void try_recycle_trashed(ShenandoahHeapRegion *r);
 
   bool can_allocate_from(ShenandoahHeapRegion *r);
@@ -80,6 +77,12 @@ private:
 
 public:
   ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions);
+
+  // Number of regions dedicated to GC allocations (for evacuation or promotion) that are currently free
+  size_t collector_count() const { return _collector_free_bitmap.count_one_bits(); }
+
+  // Number of regions dedicated to mutator allocations that are currently free
+  size_t mutator_count()   const { return _mutator_free_bitmap.count_one_bits();   }
 
   void clear();
   void rebuild();

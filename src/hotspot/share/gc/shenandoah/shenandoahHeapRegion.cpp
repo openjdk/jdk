@@ -250,7 +250,7 @@ void ShenandoahHeapRegion::make_unpinned() {
 
 void ShenandoahHeapRegion::make_cset() {
   shenandoah_assert_heaplocked();
-  reset_age();
+  // Leave age untouched.  We need to consult the age when we are deciding whether to promote evacuated objects.
   switch (_state) {
     case _regular:
       set_state(_cset);

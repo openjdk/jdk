@@ -35,6 +35,7 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "utilities/debug.hpp"
 
 ShenandoahPhaseTimings::Phase ShenandoahTimingsTracker::_current_phase = ShenandoahPhaseTimings::_invalid_phase;
@@ -68,7 +69,14 @@ ShenandoahGCSession::ShenandoahGCSession(GCCause::Cause cause, ShenandoahGenerat
 
 
 ShenandoahGCSession::~ShenandoahGCSession() {
+
   _generation->heuristics()->record_cycle_end();
+  if (_heap->mode()->is_generational() &&
+      ((_generation->generation_mode() == GLOBAL) || _heap->upgraded_to_full())) {
+    // If we just completed a GLOBAL GC, claim credit for completion of young-gen and old-gen GC as well
+    _heap->young_generation()->heuristics()->record_cycle_end();
+    _heap->old_generation()->heuristics()->record_cycle_end();
+  }
   _timer->register_gc_end();
   _heap->trace_heap_after_gc(_tracer);
   _tracer->report_gc_reference_stats(_generation->ref_processor()->reference_process_stats());

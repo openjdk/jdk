@@ -75,6 +75,7 @@ void ShenandoahCollectorPolicy::record_alloc_failure_to_degenerated(ShenandoahGC
 }
 
 void ShenandoahCollectorPolicy::record_degenerated_upgrade_to_full() {
+  ShenandoahHeap::heap()->record_upgrade_to_full();
   _alloc_failure_degenerated_upgrade_to_full++;
 }
 

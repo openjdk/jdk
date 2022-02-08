@@ -193,7 +193,7 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
 
   assert(!heap->is_concurrent_strong_root_in_progress(), "No evacuations during old gc.");
 
-  vmop_entry_final_roots();
+  vmop_entry_final_roots(false);
 
   if (heap->is_concurrent_prep_for_mixed_evacuation_in_progress()) {
     if (!entry_coalesce_and_fill()) {

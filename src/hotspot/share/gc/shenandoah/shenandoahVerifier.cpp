@@ -388,10 +388,20 @@ class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
   }
 
   static void validate_usage(const char* label, ShenandoahGeneration* generation, ShenandoahCalculateRegionStatsClosure& stats) {
-    guarantee(stats.used() == generation->used(),
+    size_t generation_used;
+    if (generation->generation_mode() == YOUNG) {
+      // young_evac_expended is "usually zero".  If it is non-zero, this means we are doing evacuation or updating references
+      // and young-gen memory that holds the results of evacuation is being temporarily hidden from the usage accounting,
+      // so we add it back in here to make verification happy.
+      generation_used = generation->used() + ShenandoahHeap::heap()->get_young_evac_expended();
+    } else {
+      generation_used = generation->used();
+    }
+
+    guarantee(stats.used() == generation_used,
               "%s: generation (%s) used size must be consistent: generation-used = " SIZE_FORMAT "%s, regions-used = " SIZE_FORMAT "%s",
               label, generation->name(),
-              byte_size_in_proper_unit(generation->used()), proper_unit_for_byte_size(generation->used()),
+              byte_size_in_proper_unit(generation_used), proper_unit_for_byte_size(generation_used),
               byte_size_in_proper_unit(stats.used()), proper_unit_for_byte_size(stats.used()));
   }
 };
@@ -774,6 +784,7 @@ void ShenandoahVerifier::verify_at_safepoint(const char* label,
     _heap->heap_region_iterate(&cl);
 
     size_t heap_used = _heap->used();
+
     guarantee(cl.used() == heap_used,
               "%s: heap used size must be consistent: heap-used = " SIZE_FORMAT "%s, regions-used = " SIZE_FORMAT "%s",
               label,

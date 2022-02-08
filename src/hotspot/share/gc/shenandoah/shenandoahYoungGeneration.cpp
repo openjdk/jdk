@@ -82,3 +82,10 @@ void ShenandoahYoungGeneration::reserve_task_queues(uint workers) {
 bool ShenandoahYoungGeneration::contains(oop obj) const {
   return ShenandoahHeap::heap()->is_in_young(obj);
 }
+
+ShenandoahHeuristics* ShenandoahYoungGeneration::initialize_heuristics(ShenandoahMode* gc_mode) {
+  _heuristics = gc_mode->initialize_heuristics(this);
+  _heuristics->set_guaranteed_gc_interval(ShenandoahGuaranteedYoungGCInterval);
+  confirm_heuristics_mode();
+  return _heuristics;
+}

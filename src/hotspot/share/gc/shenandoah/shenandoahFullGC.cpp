@@ -181,6 +181,19 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   // Since we may arrive here from degenerated GC failure of either young or old, establish generation as GLOBAL.
   heap->set_gc_generation(heap->global_generation());
 
+  // There will be no concurrent allocations during full GC so reset these coordination variables.
+  heap->young_generation()->unadjust_available();
+  heap->old_generation()->unadjust_available();
+  heap->young_generation()->increase_used(heap->get_young_evac_expended());
+  // No need to old_gen->increase_used().  That was done when plabs were allocated, accounting for both old evacs and promotions.
+
+  heap->set_alloc_supplement_reserve(0);
+  heap->set_young_evac_reserve(0);
+  heap->reset_young_evac_expended();
+  heap->set_old_evac_reserve(0);
+  heap->reset_old_evac_expended();
+  heap->set_promotion_reserve(0);
+
   if (ShenandoahVerify) {
     heap->verifier()->verify_before_fullgc();
   }
@@ -402,6 +415,10 @@ private:
   ShenandoahPrepareForCompactionTask* _compactor;
   PreservedMarks*          const _preserved_marks;
   ShenandoahHeap*          const _heap;
+
+  // _empty_regions is a thread-local list of heap regions that have been completely emptied by this worker thread's
+  // compaction efforts.  The worker thread that drives these efforts adds compacted regions to this list if the
+  // region has not been compacted onto itself.
   GrowableArray<ShenandoahHeapRegion*>& _empty_regions;
   int _empty_regions_pos;
   ShenandoahHeapRegion*          _old_to_region;
@@ -488,8 +505,34 @@ public:
     assert(!_heap->complete_marking_context()->allocated_after_mark_start(p), "must be truly marked");
 
     size_t obj_size = p->size();
-    if (_from_affiliation == ShenandoahRegionAffiliation::OLD_GENERATION) {
-      assert(_old_to_region != nullptr, "_old_to_region should not be NULL when compacting OLD _from_region");
+    uint from_region_age = _from_region->age();
+    uint object_age = p->age();
+
+    bool promote_object = false;
+    if ((_from_affiliation == ShenandoahRegionAffiliation::YOUNG_GENERATION) &&
+        (from_region_age + object_age > InitialTenuringThreshold)) {
+      if ((_old_to_region != nullptr) && (_old_compact_point + obj_size > _old_to_region->end())) {
+        finish_old_region();
+        _old_to_region = nullptr;
+      }
+      if (_old_to_region == nullptr) {
+        if (_empty_regions_pos < _empty_regions.length()) {
+          ShenandoahHeapRegion* new_to_region = _empty_regions.at(_empty_regions_pos);
+          _empty_regions_pos++;
+          new_to_region->set_affiliation(OLD_GENERATION);
+          _old_to_region = new_to_region;
+          _old_compact_point = _old_to_region->bottom();
+          promote_object = true;
+        }
+        // Else this worker thread does not yet have any empty regions into which this aged object can be promoted so
+        // we leave promote_object as false, deferring the promotion.
+      } else {
+        promote_object = true;
+      }
+    }
+
+    if (promote_object || (_from_affiliation == ShenandoahRegionAffiliation::OLD_GENERATION)) {
+      assert(_old_to_region != nullptr, "_old_to_region should not be NULL when evacuating to OLD region");
       if (_old_compact_point + obj_size > _old_to_region->end()) {
         ShenandoahHeapRegion* new_to_region;
 
@@ -525,11 +568,14 @@ public:
     } else {
       assert(_from_affiliation == ShenandoahRegionAffiliation::YOUNG_GENERATION,
              "_from_region must be OLD_GENERATION or YOUNG_GENERATION");
-
       assert(_young_to_region != nullptr, "_young_to_region should not be NULL when compacting YOUNG _from_region");
+
+      // After full gc compaction, all regions have age 0.  Embed the region's age into the object's age in order to preserve
+      // tenuring progress.
+      _heap->increase_object_age(p, from_region_age + 1);
+
       if (_young_compact_point + obj_size > _young_to_region->end()) {
         ShenandoahHeapRegion* new_to_region;
-
 
         log_debug(gc)("Worker %u finishing young region " SIZE_FORMAT ", compact_point: " PTR_FORMAT ", obj_size: " SIZE_FORMAT
                       ", &compact_point[obj_size]: " PTR_FORMAT ", region end: " PTR_FORMAT,  _worker_id, _young_to_region->index(),

@@ -150,8 +150,11 @@ class ShenandoahHeap : public CollectedHeap {
 private:
   ShenandoahHeapLock _lock;
   ShenandoahGeneration* _gc_generation;
-  bool _mixed_evac;             // true iff most recent evac included at least one old-gen HeapRegion
+
+  bool _mixed_evac;                      // true iff most recent evac included at least one old-gen HeapRegion
   bool _prep_for_mixed_evac_in_progress; // true iff we are concurrently coalescing and filling old-gen HeapRegions
+
+  size_t _evacuation_allowance;          // amount by which young-gen usage may temporarily exceed young-gen capacity
 
 public:
   ShenandoahHeapLock* lock() {
@@ -335,8 +338,66 @@ private:
   ShenandoahSharedFlag   _progress_last_gc;
   ShenandoahSharedFlag   _concurrent_strong_root_in_progress;
 
+  // _alloc_supplement_reserve is a supplemental budget for new_memory allocations.  During evacuation and update-references,
+  // mutator allocation requests are "authorized" iff young_gen->available() plus _alloc_supplement_reserve minus
+  // _young_evac_reserve is greater than request size.  The values of _alloc_supplement_reserve and _young_evac_reserve
+  // are zero except during evacuation and update-reference phases of GC.  Both of these values are established at
+  // the start of evacuation, and they remain constant throughout the duration of these two phases of GC.  Since these
+  // two values are constant throughout each GC phases, we introduce a new service into ShenandoahGeneration.  This service
+  // provides adjusted_available() based on an adjusted capacity.  At the start of evacuation, we adjust young capacity by
+  // adding the amount to be borrowed from old-gen and subtracting the _young_evac_reserve, we adjust old capacity by
+  // subtracting the amount to be loaned to young-gen.  At the end of update-refs, we unadjust the capacity of each generation,
+  // and add _young_evac_expended to young-gen used.
+  //
+  // We always use adjusted capacities to determine permission to allocate within young and to promote into old.  Note
+  // that adjusted capacities equal traditional capacities except during evacuation and update refs.
+  //
+  // During evacuation, we assure that _young_evac_expended does not exceed _young_evac_reserve and that _old_evac_expended
+  // does not exceed _old_evac_reserve.  GCLAB allocations do not immediately affect used within the young generation
+  // since the adjusted capacity already accounts for the entire evacuation reserve.  Each GCLAB allocations increments
+  // _young_evac_expended rather than incrementing the affiliated generation's used value.
+  //
+  // At the end of update references, we perform the following bookkeeping activities:
+  //
+  // 1. Unadjust the capacity within young-gen and old-gen to undo the effects of borrowing memory from old-gen.  Note that
+  //    the entirety of the collection set is now available, so allocation capacity naturally increase at this time.
+  // 2. Increase young_gen->used() by _young_evac_expended.  This represents memory consumed by evacutions from young-gen.
+  // 3. Clear (reset to zero) _alloc_supplement_reserve, _young_evac_reserve, _old_evac_reserve, and _promotion_reserve
+  //
+  // _young_evac_reserve and _old_evac_reserve are only non-zero during evacuation and update-references.
+  //
+  // Allocation of young GCLABs assures that _young_evac_expended + request-size < _young_evac_reserved.  If the allocation
+  //  is authorized, increment _young_evac_expended by request size.  This allocation ignores young_gen->available().
+  //
+  // Allocation of old GCLABs assures that _old_evac_expended + request-size < _old_evac_reserved.  If the allocation
+  //  is authorized, increment _old_evac_expended by request size.  This allocation ignores old_gen->available().
+  //
+  // Note that the typical total expenditure on evacuation is less than the associated evacuation reserve because we generally
+  // reserve ShenandoahEvacWaste (> 1.0) times the anticipated evacuation need.  In the case that there is an excessive amount
+  // of waste, it may be that one thread fails to grab a new GCLAB, this does not necessarily doom the associated evacuation
+  // effort.  If this happens, the requesting thread blocks until some other thread manages to evacuate the offending object.
+  // Only after "all" threads fail to evacuate an object do we consider the evacuation effort to have failed.
+
+  intptr_t _alloc_supplement_reserve;  // Bytes reserved for young allocations during evac and update refs
+  size_t _promotion_reserve;           // Bytes reserved within old-gen to hold the results of promotion
+
+
+  size_t _old_evac_reserve;            // Bytes reserved within old-gen to hold evacuated objects from old-gen collection set
+  size_t _old_evac_expended;           // Bytes of old-gen memory expended on old-gen evacuations
+
+  size_t _young_evac_reserve;          // Bytes reserved within young-gen to hold evacuated objects from young-gen collection set
+  size_t _young_evac_expended;         // Bytes old-gen memory has been expended on young-gen evacuations
+
+  size_t _captured_old_usage;          // What was old usage (bytes) when last captured?
+
+  size_t _previous_promotion;          // Bytes promoted during previous evacuation
+
+  bool _upgraded_to_full;
+
   void set_gc_state_all_threads(char state);
   void set_gc_state_mask(uint mask, bool value);
+
+
 
 public:
   char gc_state() const;
@@ -372,6 +433,38 @@ public:
   inline bool is_concurrent_weak_root_in_progress() const;
   bool is_concurrent_prep_for_mixed_evacuation_in_progress();
   inline bool is_aging_cycle() const;
+  inline bool upgraded_to_full() { return _upgraded_to_full; }
+  inline void start_conc_gc() { _upgraded_to_full = false; }
+  inline void record_upgrade_to_full() { _upgraded_to_full = true; }
+
+  inline size_t capture_old_usage(size_t usage);
+  inline void set_previous_promotion(size_t promoted_bytes);
+  inline size_t get_previous_promotion() const;
+
+  // Returns previous value
+  inline size_t set_promotion_reserve(size_t new_val);
+  inline size_t get_promotion_reserve() const;
+
+  // Returns previous value
+  inline size_t set_old_evac_reserve(size_t new_val);
+  inline size_t get_old_evac_reserve() const;
+
+  inline void reset_old_evac_expended();
+  inline size_t expend_old_evac(size_t increment);
+  inline size_t get_old_evac_expended() const;
+
+  // Returns previous value
+  inline size_t set_young_evac_reserve(size_t new_val);
+  inline size_t get_young_evac_reserve() const;
+
+  inline void reset_young_evac_expended();
+  inline size_t expend_young_evac(size_t increment);
+  inline size_t get_young_evac_expended() const;
+
+  // Returns previous value.  This is a signed value because it is the amount borrowed minus the amount reserved for
+  // young-gen evacuation.  In case we cannot borrow much, this value might be negative.
+  inline intptr_t set_alloc_supplement_reserve(intptr_t new_val);
+  inline intptr_t get_alloc_supplement_reserve() const;
 
 private:
   void manage_satb_barrier(bool active);
@@ -591,18 +684,18 @@ public:
 // ---------- Allocation support
 //
 private:
-  HeapWord* allocate_memory_under_lock(ShenandoahAllocRequest& request, bool& in_new_region);
+  HeapWord* allocate_memory_under_lock(ShenandoahAllocRequest& request, bool& in_new_region, bool is_promotion);
 
   inline HeapWord* allocate_from_gclab(Thread* thread, size_t size);
   HeapWord* allocate_from_gclab_slow(Thread* thread, size_t size);
   HeapWord* allocate_new_gclab(size_t min_size, size_t word_size, size_t* actual_size);
 
-  inline HeapWord* allocate_from_plab(Thread* thread, size_t size);
-  HeapWord* allocate_from_plab_slow(Thread* thread, size_t size);
+  inline HeapWord* allocate_from_plab(Thread* thread, size_t size, bool is_promotion);
+  HeapWord* allocate_from_plab_slow(Thread* thread, size_t size, bool is_promotion);
   HeapWord* allocate_new_plab(size_t min_size, size_t word_size, size_t* actual_size);
 
 public:
-  HeapWord* allocate_memory(ShenandoahAllocRequest& request);
+  HeapWord* allocate_memory(ShenandoahAllocRequest& request, bool is_promotion);
   HeapWord* mem_allocate(size_t size, bool* what);
   MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
                                                size_t size,
