@@ -322,6 +322,14 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
     }
   }
 
+  // Convert "(x|y)-(x^y)" into "x&y"
+  if (in(1)->Opcode() == Op_OrI
+      && in(2)->Opcode() == Op_XorI
+      && in(1)->in(1) == in(2)->in(1)
+      && in(1)->in(2) == in(2)->in(2)) {
+    return new AndINode(in(1)->in(1), in(1)->in(2));
+  }
+
   return NULL;
 }
 
@@ -493,6 +501,14 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if ( t21 && t22 && zero == TypeLong::ZERO && t22->is_con(63) ) {
       return new URShiftLNode(in21, in22);
     }
+  }
+
+  // Convert "(x|y)-(x^y)" into "x&y"
+  if (in(1)->Opcode() == Op_OrL
+      && in(2)->Opcode() == Op_XorL
+      && in(1)->in(1) == in(2)->in(1)
+      && in(1)->in(2) == in(2)->in(2)) {
+    return new AndLNode(in(1)->in(1), in(1)->in(2));
   }
 
   return NULL;
