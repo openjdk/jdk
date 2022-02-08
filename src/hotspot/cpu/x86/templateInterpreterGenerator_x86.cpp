@@ -736,13 +736,13 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   Label L_good_limit;
   __ cmpptr(Address(thread, JavaThread::shadow_zone_safe_limit()), (int32_t)NULL_WORD);
   __ jcc(Assembler::notEqual, L_good_limit);
-    __ stop("shadow zone safe limit is not initialized");
+  __ stop("shadow zone safe limit is not initialized");
   __ bind(L_good_limit);
 
   Label L_good_watermark;
   __ cmpptr(Address(thread, JavaThread::shadow_zone_growth_watermark()), (int32_t)NULL_WORD);
   __ jcc(Assembler::notEqual, L_good_watermark);
-    __ stop("shadow zone growth watermark is not initialized");
+  __ stop("shadow zone growth watermark is not initialized");
   __ bind(L_good_watermark);
 #endif
 
@@ -751,15 +751,15 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   __ cmpptr(rsp, Address(thread, JavaThread::shadow_zone_growth_watermark()));
   __ jcc(Assembler::above, L_done);
 
-    for (int p = 1; p <= n_shadow_pages; p++) {
-      __ bang_stack_with_offset(p*page_size);
-    }
+  for (int p = 1; p <= n_shadow_pages; p++) {
+    __ bang_stack_with_offset(p*page_size);
+  }
 
-    // Record a new watermark, unless the update is above the safe limit.
-    // Otherwise, the next time around a check above would pass the safe limit.
-    __ cmpptr(rsp, Address(thread, JavaThread::shadow_zone_safe_limit()));
-    __ jccb(Assembler::belowEqual, L_done);
-      __ movptr(Address(thread, JavaThread::shadow_zone_growth_watermark()), rsp);
+  // Record a new watermark, unless the update is above the safe limit.
+  // Otherwise, the next time around a check above would pass the safe limit.
+  __ cmpptr(rsp, Address(thread, JavaThread::shadow_zone_safe_limit()));
+  __ jccb(Assembler::belowEqual, L_done);
+  __ movptr(Address(thread, JavaThread::shadow_zone_growth_watermark()), rsp);
 
   __ bind(L_done);
 
