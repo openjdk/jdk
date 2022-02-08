@@ -160,7 +160,7 @@ public abstract class FileLock implements AutoCloseable {
             throw new IllegalArgumentException("Negative position + size");
         this.channel = channel;
         this.position = position;
-        this.size = size;
+        this.size = size == 0 ? Long.MAX_VALUE - position : size;
         this.shared = shared;
     }
 
@@ -202,7 +202,7 @@ public abstract class FileLock implements AutoCloseable {
             throw new IllegalArgumentException("Negative position + size");
         this.channel = channel;
         this.position = position;
-        this.size = size;
+        this.size = size == 0 ? Long.MAX_VALUE - position : size;
         this.shared = shared;
     }
 
@@ -284,10 +284,16 @@ public abstract class FileLock implements AutoCloseable {
      *          least one byte
      */
     public final boolean overlaps(long position, long size) {
-        System.out.printf("%d %d %d %d%n", this.position, this.size,
-            position, size);
         if (size < 0)
             return false;
+
+        try {
+            if (Math.addExact(this.position, this.size) <= position)
+                return false;               // This is below that
+        } catch (ArithmeticException ignored) {
+            // the sum of this.position and this.size overflows the range of
+            // long hence their mathematical sum is greater than position
+        }
 
         // if size == 0 then the specified lock range is unbounded and
         // cannot be below the range of this lock
@@ -298,18 +304,6 @@ public abstract class FileLock implements AutoCloseable {
             } catch (ArithmeticException ignored) {
                 // the sum of position and size overflows the range of long
                 // hence their mathematical sum is greater than this.position
-            }
-        }
-
-        // if this.size == 0 then the range of this lock is unbounded and
-        // cannot be below the specified lock range
-        if (this.size > 0) {
-            try {
-                if (Math.addExact(this.position, this.size) <= position)
-                    return false;               // This is below that
-            } catch (ArithmeticException ignored) {
-                // the sum of this.position and this.size overflows the range of
-                // long hence their mathematical sum is greater than position
             }
         }
 
