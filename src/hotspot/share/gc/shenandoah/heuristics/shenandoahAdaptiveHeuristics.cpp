@@ -283,7 +283,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   //       pass.  The best prediction for this aspect of spikes in allocation patterns is probably recent past history.
   //
   //  Rationale:
-  //    The idea is that there is an average allocation rate and there are occassional abnormal bursts (or spikes) of
+  //    The idea is that there is an average allocation rate and there are occasional abnormal bursts (or spikes) of
   //    allocations that exceed the average allocation rate.  What do these spikes look like?
   //
   //    1. At certain phase changes, we may discard large amounts of data and replace it with large numbers of newly

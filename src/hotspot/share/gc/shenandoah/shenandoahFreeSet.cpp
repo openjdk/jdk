@@ -299,7 +299,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
       } else {
         assert(r->affiliation() == ShenandoahRegionAffiliation::OLD_GENERATION, "GC Alloc was not YOUNG so must be OLD");
 
-        assert(req.type() != _alloc_gclab, "old-gen allocations use PLAB or shared allocation");
+        assert(req.type() != ShenandoahAllocRequest::_alloc_gclab, "old-gen allocations use PLAB or shared allocation");
         _heap->old_generation()->increase_used(size * HeapWordSize);
         // for plabs, we'll sort the difference between evac and promotion usage when we retire the plab
       }
