@@ -138,7 +138,7 @@ private:
                                                     const void* addr) const;
 
   // Update BOT entries corresponding to the mem range [blk_start, blk_end).
-  void alloc_block_work(HeapWord* blk_start, HeapWord* blk_end);
+  void update_for_block_work(HeapWord* blk_start, HeapWord* blk_end);
 
   void check_all_cards(size_t left_card, size_t right_card) const;
 
@@ -168,14 +168,14 @@ public:
   // in a space covered by the table.)
   inline HeapWord* block_start(const void* addr);
 
-  void alloc_block(HeapWord* blk_start, HeapWord* blk_end) {
+  void update_for_block(HeapWord* blk_start, HeapWord* blk_end) {
     if (is_crossing_card_boundary(blk_start, blk_end)) {
-      alloc_block_work(blk_start, blk_end);
+      update_for_block_work(blk_start, blk_end);
     }
   }
 
-  void alloc_block(HeapWord* blk_start, size_t size) {
-    alloc_block(blk_start, blk_start + size);
+  void update_for_block(HeapWord* blk_start, size_t size) {
+    update_for_block(blk_start, blk_start + size);
   }
 
   void set_for_starts_humongous(HeapWord* obj_top, size_t fill_size);
