@@ -51,6 +51,170 @@ class ReverseOrderSortedSetView<E> implements SortedSet<E> {
         }
     }
 
+    // ========== Object ==========
+
+    // copied from AbstractSet
+    public boolean equals(Object o) {
+        if (o == this)
+            return true;
+
+        if (!(o instanceof Set))
+            return false;
+        Collection<?> c = (Collection<?>) o;
+        if (c.size() != size())
+            return false;
+        try {
+            return containsAll(c);
+        } catch (ClassCastException | NullPointerException unused) {
+            return false;
+        }
+    }
+
+    // copied from AbstractSet
+    public int hashCode() {
+        int h = 0;
+        Iterator<E> i = iterator();
+        while (i.hasNext()) {
+            E obj = i.next();
+            if (obj != null)
+                h += obj.hashCode();
+        }
+        return h;
+    }
+
+    // copied from AbstractCollection
+    public String toString() {
+        Iterator<E> it = iterator();
+        if (! it.hasNext())
+            return "[]";
+
+        StringBuilder sb = new StringBuilder();
+        sb.append('[');
+        for (;;) {
+            E e = it.next();
+            sb.append(e == this ? "(this Collection)" : e);
+            if (! it.hasNext())
+                return sb.append(']').toString();
+            sb.append(',').append(' ');
+        }
+    }
+
+    // ========== Iterable ==========
+
+    public void forEach(Consumer<? super E> action) {
+        for (E e : this)
+            action.accept(e);
+    }
+
+    public Iterator<E> iterator() {
+        return descendingIterator(base);
+    }
+
+    public Spliterator<E> spliterator() {
+        return Spliterators.spliteratorUnknownSize(descendingIterator(base), 0);
+    }
+
+    // ========== Collection ==========
+
+    public boolean add(E e) {
+        base.add(e);
+        return true;
+    }
+
+    public boolean addAll(Collection<? extends E> c) {
+        return base.addAll(c);
+    }
+
+    public void clear() {
+        base.clear();
+    }
+
+    public boolean contains(Object o) {
+        return base.contains(o);
+    }
+
+    public boolean containsAll(Collection<?> c) {
+        return base.containsAll(c);
+    }
+
+    public boolean isEmpty() {
+        return base.isEmpty();
+    }
+
+    public Stream<E> parallelStream() {
+        return StreamSupport.stream(spliterator(), true);
+    }
+
+    public boolean remove(Object o) {
+        return base.remove(o);
+    }
+
+    public boolean removeAll(Collection<?> c) {
+        return base.removeAll(c);
+    }
+
+    // copied from AbstractCollection
+    public boolean retainAll(Collection<?> c) {
+        return base.retainAll(c);
+    }
+
+    public int size() {
+        return base.size();
+    }
+
+    public Stream<E> stream() {
+        return StreamSupport.stream(spliterator(), false);
+    }
+
+    public Object[] toArray() {
+        return arrayReverse(base.toArray());
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T[] toArray(T[] a) {
+        // TODO can probably optimize this
+        return toArray(i -> (T[]) java.lang.reflect.Array.newInstance(a.getClass().getComponentType(), i));
+    }
+
+    public <T> T[] toArray(IntFunction<T[]> generator) {
+        return arrayReverse(base.toArray(generator));
+    }
+
+    // ========== SortedSet ==========
+
+    public Comparator<? super E> comparator() {
+        return comp;
+    }
+
+    public E first() { return base.last(); }
+
+    public E last() { return base.first(); }
+
+    public SortedSet<E> headSet(E to) {
+        return new Subset(null, to);
+    }
+
+    public SortedSet<E> subSet(E from, E to) {
+        return new Subset(from, to);
+    }
+
+    public SortedSet<E> tailSet(E from) {
+        return new Subset(from, null);
+    }
+
+    // ========== Infrastructure ==========
+
+    static <T> T[] arrayReverse(T[] a) {
+        int limit = a.length / 2;
+        for (int i = 0; i < limit; i++) {
+            int r = a.length - 1 - i;
+            T t = a[i];
+            a[i] = a[r];
+            a[r] = t;
+        }
+        return a;
+    }
+
     static <T> Iterator<T> descendingIterator(SortedSet<T> set) {
         return new Iterator<>() {
             SortedSet<T> root = set;
@@ -217,166 +381,5 @@ class ReverseOrderSortedSetView<E> implements SortedSet<E> {
                 throw new IllegalArgumentException();
         }
 
-    }
-
-    // ========== Iterable ==========
-
-    public void forEach(Consumer<? super E> action) {
-        for (E e : this)
-            action.accept(e);
-    }
-
-    public Iterator<E> iterator() {
-        return descendingIterator(base);
-    }
-
-    public Spliterator<E> spliterator() {
-        return Spliterators.spliteratorUnknownSize(descendingIterator(base), 0);
-    }
-
-    // ========== Collection ==========
-
-    public boolean add(E e) {
-        base.add(e);
-        return true;
-    }
-
-    public boolean addAll(Collection<? extends E> c) {
-        return base.addAll(c);
-    }
-
-    public void clear() {
-        base.clear();
-    }
-
-    public boolean contains(Object o) {
-        return base.contains(o);
-    }
-
-    public boolean containsAll(Collection<?> c) {
-        return base.containsAll(c);
-    }
-
-    public boolean isEmpty() {
-        return base.isEmpty();
-    }
-
-    public Stream<E> parallelStream() {
-        return StreamSupport.stream(spliterator(), true);
-    }
-
-    public boolean remove(Object o) {
-        return base.remove(o);
-    }
-
-    public boolean removeAll(Collection<?> c) {
-        return base.removeAll(c);
-    }
-
-    // copied from AbstractCollection
-    public boolean retainAll(Collection<?> c) {
-        return base.retainAll(c);
-    }
-
-    public int size() {
-        return base.size();
-    }
-
-    public Stream<E> stream() {
-        return StreamSupport.stream(spliterator(), false);
-    }
-
-    private <T> T[] arrayReverse(T[] a) {
-        int limit = a.length / 2;
-        for (int i = 0; i < limit; i++) {
-            int r = a.length - 1 - i;
-            T t = a[i];
-            a[i] = a[r];
-            a[r] = t;
-        }
-        return a;
-    }
-
-    public Object[] toArray() {
-        return arrayReverse(base.toArray());
-    }
-
-    @SuppressWarnings("unchecked")
-    public <T> T[] toArray(T[] a) {
-        // TODO can probably optimize this
-        return toArray(i -> (T[]) java.lang.reflect.Array.newInstance(a.getClass().getComponentType(), i));
-    }
-
-    public <T> T[] toArray(IntFunction<T[]> generator) {
-        return arrayReverse(base.toArray(generator));
-    }
-
-    // copied from AbstractCollection
-    public String toString() {
-        Iterator<E> it = iterator();
-        if (! it.hasNext())
-            return "[]";
-
-        StringBuilder sb = new StringBuilder();
-        sb.append('[');
-        for (;;) {
-            E e = it.next();
-            sb.append(e == this ? "(this Collection)" : e);
-            if (! it.hasNext())
-                return sb.append(']').toString();
-            sb.append(',').append(' ');
-        }
-    }
-
-    // ========== Set ==========
-
-    // copied from AbstractSet
-    public boolean equals(Object o) {
-        if (o == this)
-            return true;
-
-        if (!(o instanceof Set))
-            return false;
-        Collection<?> c = (Collection<?>) o;
-        if (c.size() != size())
-            return false;
-        try {
-            return containsAll(c);
-        } catch (ClassCastException | NullPointerException unused) {
-            return false;
-        }
-    }
-
-    public int hashCode() {
-        int h = 0;
-        Iterator<E> i = iterator();
-        while (i.hasNext()) {
-            E obj = i.next();
-            if (obj != null)
-                h += obj.hashCode();
-        }
-        return h;
-    }
-
-    // ========== SortedSet ==========
-
-    public Comparator<? super E> comparator() {
-        return comp;
-    }
-
-    public E first() { return base.last(); }
-
-    public E last() { return base.first(); }
-
-    public SortedSet<E> headSet(E to) {
-        return new Subset(null, to);
-    }
-
-    public SortedSet<E> subSet(E from, E to) {
-        return new Subset(from, to);
-    }
-
-    public SortedSet<E> tailSet(E from) {
-        return new Subset(from, null);
     }
 }
