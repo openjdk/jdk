@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,34 +94,41 @@ size_t NonblockingQueue<T, next_ptr>::length() const {
 // push/append operations, each may introduce another such segment.  But they
 // all eventually get resolved by their respective updates of their old tail's
 // "next" value.  This also means that try_pop operation must handle an object
-// with a NULL "next" value specially.
+// differently depending on its "next" value.
 //
 // A push operation is just a degenerate append, where the object being pushed
 // is both the head and the tail of the list being appended.
 template<typename T, T* volatile* (*next_ptr)(T&)>
 void NonblockingQueue<T, next_ptr>::append(T& first, T& last) {
   assert(next(last) == NULL, "precondition");
+  // Make last the new end of the queue.  Any further push/appends will
+  // extend after last.  We will try to extend from the previous end of
+  // queue.
   set_next(last, end_marker());
   T* old_tail = Atomic::xchg(&_tail, &last);
-  bool is_old_tail_null = (old_tail == NULL);
-  if (is_old_tail_null ||
-      // Try to install first as old_tail's next.
-      !is_end(Atomic::cmpxchg(next_ptr(*old_tail), end_marker(), &first))) {
-    // Install first as the new head if either
-    // (1) the list was empty, or
-    // (2) a concurrent try_pop claimed old_tail, so it is no longer in the list.
-    // Note that multiple concurrent push/append operations cannot modify
-    // _head simultaneously, because the Atomic::xchg() above orders these
-    // push/append operations so they perform Atomic::cmpxchg() on different
-    // old_tail. Thus, the cmpxchg can only fail because of a concurrent try_pop.
+  if (old_tail == NULL) {
+    // If old_tail is NULL then the queue was empty, and _head must also be
+    // NULL.  The correctness of this assertion depends on try_pop clearing
+    // first _head then _tail when taking the last entry.
+    assert(Atomic::load(&_head) == NULL, "invariant");
+    // Fall through to common update of _head.
+  } else if (is_end(Atomic::cmpxchg(next_ptr(*old_tail), end_marker(), &first))) {
+    // Successfully extended the queue list from old_tail to first.  No
+    // other push/append could have competed with us, because we claimed
+    // old_tail for extension.  We won any races with try_pop by changing
+    // away from end-marker.  So we're done.
+    return;
+  } else {
+    // A concurrent try_pop has claimed old_tail, so it is no longer in the
+    // list.  The queue was logically empty.  _head is either NULL or
+    // old_tail, depending on how far try_pop operations have progressed.
     DEBUG_ONLY(T* old_head = Atomic::load(&_head);)
-    // If old_tail is NULL, old_head could be NULL, or an unseen object
-    // that is being popped.  Otherwise, old_head must be either NULL
-    // or the same as old_tail.
-    assert(is_old_tail_null ||
-           old_head == NULL || old_head == old_tail, "invariant");
-    Atomic::store(&_head, &first);
+    assert((old_head == NULL) || (old_head == old_tail), "invariant");
+    // Fall through to common update of _head.
   }
+  // The queue was empty, and first should become the new _head.  The queue
+  // will appear to be empty to any further try_pops until done.
+  Atomic::store(&_head, &first);
 }
 
 template<typename T, T* volatile* (*next_ptr)(T&)>
@@ -161,7 +168,9 @@ bool NonblockingQueue<T, next_ptr>::try_pop(T** node_ptr) {
       // _head to NULL, "helping" the competing try_pop.  _head will remain
       // NULL until a subsequent push/append.  This is a lost race, and we
       // report it as such for consistency, though we could report the queue
-      // was empty.
+      // was empty.  We don't attempt to further help [Clause 2] by also
+      // trying to set _tail to NULL, as that would just ensure that one or
+      // the other cmpxchg is a wasted failure.
       return false;
     } else {
       // [Clause 1c]
@@ -181,16 +190,20 @@ bool NonblockingQueue<T, next_ptr>::try_pop(T** node_ptr) {
     // Any further try_pops will consider the queue empty until a
     // push/append completes by installing a new head.
 
-    // Attempt to change the queue tail from result to NULL.  Failure of the
-    // cmpxchg indicates that a concurrent push/append updated the tail first.
-    // That operation will eventually recognize the old tail (our result) is
-    // no longer in the list and update head from the list being appended.
-    Atomic::cmpxchg(&_tail, result, (T*)NULL);
+    // The order of the two cmpxchgs doesn't matter algorithmically, but
+    // dealing with _head first gives a stronger invariant in append, and is
+    // also consistent with [Clause 1b].
 
     // Attempt to change the queue head from result to NULL.  Failure of the
     // cmpxchg indicates a concurrent operation updated _head first.  That
-    // could be either a push/extend or a try_pop in [Clause 1b].
+    // could be either a push/append or a try_pop in [Clause 1b].
     Atomic::cmpxchg(&_head, result, (T*)NULL);
+
+    // Attempt to change the queue tail from result to NULL.  Failure of the
+    // cmpxchg indicates that a concurrent push/append updated _tail first.
+    // That operation will eventually recognize the old tail (our result) is
+    // no longer in the list and update _head from the list being appended.
+    Atomic::cmpxchg(&_tail, result, (T*)NULL);
 
     // The queue has been restored to order, and we can return the result.
     *node_ptr = result;
