@@ -123,7 +123,8 @@ void ZRelocationSetSelectorGroup::select_inner() {
   for (int from = 1; from <= npages; from++) {
     // Add page to the candidate relocation set
     ZPage* const page = _live_pages.at(from - 1);
-    from_live_bytes += page->live_bytes();
+    const size_t page_live_bytes = page->live_bytes();
+    from_live_bytes += page_live_bytes;
     from_forwarding_entries += ZForwarding::nentries(page);
 
     // Calculate the maximum number of pages needed by the candidate relocation set.
@@ -142,7 +143,7 @@ void ZRelocationSetSelectorGroup::select_inner() {
     if (diff_reclaimable > ZFragmentationLimit) {
       selected_from = from;
       selected_to = to;
-      selected_live_bytes[static_cast<uint>(page->age())] = from_live_bytes;
+      selected_live_bytes[static_cast<uint>(page->age())] += page_live_bytes;
       selected_forwarding_entries = from_forwarding_entries;
     }
 
