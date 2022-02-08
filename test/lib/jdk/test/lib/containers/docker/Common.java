@@ -64,11 +64,7 @@ public class Common {
 
     // create commonly used options with class to be launched inside container
     public static DockerRunOptions newOpts(String imageNameAndTag, String testClass) {
-        DockerRunOptions opts =
-            new DockerRunOptions(imageNameAndTag, "/jdk/bin/java", testClass);
-        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/");
-        opts.addJavaOpts("-Xlog:os+container=trace", "-cp", "/test-classes/");
-        return opts;
+        return newOpts(imageNameAndTag, testClass, null);
     }
 
     public static DockerRunOptions newOpts(String imageNameAndTag, String testClass, String addJavaOpts) {
@@ -76,7 +72,7 @@ public class Common {
             new DockerRunOptions(imageNameAndTag, "/jdk/bin/java", testClass);
         opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/");
         opts.addJavaOpts("-Xlog:os+container=trace", "-cp", "/test-classes/");
-        opts.addJavaOpts(addJavaOpts);
+        if (addJavaOpts != null) opts.addJavaOpts(addJavaOpts);
         return opts;
     }
 

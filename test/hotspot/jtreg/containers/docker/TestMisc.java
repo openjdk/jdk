@@ -56,6 +56,7 @@ public class TestMisc {
             testMinusContainerSupport();
             testIsContainerized();
             testPrintContainerInfo();
+            testPrintContainerInfoActiveProcessorCount();
         } finally {
             DockerTestUtils.removeDockerImage(imageName);
         }
@@ -86,14 +87,23 @@ public class TestMisc {
     private static void testPrintContainerInfo() throws Exception {
         Common.logNewTestCase("Test print_container_info()");
 
+        DockerRunOptions opts = Common.newOpts(imageName, "PrintContainerInfo");
+        Common.addWhiteBoxOpts(opts);
+
+        checkContainerInfo(Common.run(opts), null);
+    }
+
+    private static void testPrintContainerInfoActiveProcessorCount() throws Exception {
+        Common.logNewTestCase("Test print_container_info()");
+
         DockerRunOptions opts = Common.newOpts(imageName, "PrintContainerInfo", "-XX:ActiveProcessorCount=2");
         Common.addWhiteBoxOpts(opts);
 
-        checkContainerInfo(Common.run(opts));
+        checkContainerInfo(Common.run(opts), "but overridden by -XX:ActiveProcessorCount 2");
     }
 
 
-    private static void checkContainerInfo(OutputAnalyzer out) throws Exception {
+    private static void checkContainerInfo(OutputAnalyzer out, String additionallyExpected) throws Exception {
         String[] expectedToContain = new String[] {
             "cpuset.cpus",
             "cpuset.mems",
@@ -101,7 +111,6 @@ public class TestMisc {
             "CPU Quota",
             "CPU Period",
             "OSContainer::active_processor_count",
-            "but overridden by -XX:ActiveProcessorCount 2",
             "Memory Limit",
             "Memory Soft Limit",
             "Memory Usage",
@@ -114,6 +123,7 @@ public class TestMisc {
         for (String s : expectedToContain) {
             out.shouldContain(s);
         }
+        if (additionallyExpected != null) out.shouldContain(additionallyExpected);
     }
 
 }
