@@ -24,13 +24,19 @@
 /*
  * @test
  * @summary Verify nextDouble stays within range
- * @bug 8280550
+ * @bug 8280550 8280950
  */
 
 import java.util.SplittableRandom;
+import java.util.random.RandomGenerator;
 
 public class RandomNextDoubleBoundary {
     public static void main(String... args) {
+        negativeBounds();
+        positiveBounds();
+    }
+
+    private static void negativeBounds() {
         // Both bounds are negative
         double lowerBound = -1.0000000000000002;
         double upperBound = -1.0;
@@ -47,6 +53,39 @@ public class RandomNextDoubleBoundary {
             System.err.println("r = " + r + "\t" + Double.toHexString(r));
             System.err.println("lb = " + lowerBound + "\t" + Double.toHexString(lowerBound));
             throw new RuntimeException("Less than lower bound");
+        }
+    }
+
+    private static void positiveBounds() {
+        double[][] originAndBounds = {{10, 100},
+                                      {12345, 123456},
+                                      {5432167.234, 54321678.1238}};
+        for (double[] originAndBound : originAndBounds) {
+            nextDoublesWithRange(originAndBound[0], originAndBound[1]);
+        }
+    }
+
+    public static void nextDoublesWithRange(double origin, double bound) {
+        RandomGenerator rg = new RandomGenerator() {
+            @Override
+            public double nextDouble() {
+                return Double.MAX_VALUE;
+            }
+
+            @Override
+            public long nextLong() {
+                return 0;
+            }
+        };
+        double value = rg.nextDouble(origin, bound);
+
+        assertTrue(value >= origin);
+        assertTrue(value < bound);
+    }
+
+    public static void assertTrue(boolean condition) {
+        if (!condition) {
+            throw new AssertionError();
         }
     }
 }
