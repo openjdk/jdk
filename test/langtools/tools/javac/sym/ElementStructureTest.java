@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,6 +121,12 @@ import toolbox.ToolBox;
  */
 public class ElementStructureTest {
 
+    static final byte[] hash6 = new byte[] {
+        (byte) 0x99, (byte) 0x34, (byte) 0x82, (byte) 0xCF,
+        (byte) 0xE0, (byte) 0x53, (byte) 0xF3, (byte) 0x13,
+        (byte) 0x4E, (byte) 0xCF, (byte) 0x49, (byte) 0x32,
+        (byte) 0xB7, (byte) 0x52, (byte) 0x0F, (byte) 0x68
+    };
     static final byte[] hash7 = new byte[] {
         (byte) 0x2C, (byte) 0x01, (byte) 0xC0, (byte) 0xFB,
         (byte) 0xD5, (byte) 0x66, (byte) 0x0D, (byte) 0x9C,
@@ -137,6 +143,7 @@ public class ElementStructureTest {
     final static Map<String, byte[]> version2Hash = new HashMap<>();
 
     static {
+        version2Hash.put("6", hash6);
         version2Hash.put("7", hash7);
         version2Hash.put("8", hash8);
     }
