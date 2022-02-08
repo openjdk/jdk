@@ -4842,7 +4842,7 @@ void Compile::print_method(CompilerPhaseType cpt, int level, Node* n) {
   if (should_print_igv(level)) {
     _igv_printer->print_method(name, level);
   }
-  if (should_print_ideal(level)) {
+  if (should_print_ideal(level) || should_print_phase(cpt)) {
     print_ideal_ir(name);
   }
 #endif
@@ -4871,6 +4871,15 @@ void Compile::end_method() {
     _igv_printer->end_method();
   }
 #endif
+}
+
+bool Compile::should_print_phase(CompilerPhaseType cpt) {
+#ifndef PRODUCT
+  if ((_directive->ideal_phase_mask() & CompilerPhaseTypeHelper::to_bitmask(cpt)) != 0) {
+    return true;
+  }
+#endif
+  return false;
 }
 
 bool Compile::should_print_igv(int level) {
