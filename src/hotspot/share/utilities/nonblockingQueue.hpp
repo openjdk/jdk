@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,9 +96,11 @@ public:
   inline size_t length() const;
 
   // Thread-safe add the object to the end of the queue.
+  // Subject to ABA behavior; callers must ensure usage is safe.
   inline void push(T& node) { append(node, node); }
 
   // Thread-safe add the objects from first to last to the end of the queue.
+  // Subject to ABA behavior; callers must ensure usage is safe.
   inline void append(T& first, T& last);
 
   // Thread-safe attempt to remove and return the first object in the queue.

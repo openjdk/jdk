@@ -116,7 +116,10 @@ void NonblockingQueue<T, next_ptr>::append(T& first, T& last) {
     // Successfully extended the queue list from old_tail to first.  No
     // other push/append could have competed with us, because we claimed
     // old_tail for extension.  We won any races with try_pop by changing
-    // away from end-marker.  So we're done.
+    // away from end-marker.  So we're done.  Note that ABA is possible;
+    // try_pop could take old_tail before our update, it gets recycled and
+    // re-added to the end, and then we successfully cmpxchg, rendering the
+    // list in _tail circular.
     return;
   } else {
     // A concurrent try_pop has claimed old_tail, so it is no longer in the
