@@ -145,33 +145,6 @@ char *printError(const char *msg) {
     }
 
     /**
-     * Send Java debugging info to the appropriate place
-     */
-    void PrintJavaDebugString2(const char *msg, ...) {
-#ifdef JAVA_DEBUGGING_ON
-        char buf[1024] = {0};
-        va_list argprt;
-
-        va_start(argprt, msg);     // set up argptr
-        vsprintf(buf, msg, argprt);
-#ifdef SEND_TO_OUTPUT_DEBUG_STRING
-        OutputDebugString(buf);
-#endif
-#ifdef SEND_TO_CONSOLE
-        printf(buf);
-        printf("\r\n");
-#endif
-#endif
-        if (logFP) {
-            fprintf(logFP, "[%llu] ", getTimeStamp());
-            va_list args;
-            va_start(args, msg);
-            vfprintf(logFP, msg, args);
-            va_end(args);
-            fprintf(logFP, "\r\n");
-        }
-    }
-    /**
      * Wide version of the method to send debugging info to the appropriate place
      */
     void wPrintDebugString(const wchar_t *msg, ...) {

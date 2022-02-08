@@ -51,7 +51,6 @@ extern "C" {
 
     char *printError(const char *msg);
     void PrintDebugString(const char *msg, ...);
-    void PrintJavaDebugString(const char *msg, ...);
     void wPrintJavaDebugString(const wchar_t *msg, ...);
     void wPrintDebugString(const wchar_t *msg, ...);
     void initializeFileLogger(const char * fileName);
