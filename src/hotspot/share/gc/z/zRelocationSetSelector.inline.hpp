@@ -68,7 +68,7 @@ inline void ZRelocationSetSelectorGroup::register_live_page(ZPage* page) {
   const size_t garbage = size - live;
 
   // check against fragmentation limit
-  if (!page->is_large() && garbage > _fragmentation_limit) {
+  if (!page->is_large() && garbage > _page_fragmentation_limit) {
     _live_pages.append(page);
   } else if (page->is_young()) {
     _not_selected_pages.append(page);

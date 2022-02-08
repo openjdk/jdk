@@ -173,9 +173,17 @@ void ZGeneration::flip_age_pages(const ZRelocationSetSelector* selector) {
   }
 }
 
+static double fragmentation_limit(ZGenerationId generation) {
+  if (generation == ZGenerationId::old) {
+    return ZFragmentationLimit;
+  } else {
+    return ZYoungCompactionLimit;
+  }
+}
+
 void ZGeneration::select_relocation_set(ZGenerationId generation, bool promote_all) {
   // Register relocatable pages with selector
-  ZRelocationSetSelector selector;
+  ZRelocationSetSelector selector(fragmentation_limit(generation));
   {
     ZGenerationPagesIterator pt_iter(_page_table, _id, _page_allocator);
     for (ZPage* page; pt_iter.next(&page);) {

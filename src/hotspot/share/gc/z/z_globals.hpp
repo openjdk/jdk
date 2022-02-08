@@ -35,8 +35,11 @@
   product(double, ZAllocationSpikeTolerance, 2.0,                           \
           "Allocation spike tolerance factor")                              \
                                                                             \
-  product(double, ZFragmentationLimit, 25.0,                                \
+  product(double, ZFragmentationLimit, 5.0,                                 \
           "Maximum allowed heap fragmentation")                             \
+                                                                            \
+  product(double, ZYoungCompactionLimit, 25.0,                              \
+          "Maximum allowed garbage in young pages")                         \
                                                                             \
   product(size_t, ZMarkStackSpaceLimit, 8*G,                                \
           "Maximum number of bytes allocated for mark stacks")              \

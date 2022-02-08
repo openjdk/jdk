@@ -72,7 +72,8 @@ private:
   const ZPageType                  _page_type;
   const size_t                     _page_size;
   const size_t                     _object_size_limit;
-  const size_t                     _fragmentation_limit;
+  const double                     _fragmentation_limit;
+  const size_t                     _page_fragmentation_limit;
   ZArray<ZPage*>                   _live_pages;
   ZArray<ZPage*>                   _not_selected_pages;
   size_t                           _forwarding_entries;
@@ -87,7 +88,8 @@ public:
   ZRelocationSetSelectorGroup(const char* name,
                               ZPageType page_type,
                               size_t page_size,
-                              size_t object_size_limit);
+                              size_t object_size_limit,
+                              double fragmentation_limit);
 
   void register_live_page(ZPage* page);
   void register_empty_page(ZPage* page);
@@ -113,7 +115,7 @@ private:
   size_t relocate() const;
 
 public:
-  ZRelocationSetSelector();
+  ZRelocationSetSelector(double fragmentation_limit);
 
   void register_live_page(ZPage* page);
   void register_empty_page(ZPage* page);
