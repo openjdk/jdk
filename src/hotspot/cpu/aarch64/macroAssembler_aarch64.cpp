@@ -5282,18 +5282,15 @@ void MacroAssembler::spin_wait() {
 
 // Stack frame creation/removal
 
-void MacroAssembler::enter() {
+void MacroAssembler::enter(bool strip_ret_addr) {
+  if (strip_ret_addr) {
+    // Addresses can only be signed once. If there are multiple nested frames being created
+    // in the same function, then the return address needs stripping first.
+    strip_return_address();
+  }
   protect_return_address();
   stp(rfp, lr, Address(pre(sp, -2 * wordSize)));
   mov(rfp, sp);
-}
-
-// Create an additional frame for a function.
-void MacroAssembler::enter_subframe() {
-  // Addresses can only be signed once, so strip it first. PAC safe because the value is not
-  // coming from memory.
-  strip_return_address();
-  enter();
 }
 
 void MacroAssembler::leave() {

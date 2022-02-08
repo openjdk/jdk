@@ -78,7 +78,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   __ tst(dst, rscratch1);
   __ br(Assembler::EQ, done);
 
-  __ enter_subframe();
+  __ enter(true);
 
   __ push_call_clobbered_registers_except(RegSet::of(dst));
 

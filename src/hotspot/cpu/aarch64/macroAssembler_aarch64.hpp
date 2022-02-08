@@ -688,8 +688,7 @@ public:
   void align(int modulus);
 
   // Stack frame creation/removal
-  void enter();
-  void enter_subframe();
+  void enter(bool strip_ret_addr = false);
   void leave();
 
   // ROP Protection
