@@ -1768,7 +1768,7 @@ void os::pretouch_memory(void* start, void* end, size_t page_size) {
     // avoid overflow if the last page abuts the end of the address range.
     for ( ; true; cur += page_size) {
       Atomic::add(reinterpret_cast<int*>(cur), 0, memory_order_relaxed);
-      if (cur == last) break;
+      if (cur >= last) break;
     }
   }
 }
