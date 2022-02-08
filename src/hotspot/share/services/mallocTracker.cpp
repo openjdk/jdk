@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 
 #include "runtime/os.hpp"
+#include "runtime/safefetch.inline.hpp"
 #include "services/mallocSiteTable.hpp"
 #include "services/mallocTracker.hpp"
 #include "services/mallocTracker.inline.hpp"
@@ -288,4 +289,33 @@ void* MallocTracker::record_free(void* memblock) {
   MallocHeader* header = malloc_header(memblock);
   header->release();
   return (void*)header;
+}
+
+// Given a pointer, if it seems to point to the start of a valid malloced block,
+// print the block. Note that since there is very low risk of memory looking
+// accidentally like a valid malloc block header (canaries and all) this is not
+// totally failproof. Only use this during debugging or when you can afford
+// signals popping up, e.g. when writing an hs_err file.
+bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
+  assert(MemTracker::enabled(), "NMT must be enabled");
+  if (CanUseSafeFetch32() && os::is_readable_pointer(p)) {
+    const NMT_TrackingLevel tracking_level = MemTracker::tracking_level();
+    const MallocHeader* mhdr = (const MallocHeader*)MallocTracker::get_base(const_cast<void*>(p), tracking_level);
+    char msg[256];
+    address p_corrupted;
+    if (os::is_readable_pointer(mhdr) &&
+        mhdr->check_block_integrity(msg, sizeof(msg), &p_corrupted)) {
+      st->print_cr(PTR_FORMAT " malloc'd " SIZE_FORMAT " bytes by %s",
+          p2i(p), mhdr->size(), NMTUtil::flag_to_name(mhdr->flags()));
+      if (tracking_level == NMT_detail) {
+        NativeCallStack ncs;
+        if (mhdr->get_stack(ncs)) {
+          ncs.print_on(st);
+          st->cr();
+        }
+      }
+      return true;
+    }
+  }
+  return false;
 }

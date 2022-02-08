@@ -159,6 +159,7 @@ public class SATestUtils {
      * if we are root, so return true.  Then return false for an expected denial
      * if "ptrace_scope" is 1, and true otherwise.
      */
+    @SuppressWarnings("removal")
     private static boolean canPtraceAttachLinux() throws IOException {
         // SELinux deny_ptrace:
         var deny_ptrace = Paths.get("/sys/fs/selinux/booleans/deny_ptrace");
