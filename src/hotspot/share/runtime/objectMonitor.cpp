@@ -233,19 +233,6 @@ OopStorage* ObjectMonitor::_oop_storage = NULL;
 // * See also http://blogs.sun.com/dave
 
 
-void* ObjectMonitor::operator new (size_t size) throw() {
-  return AllocateHeap(size, mtInternal);
-}
-void* ObjectMonitor::operator new[] (size_t size) throw() {
-  return operator new (size);
-}
-void ObjectMonitor::operator delete(void* p) {
-  FreeHeap(p);
-}
-void ObjectMonitor::operator delete[] (void *p) {
-  operator delete(p);
-}
-
 // Check that object() and set_object() are called from the right context:
 static void check_object_context() {
 #ifdef ASSERT

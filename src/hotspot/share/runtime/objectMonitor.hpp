@@ -203,11 +203,6 @@ class ObjectMonitor : public CHeapObj<mtInternal> {
 
   static int Knob_SpinLimit;
 
-  void* operator new (size_t size) throw();
-  void* operator new[] (size_t size) throw();
-  void operator delete(void* p);
-  void operator delete[] (void* p);
-
   // TODO-FIXME: the "offset" routines should return a type of off_t instead of int ...
   // ByteSize would also be an appropriate type.
   static int header_offset_in_bytes()      { return offset_of(ObjectMonitor, _header); }
