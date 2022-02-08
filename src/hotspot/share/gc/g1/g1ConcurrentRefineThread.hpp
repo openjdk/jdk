@@ -89,8 +89,13 @@ public:
 // the dirty card queue, which may trigger activation of this thread when it
 // is not already running.
 class G1PrimaryConcurrentRefineThread final : public G1ConcurrentRefineThread {
+  // Support for activation.  The thread waits on this semaphore when idle.
+  // Calls to activate signal it to wake the thread.
   Semaphore _notifier;
   DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
+  // Used as both the activation threshold and also the "is active" state.
+  // The value is SIZE_MAX when the thread is active, otherwise the threshold
+  // for signaling the semaphore.
   volatile size_t _threshold;
   DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(size_t));
 
@@ -106,6 +111,8 @@ public:
 
   void activate() override;
 
+  // Used by the write barrier support to activate the thread if needed when
+  // there are new refinement buffers.
   void notify(size_t num_cards);
   void update_notify_threshold(size_t threshold);
 };
