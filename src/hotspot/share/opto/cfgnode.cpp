@@ -2518,7 +2518,7 @@ bool PhiNode::is_data_loop(RegionNode* r, Node* uin, const PhaseGVN* phase) {
 //------------------------------is_tripcount-----------------------------------
 bool PhiNode::is_tripcount(BasicType bt) const {
   return (in(0) != NULL && in(0)->is_BaseCountedLoop() &&
-          in(0)->as_BaseCountedLoop()->operates_on(bt, true) &&
+          in(0)->as_BaseCountedLoop()->bt() == bt &&
           in(0)->as_BaseCountedLoop()->phi() == this);
 }
 
@@ -2684,6 +2684,17 @@ const Type* CatchNode::Value(PhaseGVN* phase) const {
       // Rethrows always throw exceptions, never return
       if (call->entry_point() == OptoRuntime::rethrow_stub()) {
         f[CatchProjNode::fall_through_index] = Type::TOP;
+      } else if (call->is_AllocateArray()) {
+        Node* klass_node = call->in(AllocateNode::KlassNode);
+        Node* length = call->in(AllocateNode::ALength);
+        const Type* length_type = phase->type(length);
+        const Type* klass_type = phase->type(klass_node);
+        Node* valid_length_test = call->in(AllocateNode::ValidLengthTest);
+        const Type* valid_length_test_t = phase->type(valid_length_test);
+        if (length_type == Type::TOP || klass_type == Type::TOP || valid_length_test_t == Type::TOP ||
+            valid_length_test_t->is_int()->is_con(0)) {
+          f[CatchProjNode::fall_through_index] = Type::TOP;
+        }
       } else if( call->req() > TypeFunc::Parms ) {
         const Type *arg0 = phase->type( call->in(TypeFunc::Parms) );
         // Check for null receiver to virtual or interface calls

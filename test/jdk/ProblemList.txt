@@ -242,7 +242,6 @@ sun/awt/shell/ShellFolderMemoryLeak.java 8197794 windows-all
 sun/java2d/DirectX/OnScreenRenderingResizeTest/OnScreenRenderingResizeTest.java 8022403 generic-all
 sun/java2d/DirectX/OverriddenInsetsTest/OverriddenInsetsTest.java 8196102 generic-all
 sun/java2d/DirectX/RenderingToCachedGraphicsTest/RenderingToCachedGraphicsTest.java 8196180 windows-all,macosx-all
-java/awt/Graphics2D/CopyAreaOOB.java 7001973 windows-all,macosx-all
 sun/java2d/SunGraphics2D/EmptyClipRenderingTest.java 8144029 macosx-all,linux-all
 sun/java2d/SunGraphics2D/DrawImageBilinear.java 8191406 generic-all
 sun/java2d/SunGraphics2D/PolyVertTest.java 6986565 generic-all
@@ -517,6 +516,7 @@ java/awt/KeyboardFocusmanager/TypeAhead/ButtonActionKeyTest/ButtonActionKeyTest.
 java/awt/Window/GetScreenLocation/GetScreenLocationTest.java 8225787 linux-x64
 java/awt/Dialog/MakeWindowAlwaysOnTop/MakeWindowAlwaysOnTop.java 8266243 macosx-aarch64
 java/awt/dnd/BadSerializationTest/BadSerializationTest.java 8277817 linux-x64,windows-x64
+java/awt/GraphicsDevice/CheckDisplayModes.java 8266242 macosx-aarch64
 
 ############################################################################
 
@@ -606,6 +606,8 @@ java/nio/channels/DatagramChannel/Unref.java                    8233519 generic-
 
 java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc64
 
+java/nio/channels/DatagramChannel/ManySourcesAndTargets.java    8264385 macosx-aarch64
+
 ############################################################################
 
 # jdk_rmi
@@ -646,8 +648,6 @@ javax/net/ssl/DTLS/CipherSuite.java                             8202059 macosx-x
 
 sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-all
 
-sun/security/pkcs11/KeyStore/SecretKeysBasic.java                 8209398 generic-all
-
 security/infra/java/security/cert/CertPathValidator/certification/ActalisCA.java  8224768 generic-all
 
 sun/security/smartcardio/TestChannel.java                       8039280 generic-all
@@ -671,6 +671,7 @@ javax/security/auth/kerberos/KerberosTixDateTest.java           8039280 generic-
 sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java 8039280 generic-all
 sun/security/provider/PolicyParser/ExtDirsChange.java           8039280 generic-all
 sun/security/provider/PolicyParser/PrincipalExpansionError.java 8039280 generic-all
+sun/security/ssl/SSLSessionImpl/NoInvalidateSocketException.java 8277970 linux-all,macosx-x64
 
 ############################################################################
 
@@ -748,6 +749,7 @@ javax/swing/JMenu/4515762/bug4515762.java 8276074 macosx-all
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8225012 windows-all,macosx-all
 sanity/client/SwingSet/src/ScrollPaneDemoTest.java 8225013 linux-all
 sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
+javax/swing/JTree/4908142/bug4908142.java 8278348 macosx-all
 
 ############################################################################
 
@@ -823,7 +825,8 @@ jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209 generic-
 jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-all
 jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
-jdk/jfr/api/consumer/streaming/TestLatestEvent.java             8268297 windows-x64
+jdk/jfr/event/oldobject/TestLargeRootSet.java                   8276333 generic-x64
+jdk/jfr/api/consumer/recordingstream/TestOnEvent.java           8255404 linux-x64
 
 ############################################################################
 

@@ -85,7 +85,7 @@
   product(intx, ArrayOperationPartialInlineSize, 0, DIAGNOSTIC,             \
           "Partial inline size used for small array operations"             \
           "(e.g. copy,cmp) acceleration.")                                  \
-          range(0, 64)                                                      \
+          range(0, 256)                                                     \
                                                                             \
   product(bool, AlignVector, true,                                          \
           "Perform vector store/load alignment in loop")                    \
@@ -111,6 +111,11 @@
                                                                             \
   notproduct(bool, PrintIdeal, false,                                       \
           "Print ideal graph before code generation")                       \
+                                                                            \
+  notproduct(uintx, PrintIdealLevel, 0,                                     \
+          "Print ideal IR on stdout. "                                      \
+          "Same levels as PrintIdealGraphLevel")                            \
+          range(0, 4)                                                       \
                                                                             \
   notproduct(uintx, PrintIdealIndentThreshold, 0,                           \
           "A depth threshold of ideal graph. Indentation is disabled "      \

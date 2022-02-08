@@ -57,7 +57,7 @@ public class GCMShortBuffer {
         int r = c.doFinal(cipherText, 1, len, pt, 0);
         if (r != pt.length) {
             System.out.println(
-                "doFinal() return ( " + r + ") is not the same" +
+                "doFinal() return ( " + r + ") is not the same " +
                     "as getOutputSize returned" + pt.length);
             error = true;
         }

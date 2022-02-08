@@ -622,6 +622,8 @@ public:
   // for all regions.
   void verify_region_attr_remset_is_tracked() PRODUCT_RETURN;
 
+  void clear_prev_bitmap_for_region(HeapRegion* hr);
+
   bool is_user_requested_concurrent_full_gc(GCCause::Cause cause);
 
   // This is called at the start of either a concurrent cycle or a Full
@@ -1252,6 +1254,9 @@ public:
   inline bool is_obj_dead_full(const oop obj, const HeapRegion* hr) const;
   inline bool is_obj_dead_full(const oop obj) const;
 
+  // Mark the live object that failed evacuation in the prev bitmap.
+  inline void mark_evac_failure_object(const oop obj, uint worker_id) const;
+
   G1ConcurrentMark* concurrent_mark() const { return _cm; }
 
   // Refinement
@@ -1282,9 +1287,9 @@ public:
   // Free up superfluous code root memory.
   void purge_code_root_memory();
 
-  // Rebuild the strong code root lists for each region
+  // Rebuild the code root lists for each region
   // after a full GC.
-  void rebuild_strong_code_roots();
+  void rebuild_code_roots();
 
   // Performs cleaning of data structures after class unloading.
   void complete_cleaning(BoolObjectClosure* is_alive, bool class_unloading_occurred);

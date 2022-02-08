@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,6 @@ class BlockList: public GrowableArray<BlockBegin*> {
 
   void iterate_forward(BlockClosure* closure);
   void iterate_backward(BlockClosure* closure);
-  void blocks_do(void f(BlockBegin*));
   void values_do(ValueVisitor* f);
   void print(bool cfg_only = false, bool live_only = false) PRODUCT_RETURN;
 };
@@ -1823,6 +1822,7 @@ BASE(BlockEnd, StateSplit)
   // successors
   int number_of_sux() const                      { return _sux != NULL ? _sux->length() : 0; }
   BlockBegin* sux_at(int i) const                { return _sux->at(i); }
+  bool is_sux(BlockBegin* sux) const             { return _sux == NULL ? false : _sux->contains(sux); }
   BlockBegin* default_sux() const                { return sux_at(number_of_sux() - 1); }
   void substitute_sux(BlockBegin* old_sux, BlockBegin* new_sux);
 };

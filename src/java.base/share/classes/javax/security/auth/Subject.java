@@ -402,6 +402,7 @@ public final class Subject implements java.io.Serializable {
      */
     public static <T> T callAs(final Subject subject,
             final Callable<T> action) throws CompletionException {
+        Objects.requireNonNull(action);
         if (USE_TL) {
             Subject oldSubject = SUBJECT_THREAD_LOCAL.get();
             SUBJECT_THREAD_LOCAL.set(subject);

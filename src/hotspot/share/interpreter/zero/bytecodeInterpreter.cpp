@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,6 +99,9 @@
 #undef PREFETCH_OPCCODE
 #define PREFETCH_OPCCODE
 
+JRT_ENTRY(void, at_safepoint(JavaThread* current)) {}
+JRT_END
+
 /*
   Interpreter safepoint: it is expected that the interpreter will have no live
   handles of its own creation live at an interpreter safepoint. Therefore we
@@ -107,12 +110,10 @@
   There really shouldn't be any handles remaining to trash but this is cheap
   in relation to a safepoint.
 */
-#define RETURN_SAFEPOINT                                                                                  \
-    if (SafepointMechanism::should_process(THREAD)) {                                                     \
-      HandleMarkCleaner __hmc(THREAD);                                                                    \
-      CALL_VM(SafepointMechanism::process_if_requested_with_exit_check(THREAD, true /* check asyncs */),  \
-              handle_exception);                                                                          \
-    }                                                                                                     \
+#define RETURN_SAFEPOINT                                    \
+    if (SafepointMechanism::should_process(THREAD)) {       \
+      CALL_VM(at_safepoint(THREAD), handle_exception);      \
+    }
 
 /*
  * VM_JAVA_ERROR - Macro for throwing a java exception from
@@ -1942,12 +1943,12 @@ run:
                 Copy::fill_to_words(result + hdr_size, obj_size - hdr_size, 0);
               }
 
-              oop obj = cast_to_oop(result);
+              // Initialize header, mirrors MemAllocator.
+              oopDesc::set_mark(result, markWord::prototype());
+              oopDesc::set_klass_gap(result, 0);
+              oopDesc::release_set_klass(result, ik);
 
-              // Initialize header
-              obj->set_mark(markWord::prototype());
-              obj->set_klass_gap(0);
-              obj->set_klass(ik);
+              oop obj = cast_to_oop(result);
 
               // Must prevent reordering of stores for object initialization
               // with stores that publish the new object.

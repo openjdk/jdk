@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,8 +77,8 @@ protected:
          StripMined          = 1<<15,
          SubwordLoop         = 1<<16,
          ProfileTripFailed   = 1<<17,
-         TransformedLongInnerLoop = 1<<18,
-         TransformedLongOuterLoop = 1<<19};
+         LoopNestInnerLoop = 1 << 18,
+         LoopNestLongOuterLoop = 1 << 19};
   char _unswitch_count;
   enum { _unswitch_max=3 };
   char _postloop_flags;
@@ -103,8 +103,8 @@ public:
   bool is_strip_mined() const { return _loop_flags & StripMined; }
   bool is_profile_trip_failed() const { return _loop_flags & ProfileTripFailed; }
   bool is_subword_loop() const { return _loop_flags & SubwordLoop; }
-  bool is_transformed_long_inner_loop() const { return _loop_flags & TransformedLongInnerLoop; }
-  bool is_transformed_long_outer_loop() const { return _loop_flags & TransformedLongOuterLoop; }
+  bool is_loop_nest_inner_loop() const { return _loop_flags & LoopNestInnerLoop; }
+  bool is_loop_nest_outer_loop() const { return _loop_flags & LoopNestLongOuterLoop; }
 
   void mark_partial_peel_failed() { _loop_flags |= PartialPeelFailed; }
   void mark_has_reductions() { _loop_flags |= HasReductions; }
@@ -114,13 +114,14 @@ public:
   void mark_loop_vectorized() { _loop_flags |= VectorizedLoop; }
   void mark_has_atomic_post_loop() { _loop_flags |= HasAtomicPostLoop; }
   void mark_has_range_checks() { _loop_flags |=  HasRangeChecks; }
+  void clear_has_range_checks() { _loop_flags &= ~HasRangeChecks; }
   void mark_is_multiversioned() { _loop_flags |= IsMultiversioned; }
   void mark_strip_mined() { _loop_flags |= StripMined; }
   void clear_strip_mined() { _loop_flags &= ~StripMined; }
   void mark_profile_trip_failed() { _loop_flags |= ProfileTripFailed; }
   void mark_subword_loop() { _loop_flags |= SubwordLoop; }
-  void mark_transformed_long_inner_loop() { _loop_flags |= TransformedLongInnerLoop; }
-  void mark_transformed_long_outer_loop() { _loop_flags |= TransformedLongOuterLoop; }
+  void mark_loop_nest_inner_loop() { _loop_flags |= LoopNestInnerLoop; }
+  void mark_loop_nest_outer_loop() { _loop_flags |= LoopNestLongOuterLoop; }
 
   int unswitch_max() { return _unswitch_max; }
   int unswitch_count() { return _unswitch_count; }
@@ -215,10 +216,8 @@ public:
   BaseCountedLoopEndNode* loopexit() const;
 
   virtual BasicType bt() const = 0;
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return false;
-  }
+
+  jlong stride_con() const;
 
   static BaseCountedLoopNode* make(Node* entry, Node* backedge, BasicType bt);
 };
@@ -342,10 +341,6 @@ public:
   static Node* skip_predicates_from_entry(Node* ctrl);
   Node* skip_predicates();
 
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_INT;
-  }
   virtual BasicType bt() const {
     return T_INT;
   }
@@ -366,18 +361,12 @@ public:
 
   virtual int Opcode() const;
 
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_LONG;
-  }
-
   virtual BasicType bt() const {
     return T_LONG;
   }
 
   LongCountedLoopEndNode* loopexit_or_null() const { return (LongCountedLoopEndNode*) BaseCountedLoopNode::loopexit_or_null(); }
   LongCountedLoopEndNode* loopexit() const { return (LongCountedLoopEndNode*) BaseCountedLoopNode::loopexit(); }
-  jlong   stride_con() const;
 };
 
 
@@ -423,17 +412,13 @@ public:
     if (!ln->is_BaseCountedLoop() || ln->as_BaseCountedLoop()->loopexit_or_null() != this) {
       return NULL;
     }
-    if (!ln->operates_on(bt(), true)) {
+    if (ln->as_BaseCountedLoop()->bt() != bt()) {
       return NULL;
     }
     return ln->as_BaseCountedLoop();
   }
 
   BoolTest::mask test_trip() const  { return in(TestValue)->as_Bool()->_test._test; }
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return false;
-  }
 
   jlong stride_con() const;
   virtual BasicType bt() const = 0;
@@ -452,10 +437,6 @@ public:
 
   CountedLoopNode* loopnode() const {
     return (CountedLoopNode*) BaseCountedLoopEndNode::loopnode();
-  }
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_INT;
   }
 
   virtual BasicType bt() const {
@@ -477,10 +458,7 @@ public:
   LongCountedLoopNode* loopnode() const {
     return (LongCountedLoopNode*) BaseCountedLoopEndNode::loopnode();
   }
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_LONG;
-  }
+
   virtual int Opcode() const;
 
   virtual BasicType bt() const {
@@ -498,7 +476,7 @@ inline BaseCountedLoopEndNode* BaseCountedLoopNode::loopexit_or_null() const {
     return NULL;
   }
   BaseCountedLoopEndNode* result = lexit->as_BaseCountedLoopEnd();
-  if (!result->operates_on(bt(), true)) {
+  if (result->bt() != bt()) {
     return NULL;
   }
   return result;
@@ -535,6 +513,12 @@ inline Node* BaseCountedLoopNode::phi() const {
   BaseCountedLoopEndNode* cle = loopexit_or_null();
   return cle != NULL ? cle->phi() : NULL;
 }
+
+inline jlong BaseCountedLoopNode::stride_con() const {
+  BaseCountedLoopEndNode* cle = loopexit_or_null();
+  return cle != NULL ? cle->stride_con() : 0;
+}
+
 
 //------------------------------LoopLimitNode-----------------------------
 // Counted Loop limit node which represents exact final iterator value:
@@ -734,7 +718,7 @@ public:
   // Return TRUE or FALSE if the loop should be range-check-eliminated.
   // Gather a list of IF tests that are dominated by iteration splitting;
   // also gather the end of the first split and the start of the 2nd split.
-  bool policy_range_check(PhaseIdealLoop* phase, bool provisional) const;
+  bool policy_range_check(PhaseIdealLoop* phase, bool provisional, BasicType bt) const;
 
   // Return TRUE if "iff" is a range check.
   bool is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invariance& invar DEBUG_ONLY(COMMA ProjNode *predicate_proj)) const;
@@ -790,6 +774,12 @@ public:
 
   // Estimate the number of nodes resulting from control and data flow merge.
   uint est_loop_flow_merge_sz() const;
+
+  // Check if the number of residual iterations is large with unroll_cnt.
+  // Return true if the residual iterations are more than 10% of the trip count.
+  bool is_residual_iters_large(int unroll_cnt, CountedLoopNode *cl) const {
+    return (unroll_cnt - 1) * (100.0 / LoopPercentProfileLimit) > cl->profile_trip_cnt();
+  }
 };
 
 // -----------------------------PhaseIdealLoop---------------------------------
@@ -1170,8 +1160,8 @@ public:
 
   bool is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_bt);
 
-  Node* long_loop_replace_long_iv(Node* iv_to_replace, Node* inner_iv, Node* outer_phi, Node* inner_head);
-  bool transform_long_counted_loop(IdealLoopTree* loop, Node_List &old_new);
+  Node* loop_nest_replace_iv(Node* iv_to_replace, Node* inner_iv, Node* outer_phi, Node* inner_head, BasicType bt);
+  bool create_loop_nest(IdealLoopTree* loop, Node_List &old_new);
 #ifdef ASSERT
   bool convert_to_long_loop(Node* cmp, Node* phi, IdealLoopTree* loop);
 #endif
@@ -1272,10 +1262,12 @@ public:
   void mark_reductions( IdealLoopTree *loop );
 
   // Return true if exp is a constant times an induction var
-  bool is_scaled_iv(Node* exp, Node* iv, jlong* p_scale, BasicType bt);
+  bool is_scaled_iv(Node* exp, Node* iv, jlong* p_scale, BasicType bt, bool* converted);
+
+  bool is_iv(Node* exp, Node* iv, BasicType bt);
 
   // Return true if exp is a scaled induction var plus (or minus) constant
-  bool is_scaled_iv_plus_offset(Node* exp, Node* iv, jlong* p_scale, Node** p_offset, BasicType bt, int depth = 0);
+  bool is_scaled_iv_plus_offset(Node* exp, Node* iv, jlong* p_scale, Node** p_offset, BasicType bt, bool* converted = NULL, int depth = 0);
   bool is_scaled_iv_plus_offset(Node* exp, Node* iv, int* p_scale, Node** p_offset) {
     jlong long_scale;
     if (is_scaled_iv_plus_offset(exp, iv, &long_scale, p_offset, T_INT)) {
@@ -1457,7 +1449,8 @@ public:
   // Rework addressing expressions to get the most loop-invariant stuff
   // moved out.  We'd like to do all associative operators, but it's especially
   // important (common) to do address expressions.
-  Node *remix_address_expressions( Node *n );
+  Node* remix_address_expressions(Node* n);
+  Node* remix_address_expressions_add_left_shift(Node* n, IdealLoopTree* n_loop, Node* n_ctrl, BasicType bt);
 
   // Convert add to muladd to generate MuladdS2I under certain criteria
   Node * convert_add_to_muladd(Node * n);
@@ -1479,15 +1472,15 @@ public:
   Node *has_local_phi_input( Node *n );
   // Mark an IfNode as being dominated by a prior test,
   // without actually altering the CFG (and hence IDOM info).
-  void dominated_by( Node *prevdom, Node *iff, bool flip = false, bool exclude_loop_predicate = false );
+  void dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip = false, bool exclude_loop_predicate = false);
 
   // Split Node 'n' through merge point
-  Node *split_thru_region( Node *n, Node *region );
+  RegionNode* split_thru_region(Node* n, RegionNode* region);
   // Split Node 'n' through merge point if there is enough win.
   Node *split_thru_phi( Node *n, Node *region, int policy );
   // Found an If getting its condition-code input from a Phi in the
   // same block.  Split thru the Region.
-  void do_split_if( Node *iff );
+  void do_split_if(Node *iff, RegionNode** new_false_region = NULL, RegionNode** new_true_region = NULL);
 
   // Conversion of fill/copy patterns into intrinsic versions
   bool do_intrinsify_fill();
@@ -1634,9 +1627,9 @@ public:
 
   void rpo(Node* start, Node_Stack &stk, VectorSet &visited, Node_List &rpo_list) const;
 
-  void check_long_counted_loop(IdealLoopTree* loop, Node* x) NOT_DEBUG_RETURN;
+  void check_counted_loop_shape(IdealLoopTree* loop, Node* x, BasicType bt) NOT_DEBUG_RETURN;
 
-  LoopNode* create_inner_head(IdealLoopTree* loop, LongCountedLoopNode* head, LongCountedLoopEndNode* exit_test);
+  LoopNode* create_inner_head(IdealLoopTree* loop, BaseCountedLoopNode* head, IfNode* exit_test);
 
 
   int extract_long_range_checks(const IdealLoopTree* loop, jlong stride_con, int iters_limit, PhiNode* phi,
@@ -1659,6 +1652,12 @@ public:
   Node* clamp(Node* R, Node* L, Node* H);
 
   bool safe_for_if_replacement(const Node* dom) const;
+
+  void strip_mined_nest_back_to_counted_loop(IdealLoopTree* loop, const BaseCountedLoopNode* head, Node* back_control,
+                                             IfNode*&exit_test, SafePointNode*&safepoint);
+  void push_pinned_nodes_thru_region(IfNode* dom_if, Node* region);
+
+  bool try_merge_identical_ifs(Node* n);
 };
 
 

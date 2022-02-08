@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,67 +25,13 @@
 #ifndef SHARE_SERVICES_MEMTRACKER_HPP
 #define SHARE_SERVICES_MEMTRACKER_HPP
 
-#include "services/nmtCommon.hpp"
-#include "utilities/nativeCallStack.hpp"
-
-
-#if !INCLUDE_NMT
-
-#define CURRENT_PC   NativeCallStack::empty_stack()
-#define CALLER_PC    NativeCallStack::empty_stack()
-
-class Tracker : public StackObj {
- public:
-  enum TrackerType {
-     uncommit,
-     release
-  };
-  Tracker(enum TrackerType type) : _type(type) { }
-  void record(address addr, size_t size) { }
- private:
-  enum TrackerType  _type;
-};
-
-class MemTracker : AllStatic {
- public:
-  static inline NMT_TrackingLevel tracking_level() { return NMT_off; }
-  static inline void shutdown() { }
-  static inline void init() { }
-  static bool check_launcher_nmt_support(const char* value) { return true; }
-  static bool verify_nmt_option() { return true; }
-
-  static inline void* record_malloc(void* mem_base, size_t size, MEMFLAGS flag,
-    const NativeCallStack& stack, NMT_TrackingLevel level) { return mem_base; }
-  static inline size_t malloc_header_size(NMT_TrackingLevel level) { return 0; }
-  static inline size_t malloc_header_size(void* memblock) { return 0; }
-  static inline size_t malloc_footer_size(NMT_TrackingLevel level) { return 0; }
-  static inline void* malloc_base(void* memblock) { return memblock; }
-  static inline void* record_free(void* memblock, NMT_TrackingLevel level) { return memblock; }
-
-  static inline void record_new_arena(MEMFLAGS flag) { }
-  static inline void record_arena_free(MEMFLAGS flag) { }
-  static inline void record_arena_size_change(ssize_t diff, MEMFLAGS flag) { }
-  static inline void record_virtual_memory_reserve(void* addr, size_t size, const NativeCallStack& stack,
-                       MEMFLAGS flag = mtNone) { }
-  static inline void record_virtual_memory_reserve_and_commit(void* addr, size_t size,
-    const NativeCallStack& stack, MEMFLAGS flag = mtNone) { }
-  static inline void record_virtual_memory_split_reserved(void* addr, size_t size, size_t split) { }
-  static inline void record_virtual_memory_commit(void* addr, size_t size, const NativeCallStack& stack) { }
-  static inline void record_virtual_memory_type(void* addr, MEMFLAGS flag) { }
-  static inline void record_thread_stack(void* addr, size_t size) { }
-  static inline void release_thread_stack(void* addr, size_t size) { }
-
-  static void final_report(outputStream*) { }
-  static void error_report(outputStream*) { }
-};
-
-#else
-
 #include "runtime/mutexLocker.hpp"
 #include "runtime/threadCritical.hpp"
 #include "services/mallocTracker.hpp"
+#include "services/nmtCommon.hpp"
 #include "services/threadStackTracker.hpp"
 #include "services/virtualMemoryTracker.hpp"
+#include "utilities/nativeCallStack.hpp"
 
 #define CURRENT_PC ((MemTracker::tracking_level() == NMT_detail) ? \
                     NativeCallStack(0) : NativeCallStack::empty_stack())
@@ -137,14 +83,9 @@ class MemTracker : AllStatic {
     return _tracking_level;
   }
 
-  // Shutdown native memory tracking.
-  // This transitions the tracking level:
-  //  summary -> minimal
-  //  detail  -> minimal
-  static void shutdown();
-
-  // Transition the tracking level to specified level
-  static bool transition_to(NMT_TrackingLevel level);
+  static inline bool enabled() {
+    return _tracking_level > NMT_off;
+  }
 
   static inline void* record_malloc(void* mem_base, size_t size, MEMFLAGS flag,
     const NativeCallStack& stack, NMT_TrackingLevel level) {
@@ -180,20 +121,20 @@ class MemTracker : AllStatic {
 
   // Record creation of an arena
   static inline void record_new_arena(MEMFLAGS flag) {
-    if (tracking_level() < NMT_summary) return;
+    if (!enabled()) return;
     MallocTracker::record_new_arena(flag);
   }
 
   // Record destruction of an arena
   static inline void record_arena_free(MEMFLAGS flag) {
-    if (tracking_level() < NMT_summary) return;
+    if (!enabled()) return;
     MallocTracker::record_arena_free(flag);
   }
 
   // Record arena size change. Arena size is the size of all arena
   // chuncks that backing up the arena.
   static inline void record_arena_size_change(ssize_t diff, MEMFLAGS flag) {
-    if (tracking_level() < NMT_summary) return;
+    if (!enabled()) return;
     MallocTracker::record_arena_size_change(diff, flag);
   }
 
@@ -203,11 +144,9 @@ class MemTracker : AllStatic {
   static inline void record_virtual_memory_reserve(void* addr, size_t size, const NativeCallStack& stack,
     MEMFLAGS flag = mtNone) {
     assert_post_init();
-    if (tracking_level() < NMT_summary) return;
+    if (!enabled()) return;
     if (addr != NULL) {
       ThreadCritical tc;
-      // Recheck to avoid potential racing during NMT shutdown
-      if (tracking_level() < NMT_summary) return;
       VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, flag);
     }
   }
@@ -215,10 +154,9 @@ class MemTracker : AllStatic {
   static inline void record_virtual_memory_reserve_and_commit(void* addr, size_t size,
     const NativeCallStack& stack, MEMFLAGS flag = mtNone) {
     assert_post_init();
-    if (tracking_level() < NMT_summary) return;
+    if (!enabled()) return;
     if (addr != NULL) {
       ThreadCritical tc;
-      if (tracking_level() < NMT_summary) return;
       VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, flag);
       VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
     }
@@ -227,10 +165,9 @@ class MemTracker : AllStatic {
   static inline void record_virtual_memory_commit(void* addr, size_t size,
     const NativeCallStack& stack) {
     assert_post_init();
-    if (tracking_level() < NMT_summary) return;
+    if (!enabled()) return;
     if (addr != NULL) {
       ThreadCritical tc;
-      if (tracking_level() < NMT_summary) return;
       VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
     }
   }
@@ -243,28 +180,25 @@ class MemTracker : AllStatic {
   //  memory flags of the original region.
   static inline void record_virtual_memory_split_reserved(void* addr, size_t size, size_t split) {
     assert_post_init();
-    if (tracking_level() < NMT_summary) return;
+    if (!enabled()) return;
     if (addr != NULL) {
       ThreadCritical tc;
-      // Recheck to avoid potential racing during NMT shutdown
-      if (tracking_level() < NMT_summary) return;
       VirtualMemoryTracker::split_reserved_region((address)addr, size, split);
     }
   }
 
   static inline void record_virtual_memory_type(void* addr, MEMFLAGS flag) {
     assert_post_init();
-    if (tracking_level() < NMT_summary) return;
+    if (!enabled()) return;
     if (addr != NULL) {
       ThreadCritical tc;
-      if (tracking_level() < NMT_summary) return;
       VirtualMemoryTracker::set_reserved_region_type((address)addr, flag);
     }
   }
 
   static void record_thread_stack(void* addr, size_t size) {
     assert_post_init();
-    if (tracking_level() < NMT_summary) return;
+    if (!enabled()) return;
     if (addr != NULL) {
       ThreadStackTracker::new_thread_stack((address)addr, size, CALLER_PC);
     }
@@ -272,7 +206,7 @@ class MemTracker : AllStatic {
 
   static inline void release_thread_stack(void* addr, size_t size) {
     assert_post_init();
-    if (tracking_level() < NMT_summary) return;
+    if (!enabled()) return;
     if (addr != NULL) {
       ThreadStackTracker::delete_thread_stack((address)addr, size);
     }
@@ -320,7 +254,5 @@ class MemTracker : AllStatic {
   // Query lock
   static Mutex*           _query_lock;
 };
-
-#endif // INCLUDE_NMT
 
 #endif // SHARE_SERVICES_MEMTRACKER_HPP

@@ -44,6 +44,7 @@ public abstract class MemorySegmentProxy {
     public abstract Object unsafeGetBase();
     public abstract boolean isSmall();
     public abstract ScopedMemoryAccess.Scope scope();
+    public abstract long maxAlignMask();
 
     /* Helper functions for offset computations. These are required so that we can avoid issuing long opcodes
      * (e.g. LMUL, LADD) when we're operating on 'small' segments (segments whose length can be expressed with an int).

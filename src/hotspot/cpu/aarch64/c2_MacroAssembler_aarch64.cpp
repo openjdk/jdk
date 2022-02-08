@@ -946,6 +946,48 @@ void C2_MacroAssembler::neon_compare(FloatRegister dst, BasicType bt, FloatRegis
   }
 }
 
+// Compress the least significant bit of each byte to the rightmost and clear
+// the higher garbage bits.
+void C2_MacroAssembler::bytemask_compress(Register dst) {
+  // Example input, dst = 0x01 00 00 00 01 01 00 01
+  // The "??" bytes are garbage.
+  orr(dst, dst, dst, Assembler::LSR, 7);  // dst = 0x?? 02 ?? 00 ?? 03 ?? 01
+  orr(dst, dst, dst, Assembler::LSR, 14); // dst = 0x????????08 ??????0D
+  orr(dst, dst, dst, Assembler::LSR, 28); // dst = 0x????????????????8D
+  andr(dst, dst, 0xff);                   // dst = 0x8D
+}
+
+// Pack the lowest-numbered bit of each mask element in src into a long value
+// in dst, at most the first 64 lane elements.
+// Clobbers: rscratch1
+void C2_MacroAssembler::sve_vmask_tolong(Register dst, PRegister src, BasicType bt, int lane_cnt,
+                                         FloatRegister vtmp1, FloatRegister vtmp2, PRegister pgtmp) {
+  assert(pgtmp->is_governing(), "This register has to be a governing predicate register.");
+  assert(lane_cnt <= 64 && is_power_of_2(lane_cnt), "Unsupported lane count");
+  assert_different_registers(dst, rscratch1);
+
+  Assembler::SIMD_RegVariant size = elemType_to_regVariant(bt);
+
+  // Pack the mask into vector with sequential bytes.
+  sve_cpy(vtmp1, size, src, 1, false);
+  if (bt != T_BYTE) {
+    sve_vector_narrow(vtmp1, B, vtmp1, size, vtmp2);
+  }
+
+  // Compress the lowest 8 bytes.
+  fmovd(dst, vtmp1);
+  bytemask_compress(dst);
+  if (lane_cnt <= 8) return;
+
+  // Repeat on higher bytes and join the results.
+  // Compress 8 bytes in each iteration.
+  for (int idx = 1; idx < (lane_cnt / 8); idx++) {
+    idx == 1 ? fmovhid(rscratch1, vtmp1) : sve_extract(rscratch1, D, pgtmp, vtmp1, idx);
+    bytemask_compress(rscratch1);
+    orr(dst, dst, rscratch1, Assembler::LSL, idx << 3);
+  }
+}
+
 void C2_MacroAssembler::sve_compare(PRegister pd, BasicType bt, PRegister pg,
                                     FloatRegister zn, FloatRegister zm, int cond) {
   assert(pg->is_governing(), "This register has to be a governing predicate register");
@@ -1021,6 +1063,7 @@ void C2_MacroAssembler::sve_vector_narrow(FloatRegister dst, SIMD_RegVariant dst
                                           FloatRegister src, SIMD_RegVariant src_size,
                                           FloatRegister tmp) {
   assert(dst_size < src_size && dst_size <= S && src_size <= D, "invalid element size");
+  assert_different_registers(src, tmp);
   sve_dup(tmp, src_size, 0);
   if (src_size == D) {
     switch (dst_size) {
@@ -1187,5 +1230,41 @@ void C2_MacroAssembler::sve_reduce_integral(int opc, Register dst, BasicType bt,
     } else if (bt == T_SHORT) {
       sxth(dst, dst);
     }
+  }
+}
+
+// Set elements of the dst predicate to true if the element number is
+// in the range of [0, lane_cnt), or to false otherwise.
+void C2_MacroAssembler::sve_ptrue_lanecnt(PRegister dst, SIMD_RegVariant size, int lane_cnt) {
+  assert(size != Q, "invalid size");
+  switch(lane_cnt) {
+    case 1: /* VL1 */
+    case 2: /* VL2 */
+    case 3: /* VL3 */
+    case 4: /* VL4 */
+    case 5: /* VL5 */
+    case 6: /* VL6 */
+    case 7: /* VL7 */
+    case 8: /* VL8 */
+      sve_ptrue(dst, size, lane_cnt);
+      break;
+    case 16:
+      sve_ptrue(dst, size, /* VL16 */ 0b01001);
+      break;
+    case 32:
+      sve_ptrue(dst, size, /* VL32 */ 0b01010);
+      break;
+    case 64:
+      sve_ptrue(dst, size, /* VL64 */ 0b01011);
+      break;
+    case 128:
+      sve_ptrue(dst, size, /* VL128 */ 0b01100);
+      break;
+    case 256:
+      sve_ptrue(dst, size, /* VL256 */ 0b01101);
+      break;
+    default:
+      assert(false, "unsupported");
+      ShouldNotReachHere();
   }
 }

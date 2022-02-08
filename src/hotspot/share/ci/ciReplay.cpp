@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ class CompileReplay : public StackObj {
     _protection_domain = Handle();
     _protection_domain_initialized = false;
 
-    _stream = fopen(filename, "rt");
+    _stream = os::fopen(filename, "rt");
     if (_stream == NULL) {
       fprintf(stderr, "ERROR: Can't open replay file %s\n", filename);
     }
