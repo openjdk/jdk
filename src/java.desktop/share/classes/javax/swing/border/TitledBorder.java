@@ -33,6 +33,7 @@ import java.awt.Graphics2D;
 import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.geom.Path2D;
+import java.awt.geom.Rectangle2D;
 import java.beans.ConstructorProperties;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -161,7 +162,7 @@ public class TitledBorder extends AbstractBorder
      * @param title  the title the border should display
      */
     public TitledBorder(String title) {
-        this(null, title, LEADING, DEFAULT_POSITION, null, null);
+        this(null, title, LEADING, DEFAULT_POSITION, null, Color.BLUE);
     }
 
     /**
@@ -350,10 +351,10 @@ public class TitledBorder extends AbstractBorder
                     if (g2 instanceof Graphics2D) {
                         Graphics2D g2d = (Graphics2D) g2;
                         Path2D path = new Path2D.Float();
-                        path.append(new Rectangle(borderX, borderY, borderW, labelY - borderY), false);
-                        path.append(new Rectangle(borderX, labelY, labelX - borderX - TEXT_SPACING, labelH), false);
-                        path.append(new Rectangle(labelX + labelW + TEXT_SPACING, labelY, borderX - labelX + borderW - labelW - TEXT_SPACING, labelH), false);
-                        path.append(new Rectangle(borderX, labelY + labelH, borderW, borderY - labelY + borderH - labelH), false);
+                        path.append(new Rectangle2D.Float((float) borderX, borderY, borderW, labelY - borderY), false);
+                        path.append(new Rectangle2D.Float((float) (borderX - 0.5), labelY, labelX - borderX - TEXT_SPACING, labelH), false);
+                        path.append(new Rectangle2D.Float((float) (labelX + labelW + TEXT_SPACING - 0.5), labelY, borderX - labelX + borderW - labelW - TEXT_SPACING, labelH), false);
+                        path.append(new Rectangle2D.Float((float) (borderX - 0.5), labelY + labelH, borderW, borderY - labelY + borderH - labelH), false);
                         g2d.clip(path);
                     }
                     border.paintBorder(c, g2, borderX, borderY, borderW, borderH);
