@@ -750,7 +750,7 @@ ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
   } else if (tag.is_dynamic_constant() || tag.is_dynamic_constant_in_error()) {
     return ciConstant(); // not supported
   } else {
-    fatal("unknown tag: %d (%s)", tag.value(), tag.internal_name());
+    assert(false, "unknown tag: %d (%s)", tag.value(), tag.internal_name());
     return ciConstant();
   }
 }
