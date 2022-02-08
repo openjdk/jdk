@@ -2568,18 +2568,17 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
     CountedLoopEndNode* cle = inner_cl->loopexit();
     Node* inner_test = cle->in(1);
     IfNode* outer_le = outer_loop_end();
-    Node* outer_test = outer_le->in(1);
 
-    // make counted loop exit test always fail to
-    igvn->replace_input_of(cle, 1, outer_test);
+    // make counted loop exit test always fail
+    igvn->replace_input_of(cle, 1, igvn->intcon(0));
     // replace outer loop end with CountedLoopEndNode with formers' CLE's exit test
     Node* new_end = igvn->transform(new CountedLoopEndNode(outer_le->in(0), inner_test, cle->_prob, cle->_fcnt));
     igvn->replace_node(outer_le, new_end);
-    // the outer loop backedge becomes the backedge of the inner loop
-    igvn->replace_input_of(inner_cl, LoopBackControl, in(LoopBackControl));
+    // the backedge of the inner loop must be rewired to the new loop end
+    Node* backedge = cle->proj_out(true);
+    igvn->replace_input_of(backedge, 0, new_end);
     // make the outer loop go away
     igvn->replace_input_of(this, LoopBackControl, igvn->C->top());
-    igvn->C->print_method(PHASE_DEBUG, 2);
     inner_cl->clear_strip_mined();
     return;
   }
