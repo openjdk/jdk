@@ -51,6 +51,35 @@
 static const ZStatSubPhase ZSubPhaseConcurrentRelocateRememberedSetFlipPromotedYoung("Young: Concurrent Relocate Remset FP");
 static const ZStatSubPhase ZSubPhaseConcurrentRelocateRememberedSetNormalPromotedYoung("Young: Concurrent Relocate Remset NP");
 
+static uintptr_t forwarding_index(ZForwarding* forwarding, zoffset from_offset) {
+  return (from_offset - forwarding->start()) >> forwarding->object_alignment_shift();
+}
+
+static zaddress forwarding_find(ZForwarding* forwarding, zoffset from_offset, ZForwardingCursor* cursor) {
+  const uintptr_t from_index = forwarding_index(forwarding, from_offset);
+  const ZForwardingEntry entry = forwarding->find(from_index, cursor);
+  return entry.populated() ? ZOffset::address(to_zoffset(entry.to_offset())) : zaddress::null;
+}
+
+static zaddress forwarding_find(ZForwarding* forwarding, zaddress_unsafe from_addr, ZForwardingCursor* cursor) {
+   return forwarding_find(forwarding, ZAddress::offset(from_addr), cursor);
+}
+
+static zaddress forwarding_find(ZForwarding* forwarding, zaddress from_addr, ZForwardingCursor* cursor) {
+   return forwarding_find(forwarding, ZAddress::offset(from_addr), cursor);
+}
+
+static zaddress forwarding_insert(ZForwarding* forwarding, zoffset from_offset, zaddress to_addr, ZForwardingCursor* cursor) {
+  const uintptr_t from_index = forwarding_index(forwarding, from_offset);
+  const zoffset to_offset = ZAddress::offset(to_addr);
+  const zoffset to_offset_final = forwarding->insert(from_index, to_offset, cursor);
+  return ZOffset::address(to_offset_final);
+}
+
+static zaddress forwarding_insert(ZForwarding* forwarding, zaddress from_addr, zaddress to_addr, ZForwardingCursor* cursor) {
+  return forwarding_insert(forwarding, ZAddress::offset(from_addr), to_addr, cursor);
+}
+
 ZRelocateQueue::ZRelocateQueue() :
     _lock(),
     _queue(),
@@ -88,17 +117,20 @@ void ZRelocateQueue::leave() {
   }
 }
 
-void ZRelocateQueue::add(ZForwarding* forwarding) {
+bool ZRelocateQueue::try_add(ZForwarding* forwarding, zaddress_unsafe from_addr, ZForwardingCursor* cursor) {
   ZLocker<ZConditionLock> locker(&_lock);
-  if (forwarding->retain_page()) {
-    _queue.append(forwarding);
-    forwarding->release_page();
-    if (_queue.length() == 1) {
-      // Queue became non-empty
-      inc_needs_attention();
-      _lock.notify_all();
-    }
+  zaddress to_addr = forwarding_find(forwarding, ZAddress::offset(from_addr), cursor);
+  if (!is_null(to_addr)) {
+    // The object has already relocated; no need to add to the queue
+    return false;
   }
+  _queue.append(forwarding);
+  if (_queue.length() == 1) {
+    // Queue became non-empty
+    inc_needs_attention();
+    _lock.notify_all();
+  }
+  return true;
 }
 
 bool ZRelocateQueue::poll(ZForwarding** forwarding, bool* synchronized) {
@@ -182,35 +214,6 @@ void ZRelocate::start() {
   _queue.join(workers()->active_workers());
 }
 
-static uintptr_t forwarding_index(ZForwarding* forwarding, zoffset from_offset) {
-  return (from_offset - forwarding->start()) >> forwarding->object_alignment_shift();
-}
-
-static zaddress forwarding_find(ZForwarding* forwarding, zoffset from_offset, ZForwardingCursor* cursor) {
-  const uintptr_t from_index = forwarding_index(forwarding, from_offset);
-  const ZForwardingEntry entry = forwarding->find(from_index, cursor);
-  return entry.populated() ? ZOffset::address(to_zoffset(entry.to_offset())) : zaddress::null;
-}
-
-static zaddress forwarding_find(ZForwarding* forwarding, zaddress_unsafe from_addr, ZForwardingCursor* cursor) {
-   return forwarding_find(forwarding, ZAddress::offset(from_addr), cursor);
-}
-
-static zaddress forwarding_find(ZForwarding* forwarding, zaddress from_addr, ZForwardingCursor* cursor) {
-   return forwarding_find(forwarding, ZAddress::offset(from_addr), cursor);
-}
-
-static zaddress forwarding_insert(ZForwarding* forwarding, zoffset from_offset, zaddress to_addr, ZForwardingCursor* cursor) {
-  const uintptr_t from_index = forwarding_index(forwarding, from_offset);
-  const zoffset to_offset = ZAddress::offset(to_addr);
-  const zoffset to_offset_final = forwarding->insert(from_index, to_offset, cursor);
-  return ZOffset::address(to_offset_final);
-}
-
-static zaddress forwarding_insert(ZForwarding* forwarding, zaddress from_addr, zaddress to_addr, ZForwardingCursor* cursor) {
-  return forwarding_insert(forwarding, ZAddress::offset(from_addr), to_addr, cursor);
-}
-
 void ZRelocate::add_remset(volatile zpointer* p) {
   ZGeneration::young()->remember(p);
 }
@@ -278,11 +281,13 @@ zaddress ZRelocate::relocate_object(ZForwarding* forwarding, zaddress_unsafe fro
       return forwarding_insert(forwarding, safe(from_addr), safe(from_addr), &cursor);
     }
 
-    _queue.add(forwarding);
-
-    if (!forwarding->wait_page_released()) {
-      // Forward object in-place
-      return forwarding_insert(forwarding, safe(from_addr), safe(from_addr), &cursor);
+    if (_queue.try_add(forwarding, from_addr, &cursor)) {
+      // Insert into relocation queue succeeded; now wait for the GC to
+      // relocate the page.
+      if (!forwarding->wait_page_released()) {
+        // Aborted while waiting - forward object in-place
+        return forwarding_insert(forwarding, safe(from_addr), safe(from_addr), &cursor);
+      }
     }
   }
 

@@ -24,10 +24,12 @@
 #ifndef SHARE_GC_Z_ZRELOCATE_HPP
 #define SHARE_GC_Z_ZRELOCATE_HPP
 
+#include "gc/z/zAddress.hpp"
 #include "gc/z/zRelocationSet.hpp"
 #include "gc/z/zPageAge.hpp"
 
 class ZForwarding;
+typedef size_t ZForwardingCursor;
 class ZGeneration;
 class ZWorkers;
 
@@ -50,7 +52,7 @@ public:
   void join(uint nworkers);
   void leave();
 
-  void add(ZForwarding* forwarding);
+  bool try_add(ZForwarding* forwarding, zaddress_unsafe from_addr, ZForwardingCursor* cursor);
   bool poll(ZForwarding** forwarding, bool* synchronized);
   void clear();
 
