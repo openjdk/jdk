@@ -122,7 +122,8 @@ public class IRRule {
      * Compare different counts to find out, on what output a failure was matched.
      */
     private OutputMatch findOutputMatch(int totalMatches, int idealFailuresCount, int optoAssemblyFailuresCount) {
-        if (someRegexMatchOnlyEntireOutput(totalMatches, idealFailuresCount, optoAssemblyFailuresCount)
+        if (totalMatches == 0
+            || someRegexMatchOnlyEntireOutput(totalMatches, idealFailuresCount, optoAssemblyFailuresCount)
             || anyMatchOnIdealAndOptoAssembly(idealFailuresCount, optoAssemblyFailuresCount)) {
             return OutputMatch.BOTH;
         } else if (optoAssemblyFailuresCount == 0) {
