@@ -43,7 +43,7 @@ typedef void (*FuncDict)(const void *key, const void *val, Dict *d);
 
 class Dict { // Dictionary structure
  private:
-  class AdlArena *_arena;          // Where to draw storage from
+  class AdlArena *_arena;       // Where to draw storage from
   class bucket *_bin;           // Hash table is array of buckets
   int _size;                    // Size (# of slots) in hash table
   int _cnt;                     // Number of key-value pairs in hash table

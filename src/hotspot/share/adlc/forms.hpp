@@ -119,7 +119,7 @@ public:
 //------------------------------Form-------------------------------------------
 class Form {
 public:
-  static AdlArena  *arena;            // arena used by forms
+  static AdlArena  *arena;         // arena used by forms
 private:
   static AdlArena  *generate_arena(); // allocate arena used by forms
 

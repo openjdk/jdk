@@ -71,7 +71,7 @@ class AdlChunk: public AdlCHeapObj {
       init_size =  1*1024,      // Size of first chunk
       size      = 32*1024       // Default size of an AdlArena chunk (following the first)
   };
-  AdlChunk*       _next;           // Next AdlChunk in list
+  AdlChunk*       _next;        // Next AdlChunk in list
   size_t       _len;            // Size of this AdlChunk
 
   void chop();                  // Chop this chunk
@@ -90,8 +90,8 @@ protected:
   friend class ResourceMark;
   friend class HandleMark;
   friend class NoHandleMark;
-  AdlChunk *_first;                // First chunk
-  AdlChunk *_chunk;                // current chunk
+  AdlChunk *_first;             // First chunk
+  AdlChunk *_chunk;             // current chunk
   char *_hwm, *_max;            // High water mark and max in current chunk
   void* grow(size_t x);         // Get a new AdlChunk of at least size x
   size_t _size_in_bytes;          // Size of arena (used for memory usage tracing)
@@ -99,7 +99,7 @@ public:
   AdlArena();
   AdlArena(size_t init_size);
   AdlArena(AdlArena *old);
-  ~AdlArena()                      { _first->chop(); }
+  ~AdlArena()                   { _first->chop(); }
   char* hwm() const             { return _hwm; }
 
   // Fast allocate in the arena.  Common case is: pointer test + increment.

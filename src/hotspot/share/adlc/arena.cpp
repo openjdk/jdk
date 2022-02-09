@@ -113,7 +113,7 @@ void* AdlArena::grow( size_t x ) {
   // Get minimal required size.  Either real big, or even bigger for giant objs
   size_t len = max(x, AdlChunk::size);
 
-  AdlChunk *k = _chunk;            // Get filled-up chunk address
+  AdlChunk *k = _chunk;         // Get filled-up chunk address
   _chunk = new (len) AdlChunk(len);
 
   if( k ) k->_next = _chunk;    // Append new chunk to end of linked list
