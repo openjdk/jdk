@@ -745,11 +745,11 @@ public class SSLParameters {
      * The SunJSSE provider supports this method.
      *
      * @implNote
-     * Note that the underlying provider may define the default signature
-     * schemes for each SSL/TLS/DTLS connection.  Applications may also use
-     * the {@systemProperty jdk.tls.client.SignatureSchemes} and/or
-     * {@systemProperty jdk.tls.server.SignatureSchemes} system properties to
-     * override the provider-specific default signature schemes.
+     * Note that applications may use the
+     * {@systemProperty jdk.tls.client.SignatureSchemes} and/or
+     * {@systemProperty jdk.tls.server.SignatureSchemes} system properties
+     * with the SunJSSE provider to override the provider-specific default
+     * signature schemes.
      *
      * @return an array of signature scheme {@code Strings} or {@code null} if
      *         none have been set.  For non-null returns, this method will
