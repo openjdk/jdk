@@ -54,9 +54,9 @@ class AdlAllStatic {
 };
 
 
-//------------------------------Chunk------------------------------------------
+//------------------------------AdlChunk------------------------------------------
 // Linked list of raw memory chunks
-class Chunk: public AdlCHeapObj {
+class AdlChunk: public AdlCHeapObj {
  private:
   // This ordinary operator delete is needed even though not used, so the
   // below two-argument operator delete will be treated as a placement
@@ -65,20 +65,20 @@ class Chunk: public AdlCHeapObj {
  public:
   void* operator new(size_t size, size_t length) throw();
   void  operator delete(void* p, size_t length);
-  Chunk(size_t length);
+  AdlChunk(size_t length);
 
   enum {
       init_size =  1*1024,      // Size of first chunk
       size      = 32*1024       // Default size of an Arena chunk (following the first)
   };
-  Chunk*       _next;           // Next Chunk in list
-  size_t       _len;            // Size of this Chunk
+  AdlChunk*       _next;           // Next AdlChunk in list
+  size_t       _len;            // Size of this AdlChunk
 
   void chop();                  // Chop this chunk
   void next_chop();             // Chop next chunk
 
   // Boundaries of data area (possibly unused)
-  char* bottom() const { return ((char*) this) + sizeof(Chunk);  }
+  char* bottom() const { return ((char*) this) + sizeof(AdlChunk);  }
   char* top()    const { return bottom() + _len; }
 };
 
@@ -90,10 +90,10 @@ protected:
   friend class ResourceMark;
   friend class HandleMark;
   friend class NoHandleMark;
-  Chunk *_first;                // First chunk
-  Chunk *_chunk;                // current chunk
+  AdlChunk *_first;                // First chunk
+  AdlChunk *_chunk;                // current chunk
   char *_hwm, *_max;            // High water mark and max in current chunk
-  void* grow(size_t x);         // Get a new Chunk of at least size x
+  void* grow(size_t x);         // Get a new AdlChunk of at least size x
   size_t _size_in_bytes;          // Size of arena (used for memory usage tracing)
 public:
   Arena();

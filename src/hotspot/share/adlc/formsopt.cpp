@@ -206,7 +206,7 @@ RegDef::RegDef(char *regname, char *callconv, char *c_conv, char * idealtype, ch
     _concrete(concrete),
     _register_num(0) {
 
-  // Chunk and register mask are determined by the register number
+  // AdlChunk and register mask are determined by the register number
   // _register_num is set when registers are added to an allocation class
 }
 RegDef::~RegDef() {                      // Destructor

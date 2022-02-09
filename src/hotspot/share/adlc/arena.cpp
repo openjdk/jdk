@@ -44,24 +44,24 @@ void* AdlReAllocateHeap(void* old_ptr, size_t size) {
   return ptr;
 }
 
-void* Chunk::operator new(size_t requested_size, size_t length) throw() {
+void* AdlChunk::operator new(size_t requested_size, size_t length) throw() {
   return AdlCHeapObj::operator new(requested_size + length);
 }
 
-void  Chunk::operator delete(void* p, size_t length) {
+void  AdlChunk::operator delete(void* p, size_t length) {
   AdlCHeapObj::operator delete(p);
 }
 
-Chunk::Chunk(size_t length) {
+AdlChunk::AdlChunk(size_t length) {
   _next = NULL;         // Chain on the linked list
   _len  = length;       // Save actual size
 }
 
 //------------------------------chop-------------------------------------------
-void Chunk::chop() {
-  Chunk *k = this;
+void AdlChunk::chop() {
+  AdlChunk *k = this;
   while( k ) {
-    Chunk *tmp = k->_next;
+    AdlChunk *tmp = k->_next;
     // clear out this chunk (to detect allocation bugs)
     memset(k, 0xBE, k->_len);
     free(k);                    // Free chunk (was malloc'd)
@@ -69,7 +69,7 @@ void Chunk::chop() {
   }
 }
 
-void Chunk::next_chop() {
+void AdlChunk::next_chop() {
   _next->chop();
   _next = NULL;
 }
@@ -77,17 +77,17 @@ void Chunk::next_chop() {
 //------------------------------Arena------------------------------------------
 Arena::Arena( size_t init_size ) {
   init_size = (init_size+3) & ~3;
-  _first = _chunk = new (init_size) Chunk(init_size);
+  _first = _chunk = new (init_size) AdlChunk(init_size);
   _hwm = _chunk->bottom();      // Save the cached hwm, max
   _max = _chunk->top();
   set_size_in_bytes(init_size);
 }
 
 Arena::Arena() {
-  _first = _chunk = new (Chunk::init_size) Chunk(Chunk::init_size);
+  _first = _chunk = new (AdlChunk::init_size) AdlChunk(AdlChunk::init_size);
   _hwm = _chunk->bottom();      // Save the cached hwm, max
   _max = _chunk->top();
-  set_size_in_bytes(Chunk::init_size);
+  set_size_in_bytes(AdlChunk::init_size);
 }
 
 Arena::Arena( Arena *a )
@@ -96,25 +96,25 @@ Arena::Arena( Arena *a )
 }
 
 //------------------------------used-------------------------------------------
-// Total of all Chunks in arena
+// Total of all AdlChunks in arena
 size_t Arena::used() const {
-  size_t sum = _chunk->_len - (_max-_hwm); // Size leftover in this Chunk
-  Chunk *k = _first;
-  while( k != _chunk) {         // Whilst have Chunks in a row
-    sum += k->_len;             // Total size of this Chunk
-    k = k->_next;               // Bump along to next Chunk
+  size_t sum = _chunk->_len - (_max-_hwm); // Size leftover in this AdlChunk
+  AdlChunk *k = _first;
+  while( k != _chunk) {         // Whilst have AdlChunks in a row
+    sum += k->_len;             // Total size of this AdlChunk
+    k = k->_next;               // Bump along to next AdlChunk
   }
   return sum;                   // Return total consumed space.
 }
 
 //------------------------------grow-------------------------------------------
-// Grow a new Chunk
+// Grow a new AdlChunk
 void* Arena::grow( size_t x ) {
   // Get minimal required size.  Either real big, or even bigger for giant objs
-  size_t len = max(x, Chunk::size);
+  size_t len = max(x, AdlChunk::size);
 
-  Chunk *k = _chunk;            // Get filled-up chunk address
-  _chunk = new (len) Chunk(len);
+  AdlChunk *k = _chunk;            // Get filled-up chunk address
+  _chunk = new (len) AdlChunk(len);
 
   if( k ) k->_next = _chunk;    // Append new chunk to end of linked list
   else _first = _chunk;
@@ -174,10 +174,10 @@ Arena *Arena::reset(void) {
 bool Arena::contains( const void *ptr ) const {
   if( (void*)_chunk->bottom() <= ptr && ptr < (void*)_hwm )
     return true;                // Check for in this chunk
-  for( Chunk *c = _first; c; c = c->_next )
+  for( AdlChunk *c = _first; c; c = c->_next )
     if( (void*)c->bottom() <= ptr && ptr < (void*)c->top())
       return true;              // Check for every chunk in Arena
-  return false;                 // Not in any Chunk, so not in Arena
+  return false;                 // Not in any AdlChunk, so not in Arena
 }
 
 //-----------------------------------------------------------------------------
