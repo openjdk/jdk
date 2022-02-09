@@ -1,6 +1,9 @@
 import java.awt.BorderLayout;
-import java.awt.Point;
-import java.awt.Robot;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
 import javax.swing.JFrame;
@@ -21,49 +24,54 @@ import javax.swing.SwingUtilities;
 public class TitledBorderTest {
 
   public static JFrame frame;
+  public static JPanel parentPanel;
+  public static JPanel childPanel;
 
   public static void main(String[] args) throws Exception {
     LookAndFeelInfo laf = UIManager.getInstalledLookAndFeels()[3];
     System.out.println(laf);
     SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
+    SwingUtilities.invokeAndWait(() -> createAndShowGUI());
 
-    createAndShowGUI();
+    BufferedImage buff = new BufferedImage(frame.getWidth(), frame.getHeight(),
+            BufferedImage.TYPE_INT_ARGB);
+    Graphics2D graph = buff.createGraphics();
+    childPanel.paint(graph);
+    graph.dispose();
 
-    Robot robot = new Robot();
-    robot.waitForIdle();
+    if (buff.getRGB(2,20) != -6250336) {
+      saveImage(buff, "test.png");
+      throw new RuntimeException("Border was clipped or overdrawn.");
+    }
 
-    Point loc = frame.getLocationOnScreen();
-    robot.mouseMove(loc.x + 10, loc.y + 50);
-
-    while(frame.isVisible()) {}
+    frame.dispose();
   }
 
-  private static void test() throws Exception {
-    
+  private static void createAndShowGUI() {
+    frame = new JFrame("Swing Test");
+
+    parentPanel = new JPanel(new BorderLayout());
+    parentPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+
+    childPanel = new JPanel(new BorderLayout());
+    childPanel.setBorder(BorderFactory.createTitledBorder("Title"));
+    childPanel.add(new JCheckBox(), BorderLayout.CENTER);
+
+    parentPanel.add(childPanel, BorderLayout.CENTER);
+
+    frame.getContentPane().add(parentPanel, BorderLayout.CENTER);
+
+    frame.pack();
+    frame.setLocationRelativeTo(null);
   }
 
-  private static void createAndShowGUI() throws Exception {
-    SwingUtilities.invokeAndWait(new Runnable() {
-      @Override
-      public void run() {
-        frame = new JFrame("Swing Test");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setVisible(true);
-
-        JPanel parentPanel = new JPanel(new BorderLayout());
-        parentPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-
-        JPanel childPanel = new JPanel(new BorderLayout());
-        childPanel.setBorder(BorderFactory.createTitledBorder("Title"));
-        childPanel.add(new JCheckBox(), BorderLayout.CENTER);
-
-        parentPanel.add(childPanel, BorderLayout.CENTER);
-
-        frame.getContentPane().add(parentPanel, BorderLayout.CENTER);
-
-        frame.pack();
-        frame.setLocationRelativeTo(null);
-      }});
+  private static void saveImage(BufferedImage image, String filename) {
+    try {
+      ImageIO.write(image, "png", new File(filename));
+    } catch (IOException e) {
+      // Don’t propagate the exception
+      e.printStackTrace();
+    }
   }
 
   private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
