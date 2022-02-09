@@ -56,7 +56,7 @@ Dict::Dict(CmpKey initcmp, Hash inithash) : _hash(inithash), _cmp(initcmp), _are
   init();
 }
 
-Dict::Dict(CmpKey initcmp, Hash inithash, Arena *arena) : _hash(inithash), _cmp(initcmp), _arena(arena) {
+Dict::Dict(CmpKey initcmp, Hash inithash, AdlArena *arena) : _hash(inithash), _cmp(initcmp), _arena(arena) {
   init();
 }
 

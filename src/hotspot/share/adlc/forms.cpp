@@ -27,9 +27,9 @@
 
 //------------------------------Static Initializers----------------------------
 // allocate arena used by forms
-Arena  *Form::arena = Form::generate_arena(); //  = Form::generate_arena();
-Arena *Form::generate_arena() {
-  return (new Arena);
+AdlArena  *Form::arena = Form::generate_arena(); //  = Form::generate_arena();
+AdlArena *Form::generate_arena() {
+  return (new AdlArena);
 }
 
 //------------------------------NameList---------------------------------------
@@ -312,7 +312,7 @@ FormList::~FormList()  {
 
 //------------------------------FormDict---------------------------------------
 // Constructor
-FormDict::FormDict( CmpKey cmp, Hash hash, Arena *arena )
+FormDict::FormDict( CmpKey cmp, Hash hash, AdlArena *arena )
   : _form(cmp, hash, arena) {
 }
 FormDict::~FormDict() {

@@ -74,8 +74,8 @@ void AdlChunk::next_chop() {
   _next = NULL;
 }
 
-//------------------------------Arena------------------------------------------
-Arena::Arena( size_t init_size ) {
+//------------------------------AdlArena------------------------------------------
+AdlArena::AdlArena( size_t init_size ) {
   init_size = (init_size+3) & ~3;
   _first = _chunk = new (init_size) AdlChunk(init_size);
   _hwm = _chunk->bottom();      // Save the cached hwm, max
@@ -83,21 +83,21 @@ Arena::Arena( size_t init_size ) {
   set_size_in_bytes(init_size);
 }
 
-Arena::Arena() {
+AdlArena::AdlArena() {
   _first = _chunk = new (AdlChunk::init_size) AdlChunk(AdlChunk::init_size);
   _hwm = _chunk->bottom();      // Save the cached hwm, max
   _max = _chunk->top();
   set_size_in_bytes(AdlChunk::init_size);
 }
 
-Arena::Arena( Arena *a )
+AdlArena::AdlArena( AdlArena *a )
 : _chunk(a->_chunk), _hwm(a->_hwm), _max(a->_max), _first(a->_first) {
   set_size_in_bytes(a->size_in_bytes());
 }
 
 //------------------------------used-------------------------------------------
 // Total of all AdlChunks in arena
-size_t Arena::used() const {
+size_t AdlArena::used() const {
   size_t sum = _chunk->_len - (_max-_hwm); // Size leftover in this AdlChunk
   AdlChunk *k = _first;
   while( k != _chunk) {         // Whilst have AdlChunks in a row
@@ -109,7 +109,7 @@ size_t Arena::used() const {
 
 //------------------------------grow-------------------------------------------
 // Grow a new AdlChunk
-void* Arena::grow( size_t x ) {
+void* AdlArena::grow( size_t x ) {
   // Get minimal required size.  Either real big, or even bigger for giant objs
   size_t len = max(x, AdlChunk::size);
 
@@ -127,8 +127,8 @@ void* Arena::grow( size_t x ) {
 }
 
 //------------------------------calloc-----------------------------------------
-// Allocate zeroed storage in Arena
-void *Arena::Acalloc( size_t items, size_t x ) {
+// Allocate zeroed storage in AdlArena
+void *AdlArena::Acalloc( size_t items, size_t x ) {
   size_t z = items*x;   // Total size needed
   void *ptr = Amalloc(z);       // Get space
   memset( ptr, 0, z );          // Zap space
@@ -136,8 +136,8 @@ void *Arena::Acalloc( size_t items, size_t x ) {
 }
 
 //------------------------------realloc----------------------------------------
-// Reallocate storage in Arena.
-void *Arena::Arealloc( void *old_ptr, size_t old_size, size_t new_size ) {
+// Reallocate storage in AdlArena.
+void *AdlArena::Arealloc( void *old_ptr, size_t old_size, size_t new_size ) {
   char *c_old = (char*)old_ptr; // Handy name
   // Stupid fast special case
   if( new_size <= old_size ) {  // Shrink in-place
@@ -161,23 +161,23 @@ void *Arena::Arealloc( void *old_ptr, size_t old_size, size_t new_size ) {
 }
 
 //------------------------------reset------------------------------------------
-// Reset this Arena to empty, and return this Arenas guts in a new Arena.
-Arena *Arena::reset(void) {
-  Arena *a = new Arena(this);   // New empty arena
+// Reset this AdlArena to empty, and return this AdlArenas guts in a new AdlArena.
+AdlArena *AdlArena::reset(void) {
+  AdlArena *a = new AdlArena(this);   // New empty arena
   _first = _chunk = NULL;       // Normal, new-arena initialization
   _hwm = _max = NULL;
-  return a;                     // Return Arena with guts
+  return a;                     // Return AdlArena with guts
 }
 
 //------------------------------contains---------------------------------------
-// Determine if pointer belongs to this Arena or not.
-bool Arena::contains( const void *ptr ) const {
+// Determine if pointer belongs to this AdlArena or not.
+bool AdlArena::contains( const void *ptr ) const {
   if( (void*)_chunk->bottom() <= ptr && ptr < (void*)_hwm )
     return true;                // Check for in this chunk
   for( AdlChunk *c = _first; c; c = c->_next )
     if( (void*)c->bottom() <= ptr && ptr < (void*)c->top())
-      return true;              // Check for every chunk in Arena
-  return false;                 // Not in any AdlChunk, so not in Arena
+      return true;              // Check for every chunk in AdlArena
+  return false;                 // Not in any AdlChunk, so not in AdlArena
 }
 
 //-----------------------------------------------------------------------------

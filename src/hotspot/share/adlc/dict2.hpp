@@ -43,7 +43,7 @@ typedef void (*FuncDict)(const void *key, const void *val, Dict *d);
 
 class Dict { // Dictionary structure
  private:
-  class Arena *_arena;          // Where to draw storage from
+  class AdlArena *_arena;          // Where to draw storage from
   class bucket *_bin;           // Hash table is array of buckets
   int _size;                    // Size (# of slots) in hash table
   int _cnt;                     // Number of key-value pairs in hash table
@@ -56,7 +56,7 @@ class Dict { // Dictionary structure
 
   // cmp is a key comparision routine.  hash is a routine to hash a key.
   Dict( CmpKey cmp, Hash hash );
-  Dict( CmpKey cmp, Hash hash, Arena *arena );
+  Dict( CmpKey cmp, Hash hash, AdlArena *arena );
   void init();
   ~Dict();
 

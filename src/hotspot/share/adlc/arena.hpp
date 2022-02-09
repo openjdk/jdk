@@ -69,7 +69,7 @@ class AdlChunk: public AdlCHeapObj {
 
   enum {
       init_size =  1*1024,      // Size of first chunk
-      size      = 32*1024       // Default size of an Arena chunk (following the first)
+      size      = 32*1024       // Default size of an AdlArena chunk (following the first)
   };
   AdlChunk*       _next;           // Next AdlChunk in list
   size_t       _len;            // Size of this AdlChunk
@@ -83,9 +83,9 @@ class AdlChunk: public AdlCHeapObj {
 };
 
 
-//------------------------------Arena------------------------------------------
+//------------------------------AdlArena------------------------------------------
 // Fast allocation of memory
-class Arena: public AdlCHeapObj {
+class AdlArena: public AdlCHeapObj {
 protected:
   friend class ResourceMark;
   friend class HandleMark;
@@ -96,10 +96,10 @@ protected:
   void* grow(size_t x);         // Get a new AdlChunk of at least size x
   size_t _size_in_bytes;          // Size of arena (used for memory usage tracing)
 public:
-  Arena();
-  Arena(size_t init_size);
-  Arena(Arena *old);
-  ~Arena()                      { _first->chop(); }
+  AdlArena();
+  AdlArena(size_t init_size);
+  AdlArena(AdlArena *old);
+  ~AdlArena()                      { _first->chop(); }
   char* hwm() const             { return _hwm; }
 
   // Fast allocate in the arena.  Common case is: pointer test + increment.
@@ -137,10 +137,10 @@ public:
   void *Acalloc( size_t items, size_t x );
   void *Arealloc( void *old_ptr, size_t old_size, size_t new_size );
 
-  // Reset this Arena to empty, and return this Arenas guts in a new Arena.
-  Arena *reset(void);
+  // Reset this AdlArena to empty, and return this AdlArenas guts in a new AdlArena.
+  AdlArena *reset(void);
 
-  // Determine if pointer belongs to this Arena or not.
+  // Determine if pointer belongs to this AdlArena or not.
   bool contains( const void *ptr ) const;
 
   // Total of all chunks in use (not thread-safe)
