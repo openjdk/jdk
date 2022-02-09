@@ -167,7 +167,7 @@ public:
 
   // Full GC support methods.
 
-  void alloc_block_in_bot(HeapWord* start, HeapWord* end);
+  void update_bot_for_block(HeapWord* start, HeapWord* end);
 
   // Update heap region that has been compacted to be consistent after Full GC.
   void reset_compacted_after_full_gc();
