@@ -4068,8 +4068,10 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
 
   if (exit_test != NULL) {
     float cnt = exit_test->_fcnt;
-    exit_test->_fcnt = cnt * f;
-    old_new[exit_test->_idx]->as_If()->_fcnt = cnt * (1 - f);
+    if (cnt != COUNT_UNKNOWN) {
+      exit_test->_fcnt = cnt * f;
+      old_new[exit_test->_idx]->as_If()->_fcnt = cnt * (1 - f);
+    }
   }
 
   C->set_major_progress();
