@@ -38,7 +38,7 @@ void* AdlReAllocateHeap(void* old_ptr, size_t size);
 // - AllStatic
 //
 
-class CHeapObj {
+class AdlCHeapObj {
  public:
   void* operator new(size_t size) throw();
   void  operator delete(void* p);
@@ -56,7 +56,7 @@ class AllStatic {
 
 //------------------------------Chunk------------------------------------------
 // Linked list of raw memory chunks
-class Chunk: public CHeapObj {
+class Chunk: public AdlCHeapObj {
  private:
   // This ordinary operator delete is needed even though not used, so the
   // below two-argument operator delete will be treated as a placement
@@ -85,7 +85,7 @@ class Chunk: public CHeapObj {
 
 //------------------------------Arena------------------------------------------
 // Fast allocation of memory
-class Arena: public CHeapObj {
+class Arena: public AdlCHeapObj {
 protected:
   friend class ResourceMark;
   friend class HandleMark;

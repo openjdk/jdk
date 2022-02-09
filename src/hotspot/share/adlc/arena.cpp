@@ -45,11 +45,11 @@ void* AdlReAllocateHeap(void* old_ptr, size_t size) {
 }
 
 void* Chunk::operator new(size_t requested_size, size_t length) throw() {
-  return CHeapObj::operator new(requested_size + length);
+  return AdlCHeapObj::operator new(requested_size + length);
 }
 
 void  Chunk::operator delete(void* p, size_t length) {
-  CHeapObj::operator delete(p);
+  AdlCHeapObj::operator delete(p);
 }
 
 Chunk::Chunk(size_t length) {
@@ -183,10 +183,10 @@ bool Arena::contains( const void *ptr ) const {
 //-----------------------------------------------------------------------------
 // CHeapObj
 
-void* CHeapObj::operator new(size_t size) throw() {
+void* AdlCHeapObj::operator new(size_t size) throw() {
   return (void *) AdlAllocateHeap(size);
 }
 
-void CHeapObj::operator delete(void* p){
+void AdlCHeapObj::operator delete(void* p){
  free(p);
 }
