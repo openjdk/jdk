@@ -90,20 +90,20 @@ public class TestMisc {
         DockerRunOptions opts = Common.newOpts(imageName, "PrintContainerInfo");
         Common.addWhiteBoxOpts(opts);
 
-        checkContainerInfo(Common.run(opts), null);
+        checkContainerInfo(Common.run(opts));
     }
 
     private static void testPrintContainerInfoActiveProcessorCount() throws Exception {
         Common.logNewTestCase("Test print_container_info()");
 
-        DockerRunOptions opts = Common.newOpts(imageName, "PrintContainerInfo", "-XX:ActiveProcessorCount=2");
+        DockerRunOptions opts = Common.newOpts(imageName, "PrintContainerInfo").addJavaOpts("-XX:ActiveProcessorCount=2");
         Common.addWhiteBoxOpts(opts);
 
-        checkContainerInfo(Common.run(opts), "but overridden by -XX:ActiveProcessorCount 2");
+        OutputAnalyzer out = Common.run(opts);
+        out.shouldContain("but overridden by -XX:ActiveProcessorCount 2");
     }
 
-
-    private static void checkContainerInfo(OutputAnalyzer out, String additionallyExpected) throws Exception {
+    private static void checkContainerInfo(OutputAnalyzer out) throws Exception {
         String[] expectedToContain = new String[] {
             "cpuset.cpus",
             "cpuset.mems",
@@ -123,7 +123,6 @@ public class TestMisc {
         for (String s : expectedToContain) {
             out.shouldContain(s);
         }
-        if (additionallyExpected != null) out.shouldContain(additionallyExpected);
     }
 
 }
