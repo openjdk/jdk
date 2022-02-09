@@ -66,8 +66,12 @@ public class DksWithEmptyKeystore {
 
         // Create a domain keystore with two non-empty keystores
         Path dksWithTwoPartsPath = Path.of("two-parts.dks");
-        var twoPartsConfiguration = "domain Combo { keystore a keystoreURI=\"%s\";" +
-                "keystore b keystoreURI=\"%s\"; };";
+        var twoPartsConfiguration = """
+                domain Combo {
+                    keystore a keystoreURI="%s";
+                    keystore b keystoreURI="%s";
+                };
+                """;
         Files.writeString(dksWithTwoPartsPath, String.format(twoPartsConfiguration,
                 nonEmptyPath.toUri(), nonEmptyPath.toUri()));
         Map<String,KeyStore.ProtectionParameter> protectionParameters = new LinkedHashMap<>();
@@ -90,9 +94,13 @@ public class DksWithEmptyKeystore {
 
         // Create a domain keystore with two non-empty keystores and an empty one in between
         Path dksWithThreePartsPath = Path.of("three-parts.dks");
-        var threePartsConfiguration = "domain Combo { keystore a keystoreURI=\"%s\";" +
-                "keystore b keystoreURI=\"%s\";" +
-                "keystore c keystoreURI=\"%s\"; };";
+        var threePartsConfiguration = """
+                domain Combo {
+                    keystore a keystoreURI="%s";
+                    keystore b keystoreURI="%s";
+                    keystore c keystoreURI="%s";
+                };
+                """;
         Files.writeString(dksWithThreePartsPath, String.format(threePartsConfiguration,
                 nonEmptyPath.toUri(), emptyPath.toUri(), nonEmptyPath.toUri()));
 
