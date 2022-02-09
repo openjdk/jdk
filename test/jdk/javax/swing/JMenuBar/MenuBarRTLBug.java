@@ -58,18 +58,18 @@ public class MenuBarRTLBug {
     static JMenu thirdMenu;
     static JMenuItem e;
     static JMenuItem f;
-	static JMenu forthMenu;
-	static JMenu fifthMenu;
+    static JMenu forthMenu;
+    static JMenu fifthMenu;
 
-	static Point p;
-	static int width;
-	static int height;
+    static Point p;
+    static int width;
+    static int height;
 
     static volatile boolean passed = false;
 
     public static void main(String[] args) throws  Exception {
 
-	    try {
+        try {
             SwingUtilities.invokeAndWait(() -> {
                 frame = new JFrame();
                 frame.setLayout(new BorderLayout());
@@ -151,9 +151,9 @@ public class MenuBarRTLBug {
                 throw new RuntimeException("Arrow traversal order not correct in RTL orientation");
             }
         } finally {
-	        SwingUtilities.invokeAndWait(() -> {
-	            if (frame != null) {
-	                frame.dispose();
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
                 }
             });
         }
