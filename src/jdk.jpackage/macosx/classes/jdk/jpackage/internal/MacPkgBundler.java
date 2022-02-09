@@ -218,11 +218,6 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                 .saveInFolder(SCRIPTS_DIR.fetchFrom(params));
     }
 
-    private static String URLEncoding(String pkgName) throws URISyntaxException {
-        URI uri = new URI(null, null, pkgName, null);
-        return uri.toASCIIString();
-    }
-
     private void addPackageToInstallerGuiScript(XMLStreamWriter xml,
             String pkgId, String pkgName, String pkgVersion) throws IOException,
             XMLStreamException {
@@ -240,7 +235,11 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
         xml.writeAttribute("id", pkgId);
         xml.writeAttribute("version", pkgVersion);
         xml.writeAttribute("onConclusion", "none");
-        xml.writeCharacters(pkgName);
+        try {
+            xml.writeCharacters(new URI(null, null, pkgName, null).toASCIIString());
+        } catch (URISyntaxException ex) {
+            throw new RuntimeException(ex);
+        }
         xml.writeEndElement(); // </pkg-ref>
     }
 
