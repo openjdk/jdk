@@ -202,7 +202,6 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
     }
   }
   if (n->Opcode() == Op_OpaqueLoopStride || n->Opcode() == Op_OpaqueLoopInit) {
-    ResourceMark rm;
     Unique_Node_List wq;
     wq.push(n);
     for (uint i = 0; i < wq.size(); i++) {
