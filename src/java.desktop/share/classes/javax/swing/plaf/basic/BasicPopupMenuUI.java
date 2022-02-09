@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import javax.swing.plaf.*;
 import java.applet.Applet;
 
 import java.awt.Component;
+import java.awt.ComponentOrientation;
 import java.awt.KeyboardFocusManager;
 import java.awt.Window;
 import java.awt.event.*;
@@ -536,6 +537,11 @@ public class BasicPopupMenuUI extends PopupMenuUI {
             // If this is the case, we select another toplevel menu
             if (len > 1 && path[0] instanceof JMenuBar) {
                 MenuElement currentMenu = path[1];
+                // direction traversal to be reversed for RTL orientation
+                if (path[0].getComponent().getComponentOrientation().
+                        equals(ComponentOrientation.RIGHT_TO_LEFT)) {
+                    direction = !direction;
+                }
                 MenuElement nextMenu = findEnabledChild(
                     path[0].getSubElements(), currentMenu, direction);
 
