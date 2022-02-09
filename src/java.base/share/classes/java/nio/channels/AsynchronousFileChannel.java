@@ -455,7 +455,9 @@ public abstract class AsynchronousFileChannel
      * @param   size
      *          The size of the locked region; must be non-negative, and the sum
      *          {@code position}&nbsp;+&nbsp;{@code size} must be non-negative.
-     *          A value of zero indicates the remainder of the file.
+     *          A value of zero means to lock all bytes from the specified
+     *          starting position to the end of the file, regardless of whether
+     *          the file is subsequently extended or truncated
      * @param   shared
      *          {@code true} to request a shared lock, in which case this
      *          channel must be open for reading (and possibly writing);
@@ -534,7 +536,9 @@ public abstract class AsynchronousFileChannel
      * @param   size
      *          The size of the locked region; must be non-negative, and the sum
      *          {@code position}&nbsp;+&nbsp;{@code size} must be non-negative.
-     *          A value of zero indicates the remainder of the file.
+     *          A value of zero means to lock all bytes from the specified
+     *          starting position to the end of the file, regardless of whether
+     *          the file is subsequently extended or truncated
      * @param   shared
      *          {@code true} to request a shared lock, in which case this
      *          channel must be open for reading (and possibly writing);
@@ -597,7 +601,9 @@ public abstract class AsynchronousFileChannel
      * @param  size
      *         The size of the locked region; must be non-negative, and the sum
      *         {@code position}&nbsp;+&nbsp;{@code size} must be non-negative.
-     *         A value of zero indicates the remainder of the file.
+     *         A value of zero means to lock all bytes from the specified
+     *         starting position to the end of the file, regardless of whether
+     *         the file is subsequently extended or truncated
      *
      * @param  shared
      *         {@code true} to request a shared lock,
