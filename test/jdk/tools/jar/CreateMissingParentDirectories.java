@@ -97,8 +97,6 @@ public class CreateMissingParentDirectories {
             fail("Should have failed creating jar file: " + jar);
             return;
         }
-        // non-zero exit code expected, check error message contains jar file's name
-        check(err.toString().contains(jar));
         pass();
     }
 
