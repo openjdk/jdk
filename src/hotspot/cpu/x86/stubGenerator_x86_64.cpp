@@ -796,7 +796,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   address generate_popcount_avx_lut(const char *stub_name) {
-    __ align(CodeEntryAlignment);
+    __ align64();
     StubCodeMark mark(this, "StubRoutines", stub_name);
     address start = __ pc();
     __ emit_data64(0x0302020102010100, relocInfo::none);
@@ -7727,7 +7727,10 @@ address generate_avx_ghash_processBlocks() {
     StubRoutines::x86::_vector_long_shuffle_mask = generate_vector_mask("vector_long_shuffle_mask", 0x0000000100000000);
     StubRoutines::x86::_vector_long_sign_mask = generate_vector_mask("vector_long_sign_mask", 0x8000000000000000);
     StubRoutines::x86::_vector_iota_indices = generate_iota_indices("iota_indices");
-    StubRoutines::x86::_vector_popcount_lut = generate_popcount_avx_lut("popcount_lut");
+
+    if (VM_Version::supports_avx2() && UsePopCountInstruction) {
+      StubRoutines::x86::_vector_popcount_lut = generate_popcount_avx_lut("popcount_lut");
+    }
 
     // support for verify_oop (must happen after universe_init)
     if (VerifyOops) {
