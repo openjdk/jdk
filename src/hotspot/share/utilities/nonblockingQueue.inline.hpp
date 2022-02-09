@@ -135,36 +135,36 @@ template<typename T, T* volatile* (*next_ptr)(T&)>
 bool NonblockingQueue<T, next_ptr>::try_pop(T** node_ptr) {
   // We only need memory_order_consume. Upgrade it to "load_acquire"
   // as the memory_order_consume API is not ready for use yet.
-  T* result = Atomic::load_acquire(&_head);
-  if (result == NULL) {
+  T* old_head = Atomic::load_acquire(&_head);
+  if (old_head == NULL) {
     *node_ptr = NULL;
     return true;                // Queue is empty.
   }
 
-  T* next_node = Atomic::load_acquire(next_ptr(*result));
+  T* next_node = Atomic::load_acquire(next_ptr(*old_head));
   if (!is_end(next_node)) {
     // [Clause 1]
     // There are several cases for next_node.
     // (1) next_node is the extension of the queue's list.
-    // (2) next_node is NULL, because a competing try_pop took result.
+    // (2) next_node is NULL, because a competing try_pop took old_head.
     // (3) next_node is the extension of some unrelated list, because a
-    // competing try_pop took result and put it in some other list.
+    // competing try_pop took old_head and put it in some other list.
     //
-    // Attempt to advance the list, replacing result with next_node in
+    // Attempt to advance the list, replacing old_head with next_node in
     // _head.  The success or failure of that attempt, along with the value
     // of next_node, are used to partially determine which case we're in and
     // how to proceed.  In particular, advancement will fail for case (3).
-    if (result != Atomic::cmpxchg(&_head, result, next_node)) {
+    if (old_head != Atomic::cmpxchg(&_head, old_head, next_node)) {
       // [Clause 1a]
       // The cmpxchg to advance the list failed; a concurrent try_pop won
-      // the race and claimed result.  This can happen for any of the
+      // the race and claimed old_head.  This can happen for any of the
       // next_node cases.
       return false;
     } else if (next_node == NULL) {
       // [Clause 1b]
       // The cmpxchg to advance the list succeeded, but a concurrent try_pop
-      // has already claimed result (see [Clause 2] - result was the last
-      // entry in the list) by nulling result's next field.  The advance set
+      // has already claimed old_head (see [Clause 2] - old_head was the last
+      // entry in the list) by nulling old_head's next field.  The advance set
       // _head to NULL, "helping" the competing try_pop.  _head will remain
       // NULL until a subsequent push/append.  This is a lost race, and we
       // report it as such for consistency, though we could report the queue
@@ -174,17 +174,17 @@ bool NonblockingQueue<T, next_ptr>::try_pop(T** node_ptr) {
       return false;
     } else {
       // [Clause 1c]
-      // Successfully advanced the list and claimed result.  next_node was
-      // in the extension of the queue's list.  Return result after
+      // Successfully advanced the list and claimed old_head.  next_node was
+      // in the extension of the queue's list.  Return old_head after
       // unlinking it from next_node.
-      set_next(*result, NULL);
-      *node_ptr = result;
+      set_next(*old_head, NULL);
+      *node_ptr = old_head;
       return true;
     }
 
-  } else if (is_end(Atomic::cmpxchg(next_ptr(*result), next_node, (T*)NULL))) {
+  } else if (is_end(Atomic::cmpxchg(next_ptr(*old_head), next_node, (T*)NULL))) {
     // [Clause 2]
-    // Result was the last entry and we've claimed it by setting its next
+    // Old_head was the last entry and we've claimed it by setting its next
     // value to NULL.  However, this leaves the queue in disarray.  Fix up
     // the queue, possibly in conjunction with other concurrent operations.
     // Any further try_pops will consider the queue empty until a
@@ -194,24 +194,24 @@ bool NonblockingQueue<T, next_ptr>::try_pop(T** node_ptr) {
     // dealing with _head first gives a stronger invariant in append, and is
     // also consistent with [Clause 1b].
 
-    // Attempt to change the queue head from result to NULL.  Failure of the
+    // Attempt to change the queue head from old_head to NULL.  Failure of the
     // cmpxchg indicates a concurrent operation updated _head first.  That
     // could be either a push/append or a try_pop in [Clause 1b].
-    Atomic::cmpxchg(&_head, result, (T*)NULL);
+    Atomic::cmpxchg(&_head, old_head, (T*)NULL);
 
-    // Attempt to change the queue tail from result to NULL.  Failure of the
+    // Attempt to change the queue tail from old_head to NULL.  Failure of the
     // cmpxchg indicates that a concurrent push/append updated _tail first.
-    // That operation will eventually recognize the old tail (our result) is
+    // That operation will eventually recognize the old tail (our old_head) is
     // no longer in the list and update _head from the list being appended.
-    Atomic::cmpxchg(&_tail, result, (T*)NULL);
+    Atomic::cmpxchg(&_tail, old_head, (T*)NULL);
 
-    // The queue has been restored to order, and we can return the result.
-    *node_ptr = result;
+    // The queue has been restored to order, and we can return old_head.
+    *node_ptr = old_head;
     return true;
 
   } else {
     // [Clause 3]
-    // Result was the last entry in the list, but either a concurrent
+    // Old_head was the last entry in the list, but either a concurrent
     // try_pop claimed it first or a concurrent push/append extended the
     // list from it.  Either way, we lost the race to claim it.
     return false;
