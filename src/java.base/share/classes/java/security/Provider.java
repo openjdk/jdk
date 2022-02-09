@@ -1116,11 +1116,6 @@ public abstract class Provider extends Properties {
         return new String[] {type, alg};
     }
 
-    // utility method for getting a String with service type and algorithm
-    private static String getKey(Service s) {
-        return s.getType() + "." + s.getAlgorithm();
-    }
-
     private static final String ALIAS_PREFIX = "Alg.Alias.";
     private static final String ALIAS_PREFIX_LOWER = "alg.alias.";
     private static final int ALIAS_LENGTH = ALIAS_PREFIX.length();
@@ -1544,20 +1539,11 @@ public abstract class Provider extends Properties {
         final String name;
         final boolean supportsParameter;
         final String constructorParameterClassName;
-        private volatile Class<?> constructorParameterClass;
 
         EngineDescription(String name, boolean sp, String paramName) {
             this.name = name;
             this.supportsParameter = sp;
             this.constructorParameterClassName = paramName;
-        }
-        Class<?> getConstructorParameterClass() throws ClassNotFoundException {
-            Class<?> clazz = constructorParameterClass;
-            if (clazz == null) {
-                clazz = Class.forName(constructorParameterClassName);
-                constructorParameterClass = clazz;
-            }
-            return clazz;
         }
     }
 

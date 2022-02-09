@@ -39,6 +39,7 @@ package java.io;
  * @see     java.io.File#list(java.io.FilenameFilter)
  * @since   1.0
  */
+@SuppressWarnings("doclint:reference") // cross-module links
 @FunctionalInterface
 public interface FilenameFilter {
     /**

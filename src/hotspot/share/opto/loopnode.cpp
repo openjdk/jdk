@@ -830,10 +830,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
     return false;
   }
 
-
   IfNode* exit_test = head->loopexit();
-  BoolTest::mask mask = exit_test->as_BaseCountedLoopEnd()->test_trip();
-  Node* cmp = exit_test->as_BaseCountedLoopEnd()->cmp_node();
 
   assert(back_control->Opcode() == Op_IfTrue, "wrong projection for back edge");
 

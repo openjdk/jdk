@@ -233,7 +233,7 @@ public:
     HeapRegionRemSet* hrrs = r->rem_set();
 
     // HeapRegionRemSet::mem_size() includes the
-    // size of the strong code roots
+    // size of the code roots
     size_t rs_wasted_mem_sz = hrrs->wasted_mem_size();
     size_t rs_mem_sz = hrrs->mem_size();
     if (rs_mem_sz > _max_rs_mem_sz) {
@@ -241,12 +241,12 @@ public:
       _max_rs_mem_sz_region = r;
     }
     size_t occupied_cards = hrrs->occupied();
-    size_t code_root_mem_sz = hrrs->strong_code_roots_mem_size();
+    size_t code_root_mem_sz = hrrs->code_roots_mem_size();
     if (code_root_mem_sz > max_code_root_mem_sz()) {
       _max_code_root_mem_sz = code_root_mem_sz;
       _max_code_root_mem_sz_region = r;
     }
-    size_t code_root_elems = hrrs->strong_code_roots_list_length();
+    size_t code_root_elems = hrrs->code_roots_list_length();
 
     RegionTypeCounter* current = NULL;
     if (r->is_free()) {
@@ -300,14 +300,14 @@ public:
     HeapRegionRemSet::print_static_mem_size(out);
     G1CardSetFreePool::free_list_pool()->print_on(out);
 
-    // Strong code root statistics
+    // Code root statistics
     HeapRegionRemSet* max_code_root_rem_set = max_code_root_mem_sz_region()->rem_set();
     out->print_cr("  Total heap region code root sets sizes = " SIZE_FORMAT "%s."
                   "  Max = " SIZE_FORMAT "%s.",
                   byte_size_in_proper_unit(total_code_root_mem_sz()),
                   proper_unit_for_byte_size(total_code_root_mem_sz()),
-                  byte_size_in_proper_unit(max_code_root_rem_set->strong_code_roots_mem_size()),
-                  proper_unit_for_byte_size(max_code_root_rem_set->strong_code_roots_mem_size()));
+                  byte_size_in_proper_unit(max_code_root_rem_set->code_roots_mem_size()),
+                  proper_unit_for_byte_size(max_code_root_rem_set->code_roots_mem_size()));
     for (RegionTypeCounter** current = &counters[0]; *current != NULL; current++) {
       (*current)->print_code_root_mem_info_on(out, total_code_root_mem_sz());
     }
@@ -321,9 +321,9 @@ public:
     out->print_cr("    Region with largest amount of code roots = " HR_FORMAT ", "
                   "size = " SIZE_FORMAT "%s, num_slots = " SIZE_FORMAT ".",
                   HR_FORMAT_PARAMS(max_code_root_mem_sz_region()),
-                  byte_size_in_proper_unit(max_code_root_rem_set->strong_code_roots_mem_size()),
-                  proper_unit_for_byte_size(max_code_root_rem_set->strong_code_roots_mem_size()),
-                  max_code_root_rem_set->strong_code_roots_list_length());
+                  byte_size_in_proper_unit(max_code_root_rem_set->code_roots_mem_size()),
+                  proper_unit_for_byte_size(max_code_root_rem_set->code_roots_mem_size()),
+                  max_code_root_rem_set->code_roots_list_length());
   }
 };
 

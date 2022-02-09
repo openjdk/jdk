@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,6 +117,17 @@ public class JCmdTestDynamicDump extends JCmdTestDumpBase {
                 throw new RuntimeException("The JCmdTestLingeredApp should not start up!");
             }
         }
+        // Test dynamic dump with -Xlog:cds to check lambda invoker class regeneration
+        print2ln(test_count++ + " Test dynamic dump with -Xlog:cds to check lambda invoker class regeneration");
+        app = createLingeredApp("-cp", allJars, "-XX:+RecordDynamicDumpInfo", "-Xlog:cds",
+                                "-XX:SharedArchiveFile=" + archiveFile);
+        pid = app.getPid();
+        test(null, pid, noBoot, EXPECT_PASS, DYNAMIC_MESSAGES);
+        String stdout = app.getProcessStdout();
+        if (stdout.contains("Regenerate MethodHandle Holder classes...")) {
+            throw new RuntimeException("jcmd VM.cds dynamic_dump should not regenerate MethodHandle Holder classes");
+        }
+        app.stopApp();
     }
 
     // Dump a static archive, not using TestCommon.dump(...), we do not take jtreg args.
