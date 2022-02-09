@@ -2590,7 +2590,7 @@ void ShenandoahHeap::update_heap_region_states(bool concurrent) {
     ShenandoahGCPhase phase(concurrent ?
                             ShenandoahPhaseTimings::final_update_refs_update_region_states :
                             ShenandoahPhaseTimings::degen_gc_final_update_refs_update_region_states);
-    ShenandoahFinalUpdateRefsUpdateRegionStateClosure cl (young_generation()->complete_marking_context());
+    ShenandoahFinalUpdateRefsUpdateRegionStateClosure cl (active_generation()->complete_marking_context());
     parallel_heap_region_iterate(&cl);
 
     assert_pinned_region_status();
