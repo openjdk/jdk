@@ -683,7 +683,9 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
         if (!validator.is_valid()) {
           jio_snprintf(errorbuf, buf_size, "Unrecognized intrinsic detected in %s: %s", option2name(option), validator.what());
         }
-      } else if (option == CompileCommand::PrintIdealPhase) {
+      }
+#ifndef PRODUCT
+      else if (option == CompileCommand::PrintIdealPhase) {
         uint64_t mask = 0;
         PhaseNameValidator validator(value, mask);
 
@@ -692,7 +694,9 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
         }
       } else if (option == CompileCommand::TestOptionList) {
         // all values are ok
-      } else {
+      }
+#endif
+      else {
         assert(false, "Ccstrlist type option missing validator");
       }
 

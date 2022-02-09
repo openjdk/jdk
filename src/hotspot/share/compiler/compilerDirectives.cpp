@@ -384,6 +384,7 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
     compilerdirectives_c1_flags(init_default_cc)
 
     // Parse PrintIdealPhaseName and create an efficient lookup mask
+#ifndef PRODUCT
     if (!_modified[PrintIdealPhaseIndex]) {
       // Parse ccstr and create mask
       ccstrlist option;
@@ -394,6 +395,7 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
         set.cloned()->_ideal_phase_name_mask = mask;
       }
     }
+#endif
 
     // Canonicalize DisableIntrinsic to contain only ',' as a separator.
     ccstrlist option_value;
