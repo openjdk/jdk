@@ -2015,16 +2015,23 @@ bool Arguments::check_vm_args_consistency() {
 
 #if !defined(X86) && !defined(AARCH64) && !defined(PPC64)
   if (UseHeavyMonitors) {
-    warning("UseHeavyMonitors is not fully implemented on this architecture");
+    jio_fprintf(defaultStream::error_stream(),
+                "UseHeavyMonitors is not fully implemented on this architecture");
+    return false;
   }
 #endif
 #if (defined(X86) || defined(PPC64)) && !defined(ZERO)
   if (UseHeavyMonitors && UseRTMForStackLocks) {
-    fatal("-XX:+UseHeavyMonitors and -XX:+UseRTMForStackLocks are mutually exclusive");
+    jio_fprintf(defaultStream::error_stream(),
+                "-XX:+UseHeavyMonitors and -XX:+UseRTMForStackLocks are mutually exclusive");
+
+    return false;
   }
 #endif
   if (VerifyHeavyMonitors && !UseHeavyMonitors) {
-    fatal("-XX:+VerifyHeavyMonitors requires -XX:+UseHeavyMonitors");
+    jio_fprintf(defaultStream::error_stream(),
+                "-XX:+VerifyHeavyMonitors requires -XX:+UseHeavyMonitors");
+    return false;
   }
 
   return status;
@@ -4012,7 +4019,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   no_shared_spaces("CDS Disabled");
 #endif // INCLUDE_CDS
 
-#if INCLUDE_NMT
   // Verify NMT arguments
   const NMT_TrackingLevel lvl = NMTUtil::parse_tracking_level(NativeMemoryTracking);
   if (lvl == NMT_unknown) {
@@ -4024,13 +4030,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     warning("PrintNMTStatistics is disabled, because native memory tracking is not enabled");
     FLAG_SET_DEFAULT(PrintNMTStatistics, false);
   }
-#else
-  if (!FLAG_IS_DEFAULT(NativeMemoryTracking) || PrintNMTStatistics) {
-    warning("Native Memory Tracking is not supported in this VM");
-    FLAG_SET_DEFAULT(NativeMemoryTracking, "off");
-    FLAG_SET_DEFAULT(PrintNMTStatistics, false);
-  }
-#endif // INCLUDE_NMT
 
   if (TraceDependencies && VerifyDependencies) {
     if (!FLAG_IS_DEFAULT(TraceDependencies)) {

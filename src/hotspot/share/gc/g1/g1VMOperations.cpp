@@ -52,7 +52,7 @@ void VM_G1CollectFull::doit() {
   GCCauseSetter x(g1h, _gc_cause);
   _gc_succeeded = g1h->do_full_collection(true  /* explicit_gc */,
                                           false /* clear_all_soft_refs */,
-                                          false /* do_maximum_compaction */);
+                                          false /* do_maximal_compaction */);
 }
 
 VM_G1TryInitiateConcMark::VM_G1TryInitiateConcMark(uint gc_count_before,

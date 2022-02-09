@@ -631,14 +631,11 @@ void* os::malloc(size_t size, MEMFLAGS flags) {
 
 void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
 
-#if INCLUDE_NMT
-  {
-    void* rc = NULL;
-    if (NMTPreInit::handle_malloc(&rc, size)) {
-      return rc;
-    }
+  // Special handling for NMT preinit phase before arguments are parsed
+  void* rc = NULL;
+  if (NMTPreInit::handle_malloc(&rc, size)) {
+    return rc;
   }
-#endif
 
   DEBUG_ONLY(check_crash_protection());
 
@@ -677,14 +674,11 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS flags) {
 
 void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
 
-#if INCLUDE_NMT
-  {
-    void* rc = NULL;
-    if (NMTPreInit::handle_realloc(&rc, memblock, size)) {
-      return rc;
-    }
+  // Special handling for NMT preinit phase before arguments are parsed
+  void* rc = NULL;
+  if (NMTPreInit::handle_realloc(&rc, memblock, size)) {
+    return rc;
   }
-#endif
 
   if (memblock == NULL) {
     return os::malloc(size, memflags, stack);
@@ -723,11 +717,10 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
 
 void  os::free(void *memblock) {
 
-#if INCLUDE_NMT
+  // Special handling for NMT preinit phase before arguments are parsed
   if (NMTPreInit::handle_free(memblock)) {
     return;
   }
-#endif
 
   if (memblock == NULL) {
     return;

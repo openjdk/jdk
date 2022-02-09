@@ -33,7 +33,6 @@ package java.awt;
  * @author Michael Martak
  * @since 1.4
  */
-@SuppressWarnings("doclint:missing")
 public class BufferCapabilities implements Cloneable {
 
     private ImageCapabilities frontCaps;
@@ -63,6 +62,8 @@ public class BufferCapabilities implements Cloneable {
     }
 
     /**
+     * Returns the image capabilities of the front (displayed) buffer.
+     *
      * @return the image capabilities of the front (displayed) buffer
      */
     public ImageCapabilities getFrontBufferCapabilities() {
@@ -70,6 +71,9 @@ public class BufferCapabilities implements Cloneable {
     }
 
     /**
+     * Returns the image capabilities of all back buffers (intermediate buffers
+     * are considered back buffers).
+     *
      * @return the image capabilities of all back buffers (intermediate buffers
      * are considered back buffers)
      */
@@ -78,27 +82,31 @@ public class BufferCapabilities implements Cloneable {
     }
 
     /**
-     * @return whether or not the buffer strategy uses page flipping; a set of
-     * buffers that uses page flipping
+     * Returns whether or not the buffer strategy uses page flipping.
+     * A set of buffers that uses page flipping
      * can swap the contents internally between the front buffer and one or
      * more back buffers by switching the video pointer (or by copying memory
      * internally).  A non-flipping set of
      * buffers uses blitting to copy the contents from one buffer to
      * another; when this is the case, {@code getFlipContents} returns
-     * {@code null}
+     * {@code null}.
+     *
+     * @return whether or not the buffer strategy uses page flipping
      */
     public boolean isPageFlipping() {
         return (getFlipContents() != null);
     }
 
     /**
-     * @return the resulting contents of the back buffer after page-flipping.
+     * Returns the resulting contents of the back buffer after page-flipping.
      * This value is {@code null} when the {@code isPageFlipping}
      * returns {@code false}, implying blitting.  It can be one of
      * {@code FlipContents.UNDEFINED}
      * (the assumed default), {@code FlipContents.BACKGROUND},
      * {@code FlipContents.PRIOR}, or
      * {@code FlipContents.COPIED}.
+     *
+     * @return the resulting contents of the back buffer after page-flipping
      * @see #isPageFlipping
      * @see FlipContents#UNDEFINED
      * @see FlipContents#BACKGROUND
@@ -110,9 +118,11 @@ public class BufferCapabilities implements Cloneable {
     }
 
     /**
-     * @return whether page flipping is only available in full-screen mode.  If this
+     * Returns whether page flipping is only available in full-screen mode.  If this
      * is {@code true}, full-screen exclusive mode is required for
      * page-flipping.
+     *
+     * @return whether page flipping is only available in full-screen mode
      * @see #isPageFlipping
      * @see GraphicsDevice#setFullScreenWindow
      */
@@ -121,9 +131,12 @@ public class BufferCapabilities implements Cloneable {
     }
 
     /**
-     * @return whether or not
+     * Returns whether or not
      * page flipping can be performed using more than two buffers (one or more
      * intermediate buffers as well as the front and back buffer).
+     *
+     * @return whether or not
+     * page flipping can be performed using more than two buffers
      * @see #isPageFlipping
      */
     public boolean isMultiBufferAvailable() {
