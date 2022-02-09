@@ -28,6 +28,7 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
+ * @bug 8281518
  * @summary Test that transformation from "(x|y)-(x^y)" to "x&y" works
  *          as intended.
  * @library /test/lib /
