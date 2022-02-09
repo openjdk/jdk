@@ -2974,6 +2974,21 @@ different JDK version.
 .RE
 .RE
 .TP
+.B \f[CB]\-XX:+DTraceAllocProbes\f[R]
+Enable dtrace probes for object allocation.
+.RS
+.RE
+.TP
+.B \f[CB]\-XX:+DTraceMethodProbes\f[R]
+Enable dtrace probes for method-entry and method-exit.
+.RS
+.RE
+.TP
+.B \f[CB]\-XX:+DTraceMonitorProbes\f[R]
+Enable dtrace probes for monitor events.
+.RS
+.RE
+.TP
 .B \f[CB]\-XX:+HeapDumpOnOutOfMemoryError\f[R]
 Enables the dumping of the Java heap to a file in the current directory
 by using the heap profiler (HPROF) when a
@@ -3998,11 +4013,11 @@ Example:
 .RE
 .TP
 .B \f[CB]\-XX:+ExtendedDTraceProbes\f[R]
-Deprecated. Use combination of these flags instead: -XX:+DTraceMethodProbes, -XX:+DTraceAllocProbes, -XX:+DTraceMonitorProbes
 \f[B]Linux and macOS:\f[R] Enables additional \f[CB]dtrace\f[R] tool probes
 that affect the performance.
 By default, this option is disabled and \f[CB]dtrace\f[R] performs only
 standard probes.
+Use the combination of these flags instead: -XX:+DTraceMethodProbes, -XX:+DTraceAllocProbes, -XX:+DTraceMonitorProbes
 .RS
 .RE
 .TP
