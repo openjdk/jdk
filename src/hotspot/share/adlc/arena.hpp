@@ -35,7 +35,7 @@ void* AdlReAllocateHeap(void* old_ptr, size_t size);
 // - CHeapObj
 //
 // For classes used as name spaces.
-// - AllStatic
+// - AdlAllStatic
 //
 
 class AdlCHeapObj {
@@ -47,7 +47,7 @@ class AdlCHeapObj {
 
 // Base class for classes that constitute name spaces.
 
-class AllStatic {
+class AdlAllStatic {
  public:
   void* operator new(size_t size) throw();
   void operator delete(void* p);
