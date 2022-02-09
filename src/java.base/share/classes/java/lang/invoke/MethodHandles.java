@@ -116,7 +116,11 @@ public class MethodHandles {
     @CallerSensitive
     @ForceInline // to ensure Reflection.getCallerClass optimization
     public static Lookup lookup() {
-        return new Lookup(Reflection.getCallerClass());
+        Class<?> c = Reflection.getCallerClass();
+        if (c == null) {
+            throw new IllegalCallerException();
+        }
+        return new Lookup(c);
     }
 
     /**
