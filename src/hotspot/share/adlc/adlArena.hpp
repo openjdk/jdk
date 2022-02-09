@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_ADLC_ARENA_HPP
-#define SHARE_ADLC_ARENA_HPP
+#ifndef SHARE_ADLC_ADLARENA_HPP
+#define SHARE_ADLC_ADLARENA_HPP
 
 void* AdlAllocateHeap(size_t size);
 void* AdlReAllocateHeap(void* old_ptr, size_t size);
@@ -151,4 +151,4 @@ public:
   void   set_size_in_bytes(size_t size)  { _size_in_bytes = size;   }
 };
 
-#endif // SHARE_ADLC_ARENA_HPP
+#endif // SHARE_ADLC_ADLARENA_HPP
