@@ -61,7 +61,7 @@ class ReverseOrderDequeView<E> implements Deque<E> {
     }
 
     public Spliterator<E> spliterator() {
-        return Spliterators.spliteratorUnknownSize(descendingIterator(), 0);
+        return Spliterators.spliteratorUnknownSize(base.descendingIterator(), 0);
     }
 
     // ========== Collection ==========
