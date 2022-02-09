@@ -33,7 +33,9 @@ package gc.g1.numa;
  *          java.management
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -XX:+UseG1GC -Xbootclasspath/a:. -XX:+UseNUMA -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI gc.g1.numa.TestG1NUMATouchRegions
+ * @run main/othervm -XX:+UseG1GC -Xbootclasspath/a:. -XX:+UseNUMA
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   gc.g1.numa.TestG1NUMATouchRegions
  */
 
 import java.util.LinkedList;
