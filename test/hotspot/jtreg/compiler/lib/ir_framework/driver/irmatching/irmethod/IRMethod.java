@@ -67,7 +67,7 @@ public class IRMethod {
         String idealOutputWithHeader = "PrintIdeal" + getPhaseNameString(phase) + ":" + System.lineSeparator() + idealOutput;
         outputMap.put(phase, idealOutputWithHeader);
         if (phase == CompilePhase.PRINT_IDEAL) {
-            outputMap.put(CompilePhase.DEFAULT, idealOutput);
+            outputMap.put(CompilePhase.DEFAULT, idealOutputWithHeader);
         }
     }
 

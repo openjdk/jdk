@@ -240,13 +240,15 @@ public class TestIRMatching {
                 System.out.flush();
                 String output = baos.toString();
                 baos.reset();
-                Pattern pattern = Pattern.compile(">>> Compilation.*both\\d.*\\RPrintIdeal:(?:(?!PrintOpto|>>> Compilation)[\\S\\s])+PrintOptoAssembly");
+                Pattern pattern = Pattern.compile(">>> Compilation.*both\\d.*\\RPrintIdeal - " + CompilePhase.PRINT_IDEAL.getName()
+                                                  + ":(?:(?!PrintOpto|>>> Compilation)[\\S\\s])+PrintOptoAssembly");
                 Matcher matcher = pattern.matcher(output);
                 long bothCount = matcher.results().count();
                 if (bothCount != 7L) {
                     failures.append("- Could not find all both() methods, expected 7 but found ").append(bothCount).append(System.lineSeparator());
                 }
-                pattern = Pattern.compile(">>> Compilation.*ideal\\d.*\\RPrintIdeal:(?:(?!>>> Compilation)[\\S\\s])+");
+                pattern = Pattern.compile(">>> Compilation.*ideal\\d.*\\RPrintIdeal - " + CompilePhase.PRINT_IDEAL.getName()
+                                          + ":(?:(?!>>> Compilation)[\\S\\s])+");
                 matcher = pattern.matcher(output);
                 int count = 0;
                 while (matcher.find()) {

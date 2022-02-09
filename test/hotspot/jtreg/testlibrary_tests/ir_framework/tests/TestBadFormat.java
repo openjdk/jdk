@@ -48,6 +48,7 @@ import java.util.regex.Pattern;
 public class TestBadFormat {
 
     public static void main(String[] args) {
+        checkPreFlagVM();
         expectTestFormatException(BadNoTests.class);
         expectTestFormatException(BadArgumentsAnnotation.class);
         expectTestFormatException(BadOverloadedMethod.class);
@@ -63,6 +64,62 @@ public class TestBadFormat {
                                   BadCompileClassInitializerHelper2.class, BadCompileClassInitializerHelper3.class);
     }
 
+    /**
+     * Format failures before flag VM
+     */
+    private static void checkPreFlagVM() {
+        try {
+            new TestFramework().setDefaultWarmup(-1);
+            Asserts.fail("Should have thrown exception");
+        } catch(Exception e) {
+            assertViolationCount(e, 1);
+        }
+        try {
+            new TestFramework().addScenarios((Scenario)null);
+            Asserts.fail("Should have thrown exception");
+        } catch(Exception e) {
+            assertViolationCount(e, 1);
+        }
+        try {
+            new TestFramework().addScenarios((Scenario[])null);
+            Asserts.fail("Should have thrown exception");
+        } catch(Exception e) {
+            assertViolationCount(e, 1);
+        }
+        try {
+            new TestFramework().addScenarios(new Scenario(1), null);
+            Asserts.fail("Should have thrown exception");
+        } catch(Exception e) {
+            assertViolationCount(e, 1);
+        }
+        try {
+            new TestFramework().addScenarios(new Scenario(1), new Scenario(1), new Scenario(1));
+            Asserts.fail("Should have thrown exception");
+        } catch(Exception e) {
+            assertViolationCount(e, 2);
+        }
+    }
+
+    private static void assertViolationCount(Exception e, int violationCount) {
+        assertTestFormatException(e);
+        getViolationCount(e.getMessage());
+        Asserts.assertEQ(violationCount, getViolationCount(e.getMessage()));
+    }
+
+    private static void assertTestFormatException(Exception e) {
+        if (!(e instanceof TestFormatException)) {
+            e.printStackTrace();
+            Asserts.fail("Unexpected exception", e);
+        }
+    }
+
+    private static int getViolationCount(String msg) {
+        Pattern pattern = Pattern.compile("Violations \\((\\d+)\\)");
+        Matcher matcher = pattern.matcher(msg);
+        Asserts.assertTrue(matcher.find(), "Could not find violations in" + System.lineSeparator() + msg);
+        return Integer.parseInt(matcher.group(1));
+    }
+
     private static void expectTestFormatException(Class<?> clazz, Class<?>... helpers) {
         try {
             if (helpers == null) {
@@ -71,23 +128,21 @@ public class TestBadFormat {
                 new TestFramework(clazz).addHelperClasses(helpers).start();
             }
         } catch (Exception e) {
-            if (!(e instanceof TestFormatException)) {
-                e.printStackTrace();
-                Asserts.fail("Unexpected exception", e);
-            }
-            String msg = e.getMessage();
-            Violations violations = getViolations(clazz, helpers);
-            violations.getFailedMethods().forEach(
-                    f -> Asserts.assertTrue(msg.contains(f),
-                                            "Could not find " + f + " in violations" + System.lineSeparator() + msg));
-            Pattern pattern = Pattern.compile("Violations \\((\\d+)\\)");
-            Matcher matcher = pattern.matcher(msg);
-            Asserts.assertTrue(matcher.find(), "Could not find violations in" + System.lineSeparator() + msg);
-            int violationCount = Integer.parseInt(matcher.group(1));
-            Asserts.assertEQ(violationCount, violations.getViolationCount(), msg);
+            checkException(clazz, e, helpers);
             return;
         }
         throw new RuntimeException("Should catch an exception");
+    }
+
+    private static void checkException(Class<?> clazz, Exception e, Class<?>[] helpers) {
+        assertTestFormatException(e);
+        String msg = e.getMessage();
+        Violations violations = getViolations(clazz, helpers);
+        violations.getFailedMethods().forEach(
+                f -> Asserts.assertTrue(msg.contains(f),
+                                        "Could not find " + f + " in violations" + System.lineSeparator() + msg));
+        int violationCount = getViolationCount(msg);
+        Asserts.assertEQ(violationCount, violations.getViolationCount(), msg);
     }
 
     private static Violations getViolations(Class<?> clazz, Class<?>... helpers) {
