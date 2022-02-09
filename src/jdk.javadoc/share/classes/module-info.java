@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,9 @@
  *
  * @toolGuide javadoc
  *
- * @provides java.util.spi.ToolProvider
+ * @provides java.util.spi.ToolProvider Pass {@code "javadoc"} as the name to
+ *           {@link java.util.spi.ToolProvider#findFirst ToolProvider.findFirst}
+ *           in order to obtain an instance of the tool.
  * @provides javax.tools.DocumentationTool
  * @provides javax.tools.Tool
  *

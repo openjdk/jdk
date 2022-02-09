@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,9 @@
  * @toolGuide jlink
  * @toolGuide jmod
  *
- * @provides java.util.spi.ToolProvider
+ * @provides java.util.spi.ToolProvider Pass {@code "jlink"} or {@code "jmod"}
+ *           as the name to {@link java.util.spi.ToolProvider#findFirst
+ *           ToolProvider.findFirst} in order to obtain an instance of the tool.
  *
  * @moduleGraph
  * @since 9

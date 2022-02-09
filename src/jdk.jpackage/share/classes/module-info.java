@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,9 @@
  * concurrently, even with separate {@code "jpackage"} {@code ToolProvider}
  * instances, or undefined behavior may result.
  *
+ * @provides java.util.spi.ToolProvider Pass {@code "jpackage"} as the name to
+ *           {@link java.util.spi.ToolProvider#findFirst ToolProvider.findFirst}
+ *           in order to obtain an instance of the tool.
  *
  * @moduleGraph
  * @since 16
