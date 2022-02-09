@@ -2562,12 +2562,14 @@ void OuterStripMinedLoopNode::fix_sunk_stores(CountedLoopEndNode* inner_cle, Loo
     for (DUIterator_Fast imax, i = cle_out->fast_outs(imax); i < imax; i++) {
       Node* u = cle_out->fast_out(i);
       if (u->is_Store()) {
+        int alias_idx = igvn->C->get_alias_index(u->adr_type());
         Node* first = u;
         for(;;) {
           Node* next = first->in(MemNode::Memory);
           if (!next->is_Store() || next->in(0) != cle_out) {
             break;
           }
+          assert(igvn->C->get_alias_index(next->adr_type()) == alias_idx, "");
           first = next;
         }
         Node* last = u;
@@ -2578,6 +2580,7 @@ void OuterStripMinedLoopNode::fix_sunk_stores(CountedLoopEndNode* inner_cle, Loo
             if (uu->is_Store() && uu->in(0) == cle_out) {
               assert(next == NULL, "only one in the outer loop");
               next = uu;
+              assert(igvn->C->get_alias_index(next->adr_type()) == alias_idx, "");
             }
           }
           if (next == NULL) {
@@ -2591,7 +2594,8 @@ void OuterStripMinedLoopNode::fix_sunk_stores(CountedLoopEndNode* inner_cle, Loo
           if (uu->is_Phi()) {
             Node* be = uu->in(LoopNode::LoopBackControl);
             if (be->is_Store() && be->in(0) == cle_tail) {
-              assert(false, "store on the backedge + sunk stores: unsupported");
+              assert(igvn->C->get_alias_index(uu->adr_type()) != alias_idx && igvn->C->get_alias_index(uu->adr_type()) != Compile::AliasIdxBot, "");
+//              assert(false, "store on the backedge + sunk stores: unsupported");
 //              // drop outer loop
 //              IfNode* outer_le = outer_loop_end();
 //              Node* iff = igvn->transform(new IfNode(outer_le->in(0), outer_le->in(1), outer_le->_prob, outer_le->_fcnt));
@@ -2600,6 +2604,7 @@ void OuterStripMinedLoopNode::fix_sunk_stores(CountedLoopEndNode* inner_cle, Loo
 //              return;
             }
             if (be == last || be == first->in(MemNode::Memory)) {
+              assert(igvn->C->get_alias_index(uu->adr_type()) == alias_idx || igvn->C->get_alias_index(uu->adr_type()) == Compile::AliasIdxBot, "");
               assert(phi == NULL, "only one phi");
               phi = uu;
             }
