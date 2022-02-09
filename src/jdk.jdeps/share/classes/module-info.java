@@ -48,9 +48,10 @@
  * @toolGuide jdeprscan
  * @toolGuide jdeps
  *
- * @provides java.util.spi.ToolProvider Pass {@code "javap"} or {@code "jdeps"}
- *           as the name to {@link java.util.spi.ToolProvider#findFirst
- *           ToolProvider.findFirst} in order to obtain an instance of the tool.
+ * @provides java.util.spi.ToolProvider
+ *         Pass {@code "javap"} or {@code "jdeps"}
+ *         as the name to {@link java.util.spi.ToolProvider#findFirst
+ *         ToolProvider.findFirst} in order to obtain an instance of the tool.
  *
  * @moduleGraph
  * @since 9

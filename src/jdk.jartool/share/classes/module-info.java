@@ -39,9 +39,10 @@
  * @toolGuide jar
  * @toolGuide jarsigner
  *
- * @provides java.util.spi.ToolProvider Pass {@code "jar"} as the name to
- *           {@link java.util.spi.ToolProvider#findFirst ToolProvider.findFirst}
- *           in order to obtain an instance of the tool.
+ * @provides java.util.spi.ToolProvider
+ *         Pass {@code "jar"} as the name to
+ *         {@link java.util.spi.ToolProvider#findFirst ToolProvider.findFirst}
+ *         in order to obtain an instance of the tool.
  *
  * @moduleGraph
  * @since 9

@@ -41,9 +41,10 @@
  * concurrently, even with separate {@code "jpackage"} {@code ToolProvider}
  * instances, or undefined behavior may result.
  *
- * @provides java.util.spi.ToolProvider Pass {@code "jpackage"} as the name to
- *           {@link java.util.spi.ToolProvider#findFirst ToolProvider.findFirst}
- *           in order to obtain an instance of the tool.
+ * @provides java.util.spi.ToolProvider
+ *         Pass {@code "jpackage"} as the name to
+ *         {@link java.util.spi.ToolProvider#findFirst ToolProvider.findFirst}
+ *         in order to obtain an instance of the tool.
  *
  * @moduleGraph
  * @since 16

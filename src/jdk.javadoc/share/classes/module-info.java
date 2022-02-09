@@ -44,9 +44,10 @@
  *
  * @toolGuide javadoc
  *
- * @provides java.util.spi.ToolProvider Pass {@code "javadoc"} as the name to
- *           {@link java.util.spi.ToolProvider#findFirst ToolProvider.findFirst}
- *           in order to obtain an instance of the tool.
+ * @provides java.util.spi.ToolProvider
+ *         Pass {@code "javadoc"} as the name to
+ *         {@link java.util.spi.ToolProvider#findFirst ToolProvider.findFirst}
+ *         in order to obtain an instance of the tool.
  * @provides javax.tools.DocumentationTool
  * @provides javax.tools.Tool
  *
