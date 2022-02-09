@@ -23,10 +23,7 @@
 
 package jdk.test.lib.security.timestamp;
 
-import java.math.BigInteger;
 import java.security.cert.X509Certificate;
-import java.time.Instant;
-import java.util.Date;
 import java.util.Objects;
 
 /**

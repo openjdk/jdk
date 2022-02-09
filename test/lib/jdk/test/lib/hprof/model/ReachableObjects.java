@@ -32,7 +32,6 @@
 
 package jdk.test.lib.hprof.model;
 
-import java.util.Vector;
 import java.util.Hashtable;
 import java.util.Enumeration;
 

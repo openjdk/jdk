@@ -23,7 +23,6 @@
 
 package jdk.test.lib.containers.docker;
 
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;

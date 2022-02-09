@@ -31,7 +31,6 @@ package gc;
  * @run driver/timeout=360 gc.TestAllocateHeapAtMultiple
  */
 
-import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import java.util.ArrayList;

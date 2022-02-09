@@ -31,11 +31,8 @@ package gc;
  * @run driver gc.TestAllocateHeapAt
  */
 
-import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import java.util.ArrayList;
-import java.util.Collections;
 
 public class TestAllocateHeapAt {
   public static void main(String args[]) throws Exception {

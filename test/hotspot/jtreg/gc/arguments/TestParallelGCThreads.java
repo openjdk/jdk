@@ -40,7 +40,6 @@ import java.util.ArrayList;
 import java.util.List;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 import jtreg.SkippedException;
 import sun.hotspot.gc.GC;
 

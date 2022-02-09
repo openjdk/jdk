@@ -34,12 +34,8 @@ package gc.g1;
  * @run driver gc.g1.TestSkipRebuildRemsetPhase
  */
 
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
-
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.Asserts;
 import sun.hotspot.WhiteBox;
 
 public class TestSkipRebuildRemsetPhase {

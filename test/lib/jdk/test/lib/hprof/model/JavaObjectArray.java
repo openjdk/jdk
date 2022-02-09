@@ -33,7 +33,6 @@
 package jdk.test.lib.hprof.model;
 
 import java.io.IOException;
-import jdk.test.lib.hprof.parser.ReadBuffer;
 
 /**
  * @author      Bill Foote

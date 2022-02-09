@@ -39,8 +39,6 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
 import sun.security.util.KnownOIDs;
-import sun.security.util.SignatureUtil;
-import sun.security.x509.AlgorithmId;
 
 /**
  * A {@link HttpHandler} receiving time-stamping request and returning response.

@@ -34,7 +34,6 @@ package gc.arguments;
  * @run driver gc.arguments.TestG1ConcMarkStepDurationMillis
  */
 
-import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import java.util.*;
 import java.util.regex.*;

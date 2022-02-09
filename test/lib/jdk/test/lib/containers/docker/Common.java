@@ -31,8 +31,6 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import jdk.test.lib.containers.docker.DockerRunOptions;
-import jdk.test.lib.containers.docker.DockerTestUtils;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 

@@ -23,7 +23,6 @@
 
 package jdk.test.lib.artifacts;
 
-import java.io.FileNotFoundException;
 import java.nio.file.Path;
 
 public interface ArtifactManager {

@@ -26,7 +26,6 @@ package jdk.test.lib.security.timestamp;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.KeyStore;
-import java.util.Objects;
 
 import com.sun.net.httpserver.HttpServer;
 

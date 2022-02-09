@@ -32,10 +32,6 @@
 
 package jdk.test.lib.hprof.model;
 
-import java.util.Enumeration;
-import java.util.Hashtable;
-
-
 /**
  *
  * @author      Bill Foote

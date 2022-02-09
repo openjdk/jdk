@@ -25,7 +25,6 @@ package jdk.test.lib.format;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * A codec helping representing arrays in a string form.

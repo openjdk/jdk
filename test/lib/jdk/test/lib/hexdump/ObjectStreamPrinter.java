@@ -41,9 +41,6 @@ import java.util.StringJoiner;
 import java.util.function.BiConsumer;
 
 import static java.io.ObjectStreamConstants.STREAM_MAGIC;
-import static java.io.ObjectStreamConstants.TC_BLOCKDATA;
-import static java.io.ObjectStreamConstants.TC_BLOCKDATALONG;
-import static java.io.ObjectStreamConstants.TC_ENDBLOCKDATA;
 import static java.io.ObjectStreamConstants.TC_MAX;
 import static java.io.ObjectStreamConstants.TC_NULL;
 import static java.io.ObjectStreamConstants.baseWireHandle;

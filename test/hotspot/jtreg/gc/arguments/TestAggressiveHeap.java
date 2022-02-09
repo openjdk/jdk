@@ -39,7 +39,6 @@ import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 import jtreg.SkippedException;
 
 public class TestAggressiveHeap {

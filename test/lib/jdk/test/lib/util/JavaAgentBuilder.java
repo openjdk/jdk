@@ -27,14 +27,12 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
 import jdk.test.lib.Utils;
-import jdk.test.lib.util.JarUtils;
 
 /**
  * A builder for a common Java agent.

@@ -34,14 +34,10 @@ package gc.arguments;
  * @run driver gc.arguments.TestG1RemSetFlags
  */
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 public class TestG1RemSetFlags {
 

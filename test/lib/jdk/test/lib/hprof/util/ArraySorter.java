@@ -31,7 +31,6 @@
  */
 
 package jdk.test.lib.hprof.util;
-import java.util.*;
 
 /**
  * A singleton utility class that sorts an array of objects.

@@ -44,7 +44,6 @@ import java.util.zip.Deflater;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import jdk.test.lib.Asserts;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 

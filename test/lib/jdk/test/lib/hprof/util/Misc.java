@@ -31,7 +31,6 @@
  */
 
 package jdk.test.lib.hprof.util;
-import java.util.*;
 
 /**
  * Miscellaneous functions I couldn't think of a good place to put.

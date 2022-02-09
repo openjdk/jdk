@@ -61,8 +61,6 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
-import java.util.LinkedList;
-
 import jtreg.SkippedException;
 import sun.hotspot.WhiteBox;
 import sun.hotspot.gc.GC;

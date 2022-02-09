@@ -74,7 +74,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 public class TestMaxNewSize {
 

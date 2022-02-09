@@ -24,7 +24,6 @@
 package gc.arguments;
 
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Platform;
 
 /*
