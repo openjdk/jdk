@@ -49,14 +49,7 @@ import jdk.jfr.internal.consumer.RecordingInput;
  * <p>
  * The following example shows how read and print all events in a recording file.
  *
- * <pre>{@literal
- * try (RecordingFile recordingFile = new RecordingFile(Paths.get("recording.jfr"))) {
- *   while (recordingFile.hasMoreEvents()) {
- *     RecordedEvent event = recordingFile.readEvent();
- *     System.out.println(event);
- *   }
- * }
- * }</pre>
+ * {@snippet class="Snippets" region="RecordingFileOverview"}
  *
  * @since 9
  */
