@@ -441,7 +441,7 @@ struct NUMASwitcher {
 #endif
 
 #ifndef _AIX // JDK-8257041
-  TEST_VM(os, release_multi_mappings) {
+TEST_VM(os, release_multi_mappings) {
 
   // With NMT enabled, this will trigger JDK-8263464. For now disable the test if NMT=on.
   if (MemTracker::tracking_level() > NMT_off) {
