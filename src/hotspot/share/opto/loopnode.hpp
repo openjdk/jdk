@@ -547,6 +547,8 @@ class LoopLimitNode : public Node {
 class OuterStripMinedLoopNode : public LoopNode {
 private:
   CountedLoopNode* inner_loop() const;
+  static void fix_sunk_stores(CountedLoopEndNode* inner_cle, LoopNode* target, PhaseIterGVN* igvn);
+
 public:
   OuterStripMinedLoopNode(Compile* C, Node *entry, Node *backedge)
     : LoopNode(entry, backedge) {

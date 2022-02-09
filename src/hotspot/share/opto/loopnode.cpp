@@ -2553,6 +2553,124 @@ BaseCountedLoopNode* BaseCountedLoopNode::make(Node* entry, Node* backedge, Basi
   return new LongCountedLoopNode(entry, backedge);
 }
 
+void OuterStripMinedLoopNode::fix_sunk_stores(CountedLoopEndNode* inner_cle, LoopNode* target, PhaseIterGVN* igvn) {
+  Node* cle_out = inner_cle->proj_out(false);
+  Node* cle_tail = inner_cle->proj_out(true);
+  if (cle_out->outcnt() > 1) {
+    // Look for chains of stores that were sunk
+    // out of the inner loop and are in the outer loop
+    for (DUIterator_Fast imax, i = cle_out->fast_outs(imax); i < imax; i++) {
+      Node* u = cle_out->fast_out(i);
+      if (u->is_Store()) {
+        Node* first = u;
+        for(;;) {
+          Node* next = first->in(MemNode::Memory);
+          if (!next->is_Store() || next->in(0) != cle_out) {
+            break;
+          }
+          first = next;
+        }
+        Node* last = u;
+        for(;;) {
+          Node* next = NULL;
+          for (DUIterator_Fast jmax, j = last->fast_outs(jmax); j < jmax; j++) {
+            Node* uu = last->fast_out(j);
+            if (uu->is_Store() && uu->in(0) == cle_out) {
+              assert(next == NULL, "only one in the outer loop");
+              next = uu;
+            }
+          }
+          if (next == NULL) {
+            break;
+          }
+          last = next;
+        }
+        Node* phi = NULL;
+        for (DUIterator_Fast jmax, j = target->fast_outs(jmax); j < jmax; j++) {
+          Node* uu = target->fast_out(j);
+          if (uu->is_Phi()) {
+            Node* be = uu->in(LoopNode::LoopBackControl);
+            if (be->is_Store() && be->in(0) == cle_tail) {
+              assert(false, "store on the backedge + sunk stores: unsupported");
+//              // drop outer loop
+//              IfNode* outer_le = outer_loop_end();
+//              Node* iff = igvn->transform(new IfNode(outer_le->in(0), outer_le->in(1), outer_le->_prob, outer_le->_fcnt));
+//              igvn->replace_node(outer_le, iff);
+//              inner_cl->clear_strip_mined();
+//              return;
+            }
+            if (be == last || be == first->in(MemNode::Memory)) {
+              assert(phi == NULL, "only one phi");
+              phi = uu;
+            }
+          }
+        }
+#ifdef ASSERT
+        for (DUIterator_Fast jmax, j = target->fast_outs(jmax); j < jmax; j++) {
+          Node* uu = target->fast_out(j);
+          if (uu->is_Phi() && uu->bottom_type() == Type::MEMORY) {
+            if (uu->adr_type() == igvn->C->get_adr_type(igvn->C->get_alias_index(u->adr_type()))) {
+              assert(phi == uu, "what's that phi?");
+            } else if (uu->adr_type() == TypePtr::BOTTOM) {
+              Node* n = uu->in(LoopNode::LoopBackControl);
+              uint limit = igvn->C->live_nodes();
+              uint i = 0;
+              while (n != uu) {
+                i++;
+                assert(i < limit, "infinite loop");
+                if (n->is_Proj()) {
+                  n = n->in(0);
+                } else if (n->is_SafePoint() || n->is_MemBar()) {
+                  n = n->in(TypeFunc::Memory);
+                } else if (n->is_Phi()) {
+                  n = n->in(1);
+                } else if (n->is_MergeMem()) {
+                  n = n->as_MergeMem()->memory_at(igvn->C->get_alias_index(u->adr_type()));
+                } else if (n->is_Store() || n->is_LoadStore() || n->is_ClearArray()) {
+                  n = n->in(MemNode::Memory);
+                } else {
+                  n->dump();
+                  ShouldNotReachHere();
+                }
+              }
+            }
+          }
+        }
+#endif
+        if (phi == NULL) {
+          // If the an entire chains was sunk, the
+          // inner loop has no phi for that memory
+          // slice, create one for the outer loop
+          phi = PhiNode::make(target, first->in(MemNode::Memory), Type::MEMORY,
+                              igvn->C->get_adr_type(igvn->C->get_alias_index(u->adr_type())));
+          phi->set_req(LoopNode::LoopBackControl, last);
+          phi = igvn->transform(phi);
+          igvn->replace_input_of(first, MemNode::Memory, phi);
+        } else {
+          // Or fix the outer loop fix to include
+          // that chain of stores.
+          Node* be = phi->in(LoopNode::LoopBackControl);
+          assert(!(be->is_Store() && be->in(0) == cle_tail), "store on the backedge + sunk stores: unsupported");
+          if (be == first->in(MemNode::Memory)) {
+            if (be == phi->in(LoopNode::LoopBackControl)) {
+              igvn->replace_input_of(phi, LoopNode::LoopBackControl, last);
+            } else {
+              igvn->replace_input_of(be, MemNode::Memory, last);
+            }
+          } else {
+#ifdef ASSERT
+            if (be == phi->in(LoopNode::LoopBackControl)) {
+              assert(phi->in(LoopNode::LoopBackControl) == last, "");
+            } else {
+              assert(be->in(MemNode::Memory) == last, "");
+            }
+#endif
+          }
+        }
+      }
+    }
+  }
+}
 
 void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
   // Look for the outer & inner strip mined loop, reduce number of
@@ -2569,6 +2687,9 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
     Node* inner_test = cle->in(1);
     IfNode* outer_le = outer_loop_end();
 
+    CountedLoopEndNode* inner_cle = inner_cl->loopexit();
+    fix_sunk_stores(inner_cle, inner_cl, igvn);
+
     // make counted loop exit test always fail
     igvn->replace_input_of(cle, 1, igvn->intcon(0));
     // replace outer loop end with CountedLoopEndNode with formers' CLE's exit test
@@ -2580,6 +2701,7 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
     // make the outer loop go away
     igvn->replace_input_of(this, LoopBackControl, igvn->C->top());
     inner_cl->clear_strip_mined();
+
     return;
   }
   Node* inner_iv_phi = inner_cl->phi();
@@ -2682,121 +2804,122 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
       }
     }
   }
-  Node* cle_out = inner_cle->proj_out(false);
-  if (cle_out->outcnt() > 1) {
-    // Look for chains of stores that were sunk
-    // out of the inner loop and are in the outer loop
-    for (DUIterator_Fast imax, i = cle_out->fast_outs(imax); i < imax; i++) {
-      Node* u = cle_out->fast_out(i);
-      if (u->is_Store()) {
-        Node* first = u;
-        for(;;) {
-          Node* next = first->in(MemNode::Memory);
-          if (!next->is_Store() || next->in(0) != cle_out) {
-            break;
-          }
-          first = next;
-        }
-        Node* last = u;
-        for(;;) {
-          Node* next = NULL;
-          for (DUIterator_Fast jmax, j = last->fast_outs(jmax); j < jmax; j++) {
-            Node* uu = last->fast_out(j);
-            if (uu->is_Store() && uu->in(0) == cle_out) {
-              assert(next == NULL, "only one in the outer loop");
-              next = uu;
-            }
-          }
-          if (next == NULL) {
-            break;
-          }
-          last = next;
-        }
-        Node* phi = NULL;
-        for (DUIterator_Fast jmax, j = fast_outs(jmax); j < jmax; j++) {
-          Node* uu = fast_out(j);
-          if (uu->is_Phi()) {
-            Node* be = uu->in(LoopNode::LoopBackControl);
-            if (be->is_Store() && old_new[be->_idx] != NULL) {
-              assert(false, "store on the backedge + sunk stores: unsupported");
-              // drop outer loop
-              IfNode* outer_le = outer_loop_end();
-              Node* iff = igvn->transform(new IfNode(outer_le->in(0), outer_le->in(1), outer_le->_prob, outer_le->_fcnt));
-              igvn->replace_node(outer_le, iff);
-              inner_cl->clear_strip_mined();
-              return;
-            }
-            if (be == last || be == first->in(MemNode::Memory)) {
-              assert(phi == NULL, "only one phi");
-              phi = uu;
-            }
-          }
-        }
-#ifdef ASSERT
-        for (DUIterator_Fast jmax, j = fast_outs(jmax); j < jmax; j++) {
-          Node* uu = fast_out(j);
-          if (uu->is_Phi() && uu->bottom_type() == Type::MEMORY) {
-            if (uu->adr_type() == igvn->C->get_adr_type(igvn->C->get_alias_index(u->adr_type()))) {
-              assert(phi == uu, "what's that phi?");
-            } else if (uu->adr_type() == TypePtr::BOTTOM) {
-              Node* n = uu->in(LoopNode::LoopBackControl);
-              uint limit = igvn->C->live_nodes();
-              uint i = 0;
-              while (n != uu) {
-                i++;
-                assert(i < limit, "infinite loop");
-                if (n->is_Proj()) {
-                  n = n->in(0);
-                } else if (n->is_SafePoint() || n->is_MemBar()) {
-                  n = n->in(TypeFunc::Memory);
-                } else if (n->is_Phi()) {
-                  n = n->in(1);
-                } else if (n->is_MergeMem()) {
-                  n = n->as_MergeMem()->memory_at(igvn->C->get_alias_index(u->adr_type()));
-                } else if (n->is_Store() || n->is_LoadStore() || n->is_ClearArray()) {
-                  n = n->in(MemNode::Memory);
-                } else {
-                  n->dump();
-                  ShouldNotReachHere();
-                }
-              }
-            }
-          }
-        }
-#endif
-        if (phi == NULL) {
-          // If the an entire chains was sunk, the
-          // inner loop has no phi for that memory
-          // slice, create one for the outer loop
-          phi = PhiNode::make(this, first->in(MemNode::Memory), Type::MEMORY,
-                              igvn->C->get_adr_type(igvn->C->get_alias_index(u->adr_type())));
-          phi->set_req(LoopNode::LoopBackControl, last);
-          phi = igvn->transform(phi);
-          igvn->replace_input_of(first, MemNode::Memory, phi);
-        } else {
-          // Or fix the outer loop fix to include
-          // that chain of stores.
-          Node* be = phi->in(LoopNode::LoopBackControl);
-          assert(!(be->is_Store() && old_new[be->_idx] != NULL), "store on the backedge + sunk stores: unsupported");
-          if (be == first->in(MemNode::Memory)) {
-            if (be == phi->in(LoopNode::LoopBackControl)) {
-              igvn->replace_input_of(phi, LoopNode::LoopBackControl, last);
-            } else {
-              igvn->replace_input_of(be, MemNode::Memory, last);
-            }
-          } else {
-#ifdef ASSERT
-            if (be == phi->in(LoopNode::LoopBackControl)) {
-              assert(phi->in(LoopNode::LoopBackControl) == last, "");
-            } else {
-              assert(be->in(MemNode::Memory) == last, "");
-            }
-#endif
-          }
-        }
-      }
-    }
-  }
+  fix_sunk_stores(inner_cle, this, igvn);
+//  Node* cle_out = inner_cle->proj_out(false);
+//  if (cle_out->outcnt() > 1) {
+//    // Look for chains of stores that were sunk
+//    // out of the inner loop and are in the outer loop
+//    for (DUIterator_Fast imax, i = cle_out->fast_outs(imax); i < imax; i++) {
+//      Node* u = cle_out->fast_out(i);
+//      if (u->is_Store()) {
+//        Node* first = u;
+//        for(;;) {
+//          Node* next = first->in(MemNode::Memory);
+//          if (!next->is_Store() || next->in(0) != cle_out) {
+//            break;
+//          }
+//          first = next;
+//        }
+//        Node* last = u;
+//        for(;;) {
+//          Node* next = NULL;
+//          for (DUIterator_Fast jmax, j = last->fast_outs(jmax); j < jmax; j++) {
+//            Node* uu = last->fast_out(j);
+//            if (uu->is_Store() && uu->in(0) == cle_out) {
+//              assert(next == NULL, "only one in the outer loop");
+//              next = uu;
+//            }
+//          }
+//          if (next == NULL) {
+//            break;
+//          }
+//          last = next;
+//        }
+//        Node* phi = NULL;
+//        for (DUIterator_Fast jmax, j = fast_outs(jmax); j < jmax; j++) {
+//          Node* uu = fast_out(j);
+//          if (uu->is_Phi()) {
+//            Node* be = uu->in(LoopNode::LoopBackControl);
+//            if (be->is_Store() && old_new[be->_idx] != NULL) {
+//              assert(false, "store on the backedge + sunk stores: unsupported");
+//              // drop outer loop
+//              IfNode* outer_le = outer_loop_end();
+//              Node* iff = igvn->transform(new IfNode(outer_le->in(0), outer_le->in(1), outer_le->_prob, outer_le->_fcnt));
+//              igvn->replace_node(outer_le, iff);
+//              inner_cl->clear_strip_mined();
+//              return;
+//            }
+//            if (be == last || be == first->in(MemNode::Memory)) {
+//              assert(phi == NULL, "only one phi");
+//              phi = uu;
+//            }
+//          }
+//        }
+//#ifdef ASSERT
+//        for (DUIterator_Fast jmax, j = fast_outs(jmax); j < jmax; j++) {
+//          Node* uu = fast_out(j);
+//          if (uu->is_Phi() && uu->bottom_type() == Type::MEMORY) {
+//            if (uu->adr_type() == igvn->C->get_adr_type(igvn->C->get_alias_index(u->adr_type()))) {
+//              assert(phi == uu, "what's that phi?");
+//            } else if (uu->adr_type() == TypePtr::BOTTOM) {
+//              Node* n = uu->in(LoopNode::LoopBackControl);
+//              uint limit = igvn->C->live_nodes();
+//              uint i = 0;
+//              while (n != uu) {
+//                i++;
+//                assert(i < limit, "infinite loop");
+//                if (n->is_Proj()) {
+//                  n = n->in(0);
+//                } else if (n->is_SafePoint() || n->is_MemBar()) {
+//                  n = n->in(TypeFunc::Memory);
+//                } else if (n->is_Phi()) {
+//                  n = n->in(1);
+//                } else if (n->is_MergeMem()) {
+//                  n = n->as_MergeMem()->memory_at(igvn->C->get_alias_index(u->adr_type()));
+//                } else if (n->is_Store() || n->is_LoadStore() || n->is_ClearArray()) {
+//                  n = n->in(MemNode::Memory);
+//                } else {
+//                  n->dump();
+//                  ShouldNotReachHere();
+//                }
+//              }
+//            }
+//          }
+//        }
+//#endif
+//        if (phi == NULL) {
+//          // If the an entire chains was sunk, the
+//          // inner loop has no phi for that memory
+//          // slice, create one for the outer loop
+//          phi = PhiNode::make(this, first->in(MemNode::Memory), Type::MEMORY,
+//                              igvn->C->get_adr_type(igvn->C->get_alias_index(u->adr_type())));
+//          phi->set_req(LoopNode::LoopBackControl, last);
+//          phi = igvn->transform(phi);
+//          igvn->replace_input_of(first, MemNode::Memory, phi);
+//        } else {
+//          // Or fix the outer loop fix to include
+//          // that chain of stores.
+//          Node* be = phi->in(LoopNode::LoopBackControl);
+//          assert(!(be->is_Store() && old_new[be->_idx] != NULL), "store on the backedge + sunk stores: unsupported");
+//          if (be == first->in(MemNode::Memory)) {
+//            if (be == phi->in(LoopNode::LoopBackControl)) {
+//              igvn->replace_input_of(phi, LoopNode::LoopBackControl, last);
+//            } else {
+//              igvn->replace_input_of(be, MemNode::Memory, last);
+//            }
+//          } else {
+//#ifdef ASSERT
+//            if (be == phi->in(LoopNode::LoopBackControl)) {
+//              assert(phi->in(LoopNode::LoopBackControl) == last, "");
+//            } else {
+//              assert(be->in(MemNode::Memory) == last, "");
+//            }
+//#endif
+//          }
+//        }
+//      }
+//    }
+//  }
 
   if (iv_phi != NULL) {
     // Now adjust the inner loop's exit condition
