@@ -29,12 +29,9 @@ import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.AlgorithmConstraints;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import javax.crypto.KeyGenerator;
 import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SNIMatcher;
@@ -67,6 +64,11 @@ final class SSLConfiguration implements Cloneable {
     // The configured signature schemes for "signature_algorithms" and
     // "signature_algorithms_cert" extensions
     List<SignatureScheme>       signatureSchemes;
+
+    // The configured certificate compression algorithms for
+    // "compress_certificate" extensions
+    Map<String, Function<byte[], byte[]>> certDeflaters;  // non-null
+    Map<String, Function<byte[], byte[]>> certInflaters;  // non-null
 
     // the maximum protocol version of enabled protocols
     ProtocolVersion             maximumProtocolVersion;
@@ -150,6 +152,10 @@ final class SSLConfiguration implements Cloneable {
         this.signatureSchemes = isClientMode ?
                 CustomizedClientSignatureSchemes.signatureSchemes :
                 CustomizedServerSignatureSchemes.signatureSchemes;
+
+        this.certDeflaters = Collections.emptyMap();
+        this.certInflaters = Collections.emptyMap();
+
         this.maximumProtocolVersion = ProtocolVersion.NONE;
         for (ProtocolVersion pv : enabledProtocols) {
             if (pv.compareTo(maximumProtocolVersion) > 0) {
@@ -200,6 +206,8 @@ final class SSLConfiguration implements Cloneable {
             params.setSNIMatchers(this.sniMatchers);
         }
 
+        params.setCertificateDeflaters(this.certDeflaters);
+        params.setCertificateInflaters(this.certInflaters);
         params.setApplicationProtocols(this.applicationProtocols);
         params.setUseCipherSuitesOrder(this.preferLocalCipherSuites);
         params.setEnableRetransmissions(this.enableRetransmissions);
@@ -261,6 +269,8 @@ final class SSLConfiguration implements Cloneable {
             this.applicationProtocols = sa;
         }   // otherwise, use the default values
 
+        this.certDeflaters = params.getCertificateDeflaters();
+        this.certInflaters = params.getCertificateInflaters();
         this.preferLocalCipherSuites = params.getUseCipherSuitesOrder();
         this.enableRetransmissions = params.getEnableRetransmissions();
         this.maximumPacketSize = params.getMaximumPacketSize();

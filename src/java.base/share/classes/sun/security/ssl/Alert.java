@@ -278,6 +278,8 @@ enum Alert {
                         tc.handshakeContext.handshakeConsumers.remove(
                                 SSLHandshake.CERTIFICATE.id);
                         tc.handshakeContext.handshakeConsumers.remove(
+                                SSLHandshake.COMPRESSED_CERTIFICATE.id);
+                        tc.handshakeContext.handshakeConsumers.remove(
                                 SSLHandshake.CERTIFICATE_VERIFY.id);
                     }
                 }  // Otherwise, ignore the warning

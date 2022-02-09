@@ -346,6 +346,24 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
                             ProtocolVersion.PROTOCOLS_OF_13
                     )
             })),
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    COMPRESSED_CERTIFICATE      ((byte)0x19, "compressed_certificate",
+            (Map.Entry<SSLConsumer, ProtocolVersion[]>[])(new Map.Entry[] {
+                    new SimpleImmutableEntry<>(
+                            CompressedCertificate.handshakeConsumer,
+                            ProtocolVersion.PROTOCOLS_OF_13
+                    )
+            }),
+            (Map.Entry<HandshakeProducer, ProtocolVersion[]>[])(new Map.Entry[] {
+                    // Note that the producing of this message is delegated to
+                    // CertificateMessage producer.
+                    new SimpleImmutableEntry<>(
+                            CertificateMessage.t13HandshakeProducer,
+                            ProtocolVersion.PROTOCOLS_OF_13
+                    )
+            })),
+
     MESSAGE_HASH                ((byte)0xFE, "message_hash"),
     NOT_APPLICABLE              ((byte)0xFF, "not_applicable");
 

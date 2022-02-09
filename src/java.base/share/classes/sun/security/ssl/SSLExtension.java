@@ -271,6 +271,27 @@ enum SSLExtension implements SSLStringizer {
     // Extensions defined in RFC 7924 (TLS Cached Information Extension)
     CACHED_INFO             (0x0019, "cached_info"),
 
+    // Extensions defined in RFC 8879 (TLS Certificate Compression)
+    CH_COMPRESS_CERTIFICATE (0x001B, "compress_certificate",
+                             SSLHandshake.CERTIFICATE_REQUEST,
+                             ProtocolVersion.PROTOCOLS_OF_13,
+                             CertCompressionExtension.chNetworkProducer,
+                             CertCompressionExtension.chOnLoadConsumer,
+                             null,
+                             CertCompressionExtension.chOnTradeConsumer,
+                             null,
+                             CertCompressionExtension.ccStringizer),
+
+    CR_COMPRESS_CERTIFICATE (0x001B, "compress_certificate",
+                             SSLHandshake.CERTIFICATE_REQUEST,
+                             ProtocolVersion.PROTOCOLS_OF_13,
+                             CertCompressionExtension.crNetworkProducer,
+                             CertCompressionExtension.crOnLoadConsumer,
+                             null,
+                             CertCompressionExtension.crOnTradeConsumer,
+                             null,
+                             CertCompressionExtension.ccStringizer),
+
     // Extensions defined in RFC 5077 (TLS Session Resumption without Server-Side State)
     CH_SESSION_TICKET       (0x0023, "session_ticket",
             SSLHandshake.CLIENT_HELLO,

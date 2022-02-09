@@ -42,6 +42,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.function.Function;
 import javax.crypto.SecretKey;
 import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLHandshakeException;
@@ -139,6 +140,10 @@ abstract class HandshakeContext implements ConnectionContext {
     List<SignatureScheme>                   localSupportedSignAlgs;
     List<SignatureScheme>                   peerRequestedSignatureSchemes;
     List<SignatureScheme>                   peerRequestedCertSignSchemes;
+
+    // CertificateCompressionAlgorithm
+    Map<Integer, Function<byte[], byte[]>>  localCertInflaters;
+    Map.Entry<Integer, Function<byte[], byte[]>> certDeflater;
 
     // Known authorities
     X500Principal[]                         peerSupportedAuthorities = null;
@@ -591,4 +596,3 @@ abstract class HandshakeContext implements ConnectionContext {
         return requestedServerNames;
     }
 }
-
