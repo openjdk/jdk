@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/cdsProtectionDomain.hpp"
-#include "cds/dumpTimeClassInfo.hpp"
+#include "cds/dumpTimeClassInfo.inline.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "cds/runTimeClassInfo.hpp"
 #include "classfile/classFileStream.hpp"
@@ -185,6 +185,11 @@ InstanceKlass* SystemDictionaryShared::acquire_class_for_current_thread(
 void SystemDictionaryShared::start_dumping() {
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
   _dump_in_progress = true;
+}
+
+void SystemDictionaryShared::stop_dumping() {
+  assert_lock_strong(DumpTimeTable_lock);
+  _dump_in_progress = false;
 }
 
 DumpTimeClassInfo* SystemDictionaryShared::find_or_allocate_info_for(InstanceKlass* k) {
@@ -1410,6 +1415,11 @@ InstanceKlass* SystemDictionaryShared::find_builtin_class(Symbol* name) {
   if (record != NULL) {
     assert(!record->_klass->is_hidden(), "hidden class cannot be looked up by name");
     assert(check_alignment(record->_klass), "Address not aligned");
+    // We did not save the classfile data of the regenerated LambdaForm invoker classes,
+    // so we cannot support CLFH for such classes.
+    if (record->_klass->is_regenerated() && JvmtiExport::should_post_class_file_load_hook()) {
+       return NULL;
+    }
     return record->_klass;
   } else {
     return NULL;
@@ -1528,6 +1538,7 @@ void SystemDictionaryShared::print_table_statistics(outputStream* st) {
 }
 
 bool SystemDictionaryShared::is_dumptime_table_empty() {
+  assert_lock_strong(DumpTimeTable_lock);
   if (_dumptime_table == NULL) {
     return true;
   }

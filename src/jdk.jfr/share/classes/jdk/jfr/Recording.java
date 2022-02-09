@@ -46,15 +46,7 @@ import jdk.jfr.internal.WriteableUserPath;
  * <p>
  * The following example shows how configure, start, stop and dump recording data to disk.
  *
- * <pre>{@literal
- *   Configuration c = Configuration.getConfiguration("default");
- *   Recording r = new Recording(c);
- *   r.start();
- *   System.gc();
- *   Thread.sleep(5000);
- *   r.stop();
- *   r.dump(Files.createTempFile("my-recording", ".jfr"));
- * }</pre>
+ * {@snippet class="Snippets" region="RecordingOverview"}
  *
  * @since 9
  */
@@ -143,9 +135,9 @@ public final class Recording implements Closeable {
      * <p>
      * The following example shows how create a recording that uses a predefined configuration.
      *
-     * <pre>{@literal
+     * {@snippet :
      * Recording r = new Recording(Configuration.getConfiguration("default"));
-     * }</pre>
+     * }
      *
      * The newly created recording is in the {@link RecordingState#NEW} state. To
      * start the recording, invoke the {@link Recording#start()} method.
@@ -307,21 +299,21 @@ public final class Recording implements Closeable {
      * <p>
      * The following example shows how to set event settings for a recording.
      *
-     * <pre>{@literal
+     * {@snippet :
      *     Map<String, String> settings = new HashMap<>();
      *     settings.putAll(EventSettings.enabled("jdk.CPUSample").withPeriod(Duration.ofSeconds(2)).toMap());
      *     settings.putAll(EventSettings.enabled(MyEvent.class).withThreshold(Duration.ofSeconds(2)).withoutStackTrace().toMap());
      *     settings.put("jdk.ExecutionSample#period", "10 ms");
      *     recording.setSettings(settings);
-     * }</pre>
+     * }
      *
      * The following example shows how to merge settings.
      *
-     * <pre>{@literal
+     * {@snippet :
      *     Map<String, String> settings = recording.getSettings();
      *     settings.putAll(additionalSettings);
      *     recording.setSettings(settings);
-     * }</pre>
+     * }
      *
      * @param settings the settings to set, not {@code null}
      */
@@ -423,25 +415,6 @@ public final class Recording implements Closeable {
         }
         internal.setMaxSize(maxSize);
     }
-
-        /**
-         * Determines how often events are made available for streaming.
-         *
-         * @param interval the interval at which events are made available for streaming.
-         *
-         * @throws IllegalArgumentException if {@code interval} is negative
-         *
-         * @throws IllegalStateException if the recording is in the {@code CLOSED} state
-         *
-         * @since 14
-         */
-        /*package private*/ void setFlushInterval(Duration interval) {
-            Objects.requireNonNull(interval);
-            if (interval.isNegative()) {
-                throw new IllegalArgumentException("Stream interval can't be negative");
-            }
-            internal.setFlushInterval(interval);
-        }
 
     /**
      * Returns how often events are made available for streaming purposes.

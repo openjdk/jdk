@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2017, 2020 SAP SE. All rights reserved.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2017, 2022 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -10230,7 +10230,7 @@ instruct string_compress(iRegP src, iRegP dst, iRegI result, iRegI len, iRegI tm
   format %{ "String Compress $src->$dst($len) -> $result" %}
   ins_encode %{
     __ string_compress($result$$Register, $src$$Register, $dst$$Register, $len$$Register,
-                       $tmp$$Register, false);
+                       $tmp$$Register, false, false);
   %}
   ins_pipe(pipe_class_dummy);
 %}
@@ -10291,10 +10291,24 @@ instruct encode_iso_array(iRegP src, iRegP dst, iRegI result, iRegI len, iRegI t
   match(Set result (EncodeISOArray src (Binary dst len)));
   effect(TEMP_DEF result, TEMP tmp, KILL cr); // R0, R1 are killed, too.
   ins_cost(300);
-  format %{ "Encode array $src->$dst($len) -> $result" %}
+  format %{ "Encode iso array $src->$dst($len) -> $result" %}
   ins_encode %{
     __ string_compress($result$$Register, $src$$Register, $dst$$Register, $len$$Register,
-                       $tmp$$Register, true);
+                       $tmp$$Register, true, false);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+// encode char[] to byte[] in ASCII
+instruct encode_ascii_array(iRegP src, iRegP dst, iRegI result, iRegI len, iRegI tmp, flagsReg cr) %{
+  predicate(((EncodeISOArrayNode*)n)->is_ascii());
+  match(Set result (EncodeISOArray src (Binary dst len)));
+  effect(TEMP_DEF result, TEMP tmp, KILL cr); // R0, R1 are killed, too.
+  ins_cost(300);
+  format %{ "Encode ascii array $src->$dst($len) -> $result" %}
+  ins_encode %{
+    __ string_compress($result$$Register, $src$$Register, $dst$$Register, $len$$Register,
+                       $tmp$$Register, true, true);
   %}
   ins_pipe(pipe_class_dummy);
 %}

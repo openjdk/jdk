@@ -51,7 +51,7 @@ public class TestVarHandleCombinators {
         assertEquals((byte) vh.get(segment, 2), (byte) -1);
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test(expectedExceptions = IllegalArgumentException.class)
     public void testUnalignedElement() {
         VarHandle vh = MemoryHandles.varHandle(ValueLayout.JAVA_BYTE.withBitAlignment(32));
         MemorySegment segment = MemorySegment.ofArray(new byte[4]);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,7 +197,7 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         EllipticCurve curve = spec.getCurve();
         BigInteger rhs = x.modPow(BigInteger.valueOf(3), p).add(curve.getA()
             .multiply(x)).add(curve.getB()).mod(p);
-        BigInteger lhs = y.modPow(BigInteger.valueOf(2), p).mod(p);
+        BigInteger lhs = y.modPow(BigInteger.TWO, p);
         if (!rhs.equals(lhs)) {
             throw new InvalidKeyException("Point is not on curve");
         }

@@ -486,13 +486,13 @@ private:
   //   otherwise it's for a failed allocation.
   // - if clear_all_soft_refs is true, all soft references should be
   //   cleared during the GC.
-  // - if do_maximum_compaction is true, full gc will do a maximally
+  // - if do_maximal_compaction is true, full gc will do a maximally
   //   compacting collection, leaving no dead wood.
   // - it returns false if it is unable to do the collection due to the
   //   GC locker being active, true otherwise.
   bool do_full_collection(bool explicit_gc,
                           bool clear_all_soft_refs,
-                          bool do_maximum_compaction);
+                          bool do_maximal_compaction);
 
   // Callback from VM_G1CollectFull operation, or collect_as_vm_thread.
   void do_full_collection(bool clear_all_soft_refs) override;
@@ -518,7 +518,7 @@ private:
   // Helper method for satisfy_failed_allocation()
   HeapWord* satisfy_failed_allocation_helper(size_t word_size,
                                              bool do_gc,
-                                             bool maximum_compaction,
+                                             bool maximal_compaction,
                                              bool expect_null_mutator_alloc_region,
                                              bool* gc_succeeded);
 
@@ -621,6 +621,8 @@ public:
   // Verify that the G1RegionAttr remset tracking corresponds to actual remset tracking
   // for all regions.
   void verify_region_attr_remset_is_tracked() PRODUCT_RETURN;
+
+  void clear_prev_bitmap_for_region(HeapRegion* hr);
 
   bool is_user_requested_concurrent_full_gc(GCCause::Cause cause);
 
@@ -1252,6 +1254,9 @@ public:
   inline bool is_obj_dead_full(const oop obj, const HeapRegion* hr) const;
   inline bool is_obj_dead_full(const oop obj) const;
 
+  // Mark the live object that failed evacuation in the prev bitmap.
+  inline void mark_evac_failure_object(const oop obj, uint worker_id) const;
+
   G1ConcurrentMark* concurrent_mark() const { return _cm; }
 
   // Refinement
@@ -1282,9 +1287,9 @@ public:
   // Free up superfluous code root memory.
   void purge_code_root_memory();
 
-  // Rebuild the strong code root lists for each region
+  // Rebuild the code root lists for each region
   // after a full GC.
-  void rebuild_strong_code_roots();
+  void rebuild_code_roots();
 
   // Performs cleaning of data structures after class unloading.
   void complete_cleaning(BoolObjectClosure* is_alive, bool class_unloading_occurred);

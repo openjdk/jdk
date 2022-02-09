@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -284,6 +284,10 @@ innerclass innerClass java/security/KeyStore$Entry outerClass java/security/KeyS
 innerclass innerClass java/security/KeyStore$Entry$Attribute outerClass java/security/KeyStore$Entry innerClassName Attribute flags 609
 method name engineGetAttributes descriptor (Ljava/lang/String;)Ljava/util/Set; flags 1 signature (Ljava/lang/String;)Ljava/util/Set<Ljava/security/KeyStore$Entry$Attribute;>;
 
+class name java/security/Provider
+-method name getServices descriptor ()Ljava/util/Set;
+method name getServices descriptor ()Ljava/util/Set; flags 1 signature ()Ljava/util/Set<Ljava/security/Provider$Service;>;
+
 class name java/security/SecureRandomParameters
 header extends java/lang/Object flags 601
 
@@ -388,6 +392,16 @@ class name java/util/HashSet
 header extends java/util/AbstractSet implements java/util/Set,java/lang/Cloneable,java/io/Serializable flags 21 signature <E:Ljava/lang/Object;>Ljava/util/AbstractSet<TE;>;Ljava/util/Set<TE;>;Ljava/lang/Cloneable;Ljava/io/Serializable;
 innerclass innerClass java/io/ObjectInputStream$GetField outerClass java/io/ObjectInputStream innerClassName GetField flags 409
 innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassName Entry flags 609
+
+class name java/util/Hashtable
+header extends java/util/Dictionary implements java/util/Map,java/lang/Cloneable,java/io/Serializable flags 21 signature <K:Ljava/lang/Object;V:Ljava/lang/Object;>Ljava/util/Dictionary<TK;TV;>;Ljava/util/Map<TK;TV;>;Ljava/lang/Cloneable;Ljava/io/Serializable;
+innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassName Entry flags 609
+innerclass innerClass java/io/ObjectInputStream$GetField outerClass java/io/ObjectInputStream innerClassName GetField flags 409
+
+class name java/util/IdentityHashMap
+header extends java/util/AbstractMap implements java/util/Map,java/io/Serializable,java/lang/Cloneable flags 21 signature <K:Ljava/lang/Object;V:Ljava/lang/Object;>Ljava/util/AbstractMap<TK;TV;>;Ljava/util/Map<TK;TV;>;Ljava/io/Serializable;Ljava/lang/Cloneable;
+innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassName Entry flags 609
+innerclass innerClass java/io/ObjectInputStream$GetField outerClass java/io/ObjectInputStream innerClassName GetField flags 409
 
 class name java/util/Locale$IsoCountryCode
 header extends java/lang/Enum nestHost java/util/Locale sealed true flags 4421 signature Ljava/lang/Enum<Ljava/util/Locale$IsoCountryCode;>;

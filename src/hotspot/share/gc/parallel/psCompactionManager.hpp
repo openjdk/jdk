@@ -97,6 +97,7 @@ class ParCompactionManager : public CHeapObj<mtGC> {
 
   static void initialize(ParMarkBitMap* mbm);
 
+  bool transfer_from_overflow_stack(ObjArrayTask& task);
  protected:
   // Array of task queues.  Needed by the task terminator.
   static RegionTaskQueueSet* region_task_queues()      { return _region_task_queues; }
@@ -147,7 +148,9 @@ class ParCompactionManager : public CHeapObj<mtGC> {
 
   RegionTaskQueue* region_stack()                { return &_region_stack; }
 
-  static ParCompactionManager* get_vmthread_cm() { return _manager_array[ParallelGCThreads]; }
+  // Get the compaction manager when doing evacuation work from the VM thread.
+  // Simply use the first compaction manager here.
+  static ParCompactionManager* get_vmthread_cm() { return _manager_array[0]; }
 
   ParCompactionManager();
 
