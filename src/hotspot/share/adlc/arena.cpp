@@ -24,7 +24,7 @@
 
 #include "adlc.hpp"
 
-void* AllocateHeap(size_t size) {
+void* AdlAllocateHeap(size_t size) {
   unsigned char* ptr = (unsigned char*) malloc(size);
   if (ptr == NULL && size != 0) {
     fprintf(stderr, "Error: Out of memory in ADLC\n"); // logging can cause crash!
@@ -34,7 +34,7 @@ void* AllocateHeap(size_t size) {
   return ptr;
 }
 
-void* ReAllocateHeap(void* old_ptr, size_t size) {
+void* AdlReAllocateHeap(void* old_ptr, size_t size) {
   unsigned char* ptr = (unsigned char*) realloc(old_ptr, size);
   if (ptr == NULL && size != 0) {
     fprintf(stderr, "Error: Out of memory in ADLC\n"); // logging can cause crash!
@@ -184,7 +184,7 @@ bool Arena::contains( const void *ptr ) const {
 // CHeapObj
 
 void* CHeapObj::operator new(size_t size) throw() {
-  return (void *) AllocateHeap(size);
+  return (void *) AdlAllocateHeap(size);
 }
 
 void CHeapObj::operator delete(void* p){

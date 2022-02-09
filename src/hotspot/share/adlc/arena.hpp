@@ -25,8 +25,8 @@
 #ifndef SHARE_ADLC_ARENA_HPP
 #define SHARE_ADLC_ARENA_HPP
 
-void* AllocateHeap(size_t size);
-void* ReAllocateHeap(void* old_ptr, size_t size);
+void* AdlAllocateHeap(size_t size);
+void* AdlReAllocateHeap(void* old_ptr, size_t size);
 
 // All classes in adlc may be derived
 // from one of the following allocation classes:
