@@ -114,11 +114,11 @@ public class Annotations extends JavacTestingAbstractProcessor {
                         }
                         case "dta" -> {
                             expectedDeclAnnos = "@Annotations.DTA";
-                            expectedType = "@Annotations.DTA java.lang.String";
+                            expectedType = "java.lang.@Annotations.DTA String";
                         }
                         case "ta" -> {
                             expectedDeclAnnos = "";
-                            expectedType = "@Annotations.TA java.lang.String";
+                            expectedType = "java.lang.@Annotations.TA String";
                         }
                         default -> {
                             throw new AssertionError("Unexpected variable: " + var);
@@ -133,7 +133,7 @@ public class Annotations extends JavacTestingAbstractProcessor {
                     String type = varType.toString();
                     if (!expectedType.equals(type)) {
                         throw new AssertionError("Unexpected type: " + type +
-                                                  " for: " + var.getName());
+                                                  " for: " + var.getName() + " expected " + expectedType);
                     }
                     return super.visitInstanceOf(node, p);
                 }

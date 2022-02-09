@@ -66,7 +66,7 @@ public class ArrayTypeToString extends JavacTestingAbstractProcessor {
                 // Normalize output by removing whitespace
                 s = s.replaceAll("\\s", "");
 
-                // Expected: "@Foo(0)java.lang.String@Foo(3)[]@Foo(2)[]@Foo(1)[]"
+                // Expected: "java.lang.@Foo(0)String@Foo(1)[]@Foo(2)[]@Foo(3)[]"
                 processingEnv.getMessager().printNote(s);
             }
         }
