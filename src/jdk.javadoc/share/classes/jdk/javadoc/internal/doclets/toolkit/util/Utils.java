@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3109,7 +3109,7 @@ public class Utils {
         return el != null && (el.getKind().isClass() || el.getKind().isInterface());
     }
 
-    private boolean hasNoProviewAnnotation(Element el) {
+    private boolean hasNoPreviewAnnotation(Element el) {
         return el.getAnnotationMirrors()
                  .stream()
                  .anyMatch(am -> "jdk.internal.javac.NoPreview".equals(getQualifiedTypeName(am.getAnnotationType())));
@@ -3121,14 +3121,14 @@ public class Utils {
             PreviewSummary previewAPIs = declaredUsingPreviewAPIs(el);
             Element enclosing = el.getEnclosingElement();
 
-            return (!previewLanguageFeaturesUsed(el).isEmpty() ||
-                    configuration.workArounds.isPreviewAPI(el) ||
-                    (!isClassOrInterface(el) && isClassOrInterface(enclosing) &&
-                    configuration.workArounds.isPreviewAPI(enclosing)) ||
-                    !previewAPIs.previewAPI.isEmpty() ||
-                    !previewAPIs.reflectivePreviewAPI.isEmpty() ||
-                    !previewAPIs.declaredUsingPreviewFeature.isEmpty()) &&
-                   !hasNoProviewAnnotation(el);
+            return    (   !previewLanguageFeaturesUsed(el).isEmpty()
+                       || configuration.workArounds.isPreviewAPI(el)
+                       || (   !isClassOrInterface(el) && isClassOrInterface(enclosing)
+                           && configuration.workArounds.isPreviewAPI(enclosing))
+                       || !previewAPIs.previewAPI.isEmpty()
+                       || !previewAPIs.reflectivePreviewAPI.isEmpty()
+                       || !previewAPIs.declaredUsingPreviewFeature.isEmpty())
+                   && !hasNoPreviewAnnotation(el);
         }
     };
 
