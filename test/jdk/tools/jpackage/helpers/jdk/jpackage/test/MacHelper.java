@@ -252,8 +252,9 @@ public class MacHelper {
 
     static Path getInstallationDirectory(JPackageCommand cmd) {
         cmd.verifyIsOfType(PackageType.MAC);
-        return Path.of(cmd.getArgumentValue("--install-dir", () -> "/Applications"))
-                .resolve(cmd.name() + (cmd.isRuntime() ? "" : ".app"));
+        return Path.of(cmd.getArgumentValue("--install-dir",
+                () -> cmd.isRuntime() ? "/Library/Java/JavaVirtualMachines" : "/Applications")).resolve(
+                        cmd.name() + (cmd.isRuntime() ? "" : ".app"));
     }
 
     static Path getServicePlistFilePath(JPackageCommand cmd, String launcherName) {
