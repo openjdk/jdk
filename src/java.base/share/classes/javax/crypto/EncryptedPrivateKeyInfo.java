@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,12 +83,12 @@ public class EncryptedPrivateKeyInfo {
                 "must be non-null");
         }
 
-        DerValue val = new DerValue(encoded);
+        this.encoded = encoded.clone();
+        DerValue val = DerValue.wrap(this.encoded);
         if (val.tag != DerValue.tag_Sequence) {
             throw new IOException("DER header error: no SEQ tag");
         }
 
-        this.encoded = encoded.clone();
         DerValue[] seq = new DerValue[2];
 
         seq[0] = val.data.getDerValue();
