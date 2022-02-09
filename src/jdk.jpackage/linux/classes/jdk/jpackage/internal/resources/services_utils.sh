@@ -1,7 +1,7 @@
 #
 # Register $@ unit files with systemd service.
 #
-register_units ()
+register_services ()
 {
   for unit in "$@"; do
     systemctl enable --now "$unit"
@@ -12,7 +12,7 @@ register_units ()
 #
 # Unregister $@ unit files with systemd service.
 #
-unregister_units ()
+unregister_services ()
 {
   for unit in "$@"; do
     if file_belongs_to_single_package "$unit"; then

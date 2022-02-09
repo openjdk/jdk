@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -50,21 +51,20 @@ abstract class ShellCustomAction {
 
     abstract Map<String, String> create() throws IOException;
 
-    static String stringifyShellCommands(String... commands) {
+    protected static String stringifyShellCommands(String... commands) {
         return stringifyShellCommands(Arrays.asList(commands));
     }
 
-    static String stringifyShellCommands(List<String> commands) {
-        return String.join(System.lineSeparator(), commands.stream().filter(
+    protected static String stringifyShellCommands(List<String> commands) {
+        return String.join("\n", commands.stream().filter(
                 s -> s != null && !s.isEmpty()).toList());
     }
 
     protected static String stringifyTextFile(String resourceName) throws IOException {
         try ( InputStream is = OverridableResource.readDefault(resourceName);
-                 InputStreamReader isr = new InputStreamReader(is);
-                 BufferedReader reader = new BufferedReader(isr)) {
-            return reader.lines().collect(Collectors.joining(
-                    System.lineSeparator()));
+                InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8);
+                BufferedReader reader = new BufferedReader(isr)) {
+            return reader.lines().collect(Collectors.joining("\n"));
         }
     }
 

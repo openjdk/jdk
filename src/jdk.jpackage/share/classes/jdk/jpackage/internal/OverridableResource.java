@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,6 +186,10 @@ final class OverridableResource {
         });
     }
 
+    Source saveInFolder(Path folderPath) throws IOException {
+        return saveToFile(folderPath.resolve(getPublicName()));
+    }
+
     Source saveToFile(Path dest) throws IOException {
         if (dest == null) {
             return sendToConsumer(null);
@@ -263,12 +267,8 @@ final class OverridableResource {
             final Path customResource = resourceDir.resolve(resourceName);
             used = Files.exists(customResource);
             if (used && dest != null) {
-                final Path logResourceName;
-                if (logPublicName != null) {
-                    logResourceName = logPublicName.normalize();
-                } else {
-                    logResourceName = resourceName.normalize();
-                }
+                final Path logResourceName = Optional.ofNullable(logPublicName).orElse(
+                        resourceName).normalize();
 
                 Log.verbose(MessageFormat.format(I18N.getString(
                         "message.using-custom-resource"), getPrintableCategory(),

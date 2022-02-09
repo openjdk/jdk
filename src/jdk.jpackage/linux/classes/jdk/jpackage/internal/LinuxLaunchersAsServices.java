@@ -26,98 +26,46 @@ package jdk.jpackage.internal;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import jdk.jpackage.internal.AppImageFile.LauncherInfo;
 import static jdk.jpackage.internal.OverridableResource.createResource;
 import static jdk.jpackage.internal.ShellCustomAction.escapedInstalledLauncherPath;
-import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 
 /**
- * Helper to install launchers as services.
+ * Helper to install launchers as services with "systemd".
  */
-final class LinuxLaunchersAsServices extends ShellCustomAction {
-
-    private static final String COMMANDS_INSTALL = "LAUNCHER_AS_SERVICE_COMMANDS_INSTALL";
-    private static final String COMMANDS_UNINSTALL = "LAUNCHER_AS_SERVICE_COMMANDS_UNINSTALL";
-    private static final String SCRIPTS = "LAUNCHER_AS_SERVICE_SCRIPTS";
+public final class LinuxLaunchersAsServices extends UnixLaunchersAsServices {
 
     private LinuxLaunchersAsServices(PlatformPackage thePackage,
-            Map<String, ? super Object> params) throws IOException {
-
-        this.thePackage = thePackage;
-
-        // Read launchers information
-        launchers = AppImageFile.getLaunchers(PREDEFINED_APP_IMAGE.fetchFrom(
-                params), params).stream().filter(LauncherInfo::isService).map(
-                li -> new Launcher(li.getName(), params)).toList();
+            Map<String, Object> params) throws IOException {
+        super(thePackage, REQUIRED_PACKAGES, params, li -> {
+            return new Launcher(thePackage, li.getName(), params);
+        });
     }
 
     static LinuxLaunchersAsServices create(PlatformPackage thePackage,
-            Map<String, ? super Object> params) throws IOException {
+            Map<String, Object> params) throws IOException {
         if (StandardBundlerParam.isRuntimeInstaller(params)) {
             return null;
         }
         return new LinuxLaunchersAsServices(thePackage, params);
     }
 
-    @Override
-    List<String> requiredPackages() {
-        if (launchers.isEmpty()) {
-            return Collections.emptyList();
-        }
-        return List.of("systemd", "coreutils" /* /usr/bin/wc */,
-                "grep");
+    public static Path getServiceUnitFileName(String packageName,
+            String launcherName) {
+        String baseName = launcherName.replaceAll("[\\s]", "_");
+        return Path.of(packageName + "-" + baseName + ".service");
     }
 
-    @Override
-    List<String> replacementStringIds() {
-        return List.of(COMMANDS_INSTALL, COMMANDS_UNINSTALL, SCRIPTS);
-    }
+    private static class Launcher extends UnixLauncherAsService {
 
-    @Override
-    Map<String, String> create() throws IOException {
-        Map<String, String> data = new HashMap<>();
-
-        if (launchers.isEmpty()) {
-            return data;
-        }
-
-        final List<String> installedUnitFiles = launchers.stream().map(
-                launcher -> launcher.unitFilePath(Path.of("/")).toString()).toList();
-
-        Function<String, String> strigifier = cmd -> {
-            return stringifyShellCommands(Stream.of(List.of(
-                    cmd), installedUnitFiles).flatMap(x -> x.stream()).collect(
-                    Collectors.joining(" ")));
-        };
-
-        data.put(SCRIPTS, stringifyTextFile("service_utils.sh"));
-
-        data.put(COMMANDS_INSTALL, strigifier.apply("register_units"));
-        data.put(COMMANDS_UNINSTALL, strigifier.apply("unregister_units"));
-
-        for (var launcher : launchers) {
-            launcher.createUnitFile();
-        }
-
-        return data;
-    }
-
-    private class Launcher extends LauncherAsService {
-
-        Launcher(String name, Map<String, ? super Object> mainParams) {
+        Launcher(PlatformPackage thePackage, String name,
+                Map<String, Object> mainParams) {
             super(name, mainParams, createResource("unit-template.service",
                     mainParams).setCategory(I18N.getString(
                             "resource.systemd-unit-file")));
 
-            String baseName = getName().replaceAll("[\\s]", "_") + ".service";
-            unitFilename = Path.of(thePackage.name() + "-" + baseName);
+            unitFilename = getServiceUnitFileName(thePackage.name(), getName());
 
             getResource()
                     .setPublicName(unitFilename)
@@ -125,17 +73,14 @@ final class LinuxLaunchersAsServices extends ShellCustomAction {
                             escapedInstalledLauncherPath(thePackage, getName()));
         }
 
-        void createUnitFile() throws IOException {
-            getResource().saveToFile(unitFilePath(thePackage.sourceRoot()));
-        }
-
-        Path unitFilePath(Path root) {
+        @Override
+        Path descriptorFilePath(Path root) {
             return root.resolve("lib/systemd/system").resolve(unitFilename);
         }
 
         private final Path unitFilename;
     }
 
-    private final PlatformPackage thePackage;
-    private final List<Launcher> launchers;
+    private final static List<String> REQUIRED_PACKAGES = List.of("systemd",
+            "coreutils" /* /usr/bin/wc */, "grep");
 }
