@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,6 +124,19 @@ public class AdditionalLauncher {
         test.addLauncherName(name);
         test.addInitializer(this::initialize);
         test.addInstallVerifier(this::verify);
+    }
+
+    static void forEachAdditionalLauncher(JPackageCommand cmd,
+            BiConsumer<String, Path> consumer) {
+        var argIt = cmd.getAllArguments().iterator();
+        while (argIt.hasNext()) {
+            if ("--add-launcher".equals(argIt.next())) {
+                // <launcherName>=<propFile>
+                var arg = argIt.next();
+                var items = arg.split("=", 2);
+                consumer.accept(items[0], Path.of(items[1]));
+            }
+        }
     }
 
     private void initialize(JPackageCommand cmd) {

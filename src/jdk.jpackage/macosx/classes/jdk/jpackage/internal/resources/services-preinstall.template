@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+
+LAUNCHER_AS_SERVICE_SCRIPTS
+
+unregister_services `pkgutil --files SERVICES_PACKAGE_ID`

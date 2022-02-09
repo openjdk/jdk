@@ -23,9 +23,17 @@
 package jdk.jpackage.test;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.UnaryOperator;
+import java.util.regex.Pattern;
+import jdk.jpackage.internal.IOUtils;
 
 public final class LauncherAsServiceVerifier {
 
@@ -88,6 +96,25 @@ public final class LauncherAsServiceVerifier {
         }
     }
 
+    static List<String> getLaunchersAsServices(JPackageCommand cmd) {
+        List<String> launcherNames = new ArrayList<>();
+
+        if (cmd.hasArgument("--launcher-as-service")) {
+            launcherNames.add(null);
+        }
+
+        AdditionalLauncher.forEachAdditionalLauncher(cmd,
+                Functional.ThrowingBiConsumer.toBiConsumer(
+                        (launcherName, propFilePath) -> {
+                            if (Files.readAllLines(propFilePath).stream().anyMatch(
+                                    "launcher-as-service"::equals)) {
+                                launcherNames.add(launcherName);
+                            }
+                        }));
+
+        return launcherNames;
+    }
+
     private boolean canVerifyInstall(JPackageCommand cmd) throws IOException {
         String msg = String.format(
                 "Not verifying contents of test output file [%s] for %s launcher",
@@ -125,6 +152,7 @@ public final class LauncherAsServiceVerifier {
                         .verifyOutput();
             }
         });
+        pkg.addInstallVerifier(this::verify);
     }
 
     private void applyToAdditionalLauncher(PackageTest pkg) {
@@ -135,12 +163,71 @@ public final class LauncherAsServiceVerifier {
                     delayInstallVerify();
                     super.verify(cmd);
                 }
+                LauncherAsServiceVerifier.this.verify(cmd);
             }
         }.setLauncherAsService()
         .addJavaOptions("-Djpackage.test.appOutput=" + appOutputPath.toString())
         .addJavaOptions("-Djpackage.test.noexit=true")
         .addDefaultArguments(expectedValue)
         .applyTo(pkg);
+    }
+
+    private void verify(JPackageCommand cmd) throws IOException {
+        if (TKit.isWindows()) {
+            TKit.assertFileExists(cmd.appLayout().launchersDirectory().resolve(
+                    "service-installer.exe"));
+        } else {
+            var installedLauncherPath = Optional.ofNullable(
+                    cmd.unpackedPackageDirectory()).map(
+                    path -> (UnaryOperator<Path>) (v -> {
+                        return Path.of("/").resolve(path.relativize(v));
+                    })).orElseGet(UnaryOperator::identity).apply(
+                    cmd.appLauncherPath(launcherName));
+            if (TKit.isLinux()) {
+                verifyLinuxUnitFile(cmd, installedLauncherPath);
+            } else if (TKit.isOSX()) {
+                verifyMacDaemonPlistFile(cmd, installedLauncherPath);
+            }
+        }
+    }
+
+    private void verifyLinuxUnitFile(JPackageCommand cmd,
+            Path installedLauncherPath) throws IOException {
+
+        var serviceUnitFile = cmd.pathToUnpackedPackageFile(Path.of(
+                "/lib/systemd/system").resolve(getServiceUnitFileName(
+                        LinuxHelper.getPackageName(cmd), Optional.ofNullable(
+                        launcherName).orElseGet(cmd::name))));
+
+        TKit.traceFileContents(serviceUnitFile, "unit file");
+
+        var execStartValue = (Pattern.compile("\\s").matcher(
+                installedLauncherPath.toString()).find() ? String.format(
+                "\"%s\"", installedLauncherPath) : installedLauncherPath);
+        TKit.assertTextStream("ExecStart=" + execStartValue)
+                .label("unit file")
+                .predicate(String::equals)
+                .apply(Files.readAllLines(serviceUnitFile).stream());
+    }
+
+    private void verifyMacDaemonPlistFile(JPackageCommand cmd,
+            Path installedLauncherPath) throws IOException {
+
+        var servicePlistFile = MacHelper.getServicePlistFilePath(cmd, launcherName);
+
+        TKit.traceFileContents(servicePlistFile, "property file");
+
+        var servicePlist = MacHelper.readPList(servicePlistFile);
+
+        var args = servicePlist.queryArrayValue("ProgramArguments");
+        TKit.assertEquals(1, args.size(),
+                "Check number of array elements in 'ProgramArguments' property in the property file");
+        TKit.assertEquals(installedLauncherPath.toString(), args.get(0),
+                "Check path to launcher in 'ProgramArguments' property in the property file");
+
+        var expectedLabel = IOUtils.replaceSuffix(servicePlistFile.getFileName(), "").toString();
+        TKit.assertEquals(expectedLabel, servicePlist.queryValue("Label"),
+                "Check value of 'Label' property in the property file");
     }
 
     private static void delayInstallVerify() {
@@ -152,7 +239,34 @@ public final class LauncherAsServiceVerifier {
         return Path.of(System.getProperty("java.io.tmpdir"));
     }
 
+    private static String getServiceUnitFileName(String packageName,
+            String launcherName) {
+        try {
+            return getServiceUnitFileName.invoke(null, packageName, launcherName).toString();
+        } catch (InvocationTargetException | IllegalAccessException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private static Method initGetServiceUnitFileName() {
+        try {
+            return Class.forName(
+                    "jdk.jpackage.internal.LinuxLaunchersAsServices").getMethod(
+                            "getServiceUnitFileName", String.class, String.class);
+        } catch (ClassNotFoundException ex) {
+            if (TKit.isLinux()) {
+                throw new RuntimeException(ex);
+            } else {
+                return null;
+            }
+        } catch (NoSuchMethodException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
     private final String expectedValue;
     private final String launcherName;
     private final Path appOutputPath;
+
+    private final static Method getServiceUnitFileName = initGetServiceUnitFileName();
 }

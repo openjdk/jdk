@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
-import java.util.function.Consumer;
+import java.util.Set;
 import java.util.stream.Stream;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.Annotations.Test;
@@ -36,7 +36,7 @@ import jdk.jpackage.test.TKit;
 
 /**
  * Launcher as service packaging test. Output of the test should be
- * servicetest*.* updateservicetest*.* and package bundles.
+ * servicetest*.* and updateservicetest*.* package bundles.
  */
 
 /*
@@ -44,7 +44,6 @@ import jdk.jpackage.test.TKit;
  * @summary Launcher as service packaging test
  * @library ../helpers
  * @key jpackagePlatformPackage
- * @build jtreg.SkippedException
  * @build jdk.jpackage.test.*
  * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile ServiceTest.java
@@ -84,39 +83,36 @@ public class ServiceTest {
     }
 
     @Test
-    public void test() throws IOException {
-        var pkgInitializer = configureWinServiceInstaller();
-        var pkg = new PackageTest().addHelloAppInitializer(null);
+    public void test() throws Throwable {
+        var testInitializer = createTestInitializer();
+        var pkg = createPackageTest().addHelloAppInitializer("com.foo.ServiceTest");
         build().setExpectedValue("A1").applyTo(pkg);
-        pkgInitializer.accept(pkg);
+        testInitializer.applyTo(pkg);
         pkg.run();
     }
 
     @Test
-    public void testUpdate() throws IOException {
-        final String upgradeCode = "4050AD4D-D6CC-452A-9CB0-58E5FA8C410F";
+    public void testUpdate() throws Throwable {
+        var testInitializer = createTestInitializer().setUpgradeCode(
+                "4050AD4D-D6CC-452A-9CB0-58E5FA8C410F");
 
-        var pkgInitializer = configureWinServiceInstaller();
+        // Package name will be used as package ID on macOS. Keep it the same for
+        // both packages to allow update installation.
+        final String packageName = "com.bar";
 
-        var pkg = new PackageTest()
-                .addHelloAppInitializer(null)
+        var pkg = createPackageTest()
+                .addHelloAppInitializer(String.join(".", packageName, "Hello"))
                 .disablePackageUninstaller();
-        pkg.forTypes(PackageType.WINDOWS, () -> pkg.addInitializer(cmd -> {
-            cmd.addArguments("--win-upgrade-uuid", upgradeCode);
-        }));
-        pkgInitializer.accept(pkg);
+        testInitializer.applyTo(pkg);
 
         build().setExpectedValue("Default").applyTo(pkg);
 
-        var pkg2 = new PackageTest()
-                .addHelloAppInitializer(null)
+        var pkg2 = createPackageTest()
+                .addHelloAppInitializer(String.join(".", packageName, "Bye"))
                 .addInitializer(cmd -> {
                     cmd.addArguments("--app-version", "2.0");
                 });
-        pkg2.forTypes(PackageType.WINDOWS, () -> pkg2.addInitializer(cmd -> {
-            cmd.addArguments("--win-upgrade-uuid", upgradeCode);
-        }));
-        pkgInitializer.accept(pkg2);
+        testInitializer.applyTo(pkg2);
 
         var builder = build()
                 .setLauncherName("foo")
@@ -134,23 +130,43 @@ public class ServiceTest {
         new PackageTest.Group(pkg, pkg2).run();
     }
 
-    private Consumer<PackageTest> configureWinServiceInstaller() throws
-            IOException {
-        if (winServiceInstaller == null) {
-            return test -> {
-            };
+    private final class TestInitializer {
+
+        TestInitializer setUpgradeCode(String v) {
+            upgradeCode = v;
+            return this;
         }
 
-        var resourceDir = TKit.createTempDirectory("resource-dir");
-        Files.copy(winServiceInstaller, resourceDir.resolve(
-                "service-installer.exe"));
+        void applyTo(PackageTest test) throws IOException {
+            if (winServiceInstaller != null) {
+                var resourceDir = TKit.createTempDirectory("resource-dir");
+                Files.copy(winServiceInstaller, resourceDir.resolve(
+                        "service-installer.exe"));
 
-        return test -> {
-            test.forTypes(PackageType.WINDOWS, () -> test.addInitializer(
-                    cmd -> {
-                        cmd.addArguments("--resource-dir", resourceDir);
-                    }));
-        };
+                test.forTypes(PackageType.WINDOWS, () -> test.addInitializer(cmd -> {
+                    cmd.addArguments("--resource-dir", resourceDir);
+                }));
+            }
+
+            if (upgradeCode != null) {
+                test.forTypes(PackageType.WINDOWS, () -> test.addInitializer(cmd -> {
+                    cmd.addArguments("--win-upgrade-uuid", upgradeCode);
+                }));
+            }
+        }
+
+        private String upgradeCode;
+    }
+
+    private TestInitializer createTestInitializer() {
+        return new TestInitializer();
+    }
+    
+    private static PackageTest createPackageTest() {
+        // DMG not supported
+        return new PackageTest().forTypes(Stream.of(PackageType.LINUX,
+                PackageType.WINDOWS, Set.of(PackageType.MAC_PKG)).flatMap(
+                x -> x.stream()).toList());
     }
 
     private final Path winServiceInstaller;
