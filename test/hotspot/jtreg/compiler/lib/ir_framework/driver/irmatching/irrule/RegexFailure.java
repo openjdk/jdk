@@ -24,6 +24,7 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Base class representing an IR matching failure of a regex of a check attribute of an IR rule.
@@ -40,7 +41,15 @@ abstract class RegexFailure {
     public RegexFailure(String nodeRegex, int nodeId, List<String> matches) {
         this.nodeRegex = nodeRegex;
         this.nodeId = nodeId;
-        this.matches = matches;
+        this.matches = addWhiteSpacePrefixForEachLine(matches);
+    }
+
+    private List<String> addWhiteSpacePrefixForEachLine(List<String> matches) {
+        return matches
+                .stream()
+                .map(s -> s.replaceAll(System.lineSeparator(), System.lineSeparator()
+                                                               + getMatchedNodesItemWhiteSpace() + "  "))
+                .collect(Collectors.toList());
     }
 
     abstract public String buildFailureMessage();
@@ -71,7 +80,11 @@ abstract class RegexFailure {
 
     protected String getMatchesNodeLines() {
         StringBuilder builder = new StringBuilder();
-        matches.forEach(match -> builder.append("             ").append(match).append(System.lineSeparator()));
+        matches.forEach(match -> builder.append(getMatchedNodesItemWhiteSpace()).append("* ").append(match).append(System.lineSeparator()));
         return builder.toString();
+    }
+
+    private String getMatchedNodesItemWhiteSpace() {
+        return "           ";
     }
 }

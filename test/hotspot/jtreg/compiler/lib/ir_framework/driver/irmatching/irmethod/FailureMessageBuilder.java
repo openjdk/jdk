@@ -33,16 +33,11 @@ import java.util.List;
  * @see IRMethodMatchResult
  */
 abstract class FailureMessageBuilder {
-    private final IRMethod irMethod;
+    protected final IRMethod irMethod;
 
     public FailureMessageBuilder(IRMethod irMethod) {
         this.irMethod = irMethod;
     }
 
     abstract public String build();
-
-    protected String getMethodLine() {
-        return " Method \"" + irMethod.getMethod() + "\":" + System.lineSeparator();
-    }
-
 }

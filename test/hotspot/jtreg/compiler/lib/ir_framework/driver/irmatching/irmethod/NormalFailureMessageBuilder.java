@@ -26,6 +26,7 @@ package compiler.lib.ir_framework.driver.irmatching.irmethod;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Class to build the failure message output for an IR method for failed IR rules.
@@ -37,7 +38,9 @@ class NormalFailureMessageBuilder extends FailureMessageBuilder {
 
     public NormalFailureMessageBuilder(IRMethod irMethod, List<IRRuleMatchResult> irRulesMatchResults) {
         super(irMethod);
-        this.irRulesMatchResults = irRulesMatchResults;
+        this.irRulesMatchResults = irRulesMatchResults.stream()
+                                                      .filter(IRRuleMatchResult::fail)
+                                                      .collect(Collectors.toList());
     }
 
     @Override
@@ -45,12 +48,16 @@ class NormalFailureMessageBuilder extends FailureMessageBuilder {
         return getMethodLine() + getIRRulesFailureMessage();
     }
 
+    private String getMethodLine() {
+        int failures = irRulesMatchResults.size();
+        return " Method \"" + irMethod.getMethod() + "\" - [Failed IR rules: " + failures + "]:"
+               + System.lineSeparator();
+    }
+
     private String getIRRulesFailureMessage() {
         StringBuilder failMsg = new StringBuilder();
         for (IRRuleMatchResult irRuleResult : irRulesMatchResults) {
-            if (irRuleResult.fail()) {
-                failMsg.append(irRuleResult.buildFailureMessage());
-            }
+            failMsg.append(irRuleResult.buildFailureMessage());
         }
         return failMsg.toString();
     }

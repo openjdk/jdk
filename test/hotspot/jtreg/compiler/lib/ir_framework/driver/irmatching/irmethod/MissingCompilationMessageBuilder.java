@@ -48,5 +48,7 @@ class MissingCompilationMessageBuilder extends FailureMessageBuilder {
                + "or used a @Run method in STANDALONE mode? In the latter case, make sure to always trigger a C2 "
                + "compilation by " + "invoking the test enough times.";
     }
-
+    private String getMethodLine() {
+        return " Method \"" + irMethod.getMethod() + "\":" + System.lineSeparator();
+    }
 }
