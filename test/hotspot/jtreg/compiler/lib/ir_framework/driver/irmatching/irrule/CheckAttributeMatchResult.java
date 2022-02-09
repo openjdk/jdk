@@ -41,9 +41,9 @@ abstract class CheckAttributeMatchResult implements MatchResult {
         return regexFailures != null;
     }
 
-    public int getMatchesCount() {
+    public int getMatchedNodesCount() {
         if (fail()) {
-            return regexFailures.stream().map(RegexFailure::getMatchesCount).reduce(0, Integer::sum);
+            return regexFailures.stream().map(RegexFailure::getMatchedNodesCount).reduce(0, Integer::sum);
         } else {
             return 0;
         }

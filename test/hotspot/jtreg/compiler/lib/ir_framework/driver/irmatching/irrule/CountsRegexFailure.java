@@ -33,13 +33,20 @@ import java.util.List;
  * @see Counts
  */
 class CountsRegexFailure extends RegexFailure {
-    String failedComparison;
+    private final String failedComparison;
+    private final int foundMatchesCount;
 
-    public CountsRegexFailure(String nodeRegex, int nodeId, int foundValue, Comparison<Integer> comparison,
+    public CountsRegexFailure(String nodeRegex, int nodeId, int foundMatchesCount, Comparison<Integer> comparison, List<String> matches) {
                               List<String> matches) {
         super(nodeRegex, nodeId, matches);
-        this.failedComparison = "[found] " + foundValue + " " + comparison.getComparator() + " "
+        this.failedComparison = "[found] " + foundMatchesCount + " " + comparison.getComparator() + " "
                                 + comparison.getGivenValue() + " [given]";
+        this.foundMatchesCount = foundMatchesCount;
+    }
+
+    @Override
+    public int getMatchedNodesCount() {
+        return foundMatchesCount;
     }
 
     @Override
@@ -50,7 +57,7 @@ class CountsRegexFailure extends RegexFailure {
     }
 
     private String getFailedComparison() {
-        return "         - Failed comparison: " + failedComparison + System.lineSeparator();
+        return "           - Failed comparison: " + failedComparison + System.lineSeparator();
     }
 
     @Override
@@ -63,7 +70,7 @@ class CountsRegexFailure extends RegexFailure {
     }
 
     private String getEmptyNodeMatchesLine() {
-        return getMatchedNodesWhiteSpace() + "- No nodes matched!" + System.lineSeparator();
+        return getMatchedNodesHeaderWhiteSpace() + "- No nodes matched!" + System.lineSeparator();
     }
 
     @Override

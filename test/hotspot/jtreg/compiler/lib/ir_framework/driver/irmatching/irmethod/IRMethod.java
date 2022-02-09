@@ -30,10 +30,8 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.IRRule;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Helper class to store information about a method that needs to be IR matched.
@@ -41,10 +39,9 @@ import java.util.Map;
 public class IRMethod {
     private final Method method;
     private final List<IRRule> irRules;
-    private final StringBuilder completeOutputBuilder;
     private String completeOutput;
-    private Map<CompilePhase, String> idealOutputMap;
     private String optoAssemblyOutput;
+    private final Map<CompilePhase, String> outputMap;
 
     public IRMethod(Method method, int[] ruleIds, IR[] irAnnos) {
         this.method = method;
@@ -52,10 +49,9 @@ public class IRMethod {
         for (int i : ruleIds) {
             irRules.add(new IRRule(this, i, irAnnos[i - 1]));
         }
-        this.completeOutputBuilder = new StringBuilder();
         this.completeOutput = "";
-        this.idealOutputMap = new HashMap<>();
         this.optoAssemblyOutput = "";
+        this.outputMap = new LinkedHashMap<>(); // Keep order of insertion
     }
 
     public Method getMethod() {
@@ -69,18 +65,14 @@ public class IRMethod {
      */
     public void setIdealOutput(String idealOutput, CompilePhase phase) {
         String idealOutputWithHeader = "PrintIdeal" + getPhaseNameString(phase) + ":" + System.lineSeparator() + idealOutput;
-        idealOutputMap.put(phase, idealOutputWithHeader);
-        completeOutputBuilder.append(idealOutputWithHeader);
+        outputMap.put(phase, idealOutputWithHeader);
+        if (phase == CompilePhase.PRINT_IDEAL) {
+            outputMap.put(CompilePhase.DEFAULT, idealOutput);
+        }
     }
 
     private String getPhaseNameString(CompilePhase phase) {
-        String result;
-        if (phase == CompilePhase.DEFAULT) {
-            result = "";
-        } else {
-            result = " - " + phase.getName();
-        }
-        return result;
+        return " - " + phase.getName();
     }
 
     /**
@@ -88,22 +80,34 @@ public class IRMethod {
      */
     public void setOptoAssemblyOutput(String optoAssemblyOutput) {
         this.optoAssemblyOutput = "PrintOptoAssembly:" + System.lineSeparator() + optoAssemblyOutput;
-        completeOutputBuilder.append(System.lineSeparator()).append(System.lineSeparator()).append(this.optoAssemblyOutput);
+        outputMap.put(CompilePhase.PRINT_OPTO_ASSEMBLY, this.optoAssemblyOutput);
+        String idealOutput = outputMap.get(CompilePhase.DEFAULT);
+        TestFramework.check(idealOutput != null && !idealOutput.isEmpty(), "must be non-empty");
+        outputMap.put(CompilePhase.DEFAULT, idealOutput + System.lineSeparator() + System.lineSeparator()
+                                            + this.optoAssemblyOutput);
     }
 
     public String getCompleteOutput() {
         if (completeOutput.isEmpty()) {
-            completeOutput = completeOutputBuilder.toString();
+            completeOutput = createCompleteOutput();
         }
         return completeOutput;
     }
 
-    public String getIdealOutput(CompilePhase phase) {
-        return idealOutputMap.get(phase);
+    private String createCompleteOutput() {
+        String idealOutputs = outputMap.entrySet().stream()
+                                       .filter(e -> e.getKey() == CompilePhase.PRINT_OPTO_ASSEMBLY)
+                                       .map(Map.Entry::getValue)
+                                       .collect(Collectors.joining(System.lineSeparator() + System.lineSeparator()));
+        if (!optoAssemblyOutput.isEmpty()) {
+            // PrintOptoAssembly output is reported before ideal output PHASE_FINAL. Put PrintOptoAssembly output last.
+            return idealOutputs + System.lineSeparator() + System.lineSeparator() + optoAssemblyOutput;
+        }
+        return idealOutputs;
     }
 
-    public String getOptoAssemblyOutput() {
-        return optoAssemblyOutput;
+    public String getOutput(CompilePhase phase) {
+        return outputMap.get(phase);
     }
 
     /**
@@ -112,16 +116,16 @@ public class IRMethod {
     public IRMethodMatchResult applyIRRules() {
         TestFramework.check(!irRules.isEmpty(), "IRMethod cannot be created if there are no IR rules to apply");
         List<IRRuleMatchResult> results = new ArrayList<>();
-        if (!getCompleteOutput().isEmpty()) {
-            return getNormalMatchResult(results);
-        } else {
+        if (getCompleteOutput().isEmpty()) {
             return new MissingCompilationResult(this, irRules.size());
+        } else {
+            return getNormalMatchResult(results);
         }
     }
 
     private NormalMatchResult getNormalMatchResult(List<IRRuleMatchResult> results) {
         for (IRRule irRule : irRules) {
-            IRRuleMatchResult result = irRule.applyCheckAttribute();
+            IRRuleMatchResult result = irRule.applyCheckAttributesForPhases();
             if (result.fail()) {
                 results.add(result);
             }

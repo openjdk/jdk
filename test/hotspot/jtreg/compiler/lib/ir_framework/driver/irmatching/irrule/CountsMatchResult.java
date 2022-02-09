@@ -43,7 +43,7 @@ class CountsMatchResult extends CheckAttributeMatchResult {
 
     @Override
     public String buildFailureMessage() {
-        return "     - counts: Graph contains wrong number of nodes:" + System.lineSeparator()
+        return "       - counts: Graph contains wrong number of nodes:" + System.lineSeparator()
                + collectRegexFailureMessages();
     }
 }

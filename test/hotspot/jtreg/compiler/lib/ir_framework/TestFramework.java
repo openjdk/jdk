@@ -349,10 +349,27 @@ public class TestFramework {
         for (Method m : testClass.getDeclaredMethods()) {
             for (IR irAnno : m.getAnnotationsByType(IR.class)) {
                 TestFormat.checkNoThrow(irAnno.phase().length > 0,
-                                        "@IR rule " + irAnno + " must specify a non-empty list of compile phases \"phase\" at " + m);
+                                        "@IR rule " + irAnno + " must specify a non-empty list of compile " +
+                                        "phases \"phase\" at " + m);
+                TestFormat.checkNoThrow(hasNotDefaultAndIdealOrOpto(irAnno),
+                                        "Cannot use CompilePhase.DEFAULT together with CompilePhase.PRINT_IDEAL " +
+                                        "and/or CompilePhase.PRINT_OPTO_ASSEMBLY in @IR rule " + irAnno + " at " + m);
             }
         }
         TestFormat.throwIfAnyFailures();
+    }
+
+    private boolean hasNotDefaultAndIdealOrOpto(IR irAnno) {
+        boolean hasDefault = false;
+        boolean hasOptoOrIdeal = false;
+        for (CompilePhase phase : irAnno.phase()) {
+            if (phase == CompilePhase.DEFAULT) {
+                hasDefault = true;
+            } else if (phase == CompilePhase.PRINT_IDEAL || phase == CompilePhase.PRINT_OPTO_ASSEMBLY) {
+                hasOptoOrIdeal = true;
+            }
+        }
+        return !(hasDefault && hasOptoOrIdeal);
     }
 
     /**

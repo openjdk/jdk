@@ -52,14 +52,12 @@ abstract class RegexFailure {
                 .collect(Collectors.toList());
     }
 
+    abstract public int getMatchedNodesCount();
+
     abstract public String buildFailureMessage();
 
-    public int getMatchesCount() {
-        return matches.size();
-    }
-
     protected String getRegexLine() {
-        return "       * Regex " + nodeId + ": " + nodeRegex + System.lineSeparator();
+        return "         * Regex " + nodeId + ": " + nodeRegex + System.lineSeparator();
     }
 
     protected String getMatchedNodesBlock() {
@@ -68,12 +66,12 @@ abstract class RegexFailure {
 
     protected String getMatchedNodesHeader() {
         int matchCount = matches.size();
-        return "" + getMatchedNodesWhiteSpace() + "- " + getMatchedPrefix() + " node"
-               + (matchCount != 1 ? "s (" + matchCount + ")" : "") + ":" + System.lineSeparator();
+        return getMatchedNodesHeaderWhiteSpace() + "- " + getMatchedPrefix() + " node"
+               + (matchCount > 1 ? "s (" + matchCount + ")" : "") + ":" + System.lineSeparator();
     }
 
-    protected String getMatchedNodesWhiteSpace() {
-        return "         ";
+    protected String getMatchedNodesHeaderWhiteSpace() {
+        return "           ";
     }
 
     abstract protected String getMatchedPrefix();
@@ -85,6 +83,6 @@ abstract class RegexFailure {
     }
 
     private String getMatchedNodesItemWhiteSpace() {
-        return "           ";
+        return "             ";
     }
 }

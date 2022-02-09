@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -901,6 +901,18 @@ class BadIRAnnotationBeforeFlagVM {
     @Test
     @IR(failOn = IRNode.CALL, phase = {})
     public void emptyCompilePhases() {}
+
+    @Test
+    @IR(failOn = IRNode.CALL, phase = {CompilePhase.DEFAULT, CompilePhase.PRINT_IDEAL})
+    public void wrongCombo1() {}
+
+    @Test
+    @IR(failOn = IRNode.CALL, phase = {CompilePhase.PRINT_OPTO_ASSEMBLY, CompilePhase.DEFAULT})
+    public void wrongCombo2() {}
+
+    @Test
+    @IR(failOn = IRNode.CALL, phase = {CompilePhase.PRINT_OPTO_ASSEMBLY, CompilePhase.PRINT_IDEAL, CompilePhase.DEFAULT})
+    public void wrongCombo3() {}
 }
 
 @ClassFail

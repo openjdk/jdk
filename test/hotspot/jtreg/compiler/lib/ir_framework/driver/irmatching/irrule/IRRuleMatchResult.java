@@ -23,9 +23,10 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule;
 
-import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
-import compiler.lib.ir_framework.driver.irmatching.OutputMatch;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This class represents an IR matching result of an IR rule.
@@ -35,50 +36,26 @@ import compiler.lib.ir_framework.driver.irmatching.OutputMatch;
  */
 public class IRRuleMatchResult implements MatchResult {
     private final IRRule irRule;
-    private CheckAttributeMatchResult failOnFailures = null;
-    private CheckAttributeMatchResult countsFailures = null;
-    private OutputMatch outputMatch;
+    private final List<CompilePhaseMatchResult> compilePhaseMatchResults;
 
     public IRRuleMatchResult(IRRule irRule) {
         this.irRule = irRule;
-        this.outputMatch = OutputMatch.NONE;
+        this.compilePhaseMatchResults = new ArrayList<>();
     }
 
-    private boolean hasFailOnFailures() {
-        return failOnFailures != null;
+    public List<CompilePhaseMatchResult> getCompilePhaseMatchResults() {
+        return compilePhaseMatchResults;
     }
 
-    public void setFailOnFailures(CheckAttributeMatchResult failOnFailures) {
-        this.failOnFailures = failOnFailures;
-    }
-
-    private boolean hasCountsFailures() {
-        return countsFailures != null;
-    }
-
-    public void setCountsFailures(CheckAttributeMatchResult countsFailures) {
-        this.countsFailures = countsFailures;
-    }
-
-    public OutputMatch getOutputMatch() {
-        return outputMatch;
+    public void addCompilePhaseMatchResult(CompilePhaseMatchResult result) {
+        compilePhaseMatchResults.add(result);
     }
 
     @Override
     public boolean fail() {
-        return failOnFailures != null || countsFailures != null;
+        return !compilePhaseMatchResults.isEmpty();
     }
 
-    public void updateOutputMatch(OutputMatch newOutputMatch) {
-        TestFramework.check(newOutputMatch != OutputMatch.NONE, "must be valid state");
-        switch (outputMatch) {
-            case NONE -> outputMatch = newOutputMatch;
-            case IDEAL -> outputMatch = newOutputMatch != OutputMatch.IDEAL
-                    ? OutputMatch.BOTH : OutputMatch.IDEAL;
-            case OPTO_ASSEMBLY -> outputMatch = newOutputMatch != OutputMatch.OPTO_ASSEMBLY
-                    ? OutputMatch.BOTH : OutputMatch.OPTO_ASSEMBLY;
-        }
-    }
 
     /**
      * Build a failure message based on the collected failures of this object.
@@ -87,11 +64,10 @@ public class IRRuleMatchResult implements MatchResult {
     public String buildFailureMessage() {
         StringBuilder failMsg = new StringBuilder();
         failMsg.append(getIRRuleLine());
-        if (hasFailOnFailures()) {
-            failMsg.append(failOnFailures.buildFailureMessage());
-        }
-        if (hasCountsFailures()) {
-            failMsg.append(countsFailures.buildFailureMessage());
+        for (CompilePhaseMatchResult phaseMatchResult : compilePhaseMatchResults) {
+            if (phaseMatchResult.fail()) {
+                failMsg.append(phaseMatchResult.buildFailureMessage());
+            }
         }
         return failMsg.toString();
     }

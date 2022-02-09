@@ -354,7 +354,7 @@ class Level3All {
     @IR(failOn = "foo", phase = CompilePhase.INCREMENTAL_INLINE_STEP)
     @IR(failOn = "foo", phase = CompilePhase.INCREMENTAL_INLINE_CLEANUP)
     @IR(failOn = "foo", phase = CompilePhase.END)
-    @IR(failOn = "foo", phase = CompilePhase.ALL)
+//    @IR(failOn = "foo", phase = CompilePhase.ALL)
     public void test() {
     }
 }

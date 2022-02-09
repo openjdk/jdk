@@ -37,6 +37,11 @@ class FailOnRegexFailure extends RegexFailure {
     }
 
     @Override
+    public int getMatchedNodesCount() {
+        return matches.size();
+    }
+
+    @Override
     public String buildFailureMessage() {
         return getRegexLine()
                + getMatchedNodesBlock();

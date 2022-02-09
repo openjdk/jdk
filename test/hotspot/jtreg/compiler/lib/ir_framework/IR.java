@@ -84,6 +84,9 @@ public @interface IR {
      */
     String[] counts() default {};
 
+    /**
+     * Define a list of {@link CompilePhase} enums to apply the IR rule constraints on.
+     */
     CompilePhase[] phase() default { CompilePhase.DEFAULT };
 
     /**

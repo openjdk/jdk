@@ -24,11 +24,12 @@
 package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
 import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.driver.irmatching.OutputMatch;
+import compiler.lib.ir_framework.driver.irmatching.irrule.CompilePhaseMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
-import compiler.lib.ir_framework.shared.TestFrameworkException;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Class to build the compilation output for an IR method.
@@ -37,42 +38,35 @@ import java.util.List;
  */
 class MatchedCompilationOutputBuilder {
     private final IRMethod irMethod;
-    private final OutputMatch outputMatch;
+    private final Set<CompilePhase> compilePhases;
 
     public MatchedCompilationOutputBuilder(IRMethod irMethod, List<IRRuleMatchResult> irRulesMatchResults) {
         this.irMethod = irMethod;
-        this.outputMatch = getOutputMatch(irRulesMatchResults);
+        this.compilePhases = collectCompilePhases(irRulesMatchResults);
     }
 
-    private OutputMatch getOutputMatch(List<IRRuleMatchResult> irRulesMatchResults) {
-        OutputMatch outputMatch;
-        if (allMatchesOn(irRulesMatchResults, OutputMatch.IDEAL)) {
-            outputMatch = OutputMatch.IDEAL;
-        } else if (allMatchesOn(irRulesMatchResults, OutputMatch.OPTO_ASSEMBLY)) {
-            outputMatch = OutputMatch.OPTO_ASSEMBLY;
-        } else {
-            outputMatch = OutputMatch.BOTH;
-        }
-        return outputMatch;
-    }
-
-    private boolean allMatchesOn(List<IRRuleMatchResult> irRulesMatchResults, OutputMatch outputMatch) {
-        return irRulesMatchResults.stream().allMatch(r -> r.getOutputMatch() == outputMatch);
+    private Set<CompilePhase> collectCompilePhases(List<IRRuleMatchResult> irRulesMatchResults) {
+        return irRulesMatchResults
+                .stream()
+                // Stream<CompilePhaseMatchResult>
+                .flatMap(irRuleMatchResult -> irRuleMatchResult.getCompilePhaseMatchResults().stream())
+                .map(CompilePhaseMatchResult::getCompilePhase) // Stream<CompilePhase>
+                .collect(Collectors.toSet()); // Filter duplicates
     }
 
     public String build() {
-        StringBuilder builder = new StringBuilder();
-        builder.append(getMethodLine());
-        switch (outputMatch) {
-            case IDEAL -> builder.append(irMethod.getIdealOutput(CompilePhase.DEFAULT));
-            case OPTO_ASSEMBLY -> builder.append(irMethod.getOptoAssemblyOutput());
-            case BOTH -> builder.append(irMethod.getCompleteOutput());
-            default -> throw new TestFrameworkException("found unexpected OutputMatch " + outputMatch.name());
-        }
-        return builder.toString();
+        return getMethodLine() + getOutputOfPhases();
     }
 
     private String getMethodLine() {
         return ">>> Compilation of " + irMethod.getMethod() + ":" + System.lineSeparator();
+    }
+
+    // Concat all phases with line breaks
+    private String getOutputOfPhases() {
+        return compilePhases
+                .stream()
+                .map(irMethod::getOutput)
+                .collect(Collectors.joining(System.lineSeparator() + System.lineSeparator()));
     }
 }
