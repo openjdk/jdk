@@ -26,6 +26,8 @@ package compiler.lib.ir_framework.driver.irmatching.irrule;
 import compiler.lib.ir_framework.IR;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Class representing a result of an applied counts attribute of an IR rule.
@@ -39,6 +41,21 @@ class CountsMatchResult extends CheckAttributeMatchResult {
             regexFailures = new ArrayList<>();
         }
         regexFailures.add(regexFailure);
+    }
+
+    public boolean hasZeroMatchRegexFail() {
+        return regexFailures.stream().anyMatch(failure -> failure.getMatchedNodesCount() == 0);
+    }
+
+    public void filterZeroMatchRegexFails() {
+        List<RegexFailure> newList = regexFailures.stream()
+                                                  .filter(regexFail -> regexFail.getMatchedNodesCount() != 0)
+                                                  .collect(Collectors.toList());
+        if (newList.isEmpty()) {
+            regexFailures = null;
+        } else {
+            regexFailures = newList;
+        }
     }
 
     @Override

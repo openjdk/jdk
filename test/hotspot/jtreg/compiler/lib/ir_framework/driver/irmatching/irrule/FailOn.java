@@ -44,8 +44,7 @@ class FailOn extends CheckAttribute {
         this.quickPattern = Pattern.compile(String.join("|", nodes));
     }
 
-    @Override
-    public CheckAttributeMatchResult apply(String compilation) {
+    public FailOnMatchResult apply(String compilation) {
         FailOnMatchResult result = new FailOnMatchResult();
         Matcher matcher = quickPattern.matcher(compilation);
         if (matcher.find()) {

@@ -70,8 +70,7 @@ class Counts extends CheckAttribute {
         return ComparisonConstraintParser.parse(constraint, Integer::parseInt, postfixErrorMsg);
     }
 
-    @Override
-    public CheckAttributeMatchResult apply(String compilation) {
+    public CountsMatchResult apply(String compilation) {
         CountsMatchResult result = new CountsMatchResult();
         checkConstraints(result, compilation);
         return result;

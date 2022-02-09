@@ -122,21 +122,19 @@ public class IRRule {
 
     private void applyFailOn(CompilePhase compilePhase, CompilePhaseMatchResult compilePhaseMatchResult) {
         if (failOn != null) {
-            applyCheckAttribute(failOn, compilePhase, compilePhaseMatchResult::setFailOnFailures);
+            FailOnMatchResult matchResult = failOn.apply(irMethod.getOutput(compilePhase));
+            if (matchResult.fail()) {
+                compilePhaseMatchResult.setFailOnMatchResult(matchResult);
+            }
         }
     }
 
     private void applyCounts(CompilePhase compilePhase, CompilePhaseMatchResult compilePhaseMatchResult) {
         if (counts != null) {
-            applyCheckAttribute(counts, compilePhase, compilePhaseMatchResult::setCountsFailures);
-        }
-    }
-
-    private void applyCheckAttribute(CheckAttribute checkAttribute, CompilePhase phase,
-                                     Consumer<CheckAttributeMatchResult> setFailures) {
-        CheckAttributeMatchResult checkAttributeResult = checkAttribute.apply(irMethod.getOutput(phase));
-        if (checkAttributeResult.fail()) {
-            setFailures.accept(checkAttributeResult);
+            CountsMatchResult matchResult = counts.apply(irMethod.getOutput(compilePhase));
+            if (matchResult.fail()) {
+                compilePhaseMatchResult.setCountsMatchResult(matchResult);
+            }
         }
     }
 }

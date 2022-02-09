@@ -48,36 +48,26 @@ class DefaultMatchResultBuilder {
      * Report either PrintIdeal, PrintOpto or both if there is at least one match or
      */
     public void createDefaultResult(IRRuleMatchResult irRuleMatchResult) {
-        if (noDefaultRegexMatches() || someRegexMatchOnlyEntireOutput()) {
-            // Report with default if single regex matches only both outputs or if we could not match anything (could
-            // happen with a count constraint that expect a non-zero number of matches)
+        if (defaultMatchResult.hasAnyZeroMatchRegexFails() || someRegexMatchOnlyEntireOutput()) {
+            // Report with default if single regex matches only both outputs or if we have regex failures without finding
+            // any nodes (we don't know which output that should have found a node). This could happen with a count
+            // constraint that expect a non-zero number of matches)
             irRuleMatchResult.addCompilePhaseMatchResult(defaultMatchResult);
         } else if (anyRegexMatchOnIdealAndOptoAssembly()) {
-            if (idealResult.fail()) {
-                addIdealResult(irRuleMatchResult);
-            }
-            if (optoAssemblyResult.fail()) {
-                addOptoAssemblyResult(irRuleMatchResult);
-            }
+            addResult(irRuleMatchResult, idealResult);
+            addResult(irRuleMatchResult, optoAssemblyResult);
         } else if (noOptoAssemblyRegexMatches()) {
             // Report ideal result if no matches on PrintOptoAssembly. We assume no overlapping regexes.
-            addIdealResult(irRuleMatchResult);
+            addResult(irRuleMatchResult, idealResult);
         } else {
-            addOptoAssemblyResult(irRuleMatchResult);
+            addResult(irRuleMatchResult, optoAssemblyResult);
         }
     }
 
-    private boolean noDefaultRegexMatches() {
-        return defaultMatchedNodesCount == 0;
-    }
 
-    private void addIdealResult(IRRuleMatchResult irRuleMatchResult) {
-        irRuleMatchResult.addCompilePhaseMatchResult(idealResult);
-    }
-
-
-    private void addOptoAssemblyResult(IRRuleMatchResult irRuleMatchResult) {
-        irRuleMatchResult.addCompilePhaseMatchResult(optoAssemblyResult);
+    private void addResult(IRRuleMatchResult irRuleMatchResult, CompilePhaseMatchResult compilePhaseMatchResult) {
+        compilePhaseMatchResult.filterZeroMatchRegexFails();
+        irRuleMatchResult.addCompilePhaseMatchResult(compilePhaseMatchResult);
     }
 
     private boolean noOptoAssemblyRegexMatches() {

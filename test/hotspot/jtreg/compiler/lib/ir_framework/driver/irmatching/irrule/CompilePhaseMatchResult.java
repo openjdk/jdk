@@ -34,8 +34,8 @@ import compiler.lib.ir_framework.driver.irmatching.MatchResult;
  */
 public class CompilePhaseMatchResult implements MatchResult {
     private final CompilePhase compilePhase;
-    private CheckAttributeMatchResult failOnFailures = null;
-    private CheckAttributeMatchResult countsFailures = null;
+    private FailOnMatchResult failOnFailures = null;
+    private CountsMatchResult countsFailures = null;
 
     public CompilePhaseMatchResult(CompilePhase compilePhase) {
         this.compilePhase = compilePhase;
@@ -45,7 +45,7 @@ public class CompilePhaseMatchResult implements MatchResult {
         return failOnFailures != null;
     }
 
-    public void setFailOnFailures(CheckAttributeMatchResult failOnFailures) {
+    public void setFailOnMatchResult(FailOnMatchResult failOnFailures) {
         this.failOnFailures = failOnFailures;
     }
 
@@ -53,7 +53,7 @@ public class CompilePhaseMatchResult implements MatchResult {
         return countsFailures != null;
     }
 
-    public void setCountsFailures(CheckAttributeMatchResult countsFailures) {
+    public void setCountsMatchResult(CountsMatchResult countsFailures) {
         this.countsFailures = countsFailures;
     }
 
@@ -71,6 +71,23 @@ public class CompilePhaseMatchResult implements MatchResult {
 
     private int getCountsMatchedNodesCount() {
         return hasCountsFailures() ? countsFailures.getMatchedNodesCount() : 0;
+    }
+
+    public boolean hasAnyZeroMatchRegexFails() {
+        if (hasCountsFailures()) {
+            return countsFailures.hasZeroMatchRegexFail();
+        }
+        return false;
+    }
+
+    public void filterZeroMatchRegexFails() {
+        if (hasCountsFailures()) {
+            countsFailures.filterZeroMatchRegexFails();
+            if (!countsFailures.fail()) {
+                // Does not fail anymore after filtering.
+                countsFailures = null;
+            }
+        }
     }
 
     @Override
@@ -95,6 +112,6 @@ public class CompilePhaseMatchResult implements MatchResult {
     }
 
     private String getPhaseLine() {
-        return "     * Phase \"" + compilePhase.getName() + "\":" + System.lineSeparator();
+        return "     > Phase \"" + compilePhase.getName() + "\":" + System.lineSeparator();
     }
 }
