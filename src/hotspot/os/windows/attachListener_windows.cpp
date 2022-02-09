@@ -27,6 +27,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.hpp"
 #include "services/attachListener.hpp"
+#include "services/dtraceAttacher.hpp"
 
 #include <windows.h>
 #include <signal.h>             // SIGBREAK
