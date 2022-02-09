@@ -712,6 +712,10 @@ public class SSLParameters {
      * in this list or may not use the recommended name for a certain
      * signature scheme.
      * <p>
+     * The set of signature schemes that will be used over the SSL/TLS/DTLS
+     * connections is determined by the returned array of this method and the
+     * underlying provider-specific default signature schemes.
+     * <p>
      * If the returned array is {@code null}, then the underlying
      * provider-specific default signature schemes will be used over the
      * SSL/TLS/DTLS connections.
@@ -719,11 +723,14 @@ public class SSLParameters {
      * If the returned array is empty (zero-length), then the signature scheme
      * negotiation mechanism is turned off for SSL/TLS/DTLS protocols, and
      * the connections may not be able to be established if the negotiation
-     * mechanism is required by a certain SSL/TLS/DTLS protocol.
+     * mechanism is required by a certain SSL/TLS/DTLS protocol.  This
+     * parameter will override the underlying provider-specific default
+     * signature schemes.
      * <p>
      * If the returned array is not {@code null} or empty (zero-length),
      * then the signature schemes in the returned array will be used over
-     * the SSL/TLS/DTLS connections.
+     * the SSL/TLS/DTLS connections.  This parameter will override the
+     * underlying provider-specific default signature schemes.
      * <p>
      * If the {@link #setSignatureSchemes} method has not been called, this
      * method should return the default signature schemes for connection
@@ -742,7 +749,7 @@ public class SSLParameters {
      * schemes for each SSL/TLS/DTLS connection.  Applications may also use
      * the {@systemProperty jdk.tls.client.SignatureSchemes} and/or
      * {@systemProperty jdk.tls.server.SignatureSchemes} system properties to
-     * customize the provider-specific default signature schemes.
+     * override the provider-specific default signature schemes.
      *
      * @return an array of signature scheme {@code Strings} or {@code null} if
      *         none have been set.  For non-null returns, this method will
@@ -771,20 +778,11 @@ public class SSLParameters {
      * in this list or may not use the recommended name for a certain
      * signature scheme.
      * <p>
-     * If the input parameter {@code signatureSchemes} array is {@code null},
-     * then the underlying provider-specific default signature schemes will
-     * be used over the SSL/TLS/DTLS connections.
-     * <p>
-     * If the input parameter {@code signatureSchemes} array is empty
-     * (zero-length), then the signature scheme negotiation mechanism is
-     * turned off for SSL/TLS/DTLS protocols, and the connections may not be
-     * able to be established if the negotiation mechanism is required by a
-     * certain SSL/TLS/DTLS protocol.
-     * <p>
-     * If the input parameter {@code signatureSchemes} array is not {@code null}
-     * or empty (zero-length), then the signature schemes specified in the
-     * {@code signatureSchemes} array will be used over the SSL/TLS/DTLS
-     * connections.
+     * The set of signature schemes that will be used over the SSL/TLS/DTLS
+     * connections is determined by the input parameter {@code signatureSchemes}
+     * array and the underlying provider-specific default signature schemes.
+     * See {@link #getSignatureSchemes} for specific details on how the
+     * parameters are used in SSL/TLS/DTLS connections.
      *
      * @apiNote
      * Note that a provider may not have been updated to support this method
@@ -792,13 +790,6 @@ public class SSLParameters {
      *
      * @implNote
      * The SunJSSE provider supports this method.
-     *
-     * @implNote
-     * Note that the underlying provider may define the default signature
-     * schemes for each SSL/TLS/DTLS connection.  Applications may also use
-     * the {@systemProperty jdk.tls.client.SignatureSchemes} and/or
-     * {@systemProperty jdk.tls.server.SignatureSchemes} system properties to
-     * customize the provider-specific default signature schemes.
      *
      * @param signatureSchemes an ordered array of signature scheme names with
      *        the first entry being the most preferred, or {@code null}.  This
