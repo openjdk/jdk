@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,8 @@ dry_run=${JPACKAGE_TEST_DRY_RUN}
 # Default directory where jpackage should write bundle files
 output_dir=~/jpackage_bundles
 
+default_actions='-Djpackage.test.action=create,install,verify-install,uninstall,verify-uninstall'
+
 
 set_args ()
 {
@@ -51,7 +53,8 @@ set_args ()
   local arg_is_output_dir=
   local arg_is_mode=
   local output_dir_set=
-  local with_append_actions=yes
+  local with_insert_actions=yes
+  local jtreg_first_arg_idx=
   for arg in "$@"; do
     if [ "$arg" == "-o" ]; then
       arg_is_output_dir=yes
@@ -60,11 +63,16 @@ set_args ()
       arg_is_mode=yes
       continue
     elif [ "$arg" == '--' ]; then
-      append_actions
-      with_append_actions=
-      continue
+      jtreg_first_arg_idx=$((${#args[@]}+1))
     elif ! case "$arg" in -Djpackage.test.action=*) false;; esac; then
-      continue
+      local actions=($(echo "${arg#-Djpackage.test.action=}" | tr , " "))
+      for action in "${actions[@]}"; do
+        if [ "$action" == "install" ] || [ "$action" == "uninstall" ]; then
+          with_insert_actions=
+          break
+        fi
+      done
+      [ -z "$with_insert_actions" ] || continue
     elif [ -n "$arg_is_output_dir" ]; then
       arg_is_output_dir=
       output_dir="$arg"
@@ -76,13 +84,16 @@ set_args ()
     args+=( "$arg" )
   done
   [ -n "$output_dir_set" ] || args=( -o "$output_dir" "${args[@]}" )
-  [ -z "$with_append_actions" ] || append_actions
-}
-
-
-append_actions ()
-{
-  args+=( '--' '-Djpackage.test.action=create,install,verify-install,uninstall,verify-uninstall' )
+  if [ -n "$with_insert_actions" ]; then
+    if [ -z "$jtreg_first_arg_idx" ]; then
+      args+=( "--" "$default_actions" )
+    else
+      local args_copy=( "${args[@]:0:jtreg_first_arg_idx}" )
+      args_copy+=( "$default_actions" )
+      args_copy+=( "${args[@]:jtreg_first_arg_idx}" )
+      args=( "${args_copy[@]}" )
+    fi
+  fi
 }
 
 
