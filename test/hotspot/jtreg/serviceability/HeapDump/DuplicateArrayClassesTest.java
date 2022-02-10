@@ -26,6 +26,7 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.ref.Reference;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -55,7 +56,8 @@ class DuplicateArrayClassesTarg extends LingeredApp {
         int[][][] intArray = new int[0][][];
         String[][][] strArray = new String[0][][];
         LingeredApp.main(args);
-        System.out.println("" + intArray + strArray);   // to be sure the classes are not unloaded
+        Reference.reachabilityFence(intArray);
+        Reference.reachabilityFence(strArray);
     }
 }
 
@@ -215,7 +217,7 @@ public class DuplicateArrayClassesTest {
         }
     }
 
-    // Reads the whole HPROF_GC_CLASS_DUMP record, returns closs ID.
+    // Reads the whole HPROF_GC_CLASS_DUMP record, returns class ID.
     private static long readClassDump(DumpInputStream in) throws IOException {
         long classID = in.readID();
         long stackTraceNum = in.readU4();
