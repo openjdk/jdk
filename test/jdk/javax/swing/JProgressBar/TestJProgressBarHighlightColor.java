@@ -103,7 +103,7 @@ public class TestJProgressBarHighlightColor {
                     panel.add(progressBar, BorderLayout.CENTER);
                     frame = new JFrame("TestSelectedTextBackgroundColor");
                     frame.add(panel);
-                    frame.setSize(200, 200);
+                    frame.setSize(400, 400);
                     frame.setAlwaysOnTop(true);
                     frame.setLocationRelativeTo(null);
                     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
