@@ -160,6 +160,9 @@ create_and_verify_packages=
 # run all tests
 run_all_tests=
 
+actions_create="-Djpackage.test.action=create"
+actions_install="-Djpackage.test.action=create,install,verify-install,uninstall,verify-uninstall"
+
 mapfile -t tests < <(find_all_packaging_tests)
 
 while getopts "vahdcft:j:o:r:m:l:" argname; do
@@ -243,7 +246,7 @@ if [ -z "$run_all_tests" ]; then
 fi
 
 if [ -z "$create_and_verify_packages" ]; then
-  jtreg_args+=(-Djpackage.test.action=create)
+  jtreg_args+=("$actions_create")
 fi
 
 # Drop arguments separator
