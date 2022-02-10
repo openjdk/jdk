@@ -44,7 +44,6 @@ import java.util.Properties;
 import jdk.internal.access.JavaLangReflectAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
-import jdk.internal.vm.annotation.Stable;
 import sun.security.action.GetPropertyAction;
 import sun.security.util.SecurityConstants;
 
@@ -62,43 +61,11 @@ import sun.security.util.SecurityConstants;
 
 public class ReflectionFactory {
 
-    // volatile ensures static fields set before are published
-    @Stable
-    private static volatile boolean initted;
     private static final ReflectionFactory soleInstance = new ReflectionFactory();
 
 
     /* Method for static class initializer <clinit>, or null */
     private static volatile Method hasStaticInitializerMethod;
-
-    //
-    // "Inflation" mechanism. Loading bytecodes to implement
-    // Method.invoke() and Constructor.newInstance() currently costs
-    // 3-4x more than an invocation via native code for the first
-    // invocation (though subsequent invocations have been benchmarked
-    // to be over 20x faster). Unfortunately this cost increases
-    // startup time for certain applications that use reflection
-    // intensively (but only once per class) to bootstrap themselves.
-    // To avoid this penalty we reuse the existing JVM entry points
-    // for the first few invocations of Methods and Constructors and
-    // then switch to the bytecode-based implementations.
-    //
-    // Package-private to be accessible to NativeMethodAccessorImpl
-    // and NativeConstructorAccessorImpl
-    private static boolean noInflation        = false;
-    private static int     inflationThreshold = 15;
-
-    //
-    // New implementation uses direct invocation of method handles
-    private static final int METHOD_MH_ACCESSOR      = 0x1;
-    private static final int FIELD_MH_ACCESSOR       = 0x2;
-    private static final int ALL_MH_ACCESSORS        = METHOD_MH_ACCESSOR|FIELD_MH_ACCESSOR;
-
-    private static int     useDirectMethodHandle = ALL_MH_ACCESSORS;
-    private static boolean useNativeAccessorOnly = false;  // for testing only
-
-    // true if deserialization constructor checking is disabled
-    private static boolean disableSerialConstructorChecks = false;
 
     private final JavaLangReflectAccess langReflectAccess;
     private ReflectionFactory() {
@@ -163,8 +130,6 @@ public class ReflectionFactory {
      * @param override true if caller has overridden accessibility
      */
     public FieldAccessor newFieldAccessor(Field field, boolean override) {
-        checkInitted();
-
         Field root = langReflectAccess.getRoot(field);
         if (root != null) {
             // FieldAccessor will use the root unless the modifiers have
@@ -183,8 +148,6 @@ public class ReflectionFactory {
     }
 
     public MethodAccessor newMethodAccessor(Method method, boolean callerSensitive) {
-        checkInitted();
-
         // use the root Method that will not cache caller class
         Method root = langReflectAccess.getRoot(method);
         if (root != null) {
@@ -194,7 +157,7 @@ public class ReflectionFactory {
         if (useMethodHandleAccessor()) {
             return MethodHandleAccessorFactory.newMethodAccessor(method, callerSensitive);
         } else {
-            if (noInflation && !method.getDeclaringClass().isHidden()) {
+            if (noInflation() && !method.getDeclaringClass().isHidden()) {
                 return generateMethodAccessor(method);
             } else {
                 NativeMethodAccessorImpl acc = new NativeMethodAccessorImpl(method);
@@ -218,8 +181,6 @@ public class ReflectionFactory {
     }
 
     public ConstructorAccessor newConstructorAccessor(Constructor<?> c) {
-        checkInitted();
-
         Class<?> declaringClass = c.getDeclaringClass();
         if (Modifier.isAbstract(declaringClass.getModifiers())) {
             return new InstantiationExceptionConstructorAccessorImpl(null);
@@ -245,7 +206,7 @@ public class ReflectionFactory {
                 return new BootstrapConstructorAccessorImpl(c);
             }
 
-            if (noInflation && !c.getDeclaringClass().isHidden()) {
+            if (noInflation() && !c.getDeclaringClass().isHidden()) {
                 return new MethodAccessorGenerator().
                         generateConstructor(c.getDeclaringClass(),
                                             c.getParameterTypes(),
@@ -433,7 +394,7 @@ public class ReflectionFactory {
         while (Serializable.class.isAssignableFrom(initCl)) {
             Class<?> prev = initCl;
             if ((initCl = initCl.getSuperclass()) == null ||
-                (!disableSerialConstructorChecks && !superHasAccessibleConstructor(prev))) {
+                (!disableSerialConstructorChecks() && !superHasAccessibleConstructor(prev))) {
                 return null;
             }
         }
@@ -626,24 +587,30 @@ public class ReflectionFactory {
     // Internals only below this point
     //
 
+    // Package-private to be accessible to NativeMethodAccessorImpl
+    // and NativeConstructorAccessorImpl
     static int inflationThreshold() {
-        return inflationThreshold;
+        return config().inflationThreshold;
     }
 
     static boolean noInflation() {
-        return noInflation;
+        return config().noInflation;
     }
 
     static boolean useMethodHandleAccessor() {
-        return (useDirectMethodHandle & METHOD_MH_ACCESSOR) == METHOD_MH_ACCESSOR;
+        return (config().useDirectMethodHandle & Config.METHOD_MH_ACCESSOR) == Config.METHOD_MH_ACCESSOR;
     }
 
     static boolean useFieldHandleAccessor() {
-        return (useDirectMethodHandle & FIELD_MH_ACCESSOR) == FIELD_MH_ACCESSOR;
+        return (config().useDirectMethodHandle & Config.FIELD_MH_ACCESSOR) == Config.FIELD_MH_ACCESSOR;
     }
 
     static boolean useNativeAccessorOnly() {
-        return useNativeAccessorOnly;
+        return config().useNativeAccessorOnly;
+    }
+
+    private static boolean disableSerialConstructorChecks() {
+        return config().disableSerialConstructorChecks;
     }
 
     /** We have to defer full initialization of this class until after
@@ -651,49 +618,104 @@ public class ReflectionFactory {
         static initializer (more properly, that for
         java.lang.reflect.AccessibleObject) causes this class's to be
         run, before the system properties are set up. */
-    private static void checkInitted() {
-        if (initted) return;
+    private static Config config;
 
+    private static Config config() {
         // Defer initialization until module system is initialized so as
         // to avoid inflation and spinning bytecode in unnamed modules
         // during early startup.
         if (!VM.isModuleSystemInited()) {
-            return;
+            return Config.fallback;
         }
 
-        Properties props = GetPropertyAction.privilegedGetProperties();
-        String val = props.getProperty("sun.reflect.noInflation");
-        if (val != null && val.equals("true")) {
-            noInflation = true;
+        Config c = config;
+        if (c == null) {
+            config = c = new Config(true);
         }
+        return c;
+    }
 
-        val = props.getProperty("sun.reflect.inflationThreshold");
-        if (val != null) {
-            try {
-                inflationThreshold = Integer.parseInt(val);
-            } catch (NumberFormatException e) {
-                throw new RuntimeException("Unable to parse property sun.reflect.inflationThreshold", e);
+    /**
+     * The configurations exist as an object to avoid race conditions.
+     * See bug 8261407.
+     */
+    private static final class Config {
+        private static final Config fallback = new Config(false);
+
+        //
+        // "Inflation" mechanism. Loading bytecodes to implement
+        // Method.invoke() and Constructor.newInstance() currently costs
+        // 3-4x more than an invocation via native code for the first
+        // invocation (though subsequent invocations have been benchmarked
+        // to be over 20x faster). Unfortunately this cost increases
+        // startup time for certain applications that use reflection
+        // intensively (but only once per class) to bootstrap themselves.
+        // To avoid this penalty we reuse the existing JVM entry points
+        // for the first few invocations of Methods and Constructors and
+        // then switch to the bytecode-based implementations.
+        //
+        private final boolean noInflation;
+        private final int     inflationThreshold;
+
+        //
+        // New implementation uses direct invocation of method handles
+        private static final int METHOD_MH_ACCESSOR      = 0x1;
+        private static final int FIELD_MH_ACCESSOR       = 0x2;
+        private static final int ALL_MH_ACCESSORS        = METHOD_MH_ACCESSOR|FIELD_MH_ACCESSOR;
+
+        private final int     useDirectMethodHandle;
+        private final boolean useNativeAccessorOnly;  // for testing only
+
+        // true if deserialization constructor checking is disabled
+        private final boolean disableSerialConstructorChecks;
+
+        private Config(boolean getProperties) {
+            boolean noInflation = false;
+            int inflationThreshold = 15;
+            int useDirectMethodHandle = ALL_MH_ACCESSORS;
+            boolean useNativeAccessorOnly = false;
+            boolean disableSerialConstructorChecks = false;
+
+            if (getProperties) {
+                Properties props = GetPropertyAction.privilegedGetProperties();
+                String val = props.getProperty("sun.reflect.noInflation");
+                if (val != null && val.equals("true")) {
+                    noInflation = true;
+                }
+
+                val = props.getProperty("sun.reflect.inflationThreshold");
+                if (val != null) {
+                    try {
+                        inflationThreshold = Integer.parseInt(val);
+                    } catch (NumberFormatException e) {
+                        throw new RuntimeException("Unable to parse property sun.reflect.inflationThreshold", e);
+                    }
+                }
+                val = props.getProperty("jdk.reflect.useDirectMethodHandle");
+                if (val != null) {
+                    if (val.equals("false")) {
+                        useDirectMethodHandle = 0;
+                    } else if (val.equals("methods")) {
+                        useDirectMethodHandle = METHOD_MH_ACCESSOR;
+                    } else if (val.equals("fields")) {
+                        useDirectMethodHandle = FIELD_MH_ACCESSOR;
+                    }
+                }
+                val = props.getProperty("jdk.reflect.useNativeAccessorOnly");
+                if (val != null && val.equals("true")) {
+                    useNativeAccessorOnly = true;
+                }
+
+                disableSerialConstructorChecks =
+                        "true".equals(props.getProperty("jdk.disableSerialConstructorChecks"));
             }
-        }
-        val = props.getProperty("jdk.reflect.useDirectMethodHandle");
-        if (val != null) {
-            if (val.equals("false")) {
-                useDirectMethodHandle = 0;
-            } else if (val.equals("methods")) {
-                useDirectMethodHandle = METHOD_MH_ACCESSOR;
-            } else if (val.equals("fields")) {
-                useDirectMethodHandle = FIELD_MH_ACCESSOR;
-            }
-        }
-        val = props.getProperty("jdk.reflect.useNativeAccessorOnly");
-        if (val != null && val.equals("true")) {
-            useNativeAccessorOnly = true;
-        }
 
-        disableSerialConstructorChecks =
-            "true".equals(props.getProperty("jdk.disableSerialConstructorChecks"));
-
-        initted = true;
+            this.noInflation = noInflation;
+            this.inflationThreshold = inflationThreshold;
+            this.useDirectMethodHandle = useDirectMethodHandle;
+            this.useNativeAccessorOnly = useNativeAccessorOnly;
+            this.disableSerialConstructorChecks = disableSerialConstructorChecks;
+        }
     }
 
     /**
