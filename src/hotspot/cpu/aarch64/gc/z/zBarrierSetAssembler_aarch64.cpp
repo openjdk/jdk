@@ -78,7 +78,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   __ tst(dst, rscratch1);
   __ br(Assembler::EQ, done);
 
-  __ enter(true);
+  __ enter(/*strip_ret_addr*/true);
 
   __ push_call_clobbered_registers_except(RegSet::of(dst));
 
