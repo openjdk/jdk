@@ -29,7 +29,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import static jdk.jpackage.internal.OverridableResource.createResource;
-import static jdk.jpackage.internal.ShellCustomAction.escapedInstalledLauncherPath;
 
 /**
  * Helper to install launchers as services with "systemd".
@@ -70,7 +69,9 @@ public final class LinuxLaunchersAsServices extends UnixLaunchersAsServices {
             getResource()
                     .setPublicName(unitFilename)
                     .addSubstitutionDataEntry("APPLICATION_LAUNCHER",
-                            escapedInstalledLauncherPath(thePackage, getName()));
+                            Enquoter.forPropertyValues().applyTo(
+                                    thePackage.installedApplicationLayout().launchersDirectory().resolve(
+                                            getName()).toString()));
         }
 
         @Override

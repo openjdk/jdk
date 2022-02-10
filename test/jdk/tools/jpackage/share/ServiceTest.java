@@ -25,13 +25,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Stream;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JavaTool;
-import static jdk.jpackage.test.LauncherAsServiceVerifier.build;
-import jdk.jpackage.test.PackageType;
+import jdk.jpackage.test.LauncherAsServiceVerifier;
+import static jdk.jpackage.test.LauncherAsServiceVerifier.SUPPORTED_PACKAGES;
+import static jdk.jpackage.test.PackageType.WINDOWS;
 import jdk.jpackage.test.RunnablePackageTest;
 import jdk.jpackage.test.TKit;
 
@@ -88,7 +89,7 @@ public class ServiceTest {
     public void test() throws Throwable {
         var testInitializer = createTestInitializer();
         var pkg = createPackageTest().addHelloAppInitializer("com.foo.ServiceTest");
-        build().setExpectedValue("A1").applyTo(pkg);
+        LauncherAsServiceVerifier.build().setExpectedValue("A1").applyTo(pkg);
         testInitializer.applyTo(pkg);
         pkg.run();
     }
@@ -107,7 +108,7 @@ public class ServiceTest {
                 .disablePackageUninstaller();
         testInitializer.applyTo(pkg);
 
-        build().setExpectedValue("Default").applyTo(pkg);
+        LauncherAsServiceVerifier.build().setExpectedValue("Default").applyTo(pkg);
 
         var pkg2 = createPackageTest()
                 .addHelloAppInitializer(String.join(".", packageName, "Bye"))
@@ -116,7 +117,7 @@ public class ServiceTest {
                 });
         testInitializer.applyTo(pkg2);
 
-        var builder = build()
+        var builder = LauncherAsServiceVerifier.build()
                 .setLauncherName("foo")
                 .setAppOutputFileName("foo-launcher-as-service.txt");
 
@@ -145,13 +146,13 @@ public class ServiceTest {
                 Files.copy(winServiceInstaller, resourceDir.resolve(
                         "service-installer.exe"));
 
-                test.forTypes(PackageType.WINDOWS, () -> test.addInitializer(cmd -> {
+                test.forTypes(WINDOWS, () -> test.addInitializer(cmd -> {
                     cmd.addArguments("--resource-dir", resourceDir);
                 }));
             }
 
             if (upgradeCode != null) {
-                test.forTypes(PackageType.WINDOWS, () -> test.addInitializer(cmd -> {
+                test.forTypes(WINDOWS, () -> test.addInitializer(cmd -> {
                     cmd.addArguments("--win-upgrade-uuid", upgradeCode);
                 }));
             }
@@ -163,12 +164,12 @@ public class ServiceTest {
     private TestInitializer createTestInitializer() {
         return new TestInitializer();
     }
-    
+
     private static PackageTest createPackageTest() {
         // DMG not supported
-        return new PackageTest().forTypes(Stream.of(PackageType.LINUX,
-                PackageType.WINDOWS, Set.of(PackageType.MAC_PKG)).flatMap(
-                x -> x.stream()).toList());
+        return new PackageTest()
+                .forTypes(SUPPORTED_PACKAGES)
+                .addInitializer(JPackageCommand::setInputToEmptyDirectory);
     }
 
     private final Path winServiceInstaller;
