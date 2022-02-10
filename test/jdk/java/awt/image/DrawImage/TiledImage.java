@@ -1,3 +1,26 @@
+/*
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Point;
@@ -17,16 +40,19 @@ import java.util.Vector;
 
 
 /**
+ * @test
+ * @bug 8275345
+ * @summary RasterFormatException when drawing a tiled image made of non-writable rasters.
+ *
  * Test drawing a tiled image made of non-writable {@link Raster} tiles.
  * Drawing works when tiles are instances of {@link WritableRaster}.
  * But if tiles are instances of {@link Raster} only, then the following
  * exception is thrown:
  *
- * <pre>
  * Exception in thread "main" java.awt.image.RasterFormatException: (parentX + width) is outside raster
  *     at java.desktop/java.awt.image.WritableRaster.createWritableChild(WritableRaster.java:228)
  *     at java.desktop/sun.java2d.SunGraphics2D.drawTranslatedRenderedImage(SunGraphics2D.java:2852)
- *     at java.desktop/sun.java2d.SunGraphics2D.drawRenderedImage(SunGraphics2D.java:2711)</pre>
+ *     at java.desktop/sun.java2d.SunGraphics2D.drawRenderedImage(SunGraphics2D.java:2711)
  *
  * The bug is demonstrated by drawing the same image twice:
  * once with {@link WritableRaster} tiles (which succeed),
@@ -34,7 +60,6 @@ import java.util.Vector;
  *
  * The bug is caused by the following code in {@code SunGraphics2D}:
  *
- * <pre>
  * // Create a WritableRaster containing the tile
  * WritableRaster wRaster = null;
  * if (raster instanceof WritableRaster) {
@@ -48,13 +73,12 @@ import java.util.Vector;
  *                                     null);
  * }
  * // Translate wRaster to start at (0, 0) and to contain
- * // only the relevent portion of the tile
+ * // only the relevant portion of the tile
  * wRaster = wRaster.createWritableChild(tileRect.x, tileRect.y,
  *                                       tileRect.width,
  *                                       tileRect.height,
  *                                       0, 0,
  *                                       null);
- * </pre>
  *
  * If {@code raster} is not an instance of {@link WritableRaster},
  * then a new {@link WritableRaster} is created wrapping the same
@@ -76,7 +100,7 @@ final class TiledImage implements RenderedImage {
      */
     public static void main(String[] args) {
         draw(true);         // Pass.
-        draw(false);        // Fail with exception described in javadoc.
+        draw(false);        // Fail if 8275345 is not fixed.
     }
 
     private static final int NUM_X_TILES = 2, NUM_Y_TILES = 3;
