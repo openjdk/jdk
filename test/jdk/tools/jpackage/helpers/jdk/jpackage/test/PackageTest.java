@@ -51,6 +51,7 @@ import static jdk.jpackage.test.Functional.ThrowingBiConsumer.toBiConsumer;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
 import static jdk.jpackage.test.Functional.ThrowingConsumer.toConsumer;
 import jdk.jpackage.test.Functional.ThrowingRunnable;
+import static jdk.jpackage.test.Functional.ThrowingSupplier.toSupplier;
 import static jdk.jpackage.test.Functional.rethrowUnchecked;
 import static jdk.jpackage.test.PackageType.LINUX;
 import static jdk.jpackage.test.PackageType.LINUX_DEB;
@@ -539,6 +540,16 @@ public final class PackageTest extends RunnablePackageTest {
                 case VERIFY_UNINSTALL:
                     if (expectedJPackageExitCode == 0) {
                         verifyPackageUninstalled(cmd);
+                    }
+                    break;
+
+                case PURGE:
+                    if (expectedJPackageExitCode == 0) {
+                        var bundle = cmd.outputBundle();
+                        if (toSupplier(() -> TKit.deleteIfExists(bundle)).get()) {
+                            TKit.trace(String.format("Deleted [%s] package",
+                                    bundle));
+                        }
                     }
                     break;
             }

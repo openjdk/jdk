@@ -24,6 +24,7 @@
 import java.nio.file.Path;
 import java.nio.file.Files;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.TKit;
@@ -31,6 +32,7 @@ import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.RunnablePackageTest.Action;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.RunnablePackageTest;
 
 /**
  * Test --app-image parameter. The output installer should provide the same
@@ -80,6 +82,13 @@ public class AppImagePackageTest {
         TKit.createTextFile(libDir.resolve("README"),
                 List.of("This is some arbitrary text for the README file\n"));
 
+        // default: {CREATE, UNPACK, VERIFY}, but we can't verify foreign image
+        List<Action> actions = new ArrayList<>(List.of(Action.CREATE,
+                Action.UNPACK));
+        if (RunnablePackageTest.hasAction(Action.PURGE)) {
+            actions.add(Action.PURGE);
+        }
+
         new PackageTest()
         .addInitializer(cmd -> {
             cmd.addArguments("--app-image", appImageDir);
@@ -93,8 +102,7 @@ public class AppImagePackageTest {
             if (TKit.isOSX()) {
                 cmd.addArguments("--mac-package-identifier", name);
             }
-        }).run(Action.CREATE, Action.UNPACK);
-        // default: {CREATE, UNPACK, VERIFY}, but we can't verify foreign image
+        }).run(actions.toArray(Action[]::new));
     }
 
     private static Path iconPath(String name) {
