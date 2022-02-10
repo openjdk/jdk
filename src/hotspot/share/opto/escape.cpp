@@ -3780,7 +3780,7 @@ void ConnectionGraph::trace_es_update_helper(PointsToNode* ptn, PointsToNode::Es
 void ConnectionGraph::trace_es_update(PointsToNode* ptn, PointsToNode::EscapeState es, const char* reason, bool fields_only) const {
   if (_compile->trace_escape_analysis()) {
     trace_es_update_helper(ptn, es, fields_only);
-    tty->print_cr(reason);
+    tty->print_cr("%s", reason);
   }
 }
 
