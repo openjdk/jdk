@@ -43,6 +43,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.ApplicationLayout;
@@ -403,26 +404,36 @@ public final class PackageTest extends RunnablePackageTest {
         return toConsumer(new ThrowingConsumer<Action>() {
             @Override
             public void accept(Action action) throws Throwable {
+                if (terminated) {
+                    throw new IllegalStateException();
+                }
+
                 if (action == Action.FINALIZE) {
-                    if (unpackDir != null && Files.isDirectory(unpackDir)
-                            && !unpackDir.startsWith(TKit.workDir())) {
-                        TKit.deleteDirectoryRecursive(unpackDir);
+                    if (unpackDir != null) {
+                        if (Files.isDirectory(unpackDir)
+                                && !unpackDir.startsWith(TKit.workDir())) {
+                            TKit.deleteDirectoryRecursive(unpackDir);
+                        }
+                        unpackDir = null;
                     }
+                    terminated = true;
                 }
 
                 if (aborted) {
                     return;
                 }
 
-                final JPackageCommand curCmd;
-                if (Set.of(Action.INITIALIZE, Action.CREATE).contains(action)) {
-                    curCmd = cmd;
-                } else {
-                    curCmd = cmd.createImmutableCopy();
-                }
+                final Supplier<JPackageCommand> curCmd = () -> {
+                    if (Set.of(Action.INITIALIZE, Action.CREATE).contains(action)) {
+                        return cmd;
+                    } else {
+                        return cmd.createImmutableCopy();
+                    }
+                };
 
                 switch (action) {
                     case UNPACK: {
+                        cmd.setUnpackedPackageLocation(null);
                         var handler = packageHandlers.get(type).unpackHandler;
                         if (!(aborted = (handler == null))) {
                             unpackDir = TKit.createTempDirectory(
@@ -435,9 +446,10 @@ public final class PackageTest extends RunnablePackageTest {
                     }
 
                     case INSTALL: {
+                        cmd.setUnpackedPackageLocation(null);
                         var handler = packageHandlers.get(type).installHandler;
                         if (!(aborted = (handler == null))) {
-                            handler.accept(curCmd);
+                            handler.accept(curCmd.get());
                         }
                         break;
                     }
@@ -445,18 +457,19 @@ public final class PackageTest extends RunnablePackageTest {
                     case UNINSTALL: {
                         var handler = packageHandlers.get(type).uninstallHandler;
                         if (!(aborted = (handler == null))) {
-                            handler.accept(curCmd);
+                            handler.accept(curCmd.get());
                         }
                         break;
                     }
 
                     case CREATE:
-                        handler.accept(action, curCmd);
+                        cmd.setUnpackedPackageLocation(null);
+                        handler.accept(action, curCmd.get());
                         aborted = (expectedJPackageExitCode != 0);
                         return;
 
                     default:
-                        handler.accept(action, curCmd);
+                        handler.accept(action, curCmd.get());
                         break;
                 }
 
@@ -469,6 +482,7 @@ public final class PackageTest extends RunnablePackageTest {
 
             private Path unpackDir;
             private boolean aborted;
+            private boolean terminated;
             private final JPackageCommand cmd = Functional.identity(() -> {
                 JPackageCommand result = new JPackageCommand();
                 result.setDefaultInputOutput().setDefaultAppName();
