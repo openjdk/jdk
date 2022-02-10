@@ -771,7 +771,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
                                     appImageFileName));
                 }
             }
-        } else if (TKit.isOSX()) {
+        } else if (TKit.isOSX() && !isRuntime()) {
             TKit.assertFileExists(AppImageFile.getPathInAppImage(
                     appInstallationDirectory()));
         } else {
