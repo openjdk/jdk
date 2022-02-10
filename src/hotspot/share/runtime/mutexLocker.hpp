@@ -46,9 +46,6 @@ extern Monitor* JNICritical_lock;                // a lock used while entering a
 extern Mutex*   JvmtiThreadState_lock;           // a lock on modification of JVMTI thread data
 extern Monitor* EscapeBarrier_lock;              // a lock to sync reallocating and relocking objects because of JVMTI access
 extern Monitor* Heap_lock;                       // a lock on the heap
-#ifdef INCLUDE_PARALLELGC
-extern Mutex*   ParallelExpandHeap_lock;         // a lock on expanding the heap
-#endif
 extern Mutex*   AdapterHandlerLibrary_lock;      // a lock on the AdapterHandlerLibrary
 extern Mutex*   SignatureHandlerLibrary_lock;    // a lock on the SignatureHandlerLibrary
 extern Mutex*   VtableStubs_lock;                // a lock on the VtableStubs
