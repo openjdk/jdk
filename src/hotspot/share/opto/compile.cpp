@@ -4833,7 +4833,7 @@ void Compile::print_method(CompilerPhaseType cpt, int level, Node* n) {
 #ifndef PRODUCT
   ResourceMark rm;
   stringStream ss;
-  ss.print_raw(CompilerPhaseTypeHelper::to_string(cpt));
+  ss.print_raw(CompilerPhaseTypeHelper::to_name(cpt));
   if (n != nullptr) {
     ss.print(": %d %s ", n->_idx, NodeClassNames[n->Opcode()]);
   }
@@ -4843,7 +4843,7 @@ void Compile::print_method(CompilerPhaseType cpt, int level, Node* n) {
     _igv_printer->print_method(name, level);
   }
   if (should_print_ideal(level) || should_print_phase(cpt)) {
-    print_ideal_ir(name);
+    print_ideal_ir(CompilerPhaseTypeHelper::to_name(cpt));
   }
 #endif
   C->_latest_stage_start_counter.stamp();

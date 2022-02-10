@@ -90,7 +90,10 @@ static const char* phase_names[] = {
 
 class CompilerPhaseTypeHelper {
   public:
-  static const char* to_string(CompilerPhaseType cpt) {
+  static const char* to_name(CompilerPhaseType cpt) {
+    return phase_names[cpt];
+  }
+  static const char* to_description(CompilerPhaseType cpt) {
     return phase_descriptions[cpt];
   }
   static int to_bitmask(CompilerPhaseType cpt) {
