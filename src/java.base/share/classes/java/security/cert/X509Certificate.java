@@ -587,7 +587,7 @@ implements X509Extension {
      * returned as {@code String}s represented as a series of nonnegative
      * integers separated by periods. Directory names (distinguished names)
      * are returned in <a href="http://www.ietf.org/rfc/rfc2253.txt">
-     * RFC 2253</a> string format. Othernames are returned as a byte array
+     * RFC 2253</a> string format. otherNames are returned as a byte array
      * containing the ASN.1 DER encoded form of the name, with a
      * third entry in the list containing its {@code type-id} in string
      * format, and a fourth entry containing the ASN.1 DER encoding of

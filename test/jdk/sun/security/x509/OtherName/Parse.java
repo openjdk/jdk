@@ -24,7 +24,8 @@
 /*
  * @test
  * @bug 8277976
- * @summary Break up SEQUENCE in X509Certiticate#getSubjectAlternativeNames() in otherName
+ * @summary Break up SEQUENCE in X509Certiticate::getSubjectAlternativeNames
+ *          and X509Certiticate::getIssuerAlternativeNames in otherName
  * @modules java.base/sun.security.util
  *          java.base/sun.security.x509
  *          java.base/sun.security.tools.keytool
