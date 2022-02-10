@@ -1865,33 +1865,35 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_bipush:   push(intcon(iter().get_constant_u1())); break;
   case Bytecodes::_sipush:   push(intcon(iter().get_constant_u2())); break;
   case Bytecodes::_aconst_null: push(null());  break;
+
   case Bytecodes::_ldc:
   case Bytecodes::_ldc_w:
-  case Bytecodes::_ldc2_w:
-    // If the constant is unresolved, run this BC once in the interpreter.
-    {
-      ciConstant constant = iter().get_constant();
-      if (!constant.is_valid() ||
-          (constant.basic_type() == T_OBJECT &&
-           !constant.as_object()->is_loaded())) {
-        int index = iter().get_constant_pool_index();
-        constantTag tag = iter().get_constant_pool_tag(index);
-        uncommon_trap(Deoptimization::make_trap_request
-                      (Deoptimization::Reason_unloaded,
-                       Deoptimization::Action_reinterpret,
-                       index),
-                      NULL, tag.internal_name());
-        break;
-      }
+  case Bytecodes::_ldc2_w: {
+    ciConstant constant = iter().get_constant();
+    if (constant.is_loaded()) {
       assert(constant.basic_type() != T_OBJECT || constant.as_object()->is_instance(),
              "must be java_mirror of klass");
       const Type* con_type = Type::make_from_constant(constant);
       if (con_type != NULL) {
         push_node(con_type->basic_type(), makecon(con_type));
       }
-    }
+    } else {
+      // If the constant is unresolved or in error state, run this BC in the interpreter.
+      if (iter().is_in_error()) {
+        uncommon_trap(Deoptimization::make_trap_request(Deoptimization::Reason_unhandled,
+                                                        Deoptimization::Action_none),
+                      NULL, "constant in error state", true /* must_throw */);
 
+      } else {
+        int index = iter().get_constant_pool_index();
+        uncommon_trap(Deoptimization::make_trap_request(Deoptimization::Reason_unloaded,
+                                                        Deoptimization::Action_reinterpret,
+                                                        index),
+                      NULL, "unresolved constant", false /* must_throw */);
+      }
+    }
     break;
+  }
 
   case Bytecodes::_aload_0:
     push( local(0) );

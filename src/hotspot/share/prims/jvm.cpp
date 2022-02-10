@@ -30,7 +30,7 @@
 #include "cds/heapShared.hpp"
 #include "cds/lambdaFormInvokers.hpp"
 #include "classfile/classFileStream.hpp"
-#include "classfile/classLoader.hpp"
+#include "classfile/classLoader.inline.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoadInfo.hpp"
@@ -3373,6 +3373,11 @@ JVM_END
 
 // Library support ///////////////////////////////////////////////////////////////////////////
 
+JVM_LEAF(void*, JVM_LoadZipLibrary())
+  ClassLoader::load_zip_library_if_needed();
+  return ClassLoader::zip_library_handle();
+JVM_END
+
 JVM_ENTRY_NO_ENV(void*, JVM_LoadLibrary(const char* name, jboolean throwException))
   //%note jvm_ct
   char ebuf[1024];
@@ -3684,9 +3689,9 @@ JVM_ENTRY(void, JVM_LogLambdaFormInvoker(JNIEnv *env, jstring line))
     Handle h_line (THREAD, JNIHandles::resolve_non_null(line));
     char* c_line = java_lang_String::as_utf8_string(h_line());
     if (DynamicDumpSharedSpaces) {
-      // Note: LambdaFormInvokers::append_filtered and LambdaFormInvokers::append take same format which is not
+      // Note: LambdaFormInvokers::append take same format which is not
       // same as below the print format. The line does not include LAMBDA_FORM_TAG.
-      LambdaFormInvokers::append_filtered(os::strdup((const char*)c_line, mtInternal));
+      LambdaFormInvokers::append(os::strdup((const char*)c_line, mtInternal));
     }
     if (ClassListWriter::is_enabled()) {
       ClassListWriter w;
