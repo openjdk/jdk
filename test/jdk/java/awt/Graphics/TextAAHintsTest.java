@@ -1,7 +1,5 @@
-package awt;
-
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +28,7 @@ package awt;
  * @requires (os.family != "mac")
  * @run main/manual TextAAHintsTest
  */
+
 import java.awt.AWTException;
 import java.awt.BorderLayout;
 import java.awt.Button;
@@ -47,19 +46,18 @@ import java.awt.TextArea;
 import java.awt.image.BufferedImage;
 import java.awt.image.VolatileImage;
 import java.lang.reflect.InvocationTargetException;
-import javax.swing.SwingUtilities;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
-public class TextAAHintsTest  extends Component {
+public class TextAAHintsTest extends Component {
 
     private static final String black = "This text should be solid black";
     private static final String gray  = "This text should be gray scale anti-aliased";
     private static final String lcd   = "This text should be LCD sub-pixel text (coloured).";
+    public static final CountDownLatch countDownLatch = new CountDownLatch(1);
     private static Frame frame;
-    private static Thread mainThread = null;
-    private static boolean testPassed = false;
-    private static boolean isInterrupted = false;
-    private static final int testTimeOut = 300000;
-    private static String failureReason;
+    public static String failureReason;
+    public static volatile boolean testPassed = false;
 
     public void paint(Graphics g) {
 
@@ -88,27 +86,23 @@ public class TextAAHintsTest  extends Component {
         g2d.drawString(black, 10, 20);
 
         g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-                             RenderingHints.VALUE_TEXT_ANTIALIAS_GASP);
-        g2d.drawString(black, 10, 35);
-
-        g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
                              RenderingHints.VALUE_TEXT_ANTIALIAS_DEFAULT);
-        g2d.drawString(gray, 10, 50);
+        g2d.drawString(gray, 10, 35);
 
         g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
                              RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-        g2d.drawString(gray, 10, 65);
+        g2d.drawString(gray, 10, 50);
 
         /* For visual comparison, render grayscale with graphics AA off */
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                              RenderingHints.VALUE_ANTIALIAS_OFF);
-        g2d.drawString(gray, 10, 80);
+        g2d.drawString(gray, 10, 65);
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                              RenderingHints.VALUE_ANTIALIAS_ON);
 
         g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
                              RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
-        g2d.drawString(lcd, 10, 95);
+        g2d.drawString(lcd, 10, 80);
     }
 
     public void bufferedImageText(Graphics g) {
@@ -177,41 +171,22 @@ public class TextAAHintsTest  extends Component {
                 3. Third set of text are created using VolatileImage of the first text.
                 """;
         TextArea instructionTextArea = new TextArea(instructions, 8, 50);
-        instructionTextArea.setEnabled(false);
+        instructionTextArea.setEditable(false);
         frame.add(instructionTextArea, BorderLayout.CENTER);
 
         Panel controlPanel = new Panel();
         Button passButton = new Button("Pass");
-        passButton.addActionListener(e->{
+        passButton.addActionListener(e -> {
             testPassed = true;
-            isInterrupted = true;
-            mainThread.interrupt();
+            countDownLatch.countDown();
+            frame.dispose();
         });
         Button failButton = new Button("Fail");
-        failButton.addActionListener(e->{
-
-            // Show dialog to read why the testcase was failed and append the
-            // testcase failure reason to the output
-           final Dialog dialog = new Dialog(frame , "TestCase" +
-                    " failure reason", true);
-            TextArea textArea = new TextArea("", 5,60, TextArea.SCROLLBARS_BOTH);
-            dialog.add(textArea, BorderLayout.CENTER);
-
-            Button okButton = new Button("OK");
-            okButton.addActionListener(e1->{
-                failureReason = textArea.getText();
-                dialog.dispose();
-            });
-            Panel ctlPanel = new Panel();
-            ctlPanel.add(okButton);
-            dialog.add(ctlPanel, BorderLayout.SOUTH);
-            dialog.setLocationRelativeTo(null);
-            dialog.pack();
-            dialog.setVisible(true);
-
+        failButton.addActionListener(e -> {
+            readFailedReason();
             testPassed = false;
-            isInterrupted = true;
-            mainThread.interrupt();
+            countDownLatch.countDown();
+            frame.dispose();
         });
         controlPanel.add(passButton);
         controlPanel.add(failButton);
@@ -221,26 +196,40 @@ public class TextAAHintsTest  extends Component {
         frame.setVisible(true);
     }
 
+    public static void readFailedReason() {
+        // Show dialog to read why the testcase was failed and append the
+        // testcase failure reason to the output
+        final Dialog dialog = new Dialog(frame, "TestCase" +
+                " failure reason", true);
+        TextArea textArea = new TextArea("", 5, 60, TextArea.SCROLLBARS_BOTH);
+        dialog.add(textArea, BorderLayout.CENTER);
+
+        Button okButton = new Button("OK");
+        okButton.addActionListener(e1 -> {
+            failureReason = textArea.getText();
+            dialog.dispose();
+        });
+        Panel ctlPanel = new Panel();
+        ctlPanel.add(okButton);
+        dialog.add(ctlPanel, BorderLayout.SOUTH);
+        dialog.setLocationRelativeTo(null);
+        dialog.pack();
+        dialog.setVisible(true);
+    }
+
     public static void main(String[] args) throws InterruptedException, InvocationTargetException {
-        createTestUI();
-        mainThread = Thread.currentThread();
-        try {
-            mainThread.sleep(testTimeOut);
-        } catch (InterruptedException ex) {
-            if (!testPassed) {
-                throw new RuntimeException("Test failed : Reason : " + failureReason);
-            }
-        } finally {
-            SwingUtilities.invokeAndWait(()->{
-                if ( frame != null) {
+        java.awt.EventQueue.invokeAndWait(TextAAHintsTest::createTestUI);
+        if (!countDownLatch.await(2, TimeUnit.MINUTES)) {
+            java.awt.EventQueue.invokeAndWait(() -> {
+                if (frame != null) {
                     frame.dispose();
                 }
             });
+            throw new RuntimeException("Timeout : No action was taken on the test.");
         }
 
-        if (!isInterrupted) {
-            throw new RuntimeException("Test Timed out after "
-                    + testTimeOut / 1000 + " seconds");
+        if (!testPassed) {
+            throw new RuntimeException("Test failed : Reason : " + failureReason);
         }
     }
 }
