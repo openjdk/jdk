@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,11 +155,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
             Map<String, String> data = createDefaultReplacementData(params);
 
             for (var ca : customActions) {
-                if (ca.instance != null) {
-                    ca.instance.replacementStringIds().forEach(v -> data.put(v,
-                            ""));
-                    data.putAll(ca.instance.create());
-                }
+                data.putAll(ca.instance.create());
             }
 
             data.putAll(createReplacementData(params));
@@ -188,7 +184,6 @@ abstract class LinuxPackageBundler extends AbstractBundler {
 
         final List<String> caPackages = customActions.stream()
                 .map(ca -> ca.instance)
-                .filter(Objects::nonNull)
                 .map(ShellCustomAction::requiredPackages)
                 .flatMap(List::stream).toList();
 
@@ -359,6 +354,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         void init(PlatformPackage thePackage, Map<String, ? super Object> params)
                 throws IOException {
             instance = factory.create(thePackage, params);
+            Objects.requireNonNull(instance);
         }
 
         private final ShellCustomActionFactory factory;

@@ -46,10 +46,10 @@ public final class MacLaunchersAsServices extends UnixLaunchersAsServices {
         });
     }
 
-    static MacLaunchersAsServices create(Map<String, Object> params,
+    static ShellCustomAction create(Map<String, Object> params,
             Path outputDir) throws IOException {
         if (StandardBundlerParam.isRuntimeInstaller(params)) {
-            return null;
+            return ShellCustomAction.nop(REPLACEMENT_STRING_IDS);
         }
         return Optional.of(new MacLaunchersAsServices(new PlatformPackage() {
             @Override
