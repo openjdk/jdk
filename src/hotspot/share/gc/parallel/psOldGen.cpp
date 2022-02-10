@@ -41,7 +41,11 @@ PSOldGen::PSOldGen(ReservedSpace rs, size_t initial_size, size_t min_size,
                    size_t max_size, const char* perf_data_name, int level):
   _min_gen_size(min_size),
   _max_gen_size(max_size),
+#ifdef ASSERT
   _Expand_lock(Heap_lock->rank()-1, "PSOldGenExpand_lock", true)
+#else
+  _Expand_lock(Mutex::safepoint, "PSOldGenExpand_lock", true)
+#endif
 {
   initialize(rs, initial_size, GenAlignment, perf_data_name, level);
 }
