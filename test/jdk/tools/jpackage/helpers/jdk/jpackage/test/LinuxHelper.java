@@ -215,7 +215,9 @@ public final class LinuxHelper {
         };
         rpm.uninstallHandler = cmd -> {
             cmd.verifyIsOfType(PackageType.LINUX_RPM);
-            Executor.of("sudo", "rpm", "-e", getPackageName(cmd)).execute();
+            String script = String.format("'! rpm -q %s || sudo rpm -e %s'",
+                    getPackageName(cmd));
+            Executor.of("sh", "-c", script).execute();
         };
         rpm.unpackHandler = (cmd, destinationDir) -> {
             cmd.verifyIsOfType(PackageType.LINUX_RPM);
