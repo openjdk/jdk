@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,9 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
     private String toStringImpl() {
         StringBuilder result = new StringBuilder(128);
         result.append('@');
-        result.append(type.getName());
+        // Guard against shouldn't-happen NPE for a missing canonical name
+        result.append(Objects.toString(type.getCanonicalName(),
+                                       "<no canonical name>"));
         result.append('(');
         boolean firstMember = true;
         Set<Map.Entry<String, Object>> entries = memberValues.entrySet();
@@ -189,6 +191,10 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
                 return  toSourceString((long) value);
             else if (type == Byte.class)
                 return  toSourceString((byte) value);
+            else if (value instanceof Enum<?>)
+                // Predicate above covers enum constants, including
+                // those with specialized class bodies.
+                return toSourceString((Enum<?>) value);
             else
                 return value.toString();
         } else {
@@ -219,6 +225,10 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
                 stringStream =
                     Arrays.stream((String[])value).
                     map(AnnotationInvocationHandler::toSourceString);
+            else if (type.getComponentType().isEnum())
+                stringStream =
+                    Arrays.stream((Enum<?>[])value).
+                    map(AnnotationInvocationHandler::toSourceString);
             else
                 stringStream = Arrays.stream((Object[])value).map(Objects::toString);
 
@@ -239,7 +249,11 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
             arrayBrackets.append("[]");
         }
 
-        return finalComponent.getName() + arrayBrackets.toString() + ".class";
+        // Guard against NPE in toString generation if the class lacks
+        // a canonical name; not expected to happen
+        return Objects.toString(finalComponent.getCanonicalName(),
+                                "<no canonical name>") +
+            arrayBrackets.toString() + ".class";
     }
 
     private static String toSourceString(float f) {
@@ -305,6 +319,10 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
 
     private static String toSourceString(long ell) {
         return String.valueOf(ell) + "L";
+    }
+
+    private static String toSourceString(Enum<?> enumConstant) {
+        return enumConstant.name();
     }
 
     /**
