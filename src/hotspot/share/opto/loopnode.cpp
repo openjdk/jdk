@@ -2593,7 +2593,7 @@ void OuterStripMinedLoopNode::fix_sunk_stores(CountedLoopEndNode* inner_cle, Loo
           Node* uu = target->fast_out(j);
           if (uu->is_Phi()) {
             Node* be = uu->in(LoopNode::LoopBackControl);
-            if (be->is_Store() && be->in(0) == cle_tail) {
+            if (be->is_Store() && be->in(0) == target->in(LoopNode::LoopBackControl)) {
               assert(igvn->C->get_alias_index(uu->adr_type()) != alias_idx && igvn->C->get_alias_index(uu->adr_type()) != Compile::AliasIdxBot, "");
 //              assert(false, "store on the backedge + sunk stores: unsupported");
 //              // drop outer loop
@@ -2655,7 +2655,7 @@ void OuterStripMinedLoopNode::fix_sunk_stores(CountedLoopEndNode* inner_cle, Loo
           // Or fix the outer loop fix to include
           // that chain of stores.
           Node* be = phi->in(LoopNode::LoopBackControl);
-          assert(!(be->is_Store() && be->in(0) == cle_tail), "store on the backedge + sunk stores: unsupported");
+          assert(!(be->is_Store() && be->in(0) == target->in(LoopNode::LoopBackControl)), "store on the backedge + sunk stores: unsupported");
           if (be == first->in(MemNode::Memory)) {
             if (be == phi->in(LoopNode::LoopBackControl)) {
               igvn->replace_input_of(phi, LoopNode::LoopBackControl, last);
