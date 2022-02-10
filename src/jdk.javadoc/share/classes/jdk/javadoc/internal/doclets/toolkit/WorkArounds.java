@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,8 +221,7 @@ public class WorkArounds {
                 if (sym.overrides(sym2, origin, javacTypes, true)) {
                     // Ignore those methods that may be a simple override
                     // and allow the real API method to be found.
-                    if (sym2.type.hasTag(TypeTag.METHOD) &&
-                            utils.isSimpleOverride((MethodSymbol)sym2)) {
+                    if (utils.isSimpleOverride((MethodSymbol)sym2)) {
                         continue;
                     }
                     return t;
