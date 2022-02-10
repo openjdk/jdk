@@ -376,7 +376,7 @@ TEST_VM_F(LogConfigurationTest, parse_command_line_arguments) {
   char* current_pos = strchr(buf,'\\');
   while (current_pos != nullptr) {
     *current_pos = '/';
-    current_pos = strchr(current_pos+1, '\\');
+    current_pos = strchr(current_pos + 1, '\\');
   }
   printf("Checking: %s\n", buf);
   EXPECT_TRUE(LogConfiguration::parse_command_line_arguments(buf));
