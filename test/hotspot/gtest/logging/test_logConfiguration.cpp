@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -359,6 +359,29 @@ TEST_VM_F(LogConfigurationTest, parse_command_line_arguments) {
   ret = jio_snprintf(buf, sizeof(buf), ":%s", TestLogFileName);
   ASSERT_NE(-1, ret);
   EXPECT_TRUE(LogConfiguration::parse_command_line_arguments(buf));
+
+#ifdef _WINDOWS
+  // We need to test the special-case parsing for drive letters in
+  // log file paths e.g. c:\log.txt and c:/log.txt. Our temp directory
+  // based TestLogFileName should already be the \ format (we print it
+  // below to visually verify) so we only need to convert to /.
+  printf("Checked: %s\n", buf);
+  // First disable logging so the current log file will be closed and we
+  // can delete it, so that UL won't try to perform log file rotation.
+  // The rotated file would not be auto-deleted.
+  set_log_config(TestLogFileName, "all=off");
+  delete_file(TestLogFileName);
+
+  // now convert \ to /
+  char* current_pos = strchr(buf,'\\');
+  while (current_pos != nullptr) {
+    *current_pos = '/';
+    current_pos = strchr(current_pos + 1, '\\');
+  }
+  printf("Checking: %s\n", buf);
+  EXPECT_TRUE(LogConfiguration::parse_command_line_arguments(buf));
+#endif
+
 }
 
 // Test split up log configuration arguments
