@@ -488,8 +488,13 @@ GetJavaProperties(JNIEnv *env)
 #else
         sprops.user_home = pwent ? strdup(pwent->pw_dir) : NULL;
 #endif
-        if (sprops.user_home == NULL) {
-            sprops.user_home = "?";
+        if (sprops.user_home == NULL || *sprops.user_home == '\0') {
+            // If the OS supplied home directory is not valid
+            // $HOME is the backup source for the home directory
+            sprops.user_home = getenv("HOME");
+            if ((sprops.user_home == NULL) && (*sprops.user_home == '\0')) {
+                sprops.user_home = "NO_HOME_DIR";
+            }
         }
     }
 
