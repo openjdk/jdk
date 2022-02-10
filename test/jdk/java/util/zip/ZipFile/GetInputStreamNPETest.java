@@ -69,10 +69,8 @@ public class GetInputStreamNPETest {
     // returns null
     public static final String ZIPENTRY_GETNAME_NULL_ERROR_MSG
             = "ZipEntry::getName returned null";
-    // Error message from JarFile::verifiableEntry when JarFile::getJarEntry
-    // returns null
-    public static final String ZIPENTRY_NULL_ERROR_MSG
-            = "ZipEntry should not be null";
+    // Zip Entry name that does not exist within the JarFile
+    public static final String ZIP_ENTRY_THAT_DOES_NOT_EXIST = "org/gotham/Batcave.class";
 
     /**
      * Byte array representing valid jar file prior modifying a filename in the
@@ -847,8 +845,8 @@ public class GetInputStreamNPETest {
     @Test(dataProvider = "trueFalse")
     public static void signedValidJarEntryNameTest(boolean verify) throws Exception {
         try (JarFile jf = new JarFile(SIGNED_VALID_ENTRY_NAME_JAR.toFile(), verify)) {
-            JarEntry ze = jf.getJarEntry(CEN_FILENAME_TO_MODIFY);
-            var is = jf.getInputStream(ze);
+            JarEntry je = jf.getJarEntry(CEN_FILENAME_TO_MODIFY);
+            var is = jf.getInputStream(je);
             byte[] cnt = is.readAllBytes();
             assertNotNull(cnt);
         }
@@ -880,7 +878,7 @@ public class GetInputStreamNPETest {
     @Test(dataProvider = "trueFalse")
     public static void invalidJarZipEntry(boolean verify) throws Exception {
         try (JarFile jf = new JarFile(INVALID_ENTRY_NAME_JAR.toFile(), verify)) {
-            // The entry will not be found and resulting in the ZipEntry being null
+            // The entry will not be found resulting in the ZipEntry being null
             ZipEntry ze = jf.getEntry(CEN_FILENAME_TO_MODIFY);
             var ex= expectThrows(NullPointerException.class,
                     () -> jf.getInputStream(ze) );
@@ -898,7 +896,7 @@ public class GetInputStreamNPETest {
     @Test(dataProvider = "trueFalse")
     public static void invalidJarJarEntry(boolean verify) throws Exception {
         try (JarFile jf = new JarFile(INVALID_ENTRY_NAME_JAR.toFile(), verify)) {
-            // The entry will not be found and resulting in the ZipEntry being null
+            // The entry will not be found resulting in the ZipEntry being null
             JarEntry je = jf.getJarEntry(CEN_FILENAME_TO_MODIFY);
             var ex= expectThrows(NullPointerException.class,
                     () -> jf.getInputStream(je) );
@@ -916,7 +914,7 @@ public class GetInputStreamNPETest {
     @Test
     public static void invalidJarZipEntry() throws IOException {
         try (ZipFile zip = new ZipFile(INVALID_ENTRY_NAME_JAR.toFile())) {
-            // The entry will not be found and resulting in the ZipEntry being null
+            // The entry will not be found resulting in the ZipEntry being null
             ZipEntry ze = zip.getEntry(CEN_FILENAME_TO_MODIFY);
             var ex= expectThrows(NullPointerException.class,
                     () -> zip.getInputStream(ze) );
@@ -935,7 +933,7 @@ public class GetInputStreamNPETest {
     @Test(dataProvider = "trueFalse")
     public static void testInvalidSignedJarJarEntry(boolean verify) throws Exception {
         try (JarFile jf = new JarFile(SIGNED_INVALID_ENTRY_NAME_JAR.toFile(), verify)) {
-            // The entry will not be found and resulting in the ZipEntry being null
+            // The entry will not be found resulting in the ZipEntry being null
             JarEntry ze = jf.getJarEntry(CEN_FILENAME_TO_MODIFY);
             var ex= expectThrows(NullPointerException.class,
                     () -> jf.getInputStream(ze) );
@@ -954,7 +952,7 @@ public class GetInputStreamNPETest {
     @Test(dataProvider = "trueFalse")
     public static void testInvalidSignedJarZipEntry(boolean verify) throws Exception {
         try (JarFile jf = new JarFile(SIGNED_INVALID_ENTRY_NAME_JAR.toFile(), verify)) {
-            // The entry will not be found and resulting in the ZipEntry being null
+            // The entry will not be found resulting in the ZipEntry being null
             ZipEntry ze = jf.getEntry(CEN_FILENAME_TO_MODIFY);
             var ex= expectThrows(NullPointerException.class,
                     () -> jf.getInputStream(ze) );
@@ -965,37 +963,70 @@ public class GetInputStreamNPETest {
 
     /**
      * Validate that JarFile::verifiableEntry will throw the correct ZipException
-     * if the ZipEntry returned from JarFile::getJarEntry is null.
-     * @throws Exception if an error occurs
-     */
-    @Test
-    public static void verifiableEntryZipEntryNullTest() throws Exception {
-        try (JarFile jf = new JarFile(SIGNED_VALID_ENTRY_NAME_JAR.toFile(), true)) {
-            var ze = new InvalidZipEntry("javax/inject/Singleton.class");
-            var ex= expectThrows(ZipException.class,
-                    () -> jf.getInputStream(ze) );
-            // Validate that we receive the expected message from
-            // JarFile::verifiableEntry when JarFile::getJarEntry returns null
-            assertTrue( ex != null &&
-                    ex.getMessage().equals(ZIPENTRY_NULL_ERROR_MSG));
-        }
-    }
-
-    /**
-     * Validate that JarFile::verifiableEntry will throw the correct ZipException
-     * if the ZipEntry passed to it returns null when ZipEntry::getName is invoked.
+     * if the ZipEntry passed as a parameter returns null when ZipEntry::getName
+     * is invoked.
      * @throws Exception if an error occurs
      */
     @Test
     public static void verifiableEntryZipEntryGetNameNullTest() throws Exception {
         try (JarFile jf = new JarFile(SIGNED_VALID_ENTRY_NAME_JAR.toFile(), true)) {
-            var ze = new InvalidZipEntry2("jjavax/inject/Singleton.class");
+            var ze = new InvalidZipEntry(CEN_FILENAME_TO_MODIFY);
             var ex= expectThrows(ZipException.class,
                     () -> jf.getInputStream(ze) );
             // Validate that we receive the expected message from
             // JarFile::verifiableEntry when ZipEntry::getName returns null
             assertTrue( ex != null &&
                     ex.getMessage().equals(ZIPENTRY_GETNAME_NULL_ERROR_MSG));
+        }
+    }
+
+    /**
+     * Validate that JarFile::getInputStream will return null when the specified
+     * Zip File entry does not exist in the Jar file
+     * @throws Exception if an error occurs
+     */
+    @Test
+    public static void JarFileZipEntryNullGetInputStreamTest() throws Exception {
+        // Unsigned Jar
+        try (JarFile jf = new JarFile(VALID_ENTRY_NAME_JAR.toFile())) {
+            var ze = new ZipEntry(ZIP_ENTRY_THAT_DOES_NOT_EXIST);
+            var is = jf.getInputStream(ze);
+            // As the ZipEntry cannot be found, the returned InputStream is null
+            assertNull(is);
+        }
+        // Signed Jar is used for the next checks
+        try (JarFile jf = new JarFile(SIGNED_INVALID_ENTRY_NAME_JAR.toFile(), false)) {
+            var ze = new ZipEntry(ZIP_ENTRY_THAT_DOES_NOT_EXIST);
+            var is = jf.getInputStream(ze);
+            // As the ZipEntry cannot be found, the returned InputStream is null
+            assertNull(is);
+        }
+        try (JarFile jf = new JarFile(SIGNED_VALID_ENTRY_NAME_JAR.toFile(), true)) {
+            var ze = new ZipEntry(ZIP_ENTRY_THAT_DOES_NOT_EXIST);
+            var is = jf.getInputStream(ze);
+            // As the ZipEntry cannot be found, the returned InputStream is null
+            assertNull(is);
+        }
+        try (JarFile jf = new JarFile(SIGNED_VALID_ENTRY_NAME_JAR.toFile())) {
+            var ze = new ZipEntry(ZIP_ENTRY_THAT_DOES_NOT_EXIST);
+            var is = jf.getInputStream(ze);
+            // As the ZipEntry cannot be found, the returned InputStream is null
+            assertNull(is);
+        }
+    }
+
+    /**
+     * Validate that ZipFile::getInputStream will return null when the specified
+     * Zip File entry does not exist in the Jar file
+     * @throws Exception if an error occurs
+     */
+    @Test
+    public static void ZipFileZipEntryNullGetInputStreamTest() throws Exception {
+        try (ZipFile zf = new ZipFile(VALID_ENTRY_NAME_JAR.toFile())) {
+            var ze = new ZipEntry(ZIP_ENTRY_THAT_DOES_NOT_EXIST);
+            var is = zf.getInputStream(ze);
+            // As the ZipEntry cannot be found, the returned InpuStream is null
+            assertNull(is);
         }
     }
 
@@ -1029,29 +1060,15 @@ public class GetInputStreamNPETest {
     }
 
     /**
-     * Overridden ZipEntry class which will always return an invalid name
-     * for the Zip entry
+     * Overridden ZipEntry class which will always return null
+     * for the Zip entry name
      */
     public static class InvalidZipEntry extends ZipEntry {
         public InvalidZipEntry(String name) {
             super(name);
         }
         public String getName() {
-            return "NameDoesNotExist";
-        }
-    }
-
-    /**
-     * Overridden ZipEntry class which will always return null
-     * for the Zip entry name
-     */
-    public static class InvalidZipEntry2 extends ZipEntry {
-        public InvalidZipEntry2(String name) {
-            super(name);
-        }
-        public String getName() {
             return null;
         }
     }
-
 }

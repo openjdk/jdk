@@ -826,7 +826,8 @@ public class JarFile extends ZipFile {
      * zip file entry.
      * @param ze the zip file entry
      * @return an input stream for reading the contents of the specified
-     *         zip file entry
+     *         zip file entry or null if the zip file entry does not exist
+     *         within the jar file
      * @throws ZipException if a zip file format error has occurred
      * @throws IOException if an I/O error has occurred
      * @throws SecurityException if any of the jar file entries
@@ -852,11 +853,16 @@ public class JarFile extends ZipFile {
             if (jv == null)
                 return super.getInputStream(ze);
         }
-
+        // Return null InputStream when the specified entry is not found in the
+        // Jar
+        var je = verifiableEntry(ze);
+        if (je == null) {
+            return null;
+        }
         // wrap a verifier stream around the real stream
         return new JarVerifier.VerifierStream(
                 getManifestFromReference(),
-                verifiableEntry(ze),
+                je,
                 super.getInputStream(ze),
                 jv);
 
@@ -873,10 +879,6 @@ public class JarFile extends ZipFile {
             ze = getJarEntry(entryName);
         } else {
             throw new ZipException("ZipEntry::getName returned null");
-        }
-        // ZipEntry returned from JarFile::getJarEntry should not be null
-        if (ze == null) {
-            throw new ZipException("ZipEntry should not be null");
         }
         if (ze instanceof JarFileEntry) {
             return ((JarFileEntry)ze).realEntry();
