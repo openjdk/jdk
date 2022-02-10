@@ -140,7 +140,7 @@ public class Snippets {
                 for (AnnotationElement ae : field.getAnnotationElements()) {
                     ContentType type = ae.getAnnotation(ContentType.class);
                     if (type != null) {
-                        if (ae.getTypeName().equals("sensors.Temperature")) {
+                        if (ae.getTypeName().equals("com.example.Temperature")) {
                             double value = event.getDouble(field.getName());
                             String unit = (String) ae.getValue("value");
                             double celcius = switch (unit) {
