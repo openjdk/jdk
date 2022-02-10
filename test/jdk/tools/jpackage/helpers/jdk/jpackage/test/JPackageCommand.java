@@ -796,7 +796,11 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     JPackageCommand setUnpackedPackageLocation(Path path) {
         verifyIsOfType(PackageType.NATIVE);
-        setArgumentValue(UNPACKED_PATH_ARGNAME, path);
+        if (path != null) {
+            setArgumentValue(UNPACKED_PATH_ARGNAME, path);
+        } else {
+            removeArgumentWithValue(UNPACKED_PATH_ARGNAME);
+        }
         return this;
     }
 
