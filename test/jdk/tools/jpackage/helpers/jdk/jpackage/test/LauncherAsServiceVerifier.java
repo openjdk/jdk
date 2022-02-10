@@ -115,11 +115,15 @@ public final class LauncherAsServiceVerifier {
         if (MAC_PKG.equals(cmd.packageType())) {
             servicesSpecificFiles.add(MacHelper.getUninstallCommand(cmd));
 
-            servicesSpecificFolders.add(MacHelper.getServicePlistFilePath(cmd,
-                    null).getParent());
+            if (cmd.isPackageUnpacked()) {
+                servicesSpecificFolders.add(MacHelper.getServicePlistFilePath(
+                        cmd, null).getParent());
+            }
         } else if (LINUX.contains(cmd.packageType())) {
-            servicesSpecificFolders.add(LinuxHelper.getServiceUnitFilePath(cmd,
-                    null).getParent());
+            if (cmd.isPackageUnpacked()) {
+                servicesSpecificFolders.add(LinuxHelper.getServiceUnitFilePath(
+                        cmd, null).getParent());
+            }
         }
 
         if (launcherNames.isEmpty() || cmd.isRuntime()) {
