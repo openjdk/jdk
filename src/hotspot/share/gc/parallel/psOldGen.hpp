@@ -47,7 +47,7 @@ class PSOldGen : public CHeapObj<mtGC> {
   const size_t _min_gen_size;
   const size_t _max_gen_size;
 
-  PaddedMutex _Expand_lock;
+  PaddedMutex _expand_lock;
 
   // Block size for parallel iteration
   static const size_t IterateBlockSize = 1024 * 1024;

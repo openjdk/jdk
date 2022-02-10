@@ -42,9 +42,9 @@ PSOldGen::PSOldGen(ReservedSpace rs, size_t initial_size, size_t min_size,
   _min_gen_size(min_size),
   _max_gen_size(max_size),
 #ifdef ASSERT
-  _Expand_lock(Heap_lock->rank()-1, "PSOldGenExpand_lock", true)
+  _expand_lock(Heap_lock->rank()-1, "PSOldGenExpand_lock", true)
 #else
-  _Expand_lock(Mutex::safepoint, "PSOldGenExpand_lock", true)
+  _expand_lock(Mutex::safepoint, "PSOldGenExpand_lock", true)
 #endif
 {
   initialize(rs, initial_size, GenAlignment, perf_data_name, level);
@@ -168,7 +168,7 @@ bool PSOldGen::expand_for_allocate(size_t word_size) {
   assert(word_size > 0, "allocating zero words?");
   bool result = true;
   {
-    MutexLocker x(&_Expand_lock);
+    MutexLocker x(&_expand_lock);
     // Avoid "expand storms" by rechecking available space after obtaining
     // the lock, because another thread may have already made sufficient
     // space available.  If insufficient space available, that will remain
@@ -188,7 +188,7 @@ bool PSOldGen::expand_for_allocate(size_t word_size) {
 }
 
 bool PSOldGen::expand(size_t bytes) {
-  assert_lock_strong(&_Expand_lock);
+  assert_lock_strong(&_expand_lock);
   assert_locked_or_safepoint(Heap_lock);
   assert(bytes > 0, "precondition");
   const size_t alignment = virtual_space()->alignment();
@@ -226,7 +226,7 @@ bool PSOldGen::expand(size_t bytes) {
 }
 
 bool PSOldGen::expand_by(size_t bytes) {
-  assert_lock_strong(&_Expand_lock);
+  assert_lock_strong(&_expand_lock);
   assert_locked_or_safepoint(Heap_lock);
   assert(bytes > 0, "precondition");
   bool result = virtual_space()->expand_by(bytes);
@@ -262,7 +262,7 @@ bool PSOldGen::expand_by(size_t bytes) {
 }
 
 bool PSOldGen::expand_to_reserved() {
-  assert_lock_strong(&_Expand_lock);
+  assert_lock_strong(&_expand_lock);
   assert_locked_or_safepoint(Heap_lock);
 
   bool result = false;
@@ -275,12 +275,12 @@ bool PSOldGen::expand_to_reserved() {
 }
 
 void PSOldGen::shrink(size_t bytes) {
-  assert_lock_strong(&_Expand_lock);
+  assert_lock_strong(&_expand_lock);
   assert_locked_or_safepoint(Heap_lock);
 
   size_t size = align_down(bytes, virtual_space()->alignment());
   if (size > 0) {
-    assert_lock_strong(&_Expand_lock);
+    assert_lock_strong(&_expand_lock);
     virtual_space()->shrink_by(bytes);
     post_resize();
 
@@ -319,11 +319,11 @@ void PSOldGen::resize(size_t desired_free_space) {
   }
   if (new_size > current_size) {
     size_t change_bytes = new_size - current_size;
-    MutexLocker x(&_Expand_lock);
+    MutexLocker x(&_expand_lock);
     expand(change_bytes);
   } else {
     size_t change_bytes = current_size - new_size;
-    MutexLocker x(&_Expand_lock);
+    MutexLocker x(&_expand_lock);
     shrink(change_bytes);
   }
 
