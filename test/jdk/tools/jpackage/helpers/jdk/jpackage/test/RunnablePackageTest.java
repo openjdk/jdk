@@ -94,6 +94,10 @@ public abstract class RunnablePackageTest {
          */
         UNINSTALL,
         /**
+         * Purge package.
+         */
+        PURGE,
+        /**
          * Finalize test.
          */
         FINALIZE;
