@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,7 @@ help_usage ()
   echo "  -v              - verbose output"
   echo "  -c              - keep jtreg cache"
   echo "  -a              - run all, not only SQE tests"
+  echo "  -f              - create and verify packages, not only create them"
   echo "  -d              - dry run. Print jtreg command line, but don't execute it"
   echo "  -t <jdk>        - path to JDK to be tested [ mandatory ]"
   echo "  -j <openjdk>    - path to local copy of openjdk repo with jpackage jtreg tests"
@@ -152,15 +153,15 @@ mode=update
 # jtreg extra arguments
 declare -a jtreg_args
 
-# Create packages only
-#jtreg_args+=("-Djpackage.test.action=create")
+# Create and verify packages
+create_and_verify_packages=
 
 # run all tests
 run_all_tests=
 
 mapfile -t tests < <(find_all_packaging_tests)
 
-while getopts "vahdct:j:o:r:m:l:" argname; do
+while getopts "vahdcft:j:o:r:m:l:" argname; do
   case "$argname" in
     v) verbose=yes;;
     a) run_all_tests=yes;;
@@ -172,6 +173,7 @@ while getopts "vahdct:j:o:r:m:l:" argname; do
     r) runtime_dir="$OPTARG";;
     l) logfile="$OPTARG";;
     m) mode="$OPTARG";;
+    f) create_and_verify_packages=yes;;
     h) help_usage; exit 0;;
     ?) help_usage; exit 1;;
   esac
@@ -234,6 +236,10 @@ if [ -z "$run_all_tests" ]; then
   jtreg_args+=(-Djpackage.test.SQETest=yes)
 fi
 
+if [ -z "$create_and_verify_packages" ]; then
+  jtreg_args+=(-Djpackage.test.action=create)
+fi
+
 # Drop arguments separator
 [ "$1" != "--" ] || shift
 
@@ -249,10 +255,10 @@ installJtreg ()
     if [ ! -f "$jtreg_jar" ]; then
       exec_command mkdir -p "$workdir"
       if [[ ${jtreg_bundle: -7} == ".tar.gz" ]]; then
-        exec_command "(" cd "$workdir" "&&" wget "$jtreg_bundle" "&&" tar -xzf "$(basename $jtreg_bundle)" ";" rm -f "$(basename $jtreg_bundle)" ")"
+        exec_command "(" cd "$workdir" "&&" wget --no-check-certificate "$jtreg_bundle" "&&" tar -xzf "$(basename $jtreg_bundle)" ";" rm -f "$(basename $jtreg_bundle)" ")"
       else
         if [[ ${jtreg_bundle: -4} == ".zip" ]]; then
-          exec_command "(" cd "$workdir" "&&" wget "$jtreg_bundle" "&&" unzip "$(basename $jtreg_bundle)" ";" rm -f "$(basename $jtreg_bundle)" ")"
+          exec_command "(" cd "$workdir" "&&" wget --no-check-certificate "$jtreg_bundle" "&&" unzip "$(basename $jtreg_bundle)" ";" rm -f "$(basename $jtreg_bundle)" ")"
         else
           fatal 'Unsupported extension of JREG bundle ['$JT_BUNDLE_URL']. Only *.zip or *.tar.gz is supported.'
         fi

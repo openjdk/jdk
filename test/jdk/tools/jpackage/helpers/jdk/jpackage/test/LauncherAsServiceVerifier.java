@@ -122,14 +122,14 @@ public final class LauncherAsServiceVerifier {
                     null).getParent());
         }
 
-        if (!launcherNames.isEmpty() || cmd.isRuntime()) {
-            servicesSpecificFiles.forEach(TKit::assertFileExists);
-            servicesSpecificFolders.forEach(TKit::assertDirectoryExists);
-        } else {
+        if (launcherNames.isEmpty() || cmd.isRuntime()) {
             servicesSpecificFiles.forEach(path -> TKit.assertPathExists(path,
                     false));
             servicesSpecificFolders.forEach(path -> TKit.assertPathExists(path,
                     false));
+        } else {
+            servicesSpecificFiles.forEach(TKit::assertFileExists);
+            servicesSpecificFolders.forEach(TKit::assertDirectoryExists);
         }
     }
 
