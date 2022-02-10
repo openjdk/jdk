@@ -80,7 +80,8 @@ help_usage ()
   echo '  -l <logfile>    - value for `jpackage.test.logfile` property.'
   echo "                    Optional, for jtreg tests debug purposes only."
   echo "  -m <mode>       - mode to run jtreg tests."
-  echo '                    Should be one of `create`, `update` or `print-default-tests`.'
+  echo '                    Should be one of `create`, `update`,'
+  echo '                    `create-small-runtime`, or `print-default-tests`.'
   echo '                    Optional, default mode is `update`.'
   echo '                    - `create`'
   echo '                      Remove all package bundles from the output directory before running jtreg tests.'
@@ -88,6 +89,8 @@ help_usage ()
   echo '                      Run jtreg tests and overrite existing package bundles in the output directory.'
   echo '                    - `print-default-tests`'
   echo '                      Print default list of packaging tests and exit.'
+  echo '                    - `create-small-runtime`'
+  echo '                      Create small Java runtime using <jdk>/bin/jlink command in the output directory.'
 }
 
 error ()
@@ -134,8 +137,6 @@ exec_command ()
 test_jdk=
 
 # Path to local copy of open jdk repo with jpackage jtreg tests
-# hg clone http://hg.openjdk.java.net/jdk/sandbox
-# cd sandbox; hg update -r JDK-8200758-branch
 open_jdk_with_jpackage_jtreg_tests=$(dirname $0)/../../../../
 
 # Directory where to save artifacts for testing.
@@ -201,6 +202,11 @@ if [ -z "$JAVA_HOME" ]; then
 fi
 if [ ! -e "$JAVA_HOME/bin/java" ]; then
   fatal JAVA_HOME variable is set to [$JAVA_HOME] value, but $JAVA_HOME/bin/java not found.
+fi
+
+if [ "$mode" = "create-small-runtime" ]; then
+  exec_command "$test_jdk/bin/jlink" --add-modules java.base,java.datatransfer,java.xml,java.prefs,java.desktop --compress=2 --no-header-files --no-man-pages --strip-debug --output "$output_dir"
+  exit
 fi
 
 if [ -z "$JT_HOME" ]; then
