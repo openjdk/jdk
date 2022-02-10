@@ -42,10 +42,10 @@ public final class LinuxLaunchersAsServices extends UnixLaunchersAsServices {
         });
     }
 
-    static LinuxLaunchersAsServices create(PlatformPackage thePackage,
+    static ShellCustomAction create(PlatformPackage thePackage,
             Map<String, Object> params) throws IOException {
         if (StandardBundlerParam.isRuntimeInstaller(params)) {
-            return null;
+            return ShellCustomAction.nop(REPLACEMENT_STRING_IDS);
         }
         return new LinuxLaunchersAsServices(thePackage, params);
     }

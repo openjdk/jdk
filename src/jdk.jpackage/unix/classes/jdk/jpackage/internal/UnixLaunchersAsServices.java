@@ -65,12 +65,12 @@ class UnixLaunchersAsServices extends ShellCustomAction {
     }
 
     @Override
-    final List<String> replacementStringIds() {
+    final protected List<String> replacementStringIds() {
         return List.of(COMMANDS_INSTALL, COMMANDS_UNINSTALL, SCRIPTS);
     }
 
     @Override
-    final Map<String, String> create() throws IOException {
+    final protected Map<String, String> createImpl() throws IOException {
         Map<String, String> data = new HashMap<>();
 
         if (launchers.isEmpty()) {
@@ -117,7 +117,7 @@ class UnixLaunchersAsServices extends ShellCustomAction {
 
         abstract Path descriptorFilePath(Path root);
     }
-
+    
     private final PlatformPackage thePackage;
     private final List<String> requiredPackages;
     private final List<UnixLauncherAsService> launchers;
@@ -126,4 +126,7 @@ class UnixLaunchersAsServices extends ShellCustomAction {
     private static final String COMMANDS_INSTALL = "LAUNCHER_AS_SERVICE_COMMANDS_INSTALL";
     private static final String COMMANDS_UNINSTALL = "LAUNCHER_AS_SERVICE_COMMANDS_UNINSTALL";
     private static final String SCRIPTS = "LAUNCHER_AS_SERVICE_SCRIPTS";
+    
+    protected static final List<String> REPLACEMENT_STRING_IDS = List.of(
+            COMMANDS_INSTALL, COMMANDS_UNINSTALL, SCRIPTS);
 }

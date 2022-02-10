@@ -63,6 +63,9 @@ final class DesktopIntegration extends ShellCustomAction {
     private static final String COMMANDS_UNINSTALL = "DESKTOP_COMMANDS_UNINSTALL";
     private static final String SCRIPTS = "DESKTOP_SCRIPTS";
 
+    private static final List<String> REPLACEMENT_STRING_IDS = List.of(
+            COMMANDS_INSTALL, COMMANDS_UNINSTALL, SCRIPTS);
+
     private DesktopIntegration(PlatformPackage thePackage,
             Map<String, ? super Object> params,
             Map<String, ? super Object> mainParams) throws IOException {
@@ -167,10 +170,10 @@ final class DesktopIntegration extends ShellCustomAction {
         }
     }
 
-    static DesktopIntegration create(PlatformPackage thePackage,
+    static ShellCustomAction create(PlatformPackage thePackage,
             Map<String, ? super Object> params) throws IOException {
         if (StandardBundlerParam.isRuntimeInstaller(params)) {
-            return null;
+            return ShellCustomAction.nop(REPLACEMENT_STRING_IDS);
         }
         return new DesktopIntegration(thePackage, params, null);
     }
@@ -183,12 +186,12 @@ final class DesktopIntegration extends ShellCustomAction {
     }
 
     @Override
-    List<String> replacementStringIds() {
-        return List.of(COMMANDS_INSTALL, COMMANDS_UNINSTALL, SCRIPTS);
+    protected List<String> replacementStringIds() {
+        return REPLACEMENT_STRING_IDS;
     }
 
     @Override
-    Map<String, String> create() throws IOException {
+    protected Map<String, String> createImpl() throws IOException {
         associations.forEach(assoc -> assoc.data.verify());
 
         if (iconFile != null) {
