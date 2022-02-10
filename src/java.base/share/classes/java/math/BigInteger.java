@@ -1597,10 +1597,10 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @implNote This implementation may offer better algorithmic
      * performance when {@code val == this}.
      *
-     * @implNote Compared to {@link #multiply}, this implementation's
-     * parallel multiplication algorithm will use more CPU resources
-     * to compute the result faster, with no increase in memory
-     * consumption.
+     * @implNote Compared to {@link #multiply}, an implementation's
+     * parallel multiplication algorithm would typically use more
+     * CPU resources to compute the result faster, and may do so
+     * with a slight increase in memory consumption.
      *
      * @param  val value to be multiplied by this BigInteger.
      * @return {@code this * val}
