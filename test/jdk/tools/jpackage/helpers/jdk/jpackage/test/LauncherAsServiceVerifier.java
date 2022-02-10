@@ -313,7 +313,6 @@ public final class LauncherAsServiceVerifier {
     private final String launcherName;
     private final Path appOutputPath;
 
-    public final static Set<PackageType> SUPPORTED_PACKAGES = Stream.of(LINUX,
-            WINDOWS, Set.of(MAC_PKG)).flatMap(x -> x.stream()).collect(
-            Collectors.toSet());
+    final static Set<PackageType> SUPPORTED_PACKAGES = Stream.of(LINUX, WINDOWS,
+            Set.of(MAC_PKG)).flatMap(x -> x.stream()).collect(Collectors.toSet());
 }
