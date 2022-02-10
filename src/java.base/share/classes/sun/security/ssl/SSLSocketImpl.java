@@ -107,6 +107,11 @@ public final class SSLSocketImpl
     private static final boolean trustNameService =
             Utilities.getBooleanProperty("jdk.tls.trustNameService", false);
 
+    /*
+     * Default timeout to skip bytes from the open socket
+     */
+    private static final int DEFAULT_SKIP_TIMEOUT = 100;
+
     /**
      * Package-private constructor used to instantiate an unconnected
      * socket.
@@ -1410,26 +1415,21 @@ public final class SSLSocketImpl
      * Read the initial handshake records.
      */
     private int readHandshakeRecord() throws IOException {
-        appInput.readLock.lock();
-        try {
-            while (!conContext.isInboundClosed()) {
-                try {
-                    Plaintext plainText = decode(null);
-                    if ((plainText.contentType == ContentType.HANDSHAKE.id) &&
-                            conContext.isNegotiated) {
-                        return 0;
-                    }
-                } catch (SSLException |
-                        InterruptedIOException | SocketException se) {
-                    // Don't change exception in case of timeouts or interrupts
-                    // or SocketException.
-                    throw se;
-                } catch (IOException ioe) {
-                    throw new SSLException("readHandshakeRecord", ioe);
+        while (!conContext.isInboundClosed()) {
+            try {
+                Plaintext plainText = decode(null);
+                if ((plainText.contentType == ContentType.HANDSHAKE.id) &&
+                        conContext.isNegotiated) {
+                    return 0;
                 }
+            } catch (SSLException |
+                    InterruptedIOException | SocketException se) {
+                // Don't change exception in case of timeouts or interrupts
+                // or SocketException.
+                throw se;
+            } catch (IOException ioe) {
+                throw new SSLException("readHandshakeRecord", ioe);
             }
-        } finally {
-            appInput.readLock.unlock();
         }
 
         return -1;
@@ -1786,9 +1786,16 @@ public final class SSLSocketImpl
             if (conContext.inputRecord instanceof
                     SSLSocketInputRecord inputRecord && isConnected) {
                 if (appInput.readLock.tryLock()) {
+                    int soTimeout = getSoTimeout();
                     try {
+                        if (soTimeout == 0)
+                            setSoTimeout(DEFAULT_SKIP_TIMEOUT);
                         inputRecord.deplete(false);
+                    } catch (java.net.SocketTimeoutException stEx) {
+                        // skip timeout exception during deplete
                     } finally {
+                        if (soTimeout == 0)
+                            setSoTimeout(soTimeout);
                         appInput.readLock.unlock();
                     }
                 }
