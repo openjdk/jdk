@@ -24,114 +24,97 @@
 /*
  * @test
  * @bug 8016524
- * @key headful
  * @requires (os.family=="mac")
+ * @key headful
  * @summary Tests whether the bottom line of JTableHeader border is visible for MacOS default LAF
  * @run main JTHeaderBorderTest
  */
 
-import java.awt.Point;
-import java.awt.Robot;
-import java.awt.Color;
+import java.awt.*;
+import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JTable;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.table.JTableHeader;
 import javax.swing.UnsupportedLookAndFeelException;
-import java.util.concurrent.atomic.AtomicReference;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+
+import static java.awt.image.BufferedImage.TYPE_INT_ARGB;
 
 public class JTHeaderBorderTest {
 
     private static JFrame frame;
     private static JTable table;
     private static JScrollPane scrollableTable;
-    private static JTableHeader header;
-    private static Point point;
 
-    // added so as to get the correct pixel value of the bottom border
-    public static final int X_OFFSET = 10;
-    public static final int Y_OFFSET = 1;
-
-    public static final int FRAME_HT = 300;
-    public static final int FRAME_WT = 300;
-    public static final int TABLE_COLS = 3;
-    public static final int TABLE_ROWS = 2;
+    private static final int FRAME_HT = 300;
+    private static final int FRAME_WT = 300;
+    private static final int TABLE_COLS = 3;
+    private static final int TABLE_ROWS = 2;
+    private static final int Y_OFFSET = 30;
+    private static final int X_OFFSET = 25;
 
     public static void main(String[] args) throws Exception {
 
         try {
-            //to keep track of header dimensions
-            final int[] header_dim = new int[2];
-            Robot robot = new Robot();
-            AtomicReference<Color> tableColor = new AtomicReference<>();
-            AtomicReference<Color> tableHeaderColor = new AtomicReference<>();
-
             try {
                 UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
             } catch (ClassNotFoundException | InstantiationException | IllegalAccessException
                     | UnsupportedLookAndFeelException e) {
                 throw new RuntimeException("Unsupported Look&Feel Class");
             }
+
             SwingUtilities.invokeAndWait(() -> {
                 table = new JTable(TABLE_ROWS, TABLE_COLS);
                 scrollableTable = new JScrollPane(table);
+
                 frame = new JFrame();
                 frame.getContentPane().add(scrollableTable);
                 frame.setSize(FRAME_WT, FRAME_HT);
                 frame.setLocationRelativeTo(null);
-                frame.pack();
                 frame.setVisible(true);
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-                // retrieve JTableHeader coordinate position on screen (x,y)
-                point = table.getTableHeader().getLocationOnScreen();
-                // retrieve height and width of the header
-                header = table.getTableHeader();
-                header_dim[0] = header.getHeight();
-                header_dim[1] = header.getWidth();
-                tableColor.set(table.getBackground());
-                tableHeaderColor.set(table.getTableHeader().getBackground());
+                // paint JFrame to BufferedImage
+                BufferedImage image = new BufferedImage(FRAME_WT, FRAME_HT, TYPE_INT_ARGB);
+                Graphics2D graphics2D = image.createGraphics();
+                frame.paint(graphics2D);
+                graphics2D.dispose();
+
+                String tableColor = Integer.toHexString(table.getBackground().getRGB());
+                String headerColor = Integer.toHexString(table.getTableHeader().getBackground().getRGB());
+                String pixelColor = tableColor;
+                boolean isBottomLineVisible = false;
+
+                // scan table header region to check if bottom border of JTableHeader is visible
+                for (int y = Y_OFFSET; y <= Y_OFFSET+25; y++) {
+                    pixelColor = Integer.toHexString(image.getRGB(X_OFFSET, y));
+                    System.out.println("Y offset: "+ y + " Color: "+ (Integer.toHexString(image.getRGB(X_OFFSET, y))));
+                    if (!pixelColor.equalsIgnoreCase(tableColor) || !pixelColor.equalsIgnoreCase(headerColor)) {
+                        isBottomLineVisible = true;
+                        break;
+                    }
+                }
+                // throw Runtime Exception if border is not visible in the scanned region
+                if (!isBottomLineVisible) {
+                    saveImage(image, "JTableHeader.png");
+                    throw new RuntimeException("JTableHeader Bottom Border not visible");
+                }
             });
-
-            robot.delay(200);
-            robot.waitForIdle();
-
-            // to check mouse pointer position on screen
-            robot.mouseMove(point.x + X_OFFSET, point.y + header_dim[0] - Y_OFFSET);
-            robot.delay(500);
-            robot.waitForIdle();
-
-            // get pixel color at lower left of JTableHeader
-            Color lowerLeft = robot.getPixelColor(point.x + X_OFFSET, point.y + header_dim[0] - Y_OFFSET);
-            robot.delay(500);
-
-            // to check mouse pointer position on screen
-            robot.mouseMove(point.x + header_dim[1] - X_OFFSET, point.y + header_dim[0] - Y_OFFSET);
-            robot.delay(500);
-            robot.waitForIdle();
-            // get pixel color at lower right of JTableHeader
-            Color lowerRight = robot.getPixelColor(point.x + header_dim[1] - X_OFFSET, point.y + header_dim[0] - Y_OFFSET);
-            robot.delay(500);
-
-
-            System.out.println("RGB Lower Left: " + lowerLeft.toString());
-            System.out.println("RGB Lower Right: " + lowerRight.toString());
-            System.out.println("Table-Header Background Color: " + tableHeaderColor.get().toString());
-            System.out.println("Table Background Color: " + tableColor.get().toString());
-
-
-            // if pixel color is either table-header or table background color then throw an Exception
-            if (lowerLeft.getRGB() == tableColor.get().getRGB() || lowerLeft.getRGB() == tableHeaderColor.get().getRGB()
-                    || lowerRight.getRGB() == tableColor.get().getRGB() || lowerRight.getRGB() == tableHeaderColor.get().getRGB()) {
-                throw new RuntimeException("JTableHeader Bottom Border not visible");
-            }
-        }
-        finally {
+        } finally {
             if (frame != null) {
                 SwingUtilities.invokeAndWait(()-> frame.dispose());
             }
+        }
+    }
+    private static void saveImage(BufferedImage image, String filename) {
+        try {
+            ImageIO.write(image, "png", new File(filename));
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }
