@@ -153,6 +153,19 @@ public class TestCommon extends CDSTestUtils {
         return out;
     }
 
+    public static OutputAnalyzer dumpBaseArchive(String baseArchiveName, String classList[], String ... cmdLineSuffix)
+        throws Exception
+    {
+        CDSOptions opts = new CDSOptions();
+        opts.setArchiveName(baseArchiveName);
+        opts.setClassList(classList);
+        opts.addSuffix(cmdLineSuffix);
+        opts.addSuffix("-Djava.class.path=");
+        OutputAnalyzer out = CDSTestUtils.createArchive(opts);
+        CDSTestUtils.checkBaseDump(out);
+        return out;
+    }
+
     // Create AppCDS archive using most common args - convenience method
     public static OutputAnalyzer createArchive(String appJar, String classList[],
                                                String... suffix) throws Exception {
