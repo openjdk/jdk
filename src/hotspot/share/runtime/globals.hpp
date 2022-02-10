@@ -1191,10 +1191,6 @@ const intx ObjectAlignmentInBytes = 8;
   develop(bool, VerifyJNIFields, trueInDebug,                               \
           "Verify jfieldIDs for instance fields")                           \
                                                                             \
-  notproduct(bool, VerifyJNIEnvThread, false,                               \
-          "Verify JNIEnv.thread == Thread::current() when entering VM "     \
-          "from JNI")                                                       \
-                                                                            \
   develop(bool, VerifyFPU, false,                                           \
           "Verify FPU state (check for NaN's, etc.)")                       \
                                                                             \

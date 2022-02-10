@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,21 +19,7 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
-
-#include "precompiled.hpp"
-#include "gc/g1/g1BufferNodeList.hpp"
-#include "utilities/debug.hpp"
-
-G1BufferNodeList::G1BufferNodeList() :
-  _head(NULL), _tail(NULL), _entry_count(0) {}
-
-G1BufferNodeList::G1BufferNodeList(BufferNode* head,
-                                   BufferNode* tail,
-                                   size_t entry_count) :
-  _head(head), _tail(tail), _entry_count(entry_count)
-{
-  assert((_head == NULL) == (_tail == NULL), "invariant");
-  assert((_head == NULL) == (_entry_count == 0), "invariant");
+module m2 {
+    exports p2 to m1;
 }

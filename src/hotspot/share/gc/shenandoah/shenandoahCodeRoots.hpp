@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "memory/iterator.hpp"
 #include "utilities/globalDefinitions.hpp"
 

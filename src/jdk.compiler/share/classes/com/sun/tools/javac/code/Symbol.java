@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -667,7 +667,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
      *  It is assumed that both symbols have the same name.  The static
      *  modifier is ignored for this test.
      *
-     *  See JLS 8.4.6.1 (without transitivity) and 8.4.6.4
+     *  See JLS 8.4.8.1 (without transitivity) and 8.4.8.4
      */
     public boolean overrides(Symbol _other, TypeSymbol origin, Types types, boolean checkResult) {
         return false;
@@ -2060,7 +2060,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
          *  origin) don't get rejected as summarily and are put to test against the
          *  suitable criteria.
          *
-         *  See JLS 8.4.6.1 (without transitivity) and 8.4.6.4
+         *  See JLS 8.4.8.1 (without transitivity) and 8.4.8.4
          */
         public boolean overrides(Symbol _other, TypeSymbol origin, Types types, boolean checkResult) {
             return overrides(_other, origin, types, checkResult, true);
@@ -2077,7 +2077,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
          *  It is assumed that both symbols have the same name.  The static
          *  modifier is ignored for this test.
          *
-         *  See JLS 8.4.6.1 (without transitivity) and 8.4.6.4
+         *  See JLS 8.4.8.1 (without transitivity) and 8.4.8.4
          */
         public boolean overrides(Symbol _other, TypeSymbol origin, Types types, boolean checkResult,
                                             boolean requireConcreteIfInherited) {
@@ -2115,7 +2115,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         }
 
         private boolean isOverridableIn(TypeSymbol origin) {
-            // JLS 8.4.6.1
+            // JLS 8.4.8.1
             switch ((int)(flags_field & Flags.AccessFlags)) {
             case Flags.PRIVATE:
                 return false;

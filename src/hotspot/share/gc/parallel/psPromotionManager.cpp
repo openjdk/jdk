@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ void PSPromotionManager::initialize() {
   _old_gen = heap->old_gen();
   _young_space = heap->young_gen()->to_space();
 
-  const uint promotion_manager_num = ParallelGCThreads + 1;
+  const uint promotion_manager_num = ParallelGCThreads;
 
   // To prevent false sharing, we pad the PSPromotionManagers
   // and make sure that the first instance starts at a cache line.
@@ -95,7 +95,7 @@ PSPromotionManager* PSPromotionManager::gc_thread_promotion_manager(uint index) 
 
 PSPromotionManager* PSPromotionManager::vm_thread_promotion_manager() {
   assert(_manager_array != NULL, "Sanity");
-  return &_manager_array[ParallelGCThreads];
+  return &_manager_array[0];
 }
 
 void PSPromotionManager::pre_scavenge() {
@@ -104,7 +104,7 @@ void PSPromotionManager::pre_scavenge() {
   _preserved_marks_set->assert_empty();
   _young_space = heap->young_gen()->to_space();
 
-  for(uint i=0; i<ParallelGCThreads+1; i++) {
+  for(uint i=0; i<ParallelGCThreads; i++) {
     manager_array(i)->reset();
   }
 }
@@ -113,7 +113,7 @@ bool PSPromotionManager::post_scavenge(YoungGCTracer& gc_tracer) {
   bool promotion_failure_occurred = false;
 
   TASKQUEUE_STATS_ONLY(print_taskqueue_stats());
-  for (uint i = 0; i < ParallelGCThreads + 1; i++) {
+  for (uint i = 0; i < ParallelGCThreads; i++) {
     PSPromotionManager* manager = manager_array(i);
     assert(manager->claimed_stack_depth()->is_empty(), "should be empty");
     if (manager->_promotion_failed_info.has_failed()) {
@@ -147,37 +147,24 @@ static const char* const pm_stats_hdr[] = {
   "--- ---------- ---------- ---------- ----------"
 };
 
-void
-PSPromotionManager::print_taskqueue_stats() {
+void PSPromotionManager::print_taskqueue_stats() {
   if (!log_is_enabled(Trace, gc, task, stats)) {
     return;
   }
   Log(gc, task, stats) log;
   ResourceMark rm;
   LogStream ls(log.trace());
-  outputStream* out = &ls;
-  out->print_cr("== GC Tasks Stats, GC %3d",
-                ParallelScavengeHeap::heap()->total_collections());
 
-  TaskQueueStats totals;
-  out->print("thr "); TaskQueueStats::print_header(1, out); out->cr();
-  out->print("--- "); TaskQueueStats::print_header(2, out); out->cr();
-  for (uint i = 0; i < ParallelGCThreads + 1; ++i) {
-    TaskQueueStats& next = manager_array(i)->_claimed_stack_depth.stats;
-    out->print("%3d ", i); next.print(out); out->cr();
-    totals += next;
-  }
-  out->print("tot "); totals.print(out); out->cr();
+  stack_array_depth()->print_taskqueue_stats(&ls, "Oop Queue");
 
   const uint hlines = sizeof(pm_stats_hdr) / sizeof(pm_stats_hdr[0]);
-  for (uint i = 0; i < hlines; ++i) out->print_cr("%s", pm_stats_hdr[i]);
-  for (uint i = 0; i < ParallelGCThreads + 1; ++i) {
-    manager_array(i)->print_local_stats(out, i);
+  for (uint i = 0; i < hlines; ++i) ls.print_cr("%s", pm_stats_hdr[i]);
+  for (uint i = 0; i < ParallelGCThreads; ++i) {
+    manager_array(i)->print_local_stats(&ls, i);
   }
 }
 
-void
-PSPromotionManager::reset_stats() {
+void PSPromotionManager::reset_stats() {
   claimed_stack_depth()->stats.reset();
   _array_chunk_pushes = _array_chunk_steals = 0;
   _arrays_chunked = _array_chunks_processed = 0;
@@ -216,8 +203,6 @@ void PSPromotionManager::reset() {
 
   // We need to get an assert in here to make sure the labs are always flushed.
 
-  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-
   // Do not prefill the LAB's, save heap wastage!
   HeapWord* lab_base = young_space()->top();
   _young_lab.initialize(MemRegion(lab_base, (size_t)0));
@@ -243,12 +228,6 @@ void PSPromotionManager::restore_preserved_marks() {
 
 void PSPromotionManager::drain_stacks_depth(bool totally_drain) {
   totally_drain = totally_drain || _totally_drain;
-
-#ifdef ASSERT
-  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  MutableSpace* to_space = heap->young_gen()->to_space();
-  MutableSpace* old_space = heap->old_gen()->object_space();
-#endif /* ASSERT */
 
   PSScannerTasksQueue* const tq = claimed_stack_depth();
   do {
@@ -360,7 +339,10 @@ oop PSPromotionManager::oop_promotion_failed(oop obj, markWord obj_mark) {
 
     push_contents(obj);
 
-    _preserved_marks->push_if_necessary(obj, obj_mark);
+    // Save the markWord of promotion-failed objs in _preserved_marks for later
+    // restoration. This way we don't have to walk the young-gen to locate
+    // these promotion-failed objs.
+    _preserved_marks->push_always(obj, obj_mark);
   }  else {
     // We lost, someone else "owns" this object
     guarantee(obj->is_forwarded(), "Object must be forwarded if the cas failed.");

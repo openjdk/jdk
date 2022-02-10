@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -5470,7 +5470,7 @@ public class Attr extends JCTree.Visitor {
         } else {
             // Check that all extended classes and interfaces
             // are compatible (i.e. no two define methods with same arguments
-            // yet different return types).  (JLS 8.4.6.3)
+            // yet different return types).  (JLS 8.4.8.3)
             chk.checkCompatibleSupertypes(tree.pos(), c.type);
             if (allowDefaultMethods) {
                 chk.checkDefaultMethodClashes(tree.pos(), c.type);

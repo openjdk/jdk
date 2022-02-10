@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define CPU_ARM_JNITYPES_ARM_HPP
 
 #include "jni.h"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "oops/oop.hpp"
 
 // This file holds platform-dependent routines used to write primitive jni

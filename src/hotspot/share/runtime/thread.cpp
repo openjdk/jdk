@@ -317,7 +317,6 @@ void Thread::record_stack_base_and_size() {
   }
 }
 
-#if INCLUDE_NMT
 void Thread::register_thread_stack_with_NMT() {
   MemTracker::record_thread_stack(stack_end(), stack_size());
 }
@@ -325,7 +324,6 @@ void Thread::register_thread_stack_with_NMT() {
 void Thread::unregister_thread_stack_with_NMT() {
   MemTracker::release_thread_stack(stack_end(), stack_size());
 }
-#endif // INCLUDE_NMT
 
 void Thread::call_run() {
   DEBUG_ONLY(_run_state = CALL_RUN;)
@@ -2704,10 +2702,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   jint parse_result = Arguments::parse(args);
   if (parse_result != JNI_OK) return parse_result;
 
-#if INCLUDE_NMT
   // Initialize NMT right after argument parsing to keep the pre-NMT-init window small.
   MemTracker::initialize();
-#endif // INCLUDE_NMT
 
   os::init_before_ergo();
 

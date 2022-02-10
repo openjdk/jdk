@@ -1169,15 +1169,8 @@ var getJibProfilesDependencies = function (input, common) {
         },
 
         jcov: {
-            // Use custom build of JCov
-            // See CODETOOLS-7902734 for more info.
-            // server: "jpg",
-            // product: "jcov",
-            // version: "3.0",
-            // build_number: "b07",
-            // file: "bundles/jcov-3_0.zip",
             organization: common.organization,
-            revision: "3.0-9-jdk-asm+1.0",
+            revision: "3.0-12-jdk-asm+1.0",
             ext: "zip",
             environment_name: "JCOV_HOME",
         },
