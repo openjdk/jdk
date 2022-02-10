@@ -84,7 +84,7 @@ public class PrintIdealPhaseTest {
         OutputAnalyzer oa = ProcessTools.executeTestJvm(options);
         if (valid) {
             oa.shouldHaveExitValue(0)
-            .shouldContain("CompileCommand: PrintIdealPhase compiler/oracle/PrintIdealPhaseTest$TestMain.test const char* PrintIdealPhase = '"+cmdPhases+"'")
+            .shouldContain("CompileCommand: PrintIdealPhase compiler/oracle/PrintIdealPhaseTest$TestMain.test const char* PrintIdealPhase = '"+cmdPhases.replace(',', ' ')+"'")
             .shouldNotContain("CompileCommand: An error occurred during parsing")
             .shouldNotContain("Error: Unrecognized phase name in PrintIdealPhase:")
             .shouldNotContain("# A fatal error has been detected by the Java Runtime Environment");
@@ -105,10 +105,8 @@ public class PrintIdealPhaseTest {
         } else {
             // Check that we don't pass even though bad phase names where given
             oa.shouldHaveExitValue(0)
-            .shouldNotContain("CompileCommand: PrintIdealPhase compiler/oracle/PrintIdealPhaseTest$TestMain.test const char* PrintIdealPhase = '"+cmdPhases+"'")
             .shouldContain("CompileCommand: An error occurred during parsing")
-            .shouldContain("Error: Unrecognized phase name in PrintIdealPhase:")
-            .shouldContain("# A fatal error has been detected by the Java Runtime Environment");
+            .shouldContain("Error: Unrecognized phase name in PrintIdealPhase:");
         }
     }
 
