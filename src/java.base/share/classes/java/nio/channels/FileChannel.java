@@ -981,7 +981,9 @@ public abstract class FileChannel
      * required then a region starting at zero, and no smaller than the
      * expected maximum size of the file, should be locked.  The zero-argument
      * {@link #lock()} method simply locks a region of size {@link
-     * Long#MAX_VALUE}.
+     * Long#MAX_VALUE}.  If a lock is created with a valid {@code position}
+     * and a {@code size} parameter of zero, then a lock of size
+     * {@code Long.MAX_VALUE - position} is returned.
      *
      * <p> Some operating systems do not support shared locks, in which case a
      * request for a shared lock is automatically converted into a request for
@@ -1111,7 +1113,9 @@ public abstract class FileChannel
      * required then a region starting at zero, and no smaller than the
      * expected maximum size of the file, should be locked.  The zero-argument
      * {@link #tryLock()} method simply locks a region of size {@link
-     * Long#MAX_VALUE}.
+     * Long#MAX_VALUE}.  If a lock is created with a valid {@code position}
+     * and a {@code size} parameter of zero, then a lock of size
+     * {@code Long.MAX_VALUE - position} is returned.
      *
      * <p> Some operating systems do not support shared locks, in which case a
      * request for a shared lock is automatically converted into a request for

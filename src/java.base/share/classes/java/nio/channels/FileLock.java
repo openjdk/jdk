@@ -264,16 +264,14 @@ public abstract class FileLock implements AutoCloseable {
     /**
      * Tells whether or not this lock overlaps the given lock range.
      *
-     * <p> If {@code size} is negative, {@code false} is returned regardless
-     * of the value of {@code position}.
-     *
      * @param   position
      *          The starting position of the lock range
      * @param   size
      *          The size of the lock range
      *
-     * @return  {@code true} if, and only if, this lock and the given lock
-     *          range overlap by at least one byte
+     * @return  {@code true} if this lock and the given lock range overlap
+     *          by at least one byte; {@code false} if {@code size} is
+     *          negative or the lock range does not overlap this lock
      */
     public final boolean overlaps(long position, long size) {
         if (size < 0)
