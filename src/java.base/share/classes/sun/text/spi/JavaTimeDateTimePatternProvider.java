@@ -42,7 +42,7 @@ public abstract class JavaTimeDateTimePatternProvider extends LocaleServiceProvi
     }
 
     /**
-     * Gets the formatting pattern for a timeStyle
+     * Returns the formatting pattern for a timeStyle
      * dateStyle, calendarType and locale.
      * Concrete implementation of this method will retrieve
      * a java.time specific dateTime Pattern from selected Locale Provider.
@@ -61,7 +61,7 @@ public abstract class JavaTimeDateTimePatternProvider extends LocaleServiceProvi
     public abstract String getJavaTimeDateTimePattern(int timeStyle, int dateStyle, String calType, Locale locale);
 
     /**
-     * Gets the formatting pattern for the requested template, calendarType, and locale.
+     * Returns the formatting pattern for the requested template, calendarType, and locale.
      * Concrete implementation of this method will retrieve
      * a java.time specific pattern from selected Locale Provider.
      *

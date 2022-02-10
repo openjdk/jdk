@@ -66,8 +66,7 @@ public class JavaTimeDateTimePatternImpl extends JavaTimeDateTimePatternProvider
     @Override
     public String getJavaTimeDateTimePattern(int timeStyle, int dateStyle, String calType, Locale locale) {
         LocaleResources lr = LocaleProviderAdapter.getResourceBundleBased().getLocaleResources(locale);
-        return lr.getJavaTimeDateTimePattern(
-                timeStyle, dateStyle, calType);
+        return lr.getJavaTimeDateTimePattern(timeStyle, dateStyle, calType);
     }
 
     @Override

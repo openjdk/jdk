@@ -228,7 +228,7 @@ public final class DateTimeFormatterBuilder {
     }
 
     /**
-     * Gets the formatting pattern for the requested template for a locale and chronology.
+     * Returns the formatting pattern for the requested template for a locale and chronology.
      * The locale and chronology are used to lookup the locale specific format
      * for the requested template.
      * <p>
@@ -243,7 +243,8 @@ public final class DateTimeFormatterBuilder {
      * @param chrono  the Chronology, non-null
      * @param locale  the locale, non-null
      * @return the locale and Chronology specific formatting pattern
-     * @throws IllegalArgumentException if {@code requestedTemplate} is invalid
+     * @throws IllegalArgumentException if {@code requestedTemplate} does not match
+     *      the regular expression syntax described in {@link #appendLocalized(String)}.
      * @throws DateTimeException if a match for the localized pattern for
      *      {@code requestedTemplate} is not available
      * @see #appendLocalized(String)
@@ -1482,7 +1483,7 @@ public final class DateTimeFormatterBuilder {
      * <ul>
      * <li>the {@code requestedTemplate} specified to this method
      * <li>the {@code Locale} of the {@code DateTimeFormatter}
-     * <li>the {@code Chronology}, selecting the best available
+     * <li>the {@code Chronology} of the {@code DateTimeFormatter} unless overridden
      * </ul>
      * During formatting, the chronology is obtained from the temporal object
      * being formatted, which may have been overridden by
@@ -1509,8 +1510,8 @@ public final class DateTimeFormatterBuilder {
      *      "s{0,2}" +        // Second of Minute
      *      "[vz]{0,4}"       // Zone
      * }
-     * All pattern symbols are optional, and each pattern symbol represents the field it is in,
-     * e.g., 'M' represents the Month field. The number of the pattern symbol letters follows the
+     * All pattern symbols are optional, and each pattern symbol represents a field,
+     * for example, 'M' represents the Month field. The number of the pattern symbol letters follows the
      * same presentation, such as "number" or "text" as in the
      * <a href="./DateTimeFormatter.html#patterns">Patterns for Formatting and Parsing</a> section.
      * Other pattern symbols in the requested template are invalid.
@@ -5143,13 +5144,12 @@ public final class DateTimeFormatterBuilder {
          * @throws IllegalArgumentException if the formatter cannot be found
          */
         private DateTimeFormatter formatter(Locale locale, Chronology chrono) {
-            var useRequestedTemplate = requestedTemplate != null;
             String key = chrono.getId() + '|' + locale.toString() + '|' +
-                    (useRequestedTemplate ? requestedTemplate : Objects.toString(dateStyle) + timeStyle);
+                    (requestedTemplate != null ? requestedTemplate : Objects.toString(dateStyle) + timeStyle);
 
             return FORMATTER_CACHE.computeIfAbsent(key, k ->
                 new DateTimeFormatterBuilder()
-                    .appendPattern(useRequestedTemplate ?
+                    .appendPattern(requestedTemplate != null ?
                         getLocalizedDateTimePattern(requestedTemplate, chrono, locale) :
                         getLocalizedDateTimePattern(dateStyle, timeStyle, chrono, locale))
                     .toFormatter(locale));

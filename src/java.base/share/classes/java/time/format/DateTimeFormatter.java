@@ -737,8 +737,8 @@ public final class DateTimeFormatter {
      *      "s{0,2}" +        // Second of Minute
      *      "[vz]{0,4}"       // Zone
      * }
-     * All pattern symbols are optional, and each pattern symbol represents the field it is in,
-     * e.g., 'M' represents the Month field. The number of the pattern symbol letters follows the
+     * All pattern symbols are optional, and each pattern symbol represents a field,
+     * for example, 'M' represents the Month field. The number of the pattern symbol letters follows the
      * same presentation, such as "number" or "text" as in the <a href="#patterns">Patterns for
      * Formatting and Parsing</a> section. Other pattern symbols in the requested template are
      * invalid.
@@ -750,7 +750,7 @@ public final class DateTimeFormatter {
      * {@code yMMM} will format the date '2020-06-16' to 'Jun 2020' in the {@link Locale#US US locale}.
      * <p>
      * The locale is determined from the formatter. The formatter returned directly by
-     * this method will use the {@link Locale#getDefault() default FORMAT locale}.
+     * this method uses the {@link Locale#getDefault() default FORMAT locale}.
      * The locale can be controlled using {@link DateTimeFormatter#withLocale(Locale) withLocale(Locale)}
      * on the result of this method.
      * <p>

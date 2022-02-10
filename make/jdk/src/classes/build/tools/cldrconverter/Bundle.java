@@ -51,21 +51,21 @@ class Bundle {
                                                     FORMATDATA);
     }
 
-    private final static Map<String, Bundle> bundles = new HashMap<>();
+    private static final Map<String, Bundle> bundles = new HashMap<>();
 
-    private final static String[] NUMBER_PATTERN_KEYS = {
+    private static final String[] NUMBER_PATTERN_KEYS = {
         "NumberPatterns/decimal",
         "NumberPatterns/currency",
         "NumberPatterns/percent",
         "NumberPatterns/accounting"
     };
 
-    private final static String[] COMPACT_NUMBER_PATTERN_KEYS = {
+    private static final String[] COMPACT_NUMBER_PATTERN_KEYS = {
         "short.CompactNumberPatterns",
         "long.CompactNumberPatterns"
     };
 
-    private final static String[] NUMBER_ELEMENT_KEYS = {
+    private static final String[] NUMBER_ELEMENT_KEYS = {
         "NumberElements/decimal",
         "NumberElements/group",
         "NumberElements/list",
@@ -81,45 +81,45 @@ class Bundle {
         "NumberElements/currencyGroup",
     };
 
-    private final static String[] TIME_PATTERN_KEYS = {
+    private static final String[] TIME_PATTERN_KEYS = {
         "DateTimePatterns/full-time",
         "DateTimePatterns/long-time",
         "DateTimePatterns/medium-time",
         "DateTimePatterns/short-time",
     };
 
-    private final static String[] DATE_PATTERN_KEYS = {
+    private static final String[] DATE_PATTERN_KEYS = {
         "DateTimePatterns/full-date",
         "DateTimePatterns/long-date",
         "DateTimePatterns/medium-date",
         "DateTimePatterns/short-date",
     };
 
-    private final static String[] DATETIME_PATTERN_KEYS = {
+    private static final String[] DATETIME_PATTERN_KEYS = {
         "DateTimePatterns/full-dateTime",
         "DateTimePatterns/long-dateTime",
         "DateTimePatterns/medium-dateTime",
         "DateTimePatterns/short-dateTime",
     };
 
-    private final static String[] ERA_KEYS = {
+    private static final String[] ERA_KEYS = {
         "long.Eras",
         "Eras",
         "narrow.Eras"
     };
 
     // DateFormatItem prefix
-    final static String DATEFORMATITEM_KEY_PREFIX = "DateFormatItem.";
-    final static String DATEFORMATITEM_INPUT_REGIONS_PREFIX = "DateFormatItemInputRegions.";
+    static final String DATEFORMATITEM_KEY_PREFIX = "DateFormatItem.";
+    static final String DATEFORMATITEM_INPUT_REGIONS_PREFIX = "DateFormatItemInputRegions.";
 
     // Keys for individual time zone names
-    private final static String TZ_GEN_LONG_KEY = "timezone.displayname.generic.long";
-    private final static String TZ_GEN_SHORT_KEY = "timezone.displayname.generic.short";
-    private final static String TZ_STD_LONG_KEY = "timezone.displayname.standard.long";
-    private final static String TZ_STD_SHORT_KEY = "timezone.displayname.standard.short";
-    private final static String TZ_DST_LONG_KEY = "timezone.displayname.daylight.long";
-    private final static String TZ_DST_SHORT_KEY = "timezone.displayname.daylight.short";
-    private final static String[] ZONE_NAME_KEYS = {
+    private static final String TZ_GEN_LONG_KEY = "timezone.displayname.generic.long";
+    private static final String TZ_GEN_SHORT_KEY = "timezone.displayname.generic.short";
+    private static final String TZ_STD_LONG_KEY = "timezone.displayname.standard.long";
+    private static final String TZ_STD_SHORT_KEY = "timezone.displayname.standard.short";
+    private static final String TZ_DST_LONG_KEY = "timezone.displayname.daylight.long";
+    private static final String TZ_DST_SHORT_KEY = "timezone.displayname.daylight.short";
+    private static final String[] ZONE_NAME_KEYS = {
         TZ_STD_LONG_KEY,
         TZ_STD_SHORT_KEY,
         TZ_DST_LONG_KEY,
