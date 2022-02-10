@@ -31,7 +31,7 @@ import java.util.Map;
 import static jdk.jpackage.internal.OverridableResource.createResource;
 
 /**
- * Helper to install launchers as services with "systemd".
+ * Helper to install launchers as services using "systemd".
  */
 public final class LinuxLaunchersAsServices extends UnixLaunchersAsServices {
 

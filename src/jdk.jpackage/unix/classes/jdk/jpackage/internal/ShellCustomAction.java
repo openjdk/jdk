@@ -33,11 +33,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * Interface to add custom actions to installers composed of shell commands.
+ * Interface to add custom actions composed of shell commands to installers.
  */
 abstract class ShellCustomAction {
 
