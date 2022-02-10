@@ -25,6 +25,7 @@ package jdk.jpackage.test;
 import java.awt.Desktop;
 import java.awt.GraphicsEnvironment;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -50,6 +51,7 @@ import static jdk.jpackage.test.Functional.ThrowingBiConsumer.toBiConsumer;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
 import static jdk.jpackage.test.Functional.ThrowingConsumer.toConsumer;
 import jdk.jpackage.test.Functional.ThrowingRunnable;
+import static jdk.jpackage.test.Functional.rethrowUnchecked;
 import static jdk.jpackage.test.PackageType.LINUX;
 import static jdk.jpackage.test.PackageType.LINUX_DEB;
 import static jdk.jpackage.test.PackageType.LINUX_RPM;
@@ -562,30 +564,9 @@ public final class PackageTest extends RunnablePackageTest {
             TKit.trace(String.format(formatString, cmd.getPrintableCommandLine()));
 
             Optional.ofNullable(cmd.unpackedPackageDirectory()).ifPresent(
-                    toConsumer(unpackedDir -> {
-                        try ( var files = Files.list(unpackedDir)) {
-                            final boolean withServices = !cmd.isRuntime()
-                                    && !LauncherAsServiceVerifier.getLaunchersAsServices(
-                                            cmd).isEmpty();
-
-                            final long expectedRootCount;
-                            if (WINDOWS.contains(cmd.packageType())) {
-                                // On Windows it is always two entries:
-                                // installation home directory and MSI file
-                                expectedRootCount = 2;
-                            } else if (withServices && MAC_PKG.equals(cmd.packageType())) {
-                                expectedRootCount = 2;
-                            } else if (withServices && LINUX.contains(cmd.packageType())) {
-                                expectedRootCount = 2;
-                            } else {
-                                expectedRootCount = 1;
-                            }
-                            TKit.assertEquals(expectedRootCount, files.count(),
-                                    String.format(
-                                            "Check the package has %d top installation directories",
-                                            expectedRootCount));
-                        }
-                    }));
+                    unpackedDir -> {
+                        verifyRootCountInUnpackedPackage(cmd, unpackedDir);
+                    });
 
             if (!cmd.isRuntime()) {
                 if (WINDOWS.contains(cmd.packageType())
@@ -608,6 +589,59 @@ public final class PackageTest extends RunnablePackageTest {
             cmd.assertAppLayout();
 
             installVerifiers.forEach(v -> v.accept(cmd));
+        }
+
+        private void verifyRootCountInUnpackedPackage(JPackageCommand cmd,
+                Path unpackedDir) {
+
+            final boolean withServices = !cmd.isRuntime()
+                    && !LauncherAsServiceVerifier.getLaunchersAsServices(cmd).isEmpty();
+
+            final long expectedRootCount;
+            if (WINDOWS.contains(cmd.packageType())) {
+                // On Windows it is always two entries:
+                // installation home directory and MSI file
+                expectedRootCount = 2;
+            } else if (withServices && MAC_PKG.equals(cmd.packageType())) {
+                expectedRootCount = 2;
+            } else if (LINUX.contains(cmd.packageType())) {
+                Set<Path> roots = new HashSet<>();
+                roots.add(Path.of("/").resolve(Path.of(cmd.getArgumentValue(
+                        "--install-dir", () -> "/opt")).getName(0)));
+                if (withServices) {
+                    // /lib/systemd
+                    roots.add(Path.of("/lib"));
+                }
+                if (cmd.hasArgument("--license-file")) {
+                    switch (cmd.packageType()) {
+                        case LINUX_RPM -> {
+                            // License file is in /usr/share/licenses subtree
+                            roots.add(Path.of("/usr"));
+                        }
+
+                        case LINUX_DEB -> {
+                            Path installDir = cmd.appInstallationDirectory();
+                            if (installDir.equals(Path.of("/"))
+                                    || installDir.startsWith("/usr")) {
+                                // License file is in /usr/share/doc subtree
+                                roots.add(Path.of("/usr"));
+                            }
+                        }
+                    }
+                }
+                expectedRootCount = roots.size();
+            } else {
+                expectedRootCount = 1;
+            }
+
+            try ( var files = Files.list(unpackedDir)) {
+                TKit.assertEquals(expectedRootCount, files.count(),
+                        String.format(
+                                "Check the package has %d top installation directories",
+                                expectedRootCount));
+            } catch (IOException ex) {
+                rethrowUnchecked(ex);
+            }
         }
 
         private void verifyPackageUninstalled(JPackageCommand cmd) {
