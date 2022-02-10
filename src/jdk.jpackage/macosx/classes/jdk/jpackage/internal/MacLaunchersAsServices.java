@@ -35,7 +35,7 @@ import static jdk.jpackage.internal.OverridableResource.createResource;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 
 /**
- * Helper to install launchers as services.
+ * Helper to install launchers as services using "launchd".
  */
 public final class MacLaunchersAsServices extends UnixLaunchersAsServices {
 

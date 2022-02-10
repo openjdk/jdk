@@ -37,7 +37,7 @@ import jdk.jpackage.internal.AppImageFile.LauncherInfo;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 
 /**
- * Helper to install launchers as services.
+ * Helper to install launchers as services for Unix installers.
  */
 class UnixLaunchersAsServices extends ShellCustomAction {
 

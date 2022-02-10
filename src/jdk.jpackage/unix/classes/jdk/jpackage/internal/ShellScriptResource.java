@@ -45,7 +45,6 @@ final class ShellScriptResource {
         Path dstFile = folder.resolve(publicFileName);
         resource.saveToFile(dstFile);
 
-        // chmod 755
         Files.setPosixFilePermissions(dstFile, Stream.of(execPerms, Set.of(
             PosixFilePermission.OWNER_READ,
             PosixFilePermission.OWNER_WRITE,
