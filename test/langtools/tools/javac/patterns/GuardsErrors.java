@@ -32,7 +32,7 @@ public class GuardsErrors {
 
     void typeTestPatternSwitchTest(Object o, int check) {
         switch (o) {
-            case Integer i && i == check -> System.err.println(); //error: check is not effectivelly final
+            case Integer i when i == check -> System.err.println(); //error: check is not effectivelly final
             default -> {}
         }
         check = 0;

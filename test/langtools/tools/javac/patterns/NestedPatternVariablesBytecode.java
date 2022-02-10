@@ -71,7 +71,7 @@ public class NestedPatternVariablesBytecode extends TestRunner {
         String code = """
                 class NestedPatterVariablesTest {
                     String test(Object o) {
-                        if (o instanceof (CharSequence cs && cs instanceof String s)) {
+                        if (o instanceof CharSequence cs && cs instanceof String s) {
                             return s;
                         }
                         return null;

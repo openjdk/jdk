@@ -303,16 +303,6 @@ public interface TreeVisitor<R,P> {
     R visitNewArray(NewArrayTree node, P p);
 
     /**
-     * Visits a {@code GuardPatternTree} node.
-     * @param node the node being visited
-     * @param p a parameter value
-     * @return a result value
-     * @since 17
-     */
-    @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
-    R visitGuardedPattern(GuardedPatternTree node, P p);
-
-    /**
      * Visits a {@code ParenthesizedPatternTree} node.
      * @param node the node being visited
      * @param p a parameter value

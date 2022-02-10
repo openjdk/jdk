@@ -53,7 +53,7 @@ public class DisambiguatePatterns {
         DisambiguatePatterns test = new DisambiguatePatterns();
         test.disambiguationTest("String s",
                                  ExpressionType.PATTERN);
-        test.disambiguationTest("String s && s.isEmpty()",
+        test.disambiguationTest("String s when s.isEmpty()",
                                  ExpressionType.PATTERN);
         test.disambiguationTest("(String s)",
                                  ExpressionType.PATTERN);

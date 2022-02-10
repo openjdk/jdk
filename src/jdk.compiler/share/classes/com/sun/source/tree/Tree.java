@@ -229,14 +229,6 @@ public interface Tree {
         BINDING_PATTERN(BindingPatternTree.class),
 
         /**
-         * Used for instances of {@link GuardedPatternTree}.
-         *
-         * @since 17
-         */
-        @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
-        GUARDED_PATTERN(GuardedPatternTree.class),
-
-        /**
          * Used for instances of {@link ParenthesizedPatternTree}.
          *
          * @since 17

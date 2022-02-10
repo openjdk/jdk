@@ -23,7 +23,7 @@ public class SimpleAndGuardPattern {
 
     private static int simple(Object o) throws Throwable {
         return switch (o) {
-            case String s && s.equalsIgnoreCase("test") -> s.length();
+            case String s when s.equalsIgnoreCase("test") -> s.length();
             default -> -1;
         };
     }

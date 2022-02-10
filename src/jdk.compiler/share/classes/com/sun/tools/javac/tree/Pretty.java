@@ -858,6 +858,10 @@ public class Pretty extends JCTree.Visitor {
                 print("case ");
                 printExprs(tree.labels);
             }
+            if (tree.guard != null) {
+                print(" when ");
+                printExpr(tree.guard);
+            }
             if (tree.caseKind == JCCase.STATEMENT) {
                 print(":");
                 println();
@@ -921,17 +925,6 @@ public class Pretty extends JCTree.Visitor {
             print("(");
             printExpr(patt.pattern);
             print(")");
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    @Override
-    public void visitGuardPattern(JCGuardPattern patt) {
-        try {
-            printExpr(patt.patt);
-            print(" && ");
-            printExpr(patt.expr);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

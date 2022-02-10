@@ -559,6 +559,7 @@ public class TransTypes extends TreeTranslator {
 
     public void visitCase(JCCase tree) {
         tree.labels = translate(tree.labels, null);
+        tree.guard = translate(tree.guard, syms.booleanType);
         tree.stats = translate(tree.stats);
         result = tree;
     }
@@ -582,13 +583,6 @@ public class TransTypes extends TreeTranslator {
     @Override
     public void visitParenthesizedPattern(JCParenthesizedPattern tree) {
         tree.pattern = translate(tree.pattern, null);
-        result = tree;
-    }
-
-    @Override
-    public void visitGuardPattern(JCGuardPattern tree) {
-        tree.patt = translate(tree.patt, null);
-        tree.expr = translate(tree.expr, syms.booleanType);
         result = tree;
     }
 
