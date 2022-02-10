@@ -2975,17 +2975,17 @@ different JDK version.
 .RE
 .TP
 .B \f[CB]\-XX:+DTraceAllocProbes\f[R]
-Enable dtrace probes for object allocation.
+\f[B]Linux and macOS:\f[R] Enable dtrace probes for object allocation.
 .RS
 .RE
 .TP
 .B \f[CB]\-XX:+DTraceMethodProbes\f[R]
-Enable dtrace probes for method-entry and method-exit.
+\f[B]Linux and macOS:\f[R] Enable dtrace probes for method-entry and method-exit.
 .RS
 .RE
 .TP
 .B \f[CB]\-XX:+DTraceMonitorProbes\f[R]
-Enable dtrace probes for monitor events.
+\f[B]Linux and macOS:\f[R] Enable dtrace probes for monitor events.
 .RS
 .RE
 .TP
@@ -4014,10 +4014,10 @@ Example:
 .TP
 .B \f[CB]\-XX:+ExtendedDTraceProbes\f[R]
 \f[B]Linux and macOS:\f[R] Enables additional \f[CB]dtrace\f[R] tool probes
-that affect the performance.
+that affect performance.
 By default, this option is disabled and \f[CB]dtrace\f[R] performs only
 standard probes.
-Use the combination of these flags instead: -XX:+DTraceMethodProbes, -XX:+DTraceAllocProbes, -XX:+DTraceMonitorProbes
+Use the combination of these flags instead: \f[CB]\-XX:+DTraceMethodProbes\f[R], \f[CB]\-XX:+DTraceAllocProbes\f[R], \f[CB]\-XX:+DTraceMonitorProbes\f[R].
 .RS
 .RE
 .TP

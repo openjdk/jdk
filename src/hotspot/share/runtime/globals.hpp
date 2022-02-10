@@ -1865,7 +1865,7 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, ExtendedDTraceProbes,    false,                             \
           "(Deprecated) Enable performance-impacting dtrace probes. "       \
-          "Use a combination of -XX:+DTraceMethodProbes, "                  \
+          "Use the combination of -XX:+DTraceMethodProbes, "                \
           "-XX:+DTraceAllocProbes and -XX:+DTraceMonitorProbes instead.")   \
                                                                             \
   product(bool, DTraceMethodProbes, false,                                  \
