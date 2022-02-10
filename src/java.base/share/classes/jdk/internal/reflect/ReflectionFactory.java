@@ -616,35 +616,15 @@ public class ReflectionFactory {
 
     /**
      * The configurations exist as an object to avoid race conditions.
-     * See bug 8261407. Indy is not ready so this cannot be a record.
+     * See bug 8261407.
      */
-    private static final class Config {
-        //
-        // "Inflation" mechanism. Loading bytecodes to implement
-        // Method.invoke() and Constructor.newInstance() currently costs
-        // 3-4x more than an invocation via native code for the first
-        // invocation (though subsequent invocations have been benchmarked
-        // to be over 20x faster). Unfortunately this cost increases
-        // startup time for certain applications that use reflection
-        // intensively (but only once per class) to bootstrap themselves.
-        // To avoid this penalty we reuse the existing JVM entry points
-        // for the first few invocations of Methods and Constructors and
-        // then switch to the bytecode-based implementations.
-        //
-        private final boolean noInflation;
-        private final int     inflationThreshold;
-
+    private record Config(boolean noInflation, int inflationThreshold, int useDirectMethodHandle,
+                          boolean useNativeAccessorOnly, boolean disableSerialConstructorChecks) {
         //
         // New implementation uses direct invocation of method handles
-        private static final int METHOD_MH_ACCESSOR      = 0x1;
-        private static final int FIELD_MH_ACCESSOR       = 0x2;
-        private static final int ALL_MH_ACCESSORS        = METHOD_MH_ACCESSOR|FIELD_MH_ACCESSOR;
-
-        private final int     useDirectMethodHandle;
-        private final boolean useNativeAccessorOnly;  // for testing only
-
-        // true if deserialization constructor checking is disabled
-        private final boolean disableSerialConstructorChecks;
+        private static final int METHOD_MH_ACCESSOR = 0x1;
+        private static final int FIELD_MH_ACCESSOR = 0x2;
+        private static final int ALL_MH_ACCESSORS = METHOD_MH_ACCESSOR | FIELD_MH_ACCESSOR;
 
         private static final Config DEFAULT = new Config(
                 false, // noInflation
@@ -654,21 +634,14 @@ public class ReflectionFactory {
                 false // disableSerialConstructorChecks
         );
 
-        /** We have to defer full initialization of this class until after
-         the static initializer is run since java.lang.reflect.Method's
-         static initializer (more properly, that for
-         java.lang.reflect.AccessibleObject) causes this class's to be
-         run, before the system properties are set up. */
+        /**
+         * We have to defer full initialization of this class until after
+         * the static initializer is run since java.lang.reflect.Method's
+         * static initializer (more properly, that for
+         * java.lang.reflect.AccessibleObject) causes this class's to be
+         * run, before the system properties are set up.
+         */
         private static @Stable Config instance;
-
-        private Config(boolean noInflation, int inflationThreshold, int useDirectMethodHandle,
-                       boolean useNativeAccessorOnly, boolean disableSerialConstructorChecks) {
-            this.noInflation = noInflation;
-            this.inflationThreshold = inflationThreshold;
-            this.useDirectMethodHandle = useDirectMethodHandle;
-            this.useNativeAccessorOnly = useNativeAccessorOnly;
-            this.disableSerialConstructorChecks = disableSerialConstructorChecks;
-        }
 
         private static Config instance() {
             // Defer initialization until module system is initialized so as
