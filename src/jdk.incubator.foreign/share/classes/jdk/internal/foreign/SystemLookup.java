@@ -33,6 +33,7 @@ import jdk.incubator.foreign.MemoryAddress;
 import jdk.internal.loader.NativeLibraries;
 import jdk.internal.loader.NativeLibrary;
 
+import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
@@ -63,7 +64,7 @@ public class SystemLookup implements SymbolLookup {
 
         boolean useUCRT = Files.exists(ucrtbase);
         Path stdLib = useUCRT ? ucrtbase : msvcrt;
-        SymbolLookup lookup = libLookup(libs -> libs.loadLibrary(null, stdLib.toFile()));
+        SymbolLookup lookup = libLookup(libs -> libs.loadLibrary(stdLib.toFile()));
 
         if (useUCRT) {
             // use a fallback lookup to look up inline functions from fallback lib
@@ -85,7 +86,7 @@ public class SystemLookup implements SymbolLookup {
     }
 
     private static SymbolLookup libLookup(Function<NativeLibraries, NativeLibrary> loader) {
-        NativeLibrary lib = loader.apply(NativeLibraries.rawNativeLibraries(SystemLookup.class, false));
+        NativeLibrary lib = loader.apply(NativeLibraries.rawNativeLibraries(MethodHandles.lookup(), false));
         return name -> {
             Objects.requireNonNull(name);
             try {

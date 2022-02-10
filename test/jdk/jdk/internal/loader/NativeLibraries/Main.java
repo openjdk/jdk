@@ -30,7 +30,6 @@
  * @summary Test loading and unloading of native libraries
  */
 
-import jdk.internal.loader.*;
 import jdk.internal.loader.NativeLibrariesTest;
 
 import java.io.IOException;
@@ -53,10 +52,11 @@ public class Main {
         test.unload();
         System.loadLibrary(NativeLibrariesTest.LIB_NAME);
 
-        // expect NativeLibraries to fail since the library has been loaded by System::loadLibrary
-        try {
-            test.load(false);
-        } catch (UnsatisfiedLinkError e) { e.printStackTrace(); }
+        // expect NativeLibraries to succeed even the library has been loaded by System::loadLibrary
+        test.load(true);
+
+        // unload the native library
+        test.unload();
     }
     /*
      * move p/Test.class out from classpath to the scratch directory

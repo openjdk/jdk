@@ -23,6 +23,7 @@
 
 package jdk.internal.loader;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -51,7 +52,7 @@ public class NativeLibrariesTest implements Runnable {
 
     private final NativeLibraries nativeLibraries;
     public NativeLibrariesTest() {
-        this.nativeLibraries = NativeLibraries.rawNativeLibraries(NativeLibraries.class, true);
+        this.nativeLibraries = NativeLibraries.rawNativeLibraries(MethodHandles.lookup(), true);
     }
 
     /*
