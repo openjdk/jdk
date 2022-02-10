@@ -44,6 +44,7 @@ import java.util.Properties;
 import jdk.internal.access.JavaLangReflectAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
+import jdk.internal.vm.annotation.Stable;
 import sun.security.action.GetPropertyAction;
 import sun.security.util.SecurityConstants;
 
@@ -590,58 +591,34 @@ public class ReflectionFactory {
     // Package-private to be accessible to NativeMethodAccessorImpl
     // and NativeConstructorAccessorImpl
     static int inflationThreshold() {
-        return config().inflationThreshold;
+        return Config.instance().inflationThreshold;
     }
 
     static boolean noInflation() {
-        return config().noInflation;
+        return Config.instance().noInflation;
     }
 
     static boolean useMethodHandleAccessor() {
-        return (config().useDirectMethodHandle & Config.METHOD_MH_ACCESSOR) == Config.METHOD_MH_ACCESSOR;
+        return (Config.instance().useDirectMethodHandle & Config.METHOD_MH_ACCESSOR) == Config.METHOD_MH_ACCESSOR;
     }
 
     static boolean useFieldHandleAccessor() {
-        return (config().useDirectMethodHandle & Config.FIELD_MH_ACCESSOR) == Config.FIELD_MH_ACCESSOR;
+        return (Config.instance().useDirectMethodHandle & Config.FIELD_MH_ACCESSOR) == Config.FIELD_MH_ACCESSOR;
     }
 
     static boolean useNativeAccessorOnly() {
-        return config().useNativeAccessorOnly;
+        return Config.instance().useNativeAccessorOnly;
     }
 
     private static boolean disableSerialConstructorChecks() {
-        return config().disableSerialConstructorChecks;
-    }
-
-    /** We have to defer full initialization of this class until after
-        the static initializer is run since java.lang.reflect.Method's
-        static initializer (more properly, that for
-        java.lang.reflect.AccessibleObject) causes this class's to be
-        run, before the system properties are set up. */
-    private static Config config;
-
-    private static Config config() {
-        // Defer initialization until module system is initialized so as
-        // to avoid inflation and spinning bytecode in unnamed modules
-        // during early startup.
-        if (!VM.isModuleSystemInited()) {
-            return Config.fallback;
-        }
-
-        Config c = config;
-        if (c == null) {
-            config = c = new Config(true);
-        }
-        return c;
+        return Config.instance().disableSerialConstructorChecks;
     }
 
     /**
      * The configurations exist as an object to avoid race conditions.
-     * See bug 8261407.
+     * See bug 8261407. Indy is not ready so this cannot be a record.
      */
     private static final class Config {
-        private static final Config fallback = new Config(false);
-
         //
         // "Inflation" mechanism. Loading bytecodes to implement
         // Method.invoke() and Constructor.newInstance() currently costs
@@ -669,52 +646,93 @@ public class ReflectionFactory {
         // true if deserialization constructor checking is disabled
         private final boolean disableSerialConstructorChecks;
 
-        private Config(boolean getProperties) {
-            boolean noInflation = false;
-            int inflationThreshold = 15;
-            int useDirectMethodHandle = ALL_MH_ACCESSORS;
-            boolean useNativeAccessorOnly = false;
-            boolean disableSerialConstructorChecks = false;
+        private static final Config DEFAULT = new Config(
+                false, // noInflation
+                15, // inflationThreshold
+                ALL_MH_ACCESSORS, // useDirectMethodHandle
+                false, // useNativeAccessorOnly
+                false // disableSerialConstructorChecks
+        );
 
-            if (getProperties) {
-                Properties props = GetPropertyAction.privilegedGetProperties();
-                String val = props.getProperty("sun.reflect.noInflation");
-                if (val != null && val.equals("true")) {
-                    noInflation = true;
-                }
+        /** We have to defer full initialization of this class until after
+         the static initializer is run since java.lang.reflect.Method's
+         static initializer (more properly, that for
+         java.lang.reflect.AccessibleObject) causes this class's to be
+         run, before the system properties are set up. */
+        private static @Stable Config instance;
 
-                val = props.getProperty("sun.reflect.inflationThreshold");
-                if (val != null) {
-                    try {
-                        inflationThreshold = Integer.parseInt(val);
-                    } catch (NumberFormatException e) {
-                        throw new RuntimeException("Unable to parse property sun.reflect.inflationThreshold", e);
-                    }
-                }
-                val = props.getProperty("jdk.reflect.useDirectMethodHandle");
-                if (val != null) {
-                    if (val.equals("false")) {
-                        useDirectMethodHandle = 0;
-                    } else if (val.equals("methods")) {
-                        useDirectMethodHandle = METHOD_MH_ACCESSOR;
-                    } else if (val.equals("fields")) {
-                        useDirectMethodHandle = FIELD_MH_ACCESSOR;
-                    }
-                }
-                val = props.getProperty("jdk.reflect.useNativeAccessorOnly");
-                if (val != null && val.equals("true")) {
-                    useNativeAccessorOnly = true;
-                }
-
-                disableSerialConstructorChecks =
-                        "true".equals(props.getProperty("jdk.disableSerialConstructorChecks"));
-            }
-
+        private Config(boolean noInflation, int inflationThreshold, int useDirectMethodHandle,
+                       boolean useNativeAccessorOnly, boolean disableSerialConstructorChecks) {
             this.noInflation = noInflation;
             this.inflationThreshold = inflationThreshold;
             this.useDirectMethodHandle = useDirectMethodHandle;
             this.useNativeAccessorOnly = useNativeAccessorOnly;
             this.disableSerialConstructorChecks = disableSerialConstructorChecks;
+        }
+
+        private static Config instance() {
+            // Defer initialization until module system is initialized so as
+            // to avoid inflation and spinning bytecode in unnamed modules
+            // during early startup.
+            if (!VM.isModuleSystemInited()) {
+                return DEFAULT;
+            }
+
+            Config c = instance;
+            if (c == null) {
+                instance = c = load();
+            }
+            return c;
+        }
+
+        private static Config load() {
+            assert VM.isModuleSystemInited();
+
+            boolean noInflation = DEFAULT.noInflation;
+            int inflationThreshold = DEFAULT.inflationThreshold;
+            int useDirectMethodHandle = DEFAULT.useDirectMethodHandle;
+            boolean useNativeAccessorOnly = DEFAULT.useNativeAccessorOnly;
+            boolean disableSerialConstructorChecks = DEFAULT.disableSerialConstructorChecks;
+
+            Properties props = GetPropertyAction.privilegedGetProperties();
+            String val = props.getProperty("sun.reflect.noInflation");
+            if (val != null && val.equals("true")) {
+                noInflation = true;
+            }
+
+            val = props.getProperty("sun.reflect.inflationThreshold");
+            if (val != null) {
+                try {
+                    inflationThreshold = Integer.parseInt(val);
+                } catch (NumberFormatException e) {
+                    throw new RuntimeException("Unable to parse property sun.reflect.inflationThreshold", e);
+                }
+            }
+            val = props.getProperty("jdk.reflect.useDirectMethodHandle");
+            if (val != null) {
+                if (val.equals("false")) {
+                    useDirectMethodHandle = 0;
+                } else if (val.equals("methods")) {
+                    useDirectMethodHandle = METHOD_MH_ACCESSOR;
+                } else if (val.equals("fields")) {
+                    useDirectMethodHandle = FIELD_MH_ACCESSOR;
+                }
+            }
+            val = props.getProperty("jdk.reflect.useNativeAccessorOnly");
+            if (val != null && val.equals("true")) {
+                useNativeAccessorOnly = true;
+            }
+
+            disableSerialConstructorChecks =
+                    "true".equals(props.getProperty("jdk.disableSerialConstructorChecks"));
+
+            return new Config(
+                    noInflation,
+                    inflationThreshold,
+                    useDirectMethodHandle,
+                    useNativeAccessorOnly,
+                    disableSerialConstructorChecks
+            );
         }
     }
 
