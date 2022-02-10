@@ -1621,16 +1621,6 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
     return false;
   }
 
-  if (x->in(LoopNode::LoopBackControl)->Opcode() == Op_SafePoint &&
-          ((iv_bt == T_INT && LoopStripMiningIter != 0) ||
-           iv_bt == T_LONG)) {
-    // Leaving the safepoint on the backedge and creating a
-    // CountedLoop will confuse optimizations. We can't move the
-    // safepoint around because its jvm state wouldn't match a new
-    // location. Give up on that loop.
-    return false;
-  }
-
   Node* iftrue = back_control;
   uint iftrue_op = iftrue->Opcode();
   Node* iff = iftrue->in(0);
@@ -1859,6 +1849,38 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
     }
   }
 
+  Node *sfpt2 = NULL;
+  if (loop->_child == NULL) {
+    sfpt2 = find_safepoint(back_control, x, loop);
+  } else {
+    sfpt2 = iff->in(0);
+    if (sfpt2->Opcode() != Op_SafePoint) {
+      sfpt2 = NULL;
+    }
+  }
+
+  if (x->in(LoopNode::LoopBackControl)->Opcode() == Op_SafePoint) {
+    Node *sfpt = x->in(LoopNode::LoopBackControl);
+    bool deleteable = is_deleteable_safept(sfpt);
+    if (((iv_bt == T_INT && LoopStripMiningIter != 0) ||
+         iv_bt == T_LONG) &&
+        sfpt2 == NULL) {
+      // Leaving the safepoint on the backedge and creating a
+      // CountedLoop will confuse optimizations. We can't move the
+      // safepoint around because its jvm state wouldn't match a new
+      // location. Give up on that loop.
+      return false;
+    }
+    if (deleteable) {
+      lazy_replace(sfpt, iftrue);
+      if (loop->_safepts != NULL) {
+        loop->_safepts->yank(sfpt);
+      }
+      loop->_tail = iftrue;
+    }
+  }
+
+
 #ifdef ASSERT
   if (iv_bt == T_INT &&
       !x->as_Loop()->is_loop_nest_inner_loop() &&
@@ -1896,18 +1918,6 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
       ShouldNotReachHere();
   }
   set_subtree_ctrl(adjusted_limit, false);
-
-  if (iv_bt == T_INT && LoopStripMiningIter == 0) {
-    // Check for SafePoint on backedge and remove
-    Node *sfpt = x->in(LoopNode::LoopBackControl);
-    if (sfpt->Opcode() == Op_SafePoint && is_deleteable_safept(sfpt)) {
-      lazy_replace( sfpt, iftrue );
-      if (loop->_safepts != NULL) {
-        loop->_safepts->yank(sfpt);
-      }
-      loop->_tail = iftrue;
-    }
-  }
 
   // Build a canonical trip test.
   // Clone code, as old values may be in use.
@@ -1980,13 +1990,11 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   assert(iff->outcnt() == 0, "should be dead now");
   lazy_replace( iff, le ); // fix 'get_ctrl'
 
-  Node *sfpt2 = le->in(0);
-
   Node* entry_control = init_control;
   bool strip_mine_loop = iv_bt == T_INT &&
                          LoopStripMiningIter > 1 &&
                          loop->_child == NULL &&
-                         sfpt2->Opcode() == Op_SafePoint &&
+                         sfpt2 != NULL &&
                          !loop->_has_call;
   IdealLoopTree* outer_ilt = NULL;
   if (strip_mine_loop) {
@@ -2012,7 +2020,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
 
   if (iv_bt == T_INT && (LoopStripMiningIter == 0 || strip_mine_loop)) {
     // Check for immediately preceding SafePoint and remove
-    if (sfpt2->Opcode() == Op_SafePoint && (LoopStripMiningIter != 0 || is_deleteable_safept(sfpt2))) {
+    if (sfpt2 != NULL && (LoopStripMiningIter != 0 || is_deleteable_safept(sfpt2))) {
       if (strip_mine_loop) {
         Node* outer_le = outer_ilt->_tail->in(0);
         Node* sfpt = sfpt2->clone();
@@ -3663,7 +3671,7 @@ void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
   if (_head->is_CountedLoop() ||
       phase->is_counted_loop(_head, loop, T_INT)) {
 
-    if (LoopStripMiningIter == 0 || (LoopStripMiningIter > 1 && _child == NULL)) {
+    if (LoopStripMiningIter == 0 || _head->as_CountedLoop()->is_strip_mined()) {
       // Indicate we do not need a safepoint here
       _has_sfpt = 1;
     }
