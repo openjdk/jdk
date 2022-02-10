@@ -98,10 +98,10 @@ public class Snippets {
     @Retention(RetentionPolicy.RUNTIME)
     public @interface Temperature {
         public final static String KELVIN = "KELVIN";
-        public final static String CELCIUS = "CELCIUS";
+        public final static String CELSIUS = "CELSIUS";
         public final static String FAHRENEHIT = "FAHRENHEIT";
 
-        String value() default CELCIUS;
+        String value() default CELSIUS;
     }
     // @end
 
@@ -134,7 +134,7 @@ public class Snippets {
     // @end
 
     // @start region="ContentTypeConsumption"
-    void printTemperaturesInCelcius(Path file) throws IOException {
+    void printTemperaturesInCelsius(Path file) throws IOException {
         for (RecordedEvent event : RecordingFile.readAllEvents(file)) {
             for (ValueDescriptor field : event.getEventType().getFields()) {
                 for (AnnotationElement ae : field.getAnnotationElements()) {
@@ -143,13 +143,13 @@ public class Snippets {
                         if (ae.getTypeName().equals("com.example.Temperature")) {
                             double value = event.getDouble(field.getName());
                             String unit = (String) ae.getValue("value");
-                            double celcius = switch (unit) {
-                                case "CELCIUS" -> value;
+                            double celsius = switch (unit) {
+                                case "CELSIUS" -> value;
                                 case "KELVIN" -> value - 273.15;
                                 case "FAHRENHEIT" -> (value - 32) / 1.8;
                                 default -> throw new IllegalStateException("Unknown temperature unit '" + unit + "'");
                             };
-                            System.out.println(celcius + " C");
+                            System.out.println(celsius + " C");
                         } else {
                             System.err.println("Can't format content type " + ae.getTypeName() + " for field " + field.getName());
                         }
