@@ -118,7 +118,7 @@ void ShenandoahDegenGC::op_degenerated() {
       // changing the cycle parameters mid-cycle during concurrent -> degenerated handover.
       heap->set_unload_classes((!heap->mode()->is_generational() || _generation->generation_mode() == GLOBAL) && _generation->heuristics()->can_unload_classes());
 
-      if (_generation->generation_mode() == YOUNG || (_generation->generation_mode() == GLOBAL && ShenandoahVerify)) {
+      if (heap->mode()->is_generational() && (_generation->generation_mode() == YOUNG || (_generation->generation_mode() == GLOBAL && ShenandoahVerify))) {
         // Swap remembered sets for young, or if the verifier will run during a global collect
         _generation->swap_remembered_set();
       }

@@ -295,7 +295,12 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
         // This is either a GCLAB or it is a shared evacuation allocation.  In either case, we expend young evac.
         // At end of update refs, we'll add expended young evac into young_gen->used.  We hide this usage
         // from current accounting because memory reserved for evacuation is not part of adjusted capacity.
-        _heap->expend_young_evac(size * HeapWordSize);
+        if (_heap->mode()->is_generational()) {
+          _heap->expend_young_evac(size * HeapWordSize);
+        } else {
+          // If we are not in generational mode, we still need to count this allocation as used memory.
+          _heap->young_generation()->increase_used(size * HeapWordSize);
+        }
       } else {
         assert(r->affiliation() == ShenandoahRegionAffiliation::OLD_GENERATION, "GC Alloc was not YOUNG so must be OLD");
 
