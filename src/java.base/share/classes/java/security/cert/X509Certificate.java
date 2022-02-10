@@ -588,8 +588,8 @@ implements X509Extension {
      * integers separated by periods. Directory names (distinguished names)
      * are returned in <a href="http://www.ietf.org/rfc/rfc2253.txt">
      * RFC 2253</a> string format. otherNames are returned as a byte array
-     * containing the ASN.1 DER encoded form of the name, with a
-     * third entry in the list containing its {@code type-id} in string
+     * containing the ASN.1 DER encoded form of the name, and may also return
+     * a third entry in the list containing its {@code type-id} in string
      * format, and a fourth entry containing the ASN.1 DER encoding of
      * its {@code value} without the context-specific constructed tag
      * with number 0. No standard string format is
@@ -607,6 +607,9 @@ implements X509Extension {
      * service providers, this method is not {@code abstract}
      * and it provides a default implementation. Subclasses
      * should override this method with a correct implementation.
+     *
+     * @implNote The JDK SUN provider supports the third and fourth
+     * otherName elements.
      *
      * @return an immutable {@code Collection} of subject alternative
      * names (or {@code null})
