@@ -233,6 +233,7 @@ public:
 #ifndef PRODUCT
   NodeType node_type() const { return (NodeType)_type;}
   void dump(bool print_state=true) const;
+  void dump_header(bool print_state=true) const;
 #endif
 
 };
@@ -613,6 +614,11 @@ public:
 
 #ifndef PRODUCT
   void dump(GrowableArray<PointsToNode*>& ptnodes_worklist);
+  void trace_sr_disqualification(PointsToNode* ptn, const char* reason) const;
+  void trace_es_update_helper(PointsToNode* ptn, PointsToNode::EscapeState es, bool fields_only) const;
+  void trace_es_update(PointsToNode* ptn, PointsToNode::EscapeState es, const char* reason, bool fields_only=false) const;
+  void trace_arg_escape(CallNode* call, PointsToNode* arg_ptn, PointsToNode::EscapeState es) const;
+  void trace_propagate_es(PointsToNode* from, PointsToNode* to, PointsToNode::EscapeState es, bool fields_only) const;
 #endif
 };
 
