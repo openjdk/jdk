@@ -199,6 +199,10 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
           && test "x$VERSION_BUILD$VERSION_OPT" = x; then
         AC_MSG_ERROR([Version string contains + but both 'BUILD' and 'OPT' are missing])
       fi
+      if test "x$VERSION_BUILD" = x0; then
+        AC_MSG_WARN([Version build 0 is interpreted as no build number])
+        VERSION_BUILD=
+      fi
       # Stop the version part process from setting default values.
       # We still allow them to explicitly override though.
       NO_DEFAULT_VERSION_PARTS=true
@@ -253,7 +257,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
       # Default is to calculate a string like this:
       # 'adhoc.<username>.<base dir name>'
       # Outer [ ] to quote m4.
-      [ basedirname=`$BASENAME "$TOPDIR" | $TR -d -c '[a-z][A-Z][0-9].-'` ]
+      [ basedirname=`$BASENAME "$WORKSPACE_ROOT" | $TR -d -c '[a-z][A-Z][0-9].-'` ]
       VERSION_OPT="adhoc.$USERNAME.$basedirname"
     fi
   fi
@@ -272,6 +276,10 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
       VERSION_BUILD=
     else
       JDKVER_CHECK_AND_SET_NUMBER(VERSION_BUILD, $with_version_build)
+      if test "x$VERSION_BUILD" = "x0"; then
+        AC_MSG_WARN([--with-version-build=0 is interpreted as --without-version-build])
+        VERSION_BUILD=
+      fi
     fi
   else
     if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
