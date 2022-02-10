@@ -31,7 +31,7 @@ import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.LauncherAsServiceVerifier;
-import static jdk.jpackage.test.LauncherAsServiceVerifier.SUPPORTED_PACKAGES;
+import static jdk.jpackage.test.PackageType.MAC_DMG;
 import static jdk.jpackage.test.PackageType.WINDOWS;
 import jdk.jpackage.test.RunnablePackageTest;
 import jdk.jpackage.test.TKit;
@@ -166,9 +166,8 @@ public class ServiceTest {
     }
 
     private static PackageTest createPackageTest() {
-        // DMG not supported
         return new PackageTest()
-                .forTypes(SUPPORTED_PACKAGES)
+                .excludeTypes(MAC_DMG) // DMG not supported
                 .addInitializer(JPackageCommand::setInputToEmptyDirectory);
     }
 
