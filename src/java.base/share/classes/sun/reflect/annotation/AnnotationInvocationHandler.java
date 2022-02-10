@@ -191,10 +191,10 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
                 return  toSourceString((long) value);
             else if (type == Byte.class)
                 return  toSourceString((byte) value);
-            else if (value instanceof Enum<?>)
+            else if (value instanceof Enum<?> v)
                 // Predicate above covers enum constants, including
                 // those with specialized class bodies.
-                return toSourceString((Enum<?>) value);
+                return toSourceString(v);
             else
                 return value.toString();
         } else {
@@ -241,19 +241,10 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
      * string representation of an annotation.
      */
     private static String toSourceString(Class<?> clazz) {
-        Class<?> finalComponent = clazz;
-        StringBuilder arrayBrackets = new StringBuilder();
-
-        while(finalComponent.isArray()) {
-            finalComponent = finalComponent.getComponentType();
-            arrayBrackets.append("[]");
-        }
-
         // Guard against NPE in toString generation if the class lacks
         // a canonical name; not expected to happen
-        return Objects.toString(finalComponent.getCanonicalName(),
-                                "<no canonical name>") +
-            arrayBrackets.toString() + ".class";
+        return Objects.toString(clazz.getCanonicalName(),
+                                "<no canonical name>") + ".class";
     }
 
     private static String toSourceString(float f) {
