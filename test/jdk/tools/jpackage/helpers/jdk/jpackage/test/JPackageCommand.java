@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -242,6 +242,17 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
+    public JPackageCommand setInputToEmptyDirectory() {
+        if (Files.exists(inputDir())) {
+            try {
+                setArgumentValue("--input", TKit.createTempDirectory("input"));
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+        return this;
+    }
+
     public JPackageCommand setFakeRuntime() {
         verifyMutable();
 
@@ -412,6 +423,28 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
             return path;
         }
         return unpackDir.resolve(TKit.removeRootFromAbsolutePath(path));
+    }
+
+    /**
+     * Returns path to package file from the path in unpacked package directory
+     * or the given path if the package is not unpacked.
+     */
+    public Path pathToPackageFile(Path path) {
+        Path unpackDir = unpackedPackageDirectory();
+        if (unpackDir == null) {
+            if (!path.isAbsolute()) {
+                throw new IllegalArgumentException(String.format(
+                        "Path [%s] is not absolute", path));
+            }
+            return path;
+        }
+
+        if (!path.startsWith(unpackDir)) {
+            throw new IllegalArgumentException(String.format(
+                    "Path [%s] doesn't start with [%s] path", path, unpackDir));
+        }
+
+        return Path.of("/").resolve(unpackDir.relativize(path));
     }
 
     Path unpackedPackageDirectory() {
@@ -786,6 +819,11 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     public String getPrintableCommandLine() {
         return createExecutor().getPrintableCommandLine();
+    }
+
+    @Override
+    public String toString() {
+        return getPrintableCommandLine();
     }
 
     public void verifyIsOfType(Collection<PackageType> types) {

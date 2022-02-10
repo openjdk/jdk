@@ -50,7 +50,7 @@ import jdk.jpackage.internal.RetryExecutor;
 import org.xml.sax.SAXException;
 import org.w3c.dom.NodeList;
 
-public class MacHelper {
+public final class MacHelper {
 
     public static void withExplodedDmg(JPackageCommand cmd,
             ThrowingConsumer<Path> consumer) {
@@ -227,17 +227,14 @@ public class MacHelper {
         };
         pkg.uninstallHandler = cmd -> {
             cmd.verifyIsOfType(PackageType.MAC_PKG);
-            Executor.of("sudo", "rm", "-rf")
-            .addArgument(cmd.appInstallationDirectory())
-            .execute();
 
-            // Uninstall service files
-            var servicePlistFiles = LauncherAsServiceVerifier.getLaunchersAsServices(
-                    cmd).stream().map(launcherName -> {
-                        return getServicePlistFilePath(cmd, launcherName);
-                    }).collect(Collectors.toSet());
-            for (var path : servicePlistFiles) {
-                Executor.of("sudo", "rm", "-f").addArgument(path).execute();
+            if (Files.exists(getUninstallCommand(cmd))) {
+                Executor.of("sudo", "/bin/sh",
+                        getUninstallCommand(cmd).toString()).execute();
+            } else {
+                Executor.of("sudo", "rm", "-rf")
+                        .addArgument(cmd.appInstallationDirectory())
+                        .execute();
             }
         };
 
@@ -257,7 +254,15 @@ public class MacHelper {
                         cmd.name() + (cmd.isRuntime() ? "" : ".app"));
     }
 
+    static Path getUninstallCommand(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.MAC_PKG);
+        return cmd.pathToUnpackedPackageFile(Path.of(
+                "/Library/Application Support", getPackageName(cmd),
+                "uninstall.command"));
+    }
+
     static Path getServicePlistFilePath(JPackageCommand cmd, String launcherName) {
+        cmd.verifyIsOfType(PackageType.MAC_PKG);
         return cmd.pathToUnpackedPackageFile(
                 Path.of("/Library/LaunchDaemons").resolve(
                         getServicePListFileName(getPackageId(cmd),

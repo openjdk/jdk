@@ -78,7 +78,7 @@ class UnixLaunchersAsServices extends ShellCustomAction {
         }
 
         var installedDescriptorFiles = launchers.stream().map(
-                launcher -> String.format("'%s'", launcher.descriptorFilePath(
+                launcher -> enqouter.applyTo(launcher.descriptorFilePath(
                         Path.of("/")).toString())).toList();
 
         Function<String, String> strigifier = cmd -> {
@@ -88,7 +88,7 @@ class UnixLaunchersAsServices extends ShellCustomAction {
         };
 
         try {
-            data.put(SCRIPTS, stringifyTextFile("service_utils.sh"));
+            data.put(SCRIPTS, stringifyTextFile("services_utils.sh"));
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
@@ -121,6 +121,7 @@ class UnixLaunchersAsServices extends ShellCustomAction {
     private final PlatformPackage thePackage;
     private final List<String> requiredPackages;
     private final List<UnixLauncherAsService> launchers;
+    private final Enquoter enqouter = Enquoter.forShellLiterals();
 
     private static final String COMMANDS_INSTALL = "LAUNCHER_AS_SERVICE_COMMANDS_INSTALL";
     private static final String COMMANDS_UNINSTALL = "LAUNCHER_AS_SERVICE_COMMANDS_UNINSTALL";

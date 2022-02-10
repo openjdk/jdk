@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -43,12 +44,21 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.AppImageFile;
 import jdk.jpackage.internal.ApplicationLayout;
 import jdk.jpackage.test.Functional.ThrowingBiConsumer;
+import static jdk.jpackage.test.Functional.ThrowingBiConsumer.toBiConsumer;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
+import static jdk.jpackage.test.Functional.ThrowingConsumer.toConsumer;
 import jdk.jpackage.test.Functional.ThrowingRunnable;
-
+import static jdk.jpackage.test.PackageType.LINUX;
+import static jdk.jpackage.test.PackageType.LINUX_DEB;
+import static jdk.jpackage.test.PackageType.LINUX_RPM;
+import static jdk.jpackage.test.PackageType.MAC_DMG;
+import static jdk.jpackage.test.PackageType.MAC_PKG;
+import static jdk.jpackage.test.PackageType.NATIVE;
+import static jdk.jpackage.test.PackageType.WINDOWS;
+import static jdk.jpackage.test.PackageType.WIN_EXE;
+import static jdk.jpackage.test.PackageType.WIN_MSI;
 
 
 /**
@@ -82,7 +92,7 @@ public final class PackageTest extends RunnablePackageTest {
     public PackageTest forTypes(PackageType... types) {
         Collection<PackageType> newTypes;
         if (types == null || types.length == 0) {
-            newTypes = PackageType.NATIVE;
+            newTypes = NATIVE;
         } else {
             newTypes = Stream.of(types).collect(Collectors.toSet());
         }
@@ -122,7 +132,7 @@ public final class PackageTest extends RunnablePackageTest {
             namedInitializers.add(id);
         }
         currentTypes.forEach(type -> handlers.get(type).addInitializer(
-                ThrowingConsumer.toConsumer(v)));
+                toConsumer(v)));
         return this;
     }
 
@@ -151,13 +161,12 @@ public final class PackageTest extends RunnablePackageTest {
     public PackageTest addBundleVerifier(
             ThrowingBiConsumer<JPackageCommand, Executor.Result> v) {
         currentTypes.forEach(type -> handlers.get(type).addBundleVerifier(
-                ThrowingBiConsumer.toBiConsumer(v)));
+                toBiConsumer(v)));
         return this;
     }
 
     public PackageTest addBundleVerifier(ThrowingConsumer<JPackageCommand> v) {
-        return addBundleVerifier(
-                (cmd, unused) -> ThrowingConsumer.toConsumer(v).accept(cmd));
+        return addBundleVerifier((cmd, unused) -> toConsumer(v).accept(cmd));
     }
 
     public PackageTest addBundlePropertyVerifier(String propertyName,
@@ -184,7 +193,7 @@ public final class PackageTest extends RunnablePackageTest {
     }
 
     public PackageTest addBundleDesktopIntegrationVerifier(boolean integrated) {
-        forTypes(PackageType.LINUX, () -> {
+        forTypes(LINUX, () -> {
             LinuxHelper.addBundleDesktopIntegrationVerifier(this, integrated);
         });
         return this;
@@ -192,13 +201,13 @@ public final class PackageTest extends RunnablePackageTest {
 
     public PackageTest addInstallVerifier(ThrowingConsumer<JPackageCommand> v) {
         currentTypes.forEach(type -> handlers.get(type).addInstallVerifier(
-                ThrowingConsumer.toConsumer(v)));
+                toConsumer(v)));
         return this;
     }
 
     public PackageTest addUninstallVerifier(ThrowingConsumer<JPackageCommand> v) {
         currentTypes.forEach(type -> handlers.get(type).addUninstallVerifier(
-                ThrowingConsumer.toConsumer(v)));
+                toConsumer(v)));
         return this;
     }
 
@@ -232,7 +241,7 @@ public final class PackageTest extends RunnablePackageTest {
         // running check of type of environment.
         addHelloAppInitializer(null);
 
-        forTypes(PackageType.LINUX, () -> {
+        forTypes(LINUX, () -> {
             LinuxHelper.addFileAssociationsVerifier(this, fa);
         });
 
@@ -367,7 +376,7 @@ public final class PackageTest extends RunnablePackageTest {
     }
 
     private List<Consumer<Action>> createPackageTypeHandlers() {
-        return PackageType.NATIVE.stream()
+        return NATIVE.stream()
                 .map(type -> {
                     Handler handler = handlers.entrySet().stream()
                         .filter(entry -> !entry.getValue().isVoid())
@@ -388,7 +397,7 @@ public final class PackageTest extends RunnablePackageTest {
 
     private Consumer<Action> createPackageTypeHandler(
             PackageType type, Handler handler) {
-        return ThrowingConsumer.toConsumer(new ThrowingConsumer<Action>() {
+        return toConsumer(new ThrowingConsumer<Action>() {
             @Override
             public void accept(Action action) throws Throwable {
                 if (action == Action.FINALIZE) {
@@ -536,7 +545,7 @@ public final class PackageTest extends RunnablePackageTest {
         private void verifyPackageBundle(JPackageCommand cmd,
                 Executor.Result result) {
             if (expectedJPackageExitCode == 0) {
-                if (PackageType.LINUX.contains(cmd.packageType())) {
+                if (LINUX.contains(cmd.packageType())) {
                     LinuxHelper.verifyPackageBundleEssential(cmd);
                 }
             }
@@ -552,8 +561,34 @@ public final class PackageTest extends RunnablePackageTest {
             }
             TKit.trace(String.format(formatString, cmd.getPrintableCommandLine()));
 
+            Optional.ofNullable(cmd.unpackedPackageDirectory()).ifPresent(
+                    toConsumer(unpackedDir -> {
+                        try ( var files = Files.list(unpackedDir)) {
+                            final boolean withServices = !cmd.isRuntime()
+                                    && !LauncherAsServiceVerifier.getLaunchersAsServices(
+                                            cmd).isEmpty();
+
+                            final long expectedRootCount;
+                            if (WINDOWS.contains(cmd.packageType())) {
+                                // On Windows it is always two entries:
+                                // installation home directory and MSI file
+                                expectedRootCount = 2;
+                            } else if (withServices && MAC_PKG.equals(cmd.packageType())) {
+                                expectedRootCount = 2;
+                            } else if (withServices && LINUX.contains(cmd.packageType())) {
+                                expectedRootCount = 2;
+                            } else {
+                                expectedRootCount = 1;
+                            }
+                            TKit.assertEquals(expectedRootCount, files.count(),
+                                    String.format(
+                                            "Check the package has %d top installation directories",
+                                            expectedRootCount));
+                        }
+                    }));
+
             if (!cmd.isRuntime()) {
-                if (PackageType.WINDOWS.contains(cmd.packageType())
+                if (WINDOWS.contains(cmd.packageType())
                         && !cmd.isPackageUnpacked(
                                 "Not verifying desktop integration")) {
                     // Check main launcher
@@ -564,6 +599,12 @@ public final class PackageTest extends RunnablePackageTest {
                     });
                 }
             }
+
+            if (LauncherAsServiceVerifier.SUPPORTED_PACKAGES.contains(
+                    cmd.packageType())) {
+                LauncherAsServiceVerifier.verify(cmd);
+            }
+
             cmd.assertAppLayout();
 
             installVerifiers.forEach(v -> v.accept(cmd));
@@ -575,7 +616,7 @@ public final class PackageTest extends RunnablePackageTest {
             if (!cmd.isRuntime()) {
                 TKit.assertPathExists(cmd.appLauncherPath(), false);
 
-                if (PackageType.WINDOWS.contains(cmd.packageType())) {
+                if (WINDOWS.contains(cmd.packageType())) {
                     // Check main launcher
                     new WindowsHelper.DesktopIntegrationVerifier(cmd, null);
                     // Check additional launchers
@@ -593,6 +634,11 @@ public final class PackageTest extends RunnablePackageTest {
                 TKit.assertPathExists(appInstallDir, false);
             }
 
+            if (LauncherAsServiceVerifier.SUPPORTED_PACKAGES.contains(
+                    cmd.packageType())) {
+                LauncherAsServiceVerifier.verifyUninstalled(cmd);
+            }
+
             uninstallVerifiers.forEach(v -> v.accept(cmd));
         }
 
@@ -605,18 +651,18 @@ public final class PackageTest extends RunnablePackageTest {
     private static Map<PackageType, PackageHandlers> createDefaultPackageHandlers() {
         HashMap<PackageType, PackageHandlers> handlers = new HashMap<>();
         if (TKit.isLinux()) {
-            handlers.put(PackageType.LINUX_DEB, LinuxHelper.createDebPackageHandlers());
-            handlers.put(PackageType.LINUX_RPM, LinuxHelper.createRpmPackageHandlers());
+            handlers.put(LINUX_DEB, LinuxHelper.createDebPackageHandlers());
+            handlers.put(LINUX_RPM, LinuxHelper.createRpmPackageHandlers());
         }
 
         if (TKit.isWindows()) {
-            handlers.put(PackageType.WIN_MSI, WindowsHelper.createMsiPackageHandlers());
-            handlers.put(PackageType.WIN_EXE, WindowsHelper.createExePackageHandlers());
+            handlers.put(WIN_MSI, WindowsHelper.createMsiPackageHandlers());
+            handlers.put(WIN_EXE, WindowsHelper.createExePackageHandlers());
         }
 
         if (TKit.isOSX()) {
-            handlers.put(PackageType.MAC_DMG,  MacHelper.createDmgPackageHandlers());
-            handlers.put(PackageType.MAC_PKG,  MacHelper.createPkgPackageHandlers());
+            handlers.put(MAC_DMG,  MacHelper.createDmgPackageHandlers());
+            handlers.put(MAC_PKG,  MacHelper.createPkgPackageHandlers());
         }
 
         return handlers;

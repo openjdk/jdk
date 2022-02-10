@@ -6,9 +6,9 @@ register_services ()
   for daemonPlistFilePath in "$@"; do
     daemonPlistFileName="${daemonPlistFilePath#/Library/LaunchDaemons/}";
 
-    launchctl load "$daemonPlistFilePath"
+    /bin/launchctl load "$daemonPlistFilePath"
 
-    launchctl start "${daemonPlistFileName%.plist}"
+    /bin/launchctl start "${daemonPlistFileName%.plist}"
   done
 }
 
@@ -21,8 +21,10 @@ unregister_services ()
   for daemonPlistFilePath in "$@"; do
     daemonPlistFileName="${daemonPlistFilePath#/Library/LaunchDaemons/}";
 
-    launchctl stop "${daemonPlistFileName%.plist}"
+    sudo /bin/launchctl stop "${daemonPlistFileName%.plist}"
 
-    launchctl unload "$daemonPlistFilePath"
+    sudo /bin/launchctl unload "$daemonPlistFilePath"
+
+    test -z "$delete_plist_files" || sudo rm -f "$daemonPlistFilePath"
   done
 }

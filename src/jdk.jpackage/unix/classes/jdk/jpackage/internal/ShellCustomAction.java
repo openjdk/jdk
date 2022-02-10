@@ -67,15 +67,4 @@ abstract class ShellCustomAction {
             return reader.lines().collect(Collectors.joining("\n"));
         }
     }
-
-    protected static String escapedInstalledLauncherPath(PlatformPackage pkg,
-            String launcherName) {
-        String appLauncher = pkg.installedApplicationLayout().launchersDirectory().resolve(
-                launcherName).toString();
-        if (Pattern.compile("\\s").matcher(appLauncher).find()) {
-            // Path contains whitespace(s). Enclose in double quotes.
-            appLauncher = "\"" + appLauncher + "\"";
-        }
-        return appLauncher;
-    }
 }

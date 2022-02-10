@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -273,9 +273,9 @@ final class DesktopIntegration extends ShellCustomAction {
         data.put("APPLICATION_ICON",
                 iconFile != null ? iconFile.installPath().toString() : null);
         data.put("DEPLOY_BUNDLE_CATEGORY", MENU_GROUP.fetchFrom(params));
-        data.put("APPLICATION_LAUNCHER",
-                escapedInstalledLauncherPath(thePackage,
-                        LinuxAppImageBuilder.getLauncherName(params)));
+        data.put("APPLICATION_LAUNCHER", Enquoter.forPropertyValues().applyTo(
+                thePackage.installedApplicationLayout().launchersDirectory().resolve(
+                        LinuxAppImageBuilder.getLauncherName(params)).toString()));
 
         return data;
     }
