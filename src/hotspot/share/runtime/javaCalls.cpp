@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -126,7 +126,7 @@ JavaCallWrapper::~JavaCallWrapper() {
 
   // Release handles after we are marked as being inside the VM again, since this
   // operation might block
-  JNIHandleBlock::release_block(_old_handles, _thread);
+  JNIHandleBlock::move_to_free_handle_block(_old_handles, _thread);
 
   if (_thread->has_pending_exception() && _thread->has_last_Java_frame()) {
     // If we get here, the Java code threw an exception that unwound a frame.

@@ -1925,7 +1925,7 @@ void JavaThread::pop_jni_handle_block() {
   assert(new_handles != nullptr, "should never set active handles to null");
   set_active_handles(new_handles);
   old_handles->set_pop_frame_link(NULL);
-  JNIHandleBlock::release_block(old_handles, this);
+  JNIHandleBlock::move_to_free_handle_block(old_handles, this);
 }
 
 void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,7 +129,7 @@ void ProgrammableUpcallHandler::on_exit(OptimizedEntryBlob::FrameData* context) 
 
   // Release handles after we are marked as being in native code again, since this
   // operation might block
-  JNIHandleBlock::release_block(context->new_handles, thread);
+  JNIHandleBlock::move_to_free_handle_block(context->new_handles, thread);
 
   assert(!thread->has_pending_exception(), "Upcall can not throw an exception");
 

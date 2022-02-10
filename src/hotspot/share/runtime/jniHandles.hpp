@@ -166,7 +166,8 @@ class JNIHandleBlock : public CHeapObj<mtInternal> {
 
   // Block allocation and block free list management
   static JNIHandleBlock* allocate_block(JavaThread* thread = NULL, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
-  static void release_block(JNIHandleBlock* block, JavaThread* thread = NULL);
+  static void move_to_free_handle_block(JNIHandleBlock* block, JavaThread* thread);
+  static void release_block(JNIHandleBlock* block);
 
   // JNI PushLocalFrame/PopLocalFrame support
   JNIHandleBlock* pop_frame_link() const          { return _pop_frame_link; }

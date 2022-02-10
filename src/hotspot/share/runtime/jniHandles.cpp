@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -365,13 +365,10 @@ JNIHandleBlock* JNIHandleBlock::allocate_block(JavaThread* thread, AllocFailType
 }
 
 
-void JNIHandleBlock::release_block(JNIHandleBlock* block, JavaThread* thread) {
-  assert(thread == NULL || thread == Thread::current(), "sanity check");
+void JNIHandleBlock::move_to_free_handle_block(JNIHandleBlock* block, JavaThread* thread) {
+  assert(thread == Thread::current(), "Should be current thread");
   JNIHandleBlock* pop_frame_link = block->pop_frame_link();
   // Put returned block at the beginning of the thread-local free list.
-  // Note that if thread == NULL, we use it as an implicit argument that
-  // we _don't_ want the block to be kept on the free_handle_block.
-  // See for instance JavaThread::exit().
   if (thread != NULL ) {
     block->zap();
     JNIHandleBlock* freelist = thread->free_handle_block();
@@ -385,17 +382,35 @@ void JNIHandleBlock::release_block(JNIHandleBlock* block, JavaThread* thread) {
     }
     block = NULL;
   }
-  if (block != NULL) {
-    Atomic::dec(&_blocks_allocated);
-    delete block;
-  }
+
   if (pop_frame_link != NULL) {
     // As a sanity check we release blocks pointed to by the pop_frame_link.
     // This should never happen (only if PopLocalFrame is not called the
     // correct number of times).
-    release_block(pop_frame_link, thread);
+    move_to_free_handle_block(pop_frame_link, thread);
   }
 }
+
+
+void JNIHandleBlock::release_block(JNIHandleBlock* block) {
+  JNIHandleBlock* pop_frame_link = block->pop_frame_link();
+  // Delete blocks when they are not used anymore
+  // See for instance JavaThread::exit().
+  while(block != NULL) {
+    JNIHandleBlock* next = block->_next;
+    Atomic::dec(&_blocks_allocated);
+    delete block;
+    block = next;
+  }
+
+  if (pop_frame_link != NULL) {
+    // As a sanity check we release blocks pointed to by the pop_frame_link.
+    // This should never happen (only if PopLocalFrame is not called the
+    // correct number of times).
+    release_block(pop_frame_link);
+  }
+}
+
 
 
 void JNIHandleBlock::oops_do(OopClosure* f) {

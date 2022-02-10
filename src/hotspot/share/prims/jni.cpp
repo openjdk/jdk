@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012 Red Hat, Inc.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -658,10 +658,10 @@ JNI_ENTRY(jobject, jni_PopLocalFrame(JNIEnv *env, jobject result))
     // As a sanity check we only release the handle blocks if the pop_frame_link is not NULL.
     // This way code will still work if PopLocalFrame is called without a corresponding
     // PushLocalFrame call. Note that we set the pop_frame_link to NULL explicitly, otherwise
-    // the release_block call will release the blocks.
+    // the move_to_free_handle_block call will release the blocks.
     thread->set_active_handles(new_handles);
     old_handles->set_pop_frame_link(NULL);              // clear link we won't release new_handles below
-    JNIHandleBlock::release_block(old_handles, thread); // may block
+    JNIHandleBlock::move_to_free_handle_block(old_handles, thread);
     result = JNIHandles::make_local(thread, result_handle());
   }
   HOTSPOT_JNI_POPLOCALFRAME_RETURN(result);
