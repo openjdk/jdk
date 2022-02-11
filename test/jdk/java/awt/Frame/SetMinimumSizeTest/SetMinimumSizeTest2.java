@@ -74,7 +74,7 @@ public class SetMinimumSizeTest2 {
             Dimension actualDimension = frame.getSize();
             if (!actualDimension.equals(dimension))
             {
-                throw new RuntimeException("Test Failed\n" 
+                throw new RuntimeException("Test Failed\n"
                     + "expected dimension:(" + dimension.width + "," + dimension.height +")\n"
                     + "actual dimension:(" + actualDimension.width + "," + actualDimension.height + ")");
             }
