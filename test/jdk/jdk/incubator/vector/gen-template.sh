@@ -55,17 +55,13 @@ compare_template="Compare"
 compare_masked_template="Compare-Masked"
 compare_broadcast_template="Compare-Broadcast"
 reduction_scalar="Reduction-Scalar-op"
-reduction_scalar_min="Reduction-Scalar-Min-op"
-reduction_scalar_max="Reduction-Scalar-Max-op"
+reduction_scalar_func="Reduction-Scalar-op-func"
 reduction_scalar_masked="Reduction-Scalar-Masked-op"
-reduction_scalar_min_masked="Reduction-Scalar-Masked-Min-op"
-reduction_scalar_max_masked="Reduction-Scalar-Masked-Max-op"
+reduction_scalar_masked_func="Reduction-Scalar-Masked-op-func"
 reduction_op="Reduction-op"
-reduction_op_min="Reduction-Min-op"
-reduction_op_max="Reduction-Max-op"
+reduction_op_func="Reduction-op-func"
 reduction_op_masked="Reduction-Masked-op"
-reduction_op_min_masked="Reduction-Masked-Min-op"
-reduction_op_max_masked="Reduction-Masked-Max-op"
+reduction_op_masked_func="Reduction-Masked-op-func"
 unary_math_template="Unary-op-math"
 binary_math_template="Binary-op-math"
 binary_math_broadcast_template="Binary-Broadcast-op-math"
@@ -337,20 +333,12 @@ function gen_reduction_op {
   gen_op_tmpl $reduction_op_masked "$@"
 }
 
-function gen_reduction_op_min {
+function gen_reduction_op_func {
   echo "Generating reduction op $1 ($2)..."
-  gen_op_tmpl $reduction_scalar_min "$@"
-  gen_op_tmpl $reduction_op_min "$@"
-  gen_op_tmpl $reduction_scalar_min_masked "$@"
-  gen_op_tmpl $reduction_op_min_masked "$@"
-}
-
-function gen_reduction_op_max {
-  echo "Generating reduction op $1 ($2)..."
-  gen_op_tmpl $reduction_scalar_max "$@"
-  gen_op_tmpl $reduction_op_max "$@"
-  gen_op_tmpl $reduction_scalar_max_masked "$@"
-  gen_op_tmpl $reduction_op_max_masked "$@"
+  gen_op_tmpl $reduction_scalar_func "$@"
+  gen_op_tmpl $reduction_op_func "$@"
+  gen_op_tmpl $reduction_scalar_masked_func "$@"
+  gen_op_tmpl $reduction_op_masked_func "$@"
 }
 
 function gen_bool_reduction_op {
@@ -462,9 +450,9 @@ gen_reduction_op "OR" "|" "BITWISE" "0"
 gen_reduction_op "XOR" "^" "BITWISE" "0"
 gen_reduction_op "ADD" "+" "" "0"
 gen_reduction_op "MUL" "*" "" "1"
-gen_reduction_op_min "MIN" "" "" "\$Wideboxtype\$.\$MaxValue\$"
-gen_reduction_op_max "MAX" "" "" "\$Wideboxtype\$.\$MinValue\$"
-#gen_reduction_op "reduce_FIRST_NONZERO" "lanewise_FIRST_NONZERO" "{#if[FP]?Double.doubleToLongBits}(a)=0?a:b" "" "1"
+gen_reduction_op_func "MIN" "(\$type\$) Math.min" "" "\$Wideboxtype\$.\$MaxValue\$"
+gen_reduction_op_func "MAX" "(\$type\$) Math.max" "" "\$Wideboxtype\$.\$MinValue\$"
+gen_reduction_op_func "FIRST_NONZERO" "firstNonZero" "" "(\$type\$) 0"
 
 # Boolean reductions.
 gen_bool_reduction_op "anyTrue" "|" "BITWISE" "false"
