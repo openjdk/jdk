@@ -70,19 +70,6 @@ int main(int argc, char** args) {
 
     printf("Expected IllegalCallerException was thrown\n");
 
-    /* Reflection.getCallerClass()
-    jclass reflectionClass = (*env)->FindClass(env, "jdk/internal/reflect/Reflection");
-    assert (reflectionClass != NULL);
-    jmethodID mid_Reflection_getCallerClass = (*env)->GetStaticMethodID(env, reflectionClass, "getCallerClass", "()Ljava/lang/Class;" );
-    assert(mid_Reflection_getCallerClass != NULL);
-    jclass c = (*env)->CallStaticObjectMethod(env, reflectionClass, mid_Reflection_getCallerClass );
-    printf("Reflection.getCallerClass(): %lu\n", c);
-    if ((*env)->ExceptionOccurred(env) != NULL) {
-        (*env)->ExceptionDescribe(env);
-        exit(-1);
-    }
-    */
-
     (*jvm)->DestroyJavaVM(jvm);
     return 0;
 }
