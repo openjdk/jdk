@@ -963,6 +963,17 @@ void FileMapInfo::log_paths(const char* msg, int start_idx, int end_idx) {
   }
 }
 
+bool FileMapInfo::check_module_paths() {
+  const char* rp = Arguments::get_property("jdk.module.path");
+  int num_paths = Arguments::num_archives(rp);
+  if (num_paths != header()->num_module_paths()) {
+    return false;
+  }
+  ResourceMark rm;
+  GrowableArray<const char*>* rp_array = create_path_array(rp);
+  return check_paths(header()->app_module_paths_start_index(), num_paths, rp_array);
+}
+
 bool FileMapInfo::validate_shared_path_table() {
   assert(UseSharedSpaces, "runtime only");
 
@@ -985,9 +996,11 @@ bool FileMapInfo::validate_shared_path_table() {
         "Dynamic archiving is disabled because base layer archive has appended boot classpath");
     }
     if (header()->num_module_paths() > 0) {
-      DynamicDumpSharedSpaces = false;
-      warning(
-        "Dynamic archiving is disabled because base layer archive has module path");
+      if (!check_module_paths()) {
+        DynamicDumpSharedSpaces = false;
+        warning(
+          "Dynamic archiving is disabled because base layer archive has a different module path");
+      }
     }
   }
 
