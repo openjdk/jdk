@@ -616,11 +616,27 @@ public class ReflectionFactory {
 
     /**
      * The configurations exist as an object to avoid race conditions.
-     * See bug 8261407.
+     * See bug 8261407. The object methods backed by indy may not be available.
      */
-    private record Config(boolean noInflation, int inflationThreshold, int useDirectMethodHandle,
-                          boolean useNativeAccessorOnly, boolean disableSerialConstructorChecks) {
-        //
+    private record Config(
+            // "Inflation" mechanism. Loading bytecodes to implement
+            // Method.invoke() and Constructor.newInstance() currently costs
+            // 3-4x more than an invocation via native code for the first
+            // invocation (though subsequent invocations have been benchmarked
+            // to be over 20x faster). Unfortunately this cost increases
+            // startup time for certain applications that use reflection
+            // intensively (but only once per class) to bootstrap themselves.
+            // To avoid this penalty we reuse the existing JVM entry points
+            // for the first few invocations of Methods and Constructors and
+            // then switch to the bytecode-based implementations.
+            boolean noInflation,
+            int inflationThreshold,
+            int useDirectMethodHandle,
+            boolean useNativeAccessorOnly,
+            // true if deserialization constructor checking is disabled
+            boolean disableSerialConstructorChecks
+    ) {
+
         // New implementation uses direct invocation of method handles
         private static final int METHOD_MH_ACCESSOR = 0x1;
         private static final int FIELD_MH_ACCESSOR = 0x2;
@@ -644,6 +660,11 @@ public class ReflectionFactory {
         private static @Stable Config instance;
 
         private static Config instance() {
+            Config c = instance;
+            if (c != null) {
+                return c;
+            }
+
             // Defer initialization until module system is initialized so as
             // to avoid inflation and spinning bytecode in unnamed modules
             // during early startup.
@@ -651,11 +672,7 @@ public class ReflectionFactory {
                 return DEFAULT;
             }
 
-            Config c = instance;
-            if (c == null) {
-                instance = c = load();
-            }
-            return c;
+            return instance = load();
         }
 
         private static Config load() {
