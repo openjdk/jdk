@@ -68,7 +68,6 @@ help_usage ()
   echo "  -v              - verbose output"
   echo "  -c              - keep jtreg cache"
   echo "  -a              - run all, not only SQE tests"
-  echo "  -f              - create and verify packages, not only create them"
   echo "  -d              - dry run. Print jtreg command line, but don't execute it"
   echo "  -t <jdk>        - path to JDK to be tested [ mandatory ]"
   echo "  -j <openjdk>    - path to local copy of openjdk repo with jpackage jtreg tests"
@@ -79,10 +78,7 @@ help_usage ()
   echo "                    Optional, for jtreg tests debug purposes only."
   echo '  -l <logfile>    - value for `jpackage.test.logfile` property.'
   echo "                    Optional, for jtreg tests debug purposes only."
-  echo "  -m <mode>       - mode to run jtreg tests."
-  echo '                    Should be one of `create`, `update`,'
-  echo '                    `create-small-runtime`, or `print-default-tests`.'
-  echo '                    Optional, default mode is `update`.'
+  echo "  -m <mode>       - mode to run jtreg tests. Supported values:"
   echo '                    - `create`'
   echo '                      Remove all package bundles from the output directory before running jtreg tests.'
   echo '                    - `update`'
@@ -91,6 +87,16 @@ help_usage ()
   echo '                      Print default list of packaging tests and exit.'
   echo '                    - `create-small-runtime`'
   echo '                      Create small Java runtime using <jdk>/bin/jlink command in the output directory.'
+  echo '                    - `create-packages`'
+  echo '                      Create packages.'
+  echo '                      The script will set `jpackage.test.action` property.'
+  echo '                    - `test-packages`'
+  echo '                      Create and fully test packages. Will create, unpack, install, and uninstall packages.'
+  echo '                      The script will set `jpackage.test.action` property.'
+  echo '                    - `do-packages`'
+  echo "                      Create, unpack and verify packages."
+  echo '                      The script will not set `jpackage.test.action` property.'
+  echo '                    Optional, defaults are `update` and `create-packages`.'
 }
 
 error ()
@@ -154,18 +160,30 @@ mode=update
 # jtreg extra arguments
 declare -a jtreg_args
 
-# Create and verify packages
-create_and_verify_packages=
-
 # run all tests
 run_all_tests=
 
-actions_create="-Djpackage.test.action=create"
-actions_install="-Djpackage.test.action=create,install,verify-install,uninstall,verify-uninstall"
+test_actions=
+
+set_mode ()
+{
+  case "$1" in
+    create-packages) test_actions='-Djpackage.test.action=create';;
+    test-packages) test_actions='-Djpackage.test.action=uninstall,create,unpack,verify-install,install,verify-install,uninstall,verify-uninstall,purge';;
+    do-packages) test_actions=;;
+    create-small-runtime) mode=$1;;
+    print-default-tests) mode=$1;;
+    create) mode=$1;;
+    update) mode=$1;;
+    *) fatal_with_help_usage 'Invalid value of -m option:' [$1];;
+  esac
+}
+
+set_mode 'create-packages'
 
 mapfile -t tests < <(find_all_packaging_tests)
 
-while getopts "vahdcft:j:o:r:m:l:" argname; do
+while getopts "vahdct:j:o:r:m:l:" argname; do
   case "$argname" in
     v) verbose=yes;;
     a) run_all_tests=yes;;
@@ -176,8 +194,7 @@ while getopts "vahdcft:j:o:r:m:l:" argname; do
     o) output_dir="$OPTARG";;
     r) runtime_dir="$OPTARG";;
     l) logfile="$OPTARG";;
-    m) mode="$OPTARG";;
-    f) create_and_verify_packages=yes;;
+    m) set_mode "$OPTARG";;
     h) help_usage; exit 0;;
     ?) help_usage; exit 1;;
   esac
@@ -233,21 +250,11 @@ if [ -n "$logfile" ]; then
   jtreg_args+=("-Djpackage.test.logfile=$(to_native_path "$logfile")")
 fi
 
-if [ "$mode" = create ]; then
-  true
-elif [ "$mode" = update ]; then
-  true
-else
-  fatal_with_help_usage 'Invalid value of -m option:' [$mode]
-fi
-
 if [ -z "$run_all_tests" ]; then
   jtreg_args+=(-Djpackage.test.SQETest=yes)
 fi
 
-if [ -z "$create_and_verify_packages" ]; then
-  jtreg_args+=("$actions_create")
-fi
+jtreg_args+=("$test_actions")
 
 # Drop arguments separator
 [ "$1" != "--" ] || shift
