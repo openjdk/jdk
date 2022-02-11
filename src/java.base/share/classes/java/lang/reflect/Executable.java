@@ -28,6 +28,7 @@ package java.lang.reflect;
 import java.lang.annotation.*;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Set;
 import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.stream.Stream;
@@ -204,8 +205,22 @@ public abstract sealed class Executable extends AccessibleObject
     /**
      * {@return the Java language {@linkplain Modifier modifiers} for
      * the executable represented by this object}
+     * @see #accessFlags
      */
     public abstract int getModifiers();
+
+    /**
+     * {@return the {@linkplain AccessFlag access flags} for
+     * the executable represented by this object}
+     * @implSpec
+     * TBD
+     * @see #getModifiers()
+     * @jvms 4.6 Methods
+     * @since 19
+     */
+    public Set<AccessFlag> accessFlags() {
+        return Set.of(); // stubbed out empty set
+    }
 
     /**
      * Returns an array of {@code TypeVariable} objects that represent the

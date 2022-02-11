@@ -36,6 +36,7 @@ import java.io.InputStream;
 import java.io.ObjectStreamField;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.AnnotatedType;
+import java.lang.reflect.AccessFlag;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
@@ -1305,6 +1306,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @return the {@code int} representing the modifiers for this class
      * @see     java.lang.reflect.Modifier
+     * @see #accessFlags()
      * @see <a
      * href="{@docRoot}/java.base/java/lang/reflect/package-summary.html#LanguageJvmModel">Java
      * programming language and JVM modeling in core reflection</a>
@@ -1315,6 +1317,17 @@ public final class Class<T> implements java.io.Serializable,
     @IntrinsicCandidate
     public native int getModifiers();
 
+    /**
+     * {@return the {@linkplain AccessFlag access flags} for this
+     * class}
+     * @see #getModifiers()
+     * @jvms 4.1 The ClassFile Structure
+     * @jvms 4.7.6 The InnerClasses Attribute
+     * @since 19
+     */
+    public Set<AccessFlag> accessFlags() {
+        return Set.of(); // stubbed out empty set
+    }
 
     /**
      * Gets the signers of this class.
