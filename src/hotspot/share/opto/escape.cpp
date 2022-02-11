@@ -229,6 +229,7 @@ bool ConnectionGraph::compute_escape() {
     }
     tty->print_cr("+++++ Calculating escapse states and scalar replaceability");
   }
+  ResourceMark rm; // for any trace message construction
 #endif
 
   if (non_escaped_allocs_worklist.length() == 0) {
@@ -879,8 +880,7 @@ bool ConnectionGraph::add_final_edges_unsafe_access(Node* n, uint opcode) {
     Node* val = n->in(MemNode::ValueIn);
     PointsToNode* ptn = ptnode_adr(val->_idx);
     assert(ptn != NULL, "node should be registered");
-    DEBUG_ONLY(trace_es_update(ptn, PointsToNode::GlobalEscape, "stored at raw address"));
-    set_escape_state(ptn, PointsToNode::GlobalEscape);
+    set_escape_state(ptn, PointsToNode::GlobalEscape DEBUG_ONLY(COMMA "stored at raw address"));
     // Add edge to object for unsafe access with offset.
     PointsToNode* adr_ptn = ptnode_adr(adr->_idx);
     assert(adr_ptn != NULL, "node should be registered");
@@ -938,8 +938,7 @@ void ConnectionGraph::add_call_node(CallNode* call) {
     add_java_object(call, es);
     PointsToNode* ptn = ptnode_adr(call_idx);
     if (!scalar_replaceable && ptn->scalar_replaceable()) {
-      DEBUG_ONLY(trace_sr_disqualification(ptn, nsr_reason));
-      ptn->set_scalar_replaceable(false);
+      set_not_scalar_replaceable(ptn DEBUG_ONLY(COMMA nsr_reason));
     }
   } else if (call->is_CallStaticJava()) {
     // Call nodes could be different types:
@@ -970,9 +969,7 @@ void ConnectionGraph::add_call_node(CallNode* call) {
       assert(strncmp(name, "_multianewarray", 15) == 0, "TODO: add failed case check");
       // Returns a newly allocated non-escaped object.
       add_java_object(call, PointsToNode::NoEscape);
-      PointsToNode* ptn = ptnode_adr(call_idx);
-      DEBUG_ONLY(trace_sr_disqualification(ptn, "is result of multinewarray"));
-      ptn->set_scalar_replaceable(false);
+      set_not_scalar_replaceable(ptnode_adr(call_idx) DEBUG_ONLY(COMMA "is result of multinewarray"));
     } else if (meth->is_boxing_method()) {
       // Returns boxing object
       PointsToNode::EscapeState es;
@@ -994,9 +991,7 @@ void ConnectionGraph::add_call_node(CallNode* call) {
         // Mark it as NoEscape so that objects referenced by
         // it's fields will be marked as NoEscape at least.
         add_java_object(call, PointsToNode::NoEscape);
-        PointsToNode* ptn = ptnode_adr(call_idx);
-        DEBUG_ONLY(trace_sr_disqualification(ptn, "is result of call"));
-        ptn->set_scalar_replaceable(false);
+        set_not_scalar_replaceable(ptnode_adr(call_idx) DEBUG_ONLY(COMMA "is result of call"));
       } else {
         // Determine whether any arguments are returned.
         const TypeTuple* d = call->tf()->domain();
@@ -1151,8 +1146,7 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
               es = PointsToNode::NoEscape;
             }
           }
-          DEBUG_ONLY(trace_es_update(arg_ptn, es, "reason unknown (1)"));
-          set_escape_state(arg_ptn, es);
+          set_escape_state(arg_ptn, es DEBUG_ONLY(COMMA "reason unknown (1)"));
           if (arg_is_arraycopy_dest) {
             Node* src = call->in(TypeFunc::Parms);
             if (src->is_AddP()) {
@@ -1207,14 +1201,12 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
               arg_ptn->escape_state() < PointsToNode::GlobalEscape) {
             if (!call_analyzer->is_arg_stack(k)) {
               // The argument global escapes
-              DEBUG_ONLY(trace_arg_escape(call, arg_ptn, PointsToNode::GlobalEscape));
-              set_escape_state(arg_ptn, PointsToNode::GlobalEscape);
+              set_escape_state(arg_ptn, PointsToNode::GlobalEscape DEBUG_ONLY(COMMA trace_arg_escape_message(call)));
             } else {
-              DEBUG_ONLY(trace_arg_escape(call, arg_ptn, PointsToNode::ArgEscape));
-              set_escape_state(arg_ptn, PointsToNode::ArgEscape);
+              set_escape_state(arg_ptn, PointsToNode::ArgEscape DEBUG_ONLY(COMMA trace_arg_escape_message(call)));
               if (!call_analyzer->is_arg_local(k)) {
                 // The argument itself doesn't escape, but any fields might
-                set_fields_escape_state(arg_ptn, PointsToNode::GlobalEscape);
+                set_fields_escape_state(arg_ptn, PointsToNode::GlobalEscape DEBUG_ONLY(COMMA trace_arg_escape_message(call)));
               }
             }
           }
@@ -1243,9 +1235,7 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
             arg = get_addp_base(arg);
           }
           assert(ptnode_adr(arg->_idx) != NULL, "should be defined already");
-          PointsToNode* arg_ptn = ptnode_adr(arg->_idx);
-          DEBUG_ONLY(trace_arg_escape(call, arg_ptn, PointsToNode::GlobalEscape));
-          set_escape_state(arg_ptn, PointsToNode::GlobalEscape);
+          set_escape_state(ptnode_adr(arg->_idx), PointsToNode::GlobalEscape DEBUG_ONLY(COMMA trace_arg_escape_message(call)));
         }
       }
     }
@@ -1429,35 +1419,30 @@ bool ConnectionGraph::find_non_escaped_objects(GrowableArray<PointsToNode*>& ptn
         assert(ptn->arraycopy_dst(), "sanity");
         // Propagate only fields escape state through arraycopy edge.
         if (e->fields_escape_state() < field_es) {
-          DEBUG_ONLY(trace_propagate_es(ptn, e, field_es, true));
-          set_fields_escape_state(e, field_es);
+          set_fields_escape_state(e, field_es DEBUG_ONLY(COMMA trace_propagate_message(ptn)));
           escape_worklist.push(e);
         }
       } else if (es >= field_es) {
         // fields_escape_state is also set to 'es' if it is less than 'es'.
         if (e->escape_state() < es) {
-          DEBUG_ONLY(trace_propagate_es(ptn, e, es, false));
-          set_escape_state(e, es);
+          set_escape_state(e, es DEBUG_ONLY(COMMA trace_propagate_message(ptn)));
           escape_worklist.push(e);
         }
       } else {
         // Propagate field escape state.
         bool es_changed = false;
         if (e->fields_escape_state() < field_es) {
-          DEBUG_ONLY(trace_propagate_es(ptn, e, field_es, true));
-          set_fields_escape_state(e, field_es);
+          set_fields_escape_state(e, field_es DEBUG_ONLY(COMMA trace_propagate_message(ptn)));
           es_changed = true;
         }
         if ((e->escape_state() < field_es) &&
             e->is_Field() && ptn->is_JavaObject() &&
             e->as_Field()->is_oop()) {
           // Change escape state of referenced fields.
-          DEBUG_ONLY(trace_propagate_es(ptn, e, field_es, false));
-          set_escape_state(e, field_es);
+          set_escape_state(e, field_es DEBUG_ONLY(COMMA trace_propagate_message(ptn)));
           es_changed = true;
         } else if (e->escape_state() < es) {
-          DEBUG_ONLY(trace_propagate_es(ptn, e, es, false));
-          set_escape_state(e, es);
+          set_escape_state(e, es DEBUG_ONLY(COMMA trace_propagate_message(ptn)));
           es_changed = true;
         }
         if (es_changed) {
@@ -1823,8 +1808,7 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj) {
       // 1. An object is not scalar replaceable if the field into which it is
       // stored has unknown offset (stored into unknown element of an array).
       if (field->offset() == Type::OffsetBot) {
-        DEBUG_ONLY(trace_sr_disqualification(jobj, "is stored at unknown offset"));
-        jobj->set_scalar_replaceable(false);
+        set_not_scalar_replaceable(jobj DEBUG_ONLY(COMMA "is stored at unknown offset"));
         return;
       }
       // 2. An object is not scalar replaceable if the field into which it is
@@ -1833,8 +1817,7 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj) {
         for (BaseIterator i(field); i.has_next(); i.next()) {
           PointsToNode* base = i.get();
           if (base == null_obj) {
-            DEBUG_ONLY(trace_sr_disqualification(jobj, "is stored into field with potentially null base"));;
-            jobj->set_scalar_replaceable(false);
+            set_not_scalar_replaceable(jobj DEBUG_ONLY(COMMA "is stored into field with potentially null base"));
             return;
           }
         }
@@ -1846,10 +1829,8 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj) {
       PointsToNode* ptn = j.get();
       if (ptn->is_JavaObject() && ptn != jobj) {
         // Mark all objects.
-        DEBUG_ONLY(trace_sr_disqualification(jobj, "is merged with other object"));
-        jobj->set_scalar_replaceable(false);
-        DEBUG_ONLY(trace_sr_disqualification(ptn, "is merged with other object"));
-        ptn->set_scalar_replaceable(false);
+        set_not_scalar_replaceable(jobj DEBUG_ONLY(COMMA "is merged with other object"));
+        set_not_scalar_replaceable(ptn DEBUG_ONLY(COMMA "is merged with other object"));
       }
     }
     if (!jobj->scalar_replaceable()) {
@@ -1869,8 +1850,7 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj) {
     // 4. An object is not scalar replaceable if it has a field with unknown
     // offset (array's element is accessed in loop).
     if (offset == Type::OffsetBot) {
-      DEBUG_ONLY(trace_sr_disqualification(jobj, "has field with unknown offset"));
-      jobj->set_scalar_replaceable(false);
+      set_not_scalar_replaceable(jobj DEBUG_ONLY(COMMA "has field with unknown offset"));
       return;
     }
     // 5. Currently an object is not scalar replaceable if a LoadStore node
@@ -1885,16 +1865,14 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj) {
         n->in(AddPNode::Address)->Opcode() == Op_CheckCastPP) {
       assert(n->in(AddPNode::Address)->bottom_type()->isa_rawptr(), "raw address so raw cast expected");
       assert(_igvn->type(n->in(AddPNode::Address)->in(1))->isa_oopptr(), "cast pattern at unsafe access expected");
-      DEBUG_ONLY(trace_sr_disqualification(jobj, "is used as base of mixed unsafe access"));
-      jobj->set_scalar_replaceable(false);
+      set_not_scalar_replaceable(jobj DEBUG_ONLY(COMMA "is used as base of mixed unsafe access"));
       return;
     }
 
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node* u = n->fast_out(i);
       if (u->is_LoadStore() || (u->is_Mem() && u->as_Mem()->is_mismatched_access())) {
-        DEBUG_ONLY(trace_sr_disqualification(jobj, "is used in LoadStore or mismatched access"));
-        jobj->set_scalar_replaceable(false);
+        set_not_scalar_replaceable(jobj DEBUG_ONLY(COMMA "is used in LoadStore or mismatched access"));
         return;
       }
     }
@@ -1923,10 +1901,8 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj) {
         // this field's base by now.
         if (base->is_JavaObject() && base != jobj) {
           // Mark all bases.
-          DEBUG_ONLY(trace_sr_disqualification(jobj, "may point to more than one object"));
-          jobj->set_scalar_replaceable(false);
-          DEBUG_ONLY(trace_sr_disqualification(base, "may point to more than one object"));
-          base->set_scalar_replaceable(false);
+          set_not_scalar_replaceable(jobj DEBUG_ONLY(COMMA "may point to more than one object"));
+          set_not_scalar_replaceable(base DEBUG_ONLY(COMMA "may point to more than one object"));
         }
       }
     }
@@ -3191,9 +3167,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         // so it could be eliminated.
         alloc->as_Allocate()->_is_scalar_replaceable = true;
       }
-      PointsToNode* n_ptn = ptnode_adr(n->_idx);
-      DEBUG_ONLY(trace_es_update(n_ptn, es, "reason unknown (2)"));
-      set_escape_state(n_ptn, es); // CheckCastPP escape state
+      set_escape_state(ptnode_adr(n->_idx), es DEBUG_ONLY(COMMA "reason unknown (2)")); // CheckCastPP escape state
       // in order for an object to be scalar-replaceable, it must be:
       //   - a direct allocation (not a call returning an object)
       //   - non-escaping
@@ -3668,42 +3642,42 @@ static const char *esc_names[] = {
   "GlobalEscape"
 };
 
-void PointsToNode::dump_header(bool print_state) const {
+void PointsToNode::dump_header(bool print_state, outputStream* out) const {
   NodeType nt = node_type();
-  tty->print("%s(%d) ", node_type_names[(int) nt], _pidx);
+  out->print("%s(%d) ", node_type_names[(int) nt], _pidx);
   if (print_state) {
     EscapeState es = escape_state();
     EscapeState fields_es = fields_escape_state();
-    tty->print("%s(%s) ", esc_names[(int)es], esc_names[(int)fields_es]);
+    out->print("%s(%s) ", esc_names[(int)es], esc_names[(int)fields_es]);
     if (nt == PointsToNode::JavaObject && !this->scalar_replaceable()) {
-      tty->print("NSR ");
+      out->print("NSR ");
     }
   }
 }
 
-void PointsToNode::dump(bool print_state) const {
+void PointsToNode::dump(bool print_state, outputStream* out) const {
   dump_header(print_state);
   if (is_Field()) {
     FieldNode* f = (FieldNode*)this;
     if (f->is_oop()) {
-      tty->print("oop ");
+      out->print("oop ");
     }
     if (f->offset() > 0) {
-      tty->print("+%d ", f->offset());
+      out->print("+%d ", f->offset());
     }
-    tty->print("(");
+    out->print("(");
     for (BaseIterator i(f); i.has_next(); i.next()) {
       PointsToNode* b = i.get();
-      tty->print(" %d%s", b->idx(),(b->is_JavaObject() ? "P" : ""));
+      out->print(" %d%s", b->idx(),(b->is_JavaObject() ? "P" : ""));
     }
-    tty->print(" )");
+    out->print(" )");
   }
-  tty->print("[");
+  out->print("[");
   for (EdgeIterator i(this); i.has_next(); i.next()) {
     PointsToNode* e = i.get();
-    tty->print(" %d%s%s", e->idx(),(e->is_JavaObject() ? "P" : (e->is_Field() ? "F" : "")), e->is_Arraycopy() ? "cp" : "");
+    out->print(" %d%s%s", e->idx(),(e->is_JavaObject() ? "P" : (e->is_Field() ? "F" : "")), e->is_Arraycopy() ? "cp" : "");
   }
-  tty->print(" [");
+  out->print(" [");
   for (UseIterator i(this); i.has_next(); i.next()) {
     PointsToNode* u = i.get();
     bool is_base = false;
@@ -3711,13 +3685,13 @@ void PointsToNode::dump(bool print_state) const {
       is_base = true;
       u = PointsToNode::get_use_node(u)->as_Field();
     }
-    tty->print(" %d%s%s", u->idx(), is_base ? "b" : "", u->is_Arraycopy() ? "cp" : "");
+    out->print(" %d%s%s", u->idx(), is_base ? "b" : "", u->is_Arraycopy() ? "cp" : "");
   }
-  tty->print(" ]]  ");
+  out->print(" ]]  ");
   if (_node == NULL) {
-    tty->print_cr("<null>");
+    out->print_cr("<null>");
   } else {
-    _node->dump();
+    _node->dump("\n", false, out);
   }
 }
 
@@ -3761,44 +3735,39 @@ void ConnectionGraph::dump(GrowableArray<PointsToNode*>& ptnodes_worklist) {
   }
 }
 
-void ConnectionGraph::trace_sr_disqualification(PointsToNode* ptn, const char* reason) const {
+void ConnectionGraph::trace_es_update_helper(PointsToNode* ptn, PointsToNode::EscapeState es, bool fields, const char* reason) const {
   if (_compile->trace_escape_analysis()) {
     assert(ptn != nullptr, "should not be null");
+    assert(reason != nullptr, "should not be null");
     ptn->dump_header(true);
-    tty->print_cr("is NSR. %s", reason);
+    PointsToNode::EscapeState new_es = fields ? ptn->escape_state() : es;
+    PointsToNode::EscapeState new_fields_es = fields ? es : ptn->fields_escape_state();
+    tty->print("-> %s(%s) %s", esc_names[(int)new_es], esc_names[(int)new_fields_es], reason);
   }
 }
 
-void ConnectionGraph::trace_es_update_helper(PointsToNode* ptn, PointsToNode::EscapeState es, bool fields_only) const {
-  assert(ptn != nullptr, "should not be null");
-  ptn->dump_header(true);
-  PointsToNode::EscapeState new_es = fields_only ? ptn->escape_state() : es;
-  PointsToNode::EscapeState new_fields_es = es; // fields ES is always updated
-  tty->print("-> %s(%s) ", esc_names[(int)new_es], esc_names[(int)new_fields_es]);
-}
-
-void ConnectionGraph::trace_es_update(PointsToNode* ptn, PointsToNode::EscapeState es, const char* reason, bool fields_only) const {
+const char* ConnectionGraph::trace_propagate_message(PointsToNode* from) const {
   if (_compile->trace_escape_analysis()) {
-    trace_es_update_helper(ptn, es, fields_only);
-    tty->print_cr("%s", reason);
+    stringStream ss;
+    ss.print("propagated from: ");
+    from->dump(true, &ss);
+    return ss.as_string();
+  } else {
+    return nullptr;
   }
 }
 
-void ConnectionGraph::trace_arg_escape(CallNode* call, PointsToNode* arg_ptn, PointsToNode::EscapeState es) const {
+const char* ConnectionGraph::trace_arg_escape_message(CallNode* call) const {
   if (_compile->trace_escape_analysis()) {
-    trace_es_update_helper(arg_ptn, es, false);
-    tty->print("escapes as argument to:");
-    call->dump();
+    stringStream ss;
+    ss.print("escapes as arg to:");
+    call->dump("\n", false, &ss);
+    return ss.as_string();
+  } else {
+    return nullptr;
   }
 }
 
-void ConnectionGraph::trace_propagate_es(PointsToNode* from, PointsToNode* to, PointsToNode::EscapeState es, bool is_field) const {
-  if (_compile->trace_escape_analysis()) {
-    trace_es_update_helper(to, es, is_field);
-    tty->print("propagated from: ");
-    from->dump(true);
-  }
-}
 #endif
 
 void ConnectionGraph::record_for_optimizer(Node *n) {
