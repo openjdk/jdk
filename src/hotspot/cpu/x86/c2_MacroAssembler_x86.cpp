@@ -3484,11 +3484,18 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
       vptest(vec1, vec2);
       jccb(Assembler::notZero, BREAK_LOOP);
       addptr(len, 32);
-      jcc(Assembler::notZero, COMPARE_WIDE_VECTORS);
+      jccb(Assembler::notZero, COMPARE_WIDE_VECTORS);
 
-      movl(len, result);
-      andl(len, 0x0000001f);   // tail count (in bytes)
+      testl(result, 0x0000001f);   // any bytes remaining?
       jcc(Assembler::zero, DONE);
+
+      // Quick test using the already prepared vector mask
+      movl(len, result);
+      andl(len, 0x0000001f);
+      vmovdqu(vec1, Address(ary1, len, Address::times_1, -32));
+      vptest(vec1, vec2);
+      jcc(Assembler::zero, DONE);
+      // There are zeros, jump to the tail to determine exactly where
       jmpb(TAIL_START);
 
       bind(BREAK_LOOP);
@@ -3521,12 +3528,18 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
       bind(COMPARE_WIDE_VECTORS);
       movdqu(vec1, Address(ary1, len, Address::times_1));
       ptest(vec1, vec2);
-      jcc(Assembler::notZero, BREAK_LOOP);
+      jccb(Assembler::notZero, BREAK_LOOP);
       addptr(len, 16);
-      jcc(Assembler::notZero, COMPARE_WIDE_VECTORS);
+      jccb(Assembler::notZero, COMPARE_WIDE_VECTORS);
 
+      testl(result, 0x0000000f); // len is zero, any bytes remaining?
+      jcc(Assembler::zero, DONE);
+
+      // Quick test using the already prepared vector mask
       movl(len, result);
       andl(len, 0x0000000f);   // tail count (in bytes)
+      movdqu(vec1, Address(ary1, len, Address::times_1, -16));
+      ptest(vec1, vec2);
       jcc(Assembler::zero, DONE);
       jmpb(TAIL_START);
 

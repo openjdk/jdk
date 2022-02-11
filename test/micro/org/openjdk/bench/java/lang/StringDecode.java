@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ public class StringDecode {
 
     private Charset charset;
     private byte[] asciiString;
+    private byte[] mediumAsciiString;
     private byte[] longAsciiString;
     private byte[] utf16String;
     private byte[] longUtf16EndString;
@@ -52,7 +53,17 @@ public class StringDecode {
     @Setup
     public void setup() {
         charset = Charset.forName(charsetName);
-        asciiString = "ascii string".getBytes(charset);
+        asciiString = "ascii string".repeat(3).getBytes(charset);
+        mediumAsciiString = """
+             Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam ac sem eu
+             urna egestas placerat. Etiam finibus ipsum nulla, non mattis dolor cursus a.
+             Nulla nec nisl consectetur, lacinia neque id, accumsan ante. Curabitur et
+             sapien in magna porta ultricies. Sed vel pellentesque nibh. Pellentesque dictum
+             dignissim diam eu ultricies. Class aptent taciti sociosqu ad litora torquent
+             per conubia nostra, per inceptos himenaeos. Suspendisse erat diam, fringilla
+             sed massa sed, posuere viverra orci. Suspendisse tempor libero non gravida
+             efficitur. Vivamus lacinia risus non orci viverra, at consectetur odio laoreet.
+             Suspendisse potenti.""".repeat(2).getBytes(charset);
         longAsciiString = """
              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam ac sem eu
              urna egestas placerat. Etiam finibus ipsum nulla, non mattis dolor cursus a.
@@ -62,17 +73,7 @@ public class StringDecode {
              per conubia nostra, per inceptos himenaeos. Suspendisse erat diam, fringilla
              sed massa sed, posuere viverra orci. Suspendisse tempor libero non gravida
              efficitur. Vivamus lacinia risus non orci viverra, at consectetur odio laoreet.
-             Suspendisse potenti.
-
-             Phasellus vel nisi iaculis, accumsan quam sed, bibendum eros. Sed venenatis
-             nulla tortor, et eleifend urna sodales id. Nullam tempus ac metus sit amet
-             sollicitudin. Nam sed ex diam. Praesent vitae eros et neque condimentum
-             consectetur eget non tortor. Praesent bibendum vel felis nec dignissim.
-             Maecenas a enim diam. Suspendisse quis ligula at nisi accumsan lacinia id
-             hendrerit sapien. Donec aliquam mattis lectus eu ultrices. Duis eu nisl
-             euismod, blandit mauris vel, placerat urna. Etiam malesuada enim purus,
-             tristique mollis odio blandit quis. Vivamus posuere.
-            """.getBytes(charset);
+             Suspendisse potenti.""".repeat(200).getBytes(charset);
         utf16String = "UTF-\uFF11\uFF16 string".getBytes(charset);
         longUtf16EndString = """
              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam ac sem eu
@@ -168,20 +169,28 @@ public class StringDecode {
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public String decodeAsciiCharsetName() throws Exception {
-        return new String(asciiString, charsetName);
+    public void decodeAsciiShort(Blackhole bh) throws Exception {
+        bh.consume(new String(asciiString, charset));
+        bh.consume(new String(asciiString, 0, 31, charset));
+        bh.consume(new String(asciiString, 0, 15, charset));
     }
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public String decodeAscii() throws Exception {
-        return new String(asciiString, charset);
+    public void decodeAsciiMedium(Blackhole bh) throws Exception {
+        bh.consume(new String(mediumAsciiString, charset));
+        bh.consume(new String(mediumAsciiString, 0, 31, charset));
+        bh.consume(new String(mediumAsciiString, 0, 63, charset));
+        bh.consume(new String(mediumAsciiString, 0, 95, charset));
     }
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public String decodeAsciiLong() throws Exception {
-        return new String(longAsciiString, charset);
+    public void decodeAsciiLongMix(Blackhole bh) throws Exception {
+        bh.consume(new String(longAsciiString, charset));
+        bh.consume(new String(longAsciiString, 0, 1024 + 31, charset));
+        bh.consume(new String(longAsciiString, 0, 1024 + 63, charset));
+        bh.consume(new String(longAsciiString, 0, 1024 + 95, charset));
     }
 
     @Benchmark
@@ -192,14 +201,14 @@ public class StringDecode {
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public String decodeLatin1StartLong() throws Exception {
-        return new String(longLatin1StartString, charset);
+    public String decodeLatin1LongStart() throws Exception {
+        return new String(longLatin1StartString, 0, 95, charset);
     }
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public String decodeLatin1EndLong() throws Exception {
-        return new String(longLatin1EndString, charset);
+    public String decodeLatin1LongEnd() throws Exception {
+        return new String(longLatin1EndString, 0, 95, charset);
     }
 
     @Benchmark
