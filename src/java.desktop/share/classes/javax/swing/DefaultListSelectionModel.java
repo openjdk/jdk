@@ -50,8 +50,7 @@ import javax.swing.event.*;
  * @see ListSelectionModel
  * @since 1.2
  */
-@SuppressWarnings({"serial", // Same-version serialization only
-                   "doclint:missing"})
+@SuppressWarnings({"serial"}) // Same-version serialization only
 public class DefaultListSelectionModel implements ListSelectionModel, Cloneable, Serializable
 {
     private static final int MIN = -1;
@@ -206,6 +205,11 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
     }
 
     /**
+     * Notifies <code>ListSelectionListeners</code> that the value
+     * of the selection, in the closed interval <code>firstIndex</code>,
+     * <code>lastIndex</code>, has changed and if this is the final change
+     * in the series of adjustments.
+     *
      * @param firstIndex the first index in the interval
      * @param lastIndex the last index in the interval
      * @param isAdjusting true if this is the final change in a series of

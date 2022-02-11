@@ -672,28 +672,32 @@ bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
   return true;
 }
 
-class FindAndSnapshotRegionWalker : public VirtualMemoryWalker {
+class PrintRegionWalker : public VirtualMemoryWalker {
 private:
-  ReservedMemoryRegion& _region;
-  const address         _p;
-  bool                  _found_region;
+  const address               _p;
+  outputStream*               _st;
 public:
-  FindAndSnapshotRegionWalker(void* p, ReservedMemoryRegion& region) :
-    _region(region), _p((address)p), _found_region(false) { }
+  PrintRegionWalker(const void* p, outputStream* st) :
+    _p((address)p), _st(st) { }
 
   bool do_allocation_site(const ReservedMemoryRegion* rgn) {
     if (rgn->contain_address(_p)) {
-      _region = *rgn;
-      _found_region = true;
+      _st->print_cr(PTR_FORMAT " in mmap'd memory region [" PTR_FORMAT " - " PTR_FORMAT "] by %s",
+        p2i(_p), p2i(rgn->base()), p2i(rgn->base() + rgn->size()), rgn->flag_name());
+      if (MemTracker::tracking_level() == NMT_detail) {
+        rgn->call_stack()->print_on(_st);
+        _st->cr();
+      }
       return false;
     }
     return true;
   }
-  bool found_region() const { return _found_region; }
 };
 
-const bool VirtualMemoryTracker::snapshot_region_contains(void* p, ReservedMemoryRegion& region) {
-  FindAndSnapshotRegionWalker walker(p, region);
-  walk_virtual_memory(&walker);
-  return walker.found_region();
+// If p is contained within a known memory region, print information about it to the
+// given stream and return true; false otherwise.
+bool VirtualMemoryTracker::print_containing_region(const void* p, outputStream* st) {
+  PrintRegionWalker walker(p, st);
+  return !walk_virtual_memory(&walker);
+
 }

@@ -10305,6 +10305,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @see     java.compiler/javax.lang.model.SourceVersion#isIdentifier(CharSequence)
      * @since   1.1
      */
+    @SuppressWarnings("doclint:reference") // cross-module links
     public static boolean isJavaIdentifierStart(char ch) {
         return isJavaIdentifierStart((int)ch);
     }
@@ -10334,6 +10335,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @see     java.compiler/javax.lang.model.SourceVersion#isIdentifier(CharSequence)
      * @since   1.5
      */
+    @SuppressWarnings("doclint:reference") // cross-module links
     public static boolean isJavaIdentifierStart(int codePoint) {
         return CharacterData.of(codePoint).isJavaIdentifierStart(codePoint);
     }
@@ -10371,6 +10373,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @see     java.compiler/javax.lang.model.SourceVersion#isIdentifier(CharSequence)
      * @since   1.1
      */
+    @SuppressWarnings("doclint:reference") // cross-module links
     public static boolean isJavaIdentifierPart(char ch) {
         return isJavaIdentifierPart((int)ch);
     }
@@ -10404,6 +10407,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @see     java.compiler/javax.lang.model.SourceVersion#isIdentifier(CharSequence)
      * @since   1.5
      */
+    @SuppressWarnings("doclint:reference") // cross-module links
     public static boolean isJavaIdentifierPart(int codePoint) {
         return CharacterData.of(codePoint).isJavaIdentifierPart(codePoint);
     }
