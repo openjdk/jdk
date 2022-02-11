@@ -232,7 +232,7 @@ public:
 
 #ifndef PRODUCT
   NodeType node_type() const { return (NodeType)_type;}
-  void dump(bool print_state=true, outputStream* out=tty) const;
+  void dump(bool print_state=true, outputStream* out=tty, bool newline=true) const;
   void dump_header(bool print_state=true, outputStream* out=tty) const;
 #endif
 

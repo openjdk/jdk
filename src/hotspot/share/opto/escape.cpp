@@ -3654,7 +3654,7 @@ void PointsToNode::dump_header(bool print_state, outputStream* out) const {
   }
 }
 
-void PointsToNode::dump(bool print_state, outputStream* out) const {
+void PointsToNode::dump(bool print_state, outputStream* out, bool newline) const {
   dump_header(print_state, out);
   if (is_Field()) {
     FieldNode* f = (FieldNode*)this;
@@ -3688,9 +3688,9 @@ void PointsToNode::dump(bool print_state, outputStream* out) const {
   }
   out->print(" ]]  ");
   if (_node == NULL) {
-    out->print_cr("<null>");
+    out->print("<null>%s", newline ? "\n" : "");
   } else {
-    _node->dump("\n", false, out);
+    _node->dump(newline ? "\n" : "", false, out);
   }
 }
 
@@ -3741,7 +3741,7 @@ void ConnectionGraph::trace_es_update_helper(PointsToNode* ptn, PointsToNode::Es
     ptn->dump_header(true);
     PointsToNode::EscapeState new_es = fields ? ptn->escape_state() : es;
     PointsToNode::EscapeState new_fields_es = fields ? es : ptn->fields_escape_state();
-    tty->print("-> %s(%s) %s", esc_names[(int)new_es], esc_names[(int)new_fields_es], reason);
+    tty->print_cr("-> %s(%s) %s", esc_names[(int)new_es], esc_names[(int)new_fields_es], reason);
   }
 }
 
@@ -3749,7 +3749,7 @@ const char* ConnectionGraph::trace_propagate_message(PointsToNode* from) const {
   if (_compile->trace_escape_analysis()) {
     stringStream ss;
     ss.print("propagated from: ");
-    from->dump(true, &ss);
+    from->dump(true, &ss, false);
     return ss.as_string();
   } else {
     return nullptr;
@@ -3760,7 +3760,7 @@ const char* ConnectionGraph::trace_arg_escape_message(CallNode* call) const {
   if (_compile->trace_escape_analysis()) {
     stringStream ss;
     ss.print("escapes as arg to:");
-    call->dump("\n", false, &ss);
+    call->dump("", false, &ss);
     return ss.as_string();
   } else {
     return nullptr;
