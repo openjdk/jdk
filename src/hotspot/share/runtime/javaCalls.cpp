@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -380,7 +380,7 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
 
   // Check that there are shadow pages available before changing thread state
   // to Java. Calculate current_stack_pointer here to make sure
-  // stack_shadow_pages_available() and bang_stack_shadow_pages() use the same sp.
+  // stack_shadow_pages_available() and map_stack_shadow_pages() use the same sp.
   address sp = os::current_stack_pointer();
   if (!os::stack_shadow_pages_available(THREAD, method, sp)) {
     // Throw stack overflow exception with preinitialized exception.

@@ -32,7 +32,10 @@ import jdk.jfr.Name;
 import jdk.jfr.Label;
 import jdk.jfr.Description;
 import jdk.jfr.Category;
+import jdk.jfr.ContentType;
+import jdk.jfr.Period;
 import jdk.jfr.Recording;
+import jdk.jfr.StackTrace;
 import jdk.jfr.MetadataDefinition;
 import jdk.jfr.Relational;
 import jdk.jfr.consumer.RecordingFile;
@@ -40,6 +43,7 @@ import jdk.jfr.Configuration;
 import jdk.jfr.SettingDefinition;
 import jdk.jfr.SettingControl;
 import jdk.jfr.FlightRecorder;
+import jdk.jfr.consumer.RecordedEvent;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -77,6 +81,84 @@ public class Snippets {
         event.commit();
         // @end
     }
+
+    record CPU(String id, float temperature) {
+    }
+
+    private static List<CPU> listCPUs() {
+        return List.of();
+    }
+
+    // @start region="ContentTypeDeclaration"
+    @MetadataDefinition
+    @ContentType
+    @Name("com.example.Temperature")
+    @Label("Temperature")
+    @Target(ElementType.FIELD)
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface Temperature {
+        public final static String KELVIN = "KELVIN";
+        public final static String CELSIUS = "CELSIUS";
+        public final static String FAHRENEHIT = "FAHRENHEIT";
+
+        String value() default CELSIUS;
+    }
+    // @end
+
+    // @start region="ContentTypeEvent"
+    @Name("com.example.CPU")
+    @Label("CPU")
+    @Category({ "Hardware", "CPU" })
+    @Period("1 s")
+    @StackTrace(false)
+    static public class CPUEvent extends Event {
+        @Label("ID")
+        String id;
+
+        @Temperature(Temperature.KELVIN)
+        @Label("Temperature")
+        float temperature;
+    }
+
+    public static void main(String... args) throws InterruptedException {
+        FlightRecorder.addPeriodicEvent(CPUEvent.class, () -> {
+            for (var cpu : listCPUs()) {
+                CPUEvent event = new CPUEvent();
+                event.id = cpu.id();
+                event.temperature = cpu.temperature(); // in Kelvin
+                event.commit();
+            }
+        });
+        Thread.sleep(10_000);
+    }
+    // @end
+
+    // @start region="ContentTypeConsumption"
+    void printTemperaturesInCelsius(Path file) throws IOException {
+        for (RecordedEvent event : RecordingFile.readAllEvents(file)) {
+            for (ValueDescriptor field : event.getEventType().getFields()) {
+                for (AnnotationElement ae : field.getAnnotationElements()) {
+                    ContentType type = ae.getAnnotation(ContentType.class);
+                    if (type != null) {
+                        if (ae.getTypeName().equals("com.example.Temperature")) {
+                            double value = event.getDouble(field.getName());
+                            String unit = (String) ae.getValue("value");
+                            double celsius = switch (unit) {
+                                case "CELSIUS" -> value;
+                                case "KELVIN" -> value - 273.15;
+                                case "FAHRENHEIT" -> (value - 32) / 1.8;
+                                default -> throw new IllegalStateException("Unknown temperature unit '" + unit + "'");
+                            };
+                            System.out.println(celsius + " C");
+                        } else {
+                            System.err.println("Can't format content type " + ae.getTypeName() + " for field " + field.getName());
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // @end
 
     // @start region="EventOverview"
     public class Example {

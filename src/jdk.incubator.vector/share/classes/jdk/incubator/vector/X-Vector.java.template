@@ -3021,7 +3021,8 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                                VectorMask<$Boxtype$> m) {
         m.check(maskClass, this);
         if (op == FIRST_NONZERO) {
-            $abstractvectortype$ v = reduceIdentityVector(op).blend(this, m);
+            // FIXME:  The JIT should handle this.
+            $abstractvectortype$ v = broadcast(($type$) 0).blend(this, m);
             return v.reduceLanesTemplate(op);
         }
         int opc = opCode(op);
@@ -3036,10 +3037,11 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     final
     $type$ reduceLanesTemplate(VectorOperators.Associative op) {
         if (op == FIRST_NONZERO) {
-            // FIXME:  The JIT should handle this, and other scan ops alos.
+            // FIXME:  The JIT should handle this.
             VectorMask<$Boxbitstype$> thisNZ
                 = this.viewAsIntegralLanes().compare(NE, ($bitstype$) 0);
-            return this.lane(thisNZ.firstTrue());
+            int ft = thisNZ.firstTrue();
+            return ft < length() ? this.lane(ft) : ($type$) 0;
         }
         int opc = opCode(op);
         return fromBits(VectorSupport.reductionCoerced(
@@ -3073,38 +3075,6 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             default: return null;
         }
     }
-
-    private
-    @ForceInline
-    $abstractvectortype$ reduceIdentityVector(VectorOperators.Associative op) {
-        int opc = opCode(op);
-        UnaryOperator<$abstractvectortype$> fn
-            = REDUCE_ID_IMPL.find(op, opc, (opc_) -> {
-                switch (opc_) {
-                case VECTOR_OP_ADD:
-#if[BITWISE]
-                case VECTOR_OP_OR:
-                case VECTOR_OP_XOR:
-#end[BITWISE]
-                    return v -> v.broadcast(0);
-                case VECTOR_OP_MUL:
-                    return v -> v.broadcast(1);
-#if[BITWISE]
-                case VECTOR_OP_AND:
-                    return v -> v.broadcast(-1);
-#end[BITWISE]
-                case VECTOR_OP_MIN:
-                    return v -> v.broadcast(MAX_OR_INF);
-                case VECTOR_OP_MAX:
-                    return v -> v.broadcast(MIN_OR_INF);
-                default: return null;
-                }
-            });
-        return fn.apply(this);
-    }
-    private static final
-    ImplCache<Associative,UnaryOperator<$abstractvectortype$>> REDUCE_ID_IMPL
-        = new ImplCache<>(Associative.class, $Type$Vector.class);
 
 #if[FP]
     private static final $type$ MIN_OR_INF = $Boxtype$.NEGATIVE_INFINITY;
