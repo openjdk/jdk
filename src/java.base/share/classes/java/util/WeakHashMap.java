@@ -239,19 +239,6 @@ public class WeakHashMap<K,V>
     }
 
     /**
-     * use for calculate HashMap capacity, using default load factor 0.75
-     *
-     * @param size size
-     * @return HashMap capacity under default load factor
-     */
-    private static int calculateHashMapCapacity(int size) {
-        if (size > (int) (Integer.MAX_VALUE * 0.75)) {
-            return Integer.MAX_VALUE;
-        }
-        return size + (size + 2) / 3;
-    }
-
-    /**
      * Constructs a new {@code WeakHashMap} with the same mappings as the
      * specified map.  The {@code WeakHashMap} is created with the default
      * load factor (0.75) and an initial capacity sufficient to hold the
@@ -262,7 +249,7 @@ public class WeakHashMap<K,V>
      * @since   1.3
      */
     public WeakHashMap(Map<? extends K, ? extends V> m) {
-        this(Math.max(calculateHashMapCapacity(m.size()),
+        this(Math.max((int) Math.min(((m.size() * 4L + 2L) / 3L), Integer.MAX_VALUE),
                 DEFAULT_INITIAL_CAPACITY),
              DEFAULT_LOAD_FACTOR);
         putAll(m);
