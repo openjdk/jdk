@@ -1616,7 +1616,8 @@ public abstract class ClassLoader {
      */
     @CallerSensitive
     protected static boolean registerAsParallelCapable() {
-        return registerAsParallelCapable(Reflection.getCallerClass());
+        final Class<?> caller = Reflection.getCallerClass();
+        return (caller != null) ? registerAsParallelCapable(caller): false;
     }
 
     // Caller-sensitive adapter method for reflective invocation
