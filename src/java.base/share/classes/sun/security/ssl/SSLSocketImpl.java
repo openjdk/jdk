@@ -110,7 +110,7 @@ public final class SSLSocketImpl
     /*
      * Default timeout to skip bytes from the open socket
      */
-    private static final int DEFAULT_SKIP_TIMEOUT = 100;
+    private static final int DEFAULT_SKIP_TIMEOUT = 1;
 
     /**
      * Package-private constructor used to instantiate an unconnected
@@ -1788,6 +1788,11 @@ public final class SSLSocketImpl
                 if (appInput.readLock.tryLock()) {
                     int soTimeout = getSoTimeout();
                     try {
+                        // deplete could hang on the skip operation
+                        // in case of infinite socket read timeout.
+                        // Change read timeout to avoid deadlock.
+                        // This workaround could be replaced later
+                        // with the right synchronization
                         if (soTimeout == 0)
                             setSoTimeout(DEFAULT_SKIP_TIMEOUT);
                         inputRecord.deplete(false);
