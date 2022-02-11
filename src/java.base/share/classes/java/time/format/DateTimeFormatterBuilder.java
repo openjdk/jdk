@@ -2492,11 +2492,11 @@ public final class DateTimeFormatterBuilder {
         private final DateTimePrinterParser[] printerParsers;
         private final boolean optional;
 
-        CompositePrinterParser(List<DateTimePrinterParser> printerParsers, boolean optional) {
+        private CompositePrinterParser(List<DateTimePrinterParser> printerParsers, boolean optional) {
             this(printerParsers.toArray(new DateTimePrinterParser[0]), optional);
         }
 
-        CompositePrinterParser(DateTimePrinterParser[] printerParsers, boolean optional) {
+        private CompositePrinterParser(DateTimePrinterParser[] printerParsers, boolean optional) {
             this.printerParsers = printerParsers;
             this.optional = optional;
         }
@@ -2590,7 +2590,7 @@ public final class DateTimeFormatterBuilder {
          * @param padWidth  the width to pad to, 1 or greater
          * @param padChar  the pad character
          */
-        PadPrinterParserDecorator(DateTimePrinterParser printerParser, int padWidth, char padChar) {
+        private PadPrinterParserDecorator(DateTimePrinterParser printerParser, int padWidth, char padChar) {
             // input checked by DateTimeFormatterBuilder
             this.printerParser = printerParser;
             this.padWidth = padWidth;
@@ -2698,7 +2698,7 @@ public final class DateTimeFormatterBuilder {
         private final TemporalField field;
         private final long value;
 
-        DefaultValueParser(TemporalField field, long value) {
+        private DefaultValueParser(TemporalField field, long value) {
             this.field = field;
             this.value = value;
         }
@@ -2722,7 +2722,7 @@ public final class DateTimeFormatterBuilder {
     static final class CharLiteralPrinterParser implements DateTimePrinterParser {
         private final char literal;
 
-        CharLiteralPrinterParser(char literal) {
+        private CharLiteralPrinterParser(char literal) {
             this.literal = literal;
         }
 
@@ -2765,7 +2765,7 @@ public final class DateTimeFormatterBuilder {
     static final class StringLiteralPrinterParser implements DateTimePrinterParser {
         private final String literal;
 
-        StringLiteralPrinterParser(String literal) {
+        private StringLiteralPrinterParser(String literal) {
             this.literal = literal;  // validated by caller
         }
 
@@ -2831,7 +2831,7 @@ public final class DateTimeFormatterBuilder {
          * @param maxWidth  the maximum field width, from minWidth to 19
          * @param signStyle  the positive/negative sign style, not null
          */
-        NumberPrinterParser(TemporalField field, int minWidth, int maxWidth, SignStyle signStyle) {
+        private NumberPrinterParser(TemporalField field, int minWidth, int maxWidth, SignStyle signStyle) {
             // validated by caller
             this.field = field;
             this.minWidth = minWidth;
@@ -3122,7 +3122,7 @@ public final class DateTimeFormatterBuilder {
          * @param baseValue  the base value
          * @param baseDate  the base date
          */
-        ReducedPrinterParser(TemporalField field, int minWidth, int maxWidth,
+        private ReducedPrinterParser(TemporalField field, int minWidth, int maxWidth,
                 int baseValue, ChronoLocalDate baseDate) {
             this(field, minWidth, maxWidth, baseValue, baseDate, 0);
             if (minWidth < 1 || minWidth > 10) {
@@ -3275,7 +3275,7 @@ public final class DateTimeFormatterBuilder {
          * @param maxWidth  the maximum width to output, from 0 to 9
          * @param decimalPoint  whether to output the localized decimal point symbol
          */
-        NanosPrinterParser(int minWidth, int maxWidth, boolean decimalPoint) {
+        private NanosPrinterParser(int minWidth, int maxWidth, boolean decimalPoint) {
             this(minWidth, maxWidth, decimalPoint, 0);
             if (minWidth < 0 || minWidth > 9) {
                 throw new IllegalArgumentException("Minimum width must be from 0 to 9 inclusive but was " + minWidth);
@@ -3297,7 +3297,7 @@ public final class DateTimeFormatterBuilder {
          * @param decimalPoint  whether to output the localized decimal point symbol
          * @param subsequentWidth the subsequentWidth for this instance
          */
-        NanosPrinterParser(int minWidth, int maxWidth, boolean decimalPoint, int subsequentWidth) {
+        private NanosPrinterParser(int minWidth, int maxWidth, boolean decimalPoint, int subsequentWidth) {
             super(NANO_OF_SECOND, minWidth, maxWidth, SignStyle.NOT_NEGATIVE, subsequentWidth);
             this.decimalPoint = decimalPoint;
         }
@@ -3480,7 +3480,7 @@ public final class DateTimeFormatterBuilder {
          * @param maxWidth  the maximum width to output, from 0 to 9
          * @param decimalPoint  whether to output the localized decimal point symbol
          */
-        FractionPrinterParser(TemporalField field, int minWidth, int maxWidth, boolean decimalPoint) {
+        private FractionPrinterParser(TemporalField field, int minWidth, int maxWidth, boolean decimalPoint) {
             this(field, minWidth, maxWidth, decimalPoint, 0);
             Objects.requireNonNull(field, "field");
             if (field.range().isFixed() == false) {
@@ -3507,7 +3507,7 @@ public final class DateTimeFormatterBuilder {
          * @param decimalPoint  whether to output the localized decimal point symbol
          * @param subsequentWidth the subsequentWidth for this instance
          */
-        FractionPrinterParser(TemporalField field, int minWidth, int maxWidth, boolean decimalPoint, int subsequentWidth) {
+        private FractionPrinterParser(TemporalField field, int minWidth, int maxWidth, boolean decimalPoint, int subsequentWidth) {
             super(field, minWidth, maxWidth, SignStyle.NOT_NEGATIVE, subsequentWidth);
             this.decimalPoint = decimalPoint;
             ValueRange range = field.range();
@@ -3697,7 +3697,7 @@ public final class DateTimeFormatterBuilder {
          * @param textStyle  the text style, not null
          * @param provider  the text provider, not null
          */
-        TextPrinterParser(TemporalField field, TextStyle textStyle, DateTimeTextProvider provider) {
+        private TextPrinterParser(TemporalField field, TextStyle textStyle, DateTimeTextProvider provider) {
             // validated by caller
             this.field = field;
             this.textStyle = textStyle;
@@ -3795,7 +3795,7 @@ public final class DateTimeFormatterBuilder {
         private static final long SECONDS_0000_TO_1970 = ((146097L * 5L) - (30L * 365L + 7L)) * 86400L;
         private final int fractionalDigits;
 
-        InstantPrinterParser(int fractionalDigits) {
+        private InstantPrinterParser(int fractionalDigits) {
             this.fractionalDigits = fractionalDigits;
         }
 
@@ -3944,7 +3944,7 @@ public final class DateTimeFormatterBuilder {
          * @param pattern  the pattern
          * @param noOffsetText  the text to use for UTC, not null
          */
-        OffsetIdPrinterParser(String pattern, String noOffsetText) {
+        private OffsetIdPrinterParser(String pattern, String noOffsetText) {
             Objects.requireNonNull(pattern, "pattern");
             Objects.requireNonNull(noOffsetText, "noOffsetText");
             this.type = checkPattern(pattern);
@@ -4426,7 +4426,7 @@ public final class DateTimeFormatterBuilder {
 
         /**  Display in generic time-zone format. True in case of pattern letter 'v' */
         private final boolean isGeneric;
-        ZoneTextPrinterParser(TextStyle textStyle, Set<ZoneId> preferredZones, boolean isGeneric) {
+        private ZoneTextPrinterParser(TextStyle textStyle, Set<ZoneId> preferredZones, boolean isGeneric) {
             super(TemporalQueries.zone(), "ZoneText(" + textStyle + ")");
             this.textStyle = Objects.requireNonNull(textStyle, "textStyle");
             this.isGeneric = isGeneric;
@@ -4598,7 +4598,7 @@ public final class DateTimeFormatterBuilder {
         private final TemporalQuery<ZoneId> query;
         private final String description;
 
-        ZoneIdPrinterParser(TemporalQuery<ZoneId> query, String description) {
+        private ZoneIdPrinterParser(TemporalQuery<ZoneId> query, String description) {
             this.query = query;
             this.description = description;
         }
@@ -5017,7 +5017,7 @@ public final class DateTimeFormatterBuilder {
         /** The text style to output, null means the ID. */
         private final TextStyle textStyle;
 
-        ChronoPrinterParser(TextStyle textStyle) {
+        private ChronoPrinterParser(TextStyle textStyle) {
             // validated by caller
             this.textStyle = textStyle;
         }
@@ -5100,7 +5100,7 @@ public final class DateTimeFormatterBuilder {
          * @param dateStyle  the date style to use, may be null
          * @param timeStyle  the time style to use, may be null
          */
-        LocalizedPrinterParser(FormatStyle dateStyle, FormatStyle timeStyle) {
+        private LocalizedPrinterParser(FormatStyle dateStyle, FormatStyle timeStyle) {
             // params validated by caller
             this.dateStyle = dateStyle;
             this.timeStyle = timeStyle;
@@ -5112,7 +5112,7 @@ public final class DateTimeFormatterBuilder {
          *
          * @param requestedTemplate the requested template to use, not null
          */
-        LocalizedPrinterParser(String requestedTemplate) {
+        private LocalizedPrinterParser(String requestedTemplate) {
             // param validated by caller
             this.dateStyle = null;
             this.timeStyle = null;
@@ -5184,7 +5184,7 @@ public final class DateTimeFormatterBuilder {
          * @param minWidth  the minimum field width, from 1 to 19
          * @param maxWidth  the maximum field width, from minWidth to 19
          */
-        WeekBasedFieldPrinterParser(char chr, int count, int minWidth, int maxWidth) {
+        private WeekBasedFieldPrinterParser(char chr, int count, int minWidth, int maxWidth) {
             this(chr, count, minWidth, maxWidth, 0);
         }
 
@@ -5198,7 +5198,7 @@ public final class DateTimeFormatterBuilder {
          * @param subsequentWidth  the width of subsequent non-negative numbers, 0 or greater,
          * -1 if fixed width due to active adjacent parsing
          */
-        WeekBasedFieldPrinterParser(char chr, int count, int minWidth, int maxWidth,
+        private WeekBasedFieldPrinterParser(char chr, int count, int minWidth, int maxWidth,
                 int subsequentWidth) {
             super(null, minWidth, maxWidth, SignStyle.NOT_NEGATIVE, subsequentWidth);
             this.chr = chr;
@@ -5329,7 +5329,7 @@ public final class DateTimeFormatterBuilder {
          *
          * @param textStyle  the text style, not null
          */
-        DayPeriodPrinterParser(TextStyle textStyle) {
+        private DayPeriodPrinterParser(TextStyle textStyle) {
             // validated by caller
             this.textStyle = textStyle;
         }

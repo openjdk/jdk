@@ -45,7 +45,7 @@ public abstract class JavaTimeDateTimePatternProvider extends LocaleServiceProvi
      * Returns the formatting pattern for a timeStyle
      * dateStyle, calendarType and locale.
      * Concrete implementation of this method will retrieve
-     * a java.time specific dateTime Pattern from selected Locale Provider.
+     * a java.time specific dateTime Pattern from the selected Locale Provider.
      *
      * @param timeStyle an {@code int} value, representing FormatStyle constant, -1
      * for date-only pattern
@@ -65,17 +65,20 @@ public abstract class JavaTimeDateTimePatternProvider extends LocaleServiceProvi
      * Concrete implementation of this method will retrieve
      * a java.time specific pattern from selected Locale Provider.
      *
-     * @param requestedTemplate requested template defined in CLDR
+     * @param requestedTemplate the requested template, not null
      * @param calType a {@code String}, non-null representing CalendarType such as "japanese",
      * "iso8601"
      * @param locale {@code locale}, non-null
-     * @throws IllegalArgumentException if {@code requested} is invalid
-     * @throws DateTimeException if the formatter for the given {@code requested} is not available
+     * @throws IllegalArgumentException if {@code requestedTemplate} does not match
+     *      the regular expression syntax described in
+     *      {@link java.time.format.DateTimeFormatterBuilder#appendLocalized(String)}.
+     * @throws DateTimeException if a match for the formatting pattern for
+     *      {@code requestedTemplate} is not available
      * @return  formatting pattern {@code String}
      * @since 19
      */
     public String getJavaTimeDateTimePattern(String requestedTemplate, String calType, Locale locale) {
         // default implementation throws exception
-        throw new DateTimeException("Formatter is not available for the requested template: " + requestedTemplate);
+        throw new DateTimeException("Formatting pattern is not available for the requested template: " + requestedTemplate);
     }
 }
