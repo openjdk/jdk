@@ -27,6 +27,7 @@
  * @bug 8278067
  * @run main/othervm -Dhttp.keepAlive.time.server=30 KeepAliveProperty long
  * @run main/othervm -Dhttp.keepAlive.time.server=1 KeepAliveProperty short
+ * @run main/othervm -ea -Dhttp.keepAlive.time.server=0 KeepAliveProperty short
  */
 
 import java.net.*;

@@ -235,7 +235,6 @@ public class HttpClient extends NetworkClient {
         return keepAliveProp;
     }
 
-
     public String getSpnegoCBT() {
         return spnegoCBT;
     }

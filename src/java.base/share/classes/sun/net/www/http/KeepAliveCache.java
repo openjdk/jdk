@@ -168,10 +168,16 @@ public class KeepAliveCache
                         keepAliveTimeout = http.getUsingProxy() ? 60 : 5;
                     }
                 }
-                assert keepAliveTimeout > 0;
-                v = new ClientVector(keepAliveTimeout * 1000);
-                v.put(http);
-                super.put(key, v);
+                // at this point keepAliveTimeout is the number of seconds to keep
+                // alive, which could be 0, if the user specified 0 for the property
+                assert keepAliveTimeout >= 0;
+                if (keepAliveTimeout == 0) {
+                    http.closeServer();
+                } else {
+                    v = new ClientVector(keepAliveTimeout * 1000);
+                    v.put(http);
+                    super.put(key, v);
+                }
             } else {
                 v.put(http);
             }
@@ -226,7 +232,6 @@ public class KeepAliveCache
             cacheLock.unlock();
         }
     }
-
 
     /* Sleeps for an alloted timeout, then checks for timed out connections.
      * Errs on the side of caution (leave connections idle for a relatively
