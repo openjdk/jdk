@@ -68,11 +68,52 @@ void G1EvacFailureRegions::post_collection() {
   _max_regions = 0; // To have any record() attempt fail in the future.
 }
 
+class PrepareEvacFailureRegionTask : public WorkerTask {
+  G1EvacFailureRegions* _evac_failure_regions;
+  uint _num_workers;
+  HeapRegionClaimer _claimer;
+
+  class PrepareEvacFailureRegionClosure : public HeapRegionClosure {
+    G1EvacFailureRegions* _evac_failure_regions;
+    uint _worker_id;
+  public:
+    PrepareEvacFailureRegionClosure(G1EvacFailureRegions* evac_failure_regions, uint worker_id) :
+      _evac_failure_regions(evac_failure_regions),
+      _worker_id(worker_id) { }
+
+    bool do_heap_region(HeapRegion* r) override {
+      assert(_evac_failure_regions->contains(r->hrm_index()), "precondition");
+      _evac_failure_regions->prepare_region(r->hrm_index(), _worker_id);
+      return false;
+    }
+  };
+
+public:
+  PrepareEvacFailureRegionTask(G1EvacFailureRegions* evac_failure_regions, uint num_workers) :
+  WorkerTask("Prepare Evacuation Failure Region Task"),
+  _evac_failure_regions(evac_failure_regions),
+  _num_workers(num_workers),
+  _claimer(_num_workers) {
+  }
+
+  void work(uint worker_id) override {
+    PrepareEvacFailureRegionClosure closure(_evac_failure_regions, worker_id);
+    _evac_failure_regions->par_iterate(&closure, &_claimer, worker_id);
+  }
+
+};
+
+void G1EvacFailureRegions::prepare_regions() {
+  uint num_workers = MAX2(1u, MIN2(_evac_failure_regions_cur_length, G1CollectedHeap::heap()->workers()->active_workers()));
+  PrepareEvacFailureRegionTask task(this, num_workers);
+  G1CollectedHeap::heap()->workers()->run_task(&task, num_workers);
+}
+
 void G1EvacFailureRegions::par_iterate(HeapRegionClosure* closure,
-                                       HeapRegionClaimer* _hrclaimer,
+                                       HeapRegionClaimer* hrclaimer,
                                        uint worker_id) const {
   G1CollectedHeap::heap()->par_iterate_regions_array(closure,
-                                                     _hrclaimer,
+                                                     hrclaimer,
                                                      _evac_failure_regions,
                                                      Atomic::load(&_evac_failure_regions_cur_length),
                                                      worker_id);
@@ -94,11 +135,14 @@ bool G1EvacFailureRegions::contains(uint region_idx) const {
   return _regions_failed_evacuation.par_at(region_idx, memory_order_relaxed);
 }
 
-void G1EvacFailureRegions::prepare_region(uint region_idx) {
+void G1EvacFailureRegions::prepare_region(uint region_idx, uint worker_id) {
   HeapRegion* hr = _heap->region_at(region_idx);
   assert(!hr->is_pinned(), "Unexpected pinned region at index %u", hr->hrm_index());
   assert(hr->in_collection_set(), "bad CS");
   assert(contains(hr->hrm_index()), "precondition");
+
+  Ticks start = Ticks::now();
+  G1GCPhaseTimes* phase_times = G1CollectedHeap::heap()->phase_times();
 
   hr->clear_index_in_opt_cset();
 
@@ -111,7 +155,12 @@ void G1EvacFailureRegions::prepare_region(uint region_idx) {
   hr->reset_bot();
 
   _phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,
-                                               0,
+                                               worker_id,
                                                1,
                                                G1GCPhaseTimes::RestoreRetainedRegionsNum);
+
+  hr->rem_set()->clean_strong_code_roots(hr);
+  hr->rem_set()->clear_locked(true);
+
+  phase_times->record_or_add_time_secs(G1GCPhaseTimes::PrepareRetainedRegions, worker_id, (Ticks::now() - start).seconds());
 }

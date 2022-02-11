@@ -77,6 +77,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     RebuildFreeList,
     SampleCollectionSetCandidates,
     MergePSS,
+    PrepareRetainedRegions,
     RestoreRetainedRegions,
     RemoveSelfForwardsInChunks,
     PrepareChunks,

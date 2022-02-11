@@ -94,14 +94,6 @@ public:
 
       bool do_heap_region(HeapRegion* hr) override {
         _total.add(hr->rem_set()->card_set_memory_stats());
-
-        // Put the clearing code here on purpose to make sure the rem set data
-        // is cleared only after syncing.
-        // It also avoid race condition by putting the clearing code here.
-        if (_evac_failure_regions->contains(hr->hrm_index())) {
-          hr->rem_set()->clean_strong_code_roots(hr);
-          hr->rem_set()->clear_locked(true);
-        }
         return false;
       }
     } cl(_evac_failure_regions);

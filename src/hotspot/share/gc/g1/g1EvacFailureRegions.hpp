@@ -50,9 +50,6 @@ class G1EvacFailureRegions {
   G1CollectedHeap* _heap;
   G1GCPhaseTimes* _phase_times;
 
-  // Do necessary preparation for evacuation failure regions
-  void prepare_region(uint region_idx);
-
 public:
   G1EvacFailureRegions();
   ~G1EvacFailureRegions();
@@ -64,11 +61,15 @@ public:
 
   bool contains(uint region_idx) const;
   void par_iterate(HeapRegionClosure* closure,
-                   HeapRegionClaimer* _hrclaimer,
+                   HeapRegionClaimer* hrclaimer,
                    uint worker_id) const;
   // Iterate through all chunks in regions that failed evacuation during the entire collection.
   void par_iterate_chunks_in_regions(G1HeapRegionChunkClosure* chunk_closure,
                                      uint worker_id) const;
+
+  // Do necessary preparation for evacuation failure regions
+  void prepare_region(uint region_idx, uint worker_id);
+  void prepare_regions();
 
   uint max_regions() {
     return _max_regions;
