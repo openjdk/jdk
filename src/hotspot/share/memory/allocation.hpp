@@ -146,7 +146,7 @@ class AllocatedObj {
   f(mtServiceability, "Serviceability")                                              \
   f(mtMetaspace,      "Metaspace")                                                   \
   f(mtStringDedup,    "String Deduplication")                                        \
-  f(mtObjectMonitor,  "Monitors")                                                    \
+  f(mtObjectMonitor,  "Object Monitors")                                             \
   f(mtNone,           "Unknown")                                                     \
   //end
 
