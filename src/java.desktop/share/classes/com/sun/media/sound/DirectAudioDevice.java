@@ -1297,11 +1297,10 @@ final class DirectAudioDevice extends AbstractMixer {
                     }
                 }
                 while (doIO && thread == curThread) {
-                    synchronized (this) {
-                        if (newFramePosition >= 0) {
-                            clipBytePosition = newFramePosition * frameSize;
-                            newFramePosition = -1;
-                        }
+                    int npf = newFramePosition; // copy into local variable
+                    if (npf >= 0) {
+                        clipBytePosition = npf * frameSize;
+                        newFramePosition = -1;
                     }
                     int endFrame = getFrameLength() - 1;
                     if (loopCount > 0 || loopCount == LOOP_CONTINUOUSLY) {
