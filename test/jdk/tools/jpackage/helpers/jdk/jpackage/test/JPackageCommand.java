@@ -570,9 +570,9 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
             throw TKit.throwUnknownPlatformError();
         }
 
-        if (criticalRuntimeFiles.stream().filter(
-                v -> runtimeDir.resolve(v).toFile().exists()).findFirst().orElse(
-                        null) == null) {
+        if (!criticalRuntimeFiles.stream().anyMatch(v -> {
+            return runtimeDir.resolve(v).toFile().exists();
+        })) {
             // Fake runtime
             TKit.trace(String.format(
                     "%s because application runtime directory [%s] is incomplete",
