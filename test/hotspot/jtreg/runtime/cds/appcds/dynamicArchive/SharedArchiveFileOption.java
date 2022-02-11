@@ -187,36 +187,37 @@ public class SharedArchiveFileOption extends DynamicArchiveTestBase {
 
         testcase("Specifying -XX:+RecordDynamicDumpInfo should not cause dynamic dump");
         run2(baseArchiveName, null,
-            "-XX:+RecordDynamicDumpInfo",
-            "-Xlog:cds+dynamic=debug",
-            "-cp", appJar, mainClass)
+             "-XX:+RecordDynamicDumpInfo",
+             "-Xlog:cds+dynamic=debug",
+             "-cp", appJar, mainClass)
             .assertNormalExit(output -> {
-                output.shouldNotMatch("\\[cds,dynamic");
-            });
+                    output.shouldNotMatch("\\[cds,dynamic");
+                });
 
          {
-            testcase("-XX:ArchiveClassesAtExit with CDS disabled (-Xshare:off)");
             String ERROR = "-XX:ArchiveClassesAtExit is unsupported when base CDS archive is not loaded";
+
+            testcase("-XX:ArchiveClassesAtExit with CDS disabled (-Xshare:off)");
             dump2(baseArchiveName,
                   topArchiveName,
                   "-Xshare:off",
                   "-Xlog:cds",
                   "-cp", appJar, mainClass)
-            .assertNormalExit(output -> {
-                output.shouldNotMatch("\\[cds,dynamic");
-                output.shouldContain("-XX:ArchiveClassesAtExit is unsupported when base CDS archive is not loaded");
-            });
+                 .assertNormalExit(output -> {
+                         output.shouldNotMatch("\\[cds,dynamic");
+                         output.shouldContain(ERROR);
+                     });
 
             testcase("-XX:ArchiveClassesAtExit with CDS disabled (Base archive cannot be mapped -- doesn't exist");
             dump2(baseArchiveName + ".notExist",
                   topArchiveName,
                   "-Xlog:cds",
                   "-Xshare:auto",
-                 "-cp", appJar, mainClass)
-            .assertNormalExit(output -> {
-                output.shouldNotMatch("\\[cds,dynamic");
-                output.shouldContain("-XX:ArchiveClassesAtExit is unsupported when base CDS archive is not loaded");
-            });
+                  "-cp", appJar, mainClass)
+                 .assertNormalExit(output -> {
+                         output.shouldNotMatch("\\[cds,dynamic");
+                         output.shouldContain(ERROR);
+                     });
 
             testcase("-XX:ArchiveClassesAtExit with CDS disabled (incompatible VM options)");
             dump2(baseArchiveName,
@@ -226,7 +227,7 @@ public class SharedArchiveFileOption extends DynamicArchiveTestBase {
                   "-Xshare:auto",
                   "-Xlog:cds",
                   "-cp", appJar, mainClass)
-            .assertAbnormalExit("Cannot use the following option when dumping the shared archive: --patch-module");
+                 .assertAbnormalExit("Cannot use the following option when dumping the shared archive: --patch-module");
         }
 
         {

@@ -218,7 +218,7 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
                 output.shouldContain("warning: -XX:+AutoCreateSharedArchive is unsupported when base CDS archive is not loaded");
             });
 
-        startTest("10. -XX:SharedArchiveFile=" + topArchiveName + " -XX:ArchiveClassesAtExit=" + getNewArchiveName("top3"));
+        startTest("11. -XX:SharedArchiveFile=" + topArchiveName + " -XX:ArchiveClassesAtExit=" + getNewArchiveName("top3"));
         run(topArchiveName,
             "-Xshare:auto",
             "-XX:ArchiveClassesAtExit=" + getNewArchiveName("top3"),
