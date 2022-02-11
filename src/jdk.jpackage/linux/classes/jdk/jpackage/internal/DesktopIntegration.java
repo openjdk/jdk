@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -273,8 +274,8 @@ final class DesktopIntegration extends ShellCustomAction {
         Map<String, String> data = new HashMap<>();
         data.put("APPLICATION_NAME", APP_NAME.fetchFrom(params));
         data.put("APPLICATION_DESCRIPTION", DESCRIPTION.fetchFrom(params));
-        data.put("APPLICATION_ICON",
-                iconFile != null ? iconFile.installPath().toString() : null);
+        data.put("APPLICATION_ICON", Optional.ofNullable(iconFile).map(
+                f -> f.installPath().toString()).orElse(null));
         data.put("DEPLOY_BUNDLE_CATEGORY", MENU_GROUP.fetchFrom(params));
         data.put("APPLICATION_LAUNCHER", Enquoter.forPropertyValues().applyTo(
                 thePackage.installedApplicationLayout().launchersDirectory().resolve(
