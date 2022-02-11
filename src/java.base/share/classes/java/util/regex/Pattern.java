@@ -4006,7 +4006,9 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 if (j < matcher.to)
                     return false;
             }
-            matcher.hitEnd = true;
+            else {
+                matcher.hitEnd = true;
+            }
             return false;
         }
 
