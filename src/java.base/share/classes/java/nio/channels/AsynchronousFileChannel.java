@@ -425,9 +425,9 @@ public abstract class AsynchronousFileChannel
      * required then a region starting at zero, and no smaller than the
      * expected maximum size of the file, should be locked.  The two-argument
      * {@link #lock(Object,CompletionHandler)} method simply locks a region
-     * of size {@link Long#MAX_VALUE}. If a lock is created with a valid
-     * {@code position} and a {@code size} parameter of zero, then a lock of
-     * size {@code Long.MAX_VALUE - position} is returned. If a lock that
+     * of size {@link Long#MAX_VALUE}.  If the {@code position} is non-negative
+     * and the {@code size} is zero, then a lock of size
+     * {@code Long.MAX_VALUE - position} is returned.  If a lock that
      * overlaps the requested region is already held by this Java virtual
      * machine, or this method has been invoked to lock an overlapping region
      * and that operation has not completed, then this method throws
@@ -596,9 +596,8 @@ public abstract class AsynchronousFileChannel
      * do so.  If it fails to acquire a lock because an overlapping lock is held
      * by another program then it returns {@code null}.  If it fails to acquire
      * a lock for any other reason then an appropriate exception is thrown.  If
-     * a lock is created with a valid {@code position} and a {@code size}
-     * parameter of zero, then a lock of size {@code Long.MAX_VALUE - position}
-     * is returned.
+     * the {@code position} is non-negative and the {@code size} is zero, then a
+     * lock of size {@code Long.MAX_VALUE - position} is returned.
      *
      * @param  position
      *         The position at which the locked region is to start; must be
