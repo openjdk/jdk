@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public class Switches {
         switchNestingTest(this::switchNestingExpressionStatement);
         switchNestingTest(this::switchNestingExpressionExpression);
         switchNestingTest(this::switchNestingIfSwitch);
-        assertEquals(2, switchOverNull1());
+        npeTest(x -> switchOverNull1());
         assertEquals(2, switchOverNull2());
         assertEquals(2, switchOverNull3());
         assertEquals(5, switchOverPrimitiveInt(0));
@@ -439,8 +439,17 @@ public class Switches {
     }
 
     void exhaustiveStatementSane(Object o) {
-        switch (o) {
-            case Object obj:; //no break intentionally - should not fall through to any possible default
+        try {
+            switch (o) {
+                case Object obj:; //no break intentionally - should not fall through to any possible default
+            }
+            if (o == null) {
+                throw new AssertionError();
+            }
+        } catch (NullPointerException ex) {
+            if (o != null) {
+                throw new AssertionError();
+            }
         }
         switch (o) {
             case null, Object obj:; //no break intentionally - should not fall through to any possible default
