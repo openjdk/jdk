@@ -1493,6 +1493,26 @@ void C2_MacroAssembler::load_vector_mask(KRegister dst, XMMRegister src, XMMRegi
   }
 }
 
+void C2_MacroAssembler::load_vector(XMMRegister dst, Address src, int vlen_in_bytes) {
+  switch (vlen_in_bytes) {
+  case 4:  movdl(dst, src);   break;
+  case 8:  movq(dst, src);    break;
+  case 16: movdqu(dst, src);  break;
+  case 32: vmovdqu(dst, src); break;
+  case 64: evmovdquq(dst, src, Assembler::AVX_512bit); break;
+  default: ShouldNotReachHere();
+  }
+}
+
+void C2_MacroAssembler::load_vector(XMMRegister dst, AddressLiteral src, int vlen_in_bytes, Register rscratch) {
+  if (reachable(src)) {
+    load_vector(dst, as_Address(src), vlen_in_bytes);
+  } else {
+    lea(rscratch, src);
+    load_vector(dst, Address(rscratch, 0), vlen_in_bytes);
+  }
+}
+
 void C2_MacroAssembler::load_iota_indices(XMMRegister dst, Register scratch, int vlen_in_bytes) {
   ExternalAddress addr(StubRoutines::x86::vector_iota_indices());
   if (vlen_in_bytes == 4) {

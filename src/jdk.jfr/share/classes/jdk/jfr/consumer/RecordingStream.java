@@ -56,15 +56,8 @@ import jdk.jfr.internal.consumer.EventDirectoryStream;
  * The following example shows how to record events using the default
  * configuration and print the Garbage Collection, CPU Load and JVM Information
  * event to standard out.
- * <pre>{@literal
- * Configuration c = Configuration.getConfiguration("default");
- * try (var rs = new RecordingStream(c)) {
- *     rs.onEvent("jdk.GarbageCollection", System.out::println);
- *     rs.onEvent("jdk.CPULoad", System.out::println);
- *     rs.onEvent("jdk.JVMInformation", System.out::println);
- *     rs.start();
- * }
- * }</pre>
+ *
+ * {@snippet class="Snippets" region="RecordingStreamOverview"}
  *
  * @since 14
  */
@@ -140,13 +133,7 @@ public final class RecordingStream implements AutoCloseable, EventStream {
      * The following example shows how to create a recording stream that uses a
      * predefined configuration.
      *
-     * <pre>{@literal
-     * var c = Configuration.getConfiguration("default");
-     * try (var rs = new RecordingStream(c)) {
-     *   rs.onEvent(System.out::println);
-     *   rs.start();
-     * }
-     * }</pre>
+     * {@snippet class="Snippets" region="RecordingStreamConstructor"}
      *
      * @param configuration configuration that contains the settings to use,
      *        not {@code null}
@@ -189,17 +176,7 @@ public final class RecordingStream implements AutoCloseable, EventStream {
      * The following example records 20 seconds using the "default" configuration
      * and then changes settings to the "profile" configuration.
      *
-     * <pre>{@literal
-     * Configuration defaultConfiguration = Configuration.getConfiguration("default");
-     * Configuration profileConfiguration = Configuration.getConfiguration("profile");
-     * try (var rs = new RecordingStream(defaultConfiguration)) {
-     *    rs.onEvent(System.out::println);
-     *    rs.startAsync();
-     *    Thread.sleep(20_000);
-     *    rs.setSettings(profileConfiguration.getSettings());
-     *    Thread.sleep(20_000);
-     * }
-     * }</pre>
+     * {@snippet class="Snippets" region="RecordingStreamSetSettings"}
      *
      * @param settings the settings to set, not {@code null}
      *
@@ -384,16 +361,8 @@ public final class RecordingStream implements AutoCloseable, EventStream {
      * The following example prints the CPU usage for ten seconds. When
      * the current thread leaves the try-with-resources block the
      * stream is stopped/closed.
-     * <pre>{@literal
-     * try (var stream = new RecordingStream()) {
-     *   stream.enable("jdk.CPULoad").withPeriod(Duration.ofSeconds(1));
-     *   stream.onEvent("jdk.CPULoad", event -> {
-     *     System.out.println(event);
-     *   });
-     *   stream.startAsync();
-     *   Thread.sleep(10_000);
-     * }
-     * }</pre>
+     *
+     * {@snippet class="Snippets" region="RecordingStreamStartAsync"}
      *
      * @throws IllegalStateException if the stream is already started or closed
      */
