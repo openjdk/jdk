@@ -30,7 +30,7 @@
  * @run main JTHeaderBorderTest
  */
 
-import java.awt.*;
+import java.awt.Graphics2D;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JTable;
@@ -54,7 +54,8 @@ public class JTHeaderBorderTest {
     private static final int FRAME_WT = 300;
     private static final int TABLE_COLS = 3;
     private static final int TABLE_ROWS = 2;
-    private static final int Y_OFFSET = 30;
+    private static final int Y_OFFSET_START = 30;
+    private static final int Y_OFFSET_END = 55;
     private static final int X_OFFSET = 25;
 
     public static void main(String[] args) throws Exception {
@@ -84,16 +85,17 @@ public class JTHeaderBorderTest {
                 frame.paint(graphics2D);
                 graphics2D.dispose();
 
-                String tableColor = Integer.toHexString(table.getBackground().getRGB());
-                String headerColor = Integer.toHexString(table.getTableHeader().getBackground().getRGB());
-                String pixelColor = tableColor;
+                int tableColor = table.getBackground().getRGB();
+                int headerColor = table.getTableHeader().getBackground().getRGB();
+                //at start pixelColor initialized to table header background color
+                int pixelColor = headerColor;
                 boolean isBottomLineVisible = false;
 
                 // scan table header region to check if bottom border of JTableHeader is visible
-                for (int y = Y_OFFSET; y <= Y_OFFSET+25; y++) {
-                    pixelColor = Integer.toHexString(image.getRGB(X_OFFSET, y));
+                for (int y = Y_OFFSET_START; y <= Y_OFFSET_END; y++) {
+                    pixelColor = image.getRGB(X_OFFSET, y);
                     System.out.println("Y offset: "+ y + " Color: "+ (Integer.toHexString(image.getRGB(X_OFFSET, y))));
-                    if (!pixelColor.equalsIgnoreCase(tableColor) || !pixelColor.equalsIgnoreCase(headerColor)) {
+                    if (pixelColor != tableColor || pixelColor != headerColor) {
                         isBottomLineVisible = true;
                         break;
                     }
@@ -110,6 +112,7 @@ public class JTHeaderBorderTest {
             }
         }
     }
+    // to save the BufferedImage as .png in the event the test fails (for debugging purpose)
     private static void saveImage(BufferedImage image, String filename) {
         try {
             ImageIO.write(image, "png", new File(filename));
