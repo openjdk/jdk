@@ -91,13 +91,6 @@ public class HiDPIRobotScreenCaptureTest {
                 g.fillRect(0, h / 2, w / 2, h / 2);
                 g.setColor(COLORS[3]);
                 g.fillRect(w / 2, h / 2, w / 2, h / 2);
-
-                // Several distinct pixels next to one another
-                // in order to test color picker's precision.
-                for (int i = 1; i < 4; i++) {
-                    g.setColor(COLORS[i]);
-                    g.fillRect(i, 0, 1, 1);
-                }
             }
         };
 
@@ -107,9 +100,6 @@ public class HiDPIRobotScreenCaptureTest {
         Robot robot = new Robot();
         robot.waitForIdle();
         robot.delay(500);
-
-        final Point screenLocation = frame.getLocationOnScreen();
-        checkPixelColors(robot, screenLocation.x, screenLocation.y);
 
         Rectangle rect = canvas.getBounds();
         rect.setLocation(canvas.getLocationOnScreen());
@@ -125,25 +115,10 @@ public class HiDPIRobotScreenCaptureTest {
             throw new RuntimeException("Wrong image size!");
         }
 
-
         checkRectColor(image, new Rectangle(0, 0, w / 2, h / 2), COLORS[0]);
         checkRectColor(image, new Rectangle(w / 2, 0, w / 2, h / 2), COLORS[1]);
         checkRectColor(image, new Rectangle(0, h / 2, w / 2, h / 2), COLORS[2]);
         checkRectColor(image, new Rectangle(w / 2, h / 2, w / 2, h / 2), COLORS[3]);
-    }
-
-    static void checkPixelColors(Robot robot, int x, int y) {
-        for (int i = 0; i < 4; i++) {
-            final Color actualColor = robot.getPixelColor(x + i, y);
-            System.out.print("Checking color at " + (x + i) + ", " + y + " to be equal to " + COLORS[i]);
-            if (!actualColor.equals(COLORS[i])) {
-                System.out.println("... Mismatch: found " + actualColor + " instead");
-                throw new RuntimeException("Wrong screen pixel color");
-
-            } else {
-                System.out.println("... OK");
-            }
-        }
     }
 
     private static final int OFFSET = 5;
