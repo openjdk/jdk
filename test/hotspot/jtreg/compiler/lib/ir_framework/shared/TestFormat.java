@@ -32,7 +32,7 @@ import java.util.List;
 public class TestFormat {
     private static final List<String> FAILURES = new ArrayList<>();
 
-    public static void checkThrow(boolean test, String failureMessage) {
+    public static void checkAndReport(boolean test, String failureMessage) {
         if (!test) {
             FAILURES.add(failureMessage);
             throwIfAnyFailures();

@@ -24,31 +24,35 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule;
 
 import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.driver.irmatching.parser.ParsedNode;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Matcher;
+import java.util.HashSet;
+import java.util.Set;
 
-/**
- * Base class representing a check attribute of an IR rule.
- *
- * @see IR
- */
-abstract class CheckAttribute {
-    protected final CompilePhase compilePhase;
+public class DefaultPhaseParsedNodeList extends AbstractParsedNodeList {
+    private final Set<CompilePhase> compilePhases;
+    private boolean requiresDefaultPhase;
 
-    protected CheckAttribute(CompilePhase compilePhase) {
-        this.compilePhase = compilePhase;
+    public DefaultPhaseParsedNodeList() {
+        this.compilePhases = new HashSet<>();
     }
 
-    abstract CheckAttributeMatchResult apply(String compilation);
+    public boolean requiresDefaultPhase() {
+        return requiresDefaultPhase;
+    }
 
-    protected List<String> getMatchedNodes(Matcher m) {
-        List<String> matches = new ArrayList<>();
-        do {
-            matches.add(m.group());
-        } while (m.find());
-        return matches;
+    public Set<CompilePhase> getCompilePhases() {
+        return compilePhases;
+    }
+
+    @Override
+    public void addNode(ParsedNode parsedNode) {
+        parsedNodes.add(parsedNode);
+        CompilePhase compilePhase = parsedNode.getComplePhase();
+        if (compilePhase == CompilePhase.DEFAULT) {
+            requiresDefaultPhase = true;
+        } else {
+            compilePhases.add(compilePhase);
+        }
     }
 }

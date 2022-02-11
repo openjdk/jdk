@@ -36,21 +36,21 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class IRRule {
+public class PhaseIRRule {
     private final IRMethod irMethod;
     private final int ruleId;
     private final IR irAnno;
-    private final List<FailOn> failOnForPhases;
-    private final List<Counts> countsForPhases;
-    private final List<CompilePhase> compilePhases; // TODO: wrong, create new class IRRuleForPhase to have single failON
+    private final FailOn failOn;
+    private final Counts counts;
+    private final CompilePhase compilePhase; // TODO: wrong, create new class IRRuleForPhase to have single failON
     private final NodeRegexParser nodeRegexParser;
     private final DefaultPhaseNodeRegexParser defaultPhaseNodeRegexParser;
 
-    public IRRule(IRMethod irMethod, int ruleId, IR irAnno) {
+    public PhaseIRRule(IRMethod irMethod, int ruleId, IR irAnno, CompilePhase compilePhase) {
         this.irMethod = irMethod;
         this.ruleId = ruleId;
         this.irAnno = irAnno;
-        this.compilePhases = Arrays.asList(irAnno.phase());
+        this.compilePhase = compilePhase;
         this.nodeRegexParser = new NodeRegexParser();
         this.defaultPhaseNodeRegexParser = new DefaultPhaseNodeRegexParser();
         this.failOnForPhases = initFailOnForPhases(irAnno);

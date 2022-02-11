@@ -21,34 +21,21 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule;
+package compiler.lib.ir_framework.driver.irmatching.parser;
 
-import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.IR;
+public class CountsNodeRegex extends NodeRegex {
+    private final String countConstraint;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Matcher;
-
-/**
- * Base class representing a check attribute of an IR rule.
- *
- * @see IR
- */
-abstract class CheckAttribute {
-    protected final CompilePhase compilePhase;
-
-    protected CheckAttribute(CompilePhase compilePhase) {
-        this.compilePhase = compilePhase;
+    public CountsNodeRegex(String rawNodeString, String countConstraint) {
+        super(rawNodeString);
+        this.countConstraint = countConstraint;
     }
 
-    abstract CheckAttributeMatchResult apply(String compilation);
-
-    protected List<String> getMatchedNodes(Matcher m) {
-        List<String> matches = new ArrayList<>();
-        do {
-            matches.add(m.group());
-        } while (m.find());
-        return matches;
+    public CountsNodeRegex(String rawNodeString, String userPostfixString, String countConstraint) {
+        super(rawNodeString, userPostfixString);
+        this.countConstraint = countConstraint;
+    }
+    public String getCountConstraint() {
+        return countConstraint;
     }
 }

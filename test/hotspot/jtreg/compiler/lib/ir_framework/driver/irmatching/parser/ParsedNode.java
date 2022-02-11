@@ -21,34 +21,40 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule;
+package compiler.lib.ir_framework.driver.irmatching.parser;
 
 import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.TestFramework;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Matcher;
+public class ParsedNode {
+    private final String nodeString;
+    private CompilePhase compilePhase;
+    private final String countConstraint;
 
-/**
- * Base class representing a check attribute of an IR rule.
- *
- * @see IR
- */
-abstract class CheckAttribute {
-    protected final CompilePhase compilePhase;
+    public ParsedNode(String nodeString) {
+        this.nodeString = nodeString;
+        this.countConstraint = null;
+    }
 
-    protected CheckAttribute(CompilePhase compilePhase) {
+    public ParsedNode(String nodeString, String countConstraint) {
+        this.nodeString = nodeString;
+        this.countConstraint = countConstraint;
+    }
+
+    public String getNodeString() {
+        return nodeString;
+    }
+
+    public void setCompilePhase(CompilePhase compilePhase) {
         this.compilePhase = compilePhase;
     }
 
-    abstract CheckAttributeMatchResult apply(String compilation);
+    public CompilePhase getComplePhase() {
+        return compilePhase;
+    }
 
-    protected List<String> getMatchedNodes(Matcher m) {
-        List<String> matches = new ArrayList<>();
-        do {
-            matches.add(m.group());
-        } while (m.find());
-        return matches;
+    public String getCountConstraint() {
+        TestFramework.check(countConstraint != null, "must be set");
+        return countConstraint;
     }
 }

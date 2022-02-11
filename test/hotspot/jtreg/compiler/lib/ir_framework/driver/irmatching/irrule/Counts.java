@@ -23,7 +23,9 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule;
 
+import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.driver.irmatching.parser.ParsedNode;
 import compiler.lib.ir_framework.shared.Comparison;
 import compiler.lib.ir_framework.shared.ComparisonConstraintParser;
 import compiler.lib.ir_framework.shared.TestFormat;
@@ -43,22 +45,22 @@ import java.util.stream.Collectors;
 class Counts extends CheckAttribute {
     public List<Constraint> constraints;
 
-    private Counts(List<Constraint> constraints) {
+    private Counts(List<Constraint> constraints, CompilePhase compilePhase) {
+        super(compilePhase);
         this.constraints = constraints;
     }
 
-    public static Counts create(List<String> nodesWithCountConstraint, IRRule irRule) {
+    public static Counts create(List<ParsedNode> nodes, CompilePhase compilePhase, IRRule irRule) {
         List<Constraint> constraints = new ArrayList<>();
         int nodeId = 1;
-        for (int i = 0; i < nodesWithCountConstraint.size(); i += 2, nodeId++) {
-            String node = nodesWithCountConstraint.get(i);
-            TestFormat.check(i + 1 < nodesWithCountConstraint.size(),
-                             "Missing count " + getPostfixErrorMsg(irRule, node));
-            String countConstraint = nodesWithCountConstraint.get(i + 1);
+        for (ParsedNode parsedNode : nodes) {
+            String node = parsedNode.getNodeString();
+            String countConstraint = parsedNode.getCountConstraint();
             Comparison<Integer> comparison = parseComparison(irRule, node, countConstraint);
             constraints.add(new Constraint(node, comparison, nodeId));
+            nodeId++;
         }
-        return new Counts(constraints);
+        return new Counts(constraints, compilePhase);
     }
 
     private static String getPostfixErrorMsg(IRRule irRule, String node) {
@@ -70,6 +72,7 @@ class Counts extends CheckAttribute {
         return ComparisonConstraintParser.parse(constraint, Integer::parseInt, postfixErrorMsg);
     }
 
+    @Override
     public CountsMatchResult apply(String compilation) {
         CountsMatchResult result = new CountsMatchResult();
         checkConstraints(result, compilation);

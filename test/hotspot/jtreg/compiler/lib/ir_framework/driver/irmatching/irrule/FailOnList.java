@@ -38,40 +38,18 @@ import java.util.stream.Collectors;
  *
  * @see IR#failOn()
  */
-class FailOn extends CheckAttribute {
-    private final Pattern quickPattern;
-    private final List<String> nodes;
+class FailOnList {
+    private final List<FailOn> failOnList;
+    private final List<CompilePhase> compilePhases;
 
-    public FailOn(List<ParsedNode> nodes, CompilePhase compilePhase) {
-        super(compilePhase);
-        this.nodes = nodes.stream().map(ParsedNode::getNodeString).collect(Collectors.toList());
-        this.quickPattern = Pattern.compile(String.join("|", this.nodes));
+    public FailOnList() {
+        this.failOnList = new ArrayList<>();
+        this.compilePhases = new ArrayList<>();
     }
 
-    @Override
-    public FailOnMatchResult apply(String compilation) {
-        FailOnMatchResult result = new FailOnMatchResult();
-        Matcher matcher = quickPattern.matcher(compilation);
-        if (matcher.find()) {
-            result.setFailures(createFailOnFailures(compilation));
-        }
-        return result;
+    public void add(FailOn failOn, CompilePhase compilePhase) {
+        failOnList.add(failOn);
+        compilePhases.add(compilePhase);
     }
 
-    private List<RegexFailure> createFailOnFailures(String compilation) {
-        List<RegexFailure> regexFailures = new ArrayList<>();
-        for (int i = 0; i < nodes.size(); i++) {
-            checkNode(regexFailures, compilation, nodes.get(i), i + 1);
-        }
-        return regexFailures;
-    }
-
-    private void checkNode(List<RegexFailure> regexFailures, String compilation, String node, int nodeId) {
-        Pattern p = Pattern.compile(node);
-        Matcher m = p.matcher(compilation);
-        if (m.find()) {
-            List<String> matches = getMatchedNodes(m);
-            regexFailures.add(new FailOnRegexFailure(node, nodeId, matches));
-        }
-    }
 }

@@ -21,34 +21,19 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule;
+package compiler.lib.ir_framework.driver.irmatching.parser;
 
 import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.IR;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Matcher;
+public class DefaultPhaseParsedNode extends ParsedNode {
+    private final CompilePhase compilePhase;
 
-/**
- * Base class representing a check attribute of an IR rule.
- *
- * @see IR
- */
-abstract class CheckAttribute {
-    protected final CompilePhase compilePhase;
-
-    protected CheckAttribute(CompilePhase compilePhase) {
+    public DefaultPhaseParsedNode(String nodeString, CompilePhase compilePhase) {
+        super(nodeString);
         this.compilePhase = compilePhase;
     }
 
-    abstract CheckAttributeMatchResult apply(String compilation);
-
-    protected List<String> getMatchedNodes(Matcher m) {
-        List<String> matches = new ArrayList<>();
-        do {
-            matches.add(m.group());
-        } while (m.find());
-        return matches;
+    public CompilePhase getCompilePhase() {
+        return compilePhase;
     }
 }

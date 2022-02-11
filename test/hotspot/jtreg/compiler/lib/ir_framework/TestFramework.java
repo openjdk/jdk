@@ -301,8 +301,8 @@ public class TestFramework {
      * @return the same framework instance.
      */
     public TestFramework addScenarios(Scenario... scenarios) {
-        TestFormat.checkThrow(scenarios != null && Arrays.stream(scenarios).noneMatch(Objects::isNull),
-                         "A scenario cannot be null");
+        TestFormat.checkAndReport(scenarios != null && Arrays.stream(scenarios).noneMatch(Objects::isNull),
+                                  "A scenario cannot be null");
         if (this.scenarios == null) {
             this.scenarios = new ArrayList<>();
             this.scenarioIndices = new HashSet<>();
@@ -404,7 +404,7 @@ public class TestFramework {
      * @return the same framework instance.
      */
     public TestFramework setDefaultWarmup(int defaultWarmup) {
-        TestFormat.checkThrow(defaultWarmup >= 0, "Cannot specify a negative default warm-up");
+        TestFormat.checkAndReport(defaultWarmup >= 0, "Cannot specify a negative default warm-up");
         this.defaultWarmup = defaultWarmup;
         return this;
     }

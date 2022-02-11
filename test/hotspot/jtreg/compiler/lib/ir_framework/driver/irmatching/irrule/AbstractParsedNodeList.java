@@ -23,32 +23,21 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule;
 
-import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.driver.irmatching.parser.ParsedNode;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
 
-/**
- * Base class representing a check attribute of an IR rule.
- *
- * @see IR
- */
-abstract class CheckAttribute {
-    protected final CompilePhase compilePhase;
+public abstract class AbstractParsedNodeList {
+    protected final List<ParsedNode> parsedNodes;
 
-    protected CheckAttribute(CompilePhase compilePhase) {
-        this.compilePhase = compilePhase;
+    public AbstractParsedNodeList() {
+        this.parsedNodes = new ArrayList<>();
     }
 
-    abstract CheckAttributeMatchResult apply(String compilation);
+    abstract public void addNode(ParsedNode parsedNode);
 
-    protected List<String> getMatchedNodes(Matcher m) {
-        List<String> matches = new ArrayList<>();
-        do {
-            matches.add(m.group());
-        } while (m.find());
-        return matches;
+    public List<ParsedNode> getParsedNodes() {
+        return parsedNodes;
     }
 }

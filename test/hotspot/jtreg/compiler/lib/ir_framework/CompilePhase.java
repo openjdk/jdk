@@ -23,13 +23,16 @@
 
 package compiler.lib.ir_framework;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public enum CompilePhase {
-    DEFAULT("PrintIdeal and PrintOptoAssembly", 0),
+    DEFAULT("PrintIdeal and PrintOptoAssembly", 0, OutputType.DEFAULT),
     PRINT_IDEAL("print_ideal", 0), // TODO: change to PrintIdeal
-    PRINT_OPTO_ASSEMBLY("PrintOptoAssembly", 0),
+    PRINT_OPTO_ASSEMBLY("PrintOptoAssembly", 0, OutputType.OPTO_ASSEMBLY),
 
     // All available phases found in phasetype.hpp with the corresponding levels found throughout the C2 code
     BEFORE_STRINGOPTS("Before StringOpts", 3),
@@ -54,40 +57,79 @@ public enum CompilePhase {
     ITER_GVN2("Iter GVN 2", 2),
     PHASEIDEALLOOP_ITERATIONS("PhaseIdealLoop iterations", 2),
     OPTIMIZE_FINISHED("Optimize finished", 2),
-    GLOBAL_CODE_MOTION("Global code motion", 2),
-    FINAL_CODE("Final Code", 1),
+    GLOBAL_CODE_MOTION("Global code motion", 2, OutputType.MACH),
+    FINAL_CODE("Final Code", 1, OutputType.MACH),
     AFTER_EA("After Escape Analysis", 2),
     BEFORE_CLOOPS("Before CountedLoop", 3),
     AFTER_CLOOPS("After CountedLoop", 3),
     BEFORE_BEAUTIFY_LOOPS("Before beautify loops", 3),
     AFTER_BEAUTIFY_LOOPS("After beautify loops", 3),
     BEFORE_MATCHING("Before matching", 1),
-    MATCHING("After matching", 2),
+    MATCHING("After matching", 2, OutputType.MACH),
     INCREMENTAL_INLINE("Incremental Inline", 2),
     INCREMENTAL_INLINE_STEP("Incremental Inline Step", 3),
     INCREMENTAL_INLINE_CLEANUP("Incremental Inline Cleanup", 3),
     INCREMENTAL_BOXING_INLINE("Incremental Boxing Inline", 2),
-    MACRO_EXPANSION("Macro expand", 2),
-    BARRIER_EXPANSION("Barrier expand", 2),
+    MACRO_EXPANSION("Macro expand", 2, OutputType.MACH),
+    BARRIER_EXPANSION("Barrier expand", 2, OutputType.MACH),
     END("End", 3),
 
 //    ALL("All", 3), // Apply for all phases if custom regex or all applicable phases if default regex (some might be unsupported, skip in this case) TODO
     ;
 
     private static final Map<String, CompilePhase> PHASES_BY_NAME = new HashMap<>();
+    private static final List<CompilePhase> IDEAL_PHASES;
+    private static final List<CompilePhase> MACH_PHASES;
 
     static {
         for (CompilePhase phase : CompilePhase.values()) {
             PHASES_BY_NAME.put(phase.name, phase);
         }
+        IDEAL_PHASES = initIdealPhases();
+        MACH_PHASES = initMachPhases();
     }
 
+    private static List<CompilePhase> initIdealPhases() {
+        return Arrays.stream(CompilePhase.values())
+                     .filter(phase -> phase.outputType == OutputType.IDEAL)
+                     .collect(Collectors.toList());
+    }
+
+    private static List<CompilePhase> initMachPhases() {
+        return Arrays.stream(CompilePhase.values())
+                     .filter(phase -> phase.outputType == OutputType.MACH)
+                     .collect(Collectors.toList());
+    }
+
+    public static List<CompilePhase> getIdealPhases() {
+        return IDEAL_PHASES;
+    }
+
+    public static List<CompilePhase> getMachPhases() {
+        return MACH_PHASES;
+    }
+
+    public static boolean isDefaultPhase(CompilePhase compilePhase) {
+        return compilePhase == PRINT_IDEAL || compilePhase == PRINT_OPTO_ASSEMBLY;
+    }
+
+    private enum OutputType {
+        IDEAL, MACH, OPTO_ASSEMBLY, DEFAULT;
+    }
     private final String name;
     private final int level;
+    private final OutputType outputType;
 
     CompilePhase(String name, int level) {
         this.name = name;
         this.level = level;
+        this.outputType = OutputType.IDEAL;
+    }
+
+    CompilePhase(String name, int level, OutputType outputType) {
+        this.name = name;
+        this.level = level;
+        this.outputType = outputType;
     }
 
     public int getLevel() {
