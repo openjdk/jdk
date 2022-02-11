@@ -3655,7 +3655,7 @@ void PointsToNode::dump_header(bool print_state, outputStream* out) const {
 }
 
 void PointsToNode::dump(bool print_state, outputStream* out) const {
-  dump_header(print_state);
+  dump_header(print_state, out);
   if (is_Field()) {
     FieldNode* f = (FieldNode*)this;
     if (f->is_oop()) {
