@@ -1395,6 +1395,11 @@ final class ServerHello {
             chc.handshakeConsumers.put(
                     SSLHandshake.CERTIFICATE_REQUEST.id,
                     SSLHandshake.CERTIFICATE_REQUEST);
+            if (chc.certInflaters != null && !chc.certInflaters.isEmpty()) {
+                chc.handshakeConsumers.put(
+                        SSLHandshake.COMPRESSED_CERTIFICATE.id,
+                        SSLHandshake.COMPRESSED_CERTIFICATE);
+            }
             chc.handshakeConsumers.put(
                     SSLHandshake.CERTIFICATE.id,
                     SSLHandshake.CERTIFICATE);

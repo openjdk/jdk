@@ -46,17 +46,6 @@ enum CompressionAlgorithm {
         this.name = name;
     }
 
-    static CompressionAlgorithm valueOf(int id) {
-        for (CompressionAlgorithm cca :
-                CompressionAlgorithm.values()) {
-            if (cca.id == id) {
-                return cca;
-            }
-        }
-
-        return null;
-    }
-
     static CompressionAlgorithm nameOf(String name) {
         for (CompressionAlgorithm cca :
                 CompressionAlgorithm.values()) {
@@ -87,6 +76,15 @@ enum CompressionAlgorithm {
     // Get local supported algorithm collection.
     static Map<Integer, Function<byte[], byte[]>> findInflaters(
             SSLConfiguration config) {
+        if (config.certInflaters == null || config.certInflaters.isEmpty()) {
+            if (SSLLogger.isOn &&
+                    SSLLogger.isOn("ssl,handshake,verbose")) {
+                SSLLogger.finest(
+                    "No supported certificate compression algorithms");
+            }
+            return Map.of();
+        }
+
         Map<Integer, Function<byte[], byte[]>> inflaters =
                 new LinkedHashMap<>(config.certInflaters.size());
         for (Map.Entry<String, Function<byte[], byte[]>> entry :

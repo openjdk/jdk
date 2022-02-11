@@ -935,6 +935,11 @@ final class CertificateRequest {
             // update
             //
             shc.certRequestContext = crm.requestContext.clone();
+            if (shc.certInflaters != null && !shc.certInflaters.isEmpty()) {
+                    shc.handshakeConsumers.put(
+                        SSLHandshake.COMPRESSED_CERTIFICATE.id,
+                        SSLHandshake.COMPRESSED_CERTIFICATE);
+            }
             shc.handshakeConsumers.put(SSLHandshake.CERTIFICATE.id,
                     SSLHandshake.CERTIFICATE);
             shc.handshakeConsumers.put(SSLHandshake.CERTIFICATE_VERIFY.id,

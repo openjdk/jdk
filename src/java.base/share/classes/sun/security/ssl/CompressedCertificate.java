@@ -81,8 +81,10 @@ final class CompressedCertificate {
             this.compressedCert = Record.getBytes24(m);
 
             if (m.hasRemaining()) {
-                throw handshakeContext.conContext.fatal(Alert.HANDSHAKE_FAILURE,
-                    "Invalid CompressedCertificate message: unknown extra data");
+                throw handshakeContext.conContext.fatal(
+                        Alert.HANDSHAKE_FAILURE,
+                        "Invalid CompressedCertificate message: " +
+                        "unknown extra data");
             }
         }
 
@@ -109,18 +111,18 @@ final class CompressedCertificate {
                     """
                             "CompressedCertificate": '{'
                               "algorithm": "{0}",
-                              "uncompressed_length": [{1}
-                            ]
-                              "compressed_certificate_message": [{2}
-                            ]
+                              "uncompressed_length": {1}
+                              "compressed_certificate_message": [
+                            {2}
+                              ]
                             '}'""",
                 Locale.ENGLISH);
 
             HexDumpEncoder hexEncoder = new HexDumpEncoder();
             Object[] messageFields = {
-                Utilities.toHexString(algorithmId),
-                Utilities.toHexString(uncompressedLength),
-                Utilities.indent(hexEncoder.encode(compressedCert))
+                CompressionAlgorithm.nameOf(algorithmId),
+                uncompressedLength,
+                Utilities.indent(hexEncoder.encode(compressedCert), "    ")
             };
 
             return messageFormat.format(messageFields);
@@ -150,9 +152,20 @@ final class CompressedCertificate {
             HandshakeOutStream hos = new HandshakeOutStream(null);
             message.send(hos);
             byte[] certMsg = hos.toByteArray();
+            byte[] compressedCertMsg =
+                    hc.certDeflater.getValue().apply(certMsg);
+            if (compressedCertMsg == null || compressedCertMsg.length == 0) {
+                throw hc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                        "No compressed Certificate data");
+            }
+
             CompressedCertMessage ccm = new CompressedCertMessage(hc,
                     hc.certDeflater.getKey(), certMsg.length,
-                    hc.certDeflater.getValue().apply(certMsg));
+                    compressedCertMsg);
+
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                SSLLogger.fine("Produced Compressed Certificate message", ccm);
+            }
 
             ccm.write(hc.handshakeOutput);
             hc.handshakeOutput.flush();
@@ -190,7 +203,7 @@ final class CompressedCertificate {
 
             // check the compression algorithm
             Function<byte[], byte[]> inflater =
-                    hc.localCertInflaters.get(ccm.algorithmId);
+                    hc.certInflaters.get(ccm.algorithmId);
             if (inflater == null) {
                 throw hc.conContext.fatal(Alert.BAD_CERTIFICATE,
                     "Unsupported certificate compression algorithm");
@@ -203,7 +216,7 @@ final class CompressedCertificate {
             if (certificateMessage == null ||
                     certificateMessage.length != ccm.uncompressedLength) {
                 throw hc.conContext.fatal(Alert.BAD_CERTIFICATE,
-                    "Unsupported certificate compression algorithm");
+                    "Improper certificate compression");
             }
 
             // Call the Certificate handshake message consumer.

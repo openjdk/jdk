@@ -272,7 +272,7 @@ enum Alert {
                         throw tc.fatal(Alert.HANDSHAKE_FAILURE,
                             "received handshake warning: " + alert.description);
                     } else {
-                        // Otherwise ignore the warning but remove the
+                        // Otherwise, ignore the warning but remove the
                         // Certificate and CertificateVerify handshake
                         // consumer so the state machine doesn't expect it.
                         tc.handshakeContext.handshakeConsumers.remove(

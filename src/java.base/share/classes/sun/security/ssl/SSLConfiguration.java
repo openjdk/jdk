@@ -271,6 +271,12 @@ final class SSLConfiguration implements Cloneable {
 
         this.certDeflaters = params.getCertificateDeflaters();
         this.certInflaters = params.getCertificateInflaters();
+        if (SSLLogger.isOn &&
+                SSLLogger.isOn("ssl,handshake,verbose")) {
+            SSLLogger.finest(
+                    "certInflaters: " + this.certInflaters);
+        }
+
         this.preferLocalCipherSuites = params.getUseCipherSuitesOrder();
         this.enableRetransmissions = params.getEnableRetransmissions();
         this.maximumPacketSize = params.getMaximumPacketSize();

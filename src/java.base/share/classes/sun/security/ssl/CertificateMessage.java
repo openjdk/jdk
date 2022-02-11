@@ -1159,6 +1159,7 @@ final class CertificateMessage {
             HandshakeContext hc = (HandshakeContext)context;
 
             // clean up this consumer
+            hc.handshakeConsumers.remove(SSLHandshake.COMPRESSED_CERTIFICATE.id);
             hc.handshakeConsumers.remove(SSLHandshake.CERTIFICATE.id);
             T13CertificateMessage cm = new T13CertificateMessage(hc, message);
             if (hc.sslConfig.isClientMode) {

@@ -705,7 +705,7 @@ public class SSLParameters {
     public void setCertificateDeflaters(
             Map<String, Function<byte[], byte[]>> certDeflaters) {
         // TODO
-        this.certDeflaters = certDeflaters;
+        this.certDeflaters = Map.of();
     }
 
     /**

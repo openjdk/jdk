@@ -142,8 +142,8 @@ abstract class HandshakeContext implements ConnectionContext {
     List<SignatureScheme>                   peerRequestedCertSignSchemes;
 
     // CertificateCompressionAlgorithm
-    Map<Integer, Function<byte[], byte[]>>  localCertInflaters;
-    Map.Entry<Integer, Function<byte[], byte[]>> certDeflater;
+    Map<Integer, Function<byte[], byte[]>>          certInflaters;
+    Map.Entry<Integer, Function<byte[], byte[]>>    certDeflater;
 
     // Known authorities
     X500Principal[]                         peerSupportedAuthorities = null;
