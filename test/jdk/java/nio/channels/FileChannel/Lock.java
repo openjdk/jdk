@@ -144,7 +144,8 @@ public class Lock {
                 try (FileLock lock = b ? channel.lock(position, 0, false) :
                     channel.tryLock(position, 0, false)) {
                     if(lock.size() != expectedSize)
-                        throw new RuntimeException("Size not " + expectedSize +
+                        throw new RuntimeException("Lock size " + lock.size() +
+                            " != " + expectedSize +
                             " for position " + position + " of " +
                             (shared ? "exclusive" : "shared") + " lock");
                 }

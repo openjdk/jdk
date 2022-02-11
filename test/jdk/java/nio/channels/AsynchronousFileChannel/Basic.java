@@ -199,8 +199,8 @@ public class Basic {
                 fl = ch.lock(pos, 0, false).get();
                 long expectedSize = Long.MAX_VALUE - pos;
                 if(fl.size() != expectedSize)
-                    throw new RuntimeException("Lock size not " +
-                        expectedSize + " for position " + pos);
+                    throw new RuntimeException("Lock size " + fl.size() +
+                        " != " + expectedSize + " for position " + pos);
             } catch (ExecutionException x) {
                 throw new RuntimeException(x);
             } catch (InterruptedException x) {
@@ -220,8 +220,8 @@ public class Basic {
             fl = ch.tryLock(pos, 0, false);
             long expectedSize = Long.MAX_VALUE - pos;
             if(fl.size() != expectedSize)
-                throw new RuntimeException("Lock size not " + expectedSize +
-                    " for position " + pos);
+                throw new RuntimeException("Lock size " + fl.size() + " != " +
+                    expectedSize + " for position " + pos);
             if (fl == null)
                 throw new RuntimeException("Unable to acquire lock");
             try {
