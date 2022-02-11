@@ -145,7 +145,7 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
     private String toStringImpl() {
         StringBuilder result = new StringBuilder(128);
         result.append('@');
-        // Guard against shouldn't-happen NPE for a missing canonical name
+        // Guard against null canonical name; shouldn't happen
         result.append(Objects.toString(type.getCanonicalName(),
                                        "<no canonical name>"));
         result.append('(');
@@ -241,8 +241,7 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
      * string representation of an annotation.
      */
     private static String toSourceString(Class<?> clazz) {
-        // Guard against NPE in toString generation if the class lacks
-        // a canonical name; not expected to happen
+        // Guard against null canonical name; shouldn't happen
         return Objects.toString(clazz.getCanonicalName(),
                                 "<no canonical name>") + ".class";
     }
