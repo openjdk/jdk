@@ -37,6 +37,7 @@ import javax.swing.JSpinner;
 import javax.swing.SpinnerDateModel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+
 import static javax.swing.UIManager.getInstalledLookAndFeels;
 
 /*
@@ -45,9 +46,9 @@ import static javax.swing.UIManager.getInstalledLookAndFeels;
  * @bug 4670051
  * @summary Checks whether JSpinner with a SpinnerDateModel
  *          spins the field where cursor is located.
- * @run main JSpinnerFieldUnderCursorTest
+ * @run main DateFieldUnderCursorTest
  */
-public class JSpinnerFieldUnderCursorTest {
+public class DateFieldUnderCursorTest {
 
     private static final Calendar expected = Calendar.getInstance();
     private static final Calendar actual = Calendar.getInstance();
@@ -136,7 +137,7 @@ public class JSpinnerFieldUnderCursorTest {
                     throw new RuntimeException("Test Failed as one or more cases failed");
                 }
             } finally {
-                SwingUtilities.invokeAndWait(JSpinnerFieldUnderCursorTest::disposeFrame);
+                SwingUtilities.invokeAndWait(DateFieldUnderCursorTest::disposeFrame);
             }
         }
     }
@@ -165,9 +166,9 @@ public class JSpinnerFieldUnderCursorTest {
 
 
     public static boolean compareDates() {
-        return (expected.get(Calendar.DATE) == actual.get(Calendar.DATE)) &&
-                (expected.get(Calendar.MONTH) == actual.get(Calendar.MONTH)) &&
-                (expected.get(Calendar.YEAR) == actual.get(Calendar.YEAR));
+        return (expected.get(Calendar.DATE) == actual.get(Calendar.DATE))
+                && (expected.get(Calendar.MONTH) == actual.get(Calendar.MONTH))
+                && (expected.get(Calendar.YEAR) == actual.get(Calendar.YEAR));
     }
 
     private static void checkResult() {
