@@ -375,10 +375,10 @@ public final class LinuxHelper {
 
         test.addInstallVerifier(cmd -> {
             // Verify .desktop files.
-            try (var files = Files.walk(cmd.appLayout().destktopIntegrationDirectory(), 1)) {
+            try (var files = Files.list(cmd.appLayout().destktopIntegrationDirectory())) {
                 List<Path> desktopFiles = files
                         .filter(path -> path.getFileName().toString().endsWith(".desktop"))
-                        .collect(Collectors.toList());
+                        .toList();
                 if (!integrated) {
                     TKit.assertStringListEquals(List.of(),
                             desktopFiles.stream().map(Path::toString).collect(
@@ -482,23 +482,18 @@ public final class LinuxHelper {
 
                 String desktopFileName = queryMimeTypeDefaultHandler(mimeType);
 
-                Path desktopFile = getSystemDesktopFilesFolder().resolve(
+                Path systemDesktopFile = getSystemDesktopFilesFolder().resolve(
+                        desktopFileName);
+                Path appDesktopFile = cmd.appLayout().destktopIntegrationDirectory().resolve(
                         desktopFileName);
 
-                TKit.assertFileExists(desktopFile);
+                TKit.assertFileExists(systemDesktopFile);
+                TKit.assertFileExists(appDesktopFile);
 
-                TKit.trace(String.format("Reading [%s] file...", desktopFile));
-                String mimeHandler = Files.readAllLines(desktopFile).stream().peek(
-                        v -> TKit.trace(v)).filter(
-                                v -> v.startsWith("Exec=")).map(
-                                v -> v.split("=", 2)[1]).findFirst().orElseThrow();
-
-                TKit.trace(String.format("Done"));
-
-                TKit.assertEquals(cmd.appLauncherPath().toString(),
-                        mimeHandler, String.format(
-                                "Check mime type handler is the main application launcher"));
-
+                TKit.assertStringListEquals(Files.readAllLines(appDesktopFile),
+                        Files.readAllLines(systemDesktopFile), String.format(
+                        "Check [%s] file is a copy of [%s] file",
+                        systemDesktopFile, appDesktopFile));
             });
         });
 
