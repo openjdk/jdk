@@ -435,6 +435,9 @@ void VM_Version::initialize() {
 
   // The frame pointer must be preserved for ROP protection.
   if (_rop_protection == true) {
+    if (FLAG_IS_DEFAULT(PreserveFramePointer) == false && PreserveFramePointer == false ) {
+      vm_exit_during_initialization(err_msg("PreserveFramePointer cannot be disabled for ROP-protection"));
+    }
     PreserveFramePointer = true;
   }
 
