@@ -206,13 +206,16 @@ G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask(G1EvacFailureRegi
 void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
 
   // TODO: maybe only allocate and iterate through evacuation failed regions
-  size_t marked_words_in_regions[_evac_failure_regions->max_regions()];
-  memset(marked_words_in_regions, 0, sizeof marked_words_in_regions);
+  uint max_regions = _evac_failure_regions->max_regions();
+  size_t* marked_words_in_regions = NEW_C_HEAP_ARRAY(size_t, max_regions, mtGC);
+  memset(marked_words_in_regions, 0, sizeof(size_t) * max_regions);
   RemoveSelfForwardPtrHRChunkClosure chunk_closure(marked_words_in_regions, worker_id);
 
   // Iterate through all chunks in regions that failed evacuation during the entire collection.
   _evac_failure_regions->par_iterate_chunks_in_regions(&chunk_closure, worker_id);
 
+  Ticks start = Ticks::now();
+  G1GCPhaseTimes* phase_times = G1CollectedHeap::heap()->phase_times();
   // Sync marked words of regions to HeapRegion.
   for (uint idx = 0; idx < _evac_failure_regions->max_regions(); idx++) {
     if (marked_words_in_regions[idx] > 0) {
@@ -220,6 +223,9 @@ void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
       region->note_self_forwarding_removal_end_par(marked_words_in_regions[idx] * BytesPerWord);
     }
   }
+  phase_times->record_or_add_time_secs(G1GCPhaseTimes::SyncMarkedWordInRetainedRegions, worker_id, (Ticks::now() - start).seconds());
+
+  FREE_C_HEAP_ARRAY(size_t, marked_words_in_regions);
 }
 
 uint G1ParRemoveSelfForwardPtrsTask::num_failed_regions() const {
