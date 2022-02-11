@@ -162,7 +162,7 @@ public class TitledBorder extends AbstractBorder
      * @param title  the title the border should display
      */
     public TitledBorder(String title) {
-        this(null, title, LEADING, DEFAULT_POSITION, null, Color.BLUE);
+        this(null, title, LEADING, DEFAULT_POSITION, null, null);
     }
 
     /**

@@ -1,5 +1,6 @@
 import java.awt.BorderLayout;
 import java.awt.Graphics2D;
+import java.awt.Robot;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -33,13 +34,18 @@ public class TitledBorderTest {
     SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
     SwingUtilities.invokeAndWait(() -> createAndShowGUI());
 
-    BufferedImage buff = new BufferedImage(frame.getWidth(), frame.getHeight(),
+    Robot robot = new Robot();
+
+    BufferedImage buff = new BufferedImage(frame.getWidth()*2, frame.getHeight()*2,
             BufferedImage.TYPE_INT_ARGB);
     Graphics2D graph = buff.createGraphics();
-    childPanel.paint(graph);
+    graph.scale(1.5, 1.5);
+    frame.paint(graph);
     graph.dispose();
 
-    if (buff.getRGB(2,20) != -6250336) {
+    robot.waitForIdle();
+    if (buff.getRGB(20,80) != -6250336) {
+      System.out.println("Color " + buff.getRGB(21, 80));
       saveImage(buff, "test.png");
       throw new RuntimeException("Border was clipped or overdrawn.");
     }
@@ -49,6 +55,8 @@ public class TitledBorderTest {
 
   private static void createAndShowGUI() {
     frame = new JFrame("Swing Test");
+    frame.setSize(new java.awt.Dimension(300, 200));
+    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
     parentPanel = new JPanel(new BorderLayout());
     parentPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -63,6 +71,7 @@ public class TitledBorderTest {
 
     frame.pack();
     frame.setLocationRelativeTo(null);
+    frame.setVisible(true);
   }
 
   private static void saveImage(BufferedImage image, String filename) {
