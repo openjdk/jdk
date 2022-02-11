@@ -4921,16 +4921,18 @@ int os::create_binary_file(const char* path, bool rewrite_existing) {
   return ::open64(path, oflags, S_IREAD | S_IWRITE);
 }
 
-PRAGMA_DIAG_PUSH
-PRAGMA_PERMIT_FORBIDDEN_C_FUNCTION(lseek64);
+off64_t call_lseek64(int fd, off64_t offset, int whence) {
+  ALLOW_CALL("lseek64", return ::lseek64(fd, offset, whence))
+}
+
 // return current position of file pointer
 jlong os::current_file_offset(int fd) {
-  return (jlong)::lseek64(fd, (off64_t)0, SEEK_CUR);
+  return (jlong)call_lseek64(fd, (off64_t)0, SEEK_CUR);
 }
 
 // move file pointer to the specified offset
 jlong os::seek_to_file_offset(int fd, jlong offset) {
-  return (jlong)::lseek64(fd, (off64_t)offset, SEEK_SET);
+  return (jlong)call_lseek64(fd, (off64_t)offset, SEEK_SET);
 }
 
 // This code originates from JDK's sysAvailable
@@ -4951,17 +4953,16 @@ int os::available(int fd, jlong *bytes) {
       }
     }
   }
-  if ((cur = ::lseek64(fd, 0L, SEEK_CUR)) == -1) {
+  if ((cur = call_lseek64(fd, 0L, SEEK_CUR)) == -1) {
     return 0;
-  } else if ((end = ::lseek64(fd, 0L, SEEK_END)) == -1) {
+  } else if ((end = call_lseek64(fd, 0L, SEEK_END)) == -1) {
     return 0;
-  } else if (::lseek64(fd, cur, SEEK_SET) == -1) {
+  } else if (call_lseek64(fd, cur, SEEK_SET) == -1) {
     return 0;
   }
   *bytes = end - cur;
   return 1;
 }
-PRAGMA_DIAG_POP
 
 // Map a block of memory.
 char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,

@@ -71,8 +71,12 @@
 #define FORBID_C_FUNCTION(signature, alternative) \
   extern "C" signature __attribute__((__warning__(alternative)))
 
-#define PRAGMA_PERMIT_FORBIDDEN_C_FUNCTION(name) \
-  PRAGMA_DISABLE_GCC_WARNING("-Wattribute-warning")
+#define ALLOW_CALL(name, invocation) \
+PRAGMA_DIAG_PUSH \
+PRAGMA_DISABLE_GCC_WARNING("-Wattribute-warning") \
+invocation; \
+PRAGMA_DIAG_POP
+
 
 FORBID_C_FUNCTION(int      connect(int, const struct sockaddr*, socklen_t), "use os::connect");
 FORBID_C_FUNCTION(FILE*    fdopen(int, const char*),                  "use os::fdopen");

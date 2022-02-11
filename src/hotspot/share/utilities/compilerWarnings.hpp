@@ -74,8 +74,8 @@
 #define FORBID_C_FUNCTION(signature, alternative)
 #endif
 
-#ifndef PRAGMA_PERMIT_FORBIDDEN_C_FUNCTION
-#define PRAGMA_PERMIT_FORBIDDEN_C_FUNCTION(name)
+#ifndef ALLOW_CALL
+#define ALLOW_CALL(name, invocation) invocation;
 #endif
 
 #endif // SHARE_UTILITIES_COMPILERWARNINGS_HPP
