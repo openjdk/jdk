@@ -247,8 +247,7 @@ public abstract class NativeLibraries {
         private JniNativeLibraries(ClassLoader loader) {
             // for null loader, default the caller to this class and
             // do not search java.library.path
-            super(loader, loader != null ? null : NativeLibraries.class,
-                    loader != null ? true : false);
+            super(loader, loader != null ? null : NativeLibraries.class, loader != null);
         }
 
         /**
