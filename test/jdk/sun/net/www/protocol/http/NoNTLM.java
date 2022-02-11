@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,7 +163,7 @@ public class NoNTLM {
             // client ---- GET ---> server
             // client <--- 401 ---- server
             try (Socket s = ss.accept()) {
-                new HttpHeaderParser(s.getInputStream());
+                new HttpHeaderParser().parse(s.getInputStream());
                 s.getOutputStream().write(reply.getBytes("US-ASCII"));
             }
 
@@ -171,7 +171,8 @@ public class NoNTLM {
             // client <--- 200 ---- server
             String auth;
             try (Socket s = ss.accept()) {
-                HttpHeaderParser mh = new HttpHeaderParser(s.getInputStream());
+                HttpHeaderParser mh = new HttpHeaderParser();
+                mh.parse(s.getInputStream());
                 s.getOutputStream().write(OKAY.getBytes("US-ASCII"));
                 auth = mh.getHeaderValue("Authorization").get(0);
             }
@@ -207,7 +208,7 @@ public class NoNTLM {
             // client ---- GET ---> server
             // client <--- 401 ---- client
             try (Socket s = ss.accept()) {
-                new HttpHeaderParser(s.getInputStream());
+                new HttpHeaderParser().parse(s.getInputStream());
                 s.getOutputStream().write(reply.getBytes("US-ASCII"));
             }
 
