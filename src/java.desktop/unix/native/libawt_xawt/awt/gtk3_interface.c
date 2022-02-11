@@ -2872,8 +2872,7 @@ inline static int scale_down_to_minus_inf(int what, int scale) {
 }
 
 static gboolean gtk3_get_drawable_data(JNIEnv *env, jintArray pixelArray,
-     int x, jint y, jint width, jint height, jint jwidth, int dx, int dy,
-                                                                   jint scale) {
+     int x, jint y, jint width, jint height, jint jwidth, int dx, int dy) {
     GdkPixbuf *pixbuf;
     jint *ary;
 
@@ -2904,20 +2903,6 @@ static gboolean gtk3_get_drawable_data(JNIEnv *env, jintArray pixelArray,
             root, x_scaled, y_scaled, width_scaled, height_scaled);
     } else {
         pixbuf = (*fp_gdk_pixbuf_get_from_drawable)(root, x, y, width, height);
-    }
-
-    if (pixbuf && scale != 1) {
-        GdkPixbuf *scaledPixbuf;
-        x /= scale;
-        y /= scale;
-        width /= scale;
-        height /= scale;
-        dx /= scale;
-        dy /= scale;
-        scaledPixbuf = (*fp_gdk_pixbuf_scale_simple)(pixbuf, width, height,
-                                                     GDK_INTERP_BILINEAR);
-        (*fp_g_object_unref)(pixbuf);
-        pixbuf = scaledPixbuf;
     }
 
     if (pixbuf) {
