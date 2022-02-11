@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dialog;
 import java.awt.Dimension;
+import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -54,10 +55,10 @@ public class TextAAHintsTest extends Component {
     private static final String black = "This text should be solid black";
     private static final String gray  = "This text should be gray scale anti-aliased";
     private static final String lcd   = "This text should be LCD sub-pixel text (coloured).";
-    public static final CountDownLatch countDownLatch = new CountDownLatch(1);
+    private static final CountDownLatch countDownLatch = new CountDownLatch(1);
+    private static volatile String failureReason;
+    private static volatile boolean testPassed = false;
     private static Frame frame;
-    public static String failureReason;
-    public static volatile boolean testPassed = false;
 
     public void paint(Graphics g) {
 
@@ -183,7 +184,7 @@ public class TextAAHintsTest extends Component {
         });
         Button failButton = new Button("Fail");
         failButton.addActionListener(e -> {
-            readFailedReason();
+            getFailureReason();
             testPassed = false;
             countDownLatch.countDown();
             frame.dispose();
@@ -196,7 +197,7 @@ public class TextAAHintsTest extends Component {
         frame.setVisible(true);
     }
 
-    public static void readFailedReason() {
+    public static void getFailureReason() {
         // Show dialog to read why the testcase was failed and append the
         // testcase failure reason to the output
         final Dialog dialog = new Dialog(frame, "TestCase" +
@@ -218,9 +219,9 @@ public class TextAAHintsTest extends Component {
     }
 
     public static void main(String[] args) throws InterruptedException, InvocationTargetException {
-        java.awt.EventQueue.invokeAndWait(TextAAHintsTest::createTestUI);
+        EventQueue.invokeAndWait(TextAAHintsTest::createTestUI);
         if (!countDownLatch.await(2, TimeUnit.MINUTES)) {
-            java.awt.EventQueue.invokeAndWait(() -> {
+            EventQueue.invokeAndWait(() -> {
                 if (frame != null) {
                     frame.dispose();
                 }
