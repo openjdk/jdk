@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -74,8 +75,6 @@ public class PrintIdealPhaseTest {
         List<String> options = new ArrayList<String>();
         options.add("-Xbatch");
         options.add("-XX:+PrintCompilation");
-        options.add("-XX:-TieredCompilation");
-        options.add("-XX:CICompilerCount=1");
         options.add("-XX:LogFile="+logFile);
         options.add("-XX:+IgnoreUnrecognizedVMOptions");
         options.add("-XX:CompileCommand=PrintIdealPhase," + getTestClass() + "::test," + cmdPhases);
@@ -90,7 +89,7 @@ public class PrintIdealPhaseTest {
             .shouldNotContain("# A fatal error has been detected by the Java Runtime Environment");
 
              // Check that all the expected phases matches what can be found in the compilation log file
-             List<String> loggedPhases = parseLogFile(logFile);
+             HashSet<String> loggedPhases = parseLogFile(logFile);
              System.out.println("Logged phases:");
              for (String loggedPhase : loggedPhases) {
                  System.out.println("loggedPhase: "+ loggedPhase);
@@ -110,10 +109,10 @@ public class PrintIdealPhaseTest {
         }
     }
 
-    private ArrayList<String> parseLogFile(String logFile) {
+    private HashSet<String> parseLogFile(String logFile) {
         String printIdealTag = "<ideal";
         Pattern compilePhasePattern = Pattern.compile("compile_phase='([a-zA-Z0-9 ]+)'");
-        ArrayList<String> phasesFound = new ArrayList<>();
+        HashSet<String> phasesFound = new HashSet<>();
 
         try (var br = Files.newBufferedReader(Paths.get(logFile))) {
             String line;
