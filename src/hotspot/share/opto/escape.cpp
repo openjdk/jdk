@@ -229,7 +229,6 @@ bool ConnectionGraph::compute_escape() {
     }
     tty->print_cr("+++++ Calculating escapse states and scalar replaceability");
   }
-  ResourceMark rm; // for any trace message construction
 #endif
 
   if (non_escaped_allocs_worklist.length() == 0) {
