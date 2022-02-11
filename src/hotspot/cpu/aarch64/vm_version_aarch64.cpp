@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -197,8 +197,10 @@ void VM_Version::initialize() {
     }
   }
 
-  // Neoverse N1
-  if (_cpu == CPU_ARM && (_model == 0xd0c || _model2 == 0xd0c)) {
+  // Neoverse N1, N2 and V1
+  if (_cpu == CPU_ARM && ((_model == 0xd0c || _model2 == 0xd0c)
+                          || (_model == 0xd49 || _model2 == 0xd49)
+                          || (_model == 0xd40 || _model2 == 0xd40))) {
     if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
       FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
     }

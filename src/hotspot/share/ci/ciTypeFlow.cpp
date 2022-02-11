@@ -720,6 +720,11 @@ void ciTypeFlow::StateVector::do_jsr(ciBytecodeStream* str) {
 // ------------------------------------------------------------------
 // ciTypeFlow::StateVector::do_ldc
 void ciTypeFlow::StateVector::do_ldc(ciBytecodeStream* str) {
+  if (str->is_in_error()) {
+    trap(str, NULL, Deoptimization::make_trap_request(Deoptimization::Reason_unhandled,
+                                                      Deoptimization::Action_none));
+    return;
+  }
   ciConstant con = str->get_constant();
   if (con.is_valid()) {
     BasicType basic_type = con.basic_type();
@@ -735,14 +740,10 @@ void ciTypeFlow::StateVector::do_ldc(ciBytecodeStream* str) {
       push_translate(ciType::make(basic_type));
     }
   } else {
-    if (str->is_unresolved_klass_in_error()) {
-      trap(str, NULL, Deoptimization::make_trap_request(Deoptimization::Reason_unhandled,
-                                                        Deoptimization::Action_none));
-    } else {
-      // OutOfMemoryError in the CI while loading constant
-      push_null();
-      outer()->record_failure("ldc did not link");
-    }
+    // OutOfMemoryError in the CI while loading constant.
+    // Unresolved condy also lands here (not yet supported).
+    push_null();
+    outer()->record_failure("ldc did not link");
   }
 }
 
@@ -2173,7 +2174,7 @@ bool ciTypeFlow::can_trap(ciBytecodeStream& str) {
     case Bytecodes::_ldc:
     case Bytecodes::_ldc_w:
     case Bytecodes::_ldc2_w:
-      return str.is_unresolved_klass_in_error();
+      return str.is_in_error();
 
     case Bytecodes::_aload_0:
       // These bytecodes can trap for rewriting.  We need to assume that

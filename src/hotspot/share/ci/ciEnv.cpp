@@ -503,13 +503,6 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
     domain = Handle(current, accessing_klass->protection_domain());
   }
 
-  // setup up the proper type to return on OOM
-  ciKlass* fail_type;
-  if (sym->char_at(0) == JVM_SIGNATURE_ARRAY) {
-    fail_type = _unloaded_ciobjarrayklass;
-  } else {
-    fail_type = _unloaded_ciinstance_klass;
-  }
   Klass* found_klass;
   {
     ttyUnlocker ttyul;  // release tty lock to avoid ordering problems
@@ -591,7 +584,6 @@ ciKlass* ciEnv::get_klass_by_index_impl(const constantPoolHandle& cpool,
                                         int index,
                                         bool& is_accessible,
                                         ciInstanceKlass* accessor) {
-  EXCEPTION_CONTEXT;
   Klass* klass = NULL;
   Symbol* klass_name = NULL;
 
@@ -599,7 +591,7 @@ ciKlass* ciEnv::get_klass_by_index_impl(const constantPoolHandle& cpool,
     klass_name = cpool->symbol_at(index);
   } else {
     // Check if it's resolved if it's not a symbol constant pool entry.
-    klass =  ConstantPool::klass_at_if_loaded(cpool, index);
+    klass = ConstantPool::klass_at_if_loaded(cpool, index);
     // Try to look it up by name.
     if (klass == NULL) {
       klass_name = cpool->klass_name_at(index);
@@ -666,7 +658,6 @@ ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
                                              int pool_index, int cache_index,
                                              ciInstanceKlass* accessor) {
   bool ignore_will_link;
-  EXCEPTION_CONTEXT;
   int index = pool_index;
   if (cache_index >= 0) {
     assert(index < 0, "only one kind of index at a time");
@@ -677,12 +668,14 @@ ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
         return ciConstant(T_OBJECT, get_object(NULL));
       }
       BasicType bt = T_OBJECT;
-      if (cpool->tag_at(index).is_dynamic_constant())
+      if (cpool->tag_at(index).is_dynamic_constant()) {
         bt = Signature::basic_type(cpool->uncached_signature_ref_at(index));
-      if (is_reference_type(bt)) {
-      } else {
+      }
+      if (!is_reference_type(bt)) {
         // we have to unbox the primitive value
-        if (!is_java_primitive(bt))  return ciConstant();
+        if (!is_java_primitive(bt)) {
+          return ciConstant();
+        }
         jvalue value;
         BasicType bt2 = java_lang_boxing_object::get_value(obj, &value);
         assert(bt2 == bt, "");
@@ -717,6 +710,7 @@ ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
   } else if (tag.is_double()) {
     return ciConstant((jdouble)cpool->double_at(index));
   } else if (tag.is_string()) {
+    EXCEPTION_CONTEXT;
     oop string = NULL;
     assert(cache_index >= 0, "should have a cache index");
     string = cpool->string_at(index, cache_index, THREAD);
@@ -733,24 +727,18 @@ ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
       return ciConstant(T_OBJECT, constant);
     }
   } else if (tag.is_unresolved_klass_in_error()) {
-    return ciConstant();
+    return ciConstant(T_OBJECT, get_unloaded_klass_mirror(NULL));
   } else if (tag.is_klass() || tag.is_unresolved_klass()) {
-    // 4881222: allow ldc to take a class type
     ciKlass* klass = get_klass_by_index_impl(cpool, index, ignore_will_link, accessor);
-    if (HAS_PENDING_EXCEPTION) {
-      CLEAR_PENDING_EXCEPTION;
-      record_out_of_memory_failure();
-      return ciConstant();
-    }
     assert (klass->is_instance_klass() || klass->is_array_klass(),
             "must be an instance or array klass ");
     return ciConstant(T_OBJECT, klass->java_mirror());
-  } else if (tag.is_method_type()) {
+  } else if (tag.is_method_type() || tag.is_method_type_in_error()) {
     // must execute Java code to link this CP entry into cache[i].f1
     ciSymbol* signature = get_symbol(cpool->method_type_signature_at(index));
     ciObject* ciobj = get_unloaded_method_type_constant(signature);
     return ciConstant(T_OBJECT, ciobj);
-  } else if (tag.is_method_handle()) {
+  } else if (tag.is_method_handle() || tag.is_method_handle_in_error()) {
     // must execute Java code to link this CP entry into cache[i].f1
     int ref_kind        = cpool->method_handle_ref_kind_at(index);
     int callee_index    = cpool->method_handle_klass_index_at(index);
@@ -759,10 +747,10 @@ ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
     ciSymbol* signature = get_symbol(cpool->method_handle_signature_ref_at(index));
     ciObject* ciobj     = get_unloaded_method_handle_constant(callee, name, signature, ref_kind);
     return ciConstant(T_OBJECT, ciobj);
-  } else if (tag.is_dynamic_constant()) {
-    return ciConstant();
+  } else if (tag.is_dynamic_constant() || tag.is_dynamic_constant_in_error()) {
+    return ciConstant(); // not supported
   } else {
-    ShouldNotReachHere();
+    assert(false, "unknown tag: %d (%s)", tag.value(), tag.internal_name());
     return ciConstant();
   }
 }
