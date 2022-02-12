@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,14 @@ struct bag* deletedSignatures;
 static jrawMonitorID classTrackLock;
 
 /*
+ * Note: jvmtiAllocate/jvmtiDeallocate() may be blocked by ongoing safepoints.
+ * It is dangerous to call them while holding any monitors, because jvmti may
+ * post events, e.g. JVMTI_EVENT_OBJECT_FREE at safepoints and its event handler
+ * may acquire monitor, e.g. classTrackLock in cbTrackingObjectFree(), that can
+ * result deadlock
+ */
+
+/*
  * Invoke the callback when classes are freed, find and record the signature
  * in deletedSignatures. Those are only used in addPreparedClass() by the
  * same thread.
@@ -88,8 +96,18 @@ classTrack_processUnloads(JNIEnv *env)
         return NULL;
     }
     struct bag* deleted = deletedSignatures;
-    deletedSignatures = bagCreateBag(sizeof(char*), 10);
+    deletedSignatures = NULL;
     debugMonitorExit(classTrackLock);
+
+    // Relinquish classTrackLock to avoid deadlock
+    struct bag* new_bag = bagCreateBag(sizeof(char*), 10);
+    debugMonitorEnter(classTrackLock);
+    if (deletedSignatures == NULL) {
+      deletedSignatures = new_bag;
+      new_bag = NULL;
+    }
+    debugMonitorExit(classTrackLock);
+    bagDestroyBag(new_bag);
     return deleted;
 }
 
@@ -194,8 +212,9 @@ classTrack_initialize(JNIEnv *env)
 void
 classTrack_activate(JNIEnv *env)
 {
+    struct bag* new_bag = bagCreateBag(sizeof(char*), 1000);
     debugMonitorEnter(classTrackLock);
-    deletedSignatures = bagCreateBag(sizeof(char*), 1000);
+    deletedSignatures = new_bag;
     debugMonitorExit(classTrackLock);
 }
 
@@ -213,13 +232,15 @@ cleanDeleted(void *signatureVoid, void *arg)
 void
 classTrack_reset(void)
 {
+    struct bag* to_delete = NULL;
     debugMonitorEnter(classTrackLock);
 
     if (deletedSignatures != NULL) {
         bagEnumerateOver(deletedSignatures, cleanDeleted, NULL);
-        bagDestroyBag(deletedSignatures);
+        to_delete = deletedSignatures;
         deletedSignatures = NULL;
     }
 
     debugMonitorExit(classTrackLock);
+    bagDestroyBag(to_delete);
 }
