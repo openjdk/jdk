@@ -331,11 +331,6 @@ public final class PackageTest extends RunnablePackageTest {
         return this;
     }
 
-    public PackageTest addLauncherName(String name) {
-        launcherNames.add(name);
-        return this;
-    }
-
     public final static class Group extends RunnablePackageTest {
         public Group(PackageTest... tests) {
             handlers = Stream.of(tests)
@@ -598,10 +593,10 @@ public final class PackageTest extends RunnablePackageTest {
                         && !cmd.isPackageUnpacked(
                                 "Not verifying desktop integration")) {
                     // Check main launcher
-                    new WindowsHelper.DesktopIntegrationVerifier(cmd, null);
+                    WindowsHelper.verifyDesktopIntegration(cmd, null);
                     // Check additional launchers
-                    launcherNames.forEach(name -> {
-                        new WindowsHelper.DesktopIntegrationVerifier(cmd, name);
+                    cmd.addLauncherNames().forEach(name -> {
+                        WindowsHelper.verifyDesktopIntegration(cmd, name);
                     });
                 }
             }
@@ -677,10 +672,10 @@ public final class PackageTest extends RunnablePackageTest {
 
                 if (WINDOWS.contains(cmd.packageType())) {
                     // Check main launcher
-                    new WindowsHelper.DesktopIntegrationVerifier(cmd, null);
+                    WindowsHelper.verifyDesktopIntegration(cmd, null);
                     // Check additional launchers
-                    launcherNames.forEach(name -> {
-                        new WindowsHelper.DesktopIntegrationVerifier(cmd, name);
+                    cmd.addLauncherNames().forEach(name -> {
+                        WindowsHelper.verifyDesktopIntegration(cmd, name);
                     });
                 }
             }
@@ -733,7 +728,6 @@ public final class PackageTest extends RunnablePackageTest {
     private Map<PackageType, Handler> handlers;
     private Set<String> namedInitializers;
     private Map<PackageType, PackageHandlers> packageHandlers;
-    private final List<String> launcherNames = new ArrayList();
 
     private final static File BUNDLE_OUTPUT_DIR;
 
