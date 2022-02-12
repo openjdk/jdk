@@ -644,15 +644,24 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
   const size_t old_live_total = ZGeneration::old()->stat_heap()->live_at_mark_end();
 
   size_t young_live_total = 0;
+  size_t young_live_last = 0;
+  double young_life_expectancy_sum = 0.0;
+  uint young_life_expectancy_samples = 0;
 
   for (uint i = 0; i <= ZPageAgeMax; ++i) {
     ZPageAge age = static_cast<ZPageAge>(i);
-    young_live_total += stats.small(age).live() + stats.medium(age).live() + stats.large(age).live();
+    size_t young_live = stats.small(age).live() + stats.medium(age).live() + stats.large(age).live();
+    if (young_live > 0 && young_live_last > 0) {
+      young_life_expectancy_sum += double(young_live) / double(young_live_last);
+      young_life_expectancy_samples++;
+    }
+    young_live_total += young_live;
+    young_live_last = young_live;
   }
 
   const size_t live_total = young_live_total + old_live_total;
   const double young_residency_ratio = double(young_live_total) / double(live_total);
-  const double young_life_expectancy = 1.0 / 8.0;
+  const double young_life_expectancy = young_life_expectancy_samples == 0 ? 0.0 : young_life_expectancy_sum / young_life_expectancy_samples;
   const double max_promotion_fraction = young_residency_ratio * young_life_expectancy;
   const size_t promotion_threshold = live_total * max_promotion_fraction;
 
@@ -665,10 +674,10 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
     size_t promoted = young_live_total - young_selected_live;
     young_selected_live += live;
 
-    if (promoted <= promotion_threshold) {
+    if (tenuring_threshold > 0 && promoted <= promotion_threshold) {
       // Increment tenuring threshold until promoted memory goes below the
       // heuristically computed threshold
-      break;
+      return tenuring_threshold;
     }
   }
 
