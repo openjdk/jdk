@@ -537,6 +537,7 @@ static SpecialFlag const special_jvm_flags[] = {
 #ifdef PRODUCT
   { "UseHeavyMonitors",             JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
 #endif
+  { "ExtendedDTraceProbes",         JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -2886,6 +2887,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       }
     } else if (match_option(option, "-XX:+ExtendedDTraceProbes")) {
 #if defined(DTRACE_ENABLED)
+      warning("Option ExtendedDTraceProbes was deprecated in version 19 and will likely be removed in a future release.");
+      warning("Use the combination of -XX:+DTraceMethodProbes, -XX:+DTraceAllocProbes and -XX:+DTraceMonitorProbes instead.");
       if (FLAG_SET_CMDLINE(ExtendedDTraceProbes, true) != JVMFlag::SUCCESS) {
         return JNI_EINVAL;
       }
