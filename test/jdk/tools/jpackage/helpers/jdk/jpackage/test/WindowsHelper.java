@@ -72,7 +72,7 @@ public class WindowsHelper {
                 return;
             }
 
-            // The given Executor may either be of an msiexe command or an
+            // The given Executor may either be of an msiexec command or an
             // unpack.bat script containing the msiexec command. In the later
             // case, when misexec returns 1618, the unpack.bat may return 1603
             if ((result.exitCode == 1618) || (result.exitCode == 1603)) {
