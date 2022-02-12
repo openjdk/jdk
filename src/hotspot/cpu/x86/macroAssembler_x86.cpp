@@ -8912,13 +8912,10 @@ void MacroAssembler::generate_fill_avx3(BasicType type, Register to, Register va
 
 
 #ifdef _LP64
-void MacroAssembler::convert_f2i(Register dst, XMMRegister src, bool roundF) {
+void MacroAssembler::convert_f2i(Register dst, XMMRegister src) {
   Label done;
-  if (roundF) {
-    cvtss2sil(dst, src);
-  } else {
-    cvttss2sil(dst, src);
-  }
+  cvttss2sil(dst, src);
+
   // Conversion instructions do not match JLS for overflow, underflow and NaN -> fixup in stub
   cmpl(dst, 0x80000000); // float_sign_flip
   jccb(Assembler::notEqual, done);
@@ -8954,13 +8951,72 @@ void MacroAssembler::convert_f2l(Register dst, XMMRegister src) {
   bind(done);
 }
 
-void MacroAssembler::convert_d2l(Register dst, XMMRegister src, bool roundD) {
+void MacroAssembler::round_float(Register dst, XMMRegister src, Register rtmp, Register rcx) {
+  // Following code is exactly mimicking the functionality of java.lang.Math.round(float) method.
+  Label L_special_case, L_block1, L_exit;
+  movl(rtmp, 0x7F800000);
+  movdl(dst, src);
+  andl(dst, rtmp);
+  sarl(dst, 0x17);
+  movl(rtmp, 0x95);
+  subl(rtmp, dst);
+  movl(rcx, rtmp);
+  movl(dst, 0xffffffe0);
+  testl(rtmp, dst);
+  jccb(Assembler::notEqual, L_special_case);
+  movdl(dst, src);
+  andl(dst, 0x7fffff);
+  orl(dst, 0x800000);
+  movdl(rtmp, src);
+  testl(rtmp, rtmp);
+  jccb(Assembler::greaterEqual, L_block1);
+  negl(dst);
+  bind(L_block1);
+  sarl(dst);
+  addl(dst, 0x1);
+  sarl(dst, 0x1);
+  jmp(L_exit);
+  bind(L_special_case);
+  convert_f2i(dst, src);
+  bind(L_exit);
+}
+
+void MacroAssembler::round_double(Register dst, XMMRegister src, Register rtmp, Register rcx) {
+  // Following code is exactly mimicking the functionality of java.lang.Math.round(double) method.
+  Label L_special_case, L_block1, L_exit;
+  mov64(rtmp, 0x7ff0000000000000L);
+  movq(dst, src);
+  andq(dst, rtmp);
+  sarq(dst, 0x34);
+  mov64(rtmp, 0x432);
+  subq(rtmp, dst);
+  movq(rcx, rtmp);
+  mov64(dst, 0xffffffffffffffc0L);
+  testq(rtmp, dst);
+  jccb(Assembler::notEqual, L_special_case);
+  movq(dst, src);
+  mov64(rtmp, 0xfffffffffffffL);
+  andq(dst, rtmp);
+  mov64(rtmp, 0x10000000000000L);
+  orq(dst, rtmp);
+  movq(rtmp, src);
+  testq(rtmp, rtmp);
+  jccb(Assembler::greaterEqual, L_block1);
+  negq(dst);
+  bind(L_block1);
+  sarq(dst);
+  addq(dst, 0x1);
+  sarq(dst, 0x1);
+  jmp(L_exit);
+  bind(L_special_case);
+  convert_d2l(dst, src);
+  bind(L_exit);
+}
+
+void MacroAssembler::convert_d2l(Register dst, XMMRegister src) {
   Label done;
-  if (roundD) {
-    cvtsd2siq(dst, src);
-  } else {
-    cvttsd2siq(dst, src);
-  }
+  cvttsd2siq(dst, src);
+
   cmp64(dst, ExternalAddress((address) StubRoutines::x86::double_sign_flip()));
   jccb(Assembler::notEqual, done);
   subptr(rsp, 8);

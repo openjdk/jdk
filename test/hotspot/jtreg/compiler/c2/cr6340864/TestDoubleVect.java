@@ -359,16 +359,6 @@ public class TestDoubleVect {
         errn += verify("test_negc: ", i, a0[i], (double)(-((double)(ADD_INIT+i))));
       }
 
-      test_round(l0, a1);
-      errn += verify("test_round: ", 0, l0[0], 0L);
-      errn += verify("test_round: ", 1, l0[1], Long.MAX_VALUE);
-      errn += verify("test_round: ", 2, l0[2], Long.MIN_VALUE);
-      errn += verify("test_round: ", 3, l0[3], Long.MAX_VALUE);
-      errn += verify("test_round: ", 4, l0[4], 0L);
-      errn += verify("test_round: ", 5, l0[5], 0L);
-      for (int i=6; i<ARRLEN; i++) {
-        errn += verify("test_round: ", i, l0[i], Math.round((double)(ADD_INIT+i)));
-      }
 
       // To test -ve and +ve Zero scenarios.
       double [] other_corner_cases     = { -0.0, 0.0, 9.007199254740992E15 };
@@ -435,6 +425,31 @@ public class TestDoubleVect {
       errn += verify("test_sqrt: ", 7, a0[7], (double)-0.0);
       for (int i=8; i<ARRLEN; i++) {
         errn += verify("test_sqrt: ", i, a0[i], Math.sqrt((double)(ADD_INIT+i)));
+      }
+
+      a1[6] = +0x1.fffffffffffffp-2;
+      a1[7] = +0x1.0p-1;
+      a1[8] = +0x1.0000000000001p-1;
+      a1[9] = -0x1.fffffffffffffp-2;
+      a1[10] = -0x1.0p-1;
+      a1[11] = -0x1.0000000000001p-1;
+
+      test_round(l0, a1);
+      errn += verify("test_round: ", 0, l0[0], 0L);
+      errn += verify("test_round: ", 1, l0[1], Long.MAX_VALUE);
+      errn += verify("test_round: ", 2, l0[2], Long.MIN_VALUE);
+      errn += verify("test_round: ", 3, l0[3], Long.MAX_VALUE);
+      errn += verify("test_round: ", 4, l0[4], 0L);
+      errn += verify("test_round: ", 5, l0[5], 0L);
+
+      errn += verify("test_round: ", 6, l0[6], 0L);
+      errn += verify("test_round: ", 7, l0[7], 1L);
+      errn += verify("test_round: ", 8, l0[8], 1L);
+      errn += verify("test_round: ", 9, l0[9], 0L);
+      errn += verify("test_round: ", 10, l0[10], 0L);
+      errn += verify("test_round: ", 11, l0[11], -1L);
+      for (int i=12; i<ARRLEN; i++) {
+        errn += verify("test_round: ", i, l0[i], Math.round((double)(ADD_INIT+i)));
       }
     }
 

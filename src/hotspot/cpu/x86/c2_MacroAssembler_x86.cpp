@@ -4013,51 +4013,11 @@ void C2_MacroAssembler::masked_op(int ideal_opc, int mask_len, KRegister dst,
   }
 }
 
-/*
- * Algorithm for vector D2L and F2I conversions:-
- * a) Perform vector D2L/F2I cast.
- * b) Choose fast path if none of the result vector lane contains 0x80000000 value.
- *    It signifies that source value could be any of the special floating point
- *    values(NaN,-Inf,Inf,Max,-Min).
- * c) Set destination to zero if source is NaN value.
- * d) Replace 0x80000000 with MaxInt if source lane contains a +ve value.
- */
-
-void C2_MacroAssembler::vector_castD2L_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
-                                            KRegister ktmp1, KRegister ktmp2, AddressLiteral double_sign_flip,
-                                            Register scratch, int vec_enc, bool roundD) {
+void C2_MacroAssembler::vector_cast_float_special_cases_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                                            XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4,
+                                                            Register scratch, AddressLiteral float_sign_flip,
+                                                            int vec_enc) {
   Label done;
-  if (roundD) {
-    evcvtpd2qq(dst, src, vec_enc);
-  } else {
-    evcvttpd2qq(dst, src, vec_enc);
-  }
-  evmovdqul(xtmp1, k0, double_sign_flip, false, vec_enc, scratch);
-  evpcmpeqq(ktmp1, xtmp1, dst, vec_enc);
-  kortestwl(ktmp1, ktmp1);
-  jccb(Assembler::equal, done);
-
-  vpxor(xtmp2, xtmp2, xtmp2, vec_enc);
-  evcmppd(ktmp2, k0, src, src, Assembler::UNORD_Q, vec_enc);
-  evmovdquq(dst, ktmp2, xtmp2, true, vec_enc);
-
-  kxorwl(ktmp1, ktmp1, ktmp2);
-  evcmppd(ktmp1, ktmp1, src, xtmp2, Assembler::NLT_UQ, vec_enc);
-  vpternlogq(xtmp2, 0x11, xtmp1, xtmp1, vec_enc);
-  evmovdquq(dst, ktmp1, xtmp2, true, vec_enc);
-  bind(done);
-}
-
-void C2_MacroAssembler::vector_castF2I_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
-                                           XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4,
-                                           AddressLiteral float_sign_flip, Register scratch, int vec_enc,
-                                           bool roundF) {
-  Label done;
-  if (roundF) {
-    vcvtps2dq(dst, src, vec_enc);
-  } else {
-    vcvttps2dq(dst, src, vec_enc);
-  }
   vmovdqu(xtmp1, float_sign_flip, scratch, vec_enc);
   vpcmpeqd(xtmp2, dst, xtmp1, vec_enc);
   vptest(xtmp2, xtmp2, vec_enc);
@@ -4082,15 +4042,11 @@ void C2_MacroAssembler::vector_castF2I_avx(XMMRegister dst, XMMRegister src, XMM
   bind(done);
 }
 
-void C2_MacroAssembler::vector_castF2I_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
-                                            KRegister ktmp1, KRegister ktmp2, AddressLiteral float_sign_flip,
-                                            Register scratch, int vec_enc, bool roundF) {
+void C2_MacroAssembler::vector_cast_float_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                                             XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2,
+                                                             Register scratch, AddressLiteral float_sign_flip,
+                                                             int vec_enc) {
   Label done;
-  if (roundF) {
-    vcvtps2dq(dst, src, vec_enc);
-  } else {
-    vcvttps2dq(dst, src, vec_enc);
-  }
   evmovdqul(xtmp1, k0, float_sign_flip, false, vec_enc, scratch);
   Assembler::evpcmpeqd(ktmp1, k0, xtmp1, dst, vec_enc);
   kortestwl(ktmp1, ktmp1);
@@ -4106,6 +4062,182 @@ void C2_MacroAssembler::vector_castF2I_evex(XMMRegister dst, XMMRegister src, XM
   evmovdqul(dst, ktmp1, xtmp2, true, vec_enc);
   bind(done);
 }
+
+void C2_MacroAssembler::vector_cast_double_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                                              XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2,
+                                                              Register scratch, AddressLiteral double_sign_flip,
+                                                              int vec_enc) {
+  Label done;
+  evmovdqul(xtmp1, k0, double_sign_flip, false, vec_enc, scratch);
+  evpcmpeqq(ktmp1, xtmp1, dst, vec_enc);
+  kortestwl(ktmp1, ktmp1);
+  jccb(Assembler::equal, done);
+
+  vpxor(xtmp2, xtmp2, xtmp2, vec_enc);
+  evcmppd(ktmp2, k0, src, src, Assembler::UNORD_Q, vec_enc);
+  evmovdquq(dst, ktmp2, xtmp2, true, vec_enc);
+
+  kxorwl(ktmp1, ktmp1, ktmp2);
+  evcmppd(ktmp1, ktmp1, src, xtmp2, Assembler::NLT_UQ, vec_enc);
+  vpternlogq(xtmp2, 0x11, xtmp1, xtmp1, vec_enc);
+  evmovdquq(dst, ktmp1, xtmp2, true, vec_enc);
+  bind(done);
+}
+
+/*
+ * Algorithm for vector D2L and F2I conversions:-
+ * a) Perform vector D2L/F2I cast.
+ * b) Choose fast path if none of the result vector lane contains 0x80000000 value.
+ *    It signifies that source value could be any of the special floating point
+ *    values(NaN,-Inf,Inf,Max,-Min).
+ * c) Set destination to zero if source is NaN value.
+ * d) Replace 0x80000000 with MaxInt if source lane contains a +ve value.
+ */
+
+void C2_MacroAssembler::vector_castD2L_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                                            KRegister ktmp1, KRegister ktmp2, AddressLiteral double_sign_flip,
+                                            Register scratch, int vec_enc) {
+  evcvttpd2qq(dst, src, vec_enc);
+  vector_cast_double_special_cases_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, scratch, double_sign_flip, vec_enc);
+}
+
+void C2_MacroAssembler::vector_castF2I_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                           XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4,
+                                           AddressLiteral float_sign_flip, Register scratch, int vec_enc) {
+  vcvttps2dq(dst, src, vec_enc);
+  vector_cast_float_special_cases_avx(dst, src, xtmp1, xtmp2, xtmp3, xtmp4, scratch, float_sign_flip, vec_enc);
+}
+
+void C2_MacroAssembler::vector_castF2I_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                                            KRegister ktmp1, KRegister ktmp2, AddressLiteral float_sign_flip,
+                                            Register scratch, int vec_enc) {
+  vcvttps2dq(dst, src, vec_enc);
+  vector_cast_float_special_cases_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, scratch, float_sign_flip, vec_enc);
+}
+
+#ifdef _LP64
+void C2_MacroAssembler::vector_round_double_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                                                 XMMRegister xtmp3, KRegister ktmp1, KRegister ktmp2, KRegister ktmp3,
+                                                 AddressLiteral double_sign_flip, Register scratch, int vec_enc) {
+  // Following assembly snippet is vectorized translation of Math.round(double) algorithm
+  // for AVX512 target.
+  evmovdquq(xtmp1, k0, src, true, vec_enc);
+  movptr(scratch, 0x7ff0000000000000L);
+  evpbroadcastq(xtmp2, scratch, vec_enc);
+  evpandq(xtmp2, k0, xtmp2, xtmp1, true, vec_enc);
+  Assembler::evpsraq(xtmp2, k0, xtmp2, 0x34, true, vec_enc);
+  mov64(scratch, 0x432);
+  evpbroadcastq(dst, scratch, vec_enc);
+  vpsubq(dst, dst, xtmp2, vec_enc);
+  evmovdquq(xtmp3, k0, dst, true, vec_enc);
+  mov64(scratch, 0xffffffffffffffc0L);
+  evpbroadcastq(xtmp2, scratch, vec_enc);
+  evpandq(xtmp2, k0, dst, xtmp2, true, vec_enc);
+  vpxor(dst, dst, dst, vec_enc);
+  Assembler::evpcmpeqq(ktmp1, xtmp2, dst, vec_enc);
+  mov64(scratch, 0xfffffffffffffL);
+  evpbroadcastq(xtmp2, scratch, vec_enc);
+  mov64(scratch, 0x10000000000000L);
+  evpbroadcastq(dst, scratch, vec_enc);
+  evpternlogq(xtmp1, 0xea, k0, xtmp2, dst, true, vec_enc);
+  vpxor(dst, dst, dst, vec_enc);
+  evpcmpq(ktmp2, k0, src, dst, Assembler::lt, true, vec_enc);
+  kandwl(ktmp2, ktmp2, ktmp1);
+  evpsubq(xtmp1, ktmp2, dst, xtmp1, true, vec_enc);
+  evpsravq(xtmp1, ktmp1, xtmp1, xtmp3, true, vec_enc);
+  mov64(scratch, 0x1);
+  evpbroadcastq(xtmp3, scratch, vec_enc);
+  evpaddq(xtmp1, ktmp1, xtmp1, xtmp3, true, vec_enc);
+  evpsravq(xtmp3, ktmp1, xtmp1, xtmp3, true, vec_enc);
+  evcvtpd2qq(dst, src, vec_enc);
+  vector_cast_double_special_cases_evex(dst, src, xtmp1, xtmp2, ktmp2, ktmp3, scratch, double_sign_flip, vec_enc);
+  evpblendmq(dst, ktmp1, dst, xtmp3, true, vec_enc);
+}
+
+void C2_MacroAssembler::vector_round_float_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                                                XMMRegister xtmp3, KRegister ktmp1, KRegister ktmp2, KRegister ktmp3,
+                                                AddressLiteral float_sign_flip, Register scratch, int vec_enc) {
+  // Following assembly snippet is vectorized translation of Math.round(float) algorithm
+  // for AVX512 target.
+  evmovdquq(xtmp1, k0, src, true, vec_enc);
+  movl(scratch, 0x7F800000);
+  evpbroadcastd(xtmp2, scratch, vec_enc);
+  evpandd(xtmp2, k0, xtmp2, xtmp1, true, vec_enc);
+  Assembler::evpsrad(xtmp2, k0, xtmp2, 0x17, true, vec_enc);
+  movl(scratch, 0x95);
+  evpbroadcastd(dst, scratch, vec_enc);
+  vpsubd(dst, dst, xtmp2, vec_enc);
+  evmovdquq(xtmp3, k0, dst, true, vec_enc);
+  movl(scratch, 0XFFFFFFE0);
+  evpbroadcastd(xtmp2, scratch, vec_enc);
+  evpandd(xtmp2, k0, dst, xtmp2, true, vec_enc);
+  vpxor(dst, dst, dst, vec_enc);
+  Assembler::evpcmpeqd(ktmp1, k0, xtmp2, dst, vec_enc);
+  movl(scratch, 0X007FFFFF);
+  evpbroadcastd(xtmp2, scratch, vec_enc);
+  movl(scratch, 0X00800000);
+  evpbroadcastd(dst, scratch, vec_enc);
+  evpternlogd(xtmp1, 0xea, k0, xtmp2, dst, true, vec_enc);
+  vpxor(dst, dst, dst, vec_enc);
+  evpcmpd(ktmp2, k0, src, dst, Assembler::lt, true, vec_enc);
+  kandwl(ktmp2, ktmp2, ktmp1);
+  evpsubd(xtmp1, ktmp2, dst, xtmp1, true, vec_enc);
+  evpsravd(xtmp1, ktmp1, xtmp1, xtmp3, true, vec_enc);
+  movl(scratch, 0x1);
+  evpbroadcastd(xtmp3, scratch, vec_enc);
+  evpaddd(xtmp1, ktmp1, xtmp1, xtmp3, true, vec_enc);
+  evpsravd(xtmp3, ktmp1, xtmp1, xtmp3, true, vec_enc);
+  vcvtps2dq(dst, src, vec_enc);
+  vector_cast_float_special_cases_evex(dst, src, xtmp1, xtmp2, ktmp2, ktmp3, scratch, float_sign_flip, vec_enc);
+  evpblendmd(dst, ktmp1, dst, xtmp3, true, vec_enc);
+}
+
+void C2_MacroAssembler::vector_round_float_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                                               XMMRegister xtmp3, XMMRegister xtmp4, XMMRegister xtmp5, XMMRegister xtmp6,
+                                               AddressLiteral float_sign_flip, Register scratch, int vec_enc) {
+  // Following assembly snippet is vectorized translation of Math.round(float) algorithm
+  // for AVX2 target.
+  vmovdqu(xtmp1, src);
+  movl(scratch, 0x7F800000);
+  movdl(xtmp2, scratch);
+  vpbroadcastd(xtmp2, xtmp2, vec_enc);
+  vpand(xtmp2, xtmp2, xtmp1, vec_enc);
+  Assembler::vpsrad(xtmp2, xtmp2, 0x17, vec_enc);
+  movl(scratch, 0x95);
+  movdl(dst, scratch);
+  vpbroadcastd(dst, dst, vec_enc);
+  vpsubd(dst, dst, xtmp2, vec_enc);
+  vmovdqu(xtmp3, dst);
+  movl(scratch, 0xFFFFFFE0);
+  movdl(xtmp2, scratch);
+  vpbroadcastd(xtmp2, xtmp2, vec_enc);
+  vpand(xtmp2, dst, xtmp2, vec_enc);
+  vpxor(dst, dst, dst, vec_enc);
+  Assembler::vpcmpeqd(xtmp5, xtmp2, dst, vec_enc);
+  movl(scratch, 0x007FFFFF);
+  movdl(xtmp2, scratch);
+  vpbroadcastd(xtmp2, xtmp2, vec_enc);
+  movl(scratch, 0x00800000);
+  movdl(dst, scratch);
+  vpbroadcastd(dst, dst, vec_enc);
+  vpand(xtmp1, xtmp2, xtmp1, vec_enc);
+  vpor(xtmp1, xtmp1, dst, vec_enc);
+  vpxor(dst, dst, dst, vec_enc);
+  vpcmpCCW(xtmp4, src, dst, xtmp2, Assembler::lt, Assembler::D, vec_enc);
+  vpand(xtmp4, xtmp4, xtmp5, vec_enc);
+  vpsubd(dst, dst, xtmp1, vec_enc);
+  vblendvps(xtmp1, xtmp1, dst, xtmp4, vec_enc);
+  vpsravd(xtmp1, xtmp1, xtmp3, vec_enc);
+  movl(scratch, 0x1);
+  movdl(xtmp4, scratch);
+  vpbroadcastd(xtmp4, xtmp4, vec_enc);
+  vpaddd(xtmp1, xtmp1, xtmp4, vec_enc);
+  Assembler::vpsrad(xtmp3, xtmp1, 0x1, vec_enc);
+  vcvtps2dq(dst, src, vec_enc);
+  vector_cast_float_special_cases_avx(dst, src, xtmp1, xtmp2, xtmp6, xtmp4, scratch, float_sign_flip, vec_enc);
+  vblendvps(dst, dst, xtmp3, xtmp5, vec_enc);
+}
+#endif
 
 void C2_MacroAssembler::evpternlog(XMMRegister dst, int func, KRegister mask, XMMRegister src2, XMMRegister src3,
                                    bool merge, BasicType bt, int vlen_enc) {

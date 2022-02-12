@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -357,17 +357,6 @@ public class TestFloatVect {
         errn += verify("test_negc: ", i, a0[i], (float)(-((float)(ADD_INIT+i))));
       }
 
-      test_round(i0, a1);
-      errn += verify("test_round: ", 0, i0[0], 0);
-      errn += verify("test_round: ", 1, i0[1], Integer.MAX_VALUE);
-      errn += verify("test_round: ", 2, i0[2], Integer.MIN_VALUE);
-      errn += verify("test_round: ", 3, i0[3], Integer.MAX_VALUE);
-      errn += verify("test_round: ", 4, i0[4], 0);
-      errn += verify("test_round: ", 5, i0[5], 0);
-      for (int i=6; i<ARRLEN; i++) {
-        errn += verify("test_round: ", i, i0[i], Math.round(((float)(ADD_INIT+i))));
-      }
-
       // Overwrite with +0.0/-0.0 values
       a1[6] = (float)0.0;
       a1[7] = (float)-0.0;
@@ -382,6 +371,31 @@ public class TestFloatVect {
       errn += verify("test_sqrt: ", 7, a0[7], (float)-0.0);
       for (int i=8; i<ARRLEN; i++) {
         errn += verify("test_sqrt: ", i, a0[i], (float)(Math.sqrt((double)(ADD_INIT+i))));
+      }
+
+      a1[6] = +0x1.fffffep-2f;
+      a1[7] = +0x1.0p-1f;
+      a1[8] = +0x1.000002p-1f;
+      a1[9] = -0x1.fffffep-2f;
+      a1[10] = -0x1.0p-1f;
+      a1[11] = -0x1.000002p-1f;
+
+      test_round(i0, a1);
+      errn += verify("test_round: ", 0, i0[0], 0);
+      errn += verify("test_round: ", 1, i0[1], Integer.MAX_VALUE);
+      errn += verify("test_round: ", 2, i0[2], Integer.MIN_VALUE);
+      errn += verify("test_round: ", 3, i0[3], Integer.MAX_VALUE);
+      errn += verify("test_round: ", 4, i0[4], 0);
+      errn += verify("test_round: ", 5, i0[5], 0);
+      errn += verify("test_round: ", 6, i0[6], 0);
+      errn += verify("test_round: ", 7, i0[7], 1);
+      errn += verify("test_round: ", 8, i0[8], 1);
+      errn += verify("test_round: ", 9, i0[9], 0);
+      errn += verify("test_round: ", 10, i0[10], 0);
+      errn += verify("test_round: ", 11, i0[11], -1);
+
+      for (int i=12; i<ARRLEN; i++) {
+        errn += verify("test_round: ", i, i0[i], Math.round(((float)(ADD_INIT+i))));
       }
 
     }

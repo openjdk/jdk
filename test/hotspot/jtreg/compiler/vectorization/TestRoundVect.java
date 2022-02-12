@@ -75,7 +75,7 @@ public class TestRoundVect {
   }
 
   @Test
-  @IR(applyIf = {"UseAVX", " > 0"}, counts = {"RoundVF" , " > 0 "})
+  @IR(applyIf = {"UseAVX", " > 1"}, counts = {"RoundVF" , " > 0 "})
   public void test_round_float(int[] iout, float[] finp) {
       for (int i = 0; i < finp.length; i+=1) {
           iout[i] = Math.round(finp[i]);

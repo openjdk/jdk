@@ -29,16 +29,17 @@
 public class RoundTests {
     public static void main(String... args) {
         int failures = 0;
+        for (int i = 0; i < 100000; i++) {
+            failures += testNearFloatHalfCases();
+            failures += testNearDoubleHalfCases();
+            failures += testUnityULPCases();
+            failures += testSpecialCases();
 
-        failures += testNearFloatHalfCases();
-        failures += testNearDoubleHalfCases();
-        failures += testUnityULPCases();
-        failures += testSpecialCases();
-
-        if (failures > 0) {
-            System.err.println("Testing {Math, StrictMath}.round incurred "
-                               + failures + " failures.");
-            throw new RuntimeException();
+            if (failures > 0) {
+                System.err.println("Testing {Math, StrictMath}.round incurred "
+                                   + failures + " failures.");
+                throw new RuntimeException();
+            }
         }
     }
 

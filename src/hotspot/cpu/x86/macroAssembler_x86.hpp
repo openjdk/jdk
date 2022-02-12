@@ -1964,10 +1964,13 @@ public:
   void fill64(Register dst, int dis, XMMRegister xmm, bool use64byteVector = false);
 
 #ifdef _LP64
-  void convert_f2i(Register dst, XMMRegister src, bool roundF = false);
+  void convert_f2i(Register dst, XMMRegister src);
   void convert_d2i(Register dst, XMMRegister src);
   void convert_f2l(Register dst, XMMRegister src);
-  void convert_d2l(Register dst, XMMRegister src, bool roundD = false);
+  void convert_d2l(Register dst, XMMRegister src);
+  void round_double(Register dst, XMMRegister src, Register rtmp, Register rcx);
+  void round_float(Register dst, XMMRegister src, Register rtmp, Register rcx);
+
 
   void cache_wb(Address line);
   void cache_wbsync(bool is_pre);
