@@ -47,6 +47,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.AppImageFile;
 import jdk.jpackage.internal.ApplicationLayout;
+import static jdk.jpackage.test.AdditionalLauncher.forEachAdditionalLauncher;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.Functional.ThrowingFunction;
 import jdk.jpackage.test.Functional.ThrowingSupplier;
@@ -528,6 +529,18 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
      */
     public Path appLauncherPath() {
         return appLauncherPath(null);
+    }
+    
+    /**
+     * Returns names of all additional launchers or empty list if none
+     * configured.
+     */
+    public List<String> addLauncherNames() {
+        List<String> names = new ArrayList<>();
+        forEachAdditionalLauncher(this, (launcherName, propFile) -> {
+            names.add(launcherName);
+        });
+        return names;
     }
 
     private void verifyNotRuntime() {

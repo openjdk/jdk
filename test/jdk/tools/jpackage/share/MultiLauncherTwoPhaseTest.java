@@ -69,8 +69,6 @@ public class MultiLauncherTwoPhaseTest {
         launcher2.applyTo(appImageCmd);
 
         PackageTest packageTest = new PackageTest()
-                .addLauncherName("bar") // Add launchers name for verification
-                .addLauncherName("foo")
                 .addRunOnceInitializer(() -> appImageCmd.execute())
                 .addBundleDesktopIntegrationVerifier(true)
                 .addInitializer(cmd -> {

@@ -29,10 +29,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.test.Functional.ThrowingBiConsumer;
+import static jdk.jpackage.test.Functional.ThrowingFunction.toFunction;
 
 public class AdditionalLauncher {
 
@@ -121,7 +124,6 @@ public class AdditionalLauncher {
     }
 
     final public void applyTo(PackageTest test) {
-        test.addLauncherName(name);
         test.addInitializer(this::initialize);
         test.addInstallVerifier(this::verify);
     }
@@ -137,6 +139,18 @@ public class AdditionalLauncher {
                 consumer.accept(items[0], Path.of(items[1]));
             }
         }
+    }
+
+    static PropertyFile getAdditionalLauncherProperties(
+            JPackageCommand cmd, String launcherName) {
+        PropertyFile shell[] = new PropertyFile[1];
+        forEachAdditionalLauncher(cmd, (name, propertiesFilePath) -> {
+            if (name.equals(launcherName)) {
+                shell[0] = toFunction(PropertyFile::new).apply(
+                        propertiesFilePath);
+            }
+        });
+        return Optional.of(shell[0]).get();
     }
 
     private void initialize(JPackageCommand cmd) {
@@ -295,6 +309,36 @@ public class AdditionalLauncher {
                 launcherPath))) {
             appVerifier.verifyOutput();
         }
+    }
+
+    public static final class PropertyFile {
+
+        PropertyFile(Path path) throws IOException {
+            data = Files.readAllLines(path).stream().map(str -> {
+                return str.split("=", 2);
+            }).collect(
+                    Collectors.toMap(tokens -> tokens[0], tokens -> tokens[1],
+                            (oldValue, newValue) -> {
+                                return newValue;
+                            }));
+        }
+
+        public boolean isPropertySet(String name) {
+            Objects.requireNonNull(name);
+            return data.containsKey(name);
+        }
+
+        public Optional<String> getPropertyValue(String name) {
+            Objects.requireNonNull(name);
+            return Optional.of(data.get(name));
+        }
+
+        public Optional<Boolean> getPropertyBooleanValue(String name) {
+            Objects.requireNonNull(name);
+            return Optional.ofNullable(data.get(name)).map(Boolean::parseBoolean);
+        }
+
+        private final Map<String, String> data;
     }
 
     private List<String> javaOptions;

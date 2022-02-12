@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,12 @@ public class WindowsHelper {
         for (int attempt = 0; attempt < 8; ++attempt) {
             result = misexec.executeWithoutExitCodeCheck();
 
+            if (result.exitCode == 1605) {
+                // ERROR_UNKNOWN_PRODUCT, attempt to uninstall not installed
+                // package
+                return;
+            }
+
             // The given Executor may either be of an msiexe command or an
             // unpack.bat script containing the msiexec command. In the later
             // case, when misexec returns 1618, the unpack.bat may return 1603
@@ -91,7 +97,11 @@ public class WindowsHelper {
 
         PackageHandlers msi = new PackageHandlers();
         msi.installHandler = cmd -> installMsi.accept(cmd, true);
-        msi.uninstallHandler = cmd -> installMsi.accept(cmd, false);
+        msi.uninstallHandler = cmd -> {
+            if (Files.exists(cmd.outputBundle())) {
+                installMsi.accept(cmd, false);
+            }
+        };
         msi.unpackHandler = (cmd, destinationDir) -> {
             cmd.verifyIsOfType(PackageType.WIN_MSI);
             final Path unpackBat = destinationDir.resolve("unpack.bat");
@@ -125,8 +135,17 @@ public class WindowsHelper {
 
         PackageHandlers exe = new PackageHandlers();
         exe.installHandler = cmd -> installExe.accept(cmd, true);
-        exe.uninstallHandler = cmd -> installExe.accept(cmd, false);
+        exe.uninstallHandler = cmd -> {
+            if (Files.exists(cmd.outputBundle())) {
+                installExe.accept(cmd, false);
+            }
+        };
         return exe;
+    }
+
+    static void verifyDesktopIntegration(JPackageCommand cmd,
+            String launcherName) {
+        new DesktopIntegrationVerifier(cmd, launcherName);
     }
 
     public static String getMsiProperty(JPackageCommand cmd, String propertyName) {
@@ -143,21 +162,45 @@ public class WindowsHelper {
         return cmd.hasArgument("--win-per-user-install");
     }
 
-    static class DesktopIntegrationVerifier {
+    private static class DesktopIntegrationVerifier {
 
-        DesktopIntegrationVerifier(JPackageCommand cmd, String name) {
+        DesktopIntegrationVerifier(JPackageCommand cmd, String launcherName) {
             cmd.verifyIsOfType(PackageType.WINDOWS);
-            this.cmd = cmd;
-            this.name = (name == null ? cmd.name() : name);
+
+            name = Optional.ofNullable(launcherName).orElseGet(cmd::name);
+
+            isUserLocalInstall = isUserLocalInstall(cmd);
+
+            appInstalled = cmd.appLauncherPath(launcherName).toFile().exists();
+
+            desktopShortcutPath = Path.of(name + ".lnk");
+
+            startMenuShortcutPath = Path.of(cmd.getArgumentValue(
+                    "--win-menu-group", () -> "Unknown"), name + ".lnk");
+
+            if (name.equals(cmd.name())) {
+                isWinMenu = cmd.hasArgument("--win-menu");
+                isDesktop = cmd.hasArgument("--win-shortcut");
+            } else {
+                var props = AdditionalLauncher.getAdditionalLauncherProperties(cmd,
+                        launcherName);
+                isWinMenu = props.getPropertyBooleanValue("win-menu").orElseGet(
+                        () -> cmd.hasArgument("--win-menu"));
+                isDesktop = props.getPropertyBooleanValue("win-shortcut").orElseGet(
+                        () -> cmd.hasArgument("--win-shortcut"));
+            }
+
             verifyStartMenuShortcut();
+
             verifyDesktopShortcut();
-            verifyFileAssociationsRegistry();
+
+            Stream.of(cmd.getAllArgumentValues("--file-associations")).map(
+                    Path::of).forEach(this::verifyFileAssociationsRegistry);
         }
 
         private void verifyDesktopShortcut() {
-            boolean appInstalled = cmd.appLauncherPath(name).toFile().exists();
-            if (cmd.hasArgument("--win-shortcut")) {
-                if (isUserLocalInstall(cmd)) {
+            if (isDesktop) {
+                if (isUserLocalInstall) {
                     verifyUserLocalDesktopShortcut(appInstalled);
                     verifySystemDesktopShortcut(false);
                 } else {
@@ -168,10 +211,6 @@ public class WindowsHelper {
                 verifySystemDesktopShortcut(false);
                 verifyUserLocalDesktopShortcut(false);
             }
-        }
-
-        private Path desktopShortcutPath() {
-            return Path.of(name + ".lnk");
         }
 
         private void verifyShortcut(Path path, boolean exists) {
@@ -185,19 +224,18 @@ public class WindowsHelper {
         private void verifySystemDesktopShortcut(boolean exists) {
             Path dir = Path.of(queryRegistryValueCache(
                     SYSTEM_SHELL_FOLDERS_REGKEY, "Common Desktop"));
-            verifyShortcut(dir.resolve(desktopShortcutPath()), exists);
+            verifyShortcut(dir.resolve(desktopShortcutPath), exists);
         }
 
         private void verifyUserLocalDesktopShortcut(boolean exists) {
             Path dir = Path.of(
                     queryRegistryValueCache(USER_SHELL_FOLDERS_REGKEY, "Desktop"));
-            verifyShortcut(dir.resolve(desktopShortcutPath()), exists);
+            verifyShortcut(dir.resolve(desktopShortcutPath), exists);
         }
 
         private void verifyStartMenuShortcut() {
-            boolean appInstalled = cmd.appLauncherPath(name).toFile().exists();
-            if (cmd.hasArgument("--win-menu")) {
-                if (isUserLocalInstall(cmd)) {
+            if (isWinMenu) {
+                if (isUserLocalInstall) {
                     verifyUserLocalStartMenuShortcut(appInstalled);
                     verifySystemStartMenuShortcut(false);
                 } else {
@@ -210,13 +248,8 @@ public class WindowsHelper {
             }
         }
 
-        private Path startMenuShortcutPath() {
-            return Path.of(cmd.getArgumentValue("--win-menu-group",
-                    () -> "Unknown"), name + ".lnk");
-        }
-
         private void verifyStartMenuShortcut(Path shortcutsRoot, boolean exists) {
-            Path shortcutPath = shortcutsRoot.resolve(startMenuShortcutPath());
+            Path shortcutPath = shortcutsRoot.resolve(startMenuShortcutPath);
             verifyShortcut(shortcutPath, exists);
             if (!exists) {
                 TKit.assertPathNotEmptyDirectory(shortcutPath.getParent());
@@ -234,13 +267,7 @@ public class WindowsHelper {
                     USER_SHELL_FOLDERS_REGKEY, "Programs")), exists);
         }
 
-        private void verifyFileAssociationsRegistry() {
-            Stream.of(cmd.getAllArgumentValues("--file-associations")).map(
-                    Path::of).forEach(this::verifyFileAssociationsRegistry);
-        }
-
         private void verifyFileAssociationsRegistry(Path faFile) {
-            boolean appInstalled = cmd.appLauncherPath(name).toFile().exists();
             try {
                 TKit.trace(String.format(
                         "Get file association properties from [%s] file",
@@ -290,7 +317,12 @@ public class WindowsHelper {
             }
         }
 
-        private final JPackageCommand cmd;
+        private final Path desktopShortcutPath;
+        private final Path startMenuShortcutPath;
+        private final boolean isUserLocalInstall;
+        private final boolean appInstalled;
+        private final boolean isWinMenu;
+        private final boolean isDesktop;
         private final String name;
     }
 
