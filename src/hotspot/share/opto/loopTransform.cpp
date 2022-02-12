@@ -973,7 +973,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
       case Op_PopCountVI:
       case Op_PopCountVL: {
         const TypeVect* vt = n->bottom_type()->is_vect();
-        body_size += Matcher::vector_op_cost(n->Opcode(), vt->element_basic_type(), vt->length());
+        body_size += Matcher::vector_op_pre_select_sz_estimate(n->Opcode(), vt->element_basic_type(), vt->length());
       } break;
       case Op_StrComp:
       case Op_StrEquals:

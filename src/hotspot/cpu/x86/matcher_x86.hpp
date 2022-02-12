@@ -184,11 +184,11 @@
   static const bool supports_encode_ascii_array = true;
 
   // Returns pre-selection estimated cost of a vector operation.
-  static int vector_op_cost(int vopc, BasicType ety, int vlen) {
+  static int vector_op_pre_select_sz_estimate(int vopc, BasicType ety, int vlen) {
     switch(vopc) {
-      default: return 1;
-      case Op_PopCountVI: return VM_Version::supports_avx512_vpopcntdq() ? 1 : 50;
-      case Op_PopCountVL: return VM_Version::supports_avx512_vpopcntdq() ? 1 : 40;
+      default: return 0;
+      case Op_PopCountVI: return VM_Version::supports_avx512_vpopcntdq() ? 0 : 50;
+      case Op_PopCountVL: return VM_Version::supports_avx512_vpopcntdq() ? 0 : 40;
     }
   }
 
