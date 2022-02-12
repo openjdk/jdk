@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2922,6 +2922,7 @@ public class Attr extends JCTree.Visitor {
                     && ((tree.constructorType != null && inferenceContext.free(tree.constructorType))
                     || (tree.clazz.type != null && inferenceContext.free(tree.clazz.type)))) {
                 final ResultInfo resultInfoForClassDefinition = this.resultInfo;
+                Env<AttrContext> dupLocalEnv = localEnv.dup(localEnv.tree, localEnv.info.dup(localEnv.info.scope.dupUnshared()));
                 inferenceContext.addFreeTypeListener(List.of(tree.constructorType, tree.clazz.type),
                         instantiatedContext -> {
                             tree.constructorType = instantiatedContext.asInstType(tree.constructorType);
@@ -2930,7 +2931,7 @@ public class Attr extends JCTree.Visitor {
                             try {
                                 this.resultInfo = resultInfoForClassDefinition;
                                 visitAnonymousClassDefinition(tree, clazz, clazz.type, cdef,
-                                                            localEnv, argtypes, typeargtypes, pkind);
+                                        dupLocalEnv, argtypes, typeargtypes, pkind);
                             } finally {
                                 this.resultInfo = prevResult;
                             }
@@ -5469,7 +5470,7 @@ public class Attr extends JCTree.Visitor {
         } else {
             // Check that all extended classes and interfaces
             // are compatible (i.e. no two define methods with same arguments
-            // yet different return types).  (JLS 8.4.6.3)
+            // yet different return types).  (JLS 8.4.8.3)
             chk.checkCompatibleSupertypes(tree.pos(), c.type);
             if (allowDefaultMethods) {
                 chk.checkDefaultMethodClashes(tree.pos(), c.type);

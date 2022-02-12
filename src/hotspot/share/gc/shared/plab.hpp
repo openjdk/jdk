@@ -116,7 +116,7 @@ public:
   }
 
   // Sets the space of the buffer to be [buf, space+word_sz()).
-  virtual void set_buf(HeapWord* buf, size_t new_word_sz) {
+  void set_buf(HeapWord* buf, size_t new_word_sz) {
     assert(new_word_sz > AlignmentReserve, "Too small");
     _word_sz = new_word_sz;
 

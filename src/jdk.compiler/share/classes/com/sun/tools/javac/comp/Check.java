@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1790,7 +1790,7 @@ public class Check {
             return;
         }
 
-        // Error if static method overrides instance method (JLS 8.4.6.2).
+        // Error if static method overrides instance method (JLS 8.4.8.2).
         if ((m.flags() & STATIC) != 0 &&
                    (other.flags() & STATIC) == 0) {
             log.error(TreeInfo.diagnosticPositionFor(m, tree),
@@ -1800,7 +1800,7 @@ public class Check {
         }
 
         // Error if instance method overrides static or final
-        // method (JLS 8.4.6.1).
+        // method (JLS 8.4.8.1).
         if ((other.flags() & FINAL) != 0 ||
                  (m.flags() & STATIC) == 0 &&
                  (other.flags() & STATIC) != 0) {
@@ -1816,7 +1816,7 @@ public class Check {
             return;
         }
 
-        // Error if overriding method has weaker access (JLS 8.4.6.3).
+        // Error if overriding method has weaker access (JLS 8.4.8.3).
         if (protection(m.flags()) > protection(other.flags())) {
             log.error(TreeInfo.diagnosticPositionFor(m, tree),
                       (other.flags() & AccessFlags) == 0 ?

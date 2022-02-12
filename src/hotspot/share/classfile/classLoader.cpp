@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,8 @@ static FindEntry_t       FindEntry          = NULL;
 static ReadEntry_t       ReadEntry          = NULL;
 static GetNextEntry_t    GetNextEntry       = NULL;
 static Crc32_t           Crc32              = NULL;
-int ClassLoader::_libzip_loaded = 0;
+int    ClassLoader::_libzip_loaded          = 0;
+void*  ClassLoader::_zip_handle             = NULL;
 
 // Entry points for jimage.dll for loading jimage file entries
 
@@ -253,9 +254,9 @@ ClassFileStream* ClassPathDirEntry::open_stream(JavaThread* current, const char*
     if (file_handle != -1) {
       // read contents into resource array
       u1* buffer = NEW_RESOURCE_ARRAY(u1, st.st_size);
-      size_t num_read = os::read(file_handle, (char*) buffer, st.st_size);
+      size_t num_read = ::read(file_handle, (char*) buffer, st.st_size);
       // close file
-      os::close(file_handle);
+      ::close(file_handle);
       // construct ClassFileStream
       if (num_read == (size_t)st.st_size) {
         if (UsePerfData) {
@@ -303,13 +304,19 @@ u1* ClassPathZipEntry::open_entry(JavaThread* current, const char* name, jint* f
   }
 
   // read contents into resource array
-  int size = (*filesize) + ((nul_terminate) ? 1 : 0);
+  size_t size = (uint32_t)(*filesize);
+  if (nul_terminate) {
+    if (sizeof(size) == sizeof(uint32_t) && size == UINT_MAX) {
+      return NULL; // 32-bit integer overflow will occur.
+    }
+    size++;
+  }
   buffer = NEW_RESOURCE_ARRAY(u1, size);
   if (!(*ReadEntry)(_zip, entry, buffer, filename)) return NULL;
 
   // return result
   if (nul_terminate) {
-    buffer[*filesize] = 0;
+    buffer[size - 1] = 0;
   }
   return buffer;
 }
@@ -936,20 +943,19 @@ void ClassLoader::load_zip_library() {
   assert(ZipOpen == NULL, "should not load zip library twice");
   char path[JVM_MAXPATHLEN];
   char ebuf[1024];
-  void* handle = NULL;
   if (os::dll_locate_lib(path, sizeof(path), Arguments::get_dll_dir(), "zip")) {
-    handle = os::dll_load(path, ebuf, sizeof ebuf);
+    _zip_handle = os::dll_load(path, ebuf, sizeof ebuf);
   }
-  if (handle == NULL) {
+  if (_zip_handle == NULL) {
     vm_exit_during_initialization("Unable to load zip library", path);
   }
 
-  ZipOpen = CAST_TO_FN_PTR(ZipOpen_t, dll_lookup(handle, "ZIP_Open", path));
-  ZipClose = CAST_TO_FN_PTR(ZipClose_t, dll_lookup(handle, "ZIP_Close", path));
-  FindEntry = CAST_TO_FN_PTR(FindEntry_t, dll_lookup(handle, "ZIP_FindEntry", path));
-  ReadEntry = CAST_TO_FN_PTR(ReadEntry_t, dll_lookup(handle, "ZIP_ReadEntry", path));
-  GetNextEntry = CAST_TO_FN_PTR(GetNextEntry_t, dll_lookup(handle, "ZIP_GetNextEntry", path));
-  Crc32 = CAST_TO_FN_PTR(Crc32_t, dll_lookup(handle, "ZIP_CRC32", path));
+  ZipOpen = CAST_TO_FN_PTR(ZipOpen_t, dll_lookup(_zip_handle, "ZIP_Open", path));
+  ZipClose = CAST_TO_FN_PTR(ZipClose_t, dll_lookup(_zip_handle, "ZIP_Close", path));
+  FindEntry = CAST_TO_FN_PTR(FindEntry_t, dll_lookup(_zip_handle, "ZIP_FindEntry", path));
+  ReadEntry = CAST_TO_FN_PTR(ReadEntry_t, dll_lookup(_zip_handle, "ZIP_ReadEntry", path));
+  GetNextEntry = CAST_TO_FN_PTR(GetNextEntry_t, dll_lookup(_zip_handle, "ZIP_GetNextEntry", path));
+  Crc32 = CAST_TO_FN_PTR(Crc32_t, dll_lookup(_zip_handle, "ZIP_CRC32", path));
 }
 
 void ClassLoader::load_jimage_library() {

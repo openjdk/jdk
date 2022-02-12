@@ -107,8 +107,12 @@ public final class OAEPParameters extends AlgorithmParametersSpi {
             if (!val.getOID().equals(OID_MGF1)) {
                 throw new IOException("Only MGF1 mgf is supported");
             }
+            byte[] encodedParams = val.getEncodedParams();
+            if (encodedParams == null) {
+                throw new IOException("Missing MGF1 parameters");
+            }
             AlgorithmId params = AlgorithmId.parse(
-                    new DerValue(val.getEncodedParams()));
+                    new DerValue(encodedParams));
             mgfSpec = switch (params.getName()) {
                 case "SHA-1" -> MGF1ParameterSpec.SHA1;
                 case "SHA-224" -> MGF1ParameterSpec.SHA224;
@@ -129,7 +133,12 @@ public final class OAEPParameters extends AlgorithmParametersSpi {
             if (!val.getOID().equals(OID_PSpecified)) {
                 throw new IOException("Wrong OID for pSpecified");
             }
-            p = DerValue.wrap(val.getEncodedParams()).getOctetString();
+            byte[] encodedParams = val.getEncodedParams();
+            if (encodedParams == null) {
+                throw new IOException("Missing pSpecified label");
+            }
+
+            p = DerValue.wrap(encodedParams).getOctetString();
         } else {
             p = new byte[0];
         }

@@ -230,7 +230,7 @@ public final class String
      *
      * A String instance is written into an ObjectOutputStream according to
      * <a href="{@docRoot}/../specs/serialization/protocol.html#stream-elements">
-     * Object Serialization Specification, Section 6.2, "Stream Elements"</a>
+     * <cite>Java Object Serialization Specification</cite>, Section 6.2, "Stream Elements"</a>
      */
     @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields =
@@ -541,8 +541,7 @@ public final class String
                             offset++;
                             continue;
                         }
-                        if ((b1 == (byte)0xc2 || b1 == (byte)0xc3) &&
-                                offset + 1 < sl) {
+                        if ((b1 & 0xfe) == 0xc2 && offset + 1 < sl) { // b1 either 0xc2 or 0xc3
                             int b2 = bytes[offset + 1];
                             if (!isNotContinuation(b2)) {
                                 dst[dp++] = (byte)decode2(b1, b2);
@@ -698,8 +697,7 @@ public final class String
                         offset++;
                         continue;
                     }
-                    if ((b1 == (byte) 0xc2 || b1 == (byte) 0xc3) &&
-                            offset + 1 < sl) {
+                    if ((b1 & 0xfe) == 0xc2 && offset + 1 < sl) { // b1 either 0xc2 or 0xc3
                         int b2 = bytes[offset + 1];
                         if (!isNotContinuation(b2)) {
                             dst[dp++] = (byte) decode2(b1, b2);

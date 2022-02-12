@@ -144,13 +144,9 @@ public:
   void load_vector_mask(XMMRegister dst, XMMRegister src, int vlen_in_bytes, BasicType elem_bt, bool is_legacy);
   void load_vector_mask(KRegister dst, XMMRegister src, XMMRegister xtmp, Register tmp, bool novlbwdq, int vlen_enc);
 
+  void load_vector(XMMRegister dst, Address src, int vlen_in_bytes);
+  void load_vector(XMMRegister dst, AddressLiteral src, int vlen_in_bytes, Register rscratch = rscratch1);
   void load_iota_indices(XMMRegister dst, Register scratch, int vlen_in_bytes);
-
-  // vector compare
-  void vpcmpu(BasicType typ, XMMRegister dst, XMMRegister src1, XMMRegister src2, ComparisonPredicate comparison, int vlen_in_bytes,
-              XMMRegister vtmp1, XMMRegister vtmp2, Register scratch);
-  void vpcmpu32(BasicType typ, XMMRegister dst, XMMRegister src1, XMMRegister src2, ComparisonPredicate comparison, int vlen_in_bytes,
-                XMMRegister vtmp1, XMMRegister vtmp2, XMMRegister vtmp3, Register scratch);
 
   // Reductions for vectors of bytes, shorts, ints, longs, floats, and doubles.
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,6 +101,7 @@ class JvmtiClassFileReconstituter : public JvmtiConstantPoolReconstituter {
   void write_method_info(const methodHandle& method);
   void write_code_attribute(const methodHandle& method);
   void write_exceptions_attribute(ConstMethod* const_method);
+  void write_method_parameter_attribute(const ConstMethod* const_method);
   void write_synthetic_attribute();
   void write_class_attributes();
   void write_source_file_attribute();

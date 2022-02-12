@@ -186,7 +186,7 @@ int CompileBroker::_sum_standard_bytes_compiled    = 0;
 int CompileBroker::_sum_nmethod_size               = 0;
 int CompileBroker::_sum_nmethod_code_size          = 0;
 
-long CompileBroker::_peak_compilation_time         = 0;
+jlong CompileBroker::_peak_compilation_time        = 0;
 
 CompilerStatistics CompileBroker::_stats_per_level[CompLevel_full_optimization];
 
@@ -1970,6 +1970,8 @@ void CompileBroker::compiler_thread_loop() {
           method->clear_queued_for_compilation();
           task->set_failure_reason("compilation is disabled");
         }
+      } else {
+        task->set_failure_reason("breakpoints are present");
       }
 
       if (UseDynamicNumberOfCompilerThreads) {
