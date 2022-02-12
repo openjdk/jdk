@@ -24,9 +24,8 @@
 import java.util.*;
 
 /**
- * A SortedMap implementation that does not implement NavigableMap.
- * Useful for testing default methods of SequencedMap.
- * Underlying implementation provided by TreeMap.
+ * A SortedMap implementation that does not implement NavigableMap. Useful for
+ * testing ReverseOrderSortedMapView. Underlying implementation provided by TreeMap.
  */
 public class SimpleSortedMap<K,V> implements SortedMap<K,V> {
     final SortedMap<K,V> map;

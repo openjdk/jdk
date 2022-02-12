@@ -24,116 +24,129 @@
 import java.util.*;
 
 /**
- * A SortedSet implementation that does not implement NavigableSet. Useful for
- * testing ReverseOrderSortedSetView. Underlying implementation provided by TreeSet.
+ * A complete List implementation that inherits the reversed() method
+ * from List. Useful for testing ReverseOrderListView.
+ * Underlying implementation provided by ArrayList.
  */
-public class SimpleSortedSet<E> implements SortedSet<E> {
+public class SimpleList<E> implements List<E> {
 
-    final SortedSet<E> set;
+    final List<E> list;
 
-    public SimpleSortedSet() {
-        set = new TreeSet<E>();
+    public SimpleList() {
+        list = new ArrayList<>();
     }
 
-    public SimpleSortedSet(Collection<? extends E> c) {
-        set = new TreeSet<>(c);
-    }
-
-    public SimpleSortedSet(Comparator<? super E> comparator) {
-        set = new TreeSet<>(comparator);
+    public SimpleList(Collection<? extends E> c) {
+        list = new ArrayList<>(c);
     }
 
     // ========== Object ==========
 
     public boolean equals(Object o) {
-        return set.equals(o);
+        return list.equals(o);
     }
 
     public int hashCode() {
-        return set.hashCode();
+        return list.hashCode();
     }
 
     public String toString() {
-        return set.toString();
+        return list.toString();
     }
 
     // ========== Collection ==========
 
     public boolean add(E e) {
-        return set.add(e);
+        return list.add(e);
     }
 
     public boolean addAll(Collection<? extends E> c) {
-        return set.addAll(c);
+        return list.addAll(c);
     }
 
     public void clear() {
-        set.clear();
+        list.clear();
     }
 
     public boolean contains(Object o) {
-        return set.contains(o);
+        return list.contains(o);
     }
 
     public boolean containsAll(Collection<?> c) {
-        return set.containsAll(c);
+        return list.containsAll(c);
     }
 
     public boolean isEmpty() {
-        return set.isEmpty();
+        return list.isEmpty();
     }
 
     public Iterator<E> iterator() {
-        return set.iterator();
+        return list.iterator();
     }
 
     public boolean remove(Object o) {
-        return set.remove(o);
+        return list.remove(o);
     }
 
     public boolean removeAll(Collection<?> c) {
-        return set.removeAll(c);
+        return list.removeAll(c);
     }
 
     public boolean retainAll(Collection<?> c) {
-        return set.retainAll(c);
+        return list.retainAll(c);
     }
 
     public int size() {
-        return set.size();
+        return list.size();
     }
 
     public Object[] toArray() {
-        return set.toArray();
+        return list.toArray();
     }
 
     public <T> T[] toArray(T[] a) {
-        return set.toArray(a);
+        return list.toArray(a);
     }
 
-    // ========== SortedSet ==========
+    // ========== List ==========
 
-    public Comparator<? super E> comparator() {
-        return set.comparator();
+    public void add(int index, E element) {
+        list.add(index, element);
     }
 
-    public E first() {
-        return set.first();
+    public boolean addAll(int index, Collection<? extends E> c) {
+        return list.addAll(index, c);
     }
 
-    public SortedSet<E> headSet(E toElement) {
-        return set.headSet(toElement);
+    public E get(int index) {
+        return list.get(index);
     }
 
-    public E last() {
-        return set.last();
+    public int indexOf(Object o) {
+        return list.indexOf(o);
     }
 
-    public SortedSet<E> subSet(E fromElement, E toElement) {
-        return set.subSet(fromElement, toElement);
+    public int lastIndexOf(Object o) {
+        return list.lastIndexOf(o);
     }
 
-    public SortedSet<E> tailSet(E fromElement) {
-        return set.tailSet(fromElement);
+    public ListIterator<E> listIterator() {
+        return list.listIterator();
+    }
+
+    public ListIterator<E> listIterator(int index) {
+        return list.listIterator(index);
+    }
+
+    public E remove(int index) {
+        return list.remove(index);
+    }
+
+    public E set(int index, E element) {
+        return list.set(index, element);
+    }
+
+    public List<E> subList(int fromIndex, int toIndex) {
+        return list.subList(fromIndex, toIndex);
     }
 }

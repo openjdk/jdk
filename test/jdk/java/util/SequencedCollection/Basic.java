@@ -38,23 +38,15 @@ import static org.testng.Assert.fail;
  * @bug     8266571
  * @summary Basic tests for SequencedCollection
  * @modules java.base/java.util:open
- * @build   SimpleSortedMap SimpleSortedSet
+ * @build   SimpleDeque SimpleList SimpleSortedSet
  * @run     testng Basic
  */
 
 public class Basic {
-    static Object[] a(Object... a) { return a; }
-
-    static List<String> toList(SequencedCollection<String> seq) {
-        var list = new ArrayList<String>();
-        for (var s : seq)
-            list.add(s);
-        return list;
-    }
-
-    static final List<String> ORIGINAL = List.of("a", "b", "c", "d", "e", "f", "g");
 
     // ========== Data Providers ==========
+
+    static final List<String> ORIGINAL = List.of("a", "b", "c", "d", "e", "f", "g");
 
     @DataProvider(name="all")
     public Iterator<Object[]> all() {
@@ -71,6 +63,8 @@ public class Basic {
             new Object[] { "AsList", Arrays.asList(ORIGINAL.toArray()), ORIGINAL },
             new Object[] { "LinkedHashSet", new LinkedHashSet<>(ORIGINAL), ORIGINAL },
             new Object[] { "ListOf", ORIGINAL, ORIGINAL },
+            new Object[] { "SimpleDeque", new SimpleDeque<>(ORIGINAL), ORIGINAL },
+            new Object[] { "SimpleList", new SimpleList<>(ORIGINAL), ORIGINAL },
             new Object[] { "SimpleSortedSet", new SimpleSortedSet<>(ORIGINAL), ORIGINAL },
             new Object[] { "TreeSet", new TreeSet<>(ORIGINAL), ORIGINAL }
         ).iterator();
@@ -83,6 +77,8 @@ public class Basic {
             new Object[] { "AsList", Arrays.asList(new String[0]), List.of() },
             new Object[] { "LinkedHashSet", new LinkedHashSet<>(), List.of() },
             new Object[] { "ListOf", List.of(), List.of() },
+            new Object[] { "SimpleDeque", new SimpleDeque<>(), List.of() },
+            new Object[] { "SimpleList", new SimpleList<>(), List.of() },
             new Object[] { "SimpleSortedSet", new SimpleSortedSet<>(), List.of() },
             new Object[] { "TreeSet", new TreeSet<>(), List.of() }
         ).iterator();
@@ -93,7 +89,9 @@ public class Basic {
         return Arrays.asList(
             new Object[] { "ArrayDeque", new ArrayDeque<>(ORIGINAL), ORIGINAL },
             new Object[] { "ArrayList", new ArrayList<>(ORIGINAL), ORIGINAL },
-            new Object[] { "LinkedHashSet", new LinkedHashSet<>(ORIGINAL), ORIGINAL }
+            new Object[] { "LinkedHashSet", new LinkedHashSet<>(ORIGINAL), ORIGINAL },
+            new Object[] { "SimpleDeque", new SimpleDeque<>(ORIGINAL), ORIGINAL },
+            new Object[] { "SimpleList", new SimpleList<>(ORIGINAL), ORIGINAL }
         ).iterator();
     }
 
@@ -103,6 +101,8 @@ public class Basic {
             new Object[] { "ArrayDeque", new ArrayDeque<>(ORIGINAL), ORIGINAL },
             new Object[] { "ArrayList", new ArrayList<>(ORIGINAL), ORIGINAL },
             new Object[] { "LinkedHashSet", new LinkedHashSet<>(ORIGINAL), ORIGINAL },
+            new Object[] { "SimpleDeque", new SimpleDeque<>(ORIGINAL), ORIGINAL },
+            new Object[] { "SimpleList", new SimpleList<>(ORIGINAL), ORIGINAL },
             new Object[] { "SimpleSortedSet", new SimpleSortedSet<>(ORIGINAL), ORIGINAL },
             new Object[] { "TreeSet", new TreeSet<>(ORIGINAL), ORIGINAL }
         ).iterator();
