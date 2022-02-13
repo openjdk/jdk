@@ -677,6 +677,7 @@ abstract class AbstractVector<E> extends Vector<E> {
     final <F>
     AbstractVector<F> convert0(char kind, AbstractSpecies<F> rsp) {
         // Derive some JIT-time constants:
+        Class<?> vtype;
         Class<?> etype;   // fill in after switch (constant)
         int vlength;      // fill in after switch (mark type profile?)
         Class<?> rvtype;  // fill in after switch (mark type profile)
@@ -687,13 +688,13 @@ abstract class AbstractVector<E> extends Vector<E> {
             AbstractSpecies<?> rspi = rsp.asIntegral();
             AbstractSpecies<?> vsp = this.vspecies();
             AbstractSpecies<?> vspi = vsp.asIntegral();
-            AbstractVector<?> biti = vspi == vsp ? this.check0(vspi) : this.convert0('X', vspi);
+            AbstractVector<?> biti = vspi == vsp ? this : this.convert0('X', vspi);
             rtype = rspi.elementType();
             rlength = rspi.laneCount();
             etype = vspi.elementType();
             vlength = vspi.laneCount();
-            Class<?> vtype = vspi.dummyVector().getClass();
             rvtype = rspi.dummyVector().getClass();
+            vtype = vspi.dummyVector().getClass();
             int opc = vspi.elementSize() < rspi.elementSize() ? VectorSupport.VECTOR_OP_UCAST : VectorSupport.VECTOR_OP_CAST;
             AbstractVector<?> bitv = VectorSupport.convert(opc,
                     vtype, etype, vlength,
@@ -707,8 +708,9 @@ abstract class AbstractVector<E> extends Vector<E> {
             etype = this.elementType(); // (profile)
             vlength = this.length();  // (profile)
             rvtype = rsp.dummyVector().getClass();  // (profile)
+            vtype = this.getClass();
             return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                    this.getClass(), etype, vlength,
+                    vtype, etype, vlength,
                     rvtype, rtype, rlength,
                     this, rsp,
                     AbstractVector::defaultCast);
@@ -718,8 +720,9 @@ abstract class AbstractVector<E> extends Vector<E> {
             etype = this.elementType(); // (profile)
             vlength = this.length();  // (profile)
             rvtype = rsp.dummyVector().getClass();  // (profile)
+            vtype = this.getClass();
             return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                    this.getClass(), etype, vlength,
+                    vtype, etype, vlength,
                     rvtype, rtype, rlength,
                     this, rsp,
                     AbstractVector::defaultReinterpret);
