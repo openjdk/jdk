@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,11 @@ class UnixSecureDirectoryStream
         ds.writeLock().lock();
         try {
             if (ds.closeImpl()) {
-                UnixNativeDispatcher.close(dfd);
+                try {
+                    UnixNativeDispatcher.close(dfd);
+                } catch (UnixException e) {
+                    e.rethrowAsIOException(ds.directory());
+                }
             }
         } finally {
             ds.writeLock().unlock();
@@ -118,9 +122,17 @@ class UnixSecureDirectoryStream
                 ptr = fdopendir(newdfd1);
             } catch (UnixException x) {
                 if (newdfd1 != -1)
-                    UnixNativeDispatcher.close(newdfd1);
+                    try {
+                        UnixNativeDispatcher.close(newdfd1);
+                    } catch (UnixException e) {
+                        x.addSuppressed(e);
+                    }
                 if (newdfd2 != -1)
-                    UnixNativeDispatcher.close(newdfd2);
+                    try {
+                        UnixNativeDispatcher.close(newdfd2);
+                    } catch (UnixException e) {
+                        x.addSuppressed(e);
+                    }
                 if (x.errno() == UnixConstants.ENOTDIR)
                     throw new NotDirectoryException(file.toString());
                 x.rethrowAsIOException(file);
@@ -421,8 +433,13 @@ class UnixSecureDirectoryStream
                         x.rethrowAsIOException(file);
                     }
                 } finally {
-                    if (file != null)
-                        UnixNativeDispatcher.close(fd);
+                    if (file != null) {
+                        try {
+                            UnixNativeDispatcher.close(fd);
+                        } catch (UnixException x) {
+                            x.rethrowAsIOException(file);
+                        }
+                    }
                 }
             } finally {
                 ds.readLock().unlock();
@@ -504,7 +521,11 @@ class UnixSecureDirectoryStream
                     x.rethrowAsIOException(file);
                 } finally {
                     if (file != null && fd >= 0)
-                        UnixNativeDispatcher.close(fd);
+                        try {
+                            UnixNativeDispatcher.close(fd);
+                        } catch (UnixException e) {
+                            e.rethrowAsIOException(file);
+                        }
                 }
             } finally {
                 ds.readLock().unlock();
@@ -527,7 +548,11 @@ class UnixSecureDirectoryStream
                     x.rethrowAsIOException(file);
                 } finally {
                     if (file != null && fd >= 0)
-                        UnixNativeDispatcher.close(fd);
+                        try {
+                            UnixNativeDispatcher.close(fd);
+                        } catch (UnixException e) {
+                            e.rethrowAsIOException(file);
+                        }
                 }
             } finally {
                 ds.readLock().unlock();
