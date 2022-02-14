@@ -1401,7 +1401,7 @@ size_t os::page_size_for_region(size_t region_size, size_t min_pages, bool must_
   if (UseLargePages) {
     const size_t max_page_size = region_size / min_pages;
 
-    for (size_t page_size = os::large_page_size(); page_size != 0;
+    for (size_t page_size = page_sizes().largest(); page_size != 0;
          page_size = page_sizes().next_smaller(page_size)) {
       if (page_size <= max_page_size) {
         if (!must_be_aligned || is_aligned(region_size, page_size)) {

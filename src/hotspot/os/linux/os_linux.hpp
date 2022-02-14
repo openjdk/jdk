@@ -83,7 +83,6 @@ class Linux {
 
   static bool setup_large_page_type(size_t page_size);
   static bool transparent_huge_pages_sanity_check(bool warn, size_t pages_size);
-  static bool try_commit_using_large_page(size_t page_size);
   static bool hugetlbfs_sanity_check(bool warn, size_t page_size);
   static bool shm_hugetlbfs_sanity_check(bool warn, size_t page_size);
 

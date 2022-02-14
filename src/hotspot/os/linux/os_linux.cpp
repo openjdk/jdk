@@ -3476,34 +3476,36 @@ int os::Linux::hugetlbfs_page_size_flag(size_t page_size) {
   }
   return 0;
 }
-static size_t _large_page_size = 0;
-
-bool os::Linux::try_commit_using_large_page(size_t page_size) {
-  // Include the page size flag to ensure we sanity check the correct page size.
-  int flags = MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | hugetlbfs_page_size_flag(page_size);
-  void *p = mmap(NULL, page_size, PROT_READ|PROT_WRITE, flags, -1, 0);
-  if (p != MAP_FAILED) {
-    // Mapping succeeded, sanity check passed.
-    log_info(pagesize)("Large page size (" SIZE_FORMAT "%s) passed sanity check",
-                        byte_size_in_exact_unit(page_size),
-                        exact_unit_for_byte_size(page_size));
-    munmap(p, page_size);
-    return true;
-  }
-  log_info(pagesize)("Large page size (" SIZE_FORMAT "%s) failed sanity check, "
-                     "checking if smaller large page sizes are usable",
-                     byte_size_in_exact_unit(page_size),
-                     exact_unit_for_byte_size(page_size));
-  return false;
-}
 
 bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
 
-  for (size_t local_page_size = page_size; local_page_size != (size_t)os::vm_page_size(); local_page_size = _page_sizes.next_smaller(local_page_size)) {
-    if (os::Linux::try_commit_using_large_page(local_page_size)) {
-      _large_page_size = local_page_size;
-      return true;
-    }
+  // Include the page size flag to ensure we sanity check the correct page size.
+  int flags = MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | hugetlbfs_page_size_flag(page_size);
+  void *p = mmap(NULL, page_size, PROT_READ|PROT_WRITE, flags, -1, 0);
+
+  if (p != MAP_FAILED) {
+    // Mapping succeeded, sanity check passed.
+    munmap(p, page_size);
+    return true;
+  } else {
+      log_info(pagesize)("Large page size (" SIZE_FORMAT "%s) failed sanity check, "
+                         "checking if smaller large page sizes are usable",
+                         byte_size_in_exact_unit(page_size),
+                         exact_unit_for_byte_size(page_size));
+      for (size_t page_size_ = _page_sizes.next_smaller(page_size);
+          page_size_ != (size_t)os::vm_page_size();
+          page_size_ = _page_sizes.next_smaller(page_size_)) {
+        flags = MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | hugetlbfs_page_size_flag(page_size_);
+        p = mmap(NULL, page_size_, PROT_READ|PROT_WRITE, flags, -1, 0);
+        if (p != MAP_FAILED) {
+          // Mapping succeeded, sanity check passed.
+          munmap(p, page_size_);
+          log_info(pagesize)("Large page size (" SIZE_FORMAT "%s) passed sanity check",
+                             byte_size_in_exact_unit(page_size_),
+                             exact_unit_for_byte_size(page_size_));
+          return true;
+        }
+      }
   }
 
   if (warn) {
@@ -3575,6 +3577,8 @@ static void set_coredump_filter(CoredumpFilterBit bit) {
 }
 
 // Large page support
+
+static size_t _large_page_size = 0;
 
 static size_t scan_default_large_page_size() {
   size_t default_large_page_size = 0;
@@ -3936,23 +3940,14 @@ char* os::Linux::reserve_memory_special_shm(size_t bytes, size_t alignment,
   return addr;
 }
 
-static void warn_on_commit_special_failure(char* req_addr, size_t bytes,
+static void log_on_commit_special_failure(char* req_addr, size_t bytes,
                                            size_t page_size, int error) {
   assert(error == ENOMEM, "Only expect to fail if no memory is available");
 
-  bool warn_on_failure = UseLargePages &&
-      (!FLAG_IS_DEFAULT(UseLargePages) ||
-       !FLAG_IS_DEFAULT(UseHugeTLBFS) ||
-       !FLAG_IS_DEFAULT(LargePageSizeInBytes));
-
-  if (warn_on_failure) {
-    char msg[128];
-    jio_snprintf(msg, sizeof(msg), "Failed to reserve and commit memory. req_addr: "
-                                   PTR_FORMAT " bytes: " SIZE_FORMAT " page size: "
-                                   SIZE_FORMAT " (errno = %d).",
-                                   req_addr, bytes, page_size, error);
-    warning("%s", msg);
-  }
+  log_info(pagesize)("Failed to reserve and commit memory with given page size. req_addr: " PTR_FORMAT
+                     " size: " SIZE_FORMAT "%s, page size: " SIZE_FORMAT "%s, (errno = %d)",
+                     p2i(req_addr), byte_size_in_exact_unit(bytes), exact_unit_for_byte_size(bytes),
+                     byte_size_in_exact_unit(page_size), exact_unit_for_byte_size(page_size), error);
 }
 
 bool os::Linux::commit_memory_special(size_t bytes,
@@ -3974,7 +3969,7 @@ bool os::Linux::commit_memory_special(size_t bytes,
   char* addr = (char*)::mmap(req_addr, bytes, prot, flags, -1, 0);
 
   if (addr == MAP_FAILED) {
-    warn_on_commit_special_failure(req_addr, bytes, page_size, errno);
+    log_on_commit_special_failure(req_addr, bytes, page_size, errno);
     return false;
   }
 
