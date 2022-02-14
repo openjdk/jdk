@@ -348,7 +348,8 @@ public class AdditionalLauncher {
     private static String resolveVariables(JPackageCommand cmd, String str) {
         var map = Map.of(
                 "$APPDIR", cmd.appLayout().appDirectory(),
-                "$ROOTDIR", cmd.appInstallationDirectory(),
+                "$ROOTDIR",
+                cmd.isImagePackageType() ? cmd.outputBundle() : cmd.appInstallationDirectory(),
                 "$BINDIR", cmd.appLayout().launchersDirectory());
         for (var e : map.entrySet()) {
             str = str.replaceAll(Pattern.quote(e.getKey()),
