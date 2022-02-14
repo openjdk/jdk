@@ -3576,6 +3576,10 @@ void Arguments::init_shared_archive_paths() {
             SharedArchivePath = get_default_shared_archive_path();
             SharedArchiveFile = nullptr;
           } else {
+            if (AutoCreateSharedArchive) {
+              warning("-XX:+AutoCreateSharedArchive is unsupported when base CDS archive is not loaded. Run with -Xlog:cds for more info.");
+              AutoCreateSharedArchive = false;
+            }
             no_shared_spaces("invalid archive");
           }
         } else if (base_archive_path == NULL) {

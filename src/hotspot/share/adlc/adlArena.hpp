@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,11 @@
  *
  */
 
-#ifndef SHARE_ADLC_ARENA_HPP
-#define SHARE_ADLC_ARENA_HPP
+#ifndef SHARE_ADLC_ADLARENA_HPP
+#define SHARE_ADLC_ADLARENA_HPP
 
-void* AllocateHeap(size_t size);
-void* ReAllocateHeap(void* old_ptr, size_t size);
+void* AdlAllocateHeap(size_t size);
+void* AdlReAllocateHeap(void* old_ptr, size_t size);
 
 // All classes in adlc may be derived
 // from one of the following allocation classes:
@@ -35,10 +35,10 @@ void* ReAllocateHeap(void* old_ptr, size_t size);
 // - CHeapObj
 //
 // For classes used as name spaces.
-// - AllStatic
+// - AdlAllStatic
 //
 
-class CHeapObj {
+class AdlCHeapObj {
  public:
   void* operator new(size_t size) throw();
   void  operator delete(void* p);
@@ -47,16 +47,16 @@ class CHeapObj {
 
 // Base class for classes that constitute name spaces.
 
-class AllStatic {
+class AdlAllStatic {
  public:
   void* operator new(size_t size) throw();
   void operator delete(void* p);
 };
 
 
-//------------------------------Chunk------------------------------------------
+//------------------------------AdlChunk------------------------------------------
 // Linked list of raw memory chunks
-class Chunk: public CHeapObj {
+class AdlChunk: public AdlCHeapObj {
  private:
   // This ordinary operator delete is needed even though not used, so the
   // below two-argument operator delete will be treated as a placement
@@ -65,41 +65,41 @@ class Chunk: public CHeapObj {
  public:
   void* operator new(size_t size, size_t length) throw();
   void  operator delete(void* p, size_t length);
-  Chunk(size_t length);
+  AdlChunk(size_t length);
 
   enum {
       init_size =  1*1024,      // Size of first chunk
-      size      = 32*1024       // Default size of an Arena chunk (following the first)
+      size      = 32*1024       // Default size of an AdlArena chunk (following the first)
   };
-  Chunk*       _next;           // Next Chunk in list
-  size_t       _len;            // Size of this Chunk
+  AdlChunk*       _next;        // Next AdlChunk in list
+  size_t       _len;            // Size of this AdlChunk
 
   void chop();                  // Chop this chunk
   void next_chop();             // Chop next chunk
 
   // Boundaries of data area (possibly unused)
-  char* bottom() const { return ((char*) this) + sizeof(Chunk);  }
+  char* bottom() const { return ((char*) this) + sizeof(AdlChunk);  }
   char* top()    const { return bottom() + _len; }
 };
 
 
-//------------------------------Arena------------------------------------------
+//------------------------------AdlArena------------------------------------------
 // Fast allocation of memory
-class Arena: public CHeapObj {
+class AdlArena: public AdlCHeapObj {
 protected:
   friend class ResourceMark;
   friend class HandleMark;
   friend class NoHandleMark;
-  Chunk *_first;                // First chunk
-  Chunk *_chunk;                // current chunk
+  AdlChunk *_first;             // First chunk
+  AdlChunk *_chunk;             // current chunk
   char *_hwm, *_max;            // High water mark and max in current chunk
-  void* grow(size_t x);         // Get a new Chunk of at least size x
+  void* grow(size_t x);         // Get a new AdlChunk of at least size x
   size_t _size_in_bytes;          // Size of arena (used for memory usage tracing)
 public:
-  Arena();
-  Arena(size_t init_size);
-  Arena(Arena *old);
-  ~Arena()                      { _first->chop(); }
+  AdlArena();
+  AdlArena(size_t init_size);
+  AdlArena(AdlArena *old);
+  ~AdlArena()                   { _first->chop(); }
   char* hwm() const             { return _hwm; }
 
   // Fast allocate in the arena.  Common case is: pointer test + increment.
@@ -137,10 +137,10 @@ public:
   void *Acalloc( size_t items, size_t x );
   void *Arealloc( void *old_ptr, size_t old_size, size_t new_size );
 
-  // Reset this Arena to empty, and return this Arenas guts in a new Arena.
-  Arena *reset(void);
+  // Reset this AdlArena to empty, and return this AdlArenas guts in a new AdlArena.
+  AdlArena *reset(void);
 
-  // Determine if pointer belongs to this Arena or not.
+  // Determine if pointer belongs to this AdlArena or not.
   bool contains( const void *ptr ) const;
 
   // Total of all chunks in use (not thread-safe)
@@ -151,4 +151,4 @@ public:
   void   set_size_in_bytes(size_t size)  { _size_in_bytes = size;   }
 };
 
-#endif // SHARE_ADLC_ARENA_HPP
+#endif // SHARE_ADLC_ADLARENA_HPP

@@ -42,6 +42,7 @@ import jdk.jfr.consumer.RecordingFile;
 import jdk.jfr.Configuration;
 import jdk.jfr.SettingDefinition;
 import jdk.jfr.SettingControl;
+import jdk.jfr.Timestamp;
 import jdk.jfr.FlightRecorder;
 import jdk.jfr.consumer.RecordedEvent;
 
@@ -257,6 +258,45 @@ public class Snippets {
         @TransactionId
         @Label("Transaction Blocker")
         long transactionId2;
+    }
+    // @end
+
+    // @start region="RelationalOverview"
+    @MetadataDefinition
+    @Relational
+    @Name("com.example.OrderId")
+    @Label("Order ID")
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.FIELD)
+    public @interface OrderId {
+    }
+
+    @Name("com.example.Order")
+    @Label("Order")
+    @Category("Orders")
+    class OrderEvent extends Event {
+        @Label("Order ID")
+        @OrderId
+        long orderId;
+
+        @Label("Order Date")
+        @Timestamp
+        long orderDate;
+    }
+
+    @Name("com.example.OrderLine")
+    @Label("Order Line")
+    @Category("Orders")
+    class OrderLineEvent extends Event {
+        @Label("Order ID")
+        @OrderId
+        long orderId;
+
+        @Label("Quantity")
+        long quantity;
+
+        @Label("Product")
+        String product;
     }
     // @end
 

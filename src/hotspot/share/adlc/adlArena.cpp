@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 #include "adlc.hpp"
 
-void* AllocateHeap(size_t size) {
+void* AdlAllocateHeap(size_t size) {
   unsigned char* ptr = (unsigned char*) malloc(size);
   if (ptr == NULL && size != 0) {
     fprintf(stderr, "Error: Out of memory in ADLC\n"); // logging can cause crash!
@@ -34,7 +34,7 @@ void* AllocateHeap(size_t size) {
   return ptr;
 }
 
-void* ReAllocateHeap(void* old_ptr, size_t size) {
+void* AdlReAllocateHeap(void* old_ptr, size_t size) {
   unsigned char* ptr = (unsigned char*) realloc(old_ptr, size);
   if (ptr == NULL && size != 0) {
     fprintf(stderr, "Error: Out of memory in ADLC\n"); // logging can cause crash!
@@ -44,24 +44,24 @@ void* ReAllocateHeap(void* old_ptr, size_t size) {
   return ptr;
 }
 
-void* Chunk::operator new(size_t requested_size, size_t length) throw() {
-  return CHeapObj::operator new(requested_size + length);
+void* AdlChunk::operator new(size_t requested_size, size_t length) throw() {
+  return AdlCHeapObj::operator new(requested_size + length);
 }
 
-void  Chunk::operator delete(void* p, size_t length) {
-  CHeapObj::operator delete(p);
+void  AdlChunk::operator delete(void* p, size_t length) {
+  AdlCHeapObj::operator delete(p);
 }
 
-Chunk::Chunk(size_t length) {
+AdlChunk::AdlChunk(size_t length) {
   _next = NULL;         // Chain on the linked list
   _len  = length;       // Save actual size
 }
 
 //------------------------------chop-------------------------------------------
-void Chunk::chop() {
-  Chunk *k = this;
+void AdlChunk::chop() {
+  AdlChunk *k = this;
   while( k ) {
-    Chunk *tmp = k->_next;
+    AdlChunk *tmp = k->_next;
     // clear out this chunk (to detect allocation bugs)
     memset(k, 0xBE, k->_len);
     free(k);                    // Free chunk (was malloc'd)
@@ -69,52 +69,52 @@ void Chunk::chop() {
   }
 }
 
-void Chunk::next_chop() {
+void AdlChunk::next_chop() {
   _next->chop();
   _next = NULL;
 }
 
-//------------------------------Arena------------------------------------------
-Arena::Arena( size_t init_size ) {
+//------------------------------AdlArena------------------------------------------
+AdlArena::AdlArena( size_t init_size ) {
   init_size = (init_size+3) & ~3;
-  _first = _chunk = new (init_size) Chunk(init_size);
+  _first = _chunk = new (init_size) AdlChunk(init_size);
   _hwm = _chunk->bottom();      // Save the cached hwm, max
   _max = _chunk->top();
   set_size_in_bytes(init_size);
 }
 
-Arena::Arena() {
-  _first = _chunk = new (Chunk::init_size) Chunk(Chunk::init_size);
+AdlArena::AdlArena() {
+  _first = _chunk = new (AdlChunk::init_size) AdlChunk(AdlChunk::init_size);
   _hwm = _chunk->bottom();      // Save the cached hwm, max
   _max = _chunk->top();
-  set_size_in_bytes(Chunk::init_size);
+  set_size_in_bytes(AdlChunk::init_size);
 }
 
-Arena::Arena( Arena *a )
+AdlArena::AdlArena( AdlArena *a )
 : _chunk(a->_chunk), _hwm(a->_hwm), _max(a->_max), _first(a->_first) {
   set_size_in_bytes(a->size_in_bytes());
 }
 
 //------------------------------used-------------------------------------------
-// Total of all Chunks in arena
-size_t Arena::used() const {
-  size_t sum = _chunk->_len - (_max-_hwm); // Size leftover in this Chunk
-  Chunk *k = _first;
-  while( k != _chunk) {         // Whilst have Chunks in a row
-    sum += k->_len;             // Total size of this Chunk
-    k = k->_next;               // Bump along to next Chunk
+// Total of all AdlChunks in arena
+size_t AdlArena::used() const {
+  size_t sum = _chunk->_len - (_max-_hwm); // Size leftover in this AdlChunk
+  AdlChunk *k = _first;
+  while( k != _chunk) {         // Whilst have AdlChunks in a row
+    sum += k->_len;             // Total size of this AdlChunk
+    k = k->_next;               // Bump along to next AdlChunk
   }
   return sum;                   // Return total consumed space.
 }
 
 //------------------------------grow-------------------------------------------
-// Grow a new Chunk
-void* Arena::grow( size_t x ) {
+// Grow a new AdlChunk
+void* AdlArena::grow( size_t x ) {
   // Get minimal required size.  Either real big, or even bigger for giant objs
-  size_t len = max(x, Chunk::size);
+  size_t len = max(x, AdlChunk::size);
 
-  Chunk *k = _chunk;            // Get filled-up chunk address
-  _chunk = new (len) Chunk(len);
+  AdlChunk *k = _chunk;         // Get filled-up chunk address
+  _chunk = new (len) AdlChunk(len);
 
   if( k ) k->_next = _chunk;    // Append new chunk to end of linked list
   else _first = _chunk;
@@ -127,8 +127,8 @@ void* Arena::grow( size_t x ) {
 }
 
 //------------------------------calloc-----------------------------------------
-// Allocate zeroed storage in Arena
-void *Arena::Acalloc( size_t items, size_t x ) {
+// Allocate zeroed storage in AdlArena
+void *AdlArena::Acalloc( size_t items, size_t x ) {
   size_t z = items*x;   // Total size needed
   void *ptr = Amalloc(z);       // Get space
   memset( ptr, 0, z );          // Zap space
@@ -136,8 +136,8 @@ void *Arena::Acalloc( size_t items, size_t x ) {
 }
 
 //------------------------------realloc----------------------------------------
-// Reallocate storage in Arena.
-void *Arena::Arealloc( void *old_ptr, size_t old_size, size_t new_size ) {
+// Reallocate storage in AdlArena.
+void *AdlArena::Arealloc( void *old_ptr, size_t old_size, size_t new_size ) {
   char *c_old = (char*)old_ptr; // Handy name
   // Stupid fast special case
   if( new_size <= old_size ) {  // Shrink in-place
@@ -161,32 +161,32 @@ void *Arena::Arealloc( void *old_ptr, size_t old_size, size_t new_size ) {
 }
 
 //------------------------------reset------------------------------------------
-// Reset this Arena to empty, and return this Arenas guts in a new Arena.
-Arena *Arena::reset(void) {
-  Arena *a = new Arena(this);   // New empty arena
+// Reset this AdlArena to empty, and return this AdlArenas guts in a new AdlArena.
+AdlArena *AdlArena::reset(void) {
+  AdlArena *a = new AdlArena(this);   // New empty arena
   _first = _chunk = NULL;       // Normal, new-arena initialization
   _hwm = _max = NULL;
-  return a;                     // Return Arena with guts
+  return a;                     // Return AdlArena with guts
 }
 
 //------------------------------contains---------------------------------------
-// Determine if pointer belongs to this Arena or not.
-bool Arena::contains( const void *ptr ) const {
+// Determine if pointer belongs to this AdlArena or not.
+bool AdlArena::contains( const void *ptr ) const {
   if( (void*)_chunk->bottom() <= ptr && ptr < (void*)_hwm )
     return true;                // Check for in this chunk
-  for( Chunk *c = _first; c; c = c->_next )
+  for( AdlChunk *c = _first; c; c = c->_next )
     if( (void*)c->bottom() <= ptr && ptr < (void*)c->top())
-      return true;              // Check for every chunk in Arena
-  return false;                 // Not in any Chunk, so not in Arena
+      return true;              // Check for every chunk in AdlArena
+  return false;                 // Not in any AdlChunk, so not in AdlArena
 }
 
 //-----------------------------------------------------------------------------
 // CHeapObj
 
-void* CHeapObj::operator new(size_t size) throw() {
-  return (void *) AllocateHeap(size);
+void* AdlCHeapObj::operator new(size_t size) throw() {
+  return (void *) AdlAllocateHeap(size);
 }
 
-void CHeapObj::operator delete(void* p){
+void AdlCHeapObj::operator delete(void* p){
  free(p);
 }
