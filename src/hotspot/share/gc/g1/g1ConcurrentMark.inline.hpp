@@ -48,7 +48,7 @@ inline bool G1CMIsAliveClosure::do_object_b(oop obj) {
     return true;
   }
 
-  // All object in closed archive regions are live.
+  // All objects in closed archive regions are live.
   if (hr->is_closed_archive()) {
     return true;
   }
