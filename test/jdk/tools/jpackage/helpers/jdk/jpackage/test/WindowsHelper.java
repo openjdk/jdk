@@ -58,7 +58,7 @@ public class WindowsHelper {
 
     private static Path getInstallationSubDirectory(JPackageCommand cmd) {
         cmd.verifyIsOfType(PackageType.WINDOWS);
-        return Path.of(cmd.getArgumentValue("--install-dir", () -> cmd.name()));
+        return Path.of(cmd.getArgumentValue("--install-dir", cmd::name));
     }
 
     private static void runMsiexecWithRetries(Executor misexec) {
@@ -108,9 +108,14 @@ public class WindowsHelper {
             final Path unpackDir = destinationDir.resolve(
                     TKit.removeRootFromAbsolutePath(
                             getInstallationRootDirectory(cmd)));
+
             // Put msiexec in .bat file because can't pass value of TARGETDIR
             // property containing spaces through ProcessBuilder properly.
-            TKit.createTextFile(unpackBat, List.of(String.join(" ", List.of(
+            // Set folder permissions to allow msiexec unpack msi bundle.
+            TKit.createTextFile(unpackBat, List.of(
+                    String.format("icacls \"%s\" /inheritance:e /grant Users:M",
+                            destinationDir),
+                    String.join(" ", List.of(
                     "msiexec",
                     "/a",
                     String.format("\"%s\"", cmd.outputBundle().normalize()),

@@ -32,6 +32,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.test.Functional.ThrowingBiConsumer;
@@ -300,7 +302,9 @@ public class AdditionalLauncher {
                         .orElseGet(() -> List.of(cmd.getAllArgumentValues("--arguments"))))
                 .addJavaOptions(Optional
                         .ofNullable(javaOptions)
-                        .orElseGet(() -> List.of(cmd.getAllArgumentValues("--java-options"))));
+                        .orElseGet(() -> List.of(cmd.getAllArgumentValues(
+                        "--java-options"))).stream().map(
+                        str -> resolveVariables(cmd, str)).toList());
 
         if (!rawProperties.contains(LAUNCHER_AS_SERVICE)) {
             appVerifier.executeAndVerifyOutput();
@@ -339,6 +343,18 @@ public class AdditionalLauncher {
         }
 
         private final Map<String, String> data;
+    }
+
+    private static String resolveVariables(JPackageCommand cmd, String str) {
+        var map = Map.of(
+                "$APPDIR", cmd.appLayout().appDirectory(),
+                "$ROOTDIR", cmd.appInstallationDirectory(),
+                "$BINDIR", cmd.appLayout().launchersDirectory());
+        for (var e : map.entrySet()) {
+            str = str.replaceAll(Pattern.quote(e.getKey()),
+                    Matcher.quoteReplacement(e.getValue().toString()));
+        }
+        return str;
     }
 
     private List<String> javaOptions;
