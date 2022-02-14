@@ -83,7 +83,7 @@ public final class LauncherAsServiceVerifier {
             String expectedArgValue) {
         this.expectedValue = expectedArgValue;
         this.launcherName = launcherName;
-        this.appOutputPath = appOutputDir().resolve(appOutputFileName);
+        this.appOutputFileName = Path.of(appOutputFileName);
     }
 
     public void applyTo(PackageTest pkg) {
@@ -108,6 +108,17 @@ public final class LauncherAsServiceVerifier {
         launcherNames.forEach(toConsumer(launcherName -> {
             verify(cmd, launcherName);
         }));
+
+        if (WINDOWS.contains(cmd.packageType())) {
+            Path serviceInstallerPath = cmd.appLayout().launchersDirectory().resolve(
+                    "service-installer.exe");
+            if (launcherNames.isEmpty()) {
+                TKit.assertPathExists(serviceInstallerPath, false);
+
+            } else {
+                TKit.assertFileExists(serviceInstallerPath);
+            }
+        }
 
         List<Path> servicesSpecificFiles = new ArrayList<>();
         List<Path> servicesSpecificFolders = new ArrayList<>();
@@ -188,7 +199,7 @@ public final class LauncherAsServiceVerifier {
     private boolean canVerifyInstall(JPackageCommand cmd) throws IOException {
         String msg = String.format(
                 "Not verifying contents of test output file [%s] for %s launcher",
-                appOutputPath,
+                appOutputFilePathInitialize(),
                 Optional.ofNullable(launcherName).orElse("the main"));
         if (cmd.isPackageUnpacked(msg) || cmd.isFakeRuntime(msg)) {
             return false;
@@ -209,17 +220,19 @@ public final class LauncherAsServiceVerifier {
             cmd.addArgument("--launcher-as-service");
             cmd.addArguments("--arguments",
                     JPackageCommand.escapeAndJoin(expectedValue));
-            cmd.addArguments("--java-options",
-                    "-Djpackage.test.appOutput=" + appOutputPath.toString());
+            cmd.addArguments("--java-options", "-Djpackage.test.appOutput="
+                    + appOutputFilePathInitialize().toString());
             cmd.addArguments("--java-options", "-Djpackage.test.noexit=true");
         });
         pkg.addInstallVerifier(cmd -> {
             if (canVerifyInstall(cmd)) {
                 delayInstallVerify();
                 HelloApp.assertApp(cmd.appLauncherPath())
-                        .addParam("jpackage.test.appOutput", appOutputPath.toString())
+                        .addParam("jpackage.test.appOutput",
+                                appOutputFilePathVerify(cmd).toString())
                         .addDefaultArguments(expectedValue)
                         .verifyOutput();
+                TKit.deleteIfExists(appOutputFileName);
             }
         });
         pkg.addInstallVerifier(cmd -> {
@@ -234,27 +247,24 @@ public final class LauncherAsServiceVerifier {
                 if (canVerifyInstall(cmd)) {
                     delayInstallVerify();
                     super.verify(cmd);
+                    TKit.deleteIfExists(appOutputFileName);
                 }
                 LauncherAsServiceVerifier.verify(cmd, launcherName);
             }
         }.setLauncherAsService()
-        .addJavaOptions("-Djpackage.test.appOutput=" + appOutputPath.toString())
-        .addJavaOptions("-Djpackage.test.noexit=true")
-        .addDefaultArguments(expectedValue)
-        .applyTo(pkg);
+                .addJavaOptions("-Djpackage.test.appOutput="
+                        + appOutputFilePathInitialize().toString())
+                .addJavaOptions("-Djpackage.test.noexit=true")
+                .addDefaultArguments(expectedValue)
+                .applyTo(pkg);
     }
 
     private static void verify(JPackageCommand cmd, String launcherName) throws
             IOException {
-        if (TKit.isWindows()) {
-            TKit.assertFileExists(cmd.appLayout().launchersDirectory().resolve(
-                    "service-installer.exe"));
-        } else {
-            if (TKit.isLinux()) {
-                verifyLinuxUnitFile(cmd, launcherName);
-            } else if (TKit.isOSX()) {
-                verifyMacDaemonPlistFile(cmd, launcherName);
-            }
+        if (LINUX.contains(cmd.packageType())) {
+            verifyLinuxUnitFile(cmd, launcherName);
+        } else if (MAC_PKG.equals(cmd.packageType())) {
+            verifyMacDaemonPlistFile(cmd, launcherName);
         }
     }
 
@@ -305,13 +315,27 @@ public final class LauncherAsServiceVerifier {
         Functional.ThrowingRunnable.toRunnable(() -> Thread.sleep(5 * 1000)).run();
     }
 
-    private static Path appOutputDir() {
-        return Path.of(System.getProperty("java.io.tmpdir"));
+    private Path appOutputFilePathInitialize() {
+        final Path dir;
+        if (TKit.isWindows()) {
+            dir = Path.of("$ROOTDIR");
+        } else {
+            dir = Path.of(System.getProperty("java.io.tmpdir"));
+        }
+        return dir.resolve(appOutputFileName);
+    }
+
+    private Path appOutputFilePathVerify(JPackageCommand cmd) {
+        if (TKit.isWindows()) {
+            return cmd.appInstallationDirectory().resolve(appOutputFileName);
+        } else {
+            return appOutputFilePathInitialize();
+        }
     }
 
     private final String expectedValue;
     private final String launcherName;
-    private final Path appOutputPath;
+    private final Path appOutputFileName;
 
     final static Set<PackageType> SUPPORTED_PACKAGES = Stream.of(LINUX, WINDOWS,
             Set.of(MAC_PKG)).flatMap(x -> x.stream()).collect(Collectors.toSet());

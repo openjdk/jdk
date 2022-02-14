@@ -31,14 +31,7 @@ set -e; set -o pipefail;
 
 # $JT_BUNDLE_URL (Link can be obtained from https://openjdk.java.net/jtreg/ page)
 jtreg_bundle=$JT_BUNDLE_URL
-if command -v cygpath &> /dev/null; then
-  # On Windows, when Cygwin's /tmp used, msiexec fails to unpack .msi packages 
-  # in subdirectories because of weird permission issues.
-  rootdir=`cygpath -u $LOCALAPPDATA`/Temp
-else
-  rootdir=/tmp
-fi
-workdir="$rootdir/jpackage_jtreg_testing"
+workdir=/tmp/jpackage_jtreg_testing
 jtreg_jar="$workdir/jtreg/lib/jtreg.jar"
 jpackage_test_selector=test/jdk/tools/jpackage
 
