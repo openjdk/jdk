@@ -74,8 +74,8 @@
 #define FORBID_C_FUNCTION(signature, alternative)
 #endif
 
-#ifndef ALLOW_CALL
-#define ALLOW_CALL(name, invocation) invocation;
+#ifndef ALLOW_C_FUNCTION
+#define ALLOW_C_FUNCTION(name, invocation) invocation
 #endif
 
 #endif // SHARE_UTILITIES_COMPILERWARNINGS_HPP

@@ -71,10 +71,10 @@
 #define FORBID_C_FUNCTION(signature, alternative) \
   extern "C" signature __attribute__((__warning__(alternative)))
 
-#define ALLOW_CALL(name, invocation) \
+#define ALLOW_C_FUNCTION(name, invocation) \
 PRAGMA_DIAG_PUSH \
 PRAGMA_DISABLE_GCC_WARNING("-Wattribute-warning") \
-invocation; \
+invocation \
 PRAGMA_DIAG_POP
 
 
@@ -85,12 +85,12 @@ FORBID_C_FUNCTION(FILE*    fopen(const char*, const char*),           "use os::f
 FORBID_C_FUNCTION(int      fsync(int),                                "use os::fsync");
 FORBID_C_FUNCTION(int      ftruncate(int, off_t),                     "use os::ftruncate");
 #ifndef BSD
-FORBID_C_FUNCTION(int      ftruncate64(int, off_t),                   "use os::ftruncate");
+FORBID_C_FUNCTION(int      ftruncate64(int, off64_t),                 "use os::ftruncate");
 #endif
 FORBID_C_FUNCTION(void     funlockfile(FILE *),                       "use os::funlockfile");
 FORBID_C_FUNCTION(off_t    lseek(int, off_t, int),                    "use os::lseek");
 #ifndef BSD
-FORBID_C_FUNCTION(off_t    lseek64(int, off_t, int),                  "use os::lseek");
+FORBID_C_FUNCTION(off64_t  lseek64(int, off64_t, int),                "use os::lseek");
 #endif
 FORBID_C_FUNCTION(long int random(void),                              "use os::random");
 FORBID_C_FUNCTION(ssize_t  recv(int, void*, size_t, int),             "use os::recv");

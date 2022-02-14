@@ -4922,7 +4922,7 @@ int os::create_binary_file(const char* path, bool rewrite_existing) {
 }
 
 off64_t call_lseek64(int fd, off64_t offset, int whence) {
-  ALLOW_CALL("lseek64", return ::lseek64(fd, offset, whence))
+  ALLOW_C_FUNCTION(lseek64, return ::lseek64(fd, offset, whence);)
 }
 
 // return current position of file pointer
