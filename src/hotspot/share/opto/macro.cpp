@@ -1465,7 +1465,7 @@ void PhaseMacroExpand::expand_allocate_common(
     if (result_phi_i_o->outcnt() > 1) {
       call->set_req(TypeFunc::I_O, top());
     } else {
-      assert(result_phi_i_o->unique_ctrl_out() == call, "sanity");
+      assert(result_phi_i_o->unique_ctrl_out_or_null() == call, "sanity");
       // Case of new array with negative size known during compilation.
       // AllocateArrayNode::Ideal() optimization disconnect unreachable
       // following code since call to runtime will throw exception.

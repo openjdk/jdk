@@ -1294,7 +1294,7 @@ void PhaseIdealLoop::copy_skeleton_predicates_to_main_loop_helper(Node* predicat
     while (predicate != NULL && predicate->is_Proj() && predicate->in(0)->is_If()) {
       iff = predicate->in(0)->as_If();
       uncommon_proj = iff->proj_out(1 - predicate->as_Proj()->_con);
-      if (uncommon_proj->unique_ctrl_out() != rgn)
+      if (uncommon_proj->unique_ctrl_out_or_null() != rgn)
         break;
       if (iff->in(1)->Opcode() == Op_Opaque4) {
         assert(skeleton_predicate_has_opaque(iff), "unexpected");
