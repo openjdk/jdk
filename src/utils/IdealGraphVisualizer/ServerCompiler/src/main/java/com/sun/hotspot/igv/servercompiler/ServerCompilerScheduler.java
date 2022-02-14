@@ -276,6 +276,36 @@ public class ServerCompilerScheduler implements Scheduler {
             }
             // n is pinned to ctrlIn.
             InputBlock block = ctrlIn.block;
+            if (ctrlIn.isBlockProjection) {
+                // Block projections should not have successors in their block:
+                // if n is pinned to a block projection, try to sink it.
+                assert (ctrlIn.succs.size() > 0);
+                Node ctrlSucc = null;
+                int ctrlSuccs = 0;
+                for (Node s : ctrlIn.succs) {
+                    if (s.isCFG) {
+                        ctrlSucc = s;
+                        ctrlSuccs++;
+                    }
+                }
+                if (ctrlSuccs == 1) {
+                    int ctrlSuccPreds = 0;
+                    for (Node p : ctrlSucc.preds) {
+                        if (isControl(p)) {
+                            ctrlSuccPreds++;
+                        }
+                    }
+                    if (ctrlSuccPreds == 1) {
+                        // Sink n to the successor ctrlSucc of the block projection,
+                        // since ctrlSucc does not have other predecessors.
+                        block = ctrlSucc.block;
+                    }
+                } else {
+                    ErrorManager.getDefault().log(ErrorManager.WARNING,
+                         "Block projection " + ctrlIn + " has " + ctrlSuccs + " control successors, " +
+                         "this might affect the quality of the approximated schedule.");
+                }
+            }
             n.block = block;
             block.addNode(n.inputNode.getId());
         }
