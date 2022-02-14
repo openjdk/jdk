@@ -94,7 +94,7 @@ import java.util.Vector;
  * bug apparent, we need to invoke {@code Raster.createRaster(…)}
  * with a sample model for which no optimization is provided.
  */
-final class TiledImage implements RenderedImage {
+public class TiledImage implements RenderedImage {
     /**
      * Run the test using writable tiles first, then read-only tiles.
      */
@@ -175,7 +175,7 @@ final class TiledImage implements RenderedImage {
 
     @Override
     public Vector<RenderedImage> getSources() {
-        return new Vector();
+        return new Vector<>();
     }
 
     @Override
