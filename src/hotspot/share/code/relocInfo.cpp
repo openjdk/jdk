@@ -35,6 +35,8 @@
 #include "runtime/stubCodeGenerator.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
+#include <new>
+#include <type_traits>
 
 const RelocationHolder RelocationHolder::none; // its type is relocInfo::none
 
@@ -235,12 +237,40 @@ Relocation* RelocIterator::reloc() {
   APPLY_TO_RELOCATIONS(EACH_TYPE);
   #undef EACH_TYPE
   assert(t == relocInfo::none, "must be padding");
-  return new(_rh) Relocation(t);
+  _rh = RelocationHolder::none;
+  return _rh.reloc();
 }
 
+// Verify all the destructors are trivial, so we don't need to worry about
+// destroying old contents of a RelocationHolder being assigned.
+#define VERIFY_TRIVIALLY_DESTRUCTIBLE_AUX(Reloc) \
+  static_assert(std::is_trivially_destructible<Reloc>::value, "must be");
 
-//////// Methods for flyweight Relocation types
+#define VERIFY_TRIVIALLY_DESTRUCTIBLE(name) \
+  VERIFY_TRIVIALLY_DESTRUCTIBLE_AUX(PASTE_TOKENS(name, _Relocation));
 
+APPLY_TO_RELOCATIONS(VERIFY_TRIVIALLY_DESTRUCTIBLE)
+VERIFY_TRIVIALLY_DESTRUCTIBLE_AUX(Relocation)
+
+#undef VERIFY_TRIVIALLY_DESTRUCTIBLE_AUX
+#undef VERIFY_TRIVIALLY_DESTRUCTIBLE
+
+// Define all the copy_into functions.
+#define DEFINE_COPY_INTO_AUX(Reloc)                             \
+  void Reloc::copy_into(RelocationHolder& holder) const {       \
+    copy_into_helper(*this, holder);                            \
+  }
+
+#define DEFINE_COPY_INTO(name) \
+  DEFINE_COPY_INTO_AUX(PASTE_TOKENS(name, _Relocation))
+
+APPLY_TO_RELOCATIONS(DEFINE_COPY_INTO)
+DEFINE_COPY_INTO_AUX(Relocation)
+
+#undef DEFINE_COPY_INTO_AUX
+#undef DEFINE_COPY_INTO
+
+//////// Methods for RelocationHolder
 
 RelocationHolder RelocationHolder::plus(int offset) const {
   if (offset != 0) {
@@ -263,6 +293,8 @@ RelocationHolder RelocationHolder::plus(int offset) const {
   }
   return (*this);
 }
+
+//////// Methods for flyweight Relocation types
 
 // some relocations can compute their own values
 address Relocation::value() {

@@ -2495,7 +2495,7 @@ void Assembler::jmp_literal(address dest, RelocationHolder const& rspec) {
   assert(dest != NULL, "must have a target");
   intptr_t disp = dest - (pc() + sizeof(int32_t));
   assert(is_simm32(disp), "must be 32bit offset (jmp)");
-  emit_data(disp, rspec.reloc(), call32_operand);
+  emit_data(disp, rspec, call32_operand);
 }
 
 void Assembler::jmpb_0(Label& L, const char* file, int line) {
