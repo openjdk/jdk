@@ -263,6 +263,24 @@ public class ServerCompilerScheduler implements Scheduler {
         // Mark all nodes reachable in backward traversal from root
         Set<Node> reachable = reachableNodes();
 
+        // Schedule pinned nodes first.
+        for (Node n : nodes) {
+            if (!reachable.contains(n) ||
+                n.block != null ||
+                n.preds.isEmpty()) {
+                continue;
+            }
+            Node ctrlIn = n.preds.get(0);
+            if (!isControl(ctrlIn)) {
+                continue;
+            }
+            // n is pinned to ctrlIn.
+            InputBlock block = ctrlIn.block;
+            n.block = block;
+            block.addNode(n.inputNode.getId());
+        }
+
+        // Now schedule rest of reachable nodes.
         Set<Node> unscheduled = new HashSet<>();
         for (Node n : this.nodes) {
             if (n.block == null && reachable.contains(n)) {
@@ -277,41 +295,37 @@ public class ServerCompilerScheduler implements Scheduler {
             for (Node n : unscheduled) {
 
                 InputBlock block = null;
-                if (this.isPhi(n) && n.preds.get(0) != null) {
-                    // Phi nodes in same block as region nodes
-                    block = n.preds.get(0).block;
-                } else {
-                    for (Node s : n.succs) {
-                        if (reachable.contains(s)) {
-                            if (s.block == null) {
-                                block = null;
-                                break;
-                            } else {
-                                if (isPhi(s)) {
-                                    // Move inputs above their source blocks.
-                                    boolean found = false;
-                                    for (InputBlock srcBlock : sourceBlocks(n, s)) {
-                                        found = true;
-                                        if (block == null) {
-                                            block = srcBlock;
-                                        } else {
-                                            int current = blockIndex.get(block),
-                                                source  = blockIndex.get(srcBlock);
-                                            block = commonDominator[current][source];
-                                        }
+
+                for (Node s : n.succs) {
+                    if (reachable.contains(s)) {
+                        if (s.block == null) {
+                            block = null;
+                            break;
+                        } else {
+                            if (isPhi(s)) {
+                                // Move inputs above their source blocks.
+                                boolean found = false;
+                                for (InputBlock srcBlock : sourceBlocks(n, s)) {
+                                    found = true;
+                                    if (block == null) {
+                                        block = srcBlock;
+                                    } else {
+                                        int current = blockIndex.get(block),
+                                            source  = blockIndex.get(srcBlock);
+                                        block = commonDominator[current][source];
                                     }
-                                    if (!found) {
-                                        // Can happen due to inconsistent phi-region pairs.
-                                        block = s.block;
-                                        ErrorManager.getDefault().log(ErrorManager.WARNING,
-                                            "Could not find region of " + n + " in " + s + ", " +
-                                            "this might affect the quality of the approximated schedule.");
-                                    }
-                                } else if (block == null) {
-                                    block = s.block;
-                                } else {
-                                    block = commonDominator[this.blockIndex.get(block)][blockIndex.get(s.block)];
                                 }
+                                if (!found) {
+                                    // Can happen due to inconsistent phi-region pairs.
+                                    block = s.block;
+                                    ErrorManager.getDefault().log(ErrorManager.WARNING,
+                                        "Could not find region of " + n + " in " + s + ", " +
+                                        "this might affect the quality of the approximated schedule.");
+                                }
+                            } else if (block == null) {
+                                block = s.block;
+                            } else {
+                                block = commonDominator[this.blockIndex.get(block)][blockIndex.get(s.block)];
                             }
                         }
                     }
@@ -333,6 +347,7 @@ public class ServerCompilerScheduler implements Scheduler {
             }
         }
 
+        // Finally, schedule unreachable nodes.
         Set<Node> curReachable = new HashSet<>(reachable);
         for (Node n : curReachable) {
             if (n.block != null) {
@@ -493,6 +508,10 @@ public class ServerCompilerScheduler implements Scheduler {
 
     private boolean isPhi(Node n) {
         return n.inputNode.getProperties().get("name").equals("Phi");
+    }
+
+    private boolean isControl(Node n) {
+        return n.inputNode.getProperties().get("category").equals("control");
     }
 
     private Node findRoot() {
