@@ -210,8 +210,8 @@ public abstract sealed class Executable extends AccessibleObject
     public abstract int getModifiers();
 
     /**
-     * {@return the {@linkplain AccessFlag access flags} for
-     * the executable represented by this object}
+     * {@return an immutable set of the {@linkplain AccessFlag access
+     * flags} for the executable represented by this object}
      * @implSpec
      * TBD
      * @see #getModifiers()
