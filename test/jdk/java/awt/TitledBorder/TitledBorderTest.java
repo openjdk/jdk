@@ -94,4 +94,4 @@ public class TitledBorderTest {
       throw new RuntimeException(e);
     }
   }
-} 
+}
