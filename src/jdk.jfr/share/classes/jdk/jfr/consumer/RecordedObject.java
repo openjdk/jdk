@@ -225,23 +225,7 @@ public class RecordedObject {
      * for callers of this method is to validate the field before attempting access.
      * <p>
      * Example
-     *
-     * <pre>{@literal
-     * if (event.hasField("intValue")) {
-     *   int intValue = event.getValue("intValue");
-     *   System.out.println("Int value: " + intValue);
-     * }
-     *
-     * if (event.hasField("objectClass")) {
-     *   RecordedClass clazz = event.getValue("objectClass");
-     *   System.out.println("Class name: " + clazz.getName());
-     * }
-     *
-     * if (event.hasField("sampledThread")) {
-     *   RecordedThread sampledThread = event.getValue("sampledThread");
-     *   System.out.println("Sampled thread: " + sampledThread.getJavaName());
-     * }
-     * }</pre>
+     * {@snippet class="Snippets" region="RecordedObjectGetValue"}
      *
      * @param <T> the return type
      * @param  name of the field to get, not {@code null}

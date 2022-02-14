@@ -49,7 +49,7 @@ else
 fi
 
 $JAVA_HOME/bin/java ${TESTVMOPTS} \
-    -cp "${CP}" -Xcheck:jni JNICheck | grep -v SIG | grep -v Signal | grep -v CallStatic > "${CP}"/log.txt
+    -cp "${CP}" -Xcheck:jni JNICheck | grep -v SIG | grep -v Signal | grep -v Handler | grep -v jsig | grep -v CallStatic > "${CP}"/log.txt
 
 # any messages logged may indicate a failure.
 if [ -s "${CP}"/log.txt ]; then

@@ -46,7 +46,9 @@ public class SDTProbesGNULinuxTest {
     public static void main(String[] args) throws Throwable {
         {
             var pb = ProcessTools.createJavaProcessBuilder(
-                    "-XX:+ExtendedDTraceProbes",
+                    "-XX:+DTraceMethodProbes",
+                    "-XX:+DTraceAllocProbes",
+                    "-XX:+DTraceMonitorProbes",
                     "-version");
             var oa = new OutputAnalyzer(pb.start());
             // This test only matters when build with DTRACE_ENABLED.
