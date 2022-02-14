@@ -48,10 +48,16 @@ public class ServerCompilerScheduler implements Scheduler {
         public InputNode inputNode;
         public Set<Node> succs = new HashSet<>();
         public List<Node> preds = new ArrayList<>();
+        public List<Character> predIndices = new ArrayList<>();
         public InputBlock block;
         public boolean isBlockProjection;
         public boolean isBlockStart;
         public boolean isCFG;
+
+        @Override
+        public String toString() {
+            return inputNode.toString();
+        }
     }
     private InputGraph graph;
     private Collection<Node> nodes;
@@ -246,31 +252,16 @@ public class ServerCompilerScheduler implements Scheduler {
                 assert graph.getBlock(n) != null;
             }
 
+            check();
+
             return blocks;
         }
     }
 
     private void scheduleLatest() {
-        Node root = findRoot();
-        if(root == null) {
-            assert false : "No root found!";
-            return;
-        }
 
         // Mark all nodes reachable in backward traversal from root
-        Set<Node> reachable = new HashSet<>();
-        reachable.add(root);
-        Stack<Node> stack = new Stack<>();
-        stack.push(root);
-        while (!stack.isEmpty()) {
-            Node cur = stack.pop();
-            for (Node n : cur.preds) {
-                if (!reachable.contains(n)) {
-                    reachable.add(n);
-                    stack.push(n);
-                }
-            }
-        }
+        Set<Node> reachable = reachableNodes();
 
         Set<Node> unscheduled = new HashSet<>();
         for (Node n : this.nodes) {
@@ -296,7 +287,27 @@ public class ServerCompilerScheduler implements Scheduler {
                                 block = null;
                                 break;
                             } else {
-                                if (block == null) {
+                                if (isPhi(s)) {
+                                    // Move inputs above their source blocks.
+                                    boolean found = false;
+                                    for (InputBlock srcBlock : sourceBlocks(n, s)) {
+                                        found = true;
+                                        if (block == null) {
+                                            block = srcBlock;
+                                        } else {
+                                            int current = blockIndex.get(block),
+                                                source  = blockIndex.get(srcBlock);
+                                            block = commonDominator[current][source];
+                                        }
+                                    }
+                                    if (!found) {
+                                        // Can happen due to inconsistent phi-region pairs.
+                                        block = s.block;
+                                        ErrorManager.getDefault().log(ErrorManager.WARNING,
+                                            "Could not find region of " + n + " in " + s + ", " +
+                                            "this might affect the quality of the approximated schedule.");
+                                    }
+                                } else if (block == null) {
                                     block = s.block;
                                 } else {
                                     block = commonDominator[this.blockIndex.get(block)][blockIndex.get(s.block)];
@@ -333,6 +344,44 @@ public class ServerCompilerScheduler implements Scheduler {
             }
         }
 
+    }
+
+    // Recomputes the input array of the given node, including empty slots.
+    private Node[] inputArray(Node n) {
+        Node[] inputs = new Node[Collections.max(n.predIndices) + 1];
+        for (int i = 0; i < n.preds.size(); i++) {
+            inputs[n.predIndices.get(i)] = n.preds.get(i);
+        }
+        return inputs;
+    }
+
+    // Finds the blocks from which node in flows into phi.
+    private Set<InputBlock> sourceBlocks(Node in, Node phi) {
+        Node reg = phi.preds.get(0);
+        assert (reg != null);
+        // Reconstruct the positional input arrays of phi-region pairs.
+        Node[] phiInputs = inputArray(phi);
+        Node[] regInputs = inputArray(reg);
+
+        Set<InputBlock> srcBlocks = new HashSet<>();
+        for (int i = 0; i < Math.min(phiInputs.length, regInputs.length); i++) {
+            if (phiInputs[i] == in) {
+                if (regInputs[i] != null) {
+                    if (regInputs[i].isCFG) {
+                        srcBlocks.add(regInputs[i].block);
+                    } else {
+                        ErrorManager.getDefault().log(ErrorManager.WARNING,
+                            reg + " has non-control input, " +
+                            "this might affect the quality of the approximated schedule.");
+                    }
+                } else {
+                    ErrorManager.getDefault().log(ErrorManager.WARNING,
+                        phi + " has input node without associated region, " +
+                        "this might affect the quality approximated schedule.");
+                }
+            }
+        }
+        return srcBlocks;
     }
 
     private void markWithBlock(Node n, InputBlock b, Set<Node> reachable) {
@@ -426,6 +475,18 @@ public class ServerCompilerScheduler implements Scheduler {
         }
     }
 
+    // Whether b1 dominates b2.
+    private boolean dominates(InputBlock b1, InputBlock b2) {
+        InputBlock bi = b2;
+        do {
+            if (bi.equals(b1)) {
+                return true;
+            }
+            bi = dominatorMap.get(bi);
+        } while (bi != null);
+        return false;
+    }
+
     private boolean isRegion(Node n) {
         return n.inputNode.getProperties().get("name").equals("Region");
     }
@@ -459,6 +520,29 @@ public class ServerCompilerScheduler implements Scheduler {
         } else {
             return minNode;
         }
+    }
+
+    private Set<Node> reachableNodes() {
+        Node root = findRoot();
+        if(root == null) {
+            assert false : "No root found!";
+            return null;
+        }
+        // Mark all nodes reachable in backward traversal from root
+        Set<Node> reachable = new HashSet<>();
+        reachable.add(root);
+        Stack<Node> stack = new Stack<>();
+        stack.push(root);
+        while (!stack.isEmpty()) {
+            Node cur = stack.pop();
+            for (Node n : cur.preds) {
+                if (!reachable.contains(n)) {
+                    reachable.add(n);
+                    stack.push(n);
+                }
+            }
+        }
+        return reachable;
     }
 
     public boolean hasCategoryInformation() {
@@ -512,6 +596,7 @@ public class ServerCompilerScheduler implements Scheduler {
                 Node fromNode = inputNodeToNode.get(fromInputNode);
                 fromNode.succs.add(toNode);
                 toNode.preds.add(fromNode);
+                toNode.predIndices.add(e.getToIndex());
             }
         }
     }
@@ -576,4 +661,48 @@ public class ServerCompilerScheduler implements Scheduler {
             }
         }
     }
+
+    // Check invariants in the input graph and in the output schedule. Warn the
+    // user rather than crashing, for robustness (an inaccuracy in the schedule
+    // approximation should not disable all other IGV functionality).
+    public void check() {
+
+        Set<Node> reachable = reachableNodes();
+        for (Node n : nodes) {
+
+            // Check that region nodes are well-formed.
+            if (isRegion(n) && !n.isBlockStart) {
+                ErrorManager.getDefault().log(ErrorManager.WARNING,
+                    n + " is not marked with is_block_start, " +
+                    "this might affect the quality of the approximated schedule.");
+            }
+
+            // Check that phi nodes are well-formed. If they are, check that
+            // their inputs are scheduled above their source nodes.
+            if (isPhi(n)) {
+                if (!reachable.contains(n)) { // Dead phi.
+                    continue;
+                }
+                for (int i = 1; i < n.preds.size(); i++) {
+                    Node in = n.preds.get(i);
+                    if (in.isCFG) {
+                        // This can happen for nodes misclassified as CFG,
+                        // for example x64's 'rep_stos'.
+                        ErrorManager.getDefault().log(ErrorManager.WARNING,
+                            "CFG node " + in + " is input to " + n + ", " +
+                            "this might affect the quality of the approximated schedule.");
+                        continue;
+                    }
+                    for (InputBlock b : sourceBlocks(in, n)) {
+                        if (!dominates(graph.getBlock(in.inputNode), b)) {
+                            ErrorManager.getDefault().log(ErrorManager.WARNING,
+                                "inaccurate schedule: " + in + " does not dominate " + b + ".");
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+
 }
