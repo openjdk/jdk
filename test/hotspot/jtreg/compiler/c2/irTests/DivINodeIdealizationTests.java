@@ -38,8 +38,8 @@ public class DivINodeIdealizationTests {
     }
 
     @Run(test = {"constant", "identity", "identityAgain", "identityThird",
-                 "retainDenominator", "divByNegOne", "divByPow2And",
-                 "divByPow2And1",  "divByPow2", "divByNegPow2",
+                 "retainDenominator", "divByNegOne", "divByPow2AND",
+                 "divByPow2AND1",  "divByPow2", "divByNegPow2",
                  "magicDiv"})
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
@@ -85,8 +85,8 @@ public class DivINodeIdealizationTests {
         Asserts.assertEQ(a / 1        , identity(a));
         Asserts.assertEQ(a / (13 / 13), identityAgain(a));
         Asserts.assertEQ(a / -1       , divByNegOne(a));
-        Asserts.assertEQ((a & -4) / 2 , divByPow2And(a));
-        Asserts.assertEQ((a & -2) / 2 , divByPow2And1(a));
+        Asserts.assertEQ((a & -4) / 2 , divByPow2AND(a));
+        Asserts.assertEQ((a & -2) / 2 , divByPow2AND1(a));
         Asserts.assertEQ(a / 8        , divByPow2(a));
         Asserts.assertEQ(a / -8       , divByNegPow2(a));
         Asserts.assertEQ(a / 13       , magicDiv(a));
@@ -94,7 +94,7 @@ public class DivINodeIdealizationTests {
 
     @Test
     @IR(failOn = {IRNode.DIV})
-    @IR(counts = {IRNode.TRAP, "1"})
+    @IR(counts = {IRNode.DIV_BY_ZERO_TRAP, "1"})
     // Checks x / x => 1
     public int constant(int x) {
         return x / x;
@@ -116,7 +116,7 @@ public class DivINodeIdealizationTests {
 
     @Test
     @IR(failOn = {IRNode.DIV})
-    @IR(counts = {IRNode.TRAP, "1"})
+    @IR(counts = {IRNode.DIV_BY_ZERO_TRAP, "1"})
     // Checks x / (y / y) => x
     public int identityThird(int x, int y) {
         return x / (y / y);
@@ -125,7 +125,7 @@ public class DivINodeIdealizationTests {
     @Test
     @IR(counts = {IRNode.MUL, "1",
                   IRNode.DIV, "1",
-                  IRNode.TRAP, "1"
+                  IRNode.DIV_BY_ZERO_TRAP, "1"
                  })
     // Hotspot should keep the division because it may cause a division by zero trap
     public int retainDenominator(int x, int y) {
@@ -147,7 +147,7 @@ public class DivINodeIdealizationTests {
                  })
     // Checks (x & -(2^c0)) / 2^c1 => (x >> c1) & (2^c0 >> c1) => (x >> c1) & c3 where 2^c0 > |2^c1| and c3 = 2^c0 >> c1
     // Having a large enough and in the dividend removes the need to account for rounding when converting to shifts and multiplies as in divByPow2()
-    public int divByPow2And(int x) {
+    public int divByPow2AND(int x) {
         return (x & -4) / 2;
     }
 
@@ -156,7 +156,7 @@ public class DivINodeIdealizationTests {
     @IR(counts = {IRNode.RSHIFT, "1"})
     // Checks (x & -(2^c0)) / 2^c0 => x >> c0
     // If the negative of the constant within the & equals the divisor then the and can be removed as it only affects bits that will be shifted off
-    public int divByPow2And1(int x) {
+    public int divByPow2AND1(int x) {
         return (x & -2) / 2;
     }
 
@@ -192,8 +192,8 @@ public class DivINodeIdealizationTests {
     @IR(failOn = {IRNode.DIV})
     @IR(counts = {IRNode.SUB, "1",
                   IRNode.MUL, "1",
-                  IRNode.CONVI2L, "1",
-                  IRNode.CONVL2I, "1",
+                  IRNode.CONV_I2L, "1",
+                  IRNode.CONV_L2I, "1",
                  })
     // Checks magic int division occurs in general when dividing by a non power of 2.
     // More tests can be made to cover the specific cases for differences in the
