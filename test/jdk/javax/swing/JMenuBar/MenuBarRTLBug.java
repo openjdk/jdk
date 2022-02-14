@@ -173,6 +173,6 @@ public class MenuBarRTLBug {
                     }
                 });
             }
-	}
+        }
     }
 }
