@@ -218,6 +218,7 @@ class Field extends AccessibleObject implements Member {
      * @jvms 4.5 Fields
      * @since 19
      */
+    @Override
     public Set<AccessFlag> accessFlags() {
         return Set.of(); // stubbed out empty set
     }

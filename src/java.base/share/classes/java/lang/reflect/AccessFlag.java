@@ -193,7 +193,7 @@ public enum AccessFlag {
     }
 
     /**
-     * {@return corresponding integer mask for the flag; 0 if none}
+     * {@return the corresponding integer mask for the access flag}
      */
     public int mask() {
         return mask;

@@ -254,72 +254,84 @@ public class Modifier {
     /**
      * The {@code int} value representing the {@code public}
      * modifier.
+     * @see AccessFlag#PUBLIC
      */
     public static final int PUBLIC           = 0x00000001;
 
     /**
      * The {@code int} value representing the {@code private}
      * modifier.
+     * @see AccessFlag#PRIVATE
      */
     public static final int PRIVATE          = 0x00000002;
 
     /**
      * The {@code int} value representing the {@code protected}
      * modifier.
+     * @see AccessFlag#PROTECTED
      */
     public static final int PROTECTED        = 0x00000004;
 
     /**
      * The {@code int} value representing the {@code static}
      * modifier.
+     * @see AccessFlag#STATIC
      */
     public static final int STATIC           = 0x00000008;
 
     /**
      * The {@code int} value representing the {@code final}
      * modifier.
+     * @see AccessFlag#FINAL
      */
     public static final int FINAL            = 0x00000010;
 
     /**
      * The {@code int} value representing the {@code synchronized}
      * modifier.
+     * @see AccessFlag#SYNCHRONIZED
      */
     public static final int SYNCHRONIZED     = 0x00000020;
 
     /**
      * The {@code int} value representing the {@code volatile}
      * modifier.
+     * @see AccessFlag#VOLATILE
      */
     public static final int VOLATILE         = 0x00000040;
 
     /**
      * The {@code int} value representing the {@code transient}
      * modifier.
+     * @see AccessFlag#TRANSIENT
      */
     public static final int TRANSIENT        = 0x00000080;
 
     /**
      * The {@code int} value representing the {@code native}
      * modifier.
+     * @see AccessFlag#NATIVE
      */
     public static final int NATIVE           = 0x00000100;
 
     /**
      * The {@code int} value representing the {@code interface}
      * modifier.
+     * @see AccessFlag#INTERFACE
      */
     public static final int INTERFACE        = 0x00000200;
 
     /**
      * The {@code int} value representing the {@code abstract}
      * modifier.
+     * @see AccessFlag#ABSTRACT
      */
     public static final int ABSTRACT         = 0x00000400;
 
     /**
      * The {@code int} value representing the {@code strictfp}
      * modifier.
+     * @see AccessFlag#STRICT
      */
     public static final int STRICT           = 0x00000800;
 
