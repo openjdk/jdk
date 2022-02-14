@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,6 +137,28 @@ public class WindowsHelper {
         .addArgument(propertyName)
         .dumpOutput()
         .executeAndGetOutput().stream().collect(Collectors.joining("\n"));
+    }
+
+    public static String getExecutableDesciption(Path pathToExeFile) {
+        String description = null;
+        Executor exec = Executor.of("powershell",
+                "-NoLogo",
+                "-NoProfile",
+                "-Command",
+                "(Get-Item \\\""
+                + pathToExeFile.toAbsolutePath()
+                + "\\\").VersionInfo | select FileDescription");
+        List<String> lines = exec.executeAndGetOutput();
+        for (int i = 0; i < lines.size(); i++) {
+            if (lines.get(i).trim().equals("FileDescription")) {
+                i += 2; // Skip "---------------" and move to description
+                description = lines.get(i).trim();
+            }
+        }
+
+        TKit.assertNotNull(description, "Failed to get file description");
+
+        return description;
     }
 
     private static boolean isUserLocalInstall(JPackageCommand cmd) {

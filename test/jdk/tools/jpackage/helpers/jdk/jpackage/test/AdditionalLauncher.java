@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.ApplicationLayout;
 import jdk.jpackage.test.Functional.ThrowingBiConsumer;
@@ -82,12 +83,15 @@ public final class AdditionalLauncher {
         return this;
     }
 
-    public String getRawPropertyValue(String key) {
-        Map.Entry<String, String> entry = rawProperties.stream()
+    public String getRawPropertyValue(String key, Supplier<String> getDefault) {
+        return rawProperties.stream()
                 .filter(item -> item.getKey().equals(key))
-                .findFirst().orElse(null);
+                .map(e -> e.getValue()).findAny().orElseGet(getDefault);
+    }
 
-        return entry == null ? null : entry.getValue();
+    private String getDesciption(JPackageCommand cmd) {
+        return getRawPropertyValue("description", () -> cmd.getArgumentValue(
+                "--description", unused -> cmd.name()));
     }
 
     public AdditionalLauncher setShortcuts(boolean menu, boolean shortcut) {
@@ -253,39 +257,20 @@ public final class AdditionalLauncher {
 
     private void verifyDescription(JPackageCommand cmd) throws IOException {
         if (TKit.isWindows()) {
-            String expectedDescription = getRawPropertyValue("description");
-            if (expectedDescription != null) {
-                Path launcherPath = cmd.appLauncherPath(name);
-                Executor exec = Executor.of("powershell",
-                                             "-NoLogo",
-                                             "-NoProfile",
-                                             "-Command",
-                                             "(Get-Item \\\"" +
-                                             launcherPath.toAbsolutePath() +
-                                             "\\\").VersionInfo | select FileDescription");
-                boolean descriptionIsValid = false;
-                List<String> lines = exec.executeAndGetOutput();
-                if (lines != null) {
-                    for (int i = 0; i < lines.size(); i++) {
-                        if (lines.get(i).trim().equals("FileDescription")) {
-                            i += 2; // Skip "---------------" and move to description
-                            descriptionIsValid =
-                                    expectedDescription.equals(lines.get(i).trim());
-                        }
-                    }
-                }
-                TKit.assertTrue(descriptionIsValid, "Invalid file description");
-            }
-        } else if (TKit.isLinux()) {
-            String expectedDescription = getRawPropertyValue("description");
-            if (expectedDescription != null) {
-                Path desktopFile = LinuxHelper.getDesktopFile(cmd, name);
-                if (Files.exists(desktopFile)) {
-                    TKit.assertTextStream("Comment=" + expectedDescription)
-                            .label(String.format("[%s] file", desktopFile))
-                            .predicate(String::equals)
-                            .apply(Files.readAllLines(desktopFile).stream());
-                }
+            String expectedDescription = getDesciption(cmd);
+            Path launcherPath = cmd.appLauncherPath(name);
+            String actualDescription =
+                    WindowsHelper.getExecutableDesciption(launcherPath);
+            TKit.assertEquals(expectedDescription, actualDescription,
+                    "Invalid file description");
+        } else if (TKit.isLinux() && !cmd.isImagePackageType()) {
+            String expectedDescription = getDesciption(cmd);
+            Path desktopFile = LinuxHelper.getDesktopFile(cmd, name);
+            if (Files.exists(desktopFile)) {
+                TKit.assertTextStream("Comment=" + expectedDescription)
+                        .label(String.format("[%s] file", desktopFile))
+                        .predicate(String::equals)
+                        .apply(Files.readAllLines(desktopFile).stream());
             }
         }
     }
