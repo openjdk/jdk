@@ -203,7 +203,7 @@ public enum AccessFlag {
      * {@return whether or not the flag has a directly corresponding
      * modifier in the Java programming language}
      */
-    public boolean sourceModifer() {
+    public boolean sourceModifier() {
         return sourceModifier;
     }
 
