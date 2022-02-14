@@ -58,10 +58,10 @@ static jrawMonitorID classTrackLock;
 
 /*
  * Note: jvmtiAllocate/jvmtiDeallocate() may be blocked by ongoing safepoints.
- * It is dangerous to call them while holding any monitors, because jvmti may
- * post events, e.g. JVMTI_EVENT_OBJECT_FREE at safepoints and its event handler
- * may acquire monitor, e.g. classTrackLock in cbTrackingObjectFree(), that can
- * result deadlock
+ * It is dangerous to call them (via bagCreateBag/bagDestroyBag())while holding monitor(s),
+ * because jvmti may post events, e.g. JVMTI_EVENT_OBJECT_FREE at safepoints and its event
+ * handler may acquire the same monitor(s), e.g. classTrackLock in cbTrackingObjectFree(),
+ * which can lead to deadlock.
  */
 
 /*
@@ -99,7 +99,7 @@ classTrack_processUnloads(JNIEnv *env)
     deletedSignatures = NULL;
     debugMonitorExit(classTrackLock);
 
-    // Relinquish classTrackLock to avoid deadlock
+    // Allocate new bag outside classTrackLock lock to avoid deadlock
     struct bag* new_bag = bagCreateBag(sizeof(char*), 10);
     debugMonitorEnter(classTrackLock);
     if (deletedSignatures == NULL) {
