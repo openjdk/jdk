@@ -31,6 +31,10 @@ JRT_LEAF(oopDesc*, ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded(oopDe
   return to_oop(ZBarrier::load_barrier_on_oop_field_preloaded((zpointer*)p, to_zpointer(o)));
 JRT_END
 
+JRT_LEAF(zpointer, ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_store_good(oopDesc* o, oop* p))
+  return ZAddress::color(ZBarrier::load_barrier_on_oop_field_preloaded((zpointer*)p, to_zpointer(o)), ZPointerStoreGoodMask);
+JRT_END
+
 JRT_LEAF(oopDesc*, ZBarrierSetRuntime::load_barrier_on_weak_oop_field_preloaded(oopDesc* o, oop* p))
   return to_oop(ZBarrier::load_barrier_on_weak_oop_field_preloaded((zpointer*)p, to_zpointer(o)));
 JRT_END
@@ -84,6 +88,10 @@ address ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(DecoratorSe
 
 address ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr() {
   return reinterpret_cast<address>(load_barrier_on_oop_field_preloaded);
+}
+
+address ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_store_good_addr() {
+  return reinterpret_cast<address>(load_barrier_on_oop_field_preloaded_store_good);
 }
 
 address ZBarrierSetRuntime::load_barrier_on_weak_oop_field_preloaded_addr() {

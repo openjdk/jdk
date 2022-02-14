@@ -124,7 +124,7 @@ instruct zLoadPNullCheck(rFlagsReg cr, memory op, immP0 zero)
   ins_encode %{
     // A null pointer will have all address bits 0. This mask sign extends
     // all address bits, so we can test if the address is 0.
-    __ testq($op$$Address, 0xFFFF0000);
+    __ testq($op$$Address, ZBarrierSetAssembler::_zpointer_address_mask);
   %}
   ins_pipe(ialu_cr_reg_imm);
 %}

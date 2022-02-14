@@ -211,7 +211,6 @@ extern uintptr_t  ZPointerStoreBadMask;
 
 extern uintptr_t  ZPointerVectorLoadBadMask[8];
 extern uintptr_t  ZPointerVectorStoreBadMask[8];
-extern uintptr_t  ZPointerVectorUncolorMask[8];
 extern uintptr_t  ZPointerVectorStoreGoodMask[8];
 
 // The bad mask is 64 bit. Its low order 32 bits contain all possible value combinations

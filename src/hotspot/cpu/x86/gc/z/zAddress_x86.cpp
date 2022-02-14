@@ -24,6 +24,8 @@
 #include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zBarrierSet.hpp"
+#include "gc/z/zBarrierSetAssembler.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -44,4 +46,11 @@ size_t ZPlatformAddressHeapBaseShift() {
 
 void ZGlobalsPointers::pd_set_good_masks() {
   ZPointerLoadShift = ZPointer::load_shift_lookup(ZPointerLoadGoodMask);
+
+  if (ExecutingUnitTests) {
+    // When run from gtest, we have a G1 barrier set here
+    return;
+  }
+  ZBarrierSetAssembler* bs_asm = ZBarrierSet::assembler();
+  bs_asm->patch_barriers();
 }

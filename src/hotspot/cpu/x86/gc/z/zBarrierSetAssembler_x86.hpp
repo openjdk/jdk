@@ -50,14 +50,24 @@ class ZStoreBarrierStubC2;
 #endif // COMPILER2
 
 const int ZBarrierRelocationFormatLoadGoodBeforeShl = 0;
-const int ZBarrierRelocationFormatMarkBadAfterTest  = 1;
-const int ZBarrierRelocationFormatStoreGoodAfterCmp = 2;
-const int ZBarrierRelocationFormatStoreBadAfterTest = 3;
-const int ZBarrierRelocationFormatStoreGoodAfterOr  = 4;
-const int ZBarrierRelocationFormatStoreGoodAfterMov = 5;
+const int ZBarrierRelocationFormatLoadBadAfterTest  = 1;
+const int ZBarrierRelocationFormatMarkBadAfterTest  = 2;
+const int ZBarrierRelocationFormatStoreGoodAfterCmp = 3;
+const int ZBarrierRelocationFormatStoreBadAfterTest = 4;
+const int ZBarrierRelocationFormatStoreGoodAfterOr  = 5;
+const int ZBarrierRelocationFormatStoreGoodAfterMov = 6;
 
 class ZBarrierSetAssembler : public ZBarrierSetAssemblerBase {
+private:
+  GrowableArrayCHeap<address, mtGC> _load_bad_relocations;
+  GrowableArrayCHeap<address, mtGC> _store_bad_relocations;
+  GrowableArrayCHeap<address, mtGC> _store_good_relocations;
+
 public:
+  static const int32_t _zpointer_address_mask = 0xFFFF0000;
+
+  ZBarrierSetAssembler();
+
   virtual void load_at(MacroAssembler* masm,
                        DecoratorSet decorators,
                        BasicType type,
@@ -162,6 +172,8 @@ public:
                             Label& slow_path_continuation) const;
 
   void patch_barrier_relocation(address addr, int format);
+
+  void patch_barriers();
 
   void check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error);
 };

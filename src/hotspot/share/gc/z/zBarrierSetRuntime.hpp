@@ -33,6 +33,7 @@ class oopDesc;
 class ZBarrierSetRuntime : public AllStatic {
 private:
   static oopDesc* load_barrier_on_oop_field_preloaded(oopDesc* o, oop* p);
+  static zpointer load_barrier_on_oop_field_preloaded_store_good(oopDesc* o, oop* p);
   static oopDesc* load_barrier_on_weak_oop_field_preloaded(oopDesc* o, oop* p);
   static oopDesc* load_barrier_on_phantom_oop_field_preloaded(oopDesc* o, oop* p);
   static oopDesc* no_keepalive_load_barrier_on_weak_oop_field_preloaded(oopDesc* o, oop* p);
@@ -44,6 +45,7 @@ private:
 public:
   static address load_barrier_on_oop_field_preloaded_addr(DecoratorSet decorators);
   static address load_barrier_on_oop_field_preloaded_addr();
+  static address load_barrier_on_oop_field_preloaded_store_good_addr();
   static address load_barrier_on_weak_oop_field_preloaded_addr();
   static address load_barrier_on_phantom_oop_field_preloaded_addr();
   static address no_keepalive_load_barrier_on_weak_oop_field_preloaded_addr();

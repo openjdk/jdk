@@ -55,7 +55,6 @@ uintptr_t  ZPointerStoreBadMask;
 
 uintptr_t  ZPointerVectorLoadBadMask[8];
 uintptr_t  ZPointerVectorStoreBadMask[8];
-uintptr_t  ZPointerVectorUncolorMask[8];
 uintptr_t  ZPointerVectorStoreGoodMask[8];
 
 static uint32_t* ZPointerCalculateStoreGoodMaskLowOrderBitsAddr() {
@@ -112,7 +111,6 @@ void ZGlobalsPointers::initialize() {
   ZPointerRemembered = ZPointerRemembered0;
 
   set_good_masks();
-  set_vector_mask(ZPointerVectorUncolorMask, ~ZPointerAllMetadataMask);
 }
 
 void ZGlobalsPointers::flip_young_mark_start() {
