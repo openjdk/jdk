@@ -110,7 +110,7 @@ public class MethodHandles {
      * This method is caller sensitive, which means that it may return different
      * values to different callers.
      * In cases where {@code MethodHandles.lookup} is called from a context where
-     * there is no caller frame on the stack (e.g when called directly
+     * there is no caller frame on the stack (e.g. when called directly
      * from a JNI attached thread), {@code IllegalCallerException} is thrown.
      * To obtain a {@link Lookup lookup object} in such a context, use an auxiliary class that will
      * implicitly be identified as the caller, or use {@link MethodHandles#publicLookup()}
