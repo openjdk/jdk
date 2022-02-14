@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  *          MethodHandles::lookup with null caller class throws an IllegalCallerException.
  * @library /test/lib
  * @requires os.family != "aix"
- * @run main/native NullCallerMethodHandlesLookupTest
+ * @run main/native NullCallerLookupTest
  */
 
 // Test disabled on AIX since we cannot invoke the JVM on the primordial thread.
@@ -41,11 +41,10 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
-public class NullCallerMethodHandlesLookupTest {
+public class NullCallerLookupTest {
     public static void main(String[] args) throws IOException {
-        Path launcher = Paths.get(System.getProperty("test.nativepath"), "NullCallerMethodHandlesLookupTest");
+        Path launcher = Path.of(System.getProperty("test.nativepath"), "NullCallerLookupTest");
         ProcessBuilder pb = new ProcessBuilder(launcher.toString());
         Map<String, String> env = pb.environment();
 
