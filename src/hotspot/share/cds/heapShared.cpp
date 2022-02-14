@@ -76,6 +76,7 @@ address   HeapShared::_narrow_oop_base;
 int       HeapShared::_narrow_oop_shift;
 DumpedInternedStrings *HeapShared::_dumped_interned_strings = NULL;
 
+// Support for loaded heap.
 uintptr_t HeapShared::_loaded_heap_bottom = 0;
 uintptr_t HeapShared::_loaded_heap_top = 0;
 uintptr_t HeapShared::_dumptime_base_0 = UINTPTR_MAX;
@@ -88,6 +89,10 @@ intx HeapShared::_runtime_offset_1 = 0;
 intx HeapShared::_runtime_offset_2 = 0;
 intx HeapShared::_runtime_offset_3 = 0;
 bool HeapShared::_loading_failed = false;
+
+// Suport for mapped heap (!UseCompressedOops only)
+ptrdiff_t HeapShared::_runtime_delta = 0;
+
 //
 // If you add new entries to the following tables, you should know what you're doing!
 //
@@ -362,7 +367,10 @@ void HeapShared::archive_objects(GrowableArray<MemRegion>* closed_regions,
     create_archived_object_cache();
 
     log_info(cds)("Heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
-                  p2i(CompressedOops::begin()), p2i(CompressedOops::end()));
+                   UseCompressedOops ? p2i(CompressedOops::begin()) :
+                                       p2i((address)G1CollectedHeap::heap()->reserved().start()),
+                   UseCompressedOops ? p2i(CompressedOops::end()) :
+                                       p2i((address)G1CollectedHeap::heap()->reserved().end()));
     log_info(cds)("Dumping objects to closed archive heap region ...");
     copy_closed_objects(closed_regions);
 
@@ -658,7 +666,6 @@ void HeapShared::write_subgraph_info_table() {
   CompactHashtableWriter writer(d_table->_count, &stats);
   CopyKlassSubGraphInfoToArchive copy(&writer);
   d_table->iterate(&copy);
-
   writer.dump(&_run_time_subgraph_info_table, "subgraphs");
 }
 
@@ -1400,39 +1407,44 @@ void HeapShared::add_to_dumped_interned_strings(oop string) {
 // region. This way we can quickly relocate all the pointers without using
 // BasicOopIterateClosure at runtime.
 class FindEmbeddedNonNullPointers: public BasicOopIterateClosure {
-  narrowOop* _start;
+  void* _start;
   BitMap *_oopmap;
   int _num_total_oops;
   int _num_null_oops;
  public:
-  FindEmbeddedNonNullPointers(narrowOop* start, BitMap* oopmap)
+  FindEmbeddedNonNullPointers(void* start, BitMap* oopmap)
     : _start(start), _oopmap(oopmap), _num_total_oops(0),  _num_null_oops(0) {}
 
   virtual void do_oop(narrowOop* p) {
     _num_total_oops ++;
     narrowOop v = *p;
     if (!CompressedOops::is_null(v)) {
-      size_t idx = p - _start;
+      size_t idx = p - (narrowOop*)_start;
       _oopmap->set_bit(idx);
     } else {
       _num_null_oops ++;
     }
   }
-  virtual void do_oop(oop *p) {
-    ShouldNotReachHere();
+  virtual void do_oop(oop* p) {
+    _num_total_oops ++;
+    if ((*p) != NULL) {
+      size_t idx = p - (oop*)_start;
+      _oopmap->set_bit(idx);
+    } else {
+      _num_null_oops ++;
+    }
   }
   int num_total_oops() const { return _num_total_oops; }
   int num_null_oops()  const { return _num_null_oops; }
 };
 
 ResourceBitMap HeapShared::calculate_oopmap(MemRegion region) {
-  assert(UseCompressedOops, "must be");
-  size_t num_bits = region.byte_size() / sizeof(narrowOop);
+  size_t num_bits = region.byte_size() / (UseCompressedOops ? sizeof(narrowOop) : sizeof(oop));
   ResourceBitMap oopmap(num_bits);
 
   HeapWord* p   = region.start();
   HeapWord* end = region.end();
-  FindEmbeddedNonNullPointers finder((narrowOop*)p, &oopmap);
+  FindEmbeddedNonNullPointers finder((void*)p, &oopmap);
   ArchiveBuilder* builder = DumpSharedSpaces ? ArchiveBuilder::current() : NULL;
 
   int num_objs = 0;
@@ -1453,11 +1465,11 @@ ResourceBitMap HeapShared::calculate_oopmap(MemRegion region) {
 
 // Patch all the embedded oop pointers inside an archived heap region,
 // to be consistent with the runtime oop encoding.
-class PatchEmbeddedPointers: public BitMapClosure {
+class PatchCompressedEmbeddedPointers: public BitMapClosure {
   narrowOop* _start;
 
  public:
-  PatchEmbeddedPointers(narrowOop* start) : _start(start) {}
+  PatchCompressedEmbeddedPointers(narrowOop* start) : _start(start) {}
 
   bool do_bit(size_t offset) {
     narrowOop* p = _start + offset;
@@ -1465,6 +1477,22 @@ class PatchEmbeddedPointers: public BitMapClosure {
     assert(!CompressedOops::is_null(v), "null oops should have been filtered out at dump time");
     oop o = HeapShared::decode_from_archive(v);
     RawAccess<IS_NOT_NULL>::oop_store(p, o);
+    return true;
+  }
+};
+
+class PatchUncompressedEmbeddedPointers: public BitMapClosure {
+  oop* _start;
+
+ public:
+  PatchUncompressedEmbeddedPointers(oop* start) : _start(start) {}
+
+  bool do_bit(size_t offset) {
+    oop* p = _start + offset;
+    intptr_t dumptime_oop = (intptr_t)((void*)*p);
+    assert(dumptime_oop != 0, "null oops should have been filtered out at dump time");
+    intptr_t runtime_oop = dumptime_oop + HeapShared::runtime_delta();
+    RawAccess<IS_NOT_NULL>::oop_store(p, cast_to_oop(runtime_oop));
     return true;
   }
 };
@@ -1481,8 +1509,13 @@ void HeapShared::patch_embedded_pointers(MemRegion region, address oopmap,
   assert(bm.is_same(checkBm), "sanity");
 #endif
 
-  PatchEmbeddedPointers patcher((narrowOop*)region.start());
-  bm.iterate(&patcher);
+  if (UseCompressedOops) {
+    PatchCompressedEmbeddedPointers patcher((narrowOop*)region.start());
+    bm.iterate(&patcher);
+  } else {
+    PatchUncompressedEmbeddedPointers patcher((oop*)region.start());
+    bm.iterate(&patcher);
+  }
 }
 
 // The CDS archive remembers each heap object by its address at dump time, but

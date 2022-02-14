@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@
 #ifndef SHARE_SERVICES_MALLOCTRACKER_HPP
 #define SHARE_SERVICES_MALLOCTRACKER_HPP
 
-#if INCLUDE_NMT
-
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/threadCritical.hpp"
 #include "services/nmtCommon.hpp"
 #include "utilities/nativeCallStack.hpp"
+
+class outputStream;
 
 /*
  * This counter class counts memory allocation and deallocation,
@@ -314,10 +314,9 @@ class MallocHeader {
   // We discount sizes larger than these
   static const size_t max_reasonable_malloc_size = LP64_ONLY(256 * G) NOT_LP64(3500 * M);
 
-  // Check block integrity. If block is broken, print out a report
-  // to tty (optionally with hex dump surrounding the broken block),
-  // then trigger a fatal error.
-  void check_block_integrity() const;
+  // If block is broken, print out a report to tty (optionally with
+  // hex dump surrounding the broken block), then trigger a fatal error
+  void assert_block_integrity() const;
   void print_block_on_error(outputStream* st, address bad_address) const;
   void mark_block_as_dead();
 
@@ -362,6 +361,11 @@ class MallocHeader {
 
   // Cleanup tracking information and mark block as dead before the memory is released.
   void release();
+
+  // If block is broken, fill in a short descriptive text in out,
+  // an option pointer to the corruption in p_corruption, and return false.
+  // Return true if block is fine.
+  bool check_block_integrity(char* msg, size_t msglen, address* p_corruption) const;
 
  private:
   inline void set_size(size_t size) {
@@ -436,6 +440,14 @@ class MallocTracker : AllStatic {
   static inline void record_arena_size_change(ssize_t size, MEMFLAGS flags) {
     MallocMemorySummary::record_arena_size_change(size, flags);
   }
+
+  // Given a pointer, if it seems to point to the start of a valid malloced block,
+  // print the block. Note that since there is very low risk of memory looking
+  // accidentally like a valid malloc block header (canaries and all) this is not
+  // totally failproof. Only use this during debugging or when you can afford
+  // signals popping up, e.g. when writing an hs_err file.
+  static bool print_pointer_information(const void* p, outputStream* st);
+
  private:
   static inline MallocHeader* malloc_header(void *memblock) {
     assert(memblock != NULL, "NULL pointer");
@@ -443,8 +455,5 @@ class MallocTracker : AllStatic {
     return header;
   }
 };
-
-#endif // INCLUDE_NMT
-
 
 #endif // SHARE_SERVICES_MALLOCTRACKER_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,9 @@ class MetaspaceShared : AllStatic {
 
   static void prepare_for_dumping() NOT_CDS_RETURN;
   static void preload_and_dump() NOT_CDS_RETURN;
+#ifdef _LP64
+  static void adjust_heap_sizes_for_dumping() NOT_CDS_JAVA_HEAP_RETURN;
+#endif
 
 private:
   static void preload_and_dump_impl(TRAPS) NOT_CDS_RETURN;
@@ -133,7 +136,7 @@ public:
   }
 
   static bool try_link_class(JavaThread* current, InstanceKlass* ik);
-  static void link_shared_classes(TRAPS) NOT_CDS_RETURN;
+  static void link_shared_classes(bool jcmd_request, TRAPS) NOT_CDS_RETURN;
   static bool link_class_for_cds(InstanceKlass* ik, TRAPS) NOT_CDS_RETURN_(false);
   static bool may_be_eagerly_linked(InstanceKlass* ik) NOT_CDS_RETURN_(false);
 

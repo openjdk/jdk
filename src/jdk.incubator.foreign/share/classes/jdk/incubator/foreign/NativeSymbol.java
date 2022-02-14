@@ -43,22 +43,19 @@ import java.util.Objects;
 sealed public interface NativeSymbol extends Addressable permits NativeSymbolImpl {
 
     /**
-     * Returns the name of this symbol.
-     * @return the name of this symbol.
+     * {@return the name of this symbol}
      */
     String name();
 
     /**
-     * Returns the resource scope associated with this symbol.
-     * @return the resource scope associated with this symbol.
+     * {@return the resource scope associated with this symbol}
      */
     ResourceScope scope();
 
     /**
-     * Returns the memory address associated with this symbol.
+     * {@return the memory address associated with this symbol}
      * @throws IllegalStateException if the scope associated with this symbol has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
-     * @return The memory address associated with this symbol.
      */
     @Override
     MemoryAddress address();

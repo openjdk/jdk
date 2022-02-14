@@ -1595,8 +1595,7 @@ void PSParallelCompact::summary_phase_msg(SpaceId dst_space_id,
 }
 #endif  // #ifndef PRODUCT
 
-void PSParallelCompact::summary_phase(ParCompactionManager* cm,
-                                      bool maximum_compaction)
+void PSParallelCompact::summary_phase(bool maximum_compaction)
 {
   GCTraceTime(Info, gc, phases) tm("Summary Phase", &_gc_timer);
 
@@ -1756,9 +1755,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
   const PreGenGCValues pre_gc_values = heap->get_pre_gc_values();
 
-  // Get the compaction manager reserved for the VM thread.
-  ParCompactionManager* const vmthread_cm = ParCompactionManager::get_vmthread_cm();
-
   {
     const uint active_workers =
       WorkerPolicy::calc_active_workers(ParallelScavengeHeap::heap()->workers().max_workers(),
@@ -1787,11 +1783,11 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
     ref_processor()->start_discovery(maximum_heap_compaction);
 
-    marking_phase(vmthread_cm, &_gc_tracer);
+    marking_phase(&_gc_tracer);
 
     bool max_on_system_gc = UseMaximumCompactionOnSystemGC
       && GCCause::is_user_requested_gc(gc_cause);
-    summary_phase(vmthread_cm, maximum_heap_compaction || max_on_system_gc);
+    summary_phase(maximum_heap_compaction || max_on_system_gc);
 
 #if COMPILER2_OR_JVMCI
     assert(DerivedPointerTable::is_active(), "Sanity");
@@ -1952,60 +1948,27 @@ public:
   }
 };
 
-static void mark_from_roots_work(ParallelRootType::Value root_type, uint worker_id) {
-  assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
-
-  ParCompactionManager* cm =
-    ParCompactionManager::gc_thread_compaction_manager(worker_id);
-  PCMarkAndPushClosure mark_and_push_closure(cm);
-
-  switch (root_type) {
-    case ParallelRootType::class_loader_data:
-      {
-        CLDToOopClosure cld_closure(&mark_and_push_closure, ClassLoaderData::_claim_strong);
-        ClassLoaderDataGraph::always_strong_cld_do(&cld_closure);
-      }
-      break;
-
-    case ParallelRootType::code_cache:
-      // Do not treat nmethods as strong roots for mark/sweep, since we can unload them.
-      //ScavengableNMethods::scavengable_nmethods_do(CodeBlobToOopClosure(&mark_and_push_closure));
-      break;
-
-    case ParallelRootType::sentinel:
-    DEBUG_ONLY(default:) // DEBUG_ONLY hack will create compile error on release builds (-Wswitch) and runtime check on debug builds
-      fatal("Bad enumeration value: %u", root_type);
-      break;
-  }
-
-  // Do the real work
-  cm->follow_marking_stacks();
-}
-
 void steal_marking_work(TaskTerminator& terminator, uint worker_id) {
   assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
 
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(worker_id);
 
-  oop obj = NULL;
-  ObjArrayTask task;
   do {
-    while (ParCompactionManager::steal_objarray(worker_id,  task)) {
+    oop obj = NULL;
+    ObjArrayTask task;
+    if (ParCompactionManager::steal_objarray(worker_id,  task)) {
       cm->follow_array((objArrayOop)task.obj(), task.index());
-      cm->follow_marking_stacks();
-    }
-    while (ParCompactionManager::steal(worker_id, obj)) {
+    } else if (ParCompactionManager::steal(worker_id, obj)) {
       cm->follow_contents(obj);
-      cm->follow_marking_stacks();
     }
+    cm->follow_marking_stacks();
   } while (!terminator.offer_termination());
 }
 
 class MarkFromRootsTask : public WorkerTask {
   StrongRootsScope _strong_roots_scope; // needed for Threads::possibly_parallel_threads_do
   OopStorageSetStrongParState<false /* concurrent */, false /* is_const */> _oop_storage_set_par_state;
-  SequentialSubTasksDone _subtasks;
   TaskTerminator _terminator;
   uint _active_workers;
 
@@ -2013,14 +1976,19 @@ public:
   MarkFromRootsTask(uint active_workers) :
       WorkerTask("MarkFromRootsTask"),
       _strong_roots_scope(active_workers),
-      _subtasks(ParallelRootType::sentinel),
       _terminator(active_workers, ParCompactionManager::oop_task_queues()),
-      _active_workers(active_workers) {
-  }
+      _active_workers(active_workers) {}
 
   virtual void work(uint worker_id) {
-    for (uint task = 0; _subtasks.try_claim_task(task); /*empty*/ ) {
-      mark_from_roots_work(static_cast<ParallelRootType::Value>(task), worker_id);
+    ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(worker_id);
+    PCMarkAndPushClosure mark_and_push_closure(cm);
+
+    {
+      CLDToOopClosure cld_closure(&mark_and_push_closure, ClassLoaderData::_claim_strong);
+      ClassLoaderDataGraph::always_strong_cld_do(&cld_closure);
+
+      // Do the real work
+      cm->follow_marking_stacks();
     }
 
     PCAddThreadRootsMarkingTaskClosure closure(worker_id);
@@ -2028,9 +1996,7 @@ public:
 
     // Mark from OopStorages
     {
-      ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(worker_id);
-      PCMarkAndPushClosure closure(cm);
-      _oop_storage_set_par_state.oops_do(&closure);
+      _oop_storage_set_par_state.oops_do(&mark_and_push_closure);
       // Do the real work
       cm->follow_marking_stacks();
     }
@@ -2063,8 +2029,7 @@ public:
   }
 };
 
-void PSParallelCompact::marking_phase(ParCompactionManager* cm,
-                                      ParallelOldTracer *gc_tracer) {
+void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
   // Recursively traverse all live objects and mark them
   GCTraceTime(Info, gc, phases) tm("Marking Phase", &_gc_timer);
 
@@ -2123,20 +2088,11 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
   }
 
   _gc_tracer.report_object_count_after_gc(is_alive_closure());
-}
-
-#ifdef ASSERT
-void PCAdjustPointerClosure::verify_cm(ParCompactionManager* cm) {
-  assert(cm != NULL, "associate ParCompactionManage should not be NULL");
-  auto vmthread_cm = ParCompactionManager::get_vmthread_cm();
-  if (Thread::current()->is_VM_thread()) {
-    assert(cm == vmthread_cm, "VM threads should use ParCompactionManager from get_vmthread_cm()");
-  } else {
-    assert(Thread::current()->is_Worker_thread(), "Must be a GC thread");
-    assert(cm != vmthread_cm, "GC threads should use ParCompactionManager from gc_thread_compaction_manager()");
-  }
-}
+#if TASKQUEUE_STATS
+  ParCompactionManager::oop_task_queues()->print_and_reset_taskqueue_stats("Oop Queue");
+  ParCompactionManager::_objarray_task_queues->print_and_reset_taskqueue_stats("ObjArrayOop Queue");
 #endif
+}
 
 class PSAdjustTask final : public WorkerTask {
   SubTasksDone                               _sub_tasks;
@@ -2528,9 +2484,7 @@ void PSParallelCompact::compact() {
 
   {
     GCTraceTime(Trace, gc, phases) tm("Deferred Updates", &_gc_timer);
-    // Update the deferred objects, if any. In principle, any compaction
-    // manager can be used. However, since the current thread is VM thread, we
-    // use the rightful one to keep the verification logic happy.
+    // Update the deferred objects, if any.
     ParCompactionManager* cm = ParCompactionManager::get_vmthread_cm();
     for (unsigned int id = old_space_id; id < last_space_id; ++id) {
       update_deferred_objects(cm, SpaceId(id));

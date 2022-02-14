@@ -4651,12 +4651,19 @@ void MacroAssembler::verify_heapbase(const char* msg) {
   assert (Universe::heap() != NULL, "java heap should be initialized");
   if (CheckCompressedOops) {
     Label ok;
-    push(rscratch1); // cmpptr trashes rscratch1
-    cmpptr(r12_heapbase, ExternalAddress((address)CompressedOops::ptrs_base_addr()));
+    const auto src2 = ExternalAddress((address)CompressedOops::ptrs_base_addr());
+    assert(!src2.is_lval(), "should not be lval");
+    const bool is_src2_reachable = reachable(src2);
+    if (!is_src2_reachable) {
+      push(rscratch1);  // cmpptr trashes rscratch1
+    }
+    cmpptr(r12_heapbase, src2);
     jcc(Assembler::equal, ok);
     STOP(msg);
     bind(ok);
-    pop(rscratch1);
+    if (!is_src2_reachable) {
+      pop(rscratch1);
+    }
   }
 }
 #endif
