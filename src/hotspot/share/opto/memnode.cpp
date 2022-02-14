@@ -1401,13 +1401,16 @@ Node* LoadNode::eliminate_autobox(PhaseIterGVN* igvn) {
     if ((cache_base != NULL) && cache_base->is_Con()) {
       const TypeAryPtr* base_type = cache_base->bottom_type()->isa_aryptr();
       if ((base_type != NULL) && base_type->is_autobox_cache()) {
-        Node* elements[4];
+        Node* elements[2];
         int shift = exact_log2(type2aelembytes(T_OBJECT));
         int count = address->unpack_offsets(elements, ARRAY_SIZE(elements));
-        if (count > 0 && elements[0]->is_Con() &&
-            (count == 1 ||
-             (count == 2 && elements[1]->Opcode() == Op_LShiftX &&
-                            elements[1]->in(2) == igvn->intcon(shift)))) {
+        if (count != -1) {
+          assert(count <= 2, "malformed address expr");
+          assert(elements[0]->is_Con(), "malformed address expr");
+          if (count == 2) {
+            assert(elements[1]->Opcode() == Op_LShiftX &&  elements[1]->in(2) == igvn->intcon(shift),
+                  "malformed address expr");
+          }
           ciObjArray* array = base_type->const_oop()->as_obj_array();
           // Fetch the box object cache[0] at the base of the array and get its value
           ciInstance* box = array->obj_at(0)->as_instance();
@@ -1431,7 +1434,7 @@ Node* LoadNode::eliminate_autobox(PhaseIterGVN* igvn) {
             if (offset != (int)offset) {
               return NULL; // should not happen since cache is array indexed by value
             }
-           // Add up all the offsets making of the address of the load
+            // Add up all the offsets making of the address of the load
             Node* result = elements[0];
             for (int i = 1; i < count; i++) {
               result = igvn->transform(new AddXNode(result, elements[i]));

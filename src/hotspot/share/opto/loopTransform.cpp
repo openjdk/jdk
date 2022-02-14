@@ -3647,6 +3647,8 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
   const char* msg = NULL;
   Node* msg_node = NULL;
 
+  Node* cast = NULL;
+  Node* conv = NULL;
   store_value = NULL;
   con = NULL;
   shift = NULL;
@@ -3662,141 +3664,126 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
         msg = "multiple stores";
         break;
       }
-      int opc = n->Opcode();
-      if (opc == Op_StoreP || opc == Op_StoreN || opc == Op_StoreNKlass || opc == Op_StoreCM) {
-        msg = "oop fills not handled";
+      // Make sure there is an appropriate fill routine(StubRoutines::select_fill_function)
+      BasicType t = n->as_Mem()->memory_type();
+      const char* fill_name;
+      if (StubRoutines::select_fill_function(t, false, fill_name) == NULL) {
+        msg = "unsupported store";
+        msg_node = n;
         break;
       }
+      // Make sure invariant value stored into an array
       Node* value = n->in(MemNode::ValueIn);
+      Node* addr = n->in(MemNode::Address);
+      Node* mem = n->in(MemNode::Memory);
       if (!lpt->is_invariant(value)) {
         msg  = "variant store value";
-      } else if (!_igvn.type(n->in(MemNode::Address))->isa_aryptr()) {
+        msg_node = value;
+        break;
+      } else if (!_igvn.type(addr)->isa_aryptr()) {
         msg = "not array address";
+        msg_node = addr;
+        break;
       }
+      if (!addr->is_AddP()) {
+        msg = "can't handle store address";
+        msg_node = addr;
+        break;
+      }
+      if (!mem->is_Phi() || mem->in(LoopNode::LoopBackControl) != n) {
+        msg = "store memory isn't proper phi";
+        msg_node = mem;
+        break;
+      }
+
+      // Make sure the address expression can be handled.  It should be
+      // head->phi * elsize + con.  head->phi might have a ConvI2L(CastII()).
+      bool found_index = false;
+      Node* elements[4];
+      int count = addr->as_AddP()->unpack_offsets(elements, ARRAY_SIZE(elements));
+      if (count != 2) {
+        msg = "malformed address expression";
+        msg_node = addr;
+        break;
+      }
+      if (elements[0]->is_Con()) {
+        con = elements[0];
+      } else {
+        msg = "malformed address expression: expect a Con";
+        msg_node = addr;
+        break;
+      }
+      if (elements[1]->Opcode() == Op_ConvI2L) {
+        conv = elements[1];
+        Node* tmp = elements[1]->in(1);
+        if (tmp->Opcode() == Op_CastII &&
+            tmp->as_CastII()->has_range_check()) {
+          // Skip range check dependent CastII nodes
+          cast = tmp;
+          tmp = tmp->in(1);
+        }
+        if (tmp == head->phi()) {
+          found_index = true;
+        } else {
+          msg = "unhandled input to ConvI2L";
+          break;
+        }
+      } else if (elements[1]->Opcode() == Op_LShiftX) {
+        Node* value = elements[1]->in(1);
+#ifdef _LP64
+        if (value->Opcode() == Op_ConvI2L) {
+          conv = value;
+          value = value->in(1);
+        }
+        if (value->Opcode() == Op_CastII &&
+            value->as_CastII()->has_range_check()) {
+          // Skip range check dependent CastII nodes
+          cast = value;
+          value = value->in(1);
+        }
+#endif
+        if (value != head->phi()) {
+          msg = "unhandled shift in address";
+          break;
+        } else {
+          if (type2aelembytes(n->as_Mem()->memory_type(), true) != (1 << elements[1]->in(2)->get_int())) {
+            msg = "scale doesn't match";
+            break;
+          } else {
+            found_index = true;
+            shift = elements[1];
+          }
+        }
+      } else if(value != head->phi()) {
+        found_index = true;
+        break;
+      } else {
+        msg = "malformed address expression: expect either a LShift or ConvI2L";
+        msg_node = store;
+        break;
+      }
+      if (!found_index) {
+        msg = "missing use of index";
+      }
+      // byte sized items won't have a shift
+      if (shift == NULL && t != T_BYTE && t != T_BOOLEAN) {
+        msg = "can't find shift";
+        msg_node = store;
+        break;
+      }
+      // It's a valid Store node
       store = n;
       store_value = value;
     } else if (n->is_If() && n != head->loopexit_or_null()) {
       msg = "extra control flow";
       msg_node = n;
+      break;
     }
   }
 
   if (store == NULL) {
     // No store in loop
     return false;
-  }
-
-  if (msg == NULL && head->stride_con() != 1) {
-    // could handle negative strides too
-    if (head->stride_con() < 0) {
-      msg = "negative stride";
-    } else {
-      msg = "non-unit stride";
-    }
-  }
-
-  if (msg == NULL && !store->in(MemNode::Address)->is_AddP()) {
-    msg = "can't handle store address";
-    msg_node = store->in(MemNode::Address);
-  }
-
-  if (msg == NULL &&
-      (!store->in(MemNode::Memory)->is_Phi() ||
-       store->in(MemNode::Memory)->in(LoopNode::LoopBackControl) != store)) {
-    msg = "store memory isn't proper phi";
-    msg_node = store->in(MemNode::Memory);
-  }
-
-  // Make sure there is an appropriate fill routine
-  BasicType t = store->as_Mem()->memory_type();
-  const char* fill_name;
-  if (msg == NULL &&
-      StubRoutines::select_fill_function(t, false, fill_name) == NULL) {
-    msg = "unsupported store";
-    msg_node = store;
-  }
-
-  if (msg != NULL) {
-#ifndef PRODUCT
-    if (TraceOptimizeFill) {
-      tty->print_cr("not fill intrinsic candidate: %s", msg);
-      if (msg_node != NULL) msg_node->dump();
-    }
-#endif
-    return false;
-  }
-
-  // Make sure the address expression can be handled.  It should be
-  // head->phi * elsize + con.  head->phi might have a ConvI2L(CastII()).
-  Node* elements[4];
-  Node* cast = NULL;
-  Node* conv = NULL;
-  bool found_index = false;
-  int count = store->in(MemNode::Address)->as_AddP()->unpack_offsets(elements, ARRAY_SIZE(elements));
-  for (int e = 0; e < count; e++) {
-    Node* n = elements[e];
-    if (n->is_Con() && con == NULL) {
-      con = n;
-    } else if (n->Opcode() == Op_LShiftX && shift == NULL) {
-      Node* value = n->in(1);
-#ifdef _LP64
-      if (value->Opcode() == Op_ConvI2L) {
-        conv = value;
-        value = value->in(1);
-      }
-      if (value->Opcode() == Op_CastII &&
-          value->as_CastII()->has_range_check()) {
-        // Skip range check dependent CastII nodes
-        cast = value;
-        value = value->in(1);
-      }
-#endif
-      if (value != head->phi()) {
-        msg = "unhandled shift in address";
-      } else {
-        if (type2aelembytes(store->as_Mem()->memory_type(), true) != (1 << n->in(2)->get_int())) {
-          msg = "scale doesn't match";
-        } else {
-          found_index = true;
-          shift = n;
-        }
-      }
-    } else if (n->Opcode() == Op_ConvI2L && conv == NULL) {
-      conv = n;
-      n = n->in(1);
-      if (n->Opcode() == Op_CastII &&
-          n->as_CastII()->has_range_check()) {
-        // Skip range check dependent CastII nodes
-        cast = n;
-        n = n->in(1);
-      }
-      if (n == head->phi()) {
-        found_index = true;
-      } else {
-        msg = "unhandled input to ConvI2L";
-      }
-    } else if (n == head->phi()) {
-      // no shift, check below for allowed cases
-      found_index = true;
-    } else {
-      msg = "unhandled node in address";
-      msg_node = n;
-    }
-  }
-
-  if (count == -1) {
-    msg = "malformed address expression";
-    msg_node = store;
-  }
-
-  if (!found_index) {
-    msg = "missing use of index";
-  }
-
-  // byte sized items won't have a shift
-  if (msg == NULL && shift == NULL && t != T_BYTE && t != T_BOOLEAN) {
-    msg = "can't find shift";
-    msg_node = store;
   }
 
   if (msg != NULL) {
@@ -3825,6 +3812,7 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
   ok.set(head->incr()->_idx);
   ok.set(loop_exit->cmp_node()->_idx);
   ok.set(loop_exit->in(1)->_idx);
+  ok.set(loop_exit->proj_out(1)->_idx); // Backedge projection is ok
 
   // Address elements are ok
   if (con)   ok.set(con->_idx);
@@ -3836,8 +3824,6 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
     Node* n = lpt->_body.at(i);
     if (n->outcnt() == 0) continue; // Ignore dead
     if (ok.test(n->_idx)) continue;
-    // Backedge projection is ok
-    if (n->is_IfTrue() && n->in(0) == loop_exit) continue;
     if (!n->is_AddP()) {
       msg = "unhandled node";
       msg_node = n;
@@ -3887,9 +3873,10 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
     return false;
   }
 
-  // Must have constant stride
+  // Must have constant unit stride
   CountedLoopNode* head = lpt->_head->as_CountedLoop();
-  if (!head->is_valid_counted_loop(T_INT) || !head->is_normal_loop()) {
+  if (!head->is_valid_counted_loop(T_INT) || !head->is_normal_loop() || head->stride_con() != 1 ||
+      head->loopexit()->proj_out_or_null(0) == NULL) {
     return false;
   }
 
@@ -3902,11 +3889,6 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   Node* shift = NULL;
   Node* offset = NULL;
   if (!match_fill_loop(lpt, store, store_value, shift, offset)) {
-    return false;
-  }
-
-  Node* exit = head->loopexit()->proj_out_or_null(0);
-  if (exit == NULL) {
     return false;
   }
 
@@ -3952,13 +3934,12 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   address fill = StubRoutines::select_fill_function(t, aligned, fill_name);
   assert(fill != NULL, "what?");
 
-  // Convert float/double to int/long for fill routines
+  // Convert float to int for fill routines
   if (t == T_FLOAT) {
     store_value = new MoveF2INode(store_value);
     _igvn.register_new_node_with_optimizer(store_value);
   } else if (t == T_DOUBLE) {
-    store_value = new MoveD2LNode(store_value);
-    _igvn.register_new_node_with_optimizer(store_value);
+    ShouldNotReachHere();
   }
 
   Node* mem_phi = store->in(MemNode::Memory);
@@ -4031,7 +4012,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   // state of the loop.  It's safe in this case to replace it with the
   // result_mem.
   _igvn.replace_node(store->in(MemNode::Memory), result_mem);
-  lazy_replace(exit, result_ctrl);
+  lazy_replace(head->loopexit()->proj_out_or_null(0), result_ctrl);
   _igvn.replace_node(store, result_mem);
   // Any uses the increment outside of the loop become the loop limit.
   _igvn.replace_node(head->incr(), head->limit());
