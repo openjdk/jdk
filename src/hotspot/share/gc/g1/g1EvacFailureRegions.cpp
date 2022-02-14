@@ -68,6 +68,32 @@ void G1EvacFailureRegions::post_collection() {
   _max_regions = 0; // To have any record() attempt fail in the future.
 }
 
+bool G1EvacFailureRegions::contains(uint region_idx) const {
+  assert(region_idx < _max_regions, "must be");
+  return _regions_failed_evacuation.par_at(region_idx, memory_order_relaxed);
+}
+
+void G1EvacFailureRegions::par_iterate(HeapRegionClosure* closure,
+                                       HeapRegionClaimer* hrclaimer,
+                                       uint worker_id) const {
+  G1CollectedHeap::heap()->par_iterate_regions_array(closure,
+                                                     hrclaimer,
+                                                     _evac_failure_regions,
+                                                     Atomic::load(&_evac_failure_regions_cur_length),
+                                                     worker_id);
+}
+
+void G1EvacFailureRegions::par_iterate_chunks_in_regions(G1HeapRegionChunkClosure* chunk_closure,
+                                                         uint worker_id) const {
+  G1ScanChunksInHeapRegionClosure closure(_chunk_claimers, chunk_closure, worker_id);
+
+  G1CollectedHeap::heap()->par_iterate_regions_array(&closure,
+                                                     nullptr, // pass null, so every worker thread go through every region.
+                                                     _evac_failure_regions,
+                                                     Atomic::load(&_evac_failure_regions_cur_length),
+                                                     worker_id);
+}
+
 class PrepareEvacFailureRegionTask : public WorkerTask {
   G1EvacFailureRegions* _evac_failure_regions;
   uint _num_workers;
@@ -100,39 +126,12 @@ public:
     PrepareEvacFailureRegionClosure closure(_evac_failure_regions, worker_id);
     _evac_failure_regions->par_iterate(&closure, &_claimer, worker_id);
   }
-
 };
 
 void G1EvacFailureRegions::prepare_regions() {
   uint num_workers = MAX2(1u, MIN2(_evac_failure_regions_cur_length, G1CollectedHeap::heap()->workers()->active_workers()));
   PrepareEvacFailureRegionTask task(this, num_workers);
   G1CollectedHeap::heap()->workers()->run_task(&task, num_workers);
-}
-
-void G1EvacFailureRegions::par_iterate(HeapRegionClosure* closure,
-                                       HeapRegionClaimer* hrclaimer,
-                                       uint worker_id) const {
-  G1CollectedHeap::heap()->par_iterate_regions_array(closure,
-                                                     hrclaimer,
-                                                     _evac_failure_regions,
-                                                     Atomic::load(&_evac_failure_regions_cur_length),
-                                                     worker_id);
-}
-
-void G1EvacFailureRegions::par_iterate_chunks_in_regions(G1HeapRegionChunkClosure* chunk_closure,
-                                                         uint worker_id) const {
-  G1ScanChunksInHeapRegionClosure closure(_chunk_claimers, chunk_closure, worker_id);
-
-  G1CollectedHeap::heap()->par_iterate_regions_array(&closure,
-                                                     nullptr, // pass null, so every worker thread go through every region.
-                                                     _evac_failure_regions,
-                                                     Atomic::load(&_evac_failure_regions_cur_length),
-                                                     worker_id);
-}
-
-bool G1EvacFailureRegions::contains(uint region_idx) const {
-  assert(region_idx < _max_regions, "must be");
-  return _regions_failed_evacuation.par_at(region_idx, memory_order_relaxed);
 }
 
 void G1EvacFailureRegions::prepare_region(uint region_idx, uint worker_id) {
@@ -152,14 +151,12 @@ void G1EvacFailureRegions::prepare_region(uint region_idx, uint worker_id) {
   hr->note_self_forwarding_removal_start(during_concurrent_start,
                                          during_concurrent_mark);
 
-  hr->reset_bot();
-
   _phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,
                                                worker_id,
                                                1,
                                                G1GCPhaseTimes::RestoreRetainedRegionsNum);
 
-  hr->rem_set()->clean_strong_code_roots(hr);
+  hr->rem_set()->clean_code_roots(hr);
   hr->rem_set()->clear_locked(true);
 
   phase_times->record_or_add_time_secs(G1GCPhaseTimes::PrepareRetainedRegions, worker_id, (Ticks::now() - start).seconds());

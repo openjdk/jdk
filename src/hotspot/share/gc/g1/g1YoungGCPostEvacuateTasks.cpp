@@ -67,12 +67,10 @@ public:
 };
 
 class G1PostEvacuateCollectionSetCleanupTask1::SampleCollectionSetCandidatesTask : public G1AbstractSubTask {
-  G1EvacFailureRegions* _evac_failure_regions;
 
 public:
-  SampleCollectionSetCandidatesTask(G1EvacFailureRegions* evac_failure_regions) :
-    G1AbstractSubTask(G1GCPhaseTimes::SampleCollectionSetCandidates),
-    _evac_failure_regions(evac_failure_regions) { }
+  SampleCollectionSetCandidatesTask() :
+    G1AbstractSubTask(G1GCPhaseTimes::SampleCollectionSetCandidates) { }
 
   static bool should_execute() {
     return G1CollectedHeap::heap()->should_sample_collection_set_candidates();
@@ -85,18 +83,14 @@ public:
   void do_work(uint worker_id) override {
 
     class G1SampleCollectionSetCandidatesClosure : public HeapRegionClosure {
-      G1EvacFailureRegions* _evac_failure_regions;
     public:
       G1SegmentedArrayMemoryStats _total;
-
-      G1SampleCollectionSetCandidatesClosure(G1EvacFailureRegions* evac_failure_regions) :
-        _evac_failure_regions(evac_failure_regions) { }
 
       bool do_heap_region(HeapRegion* hr) override {
         _total.add(hr->rem_set()->card_set_memory_stats());
         return false;
       }
-    } cl(_evac_failure_regions);
+    } cl;
 
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
@@ -134,7 +128,7 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
   add_serial_task(new MergePssTask(per_thread_states));
   add_serial_task(new RecalculateUsedTask(evacuation_failed));
   if (SampleCollectionSetCandidatesTask::should_execute()) {
-    add_serial_task(new SampleCollectionSetCandidatesTask(evac_failure_regions));
+    add_serial_task(new SampleCollectionSetCandidatesTask());
   }
   if (evacuation_failed) {
     add_parallel_task(new RemoveSelfForwardPtrsTask(evac_failure_regions));

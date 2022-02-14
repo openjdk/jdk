@@ -148,11 +148,6 @@ public:
 
   void zap_remainder() {
     zap_dead_objects(_last_forwarded_object_end, _chunk->next_obj_in_region());
-    if (_chunk->include_last_obj_in_region()) {
-      // As we have process the self forwardee in parallel,
-      // it's necessary to update the bot threshold explicitly.
-      _hr->update_bot_threshold();
-    }
   }
 };
 
@@ -203,8 +198,6 @@ G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask(G1EvacFailureRegi
   _evac_failure_regions(evac_failure_regions) { }
 
 void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
-
-  // TODO: maybe only allocate and iterate through evacuation failed regions
   uint max_regions = _evac_failure_regions->max_regions();
   size_t* marked_words_in_regions = NEW_C_HEAP_ARRAY(size_t, max_regions, mtGC);
   memset(marked_words_in_regions, 0, sizeof(size_t) * max_regions);

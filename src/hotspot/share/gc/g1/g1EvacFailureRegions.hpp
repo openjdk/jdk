@@ -68,8 +68,8 @@ public:
                                      uint worker_id) const;
 
   // Do necessary preparation for evacuation failure regions
-  void prepare_region(uint region_idx, uint worker_id);
   void prepare_regions();
+  void prepare_region(uint region_idx, uint worker_id);
 
   uint max_regions() {
     return _max_regions;

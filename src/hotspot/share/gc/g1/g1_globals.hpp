@@ -81,9 +81,8 @@
           "injection will be applied.")                                     \
           range(1, 100)                                                     \
   product(uint, G1EvacuationFailureALotWorkerCost, 2,                       \
-          "The percentage of regions in the collection set starting "       \
-          "from the beginning where the forced evacuation failure "         \
-          "injection will be applied.")                                     \
+          "The factor for per region work cost to remove self forwardee "   \
+          "for evecuation failure regions.")                                \
           range(1, 16)                                                      \
   product(uint, G1EvacuationFailureHeapRegionChunkNum, 256,                 \
           "Chunks num per G1 region when process evacuation failure "       \
