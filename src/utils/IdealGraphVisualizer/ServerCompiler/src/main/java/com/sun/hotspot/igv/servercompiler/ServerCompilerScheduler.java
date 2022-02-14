@@ -56,7 +56,8 @@ public class ServerCompilerScheduler implements Scheduler {
 
         @Override
         public String toString() {
-            return inputNode.toString();
+            return inputNode.getProperties().get("idx") + " " +
+                   inputNode.getProperties().get("name");
         }
     }
     private InputGraph graph;
