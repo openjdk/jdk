@@ -392,7 +392,7 @@ public class ServerCompilerScheduler implements Scheduler {
                 } else {
                     ErrorManager.getDefault().log(ErrorManager.WARNING,
                         phi + " has input node without associated region, " +
-                        "this might affect the quality approximated schedule.");
+                        "this might affect the quality of the approximated schedule.");
                 }
             }
         }
