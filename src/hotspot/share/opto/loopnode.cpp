@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -5757,7 +5757,7 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
   // which can inhibit range check elimination.
   if (least != early) {
     Node* ctrl_out = least->unique_ctrl_out_or_null();
-    if (ctrl_out && ctrl_out->is_Loop() &&
+    if (ctrl_out != NULL && ctrl_out->is_Loop() &&
         least == ctrl_out->in(LoopNode::EntryControl) &&
         (ctrl_out->is_CountedLoop() || ctrl_out->is_OuterStripMinedLoop())) {
       Node* least_dom = idom(least);
