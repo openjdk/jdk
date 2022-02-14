@@ -109,7 +109,7 @@ public final class LauncherAsServiceVerifier {
             verify(cmd, launcherName);
         }));
 
-        if (WINDOWS.contains(cmd.packageType())) {
+        if (WINDOWS.contains(cmd.packageType()) && !cmd.isRuntime()) {
             Path serviceInstallerPath = cmd.appLayout().launchersDirectory().resolve(
                     "service-installer.exe");
             if (launcherNames.isEmpty()) {
