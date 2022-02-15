@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1465,7 +1465,7 @@ void PhaseMacroExpand::expand_allocate_common(
     if (result_phi_i_o->outcnt() > 1) {
       call->set_req(TypeFunc::I_O, top());
     } else {
-      assert(result_phi_i_o->unique_ctrl_out_or_null() == call, "sanity");
+      assert(result_phi_i_o->unique_ctrl_out() == call, "sanity");
       // Case of new array with negative size known during compilation.
       // AllocateArrayNode::Ideal() optimization disconnect unreachable
       // following code since call to runtime will throw exception.

@@ -378,7 +378,7 @@ void PhaseIdealLoop::get_skeleton_predicates(Node* predicate, Unique_Node_List& 
   while (predicate != NULL && predicate->is_Proj() && predicate->in(0)->is_If()) {
     iff = predicate->in(0)->as_If();
     uncommon_proj = iff->proj_out(1 - predicate->as_Proj()->_con);
-    if (uncommon_proj->unique_ctrl_out_or_null() != rgn) {
+    if (uncommon_proj->unique_ctrl_out() != rgn) {
       break;
     }
     if (iff->in(1)->Opcode() == Op_Opaque4 && skeleton_predicate_has_opaque(iff)) {
@@ -483,7 +483,7 @@ Node* PhaseIdealLoop::skip_loop_predicates(Node* entry) {
   entry = entry->in(0)->in(0);
   while (entry != NULL && entry->is_Proj() && entry->in(0)->is_If()) {
     uncommon_proj = entry->in(0)->as_If()->proj_out(1 - entry->as_Proj()->_con);
-    if (uncommon_proj->unique_ctrl_out_or_null() != rgn)
+    if (uncommon_proj->unique_ctrl_out() != rgn)
       break;
     entry = entry->in(0)->in(0);
   }
