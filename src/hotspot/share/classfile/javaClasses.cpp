@@ -4097,7 +4097,7 @@ void java_lang_invoke_MethodType::print_signature(oop mt, outputStream* st) {
   st->print(")");
   oop rt = rtype(mt);
   if (rt != NULL) {
-    java_lang_Class::print_signature(rtype(mt), st);
+    java_lang_Class::print_signature(rt, st);
   } else {
     st->print("NULL");
   }
