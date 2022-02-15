@@ -892,8 +892,8 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_HSDIS],
   elif test "x$with_hsdis" = xllvm; then
     HSDIS_BACKEND=llvm
     AC_MSG_RESULT(['llvm'])
-    # Macs with homebrew has llvm in /usr/local/opt
-    UTIL_LOOKUP_PROGS(LLVM_CONFIG, llvm-config, [$PATH:/usr/local/opt/llvm/bin])
+    # Macs with homebrew can have llvm in different places
+    UTIL_LOOKUP_PROGS(LLVM_CONFIG, llvm-config, [$PATH:/usr/local/opt/llvm/bin:/opt/homebrew/opt/llvm/bin])
     if test "x$LLVM_CONFIG" = x; then
       AC_MSG_NOTICE([Cannot locate llvm-config which is needed for hsdis/llvm. Try using LLVM_CONFIG=<path>.])
       AC_MSG_ERROR([Cannot continue])
