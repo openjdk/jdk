@@ -50,27 +50,27 @@ class CountsRegexFailure extends RegexFailure {
     }
 
     @Override
-    public String buildFailureMessage() {
-        return getRegexLine()
-               + getFailedComparison()
-               + getMatchedNodesBlock();
+    public String buildFailureMessage(int indentationSize) {
+        return getRegexLine(indentationSize)
+               + getFailedComparison(indentationSize + 2)
+               + getMatchedNodesBlock(indentationSize + 2);
     }
 
-    private String getFailedComparison() {
-        return "           - Failed comparison: " + failedComparison + System.lineSeparator();
+    private String getFailedComparison(int indentation) {
+        return getIndentation(indentation) + "- Failed comparison: " + failedComparison + System.lineSeparator();
     }
 
     @Override
-    protected String getMatchedNodesBlock() {
+    protected String getMatchedNodesBlock(int indentation) {
         if (matches.isEmpty()) {
-            return getEmptyNodeMatchesLine();
+            return getEmptyNodeMatchesLine(indentation);
         } else {
-            return super.getMatchedNodesBlock();
+            return super.getMatchedNodesBlock(indentation);
         }
     }
 
-    private String getEmptyNodeMatchesLine() {
-        return getMatchedNodesHeaderWhiteSpace() + "- No nodes matched!" + System.lineSeparator();
+    private String getEmptyNodeMatchesLine(int indentation) {
+        return getIndentation(indentation) + "- No nodes matched!" + System.lineSeparator();
     }
 
     @Override

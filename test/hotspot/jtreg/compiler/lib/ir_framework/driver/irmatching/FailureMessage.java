@@ -21,23 +21,19 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irmethod;
-
-import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
-
-import java.util.List;
+package compiler.lib.ir_framework.driver.irmatching;
 
 /**
- * Base class to build the failure message output for an IR method.
- *
- * @see IRMethodMatchResult
+ * Interface used by all classes which represent a IR match result. A result should also provide a failure message
+ * in a pretty format to be used by the {@link IRMatcher}.
  */
-abstract class FailureMessageBuilder {
-    protected final IRMethod irMethod;
+public interface FailureMessage {
+    /**
+     * Builds a failure message in a pretty format to be used by the IR matching failure reporting.
+     */
+    String buildFailureMessage(int indentationSize);
 
-    public FailureMessageBuilder(IRMethod irMethod) {
-        this.irMethod = irMethod;
+    default String getIndentation(int indentationSize) {
+        return " ".repeat(indentationSize);
     }
-
-    abstract public String build();
 }

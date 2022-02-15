@@ -24,7 +24,7 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule;
 
 import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.driver.irmatching.CompilePhaseMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 
 /**
  * This class represents an IR matching result of an IR rule applied to a compile phase.
@@ -32,25 +32,13 @@ import compiler.lib.ir_framework.driver.irmatching.CompilePhaseMatchResult;
  * @see CheckAttributeMatchResult
  * @see IRRule
  */
-public class NormalPhaseMatchResult implements CompilePhaseMatchResult {
+public class CompilePhaseMatchResult implements MatchResult {
     private final CompilePhase compilePhase;
-    private final String compilationOutput;
     private FailOnMatchResult failOnFailures = null;
     private CountsMatchResult countsFailures = null;
 
-    public NormalPhaseMatchResult(CompilePhase compilePhase, String compilationOutput) {
+    public CompilePhaseMatchResult(CompilePhase compilePhase) {
         this.compilePhase = compilePhase;
-        this.compilationOutput = compilationOutput;
-    }
-
-    // Only available inside package
-    void mergeResults(NormalPhaseMatchResult other) {
-        if (failOnFailures != null) {
-            failOnFailures.mergeResults(other.failOnFailures);
-        }
-        if (countsFailures != null) {
-            countsFailures.mergeResults(other.countsFailures);
-        }
     }
 
     private boolean hasFailOnFailures() {
@@ -69,15 +57,6 @@ public class NormalPhaseMatchResult implements CompilePhaseMatchResult {
         this.countsFailures = countsFailures;
     }
 
-    @Override
-    public CompilePhase getCompilePhase() {
-        return compilePhase;
-    }
-
-    @Override
-    public String getCompilationOutput() {
-        return compilationOutput;
-    }
 
     public int getTotalMatchedNodesCount() {
         return getFailOnMatchedNodesCount() + getCountsMatchedNodesCount();
@@ -91,11 +70,8 @@ public class NormalPhaseMatchResult implements CompilePhaseMatchResult {
         return hasCountsFailures() ? countsFailures.getMatchedNodesCount() : 0;
     }
 
-    public boolean hasAnyZeroMatchRegexFails() {
-        if (hasCountsFailures()) {
-            return countsFailures.hasZeroMatchRegexFail();
-        }
-        return false;
+    public CompilePhase getCompilePhase() {
+        return compilePhase;
     }
 
     @Override
@@ -107,19 +83,19 @@ public class NormalPhaseMatchResult implements CompilePhaseMatchResult {
      * Build a failure message based on the collected failures of this object.
      */
     @Override
-    public String buildFailureMessage() {
+    public String buildFailureMessage(int indentationSize) {
         StringBuilder failMsg = new StringBuilder();
-        failMsg.append(getPhaseLine());
+        failMsg.append(getPhaseLine(indentationSize));
         if (hasFailOnFailures()) {
-            failMsg.append(failOnFailures.buildFailureMessage());
+            failMsg.append(failOnFailures.buildFailureMessage(indentationSize + 2));
         }
         if (hasCountsFailures()) {
-            failMsg.append(countsFailures.buildFailureMessage());
+            failMsg.append(countsFailures.buildFailureMessage(indentationSize + 2));
         }
         return failMsg.toString();
     }
 
-    private String getPhaseLine() {
-        return "     > Phase \"" + compilePhase.getName() + "\":" + System.lineSeparator();
+    private String getPhaseLine(int indentation) {
+        return getIndentation(indentation) + "> Phase \"" + compilePhase.getName() + "\":" + System.lineSeparator();
     }
 }

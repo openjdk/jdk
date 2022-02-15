@@ -27,7 +27,7 @@ package compiler.lib.ir_framework.driver.irmatching;
  * Interface used by all classes which represent a IR match result. A result should also provide a failure message
  * in a pretty format to be used by the {@link IRMatcher}.
  */
-public interface MatchResult {
+public interface MatchResult extends FailureMessage {
     /**
      * Does this match result represent a failure?
      */
@@ -36,5 +36,9 @@ public interface MatchResult {
     /**
      * Builds a failure message in a pretty format to be used by the IR matching failure reporting.
      */
-    String buildFailureMessage();
+    String buildFailureMessage(int indentationSize);
+
+    default String getIndentation(int indentationSize) {
+        return " ".repeat(indentationSize);
+    }
 }

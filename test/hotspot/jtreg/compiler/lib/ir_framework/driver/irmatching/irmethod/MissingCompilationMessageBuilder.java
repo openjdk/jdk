@@ -23,6 +23,7 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
+import compiler.lib.ir_framework.driver.irmatching.FailureMessage;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 
 import java.util.List;
@@ -32,19 +33,21 @@ import java.util.List;
  *
  * @see IRMethodMatchResult
  */
-class MissingCompilationMessageBuilder extends FailureMessageBuilder {
+class MissingCompilationMessageBuilder implements FailureMessage {
+
+    private final IRMethod irMethod;
 
     public MissingCompilationMessageBuilder(IRMethod irMethod) {
-        super(irMethod);
+        this.irMethod = irMethod;
     }
 
     @Override
-    public String build() {
-        return getMethodLine() + getMissingCompilationMessage();
+    public String buildFailureMessage(int indentationSize) {
+        return getMethodLine() + getMissingCompilationMessage(indentationSize);
     }
 
-    private String getMissingCompilationMessage() {
-        return "   * Method was not compiled. Did you specify any compiler directives preventing a compilation "
+    private String getMissingCompilationMessage(int indentationSize) {
+        return getIndentation(indentationSize) + "* Method was not compiled. Did you specify any compiler directives preventing a compilation "
                + "or used a @Run method in STANDALONE mode? In the latter case, make sure to always trigger a C2 "
                + "compilation by " + "invoking the test enough times.";
     }

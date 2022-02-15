@@ -23,6 +23,8 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule;
 
+import compiler.lib.ir_framework.driver.irmatching.FailureMessage;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,7 +35,7 @@ import java.util.stream.Collectors;
  * @see CheckAttribute
  * @see IRRule
  */
-abstract class RegexFailure {
+abstract class RegexFailure implements FailureMessage {
     protected final String nodeRegex;
     protected final int regexNodeId;
     protected final List<String> matches;
@@ -41,48 +43,40 @@ abstract class RegexFailure {
     public RegexFailure(String nodeRegex, int regexNodeId, List<String> matches) {
         this.nodeRegex = nodeRegex;
         this.regexNodeId = regexNodeId;
-        this.matches = addWhiteSpacePrefixForEachLine(matches);
+        this.matches = matches;
     }
 
-    private List<String> addWhiteSpacePrefixForEachLine(List<String> matches) {
+    private List<String> addWhiteSpacePrefixForEachLine(List<String> matches, String indentation) {
         return matches
                 .stream()
                 .map(s -> s.replaceAll(System.lineSeparator(), System.lineSeparator()
-                                                               + getMatchedNodesItemWhiteSpace() + "  "))
+                                                               + indentation))
                 .collect(Collectors.toList());
     }
 
     abstract public int getMatchedNodesCount();
 
-    abstract public String buildFailureMessage();
-
-    protected String getRegexLine() {
-        return "         * Regex " + regexNodeId + ": " + nodeRegex + System.lineSeparator();
+    protected String getRegexLine(int indentation) {
+        return getIndentation(indentation) + "* Regex " + regexNodeId + ": \"" + nodeRegex + "\"" + System.lineSeparator();
     }
 
-    protected String getMatchedNodesBlock() {
-        return getMatchedNodesHeader() + getMatchesNodeLines();
+    protected String getMatchedNodesBlock(int indentation) {
+        return getMatchedNodesHeader(indentation) + getMatchesNodeLines(indentation + 2);
     }
 
-    protected String getMatchedNodesHeader() {
+    protected String getMatchedNodesHeader(int indentation) {
         int matchCount = matches.size();
-        return getMatchedNodesHeaderWhiteSpace() + "- " + getMatchedPrefix() + " node"
+        return getIndentation(indentation) + "- " + getMatchedPrefix() + " node"
                + (matchCount > 1 ? "s (" + matchCount + ")" : "") + ":" + System.lineSeparator();
-    }
-
-    protected String getMatchedNodesHeaderWhiteSpace() {
-        return "           ";
     }
 
     abstract protected String getMatchedPrefix();
 
-    protected String getMatchesNodeLines() {
+    protected String getMatchesNodeLines(int indentation) {
         StringBuilder builder = new StringBuilder();
-        matches.forEach(match -> builder.append(getMatchedNodesItemWhiteSpace()).append("* ").append(match).append(System.lineSeparator()));
+        String indentationString = getIndentation(indentation);
+        List<String> matches = addWhiteSpacePrefixForEachLine(this.matches, indentationString + "  ");
+        matches.forEach(match -> builder.append(indentationString).append("* ").append(match).append(System.lineSeparator()));
         return builder.toString();
-    }
-
-    private String getMatchedNodesItemWhiteSpace() {
-        return "             ";
     }
 }

@@ -52,12 +52,8 @@ public class MissingCompilationResult extends IRMethodMatchResult {
     }
 
     @Override
-    public String buildFailureMessage() {
-        return failureMessageBuilder.build();
-    }
-
-    private String getMethodLine() {
-        return " Method \"" + irMethod.getMethod() + "\":" + System.lineSeparator();
+    public String buildFailureMessage(int indentationSize) {
+        return failureMessageBuilder.buildFailureMessage(indentationSize);
     }
 
     @Override

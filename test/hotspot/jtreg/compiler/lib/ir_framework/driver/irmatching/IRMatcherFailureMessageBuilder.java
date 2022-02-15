@@ -71,7 +71,9 @@ class IRMatcherFailureMessageBuilder {
     }
 
     private static String buildIRMethodFailureMessage(int failureNumber, IRMethodMatchResult result) {
-        return failureNumber + ")" + result.buildFailureMessage() + System.lineSeparator();
+        int failureNumberDigitCount = String.valueOf(failureNumber).length();
+        // Format: "X) Method..." -> Initial indentation = digitsCount(X) + ) + " "
+        return failureNumber + ")" + result.buildFailureMessage(failureNumberDigitCount + 2) + System.lineSeparator();
     }
 
     private static String buildFooterMessage() {

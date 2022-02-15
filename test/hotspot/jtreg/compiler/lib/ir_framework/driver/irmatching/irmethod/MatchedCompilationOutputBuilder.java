@@ -24,9 +24,11 @@
 package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
 import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.driver.irmatching.CompilePhaseMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.CompilePhaseMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -51,7 +53,8 @@ class MatchedCompilationOutputBuilder {
                 // Stream<CompilePhaseMatchResult>
                 .flatMap(irRuleMatchResult -> irRuleMatchResult.getCompilePhaseMatchResults().stream())
                 .map(CompilePhaseMatchResult::getCompilePhase) // Stream<CompilePhase>
-                .collect(Collectors.toSet()); // Filter duplicates
+                .sorted(Enum::compareTo)
+                .collect(Collectors.toCollection(LinkedHashSet::new)); // Filter duplicates
     }
 
     public String build() {
@@ -64,9 +67,8 @@ class MatchedCompilationOutputBuilder {
 
     // Concat all phases with line breaks
     private String getOutputOfPhases() {
-        return compilePhases
-                .stream()
-                .map(irMethod::getOutput)
-                .collect(Collectors.joining(System.lineSeparator() + System.lineSeparator()));
+        return compilePhases.stream()
+                            .map(irMethod::getOutput)
+                            .collect(Collectors.joining(System.lineSeparator() + System.lineSeparator()));
     }
 }

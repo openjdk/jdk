@@ -61,10 +61,10 @@ abstract class CheckAttributeMatchResult implements MatchResult {
         }
     }
 
-    protected String collectRegexFailureMessages() {
+    protected String collectRegexFailureMessages(int indentation) {
         StringBuilder failMsg = new StringBuilder();
         for (RegexFailure regexFailure : regexFailures) {
-            failMsg.append(regexFailure.buildFailureMessage());
+            failMsg.append(regexFailure.buildFailureMessage(indentation + 2));
         }
         return failMsg.toString();
     }

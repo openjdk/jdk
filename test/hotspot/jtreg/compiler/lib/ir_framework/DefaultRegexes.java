@@ -62,6 +62,10 @@ public class DefaultRegexes {
         OptoAssemblyDefaultRegexes.initMaps();
     }
 
+    public static CompilePhase getCompilePhaseForIRNode(String irNode) {
+        return DEFAULT_TO_PHASE_MAP.getOrDefault(irNode, CompilePhase.DEFAULT);
+    }
+
     public static String getRegexForIRNode(String node, CompilePhase compilePhase) {
         var phaseToRegexMap = DefaultRegexes.PLACEHOLDER_TO_REGEX_MAP.get(node);
         TestFormat.checkNoReport(phaseToRegexMap != null, "Did you mix a default IRNode regex with an" +

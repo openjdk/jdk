@@ -46,36 +46,12 @@ import java.util.stream.Collectors;
  *
  * @see IR
  */
-public class NodeRegexFilter<T extends NodeRegex> {
+public class NodeRegexFilter {
 
-    private final List<T> filteredDefaultList;
-    private final List<T> filteredIdealList;
-    private final List<T> filteredOptoAssemblyList;
 
-    public NodeRegexFilter(List<T> nodeRegexes) {
-        filteredDefaultList = filter(nodeRegexes, null);
-        filteredIdealList = filter(nodeRegexes, CompilePhase.PRINT_IDEAL);
-        filteredOptoAssemblyList = filter(nodeRegexes, CompilePhase.PRINT_OPTO_ASSEMBLY);
-    }
-
-    private List<T> filter(List<T> nodeRegexes, CompilePhase compilePhase) {
+    public static <T extends NodeRegex> List<T> filter(List<T> nodeRegexes, CompilePhase compilePhase) {
         return nodeRegexes.stream()
                           .filter(r -> DefaultRegexes.DEFAULT_TO_PHASE_MAP.get(r.getRawNodeString()) == compilePhase)
                           .collect(Collectors.toList());
-    }
-
-    public List<T> getList(CompilePhase compilePhase) {
-        switch (compilePhase) {
-            case DEFAULT -> {
-                return filteredDefaultList;
-            }
-            case PRINT_IDEAL -> {
-                return filteredIdealList;
-            }
-            case PRINT_OPTO_ASSEMBLY -> {
-                return filteredOptoAssemblyList;
-            }
-            default -> throw new TestFrameworkException("unsupported compile phase " + compilePhase);
-        }
     }
 }

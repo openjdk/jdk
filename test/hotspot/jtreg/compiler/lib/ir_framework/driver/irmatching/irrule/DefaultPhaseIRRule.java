@@ -25,75 +25,41 @@ package compiler.lib.ir_framework.driver.irmatching.irrule;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
-import compiler.lib.ir_framework.driver.irmatching.parser.CountsNodeRegex;
-import compiler.lib.ir_framework.driver.irmatching.parser.FailOnNodeRegex;
+import compiler.lib.ir_framework.shared.TestFrameworkException;
 
-import java.util.List;
+public class DefaultPhaseIRRule extends CompilePhaseIRRule {
 
-public class DefaultPhaseIRRule extends AbstractCompilePhaseIRRule {
-
-    private final FailOn defaultFailOn;
-    private final Counts defaultCounts;
-    private final FailOn idealFailOn;
-    private final Counts idealCounts;
-    private final FailOn optoAssemblyFailOn;
-    private final Counts optoAssemblyCounts;
-
-    public DefaultPhaseIRRule(IRMethod irMethod, List<FailOnNodeRegex> failOnNodeRegexes, List<CountsNodeRegex> countsNodeRegexes) {
-        super(irMethod, CompilePhase.DEFAULT);
-        NodeRegexFilter<FailOnNodeRegex> failOnFilter = new NodeRegexFilter<>(failOnNodeRegexes);
-        NodeRegexFilter<CountsNodeRegex> countsFilter = new NodeRegexFilter<>(countsNodeRegexes);
-        defaultFailOn = initFailOn(failOnFilter, CompilePhase.DEFAULT);
-        idealFailOn = initFailOn(failOnFilter, CompilePhase.PRINT_IDEAL);
-        optoAssemblyFailOn = initFailOn(failOnFilter, CompilePhase.PRINT_OPTO_ASSEMBLY);
-        defaultCounts = initCounts(countsFilter, CompilePhase.DEFAULT);
-        idealCounts = initCounts(countsFilter, CompilePhase.PRINT_IDEAL);
-        optoAssemblyCounts = initCounts(countsFilter, CompilePhase.PRINT_OPTO_ASSEMBLY);
+    public DefaultPhaseIRRule(IRMethod irMethod, FailOn failOn, Counts counts) {
+        super(irMethod, CompilePhase.DEFAULT, failOn, counts);
     }
 
-    private FailOn initFailOn(NodeRegexFilter<FailOnNodeRegex> failOnFilter, CompilePhase compilePhase) {
-        return FailOnNodeRegexParser.parse(failOnFilter.getList(compilePhase), compilePhase);
-    }
-
-
-    private Counts initCounts(NodeRegexFilter<CountsNodeRegex> countsFilter, CompilePhase compilePhase) {
-        return CountsNodeRegexParser.parse(countsFilter.getList(compilePhase), compilePhase);
-    }
-
-    /**
-     * Apply this IR rule by checking any failOn and counts attributes.
-     */
     @Override
-    public DefaultPhaseMatchResult applyCheckAttributes() {
-        DefaultPhaseMatchResult defaultPhaseMatchResult = new DefaultPhaseMatchResult();
-        applyPhase(defaultPhaseMatchResult, idealFailOn, idealCounts, CompilePhase.PRINT_IDEAL);
-        applyPhase(defaultPhaseMatchResult, optoAssemblyFailOn, optoAssemblyCounts, CompilePhase.PRINT_OPTO_ASSEMBLY);
-        applyDefaultPhase(defaultPhaseMatchResult);
-        return defaultPhaseMatchResult;
-    }
-
-    private void applyPhase(DefaultPhaseMatchResult defaultPhaseMatchResult, FailOn failOn, Counts counts, CompilePhase compilePhase) {
-        NormalPhaseMatchResult normalPhaseMatchResult = applyCheckAttributes(failOn, counts, compilePhase);
-        if (normalPhaseMatchResult.fail()) {
-            defaultPhaseMatchResult.addResult(normalPhaseMatchResult);
+    public CompilePhaseMatchResult applyCheckAttributes() {
+        CompilePhaseMatchResult compilePhaseMatchResult = applyCheckAttributes(CompilePhase.DEFAULT);
+        if (compilePhaseMatchResult.fail()) {
+            return replaceCompilePhaseMatchResult(compilePhaseMatchResult);
         }
+        return compilePhaseMatchResult;
     }
 
-    private void applyDefaultPhase(DefaultPhaseMatchResult defaultPhaseMatchResult) {
-        NormalPhaseMatchResult normalPhaseMatchResult = applyCheckAttributes(defaultFailOn, defaultCounts, CompilePhase.DEFAULT);
-        if (normalPhaseMatchResult.fail()) {
-            addDefaultMatchResult(defaultPhaseMatchResult, normalPhaseMatchResult);
+    private CompilePhaseMatchResult replaceCompilePhaseMatchResult(CompilePhaseMatchResult resultDefault) {
+        CompilePhaseMatchResult resultIdeal = applyCheckAttributes(CompilePhase.PRINT_IDEAL);
+        CompilePhaseMatchResult resultOptoAssembly = applyCheckAttributes(CompilePhase.PRINT_OPTO_ASSEMBLY);
+        int totalMatchesDefault = resultDefault.getTotalMatchedNodesCount();
+        int totalMatchesIdeal = resultIdeal.getTotalMatchedNodesCount();
+        int totalMatchesOptoAssembly = resultOptoAssembly.getTotalMatchedNodesCount();
+        if (totalMatchesDefault == 0) {
+            // No match? Report with PrintIdeal and PrintOptoAssembly (we do not know which should have been matched).
+            return resultDefault;
+        } else if (totalMatchesIdeal == totalMatchesDefault) {
+            // Only PrintIdeal matches.
+            return resultIdeal;
+        } else if (totalMatchesOptoAssembly == totalMatchesDefault) {
+            // Only PrintOptoAssembly matches
+            return resultOptoAssembly;
+        } else {
+            // Either matched on PrintIdeal AND PrintOptoAssembly or on combined output (discouraged).
+            return resultDefault;
         }
-    }
-
-
-    /**
-     * Report either PrintIdeal, PrintOpto or both if there is at least one match or
-     */
-    private void addDefaultMatchResult(DefaultPhaseMatchResult defaultPhaseMatchResult, NormalPhaseMatchResult failedDefaultPhaseMatchResult) {
-        NormalPhaseMatchResult idealResult = applyCheckAttributes(defaultFailOn, defaultCounts, CompilePhase.PRINT_IDEAL);
-        NormalPhaseMatchResult optoAssemblyResult = applyCheckAttributes(defaultFailOn, defaultCounts, CompilePhase.PRINT_OPTO_ASSEMBLY);
-        DefaultMatchResultMerger merger = new DefaultMatchResultMerger(failedDefaultPhaseMatchResult, idealResult, optoAssemblyResult);
-        merger.mergeDefaultMatchResults(defaultPhaseMatchResult);
     }
 }

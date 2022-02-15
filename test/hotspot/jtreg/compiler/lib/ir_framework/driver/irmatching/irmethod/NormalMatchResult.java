@@ -56,8 +56,8 @@ class NormalMatchResult extends IRMethodMatchResult {
     }
 
     @Override
-    public String buildFailureMessage() {
-        return failureMessageBuilder.build();
+    public String buildFailureMessage(int indentationSize) {
+        return failureMessageBuilder.buildFailureMessage(indentationSize);
     }
 
     @Override

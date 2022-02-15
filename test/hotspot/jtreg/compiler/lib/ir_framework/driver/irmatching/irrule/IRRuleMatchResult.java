@@ -23,7 +23,6 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule;
 
-import compiler.lib.ir_framework.driver.irmatching.CompilePhaseMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 
 import java.util.ArrayList;
@@ -58,28 +57,22 @@ public class IRRuleMatchResult implements MatchResult {
         return !compilePhaseMatchResults.isEmpty();
     }
 
-    public String getCompilationOutputs() {
-        return compilePhaseMatchResults.stream()
-                                       .map(CompilePhaseMatchResult::getCompilationOutput)
-                                       .collect(Collectors.joining(System.lineSeparator()));
-    }
-
     /**
      * Build a failure message based on the collected failures of this object.
      */
     @Override
-    public String buildFailureMessage() {
+    public String buildFailureMessage(int indentationSize) {
         StringBuilder failMsg = new StringBuilder();
-        failMsg.append(getIRRuleLine());
+        failMsg.append(getIRRuleLine(indentationSize));
         for (CompilePhaseMatchResult phaseMatchResult : compilePhaseMatchResults) {
             if (phaseMatchResult.fail()) {
-                failMsg.append(phaseMatchResult.buildFailureMessage());
+                failMsg.append(phaseMatchResult.buildFailureMessage(indentationSize + 2));
             }
         }
         return failMsg.toString();
     }
 
-    private String getIRRuleLine() {
-        return "   * @IR rule " + irRule.getRuleId() + ": \"" + irRule.getIRAnno() + "\"" + System.lineSeparator();
+    private String getIRRuleLine(int indentation) {
+        return getIndentation(indentation) + "* @IR rule " + irRule.getRuleId() + ": \"" + irRule.getIRAnno() + "\"" + System.lineSeparator();
     }
 }

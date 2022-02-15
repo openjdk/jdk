@@ -36,24 +36,9 @@ import java.util.stream.Collectors;
  */
 class CountsMatchResult extends CheckAttributeMatchResult {
 
-    public boolean hasZeroMatchRegexFail() {
-        return regexFailures.stream().anyMatch(failure -> failure.getMatchedNodesCount() == 0);
-    }
-
-    public void filterZeroMatchRegexFails() {
-        List<RegexFailure> newList = regexFailures.stream()
-                                                  .filter(regexFail -> regexFail.getMatchedNodesCount() != 0)
-                                                  .collect(Collectors.toList());
-        if (newList.isEmpty()) {
-            regexFailures = null;
-        } else {
-            regexFailures = newList;
-        }
-    }
-
     @Override
-    public String buildFailureMessage() {
-        return "       - counts: Graph contains wrong number of nodes:" + System.lineSeparator()
-               + collectRegexFailureMessages();
+    public String buildFailureMessage(int indentationSize) {
+        return getIndentation(indentationSize) + "- counts: Graph contains wrong number of nodes:" + System.lineSeparator()
+               + collectRegexFailureMessages(indentationSize);
     }
 }

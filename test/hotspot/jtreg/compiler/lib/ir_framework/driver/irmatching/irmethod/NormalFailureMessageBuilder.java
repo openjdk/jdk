@@ -23,6 +23,7 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
+import compiler.lib.ir_framework.driver.irmatching.FailureMessage;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 
 import java.util.List;
@@ -33,31 +34,31 @@ import java.util.stream.Collectors;
  *
  * @see IRMethodMatchResult
  */
-class NormalFailureMessageBuilder extends FailureMessageBuilder {
+class NormalFailureMessageBuilder implements FailureMessage {
+    private final IRMethod irMethod;
     private final List<IRRuleMatchResult> irRulesMatchResults;
 
     public NormalFailureMessageBuilder(IRMethod irMethod, List<IRRuleMatchResult> irRulesMatchResults) {
-        super(irMethod);
+        this.irMethod = irMethod;
         this.irRulesMatchResults = irRulesMatchResults.stream()
                                                       .filter(IRRuleMatchResult::fail)
                                                       .collect(Collectors.toList());
     }
 
     @Override
-    public String build() {
-        return getMethodLine() + getIRRulesFailureMessage();
+    public String buildFailureMessage(int indentationSize) {
+        return getMethodLine() + getIRRulesFailureMessage(indentationSize);
     }
 
     private String getMethodLine() {
         int failures = irRulesMatchResults.size();
-        return " Method \"" + irMethod.getMethod() + "\" - [Failed IR rules: " + failures + "]:"
-               + System.lineSeparator();
+        return " Method \"" + irMethod.getMethod() + "\" - [Failed IR rules: " + failures + "]:" + System.lineSeparator();
     }
 
-    private String getIRRulesFailureMessage() {
+    private String getIRRulesFailureMessage(int initialIndentation) {
         StringBuilder failMsg = new StringBuilder();
         for (IRRuleMatchResult irRuleResult : irRulesMatchResults) {
-            failMsg.append(irRuleResult.buildFailureMessage());
+            failMsg.append(irRuleResult.buildFailureMessage(initialIndentation));
         }
         return failMsg.toString();
     }

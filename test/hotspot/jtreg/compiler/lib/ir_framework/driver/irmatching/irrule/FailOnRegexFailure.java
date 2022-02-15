@@ -42,9 +42,9 @@ class FailOnRegexFailure extends RegexFailure {
     }
 
     @Override
-    public String buildFailureMessage() {
-        return getRegexLine()
-               + getMatchedNodesBlock();
+    public String buildFailureMessage(int indentationSize) {
+        return getRegexLine(indentationSize)
+               + getMatchedNodesBlock(indentationSize + 2);
     }
 
     @Override
