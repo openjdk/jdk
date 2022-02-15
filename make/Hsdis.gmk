@@ -153,7 +153,9 @@ INSTALLED_HSDIS_NAME := hsdis-$(OPENJDK_TARGET_CPU_LEGACY_LIB)$(SHARED_LIBRARY_S
 INSTALLED_HSDIS := $(INSTALLED_HSDIS_DIR)/$(INSTALLED_HSDIS_NAME)
 
 $(INSTALLED_HSDIS): $(BUILD_HSDIS_TARGET)
-	$(call LogWarn, NOTE: The resulting build might not be redistributable. Seek legal advice before distibuting.)
+ifeq ($(HSDIS_BACKEND), binutils)
+	$(call LogWarn, NOTE: The resulting build might not be redistributable. Seek legal advice before distributing.)
+endif
 	$(install-file)
 
 
