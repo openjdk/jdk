@@ -104,7 +104,7 @@ public final class RawNativeLibraries {
      * The {@code pathname} argument is platform-specific.
      * {@link System#mapLibraryName} can be used to convert a name to
      * a platform-specific pathname:
-     * {@snipplet
+     * {@snippet
      *     RawNativeLibraries libs = RawNativeLibraries.newInstance(MethodHandles.lookup());
      *     NativeLibrary lib = libs.load(System.mapLibraryName("blas"));
      * }
@@ -113,42 +113,27 @@ public final class RawNativeLibraries {
      * @see System#mapLibraryName(String)
      */
     public NativeLibrary load(String pathname) {
-        acquireNativeLibraryLock(pathname);
-        try {
-            // find if this library has already been loaded and registered
-            NativeLibrary cached = libraries.get(pathname);
-            if (cached != null) {
-                return cached;
-            }
+         return libraries.computeIfAbsent(pathname, this::get);
+    }
 
-            NativeLibraryImpl lib = new NativeLibraryImpl(caller, pathname, false, false);
-            if (!lib.open()) {
-                return null;    // fail to open the native library
-            }
-
-            libraries.put(pathname, lib);
-            return lib;
-        } finally {
-            releaseNativeLibraryLock(pathname);
+    private NativeLibraryImpl get(String pathname) {
+        NativeLibraryImpl lib = new NativeLibraryImpl(caller, pathname, false, false);
+        if (!lib.open()) {
+            return null;    // fail to open the native library
         }
+        return lib;
     }
 
     /*
-     * Unloads the given native library
+     * Unloads the given native library.
      */
     public void unload(NativeLibrary lib) {
         Objects.requireNonNull(lib);
-        acquireNativeLibraryLock(lib.name());
-        try {
-            NativeLibraryImpl nl = libraries.remove(lib.name());
-            if (nl != lib) {
-                throw new IllegalArgumentException(lib.name() + " not loaded by this RawNativeLibraries instance");
-            }
-            // unload the native library and also remove from the global name registry
-            nl.unloader().run();
-        } finally {
-            releaseNativeLibraryLock(lib.name());
+        if (!libraries.remove(lib.name(), lib)) {
+            throw new IllegalArgumentException(lib.name() + " not loaded by this RawNativeLibraries instance");
         }
+        NativeLibraryImpl nl = (NativeLibraryImpl)lib;
+        nl.close();
     }
 }
 

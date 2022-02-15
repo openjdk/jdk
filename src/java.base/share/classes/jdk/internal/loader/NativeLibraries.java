@@ -317,7 +317,11 @@ public final class NativeLibraries {
             return findEntry0(this, name);
         }
 
-        Runnable unloader() {
+        /*
+         * Unloader::run method is invoked to unload the native library
+         * when this class loader becomes phantom reachable.
+         */
+        private Runnable unloader() {
             return new Unloader(name, handle, isBuiltin, isJNI);
         }
 
@@ -330,6 +334,13 @@ public final class NativeLibraries {
             }
 
             return load(this, name, isBuiltin, isJNI, loadLibraryOnlyIfPresent);
+        }
+
+        /*
+         * Close this native library.
+         */
+        void close() {
+            unload(name, isBuiltin, isJNI, handle);
         }
     }
 
@@ -424,7 +435,7 @@ public final class NativeLibraries {
     private static final Map<String, CountedLock> nativeLibraryLockMap =
             new ConcurrentHashMap<>();
 
-    static void acquireNativeLibraryLock(String libraryName) {
+    private static void acquireNativeLibraryLock(String libraryName) {
         nativeLibraryLockMap.compute(libraryName,
             new BiFunction<>() {
                 public CountedLock apply(String name, CountedLock currentLock) {
@@ -439,7 +450,7 @@ public final class NativeLibraries {
         ).lock();
     }
 
-    static void releaseNativeLibraryLock(String libraryName) {
+    private static void releaseNativeLibraryLock(String libraryName) {
         CountedLock lock = nativeLibraryLockMap.computeIfPresent(libraryName,
             new BiFunction<>() {
                 public CountedLock apply(String name, CountedLock currentLock) {
