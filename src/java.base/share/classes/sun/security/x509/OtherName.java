@@ -90,7 +90,7 @@ public class OtherName implements GeneralNameInterface {
 
         oid = in.getOID();
         DerValue derValue1 = in.getDerValue();
-        if (!derValue1.isContextSpecific((byte)0)) {
+        if (!derValue1.isContextSpecific((byte)0) || !derValue1.isConstructed()) {
             throw new IOException("value is not [0]");
         }
         nameValue = derValue1.data.toByteArray();

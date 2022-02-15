@@ -1587,7 +1587,13 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
                 if (name.getType() == GeneralNameInterface.NAME_ANY
                         && name instanceof OtherName oname) {
                     nameEntry.add(oname.getOID().toString());
-                    nameEntry.add(oname.getNameValue());
+                    byte[] nameValue = oname.getNameValue();
+                    try {
+                        String v = new DerValue(nameValue).getAsString();
+                        nameEntry.add(v == null ? nameValue : v);
+                    } catch (IOException ioe) {
+                        nameEntry.add(nameValue);
+                    }
                 }
                 break;
             }

@@ -34,6 +34,7 @@
 
 import jdk.test.lib.Asserts;
 import sun.security.tools.keytool.CertAndKeyGen;
+import sun.security.util.DerValue;
 import sun.security.util.ObjectIdentifier;
 import sun.security.x509.CertificateExtensions;
 import sun.security.x509.DNSName;
@@ -65,11 +66,13 @@ public class Parse {
         CertificateExtensions exts = new CertificateExtensions();
         GeneralNames names = new GeneralNames();
 
-        byte[] d1 = new byte[] { 5, 0 };
+        byte[] d1 = new byte[] {
+                DerValue.tag_OctetString, 5, 'a', '.', 'c', 'o', 'm' };
         names.add(new GeneralName(
                 new OtherName(ObjectIdentifier.of("1.2.3.5"), d1)));
 
-        byte[] d2 = new byte[] { 4, 5, 'a', '.', 'c', 'o', 'm' };
+        byte[] d2 = new byte[] {
+                DerValue.tag_UTF8String, 5, 'a', '.', 'c', 'o', 'm' };
         names.add(new GeneralName(
                 new OtherName(ObjectIdentifier.of("1.2.3.6"), d2)));
 
@@ -83,13 +86,15 @@ public class Parse {
 
         int found = 0;
         for (var san : x.getSubjectAlternativeNames()) {
-            if (san.get(2).equals("1.2.3.5")
-                    && Arrays.equals((byte[])san.get(3), d1)) {
-                found++;
-            }
-            if (san.get(2).equals("1.2.3.6")
-                    && Arrays.equals((byte[])san.get(3), d2)) {
-                found++;
+            if (san.size() == 4) {
+                if (san.get(2).equals("1.2.3.5")
+                        && Arrays.equals((byte[]) san.get(3), d1)) {
+                    found++;
+                }
+                if (san.get(2).equals("1.2.3.6")
+                        && san.get(3).equals("a.com")) {
+                    found++;
+                }
             }
         }
 

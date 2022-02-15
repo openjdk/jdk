@@ -590,9 +590,11 @@ implements X509Extension {
      * RFC 2253</a> string format. otherNames are returned as a byte array
      * containing the ASN.1 DER encoded form of the name, and may also return
      * a third entry in the list containing its {@code type-id} in string
-     * format, and a fourth entry as a byte array containing the ASN.1 DER
-     * encoding of its {@code value} without the context-specific constructed
-     * tag with number 0. No standard string format is
+     * format, and a fourth entry as either a string (if {@code value} inside
+     * is a valid UTF8String, PrintableString, T61String, IA5String,
+     * UniversalString, BMPString, or GeneralString) or a byte array containing
+     * the ASN.1 DER encoding of {@code value} without the context-specific
+     * constructed tag with number 0 (otherwise). No standard string format is
      * defined for otherNames, X.400 names, EDI party names, or any
      * other type of names. They are returned as byte arrays
      * containing the ASN.1 DER encoded form of the name.
