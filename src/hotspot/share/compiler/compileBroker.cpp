@@ -614,9 +614,8 @@ void register_jfr_phasetype_serializer(CompilerType compiler_type) {
 #ifdef COMPILER2
   } else if (compiler_type == compiler_c2) {
     assert(first_registration, "invariant"); // c2 must be registered first.
-    GrowableArray<const char*>* c2_phase_names = new GrowableArray<const char*>(PHASE_NUM_TYPES);
     for (int i = 0; i < PHASE_NUM_TYPES; i++) {
-      const char* phase_name = CompilerPhaseTypeHelper::to_string((CompilerPhaseType) i);
+      const char* phase_name = CompilerPhaseTypeHelper::to_description((CompilerPhaseType) i);
       CompilerEvent::PhaseEvent::get_phase_id(phase_name, false, false, false);
     }
     first_registration = false;

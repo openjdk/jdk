@@ -79,9 +79,10 @@ class methodHandle;
   option(TraceOptoPipelining, "TraceOptoPipelining", Bool) \
   option(TraceOptoOutput, "TraceOptoOutput", Bool) \
   option(TraceSpilling, "TraceSpilling", Bool) \
-  option(PrintIdeal, "PrintIdeal", Bool)  \
-  option(PrintIdealLevel, "PrintIdealLevel", Uintx) \
-  option(IGVPrintLevel, "IGVPrintLevel", Intx) \
+NOT_PRODUCT(option(PrintIdeal, "PrintIdeal", Bool))  \
+NOT_PRODUCT(option(PrintIdealLevel, "PrintIdealLevel", Uintx)) \
+NOT_PRODUCT(option(PrintIdealPhase, "PrintIdealPhase", Ccstrlist)) \
+NOT_PRODUCT(option(IGVPrintLevel, "IGVPrintLevel", Intx)) \
   option(Vectorize, "Vectorize", Bool) \
   option(VectorizeDebug, "VectorizeDebug", Uintx) \
   option(CloneMapDebug, "CloneMapDebug", Bool) \

@@ -654,6 +654,7 @@ class Compile : public Phase {
   void begin_method();
   void end_method();
   bool should_print_igv(int level);
+  bool should_print_phase(CompilerPhaseType cpt);
 
   void print_method(CompilerPhaseType cpt, int level, Node* n = nullptr);
 
