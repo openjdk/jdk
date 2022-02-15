@@ -135,8 +135,7 @@ abstract class UnixUserDefinedFileAttributeView
         } finally {
             try {
                 close(fd);
-            } catch (UnixException y) {
-                y.rethrowAsIOException(file);
+            } catch (UnixException ignore) {
             }
         }
     }
@@ -163,8 +162,7 @@ abstract class UnixUserDefinedFileAttributeView
         } finally {
             try {
                 close(fd);
-            } catch (UnixException y) {
-                y.rethrowAsIOException(file);
+            } catch (UnixException ignore) {
             }
         }
     }
@@ -231,8 +229,7 @@ abstract class UnixUserDefinedFileAttributeView
         } finally {
             try {
                 close(fd);
-            } catch (UnixException y) {
-                y.rethrowAsIOException(file);
+            } catch (UnixException ignore) {
             }
         }
     }
@@ -297,8 +294,7 @@ abstract class UnixUserDefinedFileAttributeView
         } finally {
             try {
                 close(fd);
-            } catch (UnixException y) {
-                y.rethrowAsIOException(file);
+            } catch (UnixException ignore) {
             }
         }
     }
@@ -323,8 +319,7 @@ abstract class UnixUserDefinedFileAttributeView
         } finally {
             try {
                 close(fd);
-            } catch (UnixException y) {
-                y.rethrowAsIOException(file);
+            } catch (UnixException ignore) {
             }
         }
     }

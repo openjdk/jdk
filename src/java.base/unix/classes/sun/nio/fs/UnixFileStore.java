@@ -199,7 +199,7 @@ abstract class UnixFileStore
         } finally {
             try {
                 UnixNativeDispatcher.close(fd);
-            } catch (UnixException ignored) {
+            } catch (UnixException ignore) {
             }
         }
         return false;

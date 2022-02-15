@@ -213,12 +213,14 @@ class UnixCopyFile {
             }
             done = true;
         } finally {
-            if (dfd >= 0)
+            if (dfd >= 0) {
                 try {
                     close(dfd);
                 } catch (UnixException e) {
-                    e.rethrowAsIOException(target);
+                    if (done)
+                        e.rethrowAsIOException(target);
                 }
+            }
             if (!done) {
                 // rollback
                 try { rmdir(target); } catch (UnixException ignore) { }
@@ -241,6 +243,8 @@ class UnixCopyFile {
             x.rethrowAsIOException(source);
         }
 
+        // set to true when file and attributes copied
+        boolean complete = false;
         try {
             // open new file
             int fo = -1;
@@ -254,8 +258,6 @@ class UnixCopyFile {
                 x.rethrowAsIOException(target);
             }
 
-            // set to true when file and attributes copied
-            boolean complete = false;
             try {
                 // transfer bytes to target file
                 try {
@@ -299,7 +301,8 @@ class UnixCopyFile {
                 try {
                     close(fo);
                 } catch (UnixException e) {
-                    e.rethrowAsIOException(target);
+                    if (complete)
+                        e.rethrowAsIOException(target);
                 }
 
                 // copy of file or attributes failed so rollback
@@ -313,7 +316,8 @@ class UnixCopyFile {
             try {
                 close(fi);
             } catch (UnixException e) {
-                e.rethrowAsIOException(source);
+                if (complete)
+                    e.rethrowAsIOException(source);
             }
         }
     }

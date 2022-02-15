@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,8 +70,13 @@ class LinuxWatchService
             socketpair(sp);
             configureBlocking(sp[0], false);
         } catch (UnixException x) {
-            UnixNativeDispatcher.close(ifd);
-            throw new IOException(x.errorString());
+            IOException ioe = new IOException(x.errorString());
+            try {
+                UnixNativeDispatcher.close(ifd);
+            } catch (UnixException e) {
+                ioe.addSuppressed(e);
+            }
+            throw ioe;
         }
 
         this.poller = new Poller(fs, this, ifd, sp);
@@ -296,9 +301,12 @@ class LinuxWatchService
 
             // free resources
             unsafe.freeMemory(address);
-            UnixNativeDispatcher.close(socketpair[0]);
-            UnixNativeDispatcher.close(socketpair[1]);
-            UnixNativeDispatcher.close(ifd);
+            try {
+                UnixNativeDispatcher.close(socketpair[0]);
+                UnixNativeDispatcher.close(socketpair[1]);
+                UnixNativeDispatcher.close(ifd);
+            } catch (UnixException ignore) {
+            }
         }
 
         /**

@@ -162,8 +162,7 @@ class UnixFileAttributeViews {
             } finally {
                 try {
                     close(fd);
-                } catch (UnixException e) {
-                    e.rethrowAsIOException(file);
+                } catch (UnixException ignore) {
                 }
             }
         }
