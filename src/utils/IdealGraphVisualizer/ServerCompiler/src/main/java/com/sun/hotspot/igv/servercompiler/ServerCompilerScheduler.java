@@ -36,6 +36,7 @@ import org.openide.util.lookup.ServiceProvider;
 import com.ibm.wala.util.graph.Graph;
 import com.ibm.wala.util.graph.impl.SlowSparseNumberedGraph;
 import com.ibm.wala.util.graph.dominators.Dominators;
+import com.ibm.wala.util.graph.traverse.DFS;
 
 /**
  *
@@ -68,6 +69,7 @@ public class ServerCompilerScheduler implements Scheduler {
     private Map<InputBlock, InputBlock> dominatorMap;
     private Map<InputBlock, Integer> blockIndex;
     private InputBlock[][] commonDominator;
+    private Graph<InputBlock> CFG;
     private static final Comparator<InputEdge> edgeComparator = new Comparator<InputEdge>() {
 
         @Override
@@ -241,6 +243,7 @@ public class ServerCompilerScheduler implements Scheduler {
             buildDominators();
             buildCommonDominators();
             scheduleLatest();
+            renameBlocks();
 
             InputBlock noBlock = null;
             for (InputNode n : graph.getNodes()) {
@@ -545,7 +548,7 @@ public class ServerCompilerScheduler implements Scheduler {
             return;
         }
 
-        Graph<InputBlock> CFG = SlowSparseNumberedGraph.make();
+        CFG = SlowSparseNumberedGraph.make();
         for (InputBlock b : blocks) {
             CFG.addNode(b);
         }
@@ -566,6 +569,30 @@ public class ServerCompilerScheduler implements Scheduler {
             }
             dominatorMap.put(b, idom);
         }
+    }
+
+    // Rename blocks by reverse post-order traversal, to accomodate new blocks.
+    private void renameBlocks() {
+        InputBlock root = findRoot().block;
+        List<InputBlock> roots = new ArrayList<InputBlock>(1);
+        roots.add(root);
+        // Start from the Root node block if there are multiple root blocks.
+        for (InputBlock b : blocks) {
+            if (b != root && CFG.getPredNodeCount(b) == 0) {
+                roots.add(b);
+            }
+        }
+        int blockCount = 1;
+        Map<String, String> namePerm = new HashMap<>(blocks.size());
+        for (InputBlock r : roots) {
+            SortedSet<InputBlock> dfsSet = DFS.sortByDepthFirstOrder(CFG, r);
+            InputBlock[] dfs = dfsSet.toArray(new InputBlock[dfsSet.size()]);
+            for (int i = dfs.length - 1; i >= 0; i--) {
+                namePerm.put(dfs[i].getName(), Integer.toString(blockCount));
+                blockCount++;
+            }
+        }
+        graph.permuteBlockNames(namePerm);
     }
 
     // Whether b1 dominates b2.

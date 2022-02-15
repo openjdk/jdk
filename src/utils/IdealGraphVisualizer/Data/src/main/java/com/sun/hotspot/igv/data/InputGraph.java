@@ -286,6 +286,18 @@ public class InputGraph extends Properties.Entity implements FolderElement {
         return blocks.get(s);
     }
 
+    public void permuteBlockNames(Map<String, String> namePermutation) {
+        Map<String, InputBlock> newBlocks = new LinkedHashMap<>();
+        for (Map.Entry<String, String> perm : namePermutation.entrySet()) {
+            String oldName = perm.getKey();
+            String newName = perm.getValue();
+            InputBlock b = blocks.get(oldName);
+            b.setName(newName);
+            newBlocks.put(newName, b);
+        }
+        blocks = newBlocks;
+    }
+
     public Collection<InputBlockEdge> getBlockEdges() {
         return Collections.unmodifiableList(blockEdges);
     }
