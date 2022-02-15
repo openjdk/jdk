@@ -118,8 +118,7 @@ public class MethodHandles {
      * @return a lookup object for the caller of this method, with
      * {@linkplain Lookup#ORIGINAL original} and
      * {@linkplain Lookup#hasFullPrivilegeAccess() full privilege access}.
-     * @throws IllegalCallerException if there is no caller frame on the
-     *         stack when called directly from a JNI attached thread
+     * @throws IllegalCallerException if there is no caller frame on the stack.
      */
     @CallerSensitive
     @ForceInline // to ensure Reflection.getCallerClass optimization
