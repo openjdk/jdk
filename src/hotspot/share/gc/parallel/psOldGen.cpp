@@ -40,12 +40,7 @@
 PSOldGen::PSOldGen(ReservedSpace rs, size_t initial_size, size_t min_size,
                    size_t max_size, const char* perf_data_name, int level):
   _min_gen_size(min_size),
-  _max_gen_size(max_size),
-#ifdef ASSERT
-  _expand_lock(Heap_lock->rank()-1, "PSOldGenExpand_lock", true)
-#else
-  _expand_lock(Mutex::safepoint, "PSOldGenExpand_lock", true)
-#endif
+  _max_gen_size(max_size)
 {
   initialize(rs, initial_size, GenAlignment, perf_data_name, level);
 }
@@ -168,16 +163,14 @@ bool PSOldGen::expand_for_allocate(size_t word_size) {
   assert(word_size > 0, "allocating zero words?");
   bool result = true;
   {
-    MutexLocker x(&_expand_lock);
+    MutexLocker x(ParallelExpandHeap_lock);
     // Avoid "expand storms" by rechecking available space after obtaining
     // the lock, because another thread may have already made sufficient
     // space available.  If insufficient space available, that will remain
     // true until we expand, since we have the lock.  Other threads may take
     // the space we need before we can allocate it, regardless of whether we
     // expand.  That's okay, we'll just try expanding again.
-    bool needs_expand =
-      pointer_delta(object_space()->end(), object_space()->top()) < word_size;
-    if (needs_expand) {
+    if (object_space()->needs_expand(word_size)) {
       result = expand(word_size*HeapWordSize);
     }
   }
@@ -188,7 +181,7 @@ bool PSOldGen::expand_for_allocate(size_t word_size) {
 }
 
 bool PSOldGen::expand(size_t bytes) {
-  assert_lock_strong(&_expand_lock);
+  assert_lock_strong(ParallelExpandHeap_lock);
   assert_locked_or_safepoint(Heap_lock);
   assert(bytes > 0, "precondition");
   const size_t alignment = virtual_space()->alignment();
@@ -226,7 +219,7 @@ bool PSOldGen::expand(size_t bytes) {
 }
 
 bool PSOldGen::expand_by(size_t bytes) {
-  assert_lock_strong(&_expand_lock);
+  assert_lock_strong(ParallelExpandHeap_lock);
   assert_locked_or_safepoint(Heap_lock);
   assert(bytes > 0, "precondition");
   bool result = virtual_space()->expand_by(bytes);
@@ -262,7 +255,7 @@ bool PSOldGen::expand_by(size_t bytes) {
 }
 
 bool PSOldGen::expand_to_reserved() {
-  assert_lock_strong(&_expand_lock);
+  assert_lock_strong(ParallelExpandHeap_lock);
   assert_locked_or_safepoint(Heap_lock);
 
   bool result = false;
@@ -275,12 +268,12 @@ bool PSOldGen::expand_to_reserved() {
 }
 
 void PSOldGen::shrink(size_t bytes) {
-  assert_lock_strong(&_expand_lock);
+  assert_lock_strong(ParallelExpandHeap_lock);
   assert_locked_or_safepoint(Heap_lock);
 
   size_t size = align_down(bytes, virtual_space()->alignment());
   if (size > 0) {
-    assert_lock_strong(&_expand_lock);
+    assert_lock_strong(ParallelExpandHeap_lock);
     virtual_space()->shrink_by(bytes);
     post_resize();
 
@@ -319,11 +312,11 @@ void PSOldGen::resize(size_t desired_free_space) {
   }
   if (new_size > current_size) {
     size_t change_bytes = new_size - current_size;
-    MutexLocker x(&_expand_lock);
+    MutexLocker x(ParallelExpandHeap_lock);
     expand(change_bytes);
   } else {
     size_t change_bytes = current_size - new_size;
-    MutexLocker x(&_expand_lock);
+    MutexLocker x(ParallelExpandHeap_lock);
     shrink(change_bytes);
   }
 
