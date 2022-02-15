@@ -27,6 +27,7 @@ package java.lang.reflect;
 import java.lang.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.Objects;
 import sun.reflect.annotation.AnnotationSupport;
 
@@ -39,7 +40,7 @@ import sun.reflect.annotation.AnnotationSupport;
  *
  * @since 1.8
  */
-public final class Parameter implements AnnotatedElement {
+public final class Parameter implements AnnotatedElement, Member {
 
     private final String name;
     private final int modifiers;
@@ -146,6 +147,19 @@ public final class Parameter implements AnnotatedElement {
      */
     public Executable getDeclaringExecutable() {
         return executable;
+    }
+
+    /**
+     * {@return the class object of the {@code Executable} declaring
+     * this parameter}
+     * @implSpec
+     * The returned value is equal to {@code
+     * getDeclaringExecutable().getDeclaringClass()}.
+     * @since 19
+     */
+    @Override
+    public Class<?> getDeclaringClass() {
+        return executable.getDeclaringClass();
     }
 
     /**
