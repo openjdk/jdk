@@ -49,7 +49,6 @@ public class DefaultRegexes {
     public static final String START = "(\\d+(\\s){2}(";
     public static final String MID = ".*)+(\\s){2}===.*";
     public static final String END = ")";
-    public static final String COMPOSITE_PREFIX = "#PRE#"; // Prefix for regexes that require an additional user-defined string.
     public static final String IS_REPLACED = "#IS_REPLACED#"; // Is replaced by an additional user-defined string.
     public static final String STORE_OF_CLASS_POSTFIX = "(:|\\+)\\S* \\*" + END;
     public static final String LOAD_OF_CLASS_POSTFIX = "(:|\\+)\\S* \\*" + END;
@@ -63,17 +62,13 @@ public class DefaultRegexes {
         OptoAssemblyDefaultRegexes.initMaps();
     }
 
-    public static CompilePhase getDefaultPhaseForIRNode(String node) {
-        CompilePhase compilePhase = DEFAULT_TO_PHASE_MAP.get(node);
-        TestFramework.check(compilePhase != null, "phase mapping must exist for " + node);
-        return compilePhase;
-    }
-
     public static String getRegexForIRNode(String node, CompilePhase compilePhase) {
         var phaseToRegexMap = DefaultRegexes.PLACEHOLDER_TO_REGEX_MAP.get(node);
-        TestFramework.check(phaseToRegexMap != null, "Not a default IR node: " + node);
+        TestFormat.checkNoReport(phaseToRegexMap != null, "Did you mix a default IRNode regex with an" +
+                                                          " additional string? Not a unique default IRNode: \"" + node + "\"");
         String regex = phaseToRegexMap.get(compilePhase);
-        TestFormat.check(regex != null, "Default regex \"" + node + "\" not defined for compile phase " + compilePhase);
+        TestFormat.checkNoReport(regex != null, "Default regex \"" + node
+                                                + "\" not defined for compile phase " + compilePhase);
         return regex;
     }
 }

@@ -25,7 +25,6 @@ package compiler.lib.ir_framework.driver.irmatching.irrule;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
-import compiler.lib.ir_framework.driver.irmatching.parser.ParsedNode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,12 +39,11 @@ import java.util.stream.Collectors;
  */
 class FailOn extends CheckAttribute {
     private final Pattern quickPattern;
-    private final List<String> nodes;
 
-    public FailOn(List<ParsedNode> nodes, CompilePhase compilePhase) {
-        super(compilePhase);
-        this.nodes = nodes.stream().map(ParsedNode::getNodeString).collect(Collectors.toList());
-        this.quickPattern = Pattern.compile(String.join("|", this.nodes));
+    public FailOn(List<Constraint> constraints, CompilePhase compilePhase) {
+        super(constraints, compilePhase);
+        String patternString = constraints.stream().map(Constraint::getNode).collect(Collectors.joining("|"));
+        this.quickPattern = Pattern.compile(String.join("|", patternString));
     }
 
     @Override
@@ -60,18 +58,19 @@ class FailOn extends CheckAttribute {
 
     private List<RegexFailure> createFailOnFailures(String compilation) {
         List<RegexFailure> regexFailures = new ArrayList<>();
-        for (int i = 0; i < nodes.size(); i++) {
-            checkNode(regexFailures, compilation, nodes.get(i), i + 1);
+        for (Constraint constraint : constraints) {
+            checkNode(regexFailures, compilation, constraint);
         }
         return regexFailures;
     }
 
-    private void checkNode(List<RegexFailure> regexFailures, String compilation, String node, int nodeId) {
-        Pattern p = Pattern.compile(node);
+    private void checkNode(List<RegexFailure> regexFailures, String compilation, Constraint constraint) {
+        String node = constraint.getNode();
+        Pattern p = Pattern.compile(constraint.getNode());
         Matcher m = p.matcher(compilation);
         if (m.find()) {
             List<String> matches = getMatchedNodes(m);
-            regexFailures.add(new FailOnRegexFailure(node, nodeId, matches));
+            regexFailures.add(new FailOnRegexFailure(node, constraint.getRegexNodeId(), matches));
         }
     }
 }

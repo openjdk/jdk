@@ -65,6 +65,10 @@ public class TestIRMatching {
 
     public static void main(String[] args) {
         // Redirect System.out and System.err to reduce noise.
+        TestFramework.run(CompilationOutputOfFails.class);
+        if (true) {
+            return;
+        }
         System.setOut(ps);
         System.setErr(psErr);
         runWithArguments(AndOr1.class, "-XX:TLABRefillWasteFraction=52", "-XX:+UsePerfData", "-XX:+UseTLAB");
@@ -482,70 +486,70 @@ class MultipleFailOnBad {
     private int myInt;
     private MyClassEmpty myClass;
 
-    @Test
-    @IR(failOn = {IRNode.STORE, IRNode.CALL, IRNode.STORE_I, IRNode.LOOP})
-    public void fail1() {
-        iFld = 42;
-    }
-
-    @Test
-    @IR(failOn = {IRNode.STORE, IRNode.CALL})
-    public void fail2() {
-        dontInline();
-    }
-
-    @Test
-    @IR(failOn = {IRNode.CALL, IRNode.STORE_OF_CLASS, "MultipleFailOnBad", IRNode.ALLOC})
-    public void fail3() {
-        iFld = 42;
-    }
-
-    @Test
-    @IR(failOn = {IRNode.STORE_OF_CLASS, "ir_framework/tests/MultipleFailOnBad", IRNode.CALL, IRNode.ALLOC})
-    public void fail4() {
-        iFld = 42;
-    }
-
-    @Test
-    @IR(failOn = {IRNode.STORE_OF_FIELD, "iFld", IRNode.CALL, IRNode.ALLOC})
-    public void fail5() {
-        iFld = 42;
-    }
-
-    @Test
-    @IR(failOn = {IRNode.STORE_OF_CLASS, "MyClassEmpty", IRNode.ALLOC, IRNode.CALL})
-    public void fail6() {
-        myClass = new MyClassEmpty();
-    }
-
+//    @Test
+//    @IR(failOn = {IRNode.STORE, IRNode.CALL, IRNode.STORE_I, IRNode.LOOP})
+//    public void fail1() {
+//        iFld = 42;
+//    }
+//
+//    @Test
+//    @IR(failOn = {IRNode.STORE, IRNode.CALL})
+//    public void fail2() {
+//        dontInline();
+//    }
+//
+//    @Test
+//    @IR(failOn = {IRNode.CALL, IRNode.STORE_OF_CLASS, "MultipleFailOnBad", IRNode.ALLOC})
+//    public void fail3() {
+//        iFld = 42;
+//    }
+//
+//    @Test
+//    @IR(failOn = {IRNode.STORE_OF_CLASS, "ir_framework/tests/MultipleFailOnBad", IRNode.CALL, IRNode.ALLOC})
+//    public void fail4() {
+//        iFld = 42;
+//    }
+//
+//    @Test
+//    @IR(failOn = {IRNode.STORE_OF_FIELD, "iFld", IRNode.CALL, IRNode.ALLOC})
+//    public void fail5() {
+//        iFld = 42;
+//    }
+//
+//    @Test
+//    @IR(failOn = {IRNode.STORE_OF_CLASS, "MyClassEmpty", IRNode.ALLOC, IRNode.CALL})
+//    public void fail6() {
+//        myClass = new MyClassEmpty();
+//    }
+//
     @Test
     @IR(failOn = {IRNode.STORE_OF_CLASS, "UnknownClass", IRNode.ALLOC_OF, "MyClassEmpty"})
     public void fail7() {
         myClass = new MyClassEmpty();
     }
-
-    @Test
-    @IR(failOn = {IRNode.STORE_OF_CLASS, "UnknownClass", IRNode.ALLOC_OF, "ir_framework/tests/MyClassEmptySub"})
-    public void fail8() {
-        myClass = new MyClassEmptySub();
-    }
-
-    @Test
-    @IR(failOn = {IRNode.STORE, IRNode.CALL})
-    public void fail9() {
-        iFld = 42;
-        dontInline();
-    }
-
-    @Test
-    @IR(failOn = {IRNode.STORE_OF_FIELD, "iFld", IRNode.CALL, IRNode.ALLOC})
-    public void fail10() {
-        myInt = 34;
-        iFld = 42;
-    }
-
-    @DontInline
-    private void dontInline() {}
+//
+//    @Test
+//    @IR(failOn = {IRNode.STORE_OF_CLASS, "UnknownClass", IRNode.ALLOC_OF, "ir_framework/tests/MyClassEmptySub"})
+//    public void fail8() {
+//        myClass = new MyClassEmptySub();
+//    }
+//
+//    @Test
+//    @IR(failOn = {IRNode.STORE, IRNode.CALL})
+//    public void fail9() {
+//        iFld = 42;
+//        dontInline();
+//    }
+//
+//    @Test
+//    @IR(failOn = {IRNode.STORE_OF_FIELD, "iFld", IRNode.CALL, IRNode.ALLOC})
+//    public void fail10() {
+//        myInt = 34;
+//        iFld = 42;
+//    }
+//
+//    @DontInline
+//    private void dontInline() {}
 }
 
 // Called with -XX:TLABRefillWasteFraction=X.
@@ -1248,7 +1252,7 @@ class CheckCastArray {
 class CompilationOutputOfFails {
 
     @Test
-    @IR(failOn = IRNode.COUNTEDLOOP + "[\\s\\S]*" + "call")
+    @IR(failOn = IdealDefaultRegexes.COUNTEDLOOP + "[\\s\\S]*" + "call")
     public void both1() {
         for (int i = 0; i < 100; i++) {
             dontInline();
@@ -1256,7 +1260,7 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(failOn = IRNode.COUNTEDLOOP + "|" + "call")
+    @IR(failOn = IdealDefaultRegexes.COUNTEDLOOP + "|" + "call")
     public void both2() {
         for (int i = 0; i < 100; i++) {
             dontInline();
@@ -1273,7 +1277,7 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTEDLOOP + "[\\s\\S]*" + "call", "0"})
+    @IR(counts = {IdealDefaultRegexes.COUNTEDLOOP + "[\\s\\S]*" + "call", "0"})
     public void both4() {
         for (int i = 0; i < 100; i++) {
             dontInline();
@@ -1281,7 +1285,7 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTEDLOOP + "|" + "call", "1"})
+    @IR(counts = {IdealDefaultRegexes.COUNTEDLOOP + "|" + "call", "1"})
     public void both5() {
         for (int i = 0; i < 100; i++) {
             dontInline();

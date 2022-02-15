@@ -23,24 +23,17 @@
 
 package compiler.lib.ir_framework.driver.irmatching.parser;
 
-public class NodeRegex {
+abstract public class NodeRegex {
     private final String rawNodeString;
     private final String userPostfixString;
+    private final int nodeRegexIndex;
     private final boolean compositeNode;
-    private String countConstraint;
 
-    public NodeRegex(String rawNodeString) {
-        this.rawNodeString = rawNodeString;
-        this.userPostfixString = null;
-        compositeNode = false;
-        countConstraint = null;
-    }
-
-    public NodeRegex(String rawNodeString, String userPostfixString) {
+    public NodeRegex(String rawNodeString, String userPostfixString, int nodeRegexIndex) {
         this.rawNodeString = rawNodeString;
         this.userPostfixString = userPostfixString;
-        compositeNode = true;
-        countConstraint = null;
+        compositeNode = userPostfixString != null;
+        this.nodeRegexIndex = nodeRegexIndex;
     }
 
     public String getRawNodeString() {
@@ -51,19 +44,11 @@ public class NodeRegex {
         return userPostfixString;
     }
 
+    public int getNodeRegexIndex() {
+        return nodeRegexIndex;
+    }
+
     public boolean isCompositeNode() {
         return compositeNode;
-    }
-
-    public boolean isCountConstraint() {
-        return countConstraint != null;
-    }
-
-    public String getCountConstraint() {
-        return countConstraint;
-    }
-
-    public void setCountConstraint(String countConstraint) {
-        this.countConstraint = countConstraint;
     }
 }

@@ -51,6 +51,12 @@ public class TestFormat {
         }
     }
 
+    public static void checkNoReport(boolean test, String failureMessage) {
+        if (!test) {
+            throw new TestFormatException(failureMessage);
+        }
+    }
+
     public static void fail(String failureMessage) {
         FAILURES.add(failureMessage);
         throw new TestFormatException(failureMessage);

@@ -26,16 +26,16 @@ package compiler.lib.ir_framework.driver.irmatching.irrule;
 /**
  * Class to create and add compile phase match result for the default phase which needs some special care.
  */
-class DefaultMatchResultBuilder {
+class DefaultMatchResultMerger {
 
-    private final CompilePhaseMatchResult defaultMatchResult;
-    private final CompilePhaseMatchResult idealResult;
-    private final CompilePhaseMatchResult optoAssemblyResult;
+    private final NormalPhaseMatchResult defaultMatchResult;
+    private final NormalPhaseMatchResult idealResult;
+    private final NormalPhaseMatchResult optoAssemblyResult;
     private final int defaultMatchedNodesCount;
     private final int idealMatchedNodesCount;
     private final int optoAssemblyMatchedNodesCount;
 
-    DefaultMatchResultBuilder(CompilePhaseMatchResult defaultMatchResult, CompilePhaseMatchResult idealResult, CompilePhaseMatchResult optoAssemblyResult) {
+    DefaultMatchResultMerger(NormalPhaseMatchResult defaultMatchResult, NormalPhaseMatchResult idealResult, NormalPhaseMatchResult optoAssemblyResult) {
         this.defaultMatchResult = defaultMatchResult;
         this.idealResult = idealResult;
         this.optoAssemblyResult = optoAssemblyResult;
@@ -47,27 +47,19 @@ class DefaultMatchResultBuilder {
     /**
      * Report either PrintIdeal, PrintOpto or both if there is at least one match or
      */
-    public void createDefaultResult(IRRuleMatchResult irRuleMatchResult) {
-        if (defaultMatchResult.hasAnyZeroMatchRegexFails() || someRegexMatchOnlyEntireOutput()) {
-            // Report with default if single regex matches only both outputs or if we have regex failures without finding
-            // any nodes (we don't know which output that should have found a node). This could happen with a count
-            // constraint that expect a non-zero number of matches)
-            irRuleMatchResult.addCompilePhaseMatchResult(defaultMatchResult);
-        } else if (anyRegexMatchOnIdealAndOptoAssembly()) {
-            addResult(irRuleMatchResult, idealResult);
-            addResult(irRuleMatchResult, optoAssemblyResult);
+    public DefaultPhaseMatchResult mergeDefaultMatchResults(DefaultPhaseMatchResult defaultPhaseMatchResult) {
+        if (defaultMatchResult.hasAnyZeroMatchRegexFails() // No match -> do not know if PrintIdeal or PrintOptoAssembly
+            || someRegexMatchOnlyEntireOutput() // Regex matching only on combined PrintIdeal+PrintOptoAssembly output
+            || anyRegexMatchOnIdealAndOptoAssembly()) { // At least one ode matched on PrintIdeal and on PrintOptoAssembly
+            // Report with default phase
+            defaultPhaseMatchResult.addResult(defaultMatchResult);
         } else if (noOptoAssemblyRegexMatches()) {
-            // Report ideal result if no matches on PrintOptoAssembly. We assume no overlapping regexes.
-            addResult(irRuleMatchResult, idealResult);
+            // Report ideal result if no matches on PrintOptoAssembly.
+            defaultPhaseMatchResult.addResultAndMerge(idealResult);
         } else {
-            addResult(irRuleMatchResult, optoAssemblyResult);
+            defaultPhaseMatchResult.addResultAndMerge(optoAssemblyResult);
         }
-    }
-
-
-    private void addResult(IRRuleMatchResult irRuleMatchResult, CompilePhaseMatchResult compilePhaseMatchResult) {
-        compilePhaseMatchResult.filterZeroMatchRegexFails();
-        irRuleMatchResult.addCompilePhaseMatchResult(compilePhaseMatchResult);
+        return defaultPhaseMatchResult;
     }
 
     private boolean noOptoAssemblyRegexMatches() {

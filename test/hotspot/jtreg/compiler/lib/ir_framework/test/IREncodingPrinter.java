@@ -317,11 +317,12 @@ public class IREncodingPrinter {
     private <T extends Comparable<T>> boolean checkFlag(Function<String, T> parseFunction, String kind, String flag,
                                                         String value, T actualFlagValue) {
         try {
-            String postFixErrorMsg = "for " + kind + " based flag \"" + flag + "\"" + failAt();
-            Comparison<T> comparison = ComparisonConstraintParser.parse(value, parseFunction, postFixErrorMsg);
+            Comparison<T> comparison = ComparisonConstraintParser.parse(value, parseFunction);
             return comparison.compare(actualFlagValue);
         } catch (TestFormatException e) {
             // Format exception, do not apply rule.
+            String postFixErrorMsg = " for " + kind + " based flag \"" + flag + "\"" + failAt();
+            TestFormat.failNoThrow(e.getMessage() + postFixErrorMsg);
             return false;
         }
     }

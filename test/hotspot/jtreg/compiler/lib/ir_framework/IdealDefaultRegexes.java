@@ -54,16 +54,16 @@ public class IdealDefaultRegexes {
     public static final String STORE_P = START + "StoreP" + MID + END;
     public static final String STORE_N = START + "StoreN" + MID + END;
     public static final String STORE_VECTOR = START + "StoreVector" + MID + END;
-    public static final String STORE_OF_CLASS = COMPOSITE_PREFIX + START + "Store(B|C|S|I|L|F|D|P|N)" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
-    public static final String STORE_B_OF_CLASS = COMPOSITE_PREFIX + START + "StoreB" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
-    public static final String STORE_C_OF_CLASS = COMPOSITE_PREFIX + START + "StoreC" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
-    public static final String STORE_I_OF_CLASS = COMPOSITE_PREFIX + START + "StoreI" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
-    public static final String STORE_L_OF_CLASS = COMPOSITE_PREFIX + START + "StoreL" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
-    public static final String STORE_F_OF_CLASS = COMPOSITE_PREFIX + START + "StoreF" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
-    public static final String STORE_D_OF_CLASS = COMPOSITE_PREFIX + START + "StoreD" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
-    public static final String STORE_P_OF_CLASS = COMPOSITE_PREFIX + START + "StoreP" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
-    public static final String STORE_N_OF_CLASS = COMPOSITE_PREFIX + START + "StoreN" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
-    public static final String STORE_OF_FIELD = COMPOSITE_PREFIX + START + "Store(B|C|S|I|L|F|D|P|N)" + MID + "@.*name=" + IS_REPLACED + ",.*" + END;
+    public static final String STORE_OF_CLASS = START + "Store(B|C|S|I|L|F|D|P|N)" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
+    public static final String STORE_B_OF_CLASS = START + "StoreB" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
+    public static final String STORE_C_OF_CLASS = START + "StoreC" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
+    public static final String STORE_I_OF_CLASS = START + "StoreI" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
+    public static final String STORE_L_OF_CLASS = START + "StoreL" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
+    public static final String STORE_F_OF_CLASS = START + "StoreF" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
+    public static final String STORE_D_OF_CLASS = START + "StoreD" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
+    public static final String STORE_P_OF_CLASS = START + "StoreP" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
+    public static final String STORE_N_OF_CLASS = START + "StoreN" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
+    public static final String STORE_OF_FIELD = START + "Store(B|C|S|I|L|F|D|P|N)" + MID + "@.*name=" + IS_REPLACED + ",.*" + END;
 
     public static final String LOAD = START + "Load(B|UB|S|US|I|L|F|D|P|N)" + MID + END;
     public static final String LOAD_B = START + "LoadB" + MID + END;
@@ -77,18 +77,18 @@ public class IdealDefaultRegexes {
     public static final String LOAD_P = START + "LoadP" + MID + END;
     public static final String LOAD_N = START + "LoadN" + MID + END;
     public static final String LOAD_VECTOR = START + "LoadVector" + MID + END;
-    public static final String LOAD_OF_CLASS = COMPOSITE_PREFIX + START + "Load(B|UB|S|US|I|L|F|D|P|N)" + MID + "@\\S*"+  IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
-    public static final String LOAD_B_OF_CLASS = COMPOSITE_PREFIX + START + "LoadB" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
-    public static final String LOAD_UB_OF_CLASS = COMPOSITE_PREFIX + START + "LoadUB" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
-    public static final String LOAD_S_OF_CLASS = COMPOSITE_PREFIX + START + "LoadS" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
-    public static final String LOAD_US_OF_CLASS = COMPOSITE_PREFIX + START + "LoadUS" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
-    public static final String LOAD_I_OF_CLASS = COMPOSITE_PREFIX + START + "LoadI" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
-    public static final String LOAD_L_OF_CLASS = COMPOSITE_PREFIX + START + "LoadL" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
-    public static final String LOAD_F_OF_CLASS = COMPOSITE_PREFIX + START + "LoadF" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
-    public static final String LOAD_D_OF_CLASS = COMPOSITE_PREFIX + START + "LoadD" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
-    public static final String LOAD_P_OF_CLASS = COMPOSITE_PREFIX + START + "LoadP" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
-    public static final String LOAD_N_OF_CLASS = COMPOSITE_PREFIX + START + "LoadN" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
-    public static final String LOAD_OF_FIELD = COMPOSITE_PREFIX + START + "Load(B|C|S|I|L|F|D|P|N)" + MID + "@.*name=" + IS_REPLACED + ",.*" + END;
+    public static final String LOAD_OF_CLASS = START + "Load(B|UB|S|US|I|L|F|D|P|N)" + MID + "@\\S*"+  IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
+    public static final String LOAD_B_OF_CLASS = START + "LoadB" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
+    public static final String LOAD_UB_OF_CLASS = START + "LoadUB" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
+    public static final String LOAD_S_OF_CLASS = START + "LoadS" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
+    public static final String LOAD_US_OF_CLASS = START + "LoadUS" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
+    public static final String LOAD_I_OF_CLASS = START + "LoadI" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
+    public static final String LOAD_L_OF_CLASS = START + "LoadL" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
+    public static final String LOAD_F_OF_CLASS = START + "LoadF" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
+    public static final String LOAD_D_OF_CLASS = START + "LoadD" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
+    public static final String LOAD_P_OF_CLASS = START + "LoadP" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
+    public static final String LOAD_N_OF_CLASS = START + "LoadN" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
+    public static final String LOAD_OF_FIELD = START + "Load(B|C|S|I|L|F|D|P|N)" + MID + "@.*name=" + IS_REPLACED + ",.*" + END;
     public static final String LOAD_KLASS  = START + "LoadK" + MID + END;
 
     public static final String LOOP   = START + "Loop" + MID + END;
@@ -97,9 +97,9 @@ public class IdealDefaultRegexes {
     public static final String IF = START + "If\\b" + MID + END;
 
     public static final String CALL = START + "Call.*Java" + MID + END;
-    public static final String CALL_OF_METHOD = COMPOSITE_PREFIX + START + "Call.*Java" + MID + IS_REPLACED + " " +  END;
-    public static final String DYNAMIC_CALL_OF_METHOD = COMPOSITE_PREFIX + START + "CallDynamicJava" + MID + IS_REPLACED + " " + END;
-    public static final String STATIC_CALL_OF_METHOD = COMPOSITE_PREFIX + START + "CallStaticJava" + MID + IS_REPLACED + " " +  END;
+    public static final String CALL_OF_METHOD = START + "Call.*Java" + MID + IS_REPLACED + " " +  END;
+    public static final String DYNAMIC_CALL_OF_METHOD = START + "CallDynamicJava" + MID + IS_REPLACED + " " + END;
+    public static final String STATIC_CALL_OF_METHOD = START + "CallStaticJava" + MID + IS_REPLACED + " " +  END;
     public static final String TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*reason" + END;
     public static final String PREDICATE_TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*predicate" + END;
     public static final String UNSTABLE_IF_TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*unstable_if" + END;
@@ -112,7 +112,6 @@ public class IdealDefaultRegexes {
     // Does not work for VM builds without JVMCI like x86_32 (a rule containing this regex will be skipped without having JVMCI built).
     public static final String INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*intrinsic_or_type_checked_inlining" + END;
 
-    public static final String SCOPE_OBJECT = "(.*# ScObj.*" + END;
     public static final String MEMBAR = START + "MemBar" + MID + END;
 
     public static final String ABS_I = START + "AbsI" + MID + END;
@@ -208,7 +207,6 @@ public class IdealDefaultRegexes {
         initMaps(IRNode.UNHANDLED_TRAP, UNHANDLED_TRAP);
         initMaps(IRNode.INTRINSIC_TRAP, INTRINSIC_TRAP);
         initMaps(IRNode.INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP);
-        initMaps(IRNode.SCOPE_OBJECT, SCOPE_OBJECT);
         initMaps(IRNode.MEMBAR, MEMBAR);
         initMaps(IRNode.ABS_I, ABS_I);
         initMaps(IRNode.ABS_L, ABS_L);
@@ -243,6 +241,7 @@ public class IdealDefaultRegexes {
         DEFAULT_TO_PHASE_MAP.put(defaultRegexString, CompilePhase.PRINT_IDEAL);
         EnumMap<CompilePhase, String> enumMap = new EnumMap<>(CompilePhase.class);
         CompilePhase.getIdealPhases().forEach(phase -> enumMap.put(phase, idealString));
+        enumMap.put(CompilePhase.DEFAULT, idealString);
         PLACEHOLDER_TO_REGEX_MAP.put(defaultRegexString, enumMap);
     }
 }

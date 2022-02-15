@@ -32,8 +32,8 @@ import java.util.List;
  */
 class FailOnRegexFailure extends RegexFailure {
 
-    public FailOnRegexFailure(String nodeRegex, int nodeId, List<String> matches) {
-        super(nodeRegex, nodeId, matches);
+    public FailOnRegexFailure(String nodeRegex, int regexNodeId, List<String> matches) {
+        super(nodeRegex, regexNodeId, matches);
     }
 
     @Override

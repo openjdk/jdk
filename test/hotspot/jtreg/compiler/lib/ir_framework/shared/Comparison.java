@@ -27,8 +27,9 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 
 /**
- * Comparison result of parsing a constraint with {@link ComparisonConstraintParser#parse(String, Function, String)}.
+ * Comparison result of parsing a constraint with {@link #parse(String, Function}.
  */
+// TODO
 public class Comparison<T extends Comparable<T>> {
     private final T givenValue; // Right hand side
     private final BiPredicate<T, T> comparisonPredicate;

@@ -36,9 +36,11 @@ import java.util.regex.Matcher;
  * @see IR
  */
 abstract class CheckAttribute {
+    protected final List<? extends Constraint> constraints;
     protected final CompilePhase compilePhase;
 
-    protected CheckAttribute(CompilePhase compilePhase) {
+    protected CheckAttribute(List<? extends Constraint> constraints, CompilePhase compilePhase) {
+        this.constraints = constraints;
         this.compilePhase = compilePhase;
     }
 

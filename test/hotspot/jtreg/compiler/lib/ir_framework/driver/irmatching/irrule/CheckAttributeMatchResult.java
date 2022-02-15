@@ -26,6 +26,7 @@ package compiler.lib.ir_framework.driver.irmatching.irrule;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -39,6 +40,17 @@ abstract class CheckAttributeMatchResult implements MatchResult {
     @Override
     public boolean fail() {
         return regexFailures != null;
+    }
+
+    public void addFailure(RegexFailure regexFailure) {
+        if (regexFailures == null) {
+            regexFailures = new ArrayList<>();
+        }
+        regexFailures.add(regexFailure);
+    }
+
+    public void mergeResults(CheckAttributeMatchResult other) {
+        other.regexFailures.forEach(this::addFailure);
     }
 
     public int getMatchedNodesCount() {

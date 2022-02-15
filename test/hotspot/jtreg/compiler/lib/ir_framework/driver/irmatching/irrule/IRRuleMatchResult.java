@@ -23,10 +23,12 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule;
 
+import compiler.lib.ir_framework.driver.irmatching.CompilePhaseMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * This class represents an IR matching result of an IR rule.
@@ -56,6 +58,11 @@ public class IRRuleMatchResult implements MatchResult {
         return !compilePhaseMatchResults.isEmpty();
     }
 
+    public String getCompilationOutputs() {
+        return compilePhaseMatchResults.stream()
+                                       .map(CompilePhaseMatchResult::getCompilationOutput)
+                                       .collect(Collectors.joining(System.lineSeparator()));
+    }
 
     /**
      * Build a failure message based on the collected failures of this object.

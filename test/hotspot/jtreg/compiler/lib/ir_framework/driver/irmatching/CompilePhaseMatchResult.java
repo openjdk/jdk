@@ -21,38 +21,17 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule;
+package compiler.lib.ir_framework.driver.irmatching;
 
 import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.driver.irmatching.parser.ParsedNode;
 
-import java.util.HashSet;
-import java.util.Set;
+/**
+ * Interface used by all classes which represent a IR match result. A result should also provide a failure message
+ * in a pretty format to be used by the {@link IRMatcher}.
+ */
+public interface CompilePhaseMatchResult extends MatchResult {
 
-public class DefaultPhaseParsedNodeList extends AbstractParsedNodeList {
-    private final Set<CompilePhase> compilePhases;
-    private boolean requiresDefaultPhase;
+    CompilePhase getCompilePhase();
 
-    public DefaultPhaseParsedNodeList() {
-        this.compilePhases = new HashSet<>();
-    }
-
-    public boolean requiresDefaultPhase() {
-        return requiresDefaultPhase;
-    }
-
-    public Set<CompilePhase> getCompilePhases() {
-        return compilePhases;
-    }
-
-    @Override
-    public void addNode(ParsedNode parsedNode) {
-        parsedNodes.add(parsedNode);
-        CompilePhase compilePhase = parsedNode.getComplePhase();
-        if (compilePhase == CompilePhase.DEFAULT) {
-            requiresDefaultPhase = true;
-        } else {
-            compilePhases.add(compilePhase);
-        }
-    }
+    String getCompilationOutput();
 }

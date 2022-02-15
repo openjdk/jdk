@@ -21,16 +21,18 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.parser;
+package compiler.lib.ir_framework.driver.irmatching.irrule;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.DefaultRegexes;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.driver.irmatching.IRMatcher;
-import compiler.lib.ir_framework.driver.irmatching.irrule.AbstractParsedNodeList;
+import compiler.lib.ir_framework.driver.irmatching.parser.FailOnNodeRegex;
+import compiler.lib.ir_framework.driver.irmatching.parser.NodeRegex;
 import compiler.lib.ir_framework.shared.TestFormatException;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -46,44 +48,21 @@ import java.util.List;
  *
  * @see IR
  */
-abstract public class AbstractNodeRegexParser {
-    /**
-     * Called by {@link IRMatcher} to merge special composite nodes together with additional user-defined input.
-     */
+class NodeRegexParser {
 
-    abstract protected void addNonDefaultNode(AbstractParsedNodeList parsedIRNodes, ParsedNode parsedNode);
-
-    protected void parseNodeRegexes(AbstractParsedNodeList parsedNodesList, List<NodeRegex> nodeRegexes, CompilePhase compilePhase) {
-        for (NodeRegex nodeRegex : nodeRegexes) {
-            String nodeString = nodeRegex.getRawNodeString();
-            if (IRNode.isDefaultIRNode(nodeString)) {
-                ParsedNode parsedNode = getParsedDefaultNode(nodeRegex, compilePhase);
-                addDefaultNode(parsedNodesList, parsedNode);
-            } else {
-                addNonDefaultNode(parsedNodesList, createParsedNode(nodeString, nodeRegex));
-            }
+    public static String parseRawNodeString(CompilePhase compilePhase, NodeRegex nodeRegex, String rawNodeString) {
+        String parsedNodeString = rawNodeString;
+        if (IRNode.isDefaultIRNode(rawNodeString)) {
+            parsedNodeString = parseDefaultNode(compilePhase, nodeRegex, rawNodeString);
         }
+        return parsedNodeString;
     }
 
-    protected ParsedNode getParsedDefaultNode(NodeRegex nodeRegex, CompilePhase compilePhase) {
-        String defaultNodeString = DefaultRegexes.getRegexForIRNode(nodeRegex.getRawNodeString(), compilePhase);
+    private static String parseDefaultNode(CompilePhase compilePhase, NodeRegex nodeRegex, String rawNodeString) {
+        String parsedNodeString = DefaultRegexes.getRegexForIRNode(rawNodeString, compilePhase);
         if (nodeRegex.isCompositeNode()) {
-            defaultNodeString = defaultNodeString.replaceAll(DefaultRegexes.IS_REPLACED, nodeRegex.getUserPostfixString());
+            parsedNodeString = parsedNodeString.replaceAll(DefaultRegexes.IS_REPLACED, nodeRegex.getUserPostfixString());
         }
-        return createParsedNode(defaultNodeString, nodeRegex);
+        return parsedNodeString;
     }
-
-    private void addDefaultNode(AbstractParsedNodeList parsedIRNodes, ParsedNode parsedNode) {
-        parsedIRNodes.addNode(parsedNode);
-    }
-
-
-    private ParsedNode createParsedNode(String nodeString, NodeRegex nodeRegex) {
-        if (nodeRegex.isCountConstraint()) {
-            return new ParsedNode(nodeString, nodeRegex.getCountConstraint());
-        } else {
-            return new ParsedNode(nodeString);
-        }
-    }
-
 }

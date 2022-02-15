@@ -44,16 +44,18 @@ import static compiler.lib.ir_framework.DefaultRegexes.*;
  */
 public class OptoAssemblyDefaultRegexes {
     public static final String ALLOC = "(.*precise .*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*|.*LGHI.*)\\R)*.*(?i:call,static).*wrapper for: _new_instance_Java" + END;
-    public static final String ALLOC_OF = COMPOSITE_PREFIX + "(.*precise .*" + IS_REPLACED + ":.*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*|.*LGHI.*)\\R)*.*(?i:call,static).*wrapper for: _new_instance_Java" + END;
+    public static final String ALLOC_OF = "(.*precise .*" + IS_REPLACED + ":.*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*|.*LGHI.*)\\R)*.*(?i:call,static).*wrapper for: _new_instance_Java" + END;
     public static final String ALLOC_ARRAY = "(.*precise \\[.*\\R((.*(?i:mov|xor|nop|spill).*|\\s*|.*LGHI.*)\\R)*.*(?i:call,static).*wrapper for: _new_array_Java" + END;
-    public static final String ALLOC_ARRAY_OF = COMPOSITE_PREFIX + "(.*precise \\[.*" + IS_REPLACED + ":.*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*|.*LGHI.*)\\R)*.*(?i:call,static).*wrapper for: _new_array_Java" + END;
+    public static final String ALLOC_ARRAY_OF = "(.*precise \\[.*" + IS_REPLACED + ":.*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*|.*LGHI.*)\\R)*.*(?i:call,static).*wrapper for: _new_array_Java" + END;
 
     public static final String CHECKCAST_ARRAY = "(((?i:cmp|CLFI|CLR).*precise \\[.*:|.*(?i:mov|or).*precise \\[.*:.*\\R.*(cmp|CMP|CLR))" + END;
-    public static final String CHECKCAST_ARRAY_OF = COMPOSITE_PREFIX + "(((?i:cmp|CLFI|CLR).*precise \\[.*" + IS_REPLACED + ":|.*(?i:mov|or).*precise \\[.*" + IS_REPLACED + ":.*\\R.*(cmp|CMP|CLR))" + END;
+    public static final String CHECKCAST_ARRAY_OF = "(((?i:cmp|CLFI|CLR).*precise \\[.*" + IS_REPLACED + ":|.*(?i:mov|or).*precise \\[.*" + IS_REPLACED + ":.*\\R.*(cmp|CMP|CLR))" + END;
     // Does not work on s390 (a rule containing this regex will be skipped on s390).
     public static final String CHECKCAST_ARRAYCOPY = "(.*((?i:call_leaf_nofp,runtime)|CALL,\\s?runtime leaf nofp|BCTRL.*.leaf call).*checkcast_arraycopy.*" + END;
 
     public static final String FIELD_ACCESS = "(.*Field: *" + END;
+    public static final String SCOPE_OBJECT = "(.*# ScObj.*" + END;
+
 
     public static void initMaps() {
         initMaps(IRNode.ALLOC, ALLOC);
@@ -64,12 +66,14 @@ public class OptoAssemblyDefaultRegexes {
         initMaps(IRNode.CHECKCAST_ARRAY_OF, CHECKCAST_ARRAY_OF);
         initMaps(IRNode.CHECKCAST_ARRAYCOPY, CHECKCAST_ARRAYCOPY);
         initMaps(IRNode.FIELD_ACCESS, FIELD_ACCESS);
+        initMaps(IRNode.SCOPE_OBJECT, SCOPE_OBJECT);
     }
 
     private static void initMaps(String defaultRegexString, String optoAssemblyString) {
         DEFAULT_TO_PHASE_MAP.put(defaultRegexString, CompilePhase.PRINT_OPTO_ASSEMBLY);
         EnumMap<CompilePhase, String> enumMap = new EnumMap<>(CompilePhase.class);
         enumMap.put(CompilePhase.PRINT_OPTO_ASSEMBLY, optoAssemblyString);
+        enumMap.put(CompilePhase.DEFAULT, optoAssemblyString);
         PLACEHOLDER_TO_REGEX_MAP.put(defaultRegexString, enumMap);
     }
 }

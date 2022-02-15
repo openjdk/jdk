@@ -35,12 +35,12 @@ import java.util.stream.Collectors;
  */
 abstract class RegexFailure {
     protected final String nodeRegex;
-    protected final int nodeId;
+    protected final int regexNodeId;
     protected final List<String> matches;
 
-    public RegexFailure(String nodeRegex, int nodeId, List<String> matches) {
+    public RegexFailure(String nodeRegex, int regexNodeId, List<String> matches) {
         this.nodeRegex = nodeRegex;
-        this.nodeId = nodeId;
+        this.regexNodeId = regexNodeId;
         this.matches = addWhiteSpacePrefixForEachLine(matches);
     }
 
@@ -57,7 +57,7 @@ abstract class RegexFailure {
     abstract public String buildFailureMessage();
 
     protected String getRegexLine() {
-        return "         * Regex " + nodeId + ": " + nodeRegex + System.lineSeparator();
+        return "         * Regex " + regexNodeId + ": " + nodeRegex + System.lineSeparator();
     }
 
     protected String getMatchedNodesBlock() {

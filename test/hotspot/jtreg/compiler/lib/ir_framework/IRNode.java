@@ -82,11 +82,11 @@ public class IRNode {
     public static final String ALLOC = PREFIX + "ALLOC" + POSTFIX;
     public static final String ALLOC_OF = PREFIX + COMPOSITE_PREFIX + "ALLOC_OF" + POSTFIX;
     public static final String ALLOC_ARRAY = PREFIX + "ALLOC_ARRAY" + POSTFIX;
-    public static final String ALLOC_ARRAY_OF = PREFIX + "ALLOC_ARRAY_OF" + POSTFIX;
+    public static final String ALLOC_ARRAY_OF = PREFIX + COMPOSITE_PREFIX + "ALLOC_ARRAY_OF" + POSTFIX;
     public static final String CHECKCAST_ARRAY = PREFIX + "CHECKCAST_ARRAY" + POSTFIX;
-    public static final String CHECKCAST_ARRAY_OF = PREFIX + "CHECKCAST_ARRAY_OF" + POSTFIX;
-    public static final String CHECKCAST_ARRAYCOPY = PREFIX + COMPOSITE_PREFIX + "CHECKCAST_ARRAYCOPY" + POSTFIX;
-    public static final String FIELD_ACCESS = PREFIX + COMPOSITE_PREFIX + "FIELD_ACCESS" + POSTFIX;
+    public static final String CHECKCAST_ARRAY_OF = PREFIX + COMPOSITE_PREFIX + "CHECKCAST_ARRAY_OF" + POSTFIX;
+    public static final String CHECKCAST_ARRAYCOPY = PREFIX + "CHECKCAST_ARRAYCOPY" + POSTFIX;
+    public static final String FIELD_ACCESS = PREFIX + "FIELD_ACCESS" + POSTFIX;
 
     public static final String STORE = PREFIX + "STORE" + POSTFIX;
     public static final String STORE_B = PREFIX + "STORE_B" + POSTFIX;

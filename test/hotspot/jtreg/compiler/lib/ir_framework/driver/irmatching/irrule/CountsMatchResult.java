@@ -36,13 +36,6 @@ import java.util.stream.Collectors;
  */
 class CountsMatchResult extends CheckAttributeMatchResult {
 
-    public void addFailure(RegexFailure regexFailure) {
-        if (regexFailures == null) {
-            regexFailures = new ArrayList<>();
-        }
-        regexFailures.add(regexFailure);
-    }
-
     public boolean hasZeroMatchRegexFail() {
         return regexFailures.stream().anyMatch(failure -> failure.getMatchedNodesCount() == 0);
     }

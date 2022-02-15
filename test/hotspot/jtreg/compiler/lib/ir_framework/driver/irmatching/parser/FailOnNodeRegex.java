@@ -23,38 +23,9 @@
 
 package compiler.lib.ir_framework.driver.irmatching.parser;
 
-import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.TestFramework;
+public class FailOnNodeRegex extends NodeRegex {
 
-public class ParsedNode {
-    private final String nodeString;
-    private CompilePhase compilePhase;
-    private final String countConstraint;
-
-    public ParsedNode(String nodeString) {
-        this.nodeString = nodeString;
-        this.countConstraint = null;
-    }
-
-    public ParsedNode(String nodeString, String countConstraint) {
-        this.nodeString = nodeString;
-        this.countConstraint = countConstraint;
-    }
-
-    public String getNodeString() {
-        return nodeString;
-    }
-
-    public void setCompilePhase(CompilePhase compilePhase) {
-        this.compilePhase = compilePhase;
-    }
-
-    public CompilePhase getComplePhase() {
-        return compilePhase;
-    }
-
-    public String getCountConstraint() {
-        TestFramework.check(countConstraint != null, "must be set");
-        return countConstraint;
+    public FailOnNodeRegex(String rawNodeString, String userPostfixString, int nodeRegexIndex) {
+        super(rawNodeString, userPostfixString, nodeRegexIndex);
     }
 }

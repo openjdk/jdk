@@ -21,17 +21,17 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.parser;
+package compiler.lib.ir_framework.driver.irmatching.irrule;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.DefaultRegexes;
 import compiler.lib.ir_framework.IR;
-import compiler.lib.ir_framework.driver.irmatching.IRMatcher;
-import compiler.lib.ir_framework.driver.irmatching.irrule.AbstractParsedNodeList;
-import compiler.lib.ir_framework.driver.irmatching.irrule.DefaultPhaseParsedNodeList;
+import compiler.lib.ir_framework.driver.irmatching.parser.NodeRegex;
 import compiler.lib.ir_framework.shared.TestFormatException;
+import compiler.lib.ir_framework.shared.TestFrameworkException;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * This class provides default regex strings that can be used in {@link IR @IR} annotations to specify IR constraints.
@@ -46,37 +46,36 @@ import java.util.List;
  *
  * @see IR
  */
-public class DefaultPhaseNodeRegexParser extends AbstractNodeRegexParser {
+public class NodeRegexFilter<T extends NodeRegex> {
 
+    private final List<T> filteredDefaultList;
+    private final List<T> filteredIdealList;
+    private final List<T> filteredOptoAssemblyList;
 
-    /**
-     * Called by {@link IRMatcher} to merge special composite nodes together with additional user-defined input.
-     */
-    public DefaultPhaseParsedNodeList getNodesFromFailOnRegexes(String[] nodes) {
-        return parseNodeRegexes(NodeRegexExtractor.getFailOnRegexes(nodes));
+    public NodeRegexFilter(List<T> nodeRegexes) {
+        filteredDefaultList = filter(nodeRegexes, null);
+        filteredIdealList = filter(nodeRegexes, CompilePhase.PRINT_IDEAL);
+        filteredOptoAssemblyList = filter(nodeRegexes, CompilePhase.PRINT_OPTO_ASSEMBLY);
     }
 
-    public DefaultPhaseParsedNodeList getNodesFromCountsRegexes(String[] nodes) {
-        return parseNodeRegexes(NodeRegexExtractor.getCountsRegexes(nodes));
+    private List<T> filter(List<T> nodeRegexes, CompilePhase compilePhase) {
+        return nodeRegexes.stream()
+                          .filter(r -> DefaultRegexes.DEFAULT_TO_PHASE_MAP.get(r.getRawNodeString()) == compilePhase)
+                          .collect(Collectors.toList());
     }
 
-    private DefaultPhaseParsedNodeList parseNodeRegexes(List<NodeRegex> nodeRegexes) {
-        DefaultPhaseParsedNodeList parsedNodes = new DefaultPhaseParsedNodeList();
-        parseNodeRegexes(parsedNodes, nodeRegexes, CompilePhase.DEFAULT);
-        return parsedNodes;
-    }
-
-    @Override
-    protected void addNonDefaultNode(AbstractParsedNodeList parsedIRNodes, ParsedNode parsedNode) {
-        parsedNode.setCompilePhase(CompilePhase.DEFAULT);
-        parsedIRNodes.addNode(parsedNode);
-    }
-
-    @Override
-    protected ParsedNode getParsedDefaultNode(NodeRegex nodeRegex, CompilePhase ignore) {
-        CompilePhase defaultCompilePhase = DefaultRegexes.getDefaultPhaseForIRNode(nodeRegex.getRawNodeString());
-        ParsedNode parsedNode = super.getParsedDefaultNode(nodeRegex, defaultCompilePhase);
-        parsedNode.setCompilePhase(defaultCompilePhase);
-        return parsedNode;
+    public List<T> getList(CompilePhase compilePhase) {
+        switch (compilePhase) {
+            case DEFAULT -> {
+                return filteredDefaultList;
+            }
+            case PRINT_IDEAL -> {
+                return filteredIdealList;
+            }
+            case PRINT_OPTO_ASSEMBLY -> {
+                return filteredOptoAssemblyList;
+            }
+            default -> throw new TestFrameworkException("unsupported compile phase " + compilePhase);
+        }
     }
 }

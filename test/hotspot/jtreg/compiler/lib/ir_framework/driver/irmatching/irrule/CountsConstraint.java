@@ -23,33 +23,24 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule;
 
-import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
-import compiler.lib.ir_framework.driver.irmatching.parser.ParsedNode;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+import compiler.lib.ir_framework.shared.Comparison;
 
 /**
- * Class representing a failOn attribute of an IR rule.
+ * Class representing a counts attribute of an IR rule.
  *
- * @see IR#failOn()
+ * @see IR#counts()
  */
-class FailOnList {
-    private final List<FailOn> failOnList;
-    private final List<CompilePhase> compilePhases;
+class CountsConstraint extends Constraint {
+    private final Comparison<Long> comparison;
 
-    public FailOnList() {
-        this.failOnList = new ArrayList<>();
-        this.compilePhases = new ArrayList<>();
+    public CountsConstraint(String node, Comparison<Long> comparison, int regexNodeId) {
+        super(node, regexNodeId);
+        this.comparison = comparison;
     }
-
-    public void add(FailOn failOn, CompilePhase compilePhase) {
-        failOnList.add(failOn);
-        compilePhases.add(compilePhase);
+    
+    public Comparison<Long> getComparison() {
+        return comparison;
     }
-
+    
 }

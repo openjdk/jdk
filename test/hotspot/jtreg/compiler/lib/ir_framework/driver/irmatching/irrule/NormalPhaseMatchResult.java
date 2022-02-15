@@ -24,7 +24,7 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule;
 
 import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.driver.irmatching.MatchResult;
+import compiler.lib.ir_framework.driver.irmatching.CompilePhaseMatchResult;
 
 /**
  * This class represents an IR matching result of an IR rule applied to a compile phase.
@@ -32,13 +32,25 @@ import compiler.lib.ir_framework.driver.irmatching.MatchResult;
  * @see CheckAttributeMatchResult
  * @see IRRule
  */
-public class CompilePhaseMatchResult implements MatchResult {
+public class NormalPhaseMatchResult implements CompilePhaseMatchResult {
     private final CompilePhase compilePhase;
+    private final String compilationOutput;
     private FailOnMatchResult failOnFailures = null;
     private CountsMatchResult countsFailures = null;
 
-    public CompilePhaseMatchResult(CompilePhase compilePhase) {
+    public NormalPhaseMatchResult(CompilePhase compilePhase, String compilationOutput) {
         this.compilePhase = compilePhase;
+        this.compilationOutput = compilationOutput;
+    }
+
+    // Only available inside package
+    void mergeResults(NormalPhaseMatchResult other) {
+        if (failOnFailures != null) {
+            failOnFailures.mergeResults(other.failOnFailures);
+        }
+        if (countsFailures != null) {
+            countsFailures.mergeResults(other.countsFailures);
+        }
     }
 
     private boolean hasFailOnFailures() {
@@ -57,8 +69,14 @@ public class CompilePhaseMatchResult implements MatchResult {
         this.countsFailures = countsFailures;
     }
 
+    @Override
     public CompilePhase getCompilePhase() {
         return compilePhase;
+    }
+
+    @Override
+    public String getCompilationOutput() {
+        return compilationOutput;
     }
 
     public int getTotalMatchedNodesCount() {
@@ -78,16 +96,6 @@ public class CompilePhaseMatchResult implements MatchResult {
             return countsFailures.hasZeroMatchRegexFail();
         }
         return false;
-    }
-
-    public void filterZeroMatchRegexFails() {
-        if (hasCountsFailures()) {
-            countsFailures.filterZeroMatchRegexFails();
-            if (!countsFailures.fail()) {
-                // Does not fail anymore after filtering.
-                countsFailures = null;
-            }
-        }
     }
 
     @Override

@@ -25,10 +25,8 @@ package compiler.lib.ir_framework.driver.irmatching.parser;
 
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
-import compiler.lib.ir_framework.shared.TestFormat;
 import compiler.lib.ir_framework.shared.TestFormatException;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -44,54 +42,40 @@ import java.util.List;
  *
  * @see IR
  */
-public class NodeRegexExtractor {
+abstract public class CheckConstraintParser {
 
-    public static List<NodeRegex> getFailOnRegexes(String[] nodes) {
-        return getNodeRegexes(nodes, false);
-    }
+    abstract public List<? extends NodeRegex> parseConstraint(String[] nodesArray);
 
-
-    public static List<NodeRegex> getCountsRegexes(String[] nodes) {
-        return getNodeRegexes(nodes, true);
-    }
-
-    private static List<NodeRegex> getNodeRegexes(String[] nodes, boolean isCount) {
-        List<NodeRegex> nodeRegexes = new ArrayList<>();
-        for (int i = 0; i < nodes.length; i++) {
-            String node = nodes[i];
-            NodeRegex nodeRegex;
-            if (IRNode.isCompositeRegex(node)) {
-                String userPostfixString = getUserProvidedPostfixString(nodes, i);
-                nodeRegex = new NodeRegex(node, userPostfixString);
-                i++;
-            } else {
-                nodeRegex = new NodeRegex(node);
-            }
-            if (isCount) {
-                TestFormat.check(i + 1 < nodes.length, "Missing count for node " + node);
-                String countsConstraint = nodes[i + 1];
-                nodeRegex.setCountConstraint(countsConstraint);
-                i++;
-            }
-            nodeRegexes.add(nodeRegex);
+    protected void parseNodeArray(String[] nodesArray) {
+        RawNodesArray rawNodesArray = new RawNodesArray(nodesArray);
+        while (rawNodesArray.hasNodesLeft()) {
+            parseNextNode(rawNodesArray);
         }
-        return nodeRegexes;
     }
 
+    abstract protected void parseNextNode(RawNodesArray rawNodesArray);
 
-    private static String getUserProvidedPostfixString(String[] nodes, int i) {
-        if (i + 1 == nodes.length) {
-            reportMissingCompositeValue(nodes[i], i);
+    protected String getUserProvidedPostfix(RawNodesArray rawNodesArray) {
+        if (IRNode.isCompositeRegex(rawNodesArray.getCurrentNode())) {
+            return parseUserProvidedPostfix(rawNodesArray);
+        } else {
+            return null;
         }
-        return nodes[i + 1];
     }
 
+    private String parseUserProvidedPostfix(RawNodesArray rawNodesArray) {
+        if (!rawNodesArray.hasNodesLeft()) {
+            reportMissingCompositeValue(rawNodesArray);
+        }
+        return rawNodesArray.next();
+    }
 
     /**
      * Mapping from string variable value to string variable name for better error reporting.
      */
-    private static void reportMissingCompositeValue(String node, int index) {
-        String nodeName = IRNode.getCompositeNodeName(node);
-        TestFormat.fail("Must provide additional value at index " + (index + 1) + " right after " + nodeName);
+    private static void reportMissingCompositeValue(RawNodesArray rawNodesArray) {
+        String nodeName = IRNode.getCompositeNodeName(rawNodesArray.getCurrentNode());
+        throw new TestFormatException("Must provide additional value at index " + rawNodesArray.getCurrentIndex()
+                                      + " right after " + nodeName);
     }
 }

@@ -23,12 +23,11 @@
 
 package compiler.lib.ir_framework.driver.irmatching.parser;
 
-import compiler.lib.ir_framework.*;
-import compiler.lib.ir_framework.driver.irmatching.IRMatcher;
-import compiler.lib.ir_framework.driver.irmatching.irrule.AbstractParsedNodeList;
-import compiler.lib.ir_framework.driver.irmatching.irrule.ParsedNodeList;
+import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.shared.TestFormat;
 import compiler.lib.ir_framework.shared.TestFormatException;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -44,29 +43,27 @@ import java.util.List;
  *
  * @see IR
  */
-public class NodeRegexParser extends AbstractNodeRegexParser {
+public class CountsParser extends CheckConstraintParser {
+    private List<CountsNodeRegex> countsNodeRegexes;
 
-    /**
-     * Called by {@link IRMatcher} to merge special composite nodes together with additional user-defined input.
-     */
-
-
-    public ParsedNodeList getNodesFromFailOnRegexes(String[] nodes, CompilePhase compilePhase) {
-        return parseNodeRegexes(NodeRegexExtractor.getFailOnRegexes(nodes), compilePhase);
-    }
-
-    public ParsedNodeList getNodesFromCountsRegexes(String[] nodes, CompilePhase compilePhase) {
-        return parseNodeRegexes(NodeRegexExtractor.getCountsRegexes(nodes), compilePhase);
-    }
-
-    private ParsedNodeList parseNodeRegexes(List<NodeRegex> nodeRegexes, CompilePhase compilePhase) {
-        ParsedNodeList parsedNodes = new ParsedNodeList();
-        parseNodeRegexes(parsedNodes, nodeRegexes, compilePhase);
-        return parsedNodes;
+    @Override
+    public List<CountsNodeRegex> parseConstraint(String[] nodesArray) {
+        countsNodeRegexes = new ArrayList<>();
+        parseNodeArray(nodesArray);
+        return countsNodeRegexes;
     }
 
     @Override
-    protected void addNonDefaultNode(AbstractParsedNodeList parsedIRNodes, ParsedNode parsedNode) {
-        parsedIRNodes.addNode(parsedNode);
+    protected void parseNextNode(RawNodesArray rawNodesArray) {
+        String node = rawNodesArray.getNextNode();
+        String userProvidedPostfix = getUserProvidedPostfix(rawNodesArray);
+        String countConstraint = getCountConstraint(node, rawNodesArray);
+        countsNodeRegexes.add(
+                new CountsNodeRegex(node, userProvidedPostfix, countConstraint, rawNodesArray.getCurrentRegexIndex()));
+    }
+
+    private String getCountConstraint(String node, RawNodesArray rawNodesArray) {
+        TestFormat.checkNoReport(rawNodesArray.hasNodesLeft(), "Missing count for node " + node);
+        return rawNodesArray.next();
     }
 }

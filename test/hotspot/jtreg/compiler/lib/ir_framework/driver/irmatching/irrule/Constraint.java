@@ -21,16 +21,30 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.shared;
+package compiler.lib.ir_framework.driver.irmatching.irrule;
+
+import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.shared.Comparison;
 
 /**
- * The error reporting of the IR framework is throwing exceptions unconditionally in separate methods. The calling methods,
- * however, do not see these exceptions. As a result, Java and/or some IDEs could complain about impossible states
- * (e.g. uninitialized variables, null pointer dereferences etc. even though an exception will be thrown earlier).
- * To avoid that, throw an instance of this class instead.
+ * Class representing a counts attribute of an IR rule.
+ *
+ * @see IR#counts()
  */
-class UnreachableCodeException extends RuntimeException {
-    public UnreachableCodeException() {
-        super("Unreachable code");
+public class Constraint {
+    private final String node;
+    private final int regexNodeId;
+
+    public Constraint(String node, int regexNodeId) {
+        this.node = node;
+        this.regexNodeId = regexNodeId;
+    }
+
+    public String getNode() {
+        return node;
+    }
+
+    public int getRegexNodeId() {
+        return regexNodeId;
     }
 }

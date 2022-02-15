@@ -26,13 +26,8 @@ package compiler.lib.ir_framework.driver.irmatching.parser;
 public class CountsNodeRegex extends NodeRegex {
     private final String countConstraint;
 
-    public CountsNodeRegex(String rawNodeString, String countConstraint) {
-        super(rawNodeString);
-        this.countConstraint = countConstraint;
-    }
-
-    public CountsNodeRegex(String rawNodeString, String userPostfixString, String countConstraint) {
-        super(rawNodeString, userPostfixString);
+    public CountsNodeRegex(String rawNodeString, String userPostfixString, String countConstraint, int nodeRegexIndex) {
+        super(rawNodeString, userPostfixString, nodeRegexIndex);
         this.countConstraint = countConstraint;
     }
     public String getCountConstraint() {
