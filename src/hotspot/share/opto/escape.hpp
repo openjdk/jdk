@@ -431,25 +431,25 @@ private:
 
   // Set the escape state of an object and its fields.
   void set_escape_state(PointsToNode* ptn, PointsToNode::EscapeState esc
-                        DEBUG_ONLY(COMMA const char* reason="reason unknown")) {
+                        NOT_PRODUCT(COMMA const char* reason)) {
     // Don't change non-escaping state of NULL pointer.
     if (ptn != null_obj) {
       if (ptn->escape_state() < esc) {
-        DEBUG_ONLY(trace_es_update_helper(ptn, esc, false, reason));
+        NOT_PRODUCT(trace_es_update_helper(ptn, esc, false, reason));
         ptn->set_escape_state(esc);
       }
       if (ptn->fields_escape_state() < esc) {
-        DEBUG_ONLY(trace_es_update_helper(ptn, esc, true, reason));
+        NOT_PRODUCT(trace_es_update_helper(ptn, esc, true, reason));
         ptn->set_fields_escape_state(esc);
       }
     }
   }
   void set_fields_escape_state(PointsToNode* ptn, PointsToNode::EscapeState esc
-                               DEBUG_ONLY(COMMA const char* reason="reason unknown")) {
+                               NOT_PRODUCT(COMMA const char* reason)) {
     // Don't change non-escaping state of NULL pointer.
     if (ptn != null_obj) {
       if (ptn->fields_escape_state() < esc) {
-        DEBUG_ONLY(trace_es_update_helper(ptn, esc, true, reason));
+        NOT_PRODUCT(trace_es_update_helper(ptn, esc, true, reason));
         ptn->set_fields_escape_state(esc);
       }
     }
@@ -575,9 +575,9 @@ private:
   // Compute the escape information
   bool compute_escape();
 
-  void set_not_scalar_replaceable(PointsToNode* ptn DEBUG_ONLY(COMMA const char* reason="reason unknown")) const {
+  void set_not_scalar_replaceable(PointsToNode* ptn NOT_PRODUCT(COMMA const char* reason)) const {
 #ifndef PRODUCT
-    if (_compile->trace_escape_analysis()) {
+    if (_compile->directive()->TraceEscapeAnalysisOption) {
         assert(ptn != nullptr, "should not be null");
         ptn->dump_header(true);
         tty->print_cr("is NSR. %s", reason);

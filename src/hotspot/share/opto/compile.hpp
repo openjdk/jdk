@@ -324,7 +324,6 @@ class Compile : public Phase {
   bool                  _print_assembly;        // True if we should dump assembly code for this compilation
   bool                  _print_inlining;        // True if we should print inlining for this compilation
   bool                  _print_intrinsics;      // True if we should print intrinsics for this compilation
-  bool                  _trace_escape_analysis; // True if we should print escape analysis for this compilation
 #ifndef PRODUCT
   uint                  _igv_idx;               // Counter for IGV node identifiers
   bool                  _trace_opto_output;
@@ -619,8 +618,6 @@ class Compile : public Phase {
   void          set_print_inlining(bool z)       { _print_inlining = z; }
   bool              print_intrinsics() const     { return _print_intrinsics; }
   void          set_print_intrinsics(bool z)     { _print_intrinsics = z; }
-  bool              trace_escape_analysis() const{ return _trace_escape_analysis; }
-  void          set_trace_escape_analysis(bool z){ _trace_escape_analysis = z; }
   RTMState          rtm_state()  const           { return _rtm_state; }
   void          set_rtm_state(RTMState s)        { _rtm_state = s; }
   bool              use_rtm() const              { return (_rtm_state & NoRTM) == 0; }

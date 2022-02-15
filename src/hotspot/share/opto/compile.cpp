@@ -663,9 +663,6 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
 #endif
   set_print_inlining(directive->PrintInliningOption || PrintOptoInlining);
   set_print_intrinsics(directive->PrintIntrinsicsOption);
-#ifndef PRODUCT
-  set_trace_escape_analysis(directive->TraceEscapeAnalysisOption);
-#endif
   set_has_irreducible_loop(true); // conservative until build_loop_tree() reset it
 
   if (ProfileTraps RTM_OPT_ONLY( || UseRTMLocking )) {
