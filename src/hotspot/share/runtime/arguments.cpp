@@ -2906,6 +2906,18 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       jio_fprintf(defaultStream::error_stream(),
                   "ExtendedDTraceProbes flag is not applicable for this configuration\n");
       return JNI_EINVAL;
+    } else if (match_option(option, "-XX:+DTraceMethodProbes")) {
+      jio_fprintf(defaultStream::error_stream(),
+                  "DTraceMethodProbes flag is not applicable for this configuration\n");
+      return JNI_EINVAL;
+    } else if (match_option(option, "-XX:+DTraceAllocProbes")) {
+      jio_fprintf(defaultStream::error_stream(),
+                  "DTraceAllocProbes flag is not applicable for this configuration\n");
+      return JNI_EINVAL;
+    } else if (match_option(option, "-XX:+DTraceMonitorProbes")) {
+      jio_fprintf(defaultStream::error_stream(),
+                  "DTraceMonitorProbes flag is not applicable for this configuration\n");
+      return JNI_EINVAL;
 #endif // defined(DTRACE_ENABLED)
 #ifdef ASSERT
     } else if (match_option(option, "-XX:+FullGCALot")) {
