@@ -81,35 +81,23 @@ cbTrackingObjectFree(jvmtiEnv* jvmti_env, jlong tag)
 struct bag *
 classTrack_processUnloads(JNIEnv *env)
 {
-    struct bag* new_bag = NULL;
-    struct bag* deleted = NULL;
-    jboolean retry = JNI_FALSE;
-    do {
-      // Avoid unnecessary allocations when class track has yet been activated.
-      if (deletedSignatures != NULL) {
-        /* Allocate new bag outside classTrackLock lock to avoid deadlock.
-         *
-         * Note: jvmtiAllocate/jvmtiDeallocate() may be blocked by ongoing safepoints.
-         * It is dangerous to call them (via bagCreateBag/bagDestroyBag())while holding monitor(s),
-         * because jvmti may post events, e.g. JVMTI_EVENT_OBJECT_FREE at safepoints and event processing
-         * code may acquire the same monitor(s), e.g. classTrackLock in cbTrackingObjectFree(),
-         * which can lead to deadlock.
-         */
-        new_bag = bagCreateBag(sizeof(char*), 10);
-      }
-      debugMonitorEnter(classTrackLock);
-      deleted = deletedSignatures;
-      if (deletedSignatures != NULL) {
-        if (new_bag != NULL) {
-          deletedSignatures = new_bag;
-          new_bag = NULL;
-        } else {
-          retry = JNI_TRUE;
-        }
-      }
-      debugMonitorExit(classTrackLock);
-    } while (retry == JNI_TRUE);
-    bagDestroyBag(new_bag);
+    if (deletedSignatures == NULL || bagSize(deletedSignatures) == 0) {
+      return NULL;
+    }
+
+    /* Allocate new bag outside classTrackLock lock to avoid deadlock.
+     *
+     * Note: jvmtiAllocate/jvmtiDeallocate() may be blocked by ongoing safepoints.
+     * It is dangerous to call them (via bagCreateBag/bagDestroyBag())while holding monitor(s),
+     * because jvmti may post events, e.g. JVMTI_EVENT_OBJECT_FREE at safepoints and event processing
+     * code may acquire the same monitor(s), e.g. classTrackLock in cbTrackingObjectFree(),
+     * which can lead to deadlock.
+     */
+    struct bag* new_bag = bagCreateBag(sizeof(char*), 10);
+    debugMonitorEnter(classTrackLock);
+    struct bag* deleted = deletedSignatures;
+    deletedSignatures = new_bag;
+    debugMonitorExit(classTrackLock);
     return deleted;
 }
 
