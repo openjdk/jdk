@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import java.nio.file.Paths;
 
 public class NullCallerClassLoaderTest {
     public static void main(String[] args) throws IOException {
-        Path launcher = Paths.get(System.getProperty("test.nativepath"), "NullCallerClassLoaderTest");
+        Path launcher = Path.of(System.getProperty("test.nativepath"), "NullCallerClassLoaderTest");
         ProcessBuilder pb = new ProcessBuilder(launcher.toString());
         Map<String, String> env = pb.environment();
 

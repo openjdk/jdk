@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1606,9 +1606,15 @@ public abstract class ClassLoader {
      * </ol>
      * <p>Note that once a class loader is registered as parallel capable, there
      * is no way to change it back.</p>
+     * <p>
+     * In cases where {@code ClassLoader.registerAsParallelCapable} is called from a context where
+     * there is no caller frame on the stack (e.g. when called directly
+     * from a JNI attached thread), {@code IllegalCallerException} is thrown.
+     * </p>
      *
      * @return  {@code true} if the caller is successfully registered as
      *          parallel capable and {@code false} if otherwise.
+     * @throws IllegalCallerException if there is no caller frame on the stack.
      *
      * @see #isRegisteredAsParallelCapable()
      *
@@ -1617,7 +1623,10 @@ public abstract class ClassLoader {
     @CallerSensitive
     protected static boolean registerAsParallelCapable() {
         final Class<?> caller = Reflection.getCallerClass();
-        return (caller != null) ? registerAsParallelCapable(caller): false;
+        if (caller == null) {
+            throw new IllegalCallerException("no caller frame");
+        }
+        return registerAsParallelCapable(caller);
     }
 
     // Caller-sensitive adapter method for reflective invocation

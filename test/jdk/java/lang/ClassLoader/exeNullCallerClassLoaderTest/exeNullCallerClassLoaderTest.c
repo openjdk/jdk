@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,17 @@
 #include "jni.h"
 #include "assert.h"
 
+static jclass class_IllegalCallerException;
+
+int checkAndClearIllegalCallerExceptionThrown(JNIEnv *env) {
+    jthrowable t = (*env)->ExceptionOccurred(env);
+    if ((*env)->IsInstanceOf(env, t, class_IllegalCallerException) == JNI_TRUE) {
+        (*env)->ExceptionClear(env);
+        return JNI_TRUE;
+    }
+    return JNI_FALSE;
+}
+
 int main(int argc, char** args) {
     JavaVM *jvm;
     JNIEnv *env;
@@ -43,6 +54,8 @@ int main(int argc, char** args) {
         printf("ERROR: cannot create VM.\n");
         exit(-1);
     }
+    class_IllegalCallerException = (*env)->FindClass(env, "java/lang/IllegalCallerException");
+    assert (class_IllegalCallerException != NULL);
 
     // call ClassLoader.registerAsParallelCapable()
     jclass class_ClassLoader = (*env)->FindClass(env, "java/lang/ClassLoader");
@@ -50,14 +63,12 @@ int main(int argc, char** args) {
     jmethodID mid_ClassLoader_registerAsParallelCapable = (*env)->GetStaticMethodID(env, class_ClassLoader, "registerAsParallelCapable", "()Z" );
     assert(mid_ClassLoader_registerAsParallelCapable != NULL);
     jboolean b = (*env)->CallStaticBooleanMethod(env, class_ClassLoader, mid_ClassLoader_registerAsParallelCapable );
-    if ((*env)->ExceptionOccurred(env) != NULL) {
-        (*env)->ExceptionDescribe(env);
+    if ((rc = checkAndClearIllegalCallerExceptionThrown(env)) != JNI_TRUE) {
+        printf("ERROR: Didn't get the expected IllegalCallerException.\n");
         exit(-1);
     }
-    if (b != JNI_FALSE) {
-        printf("ERROR: Unexpected true return value.\n");
-        exit(1);
-    }
+
+    printf("Expected IllegalCallerException was thrown\n");
 
     (*jvm)->DestroyJavaVM(jvm);
     return 0;
