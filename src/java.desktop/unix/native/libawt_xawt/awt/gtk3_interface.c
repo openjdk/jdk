@@ -2863,11 +2863,11 @@ static void transform_detail_string (const gchar *detail,
     }
 }
 
-inline static int scale_down_to_plus_inf(int what, int scale) {
+inline static int scale_down_ceiling(int what, int scale) {
     return (int)ceilf(what / (float)scale);
 }
 
-inline static int scale_down_to_minus_inf(int what, int scale) {
+inline static int scale_down_floor(int what, int scale) {
     return (int)floorf(what / (float)scale);
 }
 
@@ -2885,17 +2885,17 @@ static gboolean gtk3_get_drawable_data(JNIEnv *env, jintArray pixelArray,
         // Scale the coordinate and size carefully such that the captured area
         // is at least as large as requested. We trim off excess later by
         // using the skip_* variables.
-        const int x_scaled = scale_down_to_minus_inf(x, win_scale);
-        const int y_scaled = scale_down_to_minus_inf(y, win_scale);
+        const int x_scaled = scale_down_floor(x, win_scale);
+        const int y_scaled = scale_down_floor(y, win_scale);
         skip_left = x - x_scaled*win_scale;
         skip_top  = y - y_scaled*win_scale;
         DASSERT(skip_left >= 0 && skip_top >= 0);
 
-        const int x_right_scaled = scale_down_to_plus_inf(x + width, win_scale);
+        const int x_right_scaled = scale_down_ceiling(x + width, win_scale);
         const int width_scaled = x_right_scaled - x_scaled;
         DASSERT(width_scaled > 0);
 
-        const int y_bottom_scaled = scale_down_to_plus_inf(y + height, win_scale);
+        const int y_bottom_scaled = scale_down_ceiling(y + height, win_scale);
         const int height_scaled = y_bottom_scaled - y_scaled;
         DASSERT(height_scaled > 0);
 
