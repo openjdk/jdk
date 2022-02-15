@@ -34,6 +34,7 @@ import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
@@ -46,6 +47,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
 import static jdk.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
 import static jdk.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
 import static jdk.jpackage.internal.StandardBundlerParam.VERBOSE;
+import static jdk.jpackage.internal.StandardBundlerParam.DMG_CONTENT;
 
 public class MacDmgBundler extends MacBaseInstallerBundler {
 
@@ -79,7 +81,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         try {
             Path appLocation = prepareAppBundle(params);
 
-            if (appLocation != null && prepareConfigFiles(params)) {
+            if (appLocation != null && prepareConfigFiles(appLocation,params)) {
                 Path configScript = getConfig_Script(params);
                 if (IOUtils.exists(configScript)) {
                     IOUtils.run("bash", configScript);
@@ -96,8 +98,8 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
 
     private static final String hdiutil = "/usr/bin/hdiutil";
 
-    private void prepareDMGSetupScript(Map<String, ? super Object> params)
-                                                                    throws IOException {
+    private void prepareDMGSetupScript(Path appLocation,
+            Map<String, ? super Object> params) throws IOException {
         Path dmgSetup = getConfig_VolumeScript(params);
         Log.verbose(MessageFormat.format(
                 I18N.getString("message.preparing-dmg-setup"),
@@ -125,7 +127,9 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         data.put("DEPLOY_BG_FILE", bgFile.toString());
         data.put("DEPLOY_VOLUME_PATH", volumePath.toString());
         data.put("DEPLOY_APPLICATION_NAME", APP_NAME.fetchFrom(params));
-
+        String targetItem = (StandardBundlerParam.isRuntimeInstaller(params)) ?
+              APP_NAME.fetchFrom(params) : appLocation.getFileName().toString();
+        data.put("DEPLOY_TARGET", targetItem);
         data.put("DEPLOY_INSTALL_LOCATION", getInstallDir(params, true));
 
         createResource(DEFAULT_DMG_SETUP_SCRIPT, params)
@@ -181,8 +185,8 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         }
     }
 
-    private boolean prepareConfigFiles(Map<String, ? super Object> params)
-            throws IOException {
+    private boolean prepareConfigFiles(Path appLocation,
+            Map<String, ? super Object> params) throws IOException {
 
         createResource(DEFAULT_BACKGROUND_IMAGE, params)
                     .setCategory(I18N.getString("resource.dmg-background"))
@@ -199,7 +203,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
 
         prepareLicense(params);
 
-        prepareDMGSetupScript(params);
+        prepareDMGSetupScript(appLocation, params);
 
         return true;
     }
@@ -313,7 +317,11 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
 
         String hdiUtilVerbosityFlag = VERBOSE.fetchFrom(params) ?
                 "-verbose" : "-quiet";
-
+        List <String> dmgContent = DMG_CONTENT.fetchFrom(params);
+        for (String content : dmgContent) {
+            Path path = Path.of(content);
+            IOUtils.copyRecursive(path, srcFolder.resolve(path.getFileName()));
+        }
         // create temp image
         ProcessBuilder pb = new ProcessBuilder(
                 hdiutil,

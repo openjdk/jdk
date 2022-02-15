@@ -379,7 +379,8 @@ public class AquaKeyBindings {
             "ENTER", "selectNextRowCell",
             "shift ENTER", "selectPreviousRowCell",
             "alt TAB", "focusHeader",
-            "alt shift TAB", "focusHeader"
+            "alt shift TAB", "focusHeader",
+            "F8", "focusHeader"
         }));
     }
 

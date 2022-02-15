@@ -6787,6 +6787,7 @@ instruct unnecessary_membar_volatile()
 
 instruct membar_storestore() %{
   match(MemBarStoreStore);
+  match(StoreStoreFence);
   ins_cost(0);
 
   size(0);
@@ -8523,6 +8524,19 @@ instruct mulHiL_rReg(rdx_RegL dst, no_rax_RegL src, rax_RegL rax, rFlagsReg cr)
   format %{ "imulq   RDX:RAX, RAX, $src\t# mulhi" %}
   ins_encode %{
     __ imulq($src$$Register);
+  %}
+  ins_pipe(ialu_reg_reg_alu0);
+%}
+
+instruct umulHiL_rReg(rdx_RegL dst, no_rax_RegL src, rax_RegL rax, rFlagsReg cr)
+%{
+  match(Set dst (UMulHiL src rax));
+  effect(USE_KILL rax, KILL cr);
+
+  ins_cost(300);
+  format %{ "mulq   RDX:RAX, RAX, $src\t# umulhi" %}
+  ins_encode %{
+    __ mulq($src$$Register);
   %}
   ins_pipe(ialu_reg_reg_alu0);
 %}
@@ -12995,6 +13009,29 @@ instruct safePoint_poll_tls(rFlagsReg cr, rRegP poll)
     assert(nativeInstruction_at(pre_pc)->is_safepoint_poll(), "must emit test %%eax [reg]");
   %}
   ins_pipe(ialu_reg_mem);
+%}
+
+instruct mask_all_evexL(kReg dst, rRegL src) %{
+  match(Set dst (MaskAll src));
+  format %{ "mask_all_evexL $dst, $src \t! mask all operation" %}
+  ins_encode %{
+    int mask_len = Matcher::vector_length(this);
+    __ vector_maskall_operation($dst$$KRegister, $src$$Register, mask_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct mask_all_evexI_GT32(kReg dst, rRegI src, rRegL tmp) %{
+  predicate(Matcher::vector_length(n) > 32);
+  match(Set dst (MaskAll src));
+  effect(TEMP tmp);
+  format %{ "mask_all_evexI_GT32 $dst, $src \t! using $tmp as TEMP" %}
+  ins_encode %{
+    int mask_len = Matcher::vector_length(this);
+    __ movslq($tmp$$Register, $src$$Register);
+    __ vector_maskall_operation($dst$$KRegister, $tmp$$Register, mask_len);
+  %}
+  ins_pipe( pipe_slow );
 %}
 
 // ============================================================================

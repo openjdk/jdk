@@ -552,7 +552,7 @@ class JFIFMarkerSegment extends MarkerSegment {
     // Could put reason codes in here to be parsed in writeJFXXSegment
     // in order to provide more meaningful warnings.
     @SuppressWarnings("serial") // JDK-implementation class
-    private class IllegalThumbException extends Exception {}
+    private static class IllegalThumbException extends Exception {}
 
     /**
      * Writes out a new JFXX extension segment, without saving it.
@@ -794,7 +794,7 @@ class JFIFMarkerSegment extends MarkerSegment {
      * A superclass for the varieties of thumbnails that can
      * be stored in a JFIF extension marker segment.
      */
-    abstract class JFIFThumb implements Cloneable {
+    abstract static class JFIFThumb implements Cloneable {
         long streamPos = -1L;  // Save the thumbnail pos when reading
         abstract int getLength(); // When writing
         abstract int getWidth();
@@ -1111,7 +1111,7 @@ class JFIFMarkerSegment extends MarkerSegment {
      * to clip these, but the entire image must fit into a
      * single JFXX marker segment.
      */
-    class JFIFThumbJPEG extends JFIFThumb {
+    static class JFIFThumbJPEG extends JFIFThumb {
         JPEGMetadata thumbMetadata = null;
         byte [] data = null;  // Compressed image data, for writing
         private static final int PREAMBLE_SIZE = 6;
@@ -1234,7 +1234,7 @@ class JFIFMarkerSegment extends MarkerSegment {
             return retval;
         }
 
-        private class ThumbnailReadListener
+        private static class ThumbnailReadListener
             implements IIOReadProgressListener {
             JPEGImageReader reader = null;
             ThumbnailReadListener (JPEGImageReader reader) {

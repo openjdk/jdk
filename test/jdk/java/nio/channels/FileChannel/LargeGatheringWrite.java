@@ -25,10 +25,11 @@
  * @test
  * @bug 8274548
  * @summary Test gathering write of more than INT_MAX bytes
+ * @requires vm.bits == 64
  * @library ..
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
- * @run main/othervm -Xmx4G LargeGatheringWrite
+ * @run main/othervm/timeout=240 -Xmx4G LargeGatheringWrite
  * @key randomness
  */
 import java.io.IOException;

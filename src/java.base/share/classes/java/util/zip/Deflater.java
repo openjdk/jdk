@@ -495,6 +495,7 @@ public class Deflater {
      * @param output the buffer for the compressed data
      * @return the actual number of bytes of compressed data written to the
      *         output buffer
+     * @throws ReadOnlyBufferException if the given output buffer is read-only
      * @since 11
      */
     public int deflate(ByteBuffer output) {
@@ -674,6 +675,7 @@ public class Deflater {
      *         the output buffer
      *
      * @throws IllegalArgumentException if the flush mode is invalid
+     * @throws ReadOnlyBufferException if the given output buffer is read-only
      * @since 11
      */
     public int deflate(ByteBuffer output, int flush) {

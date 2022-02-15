@@ -32,7 +32,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-class WorkGang;
+class WorkerThreads;
 
 // A MutableSpace supports the concept of allocation. This includes the
 // concepts that a space may be only partially full, and the query methods
@@ -102,7 +102,7 @@ class MutableSpace: public CHeapObj<mtGC> {
                           bool clear_space,
                           bool mangle_space,
                           bool setup_pages = SetupPages,
-                          WorkGang* pretouch_gang = NULL);
+                          WorkerThreads* pretouch_workers = NULL);
 
   virtual void clear(bool mangle_space);
   virtual void update() { }
@@ -145,7 +145,7 @@ class MutableSpace: public CHeapObj<mtGC> {
   // Return true if this space needs to be expanded in order to satisfy an
   // allocation request of the indicated size.  Concurrent allocations and
   // resizes may change the result of a later call.  Used by oldgen allocator.
-  // precondition: holding ExpandHeap_lock
+  // precondition: holding PSOldGenExpand_lock
   bool needs_expand(size_t word_size) const;
 
   // Iteration.

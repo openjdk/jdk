@@ -635,13 +635,13 @@ void ShenandoahConcurrentEvacThreadClosure::do_thread(Thread* thread) {
   StackWatermarkSet::finish_processing(jt, _oops, StackWatermarkKind::gc);
 }
 
-class ShenandoahConcurrentEvacUpdateThreadTask : public AbstractGangTask {
+class ShenandoahConcurrentEvacUpdateThreadTask : public WorkerTask {
 private:
   ShenandoahJavaThreadsIterator _java_threads;
 
 public:
   ShenandoahConcurrentEvacUpdateThreadTask(uint n_workers) :
-    AbstractGangTask("Shenandoah Evacuate/Update Concurrent Thread Roots"),
+    WorkerTask("Shenandoah Evacuate/Update Concurrent Thread Roots"),
     _java_threads(ShenandoahPhaseTimings::conc_thread_roots, n_workers) {
   }
 
@@ -732,7 +732,7 @@ public:
 
 // This task not only evacuates/updates marked weak roots, but also "NULL"
 // dead weak roots.
-class ShenandoahConcurrentWeakRootsEvacUpdateTask : public AbstractGangTask {
+class ShenandoahConcurrentWeakRootsEvacUpdateTask : public WorkerTask {
 private:
   ShenandoahVMWeakRoots<true /*concurrent*/> _vm_roots;
 
@@ -744,7 +744,7 @@ private:
 
 public:
   ShenandoahConcurrentWeakRootsEvacUpdateTask(ShenandoahPhaseTimings::Phase phase) :
-    AbstractGangTask("Shenandoah Evacuate/Update Concurrent Weak Roots"),
+    WorkerTask("Shenandoah Evacuate/Update Concurrent Weak Roots"),
     _vm_roots(phase),
     _cld_roots(phase, ShenandoahHeap::heap()->workers()->active_workers(), false /*heap iteration*/),
     _nmethod_itr(ShenandoahCodeRoots::table()),
@@ -846,7 +846,7 @@ public:
   }
 };
 
-class ShenandoahConcurrentRootsEvacUpdateTask : public AbstractGangTask {
+class ShenandoahConcurrentRootsEvacUpdateTask : public WorkerTask {
 private:
   ShenandoahPhaseTimings::Phase                 _phase;
   ShenandoahVMRoots<true /*concurrent*/>        _vm_roots;
@@ -856,7 +856,7 @@ private:
 
 public:
   ShenandoahConcurrentRootsEvacUpdateTask(ShenandoahPhaseTimings::Phase phase) :
-    AbstractGangTask("Shenandoah Evacuate/Update Concurrent Strong Roots"),
+    WorkerTask("Shenandoah Evacuate/Update Concurrent Strong Roots"),
     _phase(phase),
     _vm_roots(phase),
     _cld_roots(phase, ShenandoahHeap::heap()->workers()->active_workers(), false /*heap iteration*/),

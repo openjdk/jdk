@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.security.tools.jarsigner;
 
 import java.io.*;
 import java.net.UnknownHostException;
+import java.net.URLClassLoader;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.PKIXBuilderParameters;
 import java.util.*;
@@ -59,6 +60,7 @@ import sun.security.pkcs.SignerInfo;
 import sun.security.provider.certpath.CertPathConstraintsParameters;
 import sun.security.timestamp.TimestampToken;
 import sun.security.tools.KeyStoreUtil;
+import sun.security.tools.PathList;
 import sun.security.validator.Validator;
 import sun.security.validator.ValidatorException;
 import sun.security.x509.*;
@@ -152,6 +154,7 @@ public class Main {
     List<String> providerClasses = null; // list of provider classes
     // arguments for provider constructors
     HashMap<String,String> providerArgs = new HashMap<>();
+    String pathlist = null;
     char[] keypass; // private key password
     String sigfile; // name of .SF file
     String sigalg; // name of signature algorithm
@@ -163,6 +166,7 @@ public class Main {
     String tSAPolicyID;
     String tSADigestAlg;
     boolean verify = false; // verify the jar
+    boolean version = false; // print the program version
     String verbose = null; // verbose output when signing/verifying
     boolean showcerts = false; // show certs when verifying
     boolean debug = false; // debug
@@ -245,7 +249,18 @@ public class Main {
             }
 
             if (providerClasses != null) {
-                ClassLoader cl = ClassLoader.getSystemClassLoader();
+                ClassLoader cl;
+                if (pathlist != null) {
+                    String path = System.getProperty("java.class.path");
+                    path = PathList.appendPath(
+                            path, System.getProperty("env.class.path"));
+                    path = PathList.appendPath(path, pathlist);
+
+                    URL[] urls = PathList.pathToURLs(path);
+                    cl = new URLClassLoader(urls);
+                } else {
+                    cl = ClassLoader.getSystemClassLoader();
+                }
                 for (String provClass: providerClasses) {
                     try {
                         KeyStoreUtil.loadProviderByClass(provClass,
@@ -433,6 +448,9 @@ public class Main {
                         n += 2;
                     }
                 }
+            } else if (collator.compare(flags, "-providerpath") == 0) {
+                if (++n == args.length) usageNoArg();
+                pathlist = args[n];
             } else if (collator.compare(flags, "-protected") ==0) {
                 protectedPath = true;
             } else if (collator.compare(flags, "-certchain") ==0) {
@@ -479,6 +497,8 @@ public class Main {
                 externalSF = false;
             } else if (collator.compare(flags, "-verify") ==0) {
                 verify = true;
+            } else if (collator.compare(flags, "-version") ==0) {
+                version = true;
             } else if (collator.compare(flags, "-verbose") ==0) {
                 verbose = (modifier != null) ? modifier : "all";
             } else if (collator.compare(flags, "-sigalg") ==0) {
@@ -504,6 +524,14 @@ public class Main {
                         rb.getString("Illegal.option.") + flags);
                 usage();
             }
+        }
+
+        /*
+         * When `-version` is specified but `-help` is not specified, jarsigner
+         * will only print the program version and ignore other options if any.
+         */
+        if (version) {
+            doPrintVersion();
         }
 
         // -certs must always be specified with -verbose
@@ -597,11 +625,18 @@ public class Main {
         System.exit(1);
     }
 
+    static void doPrintVersion() {
+        System.out.println("jarsigner " + System.getProperty("java.version"));
+        System.exit(0);
+    }
+
     static void fullusage() {
         System.out.println(rb.getString
                 ("Usage.jarsigner.options.jar.file.alias"));
         System.out.println(rb.getString
                 (".jarsigner.verify.options.jar.file.alias."));
+        System.out.println(rb.getString
+                (".jarsigner.version"));
         System.out.println();
         System.out.println(rb.getString
                 (".keystore.url.keystore.location"));
@@ -632,6 +667,9 @@ public class Main {
         System.out.println();
         System.out.println(rb.getString
                 (".verify.verify.a.signed.JAR.file"));
+        System.out.println();
+        System.out.println(rb.getString
+                (".version.print.the.program.version"));
         System.out.println();
         System.out.println(rb.getString
                 (".verbose.suboptions.verbose.output.when.signing.verifying."));
@@ -683,6 +721,9 @@ public class Main {
                 (".providerClass.option"));
         System.out.println(rb.getString
                 (".providerArg.option.2"));
+        System.out.println();
+        System.out.println(rb.getString
+                (".providerPath.option"));
         System.out.println();
         System.out.println(rb.getString
                 (".strict.treat.warnings.as.errors"));
@@ -813,9 +854,9 @@ public class Main {
                     }
 
                     // Only used when -verbose provided
-                    StringBuffer sb = null;
+                    StringBuilder sb = null;
                     if (verbose != null) {
-                        sb = new StringBuffer();
+                        sb = new StringBuilder();
                         boolean inManifest =
                             ((man.getAttributes(name) != null) ||
                              (man.getAttributes("./"+name) != null) ||
@@ -997,9 +1038,14 @@ public class Main {
                                 Calendar c = Calendar.getInstance(
                                         TimeZone.getTimeZone("UTC"),
                                         Locale.getDefault(Locale.Category.FORMAT));
-                                c.setTime(tsTokenInfo.getDate());
+                                Date tsDate = tsTokenInfo.getDate();
+                                c.setTime(tsDate);
                                 JarConstraintsParameters jcp =
-                                    new JarConstraintsParameters(chain, si.getTimestamp());
+                                    new JarConstraintsParameters(chain, tsDate);
+                                JarConstraintsParameters jcpts =
+                                    new JarConstraintsParameters(
+                                        tsSi.getCertificateChain(tsToken),
+                                        tsDate);
                                 history = String.format(
                                         rb.getString("history.with.ts"),
                                         signer.getSubjectX500Principal(),
@@ -1008,9 +1054,9 @@ public class Main {
                                         verifyWithWeak(key, jcp),
                                         c,
                                         tsSigner.getSubjectX500Principal(),
-                                        verifyWithWeak(tsDigestAlg, DIGEST_PRIMITIVE_SET, true, jcp),
-                                        verifyWithWeak(tsSigAlg, SIG_PRIMITIVE_SET, true, jcp),
-                                        verifyWithWeak(tsKey, jcp));
+                                        verifyWithWeak(tsDigestAlg, DIGEST_PRIMITIVE_SET, true, jcpts),
+                                        verifyWithWeak(tsSigAlg, SIG_PRIMITIVE_SET, true, jcpts),
+                                        verifyWithWeak(tsKey, jcpts));
                             } else {
                                 JarConstraintsParameters jcp =
                                     new JarConstraintsParameters(chain, null);
@@ -1350,13 +1396,13 @@ public class Main {
         boolean tsa, JarConstraintsParameters jcp) {
 
         try {
-            JAR_DISABLED_CHECK.permits(alg, jcp);
+            JAR_DISABLED_CHECK.permits(alg, jcp, false);
         } catch (CertPathValidatorException e) {
             disabledAlgFound = true;
             return String.format(rb.getString("with.disabled"), alg);
         }
         try {
-            LEGACY_CHECK.permits(alg, jcp);
+            LEGACY_CHECK.permits(alg, jcp, false);
             return alg;
         } catch (CertPathValidatorException e) {
             if (primitiveSet == SIG_PRIMITIVE_SET) {
@@ -1378,13 +1424,13 @@ public class Main {
     private String verifyWithWeak(PublicKey key, JarConstraintsParameters jcp) {
         int kLen = KeyUtil.getKeySize(key);
         try {
-            JAR_DISABLED_CHECK.permits(key.getAlgorithm(), jcp);
+            JAR_DISABLED_CHECK.permits(key.getAlgorithm(), jcp, true);
         } catch (CertPathValidatorException e) {
             disabledAlgFound = true;
             return String.format(rb.getString("key.bit.disabled"), kLen);
         }
         try {
-            LEGACY_CHECK.permits(key.getAlgorithm(), jcp);
+            LEGACY_CHECK.permits(key.getAlgorithm(), jcp, true);
             if (kLen >= 0) {
                 return String.format(rb.getString("key.bit"), kLen);
             } else {
@@ -1401,9 +1447,9 @@ public class Main {
         boolean tsa, JarConstraintsParameters jcp) {
 
         try {
-            JAR_DISABLED_CHECK.permits(alg, jcp);
+            JAR_DISABLED_CHECK.permits(alg, jcp, false);
             try {
-                LEGACY_CHECK.permits(alg, jcp);
+                LEGACY_CHECK.permits(alg, jcp, false);
             } catch (CertPathValidatorException e) {
                 if (primitiveSet == SIG_PRIMITIVE_SET) {
                     legacyAlg |= 2;
@@ -1430,9 +1476,9 @@ public class Main {
 
     private void checkWeakSign(PrivateKey key, JarConstraintsParameters jcp) {
         try {
-            JAR_DISABLED_CHECK.permits(key.getAlgorithm(), jcp);
+            JAR_DISABLED_CHECK.permits(key.getAlgorithm(), jcp, true);
             try {
-                LEGACY_CHECK.permits(key.getAlgorithm(), jcp);
+                LEGACY_CHECK.permits(key.getAlgorithm(), jcp, true);
             } catch (CertPathValidatorException e) {
                 legacyAlg |= 8;
             }
@@ -1444,12 +1490,12 @@ public class Main {
     private static String checkWeakKey(PublicKey key, CertPathConstraintsParameters cpcp) {
         int kLen = KeyUtil.getKeySize(key);
         try {
-            CERTPATH_DISABLED_CHECK.permits(key.getAlgorithm(), cpcp);
+            CERTPATH_DISABLED_CHECK.permits(key.getAlgorithm(), cpcp, true);
         } catch (CertPathValidatorException e) {
             return String.format(rb.getString("key.bit.disabled"), kLen);
         }
         try {
-            LEGACY_CHECK.permits(key.getAlgorithm(), cpcp);
+            LEGACY_CHECK.permits(key.getAlgorithm(), cpcp, true);
             if (kLen >= 0) {
                 return String.format(rb.getString("key.bit"), kLen);
             } else {
@@ -1462,12 +1508,12 @@ public class Main {
 
     private static String checkWeakAlg(String alg, CertPathConstraintsParameters cpcp) {
         try {
-            CERTPATH_DISABLED_CHECK.permits(alg, cpcp);
+            CERTPATH_DISABLED_CHECK.permits(alg, cpcp, false);
         } catch (CertPathValidatorException e) {
             return String.format(rb.getString("with.disabled"), alg);
         }
         try {
-            LEGACY_CHECK.permits(alg, cpcp);
+            LEGACY_CHECK.permits(alg, cpcp, false);
             return alg;
         } catch (CertPathValidatorException e) {
             return String.format(rb.getString("with.weak"), alg);

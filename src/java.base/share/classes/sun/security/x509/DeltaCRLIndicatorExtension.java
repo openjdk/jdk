@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,6 @@ package sun.security.x509;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
-import java.util.Enumeration;
-
-import sun.security.util.*;
 
 /**
  * Represents the Delta CRL Indicator Extension.
@@ -80,7 +77,7 @@ public class DeltaCRLIndicatorExtension extends CRLNumberExtension {
     }
 
     /**
-     * Creates a delta CRL indictor extension with the BigInteger value .
+     * Creates a delta CRL indicator extension with the BigInteger value .
      * The criticality is set to true.
      *
      * @param crlNum the value to be set for the extension.
@@ -110,7 +107,6 @@ public class DeltaCRLIndicatorExtension extends CRLNumberExtension {
      * @exception IOException on encoding errors.
      */
     public void encode(OutputStream out) throws IOException {
-       DerOutputStream  tmp = new DerOutputStream();
         super.encode(out, PKIXExtensions.DeltaCRLIndicator_Id, true);
     }
 }

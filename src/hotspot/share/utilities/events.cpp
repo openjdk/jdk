@@ -39,6 +39,7 @@ StringEventLog* Events::_vm_operations = NULL;
 ExceptionsEventLog* Events::_exceptions = NULL;
 StringEventLog* Events::_redefinitions = NULL;
 UnloadingEventLog* Events::_class_unloading = NULL;
+StringEventLog* Events::_class_loading = NULL;
 StringEventLog* Events::_deopt_messages = NULL;
 
 EventLog::EventLog() {
@@ -96,6 +97,7 @@ void Events::init() {
     _exceptions = new ExceptionsEventLog("Internal exceptions", "exc");
     _redefinitions = new StringEventLog("Classes redefined", "redef");
     _class_unloading = new UnloadingEventLog("Classes unloaded", "unload");
+    _class_loading = new StringEventLog("Classes loaded", "load");
     _deopt_messages = new StringEventLog("Deoptimization events", "deopt");
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,11 +36,11 @@ import com.sun.jdi.Method;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.VirtualMachine;
 
-final public class InterfaceTypeImpl extends InvokableTypeImpl
+public final class InterfaceTypeImpl extends InvokableTypeImpl
                                      implements InterfaceType {
 
     private static class IResult implements InvocationResult {
-        final private JDWP.InterfaceType.InvokeMethod rslt;
+        private final JDWP.InterfaceType.InvokeMethod rslt;
 
         public IResult(JDWP.InterfaceType.InvokeMethod rslt) {
             this.rslt = rslt;

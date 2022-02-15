@@ -26,6 +26,7 @@
 package javax.tools;
 
 import java.io.Writer;
+import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.Locale;
 import java.util.concurrent.Callable;
@@ -106,42 +107,45 @@ import javax.annotation.processing.Processor;
  *     work with multiple sequential compilations making the following
  *     example a recommended coding pattern:
  *
- *     <pre>
- *       File[] files1 = ... ; // input for first compilation task
- *       File[] files2 = ... ; // input for second compilation task
+ *     {@snippet id="use-sjfm" lang=java :
+ *       File[] files1 = null ; // input for first compilation task     // @replace substring=null replacement="..."
+ *       File[] files2 = null ; // input for second compilation task    // @replace substring=null replacement="..."
  *
  *       JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
  *       StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
  *
- *       {@code Iterable<? extends JavaFileObject>} compilationUnits1 =
- *           fileManager.getJavaFileObjectsFromFiles({@linkplain java.util.Arrays#asList Arrays.asList}(files1));
+ *       Iterable<? extends JavaFileObject> compilationUnits1 =
+ *           fileManager.getJavaFileObjectsFromFiles(Arrays.asList(files1));  // @link substring=Arrays.asList target="java.util.Arrays#asList"
  *       compiler.getTask(null, fileManager, null, null, null, compilationUnits1).call();
  *
- *       {@code Iterable<? extends JavaFileObject>} compilationUnits2 =
+ *       Iterable<? extends JavaFileObject> compilationUnits2 =
  *           fileManager.getJavaFileObjects(files2); // use alternative method
  *       // reuse the same file manager to allow caching of jar files
  *       compiler.getTask(null, fileManager, null, null, null, compilationUnits2).call();
  *
- *       fileManager.close();</pre>
+ *       fileManager.close();
+ *       }
  *
  *   </dd>
  *
  *   <dt>{@link DiagnosticCollector}</dt>
  *   <dd>
  *     Used to collect diagnostics in a list, for example:
- *     <pre>
- *       {@code Iterable<? extends JavaFileObject>} compilationUnits = ...;
+ *     {@snippet id="use-diag-collector" lang=java :
+ *       Iterable<? extends JavaFileObject> compilationUnits = null;        // @replace substring=null replacement="..."
  *       JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
- *       {@code DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();}
+ *       DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
  *       StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnostics, null, null);
  *       compiler.getTask(null, fileManager, diagnostics, null, null, compilationUnits).call();
  *
- *       for ({@code Diagnostic<? extends JavaFileObject>} diagnostic : diagnostics.getDiagnostics())
+ *       for (Diagnostic<? extends JavaFileObject> diagnostic : diagnostics.getDiagnostics()) {
  *           System.out.format("Error on line %d in %s%n",
  *                             diagnostic.getLineNumber(),
  *                             diagnostic.getSource().toUri());
+ *       }
  *
- *       fileManager.close();</pre>
+ *       fileManager.close();
+ *       }
  *   </dd>
  *
  *   <dt>
@@ -158,9 +162,9 @@ import javax.annotation.processing.Processor;
  *     allowing customizing behavior.  For example, consider how to
  *     log all calls to {@linkplain JavaFileManager#flush}:
  *
- *     <pre>
- *       final  Logger logger = ...;
- *       {@code Iterable<? extends JavaFileObject>} compilationUnits = ...;
+ *     {@snippet id="forward-fm" lang=java :
+ *       final  Logger logger = null;                                       // @replace substring=null replacement="..."
+ *       Iterable<? extends JavaFileObject> compilationUnits = null;        // @replace substring=null replacement="..."
  *       JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
  *       StandardJavaFileManager stdFileManager = compiler.getStandardFileManager(null, null, null);
  *       JavaFileManager fileManager = new ForwardingJavaFileManager(stdFileManager) {
@@ -170,7 +174,8 @@ import javax.annotation.processing.Processor;
  *               logger.exiting(StandardJavaFileManager.class.getName(), "flush");
  *           }
  *       };
- *       compiler.getTask(null, fileManager, null, null, null, compilationUnits).call();</pre>
+ *       compiler.getTask(null, fileManager, null, null, null, compilationUnits).call();
+ *       }
  *   </dd>
  *
  *   <dt>{@link SimpleJavaFileObject}</dt>
@@ -181,32 +186,7 @@ import javax.annotation.processing.Processor;
  *     example, here is how to define a file object which represent
  *     source code stored in a string:
  *
- *     <pre>
- *       /**
- *        * A file object used to represent source coming from a string.
- *        {@code *}/
- *       public class JavaSourceFromString extends SimpleJavaFileObject {
- *           /**
- *            * The source code of this "file".
- *            {@code *}/
- *           final String code;
- *
- *           /**
- *            * Constructs a new JavaSourceFromString.
- *            * {@code @}param name the name of the compilation unit represented by this file object
- *            * {@code @}param code the source code for the compilation unit represented by this file object
- *            {@code *}/
- *           JavaSourceFromString(String name, String code) {
- *               super({@linkplain java.net.URI#create URI.create}("string:///" + name.replace('.','/') + Kind.SOURCE.extension),
- *                     Kind.SOURCE);
- *               this.code = code;
- *           }
- *
- *           {@code @}Override
- *           public CharSequence getCharContent(boolean ignoreEncodingErrors) {
- *               return code;
- *           }
- *       }</pre>
+ *     {@snippet id=fileObject class=JavaSourceFromString }
  *   </dd>
  * </dl>
  *

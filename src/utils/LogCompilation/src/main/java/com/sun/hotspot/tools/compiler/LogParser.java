@@ -439,9 +439,9 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
             this.method = method;
             this.bci = bci;
         }
-        final public Method method;
-        final public int bci;
-        final public String toString() {
+        public final Method method;
+        public final int bci;
+        public final String toString() {
             return "@" + bci + " " + method;
         }
     }

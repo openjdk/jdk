@@ -1196,7 +1196,7 @@ public interface RandomGenerator {
          *
          * @return a stream of objects that implement the {@link RandomGenerator} interface
          *
-         * @implSpec The default implementation calls {@link JumpableGenerator#jump jump}().
+         * @implSpec The default implementation calls {@link JumpableGenerator#jumps jumps}().
          */
         default Stream<RandomGenerator> rngs() {
             return this.jumps();

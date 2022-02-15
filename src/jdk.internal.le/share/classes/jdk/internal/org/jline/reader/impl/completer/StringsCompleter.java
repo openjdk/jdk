@@ -11,6 +11,7 @@ package jdk.internal.org.jline.reader.impl.completer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -28,10 +29,11 @@ import jdk.internal.org.jline.utils.AttributedString;
  */
 public class StringsCompleter implements Completer
 {
-    protected Collection<Candidate> candidates = new ArrayList<>();
+    protected Collection<Candidate> candidates;
     protected Supplier<Collection<String>> stringsSupplier;
 
     public StringsCompleter() {
+        this(Collections.<Candidate>emptyList());
     }
 
     public StringsCompleter(Supplier<Collection<String>> stringsSupplier) {
@@ -46,6 +48,7 @@ public class StringsCompleter implements Completer
 
     public StringsCompleter(Iterable<String> strings) {
         assert strings != null;
+        this.candidates = new ArrayList<>();
         for (String string : strings) {
             candidates.add(new Candidate(AttributedString.stripAnsi(string), string, null, null, null, null, true));
         }
@@ -57,9 +60,10 @@ public class StringsCompleter implements Completer
 
     public StringsCompleter(Collection<Candidate> candidates) {
         assert candidates != null;
-        this.candidates.addAll(candidates);
+        this.candidates = new ArrayList<>(candidates);
     }
 
+    @Override
     public void complete(LineReader reader, final ParsedLine commandLine, final List<Candidate> candidates) {
         assert commandLine != null;
         assert candidates != null;
@@ -72,4 +76,9 @@ public class StringsCompleter implements Completer
         }
     }
 
+    @Override
+    public String toString() {
+        String value = candidates != null ? candidates.toString() : "{" + stringsSupplier.toString() + "}";
+        return "StringsCompleter" + value;
+    }
 }

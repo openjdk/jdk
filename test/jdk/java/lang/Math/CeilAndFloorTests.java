@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,15 +30,15 @@
 public class CeilAndFloorTests {
     private static int testCeilCase(double input, double expected) {
         int failures = 0;
-        failures += Tests.test("Math.ceil",  input, Math.ceil(input),   expected);
-        failures += Tests.test("StrictMath.ceil",  input, StrictMath.ceil(input), expected);
+        failures += Tests.test("Math.ceil",        input, Math::ceil,       expected);
+        failures += Tests.test("StrictMath.ceil",  input, StrictMath::ceil, expected);
         return failures;
     }
 
     private static int testFloorCase(double input, double expected) {
         int failures = 0;
-        failures += Tests.test("Math.floor",  input, Math.floor(input),   expected);
-        failures += Tests.test("StrictMath.floor",  input, StrictMath.floor(input), expected);
+        failures += Tests.test("Math.floor",        input, Math::floor,       expected);
+        failures += Tests.test("StrictMath.floor",  input, StrictMath::floor, expected);
         return failures;
     }
 

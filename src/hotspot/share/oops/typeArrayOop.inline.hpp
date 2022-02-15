@@ -31,7 +31,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/arrayOop.hpp"
 
-int typeArrayOopDesc::object_size(const TypeArrayKlass* tk) const {
+size_t typeArrayOopDesc::object_size(const TypeArrayKlass* tk) const {
   return object_size(tk->layout_helper(), length());
 }
 

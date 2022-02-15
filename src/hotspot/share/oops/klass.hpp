@@ -117,8 +117,8 @@ class Klass : public Metadata {
   // Klass identifier used to implement devirtualized oop closure dispatching.
   const KlassID _id;
 
-  // vtable length
-  int _vtable_len;
+  // Processed access flags, for use by Class.getModifiers.
+  jint        _modifier_flags;
 
   // The fields _super_check_offset, _secondary_super_cache, _secondary_supers
   // and _primary_supers all help make fast subtype checks.  See big discussion
@@ -154,7 +154,10 @@ class Klass : public Metadata {
   // Provide access the corresponding instance java.lang.ClassLoader.
   ClassLoaderData* _class_loader_data;
 
-  jint        _modifier_flags;  // Processed access flags, for use by Class.getModifiers.
+  int _vtable_len;              // vtable length. This field may be read very often when we
+                                // have lots of itable dispatches (e.g., lambdas and streams).
+                                // Keep it away from the beginning of a Klass to avoid cacheline
+                                // contention that may happen when a nearby object is modified.
   AccessFlags _access_flags;    // Access flags. The class/interface distinction is stored here.
 
   JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
@@ -172,7 +175,8 @@ private:
   enum {
     _archived_lambda_proxy_is_available = 2,
     _has_value_based_class_annotation = 4,
-    _verified_at_dump_time = 8
+    _verified_at_dump_time = 8,
+    _regenerated = 16
   };
 #endif
 
@@ -336,6 +340,13 @@ protected:
     NOT_CDS(return false;)
   }
 
+  void set_regenerated() {
+    CDS_ONLY(_shared_class_flags |= _regenerated;)
+  }
+  bool is_regenerated() const {
+    CDS_ONLY(return (_shared_class_flags & _regenerated) != 0;)
+    NOT_CDS(return false;)
+  }
 
   // Obtain the module or package for this class
   virtual ModuleEntry* module() const = 0;
@@ -549,8 +560,8 @@ protected:
   // ALL FUNCTIONS BELOW THIS POINT ARE DISPATCHED FROM AN OOP
   // These functions describe behavior for the oop not the KLASS.
 
-  // actual oop size of obj in memory
-  virtual int oop_size(oop obj) const = 0;
+  // actual oop size of obj in memory in word size.
+  virtual size_t oop_size(oop obj) const = 0;
 
   // Size of klass in word size.
   virtual int size() const = 0;
@@ -653,8 +664,6 @@ protected:
     clean_weak_klass_links(/*unloading_occurred*/ true , /* clean_alive_klasses */ false);
   }
 
-  virtual void array_klasses_do(void f(Klass* k)) {}
-
   // Return self, except for abstract classes with exactly 1
   // implementor.  Then return the 1 concrete implementation.
   Klass *up_cast_abstract();
@@ -663,7 +672,7 @@ protected:
   Symbol* name() const                   { return _name; }
   void set_name(Symbol* n);
 
-  virtual void release_C_heap_structures();
+  virtual void release_C_heap_structures(bool release_constant_pool = true);
 
  public:
   virtual jint compute_modifier_flags() const = 0;

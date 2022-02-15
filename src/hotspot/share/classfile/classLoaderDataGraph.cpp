@@ -336,7 +336,7 @@ public:
     }
     if (cld != NULL) {
       // Keep cld that is being returned alive.
-      _holder = Handle(_thread, cld->holder_phantom());
+      _holder = Handle(_thread, cld->holder());
       _next = cld->next();
     } else {
       _next = NULL;

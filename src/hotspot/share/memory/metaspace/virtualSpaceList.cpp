@@ -34,6 +34,7 @@
 #include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/virtualSpaceList.hpp"
 #include "memory/metaspace/virtualSpaceNode.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
 
 namespace metaspace {
@@ -74,8 +75,10 @@ VirtualSpaceList::VirtualSpaceList(const char* name, ReservedSpace rs, CommitLim
 
 VirtualSpaceList::~VirtualSpaceList() {
   assert_lock_strong(Metaspace_lock);
-  // Note: normally, there is no reason ever to delete a vslist since they are
-  // global objects, but for gtests it makes sense to allow this.
+  // Delete every single mapping in this list.
+  // Please note that this only gets executed during gtests under controlled
+  // circumstances, so we do not have any concurrency issues here. The "real"
+  // lists in metaspace are immortal.
   VirtualSpaceNode* vsn = _first_node;
   VirtualSpaceNode* vsn2 = vsn;
   while (vsn != NULL) {
@@ -96,7 +99,7 @@ void VirtualSpaceList::create_new_node() {
                                                         _commit_limiter,
                                                         &_reserved_words_counter, &_committed_words_counter);
   vsn->set_next(_first_node);
-  _first_node = vsn;
+  Atomic::release_store(&_first_node, vsn);
   _nodes_counter.increment();
 }
 
@@ -132,43 +135,6 @@ Metachunk*  VirtualSpaceList::allocate_root_chunk() {
   assert(c != NULL, "This should have worked");
 
   return c;
-}
-
-// Attempts to purge nodes. This will remove and delete nodes which only contain free chunks.
-// The free chunks are removed from the freelists before the nodes are deleted.
-// Return number of purged nodes.
-int VirtualSpaceList::purge(FreeChunkListVector* freelists) {
-  assert_lock_strong(Metaspace_lock);
-  UL(debug, "purging.");
-
-  VirtualSpaceNode* vsn = _first_node;
-  VirtualSpaceNode* prev_vsn = NULL;
-  int num = 0, num_purged = 0;
-  while (vsn != NULL) {
-    VirtualSpaceNode* next_vsn = vsn->next();
-    bool purged = vsn->attempt_purge(freelists);
-    if (purged) {
-      // Note: from now on do not dereference vsn!
-      UL2(debug, "purged node @" PTR_FORMAT ".", p2i(vsn));
-      if (_first_node == vsn) {
-        _first_node = next_vsn;
-      }
-      DEBUG_ONLY(vsn = (VirtualSpaceNode*)((uintptr_t)(0xdeadbeef));)
-      if (prev_vsn != NULL) {
-        prev_vsn->set_next(next_vsn);
-      }
-      num_purged++;
-      _nodes_counter.decrement();
-    } else {
-      prev_vsn = vsn;
-    }
-    vsn = next_vsn;
-    num ++;
-  }
-
-  UL2(debug, "purged %d nodes (before: %d, now: %d)",
-      num_purged, num, num_nodes());
-  return num_purged;
 }
 
 // Print all nodes in this space list.
@@ -223,21 +189,13 @@ void VirtualSpaceList::verify() const {
 
 // Returns true if this pointer is contained in one of our nodes.
 bool VirtualSpaceList::contains(const MetaWord* p) const {
-  const VirtualSpaceNode* vsn = _first_node;
+  // Note: needs to work without locks.
+  const VirtualSpaceNode* vsn = Atomic::load_acquire(&_first_node);
   while (vsn != NULL) {
     if (vsn->contains(p)) {
       return true;
     }
     vsn = vsn->next();
-  }
-  return false;
-}
-
-// Returns true if the vslist is not expandable and no more root chunks
-// can be allocated.
-bool VirtualSpaceList::is_full() const {
-  if (!_can_expand && _first_node != NULL && _first_node->free_words() == 0) {
-    return true;
   }
   return false;
 }

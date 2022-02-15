@@ -148,11 +148,12 @@ final class LCMS implements PCMM {
     }
 
     /* methods invoked from LCMSTransform */
-    public static native void colorConvert(long trans,
-                                           LCMSImageLayout src,
-                                           LCMSImageLayout dest);
-
-    public static native void initLCMS(Class<?> Trans, Class<?> IL, Class<?> Pf);
+    static native void colorConvert(long trans, int width, int height,
+                                    int srcOffset, int srcNextRowOffset,
+                                    int dstOffset, int dstNextRowOffset,
+                                    boolean srcAtOnce, boolean dstAtOnce,
+                                    Object srcData, Object dstData,
+                                    int srcType, int dstType);
 
     private LCMS() {};
 
@@ -175,8 +176,6 @@ final class LCMS implements PCMM {
                         return null;
                     }
                 });
-
-        initLCMS(LCMSTransform.class, LCMSImageLayout.class, ICC_Profile.class);
 
         theLcms = new LCMS();
 

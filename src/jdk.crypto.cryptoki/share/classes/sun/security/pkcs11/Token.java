@@ -38,7 +38,7 @@ import sun.security.jca.JCAUtil;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.TemplateManager.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
-import static sun.security.pkcs11.wrapper.PKCS11Exception.*;
+import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
 
 /**
  * PKCS#11 token.
@@ -400,7 +400,7 @@ class Token implements Serializable {
                                                 mechanism);
                 mechInfoMap.put(mechanism, result);
             } catch (PKCS11Exception e) {
-                if (e.getErrorCode() != CKR_MECHANISM_INVALID) {
+                if (!e.match(CKR_MECHANISM_INVALID)) {
                     throw e;
                 } else {
                     mechInfoMap.put(mechanism, INVALID_MECH);

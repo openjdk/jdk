@@ -72,7 +72,7 @@ void MutableSpace::initialize(MemRegion mr,
                               bool clear_space,
                               bool mangle_space,
                               bool setup_pages,
-                              WorkGang* pretouch_gang) {
+                              WorkerThreads* pretouch_workers) {
 
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
          "invalid space boundaries");
@@ -122,10 +122,10 @@ void MutableSpace::initialize(MemRegion mr,
       size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
 
       PretouchTask::pretouch("ParallelGC PreTouch head", (char*)head.start(), (char*)head.end(),
-                             page_size, pretouch_gang);
+                             page_size, pretouch_workers);
 
       PretouchTask::pretouch("ParallelGC PreTouch tail", (char*)tail.start(), (char*)tail.end(),
-                             page_size, pretouch_gang);
+                             page_size, pretouch_workers);
     }
 
     // Remember where we stopped so that we can continue later.
@@ -217,7 +217,7 @@ bool MutableSpace::cas_deallocate(HeapWord *obj, size_t size) {
 
 // Only used by oldgen allocation.
 bool MutableSpace::needs_expand(size_t word_size) const {
-  assert_lock_strong(ExpandHeap_lock);
+  assert_lock_strong(PSOldGenExpand_lock);
   // Holding the lock means end is stable.  So while top may be advancing
   // via concurrent allocations, there is no need to order the reads of top
   // and end here, unlike in cas_allocate.

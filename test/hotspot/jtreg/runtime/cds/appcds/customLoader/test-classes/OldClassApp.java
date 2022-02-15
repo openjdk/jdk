@@ -25,9 +25,12 @@
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.HashMap;
 import sun.hotspot.WhiteBox;
 
 public class OldClassApp {
+    // Prevent the classes from being GC'ed too soon.
+    static HashMap<String, Class> clsMap = new HashMap<>();
     public static void main(String args[]) throws Exception {
         String path = args[0];
         URL url = new File(path).toURI().toURL();
@@ -44,13 +47,26 @@ public class OldClassApp {
             throw new RuntimeException("args[1] can only be either \"true\" or \"false\", actual " + args[1]);
         }
 
+        // The OldClassAndInf.java test under appcds/dynamicArchive passes the keep-alive
+        // argument for preventing the classes from being GC'ed prior to dumping of
+        // the dynamic CDS archive.
+        int startIdx = 2;
+        boolean keepAlive = false;
+        if (args[2].equals("keep-alive")) {
+            keepAlive = true;
+            startIdx = 3;
+        }
+
         URLClassLoader urlClassLoader =
             new URLClassLoader("OldClassAppClassLoader", urls, null);
 
-        for (int i = 2; i < args.length; i++) {
+        for (int i = startIdx; i < args.length; i++) {
             Class c = urlClassLoader.loadClass(args[i]);
             System.out.println(c);
             System.out.println(c.getClassLoader());
+            if (keepAlive) {
+                clsMap.put(args[i], c);
+            }
 
             // [1] Check that class is defined by the correct loader
             if (c.getClassLoader() != urlClassLoader) {

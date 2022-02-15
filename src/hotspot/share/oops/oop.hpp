@@ -91,22 +91,20 @@ class oopDesc {
   static inline void release_set_klass(HeapWord* mem, Klass* k);
 
   // For klass field compression
-  inline int klass_gap() const;
-  inline void set_klass_gap(int z);
   static inline void set_klass_gap(HeapWord* mem, int z);
 
   // size of object header, aligned to platform wordSize
-  static int header_size() { return sizeof(oopDesc)/HeapWordSize; }
+  static constexpr int header_size() { return sizeof(oopDesc)/HeapWordSize; }
 
   // Returns whether this is an instance of k or an instance of a subclass of k
   inline bool is_a(Klass* k) const;
 
   // Returns the actual oop size of the object
-  inline int size();
+  inline size_t size();
 
   // Sometimes (for complicated concurrency-related reasons), it is useful
   // to be able to figure out the size of an object knowing its klass.
-  inline int size_given_klass(Klass* klass);
+  inline size_t size_given_klass(Klass* klass);
 
   // type test operations (inlined in oop.inline.hpp)
   inline bool is_instance()            const;
@@ -272,10 +270,10 @@ class oopDesc {
   inline void oop_iterate(OopClosureType* cl, MemRegion mr);
 
   template <typename OopClosureType>
-  inline int oop_iterate_size(OopClosureType* cl);
+  inline size_t oop_iterate_size(OopClosureType* cl);
 
   template <typename OopClosureType>
-  inline int oop_iterate_size(OopClosureType* cl, MemRegion mr);
+  inline size_t oop_iterate_size(OopClosureType* cl, MemRegion mr);
 
   template <typename OopClosureType>
   inline void oop_iterate_backwards(OopClosureType* cl);

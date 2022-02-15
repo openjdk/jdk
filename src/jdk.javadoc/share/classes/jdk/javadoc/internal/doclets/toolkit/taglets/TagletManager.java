@@ -250,23 +250,22 @@ public class TagletManager {
      * @param fileManager the file manager to load classes and resources
      */
     public void addCustomTag(String classname, JavaFileManager fileManager) {
+        ClassLoader tagClassLoader = fileManager.getClassLoader(TAGLET_PATH);
+        if (configuration.workArounds.accessInternalAPI()) {
+            Module thisModule = getClass().getModule();
+            Module tagletLoaderUnnamedModule = tagClassLoader.getUnnamedModule();
+            List<String> pkgs = List.of(
+                    "jdk.javadoc.doclet",
+                    "jdk.javadoc.internal.doclets.toolkit",
+                    "jdk.javadoc.internal.doclets.formats.html");
+            pkgs.forEach(p -> thisModule.addOpens(p, tagletLoaderUnnamedModule));
+        }
         try {
-            ClassLoader tagClassLoader;
-            tagClassLoader = fileManager.getClassLoader(TAGLET_PATH);
-            if (configuration.workArounds.accessInternalAPI()) {
-                Module thisModule = getClass().getModule();
-                Module tagletLoaderUnnamedModule = tagClassLoader.getUnnamedModule();
-                List<String> pkgs = List.of(
-                        "jdk.javadoc.doclet",
-                        "jdk.javadoc.internal.doclets.toolkit",
-                        "jdk.javadoc.internal.doclets.formats.html");
-                pkgs.forEach(p -> thisModule.addOpens(p, tagletLoaderUnnamedModule));
-            }
             Class<? extends jdk.javadoc.doclet.Taglet> customTagClass =
                     tagClassLoader.loadClass(classname).asSubclass(jdk.javadoc.doclet.Taglet.class);
             jdk.javadoc.doclet.Taglet instance = customTagClass.getConstructor().newInstance();
             registerTaglet(instance);
-        } catch (ReflectiveOperationException exc) {
+        } catch (ReflectiveOperationException | ExceptionInInitializerError | ClassCastException exc) {
             messages.error("doclet.Error_taglet_not_registered", exc.getClass().getName(),
                     classname);
         }

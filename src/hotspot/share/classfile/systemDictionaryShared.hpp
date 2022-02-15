@@ -136,6 +136,7 @@ class SharedClassLoadingMark {
 
 class SystemDictionaryShared: public SystemDictionary {
   friend class ExcludeDumpTimeSharedClasses;
+  friend class CleanupDumpTimeLambdaProxyClassTable;
 public:
   enum {
     FROM_FIELD_IS_PROTECTED = 1 << 0,
@@ -173,6 +174,8 @@ private:
   static void write_dictionary(RunTimeSharedDictionary* dictionary,
                                bool is_builtin);
   static void write_lambda_proxy_class_dictionary(LambdaProxyClassDictionary* dictionary);
+  static void cleanup_lambda_proxy_class_dictionary();
+  static void reset_registered_lambda_proxy_class(InstanceKlass* ik);
   static bool is_jfr_event_class(InstanceKlass *k);
   static bool is_registered_lambda_proxy_class(InstanceKlass* ik);
   static bool check_for_exclusion_impl(InstanceKlass* k);
@@ -297,6 +300,7 @@ public:
   static void print_table_statistics(outputStream* st) NOT_CDS_RETURN;
   static bool is_dumptime_table_empty() NOT_CDS_RETURN_(true);
   static void start_dumping() NOT_CDS_RETURN;
+  static void stop_dumping() NOT_CDS_RETURN;
   static bool is_supported_invokedynamic(BootstrapInfo* bsi) NOT_CDS_RETURN_(false);
   DEBUG_ONLY(static bool no_class_loading_should_happen() {return _no_class_loading_should_happen;})
 

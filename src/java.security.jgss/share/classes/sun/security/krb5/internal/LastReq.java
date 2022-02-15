@@ -32,7 +32,7 @@ package sun.security.krb5.internal;
 
 import sun.security.util.*;
 import sun.security.krb5.Asn1Exception;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.io.IOException;
 
 /**
@@ -77,16 +77,15 @@ public class LastReq {
      */
 
     public LastReq(DerValue encoding) throws Asn1Exception, IOException {
-        Vector<LastReqEntry> v= new Vector<>();
+        ArrayList<LastReqEntry> v = new ArrayList<>();
         if (encoding.getTag() != DerValue.tag_Sequence) {
             throw new Asn1Exception(Krb5.ASN1_BAD_ID);
         }
         while (encoding.getData().available() > 0) {
-            v.addElement(new LastReqEntry(encoding.getData().getDerValue()));
+            v.add(new LastReqEntry(encoding.getData().getDerValue()));
         }
         if (v.size() > 0) {
-            entry = new LastReqEntry[v.size()];
-            v.copyInto(entry);
+            entry = v.toArray(new LastReqEntry[0]);
         }
     }
 

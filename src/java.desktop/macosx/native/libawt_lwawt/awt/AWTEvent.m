@@ -465,14 +465,23 @@ NsCharToJavaVirtualKeyCode(unichar ch, BOOL isDeadChar,
         lower = tolower(ch);
         offset = lower - 'a';
         if (offset >= 0 && offset <= 25) {
-            // some chars in letter set are NOT actually A-Z characters?!
-            // skip them...
+            // checking for A-Z characters
             *postsTyped = YES;
             // do quick conversion
             *keyCode = java_awt_event_KeyEvent_VK_A + offset;
             *keyLocation = java_awt_event_KeyEvent_KEY_LOCATION_STANDARD;
             return;
-        }
+        } else {
+            // checking for non-english characters
+            // this value comes from ExtendedKeyCodes.java
+            offset += 0x01000000;
+            *postsTyped = YES;
+            // do quick conversion
+            // the keyCode is off by 32, so adding it here
+            *keyCode = java_awt_event_KeyEvent_VK_A + offset + 32;
+            *keyLocation = java_awt_event_KeyEvent_KEY_LOCATION_STANDARD;
+return;
+         }
     }
 
     if ([[NSCharacterSet decimalDigitCharacterSet] characterIsMember:ch]) {

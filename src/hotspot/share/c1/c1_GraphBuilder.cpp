@@ -34,6 +34,7 @@
 #include "ci/ciMemberName.hpp"
 #include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
+#include "classfile/javaClasses.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
@@ -53,6 +54,7 @@ class BlockListBuilder {
 
   BlockList    _blocks;                // internal list of all blocks
   BlockList*   _bci2block;             // mapping from bci to blocks for GraphBuilder
+  GrowableArray<BlockList> _bci2block_successors; // Mapping bcis to their blocks successors while we dont have a blockend
 
   // fields used by mark_loops
   ResourceBitMap _active;              // for iteration of control flow graph
@@ -89,6 +91,11 @@ class BlockListBuilder {
   void print();
 #endif
 
+  int number_of_successors(BlockBegin* block);
+  BlockBegin* successor_at(BlockBegin* block, int i);
+  void add_successor(BlockBegin* block, BlockBegin* sux);
+  bool is_successor(BlockBegin* block, BlockBegin* sux);
+
  public:
   // creation
   BlockListBuilder(Compilation* compilation, IRScope* scope, int osr_bci);
@@ -105,6 +112,7 @@ BlockListBuilder::BlockListBuilder(Compilation* compilation, IRScope* scope, int
  , _scope(scope)
  , _blocks(16)
  , _bci2block(new BlockList(scope->method()->code_size(), NULL))
+ , _bci2block_successors(scope->method()->code_size())
  , _active()         // size not known yet
  , _visited()        // size not known yet
  , _loop_map() // size not known yet
@@ -117,6 +125,8 @@ BlockListBuilder::BlockListBuilder(Compilation* compilation, IRScope* scope, int
 
   mark_loops();
   NOT_PRODUCT(if (PrintInitialBlockList) print());
+
+  // _bci2block still contains blocks with _end == null and > 0 sux in _bci2block_successors.
 
 #ifndef PRODUCT
   if (PrintCFGToFile) {
@@ -160,6 +170,7 @@ BlockBegin* BlockListBuilder::make_block_at(int cur_bci, BlockBegin* predecessor
     block = new BlockBegin(cur_bci);
     block->init_stores_to_locals(method()->max_locals());
     _bci2block->at_put(cur_bci, block);
+    _bci2block_successors.at_put_grow(cur_bci, BlockList());
     _blocks.append(block);
 
     assert(predecessor == NULL || predecessor->bci() < cur_bci, "targets for backward branches must already exist");
@@ -170,7 +181,7 @@ BlockBegin* BlockListBuilder::make_block_at(int cur_bci, BlockBegin* predecessor
       BAILOUT_("Exception handler can be reached by both normal and exceptional control flow", block);
     }
 
-    predecessor->add_successor(block);
+    add_successor(predecessor, block);
     block->increment_total_preds();
   }
 
@@ -201,8 +212,8 @@ void BlockListBuilder::handle_exceptions(BlockBegin* current, int cur_bci) {
       assert(entry->is_set(BlockBegin::exception_entry_flag), "flag must be set");
 
       // add each exception handler only once
-      if (!current->is_successor(entry)) {
-        current->add_successor(entry);
+      if(!is_successor(current, entry)) {
+        add_successor(current, entry);
         entry->increment_total_preds();
       }
 
@@ -418,9 +429,9 @@ int BlockListBuilder::mark_loops(BlockBegin* block, bool in_subroutine) {
   _active.set_bit(block_id);
 
   intptr_t loop_state = 0;
-  for (int i = block->number_of_sux() - 1; i >= 0; i--) {
+  for (int i = number_of_successors(block) - 1; i >= 0; i--) {
     // recursively process all successors
-    loop_state |= mark_loops(block->sux_at(i), in_subroutine);
+    loop_state |= mark_loops(successor_at(block, i), in_subroutine);
   }
 
   // clear active-bit after all successors are processed
@@ -452,6 +463,28 @@ int BlockListBuilder::mark_loops(BlockBegin* block, bool in_subroutine) {
   return loop_state;
 }
 
+inline int BlockListBuilder::number_of_successors(BlockBegin* block)
+{
+  assert(_bci2block_successors.length() > block->bci(), "sux must exist");
+  return _bci2block_successors.at(block->bci()).length();
+}
+
+inline BlockBegin* BlockListBuilder::successor_at(BlockBegin* block, int i)
+{
+  assert(_bci2block_successors.length() > block->bci(), "sux must exist");
+  return _bci2block_successors.at(block->bci()).at(i);
+}
+
+inline void BlockListBuilder::add_successor(BlockBegin* block, BlockBegin* sux)
+{
+  assert(_bci2block_successors.length() > block->bci(), "sux must exist");
+  _bci2block_successors.at(block->bci()).append(sux);
+}
+
+inline bool BlockListBuilder::is_successor(BlockBegin* block, BlockBegin* sux) {
+  assert(_bci2block_successors.length() > block->bci(), "sux must exist");
+  return _bci2block_successors.at(block->bci()).contains(sux);
+}
 
 #ifndef PRODUCT
 
@@ -477,10 +510,10 @@ void BlockListBuilder::print() {
     tty->print(cur->is_set(BlockBegin::subroutine_entry_flag)        ? " sr" : "   ");
     tty->print(cur->is_set(BlockBegin::parser_loop_header_flag)      ? " lh" : "   ");
 
-    if (cur->number_of_sux() > 0) {
+    if (number_of_successors(cur) > 0) {
       tty->print("    sux: ");
-      for (int j = 0; j < cur->number_of_sux(); j++) {
-        BlockBegin* sux = cur->sux_at(j);
+      for (int j = 0; j < number_of_successors(cur); j++) {
+        BlockBegin* sux = successor_at(cur, j);
         tty->print("B%d ", sux->block_id());
       }
     }
@@ -884,45 +917,39 @@ void GraphBuilder::ScopeData::incr_num_returns() {
 
 void GraphBuilder::load_constant() {
   ciConstant con = stream()->get_constant();
-  if (con.basic_type() == T_ILLEGAL) {
-    // FIXME: an unresolved Dynamic constant can get here,
-    // and that should not terminate the whole compilation.
-    BAILOUT("could not resolve a constant");
-  } else {
+  if (con.is_valid()) {
     ValueType* t = illegalType;
     ValueStack* patch_state = NULL;
     switch (con.basic_type()) {
-      case T_BOOLEAN: t = new IntConstant     (con.as_boolean()); break;
-      case T_BYTE   : t = new IntConstant     (con.as_byte   ()); break;
-      case T_CHAR   : t = new IntConstant     (con.as_char   ()); break;
-      case T_SHORT  : t = new IntConstant     (con.as_short  ()); break;
-      case T_INT    : t = new IntConstant     (con.as_int    ()); break;
-      case T_LONG   : t = new LongConstant    (con.as_long   ()); break;
-      case T_FLOAT  : t = new FloatConstant   (con.as_float  ()); break;
-      case T_DOUBLE : t = new DoubleConstant  (con.as_double ()); break;
-      case T_ARRAY  : t = new ArrayConstant   (con.as_object ()->as_array   ()); break;
-      case T_OBJECT :
-       {
+      case T_BOOLEAN: t = new IntConstant   (con.as_boolean()); break;
+      case T_BYTE   : t = new IntConstant   (con.as_byte   ()); break;
+      case T_CHAR   : t = new IntConstant   (con.as_char   ()); break;
+      case T_SHORT  : t = new IntConstant   (con.as_short  ()); break;
+      case T_INT    : t = new IntConstant   (con.as_int    ()); break;
+      case T_LONG   : t = new LongConstant  (con.as_long   ()); break;
+      case T_FLOAT  : t = new FloatConstant (con.as_float  ()); break;
+      case T_DOUBLE : t = new DoubleConstant(con.as_double ()); break;
+      case T_ARRAY  : // fall-through
+      case T_OBJECT : {
         ciObject* obj = con.as_object();
-        if (!obj->is_loaded()
-            || (PatchALot && obj->klass() != ciEnv::current()->String_klass())) {
-          // A Class, MethodType, MethodHandle, or String.
-          // Unloaded condy nodes show up as T_ILLEGAL, above.
+        if (!obj->is_loaded() || (PatchALot && (obj->is_null_object() || obj->klass() != ciEnv::current()->String_klass()))) {
+          // A Class, MethodType, MethodHandle, Dynamic, or String.
           patch_state = copy_state_before();
           t = new ObjectConstant(obj);
         } else {
           // Might be a Class, MethodType, MethodHandle, or Dynamic constant
           // result, which might turn out to be an array.
-          if (obj->is_null_object())
+          if (obj->is_null_object()) {
             t = objectNull;
-          else if (obj->is_array())
+          } else if (obj->is_array()) {
             t = new ArrayConstant(obj->as_array());
-          else
+          } else {
             t = new InstanceConstant(obj->as_instance());
+          }
         }
         break;
-       }
-      default       : ShouldNotReachHere();
+      }
+      default: ShouldNotReachHere();
     }
     Value x;
     if (patch_state != NULL) {
@@ -930,7 +957,27 @@ void GraphBuilder::load_constant() {
     } else {
       x = new Constant(t);
     }
+
+    // Unbox the value at runtime, if needed.
+    // ConstantDynamic entry can be of a primitive type, but it is cached in boxed form.
+    if (patch_state != NULL) {
+      int index = stream()->get_constant_pool_index();
+      BasicType type = stream()->get_basic_type_for_constant_at(index);
+      if (is_java_primitive(type)) {
+        ciInstanceKlass* box_klass = ciEnv::current()->get_box_klass_for_primitive_type(type);
+        assert(box_klass->is_loaded(), "sanity");
+        int offset = java_lang_boxing_object::value_offset(type);
+        ciField* value_field = box_klass->get_field_by_offset(offset, false /*is_static*/);
+        x = new LoadField(append(x), offset, value_field, false /*is_static*/, patch_state, false /*needs_patching*/);
+        t = as_ValueType(type);
+      } else {
+        assert(is_reference_type(type), "not a reference: %s", type2name(type));
+      }
+    }
+
     push(t, append(x));
+  } else {
+    BAILOUT("could not resolve a constant");
   }
 }
 
@@ -1865,22 +1912,17 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
                 log->identify(target),
                 Bytecodes::name(code));
 
-  // invoke-special-super
-  if (bc_raw == Bytecodes::_invokespecial && !target->is_object_initializer()) {
-    ciInstanceKlass* sender_klass = calling_klass;
-    if (sender_klass->is_interface()) {
-      int index = state()->stack_size() - (target->arg_size_no_receiver() + 1);
-      Value receiver = state()->stack_at(index);
-      CheckCast* c = new CheckCast(sender_klass, receiver, copy_state_before());
-      c->set_invokespecial_receiver_check();
-      state()->stack_at_put(index, append_split(c));
-    }
-  }
-
   // Some methods are obviously bindable without any type checks so
   // convert them directly to an invokespecial or invokestatic.
   if (target->is_loaded() && !target->is_abstract() && target->can_be_statically_bound()) {
     switch (bc_raw) {
+    case Bytecodes::_invokeinterface:
+      // convert to invokespecial if the target is the private interface method.
+      if (target->is_private()) {
+        assert(holder->is_interface(), "How did we get a non-interface method here!");
+        code = Bytecodes::_invokespecial;
+      }
+      break;
     case Bytecodes::_invokevirtual:
       code = Bytecodes::_invokespecial;
       break;
@@ -1894,6 +1936,26 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
     if (bc_raw == Bytecodes::_invokehandle) {
       assert(!will_link, "should come here only for unlinked call");
       code = Bytecodes::_invokespecial;
+    }
+  }
+
+  if (code == Bytecodes::_invokespecial) {
+    // Additional receiver subtype checks for interface calls via invokespecial or invokeinterface.
+    ciKlass* receiver_constraint = nullptr;
+
+    if (bc_raw == Bytecodes::_invokeinterface) {
+      receiver_constraint = holder;
+    } else if (bc_raw == Bytecodes::_invokespecial && !target->is_object_initializer() && calling_klass->is_interface()) {
+      receiver_constraint = calling_klass;
+    }
+
+    if (receiver_constraint != nullptr) {
+      int index = state()->stack_size() - (target->arg_size_no_receiver() + 1);
+      Value receiver = state()->stack_at(index);
+      CheckCast* c = new CheckCast(receiver_constraint, receiver, copy_state_before());
+      // go to uncommon_trap when checkcast fails
+      c->set_invokespecial_receiver_check();
+      state()->stack_at_put(index, append_split(c));
     }
   }
 
@@ -1989,19 +2051,19 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
         cha_monomorphic_target = target->find_monomorphic_target(calling_klass, declared_interface, singleton);
         if (cha_monomorphic_target != NULL) {
           if (cha_monomorphic_target->holder() != compilation()->env()->Object_klass()) {
-            // If CHA is able to bind this invoke then update the class
-            // to match that class, otherwise klass will refer to the
-            // interface.
-            klass = cha_monomorphic_target->holder();
+            ciInstanceKlass* holder = cha_monomorphic_target->holder();
+            ciInstanceKlass* constraint = (holder->is_subtype_of(singleton) ? holder : singleton); // avoid upcasts
             actual_recv = declared_interface;
 
             // insert a check it's really the expected class.
-            CheckCast* c = new CheckCast(klass, receiver, copy_state_for_exception());
+            CheckCast* c = new CheckCast(constraint, receiver, copy_state_for_exception());
             c->set_incompatible_class_change_check();
-            c->set_direct_compare(klass->is_final());
+            c->set_direct_compare(constraint->is_final());
             // pass the result of the checkcast so that the compiler has
             // more accurate type info in the inlinee
             better_receiver = append_split(c);
+
+            dependency_recorder()->assert_unique_implementor(declared_interface, singleton);
           } else {
             cha_monomorphic_target = NULL; // subtype check against Object is useless
           }
@@ -2025,9 +2087,11 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   }
 
   // check if we could do inlining
-  if (!PatchALot && Inline && target->is_loaded() && callee_holder->is_linked() && !patch_for_appendix) {
+  if (!PatchALot && Inline && target->is_loaded() && !patch_for_appendix &&
+      callee_holder->is_loaded()) { // the effect of symbolic reference resolution
+
     // callee is known => check if we have static binding
-    if ((code == Bytecodes::_invokestatic && callee_holder->is_initialized()) || // invokestatic involves an initialization barrier on resolved klass
+    if ((code == Bytecodes::_invokestatic && klass->is_initialized()) || // invokestatic involves an initialization barrier on declaring class
         code == Bytecodes::_invokespecial ||
         (code == Bytecodes::_invokevirtual && target->is_final_method()) ||
         code == Bytecodes::_invokedynamic) {
@@ -3044,7 +3108,7 @@ BlockBegin* GraphBuilder::setup_start_block(int osr_bci, BlockBegin* std_entry, 
   // each method.  Previously, each method started with the
   // start-block created below, and this block was followed by the
   // header block that was always empty.  This header block is only
-  // necesary if std_entry is also a backward branch target because
+  // necessary if std_entry is also a backward branch target because
   // then phi functions may be necessary in the header block.  It's
   // also necessary when profiling so that there's a single block that
   // can increment the the counters.
@@ -3215,11 +3279,14 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
   _initial_state = state_at_entry();
   start_block->merge(_initial_state);
 
+  // End nulls still exist here
+
   // complete graph
   _vmap        = new ValueMap();
   switch (scope->method()->intrinsic_id()) {
   case vmIntrinsics::_dabs          : // fall through
   case vmIntrinsics::_dsqrt         : // fall through
+  case vmIntrinsics::_dsqrt_strict  : // fall through
   case vmIntrinsics::_dsin          : // fall through
   case vmIntrinsics::_dcos          : // fall through
   case vmIntrinsics::_dtan          : // fall through
@@ -3316,6 +3383,27 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
     break;
   }
   CHECK_BAILOUT();
+
+# ifdef ASSERT
+  //All blocks reachable from start_block have _end != NULL
+  {
+    BlockList processed;
+    BlockList to_go;
+    to_go.append(start_block);
+    while(to_go.length() > 0) {
+      BlockBegin* current = to_go.pop();
+      assert(current != NULL, "Should not happen.");
+      assert(current->end() != NULL, "All blocks reachable from start_block should have end() != NULL.");
+      processed.append(current);
+      for(int i = 0; i < current->number_of_sux(); i++) {
+        BlockBegin* s = current->sux_at(i);
+        if (!processed.contains(s)) {
+          to_go.append(s);
+        }
+      }
+    }
+  }
+#endif // ASSERT
 
   _start = setup_start_block(osr_bci, start_block, _osr_entry, _initial_state);
 
