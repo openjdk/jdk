@@ -1,7 +1,7 @@
     static $type$ [[TEST]]Reduce($type$[] a, int idx) {
         $type$ res = [[TEST_INIT]];
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            res = ($type$)Math.max(res, a[i]);
+            res = [[TEST_OP]](res, a[i]);
         }
 
         return res;
@@ -9,8 +9,8 @@
 
     static $type$ [[TEST]]ReduceAll($type$[] a) {
         $type$ res = [[TEST_INIT]];
-        for (int i = 0; i < a.length; i++) {
-            res = ($type$)Math.max(res, a[i]);
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            res = [[TEST_OP]](res, [[TEST]]Reduce(a, i));
         }
 
         return res;

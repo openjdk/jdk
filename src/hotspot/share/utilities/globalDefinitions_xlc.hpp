@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -108,10 +108,6 @@ inline int g_isnan(double f) { return isnan(f); }
 // Checking for finiteness
 inline int g_isfinite(jfloat  f)                 { return finite(f); }
 inline int g_isfinite(jdouble f)                 { return finite(f); }
-
-// Wide characters
-inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
-
 
 // Formatting.
 #ifdef _LP64
