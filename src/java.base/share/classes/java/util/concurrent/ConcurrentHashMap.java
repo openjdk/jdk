@@ -895,7 +895,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             throw new IllegalArgumentException();
         if (initialCapacity < concurrencyLevel)   // Use at least as many bins
             initialCapacity = concurrencyLevel;   // as estimated threads
-        long size = (long)(1.0 + (long)initialCapacity / loadFactor);
+        long size = (long)Math.ceil(initialCapacity / (double)loadFactor);
         int cap = (size >= (long)MAXIMUM_CAPACITY) ?
             MAXIMUM_CAPACITY : tableSizeFor((int)size);
         this.sizeCtl = cap;
@@ -1463,7 +1463,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         if (size == 0L)
             sizeCtl = 0;
         else {
-            long ts = (long)(1.0 + size / LOAD_FACTOR);
+            long ts = (long)Math.ceil(size / (double)LOAD_FACTOR);
             int n = (ts >= (long)MAXIMUM_CAPACITY) ?
                 MAXIMUM_CAPACITY : tableSizeFor((int)ts);
             @SuppressWarnings("unchecked")
