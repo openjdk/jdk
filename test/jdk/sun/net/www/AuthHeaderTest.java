@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,38 +24,53 @@
 /**
  * @test
  * @bug 4804309
- * @modules java.base/sun.net.www
- * @library ../../../sun/net/www/httptest/
- * @build HttpCallback TestHttpServer ClosedChannelList HttpTransaction
- * @run main AuthHeaderTest
+ * @library /test/lib
+ * @run main/othervm AuthHeaderTest
  * @summary AuthHeaderTest bug
  */
 
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.net.Authenticator;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.PasswordAuthentication;
+import java.net.Proxy;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.concurrent.Executors;
 
-public class AuthHeaderTest implements HttpCallback {
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+import jdk.test.lib.net.URIBuilder;
+
+public class AuthHeaderTest implements HttpHandler {
 
     static int count = 0;
     static String authstring;
 
-    void errorReply (HttpTransaction req, String reply) throws IOException {
-        req.addResponseHeader ("Connection", "close");
-        req.addResponseHeader ("Www-authenticate", reply);
-        req.sendResponse (401, "Unauthorized");
-        req.orderlyClose();
+    void errorReply (HttpExchange req, String reply) throws IOException {
+        req.getResponseHeaders().set("Connection", "close");
+        req.getResponseHeaders().set("Www-authenticate", reply);
+        req.sendResponseHeaders(401, -1);
     }
 
-    void okReply (HttpTransaction req) throws IOException {
-        req.setResponseEntityBody ("Hello .");
-        req.sendResponse (200, "Ok");
-        req.orderlyClose();
+    void okReply (HttpExchange req) throws IOException {
+        req.sendResponseHeaders (200, 0);
+        try(PrintWriter pw = new PrintWriter(req.getResponseBody())) {
+            pw.print("Hello .");
+        }
     }
 
-    public void request (HttpTransaction req) {
+    public void handle (HttpExchange req) {
         try {
-            authstring = req.getRequestHeader ("Authorization");
-            System.out.println (authstring);
+            if(req.getRequestHeaders().get("Authorization") != null) {
+                authstring = req.getRequestHeaders().get("Authorization").get(0);
+                System.out.println (authstring);
+            }
+
             switch (count) {
             case 0:
                 errorReply (req, "Basic realm=\"wallyworld\"");
@@ -91,19 +106,31 @@ public class AuthHeaderTest implements HttpCallback {
         is.close();
     }
 
-    static TestHttpServer server;
+    static HttpServer server;
 
     public static void main (String[] args) throws Exception {
         MyAuthenticator auth = new MyAuthenticator ();
         Authenticator.setDefault (auth);
         InetAddress loopback = InetAddress.getLoopbackAddress();
         try {
-            server = new TestHttpServer (new AuthHeaderTest(), 1, 10, loopback, 0);
-            System.out.println ("Server: listening on port: " + server.getAuthority());
-            client ("http://" + server.getAuthority() + "/d1/foo.html");
+//            server = new TestHttpServer (new AuthHeaderTest(), 1, 10, loopback, 0);
+            server = HttpServer.create(new InetSocketAddress(loopback, 0), 10);
+            server.createContext("/", new AuthHeaderTest());
+            server.setExecutor(Executors.newSingleThreadExecutor());
+            server.start();
+            System.out.println ("Server: listening on port: " + server.getAddress().getPort());
+
+            String serverURL = URIBuilder.newBuilder()
+                    .scheme("http")
+                    .loopback()
+                    .port(server.getAddress().getPort())
+                    .path("/")
+                    .build()
+                    .toString();
+            client (serverURL + "d1/foo.html");
         } catch (Exception e) {
             if (server != null) {
-                server.terminate();
+                server.stop(1);
             }
             throw e;
         }
@@ -111,11 +138,11 @@ public class AuthHeaderTest implements HttpCallback {
         if (f != 1) {
             except ("Authenticator was called "+f+" times. Should be 1");
         }
-        server.terminate();
+        server.stop(1);
     }
 
     public static void except (String s) {
-        server.terminate();
+        server.stop(1);
         throw new RuntimeException (s);
     }
 
