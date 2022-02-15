@@ -49,9 +49,10 @@
  * @toolGuide jdeps
  *
  * @provides java.util.spi.ToolProvider
- *         Pass {@code "javap"} or {@code "jdeps"}
- *         as the name to {@link java.util.spi.ToolProvider#findFirst
- *         ToolProvider.findFirst} in order to obtain an instance of the tool.
+ *     Use {@link java.util.spi.ToolProvider#findFirst ToolProvider.findFirst("javap")}
+ *     or {@link java.util.spi.ToolProvider#findFirst ToolProvider.findFirst("deps")}
+ *     to obtain an instance of a {@code ToolProvider} that provides the equivalent
+ *     of command-line access to the {@code javap} or {@code jdeps} tool.
  *
  * @moduleGraph
  * @since 9

@@ -42,9 +42,9 @@
  * instances, or undefined behavior may result.
  *
  * @provides java.util.spi.ToolProvider
- *         Pass {@code "jpackage"} as the name to
- *         {@link java.util.spi.ToolProvider#findFirst ToolProvider.findFirst}
- *         in order to obtain an instance of the tool.
+ *     Use {@link java.util.spi.ToolProvider#findFirst ToolProvider.findFirst("jpackage")}
+ *     to obtain an instance of a {@code ToolProvider} that provides the equivalent
+ *     of command-line access to the {@code jpackage} tool.
  *
  * @moduleGraph
  * @since 16

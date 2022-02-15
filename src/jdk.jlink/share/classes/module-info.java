@@ -44,9 +44,9 @@
  * @toolGuide jmod
  *
  * @provides java.util.spi.ToolProvider
- *         Pass {@code "jlink"} or {@code "jmod"}
- *         as the name to {@link java.util.spi.ToolProvider#findFirst
- *         ToolProvider.findFirst} in order to obtain an instance of the tool.
+ *     Use {@link java.util.spi.ToolProvider#findFirst ToolProvider.findFirst("jlink")}
+ *     to obtain an instance of a {@code ToolProvider} that provides the equivalent
+ *     of command-line access to the {@code jlink} tool.
  *
  * @moduleGraph
  * @since 9
