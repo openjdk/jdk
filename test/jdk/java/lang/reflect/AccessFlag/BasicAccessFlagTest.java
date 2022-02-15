@@ -34,6 +34,7 @@ import java.lang.reflect.Modifier;
 public class BasicAccessFlagTest {
     public static void main(String... args) throws Exception {
         testSourceModifiers();
+        testMaskOrdering();
     }
 
     private static void testSourceModifiers() throws Exception {
@@ -47,6 +48,22 @@ public class BasicAccessFlagTest {
                     throw new RuntimeException("Unexpected mask for " +
                                                accessFlag);
                 }
+            }
+        }
+    }
+
+    // The mask values of the enum constants must be non-decreasing;
+    // in other words stay the same (for colliding mask values) or go
+    // up.
+    private static void testMaskOrdering() {
+        AccessFlag[] values = AccessFlag.values();
+        for (int i = 1; i < values.length; i++) {
+            AccessFlag left  = values[i-1];
+            AccessFlag right = values[i];
+            if (left.mask() > right.mask()) {
+                throw new RuntimeException(left
+                                           + "has a greater mas than "
+                                           + right);
             }
         }
     }

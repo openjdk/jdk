@@ -47,6 +47,22 @@ import static java.lang.annotation.ElementType.*;
  * 4.5}, and {@jvms 4.7} of <cite>The Java Virtual Machine
  * Specification</cite>.
  *
+ * <p>The {@linkplain #mask() mask} values for the different access
+ * flags are <em>not</em> distinct. Flags are defined for different
+ * kinds of JVM structures and the same bit position has different
+ * meanings in different contexts. For example, {@code 0x0000_0040}
+ * indicates a {@link #VOLATILE volatile} field but a {@linkplain
+ * #BRIDGE bridge method}; {@code 0x0000_0080} indicates a {@link
+ * #TRANSIENT transient} field but a {@linkplain #VARARGS variable
+ * arity (varargs)} method.
+ *
+ * <p>The access flag constants are ordered by non-decreasing mask
+ * value; that is the mask value of a constant is greater than or
+ * equal to the mask value of an immediate neighbor to its (syntactic)
+ * left. If new constants are added, this property will be
+ * maintained. That implies new constants will not necessarily be
+ * added at the end of the existing list.
+ *
  * @see java.lang.reflect.Modifier
  * @see java.compiler/javax.lang.model.element.Modifier
  * @since 19
@@ -60,22 +76,16 @@ public enum AccessFlag {
     PUBLIC(Modifier.PUBLIC, true, Set.of(TYPE, CONSTRUCTOR, METHOD, FIELD)),
 
     /**
-     * The access flag {@code ACC_PROTECTED}, corresponding to the
-     * source modifier {@link Modifier#PROTECTED protected}.
-     */
-    PROTECTED(Modifier.PROTECTED, true, Set.of(CONSTRUCTOR, METHOD, FIELD)),
-
-    /**
      * The access flag {@code ACC_PRIVATE}, corresponding to the
      * source modifier {@link Modifier#PRIVATE private}.
      */
     PRIVATE(Modifier.PRIVATE, true, Set.of(CONSTRUCTOR, METHOD, FIELD)),
 
     /**
-     * The access flag {@code ACC_ABSTRACT}, corresponding to the
-     * source modifier {@code link Modifier#ABSTRACT abstract}.
+     * The access flag {@code ACC_PROTECTED}, corresponding to the
+     * source modifier {@link Modifier#PROTECTED protected}.
      */
-    ABSTRACT(Modifier.ABSTRACT, true, Set.of(TYPE, METHOD)),
+    PROTECTED(Modifier.PROTECTED, true, Set.of(CONSTRUCTOR, METHOD, FIELD)),
 
     /**
      * The access flag {@code ACC_STATIC}, corresponding to the source
@@ -90,10 +100,15 @@ public enum AccessFlag {
     FINAL(Modifier.FINAL, true, Set.of(FIELD, METHOD, PARAMETER, TYPE)),
 
     /**
-     * The access flag {@code ACC_TRANSIENT}, corresponding to the
-     * source modifier {@link Modifier#TRANSIENT transient}.
+     * The access flag {@code ACC_SUPER}.
      */
-    TRANSIENT(Modifier.TRANSIENT, true, Set.of(FIELD)),
+    SUPER(0x0000_0020, false, Set.of(TYPE)),
+
+    /**
+     * The access flag {@code ACC_SYNCHRONIZED}, corresponding to the
+     * source modifier {@link Modifier#SYNCHRONIZED synchronized}.
+     */
+    SYNCHRONIZED(Modifier.SYNCHRONIZED, true, Set.of(METHOD, CONSTRUCTOR)),
 
      /**
       * The access flag {@code ACC_VOLATILE}, corresponding to the
@@ -102,10 +117,22 @@ public enum AccessFlag {
     VOLATILE(Modifier.VOLATILE, true, Set.of(FIELD)),
 
     /**
-     * The access flag {@code ACC_SYNCHRONIZED}, corresponding to the
-     * source modifier {@link Modifier#SYNCHRONIZED synchronized}.
+     * The access flag {@code ACC_BRIDGE}
+     * @see Method#isBridge()
      */
-    SYNCHRONIZED(Modifier.SYNCHRONIZED, true, Set.of(METHOD, CONSTRUCTOR)),
+    BRIDGE(0x0000_0040, false, Set.of(METHOD, CONSTRUCTOR)),
+
+    /**
+     * The access flag {@code ACC_TRANSIENT}, corresponding to the
+     * source modifier {@link Modifier#TRANSIENT transient}.
+     */
+    TRANSIENT(Modifier.TRANSIENT, true, Set.of(FIELD)),
+
+    /**
+     * The access flag {@code ACC_VARARGS}.
+     * @see Executable#isVarArgs()
+     */
+    VARARGS(0x0000_0080, false, Set.of(METHOD, CONSTRUCTOR)),
 
     /**
      * The access flag {@code ACC_NATIVE}, corresponding to the source
@@ -120,52 +147,46 @@ public enum AccessFlag {
     INTERFACE(Modifier.INTERFACE, false, Set.of(TYPE)),
 
     /**
+     * The access flag {@code ACC_ABSTRACT}, corresponding to the
+     * source modifier {@code link Modifier#ABSTRACT abstract}.
+     */
+    ABSTRACT(Modifier.ABSTRACT, true, Set.of(TYPE, METHOD)),
+
+    /**
      * The access flag {@code ACC_STRICT}, corresponding to the source
      * modifier {@link Modifier#STRICT strictfp}.
      */
     STRICT(Modifier.STRICT, true, Set.of(METHOD, CONSTRUCTOR)),
 
     /**
-     * The access flag {@code ACC_BRIDGE}
-     * @see Method#isBridge()
-     */
-    BRIDGE(0x00000040, false, Set.of(METHOD, CONSTRUCTOR)),
-
-    /**
-     * The access flag {@code ACC_VARARGS}.
-     * @see Executable#isVarArgs()
-     */
-    VARARGS(0x00000080, false, Set.of(METHOD, CONSTRUCTOR)),
-
-    /**
      * The access flag {@code ACC_SYNTHETIC}.
      * @see Class#isSynthetic()
      * @see Executable#isSynthetic()
      */
-    SYNTHETIC(0x00001000, false,
+    SYNTHETIC(0x0000_1000, false,
               Set.of(TYPE, FIELD, METHOD, CONSTRUCTOR, ElementType.MODULE, PARAMETER)),
-
-    /**
-     * The access flag {@code ACC_MANDATED}.
-     */
-    MANDATED(0x00008000, false, Set.of(ElementType.MODULE, PARAMETER)),
 
     /**
      * The access flag {@code ACC_ANNOTATION}.
      * @see Class#isAnnotation()
      */
-    ANNOTATION(0x00002000, false, Set.of(TYPE)),
+    ANNOTATION(0x0000_2000, false, Set.of(TYPE)),
 
    /**
     * The access flag {@code ACC_ENUM}.
     * @see Class#isEnum()
     */
-    ENUM(0x00004000, false, Set.of(TYPE, FIELD)),
+    ENUM(0x0000_4000, false, Set.of(TYPE, FIELD)),
+
+    /**
+     * The access flag {@code ACC_MANDATED}.
+     */
+    MANDATED(0x0000_8000, false, Set.of(ElementType.MODULE, PARAMETER)),
 
    /**
     * The access flag {@code ACC_MODULE}.
     */
-    MODULE(0x8000, false, Set.of(TYPE))
+   MODULE(0x0000_8000, false, Set.of(TYPE))
     ;
 
     // May want to override toString for a different enum constant ->
