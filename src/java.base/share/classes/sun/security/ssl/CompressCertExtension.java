@@ -231,7 +231,8 @@ final class CompressCertExtension {
                 return;     // ignore the extension
             }
 
-            if (shc.sslConfig.certDeflaters.isEmpty()) {
+            if (shc.sslConfig.certDeflaters == null ||
+                    shc.sslConfig.certDeflaters.isEmpty()) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Ignore unsupported " +
                             "compress_certificate extension");
@@ -341,7 +342,8 @@ final class CompressCertExtension {
                 return;     // ignore the extension
             }
 
-            if (chc.sslConfig.certDeflaters.isEmpty()) {
+            if (chc.sslConfig.certDeflaters == null ||
+                    chc.sslConfig.certDeflaters.isEmpty()) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Ignore unsupported " +
                             "compress_certificate extension");

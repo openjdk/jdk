@@ -67,8 +67,8 @@ final class SSLConfiguration implements Cloneable {
 
     // The configured certificate compression algorithms for
     // "compress_certificate" extensions
-    Map<String, Function<byte[], byte[]>> certDeflaters;  // non-null
-    Map<String, Function<byte[], byte[]>> certInflaters;  // non-null
+    Map<String, Function<byte[], byte[]>> certDeflaters;
+    Map<String, Function<byte[], byte[]>> certInflaters;
 
     // the maximum protocol version of enabled protocols
     ProtocolVersion             maximumProtocolVersion;
@@ -153,8 +153,8 @@ final class SSLConfiguration implements Cloneable {
                 CustomizedClientSignatureSchemes.signatureSchemes :
                 CustomizedServerSignatureSchemes.signatureSchemes;
 
-        this.certDeflaters = Collections.emptyMap();
-        this.certInflaters = Collections.emptyMap();
+        this.certDeflaters = Map.of();
+        this.certInflaters = Map.of();
 
         this.maximumProtocolVersion = ProtocolVersion.NONE;
         for (ProtocolVersion pv : enabledProtocols) {
@@ -271,12 +271,6 @@ final class SSLConfiguration implements Cloneable {
 
         this.certDeflaters = params.getCertificateDeflaters();
         this.certInflaters = params.getCertificateInflaters();
-        if (SSLLogger.isOn &&
-                SSLLogger.isOn("ssl,handshake,verbose")) {
-            SSLLogger.finest(
-                    "certInflaters: " + this.certInflaters);
-        }
-
         this.preferLocalCipherSuites = params.getUseCipherSuitesOrder();
         this.enableRetransmissions = params.getEnableRetransmissions();
         this.maximumPacketSize = params.getMaximumPacketSize();

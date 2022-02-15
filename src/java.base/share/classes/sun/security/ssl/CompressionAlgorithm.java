@@ -110,6 +110,10 @@ enum CompressionAlgorithm {
     static Map.Entry<Integer, Function<byte[], byte[]>> selectDeflater(
             SSLConfiguration config,
             int[] compressionAlgorithmIds) {
+        if (config.certDeflaters == null) {
+            return null;
+        }
+
         for (Map.Entry<String, Function<byte[], byte[]>> entry :
                 config.certDeflaters.entrySet()) {
             CompressionAlgorithm ca =
