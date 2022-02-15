@@ -309,6 +309,9 @@ public:
                            KRegister ktmp1, KRegister ktmp2, AddressLiteral double_sign_flip,
                            Register scratch, int vec_enc);
 
+  void vector_unsigned_cast(XMMRegister dst, XMMRegister src, int vlen_enc,
+                            BasicType from_elem_bt, BasicType to_elem_bt);
+
   void vector_cast_double_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
                                              KRegister ktmp1, KRegister ktmp2, Register scratch, AddressLiteral double_sign_flip,
                                              int vec_enc);

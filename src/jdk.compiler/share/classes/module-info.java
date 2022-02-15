@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,9 @@
  * @toolGuide javac
  *
  * @provides java.util.spi.ToolProvider
+ *     Use {@link java.util.spi.ToolProvider#findFirst ToolProvider.findFirst("javac")}
+ *     to obtain an instance of a {@code ToolProvider} that provides the equivalent
+ *     of command-line access to the {@code javac} tool.
  * @provides com.sun.tools.javac.platform.PlatformProvider
  * @provides javax.tools.JavaCompiler
  * @provides javax.tools.Tool
