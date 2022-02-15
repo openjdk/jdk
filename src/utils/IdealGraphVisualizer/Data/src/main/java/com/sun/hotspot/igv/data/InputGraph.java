@@ -64,6 +64,12 @@ public class InputGraph extends Properties.Entity implements FolderElement {
         return edge;
     }
 
+    public void removeBlockEdge(InputBlock left, InputBlock right) {
+        InputBlockEdge edge = new InputBlockEdge(left, right);
+        blockEdges.remove(edge);
+        left.removeSuccessor(right);
+    }
+
     public List<InputNode> findRootNodes() {
         List<InputNode> result = new ArrayList<>();
         Set<Integer> nonRoot = new HashSet<>();

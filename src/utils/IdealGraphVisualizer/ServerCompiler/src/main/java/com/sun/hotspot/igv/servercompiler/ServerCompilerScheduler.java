@@ -25,6 +25,7 @@
 package com.sun.hotspot.igv.servercompiler;
 
 import com.sun.hotspot.igv.data.InputBlock;
+import com.sun.hotspot.igv.data.InputBlockEdge;
 import com.sun.hotspot.igv.data.InputEdge;
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.InputNode;
@@ -236,6 +237,7 @@ public class ServerCompilerScheduler implements Scheduler {
             markCFGNodes();
             connectOrphansAndWidows();
             buildBlocks();
+            schedulePinned();
             buildDominators();
             buildCommonDominators();
             scheduleLatest();
@@ -264,54 +266,6 @@ public class ServerCompilerScheduler implements Scheduler {
         // Mark all nodes reachable in backward traversal from root
         Set<Node> reachable = reachableNodes();
 
-        // Schedule pinned nodes first.
-        for (Node n : nodes) {
-            if (!reachable.contains(n) ||
-                n.block != null ||
-                n.preds.isEmpty()) {
-                continue;
-            }
-            Node ctrlIn = n.preds.get(0);
-            if (!isControl(ctrlIn)) {
-                continue;
-            }
-            // n is pinned to ctrlIn.
-            InputBlock block = ctrlIn.block;
-            if (ctrlIn.isBlockProjection) {
-                // Block projections should not have successors in their block:
-                // if n is pinned to a block projection, try to sink it.
-                assert (ctrlIn.succs.size() > 0);
-                Node ctrlSucc = null;
-                int ctrlSuccs = 0;
-                for (Node s : ctrlIn.succs) {
-                    if (s.isCFG) {
-                        ctrlSucc = s;
-                        ctrlSuccs++;
-                    }
-                }
-                if (ctrlSuccs == 1) {
-                    int ctrlSuccPreds = 0;
-                    for (Node p : ctrlSucc.preds) {
-                        if (isControl(p)) {
-                            ctrlSuccPreds++;
-                        }
-                    }
-                    if (ctrlSuccPreds == 1) {
-                        // Sink n to the successor ctrlSucc of the block projection,
-                        // since ctrlSucc does not have other predecessors.
-                        block = ctrlSucc.block;
-                    }
-                } else {
-                    ErrorManager.getDefault().log(ErrorManager.WARNING,
-                         "Block projection " + ctrlIn + " has " + ctrlSuccs + " control successors, " +
-                         "this might affect the quality of the approximated schedule.");
-                }
-            }
-            n.block = block;
-            block.addNode(n.inputNode.getId());
-        }
-
-        // Now schedule rest of reachable nodes.
         Set<Node> unscheduled = new HashSet<>();
         for (Node n : this.nodes) {
             if (n.block == null && reachable.contains(n)) {
@@ -490,6 +444,99 @@ public class ServerCompilerScheduler implements Scheduler {
 
         assert false;
         return null;
+    }
+
+    // Schedule nodes pinned to region-like nodes in their blocks.
+    // Schedule nodes pinned to block projections (e.g. IfTrue) in:
+    // - the projection's successor block,  if the successor block has only one
+    //                                      predecessor;
+    // - a new block created in between,    if the successor block has multiple
+    //                                      predecessors, forming a critical
+    //                                      edge (projection, successor).
+    public void schedulePinned() {
+
+        Set<Node> reachable = reachableNodes();
+        int blockCount = Collections.max(blockIndex.values()) + 1;
+        // Map from critical edges in the initial CFG to splitter blocks.
+        Map<InputBlockEdge, InputBlock> splitBlockMap = new HashMap<>();
+
+        for (Node n : nodes) {
+            if (!reachable.contains(n) ||
+                n.block != null) {
+                continue;
+            }
+            Node ctrlIn = pinnedNode(n);
+            if (ctrlIn == null) {
+                continue;
+            }
+            InputBlock block = ctrlIn.block;
+            if (ctrlIn.isBlockProjection) {
+                // Block projections should not have successors in their block:
+                // if n is pinned to a block projection, push it downwards.
+                assert (ctrlIn.succs.size() > 0);
+                Node ctrlSucc = null;
+                int ctrlSuccs = 0;
+                for (Node s : ctrlIn.succs) {
+                    if (s.isCFG) {
+                        ctrlSucc = s;
+                        ctrlSuccs++;
+                    }
+                }
+                if (ctrlSuccs == 1) {
+                    // Regular case (block projections only have one control
+                    // successor in well-formed graphs).
+                    int ctrlSuccPreds = 0;
+                    for (Node p : ctrlSucc.preds) {
+                        if (isControl(p)) {
+                            ctrlSuccPreds++;
+                        }
+                    }
+                    if (ctrlSuccPreds == 1) {
+                        // The successor block ctrlSucc has only one
+                        // predecessor: schedule n in ctrlSucc.
+                        block = ctrlSucc.block;
+                    } else {
+                        // The successor block ctrlSucc has multiple
+                        // predecessors, forming a critical edge: schedule n in
+                        // a new block created in between ctrlIn and ctrlSucc.
+                        InputBlock p = ctrlIn.block, s = ctrlSucc.block;
+                        InputBlockEdge criticalEdge = new InputBlockEdge(p, s);
+                        InputBlock split = splitBlockMap.get(criticalEdge);
+                        if (split == null) {
+                            // (p, s) form a critical edge: split it here.
+                            split = graph.addBlock(Integer.toString(blockCount + 1));
+                            graph.removeBlockEdge(p, s);
+                            graph.addBlockEdge(p, split);
+                            graph.addBlockEdge(split, s);
+                            blocks.add(split);
+                            blockIndex.put(split, blockCount);
+                            blockCount++;
+                            splitBlockMap.put(criticalEdge, split);
+                        }
+                        block = split;
+                    }
+                } else {
+                    ErrorManager.getDefault().log(ErrorManager.WARNING,
+                        "Block projection " + ctrlIn + " has " + ctrlSuccs + " control successors, " +
+                        "this might affect the quality of the approximated schedule.");
+                }
+            }
+            n.block = block;
+            block.addNode(n.inputNode.getId());
+        }
+    }
+
+    // Returns the control node to which n is pinned, or null if none.
+    public Node pinnedNode(Node n) {
+        if (n.preds.isEmpty()) {
+            return null;
+        }
+        Node ctrlIn = n.preds.get(0);
+        if (!isControl(ctrlIn)) {
+            return null;
+        }
+        // n is pinned to ctrlIn.
+        return ctrlIn;
     }
 
     public void buildDominators() {
@@ -744,6 +791,12 @@ public class ServerCompilerScheduler implements Scheduler {
                         continue;
                     }
                     for (InputBlock b : sourceBlocks(in, n)) {
+                        Node ctrlIn = pinnedNode(in);
+                        if (ctrlIn != null && ctrlIn.isBlockProjection) {
+                            // If the input is pinned to a projection, it has
+                            // been pushed downwards, skip check.
+                            continue;
+                        }
                         if (!dominates(graph.getBlock(in.inputNode), b)) {
                             ErrorManager.getDefault().log(ErrorManager.WARNING,
                                 "inaccurate schedule: " + in + " does not dominate " + b + ".");

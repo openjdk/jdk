@@ -111,4 +111,8 @@ public class InputBlock {
             successors.add(b);
         }
     }
+
+    void removeSuccessor(InputBlock b) {
+        successors.remove(b);
+    }
 }
