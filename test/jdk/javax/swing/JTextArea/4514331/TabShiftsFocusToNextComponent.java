@@ -29,6 +29,7 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -67,15 +68,21 @@ public class TabShiftsFocusToNextComponent {
                                   .collect(Collectors.toList());
         for (final String laf : lafs) {
             try {
+                SwingUtilities.invokeAndWait(() -> frame = new JFrame());
+                robot.waitForIdle();
+                AtomicReference<Point> editorLoc = new AtomicReference<Point>();
                 SwingUtilities.invokeAndWait(() -> {
                     setLookAndFeel(laf);
                     createUI();
+                    editorLoc.set(editor.getLocationOnScreen());
                 });
                 passed = false;
-                Point editorLoc = editor.getLocationOnScreen();
-                robot.mouseMove(editorLoc.x, editorLoc.y);
+
+                final int x = editorLoc.get().x;
+                final int y = editorLoc.get().y;
+                robot.mouseMove(x, y);
                 robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-                robot.mouseMove(editorLoc.x + 20, editorLoc.y);
+                robot.mouseMove(x + 20, y);
                 robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
                 robot.keyPress(KeyEvent.VK_TAB);
                 robot.keyRelease(KeyEvent.VK_TAB);
@@ -92,11 +99,9 @@ public class TabShiftsFocusToNextComponent {
 
 
     private static void createUI() {
-        frame = new JFrame();
         JPanel panel = new JPanel();
         editor = new JTextArea("I am a JTextArea");
         editor.setEditable(false);
-        editor.requestFocusInWindow();
         panel.add(editor);
         JButton button = new JButton("Button");
         panel.add(button);
@@ -113,6 +118,7 @@ public class TabShiftsFocusToNextComponent {
         frame.setAlwaysOnTop(true);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
+        editor.requestFocusInWindow();
 
     }
 
