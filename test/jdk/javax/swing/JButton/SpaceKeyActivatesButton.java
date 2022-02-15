@@ -32,6 +32,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
+
 import static java.util.stream.Collectors.toList;
 
 /*
@@ -44,6 +45,7 @@ import static java.util.stream.Collectors.toList;
 public class SpaceKeyActivatesButton {
     private static volatile boolean buttonPressed;
     private static JFrame frame;
+    private static JButton focusedButton;
 
     public static void main(String[] s) throws Exception {
         runTest();
@@ -60,10 +62,22 @@ public class SpaceKeyActivatesButton {
             try {
                 buttonPressed = false;
                 System.out.println("Testing L&F: " + laf);
+                SwingUtilities.invokeAndWait(() -> frame = new JFrame());
+                robot.waitForIdle();
                 SwingUtilities.invokeAndWait(() -> {
                     setLookAndFeel(laf);
                     createUI();
                 });
+                int waitCount = 0;
+
+                while (!isFocusOwner()) {
+                    robot.delay(100);
+                    waitCount++;
+                    if (waitCount > 20) {
+                        throw new RuntimeException("Test Failed, waited for long, " +
+                                "but the button can't gain focus for L&F: " + laf);
+                    }
+                }
 
                 robot.keyPress(KeyEvent.VK_SPACE);
                 robot.keyRelease(KeyEvent.VK_SPACE);
@@ -81,6 +95,10 @@ public class SpaceKeyActivatesButton {
 
     }
 
+    private static boolean isFocusOwner() {
+        return focusedButton.isFocusOwner();
+    }
+
     private static void setLookAndFeel(String lafName) {
         try {
             UIManager.setLookAndFeel(lafName);
@@ -93,12 +111,12 @@ public class SpaceKeyActivatesButton {
     }
 
     private static void createUI() {
-        frame = new JFrame();
         JPanel panel = new JPanel();
-        JButton focusedButton = new JButton("Button1");
+        panel.add(new JButton("Button1"));
+        focusedButton = new JButton("Button2");
         focusedButton.addActionListener(e -> buttonPressed = true);
         panel.add(focusedButton);
-        panel.add(new JButton("Button2"));
+
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.add(panel);
         frame.pack();
