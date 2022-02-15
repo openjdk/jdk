@@ -55,7 +55,6 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
             MethodType type = SharedUtils.inferMethodType(fd, false);
             MethodHandle handle = arrangeDowncall(type, fd);
             handle = SharedUtils.maybeInsertAllocator(handle);
-            handle = SharedUtils.wrapDowncall(handle, fd);
             return handle;
         });
     }

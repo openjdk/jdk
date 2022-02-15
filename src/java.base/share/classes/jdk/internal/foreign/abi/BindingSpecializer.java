@@ -26,6 +26,7 @@ package jdk.internal.foreign.abi;
 
 import jdk.internal.foreign.MemoryAddressImpl;
 import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.Scoped;
 import jdk.internal.misc.VM;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassWriter;
@@ -55,6 +56,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
 import java.util.function.BiPredicate;
@@ -79,6 +81,7 @@ public class BindingSpecializer {
     private static final String OF_SESSION_DESC = methodType(Binding.Context.class).descriptorString();
     private static final String ALLOCATOR_DESC = methodType(SegmentAllocator.class).descriptorString();
     private static final String SESSION_DESC = methodType(MemorySession.class).descriptorString();
+    private static final String SESSION_IMPL_DESC = methodType(MemorySessionImpl.class).descriptorString();
     private static final String CLOSE_DESC = methodType(void.class).descriptorString();
     private static final String ADDRESS_DESC = methodType(MemoryAddress.class).descriptorString();
     private static final String COPY_DESC = methodType(void.class, MemorySegment.class, long.class, MemorySegment.class, long.class, long.class).descriptorString();
@@ -89,6 +92,8 @@ public class BindingSpecializer {
     private static final String HANDLE_UNCAUGHT_EXCEPTION_DESC = methodType(void.class, Throwable.class).descriptorString();
     private static final String METHOD_HANDLES_INTRN = Type.getInternalName(MethodHandles.class);
     private static final String CLASS_DATA_DESC = methodType(Object.class, MethodHandles.Lookup.class, String.class, Class.class).descriptorString();
+    private static final String RELEASE0_DESC = methodType(void.class).descriptorString();
+    private static final String ACQUIRE0_DESC = methodType(void.class).descriptorString();
 
     private static final Handle BSM_CLASS_DATA = new Handle(
             H_INVOKESTATIC,
@@ -117,6 +122,8 @@ public class BindingSpecializer {
     private int localIdx = 0;
     private int[] paramIndex2ParamSlot;
     private int[] leafArgSlots;
+    private int[] scopeSlots;
+    private int curScopeLocalIdx = -1;
     private int RETURN_ALLOCATOR_IDX = -1;
     private int CONTEXT_IDX = -1;
     private int RETURN_BUFFER_IDX = -1;
@@ -241,6 +248,21 @@ public class BindingSpecializer {
         // allocator passed to us for allocating the return MS (downcalls only)
         if (callingSequence.forDowncall()) {
             RETURN_ALLOCATOR_IDX = 0; // first param
+
+            // for downcalls we also acquire/release scoped parameters before/after the call
+            // create a bunch of locals here to keep track of their scopes (to release later)
+            int[] initialScopeSlots = new int[callerMethodType.parameterCount()];
+            int numScopes = 0;
+            for (int i = 0; i < callerMethodType.parameterCount(); i++) {
+                if (shouldAcquire(callerMethodType.parameterType(i))) {
+                    int scopeLocal = newLocal(BasicType.L);
+                    initialScopeSlots[numScopes++] = scopeLocal;
+                    emitConst(null);
+                    emitStore(BasicType.L, scopeLocal); // need to initialize all scope locals here in case an exception occurs
+                }
+            }
+            scopeSlots = Arrays.copyOf(initialScopeSlots, numScopes); // fit to size
+            curScopeLocalIdx = 0; // used from emitGetInput
         }
 
         // create a Binding.Context for this call
@@ -344,7 +366,7 @@ public class BindingSpecializer {
             }
             mv.visitLabel(tryEnd);
             // finally
-            emitCloseContext();
+            emitCleanup();
 
             if (callerMethodType.returnType() == void.class) {
                 // The case for upcalls that return by return buffer
@@ -360,13 +382,13 @@ public class BindingSpecializer {
             assert typeStack.isEmpty();
             mv.visitLabel(tryEnd);
             // finally
-            emitCloseContext();
+            emitCleanup();
             mv.visitInsn(RETURN);
         }
 
         mv.visitLabel(catchStart);
         // finally
-        emitCloseContext();
+        emitCleanup();
         if (callingSequence.forDowncall()) {
             mv.visitInsn(ATHROW);
         } else {
@@ -380,6 +402,17 @@ public class BindingSpecializer {
         }
 
         mv.visitTryCatchBlock(tryStart, tryEnd, catchStart, null);
+    }
+
+    private static boolean shouldAcquire(Class<?> type) {
+        return type == Addressable.class;
+    }
+
+    private void emitCleanup() {
+        emitCloseContext();
+        if (callingSequence.forDowncall()) {
+            emitReleaseScopes();
+        }
     }
 
     private void doBindings(List<Binding> bindings) {
@@ -407,8 +440,57 @@ public class BindingSpecializer {
     private void emitGetInput() {
         Class<?> highLevelType = callerMethodType.parameterType(paramIndex);
         emitLoad(BasicType.of(highLevelType), paramIndex2ParamSlot[paramIndex]);
+
+        if (shouldAcquire(highLevelType)) {
+            emitDup(BasicType.L);
+            emitAcquireScope();
+        }
+
         pushType(highLevelType);
         paramIndex++;
+    }
+
+    private void emitAcquireScope() {
+        emitCheckCast(Scoped.class);
+        emitInvokeInterface(Scoped.class, "sessionImpl", SESSION_IMPL_DESC);
+        Label skipAcquire = new Label();
+        Label end = new Label();
+
+        // start with 1 scope to maybe acquire on the stack
+        assert curScopeLocalIdx != -1;
+        boolean hasOtherScopes = curScopeLocalIdx != 0;
+        for (int i = 0; i < curScopeLocalIdx; i++) {
+            emitDup(BasicType.L); // dup for comparison
+            emitLoad(BasicType.L, scopeSlots[i]);
+            mv.visitJumpInsn(IF_ACMPEQ, skipAcquire);
+        }
+
+        // 1 scope to acquire on the stack
+        emitDup(BasicType.L);
+        int nextScopeLocal = scopeSlots[curScopeLocalIdx++];
+        emitStore(BasicType.L, nextScopeLocal); // store off one to release later
+        emitInvokeVirtual(MemorySessionImpl.class, "acquire0", ACQUIRE0_DESC); // call acquire on the other
+
+        if (hasOtherScopes) { // avoid ASM generating a bunch of nops for the dead code
+            mv.visitJumpInsn(GOTO, end);
+
+            mv.visitLabel(skipAcquire);
+            mv.visitInsn(POP); // drop scope
+        }
+
+        mv.visitLabel(end);
+    }
+
+    private void emitReleaseScopes() {
+        for (int scopeLocal : scopeSlots) {
+            Label skipRelease = new Label();
+
+            emitLoad(BasicType.L, scopeLocal);
+            mv.visitJumpInsn(IFNULL, skipRelease);
+            emitLoad(BasicType.L, scopeLocal);
+            emitInvokeVirtual(MemorySessionImpl.class, "release0", RELEASE0_DESC);
+            mv.visitLabel(skipRelease);
+        }
     }
 
     private void emitSaveReturnValue(Class<?> storeType) {
