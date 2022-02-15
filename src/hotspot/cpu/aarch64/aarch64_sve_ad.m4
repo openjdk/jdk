@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2020, 2021, Arm Limited. All rights reserved.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2022, Arm Limited. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -745,6 +745,32 @@ VECTOR_NOT(I, B/H/S)
 VECTOR_NOT(L, D)
 undefine(MATCH_RULE)
 dnl
+// vector not - predicated
+dnl
+define(`MATCH_RULE', `ifelse($1, I,
+`match(Set dst (XorV (Binary src (ReplicateB m1)) pg));
+  match(Set dst (XorV (Binary src (ReplicateS m1)) pg));
+  match(Set dst (XorV (Binary src (ReplicateI m1)) pg));',
+`match(Set dst (XorV (Binary src (ReplicateL m1)) pg));')')dnl
+dnl
+define(`VECTOR_NOT_PREDICATE', `
+instruct vnot$1_masked`'(vReg dst, vReg src, imm$1_M1 m1, pRegGov pg) %{
+  predicate(UseSVE > 0);
+  MATCH_RULE($1)
+  ins_cost(SVE_COST);
+  format %{ "sve_not $dst, $pg, $src\t# vector (sve) $2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_not(as_FloatRegister($dst$$reg), __ elemType_to_regVariant(bt),
+               as_PRegister($pg$$reg), as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl                 $1, $2
+VECTOR_NOT_PREDICATE(I, B/H/S)
+VECTOR_NOT_PREDICATE(L, D)
+undefine(MATCH_RULE)
+dnl
 // vector and_not
 dnl
 define(`MATCH_RULE', `ifelse($1, I,
@@ -769,6 +795,32 @@ instruct vand_not$1`'(vReg dst, vReg src1, vReg src2, imm$1_M1 m1) %{
 dnl            $1,$2
 VECTOR_AND_NOT(I, B/H/S)
 VECTOR_AND_NOT(L, D)
+undefine(MATCH_RULE)
+dnl
+// vector and_not - predicated
+dnl
+define(`MATCH_RULE', `ifelse($1, I,
+`match(Set dst_src1 (AndV (Binary dst_src1 (XorV src2 (ReplicateB m1))) pg));
+  match(Set dst_src1 (AndV (Binary dst_src1 (XorV src2 (ReplicateS m1))) pg));
+  match(Set dst_src1 (AndV (Binary dst_src1 (XorV src2 (ReplicateI m1))) pg));',
+`match(Set dst_src1 (AndV (Binary dst_src1 (XorV src2 (ReplicateL m1))) pg));')')dnl
+dnl
+define(`VECTOR_AND_NOT_PREDICATE', `
+instruct vand_not$1_masked`'(vReg dst_src1, vReg src2, imm$1_M1 m1, pRegGov pg) %{
+  predicate(UseSVE > 0);
+  MATCH_RULE($1)
+  ins_cost(SVE_COST);
+  format %{ "sve_bic $dst_src1, $pg, $dst_src1, $src2\t# vector (sve) $2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_bic(as_FloatRegister($dst_src1$$reg), __ elemType_to_regVariant(bt),
+               as_PRegister($pg$$reg), as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl                     $1, $2
+VECTOR_AND_NOT_PREDICATE(I, B/H/S)
+VECTOR_AND_NOT_PREDICATE(L, D)
 undefine(MATCH_RULE)
 dnl
 dnl VDIVF($1,          $2  , $3         )
