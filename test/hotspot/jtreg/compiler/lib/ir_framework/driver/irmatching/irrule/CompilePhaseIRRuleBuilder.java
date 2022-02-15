@@ -29,7 +29,6 @@ import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 import compiler.lib.ir_framework.driver.irmatching.parser.CountsNodeRegex;
-import compiler.lib.ir_framework.driver.irmatching.parser.FailOnNodeRegex;
 import compiler.lib.ir_framework.driver.irmatching.parser.NodeRegex;
 
 import java.util.ArrayList;
@@ -42,8 +41,8 @@ import java.util.stream.Collectors;
  *
  * @see IR#failOn()
  */
-class CompilePhaseIRRuleBuilder {
-    public static List<CompilePhaseIRRule> create(List<FailOnNodeRegex> failOnNodeRegexes, List<CountsNodeRegex> countsNodeRegexes,
+public class CompilePhaseIRRuleBuilder {
+    public static List<CompilePhaseIRRule> create(List<NodeRegex> failOnNodeRegexes, List<CountsNodeRegex> countsNodeRegexes,
                                                   CompilePhase compilePhase, IRMethod irMethod) {
         if (compilePhase != CompilePhase.DEFAULT) {
             return createForNormalPhase(failOnNodeRegexes, countsNodeRegexes, compilePhase, irMethod);
@@ -52,7 +51,7 @@ class CompilePhaseIRRuleBuilder {
         }
     }
 
-    private static List<CompilePhaseIRRule> createForNormalPhase(List<FailOnNodeRegex> failOnNodeRegexes,
+    private static List<CompilePhaseIRRule> createForNormalPhase(List<NodeRegex> failOnNodeRegexes,
                                                                  List<CountsNodeRegex> countsNodeRegexes,
                                                                  CompilePhase compilePhase, IRMethod irMethod) {
         FailOn failOn = FailOnNodeRegexParser.parse(failOnNodeRegexes, compilePhase);
@@ -60,7 +59,7 @@ class CompilePhaseIRRuleBuilder {
         return Collections.singletonList(new CompilePhaseIRRule(irMethod, compilePhase, failOn, counts));
     }
 
-    private static List<CompilePhaseIRRule> createForDefaultPhase(List<FailOnNodeRegex> failOnNodeRegexes,
+    private static List<CompilePhaseIRRule> createForDefaultPhase(List<NodeRegex> failOnNodeRegexes,
                                                                   List<CountsNodeRegex> countsNodeRegexes, IRMethod irMethod) {
         List<CompilePhaseIRRule> compilePhaseIRRules = new ArrayList<>();
         addCompilePhaseIRRule(failOnNodeRegexes, countsNodeRegexes, CompilePhase.PRINT_IDEAL, irMethod, compilePhaseIRRules);
@@ -70,7 +69,7 @@ class CompilePhaseIRRuleBuilder {
         return compilePhaseIRRules;
     }
 
-    private static void addCompilePhaseIRRule(List<FailOnNodeRegex> failOnNodeRegexes, List<CountsNodeRegex> countsNodeRegexes,
+    private static void addCompilePhaseIRRule(List<NodeRegex> failOnNodeRegexes, List<CountsNodeRegex> countsNodeRegexes,
                                               CompilePhase compilePhase, IRMethod irMethod,
                                               List<CompilePhaseIRRule> compilePhaseIRRules) {
         FailOn failOn = createFailOn(failOnNodeRegexes, compilePhase);
@@ -84,8 +83,8 @@ class CompilePhaseIRRuleBuilder {
         }
     }
 
-    private static FailOn createFailOn(List<FailOnNodeRegex> failOnNodeRegexes, CompilePhase compilePhase) {
-        List<FailOnNodeRegex> filteredRegexes = DefaultRegexFilter.filter(failOnNodeRegexes, compilePhase);
+    private static FailOn createFailOn(List<NodeRegex> failOnNodeRegexes, CompilePhase compilePhase) {
+        List<NodeRegex> filteredRegexes = DefaultRegexFilter.filter(failOnNodeRegexes, compilePhase);
         return FailOnNodeRegexParser.parse(filteredRegexes, compilePhase);
     }
 

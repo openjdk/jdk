@@ -43,10 +43,10 @@ import java.util.List;
  * @see IR
  */
 public class FailOnParser extends CheckConstraintParser {
-    private List<FailOnNodeRegex> failOnNodeRegexes;
+    private List<NodeRegex> failOnNodeRegexes;
 
     @Override
-    public List<FailOnNodeRegex> parseConstraint(String[] nodesArray) {
+    public List<NodeRegex> parseConstraint(String[] nodesArray) {
         failOnNodeRegexes = new ArrayList<>();
         parseNodeArray(nodesArray);
         return failOnNodeRegexes;
@@ -56,6 +56,6 @@ public class FailOnParser extends CheckConstraintParser {
     protected void parseNextNode(RawNodesArray rawNodesArray) {
         String node = rawNodesArray.getNextNode();
         String userProvidedPostfix = getUserProvidedPostfix(rawNodesArray);
-        failOnNodeRegexes.add(new FailOnNodeRegex(node, userProvidedPostfix, rawNodesArray.getCurrentRegexIndex()));
+        failOnNodeRegexes.add(new NodeRegex(node, userProvidedPostfix, rawNodesArray.getCurrentRegexIndex()));
     }
 }

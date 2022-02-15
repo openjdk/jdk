@@ -25,8 +25,7 @@ package compiler.lib.ir_framework.driver.irmatching.irrule;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
-import compiler.lib.ir_framework.driver.irmatching.IRMatcher;
-import compiler.lib.ir_framework.driver.irmatching.parser.FailOnNodeRegex;
+import compiler.lib.ir_framework.driver.irmatching.parser.NodeRegex;
 import compiler.lib.ir_framework.shared.TestFormatException;
 
 import java.util.ArrayList;
@@ -47,12 +46,12 @@ import java.util.List;
  */
 public class FailOnNodeRegexParser {
 
-    public static FailOn parse(List<FailOnNodeRegex> failOnNodeRegexes, CompilePhase compilePhase) {
+    public static FailOn parse(List<NodeRegex> failOnNodeRegexes, CompilePhase compilePhase) {
         if (failOnNodeRegexes.isEmpty()) {
             return null;
         }
         List<Constraint> constraints = new ArrayList<>();
-        for (FailOnNodeRegex failOnNodeRegex : failOnNodeRegexes) {
+        for (NodeRegex failOnNodeRegex : failOnNodeRegexes) {
             String rawNodeString = failOnNodeRegex.getRawNodeString();
             String parsedNodeString = NodeRegexParser.parseRawNodeString(compilePhase, failOnNodeRegex, rawNodeString);
             constraints.add(new Constraint(parsedNodeString, failOnNodeRegex.getNodeRegexIndex()));

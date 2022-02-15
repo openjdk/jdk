@@ -41,6 +41,15 @@ public class CompilePhaseMatchResult implements MatchResult {
         this.compilePhase = compilePhase;
     }
 
+    @Override
+    public boolean fail() {
+        return failOnFailures != null || countsFailures != null;
+    }
+
+    public CompilePhase getCompilePhase() {
+        return compilePhase;
+    }
+
     private boolean hasFailOnFailures() {
         return failOnFailures != null;
     }
@@ -57,7 +66,6 @@ public class CompilePhaseMatchResult implements MatchResult {
         this.countsFailures = countsFailures;
     }
 
-
     public int getTotalMatchedNodesCount() {
         return getFailOnMatchedNodesCount() + getCountsMatchedNodesCount();
     }
@@ -68,15 +76,6 @@ public class CompilePhaseMatchResult implements MatchResult {
 
     private int getCountsMatchedNodesCount() {
         return hasCountsFailures() ? countsFailures.getMatchedNodesCount() : 0;
-    }
-
-    public CompilePhase getCompilePhase() {
-        return compilePhase;
-    }
-
-    @Override
-    public boolean fail() {
-        return failOnFailures != null || countsFailures != null;
     }
 
     /**

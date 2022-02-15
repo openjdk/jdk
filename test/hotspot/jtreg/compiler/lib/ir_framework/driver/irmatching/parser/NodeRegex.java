@@ -23,7 +23,7 @@
 
 package compiler.lib.ir_framework.driver.irmatching.parser;
 
-abstract public class NodeRegex {
+public class NodeRegex {
     private final String rawNodeString;
     private final String userPostfixString;
     private final int nodeRegexIndex;

@@ -27,13 +27,8 @@ import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.DefaultRegexes;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
-import compiler.lib.ir_framework.driver.irmatching.IRMatcher;
-import compiler.lib.ir_framework.driver.irmatching.parser.FailOnNodeRegex;
 import compiler.lib.ir_framework.driver.irmatching.parser.NodeRegex;
 import compiler.lib.ir_framework.shared.TestFormatException;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * This class provides default regex strings that can be used in {@link IR @IR} annotations to specify IR constraints.

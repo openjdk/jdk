@@ -26,10 +26,7 @@ package compiler.lib.ir_framework.driver.irmatching.irrule;
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
-import compiler.lib.ir_framework.driver.irmatching.parser.CountsNodeRegex;
-import compiler.lib.ir_framework.driver.irmatching.parser.CountsParser;
-import compiler.lib.ir_framework.driver.irmatching.parser.FailOnNodeRegex;
-import compiler.lib.ir_framework.driver.irmatching.parser.FailOnParser;
+import compiler.lib.ir_framework.driver.irmatching.parser.*;
 import compiler.lib.ir_framework.shared.TestFormat;
 import compiler.lib.ir_framework.shared.TestFormatException;
 
@@ -47,12 +44,12 @@ public class IRRule {
         this.irMethod = irMethod;
         this.ruleId = ruleId;
         this.irAnno = irAnno;
-        List<FailOnNodeRegex> failOnNodeRegexes = initFailOnRegexes(irAnno.failOn());
+        List<NodeRegex> failOnNodeRegexes = initFailOnRegexes(irAnno.failOn());
         List<CountsNodeRegex> countsNodeRegexes = initCountsRegexes(irAnno.counts());
         this.compilePhaseIRRules = initPhaseIRRules(failOnNodeRegexes, countsNodeRegexes, irAnno.phase());
     }
 
-    private List<FailOnNodeRegex> initFailOnRegexes(String[] failOnNodes) {
+    private List<NodeRegex> initFailOnRegexes(String[] failOnNodes) {
         if (failOnNodes != null) {
             FailOnParser failOnParser = new FailOnParser();
             return failOnParser.parseConstraint(failOnNodes);
@@ -73,9 +70,9 @@ public class IRRule {
         return null;
     }
 
-    private List<CompilePhaseIRRule> initPhaseIRRules(List<FailOnNodeRegex> failOnNodeRegexes,
-                                                              List<CountsNodeRegex> countsNodeRegexes,
-                                                              CompilePhase[] compilePhases) {
+    private List<CompilePhaseIRRule> initPhaseIRRules(List<NodeRegex> failOnNodeRegexes,
+                                                      List<CountsNodeRegex> countsNodeRegexes,
+                                                      CompilePhase[] compilePhases) {
         List<CompilePhaseIRRule> compilePhaseIRRules = new ArrayList<>();
         try {
             for (CompilePhase compilePhase : compilePhases) {
