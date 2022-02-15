@@ -57,14 +57,6 @@ struct bag* deletedSignatures;
 static jrawMonitorID classTrackLock;
 
 /*
- * Note: jvmtiAllocate/jvmtiDeallocate() may be blocked by ongoing safepoints.
- * It is dangerous to call them (via bagCreateBag/bagDestroyBag())while holding monitor(s),
- * because jvmti may post events, e.g. JVMTI_EVENT_OBJECT_FREE at safepoints and its event
- * handler may acquire the same monitor(s), e.g. classTrackLock in cbTrackingObjectFree(),
- * which can lead to deadlock.
- */
-
-/*
  * Invoke the callback when classes are freed, find and record the signature
  * in deletedSignatures. Those are only used in addPreparedClass() by the
  * same thread.
@@ -89,24 +81,34 @@ cbTrackingObjectFree(jvmtiEnv* jvmti_env, jlong tag)
 struct bag *
 classTrack_processUnloads(JNIEnv *env)
 {
-    debugMonitorEnter(classTrackLock);
-    if (deletedSignatures == NULL) {
-        // Class tracking not initialized, nobody's interested.
-        debugMonitorExit(classTrackLock);
-        return NULL;
-    }
-    struct bag* deleted = deletedSignatures;
-    deletedSignatures = NULL;
-    debugMonitorExit(classTrackLock);
-
-    // Allocate new bag outside classTrackLock lock to avoid deadlock
-    struct bag* new_bag = bagCreateBag(sizeof(char*), 10);
-    debugMonitorEnter(classTrackLock);
-    if (deletedSignatures == NULL) {
-      deletedSignatures = new_bag;
-      new_bag = NULL;
-    }
-    debugMonitorExit(classTrackLock);
+    struct bag* new_bag = NULL;
+    struct bag* deleted = NULL;
+    jboolean retry = JNI_FALSE;
+    do {
+      // Avoid unnecessary allocations when class track has yet been activated.
+      if (deletedSignatures != NULL) {
+        /* Allocate new bag outside classTrackLock lock to avoid deadlock.
+         *
+         * Note: jvmtiAllocate/jvmtiDeallocate() may be blocked by ongoing safepoints.
+         * It is dangerous to call them (via bagCreateBag/bagDestroyBag())while holding monitor(s),
+         * because jvmti may post events, e.g. JVMTI_EVENT_OBJECT_FREE at safepoints and event processing
+         * code may acquire the same monitor(s), e.g. classTrackLock in cbTrackingObjectFree(),
+         * which can lead to deadlock.
+         */
+        new_bag = bagCreateBag(sizeof(char*), 10);
+      }
+      debugMonitorEnter(classTrackLock);
+      deleted = deletedSignatures;
+      if (deletedSignatures != NULL) {
+        if (new_bag != NULL) {
+          deletedSignatures = new_bag;
+          new_bag = NULL;
+        } else {
+          retry = JNI_TRUE;
+        }
+      }
+      debugMonitorExit(classTrackLock);
+    } while (retry == JNI_TRUE);
     bagDestroyBag(new_bag);
     return deleted;
 }
@@ -212,6 +214,8 @@ classTrack_initialize(JNIEnv *env)
 void
 classTrack_activate(JNIEnv *env)
 {
+    // Allocate bag outside classTrackLock lock to avoid deadlock.
+    // See comments in classTrack_processUnloads() for details.
     struct bag* new_bag = bagCreateBag(sizeof(char*), 1000);
     debugMonitorEnter(classTrackLock);
     deletedSignatures = new_bag;
@@ -236,11 +240,15 @@ classTrack_reset(void)
     debugMonitorEnter(classTrackLock);
 
     if (deletedSignatures != NULL) {
-        bagEnumerateOver(deletedSignatures, cleanDeleted, NULL);
         to_delete = deletedSignatures;
         deletedSignatures = NULL;
     }
 
     debugMonitorExit(classTrackLock);
-    bagDestroyBag(to_delete);
+    // Deallocate bag outside classTrackLock to avoid deadlock.
+    // See comments in classTrack_processUnloads() for details.
+    if (to_delete != NULL) {
+      bagEnumerateOver(to_delete, cleanDeleted, NULL);
+      bagDestroyBag(to_delete);
+    }
 }
