@@ -1,4 +1,4 @@
-Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 The Universal Permissive License (UPL), Version 1.0
@@ -47,11 +47,41 @@ ________________________________________________________________________
 
 The files in this directory are built independently of the HotSpot JVM.
 
-* Building
+hsdis is an interface exposed by Hotspot. There are several backends that
+implement this interface, using different disassembly engines. Included in the
+JDK is support for building hsdis with LLVM or GNU binutils.The interface is
+fairly straightforward and easy to implement using other backends.
 
-To build this project you need a copy of GNU binutils to build against. It is
-known to work with binutils 2.37. Building against versions older than 2.29 is
-not supported. Download a copy of the software from
+* Building and installing
+
+To compile hsdis, you need to activate hsdis support, and select the proper
+backend to use. This is done with the configure switch --with-hsdis=<backend>,
+where <backend> is either "llvm" or "binutils". For details, see the sections on
+the respective backends below.
+
+To build the hsdis library, run "make build-hsdis". This will build the library
+in a separate directory, but not make it available to the JDK in the
+configuration. To actually install it in the JDK, run "make install-hsdis".
+
+NOTE: If you do this using the binutils backend, he resulting build may not be
+distributable. Please get legal advice if you intend to distribute the result of
+your build.
+
+* Using the library
+
+The hsdis library will be automatically loaded by Hotspot when you use the
+diagnostic option "-XX:+PrintAssembly". Note that since this is a diagnostic
+option, you need to unlock these first, so in practice you activate it using
+"-XX:+UnlockDiagnosticVMOptions -XX:+PrintAssembly".
+
+More information is available at the wiki
+[https://wiki.openjdk.java.net/display/HotSpot/PrintAssembly].
+
+* Building with binutils
+
+To build this project using binutils you need a copy of GNU binutils to build
+against. It is known to work with binutils 2.37. Building against versions older
+than 2.29 is not supported. Download a copy of the software from
 http://directory.fsf.org/project/binutils or one of its mirrors.
 
 To build this library, you must enable building in configure by "bash configure
@@ -71,32 +101,10 @@ If you want to build hsdis with binutils provided by system
 (e.g. binutils-devel from Fedora, binutils-dev from Ubuntu), you can pass
 "--with-binutils=system". "system" is available on Linux only.
 
-When you have created a proper configuration, you can then build the hsdis
-library using "make build-hsdis".
-
-* Building on Windows
+* Building with binutils on Windows
 
 On Windows, the normal Microsoft Visual Studio toolchain cannot build binutils.
 Instead we need to use the mingw compiler. This is available as a cygwin
 package. You need to install the "gcc-core" and "mingw64-x86_64-gcc-core"
 packages (or "mingw64-i686-gcc-core", if you want the 32-bit version) and
 "mingw64-x86_64-glib2.0".
-
-* Installing
-
-To build the hsdis library, run "make build-hsdis". This will build the library
-in a separate directory, but not make it available to the JDK in the
-configuration. To actually install it in the JDK, run "make install-hsdis".
-
-Note: The resulting build may not be distributable. Please get legal advice if
-you intend to distribute the result of your build.
-
-* Using the library
-
-The hsdis library will be automatically loaded by Hotspot when you use the
-diagnostic option "-XX:+PrintAssembly". Note that since this is a diagnostic
-option, you need to unlock these first, so in practice you activate it using
-"-XX:+UnlockDiagnosticVMOptions -XX:+PrintAssembly".
-
-More information is available at the wiki
-[https://wiki.openjdk.java.net/display/HotSpot/PrintAssembly].
