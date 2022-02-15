@@ -47,7 +47,7 @@ ShenandoahDirectCardMarkRememberedSet::card_index_for_addr(HeapWord *p) {
 
 inline HeapWord *
 ShenandoahDirectCardMarkRememberedSet::addr_for_card_index(size_t card_index) {
-  return _whole_heap_base + CardTable::card_size_in_words * card_index;
+  return _whole_heap_base + CardTable::card_size_in_words() * card_index;
 }
 
 inline bool
@@ -115,7 +115,7 @@ ShenandoahDirectCardMarkRememberedSet::mark_range_as_dirty(HeapWord *p, size_t n
   uint8_t *bp = &(_card_table->write_byte_map_base())[uintptr_t(p) >> _card_shift];
   uint8_t *end_bp = &(_card_table->write_byte_map_base())[uintptr_t(p + num_heap_words) >> _card_shift];
   // If (p + num_heap_words) is not aligned on card boundary, we also need to dirty last card.
-  if (((unsigned long long) (p + num_heap_words)) & (CardTable::card_size - 1)) {
+  if (((unsigned long long) (p + num_heap_words)) & (CardTable::card_size() - 1)) {
     end_bp++;
   }
   while (bp < end_bp) {
@@ -141,7 +141,7 @@ ShenandoahDirectCardMarkRememberedSet::mark_range_as_clean(HeapWord *p, size_t n
   uint8_t *bp = &(_card_table->write_byte_map_base())[uintptr_t(p) >> _card_shift];
   uint8_t *end_bp = &(_card_table->write_byte_map_base())[uintptr_t(p + num_heap_words) >> _card_shift];
   // If (p + num_heap_words) is not aligned on card boundary, we also need to clean last card.
-  if (((unsigned long long) (p + num_heap_words)) & (CardTable::card_size - 1)) {
+  if (((unsigned long long) (p + num_heap_words)) & (CardTable::card_size() - 1)) {
     end_bp++;
   }
   while (bp < end_bp) {
@@ -164,11 +164,11 @@ ShenandoahDirectCardMarkRememberedSet::cluster_count() {
 template<typename RememberedSet>
 inline void
 ShenandoahCardCluster<RememberedSet>::reset_object_range(HeapWord* from, HeapWord* to) {
-  assert(((((unsigned long long) from) & (CardTable::card_size - 1)) == 0) &&
-         ((((unsigned long long) to) & (CardTable::card_size - 1)) == 0),
+  assert(((((unsigned long long) from) & (CardTable::card_size() - 1)) == 0) &&
+         ((((unsigned long long) to) & (CardTable::card_size() - 1)) == 0),
          "reset_object_range bounds must align with card boundaries");
   size_t card_at_start = _rs->card_index_for_addr(from);
-  size_t num_cards = (to - from) / CardTable::card_size_in_words;
+  size_t num_cards = (to - from) / CardTable::card_size_in_words();
 
   for (size_t i = 0; i < num_cards; i++) {
     object_starts[card_at_start + i].short_word = 0;
@@ -210,7 +210,7 @@ ShenandoahCardCluster<RememberedSet>::coalesce_objects(HeapWord* address, size_t
 
   size_t card_at_start = _rs->card_index_for_addr(address);
   HeapWord *card_start_address = _rs->addr_for_card_index(card_at_start);
-  size_t card_at_end = card_at_start + ((address + length_in_words) - card_start_address) / CardTable::card_size_in_words;
+  size_t card_at_end = card_at_start + ((address + length_in_words) - card_start_address) / CardTable::card_size_in_words();
 
   if (card_at_start == card_at_end) {
     // There are no changes to the get_first_start array.  Either get_first_start(card_at_start) returns this coalesced object,
@@ -398,8 +398,8 @@ ShenandoahScanRemembered<RememberedSet>::verify_registration(HeapWord* address, 
 
   ShenandoahHeapRegion* r = heap->heap_region_containing(base_addr + offset);
   size_t max_offset = r->top() - base_addr;
-  if (max_offset > CardTable::card_size_in_words) {
-    max_offset = CardTable::card_size_in_words;
+  if (max_offset > CardTable::card_size_in_words()) {
+    max_offset = CardTable::card_size_in_words();
   }
   size_t prev_offset;
   if (!ctx) {
@@ -417,7 +417,7 @@ ShenandoahScanRemembered<RememberedSet>::verify_registration(HeapWord* address, 
     // Notes: base_addr is addr_for_card_index(index)
     //        base_addr + offset is end of the object we are verifying
     //        cannot use card_index_for_addr(base_addr + offset) because it asserts arg < end of whole heap
-    size_t end_card_index = index + offset / CardTable::card_size_in_words;
+    size_t end_card_index = index + offset / CardTable::card_size_in_words();
 
     if (end_card_index > index) {
       // If there is a following object registered on the next card, it should begin where this object ends.
@@ -515,7 +515,7 @@ ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_cluster, 
   }
 
   HeapWord* end_of_clusters = _rs->addr_for_card_index(first_cluster)
-    + count * ShenandoahCardCluster<RememberedSet>::CardsPerCluster * CardTable::card_size_in_words;
+    + count * ShenandoahCardCluster<RememberedSet>::CardsPerCluster * CardTable::card_size_in_words();
   while (count-- > 0) {
     size_t card_index = first_cluster * ShenandoahCardCluster<RememberedSet>::CardsPerCluster;
     size_t end_card_index = card_index + ShenandoahCardCluster<RememberedSet>::CardsPerCluster;
@@ -531,7 +531,7 @@ ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_cluster, 
           size_t start_offset = _scc->get_first_start(card_index);
           HeapWord *p = _rs->addr_for_card_index(card_index);
           HeapWord *card_start = p;
-          HeapWord *endp = p + CardTable::card_size_in_words;
+          HeapWord *endp = p + CardTable::card_size_in_words();
           if (endp > end_of_range) {
             endp = end_of_range;
             next_card_index = end_card_index;
@@ -541,7 +541,7 @@ ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_cluster, 
 
             // Can't use _scc->card_index_for_addr(endp) here because it crashes with assertion
             // failure if endp points to end of heap.
-            next_card_index = card_index + (endp - card_start) / CardTable::card_size_in_words;
+            next_card_index = card_index + (endp - card_start) / CardTable::card_size_in_words();
           }
 
           p += start_offset;
@@ -580,7 +580,7 @@ ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_cluster, 
             }
           }
           if (p > endp) {
-            card_index = card_index + (p - card_start) / CardTable::card_size_in_words;
+            card_index = card_index + (p - card_start) / CardTable::card_size_in_words();
           } else {                  // p == endp
             card_index = next_card_index;
           }
@@ -604,7 +604,7 @@ ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_cluster, 
 
           // Can't use _scc->card_index_for_addr(endp) here because it crashes with assertion
           // failure if nextp points to end of heap.
-          last_card = card_index + (nextp - card_start) / CardTable::card_size_in_words;
+          last_card = card_index + (nextp - card_start) / CardTable::card_size_in_words();
 
           bool reaches_next_cluster = (last_card > end_card_index);
           bool spans_dirty_within_this_cluster = false;
@@ -644,7 +644,7 @@ ShenandoahScanRemembered<RememberedSet>::process_clusters(size_t first_cluster, 
           } else {
             nextp = ctx->get_next_marked_addr(p, tams);
           }
-          last_card = card_index + (nextp - card_start) / CardTable::card_size_in_words;
+          last_card = card_index + (nextp - card_start) / CardTable::card_size_in_words();
         }
         // Increment card_index to account for the spanning object, even if we didn't scan it.
         card_index = (last_card > card_index)? last_card: card_index + 1;
@@ -698,7 +698,7 @@ ShenandoahScanRemembered<RememberedSet>::process_region(ShenandoahHeapRegion *re
   // Note that any object that starts between start_of_range and end_of_range, including humongous objects, will
   // be fully processed by process_clusters, even though the object may reach beyond end_of_range.
   size_t num_heapwords = end_of_range - start_of_range;
-  unsigned int cluster_size = CardTable::card_size_in_words * ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
+  unsigned int cluster_size = CardTable::card_size_in_words() * ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
   size_t num_clusters = (size_t) ((num_heapwords - 1 + cluster_size) / cluster_size);
 
   if (!region->is_humongous_continuation()) {
@@ -726,7 +726,7 @@ inline void ShenandoahScanRemembered<RememberedSet>::roots_do(OopIterateClosure*
       HeapWord* end_of_range = region->top();
       size_t start_cluster_no = cluster_for_addr(start_of_range);
       size_t num_heapwords = end_of_range - start_of_range;
-      unsigned int cluster_size = CardTable::card_size_in_words *
+      unsigned int cluster_size = CardTable::card_size_in_words() *
                                   ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
       size_t num_clusters = (size_t) ((num_heapwords - 1 + cluster_size) / cluster_size);
 

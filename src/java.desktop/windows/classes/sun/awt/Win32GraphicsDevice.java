@@ -40,7 +40,6 @@ import java.awt.event.WindowListener;
 import java.awt.image.ColorModel;
 import java.awt.peer.WindowPeer;
 import java.util.ArrayList;
-import java.util.Vector;
 
 import sun.awt.windows.WWindowPeer;
 import sun.java2d.SunGraphicsEnvironment;
@@ -214,12 +213,12 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
 
             int max = getMaxConfigs(screen);
             int defaultPixID = getDefaultPixID(screen);
-            Vector<GraphicsConfiguration> v = new Vector<>( max );
+            ArrayList<GraphicsConfiguration> v = new ArrayList<>( max );
             if (defaultPixID == 0) {
                 // Workaround for failing GDI calls
                 defaultConfig = Win32GraphicsConfig.getConfig(this,
                                                               defaultPixID);
-                v.addElement(defaultConfig);
+                v.add(defaultConfig);
             }
             else {
                 for (int i = 1; i <= max; i++) {
@@ -227,17 +226,16 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
                         if (i == defaultPixID) {
                             defaultConfig = Win32GraphicsConfig.getConfig(
                              this, i);
-                            v.addElement(defaultConfig);
+                            v.add(defaultConfig);
                         }
                         else {
-                            v.addElement(Win32GraphicsConfig.getConfig(
+                            v.add(Win32GraphicsConfig.getConfig(
                              this, i));
                         }
                     }
                 }
             }
-            configs = new GraphicsConfiguration[v.size()];
-            v.copyInto(configs);
+            configs = v.toArray(new GraphicsConfiguration[0]);
         }
         return configs.clone();
     }

@@ -717,8 +717,8 @@ JvmtiEnvBase::get_owned_monitors(JavaThread *calling_thread, JavaThread* java_th
   }
 
   // Get off stack monitors. (e.g. acquired via jni MonitorEnter).
-  JvmtiMonitorClosure jmc(java_thread, calling_thread, owned_monitors_list, this);
-  ObjectSynchronizer::monitors_iterate(&jmc);
+  JvmtiMonitorClosure jmc(calling_thread, owned_monitors_list, this);
+  ObjectSynchronizer::monitors_iterate(&jmc, java_thread);
   err = jmc.error();
 
   return err;
@@ -829,7 +829,7 @@ JvmtiEnvBase::get_stack_trace(JavaThread *java_thread,
          "call by myself / at safepoint / at handshake");
   int count = 0;
   if (java_thread->has_last_Java_frame()) {
-    RegisterMap reg_map(java_thread);
+    RegisterMap reg_map(java_thread, false /* update_map */, false /* process_frames */);
     ResourceMark rm(current_thread);
     javaVFrame *jvf = java_thread->last_java_vframe(&reg_map);
     HandleMark hm(current_thread);
@@ -1393,6 +1393,9 @@ SetForceEarlyReturn::doit(Thread *target, bool self) {
   Thread* current_thread = Thread::current();
   HandleMark   hm(current_thread);
 
+  if (java_thread->is_exiting()) {
+    return; /* JVMTI_ERROR_THREAD_NOT_ALIVE (default) */
+  }
   if (!self) {
     if (!java_thread->is_suspended()) {
       _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
@@ -1450,34 +1453,32 @@ JvmtiMonitorClosure::do_monitor(ObjectMonitor* mon) {
     // to the list.
     return;
   }
-  if (mon->owner() == _java_thread ) {
-    // Filter out on stack monitors collected during stack walk.
-    oop obj = mon->object();
-    bool found = false;
-    for (int j = 0; j < _owned_monitors_list->length(); j++) {
-      jobject jobj = ((jvmtiMonitorStackDepthInfo*)_owned_monitors_list->at(j))->monitor;
-      oop check = JNIHandles::resolve(jobj);
-      if (check == obj) {
-        // On stack monitor already collected during the stack walk.
-        found = true;
-        break;
-      }
+  // Filter out on stack monitors collected during stack walk.
+  oop obj = mon->object();
+  bool found = false;
+  for (int j = 0; j < _owned_monitors_list->length(); j++) {
+    jobject jobj = ((jvmtiMonitorStackDepthInfo*)_owned_monitors_list->at(j))->monitor;
+    oop check = JNIHandles::resolve(jobj);
+    if (check == obj) {
+      // On stack monitor already collected during the stack walk.
+      found = true;
+      break;
     }
-    if (found == false) {
-      // This is off stack monitor (e.g. acquired via jni MonitorEnter).
-      jvmtiError err;
-      jvmtiMonitorStackDepthInfo *jmsdi;
-      err = _env->allocate(sizeof(jvmtiMonitorStackDepthInfo), (unsigned char **)&jmsdi);
-      if (err != JVMTI_ERROR_NONE) {
-        _error = err;
-        return;
-      }
-      Handle hobj(Thread::current(), obj);
-      jmsdi->monitor = _env->jni_reference(_calling_thread, hobj);
-      // stack depth is unknown for this monitor.
-      jmsdi->stack_depth = -1;
-      _owned_monitors_list->append(jmsdi);
+  }
+  if (found == false) {
+    // This is off stack monitor (e.g. acquired via jni MonitorEnter).
+    jvmtiError err;
+    jvmtiMonitorStackDepthInfo *jmsdi;
+    err = _env->allocate(sizeof(jvmtiMonitorStackDepthInfo), (unsigned char **)&jmsdi);
+    if (err != JVMTI_ERROR_NONE) {
+      _error = err;
+      return;
     }
+    Handle hobj(Thread::current(), obj);
+    jmsdi->monitor = _env->jni_reference(_calling_thread, hobj);
+    // stack depth is unknown for this monitor.
+    jmsdi->stack_depth = -1;
+    _owned_monitors_list->append(jmsdi);
   }
 }
 
@@ -1512,7 +1513,7 @@ JvmtiModuleClosure::get_all_modules(JvmtiEnv* env, jint* module_count_ptr, jobje
     return JVMTI_ERROR_OUT_OF_MEMORY;
   }
   for (jint idx = 0; idx < len; idx++) {
-    array[idx] = JNIHandles::make_local(Thread::current(), _tbl->at(idx).resolve());
+    array[idx] = JNIHandles::make_local(_tbl->at(idx).resolve());
   }
   _tbl = NULL;
   *modules_ptr = array;
@@ -1525,6 +1526,10 @@ UpdateForPopTopFrameClosure::doit(Thread *target, bool self) {
   Thread* current_thread  = Thread::current();
   HandleMark hm(current_thread);
   JavaThread* java_thread = JavaThread::cast(target);
+
+  if (java_thread->is_exiting()) {
+    return; /* JVMTI_ERROR_THREAD_NOT_ALIVE (default) */
+  }
   assert(java_thread == _state->get_thread(), "Must be");
 
   if (!self && !java_thread->is_suspended()) {
@@ -1601,14 +1606,12 @@ UpdateForPopTopFrameClosure::doit(Thread *target, bool self) {
   // It's fine to update the thread state here because no JVMTI events
   // shall be posted for this PopFrame.
 
-  if (!java_thread->is_exiting() && java_thread->threadObj() != NULL) {
-    _state->update_for_pop_top_frame();
-    java_thread->set_popframe_condition(JavaThread::popframe_pending_bit);
-    // Set pending step flag for this popframe and it is cleared when next
-    // step event is posted.
-    _state->set_pending_step_for_popframe();
-    _result = JVMTI_ERROR_NONE;
-  }
+  _state->update_for_pop_top_frame();
+  java_thread->set_popframe_condition(JavaThread::popframe_pending_bit);
+  // Set pending step flag for this popframe and it is cleared when next
+  // step event is posted.
+  _state->set_pending_step_for_popframe();
+  _result = JVMTI_ERROR_NONE;
 }
 
 void
@@ -1616,6 +1619,9 @@ SetFramePopClosure::doit(Thread *target, bool self) {
   ResourceMark rm;
   JavaThread* java_thread = JavaThread::cast(target);
 
+  if (java_thread->is_exiting()) {
+    return; /* JVMTI_ERROR_THREAD_NOT_ALIVE (default) */
+  }
   assert(_state->get_thread() == java_thread, "Must be");
 
   if (!self && !java_thread->is_suspended()) {
@@ -1635,9 +1641,6 @@ SetFramePopClosure::doit(Thread *target, bool self) {
   }
 
   assert(vf->frame_pointer() != NULL, "frame pointer mustn't be NULL");
-  if (java_thread->is_exiting() || java_thread->threadObj() == NULL) {
-    return; /* JVMTI_ERROR_THREAD_NOT_ALIVE (default) */
-  }
   int frame_number = _state->count_frames() - _depth;
   _state->env_thread_state((JvmtiEnvBase*)_env)->set_frame_pop(frame_number);
   _result = JVMTI_ERROR_NONE;

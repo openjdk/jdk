@@ -46,6 +46,26 @@ int VM_Version::_dcache_line_size;
 int VM_Version::_icache_line_size;
 int VM_Version::_initial_sve_vector_length;
 
+SpinWait VM_Version::_spin_wait;
+
+static SpinWait get_spin_wait_desc() {
+  if (strcmp(OnSpinWaitInst, "nop") == 0) {
+    return SpinWait(SpinWait::NOP, OnSpinWaitInstCount);
+  } else if (strcmp(OnSpinWaitInst, "isb") == 0) {
+    return SpinWait(SpinWait::ISB, OnSpinWaitInstCount);
+  } else if (strcmp(OnSpinWaitInst, "yield") == 0) {
+    return SpinWait(SpinWait::YIELD, OnSpinWaitInstCount);
+  } else if (strcmp(OnSpinWaitInst, "none") != 0) {
+    vm_exit_during_initialization("The options for OnSpinWaitInst are nop, isb, yield, and none", OnSpinWaitInst);
+  }
+
+  if (!FLAG_IS_DEFAULT(OnSpinWaitInstCount) && OnSpinWaitInstCount > 0) {
+    vm_exit_during_initialization("OnSpinWaitInstCount cannot be used for OnSpinWaitInst 'none'");
+  }
+
+  return SpinWait{};
+}
+
 void VM_Version::initialize() {
   _supports_cx8 = true;
   _supports_atomic_getset4 = true;
@@ -182,6 +202,14 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
       FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
     }
+
+    if (FLAG_IS_DEFAULT(OnSpinWaitInst)) {
+      FLAG_SET_DEFAULT(OnSpinWaitInst, "isb");
+    }
+
+    if (FLAG_IS_DEFAULT(OnSpinWaitInstCount)) {
+      FLAG_SET_DEFAULT(OnSpinWaitInstCount, 1);
+    }
   }
 
   if (_cpu == CPU_ARM) {
@@ -237,6 +265,9 @@ void VM_Version::initialize() {
       warning("UseAESIntrinsics enabled, but UseAES not, enabling");
       UseAES = true;
     }
+    if (FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
+      FLAG_SET_DEFAULT(UseAESCTRIntrinsics, true);
+    }
   } else {
     if (UseAES) {
       warning("AES instructions are not available on this CPU");
@@ -246,12 +277,12 @@ void VM_Version::initialize() {
       warning("AES intrinsics are not available on this CPU");
       FLAG_SET_DEFAULT(UseAESIntrinsics, false);
     }
+    if (UseAESCTRIntrinsics) {
+      warning("AES/CTR intrinsics are not available on this CPU");
+      FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
+    }
   }
 
-  if (UseAESCTRIntrinsics) {
-    warning("AES/CTR intrinsics are not available on this CPU");
-    FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
-  }
 
   if (FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
     UseCRC32Intrinsics = true;
@@ -270,9 +301,8 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseFMA, true);
   }
 
-  if (UseMD5Intrinsics) {
-    warning("MD5 intrinsics are not available on this CPU");
-    FLAG_SET_DEFAULT(UseMD5Intrinsics, false);
+  if (FLAG_IS_DEFAULT(UseMD5Intrinsics)) {
+    UseMD5Intrinsics = true;
   }
 
   if (_features & (CPU_SHA1 | CPU_SHA2 | CPU_SHA3 | CPU_SHA512)) {
@@ -439,6 +469,14 @@ void VM_Version::initialize() {
     }
   }
 
+  int inline_size = (UseSVE > 0 && MaxVectorSize >= 16) ? MaxVectorSize : 0;
+  if (FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize)) {
+    FLAG_SET_DEFAULT(ArrayOperationPartialInlineSize, inline_size);
+  } else if (ArrayOperationPartialInlineSize != 0 && ArrayOperationPartialInlineSize != inline_size) {
+    warning("Setting ArrayOperationPartialInlineSize to %d", inline_size);
+    ArrayOperationPartialInlineSize = inline_size;
+  }
+
   if (FLAG_IS_DEFAULT(OptoScheduling)) {
     OptoScheduling = true;
   }
@@ -448,5 +486,24 @@ void VM_Version::initialize() {
   }
 #endif
 
-  UNSUPPORTED_OPTION(CriticalJNINatives);
+  _spin_wait = get_spin_wait_desc();
+}
+
+void VM_Version::initialize_cpu_information(void) {
+  // do nothing if cpu info has been initialized
+  if (_initialized) {
+    return;
+  }
+
+  _no_of_cores  = os::processor_count();
+  _no_of_threads = _no_of_cores;
+  _no_of_sockets = _no_of_cores;
+  snprintf(_cpu_name, CPU_TYPE_DESC_BUF_SIZE - 1, "AArch64");
+
+  int desc_len = snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "AArch64 ");
+  get_compatible_board(_cpu_desc + desc_len, CPU_DETAILED_DESC_BUF_SIZE - desc_len);
+  desc_len = (int)strlen(_cpu_desc);
+  snprintf(_cpu_desc + desc_len, CPU_DETAILED_DESC_BUF_SIZE - desc_len, " %s", _features_string);
+
+  _initialized = true;
 }

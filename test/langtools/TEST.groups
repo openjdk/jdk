@@ -87,3 +87,6 @@ tier2 = \
 
 # No langtools tests are tier 3 either.
 tier3 =
+
+# No langtools tests are tier 4 either.
+tier4 =

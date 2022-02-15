@@ -199,6 +199,20 @@ size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
 }
 
 static void current_stack_region(address *bottom, size_t *size) {
+  if (os::is_primordial_thread()) {
+    // primordial thread needs special handling because pthread_getattr_np()
+    // may return bogus value.
+    address stack_bottom = os::Linux::initial_thread_stack_bottom();
+    size_t stack_bytes  = os::Linux::initial_thread_stack_size();
+
+    assert(os::current_stack_pointer() >= stack_bottom, "should do");
+    assert(os::current_stack_pointer() < stack_bottom + stack_bytes, "should do");
+
+    *bottom = stack_bottom;
+    *size = stack_bytes;
+    return;
+  }
+
   pthread_attr_t attr;
   int res = pthread_getattr_np(pthread_self(), &attr);
   if (res != 0) {
@@ -246,18 +260,6 @@ static void current_stack_region(address *bottom, size_t *size) {
   stack_bottom += guard_bytes;
 
   pthread_attr_destroy(&attr);
-
-  // The initial thread has a growable stack, and the size reported
-  // by pthread_attr_getstack is the maximum size it could possibly
-  // be given what currently mapped.  This can be huge, so we cap it.
-  if (os::is_primordial_thread()) {
-    stack_bytes = stack_top - stack_bottom;
-
-    if (stack_bytes > JavaThread::stack_size_at_create())
-      stack_bytes = JavaThread::stack_size_at_create();
-
-    stack_bottom = stack_top - stack_bytes;
-  }
 
   assert(os::current_stack_pointer() >= stack_bottom, "should do");
   assert(os::current_stack_pointer() < stack_top, "should do");

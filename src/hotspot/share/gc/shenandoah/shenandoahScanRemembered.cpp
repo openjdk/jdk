@@ -36,12 +36,12 @@ ShenandoahDirectCardMarkRememberedSet::ShenandoahDirectCardMarkRememberedSet(She
   _card_table = card_table;
   _total_card_count = total_card_count;
   _cluster_count = total_card_count / ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
-  _card_shift = CardTable::card_shift;
+  _card_shift = CardTable::card_shift();
 
   _byte_map = _card_table->byte_for_index(0);
 
   _whole_heap_base = _card_table->addr_for(_byte_map);
-  _whole_heap_end = _whole_heap_base + total_card_count * CardTable::card_size;
+  _whole_heap_end = _whole_heap_base + total_card_count * CardTable::card_size();
 
   _byte_map_base = _byte_map - (uintptr_t(_whole_heap_base) >> _card_shift);
 
@@ -88,7 +88,7 @@ ShenandoahScanRememberedTask::ShenandoahScanRememberedTask(ShenandoahObjToScanQu
                                                            ShenandoahObjToScanQueueSet* old_queue_set,
                                                            ShenandoahReferenceProcessor* rp,
                                                            ShenandoahRegionIterator* regions) :
-  AbstractGangTask("Scan Remembered Set"),
+  WorkerTask("Scan Remembered Set"),
   _queue_set(queue_set), _old_queue_set(old_queue_set), _rp(rp), _regions(regions) {}
 
 void ShenandoahScanRememberedTask::work(uint worker_id) {

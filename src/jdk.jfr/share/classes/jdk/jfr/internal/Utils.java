@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import jdk.internal.module.Checks;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
 import jdk.internal.platform.Metrics;
@@ -96,6 +97,7 @@ public final class Utils {
      * The possible data race is benign and is worth of not introducing any contention here.
      */
     private static Metrics[] metrics;
+    private static Instant lastTimestamp;
 
     public static void checkAccessFlightRecorder() throws SecurityException {
         @SuppressWarnings("removal")
@@ -840,5 +842,55 @@ public final class Utils {
 
     public static long timeToNanos(Instant timestamp) {
         return timestamp.getEpochSecond() * 1_000_000_000L + timestamp.getNano();
+    }
+
+    public static String validTypeName(String typeName, String defaultTypeName) {
+        if (Checks.isClassName(typeName)) {
+            return typeName;
+        } else {
+            Logger.log(LogTag.JFR, LogLevel.WARN, "@Name ignored, not a valid Java type name.");
+            return defaultTypeName;
+        }
+    }
+
+    public static String validJavaIdentifier(String identifier, String defaultIdentifier) {
+        if (Checks.isJavaIdentifier(identifier)) {
+            return identifier;
+        } else {
+            Logger.log(LogTag.JFR, LogLevel.WARN, "@Name ignored, not a valid Java identifier.");
+            return defaultIdentifier;
+        }
+    }
+
+    public static void ensureJavaIdentifier(String name) {
+        if (!Checks.isJavaIdentifier(name)) {
+            throw new IllegalArgumentException("'" + name + "' is not a valid Java identifier");
+        }
+    }
+
+    public static long getChunkStartNanos() {
+        long nanos = JVM.getJVM().getChunkStartNanos();
+        // JVM::getChunkStartNanos() may return a bumped timestamp, +1 ns or +2 ns.
+        // Spin here to give Instant.now() a chance to catch up.
+        awaitUniqueTimestamp();
+        return nanos;
+    }
+
+    private static void awaitUniqueTimestamp() {
+        if (lastTimestamp == null) {
+            lastTimestamp = Instant.now(); // lazy initialization
+        }
+        while (true) {
+            Instant time = Instant.now();
+            if (!time.equals(lastTimestamp)) {
+                lastTimestamp = time;
+                return;
+            }
+            try {
+                Thread.sleep(0, 100);
+            } catch (InterruptedException iex) {
+                // ignore
+            }
+        }
     }
 }

@@ -116,6 +116,7 @@
   template(java_security_ProtectionDomain,            "java/security/ProtectionDomain")           \
   template(java_security_SecureClassLoader,           "java/security/SecureClassLoader")          \
   template(java_net_URL,                              "java/net/URL")                             \
+  template(java_net_URLClassLoader,                   "java/net/URLClassLoader")                  \
   template(java_util_jar_Manifest,                    "java/util/jar/Manifest")                   \
   template(java_io_OutputStream,                      "java/io/OutputStream")                     \
   template(java_io_Reader,                            "java/io/Reader")                           \
@@ -141,6 +142,7 @@
   template(java_util_Iterator,                        "java/util/Iterator")                       \
   template(java_lang_Record,                          "java/lang/Record")                         \
   template(sun_instrument_InstrumentationImpl,        "sun/instrument/InstrumentationImpl")       \
+  template(sun_invoke_util_ValueConversions,          "sun/invoke/util/ValueConversions")         \
                                                                                                   \
   template(jdk_internal_loader_NativeLibraries,       "jdk/internal/loader/NativeLibraries")      \
   template(jdk_internal_loader_BuiltinClassLoader,    "jdk/internal/loader/BuiltinClassLoader")   \
@@ -338,9 +340,9 @@
   template(linkMethod_name,                           "linkMethod")                               \
   template(linkMethod_signature, "(Ljava/lang/Class;ILjava/lang/Class;Ljava/lang/String;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/invoke/MemberName;") \
   template(linkDynamicConstant_name,                  "linkDynamicConstant")                      \
-  template(linkDynamicConstant_signature, "(Ljava/lang/Object;ILjava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;") \
+  template(linkDynamicConstant_signature, "(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;") \
   template(linkCallSite_name,                         "linkCallSite")                             \
-  template(linkCallSite_signature, "(Ljava/lang/Object;ILjava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/invoke/MemberName;") \
+  template(linkCallSite_signature, "(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/invoke/MemberName;") \
   template(setTargetNormal_name,                      "setTargetNormal")                          \
   template(setTargetVolatile_name,                    "setTargetVolatile")                        \
   template(setTarget_signature,                       "(Ljava/lang/invoke/MethodHandle;)V")       \
@@ -350,7 +352,6 @@
   /* Foreign API Support */                                                                                          \
   template(jdk_internal_invoke_NativeEntryPoint,                 "jdk/internal/invoke/NativeEntryPoint")           \
   template(jdk_internal_invoke_NativeEntryPoint_signature,       "Ljdk/internal/invoke/NativeEntryPoint;")         \
-  template(jdk_incubator_foreign_MemoryAccess,       "jdk/incubator/foreign/MemoryAccess")        \
                                                                                                   \
   /* Support for JVMCI */                                                                         \
   JVMCI_VM_SYMBOLS_DO(template, do_alias)                                                         \
@@ -551,6 +552,7 @@
   template(threadgroup_runnable_void_signature,       "(Ljava/lang/ThreadGroup;Ljava/lang/Runnable;)V")           \
   template(threadgroup_string_void_signature,         "(Ljava/lang/ThreadGroup;Ljava/lang/String;)V")             \
   template(string_class_signature,                    "(Ljava/lang/String;)Ljava/lang/Class;")                    \
+  template(string_boolean_class_signature,            "(Ljava/lang/String;Z)Ljava/lang/Class;")                   \
   template(object_object_object_signature,            "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;") \
   template(string_string_string_signature,            "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;") \
   template(string_string_signature,                   "(Ljava/lang/String;)Ljava/lang/String;")                   \
@@ -695,7 +697,7 @@
                                                                                                                   \
   /* CDS */                                                                                                       \
   template(dumpSharedArchive,                               "dumpSharedArchive")                                  \
-  template(dumpSharedArchive_signature,                     "(ZLjava/lang/String;)V")                             \
+  template(dumpSharedArchive_signature,                     "(ZLjava/lang/String;)Ljava/lang/String;")            \
   template(generateLambdaFormHolderClasses,                 "generateLambdaFormHolderClasses")                    \
   template(generateLambdaFormHolderClasses_signature,       "([Ljava/lang/String;)[Ljava/lang/Object;")           \
   template(java_lang_invoke_Invokers_Holder,                "java/lang/invoke/Invokers$Holder")                   \
@@ -709,6 +711,7 @@
   template(toFileURL_name,                                  "toFileURL")                                          \
   template(toFileURL_signature,                             "(Ljava/lang/String;)Ljava/net/URL;")                 \
   template(url_void_signature,                              "(Ljava/net/URL;)V")                                  \
+  template(url_array_classloader_void_signature,            "([Ljava/net/URL;Ljava/lang/ClassLoader;)V")          \
                                                                                                                   \
   /*end*/
 

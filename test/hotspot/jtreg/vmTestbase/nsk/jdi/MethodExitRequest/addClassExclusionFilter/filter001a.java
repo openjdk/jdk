@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 package nsk.jdi.MethodExitRequest.addClassExclusionFilter;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -54,7 +53,7 @@ public class filter001a {
 
     //====================================================== test program
 
-    static Thread1filter001a thread1 = null;
+    static Thread thread1 = null;
 
     //------------------------------------------------------ common section
 
@@ -101,7 +100,7 @@ public class filter001a {
     //------------------------------------------------------  section tested
 
                     case 0:
-                            thread1 = new Thread1filter001a("thread1");
+                            thread1 = JDIThreadFactory.newThread(new Thread1filter001a("thread1"));
                             log1("new filter001a().run1(thread1);");
                             new filter001a().run1(thread1);
 
@@ -142,7 +141,7 @@ public class filter001a {
     }
 }
 
-class Thread1filter001a extends Thread {
+class Thread1filter001a extends NamedTask {
 
     class TestClass10{
         void m10() {
@@ -160,21 +159,17 @@ class Thread1filter001a extends Thread {
         }
     }
 
-
-    String tName = null;
-
     public Thread1filter001a(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        filter001a.log1("  'run': enter  :: threadName == " + tName);
+        filter001a.log1("  'run': enter  :: threadName == " + getName());
         try {
             (new TestClass11()).m11();
         } catch ( NullPointerException e) {
         }
-        filter001a.log1("  'run': exit   :: threadName == " + tName);
+        filter001a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }

@@ -42,7 +42,7 @@ void ShenandoahCardTable::initialize() {
 
   HeapWord* low_bound  = _whole_heap.start();
   _read_byte_map = (CardValue*) heap_rs.base();
-  _read_byte_map_base = _read_byte_map - (uintptr_t(low_bound) >> card_shift);
+  _read_byte_map_base = _read_byte_map - (uintptr_t(low_bound) >> card_shift());
 
   log_trace(gc, barrier)("ShenandoahCardTable::ShenandoahCardTable: ");
   log_trace(gc, barrier)("    &_read_byte_map[0]: " INTPTR_FORMAT "  &_read_byte_map[_last_valid_index]: " INTPTR_FORMAT,

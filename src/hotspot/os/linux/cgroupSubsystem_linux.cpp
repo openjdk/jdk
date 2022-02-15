@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,7 +146,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
    * Conversely, for cgroups v2 (unified hierarchy), cpu, cpuacct, cpuset, memory
    * controllers must have hierarchy ID 0 and the unified controller mounted.
    */
-  cgroups = fopen(proc_cgroups, "r");
+  cgroups = os::fopen(proc_cgroups, "r");
   if (cgroups == NULL) {
     log_debug(os, container)("Can't open %s, %s", proc_cgroups, os::strerror(errno));
     *flags = INVALID_CGROUPS_GENERIC;
@@ -214,7 +214,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
    *  - on a cgroups v1 system, collect info for mapping
    *    the host mount point to the local one via /proc/self/mountinfo below.
    */
-  cgroup = fopen(proc_self_cgroup, "r");
+  cgroup = os::fopen(proc_self_cgroup, "r");
   if (cgroup == NULL) {
     log_debug(os, container)("Can't open %s, %s",
                              proc_self_cgroup, os::strerror(errno));
@@ -269,7 +269,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
 
   // Find various mount points by reading /proc/self/mountinfo
   // mountinfo format is documented at https://www.kernel.org/doc/Documentation/filesystems/proc.txt
-  mntinfo = fopen(proc_self_mountinfo, "r");
+  mntinfo = os::fopen(proc_self_mountinfo, "r");
   if (mntinfo == NULL) {
       log_debug(os, container)("Can't open %s, %s",
                                proc_self_mountinfo, os::strerror(errno));

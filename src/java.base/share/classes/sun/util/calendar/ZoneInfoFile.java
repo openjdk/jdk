@@ -574,7 +574,7 @@ public final class ZoneInfoFile {
                     // ZoneRulesBuilder adjusts < 0 case (-1, for last, don't have
                     // "<=" case yet) to positive value if not February (it appears
                     // we don't have February cutoff in tzdata table yet)
-                    // Ideally, if JSR310 can just pass in the nagative and
+                    // Ideally, if JSR310 can just pass in the negative and
                     // we can then pass in the dom = -1, dow > 0 into ZoneInfo
                     //
                     // hacking, assume the >=24 is the result of ZRB optimization for
@@ -605,9 +605,8 @@ public final class ZoneInfoFile {
                     params[7] = 0;
                 } else {
                     // hacking: see comment above
-                    if (dom < 0 || dom >= 24 &&
-                                   !(zoneId.equals("Asia/Gaza") ||
-                                     zoneId.equals("Asia/Hebron"))) {
+                    // No need of hacking for Asia/Gaza and Asia/Hebron from tz2021e
+                    if (dom < 0 || dom >= 24) {
                         params[6] = -1;
                         params[7] = toCalendarDOW[dow];
                     } else {
@@ -618,34 +617,6 @@ public final class ZoneInfoFile {
                 params[8] = endRule.secondOfDay * 1000;
                 params[9] = toSTZTime[endRule.timeDefinition];
                 dstSavings = (startRule.offsetAfter - startRule.offsetBefore) * 1000;
-
-                // Note: known mismatching -> Asia/Amman
-                // ZoneInfo :      startDayOfWeek=5     <= Thursday
-                //                 startTime=86400000   <= 24 hours
-                // This:           startDayOfWeek=6
-                //                 startTime=0
-                // Similar workaround needs to be applied to Africa/Cairo and
-                // its endDayOfWeek and endTime
-                // Below is the workarounds, it probably slows down everyone a little
-                if (params[2] == 6 && params[3] == 0 &&
-                    (zoneId.equals("Asia/Amman"))) {
-                    params[2] = 5;
-                    params[3] = 86400000;
-                }
-                // Additional check for startDayOfWeek=6 and starTime=86400000
-                // is needed for Asia/Amman;
-                if (params[2] == 7 && params[3] == 0 &&
-                     (zoneId.equals("Asia/Amman"))) {
-                    params[2] = 6;        // Friday
-                    params[3] = 86400000; // 24h
-                }
-                //endDayOfWeek and endTime workaround
-                if (params[7] == 6 && params[8] == 0 &&
-                    (zoneId.equals("Africa/Cairo"))) {
-                    params[7] = 5;
-                    params[8] = 86400000;
-                }
-
             } else if (nTrans > 0) {  // only do this if there is something in table already
                 if (lastyear < LASTYEAR) {
                     // ZoneInfo has an ending entry for 2037
@@ -894,12 +865,12 @@ public final class ZoneInfoFile {
     }
 
     // A simple/raw version of j.t.ZoneOffsetTransitionRule
+    // timeEndOfDay is included in secondOfDay as "86,400" secs.
     private static class ZoneOffsetTransitionRule {
         private final int month;
         private final byte dom;
         private final int dow;
         private final int secondOfDay;
-        private final boolean timeEndOfDay;
         private final int timeDefinition;
         private final int standardOffset;
         private final int offsetBefore;
@@ -917,9 +888,7 @@ public final class ZoneInfoFile {
             this.dom = (byte)(((data & (63 << 22)) >>> 22) - 32);
             this.dow = dowByte == 0 ? -1 : dowByte;
             this.secondOfDay = timeByte == 31 ? in.readInt() : timeByte * 3600;
-            this.timeEndOfDay = timeByte == 24;
             this.timeDefinition = (data & (3 << 12)) >>> 12;
-
             this.standardOffset = stdByte == 255 ? in.readInt() : (stdByte - 128) * 900;
             this.offsetBefore = beforeByte == 3 ? in.readInt() : standardOffset + beforeByte * 1800;
             this.offsetAfter = afterByte == 3 ? in.readInt() : standardOffset + afterByte * 1800;
@@ -937,9 +906,6 @@ public final class ZoneInfoFile {
                 if (dow != -1) {
                     epochDay = nextOrSame(epochDay, dow);
                 }
-            }
-            if (timeEndOfDay) {
-                epochDay += 1;
             }
             int difference = 0;
             switch (timeDefinition) {

@@ -102,7 +102,7 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[GCWorkerEnd] = new WorkerDataArray<double>("GCWorkerEnd", "GC Worker End (ms):", max_gc_threads);
   _gc_par_phases[Other] = new WorkerDataArray<double>("Other", "GC Worker Other (ms):", max_gc_threads);
   _gc_par_phases[MergePSS] = new WorkerDataArray<double>("MergePSS", "Merge Per-Thread State (ms):", max_gc_threads);
-  _gc_par_phases[RemoveSelfForwardingPtr] = new WorkerDataArray<double>("RemoveSelfForwardingPtr", "Remove Self Forwards (ms):", max_gc_threads);
+  _gc_par_phases[RestoreRetainedRegions] = new WorkerDataArray<double>("RestoreRetainedRegions", "Restore Retained Regions (ms):", max_gc_threads);
   _gc_par_phases[ClearCardTable] = new WorkerDataArray<double>("ClearLoggedCards", "Clear Logged Cards (ms):", max_gc_threads);
   _gc_par_phases[RecalculateUsed] = new WorkerDataArray<double>("RecalculateUsed", "Recalculate Used Memory (ms):", max_gc_threads);
   _gc_par_phases[ResetHotCardCache] = new WorkerDataArray<double>("ResetHotCardCache", "Reset Hot Card Cache (ms):", max_gc_threads);
@@ -116,10 +116,12 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[ScanHR]->create_thread_work_items("Scanned Cards:", ScanHRScannedCards);
   _gc_par_phases[ScanHR]->create_thread_work_items("Scanned Blocks:", ScanHRScannedBlocks);
   _gc_par_phases[ScanHR]->create_thread_work_items("Claimed Chunks:", ScanHRClaimedChunks);
+  _gc_par_phases[ScanHR]->create_thread_work_items("Found Roots:", ScanHRFoundRoots);
 
   _gc_par_phases[OptScanHR]->create_thread_work_items("Scanned Cards:", ScanHRScannedCards);
   _gc_par_phases[OptScanHR]->create_thread_work_items("Scanned Blocks:", ScanHRScannedBlocks);
   _gc_par_phases[OptScanHR]->create_thread_work_items("Claimed Chunks:", ScanHRClaimedChunks);
+  _gc_par_phases[OptScanHR]->create_thread_work_items("Found Roots:", ScanHRFoundRoots);
   _gc_par_phases[OptScanHR]->create_thread_work_items("Scanned Refs:", ScanHRScannedOptRefs);
   _gc_par_phases[OptScanHR]->create_thread_work_items("Used Memory:", ScanHRUsedMemory);
 
@@ -129,6 +131,8 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[MergePSS]->create_thread_work_items("Copied Bytes", MergePSSCopiedBytes);
   _gc_par_phases[MergePSS]->create_thread_work_items("LAB Waste", MergePSSLABWasteBytes);
   _gc_par_phases[MergePSS]->create_thread_work_items("LAB Undo Waste", MergePSSLABUndoWasteBytes);
+
+  _gc_par_phases[RestoreRetainedRegions]->create_thread_work_items("Evacuation Failure Regions:", RestoreRetainedRegionsNum);
 
   _gc_par_phases[EagerlyReclaimHumongousObjects]->create_thread_work_items("Humongous Total", EagerlyReclaimNumTotal);
   _gc_par_phases[EagerlyReclaimHumongousObjects]->create_thread_work_items("Humongous Candidates", EagerlyReclaimNumCandidates);
@@ -264,11 +268,7 @@ void G1GCPhaseTimes::add_time_secs(GCParPhases phase, uint worker_id, double sec
 }
 
 void G1GCPhaseTimes::record_or_add_time_secs(GCParPhases phase, uint worker_id, double secs) {
-  if (_gc_par_phases[phase]->get(worker_id) == _gc_par_phases[phase]->uninitialized()) {
-    record_time_secs(phase, worker_id, secs);
-  } else {
-    add_time_secs(phase, worker_id, secs);
-  }
+  _gc_par_phases[phase]->set_or_add(worker_id, secs);
 }
 
 double G1GCPhaseTimes::get_time_secs(GCParPhases phase, uint worker_id) {
@@ -457,7 +457,7 @@ double G1GCPhaseTimes::print_evacuate_initial_collection_set() const {
   return _cur_collection_initial_evac_time_ms + _cur_merge_heap_roots_time_ms;
 }
 
-double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
+double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed) const {
   const double sum_ms = _cur_collection_nmethod_list_cleanup_time_ms +
                         _recorded_preserve_cm_referents_time_ms +
                         _cur_ref_proc_time_ms +
@@ -481,13 +481,13 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
   debug_phase(_gc_par_phases[MergePSS], 1);
   debug_phase(_gc_par_phases[ClearCardTable], 1);
   debug_phase(_gc_par_phases[RecalculateUsed], 1);
-  if (G1CollectedHeap::heap()->evacuation_failed()) {
-    debug_phase(_gc_par_phases[RemoveSelfForwardingPtr], 1);
+  if (evacuation_failed) {
+    debug_phase(_gc_par_phases[RestoreRetainedRegions], 1);
   }
 
   trace_phase(_gc_par_phases[RedirtyCards]);
   debug_time("Post Evacuate Cleanup 2", _cur_post_evacuate_cleanup_2_time_ms);
-  if (G1CollectedHeap::heap()->evacuation_failed()) {
+  if (evacuation_failed) {
     debug_phase(_gc_par_phases[RecalculateUsed], 1);
     debug_phase(_gc_par_phases[RestorePreservedMarks], 1);
   }
@@ -526,7 +526,7 @@ void G1GCPhaseTimes::print_other(double accounted_ms) const {
   info_time("Other", _gc_pause_time_ms - accounted_ms);
 }
 
-void G1GCPhaseTimes::print() {
+void G1GCPhaseTimes::print(bool evacuation_failed) {
   // Check if some time has been recorded for verification and only then print
   // the message. We do not use Verify*GC here to print because VerifyGCType
   // further limits actual verification.
@@ -538,7 +538,7 @@ void G1GCPhaseTimes::print() {
   accounted_ms += print_pre_evacuate_collection_set();
   accounted_ms += print_evacuate_initial_collection_set();
   accounted_ms += print_evacuate_optional_collection_set();
-  accounted_ms += print_post_evacuate_collection_set();
+  accounted_ms += print_post_evacuate_collection_set(evacuation_failed);
   print_other(accounted_ms);
 
   // See above comment on the _cur_verify_before_time_ms check.
@@ -576,8 +576,8 @@ void G1EvacPhaseWithTrimTimeTracker::stop() {
   _stopped = true;
 }
 
-G1GCParPhaseTimesTracker::G1GCParPhaseTimesTracker(G1GCPhaseTimes* phase_times, G1GCPhaseTimes::GCParPhases phase, uint worker_id, bool must_record) :
-  _start_time(), _phase(phase), _phase_times(phase_times), _worker_id(worker_id), _event(), _must_record(must_record) {
+G1GCParPhaseTimesTracker::G1GCParPhaseTimesTracker(G1GCPhaseTimes* phase_times, G1GCPhaseTimes::GCParPhases phase, uint worker_id, bool allow_multiple_record) :
+  _start_time(), _phase(phase), _phase_times(phase_times), _worker_id(worker_id), _event(), _allow_multiple_record(allow_multiple_record) {
   if (_phase_times != NULL) {
     _start_time = Ticks::now();
   }
@@ -585,10 +585,10 @@ G1GCParPhaseTimesTracker::G1GCParPhaseTimesTracker(G1GCPhaseTimes* phase_times, 
 
 G1GCParPhaseTimesTracker::~G1GCParPhaseTimesTracker() {
   if (_phase_times != NULL) {
-    if (_must_record) {
-      _phase_times->record_time_secs(_phase, _worker_id, (Ticks::now() - _start_time).seconds());
-    } else {
+    if (_allow_multiple_record) {
       _phase_times->record_or_add_time_secs(_phase, _worker_id, (Ticks::now() - _start_time).seconds());
+    } else {
+      _phase_times->record_time_secs(_phase, _worker_id, (Ticks::now() - _start_time).seconds());
     }
     _event.commit(GCId::current(), _worker_id, G1GCPhaseTimes::phase_name(_phase));
   }

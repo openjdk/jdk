@@ -34,13 +34,7 @@ JVM_SUPPORT_DIR := $(JVM_VARIANT_OUTPUTDIR)/support
 DTRACE_SUPPORT_DIR := $(JVM_SUPPORT_DIR)/dtrace
 
 LIB_OUTPUTDIR := $(call FindLibDirForModule, java.base)
-ifneq ($(filter client minimal, $(JVM_VARIANT)), )
-  JVM_VARIANT_SUBDIR := $(JVM_VARIANT)
-else
-  # Use 'server' as default target directory name for all other variants.
-  JVM_VARIANT_SUBDIR := server
-endif
-JVM_LIB_OUTPUTDIR := $(LIB_OUTPUTDIR)/$(JVM_VARIANT_SUBDIR)
+JVM_LIB_OUTPUTDIR := $(LIB_OUTPUTDIR)/$(JVM_VARIANT)
 
 ################################################################################
 

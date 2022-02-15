@@ -44,42 +44,15 @@
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 
-class ShenandoahUpdateRootsTask : public AbstractGangTask {
-private:
-  ShenandoahRootUpdater*  _root_updater;
-  bool                    _check_alive;
-public:
-  ShenandoahUpdateRootsTask(ShenandoahRootUpdater* root_updater, bool check_alive) :
-    AbstractGangTask("Shenandoah Update Roots"),
-    _root_updater(root_updater),
-    _check_alive(check_alive){
-  }
-
-  void work(uint worker_id) {
-    assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
-    ShenandoahParallelWorkerSession worker_session(worker_id);
-
-    ShenandoahHeap* heap = ShenandoahHeap::heap();
-    ShenandoahUpdateRefsClosure cl;
-    if (_check_alive) {
-      ShenandoahForwardedIsAliveClosure is_alive;
-      _root_updater->roots_do<ShenandoahForwardedIsAliveClosure, ShenandoahUpdateRefsClosure>(worker_id, &is_alive, &cl);
-    } else {
-      AlwaysTrueClosure always_true;;
-      _root_updater->roots_do<AlwaysTrueClosure, ShenandoahUpdateRefsClosure>(worker_id, &always_true, &cl);
-    }
-  }
-};
-
 template <GenerationMode GENERATION>
-class ShenandoahConcurrentMarkingTask : public AbstractGangTask {
+class ShenandoahConcurrentMarkingTask : public WorkerTask {
 private:
   ShenandoahConcurrentMark* const _cm;
   TaskTerminator* const           _terminator;
 
 public:
   ShenandoahConcurrentMarkingTask(ShenandoahConcurrentMark* cm, TaskTerminator* terminator) :
-    AbstractGangTask("Shenandoah Concurrent Mark"), _cm(cm), _terminator(terminator) {
+    WorkerTask("Shenandoah Concurrent Mark"), _cm(cm), _terminator(terminator) {
   }
 
   void work(uint worker_id) {
@@ -123,7 +96,7 @@ public:
 };
 
 template<GenerationMode GENERATION>
-class ShenandoahFinalMarkingTask : public AbstractGangTask {
+class ShenandoahFinalMarkingTask : public WorkerTask {
 private:
   ShenandoahConcurrentMark* _cm;
   TaskTerminator*           _terminator;
@@ -131,7 +104,7 @@ private:
 
 public:
   ShenandoahFinalMarkingTask(ShenandoahConcurrentMark* cm, TaskTerminator* terminator, bool dedup_string) :
-    AbstractGangTask("Shenandoah Final Mark"), _cm(cm), _terminator(terminator), _dedup_string(dedup_string) {
+    WorkerTask("Shenandoah Final Mark"), _cm(cm), _terminator(terminator), _dedup_string(dedup_string) {
   }
 
   void work(uint worker_id) {
@@ -169,7 +142,7 @@ ShenandoahConcurrentMark::ShenandoahConcurrentMark(ShenandoahGeneration* generat
 
 // Mark concurrent roots during concurrent phases
 template<GenerationMode GENERATION>
-class ShenandoahMarkConcurrentRootsTask : public AbstractGangTask {
+class ShenandoahMarkConcurrentRootsTask : public WorkerTask {
 private:
   SuspendibleThreadSetJoiner          _sts_joiner;
   ShenandoahConcurrentRootScanner     _root_scanner;
@@ -192,7 +165,7 @@ ShenandoahMarkConcurrentRootsTask<GENERATION>::ShenandoahMarkConcurrentRootsTask
                                                                                  ShenandoahReferenceProcessor* rp,
                                                                                  ShenandoahPhaseTimings::Phase phase,
                                                                                  uint nworkers) :
-  AbstractGangTask("Shenandoah Concurrent Mark Roots"),
+  WorkerTask("Shenandoah Concurrent Mark Roots"),
   _root_scanner(nworkers, phase),
   _queue_set(qs),
   _old_queue_set(old),
@@ -213,7 +186,7 @@ void ShenandoahConcurrentMark::mark_concurrent_roots() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   assert(!heap->has_forwarded_objects(), "Not expected");
 
-  WorkGang* workers = heap->workers();
+  WorkerThreads* workers = heap->workers();
   ShenandoahReferenceProcessor* rp = _generation->ref_processor();
   _generation->reserve_task_queues(workers->active_workers());
   switch (_generation->generation_mode()) {
@@ -250,7 +223,7 @@ public:
 
 void ShenandoahConcurrentMark::concurrent_mark() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  WorkGang* workers = heap->workers();
+  WorkerThreads* workers = heap->workers();
   uint nworkers = workers->active_workers();
   task_queues()->reserve(nworkers);
 

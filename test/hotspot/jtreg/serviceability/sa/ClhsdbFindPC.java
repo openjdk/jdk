@@ -32,7 +32,7 @@ import jdk.test.lib.util.CoreUtils;
 import jtreg.SkippedException;
 
 /**
- * @test
+ * @test id=xcomp-process
  * @bug 8193124
  * @summary Test the clhsdb 'findpc' command with Xcomp on live process
  * @requires vm.hasSA
@@ -43,7 +43,7 @@ import jtreg.SkippedException;
  */
 
 /**
- * @test
+ * @test id=xcomp-core
  * @bug 8193124
  * @summary Test the clhsdb 'findpc' command with Xcomp on core file
  * @requires vm.compMode != "Xcomp"
@@ -54,7 +54,7 @@ import jtreg.SkippedException;
  */
 
 /**
- * @test
+ * @test id=no-xcomp-process
  * @bug 8193124
  * @summary Test the clhsdb 'findpc' command w/o Xcomp on live process
  * @requires vm.hasSA
@@ -65,7 +65,7 @@ import jtreg.SkippedException;
  */
 
 /**
- * @test
+ * @test id=no-xcomp-core
  * @bug 8193124
  * @summary Test the clhsdb 'findpc' command w/o Xcomp on core file
  * @requires vm.compMode != "Xcomp"
@@ -180,6 +180,28 @@ public class ClhsdbFindPC {
             expStrMap.put(cmdStr, List.of("Method ",
                                           "LingeredApp.steadyState",
                                           methodAddr));
+            runTest(withCore, cmds, expStrMap);
+
+            // Rerun above findpc command, but this time using "whatis", which is an alias for "findpc".
+            cmdStr = "whatis " + methodAddr;
+            cmds = List.of(cmdStr);
+            expStrMap = new HashMap<>();
+            expStrMap.put(cmdStr, List.of("Method ",
+                                          "LingeredApp.steadyState",
+                                          methodAddr));
+            runTest(withCore, cmds, expStrMap);
+
+            // Run "mem -v <addr>/30" on a Method*. The first line will look like:
+            //   Address 0x0000152e30403530: Method jdk/test/lib/apps/LingeredApp.steadyState(Ljava/lang/Object;)V@0x0000152e30403530
+            // Followed by lines displaying the memory contents, including interpretation
+            // of any contents that are addresses.
+            cmdStr = "mem -v " + methodAddr + "/30";
+            cmds = List.of(cmdStr);
+            expStrMap = new HashMap<>();
+            expStrMap.put(cmdStr, List.of("Method jdk/test/lib/apps/LingeredApp.steadyState",
+                                          methodAddr,
+                                          /* The following is from a field in the Method object. */
+                                          "In interpreter codelet: method entry point"));
             runTest(withCore, cmds, expStrMap);
 
             // Run findpc on a JavaThread*. We can find one in the jstack output.

@@ -41,6 +41,7 @@ public final class EdDSAPrivateKeyImpl
 
     private static final long serialVersionUID = 1L;
 
+    @SuppressWarnings("serial") // Type of field is not Serializable
     private final NamedParameterSpec paramSpec;
     private byte[] h;
 

@@ -74,6 +74,8 @@ class TenuredGeneration: public CardGeneration {
   // Iteration
   void object_iterate(ObjectClosure* blk);
 
+  void complete_loaded_archive_space(MemRegion archive_space);
+
   virtual inline HeapWord* allocate(size_t word_size, bool is_tlab);
   virtual inline HeapWord* par_allocate(size_t word_size, bool is_tlab);
 
@@ -94,8 +96,6 @@ class TenuredGeneration: public CardGeneration {
                        bool is_tlab);
 
   HeapWord* expand_and_allocate(size_t size, bool is_tlab);
-
-  virtual void prepare_for_verify();
 
   virtual void gc_prologue(bool full);
   virtual void gc_epilogue(bool full);

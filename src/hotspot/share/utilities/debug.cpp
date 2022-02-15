@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
+#include "runtime/safefetch.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -51,7 +52,9 @@
 #include "runtime/vframe.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/heapDumper.hpp"
+#include "services/mallocTracker.hpp"
 #include "services/memTracker.hpp"
+#include "services/virtualMemoryTracker.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/formatBuffer.hpp"
@@ -237,7 +240,6 @@ void report_vm_error(const char* file, int line, const char* error_msg)
 
 
 static void print_error_for_unit_test(const char* message, const char* detail_fmt, va_list detail_args) {
-#ifdef ASSERT
   if (ExecutingUnitTests) {
     char detail_msg[256];
     if (detail_fmt != NULL) {
@@ -262,7 +264,6 @@ static void print_error_for_unit_test(const char* message, const char* detail_fm
       va_end(detail_args_copy);
     }
   }
-#endif // ASSERT
 }
 
 void report_vm_error(const char* file, int line, const char* error_msg, const char* detail_fmt, ...)
@@ -366,7 +367,7 @@ void report_java_out_of_memory(const char* message) {
 
     if (ExitOnOutOfMemoryError) {
       tty->print_cr("Terminating due to java.lang.OutOfMemoryError: %s", message);
-      os::exit(3);
+      os::_exit(3); // quick exit with no cleanup hooks run
     }
   }
 }
@@ -482,6 +483,38 @@ extern "C" JNIEXPORT void pp(void* p) {
     oop obj = cast_to_oop(p);
     obj->print();
   } else {
+    if (MemTracker::enabled()) {
+      const NMT_TrackingLevel tracking_level = MemTracker::tracking_level();
+      ReservedMemoryRegion region(0, 0);
+      // Check and snapshot a mmap'd region that contains the pointer
+      if (VirtualMemoryTracker::snapshot_region_contains(p, region)) {
+        tty->print_cr(PTR_FORMAT " in mmap'd memory region [" PTR_FORMAT " - " PTR_FORMAT "] by %s",
+          p2i(p), p2i(region.base()), p2i(region.base() + region.size()), region.flag_name());
+        if (tracking_level == NMT_detail) {
+          region.call_stack()->print_on(tty);
+          tty->cr();
+        }
+        return;
+      }
+      // Check if it is a malloc'd memory block
+      if (CanUseSafeFetchN() && SafeFetchN((intptr_t*)p, 0) != 0) {
+        const MallocHeader* mhdr = (const MallocHeader*)MallocTracker::get_base(p, tracking_level);
+        char msg[256];
+        address p_corrupted;
+        if (SafeFetchN((intptr_t*)mhdr, 0) != 0 && mhdr->check_block_integrity(msg, sizeof(msg), &p_corrupted)) {
+          tty->print_cr(PTR_FORMAT " malloc'd " SIZE_FORMAT " bytes by %s",
+            p2i(p), mhdr->size(), NMTUtil::flag_to_name(mhdr->flags()));
+          if (tracking_level == NMT_detail) {
+            NativeCallStack ncs;
+            if (mhdr->get_stack(ncs)) {
+              ncs.print_on(tty);
+              tty->cr();
+            }
+          }
+          return;
+        }
+      }
+    }
     tty->print(PTR_FORMAT, p2i(p));
   }
 }
@@ -511,7 +544,6 @@ extern "C" JNIEXPORT void ps() { // print stack
     f = f.sender(&reg_map);
     tty->print("(guessing starting frame id=" PTR_FORMAT " based on current fp)\n", p2i(f.id()));
     p->trace_stack_from(vframe::new_vframe(&f, &reg_map, p));
-    f.pd_ps();
 #endif
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -253,9 +253,9 @@ ClassFileStream* ClassPathDirEntry::open_stream(JavaThread* current, const char*
     if (file_handle != -1) {
       // read contents into resource array
       u1* buffer = NEW_RESOURCE_ARRAY(u1, st.st_size);
-      size_t num_read = os::read(file_handle, (char*) buffer, st.st_size);
+      size_t num_read = ::read(file_handle, (char*) buffer, st.st_size);
       // close file
-      os::close(file_handle);
+      ::close(file_handle);
       // construct ClassFileStream
       if (num_read == (size_t)st.st_size) {
         if (UsePerfData) {
@@ -303,13 +303,19 @@ u1* ClassPathZipEntry::open_entry(JavaThread* current, const char* name, jint* f
   }
 
   // read contents into resource array
-  int size = (*filesize) + ((nul_terminate) ? 1 : 0);
+  size_t size = (uint32_t)(*filesize);
+  if (nul_terminate) {
+    if (sizeof(size) == sizeof(uint32_t) && size == UINT_MAX) {
+      return NULL; // 32-bit integer overflow will occur.
+    }
+    size++;
+  }
   buffer = NEW_RESOURCE_ARRAY(u1, size);
   if (!(*ReadEntry)(_zip, entry, buffer, filename)) return NULL;
 
   // return result
   if (nul_terminate) {
-    buffer[*filesize] = 0;
+    buffer[size - 1] = 0;
   }
   return buffer;
 }
@@ -1138,7 +1144,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TR
 
   const char* const class_name = name->as_C_string();
 
-  EventMark m("loading class %s", class_name);
+  EventMarkClassLoading m("Loading class %s", class_name);
 
   const char* const file_name = file_name_for_class_name(class_name,
                                                          name->utf8_length());
@@ -1253,7 +1259,8 @@ char* ClassLoader::skip_uri_protocol(char* source) {
 
 // Record the shared classpath index and loader type for classes loaded
 // by the builtin loaders at dump time.
-void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik, const ClassFileStream* stream) {
+void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
+                                const ClassFileStream* stream, bool redefined) {
   Arguments::assert_is_dumping_archive();
   assert(stream != NULL, "sanity");
 
@@ -1337,10 +1344,10 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik, const Cl
       }
     }
 
-    // No path entry found for this class. Must be a shared class loaded by the
+    // No path entry found for this class: most likely a shared class loaded by the
     // user defined classloader.
-    if (classpath_index < 0) {
-      assert(ik->shared_classpath_index() < 0, "Sanity");
+    if (classpath_index < 0 && !SystemDictionaryShared::is_builtin_loader(ik->class_loader_data())) {
+      assert(ik->shared_classpath_index() < 0, "not assigned yet");
       ik->set_shared_classpath_index(UNREGISTERED_INDEX);
       SystemDictionaryShared::set_shared_class_misc_info(ik, (ClassFileStream*)stream);
       return;
@@ -1359,7 +1366,7 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik, const Cl
                                                          ik->name()->utf8_length());
   assert(file_name != NULL, "invariant");
 
-  ClassLoaderExt::record_result(classpath_index, ik);
+  ClassLoaderExt::record_result(classpath_index, ik, redefined);
 }
 #endif // INCLUDE_CDS
 

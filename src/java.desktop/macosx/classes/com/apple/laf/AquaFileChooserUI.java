@@ -57,6 +57,7 @@ import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.net.URI;
 import java.text.DateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Objects;
@@ -518,14 +519,14 @@ public class AquaFileChooserUI extends FileChooserUI {
 
     void setPackageIsTraversable(final Object o) {
         int newProp = -1;
-        if (o != null && o instanceof String) newProp = parseTraversableProperty((String)o);
+        if (o instanceof String s) newProp = parseTraversableProperty(s);
         if (newProp != -1) fPackageIsTraversable = newProp;
         else fPackageIsTraversable = sGlobalPackageIsTraversable;
     }
 
     void setApplicationIsTraversable(final Object o) {
         int newProp = -1;
-        if (o != null && o instanceof String) newProp = parseTraversableProperty((String)o);
+        if (o instanceof String s) newProp = parseTraversableProperty(s);
         if (newProp != -1) fApplicationIsTraversable = newProp;
         else fApplicationIsTraversable = sGlobalApplicationIsTraversable;
     }
@@ -1300,23 +1301,23 @@ public class AquaFileChooserUI extends FileChooserUI {
 
             // create File instances of each directory leading up to the top
             File f = directory.getAbsoluteFile();
-            final Vector<File> path = new Vector<File>(10);
+            final ArrayList<File> path = new ArrayList<File>(10);
             while (f.getParent() != null) {
-                path.addElement(f);
+                path.add(f);
                 f = getFileChooser().getFileSystemView().createFileObject(f.getParent());
             };
 
             // Add root file (the desktop) to the model
             final File[] roots = getFileChooser().getFileSystemView().getRoots();
             for (final File element : roots) {
-                path.addElement(element);
+                path.add(element);
             }
             fPathCount = path.size();
 
             // insert all the path fDirectories leading up to the
             // selected directory in reverse order (current directory at top)
             for (int i = 0; i < path.size(); i++) {
-                fDirectories.addElement(path.elementAt(i));
+                fDirectories.addElement(path.get(i));
             }
 
             setSelectedItem(fDirectories.elementAt(0));
@@ -1984,11 +1985,11 @@ public class AquaFileChooserUI extends FileChooserUI {
 
     static {
         Object o = UIManager.get(PACKAGE_TRAVERSABLE_PROPERTY);
-        if (o != null && o instanceof String) sGlobalPackageIsTraversable = parseTraversableProperty((String)o);
+        if (o instanceof String s) sGlobalPackageIsTraversable = parseTraversableProperty(s);
         else sGlobalPackageIsTraversable = kOpenConditional;
 
         o = UIManager.get(APPLICATION_TRAVERSABLE_PROPERTY);
-        if (o != null && o instanceof String) sGlobalApplicationIsTraversable = parseTraversableProperty((String)o);
+        if (o instanceof String s) sGlobalApplicationIsTraversable = parseTraversableProperty(s);
         else sGlobalApplicationIsTraversable = kOpenConditional;
     }
     static final String sDataPrefix = "FileChooser.";
@@ -2444,7 +2445,7 @@ public class AquaFileChooserUI extends FileChooserUI {
     // Convenience, to translate from the JList directory view to the Mac-style JTable
     //   & minimize diffs between this and BasicFileChooserUI
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    class JTableExtension extends JTable {
+    static class JTableExtension extends JTable {
         public void setSelectedIndex(final int index) {
             getSelectionModel().setSelectionInterval(index, index);
         }

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020, Intel Corporation.
+* Copyright (c) 2020, 2021, Intel Corporation. All rights reserved.
 *
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
@@ -114,7 +114,7 @@ void MacroAssembler::arraycopy_avx3_special_cases_conjoint(XMMRegister xmm, KReg
                                                            bool use64byteVector, Label& L_entry, Label& L_exit) {
   Label L_entry_64, L_entry_96, L_entry_128;
   Label L_entry_160, L_entry_192;
-  bool avx3 = MaxVectorSize > 32 && AVX3Threshold == 0;
+  bool avx3 = (MaxVectorSize > 32) && (VM_Version::avx3_threshold() == 0);
 
   int size_mat[][6] = {
   /* T_BYTE */ {32 , 64,  96 , 128 , 160 , 192 },

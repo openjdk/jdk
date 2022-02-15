@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,20 +45,32 @@ import sun.hotspot.WhiteBox;
 
 // This class performs operations on shared archive file
 public class CDSArchiveUtils {
-    public static int offsetMagic;           // CDSFileMapHeaderBase::_magic
-    public static int offsetVersion;         // CDSFileMapHeaderBase::_version
-    public static int offsetJvmIdent;        // FileMapHeader::_jvm_ident
-    public static int spOffsetCrc;           // CDSFileMapRegion::_crc
-    public static int fileHeaderSize;        // total size of header, aligned with alignment
-    public static int cdsFileMapRegionSize;  // size of CDSFileMapRegion
-    public static int spOffset;              // offset of CDSFileMapRegion
-    public static int spUsedOffset;          // offset of CDSFileMapRegion::_used
-    public static int sizetSize;             // size of size_t
-    public static int intSize;               // size of int
-    public static long alignment;            // MetaspaceShared::core_region_alignment
+    // Minimum supported CDS file header version
+    private static int genericHeaderMinVersion;    // CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION
+    private static int currentCDSArchiveVersion;   // CURRENT_CDS_ARCHIVE_VERSION
+    // offsets
+    private static int offsetMagic;                // offset of GenericCDSFileMapHeader::_magic
+    private static int offsetCrc;                  // offset of GenericCDSFileMapHeader::_crc
+    private static int offsetVersion;              // offset of GenericCDSFileMapHeader::_version
+    private static int offsetHeaderSize;           // offset of GenericCDSFileMapHeader::_header_size
+    private static int offsetBaseArchiveNameOffset;// offset of GenericCDSFileMapHeader::_base_archive_name_offset
+    private static int offsetBaseArchiveNameSize;  // offset of GenericCDSFileMapHeader::_base_archive_name_size
+    private static int offsetJvmIdent;             // offset of FileMapHeader::_jvm_ident
+    private static int spOffsetCrc;                // offset of CDSFileMapRegion::_crc
+    private static int spOffset;                   // offset of CDSFileMapRegion
+    private static int spUsedOffset;               // offset of CDSFileMapRegion::_used
+    // constants
+    private static int staticMagic;                // static magic value defined in hotspot
+    private static int dynamicMagic;               // dyamic magic value defined in hotspot
+    private static int sizetSize;                  // size of size_t
+    private static int intSize;                    // size of int
+    private static int staticArchiveHeaderSize;    // static archive file header size
+    private static int dynamicArchiveHeaderSize;   // dynamic archive file header size
+    private static int cdsFileMapRegionSize;       // size of CDSFileMapRegion
+    private static long alignment;                 // MetaspaceShared::core_region_alignment
 
     // The following should be consistent with the enum in the C++ MetaspaceShared class
-    public static String[] shared_region_name = {
+    private static String[] shared_region_name = {
         "rw",          // ReadWrite
         "ro",          // ReadOnly
         "bm",          // relocation bitmaps
@@ -67,35 +79,97 @@ public class CDSArchiveUtils {
         "first_open_archive",
         "last_open_archive"
     };
-    public static int num_regions = shared_region_name.length;
+    private static int num_regions = shared_region_name.length;
 
     static {
         WhiteBox wb;
         try {
             wb = WhiteBox.getWhiteBox();
-            offsetMagic = wb.getOffsetForName("FileMapHeader::_magic");
-            offsetVersion = wb.getOffsetForName("FileMapHeader::_version");
-            offsetJvmIdent = wb.getOffsetForName("FileMapHeader::_jvm_ident");
-            spOffsetCrc = wb.getOffsetForName("CDSFileMapRegion::_crc");
-            spOffset = wb.getOffsetForName("FileMapHeader::_space[0]") - offsetMagic;
-            spUsedOffset = wb.getOffsetForName("CDSFileMapRegion::_used") - spOffsetCrc;
-            sizetSize = wb.getOffsetForName("size_t_size");
-            intSize = wb.getOffsetForName("int_size");
-            cdsFileMapRegionSize  = wb.getOffsetForName("CDSFileMapRegion_size");
+            // genericHeaderMinVersion
+            genericHeaderMinVersion = wb.getCDSGenericHeaderMinVersion();
+            currentCDSArchiveVersion = wb.getCurrentCDSVersion();
+            // offsets
+            offsetMagic = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_magic");
+            offsetCrc = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_crc");
+            offsetVersion = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_version");
+            offsetHeaderSize = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_header_size");
+            offsetBaseArchiveNameOffset = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_base_archive_name_offset");
+            offsetBaseArchiveNameSize = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_base_archive_name_size");
+            offsetJvmIdent = wb.getCDSOffsetForName("FileMapHeader::_jvm_ident");
+            spOffsetCrc = wb.getCDSOffsetForName("CDSFileMapRegion::_crc");
+            spUsedOffset = wb.getCDSOffsetForName("CDSFileMapRegion::_used") - spOffsetCrc;
+            spOffset = wb.getCDSOffsetForName("CDSFileMapHeaderBase::_space[0]") - offsetMagic;
+            // constants
+            staticMagic = wb.getCDSConstantForName("static_magic");
+            dynamicMagic = wb.getCDSConstantForName("dynamic_magic");
+            // following two sizes are runtime values
+            staticArchiveHeaderSize = wb.getCDSConstantForName("static_file_header_size");
+            dynamicArchiveHeaderSize = wb.getCDSConstantForName("dynamic_archive_header_size");
+            sizetSize = wb.getCDSConstantForName("size_t_size");
+            intSize = wb.getCDSConstantForName("int_size");
+            cdsFileMapRegionSize  = wb.getCDSConstantForName("CDSFileMapRegion_size");
             alignment = wb.metaspaceSharedRegionAlignment();
-            // file_header_size is structure size, real size aligned with alignment
-            // so must be calculated after alignment is available
-            fileHeaderSize = (int)alignUpWithAlignment(wb.getOffsetForName("file_header_size"));
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }
 
         try {
-            int nonExistOffset = wb.getOffsetForName("FileMapHeader::_non_exist_offset");
+            int nonExistOffset = wb.getCDSOffsetForName("FileMapHeader::_non_exist_offset");
             System.exit(-1); // should fail
         } catch (Exception e) {
             // success
         }
+    }
+
+    // accessors
+    // minimum supported file header version
+    public static int getGenericHeaderMinVersion()  { return genericHeaderMinVersion;     }
+    // current CDS version
+    public static int getCurrentCDSArchiveVersion() { return currentCDSArchiveVersion;    }
+    // offsets
+    public static int offsetMagic()                 { return offsetMagic;                 }
+    public static int offsetCrc()                   { return offsetCrc;                   }
+    public static int offsetVersion()               { return offsetVersion;               }
+    public static int offsetHeaderSize()            { return offsetHeaderSize;            }
+    public static int offsetBaseArchiveNameOffset() { return offsetBaseArchiveNameOffset; }
+    public static int offsetBaseArchiveNameSize()   { return offsetBaseArchiveNameSize;   }
+    public static int offsetJvmIdent()              { return offsetJvmIdent;              }
+    public static int spOffsetCrc()                 { return spOffsetCrc;                 }
+    public static int spOffset()                    { return spOffset;                    }
+    public static int spUsedOffset()                { return spUsedOffset;                }
+    // constants
+    public static int staticMagic()                 { return staticMagic;                 }
+    public static int dynamicMagic()                { return dynamicMagic;                }
+    public static int sizetSize()                   { return sizetSize;                   }
+    public static int staticArchiveHeaderSize()     { return staticArchiveHeaderSize;     }
+    public static int dynamicArchiveHeaderSize()    { return dynamicArchiveHeaderSize;    }
+    public static int cdsFileMapRegionSize()        { return cdsFileMapRegionSize;        }
+    public static long alignment()                  { return alignment;                   }
+
+
+
+    public static long fileHeaderSize(File jsaFile) throws Exception {
+        long  headerSize = readInt(jsaFile, offsetHeaderSize, 4);
+        return headerSize;
+    }
+
+    public static long fileHeaderSizeAligned(File jsaFile) throws Exception {
+        long size = fileHeaderSize(jsaFile);
+        return alignUpWithAlignment(size);
+    }
+
+    public static int baseArchiveNameOffset(File jsaFile) throws Exception {
+        return (int)readInt(jsaFile, offsetBaseArchiveNameOffset, 4);
+    }
+
+    public static int baseArchiveNameSize(File jsaFile) throws Exception {
+        return (int)readInt(jsaFile, offsetBaseArchiveNameSize, 4);
+    }
+
+    public static String baseArchiveName(File jsaFile) throws Exception {
+        int size = baseArchiveNameSize(jsaFile);
+        int baseArchiveNameOffset = (int)readInt(jsaFile, offsetBaseArchiveNameOffset, 4);
+        return readString(jsaFile, baseArchiveNameOffset, size - 1); // exclude terminating '\0'
     }
 
     private static long alignUpWithAlignment(long l) {
@@ -134,7 +208,7 @@ public class CDSArchiveUtils {
         int bufSize;
 
         System.out.printf("%-24s%12s%12s%16s\n", "Space Name", "Used bytes", "Reg Start", "Random Offset");
-        start0 = fileHeaderSize;
+        start0 = fileHeaderSizeAligned(jsaFile);
         for (int i = 0; i < num_regions; i++) {
             used[i] = usedRegionSizeAligned(jsaFile, i);
             start = start0;
@@ -163,7 +237,7 @@ public class CDSArchiveUtils {
         int bufSize;
 
         System.out.printf("%-24s%12s%12s%16s\n", "Space Name", "Used bytes", "Reg Start", "Random Offset");
-        start0 = fileHeaderSize;
+        start0 = fileHeaderSizeAligned(jsaFile);
         for (int i = 0; i < num_regions; i++) {
             used[i] = usedRegionSizeAligned(jsaFile, i);
             start = start0;
@@ -200,12 +274,12 @@ public class CDSArchiveUtils {
         }
         byte[] buf = new byte[4096];
         System.out.printf("%-24s%12d\n", "Total: ", total);
-        long regionStartOffset = fileHeaderSize;
+        long regionStartOffset = fileHeaderSizeAligned(jsaFile);
         for (int i = 0; i < region; i++) {
             regionStartOffset += used[i];
         }
         System.out.println("Corrupt " + shared_region_name[region] + " section, start = " + regionStartOffset
-                           + " (header_size + 0x" + Long.toHexString(regionStartOffset - fileHeaderSize) + ")");
+                           + " (header_size + 0x" + Long.toHexString(regionStartOffset - fileHeaderSizeAligned(jsaFile)) + ")");
         long bytesWritten = 0L;
         while (bytesWritten < used[region]) {
             bytesWritten += writeData(jsaFile, regionStartOffset + bytesWritten, buf);
@@ -233,8 +307,12 @@ public class CDSArchiveUtils {
 
     public static void modifyFileHeader(File jsaFile) throws Exception {
         // screw up header info
-        byte[] buf = new byte[fileHeaderSize];
+        byte[] buf = new byte[(int)fileHeaderSize(jsaFile)];
         writeData(jsaFile, 0, buf);
+    }
+
+    public static void modifyFileHeaderSize(File jsaFile, int newHeaderSize) throws Exception {
+        modifyHeaderIntField(jsaFile, offsetHeaderSize, newHeaderSize);
     }
 
     public static void modifyJvmIdent(File jsaFile, String newJvmIdent) throws Exception {
@@ -243,10 +321,7 @@ public class CDSArchiveUtils {
     }
 
     public static void modifyHeaderIntField(File jsaFile, long offset, int value) throws Exception {
-        System.out.println("    offset " + offset);
-
-        byte[] bytes = ByteBuffer.allocate(4).putInt(value).array();
-        writeData(jsaFile, offset, bytes);
+        writeData(jsaFile, offset, value);
     }
 
     // copy archive and set copied read/write permit
@@ -257,6 +332,7 @@ public class CDSArchiveUtils {
                 throw new IOException("Could not delete file " + newJsaFile);
             }
         }
+
         Files.copy(orgJsaFile.toPath(), newJsaFile.toPath(), REPLACE_EXISTING);
 
         // change permission
@@ -265,20 +341,48 @@ public class CDSArchiveUtils {
         return newJsaFile;
     }
 
-    private static FileChannel getFileChannel(File file) throws Exception {
+    public static File createMagicOnlyFile(String fileName, boolean createStatic) throws Exception {
+        File file = new File(fileName);
+        if (file.exists()) {
+            file.delete();
+        }
+        try (FileOutputStream out = new FileOutputStream(file)) {
+            ByteBuffer buffer = ByteBuffer.allocate(4).putInt(createStatic ? staticMagic: dynamicMagic);
+            out.write(buffer.array(), 0, 4);
+        }
+        return file;
+    }
+
+    private static FileChannel getFileChannel(File file, boolean write) throws Exception {
         List<StandardOpenOption> arry = new ArrayList<StandardOpenOption>();
         arry.add(READ);
-        arry.add(WRITE);
+        if (write) {
+            arry.add(WRITE);
+        }
         return FileChannel.open(file.toPath(), new HashSet<StandardOpenOption>(arry));
     }
 
-    public static long readInt(File file, long offset, int nBytes) throws Exception {
-        try (FileChannel fc = getFileChannel(file)) {
-            ByteBuffer bb = ByteBuffer.allocate(nBytes);
-            bb.order(ByteOrder.nativeOrder());
+    private static long readInt(File file, long offset, int nBytes) throws Exception {
+        try (FileChannel fc = getFileChannel(file, false /*read only*/)) {
+            ByteBuffer bb = ByteBuffer.allocate(nBytes).order(ByteOrder.nativeOrder());
             fc.position(offset);
             fc.read(bb);
+            bb.rewind();
             return  (nBytes > 4 ? bb.getLong(0) : bb.getInt(0));
+        }
+    }
+
+    private static String readString(File file, long offset, int nBytes) throws Exception {
+        try (FileChannel fc = getFileChannel(file, false /*read only*/)) {
+            ByteBuffer bb = ByteBuffer.allocate(nBytes).order(ByteOrder.nativeOrder());
+            fc.position(offset);
+            fc.read(bb);
+            byte[] arr = bb.flip().array();
+            for (byte i : arr) {
+                System.out.print((char)i);
+            }
+            System.out.println("");
+            return new String(arr);
         }
     }
 
@@ -288,22 +392,26 @@ public class CDSArchiveUtils {
     }
 
     public static long writeData(File file, long offset, byte[] array) throws Exception {
-        try (FileChannel fc = getFileChannel(file)) {
+        try (FileChannel fc = getFileChannel(file, true /*write*/)) {
             ByteBuffer bbuf = ByteBuffer.wrap(array);
+            bbuf.order(ByteOrder.nativeOrder());
             return writeData(fc, offset, bbuf);
          }
     }
 
     public static long writeData(File file, long offset, int value) throws Exception {
-        try (FileChannel fc = getFileChannel(file)) {
-            ByteBuffer bbuf = ByteBuffer.allocate(4).putInt(value).position(0);
+        try (FileChannel fc = getFileChannel(file, true /*write*/)) {
+            ByteBuffer bbuf = ByteBuffer.allocate(4)
+                                        .order(ByteOrder.nativeOrder())
+                                        .putInt(value)
+                                        .rewind();
             return writeData(fc, offset, bbuf);
          }
     }
 
     // dstFile will keep original size so will remove corresponding bytes.length bytes at end of file
     public static File insertBytesRandomlyAfterHeader(File orgFile, String newFileName, byte[] bytes) throws Exception {
-        long offset = fileHeaderSize + getRandomBetween(0L, 4096L);
+        long offset = fileHeaderSize(orgFile) + getRandomBetween(0L, 4096L);
         File dstFile = new File(newFileName);
         try (FileChannel inputChannel = new FileInputStream(orgFile).getChannel();
              FileChannel outputChannel = new FileOutputStream(dstFile).getChannel()) {
@@ -318,7 +426,7 @@ public class CDSArchiveUtils {
 
     // delete nBytes bytes from offset, so new file will be smaller than the original
     public static File deleteBytesAtRandomPositionAfterHeader(File orgFile, String newFileName, int nBytes) throws Exception {
-        long offset = fileHeaderSize + getRandomBetween(0L, 4096L);
+        long offset = fileHeaderSize(orgFile) + getRandomBetween(0L, 4096L);
         File dstFile = new File(newFileName);
         try (FileChannel inputChannel = new FileInputStream(orgFile).getChannel();
              FileChannel outputChannel = new FileOutputStream(dstFile).getChannel()) {

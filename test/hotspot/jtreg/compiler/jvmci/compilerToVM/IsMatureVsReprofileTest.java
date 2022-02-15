@@ -83,7 +83,7 @@ public class IsMatureVsReprofileTest {
         isMature = CompilerToVMHelper.isMature(metaspaceMethodData);
         /* a method is not mature for -Xcomp and -Tiered,
            see NonTieredCompPolicy::is_mature */
-        Asserts.assertEQ(!IS_XCOMP || TIERED, isMature,
+        Asserts.assertEQ(!IS_XCOMP, isMature,
                 "Unexpected isMature state for compiled method");
         HotSpotResolvedJavaMethod resolvedMethod
                 = CTVMUtilities.getResolvedMethod(method);
@@ -94,7 +94,7 @@ public class IsMatureVsReprofileTest {
         isMature = CompilerToVMHelper.isMature(metaspaceMethodData);
         Asserts.assertNE(metaspaceMethodData, 0L,
                 "Got null MDO after reprofile");
-        Asserts.assertEQ(TIERED && IS_XCOMP, isMature,
+        Asserts.assertFalse(isMature,
                 "Got unexpected isMature state after reprofiling");
     }
 }

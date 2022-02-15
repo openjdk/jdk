@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 package nsk.jdi.ThreadReference.popFrames;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -54,7 +53,7 @@ public class popframes001a {
 
     //====================================================== test program
 
-    static Threadpopframes001a thread2 = null;
+    static Thread thread2 = null;
 
     //------------------------------------------------------ common section
     static int instruction = 1;
@@ -96,7 +95,7 @@ public class popframes001a {
     //------------------------------------------------------  section tested
 
                     case 0:
-                               thread2 =  new Threadpopframes001a("thread2");
+                               thread2 = JDIThreadFactory.newThread(new Threadpopframes001a("thread2"));
                                log1("       thread2 is created");
 
                                synchronized (lockingObject) {
@@ -158,7 +157,7 @@ public class popframes001a {
 
     static Object lockingObject2 = new Object();
 
-    static class Threadpopframes001a extends Thread {
+    static class Threadpopframes001a extends NamedTask {
 
         public Threadpopframes001a(String threadName) {
             super(threadName);

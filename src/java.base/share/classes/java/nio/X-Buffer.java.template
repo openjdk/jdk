@@ -55,12 +55,12 @@ import jdk.internal.util.ArraysSupport;
  *
  *   <li><p> Absolute and relative {@link #get($type$[]) <i>bulk get</i>}
  *   methods that transfer contiguous sequences of $type$s from this buffer
- *   into an array; {#if[!byte]?and}</p></li>
+ *   into an array;</p></li>
  *
  *   <li><p> Absolute and relative {@link #put($type$[]) <i>bulk put</i>}
  *   methods that transfer contiguous sequences of $type$s from $a$
- *   $type$ array{#if[char]?,&#32;a&#32;string,} or some other $type$
- *   buffer into this buffer;{#if[!byte]?&#32;and} </p></li>
+ *   $type$ array{#if[char]?, a string,} or some other $type$
+ *   buffer into this buffer;</p></li>
  *
 #if[byte]
  *
@@ -86,12 +86,12 @@ import jdk.internal.util.ArraysSupport;
 #if[byte]
  *
  * content, or by {@link #wrap($type$[]) <i>wrapping</i>} an
- * existing $type$ array {#if[char]?or&#32;string} into a buffer.
+ * existing $type$ array into a buffer.
  *
 #else[byte]
  *
  * content, by {@link #wrap($type$[]) <i>wrapping</i>} an existing
- * $type$ array {#if[char]?or&#32;string} into a buffer, or by creating a
+ * $type$ array {#if[char]?or string} into a buffer, or by creating a
  * <a href="ByteBuffer.html#views"><i>view</i></a> of an existing byte buffer.
  *
 #end[byte]

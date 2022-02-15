@@ -44,7 +44,7 @@
 
 inline PSPromotionManager* PSPromotionManager::manager_array(uint index) {
   assert(_manager_array != NULL, "access of NULL manager_array");
-  assert(index <= ParallelGCThreads, "out of range manager_array access");
+  assert(index < ParallelGCThreads, "out of range manager_array access");
   return &_manager_array[index];
 }
 
@@ -219,13 +219,6 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
 
           HeapWord* lab_base = old_gen()->allocate(OldPLABSize);
           if(lab_base != NULL) {
-#ifdef ASSERT
-            // Delay the initialization of the promotion lab (plab).
-            // This exposes uninitialized plabs to card table processing.
-            if (GCWorkerDelayMillis > 0) {
-              os::naked_sleep(GCWorkerDelayMillis);
-            }
-#endif
             _old_lab.initialize(MemRegion(lab_base, OldPLABSize));
             // Try the old lab allocation again.
             new_obj = cast_to_oop(_old_lab.allocate(new_obj_size));
@@ -266,11 +259,6 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
       new_obj->incr_age();
       assert(young_space()->contains(new_obj), "Attempt to push non-promoted obj");
     }
-
-    log_develop_trace(gc, scavenge)("{%s %s " PTR_FORMAT " -> " PTR_FORMAT " (%d)}",
-                                    new_obj_is_tenured ? "copying" : "tenuring",
-                                    new_obj->klass()->internal_name(),
-                                    p2i((void *)o), p2i((void *)new_obj), new_obj->size());
 
     // Do the size comparison first with new_obj_size, which we
     // already have. Hopefully, only a few objects are larger than

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package javax.swing.text;
 
+import java.util.ArrayList;
 import java.util.Vector;
 import java.awt.*;
 import javax.swing.event.*;
@@ -293,16 +294,15 @@ public class ZoneView extends BoxView {
         // divide the old zone into a new set of bins
         Element elem = getElement();
         Document doc = elem.getDocument();
-        Vector<View> zones = new Vector<View>();
+        ArrayList<View> zones = new ArrayList<View>();
         int offs = offs0;
         do {
             offs0 = offs;
             offs = Math.min(getDesiredZoneEnd(offs0), offs1);
-            zones.addElement(createZone(offs0, offs));
+            zones.add(createZone(offs0, offs));
         } while (offs < offs1);
         View oldZone = getView(index);
-        View[] newZones = new View[zones.size()];
-        zones.copyInto(newZones);
+        View[] newZones = zones.toArray(new View[0]);
         replace(index, 1, newZones);
     }
 

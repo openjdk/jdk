@@ -69,7 +69,7 @@ static int order_regions(HeapRegion* hr1, HeapRegion* hr2) {
 // put them into some work area unsorted. At the end the array is sorted and
 // copied into the G1CollectionSetCandidates instance; the caller will be the new
 // owner of this object.
-class G1BuildCandidateRegionsTask : public AbstractGangTask {
+class G1BuildCandidateRegionsTask : public WorkerTask {
 
   // Work area for building the set of collection set candidates. Contains references
   // to heap regions with their GC efficiencies calculated. To reduce contention
@@ -223,7 +223,7 @@ class G1BuildCandidateRegionsTask : public AbstractGangTask {
 
 public:
   G1BuildCandidateRegionsTask(uint max_num_regions, uint chunk_size, uint num_workers) :
-    AbstractGangTask("G1 Build Candidate Regions"),
+    WorkerTask("G1 Build Candidate Regions"),
     _g1h(G1CollectedHeap::heap()),
     _hrclaimer(num_workers),
     _num_regions_added(0),
@@ -311,7 +311,7 @@ void G1CollectionSetChooser::prune(G1CollectionSetCandidates* candidates) {
   }
 }
 
-G1CollectionSetCandidates* G1CollectionSetChooser::build(WorkGang* workers, uint max_num_regions) {
+G1CollectionSetCandidates* G1CollectionSetChooser::build(WorkerThreads* workers, uint max_num_regions) {
   uint num_workers = workers->active_workers();
   uint chunk_size = calculate_work_chunk_size(num_workers, max_num_regions);
 

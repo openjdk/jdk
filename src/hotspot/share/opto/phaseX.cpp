@@ -792,9 +792,7 @@ ConLNode* PhaseTransform::longcon(jlong l) {
 }
 ConNode* PhaseTransform::integercon(jlong l, BasicType bt) {
   if (bt == T_INT) {
-    jint int_con = (jint)l;
-    assert(((long)int_con) == l, "not an int");
-    return intcon(int_con);
+    return intcon(checked_cast<jint>(l));
   }
   assert(bt == T_LONG, "not an integer");
   return longcon(l);
@@ -1510,13 +1508,13 @@ void PhaseIterGVN::add_users_to_worklist0( Node *n ) {
 
 // Return counted loop Phi if as a counted loop exit condition, cmp
 // compares the the induction variable with n
-static PhiNode* countedloop_phi_from_cmp(CmpINode* cmp, Node* n) {
+static PhiNode* countedloop_phi_from_cmp(CmpNode* cmp, Node* n) {
   for (DUIterator_Fast imax, i = cmp->fast_outs(imax); i < imax; i++) {
     Node* bol = cmp->fast_out(i);
     for (DUIterator_Fast i2max, i2 = bol->fast_outs(i2max); i2 < i2max; i2++) {
       Node* iff = bol->fast_out(i2);
-      if (iff->is_CountedLoopEnd()) {
-        CountedLoopEndNode* cle = iff->as_CountedLoopEnd();
+      if (iff->is_BaseCountedLoopEnd()) {
+        BaseCountedLoopEndNode* cle = iff->as_BaseCountedLoopEnd();
         if (cle->limit() == n) {
           PhiNode* phi = cle->phi();
           if (phi != NULL) {
@@ -1834,8 +1832,8 @@ void PhaseCCP::analyze() {
         // If n is used in a counted loop exit condition then the type
         // of the counted loop's Phi depends on the type of n. See
         // PhiNode::Value().
-        if (m_op == Op_CmpI) {
-          PhiNode* phi = countedloop_phi_from_cmp((CmpINode*)m, n);
+        if (m_op == Op_CmpI || m_op == Op_CmpL) {
+          PhiNode* phi = countedloop_phi_from_cmp(m->as_Cmp(), n);
           if (phi != NULL) {
             worklist.push(phi);
           }
@@ -1967,7 +1965,9 @@ Node *PhaseCCP::transform_once( Node *n ) {
 
   // TEMPORARY fix to ensure that 2nd GVN pass eliminates NULL checks
   switch( n->Opcode() ) {
-  case Op_FastLock:      // Revisit FastLocks for lock coarsening
+  case Op_CallStaticJava:  // Give post-parse call devirtualization a chance
+  case Op_CallDynamicJava:
+  case Op_FastLock:        // Revisit FastLocks for lock coarsening
   case Op_If:
   case Op_CountedLoopEnd:
   case Op_Region:

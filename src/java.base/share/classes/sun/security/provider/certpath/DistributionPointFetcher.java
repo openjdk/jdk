@@ -653,7 +653,8 @@ public class DistributionPointFetcher {
 
         // check the crl signature algorithm
         try {
-            AlgorithmChecker.check(prevKey, crl, variant, anchor);
+            AlgorithmChecker.check(prevKey, crlImpl.getSigAlgId(),
+                                   variant, anchor);
         } catch (CertPathValidatorException cpve) {
             if (debug != null) {
                 debug.println("CRL signature algorithm check failed: " + cpve);

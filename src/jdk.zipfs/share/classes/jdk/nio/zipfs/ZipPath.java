@@ -200,11 +200,17 @@ final class ZipPath implements Path {
             return new URI("jar",
                            decodeUri(zfs.getZipFile().toUri().toString()) +
                            "!" +
-                           zfs.getString(toAbsolutePath().path),
+                           getRealPath(),
                            null);
         } catch (Exception ex) {
             throw new AssertionError(ex);
         }
+    }
+
+    private String getRealPath() {
+        byte[] resolvedPath = getResolvedPath();
+        byte[] realPath = zfs.lookupPath(resolvedPath);
+        return zfs.getString(realPath != null ? realPath : resolvedPath);
     }
 
     private boolean equalsNameAt(ZipPath other, int index) {
@@ -713,7 +719,7 @@ final class ZipPath implements Path {
             if (type == FileOwnerAttributeView.class)
                 return (V)new ZipPosixFileAttributeView(this,true);
         }
-        throw new UnsupportedOperationException("view <" + type + "> is not supported");
+        return null;
     }
 
     private ZipFileAttributeView getFileAttributeView(String type) {

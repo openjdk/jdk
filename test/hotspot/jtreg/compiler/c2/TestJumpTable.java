@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @key stress randomness
  * @bug 8229855 8238812
  * @summary Test jump table with key value that gets out of bounds after loop unrolling.
  * @requires vm.compiler2.enabled

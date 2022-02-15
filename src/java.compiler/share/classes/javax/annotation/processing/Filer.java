@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,13 @@ import java.io.IOException;
  * originating elements are the classes or interfaces or packages
  * (representing {@code package-info} files) or modules (representing
  * {@code module-info} files) which caused an annotation processor to
- * attempt to create a new file.  For example, if an annotation
+ * attempt to create a new file.
+ * In other words, the originating elements are intended to have the
+ * granularity of <em>compilation units</em> (JLS section {@jls 7.3}),
+ * essentially file-level granularity, rather than finer-scale
+ * granularity of, say, a method or field declaration.
+ *
+ * <p>For example, if an annotation
  * processor tries to create a source file, {@code
  * GeneratedFromUserSource}, in response to processing
  *

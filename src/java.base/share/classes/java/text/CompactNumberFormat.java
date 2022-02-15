@@ -169,10 +169,10 @@ import java.util.stream.Collectors;
  * <i>NegativePattern:</i>
  *        <i>Prefix<sub>optional</sub></i> <i>MinimumInteger</i> <i>Suffix<sub>optional</sub></i>
  * <i>Prefix:</i>
- *      Any Unicode characters except &#92;uFFFE, &#92;uFFFF, and
+ *      Any Unicode characters except {@code U+FFFE}, {@code U+FFFF}, and
  *      <a href = "DecimalFormat.html#special_pattern_character">special characters</a>.
  * <i>Suffix:</i>
- *      Any Unicode characters except &#92;uFFFE, &#92;uFFFF, and
+ *      Any Unicode characters except {@code U+FFFE}, {@code U+FFFF}, and
  *      <a href = "DecimalFormat.html#special_pattern_character">special characters</a>.
  * <i>MinimumInteger:</i>
  *      0
@@ -1264,8 +1264,8 @@ public final class CompactNumberFormat extends NumberFormat {
         String zeros = "";
         for (int j = 1; j >= 0 && start < pattern.length(); --j) {
 
-            StringBuffer prefix = new StringBuffer();
-            StringBuffer suffix = new StringBuffer();
+            StringBuilder prefix = new StringBuilder();
+            StringBuilder suffix = new StringBuilder();
             boolean inQuote = false;
             // The phase ranges from 0 to 2.  Phase 0 is the prefix.  Phase 1 is
             // the section of the pattern with digits. Phase 2 is the suffix.
@@ -1275,7 +1275,7 @@ public final class CompactNumberFormat extends NumberFormat {
             int phase = 0;
 
             // The affix is either the prefix or the suffix.
-            StringBuffer affix = prefix;
+            StringBuilder affix = prefix;
 
             for (int pos = start; pos < pattern.length(); ++pos) {
                 char ch = pattern.charAt(pos);

@@ -303,7 +303,7 @@ void ShenandoahBarrierSetC1::generate_c1_runtime_stubs(BufferBlob* buffer_blob) 
   }
 }
 
-void ShenandoahBarrierSetC1::post_barrier(LIRAccess& access, LIR_OprDesc* addr, LIR_OprDesc* new_val) {
+void ShenandoahBarrierSetC1::post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Opr new_val) {
   if (!ShenandoahHeap::heap()->mode()->is_generational()) {
     return;
   }
@@ -337,9 +337,9 @@ void ShenandoahBarrierSetC1::post_barrier(LIRAccess& access, LIR_OprDesc* addr, 
   LIR_Opr tmp = gen->new_pointer_register();
   if (TwoOperandLIRForm) {
     __ move(addr, tmp);
-    __ unsigned_shift_right(tmp, CardTable::card_shift, tmp);
+    __ unsigned_shift_right(tmp, CardTable::card_shift(), tmp);
   } else {
-    __ unsigned_shift_right(addr, CardTable::card_shift, tmp);
+    __ unsigned_shift_right(addr, CardTable::card_shift(), tmp);
   }
 
   LIR_Address* card_addr;

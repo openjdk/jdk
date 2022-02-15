@@ -51,9 +51,9 @@
 
 ShenandoahControlThread::ShenandoahControlThread() :
   ConcurrentGCThread(),
-  _alloc_failure_waiters_lock(Mutex::leaf, "ShenandoahAllocFailureGC_lock", Monitor::_safepoint_check_always, true),
-  _gc_waiters_lock(Mutex::leaf, "ShenandoahRequestedGC_lock", Monitor::_safepoint_check_always, true),
-  _control_lock(Mutex::leaf - 1, "ShenandoahControlGC_lock", Monitor::_safepoint_check_never, true),
+  _alloc_failure_waiters_lock(Mutex::safepoint - 1, "ShenandoahAllocFailureGC_lock", true),
+  _gc_waiters_lock(Mutex::safepoint - 1, "ShenandoahRequestedGC_lock", true),
+  _control_lock(Mutex::nosafepoint - 1, "ShenandoahControlGC_lock", true),
   _periodic_task(this),
   _requested_gc_cause(GCCause::_no_cause_specified),
   _requested_generation(GenerationMode::GLOBAL),
@@ -110,8 +110,10 @@ void ShenandoahControlThread::run_service() {
   while (!in_graceful_shutdown() && !should_terminate()) {
     // Figure out if we have pending requests.
     bool alloc_failure_pending = _alloc_failure_gc.is_set();
-    bool explicit_gc_requested = _gc_requested.is_set() && is_explicit_gc(_requested_gc_cause);
-    bool implicit_gc_requested = _gc_requested.is_set() && is_implicit_gc(_requested_gc_cause);
+    bool is_gc_requested = _gc_requested.is_set();
+    GCCause::Cause requested_gc_cause = _requested_gc_cause;
+    bool explicit_gc_requested = is_gc_requested && is_explicit_gc(requested_gc_cause);
+    bool implicit_gc_requested = is_gc_requested && is_implicit_gc(requested_gc_cause);
 
     // This control loop iteration have seen this much allocations.
     size_t allocs_seen = Atomic::xchg(&_allocs_seen, (size_t)0, memory_order_relaxed);
@@ -156,8 +158,8 @@ void ShenandoahControlThread::run_service() {
         set_gc_mode(stw_full);
       }
     } else if (explicit_gc_requested) {
+      cause = requested_gc_cause;
       generation = GLOBAL;
-      cause = _requested_gc_cause;
       log_info(gc)("Trigger: Explicit GC request (%s)", GCCause::to_string(cause));
 
       global_heuristics->record_requested_gc();
@@ -172,8 +174,8 @@ void ShenandoahControlThread::run_service() {
         set_gc_mode(stw_full);
       }
     } else if (implicit_gc_requested) {
+      cause = requested_gc_cause;
       generation = GLOBAL;
-      cause = _requested_gc_cause;
       log_info(gc)("Trigger: Implicit GC request (%s)", GCCause::to_string(cause));
 
       global_heuristics->record_requested_gc();
@@ -779,8 +781,11 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
   size_t current_gc_id = get_gc_id();
   size_t required_gc_id = current_gc_id + 1;
   while (current_gc_id < required_gc_id) {
-    _gc_requested.set();
+    // Although setting gc request is under _gc_waiters_lock, but read side (run_service())
+    // does not take the lock. We need to enforce following order, so that read side sees
+    // latest requested gc cause when the flag is set.
     _requested_gc_cause = cause;
+    _gc_requested.set();
     notify_control_thread();
     if (cause != GCCause::_wb_breakpoint) {
       ml.wait();

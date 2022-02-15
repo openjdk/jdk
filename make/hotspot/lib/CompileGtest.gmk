@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBJVM, \
     CFLAGS_windows := -EHsc, \
     CFLAGS_macosx := -DGTEST_OS_MAC=1, \
     DISABLED_WARNINGS_gcc := $(DISABLED_WARNINGS_gcc) \
-        undef, \
+        undef stringop-overflow, \
     DISABLED_WARNINGS_clang := $(DISABLED_WARNINGS_clang) \
         undef switch format-nonliteral tautological-undefined-compare \
         self-assign-overloaded, \

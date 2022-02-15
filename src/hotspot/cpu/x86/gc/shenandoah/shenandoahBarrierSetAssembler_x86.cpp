@@ -474,9 +474,9 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
 
   if (is_strong) {
     if (is_narrow) {
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong_narrow), arg0, arg1);
+      __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong_narrow), arg0, arg1);
     } else {
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong), arg0, arg1);
+      __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong), arg0, arg1);
     }
   } else if (is_weak) {
     if (is_narrow) {
@@ -487,7 +487,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   } else {
     assert(is_phantom, "only remaining strength");
     assert(!is_narrow, "phantom access cannot be narrow");
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom), arg0, arg1);
+    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom), arg0, arg1);
   }
 
 #ifdef _LP64
@@ -655,7 +655,7 @@ void ShenandoahBarrierSetAssembler::store_check(MacroAssembler* masm, Register o
   ShenandoahBarrierSet* ctbs = ShenandoahBarrierSet::barrier_set();
   CardTable* ct = ctbs->card_table();
 
-  __ shrptr(obj, CardTable::card_shift);
+  __ shrptr(obj, CardTable::card_shift());
 
   Address card_addr;
 
@@ -958,8 +958,8 @@ void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssemb
 #ifdef _LP64
   __ leaq(end, Address(addr, count, TIMES_OOP, 0));  // end == addr+count*oop_size
   __ subptr(end, BytesPerHeapOop); // end - 1 to make inclusive
-  __ shrptr(addr, CardTable::card_shift);
-  __ shrptr(end, CardTable::card_shift);
+  __ shrptr(addr, CardTable::card_shift());
+  __ shrptr(end, CardTable::card_shift());
   __ subptr(end, addr); // end --> cards count
 
   __ mov64(tmp, disp);
@@ -970,8 +970,8 @@ __ BIND(L_loop);
   __ jcc(Assembler::greaterEqual, L_loop);
 #else
   __ lea(end,  Address(addr, count, Address::times_ptr, -wordSize));
-  __ shrptr(addr, CardTable::card_shift);
-  __ shrptr(end,   CardTable::card_shift);
+  __ shrptr(addr, CardTable::card_shift());
+  __ shrptr(end,   CardTable::card_shift());
   __ subptr(end, addr); // end --> count
 __ BIND(L_loop);
   Address cardtable(addr, count, Address::times_1, disp);

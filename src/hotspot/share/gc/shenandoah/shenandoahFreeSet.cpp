@@ -210,10 +210,10 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     if (req.type() == ShenandoahAllocRequest::_alloc_plab) {
       // Need to assure that plabs are aligned on multiple of card region.
       size_t free = r->free();
-      size_t usable_free = (free / CardTable::card_size) << CardTable::card_shift;
+      size_t usable_free = (free / CardTable::card_size()) << CardTable::card_shift();
       if ((free != usable_free) && (free - usable_free < ShenandoahHeap::min_fill_size() * HeapWordSize)) {
         // We'll have to add another card's memory to the padding
-        usable_free -= CardTable::card_size;
+        usable_free -= CardTable::card_size();
       }
       free /= HeapWordSize;
       usable_free /= HeapWordSize;
@@ -221,7 +221,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
         size = usable_free;
       }
       if (size >= req.min_size()) {
-        result = r->allocate_aligned(size, req, CardTable::card_size);
+        result = r->allocate_aligned(size, req, CardTable::card_size());
         if (result != nullptr && free > usable_free) {
           // Account for the alignment padding
           size_t padding = (free - usable_free) * HeapWordSize;
@@ -245,17 +245,17 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     }
   } else if (req.is_lab_alloc() && req.type() == ShenandoahAllocRequest::_alloc_plab) {
     size_t free = r->free();
-    size_t usable_free = (free / CardTable::card_size) << CardTable::card_shift;
+    size_t usable_free = (free / CardTable::card_size()) << CardTable::card_shift();
     free /= HeapWordSize;
     usable_free /= HeapWordSize;
     if ((free != usable_free) && (free - usable_free < ShenandoahHeap::min_fill_size() * HeapWordSize)) {
       // We'll have to add another card's memory to the padding
-      usable_free -= CardTable::card_size;
+      usable_free -= CardTable::card_size();
     }
     if (size <= usable_free) {
-      assert(size % CardTable::card_size_in_words == 0, "PLAB size must be multiple of remembered set card size");
+      assert(size % CardTable::card_size_in_words() == 0, "PLAB size must be multiple of remembered set card size");
 
-      result = r->allocate_aligned(size, req, CardTable::card_size);
+      result = r->allocate_aligned(size, req, CardTable::card_size());
       if (result != nullptr) {
         // Account for the alignment padding
         size_t padding = (free - usable_free) * HeapWordSize;

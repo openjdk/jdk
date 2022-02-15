@@ -109,7 +109,6 @@ public class TypeEnter implements Completer {
     private final Annotate annotate;
     private final TypeAnnotations typeAnnotations;
     private final Types types;
-    private final JCDiagnostic.Factory diags;
     private final DeferredLintHandler deferredLintHandler;
     private final Lint lint;
     private final TypeEnvs typeEnvs;
@@ -137,7 +136,6 @@ public class TypeEnter implements Completer {
         annotate = Annotate.instance(context);
         typeAnnotations = TypeAnnotations.instance(context);
         types = Types.instance(context);
-        diags = JCDiagnostic.Factory.instance(context);
         deferredLintHandler = DeferredLintHandler.instance(context);
         lint = Lint.instance(context);
         typeEnvs = TypeEnvs.instance(context);
@@ -356,8 +354,10 @@ public class TypeEnter implements Completer {
 
                 // Import-on-demand java.lang.
                 PackageSymbol javaLang = syms.enterPackage(syms.java_base, names.java_lang);
-                if (javaLang.members().isEmpty() && !javaLang.exists())
-                    throw new FatalError(diags.fragment(Fragments.FatalErrNoJavaLang));
+                if (javaLang.members().isEmpty() && !javaLang.exists()) {
+                    log.error(Errors.NoJavaLang);
+                    throw new Abort();
+                }
                 importAll(make.at(tree.pos()).Import(make.QualIdent(javaLang), false), javaLang, env);
 
                 JCModuleDecl decl = tree.getModuleDecl();
@@ -700,12 +700,12 @@ public class TypeEnter implements Completer {
             } else {
                 extending = null;
                 supertype = ((tree.mods.flags & Flags.ENUM) != 0)
-                ? attr.attribBase(enumBase(tree.pos, sym), baseEnv,
+                ? attr.attribBase(extending = enumBase(tree.pos, sym), baseEnv,
                                   true, false, false)
                 : (sym.fullname == names.java_lang_Object)
                 ? Type.noType
                 : sym.isRecord()
-                ? attr.attribBase(recordBase(tree.pos, sym), baseEnv,
+                ? attr.attribBase(extending = recordBase(tree.pos, sym), baseEnv,
                                   true, false, false)
                 : syms.objectType;
             }

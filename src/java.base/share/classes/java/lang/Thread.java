@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -922,7 +922,7 @@ public class Thread implements Runnable {
      *       <a href="{@docRoot}/java.base/java/lang/doc-files/threadPrimitiveDeprecation.html">Why
      *       are Thread.stop, Thread.suspend and Thread.resume Deprecated?</a>.
      */
-    @Deprecated(since="1.2")
+    @Deprecated(since="1.2", forRemoval=true)
     public final void stop() {
         @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
@@ -1976,8 +1976,8 @@ public class Thread implements Runnable {
      * @return the uncaught exception handler for this thread
      */
     public UncaughtExceptionHandler getUncaughtExceptionHandler() {
-        return uncaughtExceptionHandler != null ?
-            uncaughtExceptionHandler : group;
+        UncaughtExceptionHandler handler = this.uncaughtExceptionHandler;
+        return handler != null ? handler : group;
     }
 
     /**

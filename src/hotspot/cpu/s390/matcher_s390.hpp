@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,5 +149,8 @@
   static constexpr bool convL2FSupported(void) {
       return true;
   }
+
+  // Implements a variant of EncodeISOArrayNode that encode ASCII only
+  static const bool supports_encode_ascii_array = true;
 
 #endif // CPU_S390_MATCHER_S390_HPP

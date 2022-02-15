@@ -31,7 +31,7 @@ import jdk.internal.javac.PreviewFeature;
  * A visitor of trees, in the style of the visitor design pattern.
  * Classes implementing this interface are used to operate
  * on a tree when the kind of tree is unknown at compile time.
- * When a visitor is passed to an tree's {@link Tree#accept
+ * When a visitor is passed to a tree's {@link Tree#accept
  * accept} method, the <code>visit<i>Xyz</i></code> method most applicable
  * to that tree is invoked.
  *

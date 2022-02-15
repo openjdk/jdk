@@ -188,8 +188,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventPostProcessor(AquaMnemonicHandler.getInstance());
 
         final PopupFactory popupFactory = PopupFactory.getSharedInstance();
-        if (popupFactory != null && popupFactory instanceof ScreenPopupFactory) {
-            ((ScreenPopupFactory)popupFactory).setActive(false);
+        if (popupFactory instanceof ScreenPopupFactory spf) {
+            spf.setActive(false);
         }
 
         super.uninitialize();
@@ -870,7 +870,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             //"TabbedPane.selectedTabPadInsets", new InsetsUIResource(0, 0, 1, 0), // Really outsets, this is where we allow for overlap
             "TabbedPane.selectedTabPadInsets", new InsetsUIResource(0, 0, 0, 0), // Really outsets, this is where we allow for overlap
             "TabbedPane.tabsOverlapBorder", Boolean.TRUE,
-            "TabbedPane.selectedTabTitlePressedColor", selectedTabTitlePressedColor,
+            "TabbedPane.selectedTabTitlePressedColor", JRSUIUtils.isMacOSXBigSurOrAbove() ? selectedControlTextColor : selectedTabTitlePressedColor,
             "TabbedPane.selectedTabTitleDisabledColor", selectedTabTitleDisabledColor,
             "TabbedPane.selectedTabTitleNonFocusColor", selectedTabTitleNonFocusColor,
             "TabbedPane.selectedTabTitleNormalColor", JRSUIUtils.isMacOSXBigSurOrAbove() ? selectedControlTextColor : selectedTabTitleNormalColor,

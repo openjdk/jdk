@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,8 +104,7 @@ public abstract class RefAddr implements java.io.Serializable {
       * @see #getType
       */
     public boolean equals(Object obj) {
-        if ((obj != null) && (obj instanceof RefAddr)) {
-            RefAddr target = (RefAddr)obj;
+        if (obj instanceof RefAddr target) {
             if (addrType.compareTo(target.addrType) == 0) {
                 Object thisobj = this.getContent();
                 Object thatobj = target.getContent();

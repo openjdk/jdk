@@ -27,7 +27,7 @@
 
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/taskTerminator.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
@@ -66,7 +66,7 @@ void ShenandoahInitMarkRootsClosure<GENERATION>::do_oop_work(T* p) {
   ShenandoahMark::mark_through_ref<T, GENERATION>(p, _queue, nullptr, _mark_context, false);
 }
 
-class ShenandoahSTWMarkTask : public AbstractGangTask {
+class ShenandoahSTWMarkTask : public WorkerTask {
 private:
   ShenandoahSTWMark* const _mark;
 
@@ -76,7 +76,7 @@ public:
 };
 
 ShenandoahSTWMarkTask::ShenandoahSTWMarkTask(ShenandoahSTWMark* mark) :
-  AbstractGangTask("Shenandoah STW mark"),
+  WorkerTask("Shenandoah STW mark"),
   _mark(mark) {
 }
 

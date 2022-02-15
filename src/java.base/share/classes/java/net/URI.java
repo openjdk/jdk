@@ -2207,7 +2207,6 @@ public final class URI
             ru.authority = child.authority;
             ru.host = child.host;
             ru.userInfo = child.userInfo;
-            ru.host = child.host;
             ru.port = child.port;
             ru.path = child.path;
         }
@@ -3490,14 +3489,12 @@ public final class URI
                 if (q <= p)
                     break;
                 l = p;
+                p = q;
+                q = scan(p, n, L_ALPHANUM | L_DASH, H_ALPHANUM | H_DASH);
                 if (q > p) {
+                    if (input.charAt(q - 1) == '-')
+                        fail("Illegal character in hostname", q - 1);
                     p = q;
-                    q = scan(p, n, L_ALPHANUM | L_DASH, H_ALPHANUM | H_DASH);
-                    if (q > p) {
-                        if (input.charAt(q - 1) == '-')
-                            fail("Illegal character in hostname", q - 1);
-                        p = q;
-                    }
                 }
                 q = scan(p, n, '.');
                 if (q <= p)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,7 +176,7 @@ import sun.management.spi.PlatformMBeanProvider.PlatformComponent;
  * </tr>
  * <tr>
  * <th scope="row"> {@link PlatformLoggingMXBean} </th>
- * <td> {@link java.util.logging.LogManager#LOGGING_MXBEAN_NAME
+ * <td> {@link java.logging/java.util.logging.LogManager#LOGGING_MXBEAN_NAME
  *             java.util.logging:type=Logging}</td>
  * </tr>
  * </tbody>
@@ -246,7 +246,8 @@ import sun.management.spi.PlatformMBeanProvider.PlatformComponent;
  * @author  Mandy Chung
  * @since   1.5
  */
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal",
+                   "doclint:reference"}) // cross-module links
 public class ManagementFactory {
     // A class with only static fields and methods.
     private ManagementFactory() {};

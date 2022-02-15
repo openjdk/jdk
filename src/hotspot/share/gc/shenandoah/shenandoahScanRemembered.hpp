@@ -207,7 +207,7 @@
 
 #include <stdint.h>
 #include "memory/iterator.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
@@ -285,7 +285,7 @@ public:
 
   void merge_write_table(HeapWord* start, size_t word_count) {
     size_t card_index = card_index_for_addr(start);
-    size_t num_cards = word_count / CardTable::card_size_in_words;
+    size_t num_cards = word_count / CardTable::card_size_in_words();
     size_t iterations = num_cards / (sizeof (intptr_t) / sizeof (CardTable::CardValue));
     intptr_t* read_table_ptr = (intptr_t*) &(_card_table->read_byte_map())[card_index];
     intptr_t* write_table_ptr = (intptr_t*) &(_card_table->write_byte_map())[card_index];
@@ -304,7 +304,7 @@ public:
   // consists of copying the write table to the read table and cleaning the write table.
   void reset_remset(HeapWord* start, size_t word_count) {
     size_t card_index = card_index_for_addr(start);
-    size_t num_cards = word_count / CardTable::card_size_in_words;
+    size_t num_cards = word_count / CardTable::card_size_in_words();
     size_t iterations = num_cards / (sizeof (intptr_t) / sizeof (CardTable::CardValue));
     intptr_t* read_table_ptr = (intptr_t*) &(_card_table->read_byte_map())[card_index];
     intptr_t* write_table_ptr = (intptr_t*) &(_card_table->write_byte_map())[card_index];
@@ -1004,7 +1004,7 @@ public:
 
 typedef ShenandoahScanRemembered<ShenandoahDirectCardMarkRememberedSet> RememberedScanner;
 
-class ShenandoahScanRememberedTask : public AbstractGangTask {
+class ShenandoahScanRememberedTask : public WorkerTask {
  private:
   ShenandoahObjToScanQueueSet* _queue_set;
   ShenandoahObjToScanQueueSet* _old_queue_set;

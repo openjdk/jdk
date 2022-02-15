@@ -92,7 +92,7 @@ class ShenandoahProcessOldSATB : public SATBBufferClosure {
   }
 };
 
-class ShenandoahPurgeSATBTask : public AbstractGangTask {
+class ShenandoahPurgeSATBTask : public WorkerTask {
 private:
   ShenandoahObjToScanQueueSet* _mark_queues;
 
@@ -100,7 +100,7 @@ public:
   volatile size_t _trashed_oops;
 
   explicit ShenandoahPurgeSATBTask(ShenandoahObjToScanQueueSet* queues) :
-    AbstractGangTask("Purge SATB"),
+    WorkerTask("Purge SATB"),
     _mark_queues(queues),
     _trashed_oops(0) {
     Threads::change_thread_claim_token();

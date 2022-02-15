@@ -395,7 +395,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #validate
      * @see #invalidate
      */
-    private volatile boolean valid = false;
+    private volatile boolean valid;
 
     /**
      * The {@code DropTarget} associated with this component.
@@ -3177,17 +3177,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @since     1.0
      */
     public FontMetrics getFontMetrics(Font font) {
-        // This is an unsupported hack, but left in for a customer.
-        // Do not remove.
-        FontManager fm = FontManagerFactory.getInstance();
-        if (fm instanceof SunFontManager
-            && ((SunFontManager) fm).usePlatformFontMetrics()) {
-
-            if (peer != null &&
-                !(peer instanceof LightweightPeer)) {
-                return peer.getFontMetrics(font);
-            }
-        }
         return sun.font.FontDesignMetrics.getMetrics(font);
     }
 
@@ -3942,7 +3931,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      *
      * @see sun.java2d.SunGraphicsEnvironment#isFlipStrategyPreferred(ComponentPeer)
      */
-    private class ProxyCapabilities extends ExtendedBufferCapabilities {
+    private static class ProxyCapabilities extends ExtendedBufferCapabilities {
         private BufferCapabilities orig;
         private ProxyCapabilities(BufferCapabilities orig) {
             super(orig.getFrontBufferCapabilities(),
@@ -4143,7 +4132,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
         }
 
         /**
-         * @return direct access to the back buffer, as an image.
+         * Provides direct access to the back buffer as an image.
+         *
+         * @return the back buffer as an image
          * @exception IllegalStateException if the buffers have not yet
          * been created
          */
@@ -4703,8 +4694,11 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
-     * @return whether or not paint messages received from the operating system
+     * Returns whether or not paint messages received from the operating system
      * should be ignored.
+     *
+     * @return whether or not paint messages received from the operating system
+     * should be ignored
      *
      * @since 1.4
      * @see #setIgnoreRepaint
@@ -4955,8 +4949,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
             // the active/passive/peered clients loose focus.
             if (id == FocusEvent.FOCUS_GAINED) {
                 InputContext inputContext = getInputContext();
-                if (inputContext != null && inputContext instanceof sun.awt.im.InputContext) {
-                    ((sun.awt.im.InputContext)inputContext).disableNativeIM();
+                if (inputContext instanceof sun.awt.im.InputContext ctx) {
+                    ctx.disableNativeIM();
                 }
             }
         }
@@ -9340,7 +9334,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
          * to add/remove ComponentListener and FocusListener to track
          * target Component's state.
          */
-        private transient volatile int propertyListenersCount = 0;
+        private transient volatile int propertyListenersCount;
 
         /**
          * A component listener to track show/hide/resize events

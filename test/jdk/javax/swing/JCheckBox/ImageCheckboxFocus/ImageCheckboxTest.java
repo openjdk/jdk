@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import javax.swing.JCheckBox;
 /*
  * @test
  * @key headful
- * @bug 8216358
+ * @bug 8216358 8279586
  * @summary [macos] The focus is invisible when tab to "Image Radio Buttons" and "Image CheckBoxes"
  * @library ../../regtesthelpers/
  * @build Util
@@ -51,8 +51,12 @@ public class ImageCheckboxTest {
                 BufferedImage.TYPE_INT_ARGB);
         BufferedImage imageFocus = new BufferedImage(100, 50,
                 BufferedImage.TYPE_INT_ARGB);
+        BufferedImage imageFocusNotPainted = new BufferedImage(100, 50,
+                BufferedImage.TYPE_INT_ARGB);
+
 
         CustomCheckBox checkbox = new CustomCheckBox("Test", new MyIcon(Color.GREEN));
+        checkbox.setFocusPainted(true);
         checkbox.setSize(100, 50);
         checkbox.setFocused(false);
         checkbox.paint(imageNoFocus.createGraphics());
@@ -63,6 +67,17 @@ public class ImageCheckboxTest {
             ImageIO.write(imageFocus, "png", new File("imageFocus.png"));
             ImageIO.write(imageNoFocus, "png", new File("imageNoFocus.png"));
             throw new Exception("Changing focus is not visualized");
+        }
+
+        checkbox.setFocusPainted(false);
+        checkbox.paint(imageFocusNotPainted.createGraphics());
+
+        if (!Util.compareBufferedImages(imageFocusNotPainted, imageNoFocus)) {
+            ImageIO.write(imageFocusNotPainted, "png",
+                    new File("imageFocusNotPainted.png"));
+            ImageIO.write(imageFocus, "png", new File("imageFocus.png"));
+            ImageIO.write(imageNoFocus, "png", new File("imageNoFocus.png"));
+            throw new Exception("setFocusPainted(false) is ignored");
         }
     }
 

@@ -153,7 +153,6 @@ public class Config {
         }
         KdcComm.initStatic();
         EType.initStatic();
-        Checksum.initStatic();
         KrbAsReqBuilder.ReferralsState.initStatic();
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.math.BigInteger;
 import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;
 import sun.security.util.ObjectIdentifier;
+import sun.security.util.SignatureUtil;
 import sun.security.x509.AccessDescription;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.AuthorityInfoAccessExtension;
@@ -364,8 +365,7 @@ public class CertificateBuilder {
             throws IOException, CertificateException, NoSuchAlgorithmException {
         // TODO: add some basic checks (key usage, basic constraints maybe)
 
-        AlgorithmId signAlg = AlgorithmId.get(algName);
-        byte[] encodedCert = encodeTopLevel(issuerCert, issuerKey, signAlg);
+        byte[] encodedCert = encodeTopLevel(issuerCert, issuerKey, algName);
         ByteArrayInputStream bais = new ByteArrayInputStream(encodedCert);
         return (X509Certificate)factory.generateCertificate(bais);
     }
@@ -392,18 +392,24 @@ public class CertificateBuilder {
      * @throws IOException if an encoding error occurs.
      */
     private byte[] encodeTopLevel(X509Certificate issuerCert,
-            PrivateKey issuerKey, AlgorithmId signAlg)
-            throws CertificateException, IOException {
+            PrivateKey issuerKey, String algName)
+            throws CertificateException, IOException, NoSuchAlgorithmException {
+
+        AlgorithmId signAlg = AlgorithmId.get(algName);
         DerOutputStream outerSeq = new DerOutputStream();
         DerOutputStream topLevelItems = new DerOutputStream();
 
-        tbsCertBytes = encodeTbsCert(issuerCert, signAlg);
-        topLevelItems.write(tbsCertBytes);
         try {
-            signatureBytes = signCert(issuerKey, signAlg);
+            Signature sig = SignatureUtil.fromKey(signAlg.getName(), issuerKey, (Provider)null);
+            // Rewrite signAlg, RSASSA-PSS needs some parameters.
+            signAlg = SignatureUtil.fromSignature(sig, issuerKey);
+            tbsCertBytes = encodeTbsCert(issuerCert, signAlg);
+            sig.update(tbsCertBytes);
+            signatureBytes = sig.sign();
         } catch (GeneralSecurityException ge) {
             throw new CertificateException(ge);
         }
+        topLevelItems.write(tbsCertBytes);
         signAlg.derEncode(topLevelItems);
         topLevelItems.putBitString(signatureBytes);
         outerSeq.write(DerValue.tag_Sequence, topLevelItems);
@@ -518,22 +524,4 @@ public class CertificateBuilder {
                 (byte)3), extSequence);
     }
 
-    /**
-     * Digitally sign the X.509 certificate.
-     *
-     * @param issuerKey The private key of the issuing authority
-     * @param signAlg The signature algorithm object
-     *
-     * @return The digital signature bytes.
-     *
-     * @throws GeneralSecurityException If any errors occur during the
-     * digital signature process.
-     */
-    private byte[] signCert(PrivateKey issuerKey, AlgorithmId signAlg)
-            throws GeneralSecurityException {
-        Signature sig = Signature.getInstance(signAlg.getName());
-        sig.initSign(issuerKey);
-        sig.update(tbsCertBytes);
-        return sig.sign();
-    }
- }
+}

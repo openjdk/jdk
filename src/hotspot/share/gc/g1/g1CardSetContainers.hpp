@@ -95,7 +95,7 @@ class G1CardSetInlinePtr : public StackObj {
     return result;
   }
 
-  uint find(uint const card_idx, uint const bits_per_card, uint start_at, uint num_elems);
+  uint find(uint const card_idx, uint const bits_per_card, uint start_at, uint num_cards);
 
 public:
   G1CardSetInlinePtr() : _value_addr(nullptr), _value((CardSetPtr)G1CardSet::CardSetInlinePtr) { }
@@ -177,6 +177,9 @@ public:
   void set_next(G1CardSetContainer* next) {
     _next = next;
   }
+
+  // Log of largest card index that can be stored in any G1CardSetContainer
+  static uint LogCardsPerRegionLimit;
 };
 
 class G1CardSetArray : public G1CardSetContainer {
@@ -193,19 +196,19 @@ private:
   static const EntryCountType EntryMask = LockBitMask - 1;
 
   class G1CardSetArrayLocker : public StackObj {
-    EntryCountType volatile* _value;
-    EntryCountType volatile _original_value;
-    bool _success;
+    EntryCountType volatile* _num_entries_addr;
+    EntryCountType _local_num_entries;
   public:
     G1CardSetArrayLocker(EntryCountType volatile* value);
 
-    EntryCountType num_entries() const { return _original_value; }
-    void inc_num_entries() { _success = true; }
+    EntryCountType num_entries() const { return _local_num_entries; }
+    void inc_num_entries() {
+      assert(((_local_num_entries + 1) & EntryMask) == (EntryCountType)(_local_num_entries + 1), "no overflow" );
+      _local_num_entries++;
+    }
 
     ~G1CardSetArrayLocker() {
-      assert(((_original_value + _success) & EntryMask) == (EntryCountType)(_original_value + _success), "precondition!" );
-
-      Atomic::release_store(_value, (EntryCountType)(_original_value + _success));
+      Atomic::release_store(_num_entries_addr, _local_num_entries);
     }
   };
 
@@ -215,7 +218,7 @@ private:
   }
 
 public:
-  G1CardSetArray(uint const card_in_region, EntryCountType num_elems);
+  G1CardSetArray(uint const card_in_region, EntryCountType num_cards);
 
   G1AddCardResult add(uint card_idx);
 
@@ -225,7 +228,6 @@ public:
   void iterate(CardVisitor& found);
 
   size_t num_entries() const { return _num_entries & EntryMask; }
-  size_t max_entries() const { return _size; }
 
   static size_t header_size_in_bytes() { return header_size_in_bytes_internal<G1CardSetArray>(); }
 

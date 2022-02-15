@@ -512,7 +512,7 @@ void ShenandoahBarrierSetC2::post_barrier(GraphKit* kit,
   Node* cast = __ CastPX(__ ctrl(), adr);
 
   // Divide by card size
-  Node* card_offset = __ URShiftX( cast, __ ConI(CardTable::card_shift) );
+  Node* card_offset = __ URShiftX( cast, __ ConI(CardTable::card_shift()) );
 
   // Combine card table base and card offset
   Node* card_adr = __ AddP(__ top(), byte_map_base_node(kit), card_offset );
@@ -822,7 +822,7 @@ Node* ShenandoahBarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& acces
 
 // Support for GC barriers emitted during parsing
 bool ShenandoahBarrierSetC2::is_gc_barrier_node(Node* node) const {
-  if (node->Opcode() == Op_ShenandoahLoadReferenceBarrier) return true;
+  if (node->Opcode() == Op_ShenandoahLoadReferenceBarrier || node->Opcode() == Op_ShenandoahIUBarrier) return true;
   if (node->Opcode() != Op_CallLeaf && node->Opcode() != Op_CallLeafNoFP) {
     return false;
   }

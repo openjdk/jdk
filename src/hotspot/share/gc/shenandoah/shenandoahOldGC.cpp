@@ -35,7 +35,7 @@
 #include "prims/jvmtiTagMap.hpp"
 #include "utilities/events.hpp"
 
-class ShenandoahConcurrentCoalesceAndFillTask : public AbstractGangTask {
+class ShenandoahConcurrentCoalesceAndFillTask : public WorkerTask {
 private:
   uint _nworkers;
   ShenandoahHeapRegion** _coalesce_and_fill_region_array;
@@ -46,7 +46,7 @@ private:
 public:
   ShenandoahConcurrentCoalesceAndFillTask(uint nworkers, ShenandoahHeapRegion** coalesce_and_fill_region_array,
                                           uint region_count, ShenandoahConcurrentGC* old_gc) :
-    AbstractGangTask("Shenandoah Concurrent Coalesce and Fill"),
+    WorkerTask("Shenandoah Concurrent Coalesce and Fill"),
     _nworkers(nworkers),
     _coalesce_and_fill_region_array(coalesce_and_fill_region_array),
     _coalesce_and_fill_region_count(region_count),
@@ -226,7 +226,7 @@ void ShenandoahOldGC::entry_coalesce_and_fill_message(char *buf, size_t len) con
 bool ShenandoahOldGC::op_coalesce_and_fill() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   ShenandoahOldHeuristics* old_heuristics = heap->old_heuristics();
-  WorkGang* workers = heap->workers();
+  WorkerThreads* workers = heap->workers();
   uint nworkers = workers->active_workers();
 
   assert(_generation->generation_mode() == OLD, "Only old-GC does coalesce and fill");

@@ -119,7 +119,7 @@ public class RMIJRMPServerImpl extends RMIServerImpl {
         else if (credentialsTypes != null) {
             allowedTypes = Arrays.stream(credentialsTypes).filter(
                     s -> s!= null).collect(Collectors.toSet());
-            allowedTypes.stream().forEach(ReflectUtil::checkPackageAccess);
+            allowedTypes.forEach(ReflectUtil::checkPackageAccess);
             cFilter = this::newClientCheckInput;
         } else {
             allowedTypes = null;
