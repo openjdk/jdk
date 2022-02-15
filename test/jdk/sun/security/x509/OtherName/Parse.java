@@ -86,18 +86,16 @@ public class Parse {
 
         int found = 0;
         for (var san : x.getSubjectAlternativeNames()) {
-            if (san.size() == 4) {
-                if (san.get(2).equals("1.2.3.5")
-                        && Arrays.equals((byte[]) san.get(3), d1)) {
+            if (san.size() >= 4 && san.get(0).equals(0)) {
+                if (san.get(2).equals("1.2.3.5")) {
+                    Asserts.assertTrue(Arrays.equals((byte[]) san.get(3), d1));
                     found++;
-                }
-                if (san.get(2).equals("1.2.3.6")
-                        && san.get(3).equals("a.com")) {
+                } else if (san.get(2).equals("1.2.3.6")) {
+                    Asserts.assertEQ(san.get(3), "a.com");
                     found++;
                 }
             }
         }
-
         Asserts.assertEQ(found, 2);
     }
 }

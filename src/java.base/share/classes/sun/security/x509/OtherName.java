@@ -90,10 +90,11 @@ public class OtherName implements GeneralNameInterface {
 
         oid = in.getOID();
         DerValue derValue1 = in.getDerValue();
-        if (!derValue1.isContextSpecific((byte)0) || !derValue1.isConstructed()) {
+        if (derValue1.isContextSpecific((byte) 0) && derValue1.isConstructed()) {
+            nameValue = derValue1.data.toByteArray();
+        } else {
             throw new IOException("value is not [0]");
         }
-        nameValue = derValue1.data.toByteArray();
         gni = getGNI(oid, nameValue);
         if (gni != null) {
             name = gni.toString();

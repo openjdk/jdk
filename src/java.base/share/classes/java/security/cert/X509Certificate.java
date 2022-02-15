@@ -587,17 +587,15 @@ implements X509Extension {
      * returned as {@code String}s represented as a series of nonnegative
      * integers separated by periods. Directory names (distinguished names)
      * are returned in <a href="http://www.ietf.org/rfc/rfc2253.txt">
-     * RFC 2253</a> string format. otherNames are returned as a byte array
-     * containing the ASN.1 DER encoded form of the name, and may also return
-     * a third entry in the list containing its {@code type-id} in string
-     * format, and a fourth entry as either a string (if {@code value} inside
-     * is a valid UTF8String, PrintableString, T61String, IA5String,
-     * UniversalString, BMPString, or GeneralString) or a byte array containing
-     * the ASN.1 DER encoding of {@code value} without the context-specific
-     * constructed tag with number 0 (otherwise). No standard string format is
-     * defined for otherNames, X.400 names, EDI party names, or any
-     * other type of names. They are returned as byte arrays
-     * containing the ASN.1 DER encoded form of the name.
+     * RFC 2253</a> string format. No standard string format is defined for
+     * X.400 names or EDI party names. They are returned as byte arrays
+     * containing the ASN.1 DER encoded form of the name. otherNames are also
+     * returned as byte arrays containing the ASN.1 DER encoded form of the
+     * name. There may be a third entry in the list for their {@code type-id}
+     * in string form, and a fourth entry for their {@code value} as either
+     * a string (if the value is a valid supported character string)
+     * or (otherwise) a byte array containing the ASN.1 DER encoded from of
+     * the value without the context-specific constructed tag with number 0.
      * <p>
      * Note that the {@code Collection} returned may contain more
      * than one name of the same type. Also, note that the returned
