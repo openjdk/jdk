@@ -42,11 +42,13 @@ public class KeepAliveProperty {
     static volatile boolean pass = false;
 
     static class Server extends Thread {
-        ServerSocket server;
+        final ServerSocket server;
+
         Server (ServerSocket server) {
             super ();
             this.server = server;
         }
+
         void readAll (Socket s) throws IOException {
             byte[] buf = new byte [128];
             int c;
@@ -58,8 +60,9 @@ public class KeepAliveProperty {
                     return;
                 }
             }
+            if (c == -1)
+                throw new IOException("Socket closed");
         }
-
 
         Socket s = null;
         String BODY;
@@ -94,29 +97,25 @@ public class KeepAliveProperty {
 
             // second request may legitimately fail
 
-            try {
+            try (Socket s2 = s; ServerSocket server2 = server; PrintStream out2 = out) {
                 // wait for second request.
-                readAll(s);
+                readAll(s2);
 
                 BODY = "Goodbye world";
                 CLEN = "Content-Length: " + BODY.length() + "\r\n";
 
                 /* send the header */
-                out.print("HTTP/1.1 200 OK\r\n");
-                out.print("Content-Type: text/plain; charset=iso-8859-1\r\n");
-                out.print(CLEN);
-                out.print("\r\n");
-                out.print(BODY);
-                out.flush();
-                pass = true;
+                out2.print("HTTP/1.1 200 OK\r\n");
+                out2.print("Content-Type: text/plain; charset=iso-8859-1\r\n");
+                out2.print(CLEN);
+                out2.print("\r\n");
+                out2.print(BODY);
+                out2.flush();
+                pass = !expectClose;
+                if (!pass) System.out.println("Failed: expected close");
             } catch (Exception e) {
                 pass = expectClose;
-            } finally {
-                try {
-                    if (s != null)
-                        s.close();
-                    server.close();
-                } catch (IOException unused) {}
+                if (!pass) System.out.println("Failed: did not expect close");
             }
         }
     }
