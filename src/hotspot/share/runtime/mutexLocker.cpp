@@ -55,7 +55,7 @@ Mutex*   JvmtiThreadState_lock        = NULL;
 Monitor* EscapeBarrier_lock           = NULL;
 Monitor* Heap_lock                    = NULL;
 #ifdef INCLUDE_PARALLELGC
-Mutex*   ParallelExpandHeap_lock      = NULL;
+Mutex*   PSOldGenExpand_lock      = NULL;
 #endif
 Mutex*   AdapterHandlerLibrary_lock   = NULL;
 Mutex*   SignatureHandlerLibrary_lock = NULL;
@@ -365,7 +365,7 @@ void mutex_init() {
   defl(CompileTaskAlloc_lock       , PaddedMutex ,  MethodCompileQueue_lock);
 #ifdef INCLUDE_PARALLELGC
   if (UseParallelGC) {
-    defl(ParallelExpandHeap_lock   , PaddedMutex , Heap_lock, true);
+    defl(PSOldGenExpand_lock   , PaddedMutex , Heap_lock, true);
   }
 #endif
   defl(OopMapCacheAlloc_lock       , PaddedMutex ,  Threads_lock, true);
