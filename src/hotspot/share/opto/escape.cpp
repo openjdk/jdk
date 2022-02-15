@@ -227,7 +227,7 @@ bool ConnectionGraph::compute_escape() {
       PointsToNode* ptn = ptnodes_worklist.at(i);
       ptn->dump();
     }
-    tty->print_cr("+++++ Calculating escapse states and scalar replaceability");
+    tty->print_cr("+++++ Calculating escape states and scalar replaceability");
   }
 #endif
 
