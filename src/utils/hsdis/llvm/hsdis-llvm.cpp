@@ -309,6 +309,15 @@ class hsdis_backend : public hsdis_backend_base {
     size_t size = LLVMDisasmInstruction(_dcontext, (uint8_t*)p, (uint64_t)(end - start), (uint64_t)p, buf, sizeof(buf));
     if (size > 0) {
       (*_printf_callback)(_printf_stream, "%s", buf);
+    } else {
+      // LLVM encountered an unknown instruction
+      if (end - start >= 4) {
+        // Print the following word and skip past it
+        snprintf(buf, sizeof(buf), "\t.inst\t#0x%08x ; undefined", *(uint32_t*)p);
+        size = 4;
+      } else {
+        snprintf(buf, sizeof(buf), "\t<invalid instruction, aborting hsdis>");
+      }
     }
     return size;
   }
