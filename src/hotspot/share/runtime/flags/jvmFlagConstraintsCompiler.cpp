@@ -250,6 +250,14 @@ JVMFlag::Error OptoLoopAlignmentConstraintFunc(intx value, bool verbose) {
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
+  if (OptoLoopAlignment > CodeEntryAlignment) {
+    JVMFlag::printError(verbose,
+                        "OptoLoopAlignment (" INTX_FORMAT ") must be "
+                        "less or equal to CodeEntryAlignment (" INTX_FORMAT ")\n",
+                        value, CodeEntryAlignment);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+
   return JVMFlag::SUCCESS;
 }
 
