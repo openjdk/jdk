@@ -831,7 +831,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     /**
      * Creates a new, empty map with an initial table size
      * accommodating the specified number of elements without the need
-     * to dynamically resize.
+     * to dynamically re(size).
      *
      * @param initialCapacity The implementation performs internal
      * sizing to accommodate this many elements.
@@ -895,9 +895,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             throw new IllegalArgumentException();
         if (initialCapacity < concurrencyLevel)   // Use at least as many bins
             initialCapacity = concurrencyLevel;   // as estimated threads
-        long size = (long)Math.ceil(initialCapacity / (double)loadFactor);
-        int cap = (size >= (long)MAXIMUM_CAPACITY) ?
-            MAXIMUM_CAPACITY : tableSizeFor((int)size);
+        int size = (int)Math.ceil(initialCapacity / loadFactor);
+        int cap = (size >= MAXIMUM_CAPACITY) ?
+            MAXIMUM_CAPACITY : tableSizeFor(size);
         this.sizeCtl = cap;
     }
 
@@ -1463,9 +1463,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         if (size == 0L)
             sizeCtl = 0;
         else {
-            long ts = (long)Math.ceil(size / (double)LOAD_FACTOR);
-            int n = (ts >= (long)MAXIMUM_CAPACITY) ?
-                MAXIMUM_CAPACITY : tableSizeFor((int)ts);
+            int ts = (int)Math.ceil(size / (double)LOAD_FACTOR);
+            int n = (ts >= MAXIMUM_CAPACITY) ?
+                MAXIMUM_CAPACITY : tableSizeFor(ts);
             @SuppressWarnings("unchecked")
             Node<K,V>[] tab = (Node<K,V>[])new Node<?,?>[n];
             int mask = n - 1;
