@@ -4921,18 +4921,14 @@ int os::create_binary_file(const char* path, bool rewrite_existing) {
   return ::open64(path, oflags, S_IREAD | S_IWRITE);
 }
 
-off64_t call_lseek64(int fd, off64_t offset, int whence) {
-  ALLOW_C_FUNCTION(lseek64, return ::lseek64(fd, offset, whence);)
-}
-
 // return current position of file pointer
 jlong os::current_file_offset(int fd) {
-  return (jlong)call_lseek64(fd, (off64_t)0, SEEK_CUR);
+  return (jlong)os::lseek(fd, (off64_t)0, SEEK_CUR);
 }
 
 // move file pointer to the specified offset
 jlong os::seek_to_file_offset(int fd, jlong offset) {
-  return (jlong)call_lseek64(fd, (off64_t)offset, SEEK_SET);
+  return (jlong)os::lseek(fd, (off64_t)offset, SEEK_SET);
 }
 
 // This code originates from JDK's sysAvailable
@@ -4953,11 +4949,11 @@ int os::available(int fd, jlong *bytes) {
       }
     }
   }
-  if ((cur = call_lseek64(fd, 0L, SEEK_CUR)) == -1) {
+  if ((cur = os::lseek(fd, 0L, SEEK_CUR)) == -1) {
     return 0;
-  } else if ((end = call_lseek64(fd, 0L, SEEK_END)) == -1) {
+  } else if ((end = os::lseek(fd, 0L, SEEK_END)) == -1) {
     return 0;
-  } else if (call_lseek64(fd, cur, SEEK_SET) == -1) {
+  } else if (os::lseek(fd, cur, SEEK_SET) == -1) {
     return 0;
   }
   *bytes = end - cur;
