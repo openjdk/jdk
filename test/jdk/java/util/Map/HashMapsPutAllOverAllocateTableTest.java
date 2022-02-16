@@ -47,7 +47,6 @@ public class HashMapsPutAllOverAllocateTableTest {
         testOneMapClass(HashMap.class);
         testOneMapClass(WeakHashMap.class);
         testOneMapClass(IdentityHashMap.class);
-        testOneMapClass(LinkedHashMap.class);
     }
 
     public static <T extends Map<Object, Object>> void testOneMapClass(Class<T> mapClass) throws Exception {
