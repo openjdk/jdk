@@ -530,7 +530,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     public Path appLauncherPath() {
         return appLauncherPath(null);
     }
-    
+
     /**
      * Returns names of all additional launchers or empty list if none
      * configured.
