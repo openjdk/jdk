@@ -2168,6 +2168,15 @@ void FileMapInfo::map_heap_regions_impl() {
   assert(is_aligned(relocated_closed_heap_region_bottom, HeapRegion::GrainBytes),
          "must be");
 
+  if (_heap_pointers_need_patching) {
+    char* bitmap_base = map_bitmap_region();
+    if (bitmap_base == NULL) {
+      log_info(cds)("CDS heap cannot be used because bitmap region cannot be mapped");
+      _heap_pointers_need_patching = false;
+      return;
+    }
+  }
+
   // Map the closed heap regions: GC does not write into these regions.
   if (map_heap_regions(MetaspaceShared::first_closed_heap_region,
                        MetaspaceShared::max_num_closed_heap_regions,
@@ -2297,9 +2306,7 @@ void FileMapInfo::patch_heap_embedded_pointers() {
 void FileMapInfo::patch_heap_embedded_pointers(MemRegion* regions, int num_regions,
                                                int first_region_idx) {
   char* bitmap_base = map_bitmap_region();
-  if (bitmap_base == NULL) {
-    return;
-  }
+  assert(bitmap_base != NULL, "must have already been mapped");
   for (int i=0; i<num_regions; i++) {
     FileMapRegion* si = space_at(i + first_region_idx);
     HeapShared::patch_embedded_pointers(
