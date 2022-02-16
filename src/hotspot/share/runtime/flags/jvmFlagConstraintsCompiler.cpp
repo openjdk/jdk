@@ -230,7 +230,7 @@ JVMFlag::Error CodeEntryAlignmentConstraintFunc(intx value, bool verbose) {
 
   if ((uintx)CodeEntryAlignment > CodeCacheSegmentSize) {
     JVMFlag::printError(verbose,
-                        "CodeEntryAlignment  (" INTX_FORMAT ") must be "
+                        "CodeEntryAlignment (" INTX_FORMAT ") must be "
                         "less than or equal to CodeCacheSegmentSize (" UINTX_FORMAT ") "
                         "to align entry points\n",
                         CodeEntryAlignment, CodeCacheSegmentSize);
