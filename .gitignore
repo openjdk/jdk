@@ -18,3 +18,17 @@ NashornProfile.txt
 /src/utils/LogCompilation/target/
 /.project/
 /.settings/
+# -- BEGIN mx_jdk GENERATED
+/mxbuild/
+**/.checkstyle
+**/.classpath
+**/.externalToolBuilders
+**/.factorypath
+**/.idea
+**/.project
+**/.pydevproject
+**/.settings/
+**/*.pyc
+**/eclipse-launches/
+/.metadata/
+# -- END mx_jdk GENERATED

@@ -207,6 +207,7 @@ module java.base {
         jdk.nio.mapmode,
         jdk.unsupported,
         jdk.internal.vm.ci,
+        jdk.internal.vm.compiler,
         jdk.incubator.foreign;
     exports jdk.internal.module to
         java.instrument,
