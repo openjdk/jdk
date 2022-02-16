@@ -31,14 +31,12 @@
  * @run main/othervm/native -agentlib:FastGetField -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyJNIFields FastGetField 0
  * @run main/othervm/native -agentlib:FastGetField -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyJNIFields FastGetField 1
  * @run main/othervm/native -agentlib:FastGetField -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyJNIFields FastGetField 2
- * @run main/othervm/native -agentlib:FastGetField -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyJNIFields -XX:+UnlockDiagnosticVMOptions -XX:+SafepointALot -XX:GuaranteedSafepointInterval=1 FastGetField 0
- * @run main/othervm/native -agentlib:FastGetField -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyJNIFields -XX:+UnlockDiagnosticVMOptions -XX:+SafepointALot -XX:GuaranteedSafepointInterval=1 FastGetField 1
- * @run main/othervm/native -agentlib:FastGetField -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyJNIFields -XX:+UnlockDiagnosticVMOptions -XX:+SafepointALot -XX:GuaranteedSafepointInterval=1 FastGetField 2
+ * @run main/othervm/native -agentlib:FastGetField -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyJNIFields -XX:+UnlockDiagnosticVMOptions -XX:+ForceUnreachable -XX:+SafepointALot -XX:GuaranteedSafepointInterval=1 FastGetField 0
+ * @run main/othervm/native -agentlib:FastGetField -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyJNIFields -XX:+UnlockDiagnosticVMOptions -XX:+ForceUnreachable -XX:+SafepointALot -XX:GuaranteedSafepointInterval=1 FastGetField 1
+ * @run main/othervm/native -agentlib:FastGetField -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyJNIFields -XX:+UnlockDiagnosticVMOptions -XX:+ForceUnreachable -XX:+SafepointALot -XX:GuaranteedSafepointInterval=1 FastGetField 2
  */
 
 import java.lang.reflect.Field;
-
-// FIXME: Removed ForceUnreachable since it clobers rscratch1
 
 public class FastGetField {
 
