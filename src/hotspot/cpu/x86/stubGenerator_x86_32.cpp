@@ -4028,7 +4028,8 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::x86::_vector_int_mask_cmp_bits = generate_vector_mask("vector_int_mask_cmp_bits", 0x00000001);
     StubRoutines::x86::_vector_iota_indices = generate_iota_indices("iota_indices");
 
-    if (VM_Version::supports_avx2() && UsePopCountInstruction) {
+    if (UsePopCountInstruction && VM_Version::supports_avx2() && !VM_Version::supports_avx512_vpopcntdq()) {
+      // popcount lut implementation from HD.
       StubRoutines::x86::_vector_popcount_lut = generate_popcount_avx_lut("popcount_lut");
     }
 
