@@ -68,8 +68,8 @@ TEST_VM(PreservedMarks, iterate_and_restore) {
   ASSERT_MARK_WORD_EQ(o2.mark(), FakeOop::changedMark());
 
   // Push o1 and o2 to have their marks preserved.
-  pm.push(o1.get_oop(), o1.mark());
-  pm.push(o2.get_oop(), o2.mark());
+  pm.push_if_necessary(o1.get_oop(), o1.mark());
+  pm.push_if_necessary(o2.get_oop(), o2.mark());
 
   // Fake a move from o1->o3 and o2->o4.
   o1.forward_to(o3.get_oop());

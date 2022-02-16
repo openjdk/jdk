@@ -433,6 +433,12 @@ void G1ParScanThreadState::undo_allocation(G1HeapRegionAttr dest_attr,
   _plab_allocator->undo_allocation(dest_attr, obj_ptr, word_sz, node_index);
 }
 
+void G1ParScanThreadState::update_bot_after_copying(oop obj, size_t word_sz) {
+  HeapWord* obj_start = cast_from_oop<HeapWord*>(obj);
+  HeapRegion* region = _g1h->heap_region_containing(obj_start);
+  region->update_bot_for_obj(obj_start, word_sz);
+}
+
 // Private inline function, for direct internal use and providing the
 // implementation of the public not-inline function.
 MAYBE_INLINE_EVACUATION
@@ -510,10 +516,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
       }
       _age_table.add(age, word_sz);
     } else {
-      // Currently we only have two destinations and we only need BOT updates for
-      // old. If the current allocation was done outside the PLAB this call will
-      // have no effect since the _top of the PLAB has not changed.
-      _plab_allocator->update_bot_for_plab_allocation(dest_attr, word_sz, node_index);
+      update_bot_after_copying(obj, word_sz);
     }
 
     // Most objects are not arrays, so do one array check rather than
@@ -623,9 +626,11 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
   if (forward_ptr == NULL) {
     // Forward-to-self succeeded. We are the "owner" of the object.
     HeapRegion* r = _g1h->heap_region_containing(old);
-    // Records evac failure objs, this will help speed up iteration
-    // of these objs later in *remove self forward* phase of post evacuation.
-    r->record_evac_failure_obj(old);
+
+    // Objects failing evacuation will turn into old objects since the regions
+    // are relabeled as such. We mark the failing objects in the prev bitmap and
+    // later use it to handle all failed objects.
+    _g1h->mark_evac_failure_object(old, _worker_id);
 
     if (_evac_failure_regions->record(r->hrm_index())) {
       _g1h->hr_printer()->evac_failure(r);

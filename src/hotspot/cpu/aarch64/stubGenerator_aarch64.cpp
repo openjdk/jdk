@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3104,8 +3104,7 @@ class StubGenerator: public StubCodeGenerator {
   // key = c_rarg4
   // state = c_rarg5 - GHASH.state
   // subkeyHtbl = c_rarg6 - powers of H
-  // subkeyHtbl_48_entries = c_rarg7 (not used)
-  // counter = [sp, #0] pointer to 16 bytes of CTR
+  // counter = c_rarg7 - 16 bytes of CTR
   // return - number of processed bytes
   address generate_galoisCounterMode_AESCrypt() {
     address ghash_polynomial = __ pc();
@@ -3131,10 +3130,7 @@ class StubGenerator: public StubCodeGenerator {
 
     const Register subkeyHtbl = c_rarg6;
 
-    // Pointer to CTR is passed on the stack before the (fp, lr) pair.
-    const Address counter_mem(sp, 2 * wordSize);
     const Register counter = c_rarg7;
-    __ ldr(counter, counter_mem);
 
     const Register keylen = r10;
     // Save state before entering routine
@@ -5351,11 +5347,11 @@ class StubGenerator: public StubCodeGenerator {
     __ add(str1, str1, wordSize);
     __ add(str2, str2, wordSize);
     if (SoftwarePrefetchHintDistance >= 0) {
+      __ align(OptoLoopAlignment);
       __ bind(LARGE_LOOP_PREFETCH);
         __ prfm(Address(str1, SoftwarePrefetchHintDistance));
         __ prfm(Address(str2, SoftwarePrefetchHintDistance));
 
-        __ align(OptoLoopAlignment);
         for (int i = 0; i < 4; i++) {
           __ ldp(tmp1, tmp1h, Address(str1, i * 16));
           __ ldp(tmp2, tmp2h, Address(str2, i * 16));
@@ -6402,6 +6398,18 @@ class StubGenerator: public StubCodeGenerator {
     __ sub(c_rarg0, dst, doff);
 
     __ leave();
+    __ ret(lr);
+
+    return start;
+  }
+
+  // Support for spin waits.
+  address generate_spin_wait() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "spin_wait");
+    address start = __ pc();
+
+    __ spin_wait();
     __ ret(lr);
 
     return start;
@@ -7749,6 +7757,8 @@ class StubGenerator: public StubCodeGenerator {
     if (UseAdler32Intrinsics) {
       StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
     }
+
+    StubRoutines::aarch64::_spin_wait = generate_spin_wait();
 
 #ifdef LINUX
 

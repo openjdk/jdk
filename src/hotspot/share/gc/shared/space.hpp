@@ -533,10 +533,6 @@ class ContiguousSpace: public CompactibleSpace {
 
   // Debugging
   virtual void verify() const;
-
-  // Used to increase collection frequency.  "factor" of 0 means entire
-  // space.
-  void allocate_temporary_filler(int factor);
 };
 
 

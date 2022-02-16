@@ -39,7 +39,7 @@ class G1FullGCCompactionPoint : public CHeapObj<mtGC> {
   GrowableArrayIterator<HeapRegion*> _compaction_region_iterator;
 
   bool object_will_fit(size_t size);
-  void initialize_values(bool init_threshold);
+  void initialize_values();
   void switch_region();
   HeapRegion* next_region();
 
@@ -49,7 +49,7 @@ public:
 
   bool has_regions();
   bool is_initialized();
-  void initialize(HeapRegion* hr, bool init_threshold);
+  void initialize(HeapRegion* hr);
   void update();
   void forward(SlidingForwarding* const forwarding, oop object, size_t size);
   void add(HeapRegion* hr);

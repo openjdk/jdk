@@ -669,9 +669,33 @@ void DefNewGeneration::init_assuming_no_promotion_failure() {
 }
 
 void DefNewGeneration::remove_forwarding_pointers() {
-  RemoveForwardedPointerClosure rspc;
-  eden()->object_iterate(&rspc);
-  from()->object_iterate(&rspc);
+  assert(_promotion_failed, "precondition");
+
+  // Will enter Full GC soon due to failed promotion. Must reset the mark word
+  // of objs in young-gen so that no objs are marked (forwarded) when Full GC
+  // starts. (The mark word is overloaded: `is_marked()` == `is_forwarded()`.)
+  struct ResetForwardedMarkWord : ObjectClosure {
+    void do_object(oop obj) override {
+      if (obj->is_forwarded()) {
+#ifdef _LP64
+        oop forwardee = obj->forwardee();
+        markWord header = forwardee->mark();
+        if (header.has_displaced_mark_helper()) {
+          header = header.displaced_mark_helper();
+        }
+        assert(UseCompressedClassPointers, "assume +UseCompressedClassPointers");
+        narrowKlass nklass = header.narrow_klass();
+        assert(nklass == obj->narrow_klass_legacy(), "narrow klass must match: header: " PTR_FORMAT ", nklass: " PTR_FORMAT, forwardee->mark().value(), uintptr_t(nklass));
+        obj->set_mark(markWord::prototype().set_narrow_klass(nklass));
+#else
+        obj->init_mark();
+#endif
+      }
+    }
+  } cl;
+  eden()->object_iterate(&cl);
+  from()->object_iterate(&cl);
+
   restore_preserved_marks();
 }
 

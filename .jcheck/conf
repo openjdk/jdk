@@ -1,6 +1,7 @@
 [general]
 project=lilliput
 jbs=JDK
+version=19
 
 [checks]
 error=author,committer,reviewers,executable,symlink,message,hg-tag,whitespace,problemlists

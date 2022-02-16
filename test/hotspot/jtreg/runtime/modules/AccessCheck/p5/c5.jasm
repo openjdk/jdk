@@ -1,0 +1,76 @@
+/*
+ * Copyright (c) 2021, Google LLC. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
+ * Test input for the fix for JDK-8174954, which checks for an expected
+ * IllegalAccessError when the parameter type of an invokedynamic is
+ * inaccessible.
+ *
+ * The test assumes that given the string concatenation expression "" + param,
+ * javac generates an invokedynamic that uses the specific type of param. The
+ * fix for JDK-8273914 make javac eagerly convert param to a String before
+ * passing it to the invokedynamic call, which avoids the accessibility issue
+ * the test is trying to exercise.
+ *
+ * This jasm file contains the bytecode javac generated before the fix for
+ * JDK-8273914, to continue to exercise the invokedynamic behaviour that
+ * JDK-8174954 is testing.
+ */
+
+package  p5;
+
+super public class c5
+	version 61:0
+{
+  public Method "<init>":"()V"
+	stack 1 locals 1
+  {
+		aload_0;
+		invokespecial	Method java/lang/Object."<init>":"()V";
+		return;
+  }
+  public Method method5:"(Lp2/c2;)V"
+	stack 2 locals 2
+  {
+		getstatic	Field java/lang/System.out:"Ljava/io/PrintStream;";
+		aload_1;
+		invokedynamic	InvokeDynamic REF_invokeStatic:Method java/lang/invoke/StringConcatFactory.makeConcatWithConstants:"(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;":makeConcatWithConstants:"(Lp2/c2;)Ljava/lang/String;" {
+			String "In c5\'s method5 with param = "
+		};
+		invokevirtual	Method java/io/PrintStream.println:"(Ljava/lang/String;)V";
+		return;
+  }
+  public Method methodAddReadEdge:"(Ljava/lang/Module;)V"
+	stack 2 locals 2
+  {
+		ldc	class c5;
+		invokevirtual	Method java/lang/Class.getModule:"()Ljava/lang/Module;";
+		aload_1;
+		invokevirtual	Method java/lang/Module.addReads:"(Ljava/lang/Module;)Ljava/lang/Module;";
+		pop;
+		return;
+  }
+
+  public static final InnerClass Lookup=class java/lang/invoke/MethodHandles$Lookup of class java/lang/invoke/MethodHandles;
+
+} // end Class c5

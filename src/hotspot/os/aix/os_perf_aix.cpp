@@ -239,7 +239,7 @@ static int SCANF_ARGS(2, 0) vread_statdata(const char* procfile, _SCANFMT_ const
   int n;
   char buf[2048];
 
-  if ((f = fopen(procfile, "r")) == NULL) {
+  if ((f = os::fopen(procfile, "r")) == NULL) {
     return -1;
   }
 
@@ -662,7 +662,7 @@ void SystemProcessInterface::SystemProcesses::ProcessIterator::get_exe_name() {
 
   jio_snprintf(buffer, PATH_MAX, "/proc/%s/stat", _entry->d_name);
   buffer[PATH_MAX - 1] = '\0';
-  if ((fp = fopen(buffer, "r")) != NULL) {
+  if ((fp = os::fopen(buffer, "r")) != NULL) {
     if (fgets(buffer, PATH_MAX, fp) != NULL) {
       char* start, *end;
       // exe-name is between the first pair of ( and )
@@ -690,7 +690,7 @@ char* SystemProcessInterface::SystemProcesses::ProcessIterator::get_cmdline() {
 
   jio_snprintf(buffer, PATH_MAX, "/proc/%s/cmdline", _entry->d_name);
   buffer[PATH_MAX - 1] = '\0';
-  if ((fp = fopen(buffer, "r")) != NULL) {
+  if ((fp = os::fopen(buffer, "r")) != NULL) {
     size_t size = 0;
     char   dummy;
 

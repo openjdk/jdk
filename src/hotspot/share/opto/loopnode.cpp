@@ -830,14 +830,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
     return false;
   }
 
-  // May not have gone thru igvn yet so don't use _igvn.type(phi) (PhaseIdealLoop::is_counted_loop() sets the iv phi's type)
-  const TypeInteger* phi_t = phi->bottom_type()->is_integer(bt);
-  assert(phi_t->hi_as_long() >= phi_t->lo_as_long(), "dead phi?");
-  iters_limit = checked_cast<int>(MIN2((julong)iters_limit, (julong)(phi_t->hi_as_long() - phi_t->lo_as_long())));
-
   IfNode* exit_test = head->loopexit();
-  BoolTest::mask mask = exit_test->as_BaseCountedLoopEnd()->test_trip();
-  Node* cmp = exit_test->as_BaseCountedLoopEnd()->cmp_node();
 
   assert(back_control->Opcode() == Op_IfTrue, "wrong projection for back edge");
 
@@ -850,6 +843,11 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
       return false;
     }
   }
+
+  // May not have gone thru igvn yet so don't use _igvn.type(phi) (PhaseIdealLoop::is_counted_loop() sets the iv phi's type)
+  const TypeInteger* phi_t = phi->bottom_type()->is_integer(bt);
+  assert(phi_t->hi_as_long() >= phi_t->lo_as_long(), "dead phi?");
+  iters_limit = checked_cast<int>(MIN2((julong)iters_limit, (julong)(phi_t->hi_as_long() - phi_t->lo_as_long())));
 
   // We need a safepoint to insert empty predicates for the inner loop.
   SafePointNode* safepoint;

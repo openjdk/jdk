@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,8 +103,6 @@ void RootChunkArea::split(chunklevel_t target_level, Metachunk* c, FreeChunkList
   DEBUG_ONLY(chunklevel::check_valid_level(target_level));
   assert(target_level > c->level(), "Wrong target level");
 
-  const chunklevel_t starting_level = c->level();
-
   while (c->level() < target_level) {
 
     log_trace(metaspace)("Splitting chunk: " METACHUNK_FULL_FORMAT ".", METACHUNK_FULL_FORMAT_ARGS(c));
@@ -198,8 +196,6 @@ Metachunk* RootChunkArea::merge(Metachunk* c, FreeChunkListVector* freelists) {
   DEBUG_ONLY(c->verify();)
 
   log_trace(metaspace)("Attempting to merge chunk " METACHUNK_FORMAT ".", METACHUNK_FORMAT_ARGS(c));
-
-  const chunklevel_t starting_level = c->level();
 
   bool stop = false;
   Metachunk* result = NULL;
@@ -389,7 +385,6 @@ void RootChunkArea::verify() const {
 
     const Metachunk* c = _first_chunk;
     const MetaWord* expected_next_base = _base;
-    const MetaWord* const area_end = _base + word_size();
 
     while (c != NULL) {
       assrt_(c->is_free() || c->is_in_use(),

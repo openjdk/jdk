@@ -319,14 +319,6 @@ bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_met
         return true;
       }
     }
-
-    if (MinInliningThreshold > 0) { // Deprecated heuristic
-      intx counter_high_value = TieredCompilation ? InvocationCounter::count_limit / 2 : CompileThreshold / 2;
-      if (!callee_method->was_executed_more_than(MIN2(MinInliningThreshold, counter_high_value))) {
-        set_msg("executed < MinInliningThreshold times");
-        return true;
-      }
-    }
   }
 
   return false;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -301,18 +301,25 @@ public class PointerLocation {
       } else if (isInBlobOops()) {
         tty.print("oops");
       } else {
-        if (Assert.ASSERTS_ENABLED) {
-          Assert.that(isInBlobUnknownLocation(), "Should have known location in CodeBlob");
-        }
-        tty.print("unknown location");
+        tty.print("unknown CodeCache location");
       }
-      tty.print(" in ");
-      if (verbose) {
-          b.printOn(tty); // includes "\n"
+      if (b == null) {
+          tty.println();
       } else {
-          tty.println(b.toString());
+          tty.print(" in ");
+          // Since we potentially have a random address in the codecache and therefore could
+          // be dealing with a freed or partialy intialized blob, exceptions are possible.
+          // One known case is an NMethod where the method is still null, resulting in an NPE.
+          try {
+              if (verbose) {
+                  b.printOn(tty); // includes "\n"
+              } else {
+                  tty.println(b.toString());
+              }
+          } catch (Exception e) {
+              tty.println("<unknown>");
+          }
       }
-
       // FIXME: add more detail
     } else if (isInStrongGlobalJNIHandles()) {
       tty.println("In JNI strong global");
