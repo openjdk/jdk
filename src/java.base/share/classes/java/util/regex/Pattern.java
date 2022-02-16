@@ -5076,12 +5076,12 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             // referenced matched last time around
             int x = i;
 
-            //We set groupSize to the number of chars in the given subsequence
-            //but this is an upper bound we can reduce if we spot 2-char
-            //codepoints.
-            int groupSize = groupSizeChars;
+            // We set groupCodepoints to the number of chars
+            // in the given subsequence but this is an upper bound estimate
+            // we reduce by one if we spot 2-char codepoints.
+            int groupCodepoints = groupSizeChars;
 
-            for (int index=0; index<groupSize; index++) {
+            for (int index=0; index<groupCodepoints; index++) {
                 int c1 = Character.codePointAt(seq, x);
                 int c2 = Character.codePointAt(seq, j);
                 if (c1 != c2) {
@@ -5097,14 +5097,13 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                             return false;
                     }
                 }
-                int xIncr = Character.charCount(c1);
-                x += xIncr;
+                x += Character.charCount(c1);
                 j += Character.charCount(c2);
 
-                if(xIncr > 1) {
+                if(c1 >= Character.MIN_SUPPLEMENTARY_CODE_POINT) {
                     //Group size is guessed in terms of chars, but we need to
                     //adjust if we spot a 2-char codePoint.
-                    groupSize--;
+                    groupCodepoints--;
                 }
             }
 
