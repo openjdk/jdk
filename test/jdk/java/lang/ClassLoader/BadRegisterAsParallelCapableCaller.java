@@ -34,25 +34,11 @@
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-public class IsParallelCapableBadCaller {
-
-    public static class BogusLoader extends ClassLoader {
-        public static class BogusCaller {
-            public void run() {
-                ClassLoader.registerAsParallelCapable();
-            }
-        }
-    }
+public class BadRegisterAsParallelCapableCaller {
 
     public static void main(String[] args) throws Exception {
 
         Throwable thrown = null;
-
-        // BogusLoader becomes the caller class
-        final BogusLoader.BogusCaller bogusCaller = new BogusLoader.BogusCaller();
-        bogusCaller.run();
-
-        // call with reflection hackery for 8281000
         final Method m = ClassLoader.class.getDeclaredMethod("registerAsParallelCapable");
         m.setAccessible(true);
         try {
