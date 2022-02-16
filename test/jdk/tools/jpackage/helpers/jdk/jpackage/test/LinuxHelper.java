@@ -182,7 +182,10 @@ public final class LinuxHelper {
         };
         deb.uninstallHandler = cmd -> {
             cmd.verifyIsOfType(PackageType.LINUX_DEB);
-            Executor.of("sudo", "dpkg", "-r", getPackageName(cmd)).execute();
+            var packageName = getPackageName(cmd);
+            String script = String.format("! dpkg -s %s || sudo dpkg -r %s",
+                    packageName, packageName);
+            Executor.of("sh", "-c", script).execute();
         };
         deb.unpackHandler = (cmd, destinationDir) -> {
             cmd.verifyIsOfType(PackageType.LINUX_DEB);
