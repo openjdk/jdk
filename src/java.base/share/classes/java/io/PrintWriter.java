@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -428,9 +428,9 @@ public class PrintWriter extends Writer {
     /**
      * Flushes the stream if it's not closed and checks its error state.
      *
-     * @return {@code true} if the print stream has encountered an error,
-     *          either on the underlying output stream or during a format
-     *          conversion.
+     * @return {@code true} if and only if this stream has encountered an
+     *         {@code IOException}, or the {@code setError} method has been
+     *         invoked
      */
     public boolean checkError() {
         if (out != null) {
@@ -445,7 +445,7 @@ public class PrintWriter extends Writer {
     }
 
     /**
-     * Indicates that an error has occurred.
+     * Sets the error state of the stream to {@code true}.
      *
      * <p> This method will cause subsequent invocations of {@link
      * #checkError()} to return {@code true} until {@link
