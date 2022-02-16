@@ -31,8 +31,8 @@ import javax.swing.JTextField;
  */
 public class SwingUnicodeTest {
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeAndWait(() -> 
+        SwingUtilities.invokeAndWait(() ->
             new JTextField(new StringBuilder().appendCodePoint(0xFFFF).
-		            appendCodePoint(0x10000).toString()));
+                            appendCodePoint(0x10000).toString()));
     }
-} 
+}
