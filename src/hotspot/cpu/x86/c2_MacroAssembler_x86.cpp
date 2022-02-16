@@ -4013,6 +4013,14 @@ void C2_MacroAssembler::masked_op(int ideal_opc, int mask_len, KRegister dst,
   }
 }
 
+/*
+ * Following routine handles special floating point values(NaN/Inf/-Inf/Max/Min) for casting operation.
+ * If src is NaN, the result is 0.
+ * If the src is negative infinity or any value less than or equal to the value of Integer.MIN_VALUE,
+ * the result is equal to the value of Integer.MIN_VALUE.
+ * If the src is positive infinity or any value greater than or equal to the value of Integer.MAX_VALUE,
+ * the result is equal to the value of Integer.MAX_VALUE.
+ */
 void C2_MacroAssembler::vector_cast_float_special_cases_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
                                                             XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4,
                                                             Register scratch, AddressLiteral float_sign_flip,
@@ -4063,6 +4071,14 @@ void C2_MacroAssembler::vector_cast_float_special_cases_evex(XMMRegister dst, XM
   bind(done);
 }
 
+/*
+ * Following routine handles special floating point values(NaN/Inf/-Inf/Max/Min) for casting operation.
+ * If src is NaN, the result is 0.
+ * If the src is negative infinity or any value less than or equal to the value of Long.MIN_VALUE,
+ * the result is equal to the value of Long.MIN_VALUE.
+ * If the src is positive infinity or any value greater than or equal to the value of Long.MAX_VALUE,
+ * the result is equal to the value of Long.MAX_VALUE.
+ */
 void C2_MacroAssembler::vector_cast_double_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
                                                               XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2,
                                                               Register scratch, AddressLiteral double_sign_flip,
@@ -4119,6 +4135,8 @@ void C2_MacroAssembler::vector_castF2I_evex(XMMRegister dst, XMMRegister src, XM
 void C2_MacroAssembler::vector_round_double_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
                                                  KRegister ktmp1, KRegister ktmp2, AddressLiteral double_sign_flip,
                                                  AddressLiteral new_mxcsr, Register scratch, int vec_enc) {
+  // Perform floor(val+0.5) operation under the influence of MXCSR.RC mode roundTowards -inf.
+  // and re-instantiate original MXCSR.RC mode after that.
   ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
   ldmxcsr(as_Address(new_mxcsr));
   mov64(scratch, 4602678819172646912L);
@@ -4133,6 +4151,8 @@ void C2_MacroAssembler::vector_round_double_evex(XMMRegister dst, XMMRegister sr
 void C2_MacroAssembler::vector_round_float_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
                                                 KRegister ktmp1, KRegister ktmp2, AddressLiteral float_sign_flip,
                                                 AddressLiteral new_mxcsr, Register scratch, int vec_enc) {
+  // Perform floor(val+0.5) operation under the influence of MXCSR.RC mode roundTowards -inf.
+  // and re-instantiate original MXCSR.RC mode after that.
   ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
   ldmxcsr(as_Address(new_mxcsr));
   movl(scratch, 1056964608);
@@ -4147,6 +4167,8 @@ void C2_MacroAssembler::vector_round_float_evex(XMMRegister dst, XMMRegister src
 void C2_MacroAssembler::vector_round_float_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
                                                XMMRegister xtmp3, XMMRegister xtmp4, AddressLiteral float_sign_flip,
                                                AddressLiteral new_mxcsr, Register scratch, int vec_enc) {
+  // Perform floor(val+0.5) operation under the influence of MXCSR.RC mode roundTowards -inf.
+  // and re-instantiate original MXCSR.RC mode after that.
   ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
   ldmxcsr(as_Address(new_mxcsr));
   movl(scratch, 1056964608);
