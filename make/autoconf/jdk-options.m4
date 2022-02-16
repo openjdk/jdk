@@ -814,7 +814,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_HSDIS],
       [what hsdis backend to use ('none', 'capstone', 'binutils') @<:@none@:>@])])
 
   AC_ARG_WITH(capstone, [AS_HELP_STRING([--with-capstone],
-      [where to find the capstone files needed for hsdis/capstone])])
+      [where to find the Capstone files needed for hsdis/capstone])])
 
   AC_ARG_WITH([binutils], [AS_HELP_STRING([--with-binutils],
       [where to find the binutils files needed for hsdis/binutils])])
@@ -891,6 +891,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_HSDIS],
           test -e $BINUTILS_DIR/opcodes/libopcodes.a && \
           test -e $BINUTILS_DIR/libiberty/libiberty.a; then
         HSDIS_CFLAGS="-I$BINUTILS_DIR/include -I$BINUTILS_DIR/bfd -DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB"
+        HSDIS_LDFLAGS=""
         HSDIS_LIBS="$BINUTILS_DIR/bfd/libbfd.a $BINUTILS_DIR/opcodes/libopcodes.a $BINUTILS_DIR/libiberty/libiberty.a $BINUTILS_DIR/zlib/libz.a"
       fi
     fi
