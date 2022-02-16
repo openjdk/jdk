@@ -108,3 +108,19 @@ Instead we need to use the mingw compiler. This is available as a cygwin
 package. You need to install the "gcc-core" and "mingw64-x86_64-gcc-core"
 packages (or "mingw64-i686-gcc-core", if you want the 32-bit version) and
 "mingw64-x86_64-glib2.0".
+
+* Building with LLVM
+
+To build this project using LLVM you need to have LLVM installed. Typical ways
+of installation can be "sudo apt install llvm" (on Debian and derivatives),
+or "brew install llvm" (on macOS with Homebrew).
+
+This has been tested with LLVM v13.0.0, but earlier (and later) versions are
+also likely to work.
+
+To build hsdis using LLVM, you must enable it in configure by "bash configure
+--with-hsdis=llvm".
+
+If llvm-config is not in your path, you will need to specify the LLVM home using
+"--with-llvm=<LLVM home>". If your llvm-config is in ~/my-llvm/bin, then you
+should use "--with-llvm=~/my-llvm".
