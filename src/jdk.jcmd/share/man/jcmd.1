@@ -1,4 +1,4 @@
-.\" Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -802,7 +802,8 @@ false)
 .RE
 .TP
 .B \f[CB]VM.cds\f[R] [\f[I]arguments\f[R]]
-Dump a static or dynamic shared archive including all shareable classes.
+Dumps a static or dynamic shared archive that includes all currently
+loaded classes.
 .RS
 .PP
 Impact: Medium \-\-\- pause time depends on number of loaded classes
@@ -811,11 +812,22 @@ Permission: \f[CB]java.lang.management.ManagementPermission(monitor)\f[R]
 .PP
 \f[I]arguments\f[R]:
 .IP \[bu] 2
-\f[CB]subcmd\f[R]: \f[CB]static_dump\f[R] | \f[CB]dynamic_dump\f[R] (STRING,
-no default value)
+\f[CB]subcmd\f[R]: must be either \f[CB]static_dump\f[R] or
+\f[CB]dynamic_dump\f[R] (STRING, no default value)
 .IP \[bu] 2
 \f[CB]filename\f[R]: (Optional) Name of the shared archive to be dumped
 (STRING, no default value)
+.PP
+If \f[CB]filename\f[R] is not specified, a default file name is chosen
+using the pid of the target JVM process.
+For example, java_pid1234_static.jsa, java_pid5678_dynamic.jsa, etc.
+.PP
+If \f[CB]filename\f[R] is not specified as an absolute path, the archive
+file is created in a directory relative to the current directory of the
+target JVM process.
+.PP
+If \f[CB]dynamic_dump\f[R] is specified, the target JVM must be started
+with the JVM option \f[CB]\-XX:+RecordDynamicDumpInfo\f[R].
 .RE
 .TP
 .B \f[CB]VM.classloaders\f[R] [\f[I]options\f[R]]

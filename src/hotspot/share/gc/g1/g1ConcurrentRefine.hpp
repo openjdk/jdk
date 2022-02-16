@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,20 +27,20 @@
 
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
 #include "memory/allocation.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/ticks.hpp"
 
 // Forward decl
 class G1ConcurrentRefine;
 class G1ConcurrentRefineThread;
-class outputStream;
+class G1PrimaryConcurrentRefineThread;
 class ThreadClosure;
 
 // Helper class for refinement thread management. Used to start, stop and
 // iterate over them.
 class G1ConcurrentRefineThreadControl {
   G1ConcurrentRefine* _cr;
-
+  G1PrimaryConcurrentRefineThread* _primary_thread;
   G1ConcurrentRefineThread** _threads;
   uint _num_max_threads;
 
@@ -52,6 +52,12 @@ public:
   ~G1ConcurrentRefineThreadControl();
 
   jint initialize(G1ConcurrentRefine* cr, uint num_max_threads);
+
+  G1PrimaryConcurrentRefineThread* primary_thread() const {
+    assert(_num_max_threads > 0, "precondition");
+    assert(_primary_thread != nullptr, "uninitialized");
+    return _primary_thread;
+  }
 
   // If there is a "successor" thread that can be activated given the current id,
   // activate it.
@@ -115,6 +121,10 @@ public:
   static G1ConcurrentRefine* create(jint* ecode);
 
   void stop();
+
+  // The minimum number of pending cards for activation of the primary
+  // refinement thread.
+  size_t primary_activation_threshold() const;
 
   // Adjust refinement thresholds based on work done during the pause and the goal time.
   void adjust(double logged_cards_scan_time, size_t processed_logged_cards, double goal_ms);

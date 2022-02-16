@@ -92,15 +92,7 @@ public final class FlightRecorder {
      * <p>
      * The following example shows how to create a snapshot and write a subset of the data to a file.
      *
-     * <pre>{@literal
-     * try (Recording snapshot = FlightRecorder.getFlightRecorder().takeSnapshot()) {
-     *   if (snapshot.getSize() > 0) {
-     *     snapshot.setMaxSize(100_000_000);
-     *     snapshot.setMaxAge(Duration.ofMinutes(5));
-     *     snapshot.dump(Paths.get("snapshot.jfr"));
-     *   }
-     * }
-     * }</pre>
+     * {@snippet class="Snippets" region="FlightRecorderTakeSnapshot"}
      *
      * The caller must close the recording when access to the data is no longer
      * needed.

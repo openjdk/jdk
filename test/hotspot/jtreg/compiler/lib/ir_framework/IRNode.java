@@ -142,6 +142,8 @@ public class IRNode {
     public static final String ABS_D = START + "AbsD" + MID + END;
     public static final String AND_I = START + "AndI" + MID + END;
     public static final String AND_L = START + "AndL" + MID + END;
+    public static final String XOR_I = START + "XorI" + MID + END;
+    public static final String XOR_L = START + "XorL" + MID + END;
     public static final String LSHIFT_I = START + "LShiftI" + MID + END;
     public static final String LSHIFT_L = START + "LShiftL" + MID + END;
     public static final String ADD_I = START + "AddI" + MID + END;
@@ -161,6 +163,9 @@ public class IRNode {
     public static final String VECTOR_CAST_L2X = START + "VectorCastL2X" + MID + END;
     public static final String VECTOR_CAST_F2X = START + "VectorCastF2X" + MID + END;
     public static final String VECTOR_CAST_D2X = START + "VectorCastD2X" + MID + END;
+    public static final String VECTOR_UCAST_B2X = START + "VectorUCastB2X" + MID + END;
+    public static final String VECTOR_UCAST_S2X = START + "VectorUCastS2X" + MID + END;
+    public static final String VECTOR_UCAST_I2X = START + "VectorUCastI2X" + MID + END;
     public static final String VECTOR_REINTERPRET = START + "VectorReinterpret" + MID + END;
 
     /**

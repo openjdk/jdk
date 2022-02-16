@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2266,21 +2266,6 @@ void VM_RedefineClasses::rewrite_cp_refs_in_method(methodHandle method,
         break;
     }
   } // end for each bytecode
-
-  // We also need to rewrite the parameter name indexes, if there is
-  // method parameter data present
-  if(method->has_method_parameters()) {
-    const int len = method->method_parameters_length();
-    MethodParametersElement* elem = method->method_parameters_start();
-
-    for (int i = 0; i < len; i++) {
-      const u2 cp_index = elem[i].name_cp_index;
-      const u2 new_cp_index = find_new_index(cp_index);
-      if (new_cp_index != 0) {
-        elem[i].name_cp_index = new_cp_index;
-      }
-    }
-  }
 } // end rewrite_cp_refs_in_method()
 
 
@@ -3693,6 +3678,19 @@ void VM_RedefineClasses::set_new_constant_pool(
         }
       } // end for each local variable table entry
     } // end if there are local variable table entries
+
+    // Update constant pool indices in the method's method_parameters.
+    int mp_length = method->method_parameters_length();
+    if (mp_length > 0) {
+      MethodParametersElement* elem = method->method_parameters_start();
+      for (int j = 0; j < mp_length; j++) {
+        const int cp_index = elem[j].name_cp_index;
+        const int new_cp_index = find_new_index(cp_index);
+        if (new_cp_index != 0) {
+          elem[j].name_cp_index = (u2)new_cp_index;
+        }
+      }
+    }
 
     rewrite_cp_refs_in_stack_map_table(method);
   } // end for each method
