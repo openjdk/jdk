@@ -819,6 +819,9 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_HSDIS],
   AC_ARG_WITH([binutils-src], [AS_HELP_STRING([--with-binutils-src],
       [where to find the binutils source for building])])
 
+  AC_ARG_WITH([llvm], [AS_HELP_STRING([--with-llvm],
+      [where to find LLVM, needed for hsdis/llvm])])
+
   AC_MSG_CHECKING([what hsdis backend to use])
 
   if test "x$with_hsdis" = xyes; then
@@ -892,11 +895,24 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_HSDIS],
   elif test "x$with_hsdis" = xllvm; then
     HSDIS_BACKEND=llvm
     AC_MSG_RESULT(['llvm'])
-    # Macs with homebrew can have llvm in different places
-    UTIL_LOOKUP_PROGS(LLVM_CONFIG, llvm-config, [$PATH:/usr/local/opt/llvm/bin:/opt/homebrew/opt/llvm/bin])
-    if test "x$LLVM_CONFIG" = x; then
-      AC_MSG_NOTICE([Cannot locate llvm-config which is needed for hsdis/llvm. Try using LLVM_CONFIG=<path>.])
-      AC_MSG_ERROR([Cannot continue])
+
+    if test "x$with_llvm" != x; then
+      LLVM_DIR="$with_llvm"
+    fi
+
+    if test "x$LLVM_DIR" != x; then
+      UTIL_LOOKUP_PROGS(LLVM_CONFIG, llvm-config, [$LLVM_DIR/bin])
+      if test "x$LLVM_CONFIG" = x; then
+        AC_MSG_NOTICE([Cannot locate llvm-config in $LLVM_DIR. Check your --with-llvm argument.])
+        AC_MSG_ERROR([Cannot continue])
+      fi
+    else
+      # Macs with homebrew can have llvm in different places
+      UTIL_LOOKUP_PROGS(LLVM_CONFIG, llvm-config, [$PATH:/usr/local/opt/llvm/bin:/opt/homebrew/opt/llvm/bin])
+      if test "x$LLVM_CONFIG" = x; then
+        AC_MSG_NOTICE([Cannot locate llvm-config which is needed for hsdis/llvm. Try using --with-llvm=<LLVM home>.])
+        AC_MSG_ERROR([Cannot continue])
+      fi
     fi
 
     # We need the LLVM flags and libs, and llvm-config provides them for us.
