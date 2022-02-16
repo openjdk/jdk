@@ -81,7 +81,7 @@ cbTrackingObjectFree(jvmtiEnv* jvmti_env, jlong tag)
 struct bag *
 classTrack_processUnloads(JNIEnv *env)
 {
-    if (deletedSignatures == NULL || bagSize(deletedSignatures) == 0) {
+    if (deletedSignatures == NULL) {
       return NULL;
     }
 
@@ -224,15 +224,11 @@ cleanDeleted(void *signatureVoid, void *arg)
 void
 classTrack_reset(void)
 {
-    struct bag* to_delete = NULL;
     debugMonitorEnter(classTrackLock);
-
-    if (deletedSignatures != NULL) {
-        to_delete = deletedSignatures;
-        deletedSignatures = NULL;
-    }
-
+    struct bag* to_delete = deletedSignatures;
+    deletedSignatures = NULL;
     debugMonitorExit(classTrackLock);
+
     // Deallocate bag outside classTrackLock to avoid deadlock.
     // See comments in classTrack_processUnloads() for details.
     if (to_delete != NULL) {
