@@ -24,8 +24,9 @@
 /*
  * @test
  * @bug 8281000
- * @summary Test ClassLoader.isRegisteredAsParallelCapable() method with an invalid caller (non-JNI cases).  This
- *   test uses reflection and opens the java.base module so it runs separate from behavior tests of
+ * @summary Test ClassLoader.isRegisteredAsParallelCapable() method with an
+ *   invalid caller (non-JNI cases).  This test uses reflection and opens
+ *   the java.base module so it runs separate from behavior tests of
  *   isRegisteredParallelCapable to avoid side effects.
  * @modules java.base/java.lang:open
  * @run main/othervm IsParallelCapableBadCaller
