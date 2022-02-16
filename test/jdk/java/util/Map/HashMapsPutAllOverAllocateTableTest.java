@@ -39,7 +39,6 @@ import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class HashMapsPutAllOverAllocateTableTest {
 
@@ -48,7 +47,6 @@ public class HashMapsPutAllOverAllocateTableTest {
         testOneMapClass(WeakHashMap.class);
         testOneMapClass(IdentityHashMap.class);
         testOneMapClass(LinkedHashMap.class);
-        testOneMapClass(ConcurrentHashMap.class);
     }
 
     public static <T extends Map<Object, Object>> void testOneMapClass(Class<T> mapClass) throws Exception {
