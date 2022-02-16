@@ -2406,9 +2406,9 @@ Node* Node::unique_ctrl_out_or_null() const {
 //--------------------------unique_ctrl_out------------------------------
 // Return the unique control out. Asserts if none or more than one control out.
 Node* Node::unique_ctrl_out() const {
-    Node* ctrl = unique_ctrl_out_or_null();
-    assert(ctrl != NULL, "control out is assumed to be unique");
-    return ctrl;
+  Node* ctrl = unique_ctrl_out_or_null();
+  assert(ctrl != NULL, "control out is assumed to be unique");
+  return ctrl;
 }
 
 void Node::ensure_control_or_add_prec(Node* c) {
