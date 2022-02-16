@@ -151,7 +151,7 @@ public abstract class LinkFactory {
                             // we get everything as extends java.lang.Object we suppress
                             // all of them except those that have multiple extends
                             if (bounds.size() == 1 &&
-                                    bound.equals(utils.getObjectType()) &&
+                                    utils.typeUtils.isSameType(bound, utils.getObjectType()) &&
                                     !utils.isAnnotated(bound)) {
                                 continue;
                             }

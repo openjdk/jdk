@@ -707,7 +707,7 @@ public class Utils {
     }
 
     public boolean ignoreBounds(TypeMirror bound) {
-        return bound.equals(getObjectType()) && !isAnnotated(bound);
+        return typeUtils.isSameType(bound, getObjectType()) && !isAnnotated(bound);
     }
 
     /*
@@ -814,8 +814,8 @@ public class Utils {
         }
         final TypeElement origin = getEnclosingTypeElement(method);
         for (TypeMirror t = getSuperType(origin);
-                t.getKind() == DECLARED;
-                t = getSuperType(asTypeElement(t))) {
+             t.getKind() == DECLARED;
+             t = getSuperType(asTypeElement(t))) {
             TypeElement te = asTypeElement(t);
             if (te == null) {
                 return null;
@@ -828,7 +828,7 @@ public class Utils {
                     return ee;
                 }
             }
-            if (t.equals(getObjectType()))
+            if (typeUtils.isSameType(t, getObjectType()))
                 return null;
         }
         return null;
@@ -1170,8 +1170,7 @@ public class Utils {
     }
 
     public TypeElement getSuperClass(TypeElement te) {
-        if (isInterface(te) || isAnnotationType(te) ||
-                te.asType().equals(getObjectType())) {
+        if (checkType(te)) {
             return null;
         }
         TypeMirror superclass = te.getSuperclass();
@@ -1181,9 +1180,13 @@ public class Utils {
         return asTypeElement(superclass);
     }
 
+    private boolean checkType(TypeElement te) {
+        return isInterface(te) || typeUtils.isSameType(te.asType(), getObjectType())
+                || isAnnotationType(te);
+    }
+
     public TypeElement getFirstVisibleSuperClassAsTypeElement(TypeElement te) {
-        if (isAnnotationType(te) || isInterface(te) ||
-                te.asType().equals(getObjectType())) {
+        if (checkType(te)) {
             return null;
         }
         TypeMirror firstVisibleSuperClass = getFirstVisibleSuperClass(te);
@@ -1196,7 +1199,6 @@ public class Utils {
      * @return  the closest visible super class.  Return null if it cannot
      *          be found.
      */
-
     public TypeMirror getFirstVisibleSuperClass(TypeMirror type) {
         return getFirstVisibleSuperClass(asTypeElement(type));
     }
@@ -1207,7 +1209,7 @@ public class Utils {
      *
      * @param te the TypeElement to be interrogated
      * @return the closest visible super class.  Return null if it cannot
-     *         be found..
+     *         be found.
      */
     public TypeMirror getFirstVisibleSuperClass(TypeElement te) {
         TypeMirror superType = te.getSuperclass();
@@ -1227,7 +1229,7 @@ public class Utils {
             superType = supersuperType;
             superClass = supersuperClass;
         }
-        if (te.asType().equals(superType)) {
+        if (typeUtils.isSameType(te.asType(), superType)) {
             return null;
         }
         return superType;
