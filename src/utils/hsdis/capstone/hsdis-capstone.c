@@ -76,7 +76,7 @@ void* decode_instructions_virtual(uintptr_t start_va, uintptr_t end_va,
 
   if (cs_open(CAPSTONE_ARCH, CAPSTONE_MODE, &cs_handle) != CS_ERR_OK) {
     print("Could not open cs_handle");
-	  return NULL;
+    return NULL;
   }
 
   // TODO: Support intel syntax
