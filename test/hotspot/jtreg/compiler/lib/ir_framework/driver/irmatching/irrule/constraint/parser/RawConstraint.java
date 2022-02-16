@@ -21,19 +21,25 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.parser;
+package compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser;
 
-public class NodeRegex {
+import compiler.lib.ir_framework.IRNode;
+
+/**
+ * Class to store a single raw constraint (i.e. placeholder strings as defined in {@link IRNode} not replaced, yet).
+ * Can directly be used for failOn attributes while counts attributes use the subclass {@link RawCountsConstraint}.
+ */
+public class RawConstraint {
     private final String rawNodeString;
-    private final String userPostfixString;
-    private final int nodeRegexIndex;
+    private final String userPostfixString; // For composite IR nodes
+    private final int constraintIndex;
     private final boolean compositeNode;
 
-    public NodeRegex(String rawNodeString, String userPostfixString, int nodeRegexIndex) {
+    public RawConstraint(String rawNodeString, String userPostfixString, int constraintIndex) {
         this.rawNodeString = rawNodeString;
         this.userPostfixString = userPostfixString;
-        compositeNode = userPostfixString != null;
-        this.nodeRegexIndex = nodeRegexIndex;
+        this.constraintIndex = constraintIndex;
+        this.compositeNode = userPostfixString != null;
     }
 
     public String getRawNodeString() {
@@ -44,11 +50,11 @@ public class NodeRegex {
         return userPostfixString;
     }
 
-    public int getNodeRegexIndex() {
-        return nodeRegexIndex;
+    public int getConstraintIndex() {
+        return constraintIndex;
     }
 
-    public boolean isCompositeNode() {
+    public boolean hasCompositeNode() {
         return compositeNode;
     }
 }

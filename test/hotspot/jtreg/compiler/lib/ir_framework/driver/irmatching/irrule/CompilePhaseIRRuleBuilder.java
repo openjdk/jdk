@@ -28,8 +28,12 @@ import compiler.lib.ir_framework.DefaultRegexes;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
-import compiler.lib.ir_framework.driver.irmatching.parser.CountsNodeRegex;
-import compiler.lib.ir_framework.driver.irmatching.parser.NodeRegex;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Counts;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.RawCountsConstraintParser;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOn;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.RawFailOnConstraintParser;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.RawCountsConstraint;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.RawConstraint;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,37 +46,37 @@ import java.util.stream.Collectors;
  * @see IR#failOn()
  */
 public class CompilePhaseIRRuleBuilder {
-    public static List<CompilePhaseIRRule> create(List<NodeRegex> failOnNodeRegexes, List<CountsNodeRegex> countsNodeRegexes,
+    public static List<CompilePhaseIRRule> create(List<RawConstraint> failOnRawConstraints, List<RawCountsConstraint> countsNodeRegexes,
                                                   CompilePhase compilePhase, IRMethod irMethod) {
         if (compilePhase != CompilePhase.DEFAULT) {
-            return createForNormalPhase(failOnNodeRegexes, countsNodeRegexes, compilePhase, irMethod);
+            return createForNormalPhase(failOnRawConstraints, countsNodeRegexes, compilePhase, irMethod);
         } else {
-            return createForDefaultPhase(failOnNodeRegexes, countsNodeRegexes, irMethod);
+            return createForDefaultPhase(failOnRawConstraints, countsNodeRegexes, irMethod);
         }
     }
 
-    private static List<CompilePhaseIRRule> createForNormalPhase(List<NodeRegex> failOnNodeRegexes,
-                                                                 List<CountsNodeRegex> countsNodeRegexes,
+    private static List<CompilePhaseIRRule> createForNormalPhase(List<RawConstraint> failOnRawConstraints,
+                                                                 List<RawCountsConstraint> countsNodeRegexes,
                                                                  CompilePhase compilePhase, IRMethod irMethod) {
-        FailOn failOn = FailOnNodeRegexParser.parse(failOnNodeRegexes, compilePhase);
-        Counts counts = CountsNodeRegexParser.parse(countsNodeRegexes, compilePhase);
+        FailOn failOn = RawFailOnConstraintParser.parse(failOnRawConstraints, compilePhase);
+        Counts counts = RawCountsConstraintParser.parse(countsNodeRegexes, compilePhase);
         return Collections.singletonList(new CompilePhaseIRRule(irMethod, compilePhase, failOn, counts));
     }
 
-    private static List<CompilePhaseIRRule> createForDefaultPhase(List<NodeRegex> failOnNodeRegexes,
-                                                                  List<CountsNodeRegex> countsNodeRegexes, IRMethod irMethod) {
+    private static List<CompilePhaseIRRule> createForDefaultPhase(List<RawConstraint> failOnRawConstraints,
+                                                                  List<RawCountsConstraint> countsNodeRegexes, IRMethod irMethod) {
         List<CompilePhaseIRRule> compilePhaseIRRules = new ArrayList<>();
-        addCompilePhaseIRRule(failOnNodeRegexes, countsNodeRegexes, CompilePhase.PRINT_IDEAL, irMethod, compilePhaseIRRules);
-        addCompilePhaseIRRule(failOnNodeRegexes, countsNodeRegexes, CompilePhase.PRINT_OPTO_ASSEMBLY, irMethod, compilePhaseIRRules);
-        addCompilePhaseIRRule(failOnNodeRegexes, countsNodeRegexes, CompilePhase.DEFAULT, irMethod, compilePhaseIRRules);
+        addCompilePhaseIRRule(failOnRawConstraints, countsNodeRegexes, CompilePhase.PRINT_IDEAL, irMethod, compilePhaseIRRules);
+        addCompilePhaseIRRule(failOnRawConstraints, countsNodeRegexes, CompilePhase.PRINT_OPTO_ASSEMBLY, irMethod, compilePhaseIRRules);
+        addCompilePhaseIRRule(failOnRawConstraints, countsNodeRegexes, CompilePhase.DEFAULT, irMethod, compilePhaseIRRules);
         TestFramework.check(!compilePhaseIRRules.isEmpty(), "must create at least one object");
         return compilePhaseIRRules;
     }
 
-    private static void addCompilePhaseIRRule(List<NodeRegex> failOnNodeRegexes, List<CountsNodeRegex> countsNodeRegexes,
+    private static void addCompilePhaseIRRule(List<RawConstraint> failOnRawConstraints, List<RawCountsConstraint> countsNodeRegexes,
                                               CompilePhase compilePhase, IRMethod irMethod,
                                               List<CompilePhaseIRRule> compilePhaseIRRules) {
-        FailOn failOn = createFailOn(failOnNodeRegexes, compilePhase);
+        FailOn failOn = createFailOn(failOnRawConstraints, compilePhase);
         Counts counts = createCounts(countsNodeRegexes, compilePhase);
         if (failOn != null || counts != null) {
             if (compilePhase == CompilePhase.DEFAULT) {
@@ -83,18 +87,18 @@ public class CompilePhaseIRRuleBuilder {
         }
     }
 
-    private static FailOn createFailOn(List<NodeRegex> failOnNodeRegexes, CompilePhase compilePhase) {
-        List<NodeRegex> filteredRegexes = DefaultRegexFilter.filter(failOnNodeRegexes, compilePhase);
-        return FailOnNodeRegexParser.parse(filteredRegexes, compilePhase);
+    private static FailOn createFailOn(List<RawConstraint> failOnRawConstraints, CompilePhase compilePhase) {
+        List<RawConstraint> filteredRegexes = DefaultRegexFilter.filter(failOnRawConstraints, compilePhase);
+        return RawFailOnConstraintParser.parse(filteredRegexes, compilePhase);
     }
 
-    private static Counts createCounts(List<CountsNodeRegex> countsNodeRegexes, CompilePhase compilePhase) {
-        List<CountsNodeRegex> filteredRegexes = DefaultRegexFilter.filter(countsNodeRegexes, compilePhase);
-        return CountsNodeRegexParser.parse(filteredRegexes, compilePhase);
+    private static Counts createCounts(List<RawCountsConstraint> countsNodeRegexes, CompilePhase compilePhase) {
+        List<RawCountsConstraint> filteredRegexes = DefaultRegexFilter.filter(countsNodeRegexes, compilePhase);
+        return RawCountsConstraintParser.parse(filteredRegexes, compilePhase);
     }
 
     private static class DefaultRegexFilter {
-        public static <T extends NodeRegex> List<T> filter(List<T> nodeRegexes, CompilePhase compilePhase) {
+        public static <T extends RawConstraint> List<T> filter(List<T> nodeRegexes, CompilePhase compilePhase) {
             return nodeRegexes.stream()
                               .filter(r -> DefaultRegexes.getCompilePhaseForIRNode(r.getRawNodeString()) == compilePhase)
                               .collect(Collectors.toList());

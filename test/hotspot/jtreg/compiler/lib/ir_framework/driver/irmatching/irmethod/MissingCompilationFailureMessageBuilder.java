@@ -21,30 +21,28 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule;
-
-import compiler.lib.ir_framework.IR;
-import compiler.lib.ir_framework.shared.Comparison;
+package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
 /**
- * Class representing a counts attribute of an IR rule.
+ * Class to build the failure message of an IR method with a missing compilation output.
  *
- * @see IR#counts()
+ * @see IRMethodMatchResult
  */
-public class Constraint {
-    private final String node;
-    private final int regexNodeId;
+class MissingCompilationFailureMessageBuilder extends FailureMessageBuilder {
 
-    public Constraint(String node, int regexNodeId) {
-        this.node = node;
-        this.regexNodeId = regexNodeId;
+    public MissingCompilationFailureMessageBuilder(IRMethod irMethod) {
+        super(irMethod);
     }
 
-    public String getNode() {
-        return node;
+    @Override
+    protected String buildMethodHeaderLine() {
+        return " Method \"" + irMethod.getMethod() + "\":" + System.lineSeparator();
     }
 
-    public int getRegexNodeId() {
-        return regexNodeId;
+    @Override
+    protected String buildIRRulesFailureMessage(int indentationSize) {
+        return getIndentation(indentationSize) + "* Method was not compiled. Did you specify any compiler directives preventing a compilation "
+               + "or used a @Run method in STANDALONE mode? In the latter case, make sure to always trigger a C2 "
+               + "compilation by " + "invoking the test enough times.";
     }
 }

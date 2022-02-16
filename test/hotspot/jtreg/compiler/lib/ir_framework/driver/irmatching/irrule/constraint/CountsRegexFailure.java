@@ -21,7 +21,7 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule;
+package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
 import compiler.lib.ir_framework.shared.Comparison;
 

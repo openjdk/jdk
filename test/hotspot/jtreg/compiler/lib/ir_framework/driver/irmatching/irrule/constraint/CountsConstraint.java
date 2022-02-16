@@ -21,34 +21,26 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule;
+package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
-import java.util.List;
+import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.shared.Comparison;
 
 /**
- * This class represents an IR matching failure of a regex of a failOn attribute of an IR rule.
+ * Class representing a counts attribute of an IR rule.
  *
- * @see FailOn
+ * @see IR#counts()
  */
-class FailOnRegexFailure extends RegexFailure {
+public class CountsConstraint extends Constraint {
+    private final Comparison<Long> comparison;
 
-    public FailOnRegexFailure(String nodeRegex, int regexNodeId, List<String> matches) {
-        super(nodeRegex, regexNodeId, matches);
+    public CountsConstraint(String regex, Comparison<Long> comparison, int index) {
+        super(regex, index);
+        this.comparison = comparison;
     }
 
-    @Override
-    public int getMatchedNodesCount() {
-        return matches.size();
+    public Comparison<Long> getComparison() {
+        return comparison;
     }
 
-    @Override
-    public String buildFailureMessage(int indentationSize) {
-        return getRegexLine(indentationSize)
-               + getMatchedNodesBlock(indentationSize + 2);
-    }
-
-    @Override
-    protected String getMatchedPrefix() {
-        return "Matched forbidden";
-    }
 }

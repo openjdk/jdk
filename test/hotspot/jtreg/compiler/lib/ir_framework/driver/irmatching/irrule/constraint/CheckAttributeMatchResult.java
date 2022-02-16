@@ -21,7 +21,7 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule;
+package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
@@ -34,7 +34,7 @@ import java.util.List;
  *
  * @see IR
  */
-abstract class CheckAttributeMatchResult implements MatchResult {
+abstract public class CheckAttributeMatchResult implements MatchResult {
     protected List<RegexFailure> regexFailures = null;
 
     @Override

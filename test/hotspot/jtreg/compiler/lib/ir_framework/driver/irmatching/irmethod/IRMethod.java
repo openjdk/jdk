@@ -34,7 +34,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Helper class to store information about a method that needs to be IR matched.
+ * Class to store information about a method that needs to be IR matched.
  */
 public class IRMethod {
     private final Method method;
@@ -46,8 +46,8 @@ public class IRMethod {
     public IRMethod(Method method, int[] ruleIds, IR[] irAnnos) {
         this.method = method;
         this.irRules = new ArrayList<>();
-        for (int i : ruleIds) {
-            irRules.add(new IRRule(this, i, irAnnos[i - 1]));
+        for (int ruleId : ruleIds) {
+            irRules.add(new IRRule(this, ruleId, irAnnos[ruleId - 1]));
         }
         this.completeOutput = "";
         this.optoAssemblyOutput = "";
@@ -58,10 +58,35 @@ public class IRMethod {
         return method;
     }
 
+    /**
+     * Return the entire compilation output of all phases, regardless of IR matching failures.
+     */
+    public String getCompleteOutput() {
+        if (completeOutput.isEmpty()) {
+            completeOutput = createCompleteOutput();
+        }
+        return completeOutput;
+    }
+
+    private String createCompleteOutput() {
+        String idealOutputs = outputMap.entrySet().stream()
+                                       .filter(e -> e.getKey() == CompilePhase.PRINT_OPTO_ASSEMBLY)
+                                       .map(Map.Entry::getValue)
+                                       .collect(Collectors.joining(System.lineSeparator() + System.lineSeparator()));
+        if (!optoAssemblyOutput.isEmpty()) {
+            // PrintOptoAssembly output is reported before the PrintIdeal output of PHASE_FINAL.
+            // Put PrintOptoAssembly output last.
+            return idealOutputs + System.lineSeparator() + System.lineSeparator() + optoAssemblyOutput;
+        }
+        return idealOutputs;
+    }
+
+    public String getOutput(CompilePhase phase) {
+        return outputMap.get(phase);
+    }
 
     /**
-     * The Ideal output comes always before the Opto Assembly output. We might parse multiple C2 compilations of this method.
-     * Only keep the very last one by overriding 'output'.
+     * We might parse multiple C2 compilations of this method. Only keep the very last one by overriding the outputMap.
      */
     public void setIdealOutput(String idealOutput, CompilePhase phase) {
         String idealOutputWithHeader = "PrintIdeal" + getPhaseNameString(phase) + ":" + System.lineSeparator() + idealOutput;
@@ -76,7 +101,7 @@ public class IRMethod {
     }
 
     /**
-     * The Opto Assembly output comes after the Ideal output. Simply append to 'output'.
+     * We might parse multiple C2 compilations of this method. Only keep the very last one by overriding the outputMap.
      */
     public void setOptoAssemblyOutput(String optoAssemblyOutput) {
         this.optoAssemblyOutput = "PrintOptoAssembly:" + System.lineSeparator() + optoAssemblyOutput;
@@ -87,31 +112,8 @@ public class IRMethod {
                                             + this.optoAssemblyOutput);
     }
 
-    public String getCompleteOutput() {
-        if (completeOutput.isEmpty()) {
-            completeOutput = createCompleteOutput();
-        }
-        return completeOutput;
-    }
-
-    private String createCompleteOutput() {
-        String idealOutputs = outputMap.entrySet().stream()
-                                       .filter(e -> e.getKey() == CompilePhase.PRINT_OPTO_ASSEMBLY)
-                                       .map(Map.Entry::getValue)
-                                       .collect(Collectors.joining(System.lineSeparator() + System.lineSeparator()));
-        if (!optoAssemblyOutput.isEmpty()) {
-            // PrintOptoAssembly output is reported before ideal output PHASE_FINAL. Put PrintOptoAssembly output last.
-            return idealOutputs + System.lineSeparator() + System.lineSeparator() + optoAssemblyOutput;
-        }
-        return idealOutputs;
-    }
-
-    public String getOutput(CompilePhase phase) {
-        return outputMap.get(phase);
-    }
-
     /**
-     * Apply all IR rules of this IR method.
+     * Apply all IR rules of this IR method on their specified compile phases.
      */
     public IRMethodMatchResult applyIRRules() {
         TestFramework.check(!irRules.isEmpty(), "IRMethod cannot be created if there are no IR rules to apply");

@@ -26,7 +26,10 @@ package compiler.lib.ir_framework.driver.irmatching.irrule;
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
-import compiler.lib.ir_framework.driver.irmatching.parser.*;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.RawConstraint;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.RawCountsConstraint;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.CountsAttributeParser;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.FailOnAttributeParser;
 import compiler.lib.ir_framework.shared.TestFormat;
 import compiler.lib.ir_framework.shared.TestFormatException;
 
@@ -44,25 +47,23 @@ public class IRRule {
         this.irMethod = irMethod;
         this.ruleId = ruleId;
         this.irAnno = irAnno;
-        List<NodeRegex> failOnNodeRegexes = initFailOnRegexes(irAnno.failOn());
-        List<CountsNodeRegex> countsNodeRegexes = initCountsRegexes(irAnno.counts());
-        this.compilePhaseIRRules = initPhaseIRRules(failOnNodeRegexes, countsNodeRegexes, irAnno.phase());
+        List<RawConstraint> failOnRawConstraints = initFailOnRegexes(irAnno.failOn());
+        List<RawCountsConstraint> countsNodeRegexes = initCountsRegexes(irAnno.counts());
+        this.compilePhaseIRRules = initPhaseIRRules(failOnRawConstraints, countsNodeRegexes, irAnno.phase());
     }
 
-    private List<NodeRegex> initFailOnRegexes(String[] failOnNodes) {
-        if (failOnNodes != null) {
-            FailOnParser failOnParser = new FailOnParser();
-            return failOnParser.parseConstraint(failOnNodes);
+    private List<RawConstraint> initFailOnRegexes(String[] rawFailOn) {
+        if (rawFailOn != null) {
+            return FailOnAttributeParser.parse(rawFailOn);
         } else {
             return null;
         }
     }
 
-    private List<CountsNodeRegex> initCountsRegexes(String[] countsNodes) {
-        if (countsNodes != null) {
-            CountsParser countsParser = new CountsParser();
+    private List<RawCountsConstraint> initCountsRegexes(String[] rawCounts) {
+        if (rawCounts != null) {
             try {
-                return countsParser.parseConstraint(countsNodes);
+                return CountsAttributeParser.parse(rawCounts);
             } catch (TestFormatException e) {
                 reportFormatFailure(e);
             }
@@ -70,13 +71,13 @@ public class IRRule {
         return null;
     }
 
-    private List<CompilePhaseIRRule> initPhaseIRRules(List<NodeRegex> failOnNodeRegexes,
-                                                      List<CountsNodeRegex> countsNodeRegexes,
+    private List<CompilePhaseIRRule> initPhaseIRRules(List<RawConstraint> failOnRawConstraints,
+                                                      List<RawCountsConstraint> countsNodeRegexes,
                                                       CompilePhase[] compilePhases) {
         List<CompilePhaseIRRule> compilePhaseIRRules = new ArrayList<>();
         try {
             for (CompilePhase compilePhase : compilePhases) {
-                List<CompilePhaseIRRule> rulesList = CompilePhaseIRRuleBuilder.create(failOnNodeRegexes, countsNodeRegexes,
+                List<CompilePhaseIRRule> rulesList = CompilePhaseIRRuleBuilder.create(failOnRawConstraints, countsNodeRegexes,
                                                                                       compilePhase, irMethod);
                 compilePhaseIRRules.addAll(rulesList);
             }

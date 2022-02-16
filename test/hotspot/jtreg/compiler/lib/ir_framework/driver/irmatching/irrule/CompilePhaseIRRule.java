@@ -25,6 +25,10 @@ package compiler.lib.ir_framework.driver.irmatching.irrule;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Counts;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOn;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnMatchResult;
 
 public class CompilePhaseIRRule {
     protected final CompilePhase compilePhase;

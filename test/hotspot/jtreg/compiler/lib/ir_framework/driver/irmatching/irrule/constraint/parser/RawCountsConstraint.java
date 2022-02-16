@@ -21,24 +21,23 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule;
+package compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser;
 
-import compiler.lib.ir_framework.IR;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import compiler.lib.ir_framework.IRNode;
 
 /**
- * Class representing a result of an applied counts attribute of an IR rule.
- *
- * @see IR#counts()
+ * Class to store a single raw counts constraint (i.e. placeholder strings as defined in {@link IRNode} not replaced, yet).
  */
-class CountsMatchResult extends CheckAttributeMatchResult {
+public class RawCountsConstraint extends RawConstraint {
+    private final String countString;
 
-    @Override
-    public String buildFailureMessage(int indentationSize) {
-        return getIndentation(indentationSize) + "- counts: Graph contains wrong number of nodes:" + System.lineSeparator()
-               + collectRegexFailureMessages(indentationSize);
+    public RawCountsConstraint(String rawNodeString, String userPostfixString, String countString, int constraintIndex) {
+        super(rawNodeString, userPostfixString, constraintIndex);
+        this.countString = countString;
+    }
+
+    public String getCountString() {
+        return countString;
     }
 }

@@ -21,36 +21,20 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule;
+package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
-import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Matcher;
-
 /**
- * Base class representing a check attribute of an IR rule.
+ * Class representing a result of an applied counts attribute of an IR rule.
  *
- * @see IR
+ * @see IR#counts()
  */
-abstract class CheckAttribute {
-    protected final List<? extends Constraint> constraints;
-    protected final CompilePhase compilePhase;
+public class CountsMatchResult extends CheckAttributeMatchResult {
 
-    protected CheckAttribute(List<? extends Constraint> constraints, CompilePhase compilePhase) {
-        this.constraints = constraints;
-        this.compilePhase = compilePhase;
-    }
-
-    abstract CheckAttributeMatchResult apply(String compilation);
-
-    protected List<String> getMatchedNodes(Matcher m) {
-        List<String> matches = new ArrayList<>();
-        do {
-            matches.add(m.group());
-        } while (m.find());
-        return matches;
+    @Override
+    public String buildFailureMessage(int indentationSize) {
+        return getIndentation(indentationSize) + "- counts: Graph contains wrong number of nodes:" + System.lineSeparator()
+               + collectRegexFailureMessages(indentationSize);
     }
 }

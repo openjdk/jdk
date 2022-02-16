@@ -27,48 +27,46 @@ import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.driver.irmatching.irrule.CompilePhaseMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Class to build the compilation output for an IR method.
+ * Class to build the combined compilation output of all compile phases on which an IR rule failed.
  *
  * @see IRMethodMatchResult
  */
 class MatchedCompilationOutputBuilder {
-    private final IRMethod irMethod;
-    private final Set<CompilePhase> compilePhases;
 
-    public MatchedCompilationOutputBuilder(IRMethod irMethod, List<IRRuleMatchResult> irRulesMatchResults) {
-        this.irMethod = irMethod;
-        this.compilePhases = collectCompilePhases(irRulesMatchResults);
+    public static String build(IRMethod irMethod, List<IRRuleMatchResult> irRulesMatchResults) {
+        return buildMethodHeaderLine(irMethod) + buildMatchedCompileOutputOfPhases(irMethod, irRulesMatchResults);
     }
 
-    private Set<CompilePhase> collectCompilePhases(List<IRRuleMatchResult> irRulesMatchResults) {
+    private static String buildMethodHeaderLine(IRMethod irMethod) {
+        return ">>> Compilation of " + irMethod.getMethod() + ":" + System.lineSeparator();
+    }
+
+    /**
+     * Concat the compilation output of all failed compile phases with line breaks
+     */
+    private static String buildMatchedCompileOutputOfPhases(IRMethod irMethod, List<IRRuleMatchResult> irRulesMatchResults) {
+        Set<CompilePhase> compilePhases = collectCompilePhases(irRulesMatchResults);
+        return compilePhases.stream()
+                            .map(irMethod::getOutput)
+                            .collect(Collectors.joining(System.lineSeparator() + System.lineSeparator()));
+    }
+
+    /**
+     * Return list of compile phases which resultet in an IR matching failure.
+     */
+    private static Set<CompilePhase> collectCompilePhases(List<IRRuleMatchResult> irRulesMatchResults) {
         return irRulesMatchResults
                 .stream()
                 // Stream<CompilePhaseMatchResult>
                 .flatMap(irRuleMatchResult -> irRuleMatchResult.getCompilePhaseMatchResults().stream())
                 .map(CompilePhaseMatchResult::getCompilePhase) // Stream<CompilePhase>
-                .sorted(Enum::compareTo)
+                .sorted(Enum::compareTo) // Keep order in which the compile phases are defined in the file
                 .collect(Collectors.toCollection(LinkedHashSet::new)); // Filter duplicates
-    }
-
-    public String build() {
-        return getMethodLine() + getOutputOfPhases();
-    }
-
-    private String getMethodLine() {
-        return ">>> Compilation of " + irMethod.getMethod() + ":" + System.lineSeparator();
-    }
-
-    // Concat all phases with line breaks
-    private String getOutputOfPhases() {
-        return compilePhases.stream()
-                            .map(irMethod::getOutput)
-                            .collect(Collectors.joining(System.lineSeparator() + System.lineSeparator()));
     }
 }

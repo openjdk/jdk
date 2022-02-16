@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,42 +21,43 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule;
+package compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.DefaultRegexes;
-import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
-import compiler.lib.ir_framework.driver.irmatching.parser.NodeRegex;
-import compiler.lib.ir_framework.shared.TestFormatException;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
+
+import java.util.List;
 
 /**
- * This class provides default regex strings that can be used in {@link IR @IR} annotations to specify IR constraints.
- * <p>
- * There are two types of default regexes:
- * <ul>
- *     <li><p>Standalone regexes: Use them directly.</li>
- *     <li><p>Composite regexes: Their names contain "{@code _OF}" and expect another string in a list in
- *            {@link IR#failOn()} and {@link IR#counts()}. They cannot be use as standalone regex and will result in a
- *            {@link TestFormatException} when doing so.</li>
- * </ul>
+ * Base template class to parse a raw constraint to replace the placeholder strings from {@link IRNode} by actual
+ * default regexes depending on the compilation phase.
  *
- * @see IR
+ * @see RawConstraint
  */
-class NodeRegexParser {
+abstract class RawConstraintParser<C extends Constraint, RC extends RawConstraint> {
 
-    public static String parseRawNodeString(CompilePhase compilePhase, NodeRegex nodeRegex, String rawNodeString) {
+    protected void parseNonEmptyConstraints(List<C> constraintResultList, List<RC> rawConstraints, CompilePhase compilePhase) {
+        for (RC rawConstraint : rawConstraints) {
+            constraintResultList.add(parseRawConstraint(rawConstraint, compilePhase));
+        }
+    }
+
+    protected abstract C parseRawConstraint(RC constraintResultList, CompilePhase compilePhase);
+
+    protected String parseRawNodeString(CompilePhase compilePhase, RawConstraint rawConstraint, String rawNodeString) {
         String parsedNodeString = rawNodeString;
         if (IRNode.isDefaultIRNode(rawNodeString)) {
-            parsedNodeString = parseDefaultNode(compilePhase, nodeRegex, rawNodeString);
+            parsedNodeString = parseDefaultNode(compilePhase, rawConstraint, rawNodeString);
         }
         return parsedNodeString;
     }
 
-    private static String parseDefaultNode(CompilePhase compilePhase, NodeRegex nodeRegex, String rawNodeString) {
+    private String parseDefaultNode(CompilePhase compilePhase, RawConstraint rawConstraint, String rawNodeString) {
         String parsedNodeString = DefaultRegexes.getRegexForIRNode(rawNodeString, compilePhase);
-        if (nodeRegex.isCompositeNode()) {
-            parsedNodeString = parsedNodeString.replaceAll(DefaultRegexes.IS_REPLACED, nodeRegex.getUserPostfixString());
+        if (rawConstraint.hasCompositeNode()) {
+            parsedNodeString = parsedNodeString.replaceAll(DefaultRegexes.IS_REPLACED, rawConstraint.getUserPostfixString());
         }
         return parsedNodeString;
     }

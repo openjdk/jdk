@@ -34,28 +34,24 @@ import java.util.stream.Collectors;
  *
  * @see IRMethodMatchResult
  */
-class NormalFailureMessageBuilder implements FailureMessage {
-    private final IRMethod irMethod;
+class NormalFailureMessageBuilder extends FailureMessageBuilder {
     private final List<IRRuleMatchResult> irRulesMatchResults;
 
     public NormalFailureMessageBuilder(IRMethod irMethod, List<IRRuleMatchResult> irRulesMatchResults) {
-        this.irMethod = irMethod;
+        super(irMethod);
         this.irRulesMatchResults = irRulesMatchResults.stream()
                                                       .filter(IRRuleMatchResult::fail)
                                                       .collect(Collectors.toList());
     }
 
     @Override
-    public String buildFailureMessage(int indentationSize) {
-        return getMethodLine() + getIRRulesFailureMessage(indentationSize);
-    }
-
-    private String getMethodLine() {
+    protected String buildMethodHeaderLine() {
         int failures = irRulesMatchResults.size();
         return " Method \"" + irMethod.getMethod() + "\" - [Failed IR rules: " + failures + "]:" + System.lineSeparator();
     }
 
-    private String getIRRulesFailureMessage(int initialIndentation) {
+    @Override
+    protected String buildIRRulesFailureMessage(int initialIndentation) {
         StringBuilder failMsg = new StringBuilder();
         for (IRRuleMatchResult irRuleResult : irRulesMatchResults) {
             failMsg.append(irRuleResult.buildFailureMessage(initialIndentation));

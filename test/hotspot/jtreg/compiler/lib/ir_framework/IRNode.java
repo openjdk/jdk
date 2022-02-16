@@ -23,30 +23,21 @@
 
 package compiler.lib.ir_framework;
 
-import compiler.lib.ir_framework.driver.irmatching.IRMatcher;
 import compiler.lib.ir_framework.shared.CheckedTestFrameworkException;
-import compiler.lib.ir_framework.shared.TestFormat;
 import compiler.lib.ir_framework.shared.TestFormatException;
-import compiler.lib.ir_framework.shared.TestFrameworkException;
 import jdk.test.lib.Platform;
 import sun.hotspot.WhiteBox;
 
-import java.util.*;
-
-import static compiler.lib.ir_framework.DefaultRegexes.END;
-
 /**
- * This class provides default regex strings that can be used in {@link IR @IR} annotations to specify IR constraints.
- * <p>
- * There are two types of default regexes:
- * <ul>
- *     <li><p>Standalone regexes: Use them directly.</li>
- *     <li><p>Composite regexes: Their names contain "{@code _OF}" and expect another string in a list in
- *            {@link IR#failOn()} and {@link IR#counts()}. They cannot be use as standalone regex and will result in a
- *            {@link TestFormatException} when doing so.</li>
- * </ul>
+ * This class specifies placeholder strings for IR nodes that can be used in {@link IR#failOn()} and {@link IR#counts()}
+ * attributes to define IR constraints. These placeholder strings are replaced with default regexes (defined in
+ * {@link IdealDefaultRegexes} and {@link OptoAssemblyDefaultRegexes}) by the IR framework depending on the specified
+ * compile phases in {@link IR#phase()}. If a compile phase does not provide a default string for placeholder string,
+ * a test format violation is reported.
  *
- * @see IR
+ * @see DefaultRegexes
+ * @see IdealDefaultRegexes
+ * @see OptoAssemblyDefaultRegexes
  */
 public class IRNode {
 
@@ -55,19 +46,6 @@ public class IRNode {
     private static final String COMPOSITE_PREFIX = "P#";
     private static final String COMPOSITE_PREFIX_NODE = PREFIX + COMPOSITE_PREFIX;
 
-    public static boolean isCompositeRegex(String node) {
-        return node.startsWith(COMPOSITE_PREFIX_NODE);
-    }
-
-    public static boolean isDefaultIRNode(String node) {
-        return node.startsWith(PREFIX);
-    }
-
-    public static String getCompositeNodeName(String irNodeString) {
-        TestFramework.check(irNodeString.length() > PREFIX.length() + COMPOSITE_PREFIX.length() + POSTFIX.length(),
-                            "Invalid composite node placeholder: " + irNodeString);
-        return irNodeString.substring(PREFIX.length() + COMPOSITE_PREFIX.length(), irNodeString.length() - POSTFIX.length() - 1);
-    }
     public static final String RSHIFT_VB = START + "RShiftVB" + MID + END;
     public static final String RSHIFT_VS = START + "RShiftVS" + MID + END;
     public static final String ADD_VI = START + "AddVI" + MID + END;
@@ -79,6 +57,9 @@ public class IRNode {
     public static final String CAST_LL = START + "CastLL" + MID + END;
     public static final String PHI = START + "Phi" + MID + END;
 
+    /*
+     * List of placeholder strings for which at least one default regex exists.
+     */
     public static final String ALLOC = PREFIX + "ALLOC" + POSTFIX;
     public static final String ALLOC_OF = PREFIX + COMPOSITE_PREFIX + "ALLOC_OF" + POSTFIX;
     public static final String ALLOC_ARRAY = PREFIX + "ALLOC_ARRAY" + POSTFIX;
@@ -108,6 +89,7 @@ public class IRNode {
     public static final String STORE_P_OF_CLASS = PREFIX + COMPOSITE_PREFIX + "STORE_P_OF_CLASS" + POSTFIX;
     public static final String STORE_N_OF_CLASS = PREFIX + COMPOSITE_PREFIX + "STORE_N_OF_CLASS" + POSTFIX;
     public static final String STORE_OF_FIELD = PREFIX + COMPOSITE_PREFIX + "STORE_OF_FIELD" + POSTFIX;
+
     public static final String LOAD = PREFIX + "LOAD" + POSTFIX;
     public static final String LOAD_B = PREFIX + "LOAD_B" + POSTFIX;
     public static final String LOAD_UB = PREFIX + "LOAD_UB" + POSTFIX;
@@ -133,10 +115,12 @@ public class IRNode {
     public static final String LOAD_N_OF_CLASS = PREFIX + COMPOSITE_PREFIX + "LOAD_N_OF_CLASS" + POSTFIX;
     public static final String LOAD_OF_FIELD = PREFIX + COMPOSITE_PREFIX + "LOAD_OF_FIELD" + POSTFIX;
     public static final String LOAD_KLASS = PREFIX + "LOAD_KLASS" + POSTFIX;
+
     public static final String LOOP = PREFIX + "LOOP" + POSTFIX;
     public static final String COUNTEDLOOP = PREFIX + "COUNTEDLOOP" + POSTFIX;
     public static final String COUNTEDLOOP_MAIN = PREFIX + "COUNTEDLOOP_MAIN" + POSTFIX;
     public static final String IF = PREFIX + "IF" + POSTFIX;
+
     public static final String CALL = PREFIX + "CALL" + POSTFIX;
     public static final String CALL_OF_METHOD = PREFIX + COMPOSITE_PREFIX + "CALL_OF_METHOD" + POSTFIX;
     public static final String DYNAMIC_CALL_OF_METHOD = PREFIX + COMPOSITE_PREFIX + "DYNAMIC_CALL_OF_METHOD" + POSTFIX;
@@ -151,8 +135,10 @@ public class IRNode {
     public static final String UNHANDLED_TRAP = PREFIX + "UNHANDLED_TRAP" + POSTFIX;
     public static final String INTRINSIC_TRAP = PREFIX + "INTRINSIC_TRAP" + POSTFIX;
     public static final String INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP = PREFIX + "INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP" + POSTFIX;
+
     public static final String SCOPE_OBJECT = PREFIX + "SCOPE_OBJECT" + POSTFIX;
     public static final String MEMBAR = PREFIX + "MEMBAR" + POSTFIX;
+
     public static final String ABS_I = PREFIX + "ABS_I" + POSTFIX;
     public static final String ABS_L = PREFIX + "ABS_L" + POSTFIX;
     public static final String ABS_F = PREFIX + "ABS_F" + POSTFIX;
@@ -173,6 +159,7 @@ public class IRNode {
     public static final String MUL_I = PREFIX + "MUL_I" + POSTFIX;
     public static final String MUL_L = PREFIX + "MUL_L" + POSTFIX;
     public static final String CONV_I2L = PREFIX + "CONV_I2L" + POSTFIX;
+
     public static final String VECTOR_CAST_B2X = PREFIX + "VECTOR_CAST_B2X" + POSTFIX;
     public static final String VECTOR_CAST_S2X = PREFIX + "VECTOR_CAST_S2X" + POSTFIX;
     public static final String VECTOR_CAST_I2X = PREFIX + "VECTOR_CAST_I2X" + POSTFIX;
@@ -181,6 +168,20 @@ public class IRNode {
     public static final String VECTOR_CAST_D2X = PREFIX + "VECTOR_CAST_D2X" + POSTFIX;
     public static final String VECTOR_REINTERPRET = PREFIX + "VECTOR_REINTERPRET" + POSTFIX;
 
+
+    public static boolean isCompositeIRNode(String node) {
+        return node.startsWith(COMPOSITE_PREFIX_NODE);
+    }
+
+    public static boolean isDefaultIRNode(String node) {
+        return node.startsWith(PREFIX);
+    }
+
+    public static String getCompositeNodeName(String irNodeString) {
+        TestFramework.check(irNodeString.length() > PREFIX.length() + COMPOSITE_PREFIX.length() + POSTFIX.length(),
+                            "Invalid composite node placeholder: " + irNodeString);
+        return irNodeString.substring(PREFIX.length() + COMPOSITE_PREFIX.length(), irNodeString.length() - POSTFIX.length() - 1);
+    }
 
     /**
      * Is default regex supported on current platform, used VM build, etc.?

@@ -21,26 +21,28 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule;
+package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
-import compiler.lib.ir_framework.IR;
-import compiler.lib.ir_framework.shared.Comparison;
+import compiler.lib.ir_framework.driver.irmatching.FailureMessage;
 
 /**
- * Class representing a counts attribute of an IR rule.
+ * Base class to build the failure message output for an IR method with failed IR rules.
  *
- * @see IR#counts()
+ * @see IRMethodMatchResult
  */
-class CountsConstraint extends Constraint {
-    private final Comparison<Long> comparison;
+abstract class FailureMessageBuilder implements FailureMessage {
+    protected final IRMethod irMethod;
 
-    public CountsConstraint(String node, Comparison<Long> comparison, int regexNodeId) {
-        super(node, regexNodeId);
-        this.comparison = comparison;
+    public FailureMessageBuilder(IRMethod irMethod) {
+        this.irMethod = irMethod;
     }
-    
-    public Comparison<Long> getComparison() {
-        return comparison;
+
+    @Override
+    public String buildFailureMessage(int indentationSize) {
+        return buildMethodHeaderLine() + buildIRRulesFailureMessage(indentationSize);
     }
-    
+
+    abstract protected String buildMethodHeaderLine();
+
+    abstract protected String buildIRRulesFailureMessage(int initialIndentation);
 }

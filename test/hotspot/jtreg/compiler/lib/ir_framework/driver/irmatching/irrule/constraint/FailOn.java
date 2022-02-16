@@ -21,7 +21,7 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule;
+package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
@@ -37,12 +37,12 @@ import java.util.stream.Collectors;
  *
  * @see IR#failOn()
  */
-class FailOn extends CheckAttribute {
+public class FailOn extends CheckAttribute {
     private final Pattern quickPattern;
 
     public FailOn(List<Constraint> constraints, CompilePhase compilePhase) {
         super(constraints, compilePhase);
-        String patternString = constraints.stream().map(Constraint::getNode).collect(Collectors.joining("|"));
+        String patternString = constraints.stream().map(Constraint::getRegex).collect(Collectors.joining("|"));
         this.quickPattern = Pattern.compile(String.join("|", patternString));
     }
 
@@ -65,12 +65,12 @@ class FailOn extends CheckAttribute {
     }
 
     private void checkNode(List<RegexFailure> regexFailures, String compilation, Constraint constraint) {
-        String node = constraint.getNode();
-        Pattern p = Pattern.compile(constraint.getNode());
+        String node = constraint.getRegex();
+        Pattern p = Pattern.compile(constraint.getRegex());
         Matcher m = p.matcher(compilation);
         if (m.find()) {
             List<String> matches = getMatchedNodes(m);
-            regexFailures.add(new FailOnRegexFailure(node, constraint.getRegexNodeId(), matches));
+            regexFailures.add(new FailOnRegexFailure(node, constraint.getIndex(), matches));
         }
     }
 }

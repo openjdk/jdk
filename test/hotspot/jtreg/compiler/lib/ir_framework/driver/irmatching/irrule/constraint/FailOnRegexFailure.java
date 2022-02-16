@@ -21,25 +21,34 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule;
-
-import compiler.lib.ir_framework.IR;
+package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
 import java.util.List;
 
 /**
- * Class representing a result of an applied failOn attribute of an IR rule.
+ * This class represents an IR matching failure of a regex of a failOn attribute of an IR rule.
  *
- * @see IR#failOn()
+ * @see FailOn
  */
-class FailOnMatchResult extends CheckAttributeMatchResult {
-    public void setFailures(List<RegexFailure> regexFailures) {
-        this.regexFailures = regexFailures;
+class FailOnRegexFailure extends RegexFailure {
+
+    public FailOnRegexFailure(String nodeRegex, int regexNodeId, List<String> matches) {
+        super(nodeRegex, regexNodeId, matches);
+    }
+
+    @Override
+    public int getMatchedNodesCount() {
+        return matches.size();
     }
 
     @Override
     public String buildFailureMessage(int indentationSize) {
-        return getIndentation(indentationSize) + "- failOn: Graph contains forbidden nodes:" + System.lineSeparator()
-               + collectRegexFailureMessages(indentationSize + 2);
+        return getRegexLine(indentationSize)
+               + getMatchedNodesBlock(indentationSize + 2);
+    }
+
+    @Override
+    protected String getMatchedPrefix() {
+        return "Matched forbidden";
     }
 }

@@ -26,9 +26,8 @@ package compiler.lib.ir_framework.driver.irmatching.irrule;
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.DefaultRegexes;
 import compiler.lib.ir_framework.IR;
-import compiler.lib.ir_framework.driver.irmatching.parser.NodeRegex;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.RawConstraint;
 import compiler.lib.ir_framework.shared.TestFormatException;
-import compiler.lib.ir_framework.shared.TestFrameworkException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -49,7 +48,7 @@ import java.util.stream.Collectors;
 public class NodeRegexFilter {
 
 
-    public static <T extends NodeRegex> List<T> filter(List<T> nodeRegexes, CompilePhase compilePhase) {
+    public static <T extends RawConstraint> List<T> filter(List<T> nodeRegexes, CompilePhase compilePhase) {
         return nodeRegexes.stream()
                           .filter(r -> DefaultRegexes.DEFAULT_TO_PHASE_MAP.get(r.getRawNodeString()) == compilePhase)
                           .collect(Collectors.toList());

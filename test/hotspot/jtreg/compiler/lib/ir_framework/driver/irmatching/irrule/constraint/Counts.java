@@ -21,7 +21,7 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule;
+package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
  *
  * @see IR#counts()
  */
-class Counts extends CheckAttribute {
+public class Counts extends CheckAttribute {
     private final List<CountsConstraint> constraints;
 
     public Counts(List<CountsConstraint> constraints, CompilePhase compilePhase) {
@@ -70,13 +70,13 @@ class Counts extends CheckAttribute {
     }
 
     private List<String> getCountsMatches(String compilation, Constraint constraint) {
-        Pattern pattern = Pattern.compile(constraint.nodeRegex);
+        Pattern pattern = Pattern.compile(constraint.getRegex());
         Matcher matcher = pattern.matcher(compilation);
         return matcher.results().map(MatchResult::group).collect(Collectors.toList());
     }
 
     private CountsRegexFailure createRegexFailure(List<String> countsMatches, Constraint constraint) {
-        return new CountsRegexFailure(constraint.getNode(), constraint.getRegexNodeId(), foundCount,
+        return new CountsRegexFailure(constraint.getRegex(), constraint.getIndex(), foundCount,
                                       constraint.getComparison(), matches);
     }
 }

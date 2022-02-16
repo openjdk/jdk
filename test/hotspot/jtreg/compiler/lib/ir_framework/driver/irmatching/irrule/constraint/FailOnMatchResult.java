@@ -21,37 +21,25 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irmethod;
+package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
-import compiler.lib.ir_framework.driver.irmatching.FailureMessage;
-import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
+import compiler.lib.ir_framework.IR;
 
 import java.util.List;
 
 /**
- * Class to build the failure message output for an IR method with a missing compilation output.
+ * Class representing a result of an applied failOn attribute of an IR rule.
  *
- * @see IRMethodMatchResult
+ * @see IR#failOn()
  */
-class MissingCompilationMessageBuilder implements FailureMessage {
-
-    private final IRMethod irMethod;
-
-    public MissingCompilationMessageBuilder(IRMethod irMethod) {
-        this.irMethod = irMethod;
+public class FailOnMatchResult extends CheckAttributeMatchResult {
+    public void setFailures(List<RegexFailure> regexFailures) {
+        this.regexFailures = regexFailures;
     }
 
     @Override
     public String buildFailureMessage(int indentationSize) {
-        return getMethodLine() + getMissingCompilationMessage(indentationSize);
-    }
-
-    private String getMissingCompilationMessage(int indentationSize) {
-        return getIndentation(indentationSize) + "* Method was not compiled. Did you specify any compiler directives preventing a compilation "
-               + "or used a @Run method in STANDALONE mode? In the latter case, make sure to always trigger a C2 "
-               + "compilation by " + "invoking the test enough times.";
-    }
-    private String getMethodLine() {
-        return " Method \"" + irMethod.getMethod() + "\":" + System.lineSeparator();
+        return getIndentation(indentationSize) + "- failOn: Graph contains forbidden nodes:" + System.lineSeparator()
+               + collectRegexFailureMessages(indentationSize + 2);
     }
 }

@@ -21,44 +21,29 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irmethod;
+package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
-import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
+import compiler.lib.ir_framework.IR;
 
 /**
- * This class represents an IR matching result where the compilation output of a method was empty.
+ * Class representing a counts attribute of an IR rule.
  *
- * @see IRRuleMatchResult
- * @see IRMethod
+ * @see IR#counts()
  */
-public class MissingCompilationResult extends IRMethodMatchResult {
-    private final int failedIRRules;
+public class Constraint {
+    private final String regex;
+    private final int index; // constraint indices start at 1.
 
-    MissingCompilationResult(IRMethod irMethod, int failedIRRules) {
-        super(irMethod);
-        this.failedIRRules = failedIRRules;
+    public Constraint(String regex, int index) {
+        this.regex = regex;
+        this.index = index;
     }
 
-    @Override
-    public boolean fail() {
-        return true;
+    public String getRegex() {
+        return regex;
     }
 
-    @Override
-    public String getMatchedCompilationOutput() {
-        return "<empty>";
+    public int getIndex() {
+        return index;
     }
-
-    @Override
-    public int getFailedIRRuleCount() {
-        return failedIRRules;
-    }
-
-    @Override
-    public String buildFailureMessage(int indentationSize) {
-        MissingCompilationFailureMessageBuilder builder = new MissingCompilationFailureMessageBuilder(irMethod);
-        return builder.buildFailureMessage(indentationSize);
-    }
-
-
 }

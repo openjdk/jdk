@@ -28,21 +28,17 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 import java.util.List;
 
 /**
- * This class represents a normal IR matching result of all IR rules of a method.
+ * This class represents an IR matching result of a normal (non-empty compilation output) IR method.
  *
  * @see IRRuleMatchResult
  * @see IRMethod
  */
 class NormalMatchResult extends IRMethodMatchResult {
     private final List<IRRuleMatchResult> irRulesMatchResults;
-    private final NormalFailureMessageBuilder failureMessageBuilder;
-    private final MatchedCompilationOutputBuilder matchedCompilationOutputBuilder;
 
     NormalMatchResult(IRMethod irMethod, List<IRRuleMatchResult> irRulesMatchResults) {
         super(irMethod);
         this.irRulesMatchResults = irRulesMatchResults;
-        this.failureMessageBuilder = new NormalFailureMessageBuilder(irMethod, irRulesMatchResults);
-        this.matchedCompilationOutputBuilder = new MatchedCompilationOutputBuilder(irMethod, irRulesMatchResults);
     }
 
     @Override
@@ -51,17 +47,18 @@ class NormalMatchResult extends IRMethodMatchResult {
     }
 
     @Override
-    public String getMatchedCompilationOutput() {
-        return matchedCompilationOutputBuilder.build();
+    public int getFailedIRRuleCount() {
+        return irRulesMatchResults.size();
     }
 
     @Override
     public String buildFailureMessage(int indentationSize) {
-        return failureMessageBuilder.buildFailureMessage(indentationSize);
+        NormalFailureMessageBuilder builder = new NormalFailureMessageBuilder(irMethod, irRulesMatchResults);
+        return builder.buildFailureMessage(indentationSize);
     }
 
     @Override
-    public int getFailedIRRuleCount() {
-        return irRulesMatchResults.size();
+    public String getMatchedCompilationOutput() {
+        return MatchedCompilationOutputBuilder.build(irMethod, irRulesMatchResults);
     }
 }

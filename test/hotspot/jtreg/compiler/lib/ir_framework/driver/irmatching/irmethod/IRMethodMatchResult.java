@@ -27,7 +27,7 @@ import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 
 /**
- * This base class represents an IR matching result of all IR rules of a method.
+ * This base class represents an IR matching result of all specified compile phases of all IR rules of an IR method.
  *
  * @see IRRuleMatchResult
  * @see IRMethod
@@ -35,10 +35,13 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 abstract public class IRMethodMatchResult implements Comparable<IRMethodMatchResult>, MatchResult {
     protected final IRMethod irMethod;
 
-    IRMethodMatchResult(IRMethod irMethod) {
+    public IRMethodMatchResult(IRMethod irMethod) {
         this.irMethod = irMethod;
     }
 
+    /**
+     * Return the combined compilation output on which any regex in any IR rule was matched.
+     */
     abstract public String getMatchedCompilationOutput();
 
     abstract public int getFailedIRRuleCount();

@@ -21,9 +21,10 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule;
+package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
 import compiler.lib.ir_framework.driver.irmatching.FailureMessage;
+import compiler.lib.ir_framework.driver.irmatching.irrule.IRRule;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -36,8 +37,8 @@ import java.util.stream.Collectors;
  * @see IRRule
  */
 abstract class RegexFailure implements FailureMessage {
-    protected final String nodeRegex;
-    protected final int regexNodeId;
+    private final String nodeRegex;
+    private final int regexNodeId;
     protected final List<String> matches;
 
     public RegexFailure(String nodeRegex, int regexNodeId, List<String> matches) {
@@ -64,7 +65,7 @@ abstract class RegexFailure implements FailureMessage {
         return getMatchedNodesHeader(indentation) + getMatchesNodeLines(indentation + 2);
     }
 
-    protected String getMatchedNodesHeader(int indentation) {
+    private String getMatchedNodesHeader(int indentation) {
         int matchCount = matches.size();
         return getIndentation(indentation) + "- " + getMatchedPrefix() + " node"
                + (matchCount > 1 ? "s (" + matchCount + ")" : "") + ":" + System.lineSeparator();
@@ -72,7 +73,7 @@ abstract class RegexFailure implements FailureMessage {
 
     abstract protected String getMatchedPrefix();
 
-    protected String getMatchesNodeLines(int indentation) {
+    private String getMatchesNodeLines(int indentation) {
         StringBuilder builder = new StringBuilder();
         String indentationString = getIndentation(indentation);
         List<String> matches = addWhiteSpacePrefixForEachLine(this.matches, indentationString + "  ");

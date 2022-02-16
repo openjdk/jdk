@@ -27,12 +27,10 @@ import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * This class represents an IR matching result of an IR rule.
  *
- * @see CheckAttributeMatchResult
  * @see IRRule
  */
 public class IRRuleMatchResult implements MatchResult {
