@@ -28,9 +28,8 @@ package java.util.Map;/*
  * @library /test/lib
  * @modules java.base/java.lang:open
  *          java.base/java.util:open
- * @run main HashMaPutAllOverAllocateTableTest
+ * @run main HashMapsPutAllOverAllocateTableTest
  */
-
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
