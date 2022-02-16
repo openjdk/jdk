@@ -26,8 +26,7 @@
  * @test
  * @bug 8281000
  * @summary Test uses custom launcher that starts VM using JNI that verifies
- *          ClassLoader.registerAsParallelCapable with null caller class does not throw a NullPointerException,
- *          and instead returns false.
+ *          ClassLoader.registerAsParallelCapable with null caller class throws an IllegalCallerException.
  * @library /test/lib
  * @requires os.family != "aix"
  * @run main/native NullCallerClassLoaderTest
