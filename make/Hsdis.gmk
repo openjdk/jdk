@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -108,17 +108,32 @@ else
   HSDIS_TOOLCHAIN_LIBS := -ldl
 endif
 
+ifeq ($(HSDIS_BACKEND), capstone)
+  ifeq ($(call isTargetCpuArch, x86), true)
+    CAPSTONE_ARCH := CS_ARCH_X86
+    CAPSTONE_MODE := CS_MODE_$(OPENJDK_TARGET_CPU_BITS)
+  else ifeq ($(call isTargetCpuArch, aarch64), true)
+    CAPSTONE_ARCH := CS_ARCH_ARM64
+    CAPSTONE_MODE := CS_MODE_ARM
+  else
+    $(error No support for Capstone on this platform)
+  endif
+
+  HSDIS_CFLAGS += -DCAPSTONE_ARCH=$(CAPSTONE_ARCH) \
+      -DCAPSTONE_MODE=$(CAPSTONE_MODE)
+endif
 
 $(eval $(call SetupJdkLibrary, BUILD_HSDIS, \
     NAME := hsdis, \
-    SRC := $(TOPDIR)/src/utils/hsdis, \
+    SRC := $(TOPDIR)/src/utils/hsdis/$(HSDIS_BACKEND), \
+    EXTRA_HEADER_DIRS := $(TOPDIR)/src/utils/hsdis, \
     TOOLCHAIN := $(HSDIS_TOOLCHAIN), \
     OUTPUT_DIR := $(HSDIS_OUTPUT_DIR), \
     OBJECT_DIR := $(HSDIS_OUTPUT_DIR), \
     DISABLED_WARNINGS_gcc := undef format-nonliteral sign-compare, \
     DISABLED_WARNINGS_clang := undef format-nonliteral, \
     CFLAGS := $(HSDIS_TOOLCHAIN_CFLAGS) $(HSDIS_CFLAGS), \
-    LDFLAGS := $(HSDIS_TOOLCHAIN_LDFLAGS) $(SHARED_LIBRARY_FLAGS), \
+    LDFLAGS := $(HSDIS_TOOLCHAIN_LDFLAGS) $(HSDIS_LDFLAGS) $(SHARED_LIBRARY_FLAGS), \
     LIBS := $(HSDIS_LIBS) $(HSDIS_TOOLCHAIN_LIBS), \
 ))
 
