@@ -4094,6 +4094,33 @@ void C2_MacroAssembler::vector_castF2I_evex(XMMRegister dst, XMMRegister src, XM
   bind(done);
 }
 
+void C2_MacroAssembler::vector_unsigned_cast(XMMRegister dst, XMMRegister src, int vlen_enc,
+                                             BasicType from_elem_bt, BasicType to_elem_bt) {
+  switch (from_elem_bt) {
+    case T_BYTE:
+      switch (to_elem_bt) {
+        case T_SHORT: vpmovzxbw(dst, src, vlen_enc); break;
+        case T_INT:   vpmovzxbd(dst, src, vlen_enc); break;
+        case T_LONG:  vpmovzxbq(dst, src, vlen_enc); break;
+        default: ShouldNotReachHere();
+      }
+      break;
+    case T_SHORT:
+      switch (to_elem_bt) {
+        case T_INT:  vpmovzxwd(dst, src, vlen_enc); break;
+        case T_LONG: vpmovzxwq(dst, src, vlen_enc); break;
+        default: ShouldNotReachHere();
+      }
+      break;
+    case T_INT:
+      assert(to_elem_bt == T_LONG, "");
+      vpmovzxdq(dst, src, vlen_enc);
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+}
+
 void C2_MacroAssembler::evpternlog(XMMRegister dst, int func, KRegister mask, XMMRegister src2, XMMRegister src3,
                                    bool merge, BasicType bt, int vlen_enc) {
   if (bt == T_INT) {
