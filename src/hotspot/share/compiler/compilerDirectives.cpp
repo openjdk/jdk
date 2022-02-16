@@ -30,6 +30,7 @@
 #include "compiler/compilerOracle.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "opto/phasetype.hpp"
 #include "runtime/globals_extension.hpp"
 
 CompilerDirectives::CompilerDirectives() : _next(NULL), _match(NULL), _ref_count(0) {
@@ -262,6 +263,7 @@ void DirectiveSet::init_control_intrinsic() {
 
 DirectiveSet::DirectiveSet(CompilerDirectives* d) :_inlinematchers(NULL), _directive(d) {
 #define init_defaults_definition(name, type, dvalue, compiler) this->name##Option = dvalue;
+  _ideal_phase_name_mask = 0;
   compilerdirectives_common_flags(init_defaults_definition)
   compilerdirectives_c2_flags(init_defaults_definition)
   compilerdirectives_c1_flags(init_defaults_definition)
@@ -380,6 +382,24 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
     compilerdirectives_common_flags(init_default_cc)
     compilerdirectives_c2_flags(init_default_cc)
     compilerdirectives_c1_flags(init_default_cc)
+
+    // Parse PrintIdealPhaseName and create an efficient lookup mask
+#ifndef PRODUCT
+#ifdef COMPILER2
+    if (!_modified[PrintIdealPhaseIndex]) {
+      // Parse ccstr and create mask
+      ccstrlist option;
+      if (CompilerOracle::has_option_value(method, CompileCommand::PrintIdealPhase, option)) {
+        uint64_t mask = 0;
+        PhaseNameValidator validator(option, mask);
+        if (validator.is_valid()) {
+          assert(mask != 0, "Must be set");
+          set.cloned()->_ideal_phase_name_mask = mask;
+        }
+      }
+    }
+#endif
+#endif
 
     // Canonicalize DisableIntrinsic to contain only ',' as a separator.
     ccstrlist option_value;

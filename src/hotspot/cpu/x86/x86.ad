@@ -2552,15 +2552,21 @@ void vec_spill_helper(CodeBuffer *cbuf, bool is_load,
   }
 }
 
-static inline jlong replicate8_imm(int con, int width) {
-  // Load a constant of "width" (in bytes) and replicate it to fill 64bit.
-  assert(width == 1 || width == 2 || width == 4, "only byte, short or int types here");
-  int bit_width = width * 8;
-  jlong val = con;
-  val &= (((jlong) 1) << bit_width) - 1;  // mask off sign bits
-  while(bit_width < 64) {
-    val |= (val << bit_width);
-    bit_width <<= 1;
+template <class T>
+static inline GrowableArray<jvalue>* vreplicate_imm(BasicType bt, T con, int len) {
+  GrowableArray<jvalue>* val = new GrowableArray<jvalue>(len);
+  jvalue ele;
+  switch (bt) {
+    case T_BYTE:   ele.b = con; break;
+    case T_SHORT:  ele.s = con; break;
+    case T_INT:    ele.i = con; break;
+    case T_LONG:   ele.j = con; break;
+    case T_FLOAT:  ele.f = con; break;
+    case T_DOUBLE: ele.d = con; break;
+    default: ShouldNotReachHere();
+  }
+  for (int i = 0; i < len; i++) {
+    val->append(ele);
   }
   return val;
 }
@@ -3824,14 +3830,7 @@ instruct loadV(vec dst, memory mem) %{
   ins_cost(125);
   format %{ "load_vector $dst,$mem" %}
   ins_encode %{
-    switch (Matcher::vector_length_in_bytes(this)) {
-      case  4: __ movdl    ($dst$$XMMRegister, $mem$$Address); break;
-      case  8: __ movq     ($dst$$XMMRegister, $mem$$Address); break;
-      case 16: __ movdqu   ($dst$$XMMRegister, $mem$$Address); break;
-      case 32: __ vmovdqu  ($dst$$XMMRegister, $mem$$Address); break;
-      case 64: __ evmovdqul($dst$$XMMRegister, $mem$$Address, Assembler::AVX_512bit); break;
-      default: ShouldNotReachHere();
-    }
+    __ load_vector($dst$$XMMRegister, $mem$$Address, Matcher::vector_length_in_bytes(this));
   %}
   ins_pipe( pipe_slow );
 %}
@@ -4009,41 +4008,10 @@ instruct ReplB_imm(vec dst, immI con) %{
   match(Set dst (ReplicateB con));
   format %{ "replicateB $dst,$con" %}
   ins_encode %{
-    uint vlen = Matcher::vector_length(this);
-    InternalAddress const_addr = $constantaddress(replicate8_imm($con$$constant, 1));
-    if (vlen == 4) {
-      __ movdl($dst$$XMMRegister, const_addr);
-    } else {
-      __ movq($dst$$XMMRegister, const_addr);
-      if (vlen >= 16) {
-        if (VM_Version::supports_avx2()) {
-          int vlen_enc = vector_length_encoding(this);
-          __ vpbroadcastq($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-        } else {
-          assert(vlen == 16, "sanity");
-          __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-        }
-      }
-    }
+    InternalAddress addr = $constantaddress(T_BYTE, vreplicate_imm(T_BYTE, $con$$constant, Matcher::vector_length(this)));
+    __ load_vector($dst$$XMMRegister, addr, Matcher::vector_length_in_bytes(this));
   %}
   ins_pipe( pipe_slow );
-%}
-
-// Replicate byte scalar zero to be vector
-instruct ReplB_zero(vec dst, immI_0 zero) %{
-  match(Set dst (ReplicateB zero));
-  format %{ "replicateB $dst,$zero" %}
-  ins_encode %{
-    uint vlen = Matcher::vector_length(this);
-    if (vlen <= 16) {
-      __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
-    } else {
-      // Use vpxor since AVX512F does not have 512bit vxorpd (requires AVX512DQ).
-      int vlen_enc = vector_length_encoding(this);
-      __ vpxor($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    }
-  %}
-  ins_pipe( fpu_reg_reg );
 %}
 
 // ====================ReplicateS=======================================
@@ -4091,39 +4059,10 @@ instruct ReplS_imm(vec dst, immI con) %{
   match(Set dst (ReplicateS con));
   format %{ "replicateS $dst,$con" %}
   ins_encode %{
-    uint vlen = Matcher::vector_length(this);
-    InternalAddress const_addr = $constantaddress(replicate8_imm($con$$constant, 2));
-    if (vlen == 2) {
-      __ movdl($dst$$XMMRegister, const_addr);
-    } else {
-      __ movq($dst$$XMMRegister, const_addr);
-      if (vlen >= 8) {
-        if (VM_Version::supports_avx2()) {
-          int vlen_enc = vector_length_encoding(this);
-          __ vpbroadcastw($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-        } else {
-          assert(vlen == 8, "sanity");
-          __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-        }
-      }
-    }
+    InternalAddress addr = $constantaddress(T_SHORT, vreplicate_imm(T_SHORT, $con$$constant, Matcher::vector_length(this)));
+    __ load_vector($dst$$XMMRegister, addr, Matcher::vector_length_in_bytes(this));
   %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-instruct ReplS_zero(vec dst, immI_0 zero) %{
-  match(Set dst (ReplicateS zero));
-  format %{ "replicateS $dst,$zero" %}
-  ins_encode %{
-    uint vlen = Matcher::vector_length(this);
-    if (vlen <= 8) {
-      __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
-    } else {
-      int vlen_enc = vector_length_encoding(this);
-      __ vpxor($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    }
-  %}
-  ins_pipe( fpu_reg_reg );
+  ins_pipe( pipe_slow );
 %}
 
 // ====================ReplicateI=======================================
@@ -4173,30 +4112,21 @@ instruct ReplI_imm(vec dst, immI con) %{
   match(Set dst (ReplicateI con));
   format %{ "replicateI $dst,$con" %}
   ins_encode %{
-    uint vlen = Matcher::vector_length(this);
-    InternalAddress const_addr = $constantaddress(replicate8_imm($con$$constant, 4));
-    if (vlen <= 4) {
-      __ movq($dst$$XMMRegister, const_addr);
-      if (vlen == 4) {
-        __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-      }
-    } else {
-      assert(VM_Version::supports_avx2(), "sanity");
-      int vlen_enc = vector_length_encoding(this);
-      __ movq($dst$$XMMRegister, const_addr);
-      __ vpbroadcastd($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    }
+    InternalAddress addr = $constantaddress(T_INT, vreplicate_imm(T_INT, $con$$constant, Matcher::vector_length(this)));
+    __ load_vector($dst$$XMMRegister, addr, Matcher::vector_length_in_bytes(this));
   %}
   ins_pipe( pipe_slow );
 %}
 
-// Replicate integer (4 byte) scalar zero to be vector
+// Replicate scalar zero to be vector
 instruct ReplI_zero(vec dst, immI_0 zero) %{
+  match(Set dst (ReplicateB zero));
+  match(Set dst (ReplicateS zero));
   match(Set dst (ReplicateI zero));
   format %{ "replicateI $dst,$zero" %}
   ins_encode %{
-    uint vlen = Matcher::vector_length(this);
-    if (vlen <= 4) {
+    uint vsize = Matcher::vector_length_in_bytes(this);
+    if (vsize <= 16) {
       __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
     } else {
       int vlen_enc = vector_length_encoding(this);
@@ -4327,17 +4257,8 @@ instruct ReplL_imm(vec dst, immL con) %{
   match(Set dst (ReplicateL con));
   format %{ "replicateL $dst,$con" %}
   ins_encode %{
-    uint vlen = Matcher::vector_length(this);
-    InternalAddress const_addr = $constantaddress($con);
-    if (vlen == 2) {
-      __ movq($dst$$XMMRegister, const_addr);
-      __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    } else {
-      assert(VM_Version::supports_avx2(), "sanity");
-      int vlen_enc = vector_length_encoding(this);
-      __ movq($dst$$XMMRegister, const_addr);
-      __ vpbroadcastq($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    }
+    InternalAddress addr = $constantaddress(T_LONG, vreplicate_imm(T_LONG, $con$$constant, Matcher::vector_length(this)));
+    __ load_vector($dst$$XMMRegister, addr, Matcher::vector_length_in_bytes(this));
   %}
   ins_pipe( pipe_slow );
 %}
@@ -4407,6 +4328,17 @@ instruct ReplF_mem(vec dst, memory mem) %{
   ins_pipe( pipe_slow );
 %}
 
+// Replicate float scalar immediate to be vector by loading from const table.
+instruct ReplF_imm(vec dst, immF con) %{
+  match(Set dst (ReplicateF con));
+  format %{ "replicateF $dst,$con" %}
+  ins_encode %{
+    InternalAddress addr = $constantaddress(T_FLOAT, vreplicate_imm(T_FLOAT, $con$$constant, Matcher::vector_length(this)));
+    __ load_vector($dst$$XMMRegister, addr, Matcher::vector_length_in_bytes(this));
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct ReplF_zero(vec dst, immF0 zero) %{
   match(Set dst (ReplicateF zero));
   format %{ "replicateF $dst,$zero" %}
@@ -4457,6 +4389,17 @@ instruct ReplD_mem(vec dst, memory mem) %{
       int vlen_enc = vector_length_encoding(this);
       __ vbroadcastsd($dst$$XMMRegister, $mem$$Address, vlen_enc);
     }
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Replicate double (8 byte) scalar immediate to be vector by loading from const table.
+instruct ReplD_imm(vec dst, immD con) %{
+  match(Set dst (ReplicateD con));
+  format %{ "replicateD $dst,$con" %}
+  ins_encode %{
+    InternalAddress addr = $constantaddress(T_DOUBLE, vreplicate_imm(T_DOUBLE, $con$$constant, Matcher::vector_length(this)));
+    __ load_vector($dst$$XMMRegister, addr, Matcher::vector_length_in_bytes(this));
   %}
   ins_pipe( pipe_slow );
 %}
