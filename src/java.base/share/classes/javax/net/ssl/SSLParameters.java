@@ -736,6 +736,12 @@ public class SSLParameters {
      * method should return the default signature schemes for connection
      * populated objects, or {@code null} for pre-populated objects.
      *
+     * @implSpec
+     * This method was introduced since JDK 19, and could be unintentionally
+     * overridden by the existence of subclass {@link SSLParameters}.  It is
+     * recommended that if possible, the subclass overriding implementation
+     * should be checked to comply to this method specification.
+     *
      * @apiNote
      * Note that a provider may not have been updated to support this method
      * and in that case may return {@code null} instead of the default
@@ -774,8 +780,8 @@ public class SSLParameters {
      * the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#signature-schemes">
      * Signature Schemes</a> section of the Java Security Standard Algorithm
-     * Names Specification.  Providers may support signature schemes not defined
-     * in this list or may not use the recommended name for a certain
+     * Names Specification.  Providers may support signature schemes not
+     * defined in this list or may not use the recommended name for a certain
      * signature scheme.
      * <p>
      * The set of signature schemes that will be used over the SSL/TLS/DTLS
@@ -783,6 +789,12 @@ public class SSLParameters {
      * array and the underlying provider-specific default signature schemes.
      * See {@link #getSignatureSchemes} for specific details on how the
      * parameters are used in SSL/TLS/DTLS connections.
+     *
+     * @implSpec
+     * This method was introduced since JDK 19, and could be unintentionally
+     * overridden by the existence of subclass {@link SSLParameters}.  It is
+     * recommended that if possible, the subclass overriding implementation
+     * should be checked to comply to this method specification.
      *
      * @apiNote
      * Note that a provider may not have been updated to support this method
@@ -820,4 +832,3 @@ public class SSLParameters {
         this.signatureSchemes = tempSchemes;
     }
 }
-
