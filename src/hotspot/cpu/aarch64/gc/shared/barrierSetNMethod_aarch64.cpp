@@ -63,44 +63,16 @@ public:
   void verify() const;
 };
 
-// Store the instruction bitmask, bits and name for checking the barrier.
-struct CheckInsn {
-  uint32_t mask;
-  uint32_t bits;
-  const char *name;
-};
-
-// The encodings must match the instructions emitted by
-// BarrierSetAssembler::nmethod_entry_barrier. The matching ignores the specific
-// register numbers and immediate values in the encoding.
+// The first instruction of the nmethod entry barrier is an ldr (literal)
+// instruction. Verify that it's really there, so the offsets are not skewed.
 void NativeNMethodBarrier::verify() const {
-  intptr_t addr = (intptr_t) instruction_address();
-  BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
-  if (bs_asm->nmethod_code_patching()) {
-    // TODO: Write something like below. For now, trust me on this one.
-  } else {
-    static const struct CheckInsn barrierInsn[] = {
-      { 0xff000000, 0x18000000, "ldr (literal)" },
-      { 0xfffff0ff, 0xd50330bf, "dmb" },
-      { 0xffc00000, 0xb9400000, "ldr"},
-      { 0x7f20001f, 0x6b00001f, "cmp"},
-      { 0xff00001f, 0x54000000, "b.eq"},
-      { 0xff800000, 0xd2800000, "mov"},
-      { 0xff800000, 0xf2800000, "movk"},
-      { 0xff800000, 0xf2800000, "movk"},
-      { 0xfffffc1f, 0xd63f0000, "blr"},
-      { 0xfc000000, 0x14000000, "b"}
-    };
-
-    for(unsigned int i = 0; i < sizeof(barrierInsn)/sizeof(struct CheckInsn); i++ ) {
-      uint32_t inst = *((uint32_t*) addr);
-      if ((inst & barrierInsn[i].mask) != barrierInsn[i].bits) {
-        tty->print_cr("Addr: " INTPTR_FORMAT " Code: 0x%x", addr, inst);
-        fatal("not an %s instruction.", barrierInsn[i].name);
-      }
-      addr +=4;
-    }
-  }
+  uint32_t* addr = (uint32_t*) instruction_address();
+  uint32_t inst = *addr;
+  // Check if the barrier starts witha ldr (ilteral) as expected.
+  guarantee((inst & 0xff000000) == 0x18000000,
+            "Nmethod entry barrier did not start with ldr (literal) as expected. "
+            "Addr: " PTR_FORMAT " Code: " UINT32_FORMAT,
+            p2i(addr), inst);
 }
 
 
