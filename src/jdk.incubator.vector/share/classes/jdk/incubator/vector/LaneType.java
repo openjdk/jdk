@@ -95,10 +95,12 @@ enum LaneType {
         return printName;
     }
 
+    @ForceInline
     LaneType asIntegral() {
         return asIntegral.check();
     }
 
+    @ForceInline
     LaneType asFloating() {
         if (asFloating == null) {
             throw badElementType(elementType, "either int or long, to reinterpret as float or double");

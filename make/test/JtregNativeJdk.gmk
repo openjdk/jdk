@@ -63,6 +63,7 @@ ifeq ($(call isTargetOs, windows), true)
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeJliLaunchTest := $(WIN_LIB_JLI)
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeCallerAccessTest := jvm.lib
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeNullCallerClassLoaderTest := jvm.lib
+  BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeNullCallerLookupTest := jvm.lib
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exerevokeall := advapi32.lib
   BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libAsyncStackWalk := /EHsc
   BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libAsyncInvokers := /EHsc
@@ -82,6 +83,7 @@ else
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeJliLaunchTest := -ljli
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeCallerAccessTest := -ljvm
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeNullCallerClassLoaderTest := -ljvm
+  BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeNullCallerLookupTest := -ljvm
 endif
 
 ifeq ($(call isTargetOs, macosx), true)

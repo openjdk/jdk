@@ -1871,8 +1871,6 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_ldc2_w: {
     ciConstant constant = iter().get_constant();
     if (constant.is_loaded()) {
-      assert(constant.basic_type() != T_OBJECT || constant.as_object()->is_instance(),
-             "must be java_mirror of klass");
       const Type* con_type = Type::make_from_constant(constant);
       if (con_type != NULL) {
         push_node(con_type->basic_type(), makecon(con_type));
