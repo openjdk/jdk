@@ -38,6 +38,7 @@ HSDIS_OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/hsdis
 
 ifeq ($(call isTargetOs, windows), true)
   INSTALLED_HSDIS_DIR := $(JDK_OUTPUTDIR)/bin
+  IMAGE_HSDIS_DIR := $(JDK_IMAGE_DIR)/bin
 
   # On windows, we need to "fake" a completely different toolchain using gcc
   # instead of the normal microsoft toolchain. This is quite hacky...
@@ -102,6 +103,7 @@ ifeq ($(call isTargetOs, windows), true)
       -lmingwex -lmsvcrt -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32
 else
   INSTALLED_HSDIS_DIR := $(JDK_OUTPUTDIR)/lib
+  IMAGE_HSDIS_DIR := $(JDK_IMAGE_DIR)/lib
 
   HSDIS_TOOLCHAIN := TOOLCHAIN_DEFAULT
   HSDIS_TOOLCHAIN_CFLAGS := $(CFLAGS_JDKLIB)
@@ -151,6 +153,7 @@ TARGETS += build
 INSTALLED_HSDIS_NAME := hsdis-$(OPENJDK_TARGET_CPU_LEGACY_LIB)$(SHARED_LIBRARY_SUFFIX)
 
 INSTALLED_HSDIS := $(INSTALLED_HSDIS_DIR)/$(INSTALLED_HSDIS_NAME)
+INSTALLED_HSDIS_IMAGE := $(IMAGE_HSDIS_DIR)/$(INSTALLED_HSDIS_NAME)
 
 $(INSTALLED_HSDIS): $(BUILD_HSDIS_TARGET)
 ifeq ($(HSDIS_BACKEND), binutils)
@@ -158,8 +161,11 @@ ifeq ($(HSDIS_BACKEND), binutils)
 endif
 	$(install-file)
 
+$(INSTALLED_HSDIS_IMAGE): $(INSTALLED_HSDIS)
+	$(install-file)
 
-install: $(INSTALLED_HSDIS)
+
+install: $(INSTALLED_HSDIS_IMAGE)
 
 TARGETS += install
 
