@@ -29,7 +29,7 @@
  *   the java.base module so it runs separate from behavior tests of
  *   isRegisteredParallelCapable to avoid side effects.
  * @modules java.base/java.lang:open
- * @run main/othervm IsParallelCapableBadCaller
+ * @run main/othervm BadRegisterAsParallelCapableCaller
  */
 
 import java.lang.reflect.InvocationTargetException;
