@@ -831,7 +831,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     /**
      * Creates a new, empty map with an initial table size
      * accommodating the specified number of elements without the need
-     * to dynamically re(size).
+     * to dynamically resize.
      *
      * @param initialCapacity The implementation performs internal
      * sizing to accommodate this many elements.
