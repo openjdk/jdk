@@ -21,14 +21,15 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8281631
  * @summary HashMap copy constructor and putAll can over-allocate table
- * @library /test/lib
  * @modules java.base/java.lang:open
  *          java.base/java.util:open
- * @build jdk.test.lib.util.OptimalCapacity
+ * @author  Xeno Amess
+ *
+ * @compile HashMapsPutAllOverAllocateTableTest.java
  * @run main HashMapsPutAllOverAllocateTableTest
  */
 
