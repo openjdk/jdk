@@ -613,8 +613,6 @@ public final class PackageTest extends RunnablePackageTest {
                 // On Windows it is always two entries:
                 // installation home directory and MSI file
                 expectedRootCount = 2;
-            } else if (MAC_PKG.equals(cmd.packageType())) {
-                expectedRootCount = 2;
             } else if (LINUX.contains(cmd.packageType())) {
                 Set<Path> roots = new HashSet<>();
                 roots.add(Path.of("/").resolve(Path.of(cmd.getArgumentValue(
