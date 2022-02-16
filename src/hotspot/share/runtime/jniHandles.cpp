@@ -294,11 +294,7 @@ public:
 };
 
 void JNIHandles::verify() {
-  if (UseZGC) {
-    // FIXME: Need correct load barrier
-    return;
-  }
-
+  assert(!UseZGC, "not supported");
   VerifyJNIHandles verify_handle;
 
   oops_do(&verify_handle);
