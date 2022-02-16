@@ -26,7 +26,6 @@ package jdk.test.lib.net;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.ProtocolException;
-import java.nio.BufferUnderflowException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -64,16 +63,17 @@ public class HttpHeaderParser {
     private List <String> keyList = new ArrayList<>();
     private String requestOrStatusLine;
     private int responseCode;
+    private boolean eof;
 
 
 
     enum State { INITIAL,
-        STATUS_LINE,
-        STATUS_LINE_FOUND_CR,
-        STATUS_LINE_FOUND_LF,
-        STATUS_LINE_END,
-        STATUS_LINE_END_CR,
-        STATUS_LINE_END_LF,
+        STATUS_OR_REQUEST_LINE,
+        STATUS_OR_REQUEST_LINE_FOUND_CR,
+        STATUS_OR_REQUEST_LINE_FOUND_LF,
+        STATUS_OR_REQUEST_LINE_END,
+        STATUS_OR_REQUEST_LINE_END_CR,
+        STATUS_OR_REQUEST_LINE_END_LF,
         HEADER,
         HEADER_FOUND_CR,
         HEADER_FOUND_LF,
@@ -96,8 +96,8 @@ public class HttpHeaderParser {
     }
 
     public List<String> getHeaderValue(String key) {
-        if(headerMap.containsKey(key.toLowerCase())) {
-            return headerMap.get(key.toLowerCase());
+        if(headerMap.containsKey(key.toLowerCase(Locale.ROOT))) {
+            return headerMap.get(key.toLowerCase(Locale.ROOT));
         }
         return null;
     }
@@ -111,24 +111,19 @@ public class HttpHeaderParser {
     }
 
     /**
-     * Parses HTTP/1.X status-line and headers from the given bytes. Must be
-     * called successive times, with additional data, until returns true.
-     *
-     * All given ByteBuffers will be consumed, until ( possibly ) the last one
-     * ( when true is returned ), which may not be fully consumed.
-     *
-     * @param input the ( partial ) header data
-     * @return true iff the end of the headers block has been reached
+     * Parses HTTP/1.X status-line or request-line and headers from the given input stream.
+     * @param input Containing the input stream of bytes representing request or response header data
+     * @return true if the end of the headers block has been reached
      */
     public boolean parse(InputStream input) throws IOException {
         requireNonNull(input, "null input");
-        while (canContinueParsing(input)) {
+        while (canContinueParsing()) {
             switch (state) {
-                case INITIAL                                    ->  state = HttpHeaderParser.State.STATUS_LINE;
-                case STATUS_LINE                                ->  readResumeStatusLine(input);
-                case STATUS_LINE_FOUND_CR, STATUS_LINE_FOUND_LF ->  readStatusLineFeed(input);
-                case STATUS_LINE_END                            ->  maybeStartHeaders(input);
-                case STATUS_LINE_END_CR, STATUS_LINE_END_LF     ->  maybeEndHeaders(input);
+                case INITIAL                                    ->  state = HttpHeaderParser.State.STATUS_OR_REQUEST_LINE;
+                case STATUS_OR_REQUEST_LINE ->  readResumeStatusLine(input);
+                case STATUS_OR_REQUEST_LINE_FOUND_CR, STATUS_OR_REQUEST_LINE_FOUND_LF ->  readStatusLineFeed(input);
+                case STATUS_OR_REQUEST_LINE_END ->  maybeStartHeaders(input);
+                case STATUS_OR_REQUEST_LINE_END_CR, STATUS_OR_REQUEST_LINE_END_LF ->  maybeEndHeaders(input);
                 case HEADER                                     ->  readResumeHeader(input);
                 case HEADER_FOUND_CR, HEADER_FOUND_LF           ->  resumeOrLF(input);
                 case HEADER_FOUND_CR_LF                         ->  resumeOrSecondCR(input);
@@ -139,13 +134,13 @@ public class HttpHeaderParser {
         return state == HttpHeaderParser.State.FINISHED;
     }
 
-    private boolean canContinueParsing(InputStream buffer) throws IOException {
+    private boolean canContinueParsing() {
         // some states don't require any input to transition
         // to the next state.
         return switch (state) {
             case FINISHED -> false;
-            case STATUS_LINE_FOUND_LF, STATUS_LINE_END_LF, HEADER_FOUND_LF -> true;
-            default -> buffer.available() >= 0;
+            case STATUS_OR_REQUEST_LINE_FOUND_LF, STATUS_OR_REQUEST_LINE_END_LF, HEADER_FOUND_LF -> true;
+            default -> !eof;
         };
     }
 
@@ -159,48 +154,48 @@ public class HttpHeaderParser {
      * means each byte in the input should be interpreted as an unsigned
      * value from [0, 255] representing the character code.
      *
-     * @param input a {@code ByteBuffer} containing a partial input
+     * @param input a {@code InputStream} containing input stream of Bytes.
      * @return the next byte in the input, interpreted as an ISO-8859-1
      * encoded char
-     * @throws BufferUnderflowException
-     *          if the input buffer's current position is not smaller
-     *          than its limit
+     * @throws IOException
+     *          if an I/O error occurs.
      */
     private char get(InputStream input) throws IOException {
-        return (char)(input.read() & 0xFF);
+        int c = input.read();
+        if(c < 0)
+            eof = true;
+        return (char)(c & 0xFF);
     }
 
     private void readResumeStatusLine(InputStream input) throws IOException {
-        char c = 0;
-        while (input.available() > 0 && (c = get(input)) != CR) {
+        char c;
+        while ((c = get(input)) != CR && !eof) {
             if (c == LF) break;
             sb.append(c);
         }
         if (c == CR) {
-            state = HttpHeaderParser.State.STATUS_LINE_FOUND_CR;
+            state = HttpHeaderParser.State.STATUS_OR_REQUEST_LINE_FOUND_CR;
         } else if (c == LF) {
-            state = HttpHeaderParser.State.STATUS_LINE_FOUND_LF;
+            state = HttpHeaderParser.State.STATUS_OR_REQUEST_LINE_FOUND_LF;
         }
     }
 
     private void readStatusLineFeed(InputStream input) throws IOException {
-        char c = state == HttpHeaderParser.State.STATUS_LINE_FOUND_LF ? LF : get(input);
+        char c = state == HttpHeaderParser.State.STATUS_OR_REQUEST_LINE_FOUND_LF ? LF : get(input);
         if (c != LF) {
             throw protocolException("Bad trailing char, \"%s\", when parsing status line, \"%s\"",
                     c, sb.toString());
         }
-
         requestOrStatusLine = sb.toString();
         sb = new StringBuilder();
         if (!requestOrStatusLine.startsWith("HTTP/1.")) {
             if(!requestOrStatusLine.startsWith("GET") && !requestOrStatusLine.startsWith("POST") &&
                     !requestOrStatusLine.startsWith("PUT") && !requestOrStatusLine.startsWith("DELETE") &&
-                    !requestOrStatusLine.startsWith("OPTION") && !requestOrStatusLine.startsWith("HEAD")
-            && !requestOrStatusLine.startsWith("CONNECT")) {
+                    !requestOrStatusLine.startsWith("OPTIONS") && !requestOrStatusLine.startsWith("HEAD") &&
+            !requestOrStatusLine.startsWith("PATCH") && !requestOrStatusLine.startsWith("CONNECT")) {
                 throw protocolException("Invalid request Or Status line: \"%s\"", requestOrStatusLine);
             } else { //This is request
-                System.out.println("THIS IS REQUEST :"+requestOrStatusLine);
-
+                System.out.println("Request is :"+requestOrStatusLine);
             }
         } else { //This is response
             if (requestOrStatusLine.length() < 12) {
@@ -216,27 +211,29 @@ public class HttpHeaderParser {
                 throw protocolException("Invalid status line: \"%s\"", requestOrStatusLine);
             }
         }
-        state = HttpHeaderParser.State.STATUS_LINE_END;
+        state = HttpHeaderParser.State.STATUS_OR_REQUEST_LINE_END;
     }
 
     private void maybeStartHeaders(InputStream input) throws IOException {
-        assert state == HttpHeaderParser.State.STATUS_LINE_END;
+        assert state == HttpHeaderParser.State.STATUS_OR_REQUEST_LINE_END;
         assert sb.length() == 0;
         char c = get(input);
-        if (c == CR) {
-            state = HttpHeaderParser.State.STATUS_LINE_END_CR;
-        } else if (c == LF) {
-            state = HttpHeaderParser.State.STATUS_LINE_END_LF;
-        } else {
-            sb.append(c);
-            state = HttpHeaderParser.State.HEADER;
+        if(!eof) {
+            if (c == CR) {
+                state = HttpHeaderParser.State.STATUS_OR_REQUEST_LINE_END_CR;
+            } else if (c == LF) {
+                state = HttpHeaderParser.State.STATUS_OR_REQUEST_LINE_END_LF;
+            } else {
+                sb.append(c);
+                state = HttpHeaderParser.State.HEADER;
+            }
         }
     }
 
     private void maybeEndHeaders(InputStream input) throws IOException {
-        assert state == HttpHeaderParser.State.STATUS_LINE_END_CR || state == HttpHeaderParser.State.STATUS_LINE_END_LF;
+        assert state == HttpHeaderParser.State.STATUS_OR_REQUEST_LINE_END_CR || state == HttpHeaderParser.State.STATUS_OR_REQUEST_LINE_END_LF;
         assert sb.length() == 0;
-        char c = state == HttpHeaderParser.State.STATUS_LINE_END_LF ? LF : get(input);
+        char c = state == HttpHeaderParser.State.STATUS_OR_REQUEST_LINE_END_LF ? LF : get(input);
         if (c == LF) {
             state = HttpHeaderParser.State.FINISHED;  // no headers
         } else {
@@ -246,9 +243,9 @@ public class HttpHeaderParser {
 
     private void readResumeHeader(InputStream input) throws IOException {
         assert state == HttpHeaderParser.State.HEADER;
-        assert input.available() > 0;
-        while (input.available() > 0) {
-            char c = get(input);
+        assert !eof;
+        char c = get(input);
+        while (!eof) {
             if (c == CR) {
                 state = HttpHeaderParser.State.HEADER_FOUND_CR;
                 break;
@@ -259,6 +256,7 @@ public class HttpHeaderParser {
             if (c == HT)
                 c = SP;
             sb.append(c);
+            c = get(input);
         }
     }
 
@@ -288,58 +286,64 @@ public class HttpHeaderParser {
     private void resumeOrLF(InputStream input) throws IOException {
         assert state == HttpHeaderParser.State.HEADER_FOUND_CR || state == HttpHeaderParser.State.HEADER_FOUND_LF;
         char c = state == HttpHeaderParser.State.HEADER_FOUND_LF ? LF : get(input);
-        if (c == LF) {
-            state = HttpHeaderParser.State.HEADER_FOUND_CR_LF;
-        } else if (c == SP || c == HT) {
-            sb.append(SP); // parity with MessageHeaders
-            state = HttpHeaderParser.State.HEADER;
-        } else {
-            sb = new StringBuilder();
-            sb.append(c);
-            state = HttpHeaderParser.State.HEADER;
+        if (!eof) {
+            if (c == LF) {
+                state = HttpHeaderParser.State.HEADER_FOUND_CR_LF;
+            } else if (c == SP || c == HT) {
+                sb.append(SP); // parity with MessageHeaders
+                state = HttpHeaderParser.State.HEADER;
+            } else {
+                sb = new StringBuilder();
+                sb.append(c);
+                state = HttpHeaderParser.State.HEADER;
+            }
         }
     }
 
     private void resumeOrSecondCR(InputStream input) throws IOException {
         assert state == HttpHeaderParser.State.HEADER_FOUND_CR_LF;
         char c = get(input);
-        if (c == CR || c == LF) {
-            if (sb.length() > 0) {
-                // no continuation line - flush
-                // previous header value.
-                String headerString = sb.toString();
-                sb = new StringBuilder();
-                addHeaderFromString(headerString);
-            }
-            if (c == CR) {
-                state = HttpHeaderParser.State.HEADER_FOUND_CR_LF_CR;
+        if (!eof) {
+            if (c == CR || c == LF) {
+                if (sb.length() > 0) {
+                    // no continuation line - flush
+                    // previous header value.
+                    String headerString = sb.toString();
+                    sb = new StringBuilder();
+                    addHeaderFromString(headerString);
+                }
+                if (c == CR) {
+                    state = HttpHeaderParser.State.HEADER_FOUND_CR_LF_CR;
+                } else {
+                    state = HttpHeaderParser.State.FINISHED;
+                }
+            } else if (c == SP || c == HT) {
+                assert sb.length() != 0;
+                sb.append(SP); // continuation line
+                state = HttpHeaderParser.State.HEADER;
             } else {
-                state = HttpHeaderParser.State.FINISHED;
+                if (sb.length() > 0) {
+                    // no continuation line - flush
+                    // previous header value.
+                    String headerString = sb.toString();
+                    sb = new StringBuilder();
+                    addHeaderFromString(headerString);
+                }
+                sb.append(c);
+                state = HttpHeaderParser.State.HEADER;
             }
-        } else if (c == SP || c == HT) {
-            assert sb.length() != 0;
-            sb.append(SP); // continuation line
-            state = HttpHeaderParser.State.HEADER;
-        } else {
-            if (sb.length() > 0) {
-                // no continuation line - flush
-                // previous header value.
-                String headerString = sb.toString();
-                sb = new StringBuilder();
-                addHeaderFromString(headerString);
-            }
-            sb.append(c);
-            state = HttpHeaderParser.State.HEADER;
         }
     }
 
     private void resumeOrEndHeaders(InputStream input) throws IOException {
         assert state == HttpHeaderParser.State.HEADER_FOUND_CR_LF_CR;
         char c = get(input);
-        if (c == LF) {
-            state = HttpHeaderParser.State.FINISHED;
-        } else {
-            throw protocolException("Unexpected \"%s\", after CR LF CR", c);
+        if (!eof) {
+            if (c == LF) {
+                state = HttpHeaderParser.State.FINISHED;
+            } else {
+                throw protocolException("Unexpected \"%s\", after CR LF CR", c);
+            }
         }
     }
 
