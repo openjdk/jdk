@@ -839,9 +839,20 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_HSDIS],
       AC_MSG_RESULT([$CAPSTONE])
 
       HSDIS_CFLAGS="-I${CAPSTONE}/include/capstone"
-      HSDIS_LDFLAGS="-L${CAPSTONE}/lib"
-      HSDIS_LIBS="-lcapstone"
+      if test "x$OPENJDK_TARGET_OS" != xwindows; then
+        HSDIS_LDFLAGS="-L${CAPSTONE}/lib"
+        HSDIS_LIBS="-lcapstone"
+      else
+        HSDIS_LDFLAGS="-nodefaultlib:libcmt.lib"
+        HSDIS_LIBS="${CAPSTONE}/capstone.lib"
+      fi
     else
+      if test "x$OPENJDK_TARGET_OS" = xwindows; then
+        # There is no way to auto-detect capstone on Windowos
+        AC_MSG_NOTICE([You must specify capstone location using --with-capstone=<path>])
+        AC_MSG_ERROR([Cannot continue])
+      fi
+
       PKG_CHECK_MODULES(CAPSTONE, capstone, [CAPSTONE_FOUND=yes], [CAPSTONE_FOUND=no])
       if test "x$CAPSTONE_FOUND" = xyes; then
         HSDIS_CFLAGS="$CAPSTONE_CFLAGS"
