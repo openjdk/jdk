@@ -69,7 +69,6 @@ public class ServerCompilerScheduler implements Scheduler {
     private Map<InputBlock, InputBlock> dominatorMap;
     private Map<InputBlock, Integer> blockIndex;
     private InputBlock[][] commonDominator;
-    private Graph<InputBlock> CFG;
     private static final Comparator<InputEdge> edgeComparator = new Comparator<InputEdge>() {
 
         @Override
@@ -258,6 +257,7 @@ public class ServerCompilerScheduler implements Scheduler {
                 assert graph.getBlock(n) != null;
             }
 
+            buildDominators(); // check() uses dominator info.
             check();
 
             return blocks;
@@ -548,16 +548,7 @@ public class ServerCompilerScheduler implements Scheduler {
             return;
         }
 
-        CFG = SlowSparseNumberedGraph.make();
-        for (InputBlock b : blocks) {
-            CFG.addNode(b);
-        }
-        for (InputBlock p : blocks) {
-            for (InputBlock s : p.getSuccessors()) {
-                CFG.addEdge(p, s);
-            }
-        }
-
+        Graph<InputBlock> CFG = makeCFG();
         InputBlock root = findRoot().block;
         Dominators<InputBlock> D = Dominators.make(CFG, root);
 
@@ -573,6 +564,8 @@ public class ServerCompilerScheduler implements Scheduler {
 
     // Rename blocks by reverse post-order traversal, to accomodate new blocks.
     private void renameBlocks() {
+
+        Graph<InputBlock> CFG = makeCFG();
         InputBlock root = findRoot().block;
         List<InputBlock> roots = new ArrayList<InputBlock>(1);
         roots.add(root);
@@ -582,17 +575,38 @@ public class ServerCompilerScheduler implements Scheduler {
                 roots.add(b);
             }
         }
-        int blockCount = 1;
+
+        int blockCount = 0;
         Map<String, String> namePerm = new HashMap<>(blocks.size());
         for (InputBlock r : roots) {
             SortedSet<InputBlock> dfsSet = DFS.sortByDepthFirstOrder(CFG, r);
             InputBlock[] dfs = dfsSet.toArray(new InputBlock[dfsSet.size()]);
             for (int i = dfs.length - 1; i >= 0; i--) {
-                namePerm.put(dfs[i].getName(), Integer.toString(blockCount));
+                InputBlock b = dfs[i];
+                namePerm.put(b.getName(), Integer.toString(blockCount + 1));
                 blockCount++;
             }
         }
+
         graph.permuteBlockNames(namePerm);
+        // permuteBlockNames() affects InputBlock's hashCode() and equals()
+        // methods, so all maps that use InputBlock as keys are invalidated.
+        blockIndex = null;
+        dominatorMap = null;
+    }
+
+    // Build an auxiliary CFG from the WALA libraries for analysis.
+    private Graph<InputBlock> makeCFG() {
+        Graph<InputBlock> CFG = SlowSparseNumberedGraph.make();
+        for (InputBlock b : blocks) {
+            CFG.addNode(b);
+        }
+        for (InputBlock p : blocks) {
+            for (InputBlock s : p.getSuccessors()) {
+                CFG.addEdge(p, s);
+            }
+        }
+        return CFG;
     }
 
     // Whether b1 dominates b2.
