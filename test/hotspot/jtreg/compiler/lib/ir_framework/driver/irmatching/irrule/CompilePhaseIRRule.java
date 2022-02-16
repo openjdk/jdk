@@ -25,10 +25,9 @@ package compiler.lib.ir_framework.driver.irmatching.irrule;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Counts;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsMatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOn;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.*;
+
+import java.util.function.Consumer;
 
 public class CompilePhaseIRRule {
     protected final CompilePhase compilePhase;
@@ -53,25 +52,24 @@ public class CompilePhaseIRRule {
     protected CompilePhaseMatchResult applyCheckAttributes(CompilePhase compilePhase) {
         CompilePhaseMatchResult compilePhaseMatchResult = new CompilePhaseMatchResult(compilePhase);
         String compilationOutput = irMethod.getOutput(compilePhase);
-        applyFailOn(compilePhaseMatchResult, failOn, compilationOutput);
-        applyCounts(compilePhaseMatchResult, counts, compilationOutput);
+        applyFailOn(compilePhaseMatchResult, compilationOutput);
+        applyCounts(compilePhaseMatchResult, compilationOutput);
         return compilePhaseMatchResult;
     }
 
-    private void applyFailOn(CompilePhaseMatchResult compilePhaseMatchResult, FailOn failOn, String compilationOutput) {
-        if (failOn != null) {
-            FailOnMatchResult matchResult = failOn.apply(compilationOutput);
-            if (matchResult.fail()) {
-                compilePhaseMatchResult.setFailOnMatchResult(matchResult);
-            }
-        }
+    private void applyFailOn(CompilePhaseMatchResult compilePhaseMatchResult, String compilationOutput) {
+        applyCheckAttribute(compilePhaseMatchResult::setFailOnMatchResult, failOn, compilationOutput);
     }
 
-    private void applyCounts(CompilePhaseMatchResult compilePhaseMatchResult, Counts counts, String compilationOutput) {
-        if (counts != null) {
-            CountsMatchResult matchResult = counts.apply(compilationOutput);
+    private void applyCounts(CompilePhaseMatchResult compilePhaseMatchResult, String compilationOutput) {
+        applyCheckAttribute(compilePhaseMatchResult::setCountsMatchResult, counts, compilationOutput);
+    }
+
+    private void applyCheckAttribute(Consumer<CheckAttributeMatchResult> consumer, CheckAttribute<?> checkAttribute, String compilationOutput) {
+        if (checkAttribute != null) {
+            CheckAttributeMatchResult matchResult = checkAttribute.apply(compilationOutput);
             if (matchResult.fail()) {
-                compilePhaseMatchResult.setCountsMatchResult(matchResult);
+                consumer.accept(matchResult);
             }
         }
     }

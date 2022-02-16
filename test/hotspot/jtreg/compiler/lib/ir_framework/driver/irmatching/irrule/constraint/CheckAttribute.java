@@ -23,34 +23,52 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
-import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.IRNode;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
- * Base class representing a check attribute of an IR rule.
+ * Base class representing a parsed check attribute of an IR rule for a compile phase.
+ * <p>
+ *
+ * Placeholder strings from {@link IRNode} are replaced by default regexes for this compile phase and composite IR nodes
+ * are merged together.
  *
  * @see IR
  */
-abstract class CheckAttribute {
-    protected final List<? extends Constraint> constraints;
-    protected final CompilePhase compilePhase;
+abstract public class CheckAttribute<T extends Constraint> {
+    private final List<T> constraints;
 
-    protected CheckAttribute(List<? extends Constraint> constraints, CompilePhase compilePhase) {
+    public CheckAttribute(List<T> constraints) {
         this.constraints = constraints;
-        this.compilePhase = compilePhase;
     }
 
-    abstract CheckAttributeMatchResult apply(String compilation);
+    abstract public CheckAttributeMatchResult apply(String compilation);
 
-    protected List<String> getMatchedNodes(Matcher m) {
+        protected List<ConstraintFailure> checkConstraints(String compilation) {
+        List<ConstraintFailure> constraintFailures = new ArrayList<>();
+        for (T constraint : constraints) {
+            checkConstraint(constraintFailures, constraint, compilation);
+        }
+        return constraintFailures;
+    }
+
+    abstract void checkConstraint(List<ConstraintFailure> constraintFailures, T constraint, String compilation);
+
+    protected List<String> getMatchedNodes(Constraint constraint, String compilation) {
+        String regex = constraint.getRegex();
+        Pattern p = Pattern.compile(regex);
+        Matcher m = p.matcher(compilation);
         List<String> matches = new ArrayList<>();
-        do {
-            matches.add(m.group());
-        } while (m.find());
+        if (m.find()) {
+            do {
+                matches.add(m.group());
+            } while (m.find());
+        }
         return matches;
     }
 }

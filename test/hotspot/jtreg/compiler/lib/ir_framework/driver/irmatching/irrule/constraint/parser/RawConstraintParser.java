@@ -31,8 +31,8 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
 import java.util.List;
 
 /**
- * Base template class to parse a raw constraint to replace the placeholder strings from {@link IRNode} by actual
- * default regexes depending on the compilation phase.
+ * Base class to parse a raw constraint to replace the placeholder strings from {@link IRNode} by actual default
+ * regexes depending on the compilation phase.
  *
  * @see RawConstraint
  */

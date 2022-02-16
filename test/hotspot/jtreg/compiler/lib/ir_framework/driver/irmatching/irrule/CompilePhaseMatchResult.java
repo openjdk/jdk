@@ -25,18 +25,17 @@ package compiler.lib.ir_framework.driver.irmatching.irrule;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsMatchResult;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CheckAttributeMatchResult;
 
 /**
- * This class represents an IR matching result of an IR rule applied to a compile phase.
+ * This class represents an IR matching result of an IR rule applied on a compile phase.
  *
  * @see IRRule
  */
 public class CompilePhaseMatchResult implements MatchResult {
     private final CompilePhase compilePhase;
-    private FailOnMatchResult failOnFailures = null;
-    private CountsMatchResult countsFailures = null;
+    private CheckAttributeMatchResult failOnFailures = null;
+    private CheckAttributeMatchResult countsFailures = null;
 
     public CompilePhaseMatchResult(CompilePhase compilePhase) {
         this.compilePhase = compilePhase;
@@ -55,7 +54,7 @@ public class CompilePhaseMatchResult implements MatchResult {
         return failOnFailures != null;
     }
 
-    public void setFailOnMatchResult(FailOnMatchResult failOnFailures) {
+    public void setFailOnMatchResult(CheckAttributeMatchResult failOnFailures) {
         this.failOnFailures = failOnFailures;
     }
 
@@ -63,7 +62,7 @@ public class CompilePhaseMatchResult implements MatchResult {
         return countsFailures != null;
     }
 
-    public void setCountsMatchResult(CountsMatchResult countsFailures) {
+    public void setCountsMatchResult(CheckAttributeMatchResult countsFailures) {
         this.countsFailures = countsFailures;
     }
 
@@ -85,7 +84,7 @@ public class CompilePhaseMatchResult implements MatchResult {
     @Override
     public String buildFailureMessage(int indentationSize) {
         StringBuilder failMsg = new StringBuilder();
-        failMsg.append(getPhaseLine(indentationSize));
+        failMsg.append(buildPhaseHeader(indentationSize));
         if (hasFailOnFailures()) {
             failMsg.append(failOnFailures.buildFailureMessage(indentationSize + 2));
         }
@@ -95,7 +94,7 @@ public class CompilePhaseMatchResult implements MatchResult {
         return failMsg.toString();
     }
 
-    private String getPhaseLine(int indentation) {
+    private String buildPhaseHeader(int indentation) {
         return getIndentation(indentation) + "> Phase \"" + compilePhase.getName() + "\":" + System.lineSeparator();
     }
 }

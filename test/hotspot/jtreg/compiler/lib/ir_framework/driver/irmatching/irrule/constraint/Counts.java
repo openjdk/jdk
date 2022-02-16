@@ -23,11 +23,10 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
-import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.shared.Comparison;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
@@ -35,48 +34,38 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * Class representing a counts attribute of an IR rule.
+ * This class represents a fully parsed {@link IR#counts()} attribute of an IR rule for a compile phase.
  *
  * @see IR#counts()
+ * @see CheckAttribute
  */
-public class Counts extends CheckAttribute {
-    private final List<CountsConstraint> constraints;
+public class Counts extends CheckAttribute<CountsConstraint> {
 
-    public Counts(List<CountsConstraint> constraints, CompilePhase compilePhase) {
-        super(constraints, compilePhase);
-        this.constraints = constraints;
+    public Counts(List<CountsConstraint> constraints) {
+        super(constraints);
     }
-
 
     @Override
     public CountsMatchResult apply(String compilation) {
         CountsMatchResult result = new CountsMatchResult();
-        checkConstraints(result, compilation);
+        List<ConstraintFailure> failures = checkConstraints(compilation);
+        if (!failures.isEmpty()) {
+            result.setFailures(failures);
+        }
         return result;
     }
 
-    private void checkConstraints(CountsMatchResult result, String compilation) {
-        for (CountsConstraint constraint : constraints) {
-            checkConstraint(result, compilation, constraint);
-        }
-    }
-
-    private void checkConstraint(CountsMatchResult result, String compilation, CountsConstraint constraint) {
-        List<String> countsMatches = getCountsMatches(compilation, constraint);
+    @Override
+    protected void checkConstraint(List<ConstraintFailure> constraintFailures, CountsConstraint constraint, String compilation) {
+        List<String> countsMatches = getMatchedNodes(constraint, compilation);
         Comparison<Integer> comparison = constraint.getComparison();
         if (!comparison.compare(countsMatches.size())) {
             result.addFailure(createRegexFailure(countsMatches, constraint));
         }
     }
 
-    private List<String> getCountsMatches(String compilation, Constraint constraint) {
-        Pattern pattern = Pattern.compile(constraint.getRegex());
-        Matcher matcher = pattern.matcher(compilation);
-        return matcher.results().map(MatchResult::group).collect(Collectors.toList());
-    }
 
-    private CountsRegexFailure createRegexFailure(List<String> countsMatches, Constraint constraint) {
-        return new CountsRegexFailure(constraint.getRegex(), constraint.getIndex(), foundCount,
-                                      constraint.getComparison(), matches);
+    private CountsConstraintFailure createRegexFailure(List<String> countsMatches, CountsConstraint constraint) {
+        return new CountsConstraintFailure(constraint.getRegex(), constraint.getIndex(), constraint.getComparison(), countsMatches);
     }
 }

@@ -30,7 +30,7 @@ import compiler.lib.ir_framework.shared.TestFormatException;
 import java.util.List;
 
 /**
- * Base template class to parse a check attribute as found in an IR annotation.
+ * Base class to parse a check attribute as found in an IR annotation.
  *
  * @see IR
  */

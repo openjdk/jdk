@@ -26,15 +26,15 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 import compiler.lib.ir_framework.IR;
 
 /**
- * Class representing a result of an applied counts attribute of an IR rule.
+ * This class represents a result of an applied {@link Counts} attribute of an IR rule on a compile phase.
  *
+ * @see Counts
  * @see IR#counts()
  */
 public class CountsMatchResult extends CheckAttributeMatchResult {
 
     @Override
-    public String buildFailureMessage(int indentationSize) {
-        return getIndentation(indentationSize) + "- counts: Graph contains wrong number of nodes:" + System.lineSeparator()
-               + collectRegexFailureMessages(indentationSize);
+    protected String getCheckAttributeMessage() {
+        return "counts: Graph contains wrong number of nodes";
     }
 }

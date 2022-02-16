@@ -23,12 +23,19 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
-import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.IRNode;
 
 /**
- * Class representing a counts attribute of an IR rule.
+ * This class represents a single constraint of a {@link CheckAttribute} of an IR rule for a compile phase. It stores a
+ * ready to be used regex for a compile phase (i.e. all {@link IRNode} placeholder strings are updated and composite nodes
+ * merged) to apply matching on.
+ * <p>
  *
- * @see IR#counts()
+ * {@link FailOn} can directly use this class while {@link Counts} need some more information stored with the subclass
+ * {@link CountsConstraint}.
+ *
+ * @see CheckAttribute
+ * @see FailOn
  */
 public class Constraint {
     private final String regex;

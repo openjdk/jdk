@@ -25,6 +25,7 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Counts;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraint;
 import compiler.lib.ir_framework.shared.Comparison;
@@ -58,9 +59,10 @@ public class RawCountsConstraintParser extends RawConstraintParser<CountsConstra
      */
     public static Counts parse(List<RawCountsConstraint> rawCountsConstraints, CompilePhase compilePhase) {
         if (!rawCountsConstraints.isEmpty()) {
-            List<CountsConstraint> constraints = new ArrayList<>();
-            new RawCountsConstraintParser().parseNonEmptyConstraints(constraints, rawCountsConstraints, compilePhase);
-            return new Counts(constraints, compilePhase);
+            List<CountsConstraint> constraintResultList = new ArrayList<>();
+            new RawCountsConstraintParser().parseNonEmptyConstraints(constraintResultList, rawCountsConstraints, compilePhase);
+            TestFramework.check(!constraintResultList.isEmpty(), "must be non-empty");
+            return new Counts(constraintResultList);
         }
         return null;
     }

@@ -24,12 +24,17 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
 import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.shared.Comparison;
 
 /**
- * Class representing a counts attribute of an IR rule.
+ * This class represents a single counts constraint of a {@link Counts} attribute of an IR rule for a compile phase.
+ * It stores a ready to be used regex for a compile phase (i.e. all {@link IRNode} placeholder strings are updated and
+ * composite nodes merged) to apply matching on. It additionally provides a comparison object on which the matched node
+ * count is compared against a user-specified number.
+ * <p>
  *
- * @see IR#counts()
+ * @see Counts
  */
 public class CountsConstraint extends Constraint {
     private final Comparison<Long> comparison;
@@ -42,5 +47,4 @@ public class CountsConstraint extends Constraint {
     public Comparison<Long> getComparison() {
         return comparison;
     }
-
 }

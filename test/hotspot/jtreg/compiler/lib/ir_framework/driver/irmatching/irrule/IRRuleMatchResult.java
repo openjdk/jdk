@@ -61,7 +61,7 @@ public class IRRuleMatchResult implements MatchResult {
     @Override
     public String buildFailureMessage(int indentationSize) {
         StringBuilder failMsg = new StringBuilder();
-        failMsg.append(getIRRuleLine(indentationSize));
+        failMsg.append(buildIRRuleHeader(indentationSize));
         for (CompilePhaseMatchResult phaseMatchResult : compilePhaseMatchResults) {
             if (phaseMatchResult.fail()) {
                 failMsg.append(phaseMatchResult.buildFailureMessage(indentationSize + 2));
@@ -70,7 +70,7 @@ public class IRRuleMatchResult implements MatchResult {
         return failMsg.toString();
     }
 
-    private String getIRRuleLine(int indentation) {
+    private String buildIRRuleHeader(int indentation) {
         return getIndentation(indentation) + "* @IR rule " + irRule.getRuleId() + ": \"" + irRule.getIRAnno() + "\"" + System.lineSeparator();
     }
 }

@@ -23,48 +23,47 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
-import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Base class representing a result of an applied check attribute of an IR rule.
+ * Base class representing a result of an applied check attribute of an IR rule on a compile phase.
  *
- * @see IR
+ * @see CheckAttribute
  */
 abstract public class CheckAttributeMatchResult implements MatchResult {
-    protected List<RegexFailure> regexFailures = null;
+    private List<ConstraintFailure> constraintFailures = null;
 
     @Override
     public boolean fail() {
-        return regexFailures != null;
+        return constraintFailures != null;
     }
 
-    public void addFailure(RegexFailure regexFailure) {
-        if (regexFailures == null) {
-            regexFailures = new ArrayList<>();
-        }
-        regexFailures.add(regexFailure);
-    }
-
-    public void mergeResults(CheckAttributeMatchResult other) {
-        other.regexFailures.forEach(this::addFailure);
+    public void setFailures(List<ConstraintFailure> constraintFailures) {
+        this.constraintFailures = constraintFailures;
     }
 
     public int getMatchedNodesCount() {
         if (fail()) {
-            return regexFailures.stream().map(RegexFailure::getMatchedNodesCount).reduce(0, Integer::sum);
+            return constraintFailures.stream().map(ConstraintFailure::getMatchedNodesCount).reduce(0, Integer::sum);
         } else {
             return 0;
         }
     }
 
-    protected String collectRegexFailureMessages(int indentation) {
+    @Override
+    public String buildFailureMessage(int indentationSize) {
+        return getIndentation(indentationSize) + "- " + getCheckAttributeMessage() + ":" + System.lineSeparator()
+               + buildConstraintFailuresMessage(indentationSize);
+    }
+
+    abstract protected String getCheckAttributeMessage();
+
+    private String buildConstraintFailuresMessage(int indentation) {
         StringBuilder failMsg = new StringBuilder();
-        for (RegexFailure regexFailure : regexFailures) {
-            failMsg.append(regexFailure.buildFailureMessage(indentation + 2));
+        for (ConstraintFailure constraintFailure : constraintFailures) {
+            failMsg.append(constraintFailure.buildFailureMessage(indentation + 2));
         }
         return failMsg.toString();
     }

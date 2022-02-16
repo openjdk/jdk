@@ -23,28 +23,28 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
+import compiler.lib.ir_framework.TestFramework;
+
 import java.util.List;
 
 /**
- * This class represents an IR matching failure of a regex of a failOn attribute of an IR rule.
+ * This class represents a failure when applying a {@link Constraint} on a compile phase output.
  *
+ * @see Constraint
  * @see FailOn
+ * @see FailOnMatchResult
  */
-class FailOnRegexFailure extends RegexFailure {
+class FailOnConstraintFailure extends ConstraintFailure {
 
-    public FailOnRegexFailure(String nodeRegex, int regexNodeId, List<String> matches) {
-        super(nodeRegex, regexNodeId, matches);
-    }
-
-    @Override
-    public int getMatchedNodesCount() {
-        return matches.size();
+    public FailOnConstraintFailure(String nodeRegex, int regexNodeId, List<String> matchedNodes) {
+        super(nodeRegex, regexNodeId, matchedNodes);
+        TestFramework.check(!matchedNodes.isEmpty(), "must have at least one matched node");
     }
 
     @Override
     public String buildFailureMessage(int indentationSize) {
-        return getRegexLine(indentationSize)
-               + getMatchedNodesBlock(indentationSize + 2);
+        return buildRegexHeader(indentationSize)
+               + buildMatchedNodesMessage(indentationSize + 2);
     }
 
     @Override

@@ -25,21 +25,16 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
 import compiler.lib.ir_framework.IR;
 
-import java.util.List;
-
 /**
- * Class representing a result of an applied failOn attribute of an IR rule.
+ * This class represents a result of an applied {@link FailOn} attribute of an IR rule on a compile phase.
  *
+ * @see FailOn
  * @see IR#failOn()
  */
 public class FailOnMatchResult extends CheckAttributeMatchResult {
-    public void setFailures(List<RegexFailure> regexFailures) {
-        this.regexFailures = regexFailures;
-    }
 
     @Override
-    public String buildFailureMessage(int indentationSize) {
-        return getIndentation(indentationSize) + "- failOn: Graph contains forbidden nodes:" + System.lineSeparator()
-               + collectRegexFailureMessages(indentationSize + 2);
+    protected String getCheckAttributeMessage() {
+        return "failOn: Graph contains forbidden nodes";
     }
 }

@@ -23,25 +23,25 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
-import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.TestFramework;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * Class representing a failOn attribute of an IR rule.
+ * This class represents a fully parsed {@link IR#failOn()} attribute of an IR rule for a compile phase.
  *
  * @see IR#failOn()
+ * @see CheckAttribute
  */
-public class FailOn extends CheckAttribute {
+public class FailOn extends CheckAttribute<Constraint> {
     private final Pattern quickPattern;
 
-    public FailOn(List<Constraint> constraints, CompilePhase compilePhase) {
-        super(constraints, compilePhase);
+    public FailOn(List<Constraint> constraints) {
+        super(constraints);
         String patternString = constraints.stream().map(Constraint::getRegex).collect(Collectors.joining("|"));
         this.quickPattern = Pattern.compile(String.join("|", patternString));
     }
@@ -51,26 +51,18 @@ public class FailOn extends CheckAttribute {
         FailOnMatchResult result = new FailOnMatchResult();
         Matcher matcher = quickPattern.matcher(compilation);
         if (matcher.find()) {
-            result.setFailures(createFailOnFailures(compilation));
+            List<ConstraintFailure> constraintFailures = checkConstraints(compilation);
+            TestFramework.check(!constraintFailures.isEmpty(), "must find at least one match");
+            result.setFailures(constraintFailures);
         }
         return result;
     }
 
-    private List<RegexFailure> createFailOnFailures(String compilation) {
-        List<RegexFailure> regexFailures = new ArrayList<>();
-        for (Constraint constraint : constraints) {
-            checkNode(regexFailures, compilation, constraint);
-        }
-        return regexFailures;
-    }
-
-    private void checkNode(List<RegexFailure> regexFailures, String compilation, Constraint constraint) {
-        String node = constraint.getRegex();
-        Pattern p = Pattern.compile(constraint.getRegex());
-        Matcher m = p.matcher(compilation);
-        if (m.find()) {
-            List<String> matches = getMatchedNodes(m);
-            regexFailures.add(new FailOnRegexFailure(node, constraint.getIndex(), matches));
+    @Override
+    protected void checkConstraint(List<ConstraintFailure> constraintFailures, Constraint constraint, String compilation) {
+        List<String> matches = getMatchedNodes(constraint, compilation);
+        if (!matches.isEmpty()) {
+            constraintFailures.add(new FailOnConstraintFailure(constraint.getRegex(), constraint.getIndex(), matches));
         }
     }
 }

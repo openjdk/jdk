@@ -30,21 +30,21 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Base class representing an IR matching failure of a regex of a check attribute of an IR rule.
+ * Base class representing a failure when applying a constraint (i.e. regex matching) on a compile phase output.
  *
- * @see CheckAttributeMatchResult
+ * @see Constraint
  * @see CheckAttribute
- * @see IRRule
+ * @see CheckAttributeMatchResult
  */
-abstract class RegexFailure implements FailureMessage {
+abstract class ConstraintFailure implements FailureMessage {
     private final String nodeRegex;
     private final int regexNodeId;
-    protected final List<String> matches;
+    protected final List<String> matchedNodes;
 
-    public RegexFailure(String nodeRegex, int regexNodeId, List<String> matches) {
+    public ConstraintFailure(String nodeRegex, int regexNodeId, List<String> matchedNodes) {
         this.nodeRegex = nodeRegex;
         this.regexNodeId = regexNodeId;
-        this.matches = matches;
+        this.matchedNodes = matchedNodes;
     }
 
     private List<String> addWhiteSpacePrefixForEachLine(List<String> matches, String indentation) {
@@ -55,28 +55,30 @@ abstract class RegexFailure implements FailureMessage {
                 .collect(Collectors.toList());
     }
 
-    abstract public int getMatchedNodesCount();
+    public int getMatchedNodesCount() {
+        return matchedNodes.size();
+    }
 
-    protected String getRegexLine(int indentation) {
+    protected String buildRegexHeader(int indentation) {
         return getIndentation(indentation) + "* Regex " + regexNodeId + ": \"" + nodeRegex + "\"" + System.lineSeparator();
     }
 
-    protected String getMatchedNodesBlock(int indentation) {
-        return getMatchedNodesHeader(indentation) + getMatchesNodeLines(indentation + 2);
+    protected String buildMatchedNodesMessage(int indentation) {
+        return buildMatchedNodesHeader(indentation) + buildMatchedNodesBody(indentation + 2);
     }
 
-    private String getMatchedNodesHeader(int indentation) {
-        int matchCount = matches.size();
+    private String buildMatchedNodesHeader(int indentation) {
+        int matchCount = matchedNodes.size();
         return getIndentation(indentation) + "- " + getMatchedPrefix() + " node"
                + (matchCount > 1 ? "s (" + matchCount + ")" : "") + ":" + System.lineSeparator();
     }
 
     abstract protected String getMatchedPrefix();
 
-    private String getMatchesNodeLines(int indentation) {
+    private String buildMatchedNodesBody(int indentation) {
         StringBuilder builder = new StringBuilder();
         String indentationString = getIndentation(indentation);
-        List<String> matches = addWhiteSpacePrefixForEachLine(this.matches, indentationString + "  ");
+        List<String> matches = addWhiteSpacePrefixForEachLine(this.matchedNodes, indentationString + "  ");
         matches.forEach(match -> builder.append(indentationString).append("* ").append(match).append(System.lineSeparator()));
         return builder.toString();
     }

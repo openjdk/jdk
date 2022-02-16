@@ -25,6 +25,7 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOn;
 
@@ -49,10 +50,11 @@ public class RawFailOnConstraintParser extends RawConstraintParser<Constraint, R
      * list is empty.
      */
     public static FailOn parse(List<RawConstraint> rawFailOnConstraints, CompilePhase compilePhase) {
-        if (rawFailOnConstraints.isEmpty()) {
+        if (!rawFailOnConstraints.isEmpty()) {
             List<Constraint> constraintResultList = new ArrayList<>();
             new RawFailOnConstraintParser().parseNonEmptyConstraints(constraintResultList, rawFailOnConstraints, compilePhase);
-            return new FailOn(constraintResultList, compilePhase);
+            TestFramework.check(!constraintResultList.isEmpty(), "must be non-empty");
+            return new FailOn(constraintResultList);
         }
         return null;
     }
