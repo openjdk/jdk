@@ -25,7 +25,6 @@
  * @test id=enabled
  * @bug 8281822
  * @summary Test DTrace options are accepted on suitable builds
- * @requires os.family == "linux"
  * @requires vm.flagless
  * @requires vm.hasDTrace
  *
@@ -37,7 +36,6 @@
  * @test id=disabled
  * @bug 8281822
  * @summary Test DTrace options are rejected on unsuitable builds
- * @requires os.family == "linux"
  * @requires vm.flagless
  * @requires !vm.hasDTrace
  *
