@@ -3713,20 +3713,19 @@ void MacroAssembler::load_nklass(Register dst, Register src) {
   b(done);
 
   bind(slow);
-  enter();
+  RegSet saved_regs = RegSet::of(lr);
   // We need r0 as argument and return register for the call. Preserve it, if necessary.
   if (dst != r0) {
-    push(RegSet::of(r0), sp);
+    saved_regs += RegSet::of(r0);
   }
+  push(saved_regs, sp);
   mov(r0, src);
   assert(StubRoutines::load_nklass() != NULL, "Must have stub");
   far_call(RuntimeAddress(StubRoutines::load_nklass()));
   if (dst != r0) {
     mov(dst, r0);
-    pop(RegSet::of(r0), sp);
   }
-  leave();
-
+  pop(saved_regs, sp);
   bind(done);
 }
 

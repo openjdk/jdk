@@ -2283,7 +2283,7 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
     if (_igvn.type(obj_or_subklass)->isa_klassptr()) {
       subklass = obj_or_subklass;
     } else {
-      Node* k_adr = basic_plus_adr(obj_or_subklass, oopDesc::klass_offset_in_bytes());
+      Node* k_adr = basic_plus_adr(obj_or_subklass, oopDesc::nklass_offset_in_bytes());
       subklass = _igvn.transform(LoadKlassNode::make(_igvn, NULL, C->immutable_memory(), k_adr, TypeInstPtr::KLASS));
     }
 

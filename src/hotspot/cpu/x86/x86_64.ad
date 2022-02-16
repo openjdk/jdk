@@ -5289,16 +5289,18 @@ instruct loadKlass(rRegP dst, memory mem)
 %}
 
 // Load narrow Klass Pointer
-instruct loadNKlass(rRegN dst, memory mem)
+instruct loadNKlass(rRegN dst, indOffset8 mem, rFlagsReg cr)
 %{
   match(Set dst (LoadNKlass mem));
-
+  effect(TEMP_DEF dst, KILL cr);
   ins_cost(125); // XXX
   format %{ "movl    $dst, $mem\t# compressed klass ptr" %}
   ins_encode %{
-    __ movl($dst$$Register, $mem$$Address);
+    assert($mem$$disp == oopDesc::nklass_offset_in_bytes(), "expect correct offset 4, but got: %d", $mem$$disp);
+    assert($mem$$index == 4, "expect no index register: %d", $mem$$index);
+    __ load_nklass($dst$$Register, $mem$$base$$Register);
   %}
-  ins_pipe(ialu_reg_mem); // XXX
+  ins_pipe(pipe_slow); // XXX
 %}
 
 // Load Float
@@ -12258,8 +12260,12 @@ instruct compN_rReg_imm_klass(rFlagsRegU cr, rRegN op1, immNKlass op2) %{
   ins_pipe(ialu_cr_reg_imm);
 %}
 
+// Disabled because the compressed Klass* in header cannot be safely
+// accessed. TODO: Re-enable it as soon as synchronization does not
+// overload the upper header bits anymore.
 instruct compN_mem_imm_klass(rFlagsRegU cr, memory mem, immNKlass src)
 %{
+  predicate(false);
   match(Set cr (CmpN src (LoadNKlass mem)));
 
   format %{ "cmpl    $mem, $src\t# compressed klass ptr" %}

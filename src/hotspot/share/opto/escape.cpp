@@ -2184,7 +2184,7 @@ bool ConnectionGraph::is_oop_field(Node* n, int offset, bool* unsafe) {
         bt = T_OBJECT;
       }
     }
-  } else if (offset != oopDesc::klass_offset_in_bytes()) {
+  } else if (offset != oopDesc::nklass_offset_in_bytes()) {
     if (adr_type->isa_instptr()) {
       ciField* field = _compile->alias_type(adr_type->isa_instptr())->field();
       if (field != NULL) {
@@ -3167,7 +3167,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       // the header emitted during macro expansion wouldn't have
       // correct memory state otherwise.
       _compile->get_alias_index(tinst->add_offset(oopDesc::mark_offset_in_bytes()));
-      _compile->get_alias_index(tinst->add_offset(oopDesc::klass_offset_in_bytes()));
+      _compile->get_alias_index(tinst->add_offset(oopDesc::nklass_offset_in_bytes()));
       if (alloc->is_Allocate() && (t->isa_instptr() || t->isa_aryptr())) {
 
         // First, put on the worklist all Field edges from Connection Graph

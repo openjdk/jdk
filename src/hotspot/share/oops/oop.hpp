@@ -307,12 +307,14 @@ class oopDesc {
 
   // for code generation
   static int mark_offset_in_bytes()      { return offset_of(oopDesc, _mark); }
-#ifdef _LP64
   static int nklass_offset_in_bytes()    {
+#ifdef _LP64
     STATIC_ASSERT(markWord::klass_shift % 8 == 0);
     return mark_offset_in_bytes() + markWord::klass_shift / 8;
-  }
+#else
+    return klass_offset_in_bytes();
 #endif
+  }
   static int klass_offset_in_bytes()     { return offset_of(oopDesc, _metadata._klass); }
   static int klass_gap_offset_in_bytes() {
     assert(has_klass_gap(), "only applicable to compressed klass pointers");

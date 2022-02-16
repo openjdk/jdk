@@ -1170,7 +1170,7 @@ Node* GraphKit::load_object_klass(Node* obj) {
   // Special-case a fresh allocation to avoid building nodes:
   Node* akls = AllocateNode::Ideal_klass(obj, &_gvn);
   if (akls != NULL)  return akls;
-  Node* k_adr = basic_plus_adr(obj, oopDesc::klass_offset_in_bytes());
+  Node* k_adr = basic_plus_adr(obj, oopDesc::nklass_offset_in_bytes());
   return _gvn.transform(LoadKlassNode::make(_gvn, NULL, immutable_memory(), k_adr, TypeInstPtr::KLASS));
 }
 
@@ -3698,7 +3698,7 @@ Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
     // Add an edge in the MergeMem for the header fields so an access
     // to one of those has correct memory state
     set_memory(minit_out, C->get_alias_index(oop_type->add_offset(oopDesc::mark_offset_in_bytes())));
-    set_memory(minit_out, C->get_alias_index(oop_type->add_offset(oopDesc::klass_offset_in_bytes())));
+    set_memory(minit_out, C->get_alias_index(oop_type->add_offset(oopDesc::nklass_offset_in_bytes())));
     if (oop_type->isa_aryptr()) {
       const TypePtr* telemref = oop_type->add_offset(Type::OffsetBot);
       int            elemidx  = C->get_alias_index(telemref);
