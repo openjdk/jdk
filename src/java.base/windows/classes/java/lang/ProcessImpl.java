@@ -292,7 +292,7 @@ final class ProcessImpl extends Process {
         if (!str.startsWith("\"") || !str.endsWith("\"") || str.length() < 2)
             return str;    // no beginning or ending quote, or too short not quoted
 
-        if (str.endsWith("\\\"")) {
+        if (str.endsWith("\\\"") && !str.startsWith("\"")) {
             return str;    // not properly quoted, treat as unquoted
         }
         // Strip leading and trailing quotes
