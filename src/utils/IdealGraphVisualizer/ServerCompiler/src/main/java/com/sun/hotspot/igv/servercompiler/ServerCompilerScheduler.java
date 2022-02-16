@@ -76,6 +76,11 @@ public class ServerCompilerScheduler implements Scheduler {
             return o1.getToIndex() - o2.getToIndex();
         }
     };
+    // Data structures for compact error reporting.
+    private Set<Node> blockProjectionsWithMultipleSuccs;
+    private Set<Node> phiInputsWithoutRegion;
+    private Set<Node> regionsWithoutControlInput;
+    private Set<Node> phisWithRegionlessInputs;
 
     public void buildBlocks() {
 
@@ -234,6 +239,11 @@ public class ServerCompilerScheduler implements Scheduler {
                     "The control-flow graph will not be approximated.");
                 return null;
             }
+            blockProjectionsWithMultipleSuccs = new HashSet<>();
+            phiInputsWithoutRegion = new HashSet<>();
+            regionsWithoutControlInput = new HashSet<>();
+            phisWithRegionlessInputs = new HashSet<>();
+
             buildUpGraph();
             markCFGNodes();
             connectOrphansAndWidows();
@@ -306,9 +316,7 @@ public class ServerCompilerScheduler implements Scheduler {
                                 if (!found) {
                                     // Can happen due to inconsistent phi-region pairs.
                                     block = s.block;
-                                    ErrorManager.getDefault().log(ErrorManager.WARNING,
-                                        "Could not find region of " + n + " in " + s + ", " +
-                                        "this might affect the quality of the approximated schedule.");
+                                    phiInputsWithoutRegion.add(n); // For error reporting.
                                 }
                             } else if (block == null) {
                                 block = s.block;
@@ -373,14 +381,10 @@ public class ServerCompilerScheduler implements Scheduler {
                     if (regInputs[i].isCFG) {
                         srcBlocks.add(regInputs[i].block);
                     } else {
-                        ErrorManager.getDefault().log(ErrorManager.WARNING,
-                            reg + " has non-control input, " +
-                            "this might affect the quality of the approximated schedule.");
+                        regionsWithoutControlInput.add(reg); // For error reporting.
                     }
                 } else {
-                    ErrorManager.getDefault().log(ErrorManager.WARNING,
-                        phi + " has input node without associated region, " +
-                        "this might affect the quality of the approximated schedule.");
+                    phisWithRegionlessInputs.add(phi); // For error reporting.
                 }
             }
         }
@@ -519,9 +523,7 @@ public class ServerCompilerScheduler implements Scheduler {
                         block = split;
                     }
                 } else {
-                    ErrorManager.getDefault().log(ErrorManager.WARNING,
-                        "Block projection " + ctrlIn + " has " + ctrlSuccs + " control successors, " +
-                        "this might affect the quality of the approximated schedule.");
+                    blockProjectionsWithMultipleSuccs.add(ctrlIn); // For error reporting.
                 }
             }
             n.block = block;
@@ -806,13 +808,14 @@ public class ServerCompilerScheduler implements Scheduler {
     public void check() {
 
         Set<Node> reachable = reachableNodes();
+        Set<Node> notMarkedWithBlockStart = new HashSet<>();
+        Set<Node> cfgAndInputToPhi = new HashSet<>();
+        Set<Node> phiNonDominatingInputs = new HashSet<>();
         for (Node n : nodes) {
 
             // Check that region nodes are well-formed.
             if (isRegion(n) && !n.isBlockStart) {
-                ErrorManager.getDefault().log(ErrorManager.WARNING,
-                    n + " is not marked with is_block_start, " +
-                    "this might affect the quality of the approximated schedule.");
+                notMarkedWithBlockStart.add(n);
             }
 
             // Check that phi nodes are well-formed. If they are, check that
@@ -826,9 +829,7 @@ public class ServerCompilerScheduler implements Scheduler {
                     if (in.isCFG) {
                         // This can happen for nodes misclassified as CFG,
                         // for example x64's 'rep_stos'.
-                        ErrorManager.getDefault().log(ErrorManager.WARNING,
-                            "CFG node " + in + " is input to " + n + ", " +
-                            "this might affect the quality of the approximated schedule.");
+                        cfgAndInputToPhi.add(in);
                         continue;
                     }
                     for (InputBlock b : sourceBlocks(in, n)) {
@@ -839,14 +840,48 @@ public class ServerCompilerScheduler implements Scheduler {
                             continue;
                         }
                         if (!dominates(graph.getBlock(in.inputNode), b)) {
-                            ErrorManager.getDefault().log(ErrorManager.WARNING,
-                                "inaccurate schedule: " + in + " does not dominate " + b + ".");
+                            phiNonDominatingInputs.add(in);
                         }
                     }
                 }
             }
         }
 
+        if (!blockProjectionsWithMultipleSuccs.isEmpty()) {
+            ErrorManager.getDefault().log(ErrorManager.WARNING,
+                blockProjectionsWithMultipleSuccs + " have multiple successors, " +
+                "this might affect the quality of the approximated schedule.");
+        }
+        if (!phiInputsWithoutRegion.isEmpty()) {
+            ErrorManager.getDefault().log(ErrorManager.WARNING,
+                phiInputsWithoutRegion + " are phi inputs without associated regions, "
+                + "this might affect the quality of the approximated schedule.");
+        }
+        if (!regionsWithoutControlInput.isEmpty()) {
+            ErrorManager.getDefault().log(ErrorManager.WARNING,
+                regionsWithoutControlInput + " have no control input, "
+                + "this might affect the quality of the approximated schedule.");
+        }
+        if (!phisWithRegionlessInputs.isEmpty()) {
+            ErrorManager.getDefault().log(ErrorManager.WARNING,
+                phisWithRegionlessInputs + " have input nodes without asociated region, "
+                + "this might affect the quality of the approximated schedule.");
+        }
+        if (!notMarkedWithBlockStart.isEmpty()) {
+            ErrorManager.getDefault().log(ErrorManager.WARNING,
+                notMarkedWithBlockStart + " are not marked with is_block_start, " +
+                "this might affect the quality of the approximated schedule.");
+        }
+        if (!cfgAndInputToPhi.isEmpty()) {
+            ErrorManager.getDefault().log(ErrorManager.WARNING,
+                cfgAndInputToPhi + " are CFG nodes and phi inputs, " +
+                "this might affect the quality of the approximated schedule.");
+        }
+        if (!phiNonDominatingInputs.isEmpty()) {
+            ErrorManager.getDefault().log(ErrorManager.WARNING,
+                "inaccurate schedule: " + phiNonDominatingInputs +
+                " are phi inputs but do not dominate the phi's input block.");
+        }
     }
 
 }
