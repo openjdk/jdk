@@ -105,18 +105,28 @@ class CodeBlob_sizes {
   bool is_empty() const                          { return count == 0; }
 
   void print(const char* title) const {
-    tty->print_cr(" #%d %s = %dK (hdr %dK, loc %dK, code %dK, stub %dK, [oops %dK, metadata %dK, data %dK, pcs %dK])",
-                  count,
-                  title,
-                  (int)(total()               / K),
-                  (int)(header_size           / K),
-                  (int)(relocation_size       / K),
-                  (int)(code_size             / K),
-                  (int)(stub_size             / K),
-                  (int)(scopes_oop_size       / K),
-                  (int)(scopes_metadata_size  / K),
-                  (int)(scopes_data_size      / K),
-                  (int)(scopes_pcs_size       / K));
+    if (is_empty())
+    {
+      tty->print_cr(" #%d %s = %dK",
+                    count,
+                    title,
+                    (int)(total()               / K));
+    }
+    else
+    {
+      tty->print_cr(" #%d %s = %dK (hdr %dK, loc %dK, code %dK, stub %dK, [oops %dK, metadata %dK, data %dK, pcs %dK])",
+                    count,
+                    title,
+                    (int)(total()               / K),
+                    (int)(header_size           / K),
+                    (int)(relocation_size       / K),
+                    (int)(code_size             / K),
+                    (int)(stub_size             / K),
+                    (int)(scopes_oop_size       / K),
+                    (int)(scopes_metadata_size  / K),
+                    (int)(scopes_data_size      / K),
+                    (int)(scopes_pcs_size       / K));
+    }
   }
 
   void add(CodeBlob* cb) {
@@ -1430,25 +1440,24 @@ void CodeCache::print() {
 #ifndef PRODUCT
   if (!Verbose) return;
 
-  static_assert(0 < CompLevel_simple && CompLevel_simple <= CompLevel_full_optimization, "tier range check");
-  CodeBlob_sizes live[CompLevel_full_optimization];
-  CodeBlob_sizes dead[CompLevel_full_optimization];
+  CodeBlob_sizes live[CompLevel_full_optimization + 1];
+  CodeBlob_sizes dead[CompLevel_full_optimization + 1];
   CodeBlob_sizes runtimeStub;
   CodeBlob_sizes uncommonTrapStub;
   CodeBlob_sizes deoptimizationStub;
   CodeBlob_sizes adapter;
   CodeBlob_sizes bufferBlob;
+  CodeBlob_sizes other;
 
   FOR_ALL_ALLOCABLE_HEAPS(heap) {
     FOR_ALL_BLOBS(cb, *heap) {
       if (cb->is_nmethod()) {
-        const int level = cb->as_nmethod_or_null()->comp_level();
-        if (CompLevel_simple <= level && level <= CompLevel_full_optimization) {
-          if (!cb->is_alive()) {
-            dead[level - 1].add(cb);
-          } else {
-            live[level - 1].add(cb);
-          }
+        const int level = cb->as_nmethod()->comp_level();
+        assert(0 <= level && level <= CompLevel_full_optimization, "Invalid compilation level");
+        if (!cb->is_alive()) {
+          dead[level].add(cb);
+        } else {
+          live[level].add(cb);
         }
       } else if (cb->is_runtime_stub()) {
         runtimeStub.add(cb);
@@ -1460,36 +1469,33 @@ void CodeCache::print() {
         adapter.add(cb);
       } else if (cb->is_buffer_blob()) {
         bufferBlob.add(cb);
+      } else {
+        other.add(cb);
       }
     }
   }
 
   tty->print_cr("nmethod dependency checking time %fs", dependentCheckTime.seconds());
-  for (int i = CompLevel_simple; i <= CompLevel_full_optimization; i++) {
+  for (int i = 0; i <= CompLevel_full_optimization; i++) {
     tty->print_cr("Tier %d:", i);
-    if (!live[i - 1].is_empty()) {
-      live[i - 1].print("live");
-    }
-    if (!dead[i - 1].is_empty()) {
-      dead[i - 1].print("dead");
-    }
+    live[i].print("live");
+    dead[i].print("dead");
   }
 
   struct {
     const char *name;
     const CodeBlob_sizes *sizes;
   } stubs[] = {
-    { "runtime", &runtimeStub },
-    { "uncommon trap", &uncommonTrapStub },
+    { "runtime",        &runtimeStub },
+    { "uncommon trap",  &uncommonTrapStub },
     { "deoptimization", &deoptimizationStub },
-    { "adapter", &adapter },
-    { "buffer blob", &bufferBlob },
+    { "adapter",        &adapter },
+    { "buffer blob",    &bufferBlob },
+    { "other",          &other },
   };
   tty->print_cr("Stubs:");
   for (auto &stub: stubs) {
-    if (!stub.sizes->is_empty()) {
-      stub.sizes->print(stub.name);
-    }
+    stub.sizes->print(stub.name);
   }
 
   if (WizardMode) {
