@@ -34,6 +34,7 @@ import java.util.Objects;
 public class NameTest {
     public static void main(String... args) {
         testCanonicalName();
+        testSimpleName();
     }
 
     private static void testCanonicalName() {
@@ -62,6 +63,36 @@ public class NameTest {
             if (!Objects.equals(canonicalName, expectedName)) {
                 System.err.println("Unexpected canonical name '" +
                                    canonicalName + "' found for " +
+                                   key + ", expected " + expectedName);
+                throw new RuntimeException();
+            }
+        }
+    }
+
+    private static void testSimpleName() {
+        class ALocalClass {} // Local class
+        Object o = new Object() {}; // Anonymous class, empty simple name
+        Object[] objectArray = {};
+
+        Map<Class<?>, String> expectedSimpleName = new HashMap<>();
+
+        expectedSimpleName.put(ALocalClass.class,             "ALocalClass");
+        expectedSimpleName.put(o.getClass(),                  "");
+
+        expectedSimpleName.put(ALocalClass.class.arrayType(), "ALocalClass[]");
+        expectedSimpleName.put(o.getClass().arrayType(),      "[]");
+
+        expectedSimpleName.put(int.class,                     "int");
+        expectedSimpleName.put(Object.class,                  "Object");
+        expectedSimpleName.put(objectArray.getClass(),        "Object[]");
+
+        for (var entry : expectedSimpleName.entrySet()) {
+            var key = entry.getKey();
+            var expectedName = entry.getValue();
+            String simpleName = key.getSimpleName();
+            if (!Objects.equals(simpleName, expectedName)) {
+                System.err.println("Unexpected simple name '" +
+                                   simpleName + "' found for " +
                                    key + ", expected " + expectedName);
                 throw new RuntimeException();
             }
