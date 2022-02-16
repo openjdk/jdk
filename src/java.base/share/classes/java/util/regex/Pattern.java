@@ -5060,14 +5060,14 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             int j = matcher.groups[groupIndex];
             int k = matcher.groups[groupIndex+1];
 
-            int groupSize = k - j;
+            int groupSizeChars = k - j; //Group size in chars
 
             // If the referenced group didn't match, neither can this
             if (j < 0)
                 return false;
 
             // If there isn't enough input left no match
-            if (i + groupSize > matcher.to) {
+            if (i + groupSizeChars > matcher.to) {
                 matcher.hitEnd = true;
                 return false;
             }
@@ -5075,6 +5075,12 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             // Check each new char to make sure it matches what the group
             // referenced matched last time around
             int x = i;
+
+            //We set groupSize to the number of chars in the given subsequence
+            //but this is an upper bound we can reduce if we spot 2-char
+            //codepoints.
+            int groupSize = groupSizeChars;
+
             for (int index=0; index<groupSize; index++) {
                 int c1 = Character.codePointAt(seq, x);
                 int c2 = Character.codePointAt(seq, j);
@@ -5091,11 +5097,18 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                             return false;
                     }
                 }
-                x += Character.charCount(c1);
+                int xIncr = Character.charCount(c1);
+                x += xIncr;
                 j += Character.charCount(c2);
+
+                if(xIncr > 1) {
+                    //Group size is guessed in terms of chars, but we need to
+                    //adjust if we spot a 2-char codePoint.
+                    groupSize--;
+                }
             }
 
-            return next.match(matcher, i+groupSize, seq);
+            return next.match(matcher, i+groupSizeChars, seq);
         }
         boolean study(TreeInfo info) {
             info.maxValid = false;
