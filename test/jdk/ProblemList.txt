@@ -597,8 +597,6 @@ java/net/MulticastSocket/SetGetNetworkInterfaceTest.java        8219083 windows-
 
 java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc64
 
-sun/net/www/protocol/https/HttpsURLConnection/B6216082.java     8282017 generic-all
-
 ############################################################################
 
 # jdk_nio
