@@ -32,6 +32,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
 
@@ -66,7 +67,6 @@ public class CreateMissingParentDirectories {
             doHappyPathTest(topDir.resolve("a/test.jar"), entry);
             doHappyPathTest(topDir.resolve("a/b/test.jar"), entry);
 
-            doFailingTest(topDir.toString() + "/a/*/test.jar", entry);
             Path blocker = Files.writeString(topDir.resolve("blocker.txt"), "Blocked!");
             doFailingTest(topDir.resolve("blocker.txt/test.jar").toString(), entry);
         } finally {
@@ -77,7 +77,12 @@ public class CreateMissingParentDirectories {
     private static void doHappyPathTest(Path jar, Path entry) throws Throwable {
         String[] jarArgs = new String[]{"cf", jar.toString(), entry.toString()};
         if (JAR_TOOL.run(System.out, System.err, jarArgs) != 0) {
-            fail("Could not create jar file: " + jar);
+            fail("Could not create jar file: " + List.of(jarArgs));
+            return;
+        }
+        jarArgs = new String[]{"--create", "--file", jar.toString(), entry.toString()};
+        if (JAR_TOOL.run(System.out, System.err, jarArgs) != 0) {
+            fail("Could not create jar file: " + List.of(jarArgs));
             return;
         }
         pass();
@@ -92,8 +97,6 @@ public class CreateMissingParentDirectories {
             fail("Should have failed creating jar file: " + jar);
             return;
         }
-        // non-zero exit code expected, check error message contains jar file's name
-        check(err.toString().contains(jar));
         pass();
     }
 

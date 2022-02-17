@@ -2977,11 +2977,19 @@ different JDK version.
 .RE
 .RE
 .TP
-.B \f[CB]\-XX:+ExtendedDTraceProbes\f[R]
-\f[B]Linux and macOS:\f[R] Enables additional \f[CB]dtrace\f[R] tool probes
-that affect the performance.
-By default, this option is disabled and \f[CB]dtrace\f[R] performs only
-standard probes.
+.B \f[CB]\-XX:+DTraceAllocProbes\f[R]
+\f[B]Linux and macOS:\f[R] Enable \f[CB]dtrace\f[R] tool probes for object allocation.
+.RS
+.RE
+.TP
+.B \f[CB]\-XX:+DTraceMethodProbes\f[R]
+\f[B]Linux and macOS:\f[R] Enable \f[CB]dtrace\f[R] tool probes for method-entry
+and method-exit.
+.RS
+.RE
+.TP
+.B \f[CB]\-XX:+DTraceMonitorProbes\f[R]
+\f[B]Linux and macOS:\f[R] Enable \f[CB]dtrace\f[R] tool probes for monitor events.
 .RS
 .RE
 .TP
@@ -4006,6 +4014,16 @@ See Enable Logging with the JVM Unified Logging Framework.
 Example:
 .PP
 \f[CB]\-Xlog:gc:garbage\-collection.log\f[R]
+.RE
+.TP
+.B \f[CB]\-XX:+ExtendedDTraceProbes\f[R]
+\f[B]Linux and macOS:\f[R] Enables additional \f[CB]dtrace\f[R] tool probes
+that affect performance.
+By default, this option is disabled and \f[CB]dtrace\f[R] performs only
+standard probes.
+Use the combination of these flags instead: \f[CB]\-XX:+DTraceMethodProbes\f[R],
+\f[CB]\-XX:+DTraceAllocProbes\f[R], \f[CB]\-XX:+DTraceMonitorProbes\f[R].
+.RS
 .RE
 .TP
 .B \f[CB]\-XX:+FlightRecorder\f[R]

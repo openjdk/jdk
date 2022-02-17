@@ -3045,6 +3045,7 @@ public:
   INSN(sve_and,  0b00000100, 0b011010000); // vector and
   INSN(sve_andv, 0b00000100, 0b011010001); // bitwise and reduction to scalar
   INSN(sve_asr,  0b00000100, 0b010000100); // vector arithmetic shift right
+  INSN(sve_bic,  0b00000100, 0b011011000); // vector bitwise clear
   INSN(sve_cnt,  0b00000100, 0b011010101); // count non-zero bits
   INSN(sve_cpy,  0b00000101, 0b100000100); // copy scalar to each active vector element
   INSN(sve_eor,  0b00000100, 0b011001000); // vector eor

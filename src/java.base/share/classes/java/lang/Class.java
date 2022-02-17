@@ -1732,8 +1732,18 @@ public final class Class<T> implements java.io.Serializable,
      * <li>an array whose component type does not have a canonical name</li>
      * </ul>
      *
+     * The canonical name for a primitive class is the keyword for the
+     * corresponding primitive type ({@code byte}, {@code short},
+     * {@code char}, {@code int}, and so on).
+     *
+     * <p>An array type has a canonical name if and only if its
+     * component type has a canonical name. When an array type has a
+     * canonical name, it is equal to the canonical name of the
+     * component type followed by "{@code []}".
+     *
      * @return the canonical name of the underlying class if it exists, and
      * {@code null} otherwise.
+     * @jls 6.7 Fully Qualified Names and Canonical Names
      * @since 1.5
      */
     public String getCanonicalName() {

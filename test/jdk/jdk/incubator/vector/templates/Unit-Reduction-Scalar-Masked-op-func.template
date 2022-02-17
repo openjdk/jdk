@@ -1,8 +1,8 @@
     static $type$ [[TEST]]ReduceMasked($type$[] a, int idx, boolean[] mask) {
         $type$ res = [[TEST_INIT]];
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            if(mask[i % SPECIES.length()])
-                res = ($type$)Math.min(res, a[i]);
+            if (mask[i % SPECIES.length()])
+                res = [[TEST_OP]](res, a[i]);
         }
 
         return res;
@@ -10,9 +10,8 @@
 
     static $type$ [[TEST]]ReduceAllMasked($type$[] a, boolean[] mask) {
         $type$ res = [[TEST_INIT]];
-        for (int i = 0; i < a.length; i++) {
-            if(mask[i % SPECIES.length()])
-                res = ($type$)Math.min(res, a[i]);
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            res = [[TEST_OP]](res, [[TEST]]ReduceMasked(a, i, mask));
         }
 
         return res;
