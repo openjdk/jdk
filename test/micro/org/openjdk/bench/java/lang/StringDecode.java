@@ -84,7 +84,7 @@ public class StringDecode {
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public void decodeAsciiLongMix(Blackhole bh) throws Exception {
+    public void decodeAsciiLong(Blackhole bh) throws Exception {
         bh.consume(new String(longAsciiString, charset));
         bh.consume(new String(longAsciiString, 0, 1024 + 31, charset));
     }

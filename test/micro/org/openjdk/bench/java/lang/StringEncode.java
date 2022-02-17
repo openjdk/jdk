@@ -76,13 +76,7 @@ public class StringEncode {
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public byte[] encodeAsciiCharsetName() throws Exception {
-        return asciiString.getBytes(charsetName);
-    }
-
-    @Benchmark
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public byte[] encodeAscii() throws Exception {
+    public byte[] encodeAsciiShort() throws Exception {
         return asciiString.getBytes(charset);
     }
 
