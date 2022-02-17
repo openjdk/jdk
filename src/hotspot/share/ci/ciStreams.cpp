@@ -230,14 +230,19 @@ int ciBytecodeStream::get_constant_pool_index() const {
 // If this bytecode is one of the ldc variants, get the referenced
 // constant.
 ciConstant ciBytecodeStream::get_constant() {
+  VM_ENTRY_MARK;
+  constantPoolHandle cpool(THREAD, _method->get_Method()->constants());
   int pool_index = get_constant_raw_index();
   int cache_index = -1;
   if (has_cache_index()) {
     cache_index = pool_index;
-    pool_index = -1;
+    pool_index = cpool->object_to_cp_index(cache_index);
+  } else if (cpool->tag_at(pool_index).is_dynamic_constant() ||
+             cpool->tag_at(pool_index).is_dynamic_constant_in_error()) {
+    // Condy with primitive type is not quickened, so the index into resolved reference cache should be reconstructed.
+    assert(is_java_primitive(cpool->basic_type_for_constant_at(pool_index)), "not quickened");
+    cache_index = cpool->cp_to_object_index(pool_index);
   }
-  VM_ENTRY_MARK;
-  constantPoolHandle cpool(THREAD, _method->get_Method()->constants());
   return CURRENT_ENV->get_constant_by_index(cpool, pool_index, cache_index, _holder);
 }
 

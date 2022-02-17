@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@ public class WinUpgradeUUIDTest {
         // It will be uninstalled automatically when the second
         // package will be installed.
         // However uninstall verification for the first package will be executed.
-        PackageTest test1 = init.get().setPackageUninstaller(cmd -> {});
+        PackageTest test1 = init.get().disablePackageUninstaller();
 
         PackageTest test2 = init.get().addInitializer(cmd -> {
             cmd.setArgumentValue("--app-version", "2.0");

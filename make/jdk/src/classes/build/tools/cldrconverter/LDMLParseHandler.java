@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -756,6 +756,14 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                 pushStringEntry(qName, attributes, prefix + "DateTimePatterns/" + attributes.getValue("type") + "-dateTime");
             }
             break;
+        case "dateFormatItem":
+            {
+                // for FormatData
+                String prefix = (currentCalendarType == null) ? "" : currentCalendarType.keyElementName();
+                pushStringEntry(qName, attributes,
+                        prefix + Bundle.DATEFORMATITEM_KEY_PREFIX + attributes.getValue("id"));
+            }
+            break;
         case "localizedPatternChars":
             {
                 // for FormatData
@@ -1113,7 +1121,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                 if (id.equals("root") && key.startsWith("MonthNames")) {
                     value = new DateFormatSymbols(Locale.US).getShortMonths();
                 }
-                return put(entry.getKey(), value);
+                return put(key, value);
             }
         }
         return null;

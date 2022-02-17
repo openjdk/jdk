@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,6 +146,19 @@ public class TestCommon extends CDSTestUtils {
     {
         CDSOptions opts = new CDSOptions();
         opts.setArchiveName(baseArchiveName);
+        opts.addSuffix(cmdLineSuffix);
+        opts.addSuffix("-Djava.class.path=");
+        OutputAnalyzer out = CDSTestUtils.createArchive(opts);
+        CDSTestUtils.checkBaseDump(out);
+        return out;
+    }
+
+    public static OutputAnalyzer dumpBaseArchive(String baseArchiveName, String classList[], String ... cmdLineSuffix)
+        throws Exception
+    {
+        CDSOptions opts = new CDSOptions();
+        opts.setArchiveName(baseArchiveName);
+        opts.setClassList(classList);
         opts.addSuffix(cmdLineSuffix);
         opts.addSuffix("-Djava.class.path=");
         OutputAnalyzer out = CDSTestUtils.createArchive(opts);
