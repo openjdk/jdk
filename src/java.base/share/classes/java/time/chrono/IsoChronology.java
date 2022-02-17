@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -675,6 +675,18 @@ public final class IsoChronology extends AbstractChronology implements Serializa
     @Override  // override with covariant return type
     public Period period(int years, int months, int days) {
         return Period.of(years, months, days);
+    }
+
+    //-----------------------------------------------------------------------
+    /**
+     * {@inheritDoc}
+     * @implSpec Always returns {@code true}.
+     * @return {@code true}
+     * @since 19
+     */
+    @Override
+    public boolean isIsoLike() {
+        return true;
     }
 
     //-----------------------------------------------------------------------

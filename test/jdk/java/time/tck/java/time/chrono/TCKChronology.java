@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -424,4 +424,22 @@ public class TCKChronology {
         chrono.epochSecond(y, m, d, h, min, s, offset);
     }
 
+    @DataProvider(name = "data_isIsoLike")
+    Object[][]  data_isIsoLike() {
+        return new Object[][] {
+                {IsoChronology.INSTANCE, true},
+                {JapaneseChronology.INSTANCE, true},
+                {MinguoChronology.INSTANCE, true},
+                {ThaiBuddhistChronology.INSTANCE, true},
+                {HijrahChronology.INSTANCE, false},
+        };
+    }
+
+    //-----------------------------------------------------------------------
+    // isIsoLike()
+    //-----------------------------------------------------------------------
+    @Test(dataProvider = "data_isIsoLike")
+    public void test_isIsoLike(Chronology chrono, boolean expected) {
+        assertEquals(chrono.isIsoLike(), expected);
+    }
 }

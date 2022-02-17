@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -736,7 +736,7 @@ public interface Chronology extends Comparable<Chronology> {
      * @throws DateTimeException if any of the values are out of range
      * @since 9
      */
-    public default long epochSecond(int prolepticYear, int month, int dayOfMonth,
+    default long epochSecond(int prolepticYear, int month, int dayOfMonth,
                                     int hour, int minute, int second, ZoneOffset zoneOffset) {
         Objects.requireNonNull(zoneOffset, "zoneOffset");
         HOUR_OF_DAY.checkValidValue(hour);
@@ -765,11 +765,34 @@ public interface Chronology extends Comparable<Chronology> {
      * @throws DateTimeException if any of the values are out of range
      * @since 9
      */
-    public default long epochSecond(Era era, int yearOfEra, int month, int dayOfMonth,
+    default long epochSecond(Era era, int yearOfEra, int month, int dayOfMonth,
                                     int hour, int minute, int second, ZoneOffset zoneOffset) {
         Objects.requireNonNull(era, "era");
         return epochSecond(prolepticYear(era, yearOfEra), month, dayOfMonth, hour, minute, second, zoneOffset);
     }
+
+    /**
+     * Checks if this chronology is ISO-like.
+     * <p>
+     * An ISO-like chronology has the same basic structure of days and months
+     * as the ISO chronology, with month lengths generally aligned with those
+     * in the ISO January to December definitions.
+     * For example, the Minguo, ThaiBuddhist and Japanese chronologies.
+     *
+     * @implSpec
+     * The default implementation returns {@code false}.
+     *
+     * @return true if the chronology is ISO-like
+     * @see IsoChronology
+     * @see JapaneseChronology
+     * @see MinguoChronology
+     * @see ThaiBuddhistChronology
+     * @since 19
+     */
+    default boolean isIsoLike() {
+        return false;
+    }
+
     //-----------------------------------------------------------------------
     /**
      * Compares this chronology to another chronology.
