@@ -51,16 +51,16 @@ import java.util.zip.DeflaterOutputStream;
  * before JDK-8281962
  * ------------------
  * Benchmark                                     (size)  Mode  Cnt  Score   Error  Units
- * InflaterInputStreams.inflaterInputStreamRead     256  avgt    5  2.571 ± 0.120  us/op
- * InflaterInputStreams.inflaterInputStreamRead     512  avgt    5  2.861 ± 0.064  us/op
- * InflaterInputStreams.inflaterInputStreamRead    4096  avgt    5  5.110 ± 0.278  us/op
+ * InflaterInputStreams.inflaterInputStreamRead     256  avgt    5  2.571   0.120  us/op
+ * InflaterInputStreams.inflaterInputStreamRead     512  avgt    5  2.861   0.064  us/op
+ * InflaterInputStreams.inflaterInputStreamRead    4096  avgt    5  5.110   0.278  us/op
  *
  * after JDK-8281962
  * -----------------
  * Benchmark                                     (size)  Mode  Cnt  Score   Error  Units
- * InflaterInputStreams.inflaterInputStreamRead     256  avgt    5  2.332 ± 0.081  us/op
- * InflaterInputStreams.inflaterInputStreamRead     512  avgt    5  2.691 ± 0.293  us/op
- * InflaterInputStreams.inflaterInputStreamRead    4096  avgt    5  4.812 ± 1.038  us/op
+ * InflaterInputStreams.inflaterInputStreamRead     256  avgt    5  2.332   0.081  us/op
+ * InflaterInputStreams.inflaterInputStreamRead     512  avgt    5  2.691   0.293  us/op
+ * InflaterInputStreams.inflaterInputStreamRead    4096  avgt    5  4.812   1.038  us/op
  *
  */
 @BenchmarkMode(Mode.AverageTime)
@@ -74,8 +74,7 @@ public class InflaterInputStreams {
     private int size;
     private byte[] chars;
     private byte[] words;
-    private static final int MAX_SIZE = 5000; // Should be bigger than the biggest size @Param
-    private static byte[] inflated = new byte[MAX_SIZE];
+    private static byte[] inflated;
     ByteArrayInputStream deflated;
 
     @Setup(Level.Trial)
@@ -89,11 +88,14 @@ public class InflaterInputStreams {
         for (int i = 0; i < words.length / wordLength; i++) {
             System.arraycopy(chars, r.nextInt(charCount - wordLength), words, i * wordLength, wordLength);
         }
-    }
+        inflated = new byte[2*size];
+   }
 
     @Setup(Level.Iteration)
     public void beforeIteration() throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(MAX_SIZE);
+        // Maximum deflated size (see https://stackoverflow.com/a/23578269/4146053)
+        int maxDeflated = size + 5*(size/16383 + 1);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(maxDeflated);
         DeflaterOutputStream defout = new DeflaterOutputStream(baos);
         ByteArrayInputStream bais = new ByteArrayInputStream(words, 0, size);
         bais.transferTo(defout);
