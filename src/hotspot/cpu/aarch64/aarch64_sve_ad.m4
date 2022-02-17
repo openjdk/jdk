@@ -524,8 +524,10 @@ instruct $1(vReg dst, vReg src) %{
   match(Set dst ($2 src));
   ins_cost(SVE_COST);
   format %{ "$4 $dst, $src\t# vector (sve) ($3)" %}
-  ins_encode %{
-    __ $4(as_FloatRegister($dst$$reg), __ $3,
+  ins_encode %{dnl
+ifelse($1, `vnegI', `
+    BasicType bt = Matcher::vector_element_basic_type(this);', `')
+    __ $4(as_FloatRegister($dst$$reg), ifelse($1, `vnegI', `__ elemType_to_regVariant(bt)', `__ $3'),
          ptrue, as_FloatRegister($src$$reg));
   %}
   ins_pipe(pipe_slow);
@@ -548,8 +550,10 @@ instruct $1_masked(vReg dst_src, pRegGov pg) %{
   match(Set dst_src ($2 dst_src pg));
   ins_cost(SVE_COST);
   format %{ "$4 $dst_src, $pg, $dst_src\t# vector (sve) ($3)" %}
-  ins_encode %{
-    __ $4(as_FloatRegister($dst_src$$reg), __ $3,
+  ins_encode %{dnl
+ifelse($1, `vnegI', `
+    BasicType bt = Matcher::vector_element_basic_type(this);', `')
+    __ $4(as_FloatRegister($dst_src$$reg), ifelse($1, `vnegI', `__ elemType_to_regVariant(bt)', `__ $3'),
             as_PRegister($pg$$reg),
             as_FloatRegister($dst_src$$reg));
   %}
@@ -1091,11 +1095,15 @@ BINARY_OP_PREDICATE(vmulL, MulVL, D, sve_mul)
 BINARY_OP_PREDICATE(vmulF, MulVF, S, sve_fmul)
 BINARY_OP_PREDICATE(vmulD, MulVD, D, sve_fmul)
 
-// vector fneg
+// vector neg
+UNARY_OP_TRUE_PREDICATE(vnegI, NegVI, B/H/S, sve_neg)
+UNARY_OP_TRUE_PREDICATE(vnegL, NegVL, D, sve_neg)
 UNARY_OP_TRUE_PREDICATE(vnegF, NegVF, S, sve_fneg)
 UNARY_OP_TRUE_PREDICATE(vnegD, NegVD, D, sve_fneg)
 
-// vector fneg - predicated
+// vector neg - predicated
+UNARY_OP_PREDICATE(vnegI, NegVI, B/H/S, sve_neg)
+UNARY_OP_PREDICATE(vnegL, NegVL, D, sve_neg)
 UNARY_OP_PREDICATE(vnegF, NegVF, S, sve_fneg)
 UNARY_OP_PREDICATE(vnegD, NegVD, D, sve_fneg)
 

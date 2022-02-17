@@ -4212,7 +4212,7 @@ bool MatchRule::is_vector() const {
     "CMoveVD", "CMoveVF",
     "DivVF","DivVD",
     "AbsVB","AbsVS","AbsVI","AbsVL","AbsVF","AbsVD",
-    "NegVF","NegVD","NegVI",
+    "NegVF","NegVD","NegVI","NegVL",
     "SqrtVD","SqrtVF",
     "AndV" ,"XorV" ,"OrV",
     "MaxV", "MinV",

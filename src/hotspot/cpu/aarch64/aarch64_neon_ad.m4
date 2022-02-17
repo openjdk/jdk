@@ -1923,20 +1923,39 @@ VSQRT(fsqrt, 4,  F, X, S)
 VSQRT(fsqrt, 2,  D, X, D)
 
 // --------------------------------- NEG --------------------------------------
+define(`VNEGI', `
+instruct vnegI$1(vec$1 dst, vec$1 src)
+%{
+  predicate(n->as_Vector()->length_in_bytes() ifelse($1, D, <, ==) 16);
+  match(Set dst (NegVI src));
+  ins_cost(INSN_COST);
+  format %{ "negr  $dst, $src\t# vector ($2)" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    Assembler::SIMD_Arrangement size = __ esize2arrangement((unsigned)type2aelembytes(bt), ifelse($1, D, false, true));
+    __ negr(as_FloatRegister($dst$$reg), size, as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(vunop_fp`'ifelse($1, D, 64, 128));
+%}')dnl
+dnl  $1  $2
+VNEGI(D, 8B/4H/2S)
+VNEGI(X, 16B/8H/4S)
+dnl
 define(`VNEG', `
 instruct vneg$2$3`'(vec$4 dst, vec$4 src)
 %{
   predicate(n->as_Vector()->length() == $2);
   match(Set dst (NegV$3 src));
-  ins_cost(INSN_COST * 3);
+  ins_cost(INSN_COST`'ifelse($3, L, `',` * 3'));
   format %{ "$1  $dst,$src\t# vector ($2$5)" %}
   ins_encode %{
-    __ $1(as_FloatRegister($dst$$reg), __ T$2`'ifelse($5, L, D, $5),
+    __ $1(as_FloatRegister($dst$$reg), __ T$2$5,
             as_FloatRegister($src$$reg));
   %}
   ins_pipe(vunop_fp`'ifelse($4, D, 64, 128));
 %}')dnl
 dnl  $1    $2  $3 $4 $5
+VNEG(negr, 2,  L, X, D)
 VNEG(fneg, 2,  F, D, S)
 VNEG(fneg, 4,  F, X, S)
 VNEG(fneg, 2,  D, X, D)

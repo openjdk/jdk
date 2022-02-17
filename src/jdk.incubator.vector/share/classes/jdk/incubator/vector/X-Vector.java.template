@@ -596,9 +596,6 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 #if[BITWISE]
             if (op == NOT) {
                 return broadcast(-1).lanewise(XOR, this);
-            } else if (op == NEG) {
-                // FIXME: Support this in the JIT.
-                return broadcast(0).lanewise(SUB, this);
             }
 #end[BITWISE]
         }
@@ -629,8 +626,6 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 #if[BITWISE]
             if (op == NOT) {
                 return lanewise(XOR, broadcast(-1), m);
-            } else if (op == NEG) {
-                return lanewise(NOT, m).lanewise(ADD, broadcast(1), m);
             }
 #end[BITWISE]
         }

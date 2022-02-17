@@ -573,9 +573,6 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             }
             if (op == NOT) {
                 return broadcast(-1).lanewise(XOR, this);
-            } else if (op == NEG) {
-                // FIXME: Support this in the JIT.
-                return broadcast(0).lanewise(SUB, this);
             }
         }
         int opc = opCode(op);
@@ -604,8 +601,6 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             }
             if (op == NOT) {
                 return lanewise(XOR, broadcast(-1), m);
-            } else if (op == NEG) {
-                return lanewise(NOT, m).lanewise(ADD, broadcast(1), m);
             }
         }
         int opc = opCode(op);

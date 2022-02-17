@@ -1758,6 +1758,7 @@
   declare_c2_type(MulReductionVFNode, ReductionNode)                      \
   declare_c2_type(MulVDNode, VectorNode)                                  \
   declare_c2_type(NegVINode, VectorNode)                                  \
+  declare_c2_type(NegVLNode, VectorNode)                                  \
   declare_c2_type(NegVFNode, VectorNode)                                  \
   declare_c2_type(NegVDNode, VectorNode)                                  \
   declare_c2_type(FmaVDNode, VectorNode)                                  \

@@ -1936,7 +1936,34 @@ instruct vmulD_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   ins_pipe(pipe_slow);
 %}
 
-// vector fneg
+// vector neg
+
+instruct vnegI(vReg dst, vReg src) %{
+  predicate(UseSVE > 0 &&
+            !n->as_Vector()->is_predicated_vector());
+  match(Set dst (NegVI src));
+  ins_cost(SVE_COST);
+  format %{ "sve_neg $dst, $src\t# vector (sve) (B/H/S)" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_neg(as_FloatRegister($dst$$reg), __ elemType_to_regVariant(bt),
+         ptrue, as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vnegL(vReg dst, vReg src) %{
+  predicate(UseSVE > 0 &&
+            !n->as_Vector()->is_predicated_vector());
+  match(Set dst (NegVL src));
+  ins_cost(SVE_COST);
+  format %{ "sve_neg $dst, $src\t# vector (sve) (D)" %}
+  ins_encode %{
+    __ sve_neg(as_FloatRegister($dst$$reg), __ D,
+         ptrue, as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
 
 instruct vnegF(vReg dst, vReg src) %{
   predicate(UseSVE > 0 &&
@@ -1964,7 +1991,34 @@ instruct vnegD(vReg dst, vReg src) %{
   ins_pipe(pipe_slow);
 %}
 
-// vector fneg - predicated
+// vector neg - predicated
+
+instruct vnegI_masked(vReg dst_src, pRegGov pg) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src (NegVI dst_src pg));
+  ins_cost(SVE_COST);
+  format %{ "sve_neg $dst_src, $pg, $dst_src\t# vector (sve) (B/H/S)" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_neg(as_FloatRegister($dst_src$$reg), __ elemType_to_regVariant(bt),
+            as_PRegister($pg$$reg),
+            as_FloatRegister($dst_src$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vnegL_masked(vReg dst_src, pRegGov pg) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src (NegVL dst_src pg));
+  ins_cost(SVE_COST);
+  format %{ "sve_neg $dst_src, $pg, $dst_src\t# vector (sve) (D)" %}
+  ins_encode %{
+    __ sve_neg(as_FloatRegister($dst_src$$reg), __ D,
+            as_PRegister($pg$$reg),
+            as_FloatRegister($dst_src$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
 
 instruct vnegF_masked(vReg dst_src, pRegGov pg) %{
   predicate(UseSVE > 0);
