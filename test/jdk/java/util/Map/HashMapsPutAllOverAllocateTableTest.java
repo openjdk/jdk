@@ -29,7 +29,6 @@
  *          java.base/java.util:open
  * @author  Xeno Amess
  *
- * @library /test/lib
  * @compile HashMapsPutAllOverAllocateTableTest.java
  * @run junit/othervm HashMapsPutAllOverAllocateTableTest
  */
