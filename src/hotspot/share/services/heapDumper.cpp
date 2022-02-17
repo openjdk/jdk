@@ -2000,16 +2000,15 @@ void VM_HeapDumper::do_load_class(Klass* k) {
   writer()->write_u4(++class_serial_num);
 
   // class ID
-  Klass* klass = k;
-  writer()->write_classID(klass);
+  writer()->write_classID(k);
 
   // add the Klass* and class serial number pair
-  dumper()->add_class_serial_number(klass, class_serial_num);
+  dumper()->add_class_serial_number(k, class_serial_num);
 
   writer()->write_u4(STACK_TRACE_ID);
 
   // class name ID
-  Symbol* name = klass->name();
+  Symbol* name = k->name();
   writer()->write_symbolID(name);
 }
 
