@@ -30,24 +30,25 @@ import java.util.Set;
 import static java.lang.annotation.ElementType.*;
 
 /**
- * Represents a JVM access flag on a runtime member, such as a
- * {@linkplain Class class}, {@linkplain Field field}, or {@linkplain
- * Executable method}.
+ * Represents a JVM access or module-related flag on a runtime member,
+ * such as a {@linkplain Class class}, {@linkplain Field field}, or
+ * {@linkplain Executable method}.
  *
- * <P>JVM access flags are related to, but distinct from Java language
- * {@linkplain Modifier modifiers}. Some modifiers and access flags
- * have a one-to-one correspondence, such as {@code public}. In other
- * cases, some language-level modifiers do <em>not</em> have an access
- * flag, such as {@code sealed} (JVMS {@jvms 4.7.31}) and some access
- * flags have no corresponding modifier, such as {@linkplain SYNTHETIC
- * synthetic}
+ * <P>JVM access and module-related flags are related to, but distinct
+ * from Java language {@linkplain Modifier modifiers}. Some modifiers
+ * and access flags have a one-to-one correspondence, such as {@code
+ * public}. In other cases, some language-level modifiers do
+ * <em>not</em> have an access flag, such as {@code sealed} (JVMS
+ * {@jvms 4.7.31}) and some access flags have no corresponding
+ * modifier, such as {@linkplain SYNTHETIC synthetic}
  *
- * <p>The values for the constants representing the access flags are
- * taken from the tables in sections {@jvms 4.1} (class access and
+ * <p>The values for the constants representing the access and module
+ * flags are taken from sections of <cite>The Java Virtual Machine
+ * Specification</cite> including {@jvms 4.1} (class access and
  * property modifiers), {@jvms 4.5} (field access and property flags),
- * {@jvms 4.6} (method access and property flags), and {@jvms 4.7.6}
- * (nested class access and property flags) of <cite>The Java Virtual
- * Machine Specification</cite>.
+ * {@jvms 4.6} (method access and property flags), {@jvms 4.7.6}
+ * (nested class access and property flags), {@jvms 4.7.24} (method
+ * parameters), and {@jvms 4.7.25} (module flags and requires flags).
  *
  * <p>The {@linkplain #mask() mask} values for the different access
  * flags are <em>not</em> distinct. Flags are defined for different
@@ -66,6 +67,8 @@ import static java.lang.annotation.ElementType.*;
  * added at the end of the existing list.
  *
  * @see java.lang.reflect.Modifier
+ * @see java.lang.module.ModuleDescriptor.Modifier
+ * @see java.lang.module.ModuleDescriptor.Requires.Modifier
  * @see java.compiler/javax.lang.model.element.Modifier
  * @since 19
  */
@@ -107,10 +110,28 @@ public enum AccessFlag {
     SUPER(0x0000_0020, false, Set.of(TYPE)),
 
     /**
+     * The module flag {@code ACC_OPEN}.
+     * @see java.lang.module.ModuleDescriptor#isOpen
+     */
+    OPEN(0x0000_0020, false, Set.of(ElementType.MODULE)),
+
+    /**
+     * The module requires flag {@code ACC_TRANSITIVE}.
+     * @see java.lang.module.ModuleDescriptor.Requires.Modifier#TRANSITIVE
+     */
+    TRANSITIVE(0x0000_0020, false, Set.of()),
+
+    /**
      * The access flag {@code ACC_SYNCHRONIZED}, corresponding to the
      * source modifier {@link Modifier#SYNCHRONIZED synchronized}.
      */
     SYNCHRONIZED(Modifier.SYNCHRONIZED, true, Set.of(METHOD, CONSTRUCTOR)),
+
+    /**
+     * The module requires flag {@code ACC_STATIC_PHASE}.
+     * @see java.lang.module.ModuleDescriptor.Requires.Modifier#STATIC
+     */
+    STATIC_PHASE(0x0000_0040, false, Set.of()),
 
      /**
       * The access flag {@code ACC_VOLATILE}, corresponding to the
@@ -164,6 +185,7 @@ public enum AccessFlag {
      * The access flag {@code ACC_SYNTHETIC}.
      * @see Class#isSynthetic()
      * @see Executable#isSynthetic()
+     * @see java.lang.module.ModuleDescriptor.Modifier#SYNTHETIC
      */
     SYNTHETIC(0x0000_1000, false,
               Set.of(TYPE, FIELD, METHOD, CONSTRUCTOR, ElementType.MODULE, PARAMETER)),
@@ -185,10 +207,10 @@ public enum AccessFlag {
      */
     MANDATED(0x0000_8000, false, Set.of(ElementType.MODULE, PARAMETER)),
 
-   /**
-    * The access flag {@code ACC_MODULE}.
-    */
-   MODULE(0x0000_8000, false, Set.of(TYPE))
+    /**
+     * The access flag {@code ACC_MODULE}.
+     */
+    MODULE(0x0000_8000, false, Set.of(TYPE))
     ;
 
     // May want to override toString for a different enum constant ->

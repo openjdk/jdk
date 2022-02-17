@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
+import java.lang.reflect.AccessFlag;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -201,6 +202,17 @@ public class ModuleDescriptor
          */
         public Set<Modifier> modifiers() {
             return mods;
+        }
+
+        /**
+         * {@return an immutable set of the module {@linkplain AccessFlag
+         * requires flags}}
+         * @see #modifiers()
+         * @jvms 4.7.25 The Module Attribute
+         * @since 19
+         */
+        public Set<AccessFlag> accessFlags() {
+            return Set.of(); // stubbed out empty set
         }
 
         /**
@@ -415,6 +427,17 @@ public class ModuleDescriptor
          */
         public Set<Modifier> modifiers() {
             return mods;
+        }
+
+        /**
+         * {@return an immutable set of the {@linkplain AccessFlag
+         * module flags} for this module descriptor}
+         * @see #modifiers()
+         * @jvms 4.7.25 The Module Attribute
+         * @since 19
+         */
+        public Set<AccessFlag> accessFlags() {
+            return Set.of(); // stubbed out empty set
         }
 
         /**

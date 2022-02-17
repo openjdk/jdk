@@ -62,7 +62,7 @@ public class BasicAccessFlagTest {
             AccessFlag right = values[i];
             if (left.mask() > right.mask()) {
                 throw new RuntimeException(left
-                                           + "has a greater mas than "
+                                           + "has a greater mask than "
                                            + right);
             }
         }
