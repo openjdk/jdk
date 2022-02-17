@@ -1606,9 +1606,16 @@ public abstract class ClassLoader {
      * </ol>
      * <p>Note that once a class loader is registered as parallel capable, there
      * is no way to change it back.</p>
+     * <p>
+     * In cases where this method is called from a context where the caller is
+     * not a subclass of {@code ClassLoader} or there is no caller frame on the
+     * stack (e.g. when called directly from a JNI attached thread),
+     * {@code IllegalCallerException} is thrown.
+     * </p>
      *
      * @return  {@code true} if the caller is successfully registered as
      *          parallel capable and {@code false} if otherwise.
+     * @throws IllegalCallerException if the caller is not a subclass of {@code ClassLoader}
      *
      * @see #isRegisteredAsParallelCapable()
      *
@@ -1622,6 +1629,9 @@ public abstract class ClassLoader {
     // Caller-sensitive adapter method for reflective invocation
     @CallerSensitiveAdapter
     private static boolean registerAsParallelCapable(Class<?> caller) {
+        if ((caller == null) || !ClassLoader.class.isAssignableFrom(caller)) {
+            throw new IllegalCallerException(caller + " not a subclass of ClassLoader");
+        }
         return ParallelLoaders.register(caller.asSubclass(ClassLoader.class));
     }
 
