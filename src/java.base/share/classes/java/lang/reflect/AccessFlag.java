@@ -43,9 +43,11 @@ import static java.lang.annotation.ElementType.*;
  * synthetic}
  *
  * <p>The values for the constants representing the access flags are
- * taken from the tables in sections {@jvms 4.1}, {@jvms 4.4}, {@jvms
- * 4.5}, and {@jvms 4.7} of <cite>The Java Virtual Machine
- * Specification</cite>.
+ * taken from the tables in sections {@jvms 4.1} (class access and
+ * property modifiers), {@jvms 4.5} (field access and property flags),
+ * {@jvms 4.6} (method access and property flags), and {@jvms 4.7.6}
+ * (nested class access and property flags) of <cite>The Java Virtual
+ * Machine Specification</cite>.
  *
  * <p>The {@linkplain #mask() mask} values for the different access
  * flags are <em>not</em> distinct. Flags are defined for different
