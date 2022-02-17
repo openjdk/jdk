@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
@@ -7739,8 +7741,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="concentr-item">
 				<displayName>ერთეული</displayName>
-				<unitPattern count="one">{0} ერთეული</unitPattern>
-				<unitPattern count="other">{0} ერთეული</unitPattern>
+				<unitPattern count="one">{0} ერთე.</unitPattern>
+				<unitPattern count="other">{0} ერთე.</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
 				<displayName>ნაწილი/მილიონზე</displayName>
@@ -8685,8 +8687,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ფტ²</unitPattern>
 			</unit>
 			<unit type="concentr-item">
-				<unitPattern count="one">{0} ერთეული</unitPattern>
-				<unitPattern count="other">{0} ერთეული</unitPattern>
+				<unitPattern count="one">{0} ერთე.</unitPattern>
+				<unitPattern count="other">{0} ერთე.</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>

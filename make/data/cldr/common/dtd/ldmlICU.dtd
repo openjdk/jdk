@@ -19,8 +19,8 @@ NOTE: Unlike the other DTDs, this file is manually maintained.
 <!ATTLIST special icu:version CDATA #IMPLIED>
 
 <!ELEMENT icu:version EMPTY>
-<!ATTLIST icu:version icu:specialVersion  CDATA #FIXED "1.7" >
-<!ATTLIST icu:version icu:requiredLDMLVersion CDATA #FIXED "1.7" >
+<!ATTLIST icu:version icu:specialVersion  CDATA #FIXED "41" >
+<!ATTLIST icu:version icu:requiredLDMLVersion CDATA #FIXED "41" >
 
 <!-- ICU Scripts -->
 
@@ -40,11 +40,16 @@ NOTE: Unlike the other DTDs, this file is manually maintained.
 <!ATTLIST icu:ruleBasedNumberFormat type NMTOKEN #IMPLIED >
 
 <!-- RBBI data -->
-<!ELEMENT icu:breakIteratorData (alias | (icu:boundaries?, icu:dictionaries?, icu:lstm?)) >
+<!ELEMENT icu:breakIteratorData (alias | (icu:boundaries?, icu:dictionaries?, icu:extensions?, icu:lstm?)) >
 
 <!ELEMENT icu:boundaries (alias | (icu:grapheme?, icu:word?, icu:line*, icu:sentence?, icu:title?, icu:xgc?)) >
 
 <!ELEMENT icu:dictionaries (alias | (icu:dictionary*)) >
+
+<!ELEMENT icu:extensions (alias | (icu:extension*)) >
+
+<!ELEMENT icu:extension ( #PCDATA ) >
+    <!--@ORDERED-->
 
 <!ELEMENT icu:lstm (alias | (icu:lstmdata*)) >
 

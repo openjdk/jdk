@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
@@ -7964,7 +7966,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">Gruzijos larių</displayName>
 				<symbol>GEL</symbol>
 				<symbol alt="narrow">₾</symbol>
-				<symbol alt="variant">₾</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>Ganos sedis (1979–2007)</displayName>
@@ -9787,11 +9788,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="locative">{0} laisvojo kritimo pagreičių</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
+				<gender>masculine</gender>
 				<displayName>metrai per kvadratinę sekundę</displayName>
 				<unitPattern count="one">{0} metras per kvadratinę sekundę</unitPattern>
+				<unitPattern count="one" case="accusative">{0} metrą per kvadratinę sekundę</unitPattern>
+				<unitPattern count="one" case="dative">{0} metrui per kvadratinę sekundę</unitPattern>
+				<unitPattern count="one" case="genitive">{0} metro per kvadratinę sekundę</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} metru per kvadratinę sekundę</unitPattern>
+				<unitPattern count="one" case="locative">{0} metre per kvadratinę sekundę</unitPattern>
 				<unitPattern count="few">{0} m/s²</unitPattern>
+				<unitPattern count="few" case="accusative">{0} metrus per kvadratinę sekundę</unitPattern>
+				<unitPattern count="few" case="dative">{0} metrams per kvadratinę sekundę</unitPattern>
+				<unitPattern count="few" case="genitive">{0} metrų per kvadratinę sekundę</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} metrais per kvadratinę sekundę</unitPattern>
+				<unitPattern count="few" case="locative">{0} metruose per kvadratinę sekundę</unitPattern>
 				<unitPattern count="many">{0} m/s²</unitPattern>
+				<unitPattern count="many" case="accusative">{0} metro per kvadratinę sekundę</unitPattern>
+				<unitPattern count="many" case="dative">{0} metro per kvadratinę sekundę</unitPattern>
+				<unitPattern count="many" case="genitive">{0} metro per kvadratinę sekundę</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} metro per kvadratinę sekundę</unitPattern>
+				<unitPattern count="many" case="locative">{0} metro per kvadratinę sekundę</unitPattern>
 				<unitPattern count="other">{0} metrų per kvadratinę sekundę</unitPattern>
+				<unitPattern count="other" case="accusative">{0} metrų per kvadratinę sekundę</unitPattern>
+				<unitPattern count="other" case="dative">{0} metrų per kvadratinę sekundę</unitPattern>
+				<unitPattern count="other" case="genitive">{0} metrų per kvadratinę sekundę</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} metrų per kvadratinę sekundę</unitPattern>
+				<unitPattern count="other" case="locative">{0} metrų per kvadratinę sekundę</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
 				<gender>masculine</gender>
@@ -9934,11 +9956,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="locative">{0} kampo sekundžių</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
+				<gender draft="contributed">masculine</gender>
 				<displayName>kvadratiniai kilometrai</displayName>
 				<unitPattern count="one">{0} kvadratinis kilometras</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} kvadratinį kilometrą</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} kvadratiniam kilometrui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} kvadratinio kilometro</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} kvadratiniu kilometru</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} kvadratinį kilometrą</unitPattern>
 				<unitPattern count="few">{0} kvadratiniai kilometrai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} kvadratinius kilometrus</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} kvadratiniams kilometrams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} kvadratinių kilometrų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} kvadratiniais kilometrais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} kvadratiniuose kilometruose</unitPattern>
 				<unitPattern count="many">{0} kvadratinio kilometro</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} kvadratinio kilometro</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} kvadratinio kilometro</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} kvadratinio kilometro</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} kvadratinio kilometro</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} kvadratinio kilometro</unitPattern>
 				<unitPattern count="other">{0} kvadratinių kilometrų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} kvadratinių kilometrų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} kvadratinių kilometrų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} kvadratinių kilometrų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} kvadratinių kilometrų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} kvadratinių kilometrų</unitPattern>
 				<perUnitPattern>{0} kv. km</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
@@ -9970,19 +10013,61 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="locative">{0} hektarų</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
+				<gender draft="contributed">masculine</gender>
 				<displayName>kvadratiniai metrai</displayName>
 				<unitPattern count="one">{0} kvadratinis metras</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} kvadratinį metrą</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} kvadratiniam metrui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} kvadratinio metro</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} kvadratiniu metru</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} kvadratiniame metre</unitPattern>
 				<unitPattern count="few">{0} kvadratiniai metrai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} kvadratinius metrus</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} kvadratiniams metrams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} kvadratinių metrų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} kvadratiniais metrais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} kvadratiniuose metruose</unitPattern>
 				<unitPattern count="many">{0} kvadratinio metro</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} kvadratinio metro</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} kvadratinio metro</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} kvadratinio metro</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} kvadratinio metro</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} kvadratinio metro</unitPattern>
 				<unitPattern count="other">{0} kvadratinių metrų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} kvadratinių metrų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} kvadratinių metrų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} kvadratinių metrų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} kvadratinių metrų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} kvadratinių metrų</unitPattern>
 				<perUnitPattern>{0}/m²</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
+				<gender draft="contributed">masculine</gender>
 				<displayName>kvadratiniai centimetrai</displayName>
 				<unitPattern count="one">{0} kvadratinis centimetras</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} kvadratinį centimetrą</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} kvadratiniam centimetrui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} kvadratinio centimetro</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} kvadratiniam centimetrui</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} kvadratiniame centimetre</unitPattern>
 				<unitPattern count="few">{0} kvadratiniai centimetrai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} kvadratinius centimetrus</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} kvadratiniams centimetrams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} kvadratinių centimetrų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} kvadratiniais centimetrais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} kvadratiniuose centimetruose</unitPattern>
 				<unitPattern count="many">{0} kvadratinio centimetro</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} kvadratinio centimetro</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} kvadratinio centimetro</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} kvadratinio centimetro</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} kvadratinio centimetro</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} kvadratinio centimetro</unitPattern>
 				<unitPattern count="other">{0} kvadratinių centimetrų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} kvadratinių centimetrų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} kvadratinių centimetrų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} kvadratinių centimetrų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} kvadratinių centimetrų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} kvadratinių centimetrų</unitPattern>
 				<perUnitPattern>{0}/cm²</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
@@ -10065,18 +10150,60 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} miligramų decilitre</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
+				<gender draft="contributed">masculine</gender>
 				<displayName>milimoliai litre</displayName>
 				<unitPattern count="one">{0} milimolis litre</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} milimolį litre</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} milimoliui litre</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} milimolio litre</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} milimoliu litre</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} milimolyje litre</unitPattern>
 				<unitPattern count="few">{0} milimoliai litre</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} milimolius litre</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} milimoliams litre</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} milimolio litre</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} milimoliais litre</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} milimoliuose litre</unitPattern>
 				<unitPattern count="many">{0} milimoliai litre</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} milimolio litre</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} milimolio litre</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} milimolio litre</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} milimolio litre</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} milimolio litre</unitPattern>
 				<unitPattern count="other">{0} milimolių litre</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} milimolių litre</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} milimolių litre</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} milimolių litre</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} milimolių litre</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} milimolių litre</unitPattern>
 			</unit>
 			<unit type="concentr-item">
+				<gender draft="contributed">masculine</gender>
 				<displayName>elementas</displayName>
 				<unitPattern count="one">{0} elementas</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} elementą</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} elementui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} elemento</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} elementu</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} elemente</unitPattern>
 				<unitPattern count="few">{0} elementai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} elementus</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} elementams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} elementų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} elementais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} elementuose</unitPattern>
 				<unitPattern count="many">{0} elemento</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} elemento</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} elemento</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} elemento</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} elemento</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} elemento</unitPattern>
 				<unitPattern count="other">{0} elementų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} elementų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} elementų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} elementų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} elementų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} elementų</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
 				<gender>feminine</gender>
@@ -10194,18 +10321,60 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="locative">{0} molių</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
+				<gender draft="contributed">masculine</gender>
 				<displayName>litrai kilometrui</displayName>
 				<unitPattern count="one">{0} litras kilometrui</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} litrą kilometrui</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} litrui kilometrui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} litro kilometrui</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} litru kilometrui</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} litre kilometrui</unitPattern>
 				<unitPattern count="few">{0} litrai kilometrui</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} litrus kilometrui</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} litrams kilometrui</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} litrų kilometrui</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} litrais kilometrui</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} litruose kilometrui</unitPattern>
 				<unitPattern count="many">{0} litro kilometrui</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} litro kilometrui</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} litro kilometrui</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} litro kilometrui</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} litro kilometrui</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} litro kilometrui</unitPattern>
 				<unitPattern count="other">{0} litrų kilometrui</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} litrų kilometrui</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} litrų kilometrui</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} litrų kilometrui</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} litrų kilometrui</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} litrų kilometrui</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
+				<gender draft="contributed">masculine</gender>
 				<displayName>litrai 100 kilometrų</displayName>
 				<unitPattern count="one">{0} litras 100 kilometrų</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} litrą 100 kilometrų</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} litrui 100 kilometrų</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} litro 100 kilometrų</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} litru 100 kilometrų</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} litre 100 kilometrų</unitPattern>
 				<unitPattern count="few">{0} litrai 100 kilometrų</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} litrus 100 kilometrų</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} litrams 100 kilometrų</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} litrų 100 kilometrų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} litrais 100 kilometrų</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} litruose 100 kilometrų</unitPattern>
 				<unitPattern count="many">{0} litro 100 kilometrų</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} litro 100 kilometrų</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} litro 100 kilometrų</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} litro 100 kilometrų</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} litro 100 kilometrų</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} litro 100 kilometrų</unitPattern>
 				<unitPattern count="other">{0} litrų 100 kilometrų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} litrų 100 kilometrų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} litrų 100 kilometrų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} litrų 100 kilometrų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} litrų 100 kilometrų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} litrų 100 kilometrų</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>mylios už galoną</displayName>
@@ -10222,67 +10391,256 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} mylių už imperinį galoną</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
+				<gender draft="contributed">masculine</gender>
 				<displayName>pentabaitai</displayName>
 				<unitPattern count="one">{0} pentabaitas</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} pentabaitą</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} pentabaitui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} pentabaito</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} pentabaitu</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} pentabaite</unitPattern>
 				<unitPattern count="few">{0} PB</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} pentabaitus</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} pentabaitams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} pentabaitų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} pentabaitais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} pentabaituose</unitPattern>
 				<unitPattern count="many">{0} PB</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} pentabaito</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} pentabaito</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} pentabaito</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} pentabaito</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} pentabaito</unitPattern>
 				<unitPattern count="other">{0} pentabaitų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} pentabaitų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} pentabaitų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} pentabaitų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} pentabaitų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} pentabaitų</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
+				<gender draft="contributed">masculine</gender>
 				<displayName>terabaitai</displayName>
 				<unitPattern count="one">{0} terabaitas</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} terabaitą</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} terabaitui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} terabaito</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} terabaitu</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} terabaite</unitPattern>
 				<unitPattern count="few">{0} terabaitai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} terabaitus</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} terabaitams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} terabaitų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} terabaitais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} terabaituose</unitPattern>
 				<unitPattern count="many">{0} terabaito</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} terabaito</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} terabaito</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} terabaito</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} terabaito</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} terabaito</unitPattern>
 				<unitPattern count="other">{0} terabaitų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} terabaitų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} terabaitų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} terabaitų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} terabaitų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} terabaitų</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
+				<gender draft="contributed">masculine</gender>
 				<displayName>terabitai</displayName>
 				<unitPattern count="one">{0} terabitas</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} terabitą</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} terabitui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} terabito</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} terabitu</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} terabite</unitPattern>
 				<unitPattern count="few">{0} terabitai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} terabitus</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} terabitams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} terabitų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} terabitais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} terabituose</unitPattern>
 				<unitPattern count="many">{0} terabito</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} terabito</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} terabito</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} terabito</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} terabito</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} terabito</unitPattern>
 				<unitPattern count="other">{0} terabitų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} terabitų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} terabitų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} terabitų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} terabitų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} terabitų</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
+				<gender draft="contributed">masculine</gender>
 				<displayName>gigabaitai</displayName>
 				<unitPattern count="one">{0} gigabaitas</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} gigabaitą</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} gigabaitui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} gigabaito</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} gigabaitu</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} gigabaite</unitPattern>
 				<unitPattern count="few">{0} gigabaitai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} gigabaitus</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} gigabaitams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} gigabaitų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} gigabaitais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} gigabaituose</unitPattern>
 				<unitPattern count="many">{0} gigabaito</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} gigabaito</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} gigabaito</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} gigabaito</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} gigabaito</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} gigabaito</unitPattern>
 				<unitPattern count="other">{0} gigabaitų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} gigabaitų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} gigabaitų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} gigabaitų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} gigabaitų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} gigabaitų</unitPattern>
 			</unit>
 			<unit type="digital-gigabit">
+				<gender draft="contributed">masculine</gender>
 				<displayName>gigabitai</displayName>
 				<unitPattern count="one">{0} gigabitas</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} gigabitą</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} gigabitui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} gigabito</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} gigabitu</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} gigabite</unitPattern>
 				<unitPattern count="few">{0} gigabitai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} gigabitus</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} gigabitams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} gigabitų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} gigabitais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} gigabituose</unitPattern>
 				<unitPattern count="many">{0} gigabito</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} gigabito</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} gigabito</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} gigabito</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} gigabito</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} gigabito</unitPattern>
 				<unitPattern count="other">{0} gigabitų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} gigabitų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} gigabitų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} gigabitų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} gigabitų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} gigabitų</unitPattern>
 			</unit>
 			<unit type="digital-megabyte">
+				<gender draft="contributed">masculine</gender>
 				<displayName>megabaitai</displayName>
 				<unitPattern count="one">{0} megabaitas</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} megabaitą</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} megabaitui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} megabaito</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} megabaitu</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} megabaite</unitPattern>
 				<unitPattern count="few">{0} megabaitai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} megabaitus</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} megabaitams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} megabaitų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} megabaitais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} megabaituose</unitPattern>
 				<unitPattern count="many">{0} megabaito</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} megabaito</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} megabaito</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} megabaito</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} megabaito</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} megabaito</unitPattern>
 				<unitPattern count="other">{0} megabaitų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} megabaitų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} megabaitų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} megabaitų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} megabaitų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} megabaitų</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
+				<gender draft="contributed">masculine</gender>
 				<displayName>megabitai</displayName>
 				<unitPattern count="one">{0} megabitas</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} megabitą</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} megabitui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} megabito</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} megabitu</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} megabite</unitPattern>
 				<unitPattern count="few">{0} megabitai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} megabitus</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} megabitams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} megabitų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} megabitais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} megabituose</unitPattern>
 				<unitPattern count="many">{0} megabito</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} megabito</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} megabito</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} megabito</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} megabito</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} megabito</unitPattern>
 				<unitPattern count="other">{0} megabitų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} megabitų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} megabitų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} megabitų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} megabitų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} megabitų</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
+				<gender draft="contributed">masculine</gender>
 				<displayName>kilobaitai</displayName>
 				<unitPattern count="one">{0} kilobaitas</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} kilobaitą</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} kilobaitui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} kilobaito</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} kilobaitu</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} kilobaite</unitPattern>
 				<unitPattern count="few">{0} kilobaitai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} kilobaitus</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} kilobaitams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} kilobaitų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} kilobaitais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} kilobaituose</unitPattern>
 				<unitPattern count="many">{0} kilobaito</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} kilobaito</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} kilobaito</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} kilobaito</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} kilobaito</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} kilobaito</unitPattern>
 				<unitPattern count="other">{0} kilobaitų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} kilobaitų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} kilobaitų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} kilobaitų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} kilobaitų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} kilobaitų</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
+				<gender draft="contributed">masculine</gender>
 				<displayName>kilobitai</displayName>
 				<unitPattern count="one">{0} kilobitas</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} kilobitą</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} kilobitui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} kilobito</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} kilobitu</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} kilobite</unitPattern>
 				<unitPattern count="few">{0} kilobitai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} kilobitus</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} kilobitams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} kilobitų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} kilobitais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} kilobituose</unitPattern>
 				<unitPattern count="many">{0} kilobito</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} kilobito</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} kilobito</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} kilobito</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} kilobito</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} kilobito</unitPattern>
 				<unitPattern count="other">{0} kilobitų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} kilobitų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} kilobitų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} kilobitų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} kilobitų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} kilobitų</unitPattern>
 			</unit>
 			<unit type="digital-byte">
 				<gender>masculine</gender>
@@ -10600,25 +10958,88 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0}/s</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
+				<gender draft="contributed">feminine</gender>
 				<displayName>milisekundės</displayName>
 				<unitPattern count="one">{0} milisekundė</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} milisekundę</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} milisekundei</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} milisekundės</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} milisekunde</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} milisekundėje</unitPattern>
 				<unitPattern count="few">{0} milisekundės</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} milisekundes</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} milisekundėms</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} milisekundžių</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} milisekundėmis</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} milisekundėse</unitPattern>
 				<unitPattern count="many">{0} milisekundės</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} milisekundės</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} milisekundės</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} milisekundės</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} milisekundės</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} milisekundės</unitPattern>
 				<unitPattern count="other">{0} milisekundžių</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} milisekundžių</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} milisekundžių</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} milisekundžių</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} milisekundžių</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} milisekundžių</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
+				<gender draft="contributed">feminine</gender>
 				<displayName>mikrosekundės</displayName>
 				<unitPattern count="one">{0} mikrosekundė</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} mikrosekundę</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} mikrosekundei</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} mikrosekundės</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} mikrosekunde</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} mikrosekundėje</unitPattern>
 				<unitPattern count="few">{0} mikrosekundės</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} mikrosekundes</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} mikrosekundėms</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} mikrosekundžių</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} mikrosekundėmis</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} mikrosekundėse</unitPattern>
 				<unitPattern count="many">{0} mikrosekundės</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} mikrosekundės</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} mikrosekundės</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} mikrosekundės</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} mikrosekundės</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} mikrosekundės</unitPattern>
 				<unitPattern count="other">{0} mikrosekundžių</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} mikrosekundžių</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} mikrosekundžių</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} mikrosekundžių</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} mikrosekundžių</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} mikrosekundžių</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
+				<gender draft="contributed">feminine</gender>
 				<displayName>nanosekundės</displayName>
 				<unitPattern count="one">{0} nanosekundė</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} nanosekundę</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} nanosekundei</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} nanosekundės</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} nanosekunde</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} nanosekundėje</unitPattern>
 				<unitPattern count="few">{0} nanosekundės</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} nanosekundes</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} nanosekundėms</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} nanosekundžių</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} nanosekundėmis</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} nanosekundėse</unitPattern>
 				<unitPattern count="many">{0} nanosekundės</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} nanosekundės</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} nanosekundės</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} nanosekundės</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} nanosekundės</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} nanosekundės</unitPattern>
 				<unitPattern count="other">{0} nanosekundžių</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} nanosekundžių</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} nanosekundžių</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} nanosekundžių</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} nanosekundžių</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} nanosekundžių</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
 				<gender>masculine</gender>
@@ -10649,11 +11070,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="locative">{0} amperų</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
+				<gender draft="contributed">masculine</gender>
 				<displayName>miliamperai</displayName>
 				<unitPattern count="one">{0} miliamperas</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} miliamperą</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} miliamperui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} miliampero</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} miliamperu</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} miliampere</unitPattern>
 				<unitPattern count="few">{0} miliamperai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} miliamperus</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} miliamperams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} miliamperų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} miliamperais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} miliamperuose</unitPattern>
 				<unitPattern count="many">{0} miliampero</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} miliampero</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} miliampero</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} miliampero</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} miliampero</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} miliampero</unitPattern>
 				<unitPattern count="other">{0} miliamperų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} miliamperų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} miliamperų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} miliamperų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} miliamperų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} miliamperų</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
 				<gender>masculine</gender>
@@ -10754,11 +11196,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} kalorijų</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
+				<gender draft="contributed">masculine</gender>
 				<displayName>kilodžauliai</displayName>
 				<unitPattern count="one">{0} kilodžaulis</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} kilodžaulį</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} kilodžauliui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} kilodžaulio</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} kilodžauliu</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} kilodžaulyje</unitPattern>
 				<unitPattern count="few">{0} kilodžauliai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} kilodžaulius</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} kilodžauliams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} kilodžaulių</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} kilodžauliais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} kilodžauliuose</unitPattern>
 				<unitPattern count="many">{0} kilodžaulio</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} kilodžaulio</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} kilodžaulio</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} kilodžaulio</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} kilodžaulio</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} kilodžaulio</unitPattern>
 				<unitPattern count="other">{0} kilodžaulių</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} kilodžaulių</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} kilodžaulių</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} kilodžaulių</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} kilodžaulių</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} kilodžaulių</unitPattern>
 			</unit>
 			<unit type="energy-joule">
 				<gender>masculine</gender>
@@ -10789,11 +11252,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="locative">{0} džaulių</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
+				<gender draft="contributed">feminine</gender>
 				<displayName>kilovatvalandės</displayName>
 				<unitPattern count="one">{0} kilovatvalandė</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} kilovatvalandę</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} kilovatvalandei</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} kilovatvalandės</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} kilovatvalande</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} kilovatvalandėje</unitPattern>
 				<unitPattern count="few">{0} kilovatvalandės</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} kilovatvalandes</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} kilovatvalandėms</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} kilovatvalandžių</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} kilovatvalandėmis</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} kilovatvalandėse</unitPattern>
 				<unitPattern count="many">{0} kilovatvalandės</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} kilovatvalandės</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} kilovatvalandės</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} kilovatvalandės</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} kilovatvalandės</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} kilovatvalandės</unitPattern>
 				<unitPattern count="other">{0} kilovatvalandžių</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} kilovatvalandžių</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} kilovatvalandžių</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} kilovatvalandžių</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} kilovatvalandžių</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} kilovatvalandžių</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
 				<displayName>elektronvoltai</displayName>
@@ -10848,32 +11332,116 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="locative">{0} niutonų</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<gender draft="contributed">feminine</gender>
 				<displayName>kilovatvalandės šimtui kilometrų</displayName>
 				<unitPattern count="one">{0} kilovatvalandė šimtui kilometrų</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} kilovatvalandę šimtui kilometrų</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} kilovatvalandei šimtui kilometrų</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} kilovatvalandės šimtui kilometrų</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} kilovatvalande šimtui kilometrų</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} kilovatvalandėje šimtui kilometrų</unitPattern>
 				<unitPattern count="few">{0} kilovatvalandės šimtui kilometrų</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} kilovatvalandes šimtui kilometrų</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} kilovatvalandėms šimtui kilometrų</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} kilovatvalandžių šimtui kilometrų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} kilovatvalandėmis šimtui kilometrų</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} kilovatvalandėse šimtui kilometrų</unitPattern>
 				<unitPattern count="many">{0} kilovatvalandės šimtui kilometrų</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} kilovatvalandės šimtui kilometrų</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} kilovatvalandės šimtui kilometrų</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} kilovatvalandės šimtui kilometrų</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} kilovatvalandės šimtui kilometrų</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} kilovatvalandės šimtui kilometrų</unitPattern>
 				<unitPattern count="other">{0} kilovatvalandžių šimtui kilometrų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} kilovatvalandžių šimtui kilometrų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} kilovatvalandžių šimtui kilometrų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} kilovatvalandžių šimtui kilometrų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} kilovatvalandžių šimtui kilometrų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} kilovatvalandžių šimtui kilometrų</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
+				<gender draft="contributed">masculine</gender>
 				<displayName>gigahercai</displayName>
 				<unitPattern count="one">{0} gigahercas</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} gigahercą</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} gigahercui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} gigaherco</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} gigahercu</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} gigaherce</unitPattern>
 				<unitPattern count="few">{0} gigahercai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} gigahercus</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} gigahercams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} gigahercų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} gigahercais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} gigahercuose</unitPattern>
 				<unitPattern count="many">{0} gigaherco</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} gigaherco</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} gigaherco</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} gigaherco</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} gigaherco</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} gigaherco</unitPattern>
 				<unitPattern count="other">{0} gigahercų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} gigahercų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} gigahercų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} gigahercų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} gigahercų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} gigahercų</unitPattern>
 			</unit>
 			<unit type="frequency-megahertz">
+				<gender draft="contributed">masculine</gender>
 				<displayName>megahercai</displayName>
 				<unitPattern count="one">{0} megahercas</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} megahercą</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} megahercui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} megaherco</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} megahercu</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} megaherce</unitPattern>
 				<unitPattern count="few">{0} megahercai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} megahercus</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} megahercams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} megahercų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} megahercais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} megahercuose</unitPattern>
 				<unitPattern count="many">{0} megaherco</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} megaherco</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} megaherco</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} megaherco</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} megaherco</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} megaherco</unitPattern>
 				<unitPattern count="other">{0} megahercų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} megahercų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} megahercų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} megahercų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} megahercų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} megahercų</unitPattern>
 			</unit>
 			<unit type="frequency-kilohertz">
+				<gender draft="contributed">masculine</gender>
 				<displayName>kilohercai</displayName>
 				<unitPattern count="one">{0} kilohercas</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} kilohercą</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} kilohercui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} kiloherco</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} kilohercu</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} kiloherce</unitPattern>
 				<unitPattern count="few">{0} kilohercai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} kilohercus</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} kilohercams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} kilohercų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} kilohercais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} kilohercuose</unitPattern>
 				<unitPattern count="many">{0} kiloherco</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} kiloherco</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} kiloherco</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} kiloherco</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} kiloherco</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} kiloherco</unitPattern>
 				<unitPattern count="other">{0} kilohercų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} kilohercų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} kilohercų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} kilohercų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} kilohercų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} kilohercų</unitPattern>
 			</unit>
 			<unit type="frequency-hertz">
 				<gender>masculine</gender>
@@ -10960,18 +11528,60 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="locative">{0} pikselių</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
+				<gender draft="contributed">masculine</gender>
 				<displayName>megapikseliai</displayName>
 				<unitPattern count="one">{0} megapikselis</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} megapikselį</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} megapikseliui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} megapikselio</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} megapikseliu</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} megapikselyje</unitPattern>
 				<unitPattern count="few">{0} megapikseliai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} megapikselius</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} megapikseliams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} megapikselių</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} megapikseliais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} megapikseliuose</unitPattern>
 				<unitPattern count="many">{0} megapikselio</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} megapikselio</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} megapikselio</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} megapikselio</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} megapikselio</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} megapikselio</unitPattern>
 				<unitPattern count="other">{0} megapikselių</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} megapikselių</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} megapikselių</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} megapikselių</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} megapikselių</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} megapikselių</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-centimeter">
+				<gender draft="contributed">masculine</gender>
 				<displayName>pikseliai centimetre</displayName>
 				<unitPattern count="one">{0} pikselis centimetre</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} pikselį centimetre</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} pikseliui centimetre</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} pikselio centimetre</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} pikseliu centimetre</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} pikselyje centimetre</unitPattern>
 				<unitPattern count="few">{0} pikseliai centimetre</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} pikselius centimetre</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} pikseliams centimetre</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} pikselių centimetre</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} pikseliais centimetre</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} pikseliuose centimetre</unitPattern>
 				<unitPattern count="many">{0} pikselio centimetre</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} pikselio centimetre</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} pikselio centimetre</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} pikselio centimetre</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} pikselio centimetre</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} pikselio centimetre</unitPattern>
 				<unitPattern count="other">{0} pikselių centimetre</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} pikselių centimetre</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} pikselių centimetre</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} pikselių centimetre</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} pikselių centimetre</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} pikselių centimetre</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-inch">
 				<displayName>pikseliai colyje</displayName>
@@ -11009,11 +11619,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} žemės spindulių</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
+				<gender draft="contributed">masculine</gender>
 				<displayName>kilometrai</displayName>
 				<unitPattern count="one">{0} kilometras</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} kilometrą</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} kilometrui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} kilometro</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} kilometru</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} kilometre</unitPattern>
 				<unitPattern count="few">{0} kilometrai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} kilometrus</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} kilometrams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} kilometrų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} kilometrais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} kilometruose</unitPattern>
 				<unitPattern count="many">{0} kilometro</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} kilometro</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} kilometro</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} kilometro</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} kilometro</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} kilometro</unitPattern>
 				<unitPattern count="other">{0} kilometrų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} kilometrų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} kilometrų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} kilometrų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} kilometrų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} kilometrų</unitPattern>
 				<perUnitPattern>{0}/km</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
@@ -11046,47 +11677,173 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0}/m</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
+				<gender draft="contributed">masculine</gender>
 				<displayName>decimetrai</displayName>
 				<unitPattern count="one">{0} decimetras</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} decimetrą</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} decimetrui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} decimetro</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} decimetru</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} decimetre</unitPattern>
 				<unitPattern count="few">{0} decimetrai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} decimetrus</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} decimetrams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} decimetrų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} decimetrais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} decimetruose</unitPattern>
 				<unitPattern count="many">{0} decimetro</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} decimetro</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} decimetro</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} decimetro</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} decimetro</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} decimetro</unitPattern>
 				<unitPattern count="other">{0} decimetrų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} decimetrų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} decimetrų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} decimetrų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} decimetrų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} decimetrų</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
+				<gender draft="contributed">masculine</gender>
 				<displayName>centimetrai</displayName>
 				<unitPattern count="one">{0} centimetras</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} centimetrą</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} centimetrui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} centimetro</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} centimetru</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} centimetre</unitPattern>
 				<unitPattern count="few">{0} centimetrai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} centimetrus</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} centimetrams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} centimetrų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} centimetruose</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} centimetrai</unitPattern>
 				<unitPattern count="many">{0} centimetro</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} centimetro</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} centimetro</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} centimetro</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} centimetro</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} centimetro</unitPattern>
 				<unitPattern count="other">{0} centimetrų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} centimetrų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} centimetrų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} centimetrų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} centimetrų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} centimetrų</unitPattern>
 				<perUnitPattern>{0}/cm</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
+				<gender draft="contributed">masculine</gender>
 				<displayName>milimetrai</displayName>
 				<unitPattern count="one">{0} milimetras</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} milimetrą</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} milimetrui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} milimetro</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} milimetru</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} milimetre</unitPattern>
 				<unitPattern count="few">{0} milimetrai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} milimetrus</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} milimetrams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} milimetrų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} milimetrais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} milimetruose</unitPattern>
 				<unitPattern count="many">{0} milimetro</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} milimetro</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} milimetro</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} milimetro</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} milimetro</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} milimetro</unitPattern>
 				<unitPattern count="other">{0} milimetrų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} milimetrų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} milimetrų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} milimetrų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} milimetrų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} milimetrų</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
+				<gender draft="contributed">masculine</gender>
 				<displayName>mikrometrai</displayName>
 				<unitPattern count="one">{0} mikrometras</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} mikrometrą</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} mikrometrui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} mikrometro</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} mikrometru</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} mikrometre</unitPattern>
 				<unitPattern count="few">{0} mikrometrai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} mikrometrus</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} mikrometrams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} mikrometrų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} mikrometrais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} mikrometruose</unitPattern>
 				<unitPattern count="many">{0} mikrometro</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} mikrometro</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} mikrometro</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} mikrometro</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} mikrometro</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} mikrometro</unitPattern>
 				<unitPattern count="other">{0} mikrometrų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} mikrometrų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} mikrometrų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} mikrometrų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} mikrometrų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} mikrometrų</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
+				<gender draft="contributed">masculine</gender>
 				<displayName>nanometrai</displayName>
 				<unitPattern count="one">{0} nanometras</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} nanometrą</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} nanometrui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} nanometro</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} nanometru</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} nanometre</unitPattern>
 				<unitPattern count="few">{0} nanometrai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} nanometrus</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} nanometrams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} nanometrų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} nanometrais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} nanometruose</unitPattern>
 				<unitPattern count="many">{0} nanometro</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} nanometro</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} nanometro</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} nanometro</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} nanometro</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} nanometro</unitPattern>
 				<unitPattern count="other">{0} nanometrų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} nanometrų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} nanometrų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} nanometrų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} nanometrų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} nanometrų</unitPattern>
 			</unit>
 			<unit type="length-picometer">
+				<gender draft="contributed">masculine</gender>
 				<displayName>pikometrai</displayName>
 				<unitPattern count="one">{0} pikometras</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} pikometrą</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} pikometrui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} pikometro</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} pikometru</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} pikometre</unitPattern>
 				<unitPattern count="few">{0} pikometrai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} pikometrus</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} pikometrams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} pikometrų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} pikometrais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} pikometruose</unitPattern>
 				<unitPattern count="many">{0} pikometro</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} pikometro</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} pikometro</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} pikometro</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} pikometro</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} pikometro</unitPattern>
 				<unitPattern count="other">{0} pikometrų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} pikometrų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} pikometrų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} pikometrų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} pikometrų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} pikometrų</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<displayName>mylios</displayName>
@@ -11372,18 +12129,60 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0}/g</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
+				<gender draft="contributed">masculine</gender>
 				<displayName>miligramai</displayName>
 				<unitPattern count="one">{0} miligramas</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} miligramą</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} miligramui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} miligramo</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} miligramu</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} miligrame</unitPattern>
 				<unitPattern count="few">{0} miligramai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} miligramus</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} miligramams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} miligramų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} miligramais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} miligramuose</unitPattern>
 				<unitPattern count="many">{0} miligramo</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} miligramo</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} miligramo</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} miligramo</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} miligramo</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} miligramo</unitPattern>
 				<unitPattern count="other">{0} miligramų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} miligramų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} miligramų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} miligramų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} miligramų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} miligramų</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
+				<gender>masculine</gender>
 				<displayName>mikrogramai</displayName>
 				<unitPattern count="one">{0} mikrogramas</unitPattern>
+				<unitPattern count="one" case="accusative">{0} mikrogramą</unitPattern>
+				<unitPattern count="one" case="dative">{0} mikrogramui</unitPattern>
+				<unitPattern count="one" case="genitive">{0} mikrogramo</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} mikrogramu</unitPattern>
+				<unitPattern count="one" case="locative">{0} mikrograme</unitPattern>
 				<unitPattern count="few">{0} mikrogramai</unitPattern>
+				<unitPattern count="few" case="accusative">{0} mikrogramus</unitPattern>
+				<unitPattern count="few" case="dative">{0} mikrogramams</unitPattern>
+				<unitPattern count="few" case="genitive">{0} mikrogramų</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} mikrogramais</unitPattern>
+				<unitPattern count="few" case="locative">{0} mikrogramuose</unitPattern>
 				<unitPattern count="many">{0} mikrogramo</unitPattern>
+				<unitPattern count="many" case="accusative">{0} mikrogramo</unitPattern>
+				<unitPattern count="many" case="dative">{0} mikrogramo</unitPattern>
+				<unitPattern count="many" case="genitive">{0} mikrogramo</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} mikrogramo</unitPattern>
+				<unitPattern count="many" case="locative">{0} mikrogramo</unitPattern>
 				<unitPattern count="other">{0} mikrogramų</unitPattern>
+				<unitPattern count="other" case="accusative">{0} mikrogramų</unitPattern>
+				<unitPattern count="other" case="dative">{0} mikrogramų</unitPattern>
+				<unitPattern count="other" case="genitive">{0} mikrogramų</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} mikrogramų</unitPattern>
+				<unitPattern count="other" case="locative">{0} mikrogramų</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>tonos</displayName>
@@ -11471,25 +12270,88 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} grūdų</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
+				<gender draft="contributed">masculine</gender>
 				<displayName>gigavatai</displayName>
 				<unitPattern count="one">{0} gigavatas</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} gigavatą</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} gigavatui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} gigavato</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} gigavatu</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} gigavate</unitPattern>
 				<unitPattern count="few">{0} gigavatai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} gigavatus</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} gigavatams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} gigavatų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} gigavatais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} gigavatuose</unitPattern>
 				<unitPattern count="many">{0} gigavato</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} gigavato</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} gigavato</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} gigavato</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} gigavato</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} gigavato</unitPattern>
 				<unitPattern count="other">{0} gigavatų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} gigavatų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} gigavatų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} gigavatų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} gigavatų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} gigavatų</unitPattern>
 			</unit>
 			<unit type="power-megawatt">
+				<gender draft="contributed">masculine</gender>
 				<displayName>megavatai</displayName>
 				<unitPattern count="one">{0} megavatas</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} megavatą</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} megavatui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} megavatų</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} megavatais</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} megavatuose</unitPattern>
 				<unitPattern count="few">{0} megavatai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} megavatus</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} megavatams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} megavatų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} megavatais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} megavatuose</unitPattern>
 				<unitPattern count="many">{0} megavato</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} megavato</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} megavato</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} megavato</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} megavato</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} megavato</unitPattern>
 				<unitPattern count="other">{0} megavatų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} megavatų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} megavatų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} megavatų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} megavatų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} megavatų</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
+				<gender draft="contributed">masculine</gender>
 				<displayName>kilovatai</displayName>
 				<unitPattern count="one">{0} kilovatas</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} kilovatą</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} kilovatui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} kilovato</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} kilovatu</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} kilovate</unitPattern>
 				<unitPattern count="few">{0} kilovatai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} kilovatus</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} kilovatams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} kilovatų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} kilovatais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} kilovatuose</unitPattern>
 				<unitPattern count="many">{0} kilovato</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} kilovato</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} kilovato</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} kilovato</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} kilovato</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} kilovato</unitPattern>
 				<unitPattern count="other">{0} kilovatų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} kilovatų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} kilovatų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} kilovatų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} kilovatų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} kilovatų</unitPattern>
 			</unit>
 			<unit type="power-watt">
 				<gender>masculine</gender>
@@ -11520,11 +12382,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="locative">{0} vatų</unitPattern>
 			</unit>
 			<unit type="power-milliwatt">
+				<gender draft="contributed">masculine</gender>
 				<displayName>milivatai</displayName>
 				<unitPattern count="one">{0} milivatas</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} milivatą</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} milivatui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} milivato</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} milivatu</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} milivate</unitPattern>
 				<unitPattern count="few">{0} milivatai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} milivatus</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} milivatams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} milivatų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} milivatais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} milivatuose</unitPattern>
 				<unitPattern count="many">{0} milivato</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} milivato</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} milivato</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} milivato</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} milivato</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} milivato</unitPattern>
 				<unitPattern count="other">{0} milivatų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} milivatų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} milivatų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} milivatų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} milivatų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} milivatų</unitPattern>
 			</unit>
 			<unit type="power-horsepower">
 				<displayName>arklio galios</displayName>
@@ -11583,11 +12466,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="locative">{0} barų</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
+				<gender draft="contributed">masculine</gender>
 				<displayName>milibarai</displayName>
 				<unitPattern count="one">{0} milibaras</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} milibarą</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} milibarui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} milibaro</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} milibarais</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} milibaruose</unitPattern>
 				<unitPattern count="few">{0} milibarai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} milibarus</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} milibarams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} milibarų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} milibarais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} milibaruose</unitPattern>
 				<unitPattern count="many">{0} milibaro</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} milibaro</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} milibaro</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} milibaro</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} milibaro</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} milibaro</unitPattern>
 				<unitPattern count="other">{0} milibarų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} milibarų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} milibarų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} milibarų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} milibarų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} milibarų</unitPattern>
 			</unit>
 			<unit type="pressure-atmosphere">
 				<gender>feminine</gender>
@@ -11646,39 +12550,144 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="locative">{0} paskalių</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
+				<gender draft="contributed">masculine</gender>
 				<displayName>hektopaskaliai</displayName>
 				<unitPattern count="one">{0} hektopaskalis</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} hektopaskalį</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} hektopaskaliui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} hektopaskalio</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} hektopaskaliu</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} hektopaskalyje</unitPattern>
 				<unitPattern count="few">{0} hektopaskaliai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} hektopaskalius</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} hektopaskaliams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} hektopaskalių</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} hektopaskaliais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} hektopaskaliuose</unitPattern>
 				<unitPattern count="many">{0} hektopaskalio</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} hektopaskalio</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} hektopaskalio</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} hektopaskalio</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} hektopaskalio</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} hektopaskalio</unitPattern>
 				<unitPattern count="other">{0} hektopaskalių</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} hektopaskalių</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} hektopaskalių</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} hektopaskalių</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} hektopaskalių</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} hektopaskalių</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
+				<gender draft="contributed">masculine</gender>
 				<displayName>kilopaskaliai</displayName>
 				<unitPattern count="one">{0} kilopaskalis</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} kilopaskalį</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} kilopaskaliui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} kilopaskalio</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} kilopaskaliu</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} kilopaskaliuose</unitPattern>
 				<unitPattern count="few">{0} kilopaskaliai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} kilopaskalius</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} kilopaskaliams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} kilopaskalių</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} kilopaskaliais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} kilopaskaliuose</unitPattern>
 				<unitPattern count="many">{0} kilopaskalio</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} kilopaskalio</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} kilopaskalio</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} kilopaskalio</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} kilopaskalio</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} kilopaskalio</unitPattern>
 				<unitPattern count="other">{0} kilopaskalių</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} kilopaskalių</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} kilopaskalių</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} kilopaskalių</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} kilopaskalių</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} kilopaskalių</unitPattern>
 			</unit>
 			<unit type="pressure-megapascal">
+				<gender draft="contributed">masculine</gender>
 				<displayName>megapaskaliai</displayName>
 				<unitPattern count="one">{0} megapaskalis</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} megapaskalį</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} megapaskaliui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} megapaskalio</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} megapaskaliu</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} megapaskalyje</unitPattern>
 				<unitPattern count="few">{0} megapaskaliai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} megapaskalius</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} megapaskaliams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} megapaskalių</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} megapaskaliais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} megapaskaliuose</unitPattern>
 				<unitPattern count="many">{0} megapaskalio</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} megapaskalio</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} megapaskalio</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} megapaskalio</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} megapaskalio</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} megapaskalio</unitPattern>
 				<unitPattern count="other">{0} megapaskalių</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} megapaskalių</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} megapaskalių</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} megapaskalių</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} megapaskalių</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} megapaskalių</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
+				<gender>masculine</gender>
 				<displayName>kilometrai per valandą</displayName>
 				<unitPattern count="one">{0} kilometras per valandą</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilometrą per valandą</unitPattern>
+				<unitPattern count="one" case="dative">{0} kilometrui per valandą</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilometro per valandą</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilometru per valandą</unitPattern>
+				<unitPattern count="one" case="locative">{0} kilometre per valandą</unitPattern>
 				<unitPattern count="few">{0} kilometrai per valandą</unitPattern>
+				<unitPattern count="few" case="accusative">{0} kilometrus per valandą</unitPattern>
+				<unitPattern count="few" case="dative">{0} kilometrams per valandą</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilometrų per valandą</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} kilometrais per valandą</unitPattern>
+				<unitPattern count="few" case="locative">{0} kilometruose per valandą</unitPattern>
 				<unitPattern count="many">{0} kilometro per valandą</unitPattern>
+				<unitPattern count="many" case="accusative">{0} kilometro per valandą</unitPattern>
+				<unitPattern count="many" case="dative">{0} kilometro per valandą</unitPattern>
+				<unitPattern count="many" case="genitive">{0} kilometro per valandą</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} kilometro per valandą</unitPattern>
+				<unitPattern count="many" case="locative">{0} kilometro per valandą</unitPattern>
 				<unitPattern count="other">{0} kilometrų per valandą</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilometrų per valandą</unitPattern>
+				<unitPattern count="other" case="dative">{0} kilometrų per valandą</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilometrų per valandą</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kilometrų per valandą</unitPattern>
+				<unitPattern count="other" case="locative">{0} kilometrų per valandą</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
+				<gender>masculine</gender>
 				<displayName>metrai per sekundę</displayName>
 				<unitPattern count="one">{0} metras per sekundę</unitPattern>
+				<unitPattern count="one" case="accusative">{0} metrą per sekundę</unitPattern>
+				<unitPattern count="one" case="dative">{0} metrui per sekundę</unitPattern>
+				<unitPattern count="one" case="genitive">{0} metro per sekundę</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} metru per sekundę</unitPattern>
+				<unitPattern count="one" case="locative">{0} metre per sekundę</unitPattern>
 				<unitPattern count="few">{0} metrai per sekundę</unitPattern>
+				<unitPattern count="few" case="accusative">{0} metrus per sekundę</unitPattern>
+				<unitPattern count="few" case="dative">{0} metrams per sekundę</unitPattern>
+				<unitPattern count="few" case="genitive">{0} metrų per sekundę</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} metrais per sekundę</unitPattern>
+				<unitPattern count="few" case="locative">{0} metruose per sekundę</unitPattern>
 				<unitPattern count="many">{0} metro per sekundę</unitPattern>
+				<unitPattern count="many" case="accusative">{0} metro per sekundę</unitPattern>
+				<unitPattern count="many" case="dative">{0} metro per sekundę</unitPattern>
+				<unitPattern count="many" case="genitive">{0} metro per sekundę</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} metro per sekundę</unitPattern>
+				<unitPattern count="many" case="locative">{0} metro per sekundę</unitPattern>
 				<unitPattern count="other">{0} metrų per sekundę</unitPattern>
+				<unitPattern count="other" case="accusative">{0} metrų per sekundę</unitPattern>
+				<unitPattern count="other" case="dative">{0} metrų per sekundę</unitPattern>
+				<unitPattern count="other" case="genitive">{0} metrų per sekundę</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} metrų per sekundę</unitPattern>
+				<unitPattern count="other" case="locative">{0} metrų per sekundę</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
 				<displayName>mylios per valandą</displayName>
@@ -11789,33 +12798,117 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>svarų pėdos</displayName>
 			</unit>
 			<unit type="torque-newton-meter">
+				<gender draft="contributed">masculine</gender>
 				<displayName>niutonmetrai</displayName>
 				<unitPattern count="one">{0} niutonmetras</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} niutonmetrą</unitPattern>
+				<unitPattern count="one" case="dative" draft="contributed">{0} niutonmetrui</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} niutonmetro</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="contributed">{0} niutonmetru</unitPattern>
+				<unitPattern count="one" case="locative" draft="contributed">{0} niutonmetre</unitPattern>
 				<unitPattern count="few">{0} niutonmetrai</unitPattern>
+				<unitPattern count="few" case="accusative" draft="contributed">{0} niutonmetrus</unitPattern>
+				<unitPattern count="few" case="dative" draft="contributed">{0} niutonmetrams</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} niutonmetrų</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="contributed">{0} niutonmetrais</unitPattern>
+				<unitPattern count="few" case="locative" draft="contributed">{0} niutonmetruose</unitPattern>
 				<unitPattern count="many">{0} niutonmetro</unitPattern>
+				<unitPattern count="many" case="accusative" draft="contributed">{0} niutonmetro</unitPattern>
+				<unitPattern count="many" case="dative" draft="contributed">{0} niutonmetro</unitPattern>
+				<unitPattern count="many" case="genitive" draft="contributed">{0} niutonmetro</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="contributed">{0} niutonmetro</unitPattern>
+				<unitPattern count="many" case="locative" draft="contributed">{0} niutonmetro</unitPattern>
 				<unitPattern count="other">{0} niutonmetrų</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} niutonmetrų</unitPattern>
+				<unitPattern count="other" case="dative" draft="contributed">{0} niutonmetrų</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} niutonmetrų</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="contributed">{0} niutonmetrų</unitPattern>
+				<unitPattern count="other" case="locative" draft="contributed">{0} niutonmetrų</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
+				<gender>masculine</gender>
 				<displayName>kubiniai kilometrai</displayName>
 				<unitPattern count="one">{0} kubinis kilometras</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kubinį kilometrą</unitPattern>
+				<unitPattern count="one" case="dative">{0} kubiniam kilometrui</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kubinio kilometro</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kubiniu kilometru</unitPattern>
+				<unitPattern count="one" case="locative">{0} kubiniame kilometre</unitPattern>
 				<unitPattern count="few">{0} kubiniai kilimetrai</unitPattern>
+				<unitPattern count="few" case="accusative">{0} kubinius kilometrus</unitPattern>
+				<unitPattern count="few" case="dative">{0} kubiniams kilometrams</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kubinių kilometrų</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} kubiniais kilometrais</unitPattern>
+				<unitPattern count="few" case="locative">{0} kubiniuose kilometruose</unitPattern>
 				<unitPattern count="many">{0} kubinio kilometro</unitPattern>
+				<unitPattern count="many" case="accusative">{0} kubinio kilometro</unitPattern>
+				<unitPattern count="many" case="dative">{0} kubinio kilometro</unitPattern>
+				<unitPattern count="many" case="genitive">{0} kubinio kilometro</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} kubinio kilometro</unitPattern>
+				<unitPattern count="many" case="locative">{0} kubinio kilometro</unitPattern>
 				<unitPattern count="other">{0} kubinių kilometrų</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kubinių kilometrų</unitPattern>
+				<unitPattern count="other" case="dative">{0} kubinių kilometrų</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kubinių kilometrų</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kubinių kilometrų</unitPattern>
+				<unitPattern count="other" case="locative">{0} kubinių kilometrų</unitPattern>
 			</unit>
 			<unit type="volume-cubic-meter">
+				<gender>masculine</gender>
 				<displayName>kubiniai metrai</displayName>
 				<unitPattern count="one">{0} kubinis metras</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kubinį metrą</unitPattern>
+				<unitPattern count="one" case="dative">{0} kubiniam metrui</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kubinio metro</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kubiniu metru</unitPattern>
+				<unitPattern count="one" case="locative">{0} kubiniame metre</unitPattern>
 				<unitPattern count="few">{0} kubiniai metrai</unitPattern>
+				<unitPattern count="few" case="accusative">{0} kubinius metrus</unitPattern>
+				<unitPattern count="few" case="dative">{0} kubiniams metrams</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kubinių metrų</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} kubiniais metrais</unitPattern>
+				<unitPattern count="few" case="locative">{0} kubiniuose metruose</unitPattern>
 				<unitPattern count="many">{0} kubinio metro</unitPattern>
+				<unitPattern count="many" case="accusative">{0} kubinio metro</unitPattern>
+				<unitPattern count="many" case="dative">{0} kubinio metro</unitPattern>
+				<unitPattern count="many" case="genitive">{0} kubinio metro</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} kubinio metro</unitPattern>
+				<unitPattern count="many" case="locative">{0} kubinio metro</unitPattern>
 				<unitPattern count="other">{0} kubinių metrų</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kubinių metrų</unitPattern>
+				<unitPattern count="other" case="dative">{0} kubinių metrų</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kubinių metrų</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kubinių metrų</unitPattern>
+				<unitPattern count="other" case="locative">{0} kubinių metrų</unitPattern>
 				<perUnitPattern>{0}/m³</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
+				<gender>masculine</gender>
 				<displayName>kubiniai centimetrai</displayName>
 				<unitPattern count="one">{0} kubinis centimetras</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kubinį centimetrą</unitPattern>
+				<unitPattern count="one" case="dative">{0} kubiniam centimetrui</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kubinio centimetro</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kubiniu centimetru</unitPattern>
+				<unitPattern count="one" case="locative">{0} kubiniame centimetre</unitPattern>
 				<unitPattern count="few">{0} kubiniai centimetrai</unitPattern>
+				<unitPattern count="few" case="accusative">{0} kubinius centimetrus</unitPattern>
+				<unitPattern count="few" case="dative">{0} kubiniams centimetrams</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kubinių centimetrų</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} kubiniais centimetrais</unitPattern>
+				<unitPattern count="few" case="locative">{0} kubiniuose centimetruose</unitPattern>
 				<unitPattern count="many">{0} kubinio centimetro</unitPattern>
+				<unitPattern count="many" case="accusative">{0} kubinio centimetro</unitPattern>
+				<unitPattern count="many" case="dative">{0} kubinio centimetro</unitPattern>
+				<unitPattern count="many" case="genitive">{0} kubinio centimetro</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} kubinio centimetro</unitPattern>
+				<unitPattern count="many" case="locative">{0} kubinio centimetro</unitPattern>
 				<unitPattern count="other">{0} kubinių centimetrų</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kubinių centimetrų</unitPattern>
+				<unitPattern count="other" case="dative">{0} kubinių centimetrų</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kubinių centimetrų</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kubinių centimetrų</unitPattern>
+				<unitPattern count="other" case="locative">{0} kubinių centimetrų</unitPattern>
 				<perUnitPattern>{0}/cm³</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
@@ -11847,18 +12940,60 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} kubinių colių</unitPattern>
 			</unit>
 			<unit type="volume-megaliter">
+				<gender>masculine</gender>
 				<displayName>megalitrai</displayName>
 				<unitPattern count="one">{0} megalitras</unitPattern>
+				<unitPattern count="one" case="accusative">{0} megalitrą</unitPattern>
+				<unitPattern count="one" case="dative">{0} megalitrui</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megalitro</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} megalitru</unitPattern>
+				<unitPattern count="one" case="locative">{0} megalitre</unitPattern>
 				<unitPattern count="few">{0} megalitrai</unitPattern>
+				<unitPattern count="few" case="accusative">{0} megalitrus</unitPattern>
+				<unitPattern count="few" case="dative">{0} megalitrams</unitPattern>
+				<unitPattern count="few" case="genitive">{0} megalitrų</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} megalitrais</unitPattern>
+				<unitPattern count="few" case="locative">{0} megalitruose</unitPattern>
 				<unitPattern count="many">{0} megalitro</unitPattern>
+				<unitPattern count="many" case="accusative">{0} megalitro</unitPattern>
+				<unitPattern count="many" case="dative">{0} megalitro</unitPattern>
+				<unitPattern count="many" case="genitive">{0} megalitro</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} megalitro</unitPattern>
+				<unitPattern count="many" case="locative">{0} megalitro</unitPattern>
 				<unitPattern count="other">{0} megalitrų</unitPattern>
+				<unitPattern count="other" case="accusative">{0} megalitrų</unitPattern>
+				<unitPattern count="other" case="dative">{0} megalitrų</unitPattern>
+				<unitPattern count="other" case="genitive">{0} megalitrų</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} megalitrų</unitPattern>
+				<unitPattern count="other" case="locative">{0} megalitrų</unitPattern>
 			</unit>
 			<unit type="volume-hectoliter">
+				<gender>masculine</gender>
 				<displayName>hektolitrai</displayName>
 				<unitPattern count="one">{0} hektolitras</unitPattern>
+				<unitPattern count="one" case="accusative">{0} hektolitrą</unitPattern>
+				<unitPattern count="one" case="dative">{0} hektolitrui</unitPattern>
+				<unitPattern count="one" case="genitive">{0} hektolitro</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} hektolitru</unitPattern>
+				<unitPattern count="one" case="locative">{0} hektolitre</unitPattern>
 				<unitPattern count="few">{0} hektolitrai</unitPattern>
+				<unitPattern count="few" case="accusative">{0} hektolitrus</unitPattern>
+				<unitPattern count="few" case="dative">{0} hektolitrams</unitPattern>
+				<unitPattern count="few" case="genitive">{0} hektolitrų</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} hektolitrais</unitPattern>
+				<unitPattern count="few" case="locative">{0} hektolitruose</unitPattern>
 				<unitPattern count="many">{0} hektolitro</unitPattern>
+				<unitPattern count="many" case="accusative">{0} hektolitro</unitPattern>
+				<unitPattern count="many" case="dative">{0} hektolitro</unitPattern>
+				<unitPattern count="many" case="genitive">{0} hektolitro</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} hektolitro</unitPattern>
+				<unitPattern count="many" case="locative">{0} hektolitro</unitPattern>
 				<unitPattern count="other">{0} hektolitrų</unitPattern>
+				<unitPattern count="other" case="accusative">{0} hektolitrų</unitPattern>
+				<unitPattern count="other" case="dative">{0} hektolitrų</unitPattern>
+				<unitPattern count="other" case="genitive">{0} hektolitrų</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} hektolitrų</unitPattern>
+				<unitPattern count="other" case="locative">{0} hektolitrų</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<gender>masculine</gender>
@@ -11890,25 +13025,88 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0}/l</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
+				<gender>masculine</gender>
 				<displayName>decilitrai</displayName>
 				<unitPattern count="one">{0} decilitras</unitPattern>
+				<unitPattern count="one" case="accusative">{0} decilitrą</unitPattern>
+				<unitPattern count="one" case="dative">{0} decilitrui</unitPattern>
+				<unitPattern count="one" case="genitive">{0} decilitro</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} decilitru</unitPattern>
+				<unitPattern count="one" case="locative">{0} decilitre</unitPattern>
 				<unitPattern count="few">{0} decilitrai</unitPattern>
+				<unitPattern count="few" case="accusative">{0} decilitrus</unitPattern>
+				<unitPattern count="few" case="dative">{0} decilitrams</unitPattern>
+				<unitPattern count="few" case="genitive">{0} decilitrų</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} decilitrais</unitPattern>
+				<unitPattern count="few" case="locative">{0} decilitruose</unitPattern>
 				<unitPattern count="many">{0} decilitro</unitPattern>
+				<unitPattern count="many" case="accusative">{0} decilitro</unitPattern>
+				<unitPattern count="many" case="dative">{0} decilitro</unitPattern>
+				<unitPattern count="many" case="genitive">{0} decilitro</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} decilitro</unitPattern>
+				<unitPattern count="many" case="locative">{0} decilitro</unitPattern>
 				<unitPattern count="other">{0} decilitrų</unitPattern>
+				<unitPattern count="other" case="accusative">{0} decilitrų</unitPattern>
+				<unitPattern count="other" case="dative">{0} decilitrų</unitPattern>
+				<unitPattern count="other" case="genitive">{0} decilitrų</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} decilitrų</unitPattern>
+				<unitPattern count="other" case="locative">{0} decilitrų</unitPattern>
 			</unit>
 			<unit type="volume-centiliter">
+				<gender>masculine</gender>
 				<displayName>centilitrai</displayName>
 				<unitPattern count="one">{0} centilitras</unitPattern>
+				<unitPattern count="one" case="accusative">{0} centilitrą</unitPattern>
+				<unitPattern count="one" case="dative">{0} centilitrui</unitPattern>
+				<unitPattern count="one" case="genitive">{0} centilitro</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} centilitru</unitPattern>
+				<unitPattern count="one" case="locative">{0} centilitre</unitPattern>
 				<unitPattern count="few">{0} centilitrai</unitPattern>
+				<unitPattern count="few" case="accusative">{0} centilitrus</unitPattern>
+				<unitPattern count="few" case="dative">{0} centilitrams</unitPattern>
+				<unitPattern count="few" case="genitive">{0} centilitrų</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} centilitrais</unitPattern>
+				<unitPattern count="few" case="locative">{0} centilitruose</unitPattern>
 				<unitPattern count="many">{0} centilitro</unitPattern>
+				<unitPattern count="many" case="accusative">{0} centilitro</unitPattern>
+				<unitPattern count="many" case="dative">{0} centilitro</unitPattern>
+				<unitPattern count="many" case="genitive">{0} centilitro</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} centilitro</unitPattern>
+				<unitPattern count="many" case="locative">{0} centilitro</unitPattern>
 				<unitPattern count="other">{0} centilitrų</unitPattern>
+				<unitPattern count="other" case="accusative">{0} centilitrų</unitPattern>
+				<unitPattern count="other" case="dative">{0} centilitrų</unitPattern>
+				<unitPattern count="other" case="genitive">{0} centilitrų</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} centilitrų</unitPattern>
+				<unitPattern count="other" case="locative">{0} centilitrų</unitPattern>
 			</unit>
 			<unit type="volume-milliliter">
+				<gender>masculine</gender>
 				<displayName>mililitrai</displayName>
 				<unitPattern count="one">{0} mililitras</unitPattern>
+				<unitPattern count="one" case="accusative">{0} mililitrą</unitPattern>
+				<unitPattern count="one" case="dative">{0} mililitrui</unitPattern>
+				<unitPattern count="one" case="genitive">{0} mililitro</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} mililitru</unitPattern>
+				<unitPattern count="one" case="locative">{0} mililitre</unitPattern>
 				<unitPattern count="few">{0} mililitrai</unitPattern>
+				<unitPattern count="few" case="accusative">{0} mililitrus</unitPattern>
+				<unitPattern count="few" case="dative">{0} mililitrams</unitPattern>
+				<unitPattern count="few" case="genitive">{0} mililitrų</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} mililitrais</unitPattern>
+				<unitPattern count="few" case="locative">{0} mililitruose</unitPattern>
 				<unitPattern count="many">{0} mililitro</unitPattern>
+				<unitPattern count="many" case="accusative">{0} mililitro</unitPattern>
+				<unitPattern count="many" case="dative">{0} mililitro</unitPattern>
+				<unitPattern count="many" case="genitive">{0} mililitro</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} mililitro</unitPattern>
+				<unitPattern count="many" case="locative">{0} mililitro</unitPattern>
 				<unitPattern count="other">{0} mililitrų</unitPattern>
+				<unitPattern count="other" case="accusative">{0} mililitrų</unitPattern>
+				<unitPattern count="other" case="dative">{0} mililitrų</unitPattern>
+				<unitPattern count="other" case="genitive">{0} mililitrų</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} mililitrų</unitPattern>
+				<unitPattern count="other" case="locative">{0} mililitrų</unitPattern>
 			</unit>
 			<unit type="volume-pint-metric">
 				<gender>feminine</gender>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -451,9 +451,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="BZ">Belize</territory>
 			<territory type="CA">Kanada</territory>
 			<territory type="CC">Kookossuolluuh (Keelingsuolluuh)</territory>
-			<territory type="CD" alt="variant">Kongo demokraattisâš täsiväldi</territory>
+			<territory type="CD">Kongo demokraattisâš täsiväldi</territory>
 			<territory type="CF">Koskâ-Afrika täsiväldi</territory>
-			<territory type="CG" alt="variant">Kongo täsiväldi</territory>
+			<territory type="CG">Kongo täsiväldi</territory>
 			<territory type="CH">Sveitsi</territory>
 			<territory type="CI">Côte d’Ivoire</territory>
 			<territory type="CK">Cooksuolluuh</territory>

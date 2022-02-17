@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
@@ -4653,6 +4655,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Pacific/Enderbury">
 				<exemplarCity>о-в Эндербери</exemplarCity>
 			</zone>
+			<zone type="Pacific/Kanton">
+				<exemplarCity draft="contributed">Кантон</exemplarCity>
+			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>Киритимати</exemplarCity>
 			</zone>
@@ -7058,7 +7063,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">грузинского лари</displayName>
 				<symbol>GEL</symbol>
 				<symbol alt="narrow">ლ</symbol>
-				<symbol alt="variant">₾</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>Ганский седи (1979–2007)</displayName>
@@ -8628,6 +8632,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="genitive">{0} метра на секунду в квадрате</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} метра на секунду в квадрате</unitPattern>
 				<unitPattern count="other" case="locative">{0} метра на секунду в квадрате</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} метра на секунду в квадрате</unitPattern>
 				<unitPattern count="other" case="vocative">{0} метра на секунду в квадрате</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
@@ -8800,6 +8805,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="dative">{0} квадратного километра</unitPattern>
 				<unitPattern count="other" case="genitive">{0} квадратного километра</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} квадратного километра</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} квадратного километра</unitPattern>
 				<perUnitPattern>{0} на квадратный километр</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
@@ -8835,11 +8841,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="prepositional">{0} гектара</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
+				<gender>masculine</gender>
 				<displayName>квадратные метры</displayName>
 				<unitPattern count="one">{0} квадратный метр</unitPattern>
+				<unitPattern count="one" case="accusative">{0} квадратный метр</unitPattern>
+				<unitPattern count="one" case="dative">{0} квадратному метру</unitPattern>
+				<unitPattern count="one" case="genitive">{0} квадратного метра</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} квадратным метром</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} квадратном метре</unitPattern>
 				<unitPattern count="few">{0} квадратных метра</unitPattern>
+				<unitPattern count="few" case="accusative">{0} квадратных метра</unitPattern>
+				<unitPattern count="few" case="dative">{0} квадратным метрам</unitPattern>
+				<unitPattern count="few" case="genitive">{0} квадратных метров</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} квадратными метрами</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} квадратных метрах</unitPattern>
 				<unitPattern count="many">{0} квадратных метров</unitPattern>
+				<unitPattern count="many" case="accusative">{0} квадратных метров</unitPattern>
+				<unitPattern count="many" case="dative">{0} квадратным метрам</unitPattern>
+				<unitPattern count="many" case="genitive">{0} квадратных метров</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} квадратными метрами</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} квадратных метрах</unitPattern>
 				<unitPattern count="other">{0} квадратного метра</unitPattern>
+				<unitPattern count="other" case="accusative">{0} квадратного метра</unitPattern>
+				<unitPattern count="other" case="dative">{0} квадратного метра</unitPattern>
+				<unitPattern count="other" case="genitive">{0} квадратного метра</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} квадратного метра</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} квадратного метра</unitPattern>
 				<perUnitPattern>{0} на квадратный метр</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
@@ -8872,6 +8899,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="dative">{0} квадратного сантиметра</unitPattern>
 				<unitPattern count="other" case="genitive">{0} квадратного сантиметра</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} квадратного сантиметра</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} квадратного сантиметра</unitPattern>
 				<perUnitPattern>{0} на квадратный сантиметр</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
@@ -9027,18 +9055,60 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} миллиграмма на децилитр</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
+				<gender>masculine</gender>
 				<displayName>миллимоли на литр</displayName>
 				<unitPattern count="one">{0} миллимоль на литр</unitPattern>
+				<unitPattern count="one" case="accusative">{0} миллимоль на литр</unitPattern>
+				<unitPattern count="one" case="dative">{0} миллимолю на литр</unitPattern>
+				<unitPattern count="one" case="genitive">{0} миллимоля на литр</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} миллимолем на литр</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} миллимоле на литр</unitPattern>
 				<unitPattern count="few">{0} миллимоля на литр</unitPattern>
+				<unitPattern count="few" case="accusative">{0} миллимоля на литр</unitPattern>
+				<unitPattern count="few" case="dative">{0} миллимолям на литр</unitPattern>
+				<unitPattern count="few" case="genitive">{0} миллимолей на литр</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} миллимолями на литр</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} миллимолях на литр</unitPattern>
 				<unitPattern count="many">{0} миллимолей на литр</unitPattern>
+				<unitPattern count="many" case="accusative">{0} миллимолей на литр</unitPattern>
+				<unitPattern count="many" case="dative">{0} миллимолям на литр</unitPattern>
+				<unitPattern count="many" case="genitive">{0} миллимолей на литр</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} миллимолями на литр</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} миллимолях на литр</unitPattern>
 				<unitPattern count="other">{0} миллимоля на литр</unitPattern>
+				<unitPattern count="other" case="accusative">{0} миллимоля на литр</unitPattern>
+				<unitPattern count="other" case="dative">{0} миллимоля на литр</unitPattern>
+				<unitPattern count="other" case="genitive">{0} миллимоля на литр</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} миллимоля на литр</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} миллимоля на литр</unitPattern>
 			</unit>
 			<unit type="concentr-item">
+				<gender>masculine</gender>
 				<displayName>объекты</displayName>
 				<unitPattern count="one">{0} объект</unitPattern>
+				<unitPattern count="one" case="accusative">{0} объект</unitPattern>
+				<unitPattern count="one" case="dative">{0} объекту</unitPattern>
+				<unitPattern count="one" case="genitive">{0} объекта</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} объектом</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} объекте</unitPattern>
 				<unitPattern count="few">{0} объекта</unitPattern>
+				<unitPattern count="few" case="accusative">{0} объекта</unitPattern>
+				<unitPattern count="few" case="dative">{0} объектам</unitPattern>
+				<unitPattern count="few" case="genitive">{0} объектов</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} объектами</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} объектах</unitPattern>
 				<unitPattern count="many">{0} объектов</unitPattern>
+				<unitPattern count="many" case="accusative">{0} объектов</unitPattern>
+				<unitPattern count="many" case="dative">{0} объектам</unitPattern>
+				<unitPattern count="many" case="genitive">{0} объектов</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} объектами</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} объектах</unitPattern>
 				<unitPattern count="other">{0} объекта</unitPattern>
+				<unitPattern count="other" case="accusative">{0} объекта</unitPattern>
+				<unitPattern count="other" case="dative">{0} объекта</unitPattern>
+				<unitPattern count="other" case="genitive">{0} объекта</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} объекта</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} объекта</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
 				<gender>feminine</gender>
@@ -9185,11 +9255,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="prepositional">{0} моля</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
+				<gender>masculine</gender>
 				<displayName>литры на километр</displayName>
 				<unitPattern count="one">{0} литр на километр</unitPattern>
+				<unitPattern count="one" case="accusative">{0} литр на километр</unitPattern>
+				<unitPattern count="one" case="dative">{0} литру на километр</unitPattern>
+				<unitPattern count="one" case="genitive">{0} литра на километр</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} литром на километр</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} литре на километр</unitPattern>
 				<unitPattern count="few">{0} литра на километр</unitPattern>
+				<unitPattern count="few" case="accusative">{0} литра на километр</unitPattern>
+				<unitPattern count="few" case="dative">{0} литрам на километр</unitPattern>
+				<unitPattern count="few" case="genitive">{0} литров на километр</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} литрами на километр</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} литрах на километр</unitPattern>
 				<unitPattern count="many">{0} литров на километр</unitPattern>
+				<unitPattern count="many" case="accusative">{0} литров на километр</unitPattern>
+				<unitPattern count="many" case="dative">{0} литрам на километр</unitPattern>
+				<unitPattern count="many" case="genitive">{0} литров на километр</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} литрами на километр</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} литрах на километр</unitPattern>
 				<unitPattern count="other">{0} литра на километр</unitPattern>
+				<unitPattern count="other" case="accusative">{0} литра на километр</unitPattern>
+				<unitPattern count="other" case="dative">{0} литра на километр</unitPattern>
+				<unitPattern count="other" case="genitive">{0} литра на километр</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} литра на километр</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} литра на километр</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<gender>masculine</gender>
@@ -9221,6 +9312,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="dative">{0} литра на 100 километров</unitPattern>
 				<unitPattern count="other" case="genitive">{0} литра на 100 километров</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} литра на 100 километров</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} литра на 100 километров</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<gender>feminine</gender>
@@ -9290,11 +9382,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="instrumental">{0} мили на имп. галлон</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
+				<gender>masculine</gender>
 				<displayName>петабайты</displayName>
 				<unitPattern count="one">{0} петабайт</unitPattern>
+				<unitPattern count="one" case="accusative">{0} петабайт</unitPattern>
+				<unitPattern count="one" case="dative">{0} петабайту</unitPattern>
+				<unitPattern count="one" case="genitive">{0} петабайта</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} петабайтом</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} петабайте</unitPattern>
 				<unitPattern count="few">{0} петабайта</unitPattern>
+				<unitPattern count="few" case="accusative">{0} петабайта</unitPattern>
+				<unitPattern count="few" case="dative">{0} петабайтам</unitPattern>
+				<unitPattern count="few" case="genitive">{0} петабайт</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} петабайтами</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} петабайтах</unitPattern>
 				<unitPattern count="many">{0} петабайт</unitPattern>
+				<unitPattern count="many" case="accusative">{0} петабайт</unitPattern>
+				<unitPattern count="many" case="dative">{0} петабайтам</unitPattern>
+				<unitPattern count="many" case="genitive">{0} петабайт</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} петабайтами</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} петабайтах</unitPattern>
 				<unitPattern count="other">{0} петабайта</unitPattern>
+				<unitPattern count="other" case="accusative">{0} петабайта</unitPattern>
+				<unitPattern count="other" case="dative">{0} петабайта</unitPattern>
+				<unitPattern count="other" case="genitive">{0} петабайта</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} петабайта</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} петабайта</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<gender>masculine</gender>
@@ -9322,6 +9435,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="many" case="locative">{0} терабайтах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} терабайтах</unitPattern>
 				<unitPattern count="other">{0} терабайта</unitPattern>
+				<unitPattern count="other" case="accusative">{0} терабайта</unitPattern>
+				<unitPattern count="other" case="dative">{0} терабайта</unitPattern>
+				<unitPattern count="other" case="genitive">{0} терабайта</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} терабайта</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} терабайта</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
 				<gender>masculine</gender>
@@ -9349,6 +9467,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="many" case="locative">{0} терабитах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} терабитах</unitPattern>
 				<unitPattern count="other">{0} терабита</unitPattern>
+				<unitPattern count="other" case="accusative">{0} терабита</unitPattern>
+				<unitPattern count="other" case="dative">{0} терабита</unitPattern>
+				<unitPattern count="other" case="genitive">{0} терабита</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} терабита</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} терабита</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
 				<gender>masculine</gender>
@@ -9376,6 +9499,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="many" case="locative">{0} гигабайтах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} гигабайтах</unitPattern>
 				<unitPattern count="other">{0} гигабайта</unitPattern>
+				<unitPattern count="other" case="accusative">{0} гигабайта</unitPattern>
+				<unitPattern count="other" case="dative">{0} гигабайта</unitPattern>
+				<unitPattern count="other" case="genitive">{0} гигабайта</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} гигабайта</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} гигабайта</unitPattern>
 			</unit>
 			<unit type="digital-gigabit">
 				<gender>masculine</gender>
@@ -9403,6 +9531,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="many" case="locative">{0} гигабитах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} гигабитах</unitPattern>
 				<unitPattern count="other">{0} гигабита</unitPattern>
+				<unitPattern count="other" case="accusative">{0} гигабита</unitPattern>
+				<unitPattern count="other" case="dative">{0} гигабита</unitPattern>
+				<unitPattern count="other" case="genitive">{0} гигабита</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} гигабита</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} гигабита</unitPattern>
 			</unit>
 			<unit type="digital-megabyte">
 				<gender>masculine</gender>
@@ -9430,6 +9563,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="many" case="locative">{0} мегабайтах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} мегабайтах</unitPattern>
 				<unitPattern count="other">{0} мегабайта</unitPattern>
+				<unitPattern count="other" case="accusative">{0} мегабайта</unitPattern>
+				<unitPattern count="other" case="dative">{0} мегабайта</unitPattern>
+				<unitPattern count="other" case="genitive">{0} мегабайта</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} мегабайта</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} мегабайта</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
 				<gender>masculine</gender>
@@ -9457,6 +9595,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="many" case="locative">{0} мегабитах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} мегабитах</unitPattern>
 				<unitPattern count="other">{0} мегабита</unitPattern>
+				<unitPattern count="other" case="accusative">{0} мегабита</unitPattern>
+				<unitPattern count="other" case="dative">{0} мегабита</unitPattern>
+				<unitPattern count="other" case="genitive">{0} мегабита</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} мегабита</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} мегабита</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
 				<gender>masculine</gender>
@@ -9484,6 +9627,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="many" case="locative">{0} килобайтах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} килобайтах</unitPattern>
 				<unitPattern count="other">{0} килобайта</unitPattern>
+				<unitPattern count="other" case="accusative">{0} килобайта</unitPattern>
+				<unitPattern count="other" case="dative">{0} килобайта</unitPattern>
+				<unitPattern count="other" case="genitive">{0} килобайта</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} килобайта</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} килобайта</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
 				<gender>masculine</gender>
@@ -9511,6 +9659,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="many" case="locative">{0} килобитах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} килобитах</unitPattern>
 				<unitPattern count="other">{0} килобита</unitPattern>
+				<unitPattern count="other" case="accusative">{0} килобита</unitPattern>
+				<unitPattern count="other" case="dative">{0} килобита</unitPattern>
+				<unitPattern count="other" case="genitive">{0} килобита</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} килобита</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} килобита</unitPattern>
 			</unit>
 			<unit type="digital-byte">
 				<gender>masculine</gender>
@@ -9859,25 +10012,88 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} в секунду</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
+				<gender>feminine</gender>
 				<displayName>миллисекунды</displayName>
 				<unitPattern count="one">{0} миллисекунда</unitPattern>
+				<unitPattern count="one" case="accusative">{0} миллисекунду</unitPattern>
+				<unitPattern count="one" case="dative">{0} миллисекунде</unitPattern>
+				<unitPattern count="one" case="genitive">{0} миллисекунды</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} миллисекундой</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} миллисекунде</unitPattern>
 				<unitPattern count="few">{0} миллисекунды</unitPattern>
+				<unitPattern count="few" case="accusative">{0} миллисекунды</unitPattern>
+				<unitPattern count="few" case="dative">{0} миллисекундам</unitPattern>
+				<unitPattern count="few" case="genitive">{0} миллисекунд</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} миллисекундами</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} миллисекундах</unitPattern>
 				<unitPattern count="many">{0} миллисекунд</unitPattern>
+				<unitPattern count="many" case="accusative">{0} миллисекунд</unitPattern>
+				<unitPattern count="many" case="dative">{0} миллисекундам</unitPattern>
+				<unitPattern count="many" case="genitive">{0} миллисекунд</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} миллисекундами</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} миллисекундах</unitPattern>
 				<unitPattern count="other">{0} миллисекунды</unitPattern>
+				<unitPattern count="other" case="accusative">{0} миллисекунды</unitPattern>
+				<unitPattern count="other" case="dative">{0} миллисекунды</unitPattern>
+				<unitPattern count="other" case="genitive">{0} миллисекунды</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} миллисекунды</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} миллисекунды</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
+				<gender>feminine</gender>
 				<displayName>микросекунды</displayName>
 				<unitPattern count="one">{0} микросекунда</unitPattern>
+				<unitPattern count="one" case="accusative">{0} микросекунду</unitPattern>
+				<unitPattern count="one" case="dative">{0} микросекунде</unitPattern>
+				<unitPattern count="one" case="genitive">{0} микросекунды</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} микросекундой</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} микросекунде</unitPattern>
 				<unitPattern count="few">{0} микросекунды</unitPattern>
+				<unitPattern count="few" case="accusative">{0} микросекунды</unitPattern>
+				<unitPattern count="few" case="dative">{0} микросекундам</unitPattern>
+				<unitPattern count="few" case="genitive">{0} микросекунд</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} микросекундами</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} микросекундах</unitPattern>
 				<unitPattern count="many">{0} микросекунд</unitPattern>
+				<unitPattern count="many" case="accusative">{0} микросекунд</unitPattern>
+				<unitPattern count="many" case="dative">{0} микросекундам</unitPattern>
+				<unitPattern count="many" case="genitive">{0} микросекунд</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} микросекундами</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} микросекундах</unitPattern>
 				<unitPattern count="other">{0} микросекунды</unitPattern>
+				<unitPattern count="other" case="accusative">{0} микросекунды</unitPattern>
+				<unitPattern count="other" case="dative">{0} микросекунды</unitPattern>
+				<unitPattern count="other" case="genitive">{0} микросекунды</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} микросекунды</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} микросекунды</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
+				<gender>feminine</gender>
 				<displayName>наносекунды</displayName>
 				<unitPattern count="one">{0} наносекунда</unitPattern>
+				<unitPattern count="one" case="accusative">{0} наносекунду</unitPattern>
+				<unitPattern count="one" case="dative">{0} наносекунде</unitPattern>
+				<unitPattern count="one" case="genitive">{0} наносекунды</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} наносекундой</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} наносекунде</unitPattern>
 				<unitPattern count="few">{0} наносекунды</unitPattern>
+				<unitPattern count="few" case="accusative">{0} наносекунды</unitPattern>
+				<unitPattern count="few" case="dative">{0} наносекундам</unitPattern>
+				<unitPattern count="few" case="genitive">{0} наносекунд</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} наносекундами</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} наносекундах</unitPattern>
 				<unitPattern count="many">{0} наносекунд</unitPattern>
+				<unitPattern count="many" case="accusative">{0} наносекунд</unitPattern>
+				<unitPattern count="many" case="dative">{0} наносекундам</unitPattern>
+				<unitPattern count="many" case="genitive">{0} наносекунд</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} наносекундами</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} наносекундах</unitPattern>
 				<unitPattern count="other">{0} наносекунды</unitPattern>
+				<unitPattern count="other" case="accusative">{0} наносекунды</unitPattern>
+				<unitPattern count="other" case="dative">{0} наносекунды</unitPattern>
+				<unitPattern count="other" case="genitive">{0} наносекунды</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} наносекунды</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} наносекунды</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
 				<gender>masculine</gender>
@@ -9908,11 +10124,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="prepositional">{0} ампера</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
+				<gender>masculine</gender>
 				<displayName>миллиамперы</displayName>
 				<unitPattern count="one">{0} миллиампер</unitPattern>
+				<unitPattern count="one" case="accusative">{0} миллиампер</unitPattern>
+				<unitPattern count="one" case="dative">{0} миллиамперу</unitPattern>
+				<unitPattern count="one" case="genitive">{0} миллиампера</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} миллиампером</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} миллиампере</unitPattern>
 				<unitPattern count="few">{0} миллиампера</unitPattern>
+				<unitPattern count="few" case="accusative">{0} миллиампера</unitPattern>
+				<unitPattern count="few" case="dative">{0} миллиамперам</unitPattern>
+				<unitPattern count="few" case="genitive">{0} миллиампер</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} миллиамперами</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} миллиамперах</unitPattern>
 				<unitPattern count="many">{0} миллиампер</unitPattern>
+				<unitPattern count="many" case="accusative">{0} миллиампер</unitPattern>
+				<unitPattern count="many" case="dative">{0} миллиамперам</unitPattern>
+				<unitPattern count="many" case="genitive">{0} миллиампер</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} миллиамперами</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} миллиамперах</unitPattern>
 				<unitPattern count="other">{0} миллиампера</unitPattern>
+				<unitPattern count="other" case="accusative">{0} миллиампера</unitPattern>
+				<unitPattern count="other" case="dative">{0} миллиампера</unitPattern>
+				<unitPattern count="other" case="genitive">{0} миллиампера</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} миллиампера</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} миллиампера</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
 				<gender>masculine</gender>
@@ -10066,11 +10303,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="vocative">{0} килокалории</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
+				<gender>masculine</gender>
 				<displayName>килоджоули</displayName>
 				<unitPattern count="one">{0} килоджоуль</unitPattern>
+				<unitPattern count="one" case="accusative">{0} килоджоуль</unitPattern>
+				<unitPattern count="one" case="dative">{0} килоджоулю</unitPattern>
+				<unitPattern count="one" case="genitive">{0} килоджоуля</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} килоджоулем</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} килоджоуле</unitPattern>
 				<unitPattern count="few">{0} килоджоуля</unitPattern>
+				<unitPattern count="few" case="accusative">{0} килоджоуля</unitPattern>
+				<unitPattern count="few" case="dative">{0} килоджоулям</unitPattern>
+				<unitPattern count="few" case="genitive">{0} килоджоулей</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} килоджоулями</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} килоджоулях</unitPattern>
 				<unitPattern count="many">{0} килоджоулей</unitPattern>
+				<unitPattern count="many" case="accusative">{0} килоджоулей</unitPattern>
+				<unitPattern count="many" case="dative">{0} килоджоулям</unitPattern>
+				<unitPattern count="many" case="genitive">{0} килоджоулей</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} килоджоулями</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} килоджоулях</unitPattern>
 				<unitPattern count="other">{0} килоджоуля</unitPattern>
+				<unitPattern count="other" case="accusative">{0} килоджоуля</unitPattern>
+				<unitPattern count="other" case="dative">{0} килоджоуля</unitPattern>
+				<unitPattern count="other" case="genitive">{0} килоджоуля</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} килоджоуля</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} килоджоуля</unitPattern>
 			</unit>
 			<unit type="energy-joule">
 				<gender>masculine</gender>
@@ -10101,11 +10359,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="prepositional">{0} джоуля</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
+				<gender>masculine</gender>
 				<displayName>киловатт-часы</displayName>
 				<unitPattern count="one">{0} киловатт-час</unitPattern>
+				<unitPattern count="one" case="accusative">{0} киловатт-час</unitPattern>
+				<unitPattern count="one" case="dative">{0} киловатт-часу</unitPattern>
+				<unitPattern count="one" case="genitive">{0} киловатт-часа</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} киловатт-часом</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} киловатт-часе</unitPattern>
 				<unitPattern count="few">{0} киловатт-часа</unitPattern>
+				<unitPattern count="few" case="accusative">{0} киловатт-часа</unitPattern>
+				<unitPattern count="few" case="dative">{0} киловатт-часам</unitPattern>
+				<unitPattern count="few" case="genitive">{0} киловатт-часов</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} киловатт-часами</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} киловатт-часах</unitPattern>
 				<unitPattern count="many">{0} киловатт-часов</unitPattern>
+				<unitPattern count="many" case="accusative">{0} киловатт-часов</unitPattern>
+				<unitPattern count="many" case="dative">{0} киловатт-часам</unitPattern>
+				<unitPattern count="many" case="genitive">{0} киловатт-часов</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} киловатт-часами</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} киловатт-часах</unitPattern>
 				<unitPattern count="other">{0} киловатт-часа</unitPattern>
+				<unitPattern count="other" case="accusative">{0} киловатт-часа</unitPattern>
+				<unitPattern count="other" case="dative">{0} киловатт-часа</unitPattern>
+				<unitPattern count="other" case="genitive">{0} киловатт-часа</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} киловатт-часа</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} киловатт-часа</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
 				<displayName>электронвольты</displayName>
@@ -10164,32 +10443,116 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="prepositional">{0} ньютона</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<gender>masculine</gender>
 				<displayName>кВт⋅ч/100 км</displayName>
-				<unitPattern count="one">{0} кВт⋅ч/100 км</unitPattern>
-				<unitPattern count="few">{0} кВт⋅ч/100 км</unitPattern>
-				<unitPattern count="many">{0} кВт⋅ч/100 км</unitPattern>
-				<unitPattern count="other">{0} кВт⋅ч/100 км</unitPattern>
+				<unitPattern count="one">{0} киловатт-час на 100 километров</unitPattern>
+				<unitPattern count="one" case="accusative">{0} киловатт-час на 100 километров</unitPattern>
+				<unitPattern count="one" case="dative">{0} киловатт-часу на 100 километров</unitPattern>
+				<unitPattern count="one" case="genitive">{0} киловатт-часа на 100 километров</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} киловатт-часом на 100 километров</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} киловатт-часе на 100 километров</unitPattern>
+				<unitPattern count="few">{0} киловатт-часа на 100 километров</unitPattern>
+				<unitPattern count="few" case="accusative">{0} киловатт-часа на 100 километров</unitPattern>
+				<unitPattern count="few" case="dative">{0} киловатт-часам на 100 километров</unitPattern>
+				<unitPattern count="few" case="genitive">{0} киловатт-часов на 100 километров</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} киловатт-часами на 100 километров</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} киловатт-часах на 100 километров</unitPattern>
+				<unitPattern count="many">{0} киловатт-часов на 100 километров</unitPattern>
+				<unitPattern count="many" case="accusative">{0} киловатт-часов на 100 километров</unitPattern>
+				<unitPattern count="many" case="dative">{0} киловатт-часам на 100 километров</unitPattern>
+				<unitPattern count="many" case="genitive">{0} киловатт-часов на 100 километров</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} киловатт-часами на 100 километров</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} киловатт-часах на 100 километров</unitPattern>
+				<unitPattern count="other">{0} киловатт-часа на 100 километров</unitPattern>
+				<unitPattern count="other" case="accusative">{0} киловатт-часа на 100 километров</unitPattern>
+				<unitPattern count="other" case="dative">{0} киловатт-часа на 100 километров</unitPattern>
+				<unitPattern count="other" case="genitive">{0} киловатт-часа на 100 километров</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} киловатт-часа на 100 километров</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} киловатт-часа на 100 километров</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
+				<gender>masculine</gender>
 				<displayName>гигагерцы</displayName>
 				<unitPattern count="one">{0} гигагерц</unitPattern>
+				<unitPattern count="one" case="accusative">{0} гигагерц</unitPattern>
+				<unitPattern count="one" case="dative">{0} гигагерцу</unitPattern>
+				<unitPattern count="one" case="genitive">{0} гигагерца</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} гигагерцем</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} гигагерце</unitPattern>
 				<unitPattern count="few">{0} гигагерца</unitPattern>
+				<unitPattern count="few" case="accusative">{0} гигагерца</unitPattern>
+				<unitPattern count="few" case="dative">{0} гигагерцам</unitPattern>
+				<unitPattern count="few" case="genitive">{0} гигагерц</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} гигагерцами</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} гигагерцах</unitPattern>
 				<unitPattern count="many">{0} гигагерц</unitPattern>
+				<unitPattern count="many" case="accusative">{0} гигагерц</unitPattern>
+				<unitPattern count="many" case="dative">{0} гигагерцам</unitPattern>
+				<unitPattern count="many" case="genitive">{0} гигагерц</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} гигагерцами</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} гигагерцах</unitPattern>
 				<unitPattern count="other">{0} гигагерца</unitPattern>
+				<unitPattern count="other" case="accusative">{0} гигагерца</unitPattern>
+				<unitPattern count="other" case="dative">{0} гигагерца</unitPattern>
+				<unitPattern count="other" case="genitive">{0} гигагерца</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} гигагерца</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} гигагерца</unitPattern>
 			</unit>
 			<unit type="frequency-megahertz">
+				<gender>masculine</gender>
 				<displayName>мегагерцы</displayName>
 				<unitPattern count="one">{0} мегагерц</unitPattern>
+				<unitPattern count="one" case="accusative">{0} мегагерц</unitPattern>
+				<unitPattern count="one" case="dative">{0} мегагерцу</unitPattern>
+				<unitPattern count="one" case="genitive">{0} мегагерца</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} мегагерцем</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} мегагерце</unitPattern>
 				<unitPattern count="few">{0} мегагерца</unitPattern>
+				<unitPattern count="few" case="accusative">{0} мегагерца</unitPattern>
+				<unitPattern count="few" case="dative">{0} мегагерцам</unitPattern>
+				<unitPattern count="few" case="genitive">{0} мегагерц</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} мегагерцами</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} мегагерцах</unitPattern>
 				<unitPattern count="many">{0} мегагерц</unitPattern>
+				<unitPattern count="many" case="accusative">{0} мегагерц</unitPattern>
+				<unitPattern count="many" case="dative">{0} мегагерцам</unitPattern>
+				<unitPattern count="many" case="genitive">{0} мегагерц</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} мегагерцами</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} мегагерцах</unitPattern>
 				<unitPattern count="other">{0} мегагерца</unitPattern>
+				<unitPattern count="other" case="accusative">{0} мегагерца</unitPattern>
+				<unitPattern count="other" case="dative">{0} мегагерца</unitPattern>
+				<unitPattern count="other" case="genitive">{0} мегагерца</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} мегагерца</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} мегагерца</unitPattern>
 			</unit>
 			<unit type="frequency-kilohertz">
+				<gender>masculine</gender>
 				<displayName>килогерцы</displayName>
 				<unitPattern count="one">{0} килогерц</unitPattern>
+				<unitPattern count="one" case="accusative">{0} килогерц</unitPattern>
+				<unitPattern count="one" case="dative">{0} килогерцу</unitPattern>
+				<unitPattern count="one" case="genitive">{0} килогерца</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} килогерцем</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} килогерце</unitPattern>
 				<unitPattern count="few">{0} килогерца</unitPattern>
+				<unitPattern count="few" case="accusative">{0} килогерца</unitPattern>
+				<unitPattern count="few" case="dative">{0} килогерцам</unitPattern>
+				<unitPattern count="few" case="genitive">{0} килогерц</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} килогерцами</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} килогерцах</unitPattern>
 				<unitPattern count="many">{0} килогерц</unitPattern>
+				<unitPattern count="many" case="accusative">{0} килогерц</unitPattern>
+				<unitPattern count="many" case="dative">{0} килогерцам</unitPattern>
+				<unitPattern count="many" case="genitive">{0} килогерц</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} килогерцами</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} килогерцах</unitPattern>
 				<unitPattern count="other">{0} килогерца</unitPattern>
+				<unitPattern count="other" case="accusative">{0} килогерца</unitPattern>
+				<unitPattern count="other" case="dative">{0} килогерца</unitPattern>
+				<unitPattern count="other" case="genitive">{0} килогерца</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} килогерца</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} килогерца</unitPattern>
 			</unit>
 			<unit type="frequency-hertz">
 				<gender>masculine</gender>
@@ -10276,18 +10639,60 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="prepositional">{0} пикселя</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
+				<gender>masculine</gender>
 				<displayName>мегапиксели</displayName>
 				<unitPattern count="one">{0} мегапиксель</unitPattern>
+				<unitPattern count="one" case="accusative">{0} мегапиксель</unitPattern>
+				<unitPattern count="one" case="dative">{0} мегапикселю</unitPattern>
+				<unitPattern count="one" case="genitive">{0} мегапикселя</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} мегапикселем</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} мегапикселе</unitPattern>
 				<unitPattern count="few">{0} мегапикселя</unitPattern>
+				<unitPattern count="few" case="accusative">{0} мегапикселя</unitPattern>
+				<unitPattern count="few" case="dative">{0} мегапикселям</unitPattern>
+				<unitPattern count="few" case="genitive">{0} мегапикселей</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} мегапикселями</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} мегапикселях</unitPattern>
 				<unitPattern count="many">{0} мегапикселей</unitPattern>
+				<unitPattern count="many" case="accusative">{0} мегапикселей</unitPattern>
+				<unitPattern count="many" case="dative">{0} мегапикселям</unitPattern>
+				<unitPattern count="many" case="genitive">{0} мегапикселей</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} мегапикселями</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} мегапикселях</unitPattern>
 				<unitPattern count="other">{0} мегапикселя</unitPattern>
+				<unitPattern count="other" case="accusative">{0} мегапикселя</unitPattern>
+				<unitPattern count="other" case="dative">{0} мегапикселя</unitPattern>
+				<unitPattern count="other" case="genitive">{0} мегапикселя</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} мегапикселя</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} мегапикселя</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-centimeter">
+				<gender>masculine</gender>
 				<displayName>пиксели на сантиметр</displayName>
 				<unitPattern count="one">{0} пиксель на сантиметр</unitPattern>
+				<unitPattern count="one" case="accusative">{0} пиксель на сантиметр</unitPattern>
+				<unitPattern count="one" case="dative">{0} пикселю на сантиметр</unitPattern>
+				<unitPattern count="one" case="genitive">{0} пикселя на сантиметр</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} пикселем на сантиметр</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} пикселе на сантиметр</unitPattern>
 				<unitPattern count="few">{0} пикселя на сантиметр</unitPattern>
+				<unitPattern count="few" case="accusative">{0} пикселя на сантиметр</unitPattern>
+				<unitPattern count="few" case="dative">{0} пикселям на сантиметр</unitPattern>
+				<unitPattern count="few" case="genitive">{0} пикселей на сантиметр</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} пикселями на сантиметр</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} пикселях на сантиметр</unitPattern>
 				<unitPattern count="many">{0} пикселей на сантиметр</unitPattern>
+				<unitPattern count="many" case="accusative">{0} пикселей на сантиметр</unitPattern>
+				<unitPattern count="many" case="dative">{0} пикселям на сантиметр</unitPattern>
+				<unitPattern count="many" case="genitive">{0} пикселей на сантиметр</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} пикселями на сантиметр</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} пикселях на сантиметр</unitPattern>
 				<unitPattern count="other">{0} пикселя на сантиметр</unitPattern>
+				<unitPattern count="other" case="accusative">{0} пикселя на сантиметр</unitPattern>
+				<unitPattern count="other" case="dative">{0} пикселя на сантиметр</unitPattern>
+				<unitPattern count="other" case="genitive">{0} пикселя на сантиметр</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} пикселя на сантиметр</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} пикселя на сантиметр</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-inch">
 				<displayName>пиксели на дюйм</displayName>
@@ -10354,6 +10759,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="dative">{0} километра</unitPattern>
 				<unitPattern count="other" case="genitive">{0} километра</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} километра</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} километра</unitPattern>
 				<perUnitPattern>{0} на километр</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
@@ -10390,11 +10796,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} на метр</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
+				<gender>masculine</gender>
 				<displayName>дециметры</displayName>
 				<unitPattern count="one">{0} дециметр</unitPattern>
+				<unitPattern count="one" case="accusative">{0} дециметр</unitPattern>
+				<unitPattern count="one" case="dative">{0} дециметру</unitPattern>
+				<unitPattern count="one" case="genitive">{0} дециметра</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} дециметром</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} дециметре</unitPattern>
 				<unitPattern count="few">{0} дециметра</unitPattern>
+				<unitPattern count="few" case="accusative">{0} дециметра</unitPattern>
+				<unitPattern count="few" case="dative">{0} дециметрам</unitPattern>
+				<unitPattern count="few" case="genitive">{0} дециметров</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} дециметрами</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} дециметрах</unitPattern>
 				<unitPattern count="many">{0} дециметров</unitPattern>
+				<unitPattern count="many" case="accusative">{0} дециметров</unitPattern>
+				<unitPattern count="many" case="dative">{0} дециметрам</unitPattern>
+				<unitPattern count="many" case="genitive">{0} дециметров</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} дециметрами</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} дециметрах</unitPattern>
 				<unitPattern count="other">{0} дециметра</unitPattern>
+				<unitPattern count="other" case="accusative">{0} дециметра</unitPattern>
+				<unitPattern count="other" case="dative">{0} дециметра</unitPattern>
+				<unitPattern count="other" case="genitive">{0} дециметра</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} дециметра</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} дециметра</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<gender>masculine</gender>
@@ -10426,6 +10853,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="dative">{0} сантиметра</unitPattern>
 				<unitPattern count="other" case="genitive">{0} сантиметра</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} сантиметра</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} сантиметра</unitPattern>
 				<perUnitPattern>{0} на сантиметр</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
@@ -10458,20 +10886,63 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="dative">{0} миллиметра</unitPattern>
 				<unitPattern count="other" case="genitive">{0} миллиметра</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} миллиметра</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} миллиметра</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
+				<gender>masculine</gender>
 				<displayName>микрометры</displayName>
 				<unitPattern count="one">{0} микрометр</unitPattern>
+				<unitPattern count="one" case="accusative">{0} микрометр</unitPattern>
+				<unitPattern count="one" case="dative">{0} микрометру</unitPattern>
+				<unitPattern count="one" case="genitive">{0} микрометра</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} микрометром</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} микрометре</unitPattern>
 				<unitPattern count="few">{0} микрометра</unitPattern>
+				<unitPattern count="few" case="accusative">{0} микрометра</unitPattern>
+				<unitPattern count="few" case="dative">{0} микрометрам</unitPattern>
+				<unitPattern count="few" case="genitive">{0} микрометров</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} микрометрами</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} микрометрах</unitPattern>
 				<unitPattern count="many">{0} микрометров</unitPattern>
+				<unitPattern count="many" case="accusative">{0} микрометров</unitPattern>
+				<unitPattern count="many" case="dative">{0} микрометрам</unitPattern>
+				<unitPattern count="many" case="genitive">{0} микрометров</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} микрометрами</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} микрометрах</unitPattern>
 				<unitPattern count="other">{0} микрометра</unitPattern>
+				<unitPattern count="other" case="accusative">{0} микрометра</unitPattern>
+				<unitPattern count="other" case="dative">{0} микрометра</unitPattern>
+				<unitPattern count="other" case="genitive">{0} микрометра</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} микрометра</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} микрометра</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
+				<gender>masculine</gender>
 				<displayName>нанометры</displayName>
 				<unitPattern count="one">{0} нанометр</unitPattern>
+				<unitPattern count="one" case="accusative">{0} нанометр</unitPattern>
+				<unitPattern count="one" case="dative">{0} нанометру</unitPattern>
+				<unitPattern count="one" case="genitive">{0} нанометра</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} нанометром</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} нанометре</unitPattern>
 				<unitPattern count="few">{0} нанометра</unitPattern>
+				<unitPattern count="few" case="accusative">{0} нанометра</unitPattern>
+				<unitPattern count="few" case="dative">{0} нанометрам</unitPattern>
+				<unitPattern count="few" case="genitive">{0} нанометров</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} нанометрами</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} нанометрах</unitPattern>
 				<unitPattern count="many">{0} нанометров</unitPattern>
+				<unitPattern count="many" case="accusative">{0} нанометров</unitPattern>
+				<unitPattern count="many" case="dative">{0} нанометрам</unitPattern>
+				<unitPattern count="many" case="genitive">{0} нанометров</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} нанометрами</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} нанометрах</unitPattern>
 				<unitPattern count="other">{0} нанометра</unitPattern>
+				<unitPattern count="other" case="accusative">{0} нанометра</unitPattern>
+				<unitPattern count="other" case="dative">{0} нанометра</unitPattern>
+				<unitPattern count="other" case="genitive">{0} нанометра</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} нанометра</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} нанометра</unitPattern>
 			</unit>
 			<unit type="length-picometer">
 				<gender>masculine</gender>
@@ -10503,6 +10974,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="dative">{0} пикометра</unitPattern>
 				<unitPattern count="other" case="genitive">{0} пикометра</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} пикометра</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} пикометра</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<gender>feminine</gender>
@@ -10775,7 +11247,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} люкса</unitPattern>
 				<unitPattern count="few" case="accusative">{0} люкса</unitPattern>
 				<unitPattern count="few" case="dative">{0} люксам</unitPattern>
-				<unitPattern count="few" case="genitive">{0} люкс</unitPattern>
+				<unitPattern count="few" case="genitive">{0} люксов</unitPattern>
 				<unitPattern count="few" case="instrumental">{0} люксами</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} люксах</unitPattern>
 				<unitPattern count="many">{0} люксов</unitPattern>
@@ -10834,7 +11306,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few" case="genitive">{0} люмен</unitPattern>
 				<unitPattern count="few" case="instrumental">{0} люменами</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} люменах</unitPattern>
-				<unitPattern count="many">{0} люменов</unitPattern>
+				<unitPattern count="many">{0} люмен</unitPattern>
 				<unitPattern count="many" case="accusative">{0} люмен</unitPattern>
 				<unitPattern count="many" case="dative">{0} люменам</unitPattern>
 				<unitPattern count="many" case="genitive">{0} люмен</unitPattern>
@@ -10991,7 +11463,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few" case="instrumental">{0} миллиграммами</unitPattern>
 				<unitPattern count="few" case="locative">{0} миллиграммах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} миллиграммах</unitPattern>
-				<unitPattern count="many">{0} миллиграммов</unitPattern>
+				<unitPattern count="many">{0} миллиграмм</unitPattern>
 				<unitPattern count="many" case="accusative">{0} миллиграмм</unitPattern>
 				<unitPattern count="many" case="dative">{0} миллиграммам</unitPattern>
 				<unitPattern count="many" case="genitive">{0} миллиграмм</unitPattern>
@@ -11004,13 +11476,35 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="dative">{0} миллиграмма</unitPattern>
 				<unitPattern count="other" case="genitive">{0} миллиграмма</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} миллиграмма</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} миллиграмма</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
+				<gender>masculine</gender>
 				<displayName>микрограммы</displayName>
 				<unitPattern count="one">{0} микрограмм</unitPattern>
+				<unitPattern count="one" case="accusative">{0} микрограмм</unitPattern>
+				<unitPattern count="one" case="dative">{0} микрограмму</unitPattern>
+				<unitPattern count="one" case="genitive">{0} микрограмма</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} микрограммом</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} микрограмме</unitPattern>
 				<unitPattern count="few">{0} микрограмма</unitPattern>
-				<unitPattern count="many">{0} микрограммов</unitPattern>
+				<unitPattern count="few" case="accusative">{0} микрограмма</unitPattern>
+				<unitPattern count="few" case="dative">{0} микрограммам</unitPattern>
+				<unitPattern count="few" case="genitive">{0} микрограмм</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} микрограммами</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} микрограммах</unitPattern>
+				<unitPattern count="many">{0} микрограмм</unitPattern>
+				<unitPattern count="many" case="accusative">{0} микрограмм</unitPattern>
+				<unitPattern count="many" case="dative">{0} микрограммам</unitPattern>
+				<unitPattern count="many" case="genitive">{0} микрограмм</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} микрограммами</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} микрограммах</unitPattern>
 				<unitPattern count="other">{0} микрограмма</unitPattern>
+				<unitPattern count="other" case="accusative">{0} микрограмма</unitPattern>
+				<unitPattern count="other" case="dative">{0} микрограмма</unitPattern>
+				<unitPattern count="other" case="genitive">{0} микрограмма</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} микрограмма</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} микрограмма</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>американские тонны</displayName>
@@ -11256,25 +11750,88 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="vocative">{0} грана</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
+				<gender>masculine</gender>
 				<displayName>гигаватты</displayName>
 				<unitPattern count="one">{0} гигаватт</unitPattern>
+				<unitPattern count="one" case="accusative">{0} гигаватт</unitPattern>
+				<unitPattern count="one" case="dative">{0} гигаватту</unitPattern>
+				<unitPattern count="one" case="genitive">{0} гигаватта</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} гигаваттом</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} гигаватте</unitPattern>
 				<unitPattern count="few">{0} гигаватта</unitPattern>
+				<unitPattern count="few" case="accusative">{0} гигаватта</unitPattern>
+				<unitPattern count="few" case="dative">{0} гигаваттам</unitPattern>
+				<unitPattern count="few" case="genitive">{0} гигаватт</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} гигаваттами</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} гигаваттах</unitPattern>
 				<unitPattern count="many">{0} гигаватт</unitPattern>
+				<unitPattern count="many" case="accusative">{0} гигаватт</unitPattern>
+				<unitPattern count="many" case="dative">{0} гигаваттам</unitPattern>
+				<unitPattern count="many" case="genitive">{0} гигаватт</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} гигаваттами</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} гигаваттах</unitPattern>
 				<unitPattern count="other">{0} гигаватта</unitPattern>
+				<unitPattern count="other" case="accusative">{0} гигаватта</unitPattern>
+				<unitPattern count="other" case="dative">{0} гигаватта</unitPattern>
+				<unitPattern count="other" case="genitive">{0} гигаватта</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} гигаватта</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} гигаватта</unitPattern>
 			</unit>
 			<unit type="power-megawatt">
+				<gender>masculine</gender>
 				<displayName>мегаватты</displayName>
 				<unitPattern count="one">{0} мегаватт</unitPattern>
+				<unitPattern count="one" case="accusative">{0} мегаватт</unitPattern>
+				<unitPattern count="one" case="dative">{0} мегаватту</unitPattern>
+				<unitPattern count="one" case="genitive">{0} мегаватта</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} мегаваттом</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} мегаватте</unitPattern>
 				<unitPattern count="few">{0} мегаватта</unitPattern>
+				<unitPattern count="few" case="accusative">{0} мегаватта</unitPattern>
+				<unitPattern count="few" case="dative">{0} мегаваттам</unitPattern>
+				<unitPattern count="few" case="genitive">{0} мегаватт</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} мегаваттами</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} мегаваттах</unitPattern>
 				<unitPattern count="many">{0} мегаватт</unitPattern>
+				<unitPattern count="many" case="accusative">{0} мегаватт</unitPattern>
+				<unitPattern count="many" case="dative">{0} мегаваттам</unitPattern>
+				<unitPattern count="many" case="genitive">{0} мегаватт</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} мегаваттами</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} мегаваттах</unitPattern>
 				<unitPattern count="other">{0} мегаватта</unitPattern>
+				<unitPattern count="other" case="accusative">{0} мегаватта</unitPattern>
+				<unitPattern count="other" case="dative">{0} мегаватта</unitPattern>
+				<unitPattern count="other" case="genitive">{0} мегаватта</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} мегаватта</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} мегаватта</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
+				<gender>masculine</gender>
 				<displayName>киловатты</displayName>
 				<unitPattern count="one">{0} киловатт</unitPattern>
+				<unitPattern count="one" case="accusative">{0} киловатт</unitPattern>
+				<unitPattern count="one" case="dative">{0} киловатту</unitPattern>
+				<unitPattern count="one" case="genitive">{0} киловатта</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} киловаттом</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} киловатте</unitPattern>
 				<unitPattern count="few">{0} киловатта</unitPattern>
+				<unitPattern count="few" case="accusative">{0} киловатта</unitPattern>
+				<unitPattern count="few" case="dative">{0} киловаттам</unitPattern>
+				<unitPattern count="few" case="genitive">{0} киловатт</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} киловаттами</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} киловаттах</unitPattern>
 				<unitPattern count="many">{0} киловатт</unitPattern>
+				<unitPattern count="many" case="accusative">{0} киловатт</unitPattern>
+				<unitPattern count="many" case="dative">{0} киловаттам</unitPattern>
+				<unitPattern count="many" case="genitive">{0} киловатт</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} киловаттами</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} киловаттах</unitPattern>
 				<unitPattern count="other">{0} киловатта</unitPattern>
+				<unitPattern count="other" case="accusative">{0} киловатта</unitPattern>
+				<unitPattern count="other" case="dative">{0} киловатта</unitPattern>
+				<unitPattern count="other" case="genitive">{0} киловатта</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} киловатта</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} киловатта</unitPattern>
 			</unit>
 			<unit type="power-watt">
 				<gender>masculine</gender>
@@ -11305,11 +11862,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="prepositional">{0} ватта</unitPattern>
 			</unit>
 			<unit type="power-milliwatt">
+				<gender>masculine</gender>
 				<displayName>милливатты</displayName>
 				<unitPattern count="one">{0} милливатт</unitPattern>
+				<unitPattern count="one" case="accusative">{0} милливатт</unitPattern>
+				<unitPattern count="one" case="dative">{0} милливатту</unitPattern>
+				<unitPattern count="one" case="genitive">{0} милливатта</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} милливаттом</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} милливатте</unitPattern>
 				<unitPattern count="few">{0} милливатта</unitPattern>
+				<unitPattern count="few" case="accusative">{0} милливатта</unitPattern>
+				<unitPattern count="few" case="dative">{0} милливаттам</unitPattern>
+				<unitPattern count="few" case="genitive">{0} милливатт</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} милливаттами</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} милливаттах</unitPattern>
 				<unitPattern count="many">{0} милливатт</unitPattern>
+				<unitPattern count="many" case="accusative">{0} милливатт</unitPattern>
+				<unitPattern count="many" case="dative">{0} милливаттам</unitPattern>
+				<unitPattern count="many" case="genitive">{0} милливатт</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} милливаттами</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} милливаттах</unitPattern>
 				<unitPattern count="other">{0} милливатта</unitPattern>
+				<unitPattern count="other" case="accusative">{0} милливатта</unitPattern>
+				<unitPattern count="other" case="dative">{0} милливатта</unitPattern>
+				<unitPattern count="other" case="genitive">{0} милливатта</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} милливатта</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} милливатта</unitPattern>
 			</unit>
 			<unit type="power-horsepower">
 				<displayName>лошадиные силы</displayName>
@@ -11368,11 +11946,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="prepositional">{0} бара</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
+				<gender>masculine</gender>
 				<displayName>миллибары</displayName>
 				<unitPattern count="one">{0} миллибар</unitPattern>
+				<unitPattern count="one" case="accusative">{0} миллибар</unitPattern>
+				<unitPattern count="one" case="dative">{0} миллибару</unitPattern>
+				<unitPattern count="one" case="genitive">{0} миллибара</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} миллибаром</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} миллибаре</unitPattern>
 				<unitPattern count="few">{0} миллибара</unitPattern>
+				<unitPattern count="few" case="accusative">{0} миллибара</unitPattern>
+				<unitPattern count="few" case="dative">{0} миллибарам</unitPattern>
+				<unitPattern count="few" case="genitive">{0} миллибар</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} миллибарами</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} миллибарах</unitPattern>
 				<unitPattern count="many">{0} миллибар</unitPattern>
+				<unitPattern count="many" case="accusative">{0} миллибар</unitPattern>
+				<unitPattern count="many" case="dative">{0} миллибарам</unitPattern>
+				<unitPattern count="many" case="genitive">{0} миллибар</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} миллибарами</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} миллибарах</unitPattern>
 				<unitPattern count="other">{0} миллибара</unitPattern>
+				<unitPattern count="other" case="accusative">{0} миллибара</unitPattern>
+				<unitPattern count="other" case="dative">{0} миллибара</unitPattern>
+				<unitPattern count="other" case="genitive">{0} миллибара</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} миллибара</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} миллибара</unitPattern>
 			</unit>
 			<unit type="pressure-atmosphere">
 				<gender>feminine</gender>
@@ -11431,11 +12030,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="prepositional">{0} паскаля</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
+				<gender>masculine</gender>
 				<displayName>гектопаскали</displayName>
 				<unitPattern count="one">{0} гектопаскаль</unitPattern>
+				<unitPattern count="one" case="accusative">{0} гектопаскаль</unitPattern>
+				<unitPattern count="one" case="dative">{0} гектопаскалю</unitPattern>
+				<unitPattern count="one" case="genitive">{0} гектопаскаля</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} гектопаскалем</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} гектопаскале</unitPattern>
 				<unitPattern count="few">{0} гектопаскаля</unitPattern>
+				<unitPattern count="few" case="accusative">{0} гектопаскаля</unitPattern>
+				<unitPattern count="few" case="dative">{0} гектопаскалям</unitPattern>
+				<unitPattern count="few" case="genitive">{0} гектопаскалей</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} гектопаскалями</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} гектопаскалях</unitPattern>
 				<unitPattern count="many">{0} гектопаскалей</unitPattern>
+				<unitPattern count="many" case="accusative">{0} гектопаскалей</unitPattern>
+				<unitPattern count="many" case="dative">{0} гектопаскалям</unitPattern>
+				<unitPattern count="many" case="genitive">{0} гектопаскалей</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} гектопаскалями</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} гектопаскалях</unitPattern>
 				<unitPattern count="other">{0} гектопаскаля</unitPattern>
+				<unitPattern count="other" case="accusative">{0} гектопаскаля</unitPattern>
+				<unitPattern count="other" case="dative">{0} гектопаскаля</unitPattern>
+				<unitPattern count="other" case="genitive">{0} гектопаскаля</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} гектопаскаля</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} гектопаскаля</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
 				<gender>masculine</gender>
@@ -11467,13 +12087,35 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="dative">{0} килопаскаля</unitPattern>
 				<unitPattern count="other" case="genitive">{0} килопаскаля</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} килопаскаля</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} килопаскаля</unitPattern>
 			</unit>
 			<unit type="pressure-megapascal">
+				<gender>masculine</gender>
 				<displayName>мегапаскали</displayName>
 				<unitPattern count="one">{0} мегапаскаль</unitPattern>
+				<unitPattern count="one" case="accusative">{0} мегапаскаль</unitPattern>
+				<unitPattern count="one" case="dative">{0} мегапаскалю</unitPattern>
+				<unitPattern count="one" case="genitive">{0} мегапаскаля</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} мегапаскалем</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} мегапаскале</unitPattern>
 				<unitPattern count="few">{0} мегапаскаля</unitPattern>
+				<unitPattern count="few" case="accusative">{0} мегапаскаля</unitPattern>
+				<unitPattern count="few" case="dative">{0} мегапаскалям</unitPattern>
+				<unitPattern count="few" case="genitive">{0} мегапаскалей</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} мегапаскалями</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} мегапаскалях</unitPattern>
 				<unitPattern count="many">{0} мегапаскалей</unitPattern>
+				<unitPattern count="many" case="accusative">{0} мегапаскалей</unitPattern>
+				<unitPattern count="many" case="dative">{0} мегапаскалям</unitPattern>
+				<unitPattern count="many" case="genitive">{0} мегапаскалей</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} мегапаскалями</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} мегапаскалях</unitPattern>
 				<unitPattern count="other">{0} мегапаскаля</unitPattern>
+				<unitPattern count="other" case="accusative">{0} мегапаскаля</unitPattern>
+				<unitPattern count="other" case="dative">{0} мегапаскаля</unitPattern>
+				<unitPattern count="other" case="genitive">{0} мегапаскаля</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} мегапаскаля</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} мегапаскаля</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<gender>masculine</gender>
@@ -11505,6 +12147,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="dative">{0} километра в час</unitPattern>
 				<unitPattern count="other" case="genitive">{0} километра в час</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} километра в час</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} километра в час</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
 				<gender>masculine</gender>
@@ -11536,6 +12179,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="dative">{0} метра в секунду</unitPattern>
 				<unitPattern count="other" case="genitive">{0} метра в секунду</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} метра в секунду</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} метра в секунду</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
 				<gender>feminine</gender>
@@ -11714,25 +12358,88 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} фунт-фута</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
+				<gender>masculine</gender>
 				<displayName>ньютон-метры</displayName>
 				<unitPattern count="one">{0} ньютон-метр</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ньютон-метр</unitPattern>
+				<unitPattern count="one" case="dative">{0} ньютон-метру</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ньютон-метра</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ньютон-метром</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} ньютон-метре</unitPattern>
 				<unitPattern count="few">{0} ньютон-метра</unitPattern>
+				<unitPattern count="few" case="accusative">{0} ньютон-метра</unitPattern>
+				<unitPattern count="few" case="dative">{0} ньютон-метрам</unitPattern>
+				<unitPattern count="few" case="genitive">{0} ньютон-метров</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} ньютон-метрами</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} ньютон-метрах</unitPattern>
 				<unitPattern count="many">{0} ньютон-метров</unitPattern>
+				<unitPattern count="many" case="accusative">{0} ньютон-метров</unitPattern>
+				<unitPattern count="many" case="dative">{0} ньютон-метрам</unitPattern>
+				<unitPattern count="many" case="genitive">{0} ньютон-метров</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} ньютон-метрами</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} ньютон-метрах</unitPattern>
 				<unitPattern count="other">{0} ньютон-метра</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ньютон-метра</unitPattern>
+				<unitPattern count="other" case="dative">{0} ньютон-метра</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ньютон-метра</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ньютон-метра</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} ньютон-метра</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
+				<gender>masculine</gender>
 				<displayName>кубические километры</displayName>
 				<unitPattern count="one">{0} кубический километр</unitPattern>
+				<unitPattern count="one" case="accusative">{0} кубический километр</unitPattern>
+				<unitPattern count="one" case="dative">{0} кубическому километру</unitPattern>
+				<unitPattern count="one" case="genitive">{0} кубического километра</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} кубическим километром</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} кубическом километре</unitPattern>
 				<unitPattern count="few">{0} кубических километра</unitPattern>
+				<unitPattern count="few" case="accusative">{0} кубических километра</unitPattern>
+				<unitPattern count="few" case="dative">{0} кубическим километрам</unitPattern>
+				<unitPattern count="few" case="genitive">{0} кубических километров</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} кубическими километрами</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} кубических километрах</unitPattern>
 				<unitPattern count="many">{0} кубических километров</unitPattern>
+				<unitPattern count="many" case="accusative">{0} кубических километров</unitPattern>
+				<unitPattern count="many" case="dative">{0} кубическим километрам</unitPattern>
+				<unitPattern count="many" case="genitive">{0} кубических километров</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} кубическими километрами</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} кубических километрах</unitPattern>
 				<unitPattern count="other">{0} кубического километра</unitPattern>
+				<unitPattern count="other" case="accusative">{0} кубического километра</unitPattern>
+				<unitPattern count="other" case="dative">{0} кубического километра</unitPattern>
+				<unitPattern count="other" case="genitive">{0} кубического километра</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} кубического километра</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} кубического километра</unitPattern>
 			</unit>
 			<unit type="volume-cubic-meter">
+				<gender>masculine</gender>
 				<displayName>кубические метры</displayName>
 				<unitPattern count="one">{0} кубический метр</unitPattern>
+				<unitPattern count="one" case="accusative">{0} кубический метр</unitPattern>
+				<unitPattern count="one" case="dative">{0} кубическому метру</unitPattern>
+				<unitPattern count="one" case="genitive">{0} кубического метра</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} кубическим метром</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} кубическом метре</unitPattern>
 				<unitPattern count="few">{0} кубических метра</unitPattern>
+				<unitPattern count="few" case="accusative">{0} кубических метра</unitPattern>
+				<unitPattern count="few" case="dative">{0} кубическим метрам</unitPattern>
+				<unitPattern count="few" case="genitive">{0} кубических метров</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} кубическими метрами</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} кубических метрах</unitPattern>
 				<unitPattern count="many">{0} кубических метров</unitPattern>
+				<unitPattern count="many" case="accusative">{0} кубических метров</unitPattern>
+				<unitPattern count="many" case="dative">{0} кубическим метрам</unitPattern>
+				<unitPattern count="many" case="genitive">{0} кубических метров</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} кубическими метрами</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} кубических метрах</unitPattern>
 				<unitPattern count="other">{0} кубического метра</unitPattern>
+				<unitPattern count="other" case="accusative">{0} кубического метра</unitPattern>
+				<unitPattern count="other" case="dative">{0} кубического метра</unitPattern>
+				<unitPattern count="other" case="genitive">{0} кубического метра</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} кубического метра</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} кубического метра</unitPattern>
 				<perUnitPattern>{0} на кубический метр</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
@@ -11765,6 +12472,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="dative">{0} кубического сантиметра</unitPattern>
 				<unitPattern count="other" case="genitive">{0} кубического сантиметра</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} кубического сантиметра</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} кубического сантиметра</unitPattern>
 				<perUnitPattern>{0} на кубический сантиметр</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
@@ -11845,18 +12553,60 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} кубического дюйма</unitPattern>
 			</unit>
 			<unit type="volume-megaliter">
+				<gender>masculine</gender>
 				<displayName>мегалитры</displayName>
 				<unitPattern count="one">{0} мегалитр</unitPattern>
+				<unitPattern count="one" case="accusative">{0} мегалитр</unitPattern>
+				<unitPattern count="one" case="dative">{0} мегалитру</unitPattern>
+				<unitPattern count="one" case="genitive">{0} мегалитра</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} мегалитром</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} мегалитре</unitPattern>
 				<unitPattern count="few">{0} мегалитра</unitPattern>
+				<unitPattern count="few" case="accusative">{0} мегалитра</unitPattern>
+				<unitPattern count="few" case="dative">{0} мегалитрам</unitPattern>
+				<unitPattern count="few" case="genitive">{0} мегалитров</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} мегалитрами</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} мегалитрах</unitPattern>
 				<unitPattern count="many">{0} мегалитров</unitPattern>
+				<unitPattern count="many" case="accusative">{0} мегалитров</unitPattern>
+				<unitPattern count="many" case="dative">{0} мегалитрам</unitPattern>
+				<unitPattern count="many" case="genitive">{0} мегалитров</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} мегалитрами</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} мегалитрах</unitPattern>
 				<unitPattern count="other">{0} мегалитра</unitPattern>
+				<unitPattern count="other" case="accusative">{0} мегалитра</unitPattern>
+				<unitPattern count="other" case="dative">{0} мегалитра</unitPattern>
+				<unitPattern count="other" case="genitive">{0} мегалитра</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} мегалитра</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} мегалитра</unitPattern>
 			</unit>
 			<unit type="volume-hectoliter">
+				<gender>masculine</gender>
 				<displayName>гектолитры</displayName>
 				<unitPattern count="one">{0} гектолитр</unitPattern>
+				<unitPattern count="one" case="accusative">{0} гектолитр</unitPattern>
+				<unitPattern count="one" case="dative">{0} гектолитру</unitPattern>
+				<unitPattern count="one" case="genitive">{0} гектолитра</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} гектолитром</unitPattern>
+				<unitPattern count="one" case="prepositional">{0} гектолитре</unitPattern>
 				<unitPattern count="few">{0} гектолитра</unitPattern>
+				<unitPattern count="few" case="accusative">{0} гектолитра</unitPattern>
+				<unitPattern count="few" case="dative">{0} гектолитрам</unitPattern>
+				<unitPattern count="few" case="genitive">{0} гектолитров</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} гектолитрами</unitPattern>
+				<unitPattern count="few" case="prepositional">{0} гектолитрах</unitPattern>
 				<unitPattern count="many">{0} гектолитров</unitPattern>
+				<unitPattern count="many" case="accusative">{0} гектолитров</unitPattern>
+				<unitPattern count="many" case="dative">{0} гектолитрам</unitPattern>
+				<unitPattern count="many" case="genitive">{0} гектолитров</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} гектолитрами</unitPattern>
+				<unitPattern count="many" case="prepositional">{0} гектолитрах</unitPattern>
 				<unitPattern count="other">{0} гектолитра</unitPattern>
+				<unitPattern count="other" case="accusative">{0} гектолитра</unitPattern>
+				<unitPattern count="other" case="dative">{0} гектолитра</unitPattern>
+				<unitPattern count="other" case="genitive">{0} гектолитра</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} гектолитра</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} гектолитра</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<gender>masculine</gender>
@@ -11921,6 +12671,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="dative">{0} децилитра</unitPattern>
 				<unitPattern count="other" case="genitive">{0} децилитра</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} децилитра</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} децилитра</unitPattern>
 			</unit>
 			<unit type="volume-centiliter">
 				<gender>masculine</gender>
@@ -11952,6 +12703,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="dative">{0} сантилитра</unitPattern>
 				<unitPattern count="other" case="genitive">{0} сантилитра</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} сантилитра</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} сантилитра</unitPattern>
 			</unit>
 			<unit type="volume-milliliter">
 				<gender>masculine</gender>
@@ -11983,12 +12735,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="dative">{0} миллилитра</unitPattern>
 				<unitPattern count="other" case="genitive">{0} миллилитра</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} миллилитра</unitPattern>
+				<unitPattern count="other" case="prepositional">{0} миллилитра</unitPattern>
 			</unit>
 			<unit type="volume-pint-metric">
 				<gender>feminine</gender>
 				<displayName>метрические пинты</displayName>
 				<unitPattern count="one">{0} метрическая пинта</unitPattern>
-				<unitPattern count="one" case="accusative">{0} метрическая пинта</unitPattern>
+				<unitPattern count="one" case="accusative">{0} метрическую пинту</unitPattern>
 				<unitPattern count="one" case="dative">{0} метрической пинте</unitPattern>
 				<unitPattern count="one" case="genitive">{0} метрической пинты</unitPattern>
 				<unitPattern count="one" case="instrumental">{0} метрической пинтой</unitPattern>
@@ -14309,7 +15062,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="length-yard">
 				<displayName>ярд.</displayName>
-				<unitPattern count="one" draft="contributed">{0} ярд</unitPattern>
+				<unitPattern count="one">{0} ярд</unitPattern>
 				<unitPattern count="few">{0} ярд.</unitPattern>
 				<unitPattern count="many">{0} ярд.</unitPattern>
 				<unitPattern count="other">{0} ярд.</unitPattern>

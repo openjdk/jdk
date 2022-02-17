@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
@@ -243,6 +245,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="kea">काबुवेर्दियानु</language>
 			<language type="kfo">कोरो</language>
 			<language type="kg">कोंगो</language>
+			<language type="kgp" draft="unconfirmed">काइंगांग</language>
 			<language type="kha">खासी</language>
 			<language type="kho">खोतानीस</language>
 			<language type="khq">कोयरा चीनी</language>
@@ -283,6 +286,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="lez">लेज़्घीयन</language>
 			<language type="lg">गांडा</language>
 			<language type="li">लिंबर्गिश</language>
+			<language type="lij" draft="unconfirmed">लिगुरियन</language>
 			<language type="lkt">लैकोटा</language>
 			<language type="ln">लिंगाला</language>
 			<language type="lo">लाओ</language>
@@ -661,9 +665,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Syrj">पश्चिम सिरिएक</script>
 			<script type="Syrn">पूर्व सिरिएक</script>
 			<script type="Tagb">तगबन्वा</script>
+			<script type="Takr" draft="unconfirmed">तकरी</script>
 			<script type="Tale">ताई ली</script>
 			<script type="Talu">नया ताई लु</script>
 			<script type="Taml">तमिल</script>
+			<script type="Tang" draft="unconfirmed">टैंगुट</script>
 			<script type="Tavt">ताई विएत</script>
 			<script type="Telu">तेलुगू</script>
 			<script type="Teng">तेन्गवार</script>
@@ -672,12 +678,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Thaa">थाना</script>
 			<script type="Thai">थाई</script>
 			<script type="Tibt">तिब्बती</script>
+			<script type="Tirh" draft="unconfirmed">तिरहुता</script>
+			<script type="Tnsa" draft="unconfirmed">तंगसा</script>
+			<script type="Toto" draft="unconfirmed">टोटो</script>
 			<script type="Ugar">युगारिटिक</script>
 			<script type="Vaii">वाई</script>
 			<script type="Visp">विसिबल स्पीच</script>
+			<script type="Vith" draft="unconfirmed">विथकुकि</script>
+			<script type="Wara" draft="unconfirmed">वरांग क्षिती</script>
 			<script type="Xpeo">पुरानी फारसी</script>
 			<script type="Xsux">सुमेरो अक्कादियन सुनिफॉर्म</script>
+			<script type="Yezi" draft="unconfirmed">यज़ीदी</script>
 			<script type="Yiii">यी</script>
+			<script type="Zanb" draft="unconfirmed">ज़ानाबाजार स्क्वायर</script>
 			<script type="Zinh">विरासत</script>
 			<script type="Zmth">गणितीय संकेतन</script>
 			<script type="Zsye">ईमोजी</script>
@@ -1147,8 +1160,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[\u093C ॐ \u0902 \u0901 ः अ आ इ ई उ ऊ ऋ ऌ ऍ ए ऐ ऑ ओ औ क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ल ळ व श ष स ह ऽ ा ि ी \u0941 \u0942 \u0943 \u0944 \u0945 \u0947 \u0948 ॉ ो ौ \u094D]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[\u200C\u200D]</exemplarCharacters>
+		<exemplarCharacters>[\u093C ॐ \u0902 \u0901 ः अ आ इ ई उ ऊ ऋ ऌ ऍ ए ऐ ऑ ओ औ क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ल ळ व श ष स ह ऽ ा ि ी \u0941 \u0942 \u0943 \u0945 \u0947 \u0948 ॉ ो ौ \u094D]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[\u200C\u200D \u0944]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[अ आ इ ई उ ऊ ऋ ए ऐ ओ औ क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ल व श ष स ह]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0० 1१ 2२ 3३ 4४ 5५ 6६ 7७ 8८ 9९]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‑ , ; \: ! ? . ‘ ’ “ ” ( ) \[ \] \{ \} ॰]</exemplarCharacters>
@@ -3737,6 +3750,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Pacific/Enderbury">
 				<exemplarCity>एंडरबरी</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kanton">
+				<exemplarCity>कैंटन</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>किरीतिमाति</exemplarCity>
@@ -6643,15 +6659,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
-			<pluralMinimalPairs count="one">{0} घंटा</pluralMinimalPairs>
+			<pluralMinimalPairs count="one">{0}❬1 घंटा❭ लगेगा/लगेंगे</pluralMinimalPairs>
 			<pluralMinimalPairs count="other">{0} घंटे</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="few">{0} दाहिना मोड़ लें.</ordinalMinimalPairs>
 			<ordinalMinimalPairs ordinal="many">{0}ठा दाहिना मोड़ लें.</ordinalMinimalPairs>
 			<ordinalMinimalPairs ordinal="one">{0}ला दाहिना मोड़ लें.</ordinalMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">{0}वां दाहिना मोड़ लें.</ordinalMinimalPairs>
 			<ordinalMinimalPairs ordinal="two">{0}रा दाहिना मोड़ लें.</ordinalMinimalPairs>
-			<caseMinimalPairs case="nominative">{0} का समय लगेगा</caseMinimalPairs>
-			<caseMinimalPairs case="oblique">{0} लगेगा/लगेंगे</caseMinimalPairs>
+			<caseMinimalPairs case="nominative">{0} लगेगा/लगेंगे</caseMinimalPairs>
+			<caseMinimalPairs case="oblique">{0} का समय लगेगा</caseMinimalPairs>
 			<genderMinimalPairs gender="feminine">{0} बड़ी है.</genderMinimalPairs>
 			<genderMinimalPairs gender="masculine">{0} बड़ा है.</genderMinimalPairs>
 		</minimalPairs>
@@ -6795,7 +6811,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender draft="contributed">masculine</gender>
 				<displayName>रेडियन</displayName>
 				<unitPattern count="one">{0} रेडियन</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} रेडियन</unitPattern>
+				<unitPattern count="one" case="oblique">{0} रेडियन</unitPattern>
 				<unitPattern count="other">{0} रेडियन</unitPattern>
 				<unitPattern count="other" case="oblique" draft="contributed">{0} रेडियन</unitPattern>
 			</unit>
@@ -6841,9 +6857,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="oblique">{0} हेक्टेयर</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
+				<gender>masculine</gender>
 				<displayName>वर्ग मीटर</displayName>
 				<unitPattern count="one">{0} वर्ग मीटर</unitPattern>
+				<unitPattern count="one" case="oblique">{0} वर्ग मीटर</unitPattern>
 				<unitPattern count="other">{0} वर्ग मीटर</unitPattern>
+				<unitPattern count="other" case="oblique">{0} वर्ग मीटर</unitPattern>
 				<perUnitPattern>{0}/वर्ग मीटर</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
@@ -6910,20 +6929,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} मिलिग्राम प्रति डेसीलीटर</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
+				<gender>masculine</gender>
 				<displayName>मिलीमोल प्रति लीटर</displayName>
 				<unitPattern count="one">{0} मिलीमोल प्रति लीटर</unitPattern>
+				<unitPattern count="one" case="oblique">{0} मिलीमोल प्रति लीटर</unitPattern>
 				<unitPattern count="other">{0} मिलीमोल प्रति लीटर</unitPattern>
+				<unitPattern count="other" case="oblique">{0} मिलीमोल प्रति लीटर</unitPattern>
 			</unit>
 			<unit type="concentr-item">
+				<gender>masculine</gender>
 				<displayName>items</displayName>
 				<unitPattern count="one">{0} item</unitPattern>
+				<unitPattern count="one" case="oblique">{0} आइटम</unitPattern>
 				<unitPattern count="other">{0} items</unitPattern>
+				<unitPattern count="other" case="oblique">{0} items</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
 				<gender>masculine</gender>
 				<displayName>हिस्सा प्रति दस लाख</displayName>
 				<unitPattern count="one">{0} हिस्सा प्रति दस लाख</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} हिस्सा प्रति दस लाख</unitPattern>
+				<unitPattern count="one" case="oblique">{0} हिस्सा प्रति दस लाख</unitPattern>
 				<unitPattern count="other">{0} हिस्सा प्रति दस लाख</unitPattern>
 				<unitPattern count="other" case="oblique">{0} हिस्सा प्रति दस लाख</unitPattern>
 			</unit>
@@ -6939,7 +6964,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>masculine</gender>
 				<displayName>प्रति हज़ार</displayName>
 				<unitPattern count="one">{0} प्रति हज़ार</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} प्रति हज़ार</unitPattern>
+				<unitPattern count="one" case="oblique">{0} प्रति हज़ार</unitPattern>
 				<unitPattern count="other">{0} प्रति हज़ार</unitPattern>
 				<unitPattern count="other" case="oblique">{0} प्रति हज़ार</unitPattern>
 			</unit>
@@ -6960,9 +6985,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="oblique">{0} मोल</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
+				<gender>masculine</gender>
 				<displayName>लीटर प्रति किलोमीटर</displayName>
 				<unitPattern count="one">{0} लीटर प्रति किलोमीटर</unitPattern>
+				<unitPattern count="one" case="oblique">{0} लीटर प्रति किलोमीटर</unitPattern>
 				<unitPattern count="other">{0} लीटर प्रति किलोमीटर</unitPattern>
+				<unitPattern count="other" case="oblique">{0} लीटर प्रति किलोमीटर</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<gender>masculine</gender>
@@ -6989,49 +7017,76 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="oblique">{0} मील प्रति इंपीरियल गैलन</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
+				<gender>masculine</gender>
 				<displayName>पेटाबाइट</displayName>
 				<unitPattern count="one">{0} पेटाबाइट</unitPattern>
+				<unitPattern count="one" case="oblique">{0} पेटाबाइट</unitPattern>
 				<unitPattern count="other">{0} पेटाबाइट</unitPattern>
+				<unitPattern count="other" case="oblique">{0} पेटाबाइट</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
+				<gender>masculine</gender>
 				<displayName>टेराबाइट</displayName>
 				<unitPattern count="one">{0} टेराबाइट</unitPattern>
+				<unitPattern count="one" case="oblique">{0} टेराबाइट</unitPattern>
 				<unitPattern count="other">{0} टेराबाइट</unitPattern>
+				<unitPattern count="other" case="oblique">{0} टेराबाइट</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
+				<gender>masculine</gender>
 				<displayName>टेराबिट</displayName>
 				<unitPattern count="one">{0} टेराबिट</unitPattern>
+				<unitPattern count="one" case="oblique">{0} टेराबिट</unitPattern>
 				<unitPattern count="other">{0} टेराबिट</unitPattern>
+				<unitPattern count="other" case="oblique">{0} टेराबिट</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
+				<gender>masculine</gender>
 				<displayName>गीगाबाइट</displayName>
 				<unitPattern count="one">{0} गीगाबाइट</unitPattern>
+				<unitPattern count="one" case="oblique">{0} गीगाबाइट</unitPattern>
 				<unitPattern count="other">{0} गीगाबाइट</unitPattern>
+				<unitPattern count="other" case="oblique">{0} गीगाबाइट</unitPattern>
 			</unit>
 			<unit type="digital-gigabit">
+				<gender>masculine</gender>
 				<displayName>गीगाबिट</displayName>
 				<unitPattern count="one">{0} गीगाबिट</unitPattern>
+				<unitPattern count="one" case="oblique">{0} गीगाबिट</unitPattern>
 				<unitPattern count="other">{0} गीगाबिट</unitPattern>
+				<unitPattern count="other" case="oblique">{0} गीगाबिट</unitPattern>
 			</unit>
 			<unit type="digital-megabyte">
+				<gender>masculine</gender>
 				<displayName>मेगाबाइट</displayName>
 				<unitPattern count="one">{0} मेगाबाइट</unitPattern>
+				<unitPattern count="one" case="oblique">{0} मेगाबाइट</unitPattern>
 				<unitPattern count="other">{0} मेगाबाइट</unitPattern>
+				<unitPattern count="other" case="oblique">{0} मेगाबाइट</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
+				<gender>masculine</gender>
 				<displayName>मेगाबिट</displayName>
 				<unitPattern count="one">{0} मेगाबिट</unitPattern>
+				<unitPattern count="one" case="oblique">{0} मेगाबिट</unitPattern>
 				<unitPattern count="other">{0} मेगाबिट</unitPattern>
+				<unitPattern count="other" case="oblique">{0} मेगाबिट</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
+				<gender>masculine</gender>
 				<displayName>किलोबाइट</displayName>
 				<unitPattern count="one">{0} किलोबाइट</unitPattern>
+				<unitPattern count="one" case="oblique">{0} किलोबाइट</unitPattern>
 				<unitPattern count="other">{0} किलोबाइट</unitPattern>
+				<unitPattern count="other" case="oblique">{0} किलोबाइट</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
+				<gender>masculine</gender>
 				<displayName>किलोबिट</displayName>
 				<unitPattern count="one">{0} किलोबिट</unitPattern>
+				<unitPattern count="one" case="oblique">{0} किलोबिट</unitPattern>
 				<unitPattern count="other">{0} किलोबिट</unitPattern>
+				<unitPattern count="other" case="oblique">{0} किलोबिट</unitPattern>
 			</unit>
 			<unit type="digital-byte">
 				<gender>masculine</gender>
@@ -7050,20 +7105,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="oblique">{0} बिट</unitPattern>
 			</unit>
 			<unit type="duration-century">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>शताब्दियाँ</displayName>
 				<unitPattern count="one">{0} शताब्दी</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} शताब्दी</unitPattern>
+				<unitPattern count="one" case="oblique">{0} शताब्दी</unitPattern>
 				<unitPattern count="other">{0} शताब्दियाँ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} शताब्दियों</unitPattern>
+				<unitPattern count="other" case="oblique">{0} शताब्दियों</unitPattern>
 			</unit>
 			<unit type="duration-decade">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>दशकों</displayName>
 				<unitPattern count="one">{0} दशक</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} दशक</unitPattern>
+				<unitPattern count="one" case="oblique">{0} दशक</unitPattern>
 				<unitPattern count="other">{0} दशकों</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} दशकों</unitPattern>
+				<unitPattern count="other" case="oblique">{0} दशकों</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<gender>masculine</gender>
@@ -7078,9 +7133,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>masculine</gender>
 				<displayName>महीना</displayName>
 				<unitPattern count="one">{0} महीना</unitPattern>
-				<unitPattern count="one" case="oblique">{0} महीना</unitPattern>
-				<unitPattern count="other">{0} महीना</unitPattern>
-				<unitPattern count="other" case="oblique">{0} महीना</unitPattern>
+				<unitPattern count="one" case="oblique">{0} महीने</unitPattern>
+				<unitPattern count="other">{0} महीने</unitPattern>
+				<unitPattern count="other" case="oblique">{0} महीनों</unitPattern>
 				<perUnitPattern>{0} प्रति महीना</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
@@ -7096,7 +7151,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>masculine</gender>
 				<displayName>दिन</displayName>
 				<unitPattern count="one">{0} दिन</unitPattern>
-				<unitPattern count="one" case="oblique">{0} दिनों</unitPattern>
+				<unitPattern count="one" case="oblique">{0} दिन</unitPattern>
 				<unitPattern count="other">{0} दिन</unitPattern>
 				<unitPattern count="other" case="oblique">{0} दिनों</unitPattern>
 				<perUnitPattern>{0} प्रति दिन</perUnitPattern>
@@ -7129,19 +7184,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} प्रति सेकंड</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
+				<gender>masculine</gender>
 				<displayName>मिलीसेकंड</displayName>
 				<unitPattern count="one">{0} मिलीसेकंड</unitPattern>
+				<unitPattern count="one" case="oblique">{0} मिलीसेकंड</unitPattern>
 				<unitPattern count="other">{0} मिलीसेकंड</unitPattern>
+				<unitPattern count="other" case="oblique">{0} मिलीसेकंड</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
+				<gender>masculine</gender>
 				<displayName>माइक्रोसेकंड</displayName>
 				<unitPattern count="one">{0} माइक्रोसेकंड</unitPattern>
+				<unitPattern count="one" case="oblique">{0} माइक्रोसेकंड</unitPattern>
 				<unitPattern count="other">{0} माइक्रोसेकंड</unitPattern>
+				<unitPattern count="other" case="oblique">{0} माइक्रोसेकंड</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
+				<gender>masculine</gender>
 				<displayName>नैनो सेकंड</displayName>
 				<unitPattern count="one">{0} नैनो सेकंड</unitPattern>
+				<unitPattern count="one" case="oblique">{0} नैनो सेकंड</unitPattern>
 				<unitPattern count="other">{0} नैनो सेकंड</unitPattern>
+				<unitPattern count="other" case="oblique">{0} नैनो सेकंड</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
 				<gender>masculine</gender>
@@ -7152,9 +7216,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="oblique">{0} एम्पीयर</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
+				<gender>masculine</gender>
 				<displayName>मिली एम्‍पीयर</displayName>
 				<unitPattern count="one">{0} मिली एम्‍पीयर</unitPattern>
+				<unitPattern count="one" case="oblique">{0} मिली एम्‍पीयर</unitPattern>
 				<unitPattern count="other">{0} मिली एम्‍पीयर</unitPattern>
+				<unitPattern count="other" case="oblique">{0} मिली एम्‍पीयर</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
 				<gender>masculine</gender>
@@ -7197,9 +7264,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="oblique">{0} कैलोरी</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
+				<gender>masculine</gender>
 				<displayName>किलो जूल</displayName>
 				<unitPattern count="one">{0} किलो जूल</unitPattern>
+				<unitPattern count="one" case="oblique">{0} किलो जूल</unitPattern>
 				<unitPattern count="other">{0} किलो जूल</unitPattern>
+				<unitPattern count="other" case="oblique">{0} किलो जूल</unitPattern>
 			</unit>
 			<unit type="energy-joule">
 				<gender>masculine</gender>
@@ -7210,9 +7280,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="oblique">{0} जूल</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
+				<gender>masculine</gender>
 				<displayName>किलोवॉट घंटे</displayName>
 				<unitPattern count="one">{0} किलोवॉट घंटा</unitPattern>
+				<unitPattern count="one" case="oblique">{0} किलोवॉट घंटा</unitPattern>
 				<unitPattern count="other">{0} किलोवॉट घंटे</unitPattern>
+				<unitPattern count="other" case="oblique">{0} किलोवॉट घंटे</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
 				<displayName>इलेक्ट्रॉनवोल्ट</displayName>
@@ -7238,24 +7311,36 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>masculine</gender>
 				<displayName>न्यूटन</displayName>
 				<unitPattern count="one">{0} न्यूटन</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} न्यूटन</unitPattern>
+				<unitPattern count="one" case="oblique">{0} न्यूटन</unitPattern>
 				<unitPattern count="other">{0} न्यूटन</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} न्यूटन</unitPattern>
+				<unitPattern count="other" case="oblique">{0} न्यूटन</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<gender>masculine</gender>
 			</unit>
 			<unit type="frequency-gigahertz">
+				<gender>masculine</gender>
 				<displayName>गीगाहर्ट्ज़</displayName>
 				<unitPattern count="one">{0} गीगाहर्ट्ज़</unitPattern>
+				<unitPattern count="one" case="oblique">{0} गीगाहर्ट्ज़</unitPattern>
 				<unitPattern count="other">{0} गीगाहर्ट्ज़</unitPattern>
+				<unitPattern count="other" case="oblique">{0} गीगाहर्ट्ज़</unitPattern>
 			</unit>
 			<unit type="frequency-megahertz">
+				<gender>masculine</gender>
 				<displayName>मेगाहर्ट्ज़</displayName>
 				<unitPattern count="one">{0} मेगाहर्ट्ज़</unitPattern>
+				<unitPattern count="one" case="oblique">{0} मेगाहर्ट्ज़</unitPattern>
 				<unitPattern count="other">{0} मेगाहर्ट्ज़</unitPattern>
+				<unitPattern count="other" case="oblique">{0} मेगाहर्ट्ज़</unitPattern>
 			</unit>
 			<unit type="frequency-kilohertz">
+				<gender>masculine</gender>
 				<displayName>किलोहर्ट्ज़</displayName>
 				<unitPattern count="one">{0} किलोहर्ट्ज़</unitPattern>
+				<unitPattern count="one" case="oblique">{0} किलोहर्ट्ज़</unitPattern>
 				<unitPattern count="other">{0} किलोहर्ट्ज़</unitPattern>
+				<unitPattern count="other" case="oblique">{0} किलोहर्ट्ज़</unitPattern>
 			</unit>
 			<unit type="frequency-hertz">
 				<gender>masculine</gender>
@@ -7266,11 +7351,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="oblique">{0} हर्ट्ज़</unitPattern>
 			</unit>
 			<unit type="graphics-em">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>टाइपोग्राफ़िक एम</displayName>
 			</unit>
 			<unit type="graphics-pixel">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>पिक्सेल</displayName>
 				<unitPattern count="one">{0} पिक्सेल</unitPattern>
 				<unitPattern count="one" case="oblique">{0} पिक्सेल</unitPattern>
@@ -7278,14 +7363,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="oblique">{0} पिक्सेल</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
+				<gender>masculine</gender>
 				<displayName>मेगापिक्सेल</displayName>
 				<unitPattern count="one">{0} मेगापिक्सेल</unitPattern>
+				<unitPattern count="one" case="oblique">{0} मेगापिक्सेल</unitPattern>
 				<unitPattern count="other">{0} मेगापिक्सेल</unitPattern>
+				<unitPattern count="other" case="oblique">{0} मेगापिक्सेल</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-centimeter">
+				<gender>masculine</gender>
 				<displayName>पिक्सेल प्रति सेंटीमीटर</displayName>
 				<unitPattern count="one">{0} पिक्सेल प्रति सेंटीमीटर</unitPattern>
+				<unitPattern count="one" case="oblique">{0} पिक्सेल प्रति सेंटीमीटर</unitPattern>
 				<unitPattern count="other">{0} पिक्सेल प्रति सेंटीमीटर</unitPattern>
+				<unitPattern count="other" case="oblique">{0} पिक्सेल प्रति सेंटीमीटर</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-inch">
 				<displayName>पिक्सेल प्रति इंच</displayName>
@@ -7329,9 +7420,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0}/मीटर</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
+				<gender>masculine</gender>
 				<displayName>डेसीमीटर</displayName>
 				<unitPattern count="one">{0} डेसीमीटर</unitPattern>
+				<unitPattern count="one" case="oblique">{0} डेसीमीटर</unitPattern>
 				<unitPattern count="other">{0} डेसीमीटर</unitPattern>
+				<unitPattern count="other" case="oblique">{0} डेसीमीटर</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<gender>masculine</gender>
@@ -7351,14 +7445,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="oblique">{0} मिलीमीटर</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
+				<gender>masculine</gender>
 				<displayName>माइक्रोमीटर</displayName>
 				<unitPattern count="one">{0} माइक्रोमीटर</unitPattern>
+				<unitPattern count="one" case="oblique">{0} माइक्रोमीटर</unitPattern>
 				<unitPattern count="other">{0} माइक्रोमीटर</unitPattern>
+				<unitPattern count="other" case="oblique">{0} माइक्रोमीटर</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
+				<gender>masculine</gender>
 				<displayName>नैनोमीटर</displayName>
 				<unitPattern count="one">{0} नैनोमीटर</unitPattern>
+				<unitPattern count="one" case="oblique">{0} नैनोमीटर</unitPattern>
 				<unitPattern count="other">{0} नैनोमीटर</unitPattern>
+				<unitPattern count="other" case="oblique">{0} नैनोमीटर</unitPattern>
 			</unit>
 			<unit type="length-picometer">
 				<gender>masculine</gender>
@@ -7523,9 +7623,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="oblique">{0} मिलीग्राम</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
+				<gender>masculine</gender>
 				<displayName>माइक्रोग्राम</displayName>
 				<unitPattern count="one">{0} माइक्रोग्राम</unitPattern>
+				<unitPattern count="one" case="oblique">{0} माइक्रोग्राम</unitPattern>
 				<unitPattern count="other">{0} माइक्रोग्राम</unitPattern>
+				<unitPattern count="other" case="oblique">{0} माइक्रोग्राम</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>टन</displayName>
@@ -7601,19 +7704,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="oblique">{0} डेढ़ रत्ती</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
+				<gender>masculine</gender>
 				<displayName>गिगावॉट</displayName>
 				<unitPattern count="one">{0} गिगावॉट</unitPattern>
+				<unitPattern count="one" case="oblique">{0} गिगावॉट</unitPattern>
 				<unitPattern count="other">{0} गिगावॉट</unitPattern>
+				<unitPattern count="other" case="oblique">{0} गिगावॉट</unitPattern>
 			</unit>
 			<unit type="power-megawatt">
+				<gender>masculine</gender>
 				<displayName>मेगावॉट</displayName>
 				<unitPattern count="one">{0} मेगावॉट</unitPattern>
+				<unitPattern count="one" case="oblique">{0} मेगावॉट</unitPattern>
 				<unitPattern count="other">{0} मेगावॉट</unitPattern>
+				<unitPattern count="other" case="oblique">{0} मेगावॉट</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
+				<gender>masculine</gender>
 				<displayName>किलोवॉट</displayName>
 				<unitPattern count="one">{0} किलोवॉट</unitPattern>
+				<unitPattern count="one" case="oblique">{0} किलोवॉट</unitPattern>
 				<unitPattern count="other">{0} किलोवॉट</unitPattern>
+				<unitPattern count="other" case="oblique">{0} किलोवॉट</unitPattern>
 			</unit>
 			<unit type="power-watt">
 				<gender>masculine</gender>
@@ -7624,9 +7736,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="oblique">{0} वॉट</unitPattern>
 			</unit>
 			<unit type="power-milliwatt">
+				<gender>masculine</gender>
 				<displayName>मिलीवॉट</displayName>
 				<unitPattern count="one">{0} मिलीवॉट</unitPattern>
+				<unitPattern count="one" case="oblique">{0} मिलीवॉट</unitPattern>
 				<unitPattern count="other">{0} मिलीवॉट</unitPattern>
+				<unitPattern count="other" case="oblique">{0} मिलीवॉट</unitPattern>
 			</unit>
 			<unit type="power-horsepower">
 				<displayName>अश्वशक्ति</displayName>
@@ -7657,9 +7772,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="oblique">{0} बार</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
+				<gender>masculine</gender>
 				<displayName>मिलीबार</displayName>
 				<unitPattern count="one">{0} मिलीबार</unitPattern>
+				<unitPattern count="one" case="oblique">{0} मिलीबार</unitPattern>
 				<unitPattern count="other">{0} मिलीबार</unitPattern>
+				<unitPattern count="other" case="oblique">{0} मिलीबार</unitPattern>
 			</unit>
 			<unit type="pressure-atmosphere">
 				<gender draft="contributed">masculine</gender>
@@ -7678,9 +7796,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="oblique">{0} पास्कल</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
-				<displayName>हैक्टोपास्कल</displayName>
-				<unitPattern count="one">{0} हैक्टोपास्कल</unitPattern>
-				<unitPattern count="other">{0} हैक्टोपास्कल</unitPattern>
+				<gender>masculine</gender>
+				<displayName>हेक्टोपास्कल</displayName>
+				<unitPattern count="one">{0} हेक्टोपास्कल</unitPattern>
+				<unitPattern count="one" case="oblique">{0} हेक्टोपास्कल</unitPattern>
+				<unitPattern count="other">{0} हेक्टोपास्कल</unitPattern>
+				<unitPattern count="other" case="oblique">{0} हेक्टोपास्कल</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
 				<gender>masculine</gender>
@@ -7691,9 +7812,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="oblique">{0} किलोपास्कल</unitPattern>
 			</unit>
 			<unit type="pressure-megapascal">
+				<gender>masculine</gender>
 				<displayName>मेगापास्कल</displayName>
 				<unitPattern count="one">{0} मेगापास्कल</unitPattern>
+				<unitPattern count="one" case="oblique">{0} मेगापास्कल</unitPattern>
 				<unitPattern count="other">{0} मेगापास्कल</unitPattern>
+				<unitPattern count="other" case="oblique">{0} मेगापास्कल</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<gender>masculine</gender>
@@ -7762,19 +7886,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} पाउंड-फ़ुट</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
+				<gender>masculine</gender>
 				<displayName>न्यूटन-मीटर</displayName>
 				<unitPattern count="one">{0} न्यूटन-मीटर</unitPattern>
+				<unitPattern count="one" case="oblique">{0} न्यूटन-मीटर</unitPattern>
 				<unitPattern count="other">{0} न्यूटन-मीटर</unitPattern>
+				<unitPattern count="other" case="oblique">{0} न्यूटन-मीटर</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
+				<gender>masculine</gender>
 				<displayName>घन किलोमीटर</displayName>
 				<unitPattern count="one">{0} घन किलोमीटर</unitPattern>
+				<unitPattern count="one" case="oblique">{0} घन किलोमीटर</unitPattern>
 				<unitPattern count="other">{0} घन किलोमीटर</unitPattern>
+				<unitPattern count="other" case="oblique">{0} घन किलोमीटर</unitPattern>
 			</unit>
 			<unit type="volume-cubic-meter">
+				<gender>masculine</gender>
 				<displayName>घन मीटर</displayName>
 				<unitPattern count="one">{0} घन मीटर</unitPattern>
+				<unitPattern count="one" case="oblique">{0} घन मीटर</unitPattern>
 				<unitPattern count="other">{0} घन मीटर</unitPattern>
+				<unitPattern count="other" case="oblique">{0} घन मीटर</unitPattern>
 				<perUnitPattern>{0}/घन मीटर</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
@@ -7783,7 +7916,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} घन सेंटीमीटर</unitPattern>
 				<unitPattern count="one" case="oblique">{0} घन सेंटीमीटर</unitPattern>
 				<unitPattern count="other">{0} घन सेंटीमीटर</unitPattern>
-				<unitPattern count="other" case="oblique">{0} घन. सेंटी.</unitPattern>
+				<unitPattern count="other" case="oblique">{0} घन सेंटीमीटर</unitPattern>
 				<perUnitPattern>{0}/घन सेंटीमीटर</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
@@ -7813,14 +7946,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} घन इंच</unitPattern>
 			</unit>
 			<unit type="volume-megaliter">
+				<gender>masculine</gender>
 				<displayName>मेगालीटर</displayName>
 				<unitPattern count="one">{0} मेगालीटर</unitPattern>
+				<unitPattern count="one" case="oblique">{0} मेगालीटर</unitPattern>
 				<unitPattern count="other">{0} मेगालीटर</unitPattern>
+				<unitPattern count="other" case="oblique">{0} मेगालीटर</unitPattern>
 			</unit>
 			<unit type="volume-hectoliter">
-				<displayName>हैक्टोलीटर</displayName>
-				<unitPattern count="one">{0} हैक्टोलीटर</unitPattern>
-				<unitPattern count="other">{0} हैक्टोलीटर</unitPattern>
+				<gender>masculine</gender>
+				<displayName>हेक्टोलीटर</displayName>
+				<unitPattern count="one">{0} हेक्टोलीटर</unitPattern>
+				<unitPattern count="one" case="oblique">{0} हेक्टोलीटर</unitPattern>
+				<unitPattern count="other">{0} हेक्टोलीटर</unitPattern>
+				<unitPattern count="other" case="oblique">{0} हेक्टोलीटर</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<gender>masculine</gender>

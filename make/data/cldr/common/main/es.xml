@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
@@ -6410,7 +6412,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">laris</displayName>
 				<symbol>GEL</symbol>
 				<symbol alt="narrow">₾</symbol>
-				<symbol alt="variant">₾</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>cedi ghanés (1979–2007)</displayName>
@@ -7724,11 +7725,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} miligramos por decilitro</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
+				<gender>masculine</gender>
 				<displayName>milimoles por litro</displayName>
 				<unitPattern count="one">{0} milimol por litro</unitPattern>
 				<unitPattern count="other">{0} milimoles por litro</unitPattern>
 			</unit>
 			<unit type="concentr-item">
+				<gender>masculine</gender>
 				<displayName>ítem</displayName>
 				<unitPattern count="one">{0} ítem</unitPattern>
 				<unitPattern count="other">{0} ítems</unitPattern>
@@ -7764,6 +7767,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} moles</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
+				<gender>masculine</gender>
 				<displayName>litros por kilómetro</displayName>
 				<unitPattern count="one">{0} litro por kilómetro</unitPattern>
 				<unitPattern count="other">{0} litros por kilómetro</unitPattern>
@@ -7787,6 +7791,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} millas por galón imperial</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
+				<gender>masculine</gender>
 				<displayName>petabytes</displayName>
 				<unitPattern count="one">{0} petabyte</unitPattern>
 				<unitPattern count="other">{0} petabytes</unitPattern>
@@ -7798,6 +7803,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} terabytes</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
+				<gender>masculine</gender>
 				<displayName>terabits</displayName>
 				<unitPattern count="one">{0} terabit</unitPattern>
 				<unitPattern count="other">{0} terabits</unitPattern>
@@ -7915,16 +7921,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} por segundo</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
+				<gender>masculine</gender>
 				<displayName>milisegundos</displayName>
 				<unitPattern count="one">{0} milisegundo</unitPattern>
 				<unitPattern count="other">{0} milisegundos</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
+				<gender>masculine</gender>
 				<displayName>microsegundos</displayName>
 				<unitPattern count="one">{0} microsegundo</unitPattern>
 				<unitPattern count="other">{0} microsegundos</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
+				<gender>masculine</gender>
 				<displayName>nanosegundos</displayName>
 				<unitPattern count="one">{0} nanosegundo</unitPattern>
 				<unitPattern count="other">{0} nanosegundos</unitPattern>
@@ -7936,6 +7945,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} amperios</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
+				<gender>masculine</gender>
 				<displayName>miliamperios</displayName>
 				<unitPattern count="one">{0} miliamperio</unitPattern>
 				<unitPattern count="other">{0} miliamperios</unitPattern>
@@ -7971,6 +7981,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} kilocalorías</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
+				<gender>masculine</gender>
 				<displayName>kilojulios</displayName>
 				<unitPattern count="one">{0} kilojulio</unitPattern>
 				<unitPattern count="other">{0} kilojulios</unitPattern>
@@ -7982,6 +7993,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} julios</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
+				<gender>masculine</gender>
 				<displayName>kilovatios hora</displayName>
 				<unitPattern count="one">{0} kilovatio hora</unitPattern>
 				<unitPattern count="other">{0} kilovatios hora</unitPattern>
@@ -8013,21 +8025,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} newtons</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<gender>masculine</gender>
 				<displayName>kilovatios hora por 100 kilómetros</displayName>
 				<unitPattern count="one">{0} kilovatio hora por 100 kilómetros</unitPattern>
 				<unitPattern count="other">{0} kilovatios hora por 100 kilómetros</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
+				<gender>masculine</gender>
 				<displayName>gigahercios</displayName>
 				<unitPattern count="one">{0} gigahercio</unitPattern>
 				<unitPattern count="other">{0} gigahercios</unitPattern>
 			</unit>
 			<unit type="frequency-megahertz">
+				<gender>masculine</gender>
 				<displayName>megahercios</displayName>
 				<unitPattern count="one">{0} megahercio</unitPattern>
 				<unitPattern count="other">{0} megahercios</unitPattern>
 			</unit>
 			<unit type="frequency-kilohertz">
+				<gender>masculine</gender>
 				<displayName>kilohercios</displayName>
 				<unitPattern count="one">{0} kilohercio</unitPattern>
 				<unitPattern count="other">{0} kilohercios</unitPattern>
@@ -8051,11 +8067,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} píxeles</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
+				<gender>masculine</gender>
 				<displayName>megapíxeles</displayName>
 				<unitPattern count="one">{0} megapíxel</unitPattern>
 				<unitPattern count="other">{0} megapíxeles</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-centimeter">
+				<gender>masculine</gender>
 				<displayName>píxeles por centímetro</displayName>
 				<unitPattern count="one">{0} píxel por centímetro</unitPattern>
 				<unitPattern count="other">{0} píxeles por centímetro</unitPattern>
@@ -8100,6 +8118,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} por metro</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
+				<gender>masculine</gender>
 				<displayName>decímetros</displayName>
 				<unitPattern count="one">{0} decímetro</unitPattern>
 				<unitPattern count="other">{0} decímetros</unitPattern>
@@ -8118,11 +8137,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} milímetros</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
+				<gender>masculine</gender>
 				<displayName>micrómetros</displayName>
 				<unitPattern count="one">{0} micrómetro</unitPattern>
 				<unitPattern count="other">{0} micrómetros</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
+				<gender>masculine</gender>
 				<displayName>nanómetros</displayName>
 				<unitPattern count="one">{0} nanómetro</unitPattern>
 				<unitPattern count="other">{0} nanómetros</unitPattern>
@@ -8258,6 +8279,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} miligramos</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
+				<gender>masculine</gender>
 				<displayName>microgramos</displayName>
 				<unitPattern count="one">{0} microgramo</unitPattern>
 				<unitPattern count="other">{0} microgramos</unitPattern>
@@ -8322,6 +8344,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} granos</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
+				<gender>masculine</gender>
 				<displayName>gigavatios</displayName>
 				<unitPattern count="one">{0} gigavatio</unitPattern>
 				<unitPattern count="other">{0} gigavatios</unitPattern>
@@ -8345,6 +8368,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} vatios</unitPattern>
 			</unit>
 			<unit type="power-milliwatt">
+				<gender>masculine</gender>
 				<displayName>milivatios</displayName>
 				<unitPattern count="one">{0} milivatio</unitPattern>
 				<unitPattern count="other">{0} milivatios</unitPattern>
@@ -8376,6 +8400,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} bares</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
+				<gender>masculine</gender>
 				<displayName>milibares</displayName>
 				<unitPattern count="one">{0} milibar</unitPattern>
 				<unitPattern count="other">{0} milibares</unitPattern>
@@ -8393,6 +8418,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} pascales</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
+				<gender>masculine</gender>
 				<displayName>hectopascales</displayName>
 				<unitPattern count="one">{0} hectopascal</unitPattern>
 				<unitPattern count="other">{0} hectopascales</unitPattern>
@@ -8404,6 +8430,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} kilopascales</unitPattern>
 			</unit>
 			<unit type="pressure-megapascal">
+				<gender>masculine</gender>
 				<displayName>megapascales</displayName>
 				<unitPattern count="one">{0} megapascal</unitPattern>
 				<unitPattern count="other">{0} megapascales</unitPattern>
@@ -8461,6 +8488,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} libras pies</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
+				<gender>masculine</gender>
 				<displayName>newton metros</displayName>
 				<unitPattern count="one">{0} newton metro</unitPattern>
 				<unitPattern count="other">{0} newton metros</unitPattern>
@@ -8509,6 +8537,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} pulgadas cúbicas</unitPattern>
 			</unit>
 			<unit type="volume-megaliter">
+				<gender>masculine</gender>
 				<displayName>megalitros</displayName>
 				<unitPattern count="one">{0} megalitro</unitPattern>
 				<unitPattern count="other">{0} megalitros</unitPattern>

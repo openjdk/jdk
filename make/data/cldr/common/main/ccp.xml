@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -5274,7 +5274,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">𑄎𑄧𑄢𑄴𑄎𑄨𑄠𑄚𑄴 𑄣𑄢𑄨</displayName>
 				<symbol>GEL</symbol>
 				<symbol alt="narrow">₾</symbol>
-				<symbol alt="variant">₾</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>𑄊𑄚 𑄥𑄬𑄓𑄨 (𑄷𑄿𑄽𑄿-𑄸𑄶𑄶𑄽)</displayName>

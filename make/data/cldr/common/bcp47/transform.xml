@@ -33,6 +33,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type name="prprname" description="transform variant for proper names" since="29" alias="names"/>
 			<type name="iast" description="International Alphabet of Sanskrit Transliteration" since="35"/>
 			<type name="ewts" description="Extended Wylie Transliteration Scheme" since="35"/>
+			<type name="aethiopi" description="Encylopedia Aethiopica Transliteration" since="41"/>
+			<type name="betamets" description="Beta Maṣāḥǝft Transliteration" since="41" alias="beta-metsehaf"/>
+			<type name="iesjes" description="IES/JES Amharic Transliteration" since="41" alias="ies-jes"/>
+			<type name="es3842" description="Ethiopian Standards Agency ES 3842:2014 Ethiopic-Latin Transliteration" since="41"/>
+			<type name="lambdin" description="Thomas Oden Lambdin Ethiopic-Latin Transliteration" since="41"/>
+			<type name="gurage" description="Gurage Legacy to Modern Transliteration" since="41"/>
+			<type name="gutgarts" description="Yaros Gutgarts Ethiopic-Cyrillic Transliteration" since="41"/>
+			<type name="sera" description="System for Ethiopic Representation in ASCII" since="41"/>
+			<type name="tekieali" description="Tekie Alibekit Blin-Latin Transliteration" since="41" alias="tekie-alibekit"/>
+			<type name="xaleget" description="Eritrean Ministry of Education Blin-Latin Transliteration" since="41"/>
 		</key>
 	</keyword>
 </ldmlBCP47>

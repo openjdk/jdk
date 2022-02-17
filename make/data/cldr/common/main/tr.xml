@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
@@ -127,7 +129,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="cop">Kıptice</language>
 			<language type="cps">Capiznon</language>
 			<language type="cr">Krice</language>
-			<language type="crh">Kırım Türkçesi</language>
+			<language type="crh">Kırım Tatarcası</language>
 			<language type="crs">Seselwa Kreole Fransızcası</language>
 			<language type="cs">Çekçe</language>
 			<language type="csb">Kashubian</language>
@@ -1711,7 +1713,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
 							<greatestDifference id="d">G d MMM E – d MMM E y</greatestDifference>
-							<greatestDifference id="G">d MMM y E – d MMM y E</greatestDifference>
+							<greatestDifference id="G">G d MMM y E – G d MMM y E</greatestDifference>
 							<greatestDifference id="M">G d MMM E – d MMM E y</greatestDifference>
 							<greatestDifference id="y">G d MMM y E – d MMM y E</greatestDifference>
 						</intervalFormatItem>
@@ -6369,7 +6371,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">Gürcistan larisi</displayName>
 				<symbol>GEL</symbol>
 				<symbol alt="narrow">₾</symbol>
-				<symbol alt="variant">₾</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>Gana Sedisi (1979–2007)</displayName>

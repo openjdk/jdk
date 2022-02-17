@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -239,9 +239,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="BZ">Белиз</territory>
 			<territory type="CA">Канада</territory>
 			<territory type="CC">Ҷазираҳои Кокос (Килинг)</territory>
-			<territory type="CD" alt="variant">Конго (ҶДК)</territory>
+			<territory type="CD">Конго (ҶДК)</territory>
 			<territory type="CF">Ҷумҳурии Африқои Марказӣ</territory>
-			<territory type="CG" alt="variant">Конго</territory>
+			<territory type="CG">Конго</territory>
 			<territory type="CH">Швейтсария</territory>
 			<territory type="CI">Кот-д’Ивуар</territory>
 			<territory type="CK">Ҷазираҳои Кук</territory>

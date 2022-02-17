@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
@@ -1139,8 +1141,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[\u093C ॐ \u0902 \u0901 ः अ आ इ ई उ ऊ ऋ ऌ ऍ ए ऐ ऑ ओ औ क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ऱ ल व श ष स ह ळ ऽ ा ि ी \u0941 \u0942 \u0943 \u0944 \u0945 \u0947 \u0948 ॉ ो ौ \u094D]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[\u200C\u200D]</exemplarCharacters>
+		<exemplarCharacters>[\u093C ॐ \u0902 \u0901 ः अ आ इ ई उ ऊ ऋ ऌ ऍ ए ऐ ऑ ओ औ क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ऱ ल व श ष स ह ळ ऽ ा ि ी \u0941 \u0942 \u0943 \u0945 \u0947 \u0948 ॉ ो ौ \u094D]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[\u200C\u200D \u0944]</exemplarCharacters>
 		<exemplarCharacters type="index">[\u200D ॐ \u0902 ः अ आ इ ई उ ऊ ऋ ऌ ए ऐ ऑ ओ औ क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ल व श ष स ह ळ ऽ \u0945 \u094D]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0० 1१ 2२ 3३ 4४ 5५ 6६ 7७ 8८ 9९]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] @ * / \&amp; # ′ ″]</exemplarCharacters>
@@ -3867,6 +3869,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Pacific/Enderbury">
 				<exemplarCity>एंडरबरी</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kanton">
+				<exemplarCity>कँटन</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>किरितिमाती</exemplarCity>
@@ -6759,17 +6764,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<ordinalMinimalPairs ordinal="one">{0}ले उजवे वळण घ्या.</ordinalMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">{0}वे उजवे वळण घ्या.</ordinalMinimalPairs>
 			<ordinalMinimalPairs ordinal="two">{0}रे उजवे वळण घ्या.</ordinalMinimalPairs>
-			<caseMinimalPairs case="ablative">{0} दिवसापासून त्याचे प्रयत्न चालू होते</caseMinimalPairs>
-			<caseMinimalPairs case="accusative">दर {0} दिवसाला येऊन तो विचारणा करत होता</caseMinimalPairs>
-			<caseMinimalPairs case="dative">{0} दिवसांसाठी तो गावाला गेला आहे</caseMinimalPairs>
-			<caseMinimalPairs case="ergative">{0} दिवसाने काय फरक पडणार?</caseMinimalPairs>
-			<caseMinimalPairs case="genitive">{0} दिवसांचा कार्यक्रम होता</caseMinimalPairs>
-			<caseMinimalPairs case="locative">{0} व्या दिवशी तो हजर झाला</caseMinimalPairs>
-			<caseMinimalPairs case="nominative">{0} दिवस खूप मजेत गेले</caseMinimalPairs>
-			<caseMinimalPairs case="oblique">{0} दिवस</caseMinimalPairs>
-			<genderMinimalPairs gender="feminine">कॅलरी {0} ने वाढली</genderMinimalPairs>
-			<genderMinimalPairs gender="masculine">तो {0} तास खूप महत्वाचा होता</genderMinimalPairs>
-			<genderMinimalPairs gender="neuter">ते {0} वर्ष खूप महत्वाचे होते</genderMinimalPairs>
+			<caseMinimalPairs case="ablative">{0} त्याचे प्रयत्न चालू होते</caseMinimalPairs>
+			<caseMinimalPairs case="accusative">दर {0} येऊन तो विचारणा करत होता</caseMinimalPairs>
+			<caseMinimalPairs case="dative">{0} तो गावाला गेला आह</caseMinimalPairs>
+			<caseMinimalPairs case="ergative">{0} काय फरक पडणार?</caseMinimalPairs>
+			<caseMinimalPairs case="genitive">{0} कार्यक्रम होता</caseMinimalPairs>
+			<caseMinimalPairs case="locative">{0} काम पूर्ण होईल</caseMinimalPairs>
+			<caseMinimalPairs case="nominative">{0} मजेत गेले</caseMinimalPairs>
+			<genderMinimalPairs gender="feminine">ती {0} खूप महत्वाची होती</genderMinimalPairs>
+			<genderMinimalPairs gender="masculine">तो {0} खूप महत्वाचा होता</genderMinimalPairs>
+			<genderMinimalPairs gender="neuter">ते {0} खूप महत्वाचे होते</genderMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
@@ -6870,7 +6874,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<compoundUnitPattern1 count="one" case="ergative">चौरस {0} ने</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" case="genitive">चौरस {0} चा</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" case="locative">चौरस {0} शी</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" case="oblique">चौरस {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" gender="feminine">चौरस {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" gender="feminine" case="ablative">चौरस {0} आकृती पासून</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" gender="feminine" case="accusative">चौरस {0} आकृतीला</compoundUnitPattern1>
@@ -6878,7 +6881,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<compoundUnitPattern1 count="one" gender="feminine" case="ergative">चौरस {0} आकृतीने</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" gender="feminine" case="genitive">चौरस {0} आकृतीचा</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" gender="feminine" case="locative">चौरस {0} आकृतीशी</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="oblique">चौरस {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" gender="masculine">चौरस {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" gender="masculine" case="ablative">चौरस {0} पासून</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" gender="masculine" case="accusative">चौरस {0} ला</compoundUnitPattern1>
@@ -6886,7 +6888,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<compoundUnitPattern1 count="one" gender="masculine" case="ergative">चौरस {0} ने</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" gender="masculine" case="genitive">चौरस {0} चा</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" gender="masculine" case="locative">चौरस {0} शी</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="masculine" case="oblique">चौरस {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">चौरस {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="ablative">चौरस {0} हून</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="accusative">चौरस {0} ना</compoundUnitPattern1>
@@ -6894,7 +6895,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<compoundUnitPattern1 count="other" case="ergative">चौरस {0} नी</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="genitive">चौरस {0} चे</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="locative">चौरस {0} चा</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" case="oblique">चौरस {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" gender="feminine">चौरस {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" gender="feminine" case="ablative">चौरस {0} आकृतींहून</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" gender="feminine" case="accusative">चौरस {0} आकृतींना</compoundUnitPattern1>
@@ -6902,7 +6902,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<compoundUnitPattern1 count="other" gender="feminine" case="ergative">चौरस {0} आकृतींनी</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" gender="feminine" case="genitive">चौरस {0} आकृतींचे</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" gender="feminine" case="locative">चौरस {0} आकृत्यांचा</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="oblique">चौरस {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" gender="masculine">चौरस {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" gender="masculine" case="ablative">चौरस {0} हून</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" gender="masculine" case="accusative">चौरस {0} ना</compoundUnitPattern1>
@@ -6910,7 +6909,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<compoundUnitPattern1 count="other" gender="masculine" case="ergative">चौरस {0} नी</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" gender="masculine" case="genitive">चौरस {0} चे</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" gender="masculine" case="locative">चौरस {0} चा</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="masculine" case="oblique">चौरस {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="power3">
 				<compoundUnitPattern1>घन{0}</compoundUnitPattern1>
@@ -6929,7 +6927,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<compoundUnitPattern1 count="one" gender="feminine" case="ergative">घन {0} आकृतीने</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" gender="feminine" case="genitive">घन {0} आकृतीचा</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" gender="feminine" case="locative">घन {0} आकृतीशी</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="oblique">घन {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" gender="masculine">घन{0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" gender="masculine" case="ablative">घन {0} पासून</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" gender="masculine" case="accusative">घन {0} ला</compoundUnitPattern1>
@@ -6937,7 +6934,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<compoundUnitPattern1 count="one" gender="masculine" case="ergative">घन {0} ने</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" gender="masculine" case="genitive">घन {0} चा</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" gender="masculine" case="locative">घन {0} शी</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="masculine" case="oblique">घन {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">घन{0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="ablative">घन {0} हून</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="accusative">घन {0} ना</compoundUnitPattern1>
@@ -6953,7 +6949,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<compoundUnitPattern1 count="other" gender="feminine" case="ergative">घन {0} आकृतींनी</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" gender="feminine" case="genitive">घन {0} आकृतींचे</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" gender="feminine" case="locative">घन {0} आकृत्यांचा</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="oblique">घन {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" gender="masculine">घन {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" gender="masculine" case="ablative">घन {0} हून</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" gender="masculine" case="accusative">घन {0} ना</compoundUnitPattern1>
@@ -6961,10 +6956,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<compoundUnitPattern1 count="other" gender="masculine" case="ergative">घन {0} नी</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" gender="masculine" case="genitive">घन {0} चे</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" gender="masculine" case="locative">घन {0} चा</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="masculine" case="oblique">घन {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>जी-फोर्स</displayName>
 				<unitPattern count="one">{0} जी-फोर्स</unitPattern>
 				<unitPattern count="one" case="ablative">{0} जी-फोर्सपासून</unitPattern>
@@ -6973,7 +6967,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} जी-फोर्सने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} जी-फोर्सचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} जी-फोर्सशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} जी-फोर्स</unitPattern>
 				<unitPattern count="other">{0} जी-फोर्स</unitPattern>
 				<unitPattern count="other" case="ablative">{0} जी-फोर्सहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} जी-फोर्सना</unitPattern>
@@ -6981,15 +6974,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} जी-फोर्सनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} जी-फोर्सचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} जी-फोर्सचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} जी-फोर्स</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
+				<gender>neuter</gender>
 				<displayName>मीटर प्रति सेकंद चौरस</displayName>
 				<unitPattern count="one">{0} मीटर प्रति सेकंद चौरस</unitPattern>
+				<unitPattern count="one" case="ablative">{0} मीटर प्रति सेकंद चौरसपासून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} मीटर प्रति सेकंद चौरसला</unitPattern>
+				<unitPattern count="one" case="dative">{0} मीटर प्रति सेकंद चौरससाठी</unitPattern>
+				<unitPattern count="one" case="ergative">{0} मीटर प्रति सेकंद चौरसने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} मीटर प्रति सेकंद चौरसचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} मीटर प्रति सेकंद चौरसमध्ये</unitPattern>
 				<unitPattern count="other">{0} मीटर प्रति सेकंद चौरस</unitPattern>
+				<unitPattern count="other" case="ablative">{0} मीटर प्रति सेकंद चौरसपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} मीटर प्रति सेकंद चौरसना</unitPattern>
+				<unitPattern count="other" case="dative">{0} मीटर प्रति सेकंद चौरसना</unitPattern>
+				<unitPattern count="other" case="ergative">{0} मीटर प्रति सेकंद चौरसाने</unitPattern>
+				<unitPattern count="other" case="genitive">{0} मीटर प्रति सेकंद चौरसाचा</unitPattern>
+				<unitPattern count="other" case="locative">{0} मीटर प्रति सेकंद चौरसात</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>परिभ्रमण</displayName>
 				<unitPattern count="one">{0} परिभ्रमण</unitPattern>
 				<unitPattern count="one" case="ablative">{0} परिभ्रमणापासून</unitPattern>
@@ -6998,7 +7003,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} परिभ्रमणाने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} परिभ्रमणाचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} परिभ्रमणाशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} परिभ्रमण</unitPattern>
 				<unitPattern count="other">{0} परिभ्रमणे</unitPattern>
 				<unitPattern count="other" case="ablative">{0} परिभ्रमणांहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} परिभ्रमणांना</unitPattern>
@@ -7006,10 +7010,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} परिभ्रमणांनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} परिभ्रमणांचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} परिभ्रमणांचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} परिभ्रमणे</unitPattern>
 			</unit>
 			<unit type="angle-radian">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>रेडियन</displayName>
 				<unitPattern count="one">{0} रेडियन</unitPattern>
 				<unitPattern count="one" case="ablative">{0} रेडियनपासून</unitPattern>
@@ -7018,7 +7021,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} रेडियनने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} रेडियनचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} रेडियनशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} रेडियन</unitPattern>
 				<unitPattern count="other">{0} रेडियन</unitPattern>
 				<unitPattern count="other" case="ablative">{0} रेडियनहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} रेडियनना</unitPattern>
@@ -7026,10 +7028,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} रेडियननी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} रेडियनचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} रेडियनचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} रेडियन</unitPattern>
 			</unit>
 			<unit type="angle-degree">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>अंश</displayName>
 				<unitPattern count="one">{0} अंश</unitPattern>
 				<unitPattern count="one" case="ablative">{0} अंशापासून</unitPattern>
@@ -7038,7 +7039,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} अंशाने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} अंशाचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} अंशाशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} अंश</unitPattern>
 				<unitPattern count="other">{0} अंश</unitPattern>
 				<unitPattern count="other" case="ablative">{0} अंशांहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} अंशांना</unitPattern>
@@ -7046,10 +7046,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} अंशांनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} अंशांचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} अंशांचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} अंश</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>आर्कमिनिटे</displayName>
 				<unitPattern count="one">{0} आर्कमिनिट</unitPattern>
 				<unitPattern count="one" case="ablative">{0} आर्कमिनिटापासून</unitPattern>
@@ -7058,7 +7057,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} आर्कमिनिटाने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} आर्कमिनिटाचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} आर्कमिनिटाशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} आर्कमिनिट</unitPattern>
 				<unitPattern count="other">{0} आर्कमिनिटे</unitPattern>
 				<unitPattern count="other" case="ablative">{0} आर्कमिनिटांहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} आर्कमिनिटांना</unitPattern>
@@ -7066,10 +7064,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} आर्कमिनिटांनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} आर्कमिनिटांचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} आर्कमिनिटांचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} आर्कमिनिटे</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>आर्कसेकंद</displayName>
 				<unitPattern count="one">{0} आर्कसेकंद</unitPattern>
 				<unitPattern count="one" case="ablative">{0} आर्कसेकंदापासून</unitPattern>
@@ -7078,7 +7075,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} आर्कसेकंदाने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} आर्कसेकंदाचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} आर्कसेकंदाशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} आर्कसेकंद</unitPattern>
 				<unitPattern count="other">{0} आर्कसेकंद</unitPattern>
 				<unitPattern count="other" case="ablative">{0} आर्कसेकंदांपासून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} आर्कसेकंदांना</unitPattern>
@@ -7086,16 +7082,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} आर्कसेकंदांनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} आर्कसेकंदांचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} आर्कसेकंदांचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} आर्कसेकंद</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
+				<gender>neuter</gender>
 				<displayName>चौरस किलोमीटर</displayName>
 				<unitPattern count="one">{0} चौरस किलोमीटर</unitPattern>
+				<unitPattern count="one" case="ablative">{0} चौरस किलोमीटरहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} चौरस किलोमीटरला</unitPattern>
+				<unitPattern count="one" case="dative">{0} चौरस किलोमीटरला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} चौरस किलोमीटरने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} चौरस किलोमीटरचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} चौरस किलोमीटरमध्ये</unitPattern>
 				<unitPattern count="other">{0} चौरस किलोमीटर</unitPattern>
+				<unitPattern count="other" case="ablative">{0} चौरस किलोमीटरपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} चौरस किलोमीटरना</unitPattern>
+				<unitPattern count="other" case="dative">{0} चौरस किलोमीटरसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} चौरस किलोमीटरनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} चौरस किलोमीटरचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} चौरस किलोमीटरमध्ये</unitPattern>
 				<perUnitPattern>{0} पर चौरस किलोमीटर</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>हेक्टर</displayName>
 				<unitPattern count="one">{0} हेक्टर</unitPattern>
 				<unitPattern count="one" case="ablative">{0} हेक्टरपासून</unitPattern>
@@ -7104,7 +7112,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} हेक्टरने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} हेक्टरचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} हेक्टरशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} हेक्टर</unitPattern>
 				<unitPattern count="other">{0} हेक्टर</unitPattern>
 				<unitPattern count="other" case="ablative">{0} हेक्टरहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} हेक्टरना</unitPattern>
@@ -7112,18 +7119,43 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} हेक्टरनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} हेक्टरचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} हेक्टरचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} हेक्टर</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
+				<gender>neuter</gender>
 				<displayName>चौरस मीटर</displayName>
 				<unitPattern count="one">{0} चौरस मीटर</unitPattern>
+				<unitPattern count="one" case="ablative">{0} चौरस मीटरहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} चौरस मीटरला</unitPattern>
+				<unitPattern count="one" case="dative">{0} चौरस मीटरला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} चौरस मीटरने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} चौरस मीटरचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} चौरस मीटरमध्ये</unitPattern>
 				<unitPattern count="other">{0} चौरस मीटर</unitPattern>
+				<unitPattern count="other" case="ablative">{0} चौरस मीटरपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} चौरस मीटरनी</unitPattern>
+				<unitPattern count="other" case="dative">{0} चौरस मीटरसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} चौरस मीटरनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} चौरस मीटरचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} चौरस मीटरमध्ये</unitPattern>
 				<perUnitPattern>{0} दर चौरस मीटर</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
+				<gender>neuter</gender>
 				<displayName>चौरस सेंटीमीटर</displayName>
 				<unitPattern count="one">{0} चौरस सेंटीमीटर</unitPattern>
+				<unitPattern count="one" case="ablative">{0} चौरस सेंटीमीटरहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} चौरस सेंटीमीटरला</unitPattern>
+				<unitPattern count="one" case="dative">{0} चौरस सेंटीमीटरला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} चौरस सेंटीमीटरने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} चौरस सेंटीमीटरचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} चौरस सेंटीमीटरमध्ये</unitPattern>
 				<unitPattern count="other">{0} चौरस सेंटीमीटर</unitPattern>
+				<unitPattern count="other" case="ablative">{0} चौरस सेंटीमीटरपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} चौरस सेंटीमीटरनी</unitPattern>
+				<unitPattern count="other" case="dative">{0} चौरस सेंटीमीटरसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} चौरस सेंटीमीटरनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} चौरस सेंटीमीटरचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} चौरस सेंटीमीटरमध्ये</unitPattern>
 				<perUnitPattern>{0} दर चौरस सेंटीमीटर</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
@@ -7159,7 +7191,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} दुनाम</unitPattern>
 			</unit>
 			<unit type="concentr-karat">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>कॅरेट्स</displayName>
 				<unitPattern count="one">{0} कॅरेट</unitPattern>
 				<unitPattern count="one" case="ablative">{0} कॅरेटपासून</unitPattern>
@@ -7168,7 +7200,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} कॅरेटने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} कॅरेटचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} कॅरेटशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} कॅरेट</unitPattern>
 				<unitPattern count="other">{0} कॅरेट्स</unitPattern>
 				<unitPattern count="other" case="ablative">{0} कॅरेट्सहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} कॅरेट्सना</unitPattern>
@@ -7176,7 +7207,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} कॅरेट्सनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} कॅरेट्सचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} कॅरेट्सचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} कॅरेट्स</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>मिलीग्रामस् पर डेसीलिटर</displayName>
@@ -7184,17 +7214,43 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} मिलीग्रामस् पर डेसीलिटर</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
+				<gender>neuter</gender>
 				<displayName>मिलीमोलस् पर लिटर</displayName>
 				<unitPattern count="one">{0} मिलीमोल पर लिटर</unitPattern>
+				<unitPattern count="one" case="ablative">{0} मिलीमोल पर लिटरपासून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} मिलीमोल पर लिटरला</unitPattern>
+				<unitPattern count="one" case="dative">{0} मिलीमोल पर लिटरला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} मिलीमोल पर लिटरने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} मिलीमोल पर लिटरचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} मिलीमोल पर लिटरमध्ये</unitPattern>
 				<unitPattern count="other">{0} मिलीमोलस् पर लिटर</unitPattern>
+				<unitPattern count="other" case="ablative">{0} मिलीमोलस् पर लिटरपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} मिलीमोलस् पर लिटरना</unitPattern>
+				<unitPattern count="other" case="dative">{0} मिलीमोलस् पर लिटरसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} मिलीमोलस् पर लिटरने</unitPattern>
+				<unitPattern count="other" case="genitive">{0} मिलीमोलस् पर लिटरचा</unitPattern>
+				<unitPattern count="other" case="locative">{0} मिलीमोलस् पर लिटरमध्ये</unitPattern>
 			</unit>
 			<unit type="concentr-item">
+				<gender>masculine</gender>
 				<displayName>आयटम</displayName>
 				<unitPattern count="one">{0} आयटम</unitPattern>
+				<unitPattern count="one" case="ablative">{0} आयटमहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} आयटमला</unitPattern>
+				<unitPattern count="one" case="dative">{0} आयटमला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} आयटमने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} आयटमचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} आयटममध्ये</unitPattern>
 				<unitPattern count="other">{0} आयटम</unitPattern>
+				<unitPattern count="other" case="ablative">{0} आयटमपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} आयटमना</unitPattern>
+				<unitPattern count="other" case="dative">{0} आयटमना</unitPattern>
+				<unitPattern count="other" case="ergative">{0} आयटमनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} आयटमचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} आयटममध्ये</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>भाग प्रति दशलक्ष</displayName>
 				<unitPattern count="one">{0} भाग प्रति दशलक्ष</unitPattern>
 				<unitPattern count="one" case="ablative">{0} भाग प्रति दशलक्षापासून</unitPattern>
@@ -7203,7 +7259,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} भाग प्रति दशलक्षाने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} भाग प्रति दशलक्षाचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} भाग प्रति दशलक्षाशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} भाग प्रति दशलक्ष</unitPattern>
 				<unitPattern count="other">{0} भाग प्रति दशलक्ष</unitPattern>
 				<unitPattern count="other" case="ablative">{0} भाग प्रति दशलक्षांपासून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} भाग प्रति दशलक्षांना</unitPattern>
@@ -7211,10 +7266,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} भाग प्रति दशलक्षांनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} भाग प्रति दशलक्षांचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} भाग प्रति दशलक्षांचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} भाग प्रति दशलक्ष</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>टक्के</displayName>
 				<unitPattern count="one">{0} टक्के</unitPattern>
 				<unitPattern count="one" case="ablative">{0} टक्क्यापासून</unitPattern>
@@ -7223,7 +7277,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} टक्क्याने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} टक्क्याचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} टक्क्याशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} टक्के</unitPattern>
 				<unitPattern count="other">{0} टक्के</unitPattern>
 				<unitPattern count="other" case="ablative">{0} टक्क्यांपासून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} टक्क्यांना</unitPattern>
@@ -7231,7 +7284,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} टक्क्यांनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} टक्क्यांचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} टक्क्यांचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} टक्के</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
 				<gender>masculine</gender>
@@ -7243,7 +7295,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} प्रतिमैलाने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} प्रतिमैलाचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} प्रतिमैलाशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} प्रतिमैल</unitPattern>
 				<unitPattern count="other">{0} प्रतिमैल</unitPattern>
 				<unitPattern count="other" case="ablative">{0} प्रतिमैलांपासून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} प्रतिमैलांना</unitPattern>
@@ -7251,10 +7302,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} प्रतिमैलांनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} प्रतिमैलांचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} प्रतिमैलांचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} प्रतिमैल</unitPattern>
 			</unit>
 			<unit type="concentr-permyriad">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>पर्मिरेड</displayName>
 				<unitPattern count="one">{0} पर्मिरेड</unitPattern>
 				<unitPattern count="one" case="ablative">{0} पर्मिरेडपासून</unitPattern>
@@ -7263,7 +7313,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} पर्मिरेडने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} पर्मिरेडचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} पर्मिरेडशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} पर्मिरेड</unitPattern>
 				<unitPattern count="other">{0} पर्मिरेड</unitPattern>
 				<unitPattern count="other" case="ablative">{0} पर्मिरेडहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} पर्मिरेडना</unitPattern>
@@ -7271,10 +7320,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} पर्मिरेडनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} पर्मिरेडचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} पर्मिरेडचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} पर्मिरेड</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>मोल</displayName>
 				<unitPattern count="one">{0} मोल</unitPattern>
 				<unitPattern count="one" case="ablative">{0} मोलपासून</unitPattern>
@@ -7283,7 +7331,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} मोलने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} मोलचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} मोलशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} मोल</unitPattern>
 				<unitPattern count="other">{0} मोल</unitPattern>
 				<unitPattern count="other" case="ablative">{0} मोलहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} मोलना</unitPattern>
@@ -7291,17 +7338,42 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} मोलनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} मोलचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} मोलचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} मोल</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
+				<gender>neuter</gender>
 				<displayName>लीटर प्रति किलोमीटर</displayName>
 				<unitPattern count="one">{0} लीटर प्रति किलोमीटर</unitPattern>
+				<unitPattern count="one" case="ablative">{0} लीटर प्रति किलोमीटरहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} लीटर प्रति किलोमीटरला</unitPattern>
+				<unitPattern count="one" case="dative">{0} लीटर प्रति किलोमीटरला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} लीटर प्रति किलोमीटरने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} लीटर प्रति किलोमीटरचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} लीटर प्रति किलोमीटरमध्ये</unitPattern>
 				<unitPattern count="other">{0} लीटर प्रति किलोमीटर</unitPattern>
+				<unitPattern count="other" case="ablative">{0} लीटर प्रति किलोमीटरपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} लीटर प्रति किलोमीटरना</unitPattern>
+				<unitPattern count="other" case="dative">{0} लीटर प्रति किलोमीटरसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} लीटर प्रति किलोमीटरने</unitPattern>
+				<unitPattern count="other" case="genitive">{0} लीटर प्रति किलोमीटरचा</unitPattern>
+				<unitPattern count="other" case="locative">{0} लीटर प्रति किलोमीटरमध्ये</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
+				<gender>neuter</gender>
 				<displayName>लीटर प्रति 100 किलोमीटर</displayName>
 				<unitPattern count="one">{0} लीटर प्रति 100 किलोमीटर</unitPattern>
+				<unitPattern count="one" case="ablative">{0} लीटर प्रति 100 किलोमीटरहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} लीटर प्रति 100 किलोमीटरला</unitPattern>
+				<unitPattern count="one" case="dative">{0} लीटर प्रति 100 किलोमीटरला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} लीटर प्रति 100 किलोमीटरने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} लीटर प्रति 100 किलोमीटरचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} लीटर प्रति 100 किलोमीटरमध्ये</unitPattern>
 				<unitPattern count="other">{0} लीटर प्रति 100 किलोमीटर</unitPattern>
+				<unitPattern count="other" case="ablative">{0} लीटर प्रति 100 किलोमीटरपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} लीटर प्रति 100 किलोमीटरना</unitPattern>
+				<unitPattern count="other" case="dative">{0} लीटर प्रति 100 किलोमीटरना</unitPattern>
+				<unitPattern count="other" case="ergative">{0} लीटर प्रति 100 किलोमीटरनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} लीटर प्रति 100 किलोमीटरची</unitPattern>
+				<unitPattern count="other" case="locative">{0} लीटर प्रति 100 किलोमीटरमध्ये</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>मैल प्रति गॅलन</displayName>
@@ -7314,52 +7386,169 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} मैल प्रति इम्पि गॅलन</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
+				<gender>masculine</gender>
 				<displayName>पेटाबाइट्स</displayName>
 				<unitPattern count="one">{0} पेटाबाइट</unitPattern>
+				<unitPattern count="one" case="ablative">{0} पेटाबाइटहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} पेटाबाइटला</unitPattern>
+				<unitPattern count="one" case="dative">{0} पेटाबाइटला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} पेटाबाइटने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} पेटाबाइटचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} पेटाबाइटमध्ये</unitPattern>
 				<unitPattern count="other">{0} पेटाबाइट्स</unitPattern>
+				<unitPattern count="other" case="ablative">{0} पेटाबाइट्सपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} पेटाबाइट्सना</unitPattern>
+				<unitPattern count="other" case="dative">{0} पेटाबाइट्ससाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} पेटाबाइट्सनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} पेटाबाइट्सचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} पेटाबाइट्समध्ये</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
+				<gender>masculine</gender>
 				<displayName>टेराबाइट्स</displayName>
 				<unitPattern count="one">{0} टेराबाइट</unitPattern>
+				<unitPattern count="one" case="ablative">{0} टेराबाइटहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} टेराबाइटला</unitPattern>
+				<unitPattern count="one" case="dative">{0} टेराबाइटला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} टेराबाइटने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} टेराबाइटचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} टेराबाइट</unitPattern>
 				<unitPattern count="other">{0} टेराबाइट्स</unitPattern>
+				<unitPattern count="other" case="ablative">{0} टेराबाइट्सपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} टेराबाइट्सना</unitPattern>
+				<unitPattern count="other" case="dative">{0} टेराबाइट्ससाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} टेराबाइट्सनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} टेराबाइट्सचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} टेराबाइट्समध्ये</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
+				<gender>masculine</gender>
 				<displayName>टेराबिट</displayName>
 				<unitPattern count="one">{0} टेराबिट</unitPattern>
+				<unitPattern count="one" case="ablative">{0} टेराबिटहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} टेराबिटला</unitPattern>
+				<unitPattern count="one" case="dative">{0} टेराबिटला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} टेराबिटने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} टेराबिटचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} टेराबिटमध्ये</unitPattern>
 				<unitPattern count="other">{0} टेराबिट</unitPattern>
+				<unitPattern count="other" case="ablative">{0} टेराबिटपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} टेराबिटना</unitPattern>
+				<unitPattern count="other" case="dative">{0} टेराबिटसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} टेराबिटनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} टेराबिटचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} टेराबिटमध्ये</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
+				<gender>masculine</gender>
 				<displayName>गिगाबाइट</displayName>
 				<unitPattern count="one">{0} गिगाबाइट</unitPattern>
+				<unitPattern count="one" case="ablative">{0} गिगाबाइटहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} गिगाबाइटला</unitPattern>
+				<unitPattern count="one" case="dative">{0} गिगाबाइटला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} गिगाबाइटने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} गिगाबाइटचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} गिगाबाइटमध्ये</unitPattern>
 				<unitPattern count="other">{0} गिगाबाइट</unitPattern>
+				<unitPattern count="other" case="ablative">{0} गिगाबाइटपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} गिगाबाइटना</unitPattern>
+				<unitPattern count="other" case="dative">{0} गिगाबाइटसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} गिगाबाइटनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} गिगाबाइटचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} गिगाबाइटमध्ये</unitPattern>
 			</unit>
 			<unit type="digital-gigabit">
+				<gender>masculine</gender>
 				<displayName>गिगाबिट</displayName>
 				<unitPattern count="one">{0} गिगाबिट</unitPattern>
+				<unitPattern count="one" case="ablative">{0} गिगाबिटहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} गिगाबिटला</unitPattern>
+				<unitPattern count="one" case="dative">{0} गिगाबिटला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} गिगाबिटने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} गिगाबिटचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} गिगाबिटमध्ये</unitPattern>
 				<unitPattern count="other">{0} गिगाबिट</unitPattern>
+				<unitPattern count="other" case="ablative">{0} गिगाबिटपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} गिगाबिटना</unitPattern>
+				<unitPattern count="other" case="dative">{0} गिगाबिटसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} गिगाबिटनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} गिगाबिटचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} गिगाबिटमध्ये</unitPattern>
 			</unit>
 			<unit type="digital-megabyte">
+				<gender>masculine</gender>
 				<displayName>मेगाबाइट</displayName>
 				<unitPattern count="one">{0} मेगाबाइट</unitPattern>
+				<unitPattern count="one" case="ablative">{0} मेगाबाइटहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} मेगाबाइटला</unitPattern>
+				<unitPattern count="one" case="dative">{0} मेगाबाइटला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} मेगाबाइटने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} मेगाबाइटचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} मेगाबाइटमध्ये</unitPattern>
 				<unitPattern count="other">{0} मेगाबाइट</unitPattern>
+				<unitPattern count="other" case="ablative">{0} मेगाबाइटपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} मेगाबाइटना</unitPattern>
+				<unitPattern count="other" case="dative">{0} मेगाबाइटसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} मेगाबाइटनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} मेगाबाइटचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} मेगाबाइटमध्ये</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
+				<gender>masculine</gender>
 				<displayName>मेगाबिट</displayName>
 				<unitPattern count="one">{0} मेगाबिट</unitPattern>
+				<unitPattern count="one" case="ablative">{0} मेगाबिटहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} मेगाबिटला</unitPattern>
+				<unitPattern count="one" case="dative">{0} मेगाबिटला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} मेगाबिटने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} मेगाबिटचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} मेगाबिटमध्ये</unitPattern>
 				<unitPattern count="other">{0} मेगाबिट</unitPattern>
+				<unitPattern count="other" case="ablative">{0} मेगाबिटपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} मेगाबिटना</unitPattern>
+				<unitPattern count="other" case="dative">{0} मेगाबिटसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} मेगाबिटनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} मेगाबिटचा</unitPattern>
+				<unitPattern count="other" case="locative">{0} मेगाबिटमध्ये</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
+				<gender>masculine</gender>
 				<displayName>किलोबाइट</displayName>
 				<unitPattern count="one">{0} किलोबाइट</unitPattern>
+				<unitPattern count="one" case="ablative">{0} किलोबाइटहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} किलोबाइटला</unitPattern>
+				<unitPattern count="one" case="dative">{0} किलोबाइटला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} किलोबाइटने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} किलोबाइटचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} किलोबाइटमध्ये</unitPattern>
 				<unitPattern count="other">{0} किलोबाइट</unitPattern>
+				<unitPattern count="other" case="ablative">{0} किलोबाइटपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} किलोबाइटना</unitPattern>
+				<unitPattern count="other" case="dative">{0} किलोबाइटसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} किलोबाइटने</unitPattern>
+				<unitPattern count="other" case="genitive">{0} किलोबाइटचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} किलोबाइटमध्ये</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
+				<gender>masculine</gender>
 				<displayName>किलोबिट</displayName>
 				<unitPattern count="one">{0} किलोबिट</unitPattern>
+				<unitPattern count="one" case="ablative">{0} किलोबिटहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} किलोबिटला</unitPattern>
+				<unitPattern count="one" case="dative">{0} किलोबिटला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} किलोबिटने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} किलोबिटचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} किलोबिटमध्ये</unitPattern>
 				<unitPattern count="other">{0} किलोबिट</unitPattern>
+				<unitPattern count="other" case="ablative">{0} किलोबिटपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} किलोबिटना</unitPattern>
+				<unitPattern count="other" case="dative">{0} किलोबिटसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} किलोबिटनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} किलोबिटचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} किलोबिटमध्ये</unitPattern>
 			</unit>
 			<unit type="digital-byte">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>बाइट</displayName>
 				<unitPattern count="one">{0} बाइट</unitPattern>
 				<unitPattern count="one" case="ablative">{0} बाइटपासून</unitPattern>
@@ -7368,7 +7557,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} बाइटने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} बाइटचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} बाइटशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} बाइट</unitPattern>
 				<unitPattern count="other">{0} बाइट</unitPattern>
 				<unitPattern count="other" case="ablative">{0} बाइटहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} बाइटना</unitPattern>
@@ -7376,10 +7564,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} बाइटनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} बाइटचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} बाइटचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} बाइट</unitPattern>
 			</unit>
 			<unit type="digital-bit">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>बिट</displayName>
 				<unitPattern count="one">{0} बिट</unitPattern>
 				<unitPattern count="one" case="ablative">{0} बिटपासून</unitPattern>
@@ -7388,7 +7575,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} बिटने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} बिटचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} बिटशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} बिट</unitPattern>
 				<unitPattern count="other">{0} बिट</unitPattern>
 				<unitPattern count="other" case="ablative">{0} बिटहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} बिटना</unitPattern>
@@ -7396,7 +7582,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} बिटनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} बिटचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} बिटचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} बिट</unitPattern>
 			</unit>
 			<unit type="duration-century">
 				<gender>neuter</gender>
@@ -7408,7 +7593,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} शतकाने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} शतकाचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} शतकाशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} शतक</unitPattern>
 				<unitPattern count="other">{0} शतके</unitPattern>
 				<unitPattern count="other" case="ablative">{0} शतकांपासून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} शतकांना</unitPattern>
@@ -7416,7 +7600,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} शतकांनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} शतकांचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} शतकांचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} शतके</unitPattern>
 			</unit>
 			<unit type="duration-decade">
 				<gender>neuter</gender>
@@ -7428,7 +7611,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} दशकाने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} दशकाचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} दशकाशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} दशक</unitPattern>
 				<unitPattern count="other">{0} दशके</unitPattern>
 				<unitPattern count="other" case="ablative">{0} दशकांपासून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} दशकांना</unitPattern>
@@ -7436,7 +7618,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} दशकांनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} दशकांचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} दशकांचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} दशके</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<gender>neuter</gender>
@@ -7448,7 +7629,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} वर्षाने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} वर्षाचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} वर्षाशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} वर्ष</unitPattern>
 				<unitPattern count="other">{0} वर्षे</unitPattern>
 				<unitPattern count="other" case="ablative">{0} वर्षांपासून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} वर्षांना</unitPattern>
@@ -7456,7 +7636,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} वर्षांनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} वर्षांचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} वर्षांचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} वर्षे</unitPattern>
 				<perUnitPattern>{0} दर वर्षी</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
@@ -7469,7 +7648,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} महिन्याने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} महिन्याचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} महिन्याशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} महिना</unitPattern>
 				<unitPattern count="other">{0} महिने</unitPattern>
 				<unitPattern count="other" case="ablative">{0} महिन्यांपासून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} महिन्यांना</unitPattern>
@@ -7477,7 +7655,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} महिन्यांनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} महिन्यांचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} महिन्यांचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} महिने</unitPattern>
 				<perUnitPattern>{0} दर महिना</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
@@ -7490,7 +7667,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} आठवड्याने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} आठवड्याचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} आठवड्याशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} आठवडा</unitPattern>
 				<unitPattern count="other">{0} आठवडे</unitPattern>
 				<unitPattern count="other" case="ablative">{0} आठवड्यांपासून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} आठवड्यांना</unitPattern>
@@ -7498,7 +7674,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} आठवड्यांनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} आठवड्यांचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} आठवड्यांचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} आठवडे</unitPattern>
 				<perUnitPattern>{0} दर आठवडा</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
@@ -7511,7 +7686,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} दिवसाशी</unitPattern>
 				<unitPattern count="one" case="genitive">{0} दिवसाची</unitPattern>
 				<unitPattern count="one" case="locative">{0} दिवसा</unitPattern>
-				<unitPattern count="one" case="oblique">{0} दिवस</unitPattern>
 				<unitPattern count="other">{0} दिवस</unitPattern>
 				<unitPattern count="other" case="ablative">{0} दिवसांहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} दिवसांनी</unitPattern>
@@ -7519,7 +7693,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} दिवसांशी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} दिवसांचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} दिवसांच्या</unitPattern>
-				<unitPattern count="other" case="oblique">{0} दिवस</unitPattern>
 				<perUnitPattern>{0} दर दिवशी</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
@@ -7532,7 +7705,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} तासाने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} तासाचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} तासाशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} तास</unitPattern>
 				<unitPattern count="other">{0} तास</unitPattern>
 				<unitPattern count="other" case="ablative">{0} तासांपासून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} तासांना</unitPattern>
@@ -7540,7 +7712,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} तासांनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} तासांचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} तासांचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} तास</unitPattern>
 				<perUnitPattern>{0} प्रति तास</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
@@ -7553,7 +7724,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} मिनिटाने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} मिनिटाचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} मिनिटाशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} मिनिट</unitPattern>
 				<unitPattern count="other">{0} मिनिटे</unitPattern>
 				<unitPattern count="other" case="ablative">{0} मिनिटांपासून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} मिनिटांना</unitPattern>
@@ -7561,7 +7731,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} मिनिटांनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} मिनिटांचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} मिनिटांचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} मिनिटे</unitPattern>
 				<perUnitPattern>{0} दर मिनिट</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
@@ -7574,7 +7743,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} सेकंदाने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} सेकंदाचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} सेकंदाशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} सेकंद</unitPattern>
 				<unitPattern count="other">{0} सेकंद</unitPattern>
 				<unitPattern count="other" case="ablative">{0} सेकंदांपासून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} सेकंदांना</unitPattern>
@@ -7582,26 +7750,64 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} सेकंदांनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} सेकंदांचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} सेकंदांचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} सेकंद</unitPattern>
 				<perUnitPattern>{0} प्रति सेकंद</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
+				<gender>masculine</gender>
 				<displayName>मिलिसेकंद</displayName>
 				<unitPattern count="one">{0} मिलिसेकंद</unitPattern>
+				<unitPattern count="one" case="ablative">{0} मिलिसेकंदापासून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} मिलिसेकंदाला</unitPattern>
+				<unitPattern count="one" case="dative">{0} मिलिसेकंदासाठी</unitPattern>
+				<unitPattern count="one" case="ergative">{0} मिलिसेकंदाने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} मिलिसेकंदाचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} मिलिसेकंदात</unitPattern>
 				<unitPattern count="other">{0} मिलिसेकंद</unitPattern>
+				<unitPattern count="other" case="ablative">{0} मिलिसेकंदांहून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} मिलिसेकंदांनी</unitPattern>
+				<unitPattern count="other" case="dative">{0} मिलिसेकंदांसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} मिलिसेकंदांत</unitPattern>
+				<unitPattern count="other" case="genitive">{0} मिलिसेकंदांचा</unitPattern>
+				<unitPattern count="other" case="locative">{0} मिलिसेकंदांत</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
+				<gender>masculine</gender>
 				<displayName>मायक्रोसेकंद</displayName>
 				<unitPattern count="one">{0} मायक्रोसेकंद</unitPattern>
+				<unitPattern count="one" case="ablative">{0} मायक्रोसेकंदापासून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} मायक्रोसेकंदाला</unitPattern>
+				<unitPattern count="one" case="dative">{0} मायक्रोसेकंदासाठी</unitPattern>
+				<unitPattern count="one" case="ergative">{0} मायक्रोसेकंदाने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} मायक्रोसेकंदाचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} मायक्रोसेकंदात</unitPattern>
 				<unitPattern count="other">{0} मायक्रोसेकंद</unitPattern>
+				<unitPattern count="other" case="ablative">{0} मायक्रोसेकंदांपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} मायक्रोसेकंदांना</unitPattern>
+				<unitPattern count="other" case="dative">{0} मायक्रोसेकंदांसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} मायक्रोसेकंदांनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} मायक्रोसेकंदांचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} मायक्रोसेकंदांत</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
+				<gender>masculine</gender>
 				<displayName>नॅनोसेकंद</displayName>
 				<unitPattern count="one">{0} नॅनोसेकंद</unitPattern>
+				<unitPattern count="one" case="ablative">{0} नॅनोसेकंदाहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} नॅनोसेकंदाला</unitPattern>
+				<unitPattern count="one" case="dative">{0} नॅनोसेकंदासाठी</unitPattern>
+				<unitPattern count="one" case="ergative">{0} नॅनोसेकंदाने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} नॅनोसेकंदाचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} नॅनोसेकंदात</unitPattern>
 				<unitPattern count="other">{0} नॅनोसेकंद</unitPattern>
+				<unitPattern count="other" case="ablative">{0} नॅनोसेकंदांहून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} नॅनोसेकंदांनी</unitPattern>
+				<unitPattern count="other" case="dative">{0} नॅनोसेकंदांसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} नॅनोसेकंदांनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} नॅनोसेकंदांचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} नॅनोसेकंदांत</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>अँपियर</displayName>
 				<unitPattern count="one">{0} अँपियर</unitPattern>
 				<unitPattern count="one" case="ablative">{0} अँपियरपासून</unitPattern>
@@ -7610,7 +7816,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} अँपियरने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} अँपियरचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} अँपियरशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} अँपियर</unitPattern>
 				<unitPattern count="other">{0} अँपियर</unitPattern>
 				<unitPattern count="other" case="ablative">{0} अँपियरहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} अँपियरना</unitPattern>
@@ -7618,15 +7823,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} अँपियरनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} अँपियरचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} अँपियरचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} अँपियर</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
+				<gender>neuter</gender>
 				<displayName>मिलिअँपियर</displayName>
 				<unitPattern count="one">{0} मिलिअँपियर</unitPattern>
+				<unitPattern count="one" case="ablative">{0} मिलिअँपियरहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} मिलिअँपियरला</unitPattern>
+				<unitPattern count="one" case="dative">{0} मिलिअँपियरला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} मिलिअँपियरने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} मिलिअँपियरचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} मिलिअँपियरमध्ये</unitPattern>
 				<unitPattern count="other">{0} मिलिअँपियर</unitPattern>
+				<unitPattern count="other" case="ablative">{0} मिलिअँपियरपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} मिलिअँपियरना</unitPattern>
+				<unitPattern count="other" case="dative">{0} मिलिअँपियरसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} मिलिअँपियरने</unitPattern>
+				<unitPattern count="other" case="genitive">{0} मिलिअँपियरचा</unitPattern>
+				<unitPattern count="other" case="locative">{0} मिलिअँपियरमध्ये</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ओहम</displayName>
 				<unitPattern count="one">{0} ओहम</unitPattern>
 				<unitPattern count="one" case="ablative">{0} ओहमपासून</unitPattern>
@@ -7635,7 +7852,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} ओहमने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ओहमचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} ओहमशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} ओहम</unitPattern>
 				<unitPattern count="other">{0} ओहम</unitPattern>
 				<unitPattern count="other" case="ablative">{0} ओहमहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ओहमना</unitPattern>
@@ -7643,10 +7859,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} ओहमनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ओहमचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} ओहमचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} ओहम</unitPattern>
 			</unit>
 			<unit type="electric-volt">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>व्होल्ट</displayName>
 				<unitPattern count="one">{0} व्होल्ट</unitPattern>
 				<unitPattern count="one" case="ablative">{0} व्होल्टपासून</unitPattern>
@@ -7655,7 +7870,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} व्होल्टने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} व्होल्टचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} व्होल्टशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} व्होल्ट</unitPattern>
 				<unitPattern count="other">{0} व्होल्ट</unitPattern>
 				<unitPattern count="other" case="ablative">{0} व्होल्टहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} व्होल्टना</unitPattern>
@@ -7663,7 +7877,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} व्होल्टनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} व्होल्टचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} व्होल्टचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} व्होल्ट</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
 				<displayName>किलोकॅलोरी</displayName>
@@ -7671,7 +7884,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} किलोकॅलोरी</unitPattern>
 			</unit>
 			<unit type="energy-calorie">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>कॅलरीज</displayName>
 				<unitPattern count="one">{0} कॅलरी</unitPattern>
 				<unitPattern count="one" case="ablative">{0} कॅलरीपासून</unitPattern>
@@ -7680,7 +7893,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} कॅलरीने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} कॅलरीचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} कॅलरीशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} कॅलरी</unitPattern>
 				<unitPattern count="other">{0} कॅलरीज</unitPattern>
 				<unitPattern count="other" case="ablative">{0} कॅलरीजहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} कॅलरीजना</unitPattern>
@@ -7688,7 +7900,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} कॅलरीजनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} कॅलरीजचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} कॅलरीजचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} कॅलरीज</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
 				<displayName>कॅलरीज</displayName>
@@ -7696,12 +7907,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} कॅलरीज</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
+				<gender>neuter</gender>
 				<displayName>किलोज्यूल</displayName>
 				<unitPattern count="one">{0} किलोज्यूल</unitPattern>
+				<unitPattern count="one" case="ablative">{0} किलोज्यूलहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} किलोज्यूलला</unitPattern>
+				<unitPattern count="one" case="dative">{0} किलोज्यूलला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} किलोज्यूलने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} किलोज्यूलचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} किलोज्यूलमध्ये</unitPattern>
 				<unitPattern count="other">{0} किलोज्यूल</unitPattern>
+				<unitPattern count="other" case="ablative">{0} किलोज्यूलपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} किलोज्यूलना</unitPattern>
+				<unitPattern count="other" case="dative">{0} किलोज्यूलसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} किलोज्यूलनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} किलोज्यूलचा</unitPattern>
+				<unitPattern count="other" case="locative">{0} किलोज्यूलमध्ये</unitPattern>
 			</unit>
 			<unit type="energy-joule">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ज्यूल</displayName>
 				<unitPattern count="one">{0} ज्यूल</unitPattern>
 				<unitPattern count="one" case="ablative">{0} ज्यूलपासून</unitPattern>
@@ -7710,7 +7934,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} ज्यूलने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ज्यूलचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} ज्यूलशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} ज्यूल</unitPattern>
 				<unitPattern count="other">{0} ज्यूल</unitPattern>
 				<unitPattern count="other" case="ablative">{0} ज्यूलहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ज्यूलना</unitPattern>
@@ -7718,12 +7941,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} ज्यूलनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ज्यूलचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} ज्यूलचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} ज्यूल</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
+				<gender>neuter</gender>
 				<displayName>किलोवॉट-तास</displayName>
 				<unitPattern count="one">{0} किलोवॉट तास</unitPattern>
+				<unitPattern count="one" case="ablative">{0} किलोवॉट तासहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} किलोवॉट तासाला</unitPattern>
+				<unitPattern count="one" case="dative">{0} किलोवॉट तासाला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} किलोवॉट तासाने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} किलोवॉट तासाचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} किलोवॉट तासात</unitPattern>
 				<unitPattern count="other">{0} किलोवॉट-तास</unitPattern>
+				<unitPattern count="other" case="ablative">{0} किलोवॉट-तासांपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} किलोवॉट-तासांनी</unitPattern>
+				<unitPattern count="other" case="dative">{0} किलोवॉट-तासांसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} किलोवॉट-तासांनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} किलोवॉट-तासांचा</unitPattern>
+				<unitPattern count="other" case="locative">{0} किलोवॉट-तासांमध्ये</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
 				<displayName>इलेक्ट्रॉनव्होल्ट्स</displayName>
@@ -7741,7 +7976,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} पाउंड्स ऑफ फोर्स</unitPattern>
 			</unit>
 			<unit type="force-newton">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>न्यूटन्स</displayName>
 				<unitPattern count="one">{0} न्यूटन</unitPattern>
 				<unitPattern count="one" case="ablative">{0} न्यूटनपासून</unitPattern>
@@ -7750,7 +7985,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} न्यूटनने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} न्यूटनचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} न्यूटनशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} न्यूटन</unitPattern>
 				<unitPattern count="other">{0} न्यूटन्स</unitPattern>
 				<unitPattern count="other" case="ablative">{0} न्यूटनहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} न्यूटनना</unitPattern>
@@ -7761,27 +7995,79 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="oblique">{0} न्यूटन</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<gender>neuter</gender>
 				<displayName>किलोवॉट-तास प्रति 100 किलोमीटर</displayName>
 				<unitPattern count="one">{0} किलोवॉट-तास प्रति 100 किलोमीटर</unitPattern>
+				<unitPattern count="one" case="ablative">{0} किलोवॉट-तास प्रति 100 किलोमीटरपासून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} किलोवॉट-तास प्रति 100 किलोमीटरला</unitPattern>
+				<unitPattern count="one" case="dative">{0} किलोवॉट-तास प्रति 100 किलोमीटरला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} किलोवॉट-तास प्रति 100 किलोमीटरने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} किलोवॉट-तास प्रति 100 किलोमीटरचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} किलोवॉट-तास प्रति 100 किलोमीटरमध्ये</unitPattern>
 				<unitPattern count="other">{0} किलोवॉट-तास प्रति 100 किलोमीटर</unitPattern>
+				<unitPattern count="other" case="ablative">{0} किलोवॉट-तास प्रति 100 किलोमीटरपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} किलोवॉट-तास प्रति 100 किलोमीटरना</unitPattern>
+				<unitPattern count="other" case="dative">{0} किलोवॉट-तास प्रति 100 किलोमीटरसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} किलोवॉट-तास प्रति 100 किलोमीटरनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} किलोवॉट-तास प्रति 100 किलोमीटरचा</unitPattern>
+				<unitPattern count="other" case="locative">{0} किलोवॉट-तास प्रति 100 किलोमीटरमध्ये</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
+				<gender>neuter</gender>
 				<displayName>गिगाहर्ट्झ</displayName>
 				<unitPattern count="one">{0} गिगाहर्ट्झ</unitPattern>
+				<unitPattern count="one" case="ablative">{0} गिगाहर्ट्झहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} गिगाहर्ट्झला</unitPattern>
+				<unitPattern count="one" case="dative">{0} गिगाहर्ट्झला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} गिगाहर्ट्झने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} गिगाहर्ट्झचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} गिगाहर्ट्झमध्ये</unitPattern>
 				<unitPattern count="other">{0} गिगाहर्ट्झ</unitPattern>
+				<unitPattern count="other" case="ablative">{0} गिगाहर्ट्झपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} गिगाहर्ट्झना</unitPattern>
+				<unitPattern count="other" case="dative">{0} गिगाहर्ट्झसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} गिगाहर्ट्झनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} गिगाहर्ट्झचा</unitPattern>
+				<unitPattern count="other" case="locative">{0} गिगाहर्ट्झमध्ये</unitPattern>
 			</unit>
 			<unit type="frequency-megahertz">
+				<gender>neuter</gender>
 				<displayName>मेगाहर्ट्झ</displayName>
 				<unitPattern count="one">{0} मेगाहर्ट्झ</unitPattern>
+				<unitPattern count="one" case="ablative">{0} मेगाहर्ट्झहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} मेगाहर्ट्झला</unitPattern>
+				<unitPattern count="one" case="dative">{0} मेगाहर्ट्झला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} मेगाहर्ट्झने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} मेगाहर्ट्झचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} मेगाहर्ट्झमध्ये</unitPattern>
 				<unitPattern count="other">{0} मेगाहर्ट्झ</unitPattern>
+				<unitPattern count="other" case="ablative">{0} मेगाहर्ट्झपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} मेगाहर्ट्झना</unitPattern>
+				<unitPattern count="other" case="dative">{0} मेगाहर्ट्झसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} मेगाहर्ट्झने</unitPattern>
+				<unitPattern count="other" case="genitive">{0} मेगाहर्ट्झचा</unitPattern>
+				<unitPattern count="other" case="locative">{0} मेगाहर्ट्झमध्ये</unitPattern>
 			</unit>
 			<unit type="frequency-kilohertz">
+				<gender>neuter</gender>
 				<displayName>किलोहर्ट्झ</displayName>
 				<unitPattern count="one">{0} किलोहर्ट्झ</unitPattern>
+				<unitPattern count="one" case="ablative">{0} किलोहर्ट्झहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} किलोहर्ट्झला</unitPattern>
+				<unitPattern count="one" case="dative">{0} किलोहर्ट्झला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} किलोहर्ट्झने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} किलोहर्ट्झचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} किलोहर्ट्झमध्ये</unitPattern>
 				<unitPattern count="other">{0} किलोहर्ट्झ</unitPattern>
+				<unitPattern count="other" case="ablative">{0} किलोहर्ट्झपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} किलोहर्ट्झना</unitPattern>
+				<unitPattern count="other" case="dative">{0} किलोहर्ट्झसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} किलोहर्ट्झनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} किलोहर्ट्झचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} किलोहर्ट्झमध्ये</unitPattern>
 			</unit>
 			<unit type="frequency-hertz">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>हर्ट्झ</displayName>
 				<unitPattern count="one">{0} हर्ट्झ</unitPattern>
 				<unitPattern count="one" case="ablative">{0} हर्ट्झपासून</unitPattern>
@@ -7790,7 +8076,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} हर्ट्झने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} हर्ट्झचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} हर्ट्झशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} हर्ट्झ</unitPattern>
 				<unitPattern count="other">{0} हर्ट्झ</unitPattern>
 				<unitPattern count="other" case="ablative">{0} हर्ट्झहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} हर्ट्झना</unitPattern>
@@ -7798,7 +8083,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} हर्ट्झनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} हर्ट्झचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} हर्ट्झचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} हर्ट्झ</unitPattern>
 			</unit>
 			<unit type="graphics-em">
 				<gender>masculine</gender>
@@ -7810,7 +8094,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} em ने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} em चा</unitPattern>
 				<unitPattern count="one" case="locative">{0} em शी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} em</unitPattern>
 				<unitPattern count="other">{0} ems</unitPattern>
 				<unitPattern count="other" case="ablative">{0} em पासून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} em ना</unitPattern>
@@ -7818,10 +8101,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} em नी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} em चे</unitPattern>
 				<unitPattern count="other" case="locative">{0} em चा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} ems</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>पिक्सेल्स</displayName>
 				<unitPattern count="one">{0} पिक्सेल</unitPattern>
 				<unitPattern count="one" case="ablative">{0} पिक्सेलपासून</unitPattern>
@@ -7830,7 +8112,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} पिक्सेलने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} पिक्सेलचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} पिक्सेलशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} पिक्सेल</unitPattern>
 				<unitPattern count="other">{0} पिक्सेल्स</unitPattern>
 				<unitPattern count="other" case="ablative">{0} पिक्सेल्सपासून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} पिक्सेल्सना</unitPattern>
@@ -7838,17 +8119,42 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} पिक्सेल्सनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} पिक्सेल्सचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} पिक्सेल्सचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} पिक्सेल्स</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
+				<gender>masculine</gender>
 				<displayName>मेगापिक्सेल्स</displayName>
 				<unitPattern count="one">{0} मेगापिक्सेल</unitPattern>
+				<unitPattern count="one" case="ablative">{0} मेगापिक्सेलहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} मेगापिक्सेलला</unitPattern>
+				<unitPattern count="one" case="dative">{0} मेगापिक्सेलला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} मेगापिक्सेलने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} मेगापिक्सेलचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} मेगापिक्सेलनी</unitPattern>
 				<unitPattern count="other">{0} मेगापिक्सेल्स</unitPattern>
+				<unitPattern count="other" case="ablative">{0} मेगापिक्सेल्सहून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} मेगापिक्सेल्सला</unitPattern>
+				<unitPattern count="other" case="dative">{0} मेगापिक्सेल्ससाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} मेगापिक्सेल्सनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} मेगापिक्सेल्सचा</unitPattern>
+				<unitPattern count="other" case="locative">{0} मेगापिक्सेल्समध्ये</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-centimeter">
+				<gender>masculine</gender>
 				<displayName>पिक्सेल्स प्रति सेंटीमीटर</displayName>
 				<unitPattern count="one">{0} पिक्सेल प्रति सेंटीमीटर</unitPattern>
+				<unitPattern count="one" case="ablative">{0} पिक्सेल प्रति सेंटीमीटरहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} पिक्सेल प्रति सेंटीमीटरला</unitPattern>
+				<unitPattern count="one" case="dative">{0} पिक्सेल प्रति सेंटीमीटरला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} पिक्सेल प्रति सेंटीमीटरने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} पिक्सेल प्रति सेंटीमीटरचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} पिक्सेल प्रति सेंटीमीटरमध्ये</unitPattern>
 				<unitPattern count="other">{0} पिक्सेल्स प्रति सेंटीमीटर</unitPattern>
+				<unitPattern count="other" case="ablative">{0} पिक्सेल्स प्रति सेंटीमीटरपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} पिक्सेल्स प्रति सेंटीमीटरला</unitPattern>
+				<unitPattern count="other" case="dative">{0} पिक्सेल्स प्रति सेंटीमीटरला</unitPattern>
+				<unitPattern count="other" case="ergative">{0} पिक्सेल्स प्रति सेंटीमीटरनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} पिक्सेल्स प्रति सेंटीमीटरचा</unitPattern>
+				<unitPattern count="other" case="locative">{0} पिक्सेल्स प्रति सेंटीमीटरमध्ये</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-inch">
 				<displayName>पिक्सेल्स प्रति इंच</displayName>
@@ -7876,13 +8182,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} पृथ्वी त्रिज्या</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
+				<gender>neuter</gender>
 				<displayName>किलोमीटर</displayName>
 				<unitPattern count="one">{0} किलोमीटर</unitPattern>
+				<unitPattern count="one" case="ablative">{0} किलोमीटरहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} किलोमीटरला</unitPattern>
+				<unitPattern count="one" case="dative">{0} किलोमीटरला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} किलोमीटरने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} किलोमीटरचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} किलोमीटरमध्ये</unitPattern>
 				<unitPattern count="other">{0} किलोमीटर</unitPattern>
+				<unitPattern count="other" case="ablative">{0} किलोमीटरपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} किलोमीटरना</unitPattern>
+				<unitPattern count="other" case="dative">{0} किलोमीटरना</unitPattern>
+				<unitPattern count="other" case="ergative">{0} किलोमीटरनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} किलोमीटरचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} किलोमीटरमध्ये</unitPattern>
 				<perUnitPattern>{0} दर किलोमीटर</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>मीटर</displayName>
 				<unitPattern count="one">{0} मीटर</unitPattern>
 				<unitPattern count="one" case="ablative">{0} मीटरपासून</unitPattern>
@@ -7891,7 +8210,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} मीटरने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} मीटरचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} मीटरशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} मीटर</unitPattern>
 				<unitPattern count="other">{0} मीटर</unitPattern>
 				<unitPattern count="other" case="ablative">{0} मीटरपासून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} मीटरना</unitPattern>
@@ -7899,39 +8217,116 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} मीटरनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} मीटरचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} मीटरचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} मीटर</unitPattern>
 				<perUnitPattern>{0} दर मीटर</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
+				<gender>neuter</gender>
 				<displayName>डेसीमीटर</displayName>
 				<unitPattern count="one">{0} डेसीमीटर</unitPattern>
+				<unitPattern count="one" case="ablative">{0} डेसीमीटरहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} डेसीमीटरला</unitPattern>
+				<unitPattern count="one" case="dative">{0} डेसीमीटरला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} डेसीमीटरने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} डेसीमीटरचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} डेसीमीटरमध्ये</unitPattern>
 				<unitPattern count="other">{0} डेसीमीटर</unitPattern>
+				<unitPattern count="other" case="ablative">{0} डेसीमीटरपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} डेसीमीटरना</unitPattern>
+				<unitPattern count="other" case="dative">{0} डेसीमीटरना</unitPattern>
+				<unitPattern count="other" case="ergative">{0} डेसीमीटरनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} डेसीमीटरचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} डेसीमीटरमध्ये</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
+				<gender>neuter</gender>
 				<displayName>सेंटीमीटर</displayName>
 				<unitPattern count="one">{0} सेंटीमीटर</unitPattern>
+				<unitPattern count="one" case="ablative">{0} सेंटीमीटरपासून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} सेंटीमीटरला</unitPattern>
+				<unitPattern count="one" case="dative">{0} सेंटीमीटरला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} सेंटीमीटरने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} सेंटीमीटरचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} सेंटीमीटरमध्ये</unitPattern>
 				<unitPattern count="other">{0} सेंटीमीटर</unitPattern>
+				<unitPattern count="other" case="ablative">{0} सेंटीमीटरपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} सेंटीमीटरना</unitPattern>
+				<unitPattern count="other" case="dative">{0} सेंटीमीटरसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} सेंटीमीटरने</unitPattern>
+				<unitPattern count="other" case="genitive">{0} सेंटीमीटरचा</unitPattern>
+				<unitPattern count="other" case="locative">{0} सेंटीमीटरमध्ये</unitPattern>
 				<perUnitPattern>{0} दर सेंटीमीटर</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
+				<gender>neuter</gender>
 				<displayName>मिलिमीटर</displayName>
 				<unitPattern count="one">{0} मिलिमीटर</unitPattern>
+				<unitPattern count="one" case="ablative">{0} मिलिमीटरपासून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} मिलिमीटरला</unitPattern>
+				<unitPattern count="one" case="dative">{0} मिलिमीटरला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} मिलिमीटरने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} मिलिमीटरचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} मिलिमीटरमध्ये</unitPattern>
 				<unitPattern count="other">{0} मिलिमीटर</unitPattern>
+				<unitPattern count="other" case="ablative">{0} मिलिमीटरपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} मिलिमीटरना</unitPattern>
+				<unitPattern count="other" case="dative">{0} मिलिमीटरसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} मिलिमीटरनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} मिलिमीटरचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} मिलिमीटरमध्ये</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
+				<gender>neuter</gender>
 				<displayName>मायक्रोमीटर</displayName>
 				<unitPattern count="one">{0} मायक्रोमीटर</unitPattern>
+				<unitPattern count="one" case="ablative">{0} मायक्रोमीटरहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} मायक्रोमीटरला</unitPattern>
+				<unitPattern count="one" case="dative">{0} मायक्रोमीटरला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} मायक्रोमीटरने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} मायक्रोमीटरचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} मायक्रोमीटरमध्ये</unitPattern>
 				<unitPattern count="other">{0} मायक्रोमीटर</unitPattern>
+				<unitPattern count="other" case="ablative">{0} मायक्रोमीटरपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} मायक्रोमीटरना</unitPattern>
+				<unitPattern count="other" case="dative">{0} मायक्रोमीटरसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} मायक्रोमीटरनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} मायक्रोमीटरचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} मायक्रोमीटरमध्ये</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
+				<gender>neuter</gender>
 				<displayName>नॅनोमीटर</displayName>
 				<unitPattern count="one">{0} नॅनोमीटर</unitPattern>
+				<unitPattern count="one" case="ablative">{0} नॅनोमीटरहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} नॅनोमीटरला</unitPattern>
+				<unitPattern count="one" case="dative">{0} नॅनोमीटरला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} नॅनोमीटरने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} नॅनोमीटरचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} नॅनोमीटरमध्ये</unitPattern>
 				<unitPattern count="other">{0} नॅनोमीटर</unitPattern>
+				<unitPattern count="other" case="ablative">{0} नॅनोमीटरपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} नॅनोमीटरना</unitPattern>
+				<unitPattern count="other" case="dative">{0} नॅनोमीटरसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} नॅनोमीटरने</unitPattern>
+				<unitPattern count="other" case="genitive">{0} नॅनोमीटरचा</unitPattern>
+				<unitPattern count="other" case="locative">{0} नॅनोमीटरमध्ये</unitPattern>
 			</unit>
 			<unit type="length-picometer">
+				<gender>neuter</gender>
 				<displayName>पिकोमीटर</displayName>
 				<unitPattern count="one">{0} पिकोमीटर</unitPattern>
+				<unitPattern count="one" case="ablative">{0} पिकोमीटरहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} पिकोमीटरला</unitPattern>
+				<unitPattern count="one" case="dative">{0} पिकोमीटरला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} पिकोमीटरने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} पिकोमीटरचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} पिकोमीटरमध्ये</unitPattern>
 				<unitPattern count="other">{0} पिकोमीटर</unitPattern>
+				<unitPattern count="other" case="ablative">{0} पिकोमीटरपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} पिकोमीटरना</unitPattern>
+				<unitPattern count="other" case="dative">{0} पिकोमीटरना</unitPattern>
+				<unitPattern count="other" case="ergative">{0} पिकोमीटरनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} पिकोमीटरचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} पिकोमीटरमध्ये</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<displayName>मैल</displayName>
@@ -7986,7 +8381,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} नॉटिकल मैल</unitPattern>
 			</unit>
 			<unit type="length-mile-scandinavian">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>मैल-स्कॅन्डीनेव्हियन</displayName>
 				<unitPattern count="one">{0} मैल-स्कॅन्डीनेव्हियन</unitPattern>
 				<unitPattern count="one" case="ablative">{0} मैल-स्कॅन्डीनेव्हियनपासून</unitPattern>
@@ -7995,7 +8390,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} मैल-स्कॅन्डीनेव्हियनने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} मैल-स्कॅन्डीनेव्हियनचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} मैल-स्कॅन्डीनेव्हियनशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} मैल-स्कॅन्डीनेव्हियन</unitPattern>
 				<unitPattern count="other">{0} मैल-स्कॅन्डीनेव्हियन</unitPattern>
 				<unitPattern count="other" case="ablative">{0} मैल-स्कॅन्डीनेव्हियनपासून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} मैल-स्कॅन्डीनेव्हियनना</unitPattern>
@@ -8003,7 +8397,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} मैल-स्कॅन्डीनेव्हियननी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} मैल-स्कॅन्डीनेव्हियनचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} मैल-स्कॅन्डीनेव्हियनचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} मैल-स्कॅन्डीनेव्हियन</unitPattern>
 			</unit>
 			<unit type="length-point">
 				<displayName>बिंदु</displayName>
@@ -8016,7 +8409,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} सौर त्रिज्या</unitPattern>
 			</unit>
 			<unit type="light-lux">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>लक्स</displayName>
 				<unitPattern count="one">{0} लक्स</unitPattern>
 				<unitPattern count="one" case="ablative">{0} लक्सपासून</unitPattern>
@@ -8025,7 +8418,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} लक्सने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} लक्सचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} लक्सशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} लक्स</unitPattern>
 				<unitPattern count="other">{0} लक्स</unitPattern>
 				<unitPattern count="other" case="ablative">{0} लक्सहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} लक्सना</unitPattern>
@@ -8033,10 +8425,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} लक्सनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} लक्सचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} लक्सचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} लक्स</unitPattern>
 			</unit>
 			<unit type="light-candela">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>कँडेला</displayName>
 				<unitPattern count="one">{0} कँडेला</unitPattern>
 				<unitPattern count="one" case="ablative">{0} कँडेलापासून</unitPattern>
@@ -8045,7 +8436,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} कँडेलाने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} कँडेलाचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} कँडेलाशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} कँडेला</unitPattern>
 				<unitPattern count="other">{0} कँडेला</unitPattern>
 				<unitPattern count="other" case="ablative">{0} कँडेलाहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} कँडेलाना</unitPattern>
@@ -8053,10 +8443,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} कँडेलानी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} कँडेलाचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} कँडेलाचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} कँडेला</unitPattern>
 			</unit>
 			<unit type="light-lumen">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>लुमेन</displayName>
 				<unitPattern count="one">{0} लुमेन</unitPattern>
 				<unitPattern count="one" case="ablative">{0} लुमेनपासून</unitPattern>
@@ -8065,7 +8454,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} लुमेनने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} लुमेनचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} लुमेनशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} लुमेन</unitPattern>
 				<unitPattern count="other">{0} लुमेन</unitPattern>
 				<unitPattern count="other" case="ablative">{0} लुमेनहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} लुमेनना</unitPattern>
@@ -8073,7 +8461,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} लुमेननी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} लुमेनचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} लुमेनचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} लुमेन</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>सौर प्रकाश</displayName>
@@ -8081,7 +8468,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} सौर प्रकाश</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>मेट्रिक टन</displayName>
 				<unitPattern count="one">{0} मेट्रिक टन</unitPattern>
 				<unitPattern count="one" case="ablative">{0} मेट्रिक टनपासून</unitPattern>
@@ -8090,7 +8477,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} मेट्रिक टनने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} मेट्रिक टनचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} मेट्रिक टनशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} मेट्रिक टन</unitPattern>
 				<unitPattern count="other">{0} मेट्रिक टन</unitPattern>
 				<unitPattern count="other" case="ablative">{0} मेट्रिक टनहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} मेट्रिक टनना</unitPattern>
@@ -8098,10 +8484,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} मेट्रिक टनसाठी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} मेट्रिक टननी</unitPattern>
 				<unitPattern count="other" case="locative">{0} मेट्रिक टनचे</unitPattern>
-				<unitPattern count="other" case="oblique">{0} मेट्रिक टन</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>किलोग्रॅम</displayName>
 				<unitPattern count="one">{0} किलोग्रॅम</unitPattern>
 				<unitPattern count="one" case="ablative">{0} किलोग्रॅमपासून</unitPattern>
@@ -8110,7 +8495,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} किलोग्रॅमने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} किलोग्रॅमचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} किलोग्रॅमशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} किलोग्रॅम</unitPattern>
 				<unitPattern count="other">{0} किलोग्रॅम</unitPattern>
 				<unitPattern count="other" case="ablative">{0} किलोग्रॅमहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} किलोग्रॅमना</unitPattern>
@@ -8118,11 +8502,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} किलोग्रॅमनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} किलोग्रॅमचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} किलोग्रॅमचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} किलोग्रॅम</unitPattern>
 				<perUnitPattern>{0} दर किलोग्रॅम</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ग्रॅम</displayName>
 				<unitPattern count="one">{0} ग्रॅम</unitPattern>
 				<unitPattern count="one" case="ablative">{0} ग्रॅमपासून</unitPattern>
@@ -8131,7 +8514,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} ग्रॅमने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ग्रॅमचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} ग्रॅमशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} ग्रॅम</unitPattern>
 				<unitPattern count="other">{0} ग्रॅम</unitPattern>
 				<unitPattern count="other" case="ablative">{0} ग्रॅमहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ग्रॅमना</unitPattern>
@@ -8139,18 +8521,43 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} ग्रॅमनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ग्रॅमचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} ग्रॅमचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} ग्रॅम</unitPattern>
 				<perUnitPattern>{0} दर ग्रॅम</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
+				<gender>neuter</gender>
 				<displayName>मिलिग्रॅम</displayName>
 				<unitPattern count="one">{0} मिलिग्रॅम</unitPattern>
+				<unitPattern count="one" case="ablative">{0} मिलिग्रॅमहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} मिलिग्रॅमला</unitPattern>
+				<unitPattern count="one" case="dative">{0} मिलिग्रॅमला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} मिलिग्रॅमने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} मिलिग्रॅमचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} मिलिग्रॅममध्ये</unitPattern>
 				<unitPattern count="other">{0} मिलिग्रॅम</unitPattern>
+				<unitPattern count="other" case="ablative">{0} मिलिग्रॅमपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} मिलिग्रॅमना</unitPattern>
+				<unitPattern count="other" case="dative">{0} मिलिग्रॅमसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} मिलिग्रॅमनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} मिलिग्रॅमचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} मिलिग्रॅममध्ये</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
+				<gender>neuter</gender>
 				<displayName>मायक्रोग्रॅम</displayName>
 				<unitPattern count="one">{0} मायक्रोग्रॅम</unitPattern>
+				<unitPattern count="one" case="ablative">{0} मायक्रोग्रॅमहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} मायक्रोग्रॅमला</unitPattern>
+				<unitPattern count="one" case="dative">{0} मायक्रोग्रॅमला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} मायक्रोग्रॅमने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} मायक्रोग्रॅमचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} मायक्रोग्रॅममध्ये</unitPattern>
 				<unitPattern count="other">{0} मायक्रोग्रॅम</unitPattern>
+				<unitPattern count="other" case="ablative">{0} मायक्रोग्रॅमपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} मायक्रोग्रॅमना</unitPattern>
+				<unitPattern count="other" case="dative">{0} मायक्रोग्रॅमसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} मायक्रोग्रॅमनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} मायक्रोग्रॅमचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} मायक्रोग्रॅममध्ये</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>टन</displayName>
@@ -8180,7 +8587,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ट्रॉय औंस</unitPattern>
 			</unit>
 			<unit type="mass-carat">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>कॅरेट्स</displayName>
 				<unitPattern count="one">{0} कॅरेट</unitPattern>
 				<unitPattern count="one" case="ablative">{0} कॅरेटपासून</unitPattern>
@@ -8189,7 +8596,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} कॅरेटने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} कॅरेटचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} कॅरेटशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} कॅरेट</unitPattern>
 				<unitPattern count="other">{0} कॅरेट्स</unitPattern>
 				<unitPattern count="other" case="ablative">{0} कॅरेट्सहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} कॅरेट्सना</unitPattern>
@@ -8197,7 +8603,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} कॅरेट्सनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} कॅरेट्सचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} कॅरेट्सचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} कॅरेट्स</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
 				<displayName>डाल्टन</displayName>
@@ -8220,22 +8625,61 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} अल्पांश</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
+				<gender>neuter</gender>
 				<displayName>गिगावॉट</displayName>
 				<unitPattern count="one">{0} गिगावॉट</unitPattern>
+				<unitPattern count="one" case="ablative">{0} गिगावॉटहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} गिगावॉटला</unitPattern>
+				<unitPattern count="one" case="dative">{0} गिगावॉटला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} गिगावॉटने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} गिगावॉटचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} गिगावॉटमध्ये</unitPattern>
 				<unitPattern count="other">{0} गिगावॉट</unitPattern>
+				<unitPattern count="other" case="ablative">{0} गिगावॉटपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} गिगावॉटना</unitPattern>
+				<unitPattern count="other" case="dative">{0} गिगावॉटसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} गिगावॉटनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} गिगावॉटचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} गिगावॉटमध्ये</unitPattern>
 			</unit>
 			<unit type="power-megawatt">
+				<gender>neuter</gender>
 				<displayName>मेगावॉट</displayName>
 				<unitPattern count="one">{0} मेगावॉट</unitPattern>
+				<unitPattern count="one" case="ablative">{0} मेगावॉटहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} मेगावॉटला</unitPattern>
+				<unitPattern count="one" case="dative">{0} मेगावॉटला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} मेगावॉटने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} मेगावॉटचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} मेगावॉटमध्ये</unitPattern>
 				<unitPattern count="other">{0} मेगावॉट</unitPattern>
+				<unitPattern count="other" case="ablative">{0} मेगावॉटपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} मेगावॉटना</unitPattern>
+				<unitPattern count="other" case="dative">{0} मेगावॉटना</unitPattern>
+				<unitPattern count="other" case="ergative">{0} मेगावॉटनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} मेगावॉटचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} मेगावॉटमध्ये</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
+				<gender>neuter</gender>
 				<displayName>किलोवॉट</displayName>
 				<unitPattern count="one">{0} किलोवॉट</unitPattern>
+				<unitPattern count="one" case="ablative">{0} किलोवॉटहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} किलोवॉटला</unitPattern>
+				<unitPattern count="one" case="dative">{0} किलोवॉटला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} किलोवॉटने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} किलोवॉटचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} किलोवॉटमध्ये</unitPattern>
 				<unitPattern count="other">{0} किलोवॉट</unitPattern>
+				<unitPattern count="other" case="ablative">{0} किलोवॉटपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} किलोवॉटना</unitPattern>
+				<unitPattern count="other" case="dative">{0} किलोवॉटसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} किलोवॉटनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} किलोवॉटचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} किलोवॉटमध्ये</unitPattern>
 			</unit>
 			<unit type="power-watt">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>वॉट</displayName>
 				<unitPattern count="one">{0} वॉट</unitPattern>
 				<unitPattern count="one" case="ablative">{0} वॉटपासून</unitPattern>
@@ -8244,7 +8688,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} वॉटने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} वॉटचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} वॉटशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} वॉट</unitPattern>
 				<unitPattern count="other">{0} वॉट</unitPattern>
 				<unitPattern count="other" case="ablative">{0} वॉटहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} वॉटना</unitPattern>
@@ -8252,12 +8695,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} वॉटनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} वॉटचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} वॉटचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} वॉट</unitPattern>
 			</unit>
 			<unit type="power-milliwatt">
+				<gender>neuter</gender>
 				<displayName>मिलिवॉट</displayName>
 				<unitPattern count="one">{0} मिलिवॉट</unitPattern>
+				<unitPattern count="one" case="ablative">{0} मिलिवॉटहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} मिलिवॉटला</unitPattern>
+				<unitPattern count="one" case="dative">{0} मिलिवॉटला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} मिलिवॉटने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} मिलिवॉटचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} मिलिवॉटमध्ये</unitPattern>
 				<unitPattern count="other">{0} मिलिवॉट</unitPattern>
+				<unitPattern count="other" case="ablative">{0} मिलिवॉटपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} मिलिवॉटना</unitPattern>
+				<unitPattern count="other" case="dative">{0} मिलिवॉटसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} मिलिवॉटनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} मिलिवॉटचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} मिलिवॉटमध्ये</unitPattern>
 			</unit>
 			<unit type="power-horsepower">
 				<displayName>हॉर्सपॉवर</displayName>
@@ -8288,7 +8743,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} बारने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} बारचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} बारशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} बार</unitPattern>
 				<unitPattern count="other">{0} बार</unitPattern>
 				<unitPattern count="other" case="ablative">{0} बारहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} बारना</unitPattern>
@@ -8296,15 +8750,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} बारनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} बारचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} बारचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} बार</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
+				<gender>masculine</gender>
 				<displayName>मिलिबार</displayName>
 				<unitPattern count="one">{0} मिलिबार</unitPattern>
+				<unitPattern count="one" case="ablative">{0} मिलिबारहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} मिलिबारला</unitPattern>
+				<unitPattern count="one" case="dative">{0} मिलिबारला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} मिलिबारने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} मिलिबारचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} मिलिबारमध्ये</unitPattern>
 				<unitPattern count="other">{0} मिलिबार</unitPattern>
+				<unitPattern count="other" case="ablative">{0} मिलिबारपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} मिलिबारना</unitPattern>
+				<unitPattern count="other" case="dative">{0} मिलिबारसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} मिलिबारनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} मिलिबारचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} मिलिबारमध्ये</unitPattern>
 			</unit>
 			<unit type="pressure-atmosphere">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>वातावरण</displayName>
 				<unitPattern count="one">{0} वातावरण</unitPattern>
 				<unitPattern count="one" case="ablative">{0} वातावरणापासून</unitPattern>
@@ -8313,7 +8779,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} वातावरणाने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} वातावरणाचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} वातावरणाशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} वातावरण</unitPattern>
 				<unitPattern count="other">{0} वातावरण</unitPattern>
 				<unitPattern count="other" case="ablative">{0} वातावरणांहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} वातावरणांना</unitPattern>
@@ -8321,10 +8786,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} वातावरणांनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} वातावरणांचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} वातावरणांचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} वातावरण</unitPattern>
 			</unit>
 			<unit type="pressure-pascal">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>पास्काल</displayName>
 				<unitPattern count="one">{0} पास्काल</unitPattern>
 				<unitPattern count="one" case="ablative">{0} पास्कालपासून</unitPattern>
@@ -8333,7 +8797,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} पास्कालने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} पास्कालचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} पास्कालशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} पास्काल</unitPattern>
 				<unitPattern count="other">{0} पास्काल</unitPattern>
 				<unitPattern count="other" case="ablative">{0} पास्कालहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} पास्कालना</unitPattern>
@@ -8341,32 +8804,96 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} पास्कालनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} पास्कालचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} पास्कालचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} पास्काल</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
+				<gender>masculine</gender>
 				<displayName>हेक्टोपास्कल</displayName>
 				<unitPattern count="one">{0} हेक्टोपास्कल</unitPattern>
+				<unitPattern count="one" case="ablative">{0} हेक्टोपास्कलहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} हेक्टोपास्कलला</unitPattern>
+				<unitPattern count="one" case="dative">{0} हेक्टोपास्कलला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} हेक्टोपास्कलने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} हेक्टोपास्कलचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} हेक्टोपास्कलमध्ये</unitPattern>
 				<unitPattern count="other">{0} हेक्टोपास्कल</unitPattern>
+				<unitPattern count="other" case="ablative">{0} हेक्टोपास्कलपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} हेक्टोपास्कलना</unitPattern>
+				<unitPattern count="other" case="dative">{0} हेक्टोपास्कलसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} हेक्टोपास्कलनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} हेक्टोपास्कलचा</unitPattern>
+				<unitPattern count="other" case="locative">{0} हेक्टोपास्कलमध्ये</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
+				<gender>masculine</gender>
 				<displayName>किलोपास्कल</displayName>
 				<unitPattern count="one">{0} किलोपास्कल</unitPattern>
+				<unitPattern count="one" case="ablative">{0} किलोपास्कलहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} किलोपास्कलला</unitPattern>
+				<unitPattern count="one" case="dative">{0} किलोपास्कलला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} किलोपास्कलने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} किलोपास्कलचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} किलोपास्कलमध्ये</unitPattern>
 				<unitPattern count="other">{0} किलोपास्कल</unitPattern>
+				<unitPattern count="other" case="ablative">{0} किलोपास्कलपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} किलोपास्कलना</unitPattern>
+				<unitPattern count="other" case="dative">{0} किलोपास्कलसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} किलोपास्कलनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} किलोपास्कलचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} किलोपास्कलमध्ये</unitPattern>
 			</unit>
 			<unit type="pressure-megapascal">
+				<gender>masculine</gender>
 				<displayName>मेगापास्कल</displayName>
 				<unitPattern count="one">{0} मेगापास्कल</unitPattern>
+				<unitPattern count="one" case="ablative">{0} मेगापास्कलहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} मेगापास्कलला</unitPattern>
+				<unitPattern count="one" case="dative">{0} मेगापास्कलला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} मेगापास्कलने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} मेगापास्कलचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} मेगापास्कलमध्ये</unitPattern>
 				<unitPattern count="other">{0} मेगापास्कल्स</unitPattern>
+				<unitPattern count="other" case="ablative">{0} मेगापास्कल्सपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} मेगापास्कल्सना</unitPattern>
+				<unitPattern count="other" case="dative">{0} मेगापास्कल्ससाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} मेगापास्कल्सनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} मेगापास्कल्सचा</unitPattern>
+				<unitPattern count="other" case="locative">{0} मेगापास्कल्समध्ये</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
+				<gender>neuter</gender>
 				<displayName>किलोमीटर प्रति तास</displayName>
 				<unitPattern count="one">{0} किलोमीटर प्रति तास</unitPattern>
+				<unitPattern count="one" case="ablative">{0} किलोमीटर प्रति तासपासून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} किलोमीटर प्रति तासाला</unitPattern>
+				<unitPattern count="one" case="dative">{0} किलोमीटर प्रति तासाला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} किलोमीटर प्रति तासाने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} किलोमीटर प्रति तासाचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} किलोमीटर प्रति तासात</unitPattern>
 				<unitPattern count="other">{0} किलोमीटर प्रति तास</unitPattern>
+				<unitPattern count="other" case="ablative">{0} किलोमीटर प्रति तासांपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} किलोमीटर प्रति तासांनी</unitPattern>
+				<unitPattern count="other" case="dative">{0} किलोमीटर प्रति तासासाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} किलोमीटर प्रति तासांनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} किलोमीटर प्रति तासांचा</unitPattern>
+				<unitPattern count="other" case="locative">{0} किलोमीटर प्रति तासात</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
+				<gender>neuter</gender>
 				<displayName>मीटर प्रति सेकंद</displayName>
 				<unitPattern count="one">{0} मीटर प्रति सेकंद</unitPattern>
+				<unitPattern count="one" case="ablative">{0} मीटर प्रति सेकंदापासून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} मीटर प्रति सेकंदाला</unitPattern>
+				<unitPattern count="one" case="dative">{0} मीटर प्रति सेकंदाला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} मीटर प्रति सेकंदाने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} मीटर प्रति सेकंदाचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} मीटर प्रति सेकंदात</unitPattern>
 				<unitPattern count="other">{0} मीटर प्रति सेकंद</unitPattern>
+				<unitPattern count="other" case="ablative">{0} मीटर प्रति सेकंदांपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} मीटर प्रति सेकंदांनी</unitPattern>
+				<unitPattern count="other" case="dative">{0} मीटर प्रति सेकंदांसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} मीटर प्रति सेकंदांनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} मीटर प्रति सेकंदांचा</unitPattern>
+				<unitPattern count="other" case="locative">{0} मीटर प्रति सेकंदांत</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
 				<displayName>मैल प्रति तास</displayName>
@@ -8379,7 +8906,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} नॉट</unitPattern>
 			</unit>
 			<unit type="temperature-generic">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>°</displayName>
 				<unitPattern count="one">{0}°</unitPattern>
 				<unitPattern count="one" case="ablative">{0} अंशापासून</unitPattern>
@@ -8399,7 +8926,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="oblique">{0} अंश</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>अंश सेल्सिअस</displayName>
 				<unitPattern count="one">{0} अंश सेल्सिअस</unitPattern>
 				<unitPattern count="one" case="ablative">{0} अंश सेल्सिअसपासून</unitPattern>
@@ -8408,7 +8935,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} अंश सेल्सिअसने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} अंश सेल्सिअसचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} अंश सेल्सिअसशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} अंश सेल्सिअस</unitPattern>
 				<unitPattern count="other">{0} अंश सेल्सिअस</unitPattern>
 				<unitPattern count="other" case="ablative">{0} अंश सेल्सिअसहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} अंश सेल्सिअसना</unitPattern>
@@ -8416,7 +8942,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} अंश सेल्सिअसनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} अंश सेल्सिअसचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} अंश सेल्सिअसचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} अंश सेल्सिअस</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<displayName>अंश फॅरनहाईट</displayName>
@@ -8424,7 +8949,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} अंश फॅरनहाईट</unitPattern>
 			</unit>
 			<unit type="temperature-kelvin">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>केल्व्हिन</displayName>
 				<unitPattern count="one">{0} केल्व्हिन</unitPattern>
 				<unitPattern count="one" case="ablative">{0} केल्व्हिनपासून</unitPattern>
@@ -8433,7 +8958,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} केल्व्हिनने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} केल्व्हिनचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} केल्व्हिनशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} केल्व्हिन</unitPattern>
 				<unitPattern count="other">{0} केल्व्हिन</unitPattern>
 				<unitPattern count="other" case="ablative">{0} केल्व्हिनहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} केल्व्हिनना</unitPattern>
@@ -8441,7 +8965,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} केल्व्हिननी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} केल्व्हिनचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} केल्व्हिनचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} केल्व्हिन</unitPattern>
 			</unit>
 			<unit type="torque-pound-force-foot">
 				<displayName>पाउंड-फूट</displayName>
@@ -8449,25 +8972,77 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} पाउंड-फूट</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
+				<gender>neuter</gender>
 				<displayName>न्यूटन-मीटर</displayName>
 				<unitPattern count="one">{0} न्यूटन-मीटर</unitPattern>
+				<unitPattern count="one" case="ablative">{0} न्यूटन-मीटरहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} न्यूटन-मीटरला</unitPattern>
+				<unitPattern count="one" case="dative">{0} न्यूटन-मीटरला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} न्यूटन-मीटरने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} न्यूटन-मीटरचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} न्यूटन-मीटरमध्ये</unitPattern>
 				<unitPattern count="other">{0} न्यूटन-मीटर</unitPattern>
+				<unitPattern count="other" case="ablative">{0} न्यूटन-मीटरपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} न्यूटन-मीटरना</unitPattern>
+				<unitPattern count="other" case="dative">{0} न्यूटन-मीटरसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} न्यूटन-मीटरनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} न्यूटन-मीटरचा</unitPattern>
+				<unitPattern count="other" case="locative">{0} न्यूटन-मीटरमध्ये</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
+				<gender>neuter</gender>
 				<displayName>घन किलोमीटर</displayName>
 				<unitPattern count="one">{0} घन किलोमीटर</unitPattern>
+				<unitPattern count="one" case="ablative">{0} घन किलोमीटरहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} घन किलोमीटरला</unitPattern>
+				<unitPattern count="one" case="dative">{0} घन किलोमीटरला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} घन किलोमीटरने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} घन किलोमीटरचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} घन किलोमीटरमध्ये</unitPattern>
 				<unitPattern count="other">{0} घन किलोमीटर</unitPattern>
+				<unitPattern count="other" case="ablative">{0} घन किलोमीटरपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} घन किलोमीटरना</unitPattern>
+				<unitPattern count="other" case="dative">{0} घन किलोमीटरना</unitPattern>
+				<unitPattern count="other" case="ergative">{0} घन किलोमीटरनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} घन किलोमीटरचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} घन किलोमीटरमध्ये</unitPattern>
 			</unit>
 			<unit type="volume-cubic-meter">
+				<gender>neuter</gender>
 				<displayName>घन मीटर</displayName>
 				<unitPattern count="one">{0} घन मीटर</unitPattern>
+				<unitPattern count="one" case="ablative">{0} घन मीटरहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} घन मीटरला</unitPattern>
+				<unitPattern count="one" case="dative">{0} घन मीटरला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} घन मीटरने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} घन मीटरचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} घन मीटरमध्ये</unitPattern>
 				<unitPattern count="other">{0} घन मीटर</unitPattern>
+				<unitPattern count="other" case="ablative">{0} घन मीटरहून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} घन मीटरनी</unitPattern>
+				<unitPattern count="other" case="dative">{0} घन मीटरसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} घन मीटरने</unitPattern>
+				<unitPattern count="other" case="genitive">{0} घन मीटरचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} घन मीटरमध्ये</unitPattern>
 				<perUnitPattern>{0} दर घन मीटर</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
+				<gender>neuter</gender>
 				<displayName>घन सेंटीमीटर</displayName>
 				<unitPattern count="one">{0} घन सेंटीमीटर</unitPattern>
+				<unitPattern count="one" case="ablative">{0} घन सेंटीमीटरहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} घन सेंटीमीटरला</unitPattern>
+				<unitPattern count="one" case="dative">{0} घन सेंटीमीटरला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} घन सेंटीमीटरने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} घन सेंटीमीटरचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} घन सेंटीमीटरमध्ये</unitPattern>
 				<unitPattern count="other">{0} घन सेंटीमीटर</unitPattern>
+				<unitPattern count="other" case="ablative">{0} घन सेंटीमीटरहून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} घन सेंटीमीटरहला</unitPattern>
+				<unitPattern count="other" case="dative">{0} घन सेंटीमीटरला</unitPattern>
+				<unitPattern count="other" case="ergative">{0} घन सेंटीमीटरने</unitPattern>
+				<unitPattern count="other" case="genitive">{0} घन सेंटीमीटरचा</unitPattern>
+				<unitPattern count="other" case="locative">{0} घन सेंटीमीटरमध्ये</unitPattern>
 				<perUnitPattern>{0} प्रति घन सेंटिमीटर</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
@@ -8491,17 +9066,43 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} घन इंच</unitPattern>
 			</unit>
 			<unit type="volume-megaliter">
+				<gender>neuter</gender>
 				<displayName>मेगालीटर</displayName>
 				<unitPattern count="one">{0} मेगालीटर</unitPattern>
+				<unitPattern count="one" case="ablative">{0} मेगालीटरहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} मेगालीटरला</unitPattern>
+				<unitPattern count="one" case="dative">{0} मेगालीटरला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} मेगालीटरने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} मेगालीटरचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} मेगालीटरमध्ये</unitPattern>
 				<unitPattern count="other">{0} मेगालीटर</unitPattern>
+				<unitPattern count="other" case="ablative">{0} मेगालीटरपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} मेगालीटरना</unitPattern>
+				<unitPattern count="other" case="dative">{0} मेगालीटरसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} मेगालीटरनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} मेगालीटरचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} मेगालीटरमध्ये</unitPattern>
 			</unit>
 			<unit type="volume-hectoliter">
+				<gender>neuter</gender>
 				<displayName>हेक्टोलीटर</displayName>
 				<unitPattern count="one">{0} हेक्टोलीटर</unitPattern>
+				<unitPattern count="one" case="ablative">{0} हेक्टोलीटरहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} हेक्टोलीटरला</unitPattern>
+				<unitPattern count="one" case="dative">{0} हेक्टोलीटरला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} हेक्टोलीटरने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} हेक्टोलीटरचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} हेक्टोलीटरमध्ये</unitPattern>
 				<unitPattern count="other">{0} हेक्टोलीटर</unitPattern>
+				<unitPattern count="other" case="ablative">{0} हेक्टोलीटरपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} हेक्टोलीटरना</unitPattern>
+				<unitPattern count="other" case="dative">{0} हेक्टोलीटरना</unitPattern>
+				<unitPattern count="other" case="ergative">{0} हेक्टोलीटरनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} हेक्टोलीटरचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} हेक्टोलीटरमध्ये</unitPattern>
 			</unit>
 			<unit type="volume-liter">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>लीटर</displayName>
 				<unitPattern count="one">{0} लीटर</unitPattern>
 				<unitPattern count="one" case="ablative">{0} लीटरपासून</unitPattern>
@@ -8510,7 +9111,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} लीटरने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} लीटरचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} लीटरशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} लीटर</unitPattern>
 				<unitPattern count="other">{0} लीटर</unitPattern>
 				<unitPattern count="other" case="ablative">{0} लीटरहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} लीटरना</unitPattern>
@@ -8518,26 +9118,64 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} लीटरनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} लीटरचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} लीटरचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} लीटर</unitPattern>
 				<perUnitPattern>{0} दर लीटर</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
+				<gender>neuter</gender>
 				<displayName>डेसीलीटर</displayName>
 				<unitPattern count="one">{0} डेसीलीटर</unitPattern>
+				<unitPattern count="one" case="ablative">{0} डेसीलीटरहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} डेसीलीटरला</unitPattern>
+				<unitPattern count="one" case="dative">{0} डेसीलीटरला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} डेसीलीटरने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} डेसीलीटरचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} डेसीलीटरमध्ये</unitPattern>
 				<unitPattern count="other">{0} डेसीलीटर</unitPattern>
+				<unitPattern count="other" case="ablative">{0} डेसीलीटरपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} डेसीलीटरना</unitPattern>
+				<unitPattern count="other" case="dative">{0} डेसीलीटरसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} डेसीलीटरनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} डेसीलीटरचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} डेसीलीटरमध्ये</unitPattern>
 			</unit>
 			<unit type="volume-centiliter">
+				<gender>neuter</gender>
 				<displayName>सेंटीलीटर</displayName>
 				<unitPattern count="one">{0} सेंटीलीटर</unitPattern>
+				<unitPattern count="one" case="ablative">{0} सेंटीलीटरहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} सेंटीलीटरला</unitPattern>
+				<unitPattern count="one" case="dative">{0} सेंटीलीटरला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} सेंटीलीटरने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} सेंटीलीटरचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} सेंटीलीटरमध्ये</unitPattern>
 				<unitPattern count="other">{0} सेंटीलीटर</unitPattern>
+				<unitPattern count="other" case="ablative">{0} सेंटीलीटरपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} सेंटीलीटरना</unitPattern>
+				<unitPattern count="other" case="dative">{0} सेंटीलीटरसाठी</unitPattern>
+				<unitPattern count="other" case="ergative">{0} सेंटीलीटरनी</unitPattern>
+				<unitPattern count="other" case="genitive">{0} सेंटीलीटरचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} सेंटीलीटरमध्ये</unitPattern>
 			</unit>
 			<unit type="volume-milliliter">
+				<gender>neuter</gender>
 				<displayName>मिलीलीटर</displayName>
 				<unitPattern count="one">{0} मिलीलीटर</unitPattern>
+				<unitPattern count="one" case="ablative">{0} मिलीलीटरहून</unitPattern>
+				<unitPattern count="one" case="accusative">{0} मिलीलीटरला</unitPattern>
+				<unitPattern count="one" case="dative">{0} मिलीलीटरला</unitPattern>
+				<unitPattern count="one" case="ergative">{0} मिलीलीटरने</unitPattern>
+				<unitPattern count="one" case="genitive">{0} मिलीलीटरचा</unitPattern>
+				<unitPattern count="one" case="locative">{0} मिलीलीटरमध्ये</unitPattern>
 				<unitPattern count="other">{0} मिलीलीटर</unitPattern>
+				<unitPattern count="other" case="ablative">{0} मिलीलीटरपासून</unitPattern>
+				<unitPattern count="other" case="accusative">{0} मिलीलीटरना</unitPattern>
+				<unitPattern count="other" case="dative">{0} मिलीलीटरना</unitPattern>
+				<unitPattern count="other" case="ergative">{0} मिलीलीटरने</unitPattern>
+				<unitPattern count="other" case="genitive">{0} मिलीलीटरचे</unitPattern>
+				<unitPattern count="other" case="locative">{0} मिलीलीटरमध्ये</unitPattern>
 			</unit>
 			<unit type="volume-pint-metric">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>मेट्रिक पिंट</displayName>
 				<unitPattern count="one">{0} मेट्रिक पिंट</unitPattern>
 				<unitPattern count="one" case="ablative">{0} मेट्रिक पिंटपासून</unitPattern>
@@ -8546,7 +9184,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} मेट्रिक पिंटने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} मेट्रिक पिंटचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} मेट्रिक पिंटशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} मेट्रिक पिंट</unitPattern>
 				<unitPattern count="other">{0} मेट्रिक पिंट</unitPattern>
 				<unitPattern count="other" case="ablative">{0} मेट्रिक पिंटहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} मेट्रिक पिंटना</unitPattern>
@@ -8554,10 +9191,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} मेट्रिक पिंटनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} मेट्रिक पिंटचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} मेट्रिक पिंटचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} मेट्रिक पिंट</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>मेट्रिक कप</displayName>
 				<unitPattern count="one">{0} मेट्रिक कप</unitPattern>
 				<unitPattern count="one" case="ablative">{0} मेट्रिक कपपासून</unitPattern>
@@ -8566,7 +9202,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="ergative">{0} मेट्रिक कपने</unitPattern>
 				<unitPattern count="one" case="genitive">{0} मेट्रिक कपचा</unitPattern>
 				<unitPattern count="one" case="locative">{0} मेट्रिक कपशी</unitPattern>
-				<unitPattern count="one" case="oblique">{0} मेट्रिक कप</unitPattern>
 				<unitPattern count="other">{0} मेट्रिक कप</unitPattern>
 				<unitPattern count="other" case="ablative">{0} मेट्रिक कपहून</unitPattern>
 				<unitPattern count="other" case="accusative">{0} मेट्रिक कपना</unitPattern>
@@ -8574,7 +9209,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="ergative">{0} मेट्रिक कपनी</unitPattern>
 				<unitPattern count="other" case="genitive">{0} मेट्रिक कपचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} मेट्रिक कपचा</unitPattern>
-				<unitPattern count="other" case="oblique">{0} मेट्रिक कप</unitPattern>
 			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>एकर-फूट</displayName>

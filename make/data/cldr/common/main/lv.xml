@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
@@ -3699,6 +3701,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Pacific/Enderbury">
 				<exemplarCity>Enderberija</exemplarCity>
 			</zone>
+			<zone type="Pacific/Kanton">
+				<exemplarCity>Kantona</exemplarCity>
+			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>Kirisimasi</exemplarCity>
 			</zone>
@@ -5869,7 +5874,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">Gruzijas lari</displayName>
 				<symbol>GEL</symbol>
 				<symbol alt="narrow">₾</symbol>
-				<symbol alt="variant">₾</symbol>
 			</currency>
 			<currency type="GHS">
 				<displayName>Ganas sedi</displayName>
@@ -7068,10 +7072,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="locative">{0} smagumspēkos</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
+				<gender>masculine</gender>
 				<displayName>metri sekundē kvadrātā</displayName>
 				<unitPattern count="zero">{0} metru sekundē kvadrātā</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} metru sekundē kvadrātā</unitPattern>
+				<unitPattern count="zero" case="dative">{0} metru sekundē kvadrātā</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} metru sekundē kvadrātā</unitPattern>
+				<unitPattern count="zero" case="locative">{0} metru sekundē kvadrātā</unitPattern>
 				<unitPattern count="one">{0} metrs sekundē kvadrātā</unitPattern>
+				<unitPattern count="one" case="accusative">{0} metru sekundē kvadrātā</unitPattern>
+				<unitPattern count="one" case="dative">{0} metram sekundē kvadrātā</unitPattern>
+				<unitPattern count="one" case="genitive">{0} metra sekundē kvadrātā</unitPattern>
+				<unitPattern count="one" case="locative">{0} metrā sekundē kvadrātā</unitPattern>
 				<unitPattern count="other">{0} metri sekundē kvadrātā</unitPattern>
+				<unitPattern count="other" case="accusative">{0} metrus sekundē kvadrātā</unitPattern>
+				<unitPattern count="other" case="dative">{0} metriem sekundē kvadrātā</unitPattern>
+				<unitPattern count="other" case="genitive">{0} metru sekundē kvadrātā</unitPattern>
+				<unitPattern count="other" case="locative">{0} metros sekundē kvadrātā</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
 				<gender>masculine</gender>
@@ -7169,10 +7186,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="locative">{0} leņķa sekundēs</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
+				<gender>masculine</gender>
 				<displayName>kvadrātkilometri</displayName>
 				<unitPattern count="zero">{0} kvadrātkilometru</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} kvadrātkilometru</unitPattern>
+				<unitPattern count="zero" case="dative">{0} kvadrātkilometru</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} kvadrātkilometru</unitPattern>
+				<unitPattern count="zero" case="locative">{0} kvadrātkilometru</unitPattern>
 				<unitPattern count="one">{0} kvadrātkilometrs</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kvadrātkilometru</unitPattern>
+				<unitPattern count="one" case="dative">{0} kvadrātkilometram</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kvadrātkilometra</unitPattern>
+				<unitPattern count="one" case="locative">{0} kvadrātkilometrā</unitPattern>
 				<unitPattern count="other">{0} kvadrātkilometri</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kvadrātkilometrus</unitPattern>
+				<unitPattern count="other" case="dative">{0} kvadrātkilometriem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kvadrātkilometru</unitPattern>
+				<unitPattern count="other" case="locative">{0} kvadrātkilometros</unitPattern>
 				<perUnitPattern>{0} uz kvadrātkilometru</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
@@ -7195,17 +7225,43 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="locative">{0} hektāros</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
+				<gender>masculine</gender>
 				<displayName>kvadrātmetri</displayName>
 				<unitPattern count="zero">{0} kvadrātmetru</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} kvadrātmetru</unitPattern>
+				<unitPattern count="zero" case="dative">{0} kvadrātmetru</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} kvadrātmetru</unitPattern>
+				<unitPattern count="zero" case="locative">{0} kvadrātmetru</unitPattern>
 				<unitPattern count="one">{0} kvadrātmetrs</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kvadrātmetru</unitPattern>
+				<unitPattern count="one" case="dative">{0} kvadrātmetram</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kvadrātmetra</unitPattern>
+				<unitPattern count="one" case="locative">{0} kvadrātmetrā</unitPattern>
 				<unitPattern count="other">{0} kvadrātmetri</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kvadrātmetrus</unitPattern>
+				<unitPattern count="other" case="dative">{0} kvadrātmetriem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kvadrātmetru</unitPattern>
+				<unitPattern count="other" case="locative">{0} kvadrātmetros</unitPattern>
 				<perUnitPattern>{0} uz kvadrātmetru</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
+				<gender>masculine</gender>
 				<displayName>kvadrātcentimetri</displayName>
 				<unitPattern count="zero">{0} kvadrātcentimetru</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} kvadrātcentimetru</unitPattern>
+				<unitPattern count="zero" case="dative">{0} kvadrātcentimetru</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} kvadrātcentimetru</unitPattern>
+				<unitPattern count="zero" case="locative">{0} kvadrātcentimetru</unitPattern>
 				<unitPattern count="one">{0} kvadrātcentimetrs</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kvadrātcentimetru</unitPattern>
+				<unitPattern count="one" case="dative">{0} kvadrātcentimetram</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kvadrātcentimetra</unitPattern>
+				<unitPattern count="one" case="locative">{0} kvadrātcentimetrā</unitPattern>
 				<unitPattern count="other">{0} kvadrātcentimetri</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kvadrātcentimetrus</unitPattern>
+				<unitPattern count="other" case="dative">{0} kvadrātcentimetriem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kvadrātcentimetru</unitPattern>
+				<unitPattern count="other" case="locative">{0} kvadrātcentimetros</unitPattern>
 				<perUnitPattern>{0} uz kvadrātcentimetru</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
@@ -7271,16 +7327,42 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} miligrami uz decilitru</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
+				<gender>masculine</gender>
 				<displayName>milimoli uz litru</displayName>
 				<unitPattern count="zero">{0} milimolu uz litru</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} milimolu uz litru</unitPattern>
+				<unitPattern count="zero" case="dative">{0} milimolu uz litru</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} milimolu uz litru</unitPattern>
+				<unitPattern count="zero" case="locative">{0} milimolu uz litru</unitPattern>
 				<unitPattern count="one">{0} milimols uz litru</unitPattern>
+				<unitPattern count="one" case="accusative">{0} milimolu uz litru</unitPattern>
+				<unitPattern count="one" case="dative">{0} milimolam uz litru</unitPattern>
+				<unitPattern count="one" case="genitive">{0} milimola uz litru</unitPattern>
+				<unitPattern count="one" case="locative">{0} milimolā uz litru</unitPattern>
 				<unitPattern count="other">{0} milimoli uz litru</unitPattern>
+				<unitPattern count="other" case="accusative">{0} milimolus uz litru</unitPattern>
+				<unitPattern count="other" case="dative">{0} milimoliem uz litru</unitPattern>
+				<unitPattern count="other" case="genitive">{0} milimolu uz litru</unitPattern>
+				<unitPattern count="other" case="locative">{0} milimolos uz litru</unitPattern>
 			</unit>
 			<unit type="concentr-item">
+				<gender>masculine</gender>
 				<displayName>vienumi</displayName>
 				<unitPattern count="zero">{0} vienumu</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} vienumu</unitPattern>
+				<unitPattern count="zero" case="dative">{0} vienumu</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} vienumu</unitPattern>
+				<unitPattern count="zero" case="locative">{0} vienumu</unitPattern>
 				<unitPattern count="one">{0} vienums</unitPattern>
+				<unitPattern count="one" case="accusative">{0} vienumu</unitPattern>
+				<unitPattern count="one" case="dative">{0} vienumam</unitPattern>
+				<unitPattern count="one" case="genitive">{0} vienuma</unitPattern>
+				<unitPattern count="one" case="locative">{0} vienumā</unitPattern>
 				<unitPattern count="other">{0} vienumi</unitPattern>
+				<unitPattern count="other" case="accusative">{0} vienumus</unitPattern>
+				<unitPattern count="other" case="dative">{0} vienumiem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} vienumu</unitPattern>
+				<unitPattern count="other" case="locative">{0} vienumos</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
 				<gender>feminine</gender>
@@ -7378,16 +7460,42 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="locative">{0} molos</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
+				<gender>masculine</gender>
 				<displayName>litri uz kilometru</displayName>
 				<unitPattern count="zero">{0} litru uz kilometru</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} litru uz kilometru</unitPattern>
+				<unitPattern count="zero" case="dative">{0} litru uz kilometru</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} litru uz kilometru</unitPattern>
+				<unitPattern count="zero" case="locative">{0} litru uz kilometru</unitPattern>
 				<unitPattern count="one">{0} litrs uz kilometru</unitPattern>
+				<unitPattern count="one" case="accusative">{0} litru uz kilometru</unitPattern>
+				<unitPattern count="one" case="dative">{0} litram uz kilometru</unitPattern>
+				<unitPattern count="one" case="genitive">{0} litra uz kilometru</unitPattern>
+				<unitPattern count="one" case="locative">{0} litrā uz kilometru</unitPattern>
 				<unitPattern count="other">{0} litri uz kilometru</unitPattern>
+				<unitPattern count="other" case="accusative">{0} litrus uz kilometru</unitPattern>
+				<unitPattern count="other" case="dative">{0} litriem uz kilometru</unitPattern>
+				<unitPattern count="other" case="genitive">{0} litru uz kilometru</unitPattern>
+				<unitPattern count="other" case="locative">{0} litros uz kilometru</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
+				<gender>masculine</gender>
 				<displayName>litri uz 100 kilometriem</displayName>
 				<unitPattern count="zero">{0} litru uz 100 kilometriem</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} litru uz 100 kilometriem</unitPattern>
+				<unitPattern count="zero" case="dative">{0} litru uz 100 kilometriem</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} litru uz 100 kilometriem</unitPattern>
+				<unitPattern count="zero" case="locative">{0} litru uz 100 kilometriem</unitPattern>
 				<unitPattern count="one">{0} litrs uz 100 kilometriem</unitPattern>
+				<unitPattern count="one" case="accusative">{0} litru uz 100 kilometriem</unitPattern>
+				<unitPattern count="one" case="dative">{0} litram uz 100 kilometriem</unitPattern>
+				<unitPattern count="one" case="genitive">{0} litra uz 100 kilometriem</unitPattern>
+				<unitPattern count="one" case="locative">{0} litrā uz 100 kilometriem</unitPattern>
 				<unitPattern count="other">{0} litri uz 100 kilometriem</unitPattern>
+				<unitPattern count="other" case="accusative">{0} litrus uz 100 kilometriem</unitPattern>
+				<unitPattern count="other" case="dative">{0} litriem uz 100 kilometriem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} litru uz 100 kilometriem</unitPattern>
+				<unitPattern count="other" case="locative">{0} litros uz 100 kilometriem</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>jūdzes uz galonu</displayName>
@@ -7402,58 +7510,175 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} jūdzes uz britu galonu</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
+				<gender>masculine</gender>
 				<displayName>petabaiti</displayName>
 				<unitPattern count="zero">{0} petabaitu</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} petabaitu</unitPattern>
+				<unitPattern count="zero" case="dative">{0} petabaitu</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} petabaitu</unitPattern>
+				<unitPattern count="zero" case="locative">{0} petabaitu</unitPattern>
 				<unitPattern count="one">{0} petabaits</unitPattern>
+				<unitPattern count="one" case="accusative">{0} petabaitu</unitPattern>
+				<unitPattern count="one" case="dative">{0} petabaitam</unitPattern>
+				<unitPattern count="one" case="genitive">{0} petabaita</unitPattern>
+				<unitPattern count="one" case="locative">{0} petabaitā</unitPattern>
 				<unitPattern count="other">{0} petabaiti</unitPattern>
+				<unitPattern count="other" case="accusative">{0} petabaitus</unitPattern>
+				<unitPattern count="other" case="dative">{0} petabaitiem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} petabaitu</unitPattern>
+				<unitPattern count="other" case="locative">{0} petabaitos</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
+				<gender>masculine</gender>
 				<displayName>terabaiti</displayName>
 				<unitPattern count="zero">{0} terabaitu</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} terabaitu</unitPattern>
+				<unitPattern count="zero" case="dative">{0} terabaitu</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} terabaitu</unitPattern>
+				<unitPattern count="zero" case="locative">{0} terabaitu</unitPattern>
 				<unitPattern count="one">{0} terabaits</unitPattern>
+				<unitPattern count="one" case="accusative">{0} terabaitu</unitPattern>
+				<unitPattern count="one" case="dative">{0} terabaitam</unitPattern>
+				<unitPattern count="one" case="genitive">{0} terabaita</unitPattern>
+				<unitPattern count="one" case="locative">{0} terabaitam</unitPattern>
 				<unitPattern count="other">{0} terabaiti</unitPattern>
+				<unitPattern count="other" case="accusative">{0} terabaitus</unitPattern>
+				<unitPattern count="other" case="dative">{0} terabaitiem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} terabaitu</unitPattern>
+				<unitPattern count="other" case="locative">{0} terabaitos</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
+				<gender>masculine</gender>
 				<displayName>terabiti</displayName>
 				<unitPattern count="zero">{0} terabitu</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} terabitu</unitPattern>
+				<unitPattern count="zero" case="dative">{0} terabitu</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} terabitu</unitPattern>
+				<unitPattern count="zero" case="locative">{0} terabitu</unitPattern>
 				<unitPattern count="one">{0} terabits</unitPattern>
+				<unitPattern count="one" case="accusative">{0} terabitu</unitPattern>
+				<unitPattern count="one" case="dative">{0} terabitam</unitPattern>
+				<unitPattern count="one" case="genitive">{0} terabita</unitPattern>
+				<unitPattern count="one" case="locative">{0} terabitā</unitPattern>
 				<unitPattern count="other">{0} terabiti</unitPattern>
+				<unitPattern count="other" case="accusative">{0} terabitus</unitPattern>
+				<unitPattern count="other" case="dative">{0} terabitiem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} terabitu</unitPattern>
+				<unitPattern count="other" case="locative">{0} terabitos</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
+				<gender>masculine</gender>
 				<displayName>gigabaiti</displayName>
 				<unitPattern count="zero">{0} gigabaitu</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} gigabaitu</unitPattern>
+				<unitPattern count="zero" case="dative">{0} gigabaitu</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} gigabaitu</unitPattern>
+				<unitPattern count="zero" case="locative">{0} gigabaitu</unitPattern>
 				<unitPattern count="one">{0} gigabaits</unitPattern>
+				<unitPattern count="one" case="accusative">{0} gigabaitu</unitPattern>
+				<unitPattern count="one" case="dative">{0} gigabaitam</unitPattern>
+				<unitPattern count="one" case="genitive">{0} gigabaita</unitPattern>
+				<unitPattern count="one" case="locative">{0} gigabaitā</unitPattern>
 				<unitPattern count="other">{0} gigabaiti</unitPattern>
+				<unitPattern count="other" case="accusative">{0} gigabaitus</unitPattern>
+				<unitPattern count="other" case="dative">{0} gigabaitiem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} gigabaitu</unitPattern>
+				<unitPattern count="other" case="locative">{0} gigabaitos</unitPattern>
 			</unit>
 			<unit type="digital-gigabit">
+				<gender>masculine</gender>
 				<displayName>gigabiti</displayName>
 				<unitPattern count="zero">{0} gigabitu</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} gigabitu</unitPattern>
+				<unitPattern count="zero" case="dative">{0} gigabitu</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} gigabitu</unitPattern>
+				<unitPattern count="zero" case="locative">{0} gigabitu</unitPattern>
 				<unitPattern count="one">{0} gigabits</unitPattern>
+				<unitPattern count="one" case="accusative">{0} gigabitu</unitPattern>
+				<unitPattern count="one" case="dative">{0} gigabitam</unitPattern>
+				<unitPattern count="one" case="genitive">{0} gigabita</unitPattern>
+				<unitPattern count="one" case="locative">{0} gigabitā</unitPattern>
 				<unitPattern count="other">{0} gigabiti</unitPattern>
+				<unitPattern count="other" case="accusative">{0} gigabitus</unitPattern>
+				<unitPattern count="other" case="dative">{0} gigabitiem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} gigabitu</unitPattern>
+				<unitPattern count="other" case="locative">{0} gigabitos</unitPattern>
 			</unit>
 			<unit type="digital-megabyte">
+				<gender>masculine</gender>
 				<displayName>megabaiti</displayName>
 				<unitPattern count="zero">{0} megabaitu</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} megabaitu</unitPattern>
+				<unitPattern count="zero" case="dative">{0} megabaitu</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} megabaitu</unitPattern>
+				<unitPattern count="zero" case="locative">{0} megabaitu</unitPattern>
 				<unitPattern count="one">{0} megabaits</unitPattern>
+				<unitPattern count="one" case="accusative">{0} megabaitu</unitPattern>
+				<unitPattern count="one" case="dative">{0} megabaitam</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megabaita</unitPattern>
+				<unitPattern count="one" case="locative">{0} megabaitā</unitPattern>
 				<unitPattern count="other">{0} megabaits</unitPattern>
+				<unitPattern count="other" case="accusative">{0} megabaitus</unitPattern>
+				<unitPattern count="other" case="dative">{0} megabaitiem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} megabaitu</unitPattern>
+				<unitPattern count="other" case="locative">{0} megabaitos</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
+				<gender>masculine</gender>
 				<displayName>megabiti</displayName>
 				<unitPattern count="zero">{0} megabitu</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} megabitu</unitPattern>
+				<unitPattern count="zero" case="dative">{0} megabitu</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} megabitu</unitPattern>
+				<unitPattern count="zero" case="locative">{0} megabitu</unitPattern>
 				<unitPattern count="one">{0} megabits</unitPattern>
+				<unitPattern count="one" case="accusative">{0} megabitu</unitPattern>
+				<unitPattern count="one" case="dative">{0} megabitam</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megabita</unitPattern>
+				<unitPattern count="one" case="locative">{0} megabitā</unitPattern>
 				<unitPattern count="other">{0} megabiti</unitPattern>
+				<unitPattern count="other" case="accusative">{0} megabitus</unitPattern>
+				<unitPattern count="other" case="dative">{0} megabitiem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} megabitu</unitPattern>
+				<unitPattern count="other" case="locative">{0} megabitos</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
+				<gender>masculine</gender>
 				<displayName>kilobaiti</displayName>
 				<unitPattern count="zero">{0} kilobaitu</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} kilobaitu</unitPattern>
+				<unitPattern count="zero" case="dative">{0} kilobaitu</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} kilobaitu</unitPattern>
+				<unitPattern count="zero" case="locative">{0} kilobaitu</unitPattern>
 				<unitPattern count="one">{0} kilobaits</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilobaitu</unitPattern>
+				<unitPattern count="one" case="dative">{0} kilobaitam</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilobaita</unitPattern>
+				<unitPattern count="one" case="locative">{0} kilobaitā</unitPattern>
 				<unitPattern count="other">{0} kilobaiti</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilobaitus</unitPattern>
+				<unitPattern count="other" case="dative">{0} kilobaitiem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilobaitu</unitPattern>
+				<unitPattern count="other" case="locative">{0} kilobaitos</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
+				<gender>masculine</gender>
 				<displayName>kilobiti</displayName>
 				<unitPattern count="zero">{0} kilobitu</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} kilobitu</unitPattern>
+				<unitPattern count="zero" case="dative">{0} kilobitu</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} kilobitu</unitPattern>
+				<unitPattern count="zero" case="locative">{0} kilobitu</unitPattern>
 				<unitPattern count="one">{0} kilobits</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilobitu</unitPattern>
+				<unitPattern count="one" case="dative">{0} kilobitam</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilobita</unitPattern>
+				<unitPattern count="one" case="locative">{0} kilobitā</unitPattern>
 				<unitPattern count="other">{0} kilobiti</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilobitus</unitPattern>
+				<unitPattern count="other" case="dative">{0} kilobitiem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilobitu</unitPattern>
+				<unitPattern count="other" case="locative">{0} kilobitos</unitPattern>
 			</unit>
 			<unit type="digital-byte">
 				<gender>masculine</gender>
@@ -7672,22 +7897,61 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} sekundē</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
+				<gender>feminine</gender>
 				<displayName>milisekundes</displayName>
 				<unitPattern count="zero">{0} milisekunžu</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} milisekunžu</unitPattern>
+				<unitPattern count="zero" case="dative">{0} milisekunžu</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} milisekunžu</unitPattern>
+				<unitPattern count="zero" case="locative">{0} milisekunžu</unitPattern>
 				<unitPattern count="one">{0} milisekunde</unitPattern>
+				<unitPattern count="one" case="accusative">{0} milisekundi</unitPattern>
+				<unitPattern count="one" case="dative">{0} milisekundei</unitPattern>
+				<unitPattern count="one" case="genitive">{0} milisekundes</unitPattern>
+				<unitPattern count="one" case="locative">{0} milisekundē</unitPattern>
 				<unitPattern count="other">{0} milisekundes</unitPattern>
+				<unitPattern count="other" case="accusative">{0} milisekundes</unitPattern>
+				<unitPattern count="other" case="dative">{0} milisekundēm</unitPattern>
+				<unitPattern count="other" case="genitive">{0} milisekunžu</unitPattern>
+				<unitPattern count="other" case="locative">{0} milisekundēs</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
+				<gender>feminine</gender>
 				<displayName>mikrosekundes</displayName>
 				<unitPattern count="zero">{0} mikrosekunžu</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} mikrosekunžu</unitPattern>
+				<unitPattern count="zero" case="dative">{0} mikrosekunžu</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} mikrosekunžu</unitPattern>
+				<unitPattern count="zero" case="locative">{0} mikrosekunžu</unitPattern>
 				<unitPattern count="one">{0} mikrosekunde</unitPattern>
+				<unitPattern count="one" case="accusative">{0} mikrosekundi</unitPattern>
+				<unitPattern count="one" case="dative">{0} mikrosekundei</unitPattern>
+				<unitPattern count="one" case="genitive">{0} mikrosekundes</unitPattern>
+				<unitPattern count="one" case="locative">{0} mikrosekundē</unitPattern>
 				<unitPattern count="other">{0} mikrosekundes</unitPattern>
+				<unitPattern count="other" case="accusative">{0} mikrosekundes</unitPattern>
+				<unitPattern count="other" case="dative">{0} mikrosekundēm</unitPattern>
+				<unitPattern count="other" case="genitive">{0} mikrosekunžu</unitPattern>
+				<unitPattern count="other" case="locative">{0} mikrosekundēs</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
+				<gender>feminine</gender>
 				<displayName>nanosekundes</displayName>
 				<unitPattern count="zero">{0} nanosekunžu</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} nanosekunžu</unitPattern>
+				<unitPattern count="zero" case="dative">{0} nanosekunžu</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} nanosekunžu</unitPattern>
+				<unitPattern count="zero" case="locative">{0} nanosekunžu</unitPattern>
 				<unitPattern count="one">{0} nanosekunde</unitPattern>
+				<unitPattern count="one" case="accusative">{0} nanosekundi</unitPattern>
+				<unitPattern count="one" case="dative">{0} nanosekundei</unitPattern>
+				<unitPattern count="one" case="genitive">{0} nanosekundes</unitPattern>
+				<unitPattern count="one" case="locative">{0} nanosekundē</unitPattern>
 				<unitPattern count="other">{0} nanosekundes</unitPattern>
+				<unitPattern count="other" case="accusative">{0} nanosekundes</unitPattern>
+				<unitPattern count="other" case="dative">{0} nanosekundēm</unitPattern>
+				<unitPattern count="other" case="genitive">{0} nanosekunžu</unitPattern>
+				<unitPattern count="other" case="locative">{0} nanosekundēs</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
 				<gender>masculine</gender>
@@ -7709,10 +7973,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="locative">{0} ampēros</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
+				<gender>masculine</gender>
 				<displayName>miliampēri</displayName>
 				<unitPattern count="zero">{0} miliampēru</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} miliampēru</unitPattern>
+				<unitPattern count="zero" case="dative">{0} miliampēru</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} miliampēru</unitPattern>
+				<unitPattern count="zero" case="locative">{0} miliampēru</unitPattern>
 				<unitPattern count="one">{0} miliampērs</unitPattern>
+				<unitPattern count="one" case="accusative">{0} miliampēru</unitPattern>
+				<unitPattern count="one" case="dative">{0} miliampēram</unitPattern>
+				<unitPattern count="one" case="genitive">{0} miliampēra</unitPattern>
+				<unitPattern count="one" case="locative">{0} miliampērā</unitPattern>
 				<unitPattern count="other">{0} miliampēri</unitPattern>
+				<unitPattern count="other" case="accusative">{0} miliampērus</unitPattern>
+				<unitPattern count="other" case="dative">{0} miliampēriem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} miliampēru</unitPattern>
+				<unitPattern count="other" case="locative">{0} miliampēros</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
 				<gender>masculine</gender>
@@ -7784,10 +8061,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} kalorijas</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
+				<gender>masculine</gender>
 				<displayName>kilodžouli</displayName>
 				<unitPattern count="zero">{0} kilodžoulu</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} kilodžoulu</unitPattern>
+				<unitPattern count="zero" case="dative">{0} kilodžoulu</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} kilodžoulu</unitPattern>
+				<unitPattern count="zero" case="locative">{0} kilodžoulu</unitPattern>
 				<unitPattern count="one">{0} kilodžouls</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilodžoulu</unitPattern>
+				<unitPattern count="one" case="dative">{0} kilodžoulam</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilodžoula</unitPattern>
+				<unitPattern count="one" case="locative">{0} kilodžoulā</unitPattern>
 				<unitPattern count="other">{0} kilodžouli</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilodžoulus</unitPattern>
+				<unitPattern count="other" case="dative">{0} kilodžouliem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilodžoulu</unitPattern>
+				<unitPattern count="other" case="locative">{0} kilodžoulos</unitPattern>
 			</unit>
 			<unit type="energy-joule">
 				<gender>masculine</gender>
@@ -7809,10 +8099,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="locative">{0} džoulos</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
+				<gender>feminine</gender>
 				<displayName>kilovatstundas</displayName>
 				<unitPattern count="zero">{0} kilovatstundu</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} kilovatstundu</unitPattern>
+				<unitPattern count="zero" case="dative">{0} kilovatstundu</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} kilovatstundu</unitPattern>
+				<unitPattern count="zero" case="locative">{0} kilovatstundu</unitPattern>
 				<unitPattern count="one">{0} kilovatstunda</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilovatstundu</unitPattern>
+				<unitPattern count="one" case="dative">{0} kilovatstundai</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilovatstundas</unitPattern>
+				<unitPattern count="one" case="locative">{0} kilovatstundā</unitPattern>
 				<unitPattern count="other">{0} kilovatstundas</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilovatstundas</unitPattern>
+				<unitPattern count="other" case="dative">{0} kilovatstundām</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilovatstundu</unitPattern>
+				<unitPattern count="other" case="locative">{0} kilovatstundās</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
 				<displayName>elektronvolti</displayName>
@@ -7858,28 +8161,80 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="locative">{0} ņūtonos</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<gender>feminine</gender>
 				<displayName>kilovatstunda uz 100 kilometriem</displayName>
 				<unitPattern count="zero">{0} kilovatstundu uz 100 kilometriem</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} kilovatstundu uz 100 kilometriem</unitPattern>
+				<unitPattern count="zero" case="dative">{0} kilovatstundu uz 100 kilometriem</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} kilovatstundu uz 100 kilometriem</unitPattern>
+				<unitPattern count="zero" case="locative">{0} kilovatstundu uz 100 kilometriem</unitPattern>
 				<unitPattern count="one">{0} kilovatstunda uz 100 kilometriem</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilovatstundu uz 100 kilometriem</unitPattern>
+				<unitPattern count="one" case="dative">{0} kilovatstundai uz 100 kilometriem</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilovatstundas uz 100 kilometriem</unitPattern>
+				<unitPattern count="one" case="locative">{0} kilovatstundā uz 100 kilometriem</unitPattern>
 				<unitPattern count="other">{0} kilovatstundas uz 100 kilometriem</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilovatstundas uz 100 kilometriem</unitPattern>
+				<unitPattern count="other" case="dative">{0} kilovatstundām uz 100 kilometriem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilovatstundu uz 100 kilometriem</unitPattern>
+				<unitPattern count="other" case="locative">{0} kilovatstundās uz 100 kilometriem</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
+				<gender>masculine</gender>
 				<displayName>gigaherci</displayName>
 				<unitPattern count="zero">{0} gigahercu</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} gigahercu</unitPattern>
+				<unitPattern count="zero" case="dative">{0} gigahercu</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} gigahercu</unitPattern>
+				<unitPattern count="zero" case="locative">{0} gigahercu</unitPattern>
 				<unitPattern count="one">{0} gigahercs</unitPattern>
+				<unitPattern count="one" case="accusative">{0} gigaherca</unitPattern>
+				<unitPattern count="one" case="dative">{0} gigahercam</unitPattern>
+				<unitPattern count="one" case="genitive">{0} gigaherca</unitPattern>
+				<unitPattern count="one" case="locative">{0} gigahercā</unitPattern>
 				<unitPattern count="other">{0} gigaherci</unitPattern>
+				<unitPattern count="other" case="accusative">{0} gigahercus</unitPattern>
+				<unitPattern count="other" case="dative">{0} gigaherciem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} gigahercu</unitPattern>
+				<unitPattern count="other" case="locative">{0} gigahercos</unitPattern>
 			</unit>
 			<unit type="frequency-megahertz">
+				<gender>masculine</gender>
 				<displayName>megaherci</displayName>
 				<unitPattern count="zero">{0} megahercu</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} megahercu</unitPattern>
+				<unitPattern count="zero" case="dative">{0} megahercu</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} megahercu</unitPattern>
+				<unitPattern count="zero" case="locative">{0} megahercu</unitPattern>
 				<unitPattern count="one">{0} megahercs</unitPattern>
+				<unitPattern count="one" case="accusative">{0} megahercu</unitPattern>
+				<unitPattern count="one" case="dative">{0} megahercam</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megaherca</unitPattern>
+				<unitPattern count="one" case="locative">{0} megahercā</unitPattern>
 				<unitPattern count="other">{0} megaherci</unitPattern>
+				<unitPattern count="other" case="accusative">{0} megahercus</unitPattern>
+				<unitPattern count="other" case="dative">{0} megaherciem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} megahercu</unitPattern>
+				<unitPattern count="other" case="locative">{0} megahercos</unitPattern>
 			</unit>
 			<unit type="frequency-kilohertz">
+				<gender>masculine</gender>
 				<displayName>kiloherci</displayName>
 				<unitPattern count="zero">{0} kilohercu</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} kilohercu</unitPattern>
+				<unitPattern count="zero" case="dative">{0} kilohercu</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} kilohercu</unitPattern>
+				<unitPattern count="zero" case="locative">{0} kilohercu</unitPattern>
 				<unitPattern count="one">{0} kilohercs</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilohercu</unitPattern>
+				<unitPattern count="one" case="dative">{0} kilohercam</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kiloherca</unitPattern>
+				<unitPattern count="one" case="locative">{0} kilohercā</unitPattern>
 				<unitPattern count="other">{0} kiloherci</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilohercus</unitPattern>
+				<unitPattern count="other" case="dative">{0} kiloherciem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilohercu</unitPattern>
+				<unitPattern count="other" case="locative">{0} kilohercos</unitPattern>
 			</unit>
 			<unit type="frequency-hertz">
 				<gender>masculine</gender>
@@ -7923,16 +8278,42 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="locative">{0} pikseļos</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
+				<gender>masculine</gender>
 				<displayName>megapikseļi</displayName>
 				<unitPattern count="zero">{0} MP</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} MP</unitPattern>
+				<unitPattern count="zero" case="dative">{0} MP</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} MP</unitPattern>
+				<unitPattern count="zero" case="locative">{0} MP</unitPattern>
 				<unitPattern count="one">{0} megapikselis</unitPattern>
+				<unitPattern count="one" case="accusative">{0} megapikseli</unitPattern>
+				<unitPattern count="one" case="dative">{0} megapikselim</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megapikseļa</unitPattern>
+				<unitPattern count="one" case="locative">{0} megapikselī</unitPattern>
 				<unitPattern count="other">{0} megapikseļi</unitPattern>
+				<unitPattern count="other" case="accusative">{0} megapikseļus</unitPattern>
+				<unitPattern count="other" case="dative">{0} megapikseļiem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} megapikseļu</unitPattern>
+				<unitPattern count="other" case="locative">{0} megapikseļos</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-centimeter">
+				<gender>masculine</gender>
 				<displayName>pikseļi centimetrā</displayName>
 				<unitPattern count="zero">{0} ppcm</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} ppcm</unitPattern>
+				<unitPattern count="zero" case="dative">{0} ppcm</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} ppcm</unitPattern>
+				<unitPattern count="zero" case="locative">{0} ppcm</unitPattern>
 				<unitPattern count="one">{0} pikselis centimetrā</unitPattern>
+				<unitPattern count="one" case="accusative">{0} pikseli centimetrā</unitPattern>
+				<unitPattern count="one" case="dative">{0} pikselim centimetrā</unitPattern>
+				<unitPattern count="one" case="genitive">{0} pikseļa centimetrā</unitPattern>
+				<unitPattern count="one" case="locative">{0} pikselī centimetrā</unitPattern>
 				<unitPattern count="other">{0} pikseļi centimetrā</unitPattern>
+				<unitPattern count="other" case="accusative">{0} pikseļus centimetrā</unitPattern>
+				<unitPattern count="other" case="dative">{0} pikseļiem centimetrā</unitPattern>
+				<unitPattern count="other" case="genitive">{0} pikseļu centimetrā</unitPattern>
+				<unitPattern count="other" case="locative">{0} pikseļos centimetrā</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-inch">
 				<displayName>pikseļi collā</displayName>
@@ -7962,10 +8343,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} Zemes rādiuss</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
+				<gender>masculine</gender>
 				<displayName>kilometri</displayName>
 				<unitPattern count="zero">{0} kilometru</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} kilometru</unitPattern>
+				<unitPattern count="zero" case="dative">{0} kilometru</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} kilometru</unitPattern>
+				<unitPattern count="zero" case="locative">{0} kilometru</unitPattern>
 				<unitPattern count="one">{0} kilometrs</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilometru</unitPattern>
+				<unitPattern count="one" case="dative">{0} kilometram</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilometra</unitPattern>
+				<unitPattern count="one" case="locative">{0} kilometrā</unitPattern>
 				<unitPattern count="other">{0} kilometri</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilometrus</unitPattern>
+				<unitPattern count="other" case="dative">{0} kilometriem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilometru</unitPattern>
+				<unitPattern count="other" case="locative">{0} kilometros</unitPattern>
 				<perUnitPattern>{0} kilometrā</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
@@ -7989,41 +8383,119 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} metrā</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
+				<gender>masculine</gender>
 				<displayName>decimetri</displayName>
 				<unitPattern count="zero">{0} decimetru</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} decimetru</unitPattern>
+				<unitPattern count="zero" case="dative">{0} decimetru</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} decimetru</unitPattern>
+				<unitPattern count="zero" case="locative">{0} decimetru</unitPattern>
 				<unitPattern count="one">{0} decimetrs</unitPattern>
+				<unitPattern count="one" case="accusative">{0} decimetru</unitPattern>
+				<unitPattern count="one" case="dative">{0} decimetram</unitPattern>
+				<unitPattern count="one" case="genitive">{0} decimetra</unitPattern>
+				<unitPattern count="one" case="locative">{0} decimetrā</unitPattern>
 				<unitPattern count="other">{0} decimetri</unitPattern>
+				<unitPattern count="other" case="accusative">{0} decimetrus</unitPattern>
+				<unitPattern count="other" case="dative">{0} decimetriem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} decimetru</unitPattern>
+				<unitPattern count="other" case="locative">{0} decimetros</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
+				<gender>masculine</gender>
 				<displayName>centimetri</displayName>
 				<unitPattern count="zero">{0} centimetru</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} centimetru</unitPattern>
+				<unitPattern count="zero" case="dative">{0} centimetru</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} centimetru</unitPattern>
+				<unitPattern count="zero" case="locative">{0} centimetru</unitPattern>
 				<unitPattern count="one">{0} centimetrs</unitPattern>
+				<unitPattern count="one" case="accusative">{0} centimetru</unitPattern>
+				<unitPattern count="one" case="dative">{0} centimetram</unitPattern>
+				<unitPattern count="one" case="genitive">{0} centimetra</unitPattern>
+				<unitPattern count="one" case="locative">{0} centimetrā</unitPattern>
 				<unitPattern count="other">{0} centimetri</unitPattern>
+				<unitPattern count="other" case="accusative">{0} centimetrus</unitPattern>
+				<unitPattern count="other" case="dative">{0} centimetriem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} centimetru</unitPattern>
+				<unitPattern count="other" case="locative">{0} centimetros</unitPattern>
 				<perUnitPattern>{0} centimetrā</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
+				<gender>masculine</gender>
 				<displayName>milimetri</displayName>
 				<unitPattern count="zero">{0} milimetru</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} milimetru</unitPattern>
+				<unitPattern count="zero" case="dative">{0} milimetru</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} milimetru</unitPattern>
+				<unitPattern count="zero" case="locative">{0} milimetru</unitPattern>
 				<unitPattern count="one">{0} milimetrs</unitPattern>
+				<unitPattern count="one" case="accusative">{0} milimetru</unitPattern>
+				<unitPattern count="one" case="dative">{0} milimetram</unitPattern>
+				<unitPattern count="one" case="genitive">{0} milimetra</unitPattern>
+				<unitPattern count="one" case="locative">{0} milimetrā</unitPattern>
 				<unitPattern count="other">{0} milimetri</unitPattern>
+				<unitPattern count="other" case="accusative">{0} milimetrus</unitPattern>
+				<unitPattern count="other" case="dative">{0} milimetriem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} milimetru</unitPattern>
+				<unitPattern count="other" case="locative">{0} milimetos</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
+				<gender>masculine</gender>
 				<displayName>mikrometri</displayName>
 				<unitPattern count="zero">{0} mikrometru</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} mikrometru</unitPattern>
+				<unitPattern count="zero" case="dative">{0} mikrometru</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} mikrometru</unitPattern>
+				<unitPattern count="zero" case="locative">{0} mikrometru</unitPattern>
 				<unitPattern count="one">{0} mikrometrs</unitPattern>
+				<unitPattern count="one" case="accusative">{0} mikrometru</unitPattern>
+				<unitPattern count="one" case="dative">{0} mikrometram</unitPattern>
+				<unitPattern count="one" case="genitive">{0} mikrometra</unitPattern>
+				<unitPattern count="one" case="locative">{0} mikrometrā</unitPattern>
 				<unitPattern count="other">{0} mikrometri</unitPattern>
+				<unitPattern count="other" case="accusative">{0} mikrometrus</unitPattern>
+				<unitPattern count="other" case="dative">{0} mikrometriem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} mikrometru</unitPattern>
+				<unitPattern count="other" case="locative">{0} mikrometros</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
+				<gender>masculine</gender>
 				<displayName>nanometri</displayName>
 				<unitPattern count="zero">{0} nanometru</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} nanometru</unitPattern>
+				<unitPattern count="zero" case="dative">{0} nanometru</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} nanometru</unitPattern>
+				<unitPattern count="zero" case="locative">{0} nanometru</unitPattern>
 				<unitPattern count="one">{0} nanometrs</unitPattern>
+				<unitPattern count="one" case="accusative">{0} nanometru</unitPattern>
+				<unitPattern count="one" case="dative">{0} nanometram</unitPattern>
+				<unitPattern count="one" case="genitive">{0} nanometra</unitPattern>
+				<unitPattern count="one" case="locative">{0} nanometrā</unitPattern>
 				<unitPattern count="other">{0} nanometri</unitPattern>
+				<unitPattern count="other" case="accusative">{0} nanometrus</unitPattern>
+				<unitPattern count="other" case="dative">{0} nanometriem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} nanometru</unitPattern>
+				<unitPattern count="other" case="locative">{0} nanometros</unitPattern>
 			</unit>
 			<unit type="length-picometer">
+				<gender>masculine</gender>
 				<displayName>pikometri</displayName>
 				<unitPattern count="zero">{0} pikometru</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} pikometru</unitPattern>
+				<unitPattern count="zero" case="dative">{0} pikometru</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} pikometru</unitPattern>
+				<unitPattern count="zero" case="locative">{0} pikometru</unitPattern>
 				<unitPattern count="one">{0} pikometrs</unitPattern>
+				<unitPattern count="one" case="accusative">{0} pikometru</unitPattern>
+				<unitPattern count="one" case="dative">{0} pikometram</unitPattern>
+				<unitPattern count="one" case="genitive">{0} pikometra</unitPattern>
+				<unitPattern count="one" case="locative">{0} pikometrā</unitPattern>
 				<unitPattern count="other">{0} pikometri</unitPattern>
+				<unitPattern count="other" case="accusative">{0} pikometrus</unitPattern>
+				<unitPattern count="other" case="dative">{0} pikometriem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} pikometru</unitPattern>
+				<unitPattern count="other" case="locative">{0} pikometros</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<displayName>jūdzes</displayName>
@@ -8241,16 +8713,42 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} uz gramu</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
+				<gender>masculine</gender>
 				<displayName>miligrami</displayName>
 				<unitPattern count="zero">{0} miligramu</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} miligramu</unitPattern>
+				<unitPattern count="zero" case="dative">{0} miligramu</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} miligramu</unitPattern>
+				<unitPattern count="zero" case="locative">{0} miligramu</unitPattern>
 				<unitPattern count="one">{0} miligrams</unitPattern>
+				<unitPattern count="one" case="accusative">{0} miligramu</unitPattern>
+				<unitPattern count="one" case="dative">{0} miligramam</unitPattern>
+				<unitPattern count="one" case="genitive">{0} miligrama</unitPattern>
+				<unitPattern count="one" case="locative">{0} miligramā</unitPattern>
 				<unitPattern count="other">{0} miligrami</unitPattern>
+				<unitPattern count="other" case="accusative">{0} miligramus</unitPattern>
+				<unitPattern count="other" case="dative">{0} miligramiem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} miligramu</unitPattern>
+				<unitPattern count="other" case="locative">{0} miligramos</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
+				<gender>masculine</gender>
 				<displayName>mikrogrami</displayName>
 				<unitPattern count="zero">{0} mikrogramu</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} mikrogramu</unitPattern>
+				<unitPattern count="zero" case="dative">{0} mikrogramu</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} mikrogramu</unitPattern>
+				<unitPattern count="zero" case="locative">{0} mikrogramu</unitPattern>
 				<unitPattern count="one">{0} mikrograms</unitPattern>
+				<unitPattern count="one" case="accusative">{0} mikrogramu</unitPattern>
+				<unitPattern count="one" case="dative">{0} mikrogramam</unitPattern>
+				<unitPattern count="one" case="genitive">{0} mikrograma</unitPattern>
+				<unitPattern count="one" case="locative">{0} mikrogramā</unitPattern>
 				<unitPattern count="other">{0} mikrogrami</unitPattern>
+				<unitPattern count="other" case="accusative">{0} mikrogramus</unitPattern>
+				<unitPattern count="other" case="dative">{0} mikrogramiem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} mikrogramu</unitPattern>
+				<unitPattern count="other" case="locative">{0} mikrogramos</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>tonnas</displayName>
@@ -8328,22 +8826,61 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} grana</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
+				<gender>masculine</gender>
 				<displayName>gigavati</displayName>
 				<unitPattern count="zero">{0} gigavatu</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} gigavatu</unitPattern>
+				<unitPattern count="zero" case="dative">{0} gigavatu</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} gigavatu</unitPattern>
+				<unitPattern count="zero" case="locative">{0} gigavatu</unitPattern>
 				<unitPattern count="one">{0} gigavats</unitPattern>
+				<unitPattern count="one" case="accusative">{0} gigavatu</unitPattern>
+				<unitPattern count="one" case="dative">{0} gigavatam</unitPattern>
+				<unitPattern count="one" case="genitive">{0} gigavata</unitPattern>
+				<unitPattern count="one" case="locative">{0} gigavatā</unitPattern>
 				<unitPattern count="other">{0} gigavati</unitPattern>
+				<unitPattern count="other" case="accusative">{0} gigavatus</unitPattern>
+				<unitPattern count="other" case="dative">{0} gigavatiem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} gigavatu</unitPattern>
+				<unitPattern count="other" case="locative">{0} gigavatos</unitPattern>
 			</unit>
 			<unit type="power-megawatt">
+				<gender>masculine</gender>
 				<displayName>megavati</displayName>
 				<unitPattern count="zero">{0} megavatu</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} megavatu</unitPattern>
+				<unitPattern count="zero" case="dative">{0} megavatu</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} megavatu</unitPattern>
+				<unitPattern count="zero" case="locative">{0} megavatu</unitPattern>
 				<unitPattern count="one">{0} megavats</unitPattern>
+				<unitPattern count="one" case="accusative">{0} megavatu</unitPattern>
+				<unitPattern count="one" case="dative">{0} megavatam</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megavata</unitPattern>
+				<unitPattern count="one" case="locative">{0} megavatā</unitPattern>
 				<unitPattern count="other">{0} megavati</unitPattern>
+				<unitPattern count="other" case="accusative">{0} megavatus</unitPattern>
+				<unitPattern count="other" case="dative">{0} megavatiem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} megavatu</unitPattern>
+				<unitPattern count="other" case="locative">{0} megavatos</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
+				<gender>masculine</gender>
 				<displayName>kilovati</displayName>
 				<unitPattern count="zero">{0} kilovatu</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} kilovatu</unitPattern>
+				<unitPattern count="zero" case="dative">{0} kilovatu</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} kilovatu</unitPattern>
+				<unitPattern count="zero" case="locative">{0} kilovatu</unitPattern>
 				<unitPattern count="one">{0} kilovats</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilovatu</unitPattern>
+				<unitPattern count="one" case="dative">{0} kilovatam</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilovata</unitPattern>
+				<unitPattern count="one" case="locative">{0} kilovatā</unitPattern>
 				<unitPattern count="other">{0} kilovati</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilovatus</unitPattern>
+				<unitPattern count="other" case="dative">{0} kilovatiem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilovatu</unitPattern>
+				<unitPattern count="other" case="locative">{0} kilovatos</unitPattern>
 			</unit>
 			<unit type="power-watt">
 				<gender>masculine</gender>
@@ -8365,10 +8902,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="locative">{0} vatos</unitPattern>
 			</unit>
 			<unit type="power-milliwatt">
+				<gender>masculine</gender>
 				<displayName>milivati</displayName>
 				<unitPattern count="zero">{0} milivatu</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} milivatu</unitPattern>
+				<unitPattern count="zero" case="dative">{0} milivatu</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} milivatu</unitPattern>
+				<unitPattern count="zero" case="locative">{0} milivatu</unitPattern>
 				<unitPattern count="one">{0} milivats</unitPattern>
+				<unitPattern count="one" case="accusative">{0} milivatu</unitPattern>
+				<unitPattern count="one" case="dative">{0} milivatam</unitPattern>
+				<unitPattern count="one" case="genitive">{0} milivata</unitPattern>
+				<unitPattern count="one" case="locative">{0} milivatā</unitPattern>
 				<unitPattern count="other">{0} milivati</unitPattern>
+				<unitPattern count="other" case="accusative">{0} milivatus</unitPattern>
+				<unitPattern count="other" case="dative">{0} milivatiem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} milivatu</unitPattern>
+				<unitPattern count="other" case="locative">{0} milivatos</unitPattern>
 			</unit>
 			<unit type="power-horsepower">
 				<displayName>zirgspēki</displayName>
@@ -8414,10 +8964,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="locative">{0} bāros</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
+				<gender>masculine</gender>
 				<displayName>milibāri</displayName>
 				<unitPattern count="zero">{0} milibāru</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} milibāru</unitPattern>
+				<unitPattern count="zero" case="dative">{0} milibāru</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} milibāru</unitPattern>
+				<unitPattern count="zero" case="locative">{0} milibāru</unitPattern>
 				<unitPattern count="one">{0} milibārs</unitPattern>
+				<unitPattern count="one" case="accusative">{0} milibāru</unitPattern>
+				<unitPattern count="one" case="dative">{0} milibāram</unitPattern>
+				<unitPattern count="one" case="genitive">{0} milibāra</unitPattern>
+				<unitPattern count="one" case="locative">{0} milibārā</unitPattern>
 				<unitPattern count="other">{0} milibāri</unitPattern>
+				<unitPattern count="other" case="accusative">{0} milibārus</unitPattern>
+				<unitPattern count="other" case="dative">{0} milibāriem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} milibāru</unitPattern>
+				<unitPattern count="other" case="locative">{0} milibāros</unitPattern>
 			</unit>
 			<unit type="pressure-atmosphere">
 				<gender>feminine</gender>
@@ -8458,34 +9021,99 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="locative">{0} paskālos</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
+				<gender>masculine</gender>
 				<displayName>hektopaskāli</displayName>
 				<unitPattern count="zero">{0} hektopaskālu</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} hektopaskālu</unitPattern>
+				<unitPattern count="zero" case="dative">{0} hektopaskālu</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} hektopaskālu</unitPattern>
+				<unitPattern count="zero" case="locative">{0} hektopaskālu</unitPattern>
 				<unitPattern count="one">{0} hektopaskāls</unitPattern>
+				<unitPattern count="one" case="accusative">{0} hektopaskālu</unitPattern>
+				<unitPattern count="one" case="dative">{0} hektopaskālam</unitPattern>
+				<unitPattern count="one" case="genitive">{0} hektopaskāla</unitPattern>
+				<unitPattern count="one" case="locative">{0} hektopaskālā</unitPattern>
 				<unitPattern count="other">{0} hektopaskāli</unitPattern>
+				<unitPattern count="other" case="accusative">{0} hektopaskālus</unitPattern>
+				<unitPattern count="other" case="dative">{0} hektopaskāiem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} hektopaskālu</unitPattern>
+				<unitPattern count="other" case="locative">{0} hektopaskālos</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
+				<gender>masculine</gender>
 				<displayName>kilopaskāli</displayName>
 				<unitPattern count="zero">{0} kPa</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} kPa</unitPattern>
+				<unitPattern count="zero" case="dative">{0} kPa</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} kPa</unitPattern>
+				<unitPattern count="zero" case="locative">{0} kPa</unitPattern>
 				<unitPattern count="one">{0} kilopaskāls</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilopaskālu</unitPattern>
+				<unitPattern count="one" case="dative">{0} kilopaskālam</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilopaskāla</unitPattern>
+				<unitPattern count="one" case="locative">{0} kilopaskālā</unitPattern>
 				<unitPattern count="other">{0} kilopaskāli</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilopaskālus</unitPattern>
+				<unitPattern count="other" case="dative">{0} kilopaskāliem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilopaskālu</unitPattern>
+				<unitPattern count="other" case="locative">{0} kilopaskālos</unitPattern>
 			</unit>
 			<unit type="pressure-megapascal">
+				<gender>masculine</gender>
 				<displayName>magapaskāli</displayName>
 				<unitPattern count="zero">{0} MPa</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} MPa</unitPattern>
+				<unitPattern count="zero" case="dative">{0} MPa</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} MPa</unitPattern>
+				<unitPattern count="zero" case="locative">{0} MPa</unitPattern>
 				<unitPattern count="one">{0} megapaskāls</unitPattern>
+				<unitPattern count="one" case="accusative">{0} megapaskālu</unitPattern>
+				<unitPattern count="one" case="dative">{0} megapaskālam</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megapaskāla</unitPattern>
+				<unitPattern count="one" case="locative">{0} megapaskālā</unitPattern>
 				<unitPattern count="other">{0} megapaskāli</unitPattern>
+				<unitPattern count="other" case="accusative">{0} megapaskālus</unitPattern>
+				<unitPattern count="other" case="dative">{0} megapaskāliem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} megapaskālu</unitPattern>
+				<unitPattern count="other" case="locative">{0} megapaskālos</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
+				<gender>masculine</gender>
 				<displayName>kilometri stundā</displayName>
 				<unitPattern count="zero">{0} kilometru stundā</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} kilometru stundā</unitPattern>
+				<unitPattern count="zero" case="dative">{0} kilometru stundā</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} kilometru stundā</unitPattern>
+				<unitPattern count="zero" case="locative">{0} kilometru stundā</unitPattern>
 				<unitPattern count="one">{0} kilometrs stundā</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilometru stundā</unitPattern>
+				<unitPattern count="one" case="dative">{0} kilometram stundā</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilometra stundā</unitPattern>
+				<unitPattern count="one" case="locative">{0} kilometrā stundā</unitPattern>
 				<unitPattern count="other">{0} kilometri stundā</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilometrus stundā</unitPattern>
+				<unitPattern count="other" case="dative">{0} kilometriem stundā</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilometru stundā</unitPattern>
+				<unitPattern count="other" case="locative">{0} kilometros stundā</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
+				<gender>masculine</gender>
 				<displayName>metri sekundē</displayName>
 				<unitPattern count="zero">{0} metru sekundē</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} metru sekundē</unitPattern>
+				<unitPattern count="zero" case="dative">{0} metru sekundē</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} metru sekundē</unitPattern>
+				<unitPattern count="zero" case="locative">{0} metru sekundē</unitPattern>
 				<unitPattern count="one">{0} metrs sekundē</unitPattern>
+				<unitPattern count="one" case="accusative">{0} metru sekundē</unitPattern>
+				<unitPattern count="one" case="dative">{0} metram sekundē</unitPattern>
+				<unitPattern count="one" case="genitive">{0} metra sekundē</unitPattern>
+				<unitPattern count="one" case="locative">{0} metrā sekundē</unitPattern>
 				<unitPattern count="other">{0} metri sekundē</unitPattern>
+				<unitPattern count="other" case="accusative">{0} metrus sekundē</unitPattern>
+				<unitPattern count="other" case="dative">{0} metriem sekundē</unitPattern>
+				<unitPattern count="other" case="genitive">{0} metru sekundē</unitPattern>
+				<unitPattern count="other" case="locative">{0} metros sekundē</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
 				<displayName>jūdzes stundā</displayName>
@@ -8569,29 +9197,81 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} mārciņpēdas</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
+				<gender>masculine</gender>
 				<displayName>ņūtonmetri</displayName>
 				<unitPattern count="zero">{0} ņūtonmetru</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} ņūtonmetru</unitPattern>
+				<unitPattern count="zero" case="dative">{0} ņūtonmetru</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} ņūtonmetru</unitPattern>
+				<unitPattern count="zero" case="locative">{0} ņūtonmetru</unitPattern>
 				<unitPattern count="one">{0} ņūtonmetrs</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ņūtonmetru</unitPattern>
+				<unitPattern count="one" case="dative">{0} ņūtonmetram</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ņūtonmetra</unitPattern>
+				<unitPattern count="one" case="locative">{0} ņūtonmetrā</unitPattern>
 				<unitPattern count="other">{0} ņūtonmetri</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ņūtonmetus</unitPattern>
+				<unitPattern count="other" case="dative">{0} ņūtonmetriem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ņūtonmetru</unitPattern>
+				<unitPattern count="other" case="locative">{0} ņūtonmetros</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
+				<gender>masculine</gender>
 				<displayName>kubikkilometri</displayName>
 				<unitPattern count="zero">{0} kubikkilometru</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} kubikkilometru</unitPattern>
+				<unitPattern count="zero" case="dative">{0} kubikkilometru</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} kubikkilometru</unitPattern>
+				<unitPattern count="zero" case="locative">{0} kubikkilometru</unitPattern>
 				<unitPattern count="one">{0} kubikkilometrs</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kubikkilometru</unitPattern>
+				<unitPattern count="one" case="dative">{0} kubikkilometram</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kubikkilometra</unitPattern>
+				<unitPattern count="one" case="locative">{0} kubikkilometrā</unitPattern>
 				<unitPattern count="other">{0} kubikkilometri</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kubikkilometrus</unitPattern>
+				<unitPattern count="other" case="dative">{0} kubikkilometriem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kubikkilometru</unitPattern>
+				<unitPattern count="other" case="locative">{0} kubikkilometros</unitPattern>
 			</unit>
 			<unit type="volume-cubic-meter">
+				<gender>masculine</gender>
 				<displayName>kubikmetri</displayName>
 				<unitPattern count="zero">{0} kubikmetru</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} kubikmetru</unitPattern>
+				<unitPattern count="zero" case="dative">{0} kubikmetru</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} kubikmetru</unitPattern>
+				<unitPattern count="zero" case="locative">{0} kubikmetru</unitPattern>
 				<unitPattern count="one">{0} kubikmetrs</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kubikmetru</unitPattern>
+				<unitPattern count="one" case="dative">{0} kubikmetram</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kubikmetra</unitPattern>
+				<unitPattern count="one" case="locative">{0} kubikmetrā</unitPattern>
 				<unitPattern count="other">{0} kubikmetri</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kubikmetrus</unitPattern>
+				<unitPattern count="other" case="dative">{0} kubikmetriem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kubikmetru</unitPattern>
+				<unitPattern count="other" case="locative">{0} kubikmetros</unitPattern>
 				<perUnitPattern>{0} uz kubikmetru</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
+				<gender>masculine</gender>
 				<displayName>kubikcentimetri</displayName>
 				<unitPattern count="zero">{0} kubikcentimetru</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} kubikcentimetru</unitPattern>
+				<unitPattern count="zero" case="dative">{0} kubikcentimetru</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} kubikcentimetru</unitPattern>
+				<unitPattern count="zero" case="locative">{0} kubikcentimetru</unitPattern>
 				<unitPattern count="one">{0} kubikcentimetrs</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kubikcentimetru</unitPattern>
+				<unitPattern count="one" case="dative">{0} kubikcentimetram</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kubikcentimetru</unitPattern>
+				<unitPattern count="one" case="locative">{0} kubikcentimetrā</unitPattern>
 				<unitPattern count="other">{0} kubikcentimetri</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kubikcentimetrus</unitPattern>
+				<unitPattern count="other" case="dative">{0} kubikcentimetriem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kubikcentimetru</unitPattern>
+				<unitPattern count="other" case="locative">{0} kubikcentimetros</unitPattern>
 				<perUnitPattern>{0} uz kubikcentimetru</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
@@ -8619,16 +9299,42 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} kubikcollas</unitPattern>
 			</unit>
 			<unit type="volume-megaliter">
+				<gender>masculine</gender>
 				<displayName>megalitri</displayName>
 				<unitPattern count="zero">{0} megalitru</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} megalitru</unitPattern>
+				<unitPattern count="zero" case="dative">{0} megalitru</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} megalitru</unitPattern>
+				<unitPattern count="zero" case="locative">{0} megalitru</unitPattern>
 				<unitPattern count="one">{0} megalitrs</unitPattern>
+				<unitPattern count="one" case="accusative">{0} megalitru</unitPattern>
+				<unitPattern count="one" case="dative">{0} megalitram</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megalitra</unitPattern>
+				<unitPattern count="one" case="locative">{0} megalitrā</unitPattern>
 				<unitPattern count="other">{0} megalitri</unitPattern>
+				<unitPattern count="other" case="accusative">{0} megalitrus</unitPattern>
+				<unitPattern count="other" case="dative">{0} megalitriem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} megalitru</unitPattern>
+				<unitPattern count="other" case="locative">{0} megalitros</unitPattern>
 			</unit>
 			<unit type="volume-hectoliter">
+				<gender>masculine</gender>
 				<displayName>hektolitri</displayName>
 				<unitPattern count="zero">{0} hektolitru</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} hektolitru</unitPattern>
+				<unitPattern count="zero" case="dative">{0} hektolitru</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} hektolitru</unitPattern>
+				<unitPattern count="zero" case="locative">{0} hektolitru</unitPattern>
 				<unitPattern count="one">{0} hektolitrs</unitPattern>
+				<unitPattern count="one" case="accusative">{0} hektolitru</unitPattern>
+				<unitPattern count="one" case="dative">{0} hektolitram</unitPattern>
+				<unitPattern count="one" case="genitive">{0} hektolitra</unitPattern>
+				<unitPattern count="one" case="locative">{0} hektolitrā</unitPattern>
 				<unitPattern count="other">{0} hektolitri</unitPattern>
+				<unitPattern count="other" case="accusative">{0} hektolitrus</unitPattern>
+				<unitPattern count="other" case="dative">{0} hektolitriem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} hektolitru</unitPattern>
+				<unitPattern count="other" case="locative">{0} hektolitros</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<gender>masculine</gender>
@@ -8651,22 +9357,61 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} uz litru</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
+				<gender>masculine</gender>
 				<displayName>decilitri</displayName>
 				<unitPattern count="zero">{0} decilitru</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} decilitru</unitPattern>
+				<unitPattern count="zero" case="dative">{0} decilitru</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} decilitru</unitPattern>
+				<unitPattern count="zero" case="locative">{0} decilitru</unitPattern>
 				<unitPattern count="one">{0} decilitrs</unitPattern>
+				<unitPattern count="one" case="accusative">{0} decilitru</unitPattern>
+				<unitPattern count="one" case="dative">{0} decilitram</unitPattern>
+				<unitPattern count="one" case="genitive">{0} decilitra</unitPattern>
+				<unitPattern count="one" case="locative">{0} decilitrā</unitPattern>
 				<unitPattern count="other">{0} decilitri</unitPattern>
+				<unitPattern count="other" case="accusative">{0} decilitrus</unitPattern>
+				<unitPattern count="other" case="dative">{0} decilitriem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} decilitru</unitPattern>
+				<unitPattern count="other" case="locative">{0} decilitros</unitPattern>
 			</unit>
 			<unit type="volume-centiliter">
+				<gender>masculine</gender>
 				<displayName>centilitri</displayName>
 				<unitPattern count="zero">{0} centilitru</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} centilitru</unitPattern>
+				<unitPattern count="zero" case="dative">{0} centilitru</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} centilitru</unitPattern>
+				<unitPattern count="zero" case="locative">{0} centilitru</unitPattern>
 				<unitPattern count="one">{0} centilitrs</unitPattern>
+				<unitPattern count="one" case="accusative">{0} centilitru</unitPattern>
+				<unitPattern count="one" case="dative">{0} centilitram</unitPattern>
+				<unitPattern count="one" case="genitive">{0} centilitra</unitPattern>
+				<unitPattern count="one" case="locative">{0} centilitrā</unitPattern>
 				<unitPattern count="other">{0} centilitri</unitPattern>
+				<unitPattern count="other" case="accusative">{0} centilitrus</unitPattern>
+				<unitPattern count="other" case="dative">{0} centilitriem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} centilitru</unitPattern>
+				<unitPattern count="other" case="locative">{0} centilitros</unitPattern>
 			</unit>
 			<unit type="volume-milliliter">
+				<gender>masculine</gender>
 				<displayName>mililitri</displayName>
 				<unitPattern count="zero">{0} mililitru</unitPattern>
+				<unitPattern count="zero" case="accusative">{0} mililitru</unitPattern>
+				<unitPattern count="zero" case="dative">{0} mililitru</unitPattern>
+				<unitPattern count="zero" case="genitive">{0} mililitru</unitPattern>
+				<unitPattern count="zero" case="locative">{0} mililitru</unitPattern>
 				<unitPattern count="one">{0} mililitrs</unitPattern>
+				<unitPattern count="one" case="accusative">{0} mililitru</unitPattern>
+				<unitPattern count="one" case="dative">{0} mililitram</unitPattern>
+				<unitPattern count="one" case="genitive">{0} mililitra</unitPattern>
+				<unitPattern count="one" case="locative">{0} mililitrā</unitPattern>
 				<unitPattern count="other">{0} mililitri</unitPattern>
+				<unitPattern count="other" case="accusative">{0} mililitrus</unitPattern>
+				<unitPattern count="other" case="dative">{0} mililitriem</unitPattern>
+				<unitPattern count="other" case="genitive">{0} mililitru</unitPattern>
+				<unitPattern count="other" case="locative">{0} mililitros</unitPattern>
 			</unit>
 			<unit type="volume-pint-metric">
 				<gender>feminine</gender>

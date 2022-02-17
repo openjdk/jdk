@@ -10,7 +10,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 	<languageMatching>
 		<languageMatches type="written_new">
 			<paradigmLocales locales="en en_GB es es_419 pt_BR pt_PT"/>
-			<matchVariable id="$enUS" value="AS+GU+MH+MP+PR+UM+US+VI"/>
+			<matchVariable id="$enUS" value="AS+CA+GU+MH+MP+PH+PR+UM+US+VI"/>
 			<matchVariable id="$cnsar" value="HK+MO"/>
 			<matchVariable id="$americas" value="019"/>
 			<matchVariable id="$maghreb" value="MA+DZ+TN+LY+MR+EH"/>

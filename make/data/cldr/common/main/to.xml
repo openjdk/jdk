@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -7312,10 +7312,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="FJD">
 				<displayName>Tola fakafisi</displayName>
 				<displayName count="other">Tola fakafisi</displayName>
+				<symbol draft="contributed">FJD</symbol>
 				<symbol alt="narrow" draft="contributed">F$</symbol>
-			</currency>
-			<currency type="GEL">
-				<symbol alt="variant" draft="contributed">₾</symbol>
 			</currency>
 			<currency type="NZD">
 				<displayName>Tola fakanuʻusila</displayName>
@@ -7330,6 +7328,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SBD">
 				<displayName>Tola fakaʻotusolomone</displayName>
 				<displayName count="other">Tola fakaʻotusolomone</displayName>
+				<symbol draft="contributed">SBD</symbol>
 				<symbol alt="narrow" draft="contributed">S$</symbol>
 			</currency>
 			<currency type="TOP">

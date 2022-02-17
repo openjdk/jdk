@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -7141,8 +7141,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="digital-byte">
 				<displayName draft="unconfirmed">aṭamḍan</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} aṭamḍan</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} iṭamḍanen</unitPattern>
+				<unitPattern count="one" draft="unconfirmed">{0} aṭ</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} Aṭ</unitPattern>
 			</unit>
 			<unit type="digital-bit">
 				<displayName draft="unconfirmed">abit</displayName>

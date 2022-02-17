@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
@@ -6200,7 +6202,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">grúz lari</displayName>
 				<symbol>GEL</symbol>
 				<symbol alt="narrow">₾</symbol>
-				<symbol alt="variant">₾</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>Ghánai cedi (1979–2007)</displayName>
@@ -7382,20 +7383,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="acceleration-g-force">
 				<displayName>g gyorsulás</displayName>
 				<unitPattern count="one">{0} g gyorsulás</unitPattern>
-				<unitPattern count="one" case="accusative">{0} g gyorsulás</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} g gyorsulás</unitPattern>
-				<unitPattern count="one" case="terminative">{0} g gyorsulás</unitPattern>
-				<unitPattern count="one" case="translative">{0} g gyorsulás</unitPattern>
+				<unitPattern count="one" case="accusative">{0} g gyorsulást</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} g gyorsulással</unitPattern>
+				<unitPattern count="one" case="terminative">{0} g gyorsulásig</unitPattern>
+				<unitPattern count="one" case="translative">{0} g gyorsulássá</unitPattern>
 				<unitPattern count="other">{0} g gyorsulás</unitPattern>
-				<unitPattern count="other" case="accusative">{0} g gyorsulás</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} g gyorsulás</unitPattern>
-				<unitPattern count="other" case="terminative">{0} g gyorsulás</unitPattern>
-				<unitPattern count="other" case="translative">{0} g gyorsulás</unitPattern>
+				<unitPattern count="other" case="accusative">{0} g gyorsulást</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} g gyorsulással</unitPattern>
+				<unitPattern count="other" case="terminative">{0} g gyorsulásig</unitPattern>
+				<unitPattern count="other" case="translative">{0} g gyorsulássá</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
 				<displayName>méter per másodpercnégyzet</displayName>
 				<unitPattern count="one">{0} méter per másodpercnégyzet</unitPattern>
+				<unitPattern count="one" case="accusative">{0} méter per másodpercnégyzetet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} méter per másodpercnégyzettel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} méter per másodpercnégyzetig</unitPattern>
+				<unitPattern count="one" case="translative">{0} méter per másodpercnégyzetté</unitPattern>
 				<unitPattern count="other">{0} méter per másodpercnégyzet</unitPattern>
+				<unitPattern count="other" case="accusative">{0} méter per másodpercnégyzetet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} méter per másodpercnégyzettel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} méter per másodpercnégyzetig</unitPattern>
+				<unitPattern count="other" case="translative">{0} méter per másodpercnégyzetté</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
 				<displayName>fordulat</displayName>
@@ -7414,7 +7423,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>radián</displayName>
 				<unitPattern count="one">{0} radián</unitPattern>
 				<unitPattern count="one" case="accusative">{0} radiánt</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} radián</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} radiánnal</unitPattern>
 				<unitPattern count="one" case="terminative">{0} radiánig</unitPattern>
 				<unitPattern count="one" case="translative">{0} radiánná</unitPattern>
 				<unitPattern count="other">{0} radián</unitPattern>
@@ -7439,58 +7448,82 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="angle-arc-minute">
 				<displayName>ívperc</displayName>
 				<unitPattern count="one">{0} ívperc</unitPattern>
-				<unitPattern count="one" case="accusative">{0} ívperc</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} ívperc</unitPattern>
-				<unitPattern count="one" case="terminative">{0} ívperc</unitPattern>
-				<unitPattern count="one" case="translative">{0} ívperc</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ívpercet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ívperccel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} ívpercig</unitPattern>
+				<unitPattern count="one" case="translative">{0} ívperccé</unitPattern>
 				<unitPattern count="other">{0} ívperc</unitPattern>
-				<unitPattern count="other" case="accusative">{0} ívperc</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} ívperc</unitPattern>
-				<unitPattern count="other" case="terminative">{0} ívperc</unitPattern>
-				<unitPattern count="other" case="translative">{0} ívperc</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ívpercet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ívperccel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} ívpercig</unitPattern>
+				<unitPattern count="other" case="translative">{0} ívperccé</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
 				<displayName>ívmásodperc</displayName>
 				<unitPattern count="one">{0} ívmásodperc</unitPattern>
-				<unitPattern count="one" case="accusative">{0} ívmásodperc</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} ívmásodperc</unitPattern>
-				<unitPattern count="one" case="terminative">{0} ívmásodperc</unitPattern>
-				<unitPattern count="one" case="translative">{0} ívmásodperc</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ívmásodpercet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ívmásodperccel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} ívmásodpercig</unitPattern>
+				<unitPattern count="one" case="translative">{0} ívmásodperccé</unitPattern>
 				<unitPattern count="other">{0} ívmásodperc</unitPattern>
-				<unitPattern count="other" case="accusative">{0} ívmásodperc</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} ívmásodperc</unitPattern>
-				<unitPattern count="other" case="terminative">{0} ívmásodperc</unitPattern>
-				<unitPattern count="other" case="translative">{0} ívmásodperc</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ívmásodpercet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ívmásodperccel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} ívmásodpercig</unitPattern>
+				<unitPattern count="other" case="translative">{0} ívmásodperccé</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
 				<displayName>négyzetkilométer</displayName>
 				<unitPattern count="one">{0} négyzetkilométer</unitPattern>
+				<unitPattern count="one" case="accusative">{0} négyzetkilométert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} négyzetkilométerrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} négyzetkilométerig</unitPattern>
+				<unitPattern count="one" case="translative">{0} négyzetkilométerré</unitPattern>
 				<unitPattern count="other">{0} négyzetkilométer</unitPattern>
+				<unitPattern count="other" case="accusative">{0} négyzetkilométert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} négyzetkilométerrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} négyzetkilométerig</unitPattern>
+				<unitPattern count="other" case="translative">{0} négyzetkilométerré</unitPattern>
 				<perUnitPattern>{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>hektár</displayName>
 				<unitPattern count="one">{0} hektár</unitPattern>
-				<unitPattern count="one" case="accusative">{0} hektár</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} hektár</unitPattern>
-				<unitPattern count="one" case="terminative">{0} hektár</unitPattern>
-				<unitPattern count="one" case="translative">{0} hektár</unitPattern>
+				<unitPattern count="one" case="accusative">{0} hektárt</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} hektárral</unitPattern>
+				<unitPattern count="one" case="terminative">{0} hektárig</unitPattern>
+				<unitPattern count="one" case="translative">{0} hektárrá</unitPattern>
 				<unitPattern count="other">{0} hektár</unitPattern>
-				<unitPattern count="other" case="accusative">{0} hektár</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} hektár</unitPattern>
-				<unitPattern count="other" case="terminative">{0} hektár</unitPattern>
-				<unitPattern count="other" case="translative">{0} hektár</unitPattern>
+				<unitPattern count="other" case="accusative">{0} hektárt</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} hektárral</unitPattern>
+				<unitPattern count="other" case="terminative">{0} hektárig</unitPattern>
+				<unitPattern count="other" case="translative">{0} hektárrá</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
 				<displayName>négyzetméter</displayName>
 				<unitPattern count="one">{0} négyzetméter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} négyzetmétert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} négyzetméterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} négyzetméterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} négyzetméterré</unitPattern>
 				<unitPattern count="other">{0} négyzetméter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} négyzetmétert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} négyzetméterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} négyzetméterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} négyzetméterré</unitPattern>
 				<perUnitPattern>{0}/négyzetméter</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
 				<displayName>négyzetcentiméter</displayName>
 				<unitPattern count="one">{0} négyzetcentiméter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} négyzetcentimétert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} négyzetcentiméterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} négyzetcentiméterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} négyzetcentiméterré</unitPattern>
 				<unitPattern count="other">{0} négyzetcentiméter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} négyzetcentimétert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} négyzetcentiméterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} négyzetcentiméterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} négyzetcentiméterré</unitPattern>
 				<perUnitPattern>{0}/négyzetcentiméter</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
@@ -7523,15 +7556,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="concentr-karat">
 				<displayName>karát</displayName>
 				<unitPattern count="one">{0} karát</unitPattern>
-				<unitPattern count="one" case="accusative">{0} karát</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} karát</unitPattern>
-				<unitPattern count="one" case="terminative">{0} karát</unitPattern>
-				<unitPattern count="one" case="translative">{0} karát</unitPattern>
+				<unitPattern count="one" case="accusative">{0} karátot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} karáttal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} karátig</unitPattern>
+				<unitPattern count="one" case="translative">{0} karáttá</unitPattern>
 				<unitPattern count="other">{0} karát</unitPattern>
-				<unitPattern count="other" case="accusative">{0} karát</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} karát</unitPattern>
-				<unitPattern count="other" case="terminative">{0} karát</unitPattern>
-				<unitPattern count="other" case="translative">{0} karát</unitPattern>
+				<unitPattern count="other" case="accusative">{0} karátot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} karáttal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} karátig</unitPattern>
+				<unitPattern count="other" case="translative">{0} karáttá</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>milligramm/deciliter</displayName>
@@ -7541,82 +7574,118 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="concentr-millimole-per-liter">
 				<displayName>millimól/liter</displayName>
 				<unitPattern count="one">{0} millimól/liter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} millimól/litert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} millimól/literrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} millimól/literig</unitPattern>
+				<unitPattern count="one" case="translative">{0} millimól/literré</unitPattern>
 				<unitPattern count="other">{0} millimól/liter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} millimól/litert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} millimól/literrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} millimól/literig</unitPattern>
+				<unitPattern count="other" case="translative">{0} millimól/literré</unitPattern>
+			</unit>
+			<unit type="concentr-item">
+				<unitPattern count="one">{0} item</unitPattern>
+				<unitPattern count="one" case="accusative">{0} itemet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} itemmel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} itemig</unitPattern>
+				<unitPattern count="one" case="translative">{0} itemmé</unitPattern>
+				<unitPattern count="other">{0} item</unitPattern>
+				<unitPattern count="other" case="accusative">{0} itemet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} itemmel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} itemig</unitPattern>
+				<unitPattern count="other" case="translative">{0} itemmé</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
 				<displayName>részecske/millió</displayName>
 				<unitPattern count="one">{0} részecske/millió</unitPattern>
-				<unitPattern count="one" case="accusative">{0} részecske/millió</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} részecske/millió</unitPattern>
-				<unitPattern count="one" case="terminative">{0} részecske/millió</unitPattern>
-				<unitPattern count="one" case="translative">{0} részecske/millió</unitPattern>
+				<unitPattern count="one" case="accusative">{0} részecske/milliót</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} részecske/millióval</unitPattern>
+				<unitPattern count="one" case="terminative">{0} részecske/millióig</unitPattern>
+				<unitPattern count="one" case="translative">{0} részecske/millióvá</unitPattern>
 				<unitPattern count="other">{0} részecske/millió</unitPattern>
-				<unitPattern count="other" case="accusative">{0} részecske/millió</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} részecske/millió</unitPattern>
-				<unitPattern count="other" case="terminative">{0} részecske/millió</unitPattern>
-				<unitPattern count="other" case="translative">{0} részecske/millió</unitPattern>
+				<unitPattern count="other" case="accusative">{0} részecske/milliót</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} részecske/millióval</unitPattern>
+				<unitPattern count="other" case="terminative">{0} részecske/millióig</unitPattern>
+				<unitPattern count="other" case="translative">{0} részecske/millióvá</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>százalék</displayName>
 				<unitPattern count="one">{0} százalék</unitPattern>
-				<unitPattern count="one" case="accusative">{0} százalék</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} százalék</unitPattern>
-				<unitPattern count="one" case="terminative">{0} százalék</unitPattern>
-				<unitPattern count="one" case="translative">{0} százalék</unitPattern>
+				<unitPattern count="one" case="accusative">{0} százalékot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} százalékkal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} százalékig</unitPattern>
+				<unitPattern count="one" case="translative">{0} százalékká</unitPattern>
 				<unitPattern count="other">{0} százalék</unitPattern>
-				<unitPattern count="other" case="accusative">{0} százalék</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} százalék</unitPattern>
-				<unitPattern count="other" case="terminative">{0} százalék</unitPattern>
-				<unitPattern count="other" case="translative">{0} százalék</unitPattern>
+				<unitPattern count="other" case="accusative">{0} százalékot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} százalékkal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} százalékig</unitPattern>
+				<unitPattern count="other" case="translative">{0} százalékká</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
 				<displayName>ezrelék</displayName>
 				<unitPattern count="one">{0} ezrelék</unitPattern>
-				<unitPattern count="one" case="accusative">{0} ezrelék</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} ezrelék</unitPattern>
-				<unitPattern count="one" case="terminative">{0} ezrelék</unitPattern>
-				<unitPattern count="one" case="translative">{0} ezrelék</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ezreléket</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ezrelékkel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} ezrelékig</unitPattern>
+				<unitPattern count="one" case="translative">{0} ezrelékké</unitPattern>
 				<unitPattern count="other">{0} ezrelék</unitPattern>
-				<unitPattern count="other" case="accusative">{0} ezrelék</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} ezrelék</unitPattern>
-				<unitPattern count="other" case="terminative">{0} ezrelék</unitPattern>
-				<unitPattern count="other" case="translative">{0} ezrelék</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ezreléket</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ezrelékkel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} ezrelékig</unitPattern>
+				<unitPattern count="other" case="translative">{0} ezrelékké</unitPattern>
 			</unit>
 			<unit type="concentr-permyriad">
 				<displayName>tízezrelék</displayName>
 				<unitPattern count="one">{0} tízezrelék</unitPattern>
-				<unitPattern count="one" case="accusative">{0} tízezrelék</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} tízezrelék</unitPattern>
-				<unitPattern count="one" case="terminative">{0} tízezrelék</unitPattern>
-				<unitPattern count="one" case="translative">{0} tízezrelék</unitPattern>
+				<unitPattern count="one" case="accusative">{0} tízezreléket</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} tízezrelékkel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} tízezrelékig</unitPattern>
+				<unitPattern count="one" case="translative">{0} tízezrelékké</unitPattern>
 				<unitPattern count="other">{0} tízezrelék</unitPattern>
-				<unitPattern count="other" case="accusative">{0} tízezrelék</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} tízezrelék</unitPattern>
-				<unitPattern count="other" case="terminative">{0} tízezrelék</unitPattern>
-				<unitPattern count="other" case="translative">{0} tízezrelék</unitPattern>
+				<unitPattern count="other" case="accusative">{0} tízezreléket</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} tízezrelékkel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} tízezrelékig</unitPattern>
+				<unitPattern count="other" case="translative">{0} tízezrelékké</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
 				<displayName>mól</displayName>
 				<unitPattern count="one">{0} mól</unitPattern>
-				<unitPattern count="one" case="accusative">{0} mól</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} mól</unitPattern>
-				<unitPattern count="one" case="terminative">{0} mól</unitPattern>
-				<unitPattern count="one" case="translative">{0} mól</unitPattern>
+				<unitPattern count="one" case="accusative">{0} mólt</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} móllal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} mólig</unitPattern>
+				<unitPattern count="one" case="translative">{0} móllá</unitPattern>
 				<unitPattern count="other">{0} mól</unitPattern>
-				<unitPattern count="other" case="accusative">{0} mól</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} mól</unitPattern>
-				<unitPattern count="other" case="terminative">{0} mól</unitPattern>
-				<unitPattern count="other" case="translative">{0} mól</unitPattern>
+				<unitPattern count="other" case="accusative">{0} mólt</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} móllal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} mólig</unitPattern>
+				<unitPattern count="other" case="translative">{0} móllá</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>liter per kilométer</displayName>
 				<unitPattern count="one">{0} liter per kilométer</unitPattern>
+				<unitPattern count="one" case="accusative">{0} liter per kilométert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} liter per kilométerrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} liter per kilométerig</unitPattern>
+				<unitPattern count="one" case="translative">{0} liter per kilométerré</unitPattern>
 				<unitPattern count="other">{0} liter per kilométer</unitPattern>
+				<unitPattern count="other" case="accusative">{0} liter per kilométert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} liter per kilométerrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} liter per kilométerig</unitPattern>
+				<unitPattern count="other" case="translative">{0} liter per kilométerré</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>liter/100 km</displayName>
 				<unitPattern count="one">{0} liter/100 km</unitPattern>
+				<unitPattern count="one" case="accusative">{0} liter/100 km-t</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} liter/100 km-rel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} liter/100 km-ig</unitPattern>
+				<unitPattern count="one" case="translative">{0} liter/100 km-ré</unitPattern>
 				<unitPattern count="other">{0} liter/100 km</unitPattern>
+				<unitPattern count="other" case="accusative">{0} liter/100 km-t</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} liter/100 km-rel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} liter/100 km-ig</unitPattern>
+				<unitPattern count="other" case="translative">{0} liter/100 km-ré</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>mérföld per gallon</displayName>
@@ -7631,256 +7700,372 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="digital-petabyte">
 				<displayName>petabájt</displayName>
 				<unitPattern count="one">{0} petabájt</unitPattern>
+				<unitPattern count="one" case="accusative">{0} petabájtot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} petabájttal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} petabájtig</unitPattern>
+				<unitPattern count="one" case="translative">{0} petabájttá</unitPattern>
 				<unitPattern count="other">{0} petabájt</unitPattern>
+				<unitPattern count="other" case="accusative">{0} petabájtot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} petabájttal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} petabájtig</unitPattern>
+				<unitPattern count="other" case="translative">{0} petabájttá</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>terabájt</displayName>
 				<unitPattern count="one">{0} terabájt</unitPattern>
+				<unitPattern count="one" case="accusative">{0} terabájtot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} terabájttal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} terabájtig</unitPattern>
+				<unitPattern count="one" case="translative">{0} terabájttá</unitPattern>
 				<unitPattern count="other">{0} terabájt</unitPattern>
+				<unitPattern count="other" case="accusative">{0} terabájtot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} terabájttal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} terabájtig</unitPattern>
+				<unitPattern count="other" case="translative">{0} terabájttá</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
 				<displayName>terabit</displayName>
 				<unitPattern count="one">{0} terabit</unitPattern>
+				<unitPattern count="one" case="accusative">{0} terabitet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} terabittel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} terabitig</unitPattern>
+				<unitPattern count="one" case="translative">{0} terabitté</unitPattern>
 				<unitPattern count="other">{0} terabit</unitPattern>
+				<unitPattern count="other" case="accusative">{0} terabitet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} terabittel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} terabitig</unitPattern>
+				<unitPattern count="other" case="translative">{0} terabitté</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
 				<displayName>gigabájt</displayName>
 				<unitPattern count="one">{0} gigabájt</unitPattern>
+				<unitPattern count="one" case="accusative">{0} gigabájtot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} gigabájttal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} gigabájtig</unitPattern>
+				<unitPattern count="one" case="translative">{0} gigabájttá</unitPattern>
 				<unitPattern count="other">{0} gigabájt</unitPattern>
+				<unitPattern count="other" case="accusative">{0} gigabájtot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} gigabájttal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} gigabájtig</unitPattern>
+				<unitPattern count="other" case="translative">{0} gigabájttá</unitPattern>
 			</unit>
 			<unit type="digital-gigabit">
 				<displayName>gigabit</displayName>
 				<unitPattern count="one">{0} gigabit</unitPattern>
+				<unitPattern count="one" case="accusative">{0} gigabitet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} gigabittel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} gigabitig</unitPattern>
+				<unitPattern count="one" case="translative">{0} gigabitté</unitPattern>
 				<unitPattern count="other">{0} gigabit</unitPattern>
+				<unitPattern count="other" case="accusative">{0} gigabitet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} gigabittel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} gigabitig</unitPattern>
+				<unitPattern count="other" case="translative">{0} gigabitté</unitPattern>
 			</unit>
 			<unit type="digital-megabyte">
 				<displayName>megabájt</displayName>
 				<unitPattern count="one">{0} megabájt</unitPattern>
+				<unitPattern count="one" case="accusative">{0} megabájtot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} megabájttal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} megabájtig</unitPattern>
+				<unitPattern count="one" case="translative">{0} megabájttá</unitPattern>
 				<unitPattern count="other">{0} megabájt</unitPattern>
+				<unitPattern count="other" case="accusative">{0} megabájtot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} megabájttal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} megabájtig</unitPattern>
+				<unitPattern count="other" case="translative">{0} megabájttá</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
 				<displayName>megabit</displayName>
 				<unitPattern count="one">{0} megabit</unitPattern>
+				<unitPattern count="one" case="accusative">{0} megabitet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} megabittel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} megabitig</unitPattern>
+				<unitPattern count="one" case="translative">{0} megabitté</unitPattern>
 				<unitPattern count="other">{0} megabit</unitPattern>
+				<unitPattern count="other" case="accusative">{0} megabitet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} megabittel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} megabitig</unitPattern>
+				<unitPattern count="other" case="translative">{0} megabitté</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
 				<displayName>kilobájt</displayName>
 				<unitPattern count="one">{0} kilobájt</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilobájtot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilobájttal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} kilobájtig</unitPattern>
+				<unitPattern count="one" case="translative">{0} kilobájttá</unitPattern>
 				<unitPattern count="other">{0} kilobájt</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilobájtot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kilobájttal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} kilobájtig</unitPattern>
+				<unitPattern count="other" case="translative">{0} kilobájttá</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
 				<displayName>kilobit</displayName>
 				<unitPattern count="one">{0} kilobit</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilobitet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilobittel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} kilobitig</unitPattern>
+				<unitPattern count="one" case="translative">{0} kilobitté</unitPattern>
 				<unitPattern count="other">{0} kilobit</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilobitet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kilobittel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} kilobitig</unitPattern>
+				<unitPattern count="other" case="translative">{0} kilobitté</unitPattern>
 			</unit>
 			<unit type="digital-byte">
 				<displayName>bájt</displayName>
 				<unitPattern count="one">{0} bájt</unitPattern>
-				<unitPattern count="one" case="accusative">{0} bájt</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} bájt</unitPattern>
-				<unitPattern count="one" case="terminative">{0} bájt</unitPattern>
-				<unitPattern count="one" case="translative">{0} bájt</unitPattern>
+				<unitPattern count="one" case="accusative">{0} bájtot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} bájttal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} bájtig</unitPattern>
+				<unitPattern count="one" case="translative">{0} bájttá</unitPattern>
 				<unitPattern count="other">{0} bájt</unitPattern>
-				<unitPattern count="other" case="accusative">{0} bájt</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} bájt</unitPattern>
-				<unitPattern count="other" case="terminative">{0} bájt</unitPattern>
-				<unitPattern count="other" case="translative">{0} bájt</unitPattern>
+				<unitPattern count="other" case="accusative">{0} bájtot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} bájttal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} bájtig</unitPattern>
+				<unitPattern count="other" case="translative">{0} bájttá</unitPattern>
 			</unit>
 			<unit type="digital-bit">
 				<displayName>bit</displayName>
 				<unitPattern count="one">{0} bit</unitPattern>
-				<unitPattern count="one" case="accusative">{0} bit</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} bit</unitPattern>
-				<unitPattern count="one" case="terminative">{0} bit</unitPattern>
-				<unitPattern count="one" case="translative">{0} bit</unitPattern>
+				<unitPattern count="one" case="accusative">{0} bitet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} bittel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} bitig</unitPattern>
+				<unitPattern count="one" case="translative">{0} bitté</unitPattern>
 				<unitPattern count="other">{0} bit</unitPattern>
-				<unitPattern count="other" case="accusative">{0} bit</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} bit</unitPattern>
-				<unitPattern count="other" case="terminative">{0} bit</unitPattern>
-				<unitPattern count="other" case="translative">{0} bit</unitPattern>
+				<unitPattern count="other" case="accusative">{0} bitet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} bittel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} bitig</unitPattern>
+				<unitPattern count="other" case="translative">{0} bitté</unitPattern>
 			</unit>
 			<unit type="duration-century">
 				<displayName>évszázad</displayName>
 				<unitPattern count="one">{0} évszázad</unitPattern>
-				<unitPattern count="one" case="accusative">{0} évszázad</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} évszázad</unitPattern>
-				<unitPattern count="one" case="terminative">{0} évszázad</unitPattern>
-				<unitPattern count="one" case="translative">{0} évszázad</unitPattern>
+				<unitPattern count="one" case="accusative">{0} évszázadot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} évszázaddal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} évszázadig</unitPattern>
+				<unitPattern count="one" case="translative">{0} évszázaddá</unitPattern>
 				<unitPattern count="other">{0} évszázad</unitPattern>
-				<unitPattern count="other" case="accusative">{0} évszázad</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} évszázad</unitPattern>
-				<unitPattern count="other" case="terminative">{0} évszázad</unitPattern>
-				<unitPattern count="other" case="translative">{0} évszázad</unitPattern>
+				<unitPattern count="other" case="accusative">{0} évszázadot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} évszázaddal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} évszázadig</unitPattern>
+				<unitPattern count="other" case="translative">{0} évszázaddá</unitPattern>
 			</unit>
 			<unit type="duration-decade">
 				<displayName>évtized</displayName>
 				<unitPattern count="one">{0} évtized</unitPattern>
-				<unitPattern count="one" case="accusative">{0} évtized</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} évtized</unitPattern>
-				<unitPattern count="one" case="terminative">{0} évtized</unitPattern>
-				<unitPattern count="one" case="translative">{0} évtized</unitPattern>
+				<unitPattern count="one" case="accusative">{0} évtizedet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} évtizeddel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} évtizedig</unitPattern>
+				<unitPattern count="one" case="translative">{0} évtizeddé</unitPattern>
 				<unitPattern count="other">{0} évtized</unitPattern>
-				<unitPattern count="other" case="accusative">{0} évtized</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} évtized</unitPattern>
-				<unitPattern count="other" case="terminative">{0} évtized</unitPattern>
-				<unitPattern count="other" case="translative">{0} évtized</unitPattern>
+				<unitPattern count="other" case="accusative">{0} évtizedet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} évtizeddel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} évtizedig</unitPattern>
+				<unitPattern count="other" case="translative">{0} évtizeddé</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>év</displayName>
 				<unitPattern count="one">{0} év</unitPattern>
-				<unitPattern count="one" case="accusative">{0} év</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} év</unitPattern>
-				<unitPattern count="one" case="terminative">{0} év</unitPattern>
-				<unitPattern count="one" case="translative">{0} év</unitPattern>
+				<unitPattern count="one" case="accusative">{0} évet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} évvel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} évig</unitPattern>
+				<unitPattern count="one" case="translative">{0} évvé</unitPattern>
 				<unitPattern count="other">{0} év</unitPattern>
-				<unitPattern count="other" case="accusative">{0} év</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} év</unitPattern>
-				<unitPattern count="other" case="terminative">{0} év</unitPattern>
-				<unitPattern count="other" case="translative">{0} év</unitPattern>
+				<unitPattern count="other" case="accusative">{0} évet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} évvel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} évig</unitPattern>
+				<unitPattern count="other" case="translative">{0} évvé</unitPattern>
 				<perUnitPattern>{0}/év</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>hónap</displayName>
 				<unitPattern count="one">{0} hónap</unitPattern>
-				<unitPattern count="one" case="accusative">{0} hónap</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} hónap</unitPattern>
-				<unitPattern count="one" case="terminative">{0} hónap</unitPattern>
-				<unitPattern count="one" case="translative">{0} hónap</unitPattern>
+				<unitPattern count="one" case="accusative">{0} hónapot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} hónappal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} hónapig</unitPattern>
+				<unitPattern count="one" case="translative">{0} hónappá</unitPattern>
 				<unitPattern count="other">{0} hónap</unitPattern>
-				<unitPattern count="other" case="accusative">{0} hónap</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} hónap</unitPattern>
-				<unitPattern count="other" case="terminative">{0} hónap</unitPattern>
-				<unitPattern count="other" case="translative">{0} hónap</unitPattern>
+				<unitPattern count="other" case="accusative">{0} hónapot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} hónappal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} hónapig</unitPattern>
+				<unitPattern count="other" case="translative">{0} hónappá</unitPattern>
 				<perUnitPattern>{0}/hónap</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>hét</displayName>
 				<unitPattern count="one">{0} hét</unitPattern>
-				<unitPattern count="one" case="accusative">{0} hét</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} hét</unitPattern>
-				<unitPattern count="one" case="terminative">{0} hét</unitPattern>
-				<unitPattern count="one" case="translative">{0} hét</unitPattern>
+				<unitPattern count="one" case="accusative">{0} hetet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} héttel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} hétig</unitPattern>
+				<unitPattern count="one" case="translative">{0} hétté</unitPattern>
 				<unitPattern count="other">{0} hét</unitPattern>
-				<unitPattern count="other" case="accusative">{0} hét</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} hét</unitPattern>
-				<unitPattern count="other" case="terminative">{0} hét</unitPattern>
-				<unitPattern count="other" case="translative">{0} hét</unitPattern>
+				<unitPattern count="other" case="accusative">{0} hetet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} héttel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} hétig</unitPattern>
+				<unitPattern count="other" case="translative">{0} hétté</unitPattern>
 				<perUnitPattern>{0}/hét</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>nap</displayName>
 				<unitPattern count="one">{0} nap</unitPattern>
-				<unitPattern count="one" case="accusative">{0} nap</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} nap</unitPattern>
-				<unitPattern count="one" case="terminative">{0} nap</unitPattern>
-				<unitPattern count="one" case="translative">{0} nap</unitPattern>
+				<unitPattern count="one" case="accusative">{0} napot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} nappal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} napig</unitPattern>
+				<unitPattern count="one" case="translative">{0} nappá</unitPattern>
 				<unitPattern count="other">{0} nap</unitPattern>
-				<unitPattern count="other" case="accusative">{0} nap</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} nap</unitPattern>
-				<unitPattern count="other" case="terminative">{0} nap</unitPattern>
-				<unitPattern count="other" case="translative">{0} nap</unitPattern>
+				<unitPattern count="other" case="accusative">{0} napot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} nappal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} napig</unitPattern>
+				<unitPattern count="other" case="translative">{0} nappá</unitPattern>
 				<perUnitPattern>{0}/nap</perUnitPattern>
+			</unit>
+			<unit type="duration-day-person">
+				<unitPattern count="one">{0} nap</unitPattern>
+				<unitPattern count="one" case="accusative">{0} napot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} nappal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} napig</unitPattern>
+				<unitPattern count="one" case="translative">{0} nappá</unitPattern>
+				<unitPattern count="other">{0} nap</unitPattern>
+				<unitPattern count="other" case="accusative">{0} napot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} nappal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} napig</unitPattern>
+				<unitPattern count="other" case="translative">{0} nappá</unitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>óra</displayName>
 				<unitPattern count="one">{0} óra</unitPattern>
-				<unitPattern count="one" case="accusative">{0} óra</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} óra</unitPattern>
-				<unitPattern count="one" case="terminative">{0} óra</unitPattern>
-				<unitPattern count="one" case="translative">{0} óra</unitPattern>
+				<unitPattern count="one" case="accusative">{0} órát</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} órával</unitPattern>
+				<unitPattern count="one" case="terminative">{0} óráig</unitPattern>
+				<unitPattern count="one" case="translative">{0} órává</unitPattern>
 				<unitPattern count="other">{0} óra</unitPattern>
-				<unitPattern count="other" case="accusative">{0} óra</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} óra</unitPattern>
-				<unitPattern count="other" case="terminative">{0} óra</unitPattern>
-				<unitPattern count="other" case="translative">{0} óra</unitPattern>
+				<unitPattern count="other" case="accusative">{0} órát</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} órával</unitPattern>
+				<unitPattern count="other" case="terminative">{0} óráig</unitPattern>
+				<unitPattern count="other" case="translative">{0} órává</unitPattern>
 				<perUnitPattern>{0}/óra</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>perc</displayName>
 				<unitPattern count="one">{0} perc</unitPattern>
-				<unitPattern count="one" case="accusative">{0} perc</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} perc</unitPattern>
-				<unitPattern count="one" case="terminative">{0} perc</unitPattern>
-				<unitPattern count="one" case="translative">{0} perc</unitPattern>
+				<unitPattern count="one" case="accusative">{0} percet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} perccel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} percig</unitPattern>
+				<unitPattern count="one" case="translative">{0} perccé</unitPattern>
 				<unitPattern count="other">{0} perc</unitPattern>
-				<unitPattern count="other" case="accusative">{0} perc</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} perc</unitPattern>
-				<unitPattern count="other" case="terminative">{0} perc</unitPattern>
-				<unitPattern count="other" case="translative">{0} perc</unitPattern>
+				<unitPattern count="other" case="accusative">{0} percet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} perccel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} percig</unitPattern>
+				<unitPattern count="other" case="translative">{0} perccé</unitPattern>
 				<perUnitPattern>{0}/perc</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>másodperc</displayName>
 				<unitPattern count="one">{0} másodperc</unitPattern>
-				<unitPattern count="one" case="accusative">{0} másodperc</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} másodperc</unitPattern>
-				<unitPattern count="one" case="terminative">{0} másodperc</unitPattern>
-				<unitPattern count="one" case="translative">{0} másodperc</unitPattern>
+				<unitPattern count="one" case="accusative">{0} másodpercet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} másodperccel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} másodpercig</unitPattern>
+				<unitPattern count="one" case="translative">{0} másodperccé</unitPattern>
 				<unitPattern count="other">{0} másodperc</unitPattern>
-				<unitPattern count="other" case="accusative">{0} másodperc</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} másodperc</unitPattern>
-				<unitPattern count="other" case="terminative">{0} másodperc</unitPattern>
-				<unitPattern count="other" case="translative">{0} másodperc</unitPattern>
+				<unitPattern count="other" case="accusative">{0} másodpercet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} másodperccel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} másodpercig</unitPattern>
+				<unitPattern count="other" case="translative">{0} másodperccé</unitPattern>
 				<perUnitPattern>{0}/másodperc</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>ezredmásodperc</displayName>
 				<unitPattern count="one">{0} ezredmásodperc</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ezredmásodpercet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ezredmásodperccel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} ezredmásodpercig</unitPattern>
+				<unitPattern count="one" case="translative">{0} ezredmásodperccé</unitPattern>
 				<unitPattern count="other">{0} ezredmásodperc</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ezredmásodpercig</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ezredmásodperccel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} ezredmásodpercig</unitPattern>
+				<unitPattern count="other" case="translative">{0} ezredmásodperccé</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
 				<displayName>mikroszekundum</displayName>
 				<unitPattern count="one">{0} mikroszekundum</unitPattern>
+				<unitPattern count="one" case="accusative">{0} mikroszekundumot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} mikroszekundummal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} mikroszekundumig</unitPattern>
+				<unitPattern count="one" case="translative">{0} mikroszekundummá</unitPattern>
 				<unitPattern count="other">{0} mikroszekundum</unitPattern>
+				<unitPattern count="other" case="accusative">{0} mikroszekundumot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} mikroszekundummal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} mikroszekundumig</unitPattern>
+				<unitPattern count="other" case="translative">{0} mikroszekundummá</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
 				<displayName>nanoszekundum</displayName>
 				<unitPattern count="one">{0} nanoszekundum</unitPattern>
+				<unitPattern count="one" case="accusative">{0} nanoszekundumot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} nanoszekundummal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} nanoszekundumig</unitPattern>
+				<unitPattern count="one" case="translative">{0} nanoszekundummá</unitPattern>
 				<unitPattern count="other">{0} nanoszekundum</unitPattern>
+				<unitPattern count="other" case="accusative">{0} nanoszekundumot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} nanoszekundummal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} nanoszekundumig</unitPattern>
+				<unitPattern count="other" case="translative">{0} nanoszekundummá</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
 				<displayName>amper</displayName>
 				<unitPattern count="one">{0} amper</unitPattern>
-				<unitPattern count="one" case="accusative">{0} amper</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} amper</unitPattern>
-				<unitPattern count="one" case="terminative">{0} amper</unitPattern>
-				<unitPattern count="one" case="translative">{0} amper</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ampert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} amperrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} amperig</unitPattern>
+				<unitPattern count="one" case="translative">{0} amperré</unitPattern>
 				<unitPattern count="other">{0} amper</unitPattern>
-				<unitPattern count="other" case="accusative">{0} amper</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} amper</unitPattern>
-				<unitPattern count="other" case="terminative">{0} amper</unitPattern>
-				<unitPattern count="other" case="translative">{0} amper</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ampert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} amperrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} amperig</unitPattern>
+				<unitPattern count="other" case="translative">{0} amperré</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
 				<displayName>milliamper</displayName>
 				<unitPattern count="one">{0} milliamper</unitPattern>
+				<unitPattern count="one" case="accusative">{0} milliampert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} milliamperrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} milliamperig</unitPattern>
+				<unitPattern count="one" case="translative">{0} milliamperré</unitPattern>
 				<unitPattern count="other">{0} milliamper</unitPattern>
+				<unitPattern count="other" case="accusative">{0} milliampert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} milliamperrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} milliamperig</unitPattern>
+				<unitPattern count="other" case="translative">{0} milliamperré</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
 				<displayName>ohm</displayName>
 				<unitPattern count="one">{0} ohm</unitPattern>
-				<unitPattern count="one" case="accusative">{0} ohm</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} ohm</unitPattern>
-				<unitPattern count="one" case="terminative">{0} ohm</unitPattern>
-				<unitPattern count="one" case="translative">{0} ohm</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ohmot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ohmmal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} ohmig</unitPattern>
+				<unitPattern count="one" case="translative">{0} ohmmá</unitPattern>
 				<unitPattern count="other">{0} ohm</unitPattern>
-				<unitPattern count="other" case="accusative">{0} ohm</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} ohm</unitPattern>
-				<unitPattern count="other" case="terminative">{0} ohm</unitPattern>
-				<unitPattern count="other" case="translative">{0} ohm</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ohmot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ohmmal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} ohmig</unitPattern>
+				<unitPattern count="other" case="translative">{0} ohmmá</unitPattern>
 			</unit>
 			<unit type="electric-volt">
 				<displayName>volt</displayName>
 				<unitPattern count="one">{0} volt</unitPattern>
-				<unitPattern count="one" case="accusative">{0} volt</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} volt</unitPattern>
-				<unitPattern count="one" case="terminative">{0} volt</unitPattern>
-				<unitPattern count="one" case="translative">{0} volt</unitPattern>
+				<unitPattern count="one" case="accusative">{0} voltot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} volttal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} voltig</unitPattern>
+				<unitPattern count="one" case="translative">{0} volttá</unitPattern>
 				<unitPattern count="other">{0} volt</unitPattern>
-				<unitPattern count="other" case="accusative">{0} volt</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} volt</unitPattern>
-				<unitPattern count="other" case="terminative">{0} volt</unitPattern>
-				<unitPattern count="other" case="translative">{0} volt</unitPattern>
+				<unitPattern count="other" case="accusative">{0} voltot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} volttal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} voltig</unitPattern>
+				<unitPattern count="other" case="translative">{0} volttá</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
 				<displayName>kilokalória</displayName>
@@ -7890,15 +8075,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="energy-calorie">
 				<displayName>kalória</displayName>
 				<unitPattern count="one">{0} kalória</unitPattern>
-				<unitPattern count="one" case="accusative">{0} kalória</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} kalória</unitPattern>
-				<unitPattern count="one" case="terminative">{0} kalória</unitPattern>
-				<unitPattern count="one" case="translative">{0} kalória</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kalóriát</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kalóriával</unitPattern>
+				<unitPattern count="one" case="terminative">{0} kalóriáig</unitPattern>
+				<unitPattern count="one" case="translative">{0} kalóriává</unitPattern>
 				<unitPattern count="other">{0} kalória</unitPattern>
-				<unitPattern count="other" case="accusative">{0} kalória</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} kalória</unitPattern>
-				<unitPattern count="other" case="terminative">{0} kalória</unitPattern>
-				<unitPattern count="other" case="translative">{0} kalória</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kalóriát</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kalóriával</unitPattern>
+				<unitPattern count="other" case="terminative">{0} kalóriáig</unitPattern>
+				<unitPattern count="other" case="translative">{0} kalóriává</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
 				<displayName>kalória</displayName>
@@ -7908,25 +8093,41 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="energy-kilojoule">
 				<displayName>kilojoule</displayName>
 				<unitPattern count="one">{0} kilojoule</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilojoule-t</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilojoule-lal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} kilojoule-ig</unitPattern>
+				<unitPattern count="one" case="translative">{0} kilojoule-lá</unitPattern>
 				<unitPattern count="other">{0} kilojoule</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilojoule-t</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kilojoule-lal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} kilojoule-ig</unitPattern>
+				<unitPattern count="other" case="translative">{0} kilojoule-lá</unitPattern>
 			</unit>
 			<unit type="energy-joule">
 				<displayName>joule</displayName>
 				<unitPattern count="one">{0} joule</unitPattern>
-				<unitPattern count="one" case="accusative">{0} joule</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} joule</unitPattern>
-				<unitPattern count="one" case="terminative">{0} joule</unitPattern>
-				<unitPattern count="one" case="translative">{0} joule</unitPattern>
+				<unitPattern count="one" case="accusative">{0} joule-t</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} joule-lal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} joule-ig</unitPattern>
+				<unitPattern count="one" case="translative">{0} joule-lá</unitPattern>
 				<unitPattern count="other">{0} joule</unitPattern>
-				<unitPattern count="other" case="accusative">{0} joule</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} joule</unitPattern>
-				<unitPattern count="other" case="terminative">{0} joule</unitPattern>
-				<unitPattern count="other" case="translative">{0} joule</unitPattern>
+				<unitPattern count="other" case="accusative">{0} joule-t</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} joule-lal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} joule-ig</unitPattern>
+				<unitPattern count="other" case="translative">{0} joule-lá</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
 				<displayName>kilowattóra</displayName>
 				<unitPattern count="one">{0} kilowattóra</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilowattórát</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilowattórával</unitPattern>
+				<unitPattern count="one" case="terminative">{0} kilowattóráig</unitPattern>
+				<unitPattern count="one" case="translative">{0} kilowattórává</unitPattern>
 				<unitPattern count="other">{0} kilowattóra</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilowattórát</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kilowattórával</unitPattern>
+				<unitPattern count="other" case="terminative">{0} kilowattóráig</unitPattern>
+				<unitPattern count="other" case="translative">{0} kilowattórává</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
 				<displayName>elektronvolt</displayName>
@@ -7951,84 +8152,132 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="force-newton">
 				<displayName>newton</displayName>
 				<unitPattern count="one">{0} newton</unitPattern>
-				<unitPattern count="one" case="accusative">{0} newton</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} newton</unitPattern>
-				<unitPattern count="one" case="terminative">{0} newton</unitPattern>
-				<unitPattern count="one" case="translative">{0} newton</unitPattern>
+				<unitPattern count="one" case="accusative">{0} newtont</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} newtonnal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} newtonig</unitPattern>
+				<unitPattern count="one" case="translative">{0} newtonná</unitPattern>
 				<unitPattern count="other">{0} newton</unitPattern>
-				<unitPattern count="other" case="accusative">{0} newton</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} newton</unitPattern>
-				<unitPattern count="other" case="terminative">{0} newton</unitPattern>
-				<unitPattern count="other" case="translative">{0} newton</unitPattern>
+				<unitPattern count="other" case="accusative">{0} newtont</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} newtonnal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} newtonig</unitPattern>
+				<unitPattern count="other" case="translative">{0} newtonná</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
 				<displayName>kWh/100 km</displayName>
 				<unitPattern count="one">{0} kWh/100 km</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kWh/100 km-t</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kWh/100 km-rel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} kWh/100 km-ig</unitPattern>
+				<unitPattern count="one" case="translative">{0} kWh/100 km-ré</unitPattern>
 				<unitPattern count="other">{0} kWh/100 km</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kWh/100 km-t</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kWh/100 km-rel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} kWh/100 km-ig</unitPattern>
+				<unitPattern count="other" case="translative">{0} kWh/100 km-ré</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>gigahertz</displayName>
 				<unitPattern count="one">{0} gigahertz</unitPattern>
+				<unitPattern count="one" case="accusative">{0} gigahertzet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} gigahertzcel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} gigahertzig</unitPattern>
+				<unitPattern count="one" case="translative">{0} gigahertzcé</unitPattern>
 				<unitPattern count="other">{0} gigahertz</unitPattern>
+				<unitPattern count="other" case="accusative">{0} gigahertzet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} gigahertzcel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} gigahertzig</unitPattern>
+				<unitPattern count="other" case="translative">{0} gigahertzcé</unitPattern>
 			</unit>
 			<unit type="frequency-megahertz">
 				<displayName>megahertz</displayName>
 				<unitPattern count="one">{0} megahertz</unitPattern>
+				<unitPattern count="one" case="accusative">{0} megahertzet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} megahertzcel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} megahertzig</unitPattern>
+				<unitPattern count="one" case="translative">{0} megahertzcé</unitPattern>
 				<unitPattern count="other">{0} megahertz</unitPattern>
+				<unitPattern count="other" case="accusative">{0} megahertzet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} megahertzcel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} megahertzig</unitPattern>
+				<unitPattern count="other" case="translative">{0} megahertzcé</unitPattern>
 			</unit>
 			<unit type="frequency-kilohertz">
 				<displayName>kilohertz</displayName>
 				<unitPattern count="one">{0} kilohertz</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilohertzet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilohertzcel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} kilohertzig</unitPattern>
+				<unitPattern count="one" case="translative">{0} kilohertzcé</unitPattern>
 				<unitPattern count="other">{0} kilohertz</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilohertzet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kilohertzcel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} kilohertzig</unitPattern>
+				<unitPattern count="other" case="translative">{0} kilohertzcé</unitPattern>
 			</unit>
 			<unit type="frequency-hertz">
 				<displayName>hertz</displayName>
 				<unitPattern count="one">{0} hertz</unitPattern>
-				<unitPattern count="one" case="accusative">{0} hertz</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} hertz</unitPattern>
-				<unitPattern count="one" case="terminative">{0} hertz</unitPattern>
-				<unitPattern count="one" case="translative">{0} hertz</unitPattern>
+				<unitPattern count="one" case="accusative">{0} hertzet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} hertzcel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} hertzig</unitPattern>
+				<unitPattern count="one" case="translative">{0} hertzcé</unitPattern>
 				<unitPattern count="other">{0} hertz</unitPattern>
-				<unitPattern count="other" case="accusative">{0} hertz</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} hertz</unitPattern>
-				<unitPattern count="other" case="terminative">{0} hertz</unitPattern>
-				<unitPattern count="other" case="translative">{0} hertz</unitPattern>
+				<unitPattern count="other" case="accusative">{0} hertzet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} hertzcel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} hertzig</unitPattern>
+				<unitPattern count="other" case="translative">{0} hertzcé</unitPattern>
 			</unit>
 			<unit type="graphics-em">
 				<displayName>nyomdai em</displayName>
 				<unitPattern count="one">{0} kvirt</unitPattern>
-				<unitPattern count="one" case="accusative">{0} kvirt</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} kvirt</unitPattern>
-				<unitPattern count="one" case="terminative">{0} kvirt</unitPattern>
-				<unitPattern count="one" case="translative">{0} kvirt</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kvirtet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kvirttel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} kvirtig</unitPattern>
+				<unitPattern count="one" case="translative">{0} kvirtté</unitPattern>
 				<unitPattern count="other">{0} kvirt</unitPattern>
-				<unitPattern count="other" case="accusative">{0} kvirt</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} kvirt</unitPattern>
-				<unitPattern count="other" case="terminative">{0} kvirt</unitPattern>
-				<unitPattern count="other" case="translative">{0} kvirt</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kvirtet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kvirttel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} kvirtig</unitPattern>
+				<unitPattern count="other" case="translative">{0} kvirtté</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
 				<displayName>képpont</displayName>
 				<unitPattern count="one">{0} képpont</unitPattern>
-				<unitPattern count="one" case="accusative">{0} képpont</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} képpont</unitPattern>
-				<unitPattern count="one" case="terminative">{0} képpont</unitPattern>
-				<unitPattern count="one" case="translative">{0} képpont</unitPattern>
+				<unitPattern count="one" case="accusative">{0} képpontot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} képponttal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} képpontig</unitPattern>
+				<unitPattern count="one" case="translative">{0} képponttá</unitPattern>
 				<unitPattern count="other">{0} képpont</unitPattern>
-				<unitPattern count="other" case="accusative">{0} képpont</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} képpont</unitPattern>
-				<unitPattern count="other" case="terminative">{0} képpont</unitPattern>
-				<unitPattern count="other" case="translative">{0} képpont</unitPattern>
+				<unitPattern count="other" case="accusative">{0} képpontot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} képponttal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} képpontig</unitPattern>
+				<unitPattern count="other" case="translative">{0} képponttá</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
 				<displayName>millió képpont</displayName>
 				<unitPattern count="one">{0} millió képpont</unitPattern>
+				<unitPattern count="one" case="accusative">{0} millió képpontot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} millió képponttal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} millió képpontig</unitPattern>
+				<unitPattern count="one" case="translative">{0} millió képponttá</unitPattern>
 				<unitPattern count="other">{0} millió képpont</unitPattern>
+				<unitPattern count="other" case="accusative">{0} millió képpontot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} millió képponttal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} millió képpontig</unitPattern>
+				<unitPattern count="other" case="translative">{0} millió képponttá</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-centimeter">
 				<displayName>képpont per centiméter</displayName>
 				<unitPattern count="one">{0} képpont per centiméter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} képpont per centimétert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} képpont per centiméterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} képpont per centiméterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} képpont per centiméterré</unitPattern>
 				<unitPattern count="other">{0} képpont per centiméter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} képpont per centimétert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} képpont per centiméterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} képpont per centiméterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} képpont per centiméterré</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-inch">
 				<displayName>képpont per hüvelyk</displayName>
@@ -8058,53 +8307,109 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="length-kilometer">
 				<displayName>kilométer</displayName>
 				<unitPattern count="one">{0} kilométer</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilométert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilométerrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} kilométerig</unitPattern>
+				<unitPattern count="one" case="translative">{0} kilométerré</unitPattern>
 				<unitPattern count="other">{0} kilométer</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilométert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kilométerrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} kilométerig</unitPattern>
+				<unitPattern count="other" case="translative">{0} kilométerré</unitPattern>
 				<perUnitPattern>{0}/kilométer</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>méter</displayName>
 				<unitPattern count="one">{0} méter</unitPattern>
-				<unitPattern count="one" case="accusative">{0} méter</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} méter</unitPattern>
-				<unitPattern count="one" case="terminative">{0} méter</unitPattern>
-				<unitPattern count="one" case="translative">{0} méter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} métert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} méterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} méterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} méterré</unitPattern>
 				<unitPattern count="other">{0} méter</unitPattern>
-				<unitPattern count="other" case="accusative">{0} méter</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} méter</unitPattern>
-				<unitPattern count="other" case="terminative">{0} méter</unitPattern>
-				<unitPattern count="other" case="translative">{0} méter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} métert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} méterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} méterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} méterré</unitPattern>
 				<perUnitPattern>{0}/méter</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
 				<displayName>deciméter</displayName>
 				<unitPattern count="one">{0} deciméter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} decimétert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} deciméterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} deciméterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} deciméterré</unitPattern>
 				<unitPattern count="other">{0} deciméter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} decimétert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} deciméterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} deciméterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} deciméterré</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName>centiméter</displayName>
 				<unitPattern count="one">{0} centiméter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} centimétert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} centiméterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} centiméterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} centiméterré</unitPattern>
 				<unitPattern count="other">{0} centiméter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} centimétert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} centiméterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} centiméterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} centiméterré</unitPattern>
 				<perUnitPattern>{0}/centimeter</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>milliméter</displayName>
 				<unitPattern count="one">{0} milliméter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} millimétert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} milliméterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} milliméterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} milliméterré</unitPattern>
 				<unitPattern count="other">{0} milliméter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} millimétert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} milliméterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} milliméterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} milliméterré</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
 				<displayName>mikrométer</displayName>
 				<unitPattern count="one">{0} mikrométer</unitPattern>
+				<unitPattern count="one" case="accusative">{0} mikrométert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} mikrométerrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} mikrométerig</unitPattern>
+				<unitPattern count="one" case="translative">{0} mikrométerré</unitPattern>
 				<unitPattern count="other">{0} mikrométer</unitPattern>
+				<unitPattern count="other" case="accusative">{0} mikrométert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} mikrométerrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} mikrométerig</unitPattern>
+				<unitPattern count="other" case="translative">{0} mikrométerré</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
 				<displayName>nanométer</displayName>
 				<unitPattern count="one">{0} nanométer</unitPattern>
+				<unitPattern count="one" case="accusative">{0} nanométert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} nanométerrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} nanométerig</unitPattern>
+				<unitPattern count="one" case="translative">{0} nanométerré</unitPattern>
 				<unitPattern count="other">{0} nanométer</unitPattern>
+				<unitPattern count="other" case="accusative">{0} nanométert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} nanométerrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} nanométerig</unitPattern>
+				<unitPattern count="other" case="translative">{0} nanométerré</unitPattern>
 			</unit>
 			<unit type="length-picometer">
 				<displayName>pikométer</displayName>
 				<unitPattern count="one">{0} pikométer</unitPattern>
+				<unitPattern count="one" case="accusative">{0} pikométert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} pikométerrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} pikométerig</unitPattern>
+				<unitPattern count="one" case="translative">{0} pikométerré</unitPattern>
 				<unitPattern count="other">{0} pikométer</unitPattern>
+				<unitPattern count="other" case="accusative">{0} pikométert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} pikométerrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} pikométerig</unitPattern>
+				<unitPattern count="other" case="translative">{0} pikométerré</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<displayName>mérföld</displayName>
@@ -8161,15 +8466,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="length-mile-scandinavian">
 				<displayName>svéd mérföld</displayName>
 				<unitPattern count="one">{0} svéd mérföld</unitPattern>
-				<unitPattern count="one" case="accusative">{0} svéd mérföld</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} svéd mérföld</unitPattern>
-				<unitPattern count="one" case="terminative">{0} svéd mérföld</unitPattern>
-				<unitPattern count="one" case="translative">{0} svéd mérföld</unitPattern>
+				<unitPattern count="one" case="accusative">{0} svéd mérföldet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} svéd mérfölddel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} svéd mérföldig</unitPattern>
+				<unitPattern count="one" case="translative">{0} svéd mérfölddé</unitPattern>
 				<unitPattern count="other">{0} svéd mérföld</unitPattern>
-				<unitPattern count="other" case="accusative">{0} svéd mérföld</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} svéd mérföld</unitPattern>
-				<unitPattern count="other" case="terminative">{0} svéd mérföld</unitPattern>
-				<unitPattern count="other" case="translative">{0} svéd mérföld</unitPattern>
+				<unitPattern count="other" case="accusative">{0} svéd mérföldet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} svéd mérfölddel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} svéd mérföldig</unitPattern>
+				<unitPattern count="other" case="translative">{0} svéd mérfölddé</unitPattern>
 			</unit>
 			<unit type="length-point">
 				<displayName>pont</displayName>
@@ -8184,28 +8489,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="light-lux">
 				<displayName>lux</displayName>
 				<unitPattern count="one">{0} lux</unitPattern>
-				<unitPattern count="one" case="accusative">{0} lux</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} lux</unitPattern>
-				<unitPattern count="one" case="terminative">{0} lux</unitPattern>
-				<unitPattern count="one" case="translative">{0} lux</unitPattern>
+				<unitPattern count="one" case="accusative">{0} luxot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} luxszal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} luxig</unitPattern>
+				<unitPattern count="one" case="translative">{0} luxszá</unitPattern>
 				<unitPattern count="other">{0} lux</unitPattern>
-				<unitPattern count="other" case="accusative">{0} lux</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} lux</unitPattern>
-				<unitPattern count="other" case="terminative">{0} lux</unitPattern>
-				<unitPattern count="other" case="translative">{0} lux</unitPattern>
+				<unitPattern count="other" case="accusative">{0} luxot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} luxszal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} luxig</unitPattern>
+				<unitPattern count="other" case="translative">{0} luxszá</unitPattern>
 			</unit>
 			<unit type="light-candela">
 				<displayName>kandela</displayName>
 				<unitPattern count="one">{0} kandela</unitPattern>
-				<unitPattern count="one" case="accusative">{0} kandela</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} kandela</unitPattern>
-				<unitPattern count="one" case="terminative">{0} kandela</unitPattern>
-				<unitPattern count="one" case="translative">{0} kandela</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kandelát</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kandelával</unitPattern>
+				<unitPattern count="one" case="terminative">{0} kandeláig</unitPattern>
+				<unitPattern count="one" case="translative">{0} kandelává</unitPattern>
 				<unitPattern count="other">{0} kandela</unitPattern>
-				<unitPattern count="other" case="accusative">{0} kandela</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} kandela</unitPattern>
-				<unitPattern count="other" case="terminative">{0} kandela</unitPattern>
-				<unitPattern count="other" case="translative">{0} kandela</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kandelát</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kandelával</unitPattern>
+				<unitPattern count="other" case="terminative">{0} kandeláig</unitPattern>
+				<unitPattern count="other" case="translative">{0} kandelává</unitPattern>
 			</unit>
 			<unit type="light-lumen">
 				<displayName>lumen</displayName>
@@ -8228,53 +8533,69 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="mass-metric-ton">
 				<displayName>metrikus tonna</displayName>
 				<unitPattern count="one">{0} metrikus tonna</unitPattern>
-				<unitPattern count="one" case="accusative">{0} metrikus tonna</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} metrikus tonna</unitPattern>
-				<unitPattern count="one" case="terminative">{0} metrikus tonna</unitPattern>
-				<unitPattern count="one" case="translative">{0} metrikus tonna</unitPattern>
+				<unitPattern count="one" case="accusative">{0} metrikus tonnát</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} metrikus tonnával</unitPattern>
+				<unitPattern count="one" case="terminative">{0} metrikus tonnáig</unitPattern>
+				<unitPattern count="one" case="translative">{0} metrikus tonnává</unitPattern>
 				<unitPattern count="other">{0} metrikus tonna</unitPattern>
-				<unitPattern count="other" case="accusative">{0} metrikus tonna</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} metrikus tonna</unitPattern>
-				<unitPattern count="other" case="terminative">{0} metrikus tonna</unitPattern>
-				<unitPattern count="other" case="translative">{0} metrikus tonna</unitPattern>
+				<unitPattern count="other" case="accusative">{0} metrikus tonnát</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} metrikus tonnával</unitPattern>
+				<unitPattern count="other" case="terminative">{0} metrikus tonnáig</unitPattern>
+				<unitPattern count="other" case="translative">{0} metrikus tonnává</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>kilogramm</displayName>
 				<unitPattern count="one">{0} kilogramm</unitPattern>
-				<unitPattern count="one" case="accusative">{0} kilogramm</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} kilogramm</unitPattern>
-				<unitPattern count="one" case="terminative">{0} kilogramm</unitPattern>
-				<unitPattern count="one" case="translative">{0} kilogramm</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilogrammot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilogrammal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} kilogrammig</unitPattern>
+				<unitPattern count="one" case="translative">{0} kilogrammá</unitPattern>
 				<unitPattern count="other">{0} kilogramm</unitPattern>
-				<unitPattern count="other" case="accusative">{0} kilogramm</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} kilogramm</unitPattern>
-				<unitPattern count="other" case="terminative">{0} kilogramm</unitPattern>
-				<unitPattern count="other" case="translative">{0} kilogramm</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilogrammot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kilogrammal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} kilogrammig</unitPattern>
+				<unitPattern count="other" case="translative">{0} kilogrammá</unitPattern>
 				<perUnitPattern>{0}/kilogramm</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>gramm</displayName>
 				<unitPattern count="one">{0} gramm</unitPattern>
-				<unitPattern count="one" case="accusative">{0} gramm</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} gramm</unitPattern>
-				<unitPattern count="one" case="terminative">{0} gramm</unitPattern>
-				<unitPattern count="one" case="translative">{0} gramm</unitPattern>
+				<unitPattern count="one" case="accusative">{0} grammot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} grammal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} grammig</unitPattern>
+				<unitPattern count="one" case="translative">{0} grammá</unitPattern>
 				<unitPattern count="other">{0} gramm</unitPattern>
-				<unitPattern count="other" case="accusative">{0} gramm</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} gramm</unitPattern>
-				<unitPattern count="other" case="terminative">{0} gramm</unitPattern>
-				<unitPattern count="other" case="translative">{0} gramm</unitPattern>
+				<unitPattern count="other" case="accusative">{0} grammot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} grammal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} grammig</unitPattern>
+				<unitPattern count="other" case="translative">{0} grammá</unitPattern>
 				<perUnitPattern>{0}/gramm</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
 				<displayName>milligramm</displayName>
 				<unitPattern count="one">{0} milligramm</unitPattern>
+				<unitPattern count="one" case="accusative">{0} milligrammot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} milligrammal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} milligrammig</unitPattern>
+				<unitPattern count="one" case="translative">{0} milligrammá</unitPattern>
 				<unitPattern count="other">{0} milligramm</unitPattern>
+				<unitPattern count="other" case="accusative">{0} milligrammot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} milligrammal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} milligrammig</unitPattern>
+				<unitPattern count="other" case="translative">{0} milligrammá</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
 				<displayName>mikrogramm</displayName>
 				<unitPattern count="one">{0} mikrogramm</unitPattern>
+				<unitPattern count="one" case="accusative">{0} mikrogrammot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} mikrogrammal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} mikrogrammig</unitPattern>
+				<unitPattern count="one" case="translative">{0} mikrogrammá</unitPattern>
 				<unitPattern count="other">{0} mikrogramm</unitPattern>
+				<unitPattern count="other" case="accusative">{0} mikrogrammot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} mikrogrammal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} mikrogrammig</unitPattern>
+				<unitPattern count="other" case="translative">{0} mikrogrammá</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>amerikai tonna</displayName>
@@ -8306,15 +8627,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="mass-carat">
 				<displayName>karát</displayName>
 				<unitPattern count="one">{0} karát</unitPattern>
-				<unitPattern count="one" case="accusative">{0} karát</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} karát</unitPattern>
-				<unitPattern count="one" case="terminative">{0} karát</unitPattern>
-				<unitPattern count="one" case="translative">{0} karát</unitPattern>
+				<unitPattern count="one" case="accusative">{0} karátot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} karáttal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} karátig</unitPattern>
+				<unitPattern count="one" case="translative">{0} karáttá</unitPattern>
 				<unitPattern count="other">{0} karát</unitPattern>
-				<unitPattern count="other" case="accusative">{0} karát</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} karát</unitPattern>
-				<unitPattern count="other" case="terminative">{0} karát</unitPattern>
-				<unitPattern count="other" case="translative">{0} karát</unitPattern>
+				<unitPattern count="other" case="accusative">{0} karátot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} karáttal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} karátig</unitPattern>
+				<unitPattern count="other" case="translative">{0} karáttá</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
 				<displayName>dalton</displayName>
@@ -8339,35 +8660,67 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="power-gigawatt">
 				<displayName>gigawatt</displayName>
 				<unitPattern count="one">{0} gigawatt</unitPattern>
+				<unitPattern count="one" case="accusative">{0} gigawattot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} gigawattal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} gigawattig</unitPattern>
+				<unitPattern count="one" case="translative">{0} gigawattá</unitPattern>
 				<unitPattern count="other">{0} gigawatt</unitPattern>
+				<unitPattern count="other" case="accusative">{0} gigawattot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} gigawattal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} gigawattig</unitPattern>
+				<unitPattern count="other" case="translative">{0} gigawattá</unitPattern>
 			</unit>
 			<unit type="power-megawatt">
 				<displayName>megawatt</displayName>
 				<unitPattern count="one">{0} megawatt</unitPattern>
+				<unitPattern count="one" case="accusative">{0} megawattot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} megawattal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} megawattig</unitPattern>
+				<unitPattern count="one" case="translative">{0} megawattá</unitPattern>
 				<unitPattern count="other">{0} megawatt</unitPattern>
+				<unitPattern count="other" case="accusative">{0} megawattot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} megawattal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} megawattig</unitPattern>
+				<unitPattern count="other" case="translative">{0} megawattá</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
 				<displayName>kilowatt</displayName>
 				<unitPattern count="one">{0} kilowatt</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilowattot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilowattal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} kilowattig</unitPattern>
+				<unitPattern count="one" case="translative">{0} kilowattá</unitPattern>
 				<unitPattern count="other">{0} kilowatt</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilowattot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kilowattal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} kilowattig</unitPattern>
+				<unitPattern count="other" case="translative">{0} kilowattá</unitPattern>
 			</unit>
 			<unit type="power-watt">
 				<displayName>watt</displayName>
 				<unitPattern count="one">{0} watt</unitPattern>
-				<unitPattern count="one" case="accusative">{0} watt</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} watt</unitPattern>
-				<unitPattern count="one" case="terminative">{0} watt</unitPattern>
-				<unitPattern count="one" case="translative">{0} watt</unitPattern>
+				<unitPattern count="one" case="accusative">{0} wattot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} wattal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} wattig</unitPattern>
+				<unitPattern count="one" case="translative">{0} wattá</unitPattern>
 				<unitPattern count="other">{0} watt</unitPattern>
-				<unitPattern count="other" case="accusative">{0} watt</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} watt</unitPattern>
-				<unitPattern count="other" case="terminative">{0} watt</unitPattern>
-				<unitPattern count="other" case="translative">{0} watt</unitPattern>
+				<unitPattern count="other" case="accusative">{0} wattot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} wattal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} wattig</unitPattern>
+				<unitPattern count="other" case="translative">{0} wattá</unitPattern>
 			</unit>
 			<unit type="power-milliwatt">
 				<displayName>milliwatt</displayName>
 				<unitPattern count="one">{0} milliwatt</unitPattern>
+				<unitPattern count="one" case="accusative">{0} milliwattot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} milliwattal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} milliwattig</unitPattern>
+				<unitPattern count="one" case="translative">{0} milliwattá</unitPattern>
 				<unitPattern count="other">{0} milliwatt</unitPattern>
+				<unitPattern count="other" case="accusative">{0} milliwattot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} milliwattal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} milliwattig</unitPattern>
+				<unitPattern count="other" case="translative">{0} milliwattá</unitPattern>
 			</unit>
 			<unit type="power-horsepower">
 				<displayName>lóerő</displayName>
@@ -8389,61 +8742,121 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} higanyhüvelyk</unitPattern>
 				<unitPattern count="other">{0} higanyhüvelyk</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<unitPattern count="one">{0} bar</unitPattern>
+				<unitPattern count="one" case="accusative">{0} bart</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} barral</unitPattern>
+				<unitPattern count="one" case="terminative">{0} barig</unitPattern>
+				<unitPattern count="one" case="translative">{0} barrá</unitPattern>
+				<unitPattern count="other">{0} bar</unitPattern>
+				<unitPattern count="other" case="accusative">{0} bart</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} barral</unitPattern>
+				<unitPattern count="other" case="terminative">{0} barig</unitPattern>
+				<unitPattern count="other" case="translative">{0} barrá</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
 				<displayName>millibar</displayName>
 				<unitPattern count="one">{0} millibar</unitPattern>
+				<unitPattern count="one" case="accusative">{0} millibart</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} millibarral</unitPattern>
+				<unitPattern count="one" case="terminative">{0} millibarig</unitPattern>
+				<unitPattern count="one" case="translative">{0} millibarrá</unitPattern>
 				<unitPattern count="other">{0} millibar</unitPattern>
+				<unitPattern count="other" case="accusative">{0} millibart</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} millibarral</unitPattern>
+				<unitPattern count="other" case="terminative">{0} millibarig</unitPattern>
+				<unitPattern count="other" case="translative">{0} millibarrá</unitPattern>
 			</unit>
 			<unit type="pressure-atmosphere">
 				<displayName>atmoszféra</displayName>
 				<unitPattern count="one">{0} atmoszféra</unitPattern>
-				<unitPattern count="one" case="accusative">{0} atmoszféra</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} atmoszféra</unitPattern>
-				<unitPattern count="one" case="terminative">{0} atmoszféra</unitPattern>
-				<unitPattern count="one" case="translative">{0} atmoszféra</unitPattern>
+				<unitPattern count="one" case="accusative">{0} atmoszférát</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} atmoszférával</unitPattern>
+				<unitPattern count="one" case="terminative">{0} atmoszféráig</unitPattern>
+				<unitPattern count="one" case="translative">{0} atmoszférává</unitPattern>
 				<unitPattern count="other">{0} atmoszféra</unitPattern>
-				<unitPattern count="other" case="accusative">{0} atmoszféra</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} atmoszféra</unitPattern>
-				<unitPattern count="other" case="terminative">{0} atmoszféra</unitPattern>
-				<unitPattern count="other" case="translative">{0} atmoszféra</unitPattern>
+				<unitPattern count="other" case="accusative">{0} atmoszférát</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} atmoszférával</unitPattern>
+				<unitPattern count="other" case="terminative">{0} atmoszféráig</unitPattern>
+				<unitPattern count="other" case="translative">{0} atmoszférává</unitPattern>
 			</unit>
 			<unit type="pressure-pascal">
 				<displayName>pascal</displayName>
 				<unitPattern count="one">{0} pascal</unitPattern>
-				<unitPattern count="one" case="accusative">{0} pascal</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} pascal</unitPattern>
-				<unitPattern count="one" case="terminative">{0} pascal</unitPattern>
-				<unitPattern count="one" case="translative">{0} pascal</unitPattern>
+				<unitPattern count="one" case="accusative">{0} pascalt</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} pascallal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} pascalig</unitPattern>
+				<unitPattern count="one" case="translative">{0} pascallá</unitPattern>
 				<unitPattern count="other">{0} pascal</unitPattern>
-				<unitPattern count="other" case="accusative">{0} pascal</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} pascal</unitPattern>
-				<unitPattern count="other" case="terminative">{0} pascal</unitPattern>
-				<unitPattern count="other" case="translative">{0} pascal</unitPattern>
+				<unitPattern count="other" case="accusative">{0} pascalt</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} pascallal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} pascalig</unitPattern>
+				<unitPattern count="other" case="translative">{0} pascallá</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
 				<displayName>hektopascal</displayName>
 				<unitPattern count="one">{0} hektopascal</unitPattern>
+				<unitPattern count="one" case="accusative">{0} hektopascalt</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} hektopascallal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} hektopascalig</unitPattern>
+				<unitPattern count="one" case="translative">{0} hektopascallá</unitPattern>
 				<unitPattern count="other">{0} hektopascal</unitPattern>
+				<unitPattern count="other" case="accusative">{0} hektopascalt</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} hektopascallal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} hektopascalig</unitPattern>
+				<unitPattern count="other" case="translative">{0} hektopascallá</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
 				<displayName>kilopascal</displayName>
 				<unitPattern count="one">{0} kilopascal</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilopascalt</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilopascallal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} kilopascalig</unitPattern>
+				<unitPattern count="one" case="translative">{0} kilopascallá</unitPattern>
 				<unitPattern count="other">{0} kilopascal</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilopascalt</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kilopascallal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} kilopascalig</unitPattern>
+				<unitPattern count="other" case="translative">{0} kilopascallá</unitPattern>
 			</unit>
 			<unit type="pressure-megapascal">
 				<displayName>megapascal</displayName>
 				<unitPattern count="one">{0} megapascal</unitPattern>
+				<unitPattern count="one" case="accusative">{0} megapascalt</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} megapascallal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} megapascalig</unitPattern>
+				<unitPattern count="one" case="translative">{0} megapascallá</unitPattern>
 				<unitPattern count="other">{0} megapascal</unitPattern>
+				<unitPattern count="other" case="accusative">{0} megapascalt</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} megapascallal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} megapascalig</unitPattern>
+				<unitPattern count="other" case="translative">{0} megapascallá</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>kilométer per óra</displayName>
 				<unitPattern count="one">{0} kilométer per óra</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilométer per órát</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilométer per órával</unitPattern>
+				<unitPattern count="one" case="terminative">{0} kilométer per óráig</unitPattern>
+				<unitPattern count="one" case="translative">{0} kilométer per órává</unitPattern>
 				<unitPattern count="other">{0} kilométer per óra</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilométer per órát</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kilométer per órával</unitPattern>
+				<unitPattern count="other" case="terminative">{0} kilométer per óráig</unitPattern>
+				<unitPattern count="other" case="translative">{0} kilométer per órává</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
 				<displayName>méter per másodperc</displayName>
 				<unitPattern count="one">{0} méter per másodperc</unitPattern>
+				<unitPattern count="one" case="accusative">{0} méter per másodpercet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} méter per másodperccel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} méter per másodpercig</unitPattern>
+				<unitPattern count="one" case="translative">{0} méter per másodperccé</unitPattern>
 				<unitPattern count="other">{0} méter per másodperc</unitPattern>
+				<unitPattern count="other" case="accusative">{0} méter per másodpercet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} méter per másodperccel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} méter per másodpercig</unitPattern>
+				<unitPattern count="other" case="translative">{0} méter per másodperccé</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
 				<displayName>mérföld per óra</displayName>
@@ -8457,29 +8870,29 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="temperature-generic">
 				<displayName>°</displayName>
-				<unitPattern count="one">{0}°</unitPattern>
-				<unitPattern count="one" case="accusative">{0}°</unitPattern>
-				<unitPattern count="one" case="instrumental">{0}°</unitPattern>
-				<unitPattern count="one" case="terminative">{0}°</unitPattern>
-				<unitPattern count="one" case="translative">{0}°</unitPattern>
-				<unitPattern count="other">{0}°</unitPattern>
-				<unitPattern count="other" case="accusative">{0}°</unitPattern>
-				<unitPattern count="other" case="instrumental">{0}°</unitPattern>
-				<unitPattern count="other" case="terminative">{0}°</unitPattern>
-				<unitPattern count="other" case="translative">{0}°</unitPattern>
+				<unitPattern count="one">{0} fok</unitPattern>
+				<unitPattern count="one" case="accusative">{0} fokot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} fokkal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} fokig</unitPattern>
+				<unitPattern count="one" case="translative">{0} fokká</unitPattern>
+				<unitPattern count="other">{0} fok</unitPattern>
+				<unitPattern count="other" case="accusative">{0} fokot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} fokkal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} fokig</unitPattern>
+				<unitPattern count="other" case="translative">{0} fokká</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>Celsius-fok</displayName>
 				<unitPattern count="one">{0} Celsius-fok</unitPattern>
-				<unitPattern count="one" case="accusative">{0} Celsius-fok</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} Celsius-fok</unitPattern>
-				<unitPattern count="one" case="terminative">{0} Celsius-fok</unitPattern>
-				<unitPattern count="one" case="translative">{0} Celsius-fok</unitPattern>
+				<unitPattern count="one" case="accusative">{0} Celsius-fokot</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} Celsius-fokkal</unitPattern>
+				<unitPattern count="one" case="terminative">{0} Celsius-fokig</unitPattern>
+				<unitPattern count="one" case="translative">{0} Celsius-fokká</unitPattern>
 				<unitPattern count="other">{0} Celsius-fok</unitPattern>
-				<unitPattern count="other" case="accusative">{0} Celsius-fok</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} Celsius-fok</unitPattern>
-				<unitPattern count="other" case="terminative">{0} Celsius-fok</unitPattern>
-				<unitPattern count="other" case="translative">{0} Celsius-fok</unitPattern>
+				<unitPattern count="other" case="accusative">{0} Celsius-fokot</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} Celsius-fokkal</unitPattern>
+				<unitPattern count="other" case="terminative">{0} Celsius-fokig</unitPattern>
+				<unitPattern count="other" case="translative">{0} Celsius-fokká</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<displayName>Fahrenheit-fok</displayName>
@@ -8489,15 +8902,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="temperature-kelvin">
 				<displayName>kelvin</displayName>
 				<unitPattern count="one">{0} kelvin</unitPattern>
-				<unitPattern count="one" case="accusative">{0} kelvin</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} kelvin</unitPattern>
-				<unitPattern count="one" case="terminative">{0} kelvin</unitPattern>
-				<unitPattern count="one" case="translative">{0} kelvin</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kelvint</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kelvinnel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} kelvinig</unitPattern>
+				<unitPattern count="one" case="translative">{0} kelvinné</unitPattern>
 				<unitPattern count="other">{0} kelvin</unitPattern>
-				<unitPattern count="other" case="accusative">{0} kelvin</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} kelvin</unitPattern>
-				<unitPattern count="other" case="terminative">{0} kelvin</unitPattern>
-				<unitPattern count="other" case="translative">{0} kelvin</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kelvint</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kelvinnel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} kelvinig</unitPattern>
+				<unitPattern count="other" case="translative">{0} kelvinné</unitPattern>
 			</unit>
 			<unit type="torque-pound-force-foot">
 				<displayName>fontláb</displayName>
@@ -8507,23 +8920,55 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="torque-newton-meter">
 				<displayName>newtonméter</displayName>
 				<unitPattern count="one">{0} newtonméter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} newtonmétert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} newtonméterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} newtonméterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} newtonméterré</unitPattern>
 				<unitPattern count="other">{0} newtonméter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} newtonmétert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} newtonméterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} newtonméterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} newtonméterré</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>köbkilométer</displayName>
 				<unitPattern count="one">{0} köbkilométer</unitPattern>
+				<unitPattern count="one" case="accusative">{0} köbkilométert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} köbkilométerrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} köbkilométerig</unitPattern>
+				<unitPattern count="one" case="translative">{0} köbkilométerré</unitPattern>
 				<unitPattern count="other">{0} köbkilométer</unitPattern>
+				<unitPattern count="other" case="accusative">{0} köbkilométert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} köbkilométerrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} köbkilométerig</unitPattern>
+				<unitPattern count="other" case="translative">{0} köbkilométerré</unitPattern>
 			</unit>
 			<unit type="volume-cubic-meter">
 				<displayName>köbméter</displayName>
 				<unitPattern count="one">{0} köbméter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} köbmétert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} köbméterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} köbméterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} köbméterré</unitPattern>
 				<unitPattern count="other">{0} köbméter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} köbmétert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} köbméterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} köbméterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} köbméterré</unitPattern>
 				<perUnitPattern>{0}/köbméter</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
 				<displayName>köbcentiméter</displayName>
 				<unitPattern count="one">{0} köbcentiméter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} köbcentimétert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} köbcentiméterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} köbcentiméterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} köbcentiméterré</unitPattern>
 				<unitPattern count="other">{0} köbcentiméter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} köbcentimétert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} köbcentiméterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} köbcentiméterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} köbcentiméterré</unitPattern>
 				<perUnitPattern>{0}/köbcentiméter</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
@@ -8549,67 +8994,107 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="volume-megaliter">
 				<displayName>megaliter</displayName>
 				<unitPattern count="one">{0} megaliter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} megalitert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} megaliterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} megaliterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} megaliterré</unitPattern>
 				<unitPattern count="other">{0} megaliter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} megalitert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} megaliterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} megaliterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} megaliterré</unitPattern>
 			</unit>
 			<unit type="volume-hectoliter">
 				<displayName>hektoliter</displayName>
 				<unitPattern count="one">{0} hektoliter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} hektolitert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} hektoliterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} hektoliterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} hektoliterré</unitPattern>
 				<unitPattern count="other">{0} hektoliter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} hektolitert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} hektoliterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} hektoliterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} hektoliterré</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>liter</displayName>
 				<unitPattern count="one">{0} liter</unitPattern>
-				<unitPattern count="one" case="accusative">{0} liter</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} liter</unitPattern>
-				<unitPattern count="one" case="terminative">{0} liter</unitPattern>
-				<unitPattern count="one" case="translative">{0} liter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} litert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} literrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} literig</unitPattern>
+				<unitPattern count="one" case="translative">{0} literré</unitPattern>
 				<unitPattern count="other">{0} liter</unitPattern>
-				<unitPattern count="other" case="accusative">{0} liter</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} liter</unitPattern>
-				<unitPattern count="other" case="terminative">{0} liter</unitPattern>
-				<unitPattern count="other" case="translative">{0} liter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} litert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} literrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} literig</unitPattern>
+				<unitPattern count="other" case="translative">{0} literré</unitPattern>
 				<perUnitPattern>{0}/liter</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
 				<displayName>deciliter</displayName>
 				<unitPattern count="one">{0} deciliter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} decilitert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} deciliterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} deciliterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} deciliterré</unitPattern>
 				<unitPattern count="other">{0} deciliter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} decilitert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} deciliterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} deciliterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} deciliterré</unitPattern>
 			</unit>
 			<unit type="volume-centiliter">
 				<displayName>centiliter</displayName>
 				<unitPattern count="one">{0} centiliter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} centilitert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} centiliterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} centiliterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} centiliterré</unitPattern>
 				<unitPattern count="other">{0} centiliter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} centilitert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} centiliterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} centiliterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} centiliterré</unitPattern>
 			</unit>
 			<unit type="volume-milliliter">
 				<displayName>milliliter</displayName>
 				<unitPattern count="one">{0} milliliter</unitPattern>
+				<unitPattern count="one" case="accusative">{0} millilitert</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} milliliterrel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} milliliterig</unitPattern>
+				<unitPattern count="one" case="translative">{0} milliliterré</unitPattern>
 				<unitPattern count="other">{0} milliliter</unitPattern>
+				<unitPattern count="other" case="accusative">{0} millilitert</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} milliliterrel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} milliliterig</unitPattern>
+				<unitPattern count="other" case="translative">{0} milliliterré</unitPattern>
 			</unit>
 			<unit type="volume-pint-metric">
 				<displayName>metrikus pint</displayName>
 				<unitPattern count="one">{0} metrikus pint</unitPattern>
-				<unitPattern count="one" case="accusative">{0} metrikus pint</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} metrikus pint</unitPattern>
-				<unitPattern count="one" case="terminative">{0} metrikus pint</unitPattern>
-				<unitPattern count="one" case="translative">{0} metrikus pint</unitPattern>
+				<unitPattern count="one" case="accusative">{0} metrikus pintet</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} metrikus pinttel</unitPattern>
+				<unitPattern count="one" case="terminative">{0} metrikus pintig</unitPattern>
+				<unitPattern count="one" case="translative">{0} metrikus pintté</unitPattern>
 				<unitPattern count="other">{0} metrikus pint</unitPattern>
-				<unitPattern count="other" case="accusative">{0} metrikus pint</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} metrikus pint</unitPattern>
-				<unitPattern count="other" case="terminative">{0} metrikus pint</unitPattern>
-				<unitPattern count="other" case="translative">{0} metrikus pint</unitPattern>
+				<unitPattern count="other" case="accusative">{0} metrikus pintet</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} metrikus pinttel</unitPattern>
+				<unitPattern count="other" case="terminative">{0} metrikus pintig</unitPattern>
+				<unitPattern count="other" case="translative">{0} metrikus pintté</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
 				<displayName>bögre</displayName>
 				<unitPattern count="one">{0} bögre</unitPattern>
-				<unitPattern count="one" case="accusative">{0} bögre</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} bögre</unitPattern>
-				<unitPattern count="one" case="terminative">{0} bögre</unitPattern>
-				<unitPattern count="one" case="translative">{0} bögre</unitPattern>
+				<unitPattern count="one" case="accusative">{0} bögrét</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} bögrével</unitPattern>
+				<unitPattern count="one" case="terminative">{0} bögréig</unitPattern>
+				<unitPattern count="one" case="translative">{0} bögrévé</unitPattern>
 				<unitPattern count="other">{0} bögre</unitPattern>
-				<unitPattern count="other" case="accusative">{0} bögre</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} bögre</unitPattern>
-				<unitPattern count="other" case="terminative">{0} bögre</unitPattern>
-				<unitPattern count="other" case="translative">{0} bögre</unitPattern>
+				<unitPattern count="other" case="accusative">{0} bögrét</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} bögrével</unitPattern>
+				<unitPattern count="other" case="terminative">{0} bögréig</unitPattern>
+				<unitPattern count="other" case="translative">{0} bögrévé</unitPattern>
 			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>hold-láb</displayName>

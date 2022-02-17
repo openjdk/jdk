@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -2116,7 +2116,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="area-square-mile">
 				<unitPattern count="one">{0} mille carré</unitPattern>
 				<unitPattern count="other">{0} milles carrés</unitPattern>
-				<perUnitPattern>{0} par mille carré</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>acres</displayName>
@@ -2135,10 +2134,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="area-square-inch">
 				<unitPattern count="one">{0} pouce carré</unitPattern>
 				<unitPattern count="other">{0} pouces carrés</unitPattern>
-			</unit>
-			<unit type="concentr-item">
-				<unitPattern count="one">{0} item</unitPattern>
-				<unitPattern count="other">{0} items</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
 				<displayName>parties par million</displayName>
@@ -2278,6 +2273,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} joules</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
+				<displayName>kilowattheures</displayName>
 				<unitPattern count="one">{0} kilowattheure</unitPattern>
 				<unitPattern count="other">{0} kilowattheures</unitPattern>
 			</unit>
@@ -2306,6 +2302,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="frequency-hertz">
 				<unitPattern count="one">{0} hertz</unitPattern>
 				<unitPattern count="other">{0} hertz</unitPattern>
+			</unit>
+			<unit type="graphics-dot">
+				<displayName>point</displayName>
 			</unit>
 			<unit type="length-kilometer">
 				<unitPattern count="one">{0} kilomètre</unitPattern>
@@ -2378,9 +2377,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} lux</unitPattern>
 				<unitPattern count="other">{0} lux</unitPattern>
 			</unit>
-			<unit type="light-candela">
-				<displayName>candela</displayName>
-			</unit>
 			<unit type="mass-metric-ton">
 				<unitPattern count="one">{0} tonne</unitPattern>
 				<unitPattern count="other">{0} tonnes</unitPattern>
@@ -2388,7 +2384,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="mass-kilogram">
 				<unitPattern count="one">{0} kilogramme</unitPattern>
 				<unitPattern count="other">{0} kilogrammes</unitPattern>
-				<perUnitPattern>{0} par kilogramme</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<unitPattern count="one">{0} gramme</unitPattern>
@@ -2552,10 +2547,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} cuillère à thé</unitPattern>
 				<unitPattern count="other">{0} cuillères à thé</unitPattern>
 			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>cuillère à dessert</displayName>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>goutte</displayName>
+			</unit>
 			<unit type="volume-jigger">
 				<displayName>gobelet doseur</displayName>
 				<unitPattern count="one">{0} gobelet doseur</unitPattern>
 				<unitPattern count="other">{0} gobelets doseurs</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>pincée</displayName>
 			</unit>
 			<unit type="volume-quart-imperial">
 				<gender>feminine</gender>

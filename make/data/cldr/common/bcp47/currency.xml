@@ -277,6 +277,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="veb" description="Venezuelan Bolívar (1871-2008)" since="1.9"/>
             <type name="vef" description="Venezuelan Bolívar (2008-2018)"/>
             <type name="ves" description="Venezuelan Bolívar" since="34"/>
+            <type name="ved" description="Bolívar Soberano" since="41"/>
             <type name="vnd" description="Vietnamese Dong"/>
             <type name="vnn" description="Vietnamese Dong (1978-1985)" since="1.9"/>
             <type name="vuv" description="Vanuatu Vatu"/>

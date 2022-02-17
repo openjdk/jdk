@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
@@ -3871,6 +3873,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Pacific/Enderbury">
 				<exemplarCity>ಎಂಡರ್ಬರಿ</exemplarCity>
 			</zone>
+			<zone type="Pacific/Kanton">
+				<exemplarCity>ಕ್ಯಾಂಟನ್</exemplarCity>
+			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>ಕಿರಿತಿಮತಿ</exemplarCity>
 			</zone>
@@ -6008,7 +6013,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">ಜಾರ್ಜಿಯಾದ ಲಾರಿಗಳು</displayName>
 				<symbol>GEL</symbol>
 				<symbol alt="narrow">₾</symbol>
-				<symbol alt="variant">₾</symbol>
 			</currency>
 			<currency type="GHS">
 				<displayName>ಘಾನಾದ ಸೆದಿ</displayName>
@@ -6764,15 +6768,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<pluralMinimalPairs count="one">{0} ದಿನ</pluralMinimalPairs>
 			<pluralMinimalPairs count="other">{0} ದಿನಗಳು</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">{0}ನೇ ಬಲತಿರುವನ್ನು ತೆಗೆದುಕೊಳ್ಳಿ.</ordinalMinimalPairs>
-			<caseMinimalPairs case="accusative" draft="contributed">{0} ರಾಮನು ಮರವನ್ನು ಹತ್ತಿದನು</caseMinimalPairs>
-			<caseMinimalPairs case="dative" draft="contributed">{0} ರಾಮನು ಮರಕ್ಕೆ ಕಲ್ಲು ಹೊಡೆದನು</caseMinimalPairs>
-			<caseMinimalPairs case="genitive" draft="contributed">{0} ರಾಮನು ಮರದ ಬಳಿ ಹೋದನು</caseMinimalPairs>
-			<caseMinimalPairs case="locative" draft="contributed">{0} ರಾಮನು ಮರದಲ್ಲಿ ಹಣ್ಣನ್ನು ನೋಡಿದನು</caseMinimalPairs>
-			<caseMinimalPairs case="nominative" draft="contributed">{0} ಮರವು ದೊಡ್ಡದಾಗಿದೆ</caseMinimalPairs>
-			<caseMinimalPairs case="vocative" draft="contributed">{0} ಓಹ್ ಮರವೇ ! ಇದನ್ನು ಹತ್ತುವುದು ಬಹಳ ಕಷ್ಟ</caseMinimalPairs>
+			<caseMinimalPairs case="accusative">ರಾಮನು {0} ಮರವನ್ನು ಹತ್ತಿದನು</caseMinimalPairs>
+			<caseMinimalPairs case="dative">ರಾಮನು {0} ಮರಕ್ಕೆ ಕಲ್ಲು ಹೊಡೆದನು</caseMinimalPairs>
+			<caseMinimalPairs case="genitive">ರಾಮನು {0} ಮರದ ಬಳಿ ಹೋದನು</caseMinimalPairs>
+			<caseMinimalPairs case="locative">ರಾಮನು {0} ಮರದಲ್ಲಿ ಹಣ್ಣನ್ನು ನೋಡಿದನು</caseMinimalPairs>
+			<caseMinimalPairs case="nominative">{0} ಮರವು ದೊಡ್ಡದಾಗಿದೆ</caseMinimalPairs>
 			<genderMinimalPairs gender="feminine">{0} ಸ್ತ್ರೀಲಿಂಗ</genderMinimalPairs>
 			<genderMinimalPairs gender="masculine">{0} ಪುಲ್ಲಿಂಗ</genderMinimalPairs>
-			<genderMinimalPairs gender="neuter" draft="contributed">{0} ಅದು ಚಲಿಸುತ್ತದೆ</genderMinimalPairs>
+			<genderMinimalPairs gender="neuter">ಅದು {0} ಚಲಿಸುತ್ತದೆ</genderMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
@@ -6784,7 +6787,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPrefixPattern>ಸೆಂಟಿ {0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-3">
-				<unitPrefixPattern>ಮಿಲಿ {0}</unitPrefixPattern>
+				<unitPrefixPattern>ಮಿಲಿ{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-6">
 				<unitPrefixPattern>ಮೈಕ್ರೋ {0}</unitPrefixPattern>
@@ -6838,42 +6841,41 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPrefixPattern>ಯೊಟ್ಟಾ {0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p1">
-				<unitPrefixPattern draft="contributed">ಕಿಬಿ {0}</unitPrefixPattern>
+				<unitPrefixPattern>ಕಿಬಿ {0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p2">
-				<unitPrefixPattern draft="contributed">ಮೆಬಿ {0}</unitPrefixPattern>
+				<unitPrefixPattern>ಮೆಬಿ {0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p3">
-				<unitPrefixPattern draft="contributed">ಜಿಬಿ {0}</unitPrefixPattern>
+				<unitPrefixPattern>ಜಿಬಿ {0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p4">
-				<unitPrefixPattern draft="contributed">ಟೆಬಿ {0}</unitPrefixPattern>
+				<unitPrefixPattern>ಟೆಬಿ {0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p5">
-				<unitPrefixPattern draft="contributed">ಪೆಬಿ {0}</unitPrefixPattern>
+				<unitPrefixPattern>ಪೆಬಿ {0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p6">
-				<unitPrefixPattern draft="contributed">ಎಕ್ಸ್ ಬಿ{0}</unitPrefixPattern>
+				<unitPrefixPattern>ಎಕ್ಸ್ ಬಿ{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p7">
-				<unitPrefixPattern draft="contributed">ಝೆಬಿ{0}</unitPrefixPattern>
+				<unitPrefixPattern>ಝೆಬಿ{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p8">
-				<unitPrefixPattern draft="contributed">ಯೋಬ್ {0}</unitPrefixPattern>
+				<unitPrefixPattern>ಯೊಬಿ{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>ಪ್ರತಿ {1} ಗೆ {0}</compoundUnitPattern>
 			</compoundUnit>
 			<compoundUnit type="power2">
 				<compoundUnitPattern1>ಚದರ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one">ಚದರ {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">ಚದರವು {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" case="accusative">ಚದರವನ್ನು {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" case="dative">ಚದರಕ್ಕೆ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" case="genitive">ಚದರದ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" case="locative">ಚದರದಲ್ಲಿ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" case="vocative">ಚದರ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other">ಚ. {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" case="accusative">ಚದರಗಳಲ್ಲಿ {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">ಚದರಗಳು {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" case="accusative">ಚದರಗಳನ್ನು {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="dative">ಚದರಗಳಿಗೆ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="genitive">ಚದರಗಳ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="locative">ಚದರಗಳಲ್ಲಿ {0}</compoundUnitPattern1>
@@ -6886,76 +6888,80 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<compoundUnitPattern1 count="one" case="dative">ಕ್ಯೂಬಿಕ್‌ಗೆ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" case="genitive">ಕ್ಯೂಬಿಕ್‌ನ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" case="locative">ಕ್ಯೂಬಿಕ್‌ನಲ್ಲಿ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" case="vocative">ಕ್ಯೂಬಿಕ್ {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other">ಕ್ಯೂ {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">ಕ್ಯೂಬಿಕ್‌ಗಳು {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="accusative">ಕ್ಯೂಬಿಕ್‌ಗಳನ್ನು {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="dative">ಕ್ಯೂಬಿಕ್‌ಗಳಿಗೆ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="genitive">ಕ್ಯೂಬಿಕ್‌ಗಳ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="locative">ಕ್ಯೂಬಿಕ್‌ಗಳಲ್ಲಿ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="vocative">ಕ್ಯೂಬಿಕ್‌ಗಳು {0}</compoundUnitPattern1>
 			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}-{1}</compoundUnitPattern>
+			</compoundUnit>
 			<unit type="acceleration-g-force">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಜಿ-ಫೋರ್ಸ್</displayName>
 				<unitPattern count="one">{0} ಜಿ-ಫೋರ್ಸ್</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಜಿ-ಫೋರ್ಸ್ ಅನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಜಿ-ಫೋರ್ಸ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಜಿ-ಫೋರ್ಸ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಜಿ-ಫೋರ್ಸ್‌ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಜಿ-ಫೋರ್ಸ್</unitPattern>
 				<unitPattern count="other">{0} ಜಿ-ಫೋರ್ಸ್</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಜಿ-ಫೋರ್ಸ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಜಿ-ಫೋರ್ಸ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಜಿ-ಫೋರ್ಸ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಜಿ-ಫೋರ್ಸ್‌ಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ಜಿ-ಫೋರ್ಸ್</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
+				<gender>neuter</gender>
 				<displayName>ಮೀಟರ್‌ಗಳು ಪ್ರತಿ ಸೆಕೆಂಡ್‌ ಸ್ಕ್ವೇರ್‌ಗಳಿಗೆ</displayName>
 				<unitPattern count="one">{0} ಮೀಟರ್‌ ಪ್ರತಿ ಸೆಕೆಂಡ್‌ ಸ್ಕ್ವೇರ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಮೀಟರ್‌ ಪ್ರತಿ ಸೆಕೆಂಡ್‌ ಸ್ಕ್ವೇರ್‌ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಮೀಟರ್‌ ಪ್ರತಿ ಸೆಕೆಂಡ್‌ ಸ್ಕ್ವೇರ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಮೀಟರ್‌ ಪ್ರತಿ ಸೆಕೆಂಡ್‌ ಸ್ಕ್ವೇರ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಮೀಟರ್‌ ಪ್ರತಿ ಸೆಕೆಂಡ್‌ ಸ್ಕ್ವೇರ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಮೀಟರ್‌ಗಳು ಪ್ರತಿ ಸೆಕೆಂಡ್‌ ಸ್ಕ್ವೇರ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಮೀಟರ್‌ಗಳು ಪ್ರತಿ ಸೆಕೆಂಡ್‌ ಸ್ಕ್ವೇರ್‌ ಅನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಮೀಟರ್‌ಗಳು ಪ್ರತಿ ಸೆಕೆಂಡ್‌ ಸ್ಕ್ವೇರ್‌ಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಮೀಟರ್‌ಗಳು ಪ್ರತಿ ಸೆಕೆಂಡ್‌ ಸ್ಕ್ವೇರ್‌ನ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಮೀಟರ್‌ಗಳು ಪ್ರತಿ ಸೆಕೆಂಡ್‌ ಸ್ಕ್ವೇರ್‌ನಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ತಿರುಗುವಿಕೆ</displayName>
-				<unitPattern count="one">{0} ತಿರುಗುವಿಕೆ</unitPattern>
+				<unitPattern count="one">{0} ತಿರುಗುವಿಕೆಯು</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ತಿರುಗುವಿಕೆಯನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ತಿರುಗುವಿಕೆಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ತಿರುಗುವಿಕೆಯ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ತಿರುಗುವಿಕೆಯಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ತಿರುಗುವಿಕೆ</unitPattern>
 				<unitPattern count="other">{0} ತಿರುಗುವಿಕೆಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ತಿರುಗುವಿಕೆಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ತಿರುಗುವಿಕೆಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ತಿರುಗುವಿಕೆಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ತಿರುಗುವಿಕೆಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ತಿರುಗುವಿಕೆಗಳು</unitPattern>
 			</unit>
 			<unit type="angle-radian">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ರೇಡಿಯಾನ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ರೇಡಿಯಾನ್‌</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ರೇಡಿಯಾನ್‌ ಅನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ರೇಡಿಯಾನ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ರೇಡಿಯಾನ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ರೇಡಿಯಾನ್‌ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ರೇಡಿಯಾನ್‌</unitPattern>
 				<unitPattern count="other">{0} ರೇಡಿಯಾನ್‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ರೇಡಿಯಾನ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ರೇಡಿಯಾನ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ರೇಡಿಯಾನ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ರೇಡಿಯಾನ್‌ಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ರೇಡಿಯಾನ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="angle-degree">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಡಿಗ್ರಿಗಳು</displayName>
-				<unitPattern count="one">{0} ಡಿಗ್ರಿ</unitPattern>
+				<unitPattern count="one">{0} ಡಿಗ್ರಿಯು</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಡಿಗ್ರಿಯನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಡಿಗ್ರಿಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಡಿಗ್ರಿಯ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಡಿಗ್ರಿಯಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಡಿಗ್ರಿ</unitPattern>
 				<unitPattern count="other">{0}ಡಿಗ್ರಿಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0}ಡಿಗ್ರಿಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0}ಡಿಗ್ರಿಗಳಿಗೆ</unitPattern>
@@ -6964,69 +6970,90 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="vocative">{0} ಡಿಗ್ರಿಗಳು</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಆರ್ಕ್‌ಮಿನಿಟ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಆರ್ಕ್‌ಮಿನಿಟ್</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಆರ್ಕ್‌ಮಿನಿಟ್ ಅನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಆರ್ಕ್‌ಮಿನಿಟ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಆರ್ಕ್‌ಮಿನಿಟ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಆರ್ಕ್‌ಮಿನಿಟ್‌ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಆರ್ಕ್‌ಮಿನಿಟ್</unitPattern>
 				<unitPattern count="other">{0} ಆರ್ಕ್‌ಮಿನಿಟ್‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಆರ್ಕ್‌ಮಿನಿಟ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಆರ್ಕ್‌ಮಿನಿಟ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಆರ್ಕ್‌ಮಿನಿಟ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಆರ್ಕ್‌ಮಿನಿಟ್‌ಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ಆರ್ಕ್‌ಮಿನಿಟ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಆರ್ಕ್‌ಸೆಕೆಂಡುಗಳು</displayName>
 				<unitPattern count="one">{0} ಆರ್ಕ್‌ಸೆಕೆಂಡ್</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಆರ್ಕ್‌ಸೆಕೆಂಡ್ ಅನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಆರ್ಕ್‌ಸೆಕೆಂಡ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಆರ್ಕ್‌ಸೆಕೆಂಡ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಆರ್ಕ್‌ಸೆಕೆಂಡ್‌ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಆರ್ಕ್‌ಸೆಕೆಂಡ್</unitPattern>
 				<unitPattern count="other">{0} ಆರ್ಕ್‌ಸೆಕೆಂಡುಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಆರ್ಕ್‌ಸೆಕೆಂಡುಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಆರ್ಕ್‌ಸೆಕೆಂಡುಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಆರ್ಕ್‌ಸೆಕೆಂಡುಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಆರ್ಕ್‌ಸೆಕೆಂಡುಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ಆರ್ಕ್‌ಸೆಕೆಂಡುಗಳು</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
+				<gender>neuter</gender>
 				<displayName>ಚದರ ಕಿಲೋಮೀಟರ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಚದರ ಕಿಲೋಮೀಟರ್</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಚದರ ಕಿಲೋಮೀಟರ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಚದರ ಕಿಲೋಮೀಟರ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಚದರ ಕಿಲೋಮೀಟರ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಚದರ ಕಿಲೋಮೀಟರ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಚದರ ಕಿಲೋಮೀಟರ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಚದರ ಕಿಲೋಮೀಟರ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಚದರ ಕಿಲೋಮೀಟರ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಚದರ ಕಿಲೋಮೀಟರ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಚದರ ಕಿಲೋಮೀಟರ್‌ಗಳಲ್ಲಿ</unitPattern>
 				<perUnitPattern>ಪ್ರತಿ ಚದರ ಕಿಲೋಮೀಟರ್‌ಗೆ {0}</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಹೆಕ್ಟೇರುಗಳು</displayName>
 				<unitPattern count="one">{0} ಹೆಕ್ಟೇರ್</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಹೆಕ್ಟೇರನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಹೆಕ್ಟೇರ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಹೆಕ್ಟೇರ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಹೆಕ್ಟೇರ್‌ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಹೆಕ್ಟೇರ್</unitPattern>
 				<unitPattern count="other">{0} ಹೆಕ್ಟೇರುಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಹೆಕ್ಟೇರುಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಹೆಕ್ಟೇರುಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಹೆಕ್ಟೇರುಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಹೆಕ್ಟೇರುಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ಹೆಕ್ಟೇರುಗಳು</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
+				<gender>neuter</gender>
 				<displayName>ಚದರ ಮೀಟರ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಚದರ ಮೀಟರ್</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಚದರ ಮೀಟರ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಚದರ ಮೀಟರ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಚದರ ಮೀಟರ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಚದರ ಮೀಟರ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಚದರ ಮೀಟರ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಚದರ ಮೀಟರ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಚದರ ಮೀಟರ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಚದರ ಮೀಟರ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಚದರ ಮೀಟರ್‌ಗಳಲ್ಲಿ</unitPattern>
 				<perUnitPattern>ಚದರ ಮೀಟರ್‌ಗೆ {0}</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
+				<gender>neuter</gender>
 				<displayName>ಚದರ ಸೆಂಟಿಮೀಟರ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಚದರ ಸೆಂಟಿಮೀಟರ್</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಚದರ ಸೆಂಟಿಮೀಟರ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಚದರ ಸೆಂಟಿಮೀಟರ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಚದರ ಸೆಂಟಿಮೀಟರ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಚದರ ಸೆಂಟಿಮೀಟರ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಚದರ ಸೆಂಟಿಮೀಟರ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಚದರ ಸೆಂಟಿಮೀಟರ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಚದರ ಸೆಂಟಿಮೀಟರ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಚದರ ಸೆಂಟಿಮೀಟರ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಚದರ ಸೆಂಟಿಮೀಟರ್‌ಗಳಲ್ಲಿ</unitPattern>
 				<perUnitPattern>ಪ್ರತಿ ಚದರ ಸೆಂಟಿಮೀಟರ್‌‌ಗೆ {0}</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
@@ -7062,20 +7089,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ಡುನಮ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="concentr-karat">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಕಾರಟ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಕಾರಟ್‌</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಕಾರಟ್‌ ಅನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಕಾರಟ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಕಾರಟ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಕಾರಟ್‌ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಕಾರಟ್‌</unitPattern>
 				<unitPattern count="other">{0} ಕಾರಟ್‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಕಾರಟ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಕಾರಟ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಕಾರಟ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಕಾರಟ್‌ಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ಕಾರಟ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>ಪ್ರತಿ ಡೆಸಿಲೀಟರ್‌ಗೆ ಮಿಲಿಗ್ರಾಂಗಳು</displayName>
@@ -7083,56 +7108,69 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ಪ್ರತಿ ಡೆಸಿಲೀಟರ್‌ಗೆ ಮಿಲಿಗ್ರಾಂಗಳು</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
-				<displayName>ಪ್ರತಿ ಲೀಟರ್ ಮಿಲ್ಲಿಮೋಲ್ಸ್</displayName>
-				<unitPattern count="one">{0} ಪ್ರತಿ ಲೀಟರ್ ಮಿಲ್ಲಿಮೋಲ್ಸ್</unitPattern>
-				<unitPattern count="other">{0} ಪ್ರತಿ ಲೀಟರ್ ಮಿಲ್ಲಿಮೋಲ್ಸ್</unitPattern>
+				<gender>neuter</gender>
+				<displayName>ಮಿಲಿಮೋಲ್‌ಗಳು ಪ್ರತಿ ಲೀಟರ್‌ಗೆ</displayName>
+				<unitPattern count="one">{0} ಮಿಲಿಮೋಲ್‌ ಪ್ರತಿ ಲೀಟರ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಮಿಲಿಮೋಲ್‌ ಪ್ರತಿ ಲೀಟರ್‌ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಮಿಲಿಮೋಲ್ ಪ್ರತಿ ಲೀಟರ್‌‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಮಿಲಿಮೋಲ್ ಪ್ರತಿ ಲೀಟರ್‌‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಮಿಲಿಮೋಲ್ ಪ್ರತಿ ಲೀಟರ್‌‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="other">{0} ಮಿಲಿಮೋಲ್‌ಗಳು ಪ್ರತಿ ಲೀಟರ್‌‌ಗೆ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಮಿಲಿಮೋಲ್‌ಗಳು ಪ್ರತಿ ಲೀಟರ್‌‌ಗೆ ಅನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಮಿಲಿಮೋಲ್‌ಗಳು ಪ್ರತಿ ಲೀಟರ್‌‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಮಿಲಿಮೋಲ್‌ಗಳು ಪ್ರತಿ ಲೀಟರ್‌‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಮಿಲಿಮೋಲ್‌ಗಳು ಪ್ರತಿ ಲೀಟರ್‌‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="concentr-item">
+				<gender>neuter</gender>
 				<displayName>ವಸ್ತು</displayName>
 				<unitPattern count="one">{0} ವಸ್ತು</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ವಸ್ತುವನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ವಸ್ತುವಿಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ವಸ್ತುವಿನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ವಸ್ತುವಿನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ವಸ್ತುಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ವಸ್ತುಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ವಸ್ತುಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ವಸ್ತುಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ವಸ್ತುಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಪ್ರತಿ ಮಿಲಿಯನ್ ಭಾಗಗಳು</displayName>
-				<unitPattern count="one">{0} ಪ್ರತಿ ಮಿಲಿಯನ್ ಭಾಗ</unitPattern>
+				<unitPattern count="one">{0} ಪ್ರತಿ ಮಿಲಿಯನ್ ಭಾಗವು</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಪ್ರತಿ ಮಿಲಿಯನ್ ಭಾಗವನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಪ್ರತಿ ಮಿಲಿಯನ್ ಭಾಗಕ್ಕೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಪ್ರತಿ ಮಿಲಿಯನ್ ಭಾಗದ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಪ್ರತಿ ಮಿಲಿಯನ್ ಭಾಗದಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಪ್ರತಿ ಮಿಲಿಯನ್ ಭಾಗ</unitPattern>
 				<unitPattern count="other">{0} ಪ್ರತಿ ಮಿಲಿಯನ್ ಭಾಗಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಪ್ರತಿ ಮಿಲಿಯನ್ ಭಾಗಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಪ್ರತಿ ಮಿಲಿಯನ್ ಭಾಗಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಪ್ರತಿ ಮಿಲಿಯನ್ ಭಾಗಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಪ್ರತಿ ಮಿಲಿಯನ್ ಭಾಗಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ಪ್ರತಿ ಮಿಲಿಯನ್ ಭಾಗಗಳು</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಶೇಕಡಾ</displayName>
-				<unitPattern count="one">{0} ಶೇಕಡಾ</unitPattern>
+				<unitPattern count="one">{0} ಶೇಕಡಾವು</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಶೇಕಡಾವನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಶೇಕಡಾಕ್ಕೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಶೇಕಡಾದ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಶೇಕಡಾದಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಶೇಕಡಾ</unitPattern>
 				<unitPattern count="other">{0} ಶೇಕಡಾ</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಶೇಕಡಾಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಶೇಕಡಾಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಶೇಕಡಾಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಶೇಕಡಾಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ಶೇಕಡಾ</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಪ್ರತಿ ಸಾವಿರಕ್ಕೆ</displayName>
-				<unitPattern count="one">{0} ಪ್ರತಿ ಸಾವಿರಕ್ಕೆ</unitPattern>
+				<unitPattern count="one">{0} ಪ್ರತಿ ಸಾವಿರವು</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಪ್ರತಿ ಸಾವಿರವನ್ನು</unitPattern>
-				<unitPattern count="one" case="dative">{0} ಪ್ರತಿ ಸಾವಿರಕ್ಕೆ</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಪ್ರತಿ ಸಾವಿರವು</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಪ್ರತಿ ಸಾವಿರದ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಪ್ರತಿ ಸಾವಿರದಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಪ್ರತಿ ಸಾವಿರಕ್ಕೆ</unitPattern>
 				<unitPattern count="other">{0} ಪ್ರತಿ ಸಾವಿರಕ್ಕೆ</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಪ್ರತಿ ಸಾವಿರಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಪ್ರತಿ ಸಾವಿರಗಳಿಗೆ</unitPattern>
@@ -7141,23 +7179,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="vocative">{0} ಪ್ರತಿ ಸಾವಿರಗಳು</unitPattern>
 			</unit>
 			<unit type="concentr-permyriad">
-				<gender draft="contributed">neuter</gender>
-				<displayName>ಪರ್ಮಿರೈಡ್</displayName>
-				<unitPattern count="one">{0} ಪರ್ಮಿರೈಡ್</unitPattern>
-				<unitPattern count="one" case="accusative">{0} ಪರ್ಮಿರೈಡ್ ಅನ್ನು</unitPattern>
-				<unitPattern count="one" case="dative">{0} ಪರ್ಮಿರೈಡ್‌ಗೆ</unitPattern>
-				<unitPattern count="one" case="genitive">{0}ಪರ್ಮಿರೈಡ್‌ನ</unitPattern>
-				<unitPattern count="one" case="locative">{0} ಪರ್ಮಿರೈಡ್‌ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಪರ್ಮಿರೈಡ್</unitPattern>
-				<unitPattern count="other">{0} ಪರ್ಮಿರೈಡ್</unitPattern>
-				<unitPattern count="other" case="accusative">{0} ಪರ್ಮಿರೈಡ್‌ಗಳನ್ನು</unitPattern>
-				<unitPattern count="other" case="dative">{0} ಪರ್ಮಿರೈಡ್‌ಗಳಿಗೆ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} ಪರ್ಮಿರೈಡ್‌ಗಳ</unitPattern>
-				<unitPattern count="other" case="locative">{0} ಪರ್ಮಿರೈಡ್‌ಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ಪರ್ಮಿರೈಡ್‌ಗಳು</unitPattern>
+				<gender>neuter</gender>
+				<displayName>ಪರ್‌ಮಿರಿಯಾಡ್</displayName>
+				<unitPattern count="one">{0} ಪರ್‌ಮಿರಿಯಾಡ್</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಪರ್‌ಮಿರಿಯಾಡ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಪರ್‌ಮಿರಿಯಾಡ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಪರ್‌ಮಿರಿಯಾಡ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಪರ್‌ಮಿರಿಯಾಡ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="other">{0} ಪರ್‌ಮಿರಿಯಾಡ್‌</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಪರ್‌ಮಿರಿಯಾಡ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಪರ್‌ಮಿರಿಯಾಡ್‌ಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಪರ್‌ಮಿರಿಯಾಡ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಪರ್‌ಮಿರಿಯಾಡ್‌ನಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಮೋಲ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಮೋಲ್‌ಗಳು</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಮೋಲ್‌ ಅನ್ನು</unitPattern>
@@ -7170,17 +7206,34 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="dative">{0} ಮೋಲ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಮೋಲ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಮೋಲ್‌ಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ಮೋಲ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
-				<displayName>ಪ್ರತಿ ಕಿಲೋಮೀಟರ್‌ಗೆ ಲೀಟರ್‌ಗಳು</displayName>
+				<gender>neuter</gender>
+				<displayName>ಲೀಟರ್‌ಗಳು ಪ್ರತಿ ಕಿಲೋಮೀಟರಿಗೆ</displayName>
 				<unitPattern count="one">{0} ಲೀಟರ್ ಪ್ರತಿ ಕಿಲೋಮೀಟರ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಲೀಟರ್ ಪ್ರತಿ ಕಿಲೋಮೀಟರ್‌ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಲೀಟರ್ ಪ್ರತಿ ಕಿಲೋಮೀಟರ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಲೀಟರ್ ಪ್ರತಿ ಕಿಲೋಮೀಟರ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಲೀಟರ್ ಪ್ರತಿ ಕಿಲೋಮೀಟರ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಪ್ರತಿ ಕಿಲೋಮೀಟರ್‌‌ಗೆ ಲೀಟರ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಲೀಟರ್‌ಗಳು ಪ್ರತಿ ಕಿಲೋಮೀಟರಿಗೆ ಅನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಲೀಟರ್‌ಗಳು ಪ್ರತಿ ಕಿಲೋಮೀಟರ್‌ಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಲೀಟರ್‌ಗಳು ಪ್ರತಿ ಕಿಲೋಮೀಟರ್‌‌ನ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಲೀಟರ್‌ಗಳು ಪ್ರತಿ ಕಿಲೋಮೀಟರ್‌‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
+				<gender>neuter</gender>
 				<displayName>ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗಳಿಗೆ ಲೀಟರ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗಳಿಗೆ ಲೀಟರ್‌ಗಳು</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಲೀಟರ್ ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗಳಿಗೆ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಲೀಟರ್ ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಲೀಟರ್ ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗಳ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಲೀಟರ್ ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗಳಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗಳಿಗೆ ಲೀಟರ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಲೀಟರ್‌ಗಳು ಪ್ರತಿ 100 ಕೀಲೋಮೀಟರ್‌ಗಳಿಗೆ ಅನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಲೀಟರ್‌ಗಳು ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಲೀಟರ್‌ಗಳು ಪ್ರತಿ 100 ಕೀಲೋಮೀಟರ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಲೀಟರ್‌ಗಳು ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗಳಿಗೆ ಅಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>ಪ್ರತಿ ಗ್ಯಾಲನ್‌‌ಗೆ ಮೈಲಿಗಳು</displayName>
@@ -7193,300 +7246,392 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ಪ್ರತಿ Imp ಗ್ಯಾಲನ್‌ಗೆ ಮೈಲಿಗಳು</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
+				<gender>neuter</gender>
 				<displayName>ಪೆಟಾಬೈಟ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಪೆಟಾಬೈಟ್‌</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಪೆಟಾಬೈಟ್‌ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಪೆಟಾಬೈಟ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಪೆಟಾಬೈಟ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಪೆಟಾಬೈಟ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಪೆಟಾಬೈಟ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಪೆಟಾಬೈಟ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಪೆಟಾಬೈಟ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಪೆಟಾಬೈಟ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಪೆಟಾಬೈಟ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
+				<gender>neuter</gender>
 				<displayName>ಟೆರಾಬೈಟ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಟೆರಾಬೈಟ್‌</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಟೆರಾಬೈಟ್‌ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಟೆರಾಬೈಟ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಟೆರಾಬೈಟ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಟೆರಾಬೈಟ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಟೆರಾಬೈಟ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಟೆರಾಬೈಟ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಟೆರಾಬೈಟ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಟೆರಾಬೈಟ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಟೆರಾಬೈಟ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
+				<gender>neuter</gender>
 				<displayName>ಟೆರಾಬಿಟ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಟೆರಾಬಿಟ್‌</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಟೆರಾಬಿಟ್‌ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಟೆರಾಬಿಟ್‌‍ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಟೆರಾಬಿಟ್‌‍ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಟೆರಾಬಿಟ್‌‍ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಟೆರಾಬಿಟ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಟೆರಾಬಿಟ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಟೆರಾಬಿಟ್‌‍ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಟೆರಾಬಿಟ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಟೆರಾಬಿಟ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
+				<gender>neuter</gender>
 				<displayName>ಗಿಗಾಬೈಟ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಗಿಗಾಬೈಟ್‌</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಗಿಗಾಬೈಟ್‌ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಗಿಗಾಬೈಟ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಗಿಗಾಬೈಟ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಗಿಗಾಬೈಟ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಗಿಗಾಬೈಟ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಗಿಗಾಬೈಟ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಗಿಗಾಬೈಟ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಗಿಗಾಬೈಟ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಗಿಗಾಬೈಟ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="digital-gigabit">
+				<gender>neuter</gender>
 				<displayName>ಗಿಗಾಬಿಟ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಗಿಗಾಬಿಟ್‌</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಗಿಗಾಬಿಟ್‌ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಗಿಗಾಬಿಟ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಗಿಗಾಬಿಟ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಗಿಗಾಬಿಟ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಗಿಗಾಬಿಟ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಗಿಗಾಬಿಟ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಗಿಗಾಬಿಟ್‌‍ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಗಿಗಾಬಿಟ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಗಿಗಾಬಿಟ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="digital-megabyte">
+				<gender>neuter</gender>
 				<displayName>ಮೆಗಾಬೈಟ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಮೆಗಾಬೈಟ್‌</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಮೆಗಾಬೈಟ್‌ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಮೆಗಾಬೈಟ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಮೆಗಾಬೈಟ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಮೆಗಾಬೈಟ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಮೆಗಾಬೈಟ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಮೆಗಾಬೈಟ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಮೆಗಾಬೈಟ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಮೆಗಾಬೈಟ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಮೆಗಾಬೈಟ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
+				<gender>neuter</gender>
 				<displayName>ಮೆಗಾಬಿಟ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಮೆಗಾಬಿಟ್‌</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಮೆಗಾಬಿಟ್‌ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಮೆಗಾಬಿಟ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಮೆಗಾಬಿಟ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಮೆಗಾಬಿಟ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಮೆಗಾಬಿಟ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಮೆಗಾಬಿಟ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಮೆಗಾಬಿಟ್‌‍ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಮೆಗಾಬಿಟ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಮೆಗಾಬಿಟ್‌ಗಳ</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
+				<gender>neuter</gender>
 				<displayName>ಕಿಲೋಬೈಟ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಕಿಲೋಬೈಟ್‌</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಕಿಲೋಬೈಟ್‌ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಕಿಲೋಬೈಟ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಕಿಲೋಬೈಟ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಕಿಲೋಬೈಟ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಕಿಲೋಬೈಟ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಕಿಲೋಬೈಟ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಕಿಲೋಬೈಟ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಕಿಲೋಬೈಟ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಕಿಲೋಬೈಟ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
+				<gender>neuter</gender>
 				<displayName>ಕಿಲೋಬಿಟ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಕಿಲೋಬಿಟ್‌</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಕಿಲೋಬಿಟ್‌ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಕಿಲೋಬಿಟ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಕಿಲೋಬಿಟ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಕಿಲೋಬಿಟ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಕಿಲೋಬಿಟ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಕಿಲೋಬಿಟ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಕಿಲೋಬಿಟ್‌ಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಕಿಲೋಬಿಟ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಕಿಲೋಬಿಟ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="digital-byte">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಬೈಟ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಬೈಟ್‌</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಬೈಟ್‌ ಅನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಬೈಟ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಬೈಟ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಬೈಟ್‌ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಬೈಟ್‌</unitPattern>
 				<unitPattern count="other">{0} ಬೈಟ್‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಬೈಟ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಬೈಟ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಬೈಟ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಬೈಟ್‌ಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ಬೈಟ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="digital-bit">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಬಿಟ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಬಿಟ್‌</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಬಿಟ್‌ ಅನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಬಿಟ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಬಿಟ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಬಿಟ್‌ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಬಿಟ್‌</unitPattern>
 				<unitPattern count="other">{0} ಬಿಟ್‍ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಬಿಟ್‍ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಬಿಟ್‍ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಬಿಟ್‍ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಬಿಟ್‍ಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ಬಿಟ್‍ಗಳು</unitPattern>
 			</unit>
 			<unit type="duration-century">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಶತಮಾನಗಳು</displayName>
-				<unitPattern count="one">{0} ಶತಮಾನ</unitPattern>
+				<unitPattern count="one">{0} ಶತಮಾನವು</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಶತಮಾನವನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಶತಮಾನಕ್ಕೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಶತಮಾನದ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಶತಮಾನದಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಶತಮಾನ</unitPattern>
 				<unitPattern count="other">{0}ಶತಮಾನಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಶತಮಾನಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಶತಮಾನಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಶತಮಾನಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಶತಮಾನಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0}ಶತಮಾನಗಳು</unitPattern>
 			</unit>
 			<unit type="duration-decade">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ದಶಕಗಳು</displayName>
-				<unitPattern count="one">{0} ದಶಕ</unitPattern>
-				<unitPattern count="one" case="accusative" draft="contributed">{0} ದಶಕವನ್ನು</unitPattern>
-				<unitPattern count="one" case="dative" draft="contributed">{0} ದಶಕಕ್ಕೆ</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} ದಶಕದ</unitPattern>
-				<unitPattern count="one" case="locative" draft="contributed">{0} ದಶಕದಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative" draft="contributed">{0} ದಶಕ</unitPattern>
+				<unitPattern count="one">{0} ದಶಕವು</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ದಶಕವನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ದಶಕಕ್ಕೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ದಶಕದ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ದಶಕದಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ದಶಕಗಳು</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} ದಶಕಗಳನ್ನು</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} ದಶಕಗಳಿಗೆ</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} ದಶಕಗಳ</unitPattern>
-				<unitPattern count="other" case="locative" draft="contributed">{0} ದಶಕಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative" draft="contributed">{0} ದಶಕಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ದಶಕಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ದಶಕಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ದಶಕಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ದಶಕಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="duration-year">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ವರ್ಷಗಳು</displayName>
-				<unitPattern count="one">{0} ವರ್ಷ</unitPattern>
+				<unitPattern count="one">{0} ವರ್ಷವು</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ವರ್ಷವನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ವರ್ಷಕ್ಕೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ವರ್ಷದ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ವರ್ಷದಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ವರ್ಷ</unitPattern>
 				<unitPattern count="other">{0} ವರ್ಷಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ವರ್ಷಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ವರ್ಷಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ವರ್ಷಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ವರ್ಷಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative" draft="contributed">{0} ವರ್ಷಗಳು</unitPattern>
 				<perUnitPattern>ಪ್ರತಿ ವರ್ಷಕ್ಕೆ {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ತಿಂಗಳು</displayName>
 				<unitPattern count="one">{0} ತಿಂಗಳು</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ತಿಂಗಳನ್ನು</unitPattern>
-				<unitPattern count="one" case="dative">{0} ತಿಂಗಳಿನಿಂದ</unitPattern>
+				<unitPattern count="one" case="dative">{0} ತಿಂಗಳಿಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ತಿಂಗಳ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ತಿಂಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ತಿಂಗಳು</unitPattern>
 				<unitPattern count="other">{0} ತಿಂಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ತಿಂಗಳುಗಳನ್ನು</unitPattern>
-				<unitPattern count="other" case="dative">{0} ತಿಂಗಳುಗಳಿಂದ</unitPattern>
+				<unitPattern count="other" case="dative">{0} ತಿಂಗಳುಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ತಿಂಗಳುಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ತಿಂಗಳುಗಳಲ್ಲಿ</unitPattern>
 				<unitPattern count="other" case="vocative">{0} ತಿಂಗಳುಗಳು</unitPattern>
 				<perUnitPattern>ಪ್ರತಿ ತಿಂಗಳಿಗೆ {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ವಾರಗಳು</displayName>
-				<unitPattern count="one">{0} ವಾರ</unitPattern>
+				<unitPattern count="one">{0} ವಾರವು</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ವಾರವನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ವಾರಕ್ಕೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ವಾರದ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ವಾರದಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ವಾರ</unitPattern>
 				<unitPattern count="other">{0} ವಾರಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ವಾರಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ವಾರಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ವಾರಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ವಾರಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ವಾರಗಳು</unitPattern>
 				<perUnitPattern>{0} ಪ್ರತಿ ವಾರಕ್ಕೆ</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ದಿನಗಳು</displayName>
-				<unitPattern count="one">{0} ದಿನ</unitPattern>
+				<unitPattern count="one">{0} ದಿನವು</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ದಿನವನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ದಿನಕ್ಕೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ದಿನದ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ದಿನದಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ದಿನ</unitPattern>
 				<unitPattern count="other">{0} ದಿನಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ದಿನಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ದಿನಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ದಿನಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ದಿನಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ದಿನಗಳು</unitPattern>
 				<perUnitPattern>{0} ಪ್ರತಿ ದಿನಕ್ಕೆ</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಗಂಟೆಗಳು</displayName>
-				<unitPattern count="one">{0} ಗಂಟೆ</unitPattern>
+				<unitPattern count="one">{0} ಗಂಟೆಯು</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಗಂಟೆಯನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಗಂಟೆಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಗಂಟೆಯ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಗಂಟೆಯಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಗಂಟೆ</unitPattern>
 				<unitPattern count="other">{0} ಗಂಟೆಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಗಂಟೆಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಗಂಟೆಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಗಂಟೆಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಗಂಟೆಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ಗಂಟೆಗಳು</unitPattern>
 				<perUnitPattern>ಪ್ರತಿ ಗಂಟೆಗೆ {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ನಿಮಿಷಗಳು</displayName>
-				<unitPattern count="one">{0} ನಿಮಿಷ</unitPattern>
+				<unitPattern count="one">{0} ನಿಮಿಷವು</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ನಿಮಿಷವನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ನಿಮಿಷಕ್ಕೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ನಿಮಿಷದ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ನಿಮಿಷದಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ನಿಮಿಷ</unitPattern>
 				<unitPattern count="other">{0} ನಿಮಿಷಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ನಿಮಿಷಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ನಿಮಿಷಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ನಿಮಿಷಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ನಿಮಿಷಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ನಿಮಿಷಗಳು</unitPattern>
 				<perUnitPattern>ಪ್ರತಿ ನಿಮಿಷಕ್ಕೆ {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಸೆಕೆಂಡುಗಳು</displayName>
 				<unitPattern count="one">{0} ಸೆಕೆಂಡ್</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಸೆಕೆಂಡನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಸೆಕೆಂಡಿಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಸೆಕೆಂಡಿನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಸೆಕೆಂಡಿನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಸೆಕೆಂಡ್</unitPattern>
 				<unitPattern count="other">{0} ಸೆಕೆಂಡುಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಸೆಕೆಂಡುಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಸೆಕೆಂಡುಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಸೆಕೆಂಡುಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಸೆಕೆಂಡುಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ಸೆಕೆಂಡುಗಳು</unitPattern>
 				<perUnitPattern>ಪ್ರತಿ ಸೆಕೆಂಡ್‌ಗೆ {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
+				<gender>neuter</gender>
 				<displayName>ಮಿಲಿಸೆಕೆಂಡುಗಳು</displayName>
 				<unitPattern count="one">{0} ಮಿಲಿಸೆಕೆಂಡ್</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಮಿಲಿಸೆಕೆಂಡ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಮಿಲಿಸೆಕೆಂಡಿಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಮಿಲಿಸೆಕೆಂಡಿನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಮಿಲಿಸೆಕೆಂಡಿನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಮಿಲಿಸೆಕೆಂಡುಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಮಿಲಿಸೆಕೆಂಡ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಮಿಲಿಸೆಕೆಂಡುಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಮಿಲಿಸೆಕೆಂಡುಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಮಿಲಿಸೆಕೆಂಡುಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
+				<gender>neuter</gender>
 				<displayName>ಮೈಕ್ರೊಸೆಕೆಂಡುಗಳು</displayName>
 				<unitPattern count="one">{0} ಮೈಕ್ರೊಸೆಕೆಂಡ್</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಮೈಕ್ರೊಸೆಕೆಂಡ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಮೈಕ್ರೊಸೆಕೆಂಡ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಮೈಕ್ರೊಸೆಕೆಂಡ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಮೈಕ್ರೊಸೆಕೆಂಡ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಮೈಕ್ರೊಸೆಕೆಂಡುಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಮೈಕ್ರೊಸೆಕೆಂಡ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಮೈಕ್ರೊಸೆಕೆಂಡ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಮೈಕ್ರೊಸೆಕೆಂಡುಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಮೈಕ್ರೊಸೆಕೆಂಡುಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
+				<gender>neuter</gender>
 				<displayName>ನ್ಯಾನೊಸೆಕೆಂಡುಗಳು</displayName>
 				<unitPattern count="one">{0} ನ್ಯಾನೊಸೆಕೆಂಡ್</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ನ್ಯಾನೊಸೆಕೆಂಡ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ನ್ಯಾನೊಸೆಕೆಂಡ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ನ್ಯಾನೊಸೆಕೆಂಡ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ನ್ಯಾನೊಸೆಕೆಂಡ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ನ್ಯಾನೊಸೆಕೆಂಡುಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ನ್ಯಾನೊಸೆಕೆಂಡುಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ನ್ಯಾನೊಸೆಕೆಂಡುಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ನ್ಯಾನೊಸೆಕೆಂಡುಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ನ್ಯಾನೊಸೆಕೆಂಡುಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
-				<gender draft="contributed">neuter</gender>
-				<displayName>ಆಂಪೇರ್‌ಗಳು</displayName>
-				<unitPattern count="one">{0} ಆಂಪೇರ್‌</unitPattern>
-				<unitPattern count="one" case="accusative">{0} ಆಂಪೇರ್‌ ಅನ್ನು</unitPattern>
-				<unitPattern count="one" case="dative">{0} ಆಂಪೇರ್‌ಗೆ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} ಆಂಪೇರ್‌ನ</unitPattern>
-				<unitPattern count="one" case="locative">{0} ಆಂಪೇರ್‌ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಆಂಪೇರ್‌</unitPattern>
-				<unitPattern count="other">{0} ಆಂಪೇರ್‌ಗಳು</unitPattern>
-				<unitPattern count="other" case="accusative">{0} ಆಂಪೇರ್‌ಗಳನ್ನು</unitPattern>
-				<unitPattern count="other" case="dative">{0} ಆಂಪೇರ್‌ಗಳಿಗೆ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} ಆಂಪೇರ್‌ಗಳ</unitPattern>
-				<unitPattern count="other" case="locative">{0} ಆಂಪೇರ್‌ಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ಆಂಪೇರ್‌ಗಳು</unitPattern>
+				<gender>neuter</gender>
+				<displayName>ಆ್ಯಂಪಿಯರ್‌ಗಳು</displayName>
+				<unitPattern count="one">{0} ಆ್ಯಂಪಿಯರ್</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಆ್ಯಂಪಿಯರ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಆ್ಯಂಪಿಯರ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಆ್ಯಂಪಿಯರ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಆ್ಯಂಪಿಯರ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಆ್ಯಂಪಿಯರ್‌</unitPattern>
+				<unitPattern count="other">{0} ಆ್ಯಂಪಿಯರ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಆ್ಯಂಪಿಯರ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಆ್ಯಂಪಿಯರ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಆ್ಯಂಪಿಯರ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಆ್ಯಂಪಿಯರ್‌ಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಆ್ಯಂಪಿಯರ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
-				<displayName>ಮಿಲಿಆಂಪೇರ್‌ಗಳು</displayName>
-				<unitPattern count="one">{0} ಮಿಲಿಆಂಪೇರ್‌</unitPattern>
-				<unitPattern count="other">{0} ಮಿಲಿಆಂಪೇರ್‌ಗಳು</unitPattern>
+				<gender>neuter</gender>
+				<displayName>ಮಿಲಿಆ್ಯಂಪಿಯರ್‌ಗಳು</displayName>
+				<unitPattern count="one">{0} ಮಿಲಿಆ್ಯಂಪಿಯರ್</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಮಿಲಿಆ್ಯಂಪಿಯರ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಮಿಲಿಆ್ಯಂಪಿಯರ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಮಿಲಿಆ್ಯಂಪಿಯರ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಮಿಲಿಆ್ಯಂಪಿಯರ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="other">{0} ಮಿಲಿಆ್ಯಂಪಿಯರ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಮಿಲಿಆ್ಯಂಪಿಯರ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಮಿಲಿಆ್ಯಂಪಿಯರ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಮಿಲಿಆ್ಯಂಪಿಯರ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಮಿಲಿಆ್ಯಂಪಿಯರ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಓಂಗಳು</displayName>
 				<unitPattern count="one">{0} ಓಂ</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಓಂ ಅನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಓಂ ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಓಂ ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಓಂ ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಓಂ</unitPattern>
 				<unitPattern count="other">{0} ಓಂಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಓಂಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಓಂಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಓಂಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಓಂಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ಓಂಗಳು</unitPattern>
 			</unit>
 			<unit type="electric-volt">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ವೋಲ್ಟ್‌‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ವೋಲ್ಟ್‌</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ವೋಲ್ಟ್‌ ಅನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ವೋಲ್ಟ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ವೋಲ್ಟ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ವೋಲ್ಟ್‌ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ವೋಲ್ಟ್‌</unitPattern>
 				<unitPattern count="other">{0} ವೋಲ್ಟ್‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ವೋಲ್ಟ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ವೋಲ್ಟ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ವೋಲ್ಟ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ವೋಲ್ಟ್‌ಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ವೋಲ್ಟ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
 				<displayName>ಕಿಲೋಕ್ಯಾಲೋರಿಗಳು</displayName>
@@ -7494,20 +7639,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ಕಿಲೋಕ್ಯಾಲೋರಿಗಳು</unitPattern>
 			</unit>
 			<unit type="energy-calorie">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಕ್ಯಾಲೋರಿಗಳು</displayName>
 				<unitPattern count="one">{0} ಕ್ಯಾಲೋರಿ</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಕ್ಯಾಲೋರಿಯನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಕ್ಯಾಲೋರಿಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಕ್ಯಾಲೋರಿಯ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಕ್ಯಾಲೋರಿಯಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಕ್ಯಾಲೋರಿ</unitPattern>
 				<unitPattern count="other">{0} ಕ್ಯಾಲೋರಿಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಕ್ಯಾಲೋರಿಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಕ್ಯಾಲೋರಿಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಕ್ಯಾಲೋರಿಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಕ್ಯಾಲೋರಿಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ಕ್ಯಾಲೋರಿಗಳು</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
 				<displayName>ಕ್ಯಾಲೋರಿಗಳು</displayName>
@@ -7515,30 +7658,46 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ಕ್ಯಾಲೋರಿಗಳು</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
+				<gender>neuter</gender>
 				<displayName>ಕಿಲೋಜೌಲ್‌‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಕಿಲೋಜೌಲ್‌</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಕಿಲೋಜೌಲ್‌ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಕಿಲೋಜೌಲ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಕಿಲೋಜೌಲ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಕಿಲೋಜೌಲ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಕಿಲೋಜೌಲ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಕಿಲೋಜೌಲ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಕಿಲೋಜೌಲ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಕಿಲೋಜೌಲ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಕಿಲೋಜೌಲ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="energy-joule">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಜೌಲ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಜೌಲ್‌</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಜೌಲ್‌ ಅನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಜೌಲ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಜೌಲ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಜೌಲ್‌ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಜೌಲ್‌</unitPattern>
 				<unitPattern count="other">{0} ಜೌಲ್‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಜೌಲ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಜೌಲ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಜೌಲ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಜೌಲ್‌ಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ಜೌಲ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
+				<gender>neuter</gender>
 				<displayName>ಕಿಲೋವ್ಯಾಟ್‌-ಗಂಟೆಗಳು</displayName>
 				<unitPattern count="one">{0} ಕಿಲೋವ್ಯಾಟ್‌-ಗಂಟೆ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಕಿಲೋವ್ಯಾಟ್‌-ಗಂಟೆಯನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಕಿಲೋವ್ಯಾಟ್‌-ಗಂಟೆಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಕಿಲೋವ್ಯಾಟ್‌-ಗಂಟೆಯ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಕಿಲೋವ್ಯಾಟ್‌-ಗಂಟೆಯಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಕಿಲೋವ್ಯಾಟ್‌-ಗಂಟೆಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಕಿಲೋವ್ಯಾಟ್‌-ಗಂಟೆಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಕಿಲೋವ್ಯಾಟ್‌-ಗಂಟೆಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಕಿಲೋವ್ಯಾಟ್‌-ಗಂಟೆಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಕಿಲೋವ್ಯಾಟ್‌-ಗಂಟೆಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
 				<displayName>ಎಲೆಕ್ಟ್ರಾನ್‌ವೋಲ್ಟ್‌ಗಳು</displayName>
@@ -7561,49 +7720,85 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ಪೌಂಡ್ಸ್ ಆಫ್ ಫೋರ್ಸ್</unitPattern>
 			</unit>
 			<unit type="force-newton">
-				<gender draft="contributed">neuter</gender>
-				<displayName>ನ್ಯೂಟೋನ್‌ಗಳು</displayName>
-				<unitPattern count="one">{0} ನ್ಯೂಟೋನ್‌</unitPattern>
-				<unitPattern count="one" case="accusative">{0} ನ್ಯೂಟೋನ್‌ ಅನ್ನು</unitPattern>
-				<unitPattern count="one" case="dative">{0} ನ್ಯೂಟೋನ್‌ಗೆ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} ನ್ಯೂಟೋನ್‌ನ</unitPattern>
-				<unitPattern count="one" case="locative">{0} ನ್ಯೂಟೋನ್‌ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ನ್ಯೂಟೋನ್‌</unitPattern>
-				<unitPattern count="other">{0} ನ್ಯೂಟೋನ್‌ಗಳು</unitPattern>
-				<unitPattern count="other" case="accusative">{0} ನ್ಯೂಟೋನ್‌ಗಳನ್ನು</unitPattern>
-				<unitPattern count="other" case="dative">{0} ನ್ಯೂಟೋನ್‌ಗಳಿಗೆ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} ನ್ಯೂಟೋನ್‌ಗಳ</unitPattern>
-				<unitPattern count="other" case="locative">{0} ನ್ಯೂಟೋನ್‌ಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ನ್ಯೂಟೋನ್‌ಗಳು</unitPattern>
+				<gender>neuter</gender>
+				<displayName>ನ್ಯೂಟನ್‌ಗಳು</displayName>
+				<unitPattern count="one">{0} ನ್ಯೂಟನ್</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ನ್ಯೂಟನ್‌ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ನ್ಯೂಟನ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ನ್ಯೂಟನ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ನ್ಯೂಟನ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ನ್ಯೂಟನ್</unitPattern>
+				<unitPattern count="other">{0} ನ್ಯೂಟನ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ನ್ಯೂಟನ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ನ್ಯೂಟನ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ನ್ಯೂಟನ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ನ್ಯೂಟನ್‌ಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ನ್ಯೂಟನ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
-				<displayName>ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗೆ ಕಿಲೋವ್ಯಾಟ್-ಗಂಟೆ</displayName>
+				<gender>neuter</gender>
+				<displayName>ಕಿಲೋವ್ಯಾಟ್-ಗಂಟೆಗಳು ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗಳಿಗೆ</displayName>
 				<unitPattern count="one">{0} ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗೆ ಕಿಲೋವ್ಯಾಟ್-ಗಂಟೆ</unitPattern>
-				<unitPattern count="other">{0} ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗೆ ಕಿಲೋವ್ಯಾಟ್-ಗಂಟೆ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗಳಿಗೆ ಕಿಲೋವ್ಯಾಟ್-ಗಂಟೆಯನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಕಿಲೋವ್ಯಾಟ್-ಗಂಟೆ ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗೆ ಕಿಲೋವ್ಯಾಟ್-ಗಂಟೆ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಕಿಲೋವ್ಯಾಟ್-ಗಂಟೆ ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other">{0} ಕಿಲೋವ್ಯಾಟ್-ಗಂಟೆಗಳು ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಕಿಲೋವ್ಯಾಟ್-ಗಂಟೆಗಳು ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಕಿಲೋವ್ಯಾಟ್-ಗಂಟೆಗಳು ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಕಿಲೋವ್ಯಾಟ್-ಗಂಟೆಗಳು ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಕಿಲೋವ್ಯಾಟ್-ಗಂಟೆಗಳು ಪ್ರತಿ 100 ಕಿಲೋಮೀಟರ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
+				<gender>neuter</gender>
 				<displayName>ಗಿಗಾಹರ್ಟ್ಸ್‌</displayName>
 				<unitPattern count="one">{0} ಗಿಗಾಹರ್ಟ್ಸ್‌</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಗಿಗಾಹರ್ಟ್ಸ್‌ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಗಿಗಾಹರ್ಟ್ಸ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಗಿಗಾಹರ್ಟ್ಸ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಗಿಗಾಹರ್ಟ್ಸ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಗಿಗಾಹರ್ಟ್ಸ್‌</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಗಿಗಾಹರ್ಟ್ಸ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಗಿಗಾಹರ್ಟ್ಸ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಗಿಗಾಹರ್ಟ್ಸ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಗಿಗಾಹರ್ಟ್ಸ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="frequency-megahertz">
+				<gender>neuter</gender>
 				<displayName>ಮೆಗಾಹರ್ಟ್ಸ್</displayName>
 				<unitPattern count="one">{0} ಮೆಗಾಹರ್ಟ್ಸ್</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಮೆಗಾಹರ್ಟ್ಸ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಮೆಗಾಹರ್ಟ್ಸ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಮೆಗಾಹರ್ಟ್ಸ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಮೆಗಾಹರ್ಟ್ಸ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಮೆಗಾಹರ್ಟ್ಸ್</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಮೆಗಾಹರ್ಟ್ಸ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಮೆಗಾಹರ್ಟ್ಸ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಮೆಗಾಹರ್ಟ್ಸ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಮೆಗಾಹರ್ಟ್ಸ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="frequency-kilohertz">
+				<gender>neuter</gender>
 				<displayName>ಕಿಲೋಹರ್ಟ್ಸ್‌</displayName>
 				<unitPattern count="one">{0} ಕಿಲೋಹರ್ಟ್ಸ್‌</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಕಿಲೋಹರ್ಟ್ಸ್‌ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಕಿಲೋಹರ್ಟ್ಸ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಕಿಲೋಹರ್ಟ್ಸ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಕಿಲೋಹರ್ಟ್ಸ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಕಿಲೋಹರ್ಟ್ಸ್‌</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಕಿಲೋಹರ್ಟ್ಸ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಕಿಲೋಹರ್ಟ್ಸ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಕಿಲೋಹರ್ಟ್ಸ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಕಿಲೋಹರ್ಟ್ಸ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="frequency-hertz">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಹರ್ಟ್ಸ್‌</displayName>
 				<unitPattern count="one">{0} ಹರ್ಟ್ಸ್‌</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಹರ್ಟ್ಜ್ ಅನ್ನು</unitPattern>
-				<unitPattern count="one" case="dative">{0} ಹರ್ಟ್ಜ್ ಗೆ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} ಹರ್ಟ್ಜ್ ನ</unitPattern>
-				<unitPattern count="one" case="locative">{0} ಹರ್ಟ್ಜ್ ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಹರ್ಟ್ಜ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಹರ್ಟ್ಜ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಹರ್ಟ್ಜ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="one" case="vocative">{0} ಹರ್ಟ್ಜ್</unitPattern>
 				<unitPattern count="other">{0} ಹರ್ಟ್ಸ್‌</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಹರ್ಟ್ಜ್‌ಗಳನ್ನು</unitPattern>
@@ -7613,46 +7808,60 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="vocative">{0} ಹರ್ಟ್ಜ್</unitPattern>
 			</unit>
 			<unit type="graphics-em">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಟೈಪೊಗ್ರಾಫಿಕ್ em</displayName>
 				<unitPattern count="one">{0} em</unitPattern>
 				<unitPattern count="one" case="accusative">{0} em ಅನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} em ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} em ದ</unitPattern>
 				<unitPattern count="one" case="locative">{0} em ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} em</unitPattern>
-				<unitPattern count="other">{0} ems</unitPattern>
+				<unitPattern count="other">{0} ems ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} em ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} em ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} em ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} em ಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ems</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಪಿಕ್ಸೆಲ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಪಿಕ್ಸೆಲ್</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಪಿಕ್ಸೆಲ್ ಅನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಪಿಕ್ಸೆಲ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಪಿಕ್ಸೆಲ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಪಿಕ್ಸೆಲ್‌ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಪಿಕ್ಸೆಲ್</unitPattern>
 				<unitPattern count="other">{0} ಪಿಕ್ಸೆಲ್‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಪಿಕ್ಸೆಲ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಪಿಕ್ಸೆಲ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಪಿಕ್ಸೆಲ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಪಿಕ್ಸೆಲ್‌ಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ಪಿಕ್ಸೆಲ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
+				<gender>neuter</gender>
 				<displayName>ಮೆಗಾಪಿಕ್ಸೆಲ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಮೆಗಾಪಿಕ್ಸೆಲ್</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಮೆಗಾಪಿಕ್ಸೆಲ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಮೆಗಾಪಿಕ್ಸೆಲ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಮೆಗಾಪಿಕ್ಸೆಲ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಮೆಗಾಪಿಕ್ಸೆಲ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಮೆಗಾಪಿಕ್ಸೆಲ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಮೆಗಾಪಿಕ್ಸೆಲ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಮೆಗಾಪಿಕ್ಸೆಲ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಮೆಗಾಪಿಕ್ಸೆಲ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಮೆಗಾಪಿಕ್ಸೆಲ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-centimeter">
+				<gender>neuter</gender>
 				<displayName>ಪಿಕ್ಸೆಲ್ಸ್ ಪರ್ ಸೆಂಟಿಮೀಟರ್</displayName>
 				<unitPattern count="one">{0} ಪಿಕ್ಸೆಲ್ ಪರ್ ಸೆಂಟಿಮೀಟರ್</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಪಿಕ್ಸೆಲ್ ಪರ್ ಸೆಂಟಿಮೀಟರ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಪಿಕ್ಸೆಲ್ ಪರ್ ಸೆಂಟಿಮೀಟರ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಪಿಕ್ಸೆಲ್ ಪರ್ ಸೆಂಟಿಮೀಟರ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಪಿಕ್ಸೆಲ್ ಪರ್ ಸೆಂಟಿಮೀಟರ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಪಿಕ್ಸೆಲ್ಸ್ ಪರ್ ಸೆಂಟಿಮೀಟರ್</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಪಿಕ್ಸೆಲ್ಸ್ ಪರ್ ಸೆಂಟಿಮೀಟರ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಪಿಕ್ಸೆಲ್ಸ್ ಪರ್ ಸೆಂಟಿಮೀಟರ್‌ಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಪಿಕ್ಸೆಲ್ಸ್ ಪರ್ ಸೆಂಟಿಮೀಟರ್‌ನ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಪಿಕ್ಸೆಲ್ಸ್ ಪರ್ ಸೆಂಟಿಮೀಟರ್‌ನಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-inch">
 				<displayName>ಪಿಕ್ಸೆಲ್ಸ್ ಪರ್ ಇಂಚ್</displayName>
@@ -7670,7 +7879,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ಡಾಟ್ಸ್ ಪರ್ ಇಂಚ್</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>ಡಾಟ್</displayName>
+				<displayName>ಡಾಟ್‌ಗಳು</displayName>
+				<unitPattern count="one">{0} ಡಾಟ್‌</unitPattern>
+				<unitPattern count="other">{0} ಡಾಟ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>ಭೂಮಿಯ ತ್ರಿಜ್ಯ</displayName>
@@ -7678,58 +7889,119 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ಭೂಮಿಯ ತ್ರಿಜ್ಯ</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
+				<gender>neuter</gender>
 				<displayName>ಕಿಲೋಮೀಟರ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಕಿಲೋಮೀಟರ್</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಕಿಲೋಮೀಟರ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಕಿಲೋಮೀಟರ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಕಿಲೋಮೀಟರ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಕಿಲೋಮೀಟರ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಕಿಲೋಮೀಟರ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಕಿಲೋಮೀಟರ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಕಿಲೋಮೀಟರ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಕಿಲೋಮೀಟರ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಕಿಲೋಮೀಟರ್‌ಗಳಲ್ಲಿ</unitPattern>
 				<perUnitPattern>ಪ್ರತಿ ಕಿಲೋಮೀಟ‍ರ್‌ಗೆ {0}</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಮೀಟರ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಮೀಟರ್</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಮೀಟರನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಮೀಟರ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಮೀಟರ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಮೀಟರ್‌ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative" draft="contributed">{0} ಮೀಟರ್</unitPattern>
 				<unitPattern count="other">{0} ಮೀಟರ್‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಮೀಟರ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಮೀಟರ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಮೀಟರ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಮೀಟರ್‌ಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ಮೀಟರ್‌ಗಳು</unitPattern>
 				<perUnitPattern>ಪ್ರತಿ ಮೀಟರ್‌ಗೆ {0}</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
+				<gender>neuter</gender>
 				<displayName>ಡೆಸಿಮೀಟರ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಡೆಸಿಮೀಟರ್</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಡೆಸಿಮೀಟರ್‌ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಡೆಸಿಮೀಟರ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಡೆಸಿಮೀಟರ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಡೆಸಿಮೀಟರ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಡೆಸಿಮೀಟರ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಡೆಸಿಮೀಟರ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಡೆಸಿಮೀಟರ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಡೆಸಿಮೀಟರ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಡೆಸಿಮೀಟರ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
+				<gender>neuter</gender>
 				<displayName>ಸೆಂಟಿಮೀಟರ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಸೆಂಟಿಮೀಟರ್</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಸೆಂಟಿಮೀಟರ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಸೆಂಟಿಮೀಟರ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಸೆಂಟಿಮೀಟರ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಸೆಂಟಿಮೀಟರ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಸೆಂಟಿಮೀಟರ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಸೆಂಟಿಮೀಟರ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಸೆಂಟಿಮೀಟರ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಸೆಂಟಿಮೀಟರ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಸೆಂಟಿಮೀಟರ್‌ಗಳಲ್ಲಿ</unitPattern>
 				<perUnitPattern>ಪ್ರತಿ ಸೆಂಟಿಮೀಟರ್‌ಗೆ {0}</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
+				<gender>neuter</gender>
 				<displayName>ಮಿಲಿಮೀಟರ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಮಿಲಿಮೀಟರ್</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಮಿಲಿಮೀಟರ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಮಿಲಿಮೀಟರ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಮಿಲಿಮೀಟರ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಮಿಲಿಮೀಟರ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಮಿಲಿಮೀಟರ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಮಿಲಿಮೀಟರ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಮಿಲಿಮೀಟರ್‌ಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಮಿಲಿಮೀಟರ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಮಿಲಿಮೀಟರ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
+				<gender>neuter</gender>
 				<displayName>ಮೈಕ್ರೊಮೀಟರ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಮೈಕ್ರೊಮೀಟರ್</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಮೈಕ್ರೊಮೀಟರ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಮೈಕ್ರೊಮೀಟರ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಮೈಕ್ರೊಮೀಟರ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಮೈಕ್ರೊಮೀಟರ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಮೈಕ್ರೊಮೀಟರ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಮೈಕ್ರೊಮೀಟರ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಮೈಕ್ರೊಮೀಟರ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಮೈಕ್ರೊಮೀಟರ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಮೈಕ್ರೊಮೀಟರ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
+				<gender>neuter</gender>
 				<displayName>ನ್ಯಾನೊಮೀಟರ್‌‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ನ್ಯಾನೊಮೀಟರ್‌</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ನ್ಯಾನೊಮೀಟರ್‌ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ನ್ಯಾನೊಮೀಟರ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ನ್ಯಾನೊಮೀಟರ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ನ್ಯಾನೊಮೀಟರ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ನ್ಯಾನೊಮೀಟರ್‌‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ನ್ಯಾನೊಮೀಟರ್‌‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ನ್ಯಾನೊಮೀಟರ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ನ್ಯಾನೊಮೀಟರ್‌‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ನ್ಯಾನೊಮೀಟರ್‌‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="length-picometer">
+				<gender>neuter</gender>
 				<displayName>ಪಿಕೋಮೀಟರ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಪಿಕೋಮೀಟರ್</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಪಿಕೋಮೀಟರ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಪಿಕೋಮೀಟರ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಪಿಕೋಮೀಟರ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಪಿಕೋಮೀಟರ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಪಿಕೋಮೀಟರ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಪಿಕೋಮೀಟರ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಪಿಕೋಮೀಟರ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಪಿಕೋಮೀಟರ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಪಿಕೋಮೀಟರ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<displayName>ಮೈಲುಗಳು</displayName>
@@ -7754,9 +8026,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>ಪ್ರತಿ ಅಂಗುಲಕ್ಕೆ {0}</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
-				<displayName>ಪಾರ್‌‍ಸೆಕೆಂ</displayName>
+				<displayName>ಪಾರ್‌ಸೆಕೆಂಡ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಪಾರ್‌ಸೆಕೆಂ</unitPattern>
-				<unitPattern count="other">{0} ಪಾರ್‌ಸೆಕೆಂ</unitPattern>
+				<unitPattern count="other">{0} ಪಾರ್‌ಸೆಕೆಂಡ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="length-light-year">
 				<displayName>ಬೆಳಕಿನ ವರ್ಷಗಳು</displayName>
@@ -7784,20 +8056,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ನಾಟಿಕಲ್ ಮೈಲುಗಳು</unitPattern>
 			</unit>
 			<unit type="length-mile-scandinavian">
-				<gender draft="contributed">neuter</gender>
-				<displayName>ಸ್ಕ್ಯಾಂಡಿನೇವಿಯನ್-ಮೈಲು</displayName>
+				<gender>neuter</gender>
+				<displayName>ಸ್ಕ್ಯಾಂಡಿನೇವಿಯನ್-ಮೈಲುಗಳು</displayName>
 				<unitPattern count="one">{0} ಸ್ಕ್ಯಾಂಡಿನೇವಿಯನ್-ಮೈಲು</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಸ್ಕ್ಯಾಂಡಿನೇವಿಯನ್-ಮೈಲನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಸ್ಕ್ಯಾಂಡಿನೇವಿಯನ್-ಮೈಲ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಸ್ಕ್ಯಾಂಡಿನೇವಿಯನ್-ಮೈಲ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಸ್ಕ್ಯಾಂಡಿನೇವಿಯನ್-ಮೈಲ್‌ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಸ್ಕ್ಯಾಂಡಿನೇವಿಯನ್-ಮೈಲು</unitPattern>
 				<unitPattern count="other">{0} ಸ್ಕ್ಯಾಂಡಿನೇವಿಯನ್-ಮೈಲುಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಸ್ಕ್ಯಾಂಡಿನೇವಿಯನ್-ಮೈಲುಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಸ್ಕ್ಯಾಂಡಿನೇವಿಯನ್-ಮೈಲುಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಸ್ಕ್ಯಾಂಡಿನೇವಿಯನ್-ಮೈಲುಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಸ್ಕ್ಯಾಂಡಿನೇವಿಯನ್-ಮೈಲುಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ಸ್ಕ್ಯಾಂಡಿನೇವಿಯನ್-ಮೈಲುಗಳು</unitPattern>
 			</unit>
 			<unit type="length-point">
 				<displayName>ಪಾಯಿಂಟ್ಸ್</displayName>
@@ -7810,31 +8080,29 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ಸೋಲಾರ್‌ ರೇಡಿ</unitPattern>
 			</unit>
 			<unit type="light-lux">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಲಕ್ಸ್‌‌</displayName>
 				<unitPattern count="one">{0} ಲಕ್ಸ್‌‌</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಲಕ್ಸ್‌‌ ಅನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಲಕ್ಸ್‌‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಲಕ್ಸ್‌‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಲಕ್ಸ್‌‌ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಲಕ್ಸ್‌‌</unitPattern>
 				<unitPattern count="other">{0} ಲಕ್ಸ್‌‌</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಲಕ್ಸ್‌‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಲಕ್ಸ್‌‌ಗಳಿಗೆ</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} ಲಕ್ಸ್‌‌ಗಳ</unitPattern>
-				<unitPattern count="other" case="locative" draft="contributed">{0} ಲಕ್ಸ್‌‌ಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಲಕ್ಸ್‌‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಲಕ್ಸ್‌‌ಗಳಲ್ಲಿ</unitPattern>
 				<unitPattern count="other" case="vocative">{0} ಲಕ್ಸ್‌‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="light-candela">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಕ್ಯಾಂಡಿಲಾ</displayName>
-				<unitPattern count="one" draft="contributed">{0} ಕ್ಯಾಂಡಿಲಾ</unitPattern>
+				<unitPattern count="one">{0} ಕ್ಯಾಂಡಿಲಾವು</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಕ್ಯಾಂಡಿಲಾವನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಕ್ಯಾಂಡಿಲಾಕ್ಕೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಕ್ಯಾಂಡಿಲಾದ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಕ್ಯಾಂಡಿಲಾದಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಕ್ಯಾಂಡಿಲಾ</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} ಕ್ಯಾಂಡಿಲಾ</unitPattern>
+				<unitPattern count="other">{0} ಕ್ಯಾಂಡಿಲಾ</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಕ್ಯಾಂಡಿಲಾಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಕ್ಯಾಂಡಿಲಾಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಕ್ಯಾಂಡಿಲಾಗಳ</unitPattern>
@@ -7842,15 +8110,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="vocative" draft="contributed">{0} ಕ್ಯಾಂಡಿಲಾಗಳು</unitPattern>
 			</unit>
 			<unit type="light-lumen">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಲೂಮೆನ್</displayName>
 				<unitPattern count="one">{0} ಲೂಮೆನ್</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಲೂಮೆನ್ ಅನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಲೂಮೆನ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಲೂಮೆನ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಲೂಮೆನ್‌ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಲೂಮೆನ್</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} ಲೂಮೆನ್</unitPattern>
+				<unitPattern count="other">{0} ಲೂಮೆನ್</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಲೂಮೆನ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಲೂಮೆನ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಲೂಮೆನ್‌ಗಳ</unitPattern>
@@ -7863,64 +8130,76 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ಸೌರ ಪ್ರಕಾಶಗಳು</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಮೆಟ್ರಿಕ್‌‌ ಟನ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಮೆಟ್ರಿಕ್‌ ಟನ್‌</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಮೆಟ್ರಿಕ್‌ ಟನ್‌ ಅನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಮೆಟ್ರಿಕ್‌ ಟನ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಮೆಟ್ರಿಕ್‌ ಟನ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಮೆಟ್ರಿಕ್‌ ಟನ್‌ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಮೆಟ್ರಿಕ್‌ ಟನ್‌</unitPattern>
 				<unitPattern count="other">{0} ಮೆಟ್ರಿಕ್‌‌ ಟನ್‌‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಮೆಟ್ರಿಕ್‌‌ ಟನ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಮೆಟ್ರಿಕ್‌‌ ಟನ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಮೆಟ್ರಿಕ್‌‌ ಟನ್‌‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಮೆಟ್ರಿಕ್‌‌ ಟನ್‌‌ಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ಮೆಟ್ರಿಕ್‌‌ ಟನ್‌‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಕಿಲೋಗ್ರಾಂಗಳು</displayName>
 				<unitPattern count="one">{0} ಕಿಲೋಗ್ರಾಂ</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಕಿಲೋಗ್ರಾಂ ಅನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಕಿಲೋಗ್ರಾಂಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಕಿಲೋಗ್ರಾಂನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಕಿಲೋಗ್ರಾಂನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಕಿಲೋಗ್ರಾಂ</unitPattern>
 				<unitPattern count="other">{0} ಕಿಲೋಗ್ರಾಂಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಕಿಲೋಗ್ರಾಂಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಕಿಲೋಗ್ರಾಂಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಕಿಲೋಗ್ರಾಂಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಕಿಲೋಗ್ರಾಂಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ಕಿಲೋಗ್ರಾಂಗಳು</unitPattern>
 				<perUnitPattern>{0} ಪ್ರತಿ ಕಿಲೋಗ್ರಾಂಗೆ</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಗ್ರಾಂಗಳು</displayName>
 				<unitPattern count="one">{0} ಗ್ರಾಂ</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಗ್ರಾಂ ಅನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಗ್ರಾಂ ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಗ್ರಾಂ ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಗ್ರಾಂ ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಗ್ರಾಂ</unitPattern>
 				<unitPattern count="other">{0} ಗ್ರಾಂಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಗ್ರಾಂಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಗ್ರಾಂಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಗ್ರಾಂಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಗ್ರಾಂಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ಗ್ರಾಂಗಳು</unitPattern>
 				<perUnitPattern>{0} ಪ್ರತಿ ಗ್ರಾಂಗೆ</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
+				<gender>neuter</gender>
 				<displayName>ಮಿಲಿ ಗ್ರಾಂಗಳು</displayName>
 				<unitPattern count="one">{0} ಮಿಲಿ ಗ್ರಾಂ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಮಿಲಿ ಗ್ರಾಂ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಮಿಲಿ ಗ್ರಾಂಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಮಿಲಿ ಗ್ರಾಂನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಮಿಲಿ ಗ್ರಾಂನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಮಿಲಿ ಗ್ರಾಂಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಮಿಲಿ ಗ್ರಾಂಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಮಿಲಿ ಗ್ರಾಂಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಮಿಲಿ ಗ್ರಾಂಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಮಿಲಿ ಗ್ರಾಂಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
+				<gender>neuter</gender>
 				<displayName>ಮೈಕ್ರೋ ಗ್ರಾಂಗಳು</displayName>
 				<unitPattern count="one">{0} ಮೈಕ್ರೋ ಗ್ರಾಂ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಮೈಕ್ರೋ ಗ್ರಾಂ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಮೈಕ್ರೋ ಗ್ರಾಂಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಮೈಕ್ರೋ ಗ್ರಾಂನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಮೈಕ್ರೋ ಗ್ರಾಂನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಮೈಕ್ರೋ ಗ್ರಾಂಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಮೈಕ್ರೋ ಗ್ರಾಂಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಮೈಕ್ರೋ ಗ್ರಾಂಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಮೈಕ್ರೋ ಗ್ರಾಂಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಮೈಕ್ರೋ ಗ್ರಾಂಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>ಟನ್‌ಗಳು</displayName>
@@ -7950,20 +8229,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ಟ್ರಾಯ್ ಔನ್ಸ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="mass-carat">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಕ್ಯಾರೆಟ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಕ್ಯಾರೆಟ್‌</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಕ್ಯಾರೆಟ್‌ ಅನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಕ್ಯಾರೆಟ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಕ್ಯಾರೆಟ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಕ್ಯಾರೆಟ್‌ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಕ್ಯಾರೆಟ್‌</unitPattern>
 				<unitPattern count="other">{0} ಕ್ಯಾರೆಟ್‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಕ್ಯಾರೆಟ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಕ್ಯಾರೆಟ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಕ್ಯಾರೆಟ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಕ್ಯಾರೆಟ್‌ಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ಕ್ಯಾರೆಟ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
 				<displayName>ಡಿಎ</displayName>
@@ -7971,14 +8248,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ಡಿಎ</unitPattern>
 			</unit>
 			<unit type="mass-earth-mass">
-				<displayName>ಭೂಮಿಯ ದೃವ್ಯರಾಶಿ</displayName>
-				<unitPattern count="one">{0} ಭೂಮಿಯ ದೃವ್ಯರಾಶಿ</unitPattern>
-				<unitPattern count="other">{0} ಭೂಮಿಯ ದೃವ್ಯರಾಶಿ</unitPattern>
+				<displayName>ಭೂಮಿಯ ದ್ರವ್ಯರಾಶಿಗಳು</displayName>
+				<unitPattern count="one">{0} ಭೂಮಿಯ ದ್ರವ್ಯರಾಶಿ</unitPattern>
+				<unitPattern count="other">{0} ಭೂಮಿಯ ದ್ರವ್ಯರಾಶಿಗಳು</unitPattern>
 			</unit>
 			<unit type="mass-solar-mass">
 				<displayName>ಸೋಲಾರ್‌ ಮಾಸ್‌</displayName>
 				<unitPattern count="one">{0} ಸೋಲಾರ್‌ ಮಾಸ್‌</unitPattern>
-				<unitPattern count="other">{0} ಸೋಲಾರ್‌ ಮಾಸಸ್‌</unitPattern>
+				<unitPattern count="other">{0} ಸೋಲಾರ್ ಮಾಸ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="mass-grain">
 				<displayName>ಗ್ರೇನ್</displayName>
@@ -7986,40 +8263,74 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ಗ್ರೇನ್</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
+				<gender>neuter</gender>
 				<displayName>ಗಿಗಾವ್ಯಾಟ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಗಿಗಾವ್ಯಾಟ್‌</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಗಿಗಾವ್ಯಾಟ್‌ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಗಿಗಾವ್ಯಾಟ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಗಿಗಾವ್ಯಾಟ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಗಿಗಾವ್ಯಾಟ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಗಿಗಾವ್ಯಾಟ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಗಿಗಾವ್ಯಾಟ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಗಿಗಾವ್ಯಾಟ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಗಿಗಾವ್ಯಾಟ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಗಿಗಾವ್ಯಾಟ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="power-megawatt">
+				<gender>neuter</gender>
 				<displayName>ಮೆಗಾವ್ಯಾಟ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಮೆಗಾವ್ಯಾಟ್‌</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಮೆಗಾವ್ಯಾಟ್‌ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಮೆಗಾವ್ಯಾಟ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಮೆಗಾವ್ಯಾಟ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಮೆಗಾವ್ಯಾಟ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಮೆಗಾವ್ಯಾಟ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಮೆಗಾವ್ಯಾಟ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಮೆಗಾವ್ಯಾಟ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಮೆಗಾವ್ಯಾಟ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಮೆಗಾವ್ಯಾಟ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
+				<gender>neuter</gender>
 				<displayName>ಕಿಲೋವ್ಯಾಟ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಕಿಲೋವ್ಯಾಟ್</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಕಿಲೋವ್ಯಾಟ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಕಿಲೋವ್ಯಾಟ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಕಿಲೋವ್ಯಾಟ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಕಿಲೋವ್ಯಾಟ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಕಿಲೋವ್ಯಾಟ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಕಿಲೋವ್ಯಾಟ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಕಿಲೋವ್ಯಾಟ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಕಿಲೋವ್ಯಾಟ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಕಿಲೋವ್ಯಾಟ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="power-watt">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ವ್ಯಾಟ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ವ್ಯಾಟ್</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ವ್ಯಾಟ್ ಅನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ವ್ಯಾಟ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ವ್ಯಾಟ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ವ್ಯಾಟ್‌ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ವ್ಯಾಟ್</unitPattern>
 				<unitPattern count="other">{0} ವ್ಯಾಟ್‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ವ್ಯಾಟ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ವ್ಯಾಟ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ವ್ಯಾಟ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ವ್ಯಾಟ್‌ಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ವ್ಯಾಟ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="power-milliwatt">
+				<gender>neuter</gender>
 				<displayName>ಮಿಲಿವ್ಯಾಟ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಮಿಲಿವ್ಯಾಟ್‌</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಮಿಲಿವ್ಯಾಟ್‌ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಮಿಲಿವ್ಯಾಟ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಮಿಲಿವ್ಯಾಟ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಮಿಲಿವ್ಯಾಟ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಮಿಲಿವ್ಯಾಟ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಮಿಲಿವ್ಯಾಟ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಮಿಲಿವ್ಯಾಟ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಮಿಲಿವ್ಯಾಟ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಮಿಲಿವ್ಯಾಟ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="power-horsepower">
 				<displayName>ಹಾರ್ಸ್‌ಪವರ್</displayName>
@@ -8032,9 +8343,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ಮರ್ಕ್ಯುರಿ ಮಿಲಿಮೀಟರ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
-				<displayName>ಪ್ರತಿ ಚದರ ಇಂಚಿಗೆ ಪೌಂಡ್‌ಗಳು</displayName>
-				<unitPattern count="one">{0} ಪ್ರತಿ ಚದರ ಇಂಚಿಗೆ ಪೌಂಡ್‌</unitPattern>
-				<unitPattern count="other">{0} ಪ್ರತಿ ಚದರ ಇಂಚಿಗೆ ಪೌಂಡ್‌ಗಳು</unitPattern>
+				<displayName>ಪೌಂಡ್ಸ್-ಫೋರ್ಸ್ ಪ್ರತಿ ಚದರ ಇಂಚಿಗೆ</displayName>
+				<unitPattern count="one">{0} ಪೌಂಡ್-ಫೋರ್ಸ್ ಪ್ರತಿ ಚದರ ಇಂಚಿಗೆ</unitPattern>
+				<unitPattern count="other">{0} ಪೌಂಡ್-ಫೋರ್ಸ್ ಪ್ರತಿ ಚದರ ಇಂಚಿಗೆ</unitPattern>
 			</unit>
 			<unit type="pressure-inch-ofhg">
 				<displayName>ಮರ್ಕ್ಯುರಿ ಅಂಗುಲಗಳು</displayName>
@@ -8042,82 +8353,132 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ಮರ್ಕ್ಯುರಿ ಅಂಗುಲಗಳು</unitPattern>
 			</unit>
 			<unit type="pressure-bar">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಬಾರ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಬಾರ್‌</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಬಾರ್‌ ಅನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಬಾರ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಬಾರ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಬಾರ್‌ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಬಾರ್‌</unitPattern>
 				<unitPattern count="other">{0} ಬಾರ್‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಬಾರ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಬಾರ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಬಾರ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಬಾರ್‌ಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ಬಾರ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
+				<gender>neuter</gender>
 				<displayName>ಮಿಲಿಬಾರ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಮಿಲಿಬಾರ್</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಮಿಲಿಬಾರ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಮಿಲಿಬಾರ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಮಿಲಿಬಾರ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಮಿಲಿಬಾರ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಮಿಲಿಬಾರ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಮಿಲಿಬಾರ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಮಿಲಿಬಾರ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಮಿಲಿಬಾರ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಮಿಲಿಬಾರ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="pressure-atmosphere">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ವಾತಾವರಣಗಳು</displayName>
 				<unitPattern count="one">{0} ವಾತಾವರಣ</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ವಾತಾವರಣವನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ವಾತಾವರಣಕ್ಕೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ವಾತಾವರಣದ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ವಾತಾವರಣದಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ವಾತಾವರಣ</unitPattern>
 				<unitPattern count="other">{0} ವಾತಾವರಣಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ವಾತಾವರಣಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ವಾತಾವರಣಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ವಾತಾವರಣಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ವಾತಾವರಣಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ವಾತಾವರಣಗಳು</unitPattern>
 			</unit>
 			<unit type="pressure-pascal">
-				<gender draft="contributed">neuter</gender>
-				<displayName>ಪ್ಯಾಸ್ಕಲ್ಸ್</displayName>
-				<unitPattern count="one">{0} ಪ್ಯಾಸ್ಕಲ್</unitPattern>
-				<unitPattern count="one" case="accusative">{0} ಪ್ಯಾಸ್ಕಲ್ ಅನ್ನು</unitPattern>
-				<unitPattern count="one" case="dative">{0} ಪ್ಯಾಸ್ಕಲ್‌ಗೆ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} ಪ್ಯಾಸ್ಕಲ್‌ನ</unitPattern>
-				<unitPattern count="one" case="locative">{0} ಪ್ಯಾಸ್ಕಲ್‌ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಪ್ಯಾಸ್ಕಲ್</unitPattern>
-				<unitPattern count="other">{0} ಪ್ಯಾಸ್ಕಲ್ಸ್</unitPattern>
-				<unitPattern count="other" case="accusative">{0} ಪ್ಯಾಸ್ಕಲ್‌ಗಳನ್ನು</unitPattern>
-				<unitPattern count="other" case="dative">{0} ಪ್ಯಾಸ್ಕಲ್‌ಗಳಿಗೆ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} ಪ್ಯಾಸ್ಕಲ್‌ಗಳ</unitPattern>
-				<unitPattern count="other" case="locative">{0} ಪ್ಯಾಸ್ಕಲ್‌ಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ಪ್ಯಾಸ್ಕಲ್ಸ್</unitPattern>
+				<gender>neuter</gender>
+				<displayName>ಪಾಸ್ಕಲ್‌ಗಳು</displayName>
+				<unitPattern count="one">{0} ಪಾಸ್ಕಲ್‌</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಪಾಸ್ಕಲ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಪಾಸ್ಕಲ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಪಾಸ್ಕಲ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಪಾಸ್ಕಲ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಪಾಸ್ಕಲ್‌</unitPattern>
+				<unitPattern count="other">{0} ಪಾಸ್ಕಲ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಪಾಸ್ಕಲ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಪಾಸ್ಕಲ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಪಾಸ್ಕಲ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಪಾಸ್ಕಲ್‌ಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಪಾಸ್ಕಲ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
+				<gender>neuter</gender>
 				<displayName>ಹೆಕ್ಟೋಪ್ಯಾಸ್ಕಲ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಹೆಕ್ಟೋಪ್ಯಾಸ್ಕಲ್</unitPattern>
-				<unitPattern count="other">{0} ಹೆಕ್ಟೋಪ್ಯಾಸ್ಕಲ್‌ಗಳು</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಹೆಕ್ಟೋಪ್ಯಾಸ್ಕಲ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಹೆಕ್ಟೋಪ್ಯಾಸ್ಕಲ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಹೆಕ್ಟೋಪ್ಯಾಸ್ಕಲ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಹೆಕ್ಟೋಪ್ಯಾಸ್ಕಲ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="other">{0} ಹೆಕ್ಟೋಪಾಸ್ಕಲ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಹೆಕ್ಟೋಪ್ಯಾಸ್ಕಲ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಹೆಕ್ಟೋಪ್ಯಾಸ್ಕಲ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಹೆಕ್ಟೋಪ್ಯಾಸ್ಕಲ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಹೆಕ್ಟೋಪ್ಯಾಸ್ಕಲ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
+				<gender>neuter</gender>
 				<displayName>ಕಿಲೋಪಾಸ್ಕಲ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಕಿಲೋಪಾಸ್ಕಲ್‌</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಕಿಲೋಪಾಸ್ಕಲ್‌ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಕಿಲೋಪಾಸ್ಕಲ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಕಿಲೋಪಾಸ್ಕಲ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಕಿಲೋಪಾಸ್ಕಲ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಕಿಲೋಪಾಸ್ಕಲ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಕಿಲೋಪಾಸ್ಕಲ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಕಿಲೋಪಾಸ್ಕಲ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಕಿಲೋಪಾಸ್ಕಲ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಕಿಲೋಪಾಸ್ಕಲ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="pressure-megapascal">
+				<gender>neuter</gender>
 				<displayName>ಮೆಗಾಪಾಸ್ಕಲ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಮೆಗಾಪಾಸ್ಕಲ್‌</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಮೆಗಾಪಾಸ್ಕಲ್‌ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಮೆಗಾಪಾಸ್ಕಲ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಮೆಗಾಪಾಸ್ಕಲ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಮೆಗಾಪಾಸ್ಕಲ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಮೆಗಾಪಾಸ್ಕಲ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಮೆಗಾಪಾಸ್ಕಲ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಮೆಗಾಪಾಸ್ಕಲ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಮೆಗಾಪಾಸ್ಕಲ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಮೆಗಾಪಾಸ್ಕಲ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
+				<gender>neuter</gender>
 				<displayName>ಕಿಲೋಮೀಟರ್‌ಗಳು ಪ್ರತಿ ಗಂಟೆಗೆ</displayName>
-				<unitPattern count="one">{0} ಕಿಲೋಮಿಟರ್ ಪ್ರತಿ ಗಂಟೆಗೆ</unitPattern>
-				<unitPattern count="other">{0} ಕಿಲೋಮಿಟರ್‌ಗಳು ಪ್ರತಿ ಗಂಟೆಗೆ</unitPattern>
+				<unitPattern count="one">{0} ಕಿಲೋಮೀಟರ್ ಪ್ರತಿ ಗಂಟೆಗೆ</unitPattern>
+				<unitPattern count="one" case="accusative">{0}ಕಿಲೋಮೀಟರ್ ಪ್ರತಿ ಗಂಟೆಯನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಕಿಲೋಮೀಟರ್ ಪ್ರತಿ ಗಂಟೆಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಕಿಲೋಮೀಟರ್ ಪ್ರತಿ ಗಂಟೆಯ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಕಿಲೋಮೀಟರ್ ಪ್ರತಿ ಗಂಟೆಯಲ್ಲಿ</unitPattern>
+				<unitPattern count="other">{0} ಕಿಲೋಮೀಟರ್‌ಗಳು ಪ್ರತಿ ಗಂಟೆಗೆ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಕಿಲೋಮೀಟರ್‌ಗಳು ಪ್ರತಿ ಗಂಟೆಯನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಕಿಲೋಮೀಟರ್‌ಗಳು ಪ್ರತಿ ಗಂಟೆಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಕಿಲೋಮೀಟರ್‌ಗಳು ಪ್ರತಿ ಗಂಟೆಯ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಕಿಲೋಮೀಟರ್‌ಗಳು ಪ್ರತಿ ಗಂಟೆಯಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
+				<gender>neuter</gender>
 				<displayName>ಮೀಟರ್‌ಗಳು ಪ್ರತಿ ಸೆಕೆಂಡ್‌ಗೆ</displayName>
 				<unitPattern count="one">{0} ಮೀಟರ್‌ ಪ್ರತಿ ಸೆಕೆಂಡ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಮೀಟರ್‌ ಪ್ರತಿ ಸೆಕೆಂಡ್‌ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಮೀಟರ್‌ ಪ್ರತಿ ಸೆಕೆಂಡ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಮೀಟರ್‌ ಪ್ರತಿ ಸೆಕೆಂಡ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಮೀಟರ್‌ ಪ್ರತಿ ಸೆಕೆಂಡ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಮೀಟರ್‌ಗಳು ಪ್ರತಿ ಸೆಕೆಂಡ್‌ಗೆ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಮೀಟರ್‌ಗಳು ಪ್ರತಿ ಸೆಕೆಂಡ್‌ ಅನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಮೀಟರ್‌ಗಳು ಪ್ರತಿ ಸೆಕೆಂಡ್‌ಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಮೀಟರ್‌ಗಳು ಪ್ರತಿ ಸೆಕೆಂಡ್‌ನ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಮೀಟರ್‌ಗಳು ಪ್ರತಿ ಸೆಕೆಂಡ್‌ನಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
 				<displayName>ಮೈಲುಗಳು ಪ್ರತಿ ಗಂಟೆಗೆ</displayName>
@@ -8130,9 +8491,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ನಾಟ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="temperature-generic">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>°</displayName>
-				<unitPattern count="one">{0}°</unitPattern>
+				<unitPattern count="one">{0} ಡಿಗ್ರಿ</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಡಿಗ್ರಿಯನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಡಿಗ್ರಿಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಡಿಗ್ರಿಯ</unitPattern>
@@ -8146,20 +8507,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="vocative">{0} ಡಿಗ್ರಿಗಳು</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಡಿಗ್ರಿ ಸೆಲ್ಶಿಯಸ್</displayName>
 				<unitPattern count="one">{0} ಡಿಗ್ರಿ ಸೆಲ್ಶಿಯಸ್</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಡಿಗ್ರಿ ಸೆಲ್ಶಿಯಸ್ ಅನ್ನು</unitPattern>
-				<unitPattern count="one" case="dative">{0} ಡಿಗ್ರಿ ಸೆಲ್ಶಿಯಸ್ ಗೆ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} ಡಿಗ್ರಿ ಸೆಲ್ಶಿಯಸ್ ನ</unitPattern>
-				<unitPattern count="one" case="locative">{0} ಡಿಗ್ರಿ ಸೆಲ್ಶಿಯಸ್ ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಡಿಗ್ರಿ ಸೆಲ್ಶಿಯಸ್</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಡಿಗ್ರಿ ಸೆಲ್ಶಿಯಸ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಡಿಗ್ರಿ ಸೆಲ್ಶಿಯಸ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಡಿಗ್ರಿ ಸೆಲ್ಶಿಯಸ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಡಿಗ್ರಿ ಸೆಲ್ಶಿಯಸ್</unitPattern>
-				<unitPattern count="other" case="accusative">{0} ಡಿಗ್ರಿ ಸೆಲ್ಶಿಯಸ್ ಗಳನ್ನು</unitPattern>
-				<unitPattern count="other" case="dative">{0} ಡಿಗ್ರಿ ಸೆಲ್ಶಿಯಸ್ ಗಳಿಗೆ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} ಡಿಗ್ರಿ ಸೆಲ್ಶಿಯಸ್ ಗಳ</unitPattern>
-				<unitPattern count="other" case="locative">{0} ಡಿಗ್ರಿ ಸೆಲ್ಶಿಯಸ್ ಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ಡಿಗ್ರಿ ಸೆಲ್ಶಿಯಸ್</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಡಿಗ್ರಿ ಸೆಲ್ಶಿಯಸ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಡಿಗ್ರಿ ಸೆಲ್ಶಿಯಸ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಡಿಗ್ರಿ ಸೆಲ್ಶಿಯಸ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಡಿಗ್ರಿ ಸೆಲ್ಶಿಯಸ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<displayName>ಡಿಗ್ರಿ ಫ್ಯಾರೆನ್‌ಹಿಟ್</displayName>
@@ -8167,46 +8526,80 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}ಡಿಗ್ರಿ ಫ್ಯಾರೆನ್‌ಹಿಟ್</unitPattern>
 			</unit>
 			<unit type="temperature-kelvin">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಕೆಲ್ವಿನ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಕೆಲ್ವಿನ್</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಕೆಲ್ವಿನ್ ಅನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಕೆಲ್ವಿನ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಕೆಲ್ವಿನ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಕೆಲ್ವಿನ್‌ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಕೆಲ್ವಿನ್</unitPattern>
 				<unitPattern count="other">{0} ಕೆಲ್ವಿನ್‍ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಕೆಲ್ವಿನ್‍ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಕೆಲ್ವಿನ್‍ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಕೆಲ್ವಿನ್‍ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಕೆಲ್ವಿನ್‍ಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ಕೆಲ್ವಿನ್‍ಗಳು</unitPattern>
 			</unit>
 			<unit type="torque-pound-force-foot">
-				<displayName>ಪೌಂಡ್-ಅಡಿ</displayName>
-				<unitPattern count="one">{0} ಪೌಂಡ್-ಅಡಿ</unitPattern>
-				<unitPattern count="other">{0} ಪೌಂಡ್-ಅಡಿ</unitPattern>
+				<displayName>ಪೌಂಡ್-ಫೋರ್ಸ್-ಅಡಿ</displayName>
+				<unitPattern count="one">{0} ಪೌಂಡ್-ಫೋರ್ಸ್-ಅಡಿ</unitPattern>
+				<unitPattern count="other">{0} ಪೌಂಡ್-ಫೋರ್ಸ್-ಅಡಿ</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
+				<gender>neuter</gender>
 				<displayName>ನ್ಯೂಟನ್-ಮೀಟರ್</displayName>
 				<unitPattern count="one">{0} ನ್ಯೂಟನ್-ಮೀಟರ್</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ನ್ಯೂಟನ್-ಮೀಟರ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ನ್ಯೂಟನ್-ಮೀಟರ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ನ್ಯೂಟನ್-ಮೀಟರ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ನ್ಯೂಟನ್-ಮೀಟರ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ನ್ಯೂಟನ್-ಮೀಟರ್</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ನ್ಯೂಟನ್-ಮೀಟರ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ನ್ಯೂಟನ್-ಮೀಟರ್‌ಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ನ್ಯೂಟನ್-ಮೀಟರ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ನ್ಯೂಟನ್-ಮೀಟರ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
+				<gender>neuter</gender>
 				<displayName>ಘನ ಕಿಲೋಮೀಟರ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಘನ ಕಿಲೋಮೀಟರ್</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಘನ ಕಿಲೋಮೀಟರ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಘನ ಕಿಲೋಮೀಟರ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಘನ ಕಿಲೋಮೀಟರ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಘನ ಕಿಲೋಮೀಟರ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಘನ ಕಿಲೋಮೀಟರ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಘನ ಕಿಲೋಮೀಟರ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಘನ ಕಿಲೋಮೀಟರ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಘನ ಕಿಲೋಮೀಟರ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಘನ ಕಿಲೋಮೀಟರ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="volume-cubic-meter">
+				<gender>neuter</gender>
 				<displayName>ಘನ ಮೀಟರುಗಳು</displayName>
 				<unitPattern count="one">{0} ಘನ ಮೀಟರ್</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಘನ ಮೀಟರ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಘನ ಮೀಟರ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಘನ ಮೀಟರ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಘನ ಮೀಟರ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಘನ ಮೀಟರುಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಘನ ಮೀಟರುಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಘನ ಮೀಟರ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಘನ ಮೀಟರುಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಘನ ಮೀಟರುಗಳಲ್ಲಿ</unitPattern>
 				<perUnitPattern>{0} ಪ್ರತಿ ಘನ ಮೀಟರುಗಳಿಗೆ</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
+				<gender>neuter</gender>
 				<displayName>ಕ್ಯೂಬಿಕ್ ಸೆಂಟಿಮೀಟರ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಕ್ಯೂಬಿಕ್ ಸೆಂಟಿಮೀಟರ್</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಕ್ಯೂಬಿಕ್ ಸೆಂಟಿಮೀಟರ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಕ್ಯೂಬಿಕ್ ಸೆಂಟಿಮೀಟರ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಕ್ಯೂಬಿಕ್ ಸೆಂಟಿಮೀಟರ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಕ್ಯೂಬಿಕ್ ಸೆಂಟಿಮೀಟರ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಕ್ಯೂಬಿಕ್ ಸೆಂಟಿಮೀಟರ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಕ್ಯೂಬಿಕ್ ಸೆಂಟಿಮೀಟರ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಕ್ಯೂಬಿಕ್ ಸೆಂಟಿಮೀಟರ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಕ್ಯೂಬಿಕ್ ಸೆಂಟಿಮೀಟರ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಕ್ಯೂಬಿಕ್ ಸೆಂಟಿಮೀಟರ್‌ಗಳಲ್ಲಿ</unitPattern>
 				<perUnitPattern>ಪ್ರತಿ ಕ್ಯೂಬಿಕ್ ಸೆಂಟಿಮೀಟರ್‌ಗಳಿಗೆ {0}</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
@@ -8230,78 +8623,117 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ಘನ ಅಂಗುಲಗಳು</unitPattern>
 			</unit>
 			<unit type="volume-megaliter">
+				<gender>neuter</gender>
 				<displayName>ಮೆಗಾ ಲೀಟರ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಮೆಗಾ ಲೀಟರ್‌</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಮೆಗಾ ಲೀಟರ್‌ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಮೆಗಾ ಲೀಟರ್‌ನ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಮೆಗಾ ಲೀಟರ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಮೆಗಾ ಲೀಟರ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಮೆಗಾ ಲೀಟರ್‌‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಮೆಗಾ ಲೀಟರ್‌‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಮೆಗಾ ಲೀಟರ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಮೆಗಾ ಲೀಟರ್‌‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಮೆಗಾ ಲೀಟರ್‌‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="volume-hectoliter">
+				<gender>neuter</gender>
 				<displayName>ಹೆಕ್ಟೋಲೀಟರ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಹೆಕ್ಟೋಲೀಟರ್</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಹೆಕ್ಟೋಲೀಟರ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಹೆಕ್ಟೋಲೀಟರ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಹೆಕ್ಟೋಲೀಟರ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಹೆಕ್ಟೋಲೀಟರ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಹೆಕ್ಟೋಲೀಟರ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಹೆಕ್ಟೋಲೀಟರ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಹೆಕ್ಟೋಲೀಟರ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಹೆಕ್ಟೋಲೀಟರ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಹೆಕ್ಟೋಲೀಟರ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="volume-liter">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಲೀಟರ್‌‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಲೀಟರ್</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಲೀಟರನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಲೀಟರ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಲೀಟರ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಲೀಟರ್‌ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಲೀಟರ್</unitPattern>
 				<unitPattern count="other">{0} ಲೀಟರ್‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಲೀಟರ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಲೀಟರ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಲೀಟರ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಲೀಟರ್‌ಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ಲೀಟರ್‌ಗಳು</unitPattern>
 				<perUnitPattern>ಪ್ರತಿ ಲೀಟರ್‌ಗೆ {0}</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
+				<gender>neuter</gender>
 				<displayName>ಡೆಸಿಲೀಟರ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಡೆಸಿಲೀಟರ್‌</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಡೆಸಿಲೀಟರ್‌ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಡೆಸಿಲೀಟರ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಡೆಸಿಲೀಟರ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಡೆಸಿಲೀಟರಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಡೆಸಿಲೀಟರ್‌‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಡೆಸಿಲೀಟರ್‌‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಡೆಸಿಲೀಟರ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಡೆಸಿಲೀಟರ್‌‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಡೆಸಿಲೀಟರ್‌‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="volume-centiliter">
+				<gender>neuter</gender>
 				<displayName>ಸೆಂಟಿಲೀಟರ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಸೆಂಟಿಲೀಟರ್</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಸೆಂಟಿಲೀಟರ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಸೆಂಟಿಲೀಟರ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಸೆಂಟಿಲೀಟರ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಸೆಂಟಿಲೀಟರ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಸೆಂಟಿಲೀಟರ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಸೆಂಟಿಲೀಟರ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಸೆಂಟಿಲೀಟರ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಸೆಂಟಿಲೀಟರ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಸೆಂಟಿಲೀಟರ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="volume-milliliter">
+				<gender>neuter</gender>
 				<displayName>ಮಿಲಿಲೀಟರ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಮಿಲಿಲೀಟರ್</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ಮಿಲಿಲೀಟರ್ ಅನ್ನು</unitPattern>
+				<unitPattern count="one" case="dative">{0} ಮಿಲಿಲೀಟರ್‌ಗೆ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ಮಿಲಿಲೀಟರ್‌ನ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ಮಿಲಿಲೀಟರ್‌ನಲ್ಲಿ</unitPattern>
 				<unitPattern count="other">{0} ಮಿಲಿಲೀಟರ್‌ಗಳು</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ಮಿಲಿಲೀಟರ್‌ಗಳನ್ನು</unitPattern>
+				<unitPattern count="other" case="dative">{0} ಮಿಲಿಲೀಟರ್‌ಗಳಿಗೆ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ಮಿಲಿಲೀಟರ್‌ಗಳ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ಮಿಲಿಲೀಟರ್‌ಗಳಲ್ಲಿ</unitPattern>
 			</unit>
 			<unit type="volume-pint-metric">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಮೆಟ್ರಿಕ್ ಪಿಂಟ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಮೆಟ್ರಿಕ್ ಪಿಂಟ್</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಮೆಟ್ರಿಕ್ ಪಿಂಟನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಮೆಟ್ರಿಕ್ ಪಿಂಟ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಮೆಟ್ರಿಕ್ ಪಿಂಟ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಮೆಟ್ರಿಕ್ ಪಿಂಟ್‌ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಮೆಟ್ರಿಕ್ ಪಿಂಟ್</unitPattern>
 				<unitPattern count="other">{0} ಮೆಟ್ರಿಕ್ ಪಿಂಟ್‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಮೆಟ್ರಿಕ್ ಪಿಂಟ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಮೆಟ್ರಿಕ್ ಪಿಂಟ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಮೆಟ್ರಿಕ್ ಪಿಂಟ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಮೆಟ್ರಿಕ್ ಪಿಂಟ್‌ಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ಮೆಟ್ರಿಕ್ ಪಿಂಟ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>ಮೆಟ್ರಿಕ್‌ ಕಪ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಮೆಟ್ರಿಕ್‌ ಕಪ್‌</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ಮೆಟ್ರಿಕ್‌ ಕಪ್‌ ಅನ್ನು</unitPattern>
 				<unitPattern count="one" case="dative">{0} ಮೆಟ್ರಿಕ್‌ ಕಪ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಮೆಟ್ರಿಕ್‌ ಕಪ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಮೆಟ್ರಿಕ್‌ ಕಪ್‌ನಲ್ಲಿ</unitPattern>
-				<unitPattern count="one" case="vocative">{0} ಮೆಟ್ರಿಕ್‌ ಕಪ್‌</unitPattern>
 				<unitPattern count="other">{0} ಮೆಟ್ರಿಕ್‌ ಕಪ್‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಮೆಟ್ರಿಕ್‌ ಕಪ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಮೆಟ್ರಿಕ್‌ ಕಪ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಮೆಟ್ರಿಕ್‌ ಕಪ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಮೆಟ್ರಿಕ್‌ ಕಪ್‌ಗಳಲ್ಲಿ</unitPattern>
-				<unitPattern count="other" case="vocative">{0} ಮೆಟ್ರಿಕ್‌ ಕಪ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>ಎಕರೆ-ಅಡಿ</displayName>
@@ -8342,13 +8774,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="volume-fluid-ounce">
 				<displayName>ಫ್ಲೂಡ್ ಔನ್ಸ್‌ಗಳು</displayName>
-				<unitPattern count="one">{0} ಫ್ಲೂಡ್ ಔನ್ಸ್‌</unitPattern>
-				<unitPattern count="other">{0} ಫ್ಲೂಡ್ ಔನ್ಸ್‌ಗಳು</unitPattern>
+				<unitPattern count="one">{0} ಫ್ಲೂಯ್ಡ್ ಔನ್ಸ್</unitPattern>
+				<unitPattern count="other">{0} ಫ್ಲೂಯ್ಡ್ ಔನ್ಸ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce-imperial">
-				<displayName>ಇಂಪಿರಿಯಲ್ ಫ್ಲೂಡ್ ಔನ್ಸ್‌ಗಳು</displayName>
-				<unitPattern count="one">{0} ಇಂಪಿರಿಯಲ್ ಫ್ಲೂಡ್ ಔನ್ಸ್‌</unitPattern>
-				<unitPattern count="other">{0} ಇಂಪಿರಿಯಲ್ ಫ್ಲೂಡ್ ಔನ್ಸ್‌ಗಳು</unitPattern>
+				<displayName>ಇಂಪಿರಿಯಲ್ ಫ್ಲೂಯ್ಡ್ ಔನ್ಸ್‌ಗಳು</displayName>
+				<unitPattern count="one">{0} ಇಂಪಿರಿಯಲ್ ಫ್ಲೂಯ್ಡ್ ಔನ್ಸ್‌</unitPattern>
+				<unitPattern count="other">{0} ಇಂಪಿರಿಯಲ್ ಫ್ಲೂಯ್ಡ್ ಔನ್ಸ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>ಟೇಬಲ್ ಸ್ಪೂನ್‍ಗಳು</displayName>

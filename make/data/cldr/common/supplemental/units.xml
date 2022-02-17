@@ -164,21 +164,21 @@ For terms of use, see http://www.unicode.org/copyright.html
         <convertUnit source='parsec' baseUnit='meter' factor='30856780000000000'/>
         
         <!-- time -->
-        <convertUnit source='second' baseUnit='second' systems="si metric ussystem uksystem"/>
-        <convertUnit source='minute' baseUnit='second' factor='60' systems="metric ussystem uksystem"/>
-        <convertUnit source='hour' baseUnit='second' factor='3600' systems="metric ussystem uksystem"/>
-        <convertUnit source='day' baseUnit='second' factor='86400' systems="metric ussystem uksystem"/>
-        <convertUnit source='day-person' baseUnit='second' factor='86400' systems="metric ussystem uksystem"/>
-        <convertUnit source='week' baseUnit='second' factor='604800'/>
+        <convertUnit source='second' baseUnit='second' systems="si metric"/>
+        <convertUnit source='minute' baseUnit='second' factor='60' systems="metric"/>
+        <convertUnit source='hour' baseUnit='second' factor='3600' systems="metric"/>
+        <convertUnit source='day' baseUnit='second' factor='86400' systems="metric"/>
+        <convertUnit source='day-person' baseUnit='second' factor='86400'/>
+        <convertUnit source='week' baseUnit='second' factor='604800' systems="metric"/>
         <convertUnit source='week-person' baseUnit='second' factor='604800'/>
         
         <!-- year-duration -->
-        <convertUnit source='month' baseUnit='year' factor='1/12'/>
+        <convertUnit source='month' baseUnit='year' factor='1/12' systems="metric"/>
         <convertUnit source='month-person' baseUnit='year' factor='1/12'/>
-        <convertUnit source='year' baseUnit='year'/>
+        <convertUnit source='year' baseUnit='year' systems="metric"/>
         <convertUnit source='year-person' baseUnit='year'/>
-        <convertUnit source='decade' baseUnit='year' factor='10'/>
-        <convertUnit source='century' baseUnit='year' factor='100'/>
+        <convertUnit source='decade' baseUnit='year' factor='10' systems="metric"/>
+        <convertUnit source='century' baseUnit='year' factor='100' systems="metric"/>
         
         <!-- electric-current -->
         <convertUnit source='ampere' baseUnit='ampere' systems="metric si"/>
@@ -189,34 +189,34 @@ For terms of use, see http://www.unicode.org/copyright.html
         <convertUnit source='celsius' baseUnit='kelvin' offset='273.15' systems="metric"/>
         
         <!-- angle -->
-        <convertUnit source='arc-second' baseUnit='revolution' factor='1/360*60*60'/>
-        <convertUnit source='arc-minute' baseUnit='revolution' factor='1/360*60'/>
-        <convertUnit source='degree' baseUnit='revolution' factor='1/360'/>
+        <convertUnit source='arc-second' baseUnit='revolution' factor='1/360*60*60' systems="metric"/>
+        <convertUnit source='arc-minute' baseUnit='revolution' factor='1/360*60' systems="metric"/>
+        <convertUnit source='degree' baseUnit='revolution' factor='1/360' systems="metric"/>
         <convertUnit source='radian' baseUnit='revolution' factor='1/2*PI' systems="metric si"/>
-        <convertUnit source='revolution' baseUnit='revolution'/>
+        <convertUnit source='revolution' baseUnit='revolution' systems="metric"/>
         
         <!-- substance-amount -->
-        <convertUnit source='item' baseUnit='item'/>
+        <convertUnit source='item' baseUnit='item' systems="metric"/>
         <convertUnit source='mole' baseUnit='item' factor='item_per_mole' systems="metric si"/>
         
         <!-- portion -->
-        <convertUnit source='permillion' baseUnit='portion' factor='1/1000000'/>
-        <convertUnit source='permyriad' baseUnit='portion' factor='1/10000'/>
-        <convertUnit source='permille' baseUnit='portion' factor='1/1000'/>
-        <convertUnit source='percent' baseUnit='portion' factor='1/100'/>
+        <convertUnit source='permillion' baseUnit='portion' factor='1/1000000' systems="metric"/>
+        <convertUnit source='permyriad' baseUnit='portion' factor='1/10000' systems="metric"/>
+        <convertUnit source='permille' baseUnit='portion' factor='1/1000' systems="metric"/>
+        <convertUnit source='percent' baseUnit='portion' factor='1/100' systems="metric"/>
         <convertUnit source='karat' baseUnit='portion' factor='1/24'/>
         <convertUnit source='portion' baseUnit='portion'/>
         
         <!-- digital -->
-        <convertUnit source='bit' baseUnit='bit'/>
-        <convertUnit source='byte' baseUnit='bit' factor='8'/>
+        <convertUnit source='bit' baseUnit='bit' systems="metric"/>
+        <convertUnit source='byte' baseUnit='bit' factor='8' systems="metric"/>
         
         <!-- graphics -->
         <convertUnit source='dot' baseUnit='pixel'/>
-        <convertUnit source='pixel' baseUnit='pixel'/>
+        <convertUnit source='pixel' baseUnit='pixel' systems="metric"/>
         
         <!-- typewidth -->
-        <convertUnit source='em' baseUnit='em'/>
+        <convertUnit source='em' baseUnit='em' systems="metric"/>
         
         <!-- frequency -->
         <convertUnit source='hertz' baseUnit='revolution-per-second' systems="metric si"/>

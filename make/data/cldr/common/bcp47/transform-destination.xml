@@ -30,6 +30,7 @@
 			<type name="null" description="make no change in the string" since="29"/>
 			<type name="remove" description="remove every character in the string" since="29"/>
 			<type name="zawgyi" description="map Unicode to Zawgyi Myanmar encoding" since="34"/>
+			<type name="morse" description="map Unicode to Morse Code encoding" since="41"/>
 		</key>
 		<key extension="t" name="s0" description="Transform source for non-languages/scripts."  since="29">
 			<type name="accents" description="accented characters to map base + punctuation, etc" since="29"/>
@@ -38,6 +39,7 @@
 			<type name="hex" description="map characters from hex equivalents, trying all variants, eg 'U+0061' to 'a'; for hex variants see transform.xml" since="29"/>
 			<type name="npinyin" description="map the numeric form of pinyin to the tone format" since="29" alias="numericPinyin"/>
 			<type name="zawgyi" description="map Zawgyi Myanmar encoding to Unicode" since="30"/>
+			<type name="morse" description="map Morse Code to Unicode encoding" since="41"/>
 		</key>
 	</keyword>
 </ldmlBCP47>

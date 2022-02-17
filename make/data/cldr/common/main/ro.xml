@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
@@ -6628,7 +6630,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">lari georgieni</displayName>
 				<symbol>GEL</symbol>
 				<symbol alt="narrow">₾</symbol>
-				<symbol alt="variant">₾</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>cedi Ghana (1979–2007)</displayName>
@@ -7821,8 +7822,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<pluralMinimalPairs count="other">{0} de zile</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="one">Faceți virajul nr. {0} la dreapta.</ordinalMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">Faceți virajul al {0}-lea la dreapta.</ordinalMinimalPairs>
-			<caseMinimalPairs case="genitive">... ale (celor) {0} ...</caseMinimalPairs>
-			<caseMinimalPairs case="nominative">{0} este ...</caseMinimalPairs>
+			<caseMinimalPairs case="genitive">… ale (celor) {0} …</caseMinimalPairs>
+			<caseMinimalPairs case="nominative">{0} este/sunt …</caseMinimalPairs>
 			<genderMinimalPairs gender="feminine">O {0} costă 5 €.</genderMinimalPairs>
 			<genderMinimalPairs gender="masculine">Un {0} costă 5 €, doi costă 9 €.</genderMinimalPairs>
 			<genderMinimalPairs gender="neuter">Un {0} costă 5 €, două costă 9 €.</genderMinimalPairs>
@@ -7961,100 +7962,116 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<compoundUnitPattern>{0}-{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>forță g</displayName>
 				<unitPattern count="one">{0} forță g</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} forță g</unitPattern>
+				<unitPattern count="one" case="genitive">{0} forță g</unitPattern>
 				<unitPattern count="few">{0} forță g</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} forță g</unitPattern>
+				<unitPattern count="few" case="genitive">{0} forță g</unitPattern>
 				<unitPattern count="other">{0} forță g</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} forță g</unitPattern>
+				<unitPattern count="other" case="genitive">{0} forță g</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
+				<gender>masculine</gender>
 				<displayName>metri pe secundă la pătrat</displayName>
 				<unitPattern count="one">{0} metru pe secundă la pătrat</unitPattern>
+				<unitPattern count="one" case="genitive">unui metru pe secundă la pătrat</unitPattern>
 				<unitPattern count="few">{0} metri pe secundă la pătrat</unitPattern>
+				<unitPattern count="few" case="genitive">{0} metri pe secundă la pătrat</unitPattern>
 				<unitPattern count="other">{0} de metri pe secundă la pătrat</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de metri pe secundă la pătrat</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
 				<gender>feminine</gender>
 				<displayName>revoluție</displayName>
 				<unitPattern count="one">{0} revoluție</unitPattern>
-				<unitPattern count="one" case="genitive">{0} revoluții</unitPattern>
+				<unitPattern count="one" case="genitive">unei revoluții</unitPattern>
 				<unitPattern count="few">{0} revoluții</unitPattern>
 				<unitPattern count="few" case="genitive">{0} revoluții</unitPattern>
 				<unitPattern count="other">{0} de revoluții</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de revoluții</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de revoluții</unitPattern>
 			</unit>
 			<unit type="angle-radian">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>radiani</displayName>
 				<unitPattern count="one">{0} radian</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} radian</unitPattern>
+				<unitPattern count="one" case="genitive">unui radian</unitPattern>
 				<unitPattern count="few">{0} radiani</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} radiani</unitPattern>
+				<unitPattern count="few" case="genitive">{0} radiani</unitPattern>
 				<unitPattern count="other">{0} de radiani</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de radiani</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de radiani</unitPattern>
 			</unit>
 			<unit type="angle-degree">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>grade</displayName>
 				<unitPattern count="one">{0} grad</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} grad</unitPattern>
+				<unitPattern count="one" case="genitive">unui grad</unitPattern>
 				<unitPattern count="few">{0} grade</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} grade</unitPattern>
+				<unitPattern count="few" case="genitive">{0} grade</unitPattern>
 				<unitPattern count="other">{0} de grade</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de grade</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de grade</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>minute de arc</displayName>
 				<unitPattern count="one">{0} minut de arc</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} minut de arc</unitPattern>
+				<unitPattern count="one" case="genitive">unui minut de arc</unitPattern>
 				<unitPattern count="few">{0} minute de arc</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} minute de arc</unitPattern>
+				<unitPattern count="few" case="genitive">{0} minute de arc</unitPattern>
 				<unitPattern count="other">{0} de minute de arc</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de minute de arc</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de minute de arc</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>secunde de arc</displayName>
 				<unitPattern count="one">{0} secundă de arc</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} secunde de arc</unitPattern>
+				<unitPattern count="one" case="genitive">unei secunde de arc</unitPattern>
 				<unitPattern count="few">{0} secunde de arc</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} secunde de arc</unitPattern>
+				<unitPattern count="few" case="genitive">{0} secunde de arc</unitPattern>
 				<unitPattern count="other">{0} de secunde de arc</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de secunde de arc</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de secunde de arc</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
+				<gender>masculine</gender>
 				<displayName>kilometri pătrați</displayName>
 				<unitPattern count="one">{0} kilometru pătrat</unitPattern>
+				<unitPattern count="one" case="genitive">unui kilometru pătrat</unitPattern>
 				<unitPattern count="few">{0} kilometri pătrați</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilometri pătrați</unitPattern>
 				<unitPattern count="other">{0} de kilometri pătrați</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de kilometri pătrați</unitPattern>
 				<perUnitPattern>{0} pe kilometru pătrat</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>hectare</displayName>
 				<unitPattern count="one">{0} hectar</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} hectar</unitPattern>
+				<unitPattern count="one" case="genitive">unui hectar</unitPattern>
 				<unitPattern count="few">{0} hectare</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} hectare</unitPattern>
+				<unitPattern count="few" case="genitive">{0} hectare</unitPattern>
 				<unitPattern count="other">{0} de hectare</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de hectare</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de hectare</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
+				<gender>masculine</gender>
 				<displayName>metri pătrați</displayName>
 				<unitPattern count="one">{0} metru pătrat</unitPattern>
+				<unitPattern count="one" case="genitive">unui metru pătrat</unitPattern>
 				<unitPattern count="few">{0} metri pătrați</unitPattern>
+				<unitPattern count="few" case="genitive">{0} metri pătrați</unitPattern>
 				<unitPattern count="other">{0} de metri pătrați</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de metri pătrați</unitPattern>
 				<perUnitPattern>{0} pe metru pătrat</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
+				<gender>masculine</gender>
 				<displayName>centimetri pătrați</displayName>
 				<unitPattern count="one">{0} centimetru pătrat</unitPattern>
+				<unitPattern count="one" case="genitive">unui centimetru pătrat</unitPattern>
 				<unitPattern count="few">{0} centimetri pătrați</unitPattern>
+				<unitPattern count="few" case="genitive">{0} centimetri pătrați</unitPattern>
 				<unitPattern count="other">{0} de centimetri pătrați</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de centimetri pătrați</unitPattern>
 				<perUnitPattern>{0} pe centimetru pătrat</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
@@ -8099,7 +8116,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>neuter</gender>
 				<displayName>carate</displayName>
 				<unitPattern count="one">{0} carat</unitPattern>
-				<unitPattern count="one" case="genitive">{0} carat</unitPattern>
+				<unitPattern count="one" case="genitive">unui carat</unitPattern>
 				<unitPattern count="few">{0} carate</unitPattern>
 				<unitPattern count="few" case="genitive">{0} carate</unitPattern>
 				<unitPattern count="other">{0} de carate</unitPattern>
@@ -8112,76 +8129,92 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} de miligrame pe decilitru</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
+				<gender>masculine</gender>
 				<displayName>milimoli pe litru</displayName>
 				<unitPattern count="one">{0} milimol pe litru</unitPattern>
+				<unitPattern count="one" case="genitive">unui milimol pe litru</unitPattern>
 				<unitPattern count="few">{0} milimoli pe litru</unitPattern>
+				<unitPattern count="few" case="genitive">{0} milimoli pe litru</unitPattern>
 				<unitPattern count="other">{0} de milimoli pe litru</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de milimoli pe litru</unitPattern>
 			</unit>
 			<unit type="concentr-item">
+				<gender>masculine</gender>
 				<unitPattern count="one" draft="contributed">{0} de itemi</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} itemi</unitPattern>
+				<unitPattern count="one" case="genitive">unui item</unitPattern>
+				<unitPattern count="few">{0} itemi</unitPattern>
+				<unitPattern count="few" case="genitive">{0} itemi</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} itemi</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de itemi</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>părți pe milion</displayName>
 				<unitPattern count="one">{0} parte pe milion</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} părți pe milion</unitPattern>
+				<unitPattern count="one" case="genitive">unei părți pe milion</unitPattern>
 				<unitPattern count="few">{0} părți pe milion</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} părți pe milion</unitPattern>
+				<unitPattern count="few" case="genitive">{0} părți pe milion</unitPattern>
 				<unitPattern count="other">{0} de părți pe milion</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de părți pe milion</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de părți pe milion</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>procent</displayName>
 				<unitPattern count="one">{0} procent</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} procent</unitPattern>
+				<unitPattern count="one" case="genitive">unui procent</unitPattern>
 				<unitPattern count="few">{0} procente</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} procente</unitPattern>
+				<unitPattern count="few" case="genitive">{0} procente</unitPattern>
 				<unitPattern count="other">{0} de procente</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de procente</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de procente</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>promilă</displayName>
-				<unitPattern count="one">la mie</unitPattern>
-				<unitPattern count="one" case="genitive">la mie</unitPattern>
-				<unitPattern count="few">{0} la mie</unitPattern>
-				<unitPattern count="few" case="genitive">{0} la mie</unitPattern>
-				<unitPattern count="other">{0} la mie</unitPattern>
-				<unitPattern count="other" case="genitive">{0} la mie</unitPattern>
+				<unitPattern count="one">{0} promilă</unitPattern>
+				<unitPattern count="one" case="genitive">unei promile</unitPattern>
+				<unitPattern count="few">{0} promile</unitPattern>
+				<unitPattern count="few" case="genitive">{0} promile</unitPattern>
+				<unitPattern count="other">{0} de promile</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de promile</unitPattern>
 			</unit>
 			<unit type="concentr-permyriad">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<unitPattern count="one">{0} la zece mii</unitPattern>
-				<unitPattern count="one" case="genitive">{0} la zece mii</unitPattern>
+				<unitPattern count="one" case="genitive">unei părți la zece mii</unitPattern>
 				<unitPattern count="few">{0} la zece mii</unitPattern>
-				<unitPattern count="few" case="genitive">{0} la zece mii</unitPattern>
+				<unitPattern count="few" case="genitive">{0} părți la zece mii</unitPattern>
 				<unitPattern count="other">{0} la zece mii</unitPattern>
-				<unitPattern count="other" case="genitive">{0} la zece mii</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de părți la zece mii</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>moli</displayName>
 				<unitPattern count="one">{0} mol</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} mol</unitPattern>
+				<unitPattern count="one" case="genitive">unui mol</unitPattern>
 				<unitPattern count="few">{0} moli</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} moli</unitPattern>
+				<unitPattern count="few" case="genitive">{0} moli</unitPattern>
 				<unitPattern count="other">{0} de moli</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de moli</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de moli</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
+				<gender>masculine</gender>
 				<displayName>litri pe kilometru</displayName>
 				<unitPattern count="one">{0} litru pe kilometru</unitPattern>
+				<unitPattern count="one" case="genitive">unui litru pe kilometru</unitPattern>
 				<unitPattern count="few">{0} litri pe kilometru</unitPattern>
+				<unitPattern count="few" case="genitive">{0} litri pe kilometru</unitPattern>
 				<unitPattern count="other">{0} de litri pe kilometru</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de litri pe kilometru</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
+				<gender>masculine</gender>
 				<displayName>litri la suta de kilometri</displayName>
 				<unitPattern count="one">{0} litru la suta de kilometri</unitPattern>
+				<unitPattern count="one" case="genitive">unui litru la suta de kilometri</unitPattern>
 				<unitPattern count="few">{0} litri la suta de kilometri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} litri la suta de kilometri</unitPattern>
 				<unitPattern count="other">{0} de litri la suta de kilometri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de litri la suta de kilometri</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>mile pe galon</displayName>
@@ -8196,229 +8229,281 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} de mile pe galon imperial</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
+				<gender>masculine</gender>
 				<displayName>petabyți</displayName>
 				<unitPattern count="one">{0} petabyte</unitPattern>
+				<unitPattern count="one" case="genitive">unui petabyte</unitPattern>
 				<unitPattern count="few">{0} petabyți</unitPattern>
+				<unitPattern count="few" case="genitive">{0} petabyți</unitPattern>
 				<unitPattern count="other">{0} de petabyți</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de petabyți</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
+				<gender>masculine</gender>
 				<displayName>terabyți</displayName>
 				<unitPattern count="one">{0} terabyte</unitPattern>
+				<unitPattern count="one" case="genitive">unui terabyte</unitPattern>
 				<unitPattern count="few">{0} terabyți</unitPattern>
+				<unitPattern count="few" case="genitive">{0} terabyți</unitPattern>
 				<unitPattern count="other">{0} de terabyți</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de terabyți</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
+				<gender>masculine</gender>
 				<displayName>terabiți</displayName>
 				<unitPattern count="one">{0} terabit</unitPattern>
+				<unitPattern count="one" case="genitive">unui terabit</unitPattern>
 				<unitPattern count="few">{0} terabiți</unitPattern>
+				<unitPattern count="few" case="genitive">{0} terabiți</unitPattern>
 				<unitPattern count="other">{0} de terabiți</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de terabiți</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
+				<gender>masculine</gender>
 				<displayName>gigabyți</displayName>
 				<unitPattern count="one">{0} gigabyte</unitPattern>
+				<unitPattern count="one" case="genitive">unui gigabyte</unitPattern>
 				<unitPattern count="few">{0} gigabyți</unitPattern>
+				<unitPattern count="few" case="genitive">{0} gigabyți</unitPattern>
 				<unitPattern count="other">{0} de gigabyți</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de gigabyți</unitPattern>
 			</unit>
 			<unit type="digital-gigabit">
+				<gender>masculine</gender>
 				<displayName>gigabiți</displayName>
 				<unitPattern count="one">{0} gigabit</unitPattern>
+				<unitPattern count="one" case="genitive">unui gigabit</unitPattern>
 				<unitPattern count="few">{0} gigabiți</unitPattern>
+				<unitPattern count="few" case="genitive">{0} gigabiți</unitPattern>
 				<unitPattern count="other">{0} de gigabiți</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de gigabiți</unitPattern>
 			</unit>
 			<unit type="digital-megabyte">
+				<gender>masculine</gender>
 				<displayName>megabyți</displayName>
 				<unitPattern count="one">{0} megabyte</unitPattern>
+				<unitPattern count="one" case="genitive">unui megabyte</unitPattern>
 				<unitPattern count="few">{0} megabyți</unitPattern>
+				<unitPattern count="few" case="genitive">{0} megabyți</unitPattern>
 				<unitPattern count="other">{0} de megabyți</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de megabyți</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
+				<gender>masculine</gender>
 				<displayName>megabiți</displayName>
 				<unitPattern count="one">{0} megabit</unitPattern>
+				<unitPattern count="one" case="genitive">unui megabit</unitPattern>
 				<unitPattern count="few">{0} megabiți</unitPattern>
+				<unitPattern count="few" case="genitive">{0} megabiți</unitPattern>
 				<unitPattern count="other">{0} de megabiți</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de megabiți</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
+				<gender>masculine</gender>
 				<displayName>kilobyți</displayName>
 				<unitPattern count="one">{0} kilobyte</unitPattern>
+				<unitPattern count="one" case="genitive">unui kilobyte</unitPattern>
 				<unitPattern count="few">{0} kilobyți</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilobyți</unitPattern>
 				<unitPattern count="other">{0} de kilobyți</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de kilobyți</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
+				<gender>masculine</gender>
 				<displayName>kilobiți</displayName>
 				<unitPattern count="one">{0} kilobit</unitPattern>
+				<unitPattern count="one" case="genitive">unui kilobit</unitPattern>
 				<unitPattern count="few">{0} kilobiți</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilobiți</unitPattern>
 				<unitPattern count="other">{0} de kilobiți</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de kilobiți</unitPattern>
 			</unit>
 			<unit type="digital-byte">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>byți</displayName>
 				<unitPattern count="one">{0} byte</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} byte</unitPattern>
+				<unitPattern count="one" case="genitive">unui byte</unitPattern>
 				<unitPattern count="few">{0} byți</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} byți</unitPattern>
+				<unitPattern count="few" case="genitive">{0} byți</unitPattern>
 				<unitPattern count="other">{0} de byți</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de byți</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de byți</unitPattern>
 			</unit>
 			<unit type="digital-bit">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>biți</displayName>
 				<unitPattern count="one">{0} bit</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} bit</unitPattern>
+				<unitPattern count="one" case="genitive">unui bit</unitPattern>
 				<unitPattern count="few">{0} biți</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} biți</unitPattern>
+				<unitPattern count="few" case="genitive">{0} biți</unitPattern>
 				<unitPattern count="other">{0} de biți</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de biți</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de biți</unitPattern>
 			</unit>
 			<unit type="duration-century">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>secole</displayName>
 				<unitPattern count="one">{0} secol</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} secol</unitPattern>
+				<unitPattern count="one" case="genitive">unui secol</unitPattern>
 				<unitPattern count="few">{0} secole</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} secole</unitPattern>
+				<unitPattern count="few" case="genitive">{0} secole</unitPattern>
 				<unitPattern count="other">{0} de secole</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de secole</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de secole</unitPattern>
 			</unit>
 			<unit type="duration-decade">
 				<gender>neuter</gender>
 				<displayName>decenii</displayName>
 				<unitPattern count="one">{0} deceniu</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} deceniu</unitPattern>
+				<unitPattern count="one" case="genitive">unui deceniu</unitPattern>
 				<unitPattern count="few">{0} decenii</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} decenii</unitPattern>
+				<unitPattern count="few" case="genitive">{0} decenii</unitPattern>
 				<unitPattern count="other">{0} de decenii</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de decenii</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de decenii</unitPattern>
 			</unit>
 			<unit type="duration-year">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ani</displayName>
 				<unitPattern count="one">{0} an</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} an</unitPattern>
+				<unitPattern count="one" case="genitive">unui an</unitPattern>
 				<unitPattern count="few">{0} ani</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} ani</unitPattern>
+				<unitPattern count="few" case="genitive">{0} ani</unitPattern>
 				<unitPattern count="other">{0} de ani</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de ani</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de ani</unitPattern>
 				<perUnitPattern>{0} pe an</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>luni</displayName>
 				<unitPattern count="one">{0} lună</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} luni</unitPattern>
+				<unitPattern count="one" case="genitive">unei luni</unitPattern>
 				<unitPattern count="few">{0} luni</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} luni</unitPattern>
+				<unitPattern count="few" case="genitive">{0} luni</unitPattern>
 				<unitPattern count="other">{0} de luni</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de luni</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de luni</unitPattern>
 				<perUnitPattern>{0} pe lună</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>săptămâni</displayName>
 				<unitPattern count="one">{0} săptămână</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} săptămâni</unitPattern>
+				<unitPattern count="one" case="genitive">unei săptămâni</unitPattern>
 				<unitPattern count="few">{0} săptămâni</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} săptămâni</unitPattern>
+				<unitPattern count="few" case="genitive">{0} săptămâni</unitPattern>
 				<unitPattern count="other">{0} de săptămâni</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de săptămâni</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de săptămâni</unitPattern>
 				<perUnitPattern>{0} pe săptămână</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>zile</displayName>
 				<unitPattern count="one">{0} zi</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} zile</unitPattern>
+				<unitPattern count="one" case="genitive">unei zile</unitPattern>
 				<unitPattern count="few">{0} zile</unitPattern>
 				<unitPattern count="few" case="genitive">{0} zile</unitPattern>
 				<unitPattern count="other">{0} de zile</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de zile</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de zile</unitPattern>
 				<perUnitPattern>{0} pe zi</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>ore</displayName>
 				<unitPattern count="one">{0} oră</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} ore</unitPattern>
+				<unitPattern count="one" case="genitive">unei ore</unitPattern>
 				<unitPattern count="few">{0} ore</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} ore</unitPattern>
+				<unitPattern count="few" case="genitive">{0} ore</unitPattern>
 				<unitPattern count="other">{0} de ore</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de ore</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de ore</unitPattern>
 				<perUnitPattern>{0} pe oră</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>minute</displayName>
 				<unitPattern count="one">{0} minut</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} minut</unitPattern>
+				<unitPattern count="one" case="genitive">unui minut</unitPattern>
 				<unitPattern count="few">{0} minute</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} minute</unitPattern>
+				<unitPattern count="few" case="genitive">{0} minute</unitPattern>
 				<unitPattern count="other">{0} de minute</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de minute</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de minute</unitPattern>
 				<perUnitPattern>{0} pe minut</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>secunde</displayName>
 				<unitPattern count="one">{0} secundă</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} secunde</unitPattern>
+				<unitPattern count="one" case="genitive">unei secunde</unitPattern>
 				<unitPattern count="few">{0} secunde</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} secunde</unitPattern>
+				<unitPattern count="few" case="genitive">{0} secunde</unitPattern>
 				<unitPattern count="other">{0} de secunde</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de secunde</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de secunde</unitPattern>
 				<perUnitPattern>{0} pe secundă</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
+				<gender>feminine</gender>
 				<displayName>milisecunde</displayName>
 				<unitPattern count="one">{0} milisecundă</unitPattern>
+				<unitPattern count="one" case="genitive">unei milisecunde</unitPattern>
 				<unitPattern count="few">{0} milisecunde</unitPattern>
+				<unitPattern count="few" case="genitive">{0} milisecunde</unitPattern>
 				<unitPattern count="other">{0} de milisecunde</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de milisecunde</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
+				<gender>feminine</gender>
 				<displayName>microsecunde</displayName>
 				<unitPattern count="one">{0} microsecundă</unitPattern>
+				<unitPattern count="one" case="genitive">unei microsecunde</unitPattern>
 				<unitPattern count="few">{0} microsecunde</unitPattern>
+				<unitPattern count="few" case="genitive">{0} microsecunde</unitPattern>
 				<unitPattern count="other">{0} de microsecunde</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de microsecunde</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
+				<gender>feminine</gender>
 				<displayName>nanosecunde</displayName>
 				<unitPattern count="one">{0} nanosecundă</unitPattern>
+				<unitPattern count="one" case="genitive">unei nanosecunde</unitPattern>
 				<unitPattern count="few">{0} nanosecunde</unitPattern>
+				<unitPattern count="few" case="genitive">{0} nanosecunde</unitPattern>
 				<unitPattern count="other">{0} de nanosecunde</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de nanosecunde</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>amperi</displayName>
 				<unitPattern count="one">{0} amper</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} amper</unitPattern>
+				<unitPattern count="one" case="genitive">unui amper</unitPattern>
 				<unitPattern count="few">{0} amperi</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} amperi</unitPattern>
+				<unitPattern count="few" case="genitive">{0} amperi</unitPattern>
 				<unitPattern count="other">{0} de amperi</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de amperi</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de amperi</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
+				<gender>masculine</gender>
 				<displayName>miliamperi</displayName>
 				<unitPattern count="one">{0} miliamper</unitPattern>
+				<unitPattern count="one" case="genitive">unui miliamper</unitPattern>
 				<unitPattern count="few">{0} miliamperi</unitPattern>
+				<unitPattern count="few" case="genitive">{0} miliamperi</unitPattern>
 				<unitPattern count="other">{0} de miliamperi</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de miliamperi</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ohmi</displayName>
 				<unitPattern count="one">{0} ohm</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} ohm</unitPattern>
+				<unitPattern count="one" case="genitive">unui ohm</unitPattern>
 				<unitPattern count="few">{0} ohmi</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} ohmi</unitPattern>
+				<unitPattern count="few" case="genitive">{0} ohmi</unitPattern>
 				<unitPattern count="other">{0} de ohmi</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de ohmi</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de ohmi</unitPattern>
 			</unit>
 			<unit type="electric-volt">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>volți</displayName>
 				<unitPattern count="one">{0} volt</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} volt</unitPattern>
+				<unitPattern count="one" case="genitive">unui volt</unitPattern>
 				<unitPattern count="few">{0} volți</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} volți</unitPattern>
+				<unitPattern count="few" case="genitive">{0} volți</unitPattern>
 				<unitPattern count="other">{0} de volți</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de volți</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de volți</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
 				<displayName>kilocalorii</displayName>
@@ -8427,14 +8512,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} de kilocalorii</unitPattern>
 			</unit>
 			<unit type="energy-calorie">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>calorii</displayName>
 				<unitPattern count="one">{0} calorie</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} calorii</unitPattern>
+				<unitPattern count="one" case="genitive">unei calorii</unitPattern>
 				<unitPattern count="few">{0} calorii</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} calorii</unitPattern>
+				<unitPattern count="few" case="genitive">{0} calorii</unitPattern>
 				<unitPattern count="other">{0} de calorii</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de calorii</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de calorii</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
 				<displayName>kilocalorii</displayName>
@@ -8443,26 +8528,34 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} de kilocalorii</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
+				<gender>masculine</gender>
 				<displayName>kilojouli</displayName>
 				<unitPattern count="one">{0} kilojoule</unitPattern>
+				<unitPattern count="one" case="genitive">unui kilojoule</unitPattern>
 				<unitPattern count="few">{0} kilojouli</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilojouli</unitPattern>
 				<unitPattern count="other">{0} de kilojouli</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de kilojouli</unitPattern>
 			</unit>
 			<unit type="energy-joule">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>jouli</displayName>
 				<unitPattern count="one">{0} joule</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} joule</unitPattern>
+				<unitPattern count="one" case="genitive">unui joule</unitPattern>
 				<unitPattern count="few">{0} jouli</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} jouli</unitPattern>
+				<unitPattern count="few" case="genitive">{0} jouli</unitPattern>
 				<unitPattern count="other">{0} de jouli</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de jouli</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de jouli</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
+				<gender>masculine</gender>
 				<displayName>kilowați-oră</displayName>
 				<unitPattern count="one">kilowatt-oră</unitPattern>
+				<unitPattern count="one" case="genitive">unui kilowatt-oră</unitPattern>
 				<unitPattern count="few">{0} kilowați-oră</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilowați-oră</unitPattern>
 				<unitPattern count="other">{0} de kilowați-oră</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de kilowați-oră</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
 				<displayName>electronvolți</displayName>
@@ -8492,71 +8585,95 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>masculine</gender>
 				<displayName>newtoni</displayName>
 				<unitPattern count="one">{0} newton</unitPattern>
-				<unitPattern count="one" case="genitive">{0} newton</unitPattern>
+				<unitPattern count="one" case="genitive">unui newton</unitPattern>
 				<unitPattern count="few">{0} newtoni</unitPattern>
 				<unitPattern count="few" case="genitive">{0} newtoni</unitPattern>
 				<unitPattern count="other">{0} de newtoni</unitPattern>
 				<unitPattern count="other" case="genitive">{0} de newtoni</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<gender>masculine</gender>
 				<displayName>kilowatt-oră per 100 kilometri</displayName>
 				<unitPattern count="one">{0} kilowatt-oră per 100 kilometri</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilowatt-oră per 100 kilometri</unitPattern>
 				<unitPattern count="few">{0} kilowați-oră per 100 kilometri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilowați-oră per 100 kilometri</unitPattern>
 				<unitPattern count="other">{0} kilowați-oră per 100 kilometri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilowați-oră per 100 kilometri</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
+				<gender>masculine</gender>
 				<displayName>gigahertz</displayName>
 				<unitPattern count="one">{0} gigahertz</unitPattern>
+				<unitPattern count="one" case="genitive">unui gigahertz</unitPattern>
 				<unitPattern count="few">{0} gigahertzi</unitPattern>
+				<unitPattern count="few" case="genitive">{0} gigahertzi</unitPattern>
 				<unitPattern count="other">{0} de gigahertzi</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de gigahertzi</unitPattern>
 			</unit>
 			<unit type="frequency-megahertz">
+				<gender>masculine</gender>
 				<displayName>megahertz</displayName>
 				<unitPattern count="one">{0} megahertz</unitPattern>
+				<unitPattern count="one" case="genitive">unui megahertz</unitPattern>
 				<unitPattern count="few">{0} megahertzi</unitPattern>
+				<unitPattern count="few" case="genitive">{0} megahertzi</unitPattern>
 				<unitPattern count="other">{0} de megahertzi</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de megahertzi</unitPattern>
 			</unit>
 			<unit type="frequency-kilohertz">
+				<gender>masculine</gender>
 				<displayName>kilohertz</displayName>
 				<unitPattern count="one">{0} kilohertz</unitPattern>
+				<unitPattern count="one" case="genitive">unui kilohertz</unitPattern>
 				<unitPattern count="few">{0} kilohertzi</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilohertzi</unitPattern>
 				<unitPattern count="other">{0} de kilohertzi</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de kilohertzi</unitPattern>
 			</unit>
 			<unit type="frequency-hertz">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>hertz</displayName>
 				<unitPattern count="one">{0} hertz</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} hertz</unitPattern>
+				<unitPattern count="one" case="genitive">unui hertz</unitPattern>
 				<unitPattern count="few">{0} hertzi</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} hertzi</unitPattern>
+				<unitPattern count="few" case="genitive">{0} hertzi</unitPattern>
 				<unitPattern count="other">{0} de hertzi</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de hertzi</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de hertzi</unitPattern>
 			</unit>
 			<unit type="graphics-em">
 				<gender>masculine</gender>
 				<displayName>em tipografic</displayName>
 			</unit>
 			<unit type="graphics-pixel">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>pixeli</displayName>
 				<unitPattern count="one">{0} pixel</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} pixel</unitPattern>
+				<unitPattern count="one" case="genitive">unui pixel</unitPattern>
 				<unitPattern count="few">{0} pixeli</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} pixeli</unitPattern>
+				<unitPattern count="few" case="genitive">{0} pixeli</unitPattern>
 				<unitPattern count="other">{0} de pixeli</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de pixeli</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de pixeli</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
+				<gender>masculine</gender>
 				<displayName>megapixeli</displayName>
 				<unitPattern count="one">{0} megapixel</unitPattern>
+				<unitPattern count="one" case="genitive">unui megapixel</unitPattern>
 				<unitPattern count="few">{0} megapixeli</unitPattern>
-				<unitPattern count="other">{0} de megapixel</unitPattern>
+				<unitPattern count="few" case="genitive">{0} megapixeli</unitPattern>
+				<unitPattern count="other">{0} de megapixeli</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de megapixeli</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-centimeter">
+				<gender>masculine</gender>
 				<displayName>pixeli pe centimetru</displayName>
 				<unitPattern count="one">{0} pixel pe centimetru</unitPattern>
+				<unitPattern count="one" case="genitive">unui pixel pe centimetru</unitPattern>
 				<unitPattern count="few">{0} pixeli pe centimetru</unitPattern>
+				<unitPattern count="few" case="genitive">{0} pixeli pe centimetru</unitPattern>
 				<unitPattern count="other">{0} de pixeli pe centimetru</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de pixeli pe centimetru</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-inch">
 				<displayName>pixeli pe inch</displayName>
@@ -8589,59 +8706,87 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} de raze terestre</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
+				<gender>masculine</gender>
 				<displayName>kilometri</displayName>
 				<unitPattern count="one">{0} kilometru</unitPattern>
+				<unitPattern count="one" case="genitive">unui kilometru</unitPattern>
 				<unitPattern count="few">{0} kilometri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilometri</unitPattern>
 				<unitPattern count="other">{0} de kilometri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de kilometri</unitPattern>
 				<perUnitPattern>{0} pe kilometru</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>metri</displayName>
 				<unitPattern count="one">{0} metru</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} metru</unitPattern>
+				<unitPattern count="one" case="genitive">unui metru</unitPattern>
 				<unitPattern count="few">{0} metri</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} metri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} metri</unitPattern>
 				<unitPattern count="other">{0} de metri</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de metri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de metri</unitPattern>
 				<perUnitPattern>{0} pe metru</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
+				<gender>masculine</gender>
 				<displayName>decimetri</displayName>
 				<unitPattern count="one">{0} decimetru</unitPattern>
+				<unitPattern count="one" case="genitive">unui decimetru</unitPattern>
 				<unitPattern count="few">{0} decimetri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} decimetri</unitPattern>
 				<unitPattern count="other">{0} de decimetri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de decimetri</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
+				<gender>masculine</gender>
 				<displayName>centimetri</displayName>
 				<unitPattern count="one">{0} centimetru</unitPattern>
+				<unitPattern count="one" case="genitive">unui centimetru</unitPattern>
 				<unitPattern count="few">{0} centimetri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} centimetri</unitPattern>
 				<unitPattern count="other">{0} de centimetri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de centimetri</unitPattern>
 				<perUnitPattern>{0} pe centimetru</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
+				<gender>masculine</gender>
 				<displayName>milimetri</displayName>
 				<unitPattern count="one">{0} milimetru</unitPattern>
+				<unitPattern count="one" case="genitive">unui milimetru</unitPattern>
 				<unitPattern count="few">{0} milimetri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} milimetri</unitPattern>
 				<unitPattern count="other">{0} de milimetri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de milimetri</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
+				<gender>masculine</gender>
 				<displayName>micrometri</displayName>
 				<unitPattern count="one">{0} micrometru</unitPattern>
+				<unitPattern count="one" case="genitive">unui micrometru</unitPattern>
 				<unitPattern count="few">{0} micrometri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} micrometri</unitPattern>
 				<unitPattern count="other">{0} de micrometri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de micrometri</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
+				<gender>masculine</gender>
 				<displayName>nanometri</displayName>
 				<unitPattern count="one">{0} nanometru</unitPattern>
+				<unitPattern count="one" case="genitive">unui nanometru</unitPattern>
 				<unitPattern count="few">{0} nanometri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} nanometri</unitPattern>
 				<unitPattern count="other">{0} de nanometri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de nanometri</unitPattern>
 			</unit>
 			<unit type="length-picometer">
+				<gender>masculine</gender>
 				<displayName>picometri</displayName>
 				<unitPattern count="one">{0} picometru</unitPattern>
+				<unitPattern count="one" case="genitive">unui picometru</unitPattern>
 				<unitPattern count="few">{0} picometri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} picometri</unitPattern>
 				<unitPattern count="other">{0} de picometri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de picometri</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<displayName>mile</displayName>
@@ -8706,14 +8851,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} de mile nautice</unitPattern>
 			</unit>
 			<unit type="length-mile-scandinavian">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>milă scandinavă</displayName>
 				<unitPattern count="one">{0} milă scandinavă</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} mile scandinave</unitPattern>
+				<unitPattern count="one" case="genitive">unei mile scandinave</unitPattern>
 				<unitPattern count="few">{0} mile scandinave</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} mile scandinave</unitPattern>
+				<unitPattern count="few" case="genitive">{0} mile scandinave</unitPattern>
 				<unitPattern count="other">{0} de mile scandinave</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de mile scandinave</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de mile scandinave</unitPattern>
 			</unit>
 			<unit type="length-point">
 				<displayName>puncte</displayName>
@@ -8731,7 +8876,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>masculine</gender>
 				<displayName>lucși</displayName>
 				<unitPattern count="one">{0} lux</unitPattern>
-				<unitPattern count="one" case="genitive">{0} lux</unitPattern>
+				<unitPattern count="one" case="genitive">unui lux</unitPattern>
 				<unitPattern count="few">{0} lucși</unitPattern>
 				<unitPattern count="few" case="genitive">{0} lucși</unitPattern>
 				<unitPattern count="other">{0} de lucși</unitPattern>
@@ -8741,7 +8886,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>feminine</gender>
 				<displayName>candelă</displayName>
 				<unitPattern count="one">{0} candelă</unitPattern>
-				<unitPattern count="one" case="genitive">{0} candele</unitPattern>
+				<unitPattern count="one" case="genitive">unei candele</unitPattern>
 				<unitPattern count="few">{0} candele</unitPattern>
 				<unitPattern count="few" case="genitive">{0} candele</unitPattern>
 				<unitPattern count="other">{0} de candele</unitPattern>
@@ -8751,7 +8896,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>masculine</gender>
 				<displayName>lumen</displayName>
 				<unitPattern count="one">{0} lumen</unitPattern>
-				<unitPattern count="one" case="genitive">{0} lumen</unitPattern>
+				<unitPattern count="one" case="genitive">unui lumen</unitPattern>
 				<unitPattern count="few">{0} lumeni</unitPattern>
 				<unitPattern count="few" case="genitive">{0} lumeni</unitPattern>
 				<unitPattern count="other">{0} de lumeni</unitPattern>
@@ -8764,7 +8909,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} de luminozități solare</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>tone</displayName>
 				<unitPattern count="one">{0} tonă</unitPattern>
 				<unitPattern count="one" case="genitive" draft="contributed">{0} tonă</unitPattern>
@@ -8774,38 +8919,46 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="genitive" draft="contributed">{0} de tone</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>kilograme</displayName>
 				<unitPattern count="one">{0} kilogram</unitPattern>
 				<unitPattern count="one" case="genitive" draft="contributed">{0} kilogram</unitPattern>
 				<unitPattern count="few">{0} kilograme</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} kilograme</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilograme</unitPattern>
 				<unitPattern count="other">{0} de kilograme</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de kilograme</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de kilograme</unitPattern>
 				<perUnitPattern>{0} per kilogram</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>grame</displayName>
 				<unitPattern count="one">{0} gram</unitPattern>
 				<unitPattern count="one" case="genitive" draft="contributed">{0} gram</unitPattern>
 				<unitPattern count="few">{0} grame</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} grame</unitPattern>
+				<unitPattern count="few" case="genitive">{0} grame</unitPattern>
 				<unitPattern count="other">{0} de grame</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de grame</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de grame</unitPattern>
 				<perUnitPattern>{0} per gram</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
+				<gender>neuter</gender>
 				<displayName>miligrame</displayName>
 				<unitPattern count="one">{0} miligram</unitPattern>
+				<unitPattern count="one" case="genitive">unui miligram</unitPattern>
 				<unitPattern count="few">{0} miligrame</unitPattern>
+				<unitPattern count="few" case="genitive">{0} miligrame</unitPattern>
 				<unitPattern count="other">{0} de miligrame</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de miligrame</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
+				<gender>neuter</gender>
 				<displayName>micrograme</displayName>
 				<unitPattern count="one">{0} microgram</unitPattern>
+				<unitPattern count="one" case="genitive">unui microgram</unitPattern>
 				<unitPattern count="few">{0} micrograme</unitPattern>
+				<unitPattern count="few" case="genitive">{0} micrograme</unitPattern>
 				<unitPattern count="other">{0} de micrograme</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de micrograme</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>tone scurte</displayName>
@@ -8840,14 +8993,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} de uncii monetare</unitPattern>
 			</unit>
 			<unit type="mass-carat">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>carate</displayName>
 				<unitPattern count="one">{0} carat</unitPattern>
 				<unitPattern count="one" case="genitive" draft="contributed">{0} carat</unitPattern>
 				<unitPattern count="few">{0} carate</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} carate</unitPattern>
+				<unitPattern count="few" case="genitive">{0} carate</unitPattern>
 				<unitPattern count="other">{0} de carate</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de carate</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de carate</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
 				<displayName>daltoni</displayName>
@@ -8874,38 +9027,54 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} de boabe</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
+				<gender>masculine</gender>
 				<displayName>gigawați</displayName>
 				<unitPattern count="one">{0} gigawatt</unitPattern>
+				<unitPattern count="one" case="genitive">unui gigawatt</unitPattern>
 				<unitPattern count="few">{0} gigawați</unitPattern>
+				<unitPattern count="few" case="genitive">{0} gigawați</unitPattern>
 				<unitPattern count="other">{0} de gigawați</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de gigawați</unitPattern>
 			</unit>
 			<unit type="power-megawatt">
+				<gender>masculine</gender>
 				<displayName>megawați</displayName>
 				<unitPattern count="one">{0} megawatt</unitPattern>
+				<unitPattern count="one" case="genitive">unui megawatt</unitPattern>
 				<unitPattern count="few">{0} megawați</unitPattern>
+				<unitPattern count="few" case="genitive">{0} megawați</unitPattern>
 				<unitPattern count="other">{0} de megawați</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de megawați</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
+				<gender>masculine</gender>
 				<displayName>kilowați</displayName>
 				<unitPattern count="one">{0} kilowatt</unitPattern>
+				<unitPattern count="one" case="genitive">unui kilowatt</unitPattern>
 				<unitPattern count="few">{0} kilowați</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilowați</unitPattern>
 				<unitPattern count="other">{0} de kilowați</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de kilowați</unitPattern>
 			</unit>
 			<unit type="power-watt">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>wați</displayName>
 				<unitPattern count="one">{0} watt</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} watt</unitPattern>
+				<unitPattern count="one" case="genitive">unui watt</unitPattern>
 				<unitPattern count="few">{0} wați</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} wați</unitPattern>
+				<unitPattern count="few" case="genitive">{0} wați</unitPattern>
 				<unitPattern count="other">{0} de wați</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de wați</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de wați</unitPattern>
 			</unit>
 			<unit type="power-milliwatt">
+				<gender>masculine</gender>
 				<displayName>miliwați</displayName>
 				<unitPattern count="one">{0} miliwatt</unitPattern>
+				<unitPattern count="one" case="genitive">unui miliwatt</unitPattern>
 				<unitPattern count="few">{0} miliwați</unitPattern>
+				<unitPattern count="few" case="genitive">{0} miliwați</unitPattern>
 				<unitPattern count="other">{0} de miliwați</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de miliwați</unitPattern>
 			</unit>
 			<unit type="power-horsepower">
 				<displayName>cai putere</displayName>
@@ -8932,70 +9101,94 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} de inchi coloană de mercur</unitPattern>
 			</unit>
 			<unit type="pressure-bar">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>bari</displayName>
 				<unitPattern count="one">{0} bar</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} bar</unitPattern>
+				<unitPattern count="one" case="genitive">unui bar</unitPattern>
 				<unitPattern count="few">{0} bari</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} bari</unitPattern>
+				<unitPattern count="few" case="genitive">{0} bari</unitPattern>
 				<unitPattern count="other">{0} de bari</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de bari</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de bari</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
+				<gender>masculine</gender>
 				<displayName>milibari</displayName>
 				<unitPattern count="one">{0} milibar</unitPattern>
+				<unitPattern count="one" case="genitive">unui milibar</unitPattern>
 				<unitPattern count="few">{0} milibari</unitPattern>
+				<unitPattern count="few" case="genitive">{0} milibari</unitPattern>
 				<unitPattern count="other">{0} de milibari</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de milibari</unitPattern>
 			</unit>
 			<unit type="pressure-atmosphere">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>atmosfere</displayName>
 				<unitPattern count="one">{0} atmosferă</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} atmosfere</unitPattern>
+				<unitPattern count="one" case="genitive">unei atmosfere</unitPattern>
 				<unitPattern count="few">{0} atmosfere</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} atmosfere</unitPattern>
+				<unitPattern count="few" case="genitive">{0} atmosfere</unitPattern>
 				<unitPattern count="other">{0} de atmosfere</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de atmosfere</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de atmosfere</unitPattern>
 			</unit>
 			<unit type="pressure-pascal">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>pascali</displayName>
 				<unitPattern count="one">{0} pascal</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} pascal</unitPattern>
+				<unitPattern count="one" case="genitive">unui pascal</unitPattern>
 				<unitPattern count="few">{0} pascali</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} pascali</unitPattern>
+				<unitPattern count="few" case="genitive">{0} pascali</unitPattern>
 				<unitPattern count="other">{0} de pascali</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de pascali</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de pascali</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
+				<gender>masculine</gender>
 				<displayName>hectopascali</displayName>
 				<unitPattern count="one">{0} hectopascal</unitPattern>
+				<unitPattern count="one" case="genitive">unui hectopascal</unitPattern>
 				<unitPattern count="few">{0} hectopascali</unitPattern>
+				<unitPattern count="few" case="genitive">{0} hectopascali</unitPattern>
 				<unitPattern count="other">{0} de hectopascali</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de hectopascali</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
+				<gender>masculine</gender>
 				<displayName>kilopascali</displayName>
 				<unitPattern count="one">{0} kilopascal</unitPattern>
+				<unitPattern count="one" case="genitive">unui kilopascal</unitPattern>
 				<unitPattern count="few">{0} kilopascali</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilopascali</unitPattern>
 				<unitPattern count="other">{0} de kilopascali</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de kilopascali</unitPattern>
 			</unit>
 			<unit type="pressure-megapascal">
+				<gender>masculine</gender>
 				<displayName>megapascali</displayName>
 				<unitPattern count="one">{0} megapascal</unitPattern>
+				<unitPattern count="one" case="genitive">unui megapascal</unitPattern>
 				<unitPattern count="few">{0} megapascali</unitPattern>
+				<unitPattern count="few" case="genitive">{0} megapascali</unitPattern>
 				<unitPattern count="other">{0} de megapascali</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de megapascali</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
+				<gender>masculine</gender>
 				<displayName>kilometri pe oră</displayName>
 				<unitPattern count="one">{0} kilometru pe oră</unitPattern>
+				<unitPattern count="one" case="genitive">unui kilometru pe oră</unitPattern>
 				<unitPattern count="few">{0} kilometri pe oră</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilometri pe oră</unitPattern>
 				<unitPattern count="other">{0} de kilometri pe oră</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de kilometri pe oră</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
+				<gender>masculine</gender>
 				<displayName>metri pe secundă</displayName>
 				<unitPattern count="one">{0} metru pe secundă</unitPattern>
+				<unitPattern count="one" case="genitive">unui metru pe secundă</unitPattern>
 				<unitPattern count="few">{0} metri pe secundă</unitPattern>
+				<unitPattern count="few" case="genitive">{0} metri pe secundă</unitPattern>
 				<unitPattern count="other">{0} de metri pe secundă</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de metri pe secundă</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
 				<displayName>mile pe oră</displayName>
@@ -9010,24 +9203,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} de noduri</unitPattern>
 			</unit>
 			<unit type="temperature-generic">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>°</displayName>
-				<unitPattern count="one">{0}°</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0}°</unitPattern>
-				<unitPattern count="few">{0}°</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0}°</unitPattern>
-				<unitPattern count="other">{0}°</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0}°</unitPattern>
+				<unitPattern count="one">{0} grad</unitPattern>
+				<unitPattern count="one" case="genitive">unui grad</unitPattern>
+				<unitPattern count="few">{0} grade</unitPattern>
+				<unitPattern count="few" case="genitive">{0} grade</unitPattern>
+				<unitPattern count="other">{0} de grade</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de grade</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>grade Celsius</displayName>
 				<unitPattern count="one">{0} grad Celsius</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} grad Celsius</unitPattern>
+				<unitPattern count="one" case="genitive">unui grad Celsius</unitPattern>
 				<unitPattern count="few">{0} grade Celsius</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} grade Celsius</unitPattern>
+				<unitPattern count="few" case="genitive">{0} grade Celsius</unitPattern>
 				<unitPattern count="other">{0} de grade Celsius</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de grade Celsius</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de grade Celsius</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<displayName>grade Fahrenheit</displayName>
@@ -9036,14 +9229,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} de grade Fahrenheit</unitPattern>
 			</unit>
 			<unit type="temperature-kelvin">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>kelvini</displayName>
 				<unitPattern count="one">{0} kelvin</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} kelvin</unitPattern>
+				<unitPattern count="one" case="genitive">unui kelvin</unitPattern>
 				<unitPattern count="few">{0} kelvini</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} kelvini</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kelvini</unitPattern>
 				<unitPattern count="other">{0} de kelvini</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de kelvini</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de kelvini</unitPattern>
 			</unit>
 			<unit type="torque-pound-force-foot">
 				<displayName>livră-forță picioare</displayName>
@@ -9052,29 +9245,45 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} de livră-forță picioare</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
+				<gender>masculine</gender>
 				<displayName>newton-metri</displayName>
 				<unitPattern count="one">{0} newton metru</unitPattern>
+				<unitPattern count="one" case="genitive">unui newton metru</unitPattern>
 				<unitPattern count="few">{0} newton metri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} newton metri</unitPattern>
 				<unitPattern count="other">{0} de newton metri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de newton metri</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
+				<gender>masculine</gender>
 				<displayName>kilometri cubi</displayName>
 				<unitPattern count="one">{0} kilometru cub</unitPattern>
+				<unitPattern count="one" case="genitive">unui kilometru cub</unitPattern>
 				<unitPattern count="few">{0} kilometri cubi</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilometri cubi</unitPattern>
 				<unitPattern count="other">{0} de kilometri cubi</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de kilometri cubi</unitPattern>
 			</unit>
 			<unit type="volume-cubic-meter">
+				<gender>masculine</gender>
 				<displayName>metri cubi</displayName>
 				<unitPattern count="one">{0} metru cub</unitPattern>
+				<unitPattern count="one" case="genitive">unui metru cub</unitPattern>
 				<unitPattern count="few">{0} metri cubi</unitPattern>
+				<unitPattern count="few" case="genitive">{0} metri cubi</unitPattern>
 				<unitPattern count="other">{0} de metri cubi</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de metri cubi</unitPattern>
 				<perUnitPattern>{0} pe metru cub</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
+				<gender>masculine</gender>
 				<displayName>centimetri cubi</displayName>
 				<unitPattern count="one">{0} centimetru cub</unitPattern>
+				<unitPattern count="one" case="genitive">unui centimetru cub</unitPattern>
 				<unitPattern count="few">{0} centimetri cubi</unitPattern>
+				<unitPattern count="few" case="genitive">{0} centimetri cubi</unitPattern>
 				<unitPattern count="other">{0} de centimetri cubi</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de centimetri cubi</unitPattern>
 				<perUnitPattern>{0} pe centimetru cub</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
@@ -9102,65 +9311,85 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} de inchi cubici</unitPattern>
 			</unit>
 			<unit type="volume-megaliter">
+				<gender>masculine</gender>
 				<displayName>megalitri</displayName>
 				<unitPattern count="one">{0} megalitru</unitPattern>
+				<unitPattern count="one" case="genitive">unui megalitru</unitPattern>
 				<unitPattern count="few">{0} megalitri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} megalitri</unitPattern>
 				<unitPattern count="other">{0} megalitri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} megalitri</unitPattern>
 			</unit>
 			<unit type="volume-hectoliter">
+				<gender>masculine</gender>
 				<displayName>hectolitri</displayName>
 				<unitPattern count="one">{0} hectolitru</unitPattern>
+				<unitPattern count="one" case="genitive">unui hectolitru</unitPattern>
 				<unitPattern count="few">{0} hectolitri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} hectolitri</unitPattern>
 				<unitPattern count="other">{0} de hectolitri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de hectolitri</unitPattern>
 			</unit>
 			<unit type="volume-liter">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>litri</displayName>
 				<unitPattern count="one">{0} litru</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} litru</unitPattern>
+				<unitPattern count="one" case="genitive">unui litru</unitPattern>
 				<unitPattern count="few">{0} litri</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} litri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} litri</unitPattern>
 				<unitPattern count="other">{0} de litri</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de litri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de litri</unitPattern>
 				<perUnitPattern>{0} pe litru</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
+				<gender>masculine</gender>
 				<displayName>decilitri</displayName>
 				<unitPattern count="one">{0} decilitru</unitPattern>
+				<unitPattern count="one" case="genitive">unui decilitru</unitPattern>
 				<unitPattern count="few">{0} decilitri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} decilitri</unitPattern>
 				<unitPattern count="other">{0} de decilitri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de decilitri</unitPattern>
 			</unit>
 			<unit type="volume-centiliter">
+				<gender>masculine</gender>
 				<displayName>centilitri</displayName>
 				<unitPattern count="one">{0} centilitru</unitPattern>
+				<unitPattern count="one" case="genitive">unui centilitru</unitPattern>
 				<unitPattern count="few">{0} centilitri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} centilitri</unitPattern>
 				<unitPattern count="other">{0} de centilitri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de centilitri</unitPattern>
 			</unit>
 			<unit type="volume-milliliter">
+				<gender>masculine</gender>
 				<displayName>mililitri</displayName>
 				<unitPattern count="one">{0} mililitru</unitPattern>
+				<unitPattern count="one" case="genitive">unui mililitru</unitPattern>
 				<unitPattern count="few">{0} mililitri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} mililitri</unitPattern>
 				<unitPattern count="other">{0} de mililitri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de mililitri</unitPattern>
 			</unit>
 			<unit type="volume-pint-metric">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>pinte metrice</displayName>
 				<unitPattern count="one">{0} pintă metrică</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} pinte metrice</unitPattern>
+				<unitPattern count="one" case="genitive">unei pinte metrice</unitPattern>
 				<unitPattern count="few">{0} pinte metrice</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} pinte metrice</unitPattern>
+				<unitPattern count="few" case="genitive">{0} pinte metrice</unitPattern>
 				<unitPattern count="other">{0} de pinte metrice</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de pinte metrice</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de pinte metrice</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>căni metrice</displayName>
 				<unitPattern count="one">{0} cană metrică</unitPattern>
-				<unitPattern count="one" case="genitive" draft="contributed">{0} căni metrice</unitPattern>
+				<unitPattern count="one" case="genitive">unei căni metrice</unitPattern>
 				<unitPattern count="few">{0} căni metrice</unitPattern>
-				<unitPattern count="few" case="genitive" draft="contributed">{0} căni metrice</unitPattern>
+				<unitPattern count="few" case="genitive">{0} căni metrice</unitPattern>
 				<unitPattern count="other">{0} de căni metrice</unitPattern>
-				<unitPattern count="other" case="genitive" draft="contributed">{0} de căni metrice</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de căni metrice</unitPattern>
 			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>acru-picioare</displayName>

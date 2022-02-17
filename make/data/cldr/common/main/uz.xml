@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
@@ -5085,7 +5087,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">Gruziya larisi</displayName>
 				<symbol>GEL</symbol>
 				<symbol alt="narrow">₾</symbol>
-				<symbol alt="variant">₾</symbol>
 			</currency>
 			<currency type="GHS">
 				<displayName>Gana sedisi</displayName>
@@ -5836,8 +5837,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
-			<pluralMinimalPairs count="one">Savatingizda {0}X bor. Uni sotib olasizmi?</pluralMinimalPairs>
-			<pluralMinimalPairs count="other">Savatingizda {0}X bor. Ularni sotib olasizmi?</pluralMinimalPairs>
+			<pluralMinimalPairs count="one">Bu jildda {0} ta fayl bor. Uni oʻchirib tashlaysizmi?</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">Bu jildda {0} ta fayl bor. Ularni oʻchirib tashlaysizmi?</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">{0}-chorrahadan o‘ngga buriling</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
@@ -6046,9 +6047,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ta element</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
-				<displayName>qism/million</displayName>
-				<unitPattern count="one">{0} qism/million</unitPattern>
-				<unitPattern count="other">{0} qism/million</unitPattern>
+				<displayName>milliondan ulush</displayName>
+				<unitPattern count="one">{0} ppm</unitPattern>
+				<unitPattern count="other">{0} ppm</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>foiz</displayName>
@@ -7055,9 +7056,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ta element</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
-				<displayName>qism/million</displayName>
-				<unitPattern count="one">{0} qism/million</unitPattern>
-				<unitPattern count="other">{0} qism/million</unitPattern>
+				<displayName>milliondan ulush</displayName>
+				<unitPattern count="one">{0} ppm</unitPattern>
+				<unitPattern count="other">{0} ppm</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>foiz</displayName>
@@ -8000,6 +8001,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="area-square-foot">
 				<unitPattern count="one">{0} ft²</unitPattern>
 				<unitPattern count="other">{0} ft²</unitPattern>
+			</unit>
+			<unit type="concentr-permillion">
+				<displayName>ppm</displayName>
+				<unitPattern count="one">{0}ppm</unitPattern>
+				<unitPattern count="other">{0}ppm</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>

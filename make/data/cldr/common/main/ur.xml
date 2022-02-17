@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
@@ -3581,6 +3583,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Pacific/Enderbury">
 				<exemplarCity>اینڈربری</exemplarCity>
 			</zone>
+			<zone type="Pacific/Kanton">
+				<exemplarCity>کانٹن</exemplarCity>
+			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>کریتیماٹی</exemplarCity>
 			</zone>
@@ -5666,7 +5671,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">جارجیائی لاری</displayName>
 				<symbol>GEL</symbol>
 				<symbol alt="narrow">₾</symbol>
-				<symbol alt="variant">₾</symbol>
 			</currency>
 			<currency type="GHS">
 				<displayName>گھانا کا سیڈی</displayName>
@@ -6548,6 +6552,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} جی-فورس</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
+				<gender>masculine</gender>
 				<displayName>میٹر فی مربع سیکنڈ</displayName>
 				<unitPattern count="one">{0} میٹر فی مربع سیکنڈ</unitPattern>
 				<unitPattern count="other">{0} میٹر فی مربع سیکنڈ</unitPattern>
@@ -6555,7 +6560,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="angle-revolution">
 				<gender>feminine</gender>
 				<displayName>گردش</displayName>
-				<unitPattern count="one">{0} rev</unitPattern>
+				<unitPattern count="one">{0} گردش</unitPattern>
 				<unitPattern count="other">{0} گردش</unitPattern>
 			</unit>
 			<unit type="angle-radian">
@@ -6583,6 +6588,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} آرک سیکنڈ</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
+				<gender>masculine</gender>
 				<displayName>مربع کلو میٹر</displayName>
 				<unitPattern count="one">{0} مربع کلو میٹر</unitPattern>
 				<unitPattern count="other">{0} مربع کلو میٹر</unitPattern>
@@ -6595,12 +6601,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ہیکٹر</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
+				<gender>masculine</gender>
 				<displayName>مربع میٹر</displayName>
 				<unitPattern count="one">{0} مربع میٹر</unitPattern>
 				<unitPattern count="other">{0} مربع میٹر</unitPattern>
 				<perUnitPattern>{0} فی مربع میٹر</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
+				<gender>masculine</gender>
 				<displayName>مربع سینٹی میٹر</displayName>
 				<unitPattern count="one">{0} مربع سینٹی میٹر</unitPattern>
 				<unitPattern count="other">{0} مربع سینٹی میٹر</unitPattern>
@@ -6650,11 +6658,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ملی گرام فی ڈیسی لیٹر</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
+				<gender>masculine</gender>
 				<displayName>ملی مولس فی لیٹر</displayName>
 				<unitPattern count="one">{0} ملی مول فی لیٹر</unitPattern>
 				<unitPattern count="other">{0} ملی مول فی لیٹر</unitPattern>
 			</unit>
 			<unit type="concentr-item">
+				<gender>masculine</gender>
 				<displayName>آئٹمز</displayName>
 				<unitPattern count="one">{0} آئٹم</unitPattern>
 				<unitPattern count="other">{0} آئٹمز</unitPattern>
@@ -6690,11 +6700,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} مولز</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
+				<gender>masculine</gender>
 				<displayName>لیٹر فی کلومیٹر</displayName>
 				<unitPattern count="one">{0} لیٹر فی کلومیٹر</unitPattern>
 				<unitPattern count="other">{0} لیٹر فی کلومیٹر</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
+				<gender>masculine</gender>
 				<displayName>لیٹر فی 100 کلو میٹر</displayName>
 				<unitPattern count="one">{0} لیٹر فی 100 کلو میٹر</unitPattern>
 				<unitPattern count="other">{0} لیٹر فی 100 کلو میٹر</unitPattern>
@@ -6710,46 +6722,55 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} میل فی امپیریل گیلن</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
+				<gender>feminine</gender>
 				<displayName>پیٹا بائٹس</displayName>
 				<unitPattern count="one">{0} پیٹا بائٹ</unitPattern>
 				<unitPattern count="other">{0} پیٹا بائٹس</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
+				<gender>feminine</gender>
 				<displayName>ٹیرابائٹس</displayName>
 				<unitPattern count="one">{0} ٹیرابائٹ</unitPattern>
 				<unitPattern count="other">{0} ٹیرابائٹ</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
+				<gender>feminine</gender>
 				<displayName>ٹیرابٹس</displayName>
 				<unitPattern count="one">{0} ٹیرابٹ</unitPattern>
 				<unitPattern count="other">{0} ٹیرابٹس</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
+				<gender>feminine</gender>
 				<displayName>گیگابائٹس</displayName>
 				<unitPattern count="one">{0} گیگابائٹ</unitPattern>
 				<unitPattern count="other">{0} گیگابائٹ</unitPattern>
 			</unit>
 			<unit type="digital-gigabit">
+				<gender>feminine</gender>
 				<displayName>گیگابٹس</displayName>
 				<unitPattern count="one">{0} گیگابٹ</unitPattern>
 				<unitPattern count="other">{0} گیگابٹس</unitPattern>
 			</unit>
 			<unit type="digital-megabyte">
+				<gender>feminine</gender>
 				<displayName>ميگابائٹس</displayName>
 				<unitPattern count="one">{0} میگابائٹ</unitPattern>
 				<unitPattern count="other">{0} ميگابائٹس</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
+				<gender>feminine</gender>
 				<displayName>میگابٹس</displayName>
 				<unitPattern count="one">{0} میگابٹ</unitPattern>
 				<unitPattern count="other">{0} میگابٹس</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
+				<gender>feminine</gender>
 				<displayName>کلوبائٹس</displayName>
 				<unitPattern count="one">{0} کلوبائٹ</unitPattern>
 				<unitPattern count="other">{0} کلوبائٹس</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
+				<gender>feminine</gender>
 				<displayName>کلوبٹس</displayName>
 				<unitPattern count="one">{0} کلوبٹ</unitPattern>
 				<unitPattern count="other">{0} کلوبٹس</unitPattern>
@@ -6790,7 +6811,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>مہینے</displayName>
 				<unitPattern count="one">{0} مہینہ</unitPattern>
 				<unitPattern count="other">{0} مہینے</unitPattern>
-				<perUnitPattern>{0}/m</perUnitPattern>
+				<perUnitPattern>{0} فی ماہ</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<gender>masculine</gender>
@@ -6831,16 +6852,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} فی سیکنڈ</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
+				<gender>masculine</gender>
 				<displayName>ملی سیکنڈز</displayName>
 				<unitPattern count="one">{0} ملی سیکنڈ</unitPattern>
-				<unitPattern count="other">{0} میل سیکنڈ</unitPattern>
+				<unitPattern count="other">{0} ملی سیکنڈ</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
+				<gender>masculine</gender>
 				<displayName>مائیکرو سیکنڈز</displayName>
 				<unitPattern count="one">{0} مائیکرو سیکنڈ</unitPattern>
 				<unitPattern count="other">{0} مائیکرو سیکنڈز</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
+				<gender>masculine</gender>
 				<displayName>نینو سیکنڈز</displayName>
 				<unitPattern count="one">{0} نینو سیکنڈ</unitPattern>
 				<unitPattern count="other">{0} نینو سیکنڈ</unitPattern>
@@ -6852,6 +6876,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ایمپیئر</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
+				<gender>masculine</gender>
 				<displayName>ملی ایمپیئر</displayName>
 				<unitPattern count="one">{0} ملی ایمپیئر</unitPattern>
 				<unitPattern count="other">{0} ملی ایمپیئر</unitPattern>
@@ -6885,6 +6910,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} کیلوریز</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
+				<gender>masculine</gender>
 				<displayName>کلو جول</displayName>
 				<unitPattern count="one">{0} کلو جول</unitPattern>
 				<unitPattern count="other">{0} کلو جول</unitPattern>
@@ -6896,6 +6922,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} جول</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
+				<gender>masculine</gender>
 				<displayName>کلو واٹ آور</displayName>
 				<unitPattern count="one">{0} کلو واٹ آور</unitPattern>
 				<unitPattern count="other">{0} کلو واٹ آور</unitPattern>
@@ -6927,21 +6954,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} نیوٹنز</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<gender>masculine</gender>
 				<displayName>کلو واٹ گھنٹے فی 100 کلومیٹر</displayName>
 				<unitPattern count="one">{0} کلو واٹ گھنٹہ فی 100 کلومیٹر</unitPattern>
 				<unitPattern count="other">{0} کلو واٹ گھنٹے فی 100 کلومیٹر</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
+				<gender>masculine</gender>
 				<displayName>گیگاہرٹز</displayName>
 				<unitPattern count="one">{0} گیگاہرٹز</unitPattern>
 				<unitPattern count="other">{0} گیگاہرٹز</unitPattern>
 			</unit>
 			<unit type="frequency-megahertz">
+				<gender>masculine</gender>
 				<displayName>میگاہرٹز</displayName>
 				<unitPattern count="one">{0} میگاہرٹز</unitPattern>
 				<unitPattern count="other">{0} میگاہرٹز</unitPattern>
 			</unit>
 			<unit type="frequency-kilohertz">
+				<gender>masculine</gender>
 				<displayName>کلوہرٹز</displayName>
 				<unitPattern count="one">{0} کلوہرٹز</unitPattern>
 				<unitPattern count="other">{0} کلوہرٹز</unitPattern>
@@ -6965,11 +6996,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} پکسلز</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
+				<gender>masculine</gender>
 				<displayName>میگا پکسلز</displayName>
 				<unitPattern count="one">{0} میگا پکسل</unitPattern>
 				<unitPattern count="other">{0} میگا پکسلز</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-centimeter">
+				<gender>masculine</gender>
 				<displayName>پکسلز فی سینٹی میٹر</displayName>
 				<unitPattern count="one">{0} پکسل فی سینٹی میٹر</unitPattern>
 				<unitPattern count="other">{0} پکسلز فی سینٹی میٹر</unitPattern>
@@ -6998,6 +7031,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} زمینی رداس</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
+				<gender>masculine</gender>
 				<displayName>کلو میٹر</displayName>
 				<unitPattern count="one">{0} کلو میٹر</unitPattern>
 				<unitPattern count="other">{0} کلو میٹر</unitPattern>
@@ -7011,32 +7045,38 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} فی میٹر</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
+				<gender>masculine</gender>
 				<displayName>ڈیسی میٹر</displayName>
 				<unitPattern count="one">{0} ڈیسی میٹر</unitPattern>
 				<unitPattern count="other">{0} ڈیسی میٹر</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
+				<gender>masculine</gender>
 				<displayName>سینٹی میٹر</displayName>
 				<unitPattern count="one">{0} سینٹی میٹر</unitPattern>
 				<unitPattern count="other">{0} سینٹی میٹر</unitPattern>
 				<perUnitPattern>{0} فی سینٹی میٹر</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
+				<gender>masculine</gender>
 				<displayName>ملی میٹر</displayName>
-				<unitPattern count="one">{0} ملیمیٹر</unitPattern>
+				<unitPattern count="one">{0} ملی میٹر</unitPattern>
 				<unitPattern count="other">{0} ملیمیٹر</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
+				<gender>masculine</gender>
 				<displayName>مائیکرو میٹر</displayName>
 				<unitPattern count="one">{0} مائیکرو میٹر</unitPattern>
 				<unitPattern count="other">{0} مائیکرو میٹر</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
+				<gender>masculine</gender>
 				<displayName>نینو میٹر</displayName>
 				<unitPattern count="one">{0} نینو میٹر</unitPattern>
 				<unitPattern count="other">{0} نینو میٹر</unitPattern>
 			</unit>
 			<unit type="length-picometer">
+				<gender>masculine</gender>
 				<displayName>پیکو میٹر</displayName>
 				<unitPattern count="one">{0} پیکو میٹر</unitPattern>
 				<unitPattern count="other">{0} پیکو میٹر</unitPattern>
@@ -7153,11 +7193,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} فی گرام</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
+				<gender>masculine</gender>
 				<displayName>ملی گرام</displayName>
 				<unitPattern count="one">{0} ملی گرام</unitPattern>
 				<unitPattern count="other">{0} ملی گرام</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
+				<gender>masculine</gender>
 				<displayName>مائکرو گرام</displayName>
 				<unitPattern count="one">{0} مائکرو گرام</unitPattern>
 				<unitPattern count="other">{0} مائکرو گرام</unitPattern>
@@ -7216,16 +7258,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} گرین</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
+				<gender>masculine</gender>
 				<displayName>گیگا واٹ</displayName>
 				<unitPattern count="one">{0} گیگا واٹ</unitPattern>
 				<unitPattern count="other">{0} گیگا واٹ</unitPattern>
 			</unit>
 			<unit type="power-megawatt">
+				<gender>masculine</gender>
 				<displayName>میگا واٹ</displayName>
 				<unitPattern count="one">{0} میگا واٹ</unitPattern>
 				<unitPattern count="other">{0} میگا واٹ</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
+				<gender>masculine</gender>
 				<displayName>کلو واٹ</displayName>
 				<unitPattern count="one">{0} کلو واٹ</unitPattern>
 				<unitPattern count="other">{0} کلو واٹ</unitPattern>
@@ -7237,6 +7282,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} واٹ</unitPattern>
 			</unit>
 			<unit type="power-milliwatt">
+				<gender>masculine</gender>
 				<displayName>ملی واٹ</displayName>
 				<unitPattern count="one">{0} ملی واٹ</unitPattern>
 				<unitPattern count="other">{0} ملی واٹ</unitPattern>
@@ -7268,6 +7314,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} بارز</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
+				<gender>masculine</gender>
 				<displayName>ملی بار</displayName>
 				<unitPattern count="one">{0} ملی بار</unitPattern>
 				<unitPattern count="other">{0} ملی بار</unitPattern>
@@ -7285,26 +7332,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} پاسکل</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
+				<gender>masculine</gender>
 				<displayName>ہیکٹو پاسکل</displayName>
 				<unitPattern count="one">{0} ہیکٹو پاسکل</unitPattern>
 				<unitPattern count="other">{0} ہیکٹو پاسکل</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
+				<gender>masculine</gender>
 				<displayName>کلو پاسکلز</displayName>
 				<unitPattern count="one">{0} کلو پاسکل</unitPattern>
 				<unitPattern count="other">{0} کلو پاسکلز</unitPattern>
 			</unit>
 			<unit type="pressure-megapascal">
+				<gender>masculine</gender>
 				<displayName>میگا پاسکلز</displayName>
 				<unitPattern count="one">{0} میگا پاسکل</unitPattern>
 				<unitPattern count="other">{0} میگا پاسکلز</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
+				<gender>masculine</gender>
 				<displayName>کلومیٹر فی گھنٹہ</displayName>
 				<unitPattern count="one">{0} کلومیٹر فی گھنٹہ</unitPattern>
 				<unitPattern count="other">{0} کلومیٹر فی گھنٹہ</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
+				<gender>masculine</gender>
 				<displayName>میٹر فی سیکنڈ</displayName>
 				<unitPattern count="one">{0} میٹر فی سیکنڈ</unitPattern>
 				<unitPattern count="other">{0} میٹر فی سیکنڈ</unitPattern>
@@ -7348,22 +7400,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} پاؤنڈ فٹ</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
+				<gender>masculine</gender>
 				<displayName>نیوٹن میٹر</displayName>
 				<unitPattern count="one">{0} نیوٹن میٹر</unitPattern>
 				<unitPattern count="other">{0} نیوٹن میٹر</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
+				<gender>masculine</gender>
 				<displayName>کیوبک کلو میٹر</displayName>
 				<unitPattern count="one">{0} کیوبک کلو میٹر</unitPattern>
 				<unitPattern count="other">{0} کیوبک کلو میٹر</unitPattern>
 			</unit>
 			<unit type="volume-cubic-meter">
+				<gender>masculine</gender>
 				<displayName>کیوبک میٹر</displayName>
 				<unitPattern count="one">{0} کیوبک میٹر</unitPattern>
 				<unitPattern count="other">{0} کیوبک میٹر</unitPattern>
 				<perUnitPattern>{0} فی کیوبک میٹر</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
+				<gender>masculine</gender>
 				<displayName>کیوبک سینٹی میٹر</displayName>
 				<unitPattern count="one">{0} کیوبک سینٹی میٹر</unitPattern>
 				<unitPattern count="other">{0} کیوبک سینٹی میٹر</unitPattern>
@@ -7381,7 +7437,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="volume-cubic-foot">
 				<displayName>کیوبک فیٹ</displayName>
-				<unitPattern count="one">{0} کیوبک فیٹ</unitPattern>
+				<unitPattern count="one">{0} کیوبک فٹ</unitPattern>
 				<unitPattern count="other">{0} کیوبک فٹ</unitPattern>
 			</unit>
 			<unit type="volume-cubic-inch">
@@ -7390,11 +7446,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} کیوبک انچ</unitPattern>
 			</unit>
 			<unit type="volume-megaliter">
+				<gender>masculine</gender>
 				<displayName>میگا لیٹر</displayName>
 				<unitPattern count="one">{0} میگا لیٹر</unitPattern>
 				<unitPattern count="other">{0} میگا لیٹر</unitPattern>
 			</unit>
 			<unit type="volume-hectoliter">
+				<gender>masculine</gender>
 				<displayName>ہیکٹو لیٹر</displayName>
 				<unitPattern count="one">{0} ہیکٹو لیٹر</unitPattern>
 				<unitPattern count="other">{0} ہیکٹو لیٹر</unitPattern>
@@ -7407,16 +7465,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} فی لیٹر</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
+				<gender>masculine</gender>
 				<displayName>ڈیسی لیٹر</displayName>
 				<unitPattern count="one">{0} ڈیسی لیٹر</unitPattern>
 				<unitPattern count="other">{0} ڈیسی لیٹر</unitPattern>
 			</unit>
 			<unit type="volume-centiliter">
+				<gender>masculine</gender>
 				<displayName>سینٹی لیٹر</displayName>
 				<unitPattern count="one">{0} سینٹی لیٹر</unitPattern>
 				<unitPattern count="other">{0} سینٹی لیٹر</unitPattern>
 			</unit>
 			<unit type="volume-milliliter">
+				<gender>masculine</gender>
 				<displayName>ملی لیٹر</displayName>
 				<unitPattern count="one">{0} ملی لیٹر</unitPattern>
 				<unitPattern count="other">{0} ملی لیٹر</unitPattern>

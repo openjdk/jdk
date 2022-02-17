@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
@@ -6995,6 +6997,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>spansk peseta</displayName>
 				<displayName count="one">spansk peseta</displayName>
 				<displayName count="other">spanska pesetas</displayName>
+				<symbol draft="contributed">ESP</symbol>
 				<symbol alt="narrow" draft="contributed">ESP</symbol>
 			</currency>
 			<currency type="ETB">
@@ -7052,7 +7055,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">georgiska lari</displayName>
 				<symbol>GEL</symbol>
 				<symbol alt="narrow">₾</symbol>
-				<symbol alt="variant">₾</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>ghanansk cedi (1979–2007)</displayName>
@@ -8261,6 +8263,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<pluralMinimalPairs count="other">om {0} dagar</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="one">Ta {0}:a svängen till höger</ordinalMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">Ta {0}:e svängen till höger</ordinalMinimalPairs>
+			<caseMinimalPairs case="genitive">På {0} avstånd</caseMinimalPairs>
+			<caseMinimalPairs case="nominative">Jag tror att {0} är tillräckligt.</caseMinimalPairs>
 			<genderMinimalPairs gender="common">En {0} är</genderMinimalPairs>
 			<genderMinimalPairs gender="neuter">Ett {0} är</genderMinimalPairs>
 		</minimalPairs>
@@ -8357,16 +8361,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="power2">
 				<compoundUnitPattern1>kvadrat{0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one">kvadrat{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" case="genitive">kvadrat{0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" gender="common">kvadrat{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" gender="common" case="genitive">kvadrat{0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">kvadrat{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" case="genitive">kvadrat{0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" gender="common">kvadrat{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" gender="common" case="genitive">kvadrat{0}</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="power3">
 				<compoundUnitPattern1>kubik{0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one">kubik{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" case="genitive">kubik{0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" gender="common">kubik{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" gender="common" case="genitive">kubik{0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">kubik{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" case="genitive">kubik{0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" gender="common">kubik{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" gender="common" case="genitive">kubik{0}</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern>{0}-{1}</compoundUnitPattern>
@@ -8375,68 +8387,91 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>common</gender>
 				<displayName>g-kraft</displayName>
 				<unitPattern count="one">{0} g-kraft</unitPattern>
+				<unitPattern count="one" case="genitive">{0} g-krafts</unitPattern>
 				<unitPattern count="other">{0} g-kraft</unitPattern>
+				<unitPattern count="other" case="genitive">{0} g-krafters</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
 				<gender>common</gender>
 				<displayName>meter per kvadratsekund</displayName>
 				<unitPattern count="one">{0} meter per kvadratsekund</unitPattern>
+				<unitPattern count="one" case="genitive">{0} meter per kvadratsekunds</unitPattern>
 				<unitPattern count="other">{0} meter per kvadratsekund</unitPattern>
+				<unitPattern count="other" case="genitive">{0} meter per kvadratsekunds</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
 				<gender>neuter</gender>
 				<displayName>varv</displayName>
 				<unitPattern count="one">{0} varv</unitPattern>
+				<unitPattern count="one" case="genitive">{0} varvs</unitPattern>
 				<unitPattern count="other">{0} varv</unitPattern>
+				<unitPattern count="other" case="genitive">{0} varvs</unitPattern>
 			</unit>
 			<unit type="angle-radian">
 				<gender>common</gender>
 				<displayName>radianer</displayName>
 				<unitPattern count="one">{0} radian</unitPattern>
+				<unitPattern count="one" case="genitive">{0} radians</unitPattern>
 				<unitPattern count="other">{0} radianer</unitPattern>
+				<unitPattern count="other" case="genitive">{0} radianers</unitPattern>
 			</unit>
 			<unit type="angle-degree">
 				<gender>common</gender>
 				<displayName>grader</displayName>
 				<unitPattern count="one">{0} grad</unitPattern>
+				<unitPattern count="one" case="genitive">{0} grads</unitPattern>
 				<unitPattern count="other">{0} grader</unitPattern>
+				<unitPattern count="other" case="genitive">{0} graders</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
 				<gender>common</gender>
 				<displayName>bågminuter</displayName>
 				<unitPattern count="one">{0} bågminut</unitPattern>
+				<unitPattern count="one" case="genitive">{0} bågminuts</unitPattern>
 				<unitPattern count="other">{0} bågminuter</unitPattern>
+				<unitPattern count="other" case="genitive">{0} bågminuters</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
 				<gender>common</gender>
 				<displayName>bågsekunder</displayName>
 				<unitPattern count="one">{0} bågsekund</unitPattern>
+				<unitPattern count="one" case="genitive">{0} bågsekunds</unitPattern>
 				<unitPattern count="other">{0} bågsekunder</unitPattern>
+				<unitPattern count="other" case="genitive">{0} bågsekunders</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
 				<gender>common</gender>
 				<displayName>kvadratkilometer</displayName>
 				<unitPattern count="one">{0} kvadratkilometer</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} kvadratkilometers</unitPattern>
 				<unitPattern count="other">{0} kvadratkilometer</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} kvadratkilometers</unitPattern>
 				<perUnitPattern>{0} per kvadratkilometer</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<gender>common</gender>
 				<displayName>hektar</displayName>
 				<unitPattern count="one">{0} hektar</unitPattern>
+				<unitPattern count="one" case="genitive">{0} hektars</unitPattern>
 				<unitPattern count="other">{0} hektar</unitPattern>
+				<unitPattern count="other" case="genitive">{0} hektars</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
+				<gender>common</gender>
 				<displayName>kvadratmeter</displayName>
 				<unitPattern count="one">{0} kvadratmeter</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kvadratmeters</unitPattern>
 				<unitPattern count="other">{0} kvadratmeter</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kvadratmeters</unitPattern>
 				<perUnitPattern>{0} per kvadratmeter</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
 				<gender>common</gender>
 				<displayName>kvadratcentimeter</displayName>
 				<unitPattern count="one">{0} kvadratcentimeter</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kvadratcentimeters</unitPattern>
 				<unitPattern count="other">{0} kvadratcentimeter</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kvadratcentimeters</unitPattern>
 				<perUnitPattern>{0} per kvadratcentimeter</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
@@ -8478,7 +8513,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>common</gender>
 				<displayName>karat</displayName>
 				<unitPattern count="one">{0} karat</unitPattern>
+				<unitPattern count="one" case="genitive">{0} karats</unitPattern>
 				<unitPattern count="other">{0} karat</unitPattern>
+				<unitPattern count="other" case="genitive">{0} karats</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>milligram per deciliter</displayName>
@@ -8486,160 +8523,226 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} milligram per deciliter</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
+				<gender>common</gender>
 				<displayName>millimol per liter</displayName>
 				<unitPattern count="one">{0} millimol per liter</unitPattern>
+				<unitPattern count="one" case="genitive">{0} millimol per liters</unitPattern>
 				<unitPattern count="other">{0} millimol per liter</unitPattern>
+				<unitPattern count="other" case="genitive">{0} millimol per liters</unitPattern>
 			</unit>
 			<unit type="concentr-item">
+				<gender>neuter</gender>
 				<displayName>objekt</displayName>
 				<unitPattern count="one">{0} objekt</unitPattern>
+				<unitPattern count="one" case="genitive">{0} objekts</unitPattern>
 				<unitPattern count="other">{0} objekt</unitPattern>
+				<unitPattern count="other" case="genitive">{0} objekts</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
 				<gender>common</gender>
 				<displayName>miljondelar</displayName>
 				<unitPattern count="one">{0} miljondel</unitPattern>
+				<unitPattern count="one" case="genitive">{0} miljondels</unitPattern>
 				<unitPattern count="other">{0} miljondelar</unitPattern>
+				<unitPattern count="other" case="genitive">{0} miljondelars</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<gender>common</gender>
 				<displayName>procent</displayName>
 				<unitPattern count="one">{0} procent</unitPattern>
+				<unitPattern count="one" case="genitive">{0} procents</unitPattern>
 				<unitPattern count="other">{0} procent</unitPattern>
+				<unitPattern count="other" case="genitive">{0} procents</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
 				<gender>common</gender>
 				<displayName>promille</displayName>
 				<unitPattern count="one">{0} promille</unitPattern>
+				<unitPattern count="one" case="genitive">{0} promilles</unitPattern>
 				<unitPattern count="other">{0} promille</unitPattern>
+				<unitPattern count="other" case="genitive">{0} promilles</unitPattern>
 			</unit>
 			<unit type="concentr-permyriad">
 				<gender>common</gender>
 				<displayName>promyriad</displayName>
 				<unitPattern count="one">{0} promyriad</unitPattern>
+				<unitPattern count="one" case="genitive">{0} promyriads</unitPattern>
 				<unitPattern count="other">{0} promyriad</unitPattern>
+				<unitPattern count="other" case="genitive">{0} promyriads</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
 				<gender>common</gender>
+				<unitPattern count="one">{0} mol</unitPattern>
+				<unitPattern count="one" case="genitive">{0} mols</unitPattern>
+				<unitPattern count="other">{0} mol</unitPattern>
+				<unitPattern count="other" case="genitive">{0} mols</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
+				<gender>common</gender>
 				<displayName>liter per kilometer</displayName>
 				<unitPattern count="one">{0} liter per kilometer</unitPattern>
+				<unitPattern count="one" case="genitive">{0} liter per kilometers</unitPattern>
 				<unitPattern count="other">{0} liter per kilometer</unitPattern>
+				<unitPattern count="other" case="genitive">{0} liter per kilometers</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<gender>common</gender>
 				<displayName>liter per 100 kilometer</displayName>
 				<unitPattern count="one">{0} liter per 100 kilometer</unitPattern>
+				<unitPattern count="one" case="genitive">{0} liter per 100 kilometers</unitPattern>
 				<unitPattern count="other">{0} liter per 100 kilometer</unitPattern>
+				<unitPattern count="other" case="genitive">{0} liter per 100 kilometers</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
-				<gender draft="contributed">common</gender>
+				<gender>common</gender>
 				<displayName>miles per gallon</displayName>
 				<unitPattern count="one">{0} mile per gallon</unitPattern>
 				<unitPattern count="other">{0} miles per gallon</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
-				<gender draft="contributed">common</gender>
+				<gender>common</gender>
 				<displayName>UK mpg</displayName>
 				<unitPattern count="one">{0} UK mil/gn</unitPattern>
 				<unitPattern count="other">{0} UK mil/gn</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
+				<gender>common</gender>
 				<displayName>petabyte</displayName>
 				<unitPattern count="one">{0} petabyte</unitPattern>
+				<unitPattern count="one" case="genitive">{0} petabytes</unitPattern>
 				<unitPattern count="other">{0} petabyte</unitPattern>
+				<unitPattern count="other" case="genitive">{0} petabytes</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
+				<gender>common</gender>
 				<displayName>terabyte</displayName>
 				<unitPattern count="one">{0} terabyte</unitPattern>
+				<unitPattern count="one" case="genitive">{0} terabytes</unitPattern>
 				<unitPattern count="other">{0} terabyte</unitPattern>
+				<unitPattern count="other" case="genitive">{0} terabytes</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
+				<gender>common</gender>
 				<displayName>terabit</displayName>
 				<unitPattern count="one">{0} terabit</unitPattern>
+				<unitPattern count="one" case="genitive">{0} terabits</unitPattern>
 				<unitPattern count="other">{0} terabit</unitPattern>
+				<unitPattern count="other" case="genitive">{0} terabits</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
+				<gender>common</gender>
 				<displayName>gigabyte</displayName>
 				<unitPattern count="one">{0} gigabyte</unitPattern>
+				<unitPattern count="one" case="genitive">{0} gigabytes</unitPattern>
 				<unitPattern count="other">{0} gigabyte</unitPattern>
+				<unitPattern count="other" case="genitive">{0} gigabytes</unitPattern>
 			</unit>
 			<unit type="digital-gigabit">
+				<gender>common</gender>
 				<displayName>gigabit</displayName>
 				<unitPattern count="one">{0} gigabit</unitPattern>
+				<unitPattern count="one" case="genitive">{0} gigabits</unitPattern>
 				<unitPattern count="other">{0} gigabit</unitPattern>
+				<unitPattern count="other" case="genitive">{0} gigabits</unitPattern>
 			</unit>
 			<unit type="digital-megabyte">
+				<gender>common</gender>
 				<displayName>megabyte</displayName>
 				<unitPattern count="one">{0} megabyte</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megabytes</unitPattern>
 				<unitPattern count="other">{0} megabyte</unitPattern>
+				<unitPattern count="other" case="genitive">{0} megabytes</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
+				<gender>common</gender>
 				<displayName>megabit</displayName>
 				<unitPattern count="one">{0} megabit</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megabits</unitPattern>
 				<unitPattern count="other">{0} megabit</unitPattern>
+				<unitPattern count="other" case="genitive">{0} megabits</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
+				<gender>common</gender>
 				<displayName>kilobyte</displayName>
 				<unitPattern count="one">{0} kilobyte</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilobytes</unitPattern>
 				<unitPattern count="other">{0} kilobyte</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilobytes</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
+				<gender>common</gender>
 				<displayName>kilobit</displayName>
 				<unitPattern count="one">{0} kilobit</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilobits</unitPattern>
 				<unitPattern count="other">{0} kilobit</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilobits</unitPattern>
 			</unit>
 			<unit type="digital-byte">
 				<gender>common</gender>
 				<displayName>byte</displayName>
 				<unitPattern count="one">{0} byte</unitPattern>
+				<unitPattern count="one" case="genitive">{0} bytes</unitPattern>
 				<unitPattern count="other">{0} byte</unitPattern>
+				<unitPattern count="other" case="genitive">{0} bytes</unitPattern>
 			</unit>
 			<unit type="digital-bit">
 				<gender>common</gender>
 				<displayName>bit</displayName>
 				<unitPattern count="one">{0} bit</unitPattern>
+				<unitPattern count="one" case="genitive">{0} bits</unitPattern>
 				<unitPattern count="other">{0} bit</unitPattern>
+				<unitPattern count="other" case="genitive">{0} bits</unitPattern>
 			</unit>
 			<unit type="duration-century">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>århundraden</displayName>
 				<unitPattern count="one">{0} århundrade</unitPattern>
+				<unitPattern count="one" case="genitive">{0} århundrades</unitPattern>
 				<unitPattern count="other">{0} århundraden</unitPattern>
+				<unitPattern count="other" case="genitive">{0} århundradens</unitPattern>
 			</unit>
 			<unit type="duration-decade">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>årtionden</displayName>
 				<unitPattern count="one">{0} årtionde</unitPattern>
+				<unitPattern count="one" case="genitive">{0} årtiondes</unitPattern>
 				<unitPattern count="other">{0} årtionden</unitPattern>
+				<unitPattern count="other" case="genitive">{0} årtiondens</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<gender>neuter</gender>
 				<displayName>år</displayName>
 				<unitPattern count="one">{0} år</unitPattern>
+				<unitPattern count="one" case="genitive">{0} års</unitPattern>
 				<unitPattern count="other">{0} år</unitPattern>
+				<unitPattern count="other" case="genitive">{0} års</unitPattern>
 				<perUnitPattern>{0} per år</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<gender>common</gender>
 				<displayName>månader</displayName>
 				<unitPattern count="one">{0} månad</unitPattern>
+				<unitPattern count="one" case="genitive">{0} månads</unitPattern>
 				<unitPattern count="other">{0} månader</unitPattern>
+				<unitPattern count="other" case="genitive">{0} månaders</unitPattern>
 				<perUnitPattern>{0} per månad</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<gender>common</gender>
 				<displayName>veckor</displayName>
 				<unitPattern count="one">{0} vecka</unitPattern>
+				<unitPattern count="one" case="genitive">{0} veckas</unitPattern>
 				<unitPattern count="other">{0} veckor</unitPattern>
+				<unitPattern count="other" case="genitive">{0} veckors</unitPattern>
 				<perUnitPattern>{0} per vecka</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
-				<gender>common</gender>
+				<gender>neuter</gender>
 				<displayName>dygn</displayName>
 				<unitPattern count="one">{0} dygn</unitPattern>
+				<unitPattern count="one" case="genitive">{0} dygns</unitPattern>
 				<unitPattern count="other">{0} dygn</unitPattern>
+				<unitPattern count="other" case="genitive">{0} dygns</unitPattern>
 				<perUnitPattern>{0} per dygn</perUnitPattern>
 			</unit>
 			<unit type="duration-day-person">
@@ -8649,60 +8752,84 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>common</gender>
 				<displayName>timmar</displayName>
 				<unitPattern count="one">{0} timme</unitPattern>
+				<unitPattern count="one" case="genitive">{0} timmes</unitPattern>
 				<unitPattern count="other">{0} timmar</unitPattern>
+				<unitPattern count="other" case="genitive">{0} timmars</unitPattern>
 				<perUnitPattern>{0} per timme</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<gender>common</gender>
 				<displayName>minuter</displayName>
 				<unitPattern count="one">{0} minut</unitPattern>
+				<unitPattern count="one" case="genitive">{0} minuts</unitPattern>
 				<unitPattern count="other">{0} minuter</unitPattern>
+				<unitPattern count="other" case="genitive">{0} minuters</unitPattern>
 				<perUnitPattern>{0} per minut</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<gender>common</gender>
 				<displayName>sekunder</displayName>
 				<unitPattern count="one">{0} sekund</unitPattern>
+				<unitPattern count="one" case="genitive">{0} sekunds</unitPattern>
 				<unitPattern count="other">{0} sekunder</unitPattern>
+				<unitPattern count="other" case="genitive">{0} sekunders</unitPattern>
 				<perUnitPattern>{0} per sekund</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
+				<gender>common</gender>
 				<displayName>millisekunder</displayName>
 				<unitPattern count="one">{0} millisekund</unitPattern>
+				<unitPattern count="one" case="genitive">{0} millisekunds</unitPattern>
 				<unitPattern count="other">{0} millisekunder</unitPattern>
+				<unitPattern count="other" case="genitive">{0} millisekunders</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
+				<gender>common</gender>
 				<displayName>mikrosekunder</displayName>
 				<unitPattern count="one">{0} mikrosekund</unitPattern>
+				<unitPattern count="one" case="genitive">{0} mikrosekunds</unitPattern>
 				<unitPattern count="other">{0} mikrosekunder</unitPattern>
+				<unitPattern count="other" case="genitive">{0} mikrosekunders</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
+				<gender>common</gender>
 				<displayName>nanosekunder</displayName>
 				<unitPattern count="one">{0} nanosekund</unitPattern>
+				<unitPattern count="one" case="genitive">{0} nanosekunds</unitPattern>
 				<unitPattern count="other">{0} nanosekunder</unitPattern>
+				<unitPattern count="other" case="genitive">{0} nanosekunders</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
 				<gender>common</gender>
 				<displayName>ampere</displayName>
 				<unitPattern count="one">{0} ampere</unitPattern>
+				<unitPattern count="one" case="genitive">{0} amperes</unitPattern>
 				<unitPattern count="other">{0} ampere</unitPattern>
+				<unitPattern count="other" case="genitive">{0} amperes</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
+				<gender>common</gender>
 				<displayName>milliampere</displayName>
 				<unitPattern count="one">{0} milliampere</unitPattern>
+				<unitPattern count="one" case="genitive">{0} milliamperes</unitPattern>
 				<unitPattern count="other">{0} milliampere</unitPattern>
+				<unitPattern count="other" case="genitive">{0} milliamperes</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
 				<gender>common</gender>
 				<displayName>ohm</displayName>
 				<unitPattern count="one">{0} ohm</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ohms</unitPattern>
 				<unitPattern count="other">{0} ohm</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ohms</unitPattern>
 			</unit>
 			<unit type="electric-volt">
 				<gender>common</gender>
 				<displayName>volt</displayName>
 				<unitPattern count="one">{0} volt</unitPattern>
+				<unitPattern count="one" case="genitive">{0} volts</unitPattern>
 				<unitPattern count="other">{0} volt</unitPattern>
+				<unitPattern count="other" case="genitive">{0} volts</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
 				<gender>common</gender>
@@ -8714,7 +8841,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>common</gender>
 				<displayName>kalorier</displayName>
 				<unitPattern count="one">{0} kalori</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kaloris</unitPattern>
 				<unitPattern count="other">{0} kalorier</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kaloriers</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
 				<gender>common</gender>
@@ -8723,20 +8852,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} kilokalorier</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
+				<gender>common</gender>
 				<displayName>kilojoule</displayName>
 				<unitPattern count="one">{0} kilojoule</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilojoules</unitPattern>
 				<unitPattern count="other">{0} kilojoule</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilojoules</unitPattern>
 			</unit>
 			<unit type="energy-joule">
 				<gender>common</gender>
 				<displayName>joule</displayName>
 				<unitPattern count="one">{0} joule</unitPattern>
+				<unitPattern count="one" case="genitive">{0} joules</unitPattern>
 				<unitPattern count="other">{0} joule</unitPattern>
+				<unitPattern count="other" case="genitive">{0} joules</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
+				<gender>common</gender>
 				<displayName>kilowattimmar</displayName>
 				<unitPattern count="one">{0} kilowattimme</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilowattimmes</unitPattern>
 				<unitPattern count="other">{0} kilowattimmar</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilowattimmars</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
 				<displayName>elektronvolt</displayName>
@@ -8761,54 +8898,80 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>common</gender>
 				<displayName>newton</displayName>
 				<unitPattern count="one">{0} newton</unitPattern>
+				<unitPattern count="one" case="genitive">{0} newtons</unitPattern>
 				<unitPattern count="other">{0} newton</unitPattern>
+				<unitPattern count="other" case="genitive">{0} newtons</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<gender>common</gender>
 				<unitPattern count="one">{0} kWh/100 km</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kWh/100 km</unitPattern>
 				<unitPattern count="other">{0} kWh/100 km</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kWh/100 km</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
+				<gender>common</gender>
 				<displayName>gigahertz</displayName>
 				<unitPattern count="one">{0} gigahertz</unitPattern>
+				<unitPattern count="one" case="genitive">{0} gigahertz</unitPattern>
 				<unitPattern count="other">{0} gigahertz</unitPattern>
+				<unitPattern count="other" case="genitive">{0} gigahertz</unitPattern>
 			</unit>
 			<unit type="frequency-megahertz">
+				<gender>common</gender>
 				<displayName>megahertz</displayName>
 				<unitPattern count="one">{0} megahertz</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megahertz</unitPattern>
 				<unitPattern count="other">{0} megahertz</unitPattern>
+				<unitPattern count="other" case="genitive">{0} megahertz</unitPattern>
 			</unit>
 			<unit type="frequency-kilohertz">
+				<gender>common</gender>
 				<displayName>kilohertz</displayName>
 				<unitPattern count="one">{0} kilohertz</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilohertz</unitPattern>
 				<unitPattern count="other">{0} kilohertz</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilohertz</unitPattern>
 			</unit>
 			<unit type="frequency-hertz">
 				<gender>common</gender>
 				<displayName>hertz</displayName>
 				<unitPattern count="one">{0} hertz</unitPattern>
+				<unitPattern count="one" case="genitive">{0} hertz</unitPattern>
 				<unitPattern count="other">{0} hertz</unitPattern>
+				<unitPattern count="other" case="genitive">{0} hertz</unitPattern>
 			</unit>
 			<unit type="graphics-em">
-				<gender draft="contributed">common</gender>
+				<gender>common</gender>
 				<displayName>typografisk fyrkant</displayName>
 				<unitPattern count="one">{0} fyrkant</unitPattern>
+				<unitPattern count="one" case="genitive">{0} fyrkants</unitPattern>
 				<unitPattern count="other">{0} fyrkanter</unitPattern>
+				<unitPattern count="other" case="genitive">{0} fyrkanters</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
-				<gender draft="contributed">common</gender>
+				<gender>common</gender>
 				<displayName>pixlar</displayName>
 				<unitPattern count="one">{0} pixel</unitPattern>
+				<unitPattern count="one" case="genitive">{0} pixels</unitPattern>
 				<unitPattern count="other">{0} pixlar</unitPattern>
+				<unitPattern count="other" case="genitive">{0} pixlars</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
+				<gender>common</gender>
 				<displayName>megapixlar</displayName>
 				<unitPattern count="one">{0} megapixel</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megapixels</unitPattern>
 				<unitPattern count="other">{0} megapixlar</unitPattern>
+				<unitPattern count="other" case="genitive">{0} megapixlars</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-centimeter">
+				<gender>common</gender>
 				<displayName>pixlar per centimeter</displayName>
 				<unitPattern count="one">{0} pixel per centimeter</unitPattern>
+				<unitPattern count="one" case="genitive">{0} pixel per centimeters</unitPattern>
 				<unitPattern count="other">{0} pixlar per centimeter</unitPattern>
+				<unitPattern count="other" case="genitive">{0} pixlar per centimeters</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-inch">
 				<displayName>pixel per tum</displayName>
@@ -8837,50 +9000,68 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>common</gender>
 				<displayName>kilometer</displayName>
 				<unitPattern count="one">{0} kilometer</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilometers</unitPattern>
 				<unitPattern count="other">{0} kilometer</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilometers</unitPattern>
 				<perUnitPattern>{0} per kilometer</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<gender>common</gender>
 				<displayName>meter</displayName>
 				<unitPattern count="one">{0} meter</unitPattern>
+				<unitPattern count="one" case="genitive">{0} meters</unitPattern>
 				<unitPattern count="other">{0} meter</unitPattern>
+				<unitPattern count="other" case="genitive">{0} meters</unitPattern>
 				<perUnitPattern>{0} per meter</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
 				<gender>common</gender>
 				<displayName>decimeter</displayName>
 				<unitPattern count="one">{0} decimeter</unitPattern>
+				<unitPattern count="one" case="genitive">{0} decimeters</unitPattern>
 				<unitPattern count="other">{0} decimeter</unitPattern>
+				<unitPattern count="other" case="genitive">{0} decimeters</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<gender>common</gender>
 				<displayName>centimeter</displayName>
 				<unitPattern count="one">{0} centimeter</unitPattern>
+				<unitPattern count="one" case="genitive">{0} centimeters</unitPattern>
 				<unitPattern count="other">{0} centimeter</unitPattern>
+				<unitPattern count="other" case="genitive">{0} centimeters</unitPattern>
 				<perUnitPattern>{0} per centimeter</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<gender>common</gender>
 				<displayName>millimeter</displayName>
 				<unitPattern count="one">{0} millimeter</unitPattern>
+				<unitPattern count="one" case="genitive">{0} millimeters</unitPattern>
 				<unitPattern count="other">{0} millimeter</unitPattern>
+				<unitPattern count="other" case="genitive">{0} millimeters</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
+				<gender>common</gender>
 				<displayName>mikrometer</displayName>
 				<unitPattern count="one">{0} mikrometer</unitPattern>
+				<unitPattern count="one" case="genitive">{0} mikrometers</unitPattern>
 				<unitPattern count="other">{0} mikrometer</unitPattern>
+				<unitPattern count="other" case="genitive">{0} mikrometers</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
+				<gender>common</gender>
 				<displayName>nanometer</displayName>
 				<unitPattern count="one">{0} nanometer</unitPattern>
+				<unitPattern count="one" case="genitive">{0} nanometers</unitPattern>
 				<unitPattern count="other">{0} nanometer</unitPattern>
+				<unitPattern count="other" case="genitive">{0} nanometers</unitPattern>
 			</unit>
 			<unit type="length-picometer">
 				<gender>common</gender>
 				<displayName>pikometer</displayName>
 				<unitPattern count="one">{0} pikometer</unitPattern>
+				<unitPattern count="one" case="genitive">{0} pikometers</unitPattern>
 				<unitPattern count="other">{0} pikometer</unitPattern>
+				<unitPattern count="other" case="genitive">{0} pikometers</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<gender>common</gender>
@@ -8943,7 +9124,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>common</gender>
 				<displayName>mil</displayName>
 				<unitPattern count="one">{0} mil</unitPattern>
+				<unitPattern count="one" case="genitive">{0} mils</unitPattern>
 				<unitPattern count="other">{0} mil</unitPattern>
+				<unitPattern count="other" case="genitive">{0} mils</unitPattern>
 			</unit>
 			<unit type="length-point">
 				<displayName>pt</displayName>
@@ -8960,19 +9143,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>common</gender>
 				<displayName>lux</displayName>
 				<unitPattern count="one">{0} lux</unitPattern>
+				<unitPattern count="one" case="genitive">{0} lux</unitPattern>
 				<unitPattern count="other">{0} lux</unitPattern>
+				<unitPattern count="other" case="genitive">{0} lux</unitPattern>
 			</unit>
 			<unit type="light-candela">
 				<gender>common</gender>
 				<displayName>candela</displayName>
 				<unitPattern count="one">{0} candela</unitPattern>
+				<unitPattern count="one" case="genitive">{0} candelas</unitPattern>
 				<unitPattern count="other">{0} candela</unitPattern>
+				<unitPattern count="other" case="genitive">{0} candelas</unitPattern>
 			</unit>
 			<unit type="light-lumen">
 				<gender>common</gender>
 				<displayName>lumen</displayName>
 				<unitPattern count="one">{0} lumen</unitPattern>
+				<unitPattern count="one" case="genitive">{0} lumens</unitPattern>
 				<unitPattern count="other">{0} lumen</unitPattern>
+				<unitPattern count="other" case="genitive">{0} lumens</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<gender>common</gender>
@@ -8984,32 +9173,43 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>neuter</gender>
 				<displayName>ton</displayName>
 				<unitPattern count="one">{0} ton</unitPattern>
+				<unitPattern count="one" case="genitive">{0} tons</unitPattern>
 				<unitPattern count="other">{0} ton</unitPattern>
+				<unitPattern count="other" case="genitive">{0} tons</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<gender>neuter</gender>
 				<displayName>kilogram</displayName>
 				<unitPattern count="one">{0} kilogram</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilograms</unitPattern>
 				<unitPattern count="other">{0} kilogram</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilograms</unitPattern>
 				<perUnitPattern>{0} per kilogram</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<gender>neuter</gender>
 				<displayName>gram</displayName>
 				<unitPattern count="one">{0} gram</unitPattern>
+				<unitPattern count="one" case="genitive">{0} grams</unitPattern>
 				<unitPattern count="other">{0} gram</unitPattern>
+				<unitPattern count="other" case="genitive">{0} grams</unitPattern>
 				<perUnitPattern>{0} per gram</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
 				<gender>neuter</gender>
 				<displayName>milligram</displayName>
 				<unitPattern count="one">{0} milligram</unitPattern>
+				<unitPattern count="one" case="genitive">{0} milligrams</unitPattern>
 				<unitPattern count="other">{0} milligram</unitPattern>
+				<unitPattern count="other" case="genitive">{0} milligrams</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
+				<gender>neuter</gender>
 				<displayName>mikrogram</displayName>
 				<unitPattern count="one">{0} mikrogram</unitPattern>
+				<unitPattern count="one" case="genitive">{0} mikrograms</unitPattern>
 				<unitPattern count="other">{0} mikrogram</unitPattern>
+				<unitPattern count="other" case="genitive">{0} mikrograms</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>engelska korta ton</displayName>
@@ -9029,7 +9229,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} per pund</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
-				<gender draft="contributed">common</gender>
+				<gender>neuter</gender>
 				<displayName>uns</displayName>
 				<unitPattern count="one">{0} uns</unitPattern>
 				<unitPattern count="other">{0} uns</unitPattern>
@@ -9044,7 +9244,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>common</gender>
 				<displayName>karat</displayName>
 				<unitPattern count="one">{0} karat</unitPattern>
+				<unitPattern count="one" case="genitive">{0} karats</unitPattern>
 				<unitPattern count="other">{0} karat</unitPattern>
+				<unitPattern count="other" case="genitive">{0} karats</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
 				<gender>common</gender>
@@ -9070,30 +9272,44 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} grains</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
+				<gender>common</gender>
 				<displayName>gigawatt</displayName>
 				<unitPattern count="one">{0} gigawatt</unitPattern>
+				<unitPattern count="one" case="genitive">{0} gigawatts</unitPattern>
 				<unitPattern count="other">{0} gigawatt</unitPattern>
+				<unitPattern count="other" case="genitive">{0} gigawatts</unitPattern>
 			</unit>
 			<unit type="power-megawatt">
+				<gender>common</gender>
 				<displayName>megawatt</displayName>
 				<unitPattern count="one">{0} megawatt</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megawatts</unitPattern>
 				<unitPattern count="other">{0} megawatt</unitPattern>
+				<unitPattern count="other" case="genitive">{0} megawatts</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
+				<gender>common</gender>
 				<displayName>kilowatt</displayName>
 				<unitPattern count="one">{0} kilowatt</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilowatts</unitPattern>
 				<unitPattern count="other">{0} kilowatt</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilowatts</unitPattern>
 			</unit>
 			<unit type="power-watt">
 				<gender>common</gender>
 				<displayName>watt</displayName>
 				<unitPattern count="one">{0} watt</unitPattern>
+				<unitPattern count="one" case="genitive">{0} watts</unitPattern>
 				<unitPattern count="other">{0} watt</unitPattern>
+				<unitPattern count="other" case="genitive">{0} watts</unitPattern>
 			</unit>
 			<unit type="power-milliwatt">
+				<gender>common</gender>
 				<displayName>milliwatt</displayName>
 				<unitPattern count="one">{0} milliwatt</unitPattern>
+				<unitPattern count="one" case="genitive">{0} milliwatts</unitPattern>
 				<unitPattern count="other">{0} milliwatt</unitPattern>
+				<unitPattern count="other" case="genitive">{0} milliwatts</unitPattern>
 			</unit>
 			<unit type="power-horsepower">
 				<displayName>hästkrafter</displayName>
@@ -9117,51 +9333,74 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="pressure-bar">
 				<gender>common</gender>
+				<unitPattern count="one">{0} bar</unitPattern>
+				<unitPattern count="one" case="genitive">{0} bars</unitPattern>
+				<unitPattern count="other">{0} bar</unitPattern>
+				<unitPattern count="other" case="genitive">{0} bars</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
+				<gender>common</gender>
 				<displayName>millibar</displayName>
 				<unitPattern count="one">{0} millibar</unitPattern>
+				<unitPattern count="one" case="genitive">{0} millibars</unitPattern>
 				<unitPattern count="other">{0} millibar</unitPattern>
+				<unitPattern count="other" case="genitive">{0} millibars</unitPattern>
 			</unit>
 			<unit type="pressure-atmosphere">
 				<gender>common</gender>
 				<displayName>atmosfärer</displayName>
 				<unitPattern count="one">{0} atmosfär</unitPattern>
+				<unitPattern count="one" case="genitive">{0} atmosfärs</unitPattern>
 				<unitPattern count="other">{0} atmosfärer</unitPattern>
+				<unitPattern count="other" case="genitive">{0} atmosfärs</unitPattern>
 			</unit>
 			<unit type="pressure-pascal">
 				<gender>common</gender>
 				<displayName>pascal</displayName>
 				<unitPattern count="one">{0} pascal</unitPattern>
+				<unitPattern count="one" case="genitive">{0} pascals</unitPattern>
 				<unitPattern count="other">{0} pascal</unitPattern>
+				<unitPattern count="other" case="genitive">{0} pascals</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
+				<gender>common</gender>
 				<displayName>hektopascal</displayName>
 				<unitPattern count="one">{0} hektopascal</unitPattern>
+				<unitPattern count="one" case="genitive">{0} hektopascals</unitPattern>
 				<unitPattern count="other">{0} hektopascal</unitPattern>
+				<unitPattern count="other" case="genitive">{0} hektopascals</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
 				<gender>common</gender>
 				<displayName>kilopascal</displayName>
 				<unitPattern count="one">{0} kilopascal</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilopascals</unitPattern>
 				<unitPattern count="other">{0} kilopascal</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilopascals</unitPattern>
 			</unit>
 			<unit type="pressure-megapascal">
+				<gender>common</gender>
 				<displayName>megapascal</displayName>
 				<unitPattern count="one">{0} megapascal</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megapascals</unitPattern>
 				<unitPattern count="other">{0} megapascal</unitPattern>
+				<unitPattern count="other" case="genitive">{0} megapascals</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<gender>common</gender>
 				<displayName>kilometer per timme</displayName>
 				<unitPattern count="one">{0} kilometer per timme</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilometer per timmes</unitPattern>
 				<unitPattern count="other">{0} kilometer per timme</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilometer per timmes</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
 				<gender>common</gender>
 				<displayName>meter per sekund</displayName>
 				<unitPattern count="one">{0} meter per sekund</unitPattern>
+				<unitPattern count="one" case="genitive">{0} meter per sekunds</unitPattern>
 				<unitPattern count="other">{0} meter per sekund</unitPattern>
+				<unitPattern count="other" case="genitive">{0} meter per sekunds</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
 				<gender>common</gender>
@@ -9177,14 +9416,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="temperature-generic">
 				<gender>common</gender>
 				<displayName>grader</displayName>
-				<unitPattern count="one">{0}°</unitPattern>
-				<unitPattern count="other">{0}°</unitPattern>
+				<unitPattern count="one">{0} grad</unitPattern>
+				<unitPattern count="one" case="genitive">{0} grads</unitPattern>
+				<unitPattern count="other">{0} grader</unitPattern>
+				<unitPattern count="other" case="genitive">{0} graders</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<gender>common</gender>
 				<displayName>grader Celsius</displayName>
 				<unitPattern count="one">{0} grad Celsius</unitPattern>
+				<unitPattern count="one" case="genitive">{0} grad Celsius</unitPattern>
 				<unitPattern count="other">{0} grader Celsius</unitPattern>
+				<unitPattern count="other" case="genitive">{0} grader Celsius</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<gender>common</gender>
@@ -9196,7 +9439,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>common</gender>
 				<displayName>kelvin</displayName>
 				<unitPattern count="one">{0} kelvin</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kelvins</unitPattern>
 				<unitPattern count="other">{0} kelvin</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kelvins</unitPattern>
 			</unit>
 			<unit type="torque-pound-force-foot">
 				<displayName>pound-feet</displayName>
@@ -9204,26 +9449,37 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} pound-feet</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
+				<gender>common</gender>
 				<displayName>newton-meter</displayName>
 				<unitPattern count="one">{0} newton-meter</unitPattern>
+				<unitPattern count="one" case="genitive">{0} newton-meters</unitPattern>
 				<unitPattern count="other">{0} newton-meter</unitPattern>
+				<unitPattern count="other" case="genitive">{0} newton-meters</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
+				<gender>common</gender>
 				<displayName>kubikkilometer</displayName>
 				<unitPattern count="one">{0} kubikkilometer</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kubikkilometers</unitPattern>
 				<unitPattern count="other">{0} kubikkilometer</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kubikkilometers</unitPattern>
 			</unit>
 			<unit type="volume-cubic-meter">
+				<gender>common</gender>
 				<displayName>kubikmeter</displayName>
 				<unitPattern count="one">{0} kubikmeter</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kubikmeters</unitPattern>
 				<unitPattern count="other">{0} kubikmeter</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kubikmeters</unitPattern>
 				<perUnitPattern>{0} per kubikmeter</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
 				<gender>common</gender>
 				<displayName>kubikcentimeter</displayName>
 				<unitPattern count="one">{0} kubikcentimeter</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kubikcentimeters</unitPattern>
 				<unitPattern count="other">{0} kubikcentimeter</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kubikcentimeters</unitPattern>
 				<perUnitPattern>{0} per kubikcentimeter</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
@@ -9249,51 +9505,69 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} kubiktum</unitPattern>
 			</unit>
 			<unit type="volume-megaliter">
+				<gender>common</gender>
 				<displayName>megaliter</displayName>
 				<unitPattern count="one">{0} megaliter</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megaliters</unitPattern>
 				<unitPattern count="other">{0} megaliter</unitPattern>
+				<unitPattern count="other" case="genitive">{0} megaliters</unitPattern>
 			</unit>
 			<unit type="volume-hectoliter">
+				<gender>common</gender>
 				<displayName>hektoliter</displayName>
 				<unitPattern count="one">{0} hektoliter</unitPattern>
+				<unitPattern count="one" case="genitive">{0} hektoliters</unitPattern>
 				<unitPattern count="other">{0} hektoliter</unitPattern>
+				<unitPattern count="other" case="genitive">{0} hektoliters</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<gender>common</gender>
 				<displayName>liter</displayName>
 				<unitPattern count="one">{0} liter</unitPattern>
+				<unitPattern count="one" case="genitive">{0} liters</unitPattern>
 				<unitPattern count="other">{0} liter</unitPattern>
+				<unitPattern count="other" case="genitive">{0} liters</unitPattern>
 				<perUnitPattern>{0} per liter</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
 				<gender>common</gender>
 				<displayName>deciliter</displayName>
 				<unitPattern count="one">{0} deciliter</unitPattern>
+				<unitPattern count="one" case="genitive">{0} deciliters</unitPattern>
 				<unitPattern count="other">{0} deciliter</unitPattern>
+				<unitPattern count="other" case="genitive">{0} deciliters</unitPattern>
 			</unit>
 			<unit type="volume-centiliter">
 				<gender>common</gender>
 				<displayName>centiliter</displayName>
 				<unitPattern count="one">{0} centiliter</unitPattern>
+				<unitPattern count="one" case="genitive">{0} centiliters</unitPattern>
 				<unitPattern count="other">{0} centiliter</unitPattern>
+				<unitPattern count="other" case="genitive">{0} centiliters</unitPattern>
 			</unit>
 			<unit type="volume-milliliter">
 				<gender>common</gender>
 				<displayName>milliliter</displayName>
 				<unitPattern count="one">{0} milliliter</unitPattern>
+				<unitPattern count="one" case="genitive">{0} milliliters</unitPattern>
 				<unitPattern count="other">{0} milliliter</unitPattern>
+				<unitPattern count="other" case="genitive">{0} milliliters</unitPattern>
 			</unit>
 			<unit type="volume-pint-metric">
 				<gender>common</gender>
 				<displayName>pint à 500 ml</displayName>
 				<unitPattern count="one">{0} pint à 500 ml</unitPattern>
+				<unitPattern count="one" case="genitive">{0} pint à 500 ml</unitPattern>
 				<unitPattern count="other">{0} pint à 500 ml</unitPattern>
+				<unitPattern count="other" case="genitive">{0} pint à 500 ml</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
-				<gender draft="contributed">common</gender>
+				<gender>common</gender>
 				<displayName>koppar à 2,5 dl</displayName>
 				<unitPattern count="one">{0} kopp à 2,5 dl</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kopp à 2,5 dl</unitPattern>
 				<unitPattern count="other">{0} koppar à 2,5 dl</unitPattern>
+				<unitPattern count="other" case="genitive">{0} koppar à 2,5 dl</unitPattern>
 			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>engelska tunnland gånger fot</displayName>
@@ -9320,25 +9594,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} per ämbar à 4,6 l</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
-				<gender draft="contributed">common</gender>
+				<gender>common</gender>
 				<displayName>quart</displayName>
 				<unitPattern count="one">{0} quart</unitPattern>
 				<unitPattern count="other">{0} quart</unitPattern>
 			</unit>
 			<unit type="volume-pint">
-				<gender draft="contributed">common</gender>
+				<gender>common</gender>
 				<displayName>pint</displayName>
 				<unitPattern count="one">{0} pint</unitPattern>
 				<unitPattern count="other">{0} pint</unitPattern>
 			</unit>
 			<unit type="volume-cup">
-				<gender draft="contributed">common</gender>
+				<gender>common</gender>
 				<displayName>koppar</displayName>
 				<unitPattern count="one">{0} kopp</unitPattern>
 				<unitPattern count="other">{0} koppar</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce">
-				<gender draft="contributed">common</gender>
+				<gender>neuter</gender>
 				<displayName>fluid ounces</displayName>
 				<unitPattern count="one">{0} fluid ounce</unitPattern>
 				<unitPattern count="other">{0} fluid ounces</unitPattern>
@@ -9347,13 +9621,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender>neuter</gender>
 			</unit>
 			<unit type="volume-tablespoon">
-				<gender draft="contributed">common</gender>
+				<gender>common</gender>
 				<displayName>matskedar</displayName>
 				<unitPattern count="one">{0} matsked</unitPattern>
 				<unitPattern count="other">{0} matskedar</unitPattern>
 			</unit>
 			<unit type="volume-teaspoon">
-				<gender draft="contributed">common</gender>
+				<gender>common</gender>
 				<displayName>teskedar</displayName>
 				<unitPattern count="one">{0} tesked</unitPattern>
 				<unitPattern count="other">{0} teskedar</unitPattern>
@@ -9362,41 +9636,41 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>fat</displayName>
 			</unit>
 			<unit type="volume-dessert-spoon">
-				<gender draft="contributed">common</gender>
+				<gender>common</gender>
 				<displayName>dessertsked</displayName>
 				<unitPattern count="one">{0} dessertsked</unitPattern>
 				<unitPattern count="other">{0} dessertsked</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon-imperial">
-				<gender draft="contributed">common</gender>
+				<gender>common</gender>
 				<displayName>brittisk dessertsked</displayName>
 				<unitPattern count="one">{0} brittiska dessertskedar</unitPattern>
 				<unitPattern count="other">{0} brittiska dessertskedar</unitPattern>
 			</unit>
 			<unit type="volume-drop">
-				<gender draft="contributed">common</gender>
+				<gender>common</gender>
 				<displayName>droppe</displayName>
 				<unitPattern count="one">{0} droppe</unitPattern>
 				<unitPattern count="other">{0} droppe</unitPattern>
 			</unit>
 			<unit type="volume-dram">
-				<gender draft="contributed">common</gender>
+				<gender>common</gender>
 				<displayName>brittisk dram</displayName>
 				<unitPattern count="one">{0} brittisk dram</unitPattern>
 				<unitPattern count="other">{0} brittiska dramer</unitPattern>
 			</unit>
 			<unit type="volume-jigger">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>mätglas</displayName>
 				<unitPattern count="one">{0} mätglas</unitPattern>
 				<unitPattern count="other">{0} mätglas</unitPattern>
 			</unit>
 			<unit type="volume-pinch">
-				<gender draft="contributed">common</gender>
+				<gender>common</gender>
 				<displayName>nypa</displayName>
 			</unit>
 			<unit type="volume-quart-imperial">
-				<gender draft="contributed">common</gender>
+				<gender>common</gender>
 				<displayName>br quart</displayName>
 				<unitPattern count="one">{0} brittisk quart</unitPattern>
 				<unitPattern count="other">{0} brittiska quarts</unitPattern>
@@ -10402,9 +10676,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ac</unitPattern>
 			</unit>
 			<unit type="area-square-yard">
-				<displayName draft="contributed">eng. yard²</displayName>
-				<unitPattern count="one" draft="contributed">{0} en. yrd²</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} en. yrd²</unitPattern>
+				<displayName>eng. yard²</displayName>
+				<unitPattern count="one">{0} en. yrd²</unitPattern>
+				<unitPattern count="other">{0} en. yrd²</unitPattern>
 			</unit>
 			<unit type="area-square-foot">
 				<displayName>fot²</displayName>
@@ -10834,13 +11108,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="volume-cup-metric">
 				<displayName>kp à 2,5 dl</displayName>
-				<unitPattern count="one" draft="contributed">{0}kp·2½dl</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}kp·2½dl</unitPattern>
+				<unitPattern count="one">{0}kp·2½dl</unitPattern>
+				<unitPattern count="other">{0}kp·2½dl</unitPattern>
 			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>eng. t:land·fot</displayName>
-				<unitPattern count="one" draft="contributed">{0}en.td·fot</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}en.td·fot</unitPattern>
+				<unitPattern count="one">{0}en.td·fot</unitPattern>
+				<unitPattern count="other">{0}en.td·fot</unitPattern>
 			</unit>
 			<unit type="volume-bushel">
 				<displayName>skäppa</displayName>

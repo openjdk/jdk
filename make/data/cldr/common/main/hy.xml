@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
@@ -1541,7 +1543,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="Gy">G y թ.</dateFormatItem>
 						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">G y թ. MMM</dateFormatItem>
-						<dateFormatItem id="GyMMMd">d MMM, y թ.</dateFormatItem>
+						<dateFormatItem id="GyMMMd">d MMM, y թ. G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y թ. MMM d, E</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">H</dateFormatItem>
@@ -3009,6 +3011,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Pacific/Enderbury">
 				<exemplarCity>Էնդերբերի կղզի</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kanton">
+				<exemplarCity>Կանտոն</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>Կիրիտիմատի</exemplarCity>
@@ -5781,8 +5786,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
-			<pluralMinimalPairs count="one">այդ {0} ժամը</pluralMinimalPairs>
-			<pluralMinimalPairs count="other">այդ {0} ժամերը</pluralMinimalPairs>
+			<pluralMinimalPairs count="one">այդ {0} պանակը</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">այդ {0} պանակները</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="one">Թեքվեք աջ {0}-ին խաչմերուկից:</ordinalMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">Թեքվեք աջ {0}-րդ խաչմերուկից:</ordinalMinimalPairs>
 			<caseMinimalPairs case="ablative">Վախենում եմ այդ {0}</caseMinimalPairs>
@@ -5905,7 +5910,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="acceleration-meter-per-square-second">
 				<displayName>մետրեր/վայրկյան քառակուսի</displayName>
 				<unitPattern count="one">{0} մետր/վայրկյան քառակուսի</unitPattern>
+				<unitPattern count="one" case="ablative">{0} մետրից/վայրկյան քառակուսի</unitPattern>
+				<unitPattern count="one" case="dative">{0} մետրին/վայրկյան քառակուսի</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} մետրով/վայրկյան քառակուսի</unitPattern>
+				<unitPattern count="one" case="locative">{0} մետրում/վայրկյան քառակուսի</unitPattern>
 				<unitPattern count="other">{0} մետր/վայրկյան քառակուսի</unitPattern>
+				<unitPattern count="other" case="ablative">{0} մետրից/վայրկյան քառակուսի</unitPattern>
+				<unitPattern count="other" case="dative">{0} մետրին/վայրկյան քառակուսի</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} մետրով/վայրկյան քառակուսի</unitPattern>
+				<unitPattern count="other" case="locative">{0} մետրում/վայրկյան քառակուսի</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
 				<displayName>պտույտներ</displayName>
@@ -5975,7 +5988,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="area-square-kilometer">
 				<displayName>քառակուսի կիլոմետրեր</displayName>
 				<unitPattern count="one">{0} քառակուսի կիլոմետր</unitPattern>
+				<unitPattern count="one" case="ablative">{0} քառակուսի կիլոմետրից</unitPattern>
+				<unitPattern count="one" case="dative">{0} քառակուսի կիլոմետրին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} քառակուսի կիլոմետրով</unitPattern>
+				<unitPattern count="one" case="locative">{0} քառակուսի կիլոմետրում</unitPattern>
 				<unitPattern count="other">{0} քառակուսի կիլոմետր</unitPattern>
+				<unitPattern count="other" case="ablative">{0} քառակուսի կիլոմետրից</unitPattern>
+				<unitPattern count="other" case="dative">{0} քառակուսի կիլոմետրին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} քառակուսի կիլոմետրով</unitPattern>
+				<unitPattern count="other" case="locative">{0} քառակուսի կիլոմետրում</unitPattern>
 				<perUnitPattern>{0} քառակուսի կիլոմետրի վրա</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
@@ -5994,13 +6015,29 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="area-square-meter">
 				<displayName>քառակուսի մետրեր</displayName>
 				<unitPattern count="one">{0} քառակուսի մետր</unitPattern>
+				<unitPattern count="one" case="ablative">{0} քառակուսի մետրից</unitPattern>
+				<unitPattern count="one" case="dative">{0} քառակուսի մետրին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} քառակուսի մետրով</unitPattern>
+				<unitPattern count="one" case="locative">{0} քառակուսի մետրում</unitPattern>
 				<unitPattern count="other">{0} քառակուսի մետր</unitPattern>
+				<unitPattern count="other" case="ablative">{0} քառակուսի մետրից</unitPattern>
+				<unitPattern count="other" case="dative">{0} քառակուսի մետրին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} քառակուսի մետրով</unitPattern>
+				<unitPattern count="other" case="locative">{0} քառակուսի մետրում</unitPattern>
 				<perUnitPattern>{0} քառակուսի մետրի վրա</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
 				<displayName>քառակուսի սանտիմետրեր</displayName>
 				<unitPattern count="one">{0} քառակուսի սանտիմետր</unitPattern>
+				<unitPattern count="one" case="ablative">{0} քառակուսի սանտիմետրից</unitPattern>
+				<unitPattern count="one" case="dative">{0} քառակուսի սանտիմետրին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} քառակուսի սանտիմետրով</unitPattern>
+				<unitPattern count="one" case="locative">{0} քառակուսի սանտիմետրում</unitPattern>
 				<unitPattern count="other">{0} քառակուսի սանտիմետր</unitPattern>
+				<unitPattern count="other" case="ablative">{0} քառակուսի սանտիմետրից</unitPattern>
+				<unitPattern count="other" case="dative">{0} քառակուսի սանտիմետրին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} քառակուսի սանտիմետրով</unitPattern>
+				<unitPattern count="other" case="locative">{0} քառակուսի սանտիմետրում</unitPattern>
 				<perUnitPattern>{0} քառակուսի սանտիմետրի վրա</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
@@ -6056,12 +6093,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="concentr-millimole-per-liter">
 				<displayName>միլիմոլներ լիտրի վրա</displayName>
 				<unitPattern count="one">{0} միլիմոլ լիտրի վրա</unitPattern>
+				<unitPattern count="one" case="ablative">{0} միլիմոլից լիտրի վրա</unitPattern>
+				<unitPattern count="one" case="dative">{0} միլիմոլին լիտրի վրա</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} միլիմոլով լիտրի վրա</unitPattern>
+				<unitPattern count="one" case="locative">{0} միլիմոլում լիտրի վրա</unitPattern>
 				<unitPattern count="other">{0} միլիմոլ լիտրի վրա</unitPattern>
+				<unitPattern count="other" case="ablative">{0} միլիմոլից լիտրի վրա</unitPattern>
+				<unitPattern count="other" case="dative">{0} միլիմոլին լիտրի վրա</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} միլիմոլով լիտրի վրա</unitPattern>
+				<unitPattern count="other" case="locative">{0} միլիմոլում լիտրի վրա</unitPattern>
 			</unit>
 			<unit type="concentr-item">
 				<displayName>միույթ</displayName>
 				<unitPattern count="one">{0} միույթ</unitPattern>
+				<unitPattern count="one" case="ablative">{0} միույթից</unitPattern>
+				<unitPattern count="one" case="dative">{0} միույթին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} միույթով</unitPattern>
+				<unitPattern count="one" case="locative">{0} միույթում</unitPattern>
 				<unitPattern count="other">{0} միույթ</unitPattern>
+				<unitPattern count="other" case="ablative">{0} միույթից</unitPattern>
+				<unitPattern count="other" case="dative">{0} միույթին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} միույթով</unitPattern>
+				<unitPattern count="other" case="locative">{0} միույթում</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
 				<displayName>մասնիկներ միլիոնի վրա</displayName>
@@ -6131,12 +6184,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>լիտրեր կիլոմետրի վրա</displayName>
 				<unitPattern count="one">{0} լիտր կիլոմետրի վրա</unitPattern>
+				<unitPattern count="one" case="ablative">{0} լիտրից կիլոմետրի վրա</unitPattern>
+				<unitPattern count="one" case="dative">{0} լիտրին կիլոմետրի վրա</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} լիտրով կիլոմետրի վրա</unitPattern>
+				<unitPattern count="one" case="locative">{0} լիտրում կիլոմետրի վրա</unitPattern>
 				<unitPattern count="other">{0} լիտր կիլոմետրի վրա</unitPattern>
+				<unitPattern count="other" case="ablative">{0} լիտրից կիլոմետրի վրա</unitPattern>
+				<unitPattern count="other" case="dative">{0} լիտրին կիլոմետրի վրա</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} լիտրով կիլոմետրի վրա</unitPattern>
+				<unitPattern count="other" case="locative">{0} լիտրում կիլոմետրի վրա</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>լիտրեր 100 կիլոմետրի վրա</displayName>
 				<unitPattern count="one">{0} լիտր 100 կիլոմետրի վրա</unitPattern>
+				<unitPattern count="one" case="ablative">{0} լիտրից 100 կիլոմետրի վրա</unitPattern>
+				<unitPattern count="one" case="dative">{0} լիտրին 100 կիլոմետրի վրա</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} լիտրով 100 կիլոմետրի վրա</unitPattern>
+				<unitPattern count="one" case="locative">{0} լիտրում 100 կիլոմետրի վրա</unitPattern>
 				<unitPattern count="other">{0} լիտր 100 կիլոմետրի վրա</unitPattern>
+				<unitPattern count="other" case="ablative">{0} լիտրից 100 կիլոմետրի վրա</unitPattern>
+				<unitPattern count="other" case="dative">{0} լիտրին 100 կիլոմետրի վրա</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} լիտրով 100 կիլոմետրի վրա</unitPattern>
+				<unitPattern count="other" case="locative">{0} լիտրում 100 կիլոմետրի վրա</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>մղոններ գալոնի վրա</displayName>
@@ -6151,47 +6220,119 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="digital-petabyte">
 				<displayName>պետաբայթեր</displayName>
 				<unitPattern count="one">{0} պետաբայթ</unitPattern>
+				<unitPattern count="one" case="ablative">{0} պետաբայթից</unitPattern>
+				<unitPattern count="one" case="dative">{0} պետաբայթին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} պետաբայթով</unitPattern>
+				<unitPattern count="one" case="locative">{0} պետաբայթում</unitPattern>
 				<unitPattern count="other">{0} պետաբայթ</unitPattern>
+				<unitPattern count="other" case="ablative">{0} պետաբայթից</unitPattern>
+				<unitPattern count="other" case="dative">{0} պետաբայթին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} պետաբայթով</unitPattern>
+				<unitPattern count="other" case="locative">{0} պետաբայթում</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>տերաբայթեր</displayName>
 				<unitPattern count="one">{0} տերաբայթ</unitPattern>
+				<unitPattern count="one" case="ablative">{0} տերաբայթից</unitPattern>
+				<unitPattern count="one" case="dative">{0} տերաբայթին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} տերաբայթով</unitPattern>
+				<unitPattern count="one" case="locative">{0} տերաբայթում</unitPattern>
 				<unitPattern count="other">{0} տերաբայթ</unitPattern>
+				<unitPattern count="other" case="ablative">{0} տերաբայթից</unitPattern>
+				<unitPattern count="other" case="dative">{0} տերաբայթին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} տերաբայթով</unitPattern>
+				<unitPattern count="other" case="locative">{0} տերաբայթում</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
 				<displayName>տերաբիթեր</displayName>
 				<unitPattern count="one">{0} տերաբիթ</unitPattern>
+				<unitPattern count="one" case="ablative">{0} տերաբիթից</unitPattern>
+				<unitPattern count="one" case="dative">{0} տերաբիթին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} տերաբիթով</unitPattern>
+				<unitPattern count="one" case="locative">{0} տերաբիթում</unitPattern>
 				<unitPattern count="other">{0} տերաբիթ</unitPattern>
+				<unitPattern count="other" case="ablative">{0} տերաբիթից</unitPattern>
+				<unitPattern count="other" case="dative">{0} տերաբիթին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} տերաբիթով</unitPattern>
+				<unitPattern count="other" case="locative">{0} տերաբիթում</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
 				<displayName>գիգաբայթեր</displayName>
 				<unitPattern count="one">{0} գիգաբայթ</unitPattern>
+				<unitPattern count="one" case="ablative">{0} գիգաբայթից</unitPattern>
+				<unitPattern count="one" case="dative">{0} գիգաբայթին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} գիգաբայթով</unitPattern>
+				<unitPattern count="one" case="locative">{0} գիգաբայթում</unitPattern>
 				<unitPattern count="other">{0} գիգաբայթ</unitPattern>
+				<unitPattern count="other" case="ablative">{0} գիգաբայթից</unitPattern>
+				<unitPattern count="other" case="dative">{0} գիգաբայթին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} գիգաբայթով</unitPattern>
+				<unitPattern count="other" case="locative">{0} գիգաբայթում</unitPattern>
 			</unit>
 			<unit type="digital-gigabit">
 				<displayName>գիգաբիթեր</displayName>
 				<unitPattern count="one">{0} գիգաբիթ</unitPattern>
+				<unitPattern count="one" case="ablative">{0} գիգաբիթից</unitPattern>
+				<unitPattern count="one" case="dative">{0} գիգաբիթին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} գիգաբիթով</unitPattern>
+				<unitPattern count="one" case="locative">{0} գիգաբիթում</unitPattern>
 				<unitPattern count="other">{0} գիգաբիթ</unitPattern>
+				<unitPattern count="other" case="ablative">{0} գիգաբիթից</unitPattern>
+				<unitPattern count="other" case="dative">{0} գիգաբիթին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} գիգաբիթով</unitPattern>
+				<unitPattern count="other" case="locative">{0} գիգաբիթում</unitPattern>
 			</unit>
 			<unit type="digital-megabyte">
 				<displayName>մեգաբայթեր</displayName>
 				<unitPattern count="one">{0} մեգաբայթ</unitPattern>
+				<unitPattern count="one" case="ablative">{0} մեգաբայթից</unitPattern>
+				<unitPattern count="one" case="dative">{0} մեգաբայթին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} մեգաբայթով</unitPattern>
+				<unitPattern count="one" case="locative">{0} մեգաբայթում</unitPattern>
 				<unitPattern count="other">{0} մեգաբայթ</unitPattern>
+				<unitPattern count="other" case="ablative">{0} մեգաբայթից</unitPattern>
+				<unitPattern count="other" case="dative">{0} մեգաբայթին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} մեգաբայթով</unitPattern>
+				<unitPattern count="other" case="locative">{0} մեգաբայթում</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
 				<displayName>մեգաբիթեր</displayName>
 				<unitPattern count="one">{0} մեգաբիթ</unitPattern>
+				<unitPattern count="one" case="ablative">{0} մեգաբիթից</unitPattern>
+				<unitPattern count="one" case="dative">{0} մեգաբիթին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} մեգաբիթով</unitPattern>
+				<unitPattern count="one" case="locative">{0} մեգաբիթում</unitPattern>
 				<unitPattern count="other">{0} մեգաբիթ</unitPattern>
+				<unitPattern count="other" case="ablative">{0} մեգաբիթից</unitPattern>
+				<unitPattern count="other" case="dative">{0} մեգաբիթին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} մեգաբիթով</unitPattern>
+				<unitPattern count="other" case="locative">{0} մեգաբիթում</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
 				<displayName>կիլոբայթեր</displayName>
 				<unitPattern count="one">{0} կիլոբայթ</unitPattern>
+				<unitPattern count="one" case="ablative">{0} կիլոբայթից</unitPattern>
+				<unitPattern count="one" case="dative">{0} կիլոբայթին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} կիլոբայթով</unitPattern>
+				<unitPattern count="one" case="locative">{0} կիլոբայթում</unitPattern>
 				<unitPattern count="other">{0} կիլոբայթ</unitPattern>
+				<unitPattern count="other" case="ablative">{0} կիլոբայթից</unitPattern>
+				<unitPattern count="other" case="dative">{0} կիլոբայթին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} կիլոբայթով</unitPattern>
+				<unitPattern count="other" case="locative">{0} կիլոբայթում</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
 				<displayName>կիլոբիթեր</displayName>
 				<unitPattern count="one">{0} կիլոբիթ</unitPattern>
+				<unitPattern count="one" case="ablative">{0} կիլոբիթից</unitPattern>
+				<unitPattern count="one" case="dative">{0} կիլոբիթին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} կիլոբիթով</unitPattern>
+				<unitPattern count="one" case="locative">{0} կիլոբիթում</unitPattern>
 				<unitPattern count="other">{0} կիլոբիթ</unitPattern>
+				<unitPattern count="other" case="ablative">{0} կիլոբիթից</unitPattern>
+				<unitPattern count="other" case="dative">{0} կիլոբիթին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} կիլոբիթով</unitPattern>
+				<unitPattern count="other" case="locative">{0} կիլոբիթում</unitPattern>
 			</unit>
 			<unit type="digital-byte">
 				<displayName>բայթեր</displayName>
@@ -6292,13 +6433,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} օր</unitPattern>
 				<unitPattern count="one" case="ablative">{0} օրից</unitPattern>
 				<unitPattern count="one" case="dative">{0} օրվան</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} օր</unitPattern>
-				<unitPattern count="one" case="locative">{0} օր</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} օրով</unitPattern>
+				<unitPattern count="one" case="locative">{0} օրում</unitPattern>
 				<unitPattern count="other">{0} օր</unitPattern>
-				<unitPattern count="other" case="ablative">{0} օր</unitPattern>
-				<unitPattern count="other" case="dative">{0} օր</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} օր</unitPattern>
-				<unitPattern count="other" case="locative">{0} օր</unitPattern>
+				<unitPattern count="other" case="ablative">{0} օրից</unitPattern>
+				<unitPattern count="other" case="dative">{0} օրվան</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} օրով</unitPattern>
+				<unitPattern count="other" case="locative">{0} օրում</unitPattern>
 				<perUnitPattern>օրական {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
@@ -6346,17 +6487,41 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="duration-millisecond">
 				<displayName>միլիվայրկյաններ</displayName>
 				<unitPattern count="one">{0} միլիվայրկյան</unitPattern>
+				<unitPattern count="one" case="ablative">{0} միլիվայրկյանից</unitPattern>
+				<unitPattern count="one" case="dative">{0} միլիվայրկյանին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} միլիվայրկյանով</unitPattern>
+				<unitPattern count="one" case="locative">{0} միլիվայրկյանում</unitPattern>
 				<unitPattern count="other">{0} միլիվայրկյան</unitPattern>
+				<unitPattern count="other" case="ablative">{0} միլիվայրկյանից</unitPattern>
+				<unitPattern count="other" case="dative">{0} միլիվայրկյանին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} միլիվայրկյանով</unitPattern>
+				<unitPattern count="other" case="locative">{0} միլիվայրկյանում</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
 				<displayName>միկրովայրկյաններ</displayName>
 				<unitPattern count="one">{0} միկրովայրկյան</unitPattern>
+				<unitPattern count="one" case="ablative">{0} միկրովայրկյանից</unitPattern>
+				<unitPattern count="one" case="dative">{0} միկրովայրկյանին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} միկրովայրկյանով</unitPattern>
+				<unitPattern count="one" case="locative">{0} միկրովայրկյանում</unitPattern>
 				<unitPattern count="other">{0} միկրովայրկյան</unitPattern>
+				<unitPattern count="other" case="ablative">{0} միկրովայրկյանից</unitPattern>
+				<unitPattern count="other" case="dative">{0} միկրովայրկյանին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} միկրովայրկյանով</unitPattern>
+				<unitPattern count="other" case="locative">{0} միկրովայրկյանում</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
 				<displayName>նանովայրկյաններ</displayName>
 				<unitPattern count="one">{0} նանովայրկյան</unitPattern>
+				<unitPattern count="one" case="ablative">{0} նանովայրկյանից</unitPattern>
+				<unitPattern count="one" case="dative">{0} նանովայրկյանին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} նանովայրկյանով</unitPattern>
+				<unitPattern count="one" case="locative">{0} նանովայրկյանում</unitPattern>
 				<unitPattern count="other">{0} նանովայրկյան</unitPattern>
+				<unitPattern count="other" case="ablative">{0} նանովայրկյանից</unitPattern>
+				<unitPattern count="other" case="dative">{0} նանովայրկյանին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} նանովայրկյանով</unitPattern>
+				<unitPattern count="other" case="locative">{0} նանովայրկյանում</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
 				<displayName>ամպերներ</displayName>
@@ -6374,7 +6539,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="electric-milliampere">
 				<displayName>միլիամպերներ</displayName>
 				<unitPattern count="one">{0} միլիամպեր</unitPattern>
+				<unitPattern count="one" case="ablative">{0} միլիամպերից</unitPattern>
+				<unitPattern count="one" case="dative">{0} միլիամպերին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} միլիամպերով</unitPattern>
+				<unitPattern count="one" case="locative">{0} միլիամպերում</unitPattern>
 				<unitPattern count="other">{0} միլիամպեր</unitPattern>
+				<unitPattern count="other" case="ablative">{0} միլիամպերից</unitPattern>
+				<unitPattern count="other" case="dative">{0} միլիամպերին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} միլիամպերով</unitPattern>
+				<unitPattern count="other" case="locative">{0} միլիամպերում</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
 				<displayName>օհմեր</displayName>
@@ -6428,7 +6601,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="energy-kilojoule">
 				<displayName>կիլոջոուլներ</displayName>
 				<unitPattern count="one">{0} կիլոջոուլ</unitPattern>
+				<unitPattern count="one" case="ablative">{0} կիլոջոուլից</unitPattern>
+				<unitPattern count="one" case="dative">{0} կիլոջոուլին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} կիլոջոուլով</unitPattern>
+				<unitPattern count="one" case="locative">{0} կիլոջոուլում</unitPattern>
 				<unitPattern count="other">{0} կիլոջոուլ</unitPattern>
+				<unitPattern count="other" case="ablative">{0} կիլոջոուլից</unitPattern>
+				<unitPattern count="other" case="dative">{0} կիլոջոուլին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} կիլոջոուլով</unitPattern>
+				<unitPattern count="other" case="locative">{0} կիլոջոուլում</unitPattern>
 			</unit>
 			<unit type="energy-joule">
 				<displayName>ջոուլներ</displayName>
@@ -6446,7 +6627,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="energy-kilowatt-hour">
 				<displayName>կիլովատտեր-ժամեր</displayName>
 				<unitPattern count="one">{0} կիլովատտ-ժամ</unitPattern>
+				<unitPattern count="one" case="ablative">{0} կիլովատտ-ժամից</unitPattern>
+				<unitPattern count="one" case="dative">{0} կիլովատտ-ժամին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} կիլովատտ-ժամով</unitPattern>
+				<unitPattern count="one" case="locative">{0} կիլովատտ-ժամում</unitPattern>
 				<unitPattern count="other">{0} կիլովատտ-ժամ</unitPattern>
+				<unitPattern count="other" case="ablative">{0} կիլովատտ-ժամից</unitPattern>
+				<unitPattern count="other" case="dative">{0} կիլովատտ-ժամին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} կիլովատտ-ժամով</unitPattern>
+				<unitPattern count="other" case="locative">{0} կիլովատտ-ժամում</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
 				<displayName>էլեկտրոն-վոլտեր</displayName>
@@ -6484,22 +6673,54 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="force-kilowatt-hour-per-100-kilometer">
 				<displayName>կիլովատտ-ժամ 100 կիլոմետրի վրա</displayName>
 				<unitPattern count="one">{0} կիլովատտ-ժամ 100 կիլոմետրի վրա</unitPattern>
+				<unitPattern count="one" case="ablative">{0} կիլովատտ-ժամից 100 կիլոմետրի վրա</unitPattern>
+				<unitPattern count="one" case="dative">{0} կիլովատտ-ժամին 100 կիլոմետրի վրա</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} կիլովատտ-ժամով 100 կիլոմետրի վրա</unitPattern>
+				<unitPattern count="one" case="locative">{0} կիլովատտ-ժամում 100 կիլոմետրի վրա</unitPattern>
 				<unitPattern count="other">{0} կիլովատտ-ժամ 100 կիլոմետրի վրա</unitPattern>
+				<unitPattern count="other" case="ablative">{0} կիլովատտ-ժամից 100 կիլոմետրի վրա</unitPattern>
+				<unitPattern count="other" case="dative">{0} կիլովատտ-ժամին 100 կիլոմետրի վրա</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} կիլովատտ-ժամով 100 կիլոմետրի վրա</unitPattern>
+				<unitPattern count="other" case="locative">{0} կիլովատտ-ժամում 100 կիլոմետրի վրա</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>գիգահերցեր</displayName>
 				<unitPattern count="one">{0} գիգահերց</unitPattern>
+				<unitPattern count="one" case="ablative">{0} գիգահերցից</unitPattern>
+				<unitPattern count="one" case="dative">{0} գիգահերցին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} գիգահերցով</unitPattern>
+				<unitPattern count="one" case="locative">{0} գիգահերցում</unitPattern>
 				<unitPattern count="other">{0} գիգահերց</unitPattern>
+				<unitPattern count="other" case="ablative">{0} գիգահերցից</unitPattern>
+				<unitPattern count="other" case="dative">{0} գիգահերցին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} գիգահերցով</unitPattern>
+				<unitPattern count="other" case="locative">{0} գիգահերցում</unitPattern>
 			</unit>
 			<unit type="frequency-megahertz">
 				<displayName>մեգահերցեր</displayName>
 				<unitPattern count="one">{0} մեգահերց</unitPattern>
+				<unitPattern count="one" case="ablative">{0} մեգահերցից</unitPattern>
+				<unitPattern count="one" case="dative">{0} մեգահերցին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} մեգահերցով</unitPattern>
+				<unitPattern count="one" case="locative">{0} մեգահերցում</unitPattern>
 				<unitPattern count="other">{0} մեգահերց</unitPattern>
+				<unitPattern count="other" case="ablative">{0} մեգահերցից</unitPattern>
+				<unitPattern count="other" case="dative">{0} մեգահերցին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} մեգահերցով</unitPattern>
+				<unitPattern count="other" case="locative">{0} մեգահերցում</unitPattern>
 			</unit>
 			<unit type="frequency-kilohertz">
 				<displayName>կիլոհերցեր</displayName>
 				<unitPattern count="one">{0} կիլոհերց</unitPattern>
+				<unitPattern count="one" case="ablative">{0} կիլոհերցից</unitPattern>
+				<unitPattern count="one" case="dative">{0} կիլոհերցին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} կիլոհերցով</unitPattern>
+				<unitPattern count="one" case="locative">{0} կիլոհերցում</unitPattern>
 				<unitPattern count="other">{0} կիլոհերց</unitPattern>
+				<unitPattern count="other" case="ablative">{0} կիլոհերցից</unitPattern>
+				<unitPattern count="other" case="dative">{0} կիլոհերցին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} կիլոհերցով</unitPattern>
+				<unitPattern count="other" case="locative">{0} կիլոհերցում</unitPattern>
 			</unit>
 			<unit type="frequency-hertz">
 				<displayName>հերցեր</displayName>
@@ -6525,20 +6746,36 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="instrumental">{0} փիքսելով</unitPattern>
 				<unitPattern count="one" case="locative">{0} փիքսելում</unitPattern>
 				<unitPattern count="other">{0} փիքսել</unitPattern>
-				<unitPattern count="other" case="ablative">{0} փիքսելներից</unitPattern>
-				<unitPattern count="other" case="dative">{0} փիքսելներին</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} փիքսելներով</unitPattern>
-				<unitPattern count="other" case="locative">{0} փիքսելներում</unitPattern>
+				<unitPattern count="other" case="ablative">{0} փիքսելից</unitPattern>
+				<unitPattern count="other" case="dative">{0} փիքսելին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} փիքսելով</unitPattern>
+				<unitPattern count="other" case="locative">{0} փիքսելում</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
 				<displayName>մեգափիքսելներ</displayName>
 				<unitPattern count="one">{0} մեգափիքսել</unitPattern>
+				<unitPattern count="one" case="ablative">{0} մեգափիքսելից</unitPattern>
+				<unitPattern count="one" case="dative">{0} մեգափիքսելին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} մեգափիքսելով</unitPattern>
+				<unitPattern count="one" case="locative">{0} մեգափիքսելում</unitPattern>
 				<unitPattern count="other">{0} մեգափիքսել</unitPattern>
+				<unitPattern count="other" case="ablative">{0} մեգափիքսելից</unitPattern>
+				<unitPattern count="other" case="dative">{0} մեգափիքսելին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} մեգափիքսելով</unitPattern>
+				<unitPattern count="other" case="locative">{0} մեգափիքսելում</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-centimeter">
 				<displayName>փիքսելներ սանտիմետրի վրա</displayName>
 				<unitPattern count="one">{0} փիքսել սանտիմետրի վրա</unitPattern>
+				<unitPattern count="one" case="ablative">{0} փիքսելից սանտիմետրի վրա</unitPattern>
+				<unitPattern count="one" case="dative">{0} փիքսելին սանտիմետրի վրա</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} փիքսելով սանտիմետրի վրա</unitPattern>
+				<unitPattern count="one" case="locative">{0} փիքսելում սանտիմետրի վրա</unitPattern>
 				<unitPattern count="other">{0} փիքսել սանտիմետրի վրա</unitPattern>
+				<unitPattern count="other" case="ablative">{0} փիքսելից սանտիմետրի վրա</unitPattern>
+				<unitPattern count="other" case="dative">{0} փիքսելին սանտիմետրի վրա</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} փիքսելով սանտիմետրի վրա</unitPattern>
+				<unitPattern count="other" case="locative">{0} փիքսելում սանտիմետրի վրա</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-inch">
 				<displayName>փիքսելներ մատնաչափի վրա</displayName>
@@ -6568,7 +6805,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="length-kilometer">
 				<displayName>կիլոմետրեր</displayName>
 				<unitPattern count="one">{0} կիլոմետր</unitPattern>
+				<unitPattern count="one" case="ablative">{0} կիլոմետրից</unitPattern>
+				<unitPattern count="one" case="dative">{0} կիլոմետրին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} կիլոմետրով</unitPattern>
+				<unitPattern count="one" case="locative">{0} կիլոմետրում</unitPattern>
 				<unitPattern count="other">{0} կիլոմետր</unitPattern>
+				<unitPattern count="other" case="ablative">{0} կիլոմետրից</unitPattern>
+				<unitPattern count="other" case="dative">{0} կիլոմետրին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} կիլոմետրով</unitPattern>
+				<unitPattern count="other" case="locative">{0} կիլոմետրում</unitPattern>
 				<perUnitPattern>{0} կիլոմետրի վրա</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
@@ -6588,33 +6833,81 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="length-decimeter">
 				<displayName>դեցիմետրեր</displayName>
 				<unitPattern count="one">{0} դեցիմետր</unitPattern>
+				<unitPattern count="one" case="ablative">{0} դեցիմետրից</unitPattern>
+				<unitPattern count="one" case="dative">{0} դեցիմետրին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} դեցիմետրով</unitPattern>
+				<unitPattern count="one" case="locative">{0} դեցիմետրում</unitPattern>
 				<unitPattern count="other">{0} դեցիմետր</unitPattern>
+				<unitPattern count="other" case="ablative">{0} դեցիմետրից</unitPattern>
+				<unitPattern count="other" case="dative">{0} դեցիմետրին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} դեցիմետրով</unitPattern>
+				<unitPattern count="other" case="locative">{0} դեցիմետրում</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName>սանտիմետրեր</displayName>
 				<unitPattern count="one">{0} սանտիմետր</unitPattern>
+				<unitPattern count="one" case="ablative">{0} սանտիմետրից</unitPattern>
+				<unitPattern count="one" case="dative">{0} սանտիմետրին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} սանտիմետրով</unitPattern>
+				<unitPattern count="one" case="locative">{0} սանտիմետրում</unitPattern>
 				<unitPattern count="other">{0} սանտիմետր</unitPattern>
+				<unitPattern count="other" case="ablative">{0} սանտիմետրից</unitPattern>
+				<unitPattern count="other" case="dative">{0} սանտիմետրին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} սանտիմետրով</unitPattern>
+				<unitPattern count="other" case="locative">{0} սանտիմետրում</unitPattern>
 				<perUnitPattern>{0} սանտիմետրի վրա</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>միլիմետրեր</displayName>
 				<unitPattern count="one">{0} միլիմետր</unitPattern>
+				<unitPattern count="one" case="ablative">{0} միլիմետրից</unitPattern>
+				<unitPattern count="one" case="dative">{0} միլիմետրին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} միլիմետրով</unitPattern>
+				<unitPattern count="one" case="locative">{0} միլիմետրում</unitPattern>
 				<unitPattern count="other">{0} միլիմետր</unitPattern>
+				<unitPattern count="other" case="ablative">{0} միլիմետրից</unitPattern>
+				<unitPattern count="other" case="dative">{0} միլիմետրին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} միլիմետրով</unitPattern>
+				<unitPattern count="other" case="locative">{0} միլիմետրում</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
 				<displayName>միկրոմետրեր</displayName>
 				<unitPattern count="one">{0} միկրոմետր</unitPattern>
+				<unitPattern count="one" case="ablative">{0} միկրոմետրից</unitPattern>
+				<unitPattern count="one" case="dative">{0} միկրոմետրին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} միկրոմետրով</unitPattern>
+				<unitPattern count="one" case="locative">{0} միկրոմետրում</unitPattern>
 				<unitPattern count="other">{0} միկրոմետր</unitPattern>
+				<unitPattern count="other" case="ablative">{0} միկրոմետրից</unitPattern>
+				<unitPattern count="other" case="dative">{0} միկրոմետրին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} միկրոմետրով</unitPattern>
+				<unitPattern count="other" case="locative">{0} միկրոմետրում</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
 				<displayName>նանոմետրեր</displayName>
 				<unitPattern count="one">{0} նանոմետր</unitPattern>
+				<unitPattern count="one" case="ablative">{0} նանոմետրից</unitPattern>
+				<unitPattern count="one" case="dative">{0} նանոմետրին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} նանոմետրով</unitPattern>
+				<unitPattern count="one" case="locative">{0} նանոմետրում</unitPattern>
 				<unitPattern count="other">{0} նանոմետր</unitPattern>
+				<unitPattern count="other" case="ablative">{0} նանոմետրից</unitPattern>
+				<unitPattern count="other" case="dative">{0} նանոմետրին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} նանոմետրով</unitPattern>
+				<unitPattern count="other" case="locative">{0} նանոմետրում</unitPattern>
 			</unit>
 			<unit type="length-picometer">
 				<displayName>պիկոմետրեր</displayName>
 				<unitPattern count="one">{0} պիկոմետր</unitPattern>
+				<unitPattern count="one" case="ablative">{0} պիկոմետրից</unitPattern>
+				<unitPattern count="one" case="dative">{0} պիկոմետրին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} պիկոմետրով</unitPattern>
+				<unitPattern count="one" case="locative">{0} պիկոմետրում</unitPattern>
 				<unitPattern count="other">{0} պիկոմետր</unitPattern>
+				<unitPattern count="other" case="ablative">{0} պիկոմետրից</unitPattern>
+				<unitPattern count="other" case="dative">{0} պիկոմետրին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} պիկոմետրով</unitPattern>
+				<unitPattern count="other" case="locative">{0} պիկոմետրում</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<displayName>մղոններ</displayName>
@@ -6779,12 +7072,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="mass-milligram">
 				<displayName>միլիգրամներ</displayName>
 				<unitPattern count="one">{0} միլիգրամ</unitPattern>
+				<unitPattern count="one" case="ablative">{0} միլիգրամից</unitPattern>
+				<unitPattern count="one" case="dative">{0} միլիգրամին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} միլիգրամով</unitPattern>
+				<unitPattern count="one" case="locative">{0} միլիգրամում</unitPattern>
 				<unitPattern count="other">{0} միլիգրամ</unitPattern>
+				<unitPattern count="other" case="ablative">{0} միլիգրամից</unitPattern>
+				<unitPattern count="other" case="dative">{0} միլիգրամին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} միլիգրամով</unitPattern>
+				<unitPattern count="other" case="locative">{0} միլիգրամում</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
 				<displayName>միկրոգրամներ</displayName>
 				<unitPattern count="one">{0} միկրոգրամ</unitPattern>
+				<unitPattern count="one" case="ablative">{0} միկրոգրամից</unitPattern>
+				<unitPattern count="one" case="dative">{0} միկրոգրամին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} միկրոգրամով</unitPattern>
+				<unitPattern count="one" case="locative">{0} միկրոգրամում</unitPattern>
 				<unitPattern count="other">{0} միկրոգրամ</unitPattern>
+				<unitPattern count="other" case="ablative">{0} միկրոգրամից</unitPattern>
+				<unitPattern count="other" case="dative">{0} միկրոգրամին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} միկրոգրամով</unitPattern>
+				<unitPattern count="other" case="locative">{0} միկրոգրամում</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>ամերիկյան տոննաներ</displayName>
@@ -6849,17 +7158,41 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="power-gigawatt">
 				<displayName>գիգավատտեր</displayName>
 				<unitPattern count="one">{0} գիգավատտ</unitPattern>
+				<unitPattern count="one" case="ablative">{0} գիգավատտից</unitPattern>
+				<unitPattern count="one" case="dative">{0} գիգավատտին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} գիգավատտով</unitPattern>
+				<unitPattern count="one" case="locative">{0} գիգավատտում</unitPattern>
 				<unitPattern count="other">{0} գիգավատտ</unitPattern>
+				<unitPattern count="other" case="ablative">{0} գիգավատտից</unitPattern>
+				<unitPattern count="other" case="dative">{0} գիգավատտին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} գիգավատտով</unitPattern>
+				<unitPattern count="other" case="locative">{0} գիգավատտում</unitPattern>
 			</unit>
 			<unit type="power-megawatt">
 				<displayName>մեգավատտեր</displayName>
 				<unitPattern count="one">{0} մեգավատտ</unitPattern>
+				<unitPattern count="one" case="ablative">{0} մեգավատտից</unitPattern>
+				<unitPattern count="one" case="dative">{0} մեգավատտին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} մեգավատտով</unitPattern>
+				<unitPattern count="one" case="locative">{0} մեգավատտում</unitPattern>
 				<unitPattern count="other">{0} մեգավատտ</unitPattern>
+				<unitPattern count="other" case="ablative">{0} մեգավատտից</unitPattern>
+				<unitPattern count="other" case="dative">{0} մեգավատտին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} մեգավատտով</unitPattern>
+				<unitPattern count="other" case="locative">{0} մեգավատտում</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
 				<displayName>կիլովատտեր</displayName>
 				<unitPattern count="one">{0} կիլովատտ</unitPattern>
+				<unitPattern count="one" case="ablative">{0} կիլովատտից</unitPattern>
+				<unitPattern count="one" case="dative">{0} կիլովատտին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} կիլովատտով</unitPattern>
+				<unitPattern count="one" case="locative">{0} կիլովատտում</unitPattern>
 				<unitPattern count="other">{0} կիլովատտ</unitPattern>
+				<unitPattern count="other" case="ablative">{0} կիլովատտից</unitPattern>
+				<unitPattern count="other" case="dative">{0} կիլովատտին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} կիլովատտով</unitPattern>
+				<unitPattern count="other" case="locative">{0} կիլովատտում</unitPattern>
 			</unit>
 			<unit type="power-watt">
 				<displayName>վատտեր</displayName>
@@ -6877,7 +7210,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="power-milliwatt">
 				<displayName>միլիվատտեր</displayName>
 				<unitPattern count="one">{0} միլիվատտ</unitPattern>
+				<unitPattern count="one" case="ablative">{0} միլիվատտից</unitPattern>
+				<unitPattern count="one" case="dative">{0} միլիվատտին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} միլիվատտով</unitPattern>
+				<unitPattern count="one" case="locative">{0} միլիվատտում</unitPattern>
 				<unitPattern count="other">{0} միլիվատտ</unitPattern>
+				<unitPattern count="other" case="ablative">{0} միլիվատտից</unitPattern>
+				<unitPattern count="other" case="dative">{0} միլիվատտին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} միլիվատտով</unitPattern>
+				<unitPattern count="other" case="locative">{0} միլիվատտում</unitPattern>
 			</unit>
 			<unit type="power-horsepower">
 				<displayName>ձիաուժեր</displayName>
@@ -6915,7 +7256,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="pressure-millibar">
 				<displayName>միլիբարեր</displayName>
 				<unitPattern count="one">{0} միլիբար</unitPattern>
+				<unitPattern count="one" case="ablative">{0} միլիբարից</unitPattern>
+				<unitPattern count="one" case="dative">{0} միլիբարին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} միլիբարով</unitPattern>
+				<unitPattern count="one" case="locative">{0} միլիբարում</unitPattern>
 				<unitPattern count="other">{0} միլիբար</unitPattern>
+				<unitPattern count="other" case="ablative">{0} միլիբարից</unitPattern>
+				<unitPattern count="other" case="dative">{0} միլիբարին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} միլիբարով</unitPattern>
+				<unitPattern count="other" case="locative">{0} միլիբարում</unitPattern>
 			</unit>
 			<unit type="pressure-atmosphere">
 				<displayName>մթնոլորտներ</displayName>
@@ -6946,27 +7295,67 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="pressure-hectopascal">
 				<displayName>հեկտոպասկալ</displayName>
 				<unitPattern count="one">{0} հեկտոպասկալ</unitPattern>
+				<unitPattern count="one" case="ablative">{0} հեկտոպասկալից</unitPattern>
+				<unitPattern count="one" case="dative">{0} հեկտոպասկալին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} հեկտոպասկալով</unitPattern>
+				<unitPattern count="one" case="locative">{0} հեկտոպասկալում</unitPattern>
 				<unitPattern count="other">{0} հեկտոպասկալ</unitPattern>
+				<unitPattern count="other" case="ablative">{0} հեկտոպասկալից</unitPattern>
+				<unitPattern count="other" case="dative">{0} հեկտոպասկալին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} հեկտոպասկալով</unitPattern>
+				<unitPattern count="other" case="locative">{0} հեկտոպասկալում</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
 				<displayName>կիլոպասկալներ</displayName>
 				<unitPattern count="one">{0} կիլոպասկալ</unitPattern>
+				<unitPattern count="one" case="ablative">{0} կիլոպասկալից</unitPattern>
+				<unitPattern count="one" case="dative">{0} կիլոպասկալին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} կիլոպասկալով</unitPattern>
+				<unitPattern count="one" case="locative">{0} կիլոպասկալում</unitPattern>
 				<unitPattern count="other">{0} կիլոպասկալ</unitPattern>
+				<unitPattern count="other" case="ablative">{0} կիլոպասկալից</unitPattern>
+				<unitPattern count="other" case="dative">{0} կիլոպասկալին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} կիլոպասկալով</unitPattern>
+				<unitPattern count="other" case="locative">{0} կիլոպասկալում</unitPattern>
 			</unit>
 			<unit type="pressure-megapascal">
 				<displayName>մեգապասկալներ</displayName>
 				<unitPattern count="one">{0} մեգապասկալ</unitPattern>
+				<unitPattern count="one" case="ablative">{0} մեգապասկալից</unitPattern>
+				<unitPattern count="one" case="dative">{0} մեգապասկալին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} մեգապասկալով</unitPattern>
+				<unitPattern count="one" case="locative">{0} մեգապասկալում</unitPattern>
 				<unitPattern count="other">{0} մեգապասկալ</unitPattern>
+				<unitPattern count="other" case="ablative">{0} մեգապասկալից</unitPattern>
+				<unitPattern count="other" case="dative">{0} մեգապասկալին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} մեգապասկալով</unitPattern>
+				<unitPattern count="other" case="locative">{0} մեգապասկալում</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>կիլոմետրեր ժամում</displayName>
 				<unitPattern count="one">{0} կիլոմետր ժամում</unitPattern>
+				<unitPattern count="one" case="ablative">ժամում {0} կիլոմետրից</unitPattern>
+				<unitPattern count="one" case="dative">ժամում {0} կիլոմետրին</unitPattern>
+				<unitPattern count="one" case="instrumental">ժամում {0} կիլոմետրով</unitPattern>
+				<unitPattern count="one" case="locative">ժամում {0} կիլոմետրում</unitPattern>
 				<unitPattern count="other">{0} կիլոմետր ժամում</unitPattern>
+				<unitPattern count="other" case="ablative">ժամում {0} կիլոմետրից</unitPattern>
+				<unitPattern count="other" case="dative">ժամում {0} կիլոմետրին</unitPattern>
+				<unitPattern count="other" case="instrumental">ժամում {0} կիլոմետրով</unitPattern>
+				<unitPattern count="other" case="locative">ժամում {0} կիլոմետրում</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
 				<displayName>մետրեր վայրկյանում</displayName>
 				<unitPattern count="one">{0} մետր վայրկյանում</unitPattern>
+				<unitPattern count="one" case="ablative">վայրկյանում {0} մետրից</unitPattern>
+				<unitPattern count="one" case="dative">վայրկյանում {0} մետրին</unitPattern>
+				<unitPattern count="one" case="instrumental">վայրկյանում {0} մետրով</unitPattern>
+				<unitPattern count="one" case="locative">վայրկյանում {0} մետրում</unitPattern>
 				<unitPattern count="other">{0} մետր վայրկյանում</unitPattern>
+				<unitPattern count="other" case="ablative">վայրկյանում {0} մետրից</unitPattern>
+				<unitPattern count="other" case="dative">վայրկյանում {0} մետրին</unitPattern>
+				<unitPattern count="other" case="instrumental">վայրկյանում {0} մետրով</unitPattern>
+				<unitPattern count="other" case="locative">վայրկյանում {0} մետրում</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
 				<displayName>մղոններ ժամում</displayName>
@@ -7030,23 +7419,55 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="torque-newton-meter">
 				<displayName>նյուտոն-մետրեր</displayName>
 				<unitPattern count="one">{0} նյուտոն-մետր</unitPattern>
+				<unitPattern count="one" case="ablative">{0} նյուտոն-մետրից</unitPattern>
+				<unitPattern count="one" case="dative">{0} նյուտոն-մետրին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} նյուտոն-մետրով</unitPattern>
+				<unitPattern count="one" case="locative">{0} նյուտոն-մետրում</unitPattern>
 				<unitPattern count="other">{0} նյուտոն-մետր</unitPattern>
+				<unitPattern count="other" case="ablative">{0} նյուտոն-մետրից</unitPattern>
+				<unitPattern count="other" case="dative">{0} նյուտոն-մետրին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} նյուտոն-մետրով</unitPattern>
+				<unitPattern count="other" case="locative">{0} նյուտոն-մետրում</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>խորանարդ կիլոմետրեր</displayName>
 				<unitPattern count="one">{0} խորանարդ կիլոմետր</unitPattern>
+				<unitPattern count="one" case="ablative">{0} խորանարդ կիլոմետրից</unitPattern>
+				<unitPattern count="one" case="dative">{0} խորանարդ կիլոմետրին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} խորանարդ կիլոմետրով</unitPattern>
+				<unitPattern count="one" case="locative">{0} խորանարդ կիլոմետրում</unitPattern>
 				<unitPattern count="other">{0} խորանարդ կիլոմետր</unitPattern>
+				<unitPattern count="other" case="ablative">{0} խորանարդ կիլոմետրից</unitPattern>
+				<unitPattern count="other" case="dative">{0} խորանարդ կիլոմետրին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} խորանարդ կիլոմետրով</unitPattern>
+				<unitPattern count="other" case="locative">{0} խորանարդ կիլոմետրում</unitPattern>
 			</unit>
 			<unit type="volume-cubic-meter">
 				<displayName>խորանարդ մետրեր</displayName>
 				<unitPattern count="one">{0} խորանարդ մետր</unitPattern>
+				<unitPattern count="one" case="ablative">{0} խորանարդ մետրից</unitPattern>
+				<unitPattern count="one" case="dative">{0} խորանարդ մետրին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} խորանարդ մետրով</unitPattern>
+				<unitPattern count="one" case="locative">{0} խորանարդ մետրում</unitPattern>
 				<unitPattern count="other">{0} խորանարդ մետր</unitPattern>
+				<unitPattern count="other" case="ablative">{0} խորանարդ մետրից</unitPattern>
+				<unitPattern count="other" case="dative">{0} խորանարդ մետրին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} խորանարդ մետրով</unitPattern>
+				<unitPattern count="other" case="locative">{0} խորանարդ մետրում</unitPattern>
 				<perUnitPattern>{0} խորանարդ մետրի վրա</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
 				<displayName>խորանարդ սանտիմետրեր</displayName>
 				<unitPattern count="one">{0} խորանարդ սանտիմետր</unitPattern>
+				<unitPattern count="one" case="ablative">{0} խորանարդ սանտիմետրից</unitPattern>
+				<unitPattern count="one" case="dative">{0} խորանարդ սանտիմետրին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} խորանարդ սանտիմետրով</unitPattern>
+				<unitPattern count="one" case="locative">{0} խորանարդ սանտիմետրում</unitPattern>
 				<unitPattern count="other">{0} խորանարդ սանտիմետր</unitPattern>
+				<unitPattern count="other" case="ablative">{0} խորանարդ սանտիմետրից</unitPattern>
+				<unitPattern count="other" case="dative">{0} խորանարդ սանտիմետրին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} խորանարդ սանտիմետրով</unitPattern>
+				<unitPattern count="other" case="locative">{0} խորանարդ սանտիմետրում</unitPattern>
 				<perUnitPattern>{0} խորանարդ սանտիմետրի վրա</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
@@ -7072,12 +7493,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="volume-megaliter">
 				<displayName>մեգալիտրեր</displayName>
 				<unitPattern count="one">{0} մեգալիտր</unitPattern>
+				<unitPattern count="one" case="ablative">{0} մեգալիտրից</unitPattern>
+				<unitPattern count="one" case="dative">{0} մեգալիտրին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} մեգալիտրով</unitPattern>
+				<unitPattern count="one" case="locative">{0} մեգալիտրում</unitPattern>
 				<unitPattern count="other">{0} մեգալիտր</unitPattern>
+				<unitPattern count="other" case="ablative">{0} մեգալիտրից</unitPattern>
+				<unitPattern count="other" case="dative">{0} մեգալիտրին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} մեգալիտրով</unitPattern>
+				<unitPattern count="other" case="locative">{0} մեգալիտրում</unitPattern>
 			</unit>
 			<unit type="volume-hectoliter">
 				<displayName>հեկտոլիտրեր</displayName>
 				<unitPattern count="one">{0} հեկտոլիտր</unitPattern>
+				<unitPattern count="one" case="ablative">{0} հեկտոլիտրից</unitPattern>
+				<unitPattern count="one" case="dative">{0} հեկտոլիտրին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} հեկտոլիտրով</unitPattern>
+				<unitPattern count="one" case="locative">{0} հեկտոլիտրում</unitPattern>
 				<unitPattern count="other">{0} հեկտոլիտր</unitPattern>
+				<unitPattern count="other" case="ablative">{0} հեկտոլիտրից</unitPattern>
+				<unitPattern count="other" case="dative">{0} հեկտոլիտրին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} հեկտոլիտրով</unitPattern>
+				<unitPattern count="other" case="locative">{0} հեկտոլիտրում</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>լիտրեր</displayName>
@@ -7096,17 +7533,41 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="volume-deciliter">
 				<displayName>դեցիլիտրեր</displayName>
 				<unitPattern count="one">{0} դեցիլիտր</unitPattern>
+				<unitPattern count="one" case="ablative">{0} դեցիլիտրից</unitPattern>
+				<unitPattern count="one" case="dative">{0} դեցիլիտրին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} դեցիլիտրով</unitPattern>
+				<unitPattern count="one" case="locative">{0} դեցիլիտրում</unitPattern>
 				<unitPattern count="other">{0} դեցիլիտր</unitPattern>
+				<unitPattern count="other" case="ablative">{0} դեցիլիտրից</unitPattern>
+				<unitPattern count="other" case="dative">{0} դեցիլիտրին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} դեցիլիտրով</unitPattern>
+				<unitPattern count="other" case="locative">{0} դեցիլիտրում</unitPattern>
 			</unit>
 			<unit type="volume-centiliter">
 				<displayName>սանտիլիտրեր</displayName>
 				<unitPattern count="one">{0} սանտիլիտր</unitPattern>
+				<unitPattern count="one" case="ablative">{0} սանտիլիտրից</unitPattern>
+				<unitPattern count="one" case="dative">{0} սանտիլիտրին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} սանտիլիտրով</unitPattern>
+				<unitPattern count="one" case="locative">{0} սանտիլիտրում</unitPattern>
 				<unitPattern count="other">{0} սանտիլիտր</unitPattern>
+				<unitPattern count="other" case="ablative">{0} սանտիլիտրից</unitPattern>
+				<unitPattern count="other" case="dative">{0} սանտիլիտրին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} սանտիլիտրով</unitPattern>
+				<unitPattern count="other" case="locative">{0} սանտիլիտրում</unitPattern>
 			</unit>
 			<unit type="volume-milliliter">
 				<displayName>միլիլիտրեր</displayName>
 				<unitPattern count="one">{0} միլիլիտր</unitPattern>
+				<unitPattern count="one" case="ablative">{0} միլիլիտրից</unitPattern>
+				<unitPattern count="one" case="dative">{0} միլիլիտրին</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} միլիլիտրով</unitPattern>
+				<unitPattern count="one" case="locative">{0} միլիլիտրում</unitPattern>
 				<unitPattern count="other">{0} միլիլիտր</unitPattern>
+				<unitPattern count="other" case="ablative">{0} միլիլիտրից</unitPattern>
+				<unitPattern count="other" case="dative">{0} միլիլիտրին</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} միլիլիտրով</unitPattern>
+				<unitPattern count="other" case="locative">{0} միլիլիտրում</unitPattern>
 			</unit>
 			<unit type="volume-pint-metric">
 				<displayName>մետրիկ փինթեր</displayName>
@@ -8430,6 +8891,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} Լ/100 կմ</unitPattern>
 				<unitPattern count="other">{0} Լ/100 կմ</unitPattern>
 			</unit>
+			<unit type="digital-gigabyte">
+				<displayName>ԳԲ</displayName>
+			</unit>
+			<unit type="digital-megabyte">
+				<displayName>ՄԲ</displayName>
+			</unit>
+			<unit type="digital-kilobyte">
+				<displayName>կԲ</displayName>
+			</unit>
 			<unit type="digital-byte">
 				<unitPattern count="one">{0} Բ</unitPattern>
 				<unitPattern count="other">{0} Բ</unitPattern>
@@ -8532,6 +9002,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} լ. տ.</unitPattern>
 				<unitPattern count="other">{0} լ. տ.</unitPattern>
 			</unit>
+			<unit type="length-fathom">
+				<displayName>ֆատոմ</displayName>
+			</unit>
 			<unit type="mass-kilogram">
 				<displayName>կգ</displayName>
 				<unitPattern count="one">{0} կգ</unitPattern>
@@ -8599,6 +9072,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="volume-cubic-kilometer">
 				<unitPattern count="one">{0}կմ³</unitPattern>
 				<unitPattern count="other">{0}կմ³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<unitPattern count="one">{0} սմ³</unitPattern>
+				<unitPattern count="other">{0} սմ³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
 				<unitPattern count="one">{0}մղ³</unitPattern>

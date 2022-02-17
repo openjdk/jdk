@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
@@ -4044,6 +4046,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Pacific/Enderbury">
 				<exemplarCity>Έντερμπερι</exemplarCity>
 			</zone>
+			<zone type="Pacific/Kanton">
+				<exemplarCity draft="contributed">Καντών</exemplarCity>
+			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>Κιριτιμάτι</exemplarCity>
 			</zone>
@@ -6337,7 +6342,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">λάρι Γεωργίας</displayName>
 				<symbol>GEL</symbol>
 				<symbol alt="narrow">₾</symbol>
-				<symbol alt="variant">₾</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>Σέντι Γκάνας (1979–2007)</displayName>
@@ -7619,9 +7623,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="genitive">{0} δυνάμεων επιτάχυνσης</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
+				<gender>neuter</gender>
 				<displayName>μέτρα ανά τετραγωνικό δευτερόλεπτο</displayName>
 				<unitPattern count="one">{0} μέτρο ανά τετραγωνικό δευτερόλεπτο</unitPattern>
+				<unitPattern count="one" case="accusative">{0} μέτρο ανά τετραγωνικό δευτερόλεπτο</unitPattern>
+				<unitPattern count="one" case="genitive">{0} μέτρου ανά τετραγωνικό δευτερόλεπτο</unitPattern>
 				<unitPattern count="other">{0} μέτρα ανά τετραγωνικό δευτερόλεπτο</unitPattern>
+				<unitPattern count="other" case="accusative">{0} μέτρα ανά τετραγωνικό δευτερόλεπτο</unitPattern>
+				<unitPattern count="other" case="genitive">{0} μέτρων ανά τετραγωνικό δευτερόλεπτο</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
 				<gender>feminine</gender>
@@ -7674,9 +7683,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="genitive">{0} δευτερολέπτων του τόξου</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
+				<gender>neuter</gender>
 				<displayName>τετραγωνικά χιλιόμετρα</displayName>
 				<unitPattern count="one">{0} τετραγωνικό χιλιόμετρο</unitPattern>
+				<unitPattern count="one" case="accusative">{0} τετραγωνικό χιλιόμετρο</unitPattern>
+				<unitPattern count="one" case="genitive">{0} τετραγωνικού χιλιομέτρου</unitPattern>
 				<unitPattern count="other">{0} τετραγωνικά χιλιόμετρα</unitPattern>
+				<unitPattern count="other" case="accusative">{0} τετραγωνικά χιλιόμετρα</unitPattern>
+				<unitPattern count="other" case="genitive">{0} τετραγωνικών χιλιομέτρων</unitPattern>
 				<perUnitPattern>{0}/τετραγωνικό χιλιόμετρο</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
@@ -7690,15 +7704,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="genitive">{0} εκτάριων</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
+				<gender>neuter</gender>
 				<displayName>τετραγωνικά μέτρα</displayName>
 				<unitPattern count="one">{0} τετραγωνικό μέτρο</unitPattern>
+				<unitPattern count="one" case="accusative">{0} τετραγωνικό μέτρο</unitPattern>
+				<unitPattern count="one" case="genitive">{0} τετραγωνικού μέτρου</unitPattern>
 				<unitPattern count="other">{0} τετραγωνικά μέτρα</unitPattern>
+				<unitPattern count="other" case="accusative">{0} τετραγωνικά μέτρα</unitPattern>
+				<unitPattern count="other" case="genitive">{0} τετραγωνικών μέτρων</unitPattern>
 				<perUnitPattern>{0}/τετραγωνικό μέτρο</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
+				<gender>neuter</gender>
 				<displayName>τετραγωνικά εκατοστά</displayName>
 				<unitPattern count="one">{0} τετραγωνικό εκατοστό</unitPattern>
+				<unitPattern count="one" case="accusative">{0} τετραγωνικό εκατοστό</unitPattern>
+				<unitPattern count="one" case="genitive">{0} τετραγωνικού εκατοστού</unitPattern>
 				<unitPattern count="other">{0} τετραγωνικά εκατοστά</unitPattern>
+				<unitPattern count="other" case="accusative">{0} τετραγωνικά εκατοστά</unitPattern>
+				<unitPattern count="other" case="genitive">{0} τετραγωνικών εκατοστών</unitPattern>
 				<perUnitPattern>{0}/τετραγωνικό εκατοστό</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
@@ -7749,14 +7773,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} χιλιοστόγραμμα ανά δεκατόλιτρο</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
+				<gender>neuter</gender>
 				<displayName>χιλιοστογραμμομόρια ανά λίτρο</displayName>
 				<unitPattern count="one">{0} χιλιοστογραμμομόριο ανά λίτρο</unitPattern>
+				<unitPattern count="one" case="accusative">{0} χιλιοστογραμμομόριο ανά λίτρο</unitPattern>
+				<unitPattern count="one" case="genitive">{0} χιλιοστογραμμομορίου ανά λίτρο</unitPattern>
 				<unitPattern count="other">{0} χιλιοστογραμμομόρια ανά λίτρο</unitPattern>
+				<unitPattern count="other" case="accusative">{0} χιλιοστογραμμομόρια ανά λίτρο</unitPattern>
+				<unitPattern count="other" case="genitive">{0} χιλιοστογραμμομορίων ανά λίτρο</unitPattern>
 			</unit>
 			<unit type="concentr-item">
+				<gender>neuter</gender>
 				<displayName>στοιχείο</displayName>
 				<unitPattern count="one">{0} στοιχείο</unitPattern>
+				<unitPattern count="one" case="accusative">{0} στοιχείο</unitPattern>
+				<unitPattern count="one" case="genitive">{0} στοιχείου</unitPattern>
 				<unitPattern count="other">{0} στοιχεία</unitPattern>
+				<unitPattern count="other" case="accusative">{0} στοιχεία</unitPattern>
+				<unitPattern count="other" case="genitive">{0} στοιχείων</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
 				<gender>neuter</gender>
@@ -7809,14 +7843,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="genitive">{0} μολ</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
+				<gender>neuter</gender>
 				<displayName>λίτρα ανά χιλιόμετρο</displayName>
 				<unitPattern count="one">{0} λίτρο ανά χιλιόμετρο</unitPattern>
+				<unitPattern count="one" case="accusative">{0} λίτρο ανά χιλιόμετρο</unitPattern>
+				<unitPattern count="one" case="genitive">{0} λίτρου ανά χιλιόμετρο</unitPattern>
 				<unitPattern count="other">{0} λίτρα ανά χιλιόμετρο</unitPattern>
+				<unitPattern count="other" case="accusative">{0} λίτρα ανά χιλιόμετρο</unitPattern>
+				<unitPattern count="other" case="genitive">{0} λίτρων ανά χιλιόμετρο</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
+				<gender>neuter</gender>
 				<displayName>λίτρα ανά 100 χιλιόμετρα</displayName>
 				<unitPattern count="one">{0} λίτρο ανά 100 χιλιόμετρα</unitPattern>
+				<unitPattern count="one" case="accusative">{0} λίτρο ανά 100 χιλιόμετρα</unitPattern>
+				<unitPattern count="one" case="genitive">{0} λίτρου ανά 100 χιλιόμετρα</unitPattern>
 				<unitPattern count="other">{0} λίτρα ανά 100 χιλιόμετρα</unitPattern>
+				<unitPattern count="other" case="accusative">{0} λίτρα ανά 100 χιλιόμετρα</unitPattern>
+				<unitPattern count="other" case="genitive">{0} λίτρων ανά 100 χιλιόμετρα</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>μίλια ανά γαλόνι</displayName>
@@ -7829,49 +7873,94 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} μίλια ανά αγγλοσαξονικό γαλόνι</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
+				<gender>neuter</gender>
 				<displayName>petabyte</displayName>
 				<unitPattern count="one">{0} petabyte</unitPattern>
+				<unitPattern count="one" case="accusative">{0} petabyte</unitPattern>
+				<unitPattern count="one" case="genitive">{0} petabyte</unitPattern>
 				<unitPattern count="other">{0} petabyte</unitPattern>
+				<unitPattern count="other" case="accusative">{0} petabyte</unitPattern>
+				<unitPattern count="other" case="genitive">{0} petabyte</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
+				<gender>neuter</gender>
 				<displayName>terabyte</displayName>
 				<unitPattern count="one">{0} terabyte</unitPattern>
+				<unitPattern count="one" case="accusative">{0} terabyte</unitPattern>
+				<unitPattern count="one" case="genitive">{0} terabyte</unitPattern>
 				<unitPattern count="other">{0} terabyte</unitPattern>
+				<unitPattern count="other" case="accusative">{0} terabyte</unitPattern>
+				<unitPattern count="other" case="genitive">{0} terabyte</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
+				<gender>neuter</gender>
 				<displayName>terabit</displayName>
 				<unitPattern count="one">{0} terabit</unitPattern>
+				<unitPattern count="one" case="accusative">{0} terabit</unitPattern>
+				<unitPattern count="one" case="genitive">{0} terabit</unitPattern>
 				<unitPattern count="other">{0} terabit</unitPattern>
+				<unitPattern count="other" case="accusative">{0} terabit</unitPattern>
+				<unitPattern count="other" case="genitive">{0} terabit</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
+				<gender>neuter</gender>
 				<displayName>gigabyte</displayName>
 				<unitPattern count="one">{0} gigabyte</unitPattern>
+				<unitPattern count="one" case="accusative">{0} gigabyte</unitPattern>
+				<unitPattern count="one" case="genitive">{0} gigabyte</unitPattern>
 				<unitPattern count="other">{0} gigabyte</unitPattern>
+				<unitPattern count="other" case="accusative">{0} gigabyte</unitPattern>
+				<unitPattern count="other" case="genitive">{0} gigabyte</unitPattern>
 			</unit>
 			<unit type="digital-gigabit">
+				<gender>neuter</gender>
 				<displayName>gigabit</displayName>
 				<unitPattern count="one">{0} gigabit</unitPattern>
+				<unitPattern count="one" case="accusative">{0} gigabit</unitPattern>
+				<unitPattern count="one" case="genitive">{0} gigabit</unitPattern>
 				<unitPattern count="other">{0} gigabit</unitPattern>
+				<unitPattern count="other" case="accusative">{0} gigabit</unitPattern>
+				<unitPattern count="other" case="genitive">{0} gigabit</unitPattern>
 			</unit>
 			<unit type="digital-megabyte">
+				<gender>neuter</gender>
 				<displayName>megabyte</displayName>
 				<unitPattern count="one">{0} megabyte</unitPattern>
+				<unitPattern count="one" case="accusative">{0} megabyte</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megabyte</unitPattern>
 				<unitPattern count="other">{0} megabyte</unitPattern>
+				<unitPattern count="other" case="accusative">{0} megabyte</unitPattern>
+				<unitPattern count="other" case="genitive">{0} megabyte</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
+				<gender>neuter</gender>
 				<displayName>megabit</displayName>
 				<unitPattern count="one">{0} megabit</unitPattern>
+				<unitPattern count="one" case="accusative">{0} megabit</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megabit</unitPattern>
 				<unitPattern count="other">{0} megabit</unitPattern>
+				<unitPattern count="other" case="accusative">{0} megabit</unitPattern>
+				<unitPattern count="other" case="genitive">{0} megabit</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
+				<gender>neuter</gender>
 				<displayName>kilobyte</displayName>
 				<unitPattern count="one">{0} kilobyte</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilobyte</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilobyte</unitPattern>
 				<unitPattern count="other">{0} kilobyte</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilobyte</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilobyte</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
+				<gender>neuter</gender>
 				<displayName>kilobit</displayName>
 				<unitPattern count="one">{0} kilobit</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilobit</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilobit</unitPattern>
 				<unitPattern count="other">{0} kilobit</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilobit</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilobit</unitPattern>
 			</unit>
 			<unit type="digital-byte">
 				<gender draft="contributed">neuter</gender>
@@ -7894,7 +7983,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="genitive">{0} bit</unitPattern>
 			</unit>
 			<unit type="duration-century">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>αιώνες</displayName>
 				<unitPattern count="one">{0} αιώνας</unitPattern>
 				<unitPattern count="one" case="accusative">{0} αιώνα</unitPattern>
@@ -7904,7 +7993,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="genitive">{0} αιώνων</unitPattern>
 			</unit>
 			<unit type="duration-decade">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>δεκαετίες</displayName>
 				<unitPattern count="one">{0} δεκαετία</unitPattern>
 				<unitPattern count="one" case="accusative">{0} δεκαετία</unitPattern>
@@ -7947,7 +8036,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} ανά εβδομάδα</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>ημέρες</displayName>
 				<unitPattern count="one">{0} ημέρα</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ημέρα</unitPattern>
@@ -7958,7 +8047,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} ανά ημέρα</perUnitPattern>
 			</unit>
 			<unit type="duration-day-person">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<unitPattern count="one">{0} ημέρα</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ημέρα</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ημέρας</unitPattern>
@@ -8000,19 +8089,34 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} ανά δευτερόλεπτο</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
+				<gender>neuter</gender>
 				<displayName>χιλιοστά του δευτερολέπτου</displayName>
 				<unitPattern count="one">{0} χιλιοστό του δευτερολέπτου</unitPattern>
+				<unitPattern count="one" case="accusative">{0} χιλιοστό του δευτερολέπτου</unitPattern>
+				<unitPattern count="one" case="genitive">{0} χιλιοστού του δευτερολέπτου</unitPattern>
 				<unitPattern count="other">{0} χιλιοστά του δευτερολέπτου</unitPattern>
+				<unitPattern count="other" case="accusative">{0} χιλιοστά του δευτερολέπτου</unitPattern>
+				<unitPattern count="other" case="genitive">{0} χιλιοστών του δευτερολέπτου</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
+				<gender>neuter</gender>
 				<displayName>μικροδευτερόλεπτα</displayName>
 				<unitPattern count="one">{0} μικροδευτερόλεπτο</unitPattern>
+				<unitPattern count="one" case="accusative">{0} μικροδευτερόλεπτο</unitPattern>
+				<unitPattern count="one" case="genitive">μικροδευτερόλεπτου</unitPattern>
 				<unitPattern count="other">{0} μικροδευτερόλεπτα</unitPattern>
+				<unitPattern count="other" case="accusative">{0} μικροδευτερόλεπτα</unitPattern>
+				<unitPattern count="other" case="genitive">{0} μικροδευτερόλεπτων</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
+				<gender>neuter</gender>
 				<displayName>νανοδευτερόλεπτα</displayName>
 				<unitPattern count="one">{0} νανοδευτερόλεπτο</unitPattern>
+				<unitPattern count="one" case="accusative">{0} νανοδευτερόλεπτο</unitPattern>
+				<unitPattern count="one" case="genitive">{0} νανοδευτερόλεπτου</unitPattern>
 				<unitPattern count="other">{0} νανοδευτερόλεπτα</unitPattern>
+				<unitPattern count="other" case="accusative">{0} νανοδευτερόλεπτα</unitPattern>
+				<unitPattern count="other" case="genitive">{0} νανοδευτερόλεπτων</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
 				<gender>neuter</gender>
@@ -8025,9 +8129,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="genitive">{0} αμπέρ</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
+				<gender>neuter</gender>
 				<displayName>μιλιαμπέρ</displayName>
 				<unitPattern count="one">{0} μιλιαμπέρ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} μιλιαμπέρ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} μιλιαμπέρ</unitPattern>
 				<unitPattern count="other">{0} μιλιαμπέρ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} μιλιαμπέρ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} μιλιαμπέρ</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
 				<gender>neuter</gender>
@@ -8070,9 +8179,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} θερμίδες</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
+				<gender>neuter</gender>
 				<displayName>κιλοτζάουλ</displayName>
 				<unitPattern count="one">{0} κιλοτζάουλ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} κιλοτζάουλ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} κιλοτζάουλ</unitPattern>
 				<unitPattern count="other">{0} κιλοτζάουλ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} κιλοτζάουλ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} κιλοτζάουλ</unitPattern>
 			</unit>
 			<unit type="energy-joule">
 				<gender>neuter</gender>
@@ -8085,9 +8199,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="genitive">{0} τζάουλ</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
+				<gender>feminine</gender>
 				<displayName>κιλοβατώρες</displayName>
 				<unitPattern count="one">{0} κιλοβατώρα</unitPattern>
+				<unitPattern count="one" case="accusative">{0} κιλοβατώρα</unitPattern>
+				<unitPattern count="one" case="genitive">{0} κιλοβατώρας</unitPattern>
 				<unitPattern count="other">{0} κιλοβατώρες</unitPattern>
+				<unitPattern count="other" case="accusative">{0} κιλοβατώρες</unitPattern>
+				<unitPattern count="other" case="genitive">{0} κιλοβατωρών</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
 				<displayName>ηλεκτρονιοβόλτ</displayName>
@@ -8120,24 +8239,44 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="genitive">{0} νιούτον</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<gender>feminine</gender>
 				<displayName>κιλοβατώρες ανά 100 χιλιόμετρα</displayName>
 				<unitPattern count="one">{0} κιλοβατώρα ανά 100 χιλιόμετρα</unitPattern>
+				<unitPattern count="one" case="accusative">{0} κιλοβατώρα ανά 100 χιλιόμετρα</unitPattern>
+				<unitPattern count="one" case="genitive">{0} κιλοβατώρας ανά 100 χιλιόμετρα</unitPattern>
 				<unitPattern count="other">{0} κιλοβατώρες ανά 100 χιλιόμετρα</unitPattern>
+				<unitPattern count="other" case="accusative">{0} κιλοβατώρες ανά 100 χιλιόμετρα</unitPattern>
+				<unitPattern count="other" case="genitive">{0} κιλοβατωρών ανά 100 χιλιόμετρα</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
+				<gender>neuter</gender>
 				<displayName>γιγαχέρτζ</displayName>
 				<unitPattern count="one">{0} γιγαχέρτζ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} γιγαχέρτζ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} γιγαχέρτζ</unitPattern>
 				<unitPattern count="other">{0} γιγαχέρτζ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} γιγαχέρτζ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} γιγαχέρτζ</unitPattern>
 			</unit>
 			<unit type="frequency-megahertz">
+				<gender>neuter</gender>
 				<displayName>μεγαχέρτζ</displayName>
 				<unitPattern count="one">{0} μεγαχέρτζ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} μεγαχέρτζ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} μεγαχέρτζ</unitPattern>
 				<unitPattern count="other">{0} μεγαχέρτζ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} μεγαχέρτζ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} μεγαχέρτζ</unitPattern>
 			</unit>
 			<unit type="frequency-kilohertz">
+				<gender>neuter</gender>
 				<displayName>κιλοχέρτζ</displayName>
 				<unitPattern count="one">{0} κιλοχέρτζ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} κιλοχέρτζ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} κιλοχέρτζ</unitPattern>
 				<unitPattern count="other">{0} κιλοχέρτζ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} κιλοχέρτζ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} κιλοχέρτζ</unitPattern>
 			</unit>
 			<unit type="frequency-hertz">
 				<gender>neuter</gender>
@@ -8160,7 +8299,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="genitive">{0} τυπογραφικών em</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
-				<gender draft="contributed">neuter</gender>
+				<gender>neuter</gender>
 				<displayName>pixel</displayName>
 				<unitPattern count="one">{0} pixel</unitPattern>
 				<unitPattern count="one" case="accusative">{0} pixel</unitPattern>
@@ -8170,14 +8309,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="genitive">{0} pixel</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
+				<gender>neuter</gender>
 				<displayName>megapixel</displayName>
 				<unitPattern count="one">{0} megapixel</unitPattern>
+				<unitPattern count="one" case="accusative">{0} megapixel</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megapixel</unitPattern>
 				<unitPattern count="other">{0} megapixel</unitPattern>
+				<unitPattern count="other" case="accusative">{0} megapixel</unitPattern>
+				<unitPattern count="other" case="genitive">{0} megapixel</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-centimeter">
+				<gender>neuter</gender>
 				<displayName>pixel ανά εκατοστό</displayName>
 				<unitPattern count="one">{0} pixel ανά εκατοστό</unitPattern>
+				<unitPattern count="one" case="accusative">{0} pixel ανά εκατοστό</unitPattern>
+				<unitPattern count="one" case="genitive">{0} pixel ανά εκατοστό</unitPattern>
 				<unitPattern count="other">{0} pixel ανά εκατοστό</unitPattern>
+				<unitPattern count="other" case="accusative">{0} pixel ανά εκατοστό</unitPattern>
+				<unitPattern count="other" case="genitive">{0} pixel ανά εκατοστό</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-inch">
 				<displayName>pixel ανά ίντσα</displayName>
@@ -8205,9 +8354,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ακτίνες της Γης</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
+				<gender>neuter</gender>
 				<displayName>χιλιόμετρα</displayName>
 				<unitPattern count="one">{0} χιλιόμετρο</unitPattern>
+				<unitPattern count="one" case="accusative">{0} χιλιόμετρο</unitPattern>
+				<unitPattern count="one" case="genitive">{0} χιλιόμετρου</unitPattern>
 				<unitPattern count="other">{0} χιλιόμετρα</unitPattern>
+				<unitPattern count="other" case="accusative">{0} χιλιόμετρα</unitPattern>
+				<unitPattern count="other" case="genitive">{0} χιλιομέτρων</unitPattern>
 				<perUnitPattern>{0} ανά χιλιόμετρο</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
@@ -8222,34 +8376,64 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} ανά μέτρο</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
+				<gender>neuter</gender>
 				<displayName>δεκατόμετρα</displayName>
 				<unitPattern count="one">{0} δεκατόμετρο</unitPattern>
+				<unitPattern count="one" case="accusative">{0} δεκατόμετρο</unitPattern>
+				<unitPattern count="one" case="genitive">{0} δεκατόμετρο</unitPattern>
 				<unitPattern count="other">{0} δεκατόμετρα</unitPattern>
+				<unitPattern count="other" case="accusative">{0} δεκατόμετρα</unitPattern>
+				<unitPattern count="other" case="genitive">{0} δεκατόμετρων</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
+				<gender>neuter</gender>
 				<displayName>εκατοστά</displayName>
 				<unitPattern count="one">{0} εκατοστό</unitPattern>
+				<unitPattern count="one" case="accusative">{0} εκατοστό</unitPattern>
+				<unitPattern count="one" case="genitive">{0} εκατοστού</unitPattern>
 				<unitPattern count="other">{0} εκατοστά</unitPattern>
+				<unitPattern count="other" case="accusative">{0} εκατοστά</unitPattern>
+				<unitPattern count="other" case="genitive">{0} εκατοστών</unitPattern>
 				<perUnitPattern>{0} ανά εκατοστό</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
+				<gender>neuter</gender>
 				<displayName>χιλιοστόμετρα</displayName>
 				<unitPattern count="one">{0} χιλιοστόμετρο</unitPattern>
+				<unitPattern count="one" case="accusative">{0} χιλιοστόμετρο</unitPattern>
+				<unitPattern count="one" case="genitive">{0} χιλιοστόμετρου</unitPattern>
 				<unitPattern count="other">{0} χιλιοστόμετρα</unitPattern>
+				<unitPattern count="other" case="accusative">{0} χιλιοστόμετρα</unitPattern>
+				<unitPattern count="other" case="genitive">{0} χιλιοστόμετρων</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
+				<gender>neuter</gender>
 				<unitPattern count="one">{0} μικρόμετρο</unitPattern>
+				<unitPattern count="one" case="accusative">{0} μικρόμετρο</unitPattern>
+				<unitPattern count="one" case="genitive">{0} μικρόμετρο</unitPattern>
 				<unitPattern count="other">{0} μικρόμετρα</unitPattern>
+				<unitPattern count="other" case="accusative">{0} μικρόμετρα</unitPattern>
+				<unitPattern count="other" case="genitive">{0} μικρόμετρων</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
+				<gender>neuter</gender>
 				<displayName>νανόμετρα</displayName>
 				<unitPattern count="one">{0} νανόμετρο</unitPattern>
+				<unitPattern count="one" case="accusative">{0} νανόμετρο</unitPattern>
+				<unitPattern count="one" case="genitive">{0} νανόμετρου</unitPattern>
 				<unitPattern count="other">{0} νανόμετρα</unitPattern>
+				<unitPattern count="other" case="accusative">{0} νανόμετρα</unitPattern>
+				<unitPattern count="other" case="genitive">{0} νανόμετρων</unitPattern>
 			</unit>
 			<unit type="length-picometer">
+				<gender>neuter</gender>
 				<displayName>πικόμετρα</displayName>
 				<unitPattern count="one">{0} πικόμετρο</unitPattern>
+				<unitPattern count="one" case="accusative">{0} πικόμετρο</unitPattern>
+				<unitPattern count="one" case="genitive">{0} πικόμετρου</unitPattern>
 				<unitPattern count="other">{0} πικόμετρα</unitPattern>
+				<unitPattern count="other" case="accusative">{0} πικόμετρα</unitPattern>
+				<unitPattern count="other" case="genitive">{0} πικόμετρων</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<displayName>μίλια</displayName>
@@ -8389,14 +8573,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} ανά γραμμάριο</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
+				<gender>neuter</gender>
 				<displayName>χιλιοστόγραμμα</displayName>
 				<unitPattern count="one">{0} χιλιοστόγραμμο</unitPattern>
+				<unitPattern count="one" case="accusative">{0} χιλιοστόγραμμο</unitPattern>
+				<unitPattern count="one" case="genitive">{0} χιλιοστόγραμμου</unitPattern>
 				<unitPattern count="other">{0} χιλιοστόγραμμα</unitPattern>
+				<unitPattern count="other" case="accusative">{0} χιλιοστόγραμμα</unitPattern>
+				<unitPattern count="other" case="genitive">{0} χιλιοστόγραμμων</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
+				<gender>neuter</gender>
 				<displayName>μικρογραμμάρια</displayName>
 				<unitPattern count="one">{0} μικρογραμμάριο</unitPattern>
+				<unitPattern count="one" case="accusative">{0} μικρογραμμάριο</unitPattern>
+				<unitPattern count="one" case="genitive">{0} μικρογραμμάριου</unitPattern>
 				<unitPattern count="other">{0} μικρογραμμάρια</unitPattern>
+				<unitPattern count="other" case="accusative">{0} μικρογραμμάρια</unitPattern>
+				<unitPattern count="other" case="genitive">{0} μικρογραμμαρίων</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>τόνοι ΗΠΑ</displayName>
@@ -8456,19 +8650,34 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} κόκκοι</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
+				<gender>neuter</gender>
 				<displayName>γιγαβάτ</displayName>
 				<unitPattern count="one">{0} γιγαβάτ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} γιγαβάτ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} γιγαβάτ</unitPattern>
 				<unitPattern count="other">{0} γιγαβάτ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} γιγαβάτ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} γιγαβάτ</unitPattern>
 			</unit>
 			<unit type="power-megawatt">
+				<gender>neuter</gender>
 				<displayName>μεγαβάτ</displayName>
 				<unitPattern count="one">{0} μεγαβάτ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} μεγαβάτ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} μεγαβάτ</unitPattern>
 				<unitPattern count="other">{0} μεγαβάτ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} μεγαβάτ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} μεγαβάτ</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
+				<gender>neuter</gender>
 				<displayName>κιλοβάτ</displayName>
 				<unitPattern count="one">{0} κιλοβάτ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} κιλοβάτ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} κιλοβάτ</unitPattern>
 				<unitPattern count="other">{0} κιλοβάτ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} κιλοβάτ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} κιλοβάτ</unitPattern>
 			</unit>
 			<unit type="power-watt">
 				<gender>neuter</gender>
@@ -8481,9 +8690,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="genitive">{0} βατ</unitPattern>
 			</unit>
 			<unit type="power-milliwatt">
+				<gender>neuter</gender>
 				<displayName>μιλιβάτ</displayName>
 				<unitPattern count="one">{0} μιλιβάτ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} μιλιβάτ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} μιλιβάτ</unitPattern>
 				<unitPattern count="other">{0} μιλιβάτ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} μιλιβάτ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} μιλιβάτ</unitPattern>
 			</unit>
 			<unit type="power-horsepower">
 				<displayName>ίπποι</displayName>
@@ -8516,9 +8730,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="genitive">{0} μπαρ</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
+				<gender>neuter</gender>
 				<displayName>μιλιμπάρ</displayName>
 				<unitPattern count="one">{0} μιλιμπάρ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} μιλιμπάρ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} μιλιμπάρ</unitPattern>
 				<unitPattern count="other">{0} μιλιμπάρ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} μιλιμπάρ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} μιλιμπάρ</unitPattern>
 			</unit>
 			<unit type="pressure-atmosphere">
 				<gender>feminine</gender>
@@ -8541,29 +8760,54 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="genitive">{0} πασκάλ</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
+				<gender>neuter</gender>
 				<displayName>εκτοπασκάλ</displayName>
 				<unitPattern count="one">{0} εκτοπασκάλ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} εκτοπασκάλ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} εκτοπασκάλ</unitPattern>
 				<unitPattern count="other">{0} εκτοπασκάλ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} εκτοπασκάλ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} εκτοπασκάλ</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
+				<gender>neuter</gender>
 				<displayName>κιλοπασκάλ</displayName>
 				<unitPattern count="one">{0} κιλοπασκάλ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} κιλοπασκάλ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} κιλοπασκάλ</unitPattern>
 				<unitPattern count="other">{0} κιλοπασκάλ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} κιλοπασκάλ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} κιλοπασκάλ</unitPattern>
 			</unit>
 			<unit type="pressure-megapascal">
+				<gender>neuter</gender>
 				<displayName>μεγαπασκάλ</displayName>
 				<unitPattern count="one">{0} μεγαπασκάλ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} μεγαπασκάλ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} μεγαπασκάλ</unitPattern>
 				<unitPattern count="other">{0} μεγαπασκάλ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} μεγαπασκάλ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} μεγαπασκάλ</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
+				<gender>neuter</gender>
 				<displayName>χιλιόμετρα ανά ώρα</displayName>
 				<unitPattern count="one">{0} χιλιόμετρο ανά ώρα</unitPattern>
+				<unitPattern count="one" case="accusative">{0} χιλιόμετρο ανά ώρα</unitPattern>
+				<unitPattern count="one" case="genitive">{0} χιλιόμετρου ανά ώρα</unitPattern>
 				<unitPattern count="other">{0} χιλιόμετρα ανά ώρα</unitPattern>
+				<unitPattern count="other" case="accusative">{0} χιλιόμετρα ανά ώρα</unitPattern>
+				<unitPattern count="other" case="genitive">{0} χιλιομέτρων ανά ώρα</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
+				<gender>neuter</gender>
 				<displayName>μέτρα ανά δευτερόλεπτο</displayName>
 				<unitPattern count="one">{0} μέτρο ανά δευτερόλεπτο</unitPattern>
+				<unitPattern count="one" case="accusative">{0} μέτρο ανά δευτερόλεπτο</unitPattern>
+				<unitPattern count="one" case="genitive">{0} μέτρου ανά δευτερόλεπτο</unitPattern>
 				<unitPattern count="other">{0} μέτρα ανά δευτερόλεπτο</unitPattern>
+				<unitPattern count="other" case="accusative">{0} μέτρα ανά δευτερόλεπτο</unitPattern>
+				<unitPattern count="other" case="genitive">{0} μέτρων ανά δευτερόλεπτο</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
 				<displayName>μίλια ανά ώρα</displayName>
@@ -8616,25 +8860,45 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} λίβρες-πόδια</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
+				<gender>neuter</gender>
 				<displayName>νιουτόμετρα</displayName>
 				<unitPattern count="one">{0} νιουτόμετρο</unitPattern>
+				<unitPattern count="one" case="accusative">{0} νιουτόμετρο</unitPattern>
+				<unitPattern count="one" case="genitive">{0} νιουτόμετρου</unitPattern>
 				<unitPattern count="other">{0} νιουτόμετρα</unitPattern>
+				<unitPattern count="other" case="accusative">{0} νιουτόμετρα</unitPattern>
+				<unitPattern count="other" case="genitive">{0} νιουτόμετρων</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
+				<gender>neuter</gender>
 				<displayName>κυβικά χιλιόμετρα</displayName>
 				<unitPattern count="one">{0} κυβικό χιλιόμετρο</unitPattern>
+				<unitPattern count="one" case="accusative">{0} κυβικό χιλιόμετρο</unitPattern>
+				<unitPattern count="one" case="genitive">{0} κυβικού χιλιόμετρου</unitPattern>
 				<unitPattern count="other">{0} κυβικά χιλιόμετρα</unitPattern>
+				<unitPattern count="other" case="accusative">{0} κυβικά χιλιόμετρα</unitPattern>
+				<unitPattern count="other" case="genitive">{0} κυβικών χιλιομέτρων</unitPattern>
 			</unit>
 			<unit type="volume-cubic-meter">
+				<gender>neuter</gender>
 				<displayName>κυβικά μέτρα</displayName>
 				<unitPattern count="one">{0} κυβικό μέτρο</unitPattern>
+				<unitPattern count="one" case="accusative">{0} κυβικό μέτρο</unitPattern>
+				<unitPattern count="one" case="genitive">{0} κυβικού μέτρου</unitPattern>
 				<unitPattern count="other">{0} κυβικά μέτρα</unitPattern>
+				<unitPattern count="other" case="accusative">{0} κυβικά μέτρα</unitPattern>
+				<unitPattern count="other" case="genitive">{0} κυβικών μέτρων</unitPattern>
 				<perUnitPattern>{0} ανά κυβικό μέτρο</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
+				<gender>neuter</gender>
 				<displayName>κυβικά εκατοστά</displayName>
 				<unitPattern count="one">{0} κυβικό εκατοστό</unitPattern>
+				<unitPattern count="one" case="accusative">{0} κυβικό εκατοστό</unitPattern>
+				<unitPattern count="one" case="genitive">{0} κυβικού εκατοστού</unitPattern>
 				<unitPattern count="other">{0} κυβικά εκατοστά</unitPattern>
+				<unitPattern count="other" case="accusative">{0} κυβικά εκατοστά</unitPattern>
+				<unitPattern count="other" case="genitive">{0} κυβικών εκατοστών</unitPattern>
 				<perUnitPattern>{0} ανά κυβικό εκατοστό</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
@@ -8658,14 +8922,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} κυβικές ίντσες</unitPattern>
 			</unit>
 			<unit type="volume-megaliter">
+				<gender>neuter</gender>
 				<displayName>μεγαλίτρα</displayName>
 				<unitPattern count="one">{0} μεγαλίτρο</unitPattern>
+				<unitPattern count="one" case="accusative">{0} μεγαλίτρο</unitPattern>
+				<unitPattern count="one" case="genitive">{0} μεγαλίτρου</unitPattern>
 				<unitPattern count="other">{0} μεγαλίτρα</unitPattern>
+				<unitPattern count="other" case="accusative">{0} μεγαλίτρα</unitPattern>
+				<unitPattern count="other" case="genitive">{0} μεγαλίτρων</unitPattern>
 			</unit>
 			<unit type="volume-hectoliter">
+				<gender>neuter</gender>
 				<displayName>εκτόλιτρα</displayName>
 				<unitPattern count="one">{0} εκτόλιτρο</unitPattern>
+				<unitPattern count="one" case="accusative">{0} εκτόλιτρο</unitPattern>
+				<unitPattern count="one" case="genitive">{0} εκτόλιτρου</unitPattern>
 				<unitPattern count="other">{0} εκτόλιτρα</unitPattern>
+				<unitPattern count="other" case="accusative">{0} εκτόλιτρα</unitPattern>
+				<unitPattern count="other" case="genitive">{0} εκτόλιτρων</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<gender>neuter</gender>
@@ -8679,19 +8953,34 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} ανά λίτρο</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
+				<gender>neuter</gender>
 				<displayName>δεκατόλιτρα</displayName>
 				<unitPattern count="one">{0} δεκατόλιτρο</unitPattern>
+				<unitPattern count="one" case="accusative">{0} δεκατόλιτρο</unitPattern>
+				<unitPattern count="one" case="genitive">{0} δεκατόλιτρου</unitPattern>
 				<unitPattern count="other">{0} δεκατόλιτρα</unitPattern>
+				<unitPattern count="other" case="accusative">{0} δεκατόλιτρα</unitPattern>
+				<unitPattern count="other" case="genitive">{0} δεκατόλιτρων</unitPattern>
 			</unit>
 			<unit type="volume-centiliter">
+				<gender>neuter</gender>
 				<displayName>εκατοστόλιτρα</displayName>
 				<unitPattern count="one">{0} εκατοστόλιτρο</unitPattern>
+				<unitPattern count="one" case="accusative">{0} εκατοστόλιτρο</unitPattern>
+				<unitPattern count="one" case="genitive">{0} εκατοστόλιτρου</unitPattern>
 				<unitPattern count="other">{0} εκατοστόλιτρα</unitPattern>
+				<unitPattern count="other" case="accusative">{0} εκατοστόλιτρα</unitPattern>
+				<unitPattern count="other" case="genitive">{0} εκατοστόλιτρων</unitPattern>
 			</unit>
 			<unit type="volume-milliliter">
+				<gender>neuter</gender>
 				<displayName>χιλιοστόλιτρα</displayName>
 				<unitPattern count="one">{0} χιλιοστόλιτρο</unitPattern>
+				<unitPattern count="one" case="accusative">{0} χιλιοστόλιτρο</unitPattern>
+				<unitPattern count="one" case="genitive">{0} χιλιοστόλιτρου</unitPattern>
 				<unitPattern count="other">{0} χιλιοστόλιτρα</unitPattern>
+				<unitPattern count="other" case="accusative">{0} χιλιοστόλιτρα</unitPattern>
+				<unitPattern count="other" case="genitive">{0} χιλιοστόλιτρων</unitPattern>
 			</unit>
 			<unit type="volume-pint-metric">
 				<gender>feminine</gender>

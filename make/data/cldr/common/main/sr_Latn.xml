@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -1459,18 +1459,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="12">d</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1">januara</month>
-							<month type="2">februara</month>
-							<month type="3">marta</month>
-							<month type="4">aprila</month>
-							<month type="5">maja</month>
-							<month type="6">juna</month>
-							<month type="7">jula</month>
-							<month type="8">avgusta</month>
-							<month type="9">septembra</month>
-							<month type="10">oktobra</month>
-							<month type="11">novembra</month>
-							<month type="12">decembra</month>
+							<month type="1">januar</month>
+							<month type="2">februar</month>
+							<month type="3">mart</month>
+							<month type="4">april</month>
+							<month type="5">maj</month>
+							<month type="6">jun</month>
+							<month type="7">jul</month>
+							<month type="8">avgust</month>
+							<month type="9">septembar</month>
+							<month type="10">oktobar</month>
+							<month type="11">novembar</month>
+							<month type="12">decembar</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
@@ -3741,6 +3741,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Pacific/Enderbury">
 				<exemplarCity>Enderberi</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kanton">
+				<exemplarCity>Kanton</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>Kiritimati</exemplarCity>
@@ -6241,7 +6244,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">gruzijskih larija</displayName>
 				<symbol>GEL</symbol>
 				<symbol alt="narrow">ლ</symbol>
-				<symbol alt="variant">ლ</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>Ganski cedi (1979–2007)</displayName>
@@ -6732,7 +6734,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">mauritanijska ogija (1973–2017)</displayName>
 				<displayName count="few">mauritanijske ogije (1973–2017)</displayName>
 				<displayName count="other">mauritanijskih ogija (1973–2017)</displayName>
-				<symbol draft="contributed">MRO</symbol>
+				<symbol>MRO</symbol>
 			</currency>
 			<currency type="MRU">
 				<displayName>mauritanska ogija</displayName>
@@ -7141,7 +7143,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">saotomska dobra (1977–2017)</displayName>
 				<displayName count="few">saotomske dobre (1977–2017)</displayName>
 				<displayName count="other">saotomskih dobri (1977–2017)</displayName>
-				<symbol draft="contributed">STD</symbol>
+				<symbol>STD</symbol>
 			</currency>
 			<currency type="STN">
 				<displayName>saotomska dobra</displayName>
@@ -7356,8 +7358,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">venecuelanski bolivar (2008–2018)</displayName>
 				<displayName count="few">venecuelanska bolivara (2008–2018)</displayName>
 				<displayName count="other">venecuelanskih bolivara (2008–2018)</displayName>
-				<symbol draft="contributed">VEF</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
+				<symbol>VEF</symbol>
+				<symbol alt="narrow">Bs</symbol>
 			</currency>
 			<currency type="VES">
 				<displayName>venecuelanski bolivar</displayName>
@@ -7744,8 +7746,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ge sila</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
+				<gender>inanimate</gender>
 				<displayName>metri u sekundi na kvadrat</displayName>
 				<unitPattern count="one">{0} metar u sekundi na kvadrat</unitPattern>
+				<unitPattern count="one" case="genitive">{0} metra u sekundi na kvadrat</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} metrom u sekundi na kvadrat</unitPattern>
 				<unitPattern count="few">{0} metra u sekundi na kvadrat</unitPattern>
 				<unitPattern count="other">{0} metara u sekundi na kvadrat</unitPattern>
 			</unit>
@@ -7800,8 +7805,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} lučnih sekundi</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
+				<gender>inanimate</gender>
 				<displayName>kvadratni kilometri</displayName>
 				<unitPattern count="one">{0} kvadratni kilometar</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kvadratna kilometra</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kvadratnim kilometrom</unitPattern>
 				<unitPattern count="few">{0} kvadratna kilometra</unitPattern>
 				<unitPattern count="other">{0} kvadratnih kilometara</unitPattern>
 				<perUnitPattern>{0} po kvadratnom kilometru</perUnitPattern>
@@ -7817,15 +7825,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} hektara</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
+				<gender>inanimate</gender>
 				<displayName>kvadratni metri</displayName>
 				<unitPattern count="one">{0} kvadratni metar</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kvadratna metra</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kvadratnim metrom</unitPattern>
 				<unitPattern count="few">{0} kvadratna metra</unitPattern>
 				<unitPattern count="other">{0} kvadratnih metara</unitPattern>
 				<perUnitPattern>{0}/m²</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
+				<gender>inanimate</gender>
 				<displayName>kvadratni centimetri</displayName>
 				<unitPattern count="one">{0} kvadratni centimetar</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kvadratnog centimetra</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kvadratnim centimetrom</unitPattern>
 				<unitPattern count="few">{0} kvadratna centimetra</unitPattern>
 				<unitPattern count="other">{0} kvadratnih centimetara</unitPattern>
 				<perUnitPattern>{0}/cm²</perUnitPattern>
@@ -7885,14 +7899,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} miligrama po decilitru</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
+				<gender>inanimate</gender>
 				<displayName>milimol po litri</displayName>
 				<unitPattern count="one">{0} milimol po litri</unitPattern>
+				<unitPattern count="one" case="genitive">{0} milimola po litri</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} milimolom po litri</unitPattern>
 				<unitPattern count="few">{0} milimola po litri</unitPattern>
 				<unitPattern count="other">{0} milimola po litri</unitPattern>
 			</unit>
 			<unit type="concentr-item">
+				<gender>feminine</gender>
 				<displayName>stavke</displayName>
 				<unitPattern count="one">{0} stavka</unitPattern>
+				<unitPattern count="one" case="accusative">{0} stavku</unitPattern>
+				<unitPattern count="one" case="genitive">{0} stavke</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} stavkom</unitPattern>
 				<unitPattern count="few">{0} stavke</unitPattern>
 				<unitPattern count="other">{0} stavki</unitPattern>
 			</unit>
@@ -7949,14 +7970,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="instrumental">{0} mola</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
+				<gender>inanimate</gender>
 				<displayName>litri po kilometru</displayName>
 				<unitPattern count="one">{0} litar po kilometru</unitPattern>
+				<unitPattern count="one" case="genitive">{0} litra po kilometru</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} litrom po kilometru</unitPattern>
 				<unitPattern count="few">{0} litra po kilometru</unitPattern>
 				<unitPattern count="other">{0} litara po kilometru</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
+				<gender>inanimate</gender>
 				<displayName>litri na 100 kilometara</displayName>
 				<unitPattern count="one">{0} litar na 100 kilometara</unitPattern>
+				<unitPattern count="one" case="genitive">{0} litra na 100 kilometara</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} litrom na 100 kilometara</unitPattern>
 				<unitPattern count="few">{0} litra na 100 kilometara</unitPattern>
 				<unitPattern count="other">{0} litara na 100 kilometara</unitPattern>
 			</unit>
@@ -7973,56 +8000,86 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} milja po imperijalnom galonu</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
+				<gender>inanimate</gender>
 				<displayName>petabajti</displayName>
 				<unitPattern count="one">{0} petabajt</unitPattern>
+				<unitPattern count="one" case="genitive">{0} petabajta</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} petabajtom</unitPattern>
 				<unitPattern count="few">{0} petabajta</unitPattern>
 				<unitPattern count="other">{0} petabajtova</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
+				<gender>inanimate</gender>
 				<displayName>terabajti</displayName>
 				<unitPattern count="one">{0} terabajt</unitPattern>
+				<unitPattern count="one" case="genitive">{0} terabajta</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} terabajtom</unitPattern>
 				<unitPattern count="few">{0} terabajta</unitPattern>
 				<unitPattern count="other">{0} terabajta</unitPattern>
+				<unitPattern count="other" case="accusative">{0} terabajtova</unitPattern>
+				<unitPattern count="other" case="genitive">{0} terabajtova</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} terabajtova</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
+				<gender>inanimate</gender>
 				<displayName>terabitovi</displayName>
 				<unitPattern count="one">{0} terabit</unitPattern>
+				<unitPattern count="one" case="genitive">{0} terabita</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} terabitom</unitPattern>
 				<unitPattern count="few">{0} terabita</unitPattern>
 				<unitPattern count="other">{0} terabitova</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
+				<gender>inanimate</gender>
 				<displayName>gigabajti</displayName>
 				<unitPattern count="one">{0} gigabajt</unitPattern>
+				<unitPattern count="one" case="genitive">{0} gigabajta</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} gigabajtom</unitPattern>
 				<unitPattern count="few">{0} gigabajta</unitPattern>
 				<unitPattern count="other">{0} gigabajtova</unitPattern>
 			</unit>
 			<unit type="digital-gigabit">
+				<gender>inanimate</gender>
 				<displayName>gigabitovi</displayName>
 				<unitPattern count="one">{0} gigabit</unitPattern>
+				<unitPattern count="one" case="genitive">{0} gigabita</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} gigabitom</unitPattern>
 				<unitPattern count="few">{0} gigabita</unitPattern>
 				<unitPattern count="other">{0} gigabitova</unitPattern>
 			</unit>
 			<unit type="digital-megabyte">
+				<gender>inanimate</gender>
 				<displayName>megabajti</displayName>
 				<unitPattern count="one">{0} megabajt</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megabajta</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} megabajtom</unitPattern>
 				<unitPattern count="few">{0} megabajta</unitPattern>
 				<unitPattern count="other">{0} megabajtova</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
+				<gender>inanimate</gender>
 				<displayName>megabitovi</displayName>
 				<unitPattern count="one">{0} megabit</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megabita</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} megabitom</unitPattern>
 				<unitPattern count="few">{0} megabita</unitPattern>
 				<unitPattern count="other">{0} megabitova</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
+				<gender>inanimate</gender>
 				<displayName>kilobajti</displayName>
 				<unitPattern count="one">{0} kilobajt</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilobajta</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilobajtom</unitPattern>
 				<unitPattern count="few">{0} kilobajta</unitPattern>
 				<unitPattern count="other">{0} kilobajtova</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
+				<gender>inanimate</gender>
 				<displayName>kilobitovi</displayName>
 				<unitPattern count="one">{0} kilobit</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilobita</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilobitom</unitPattern>
 				<unitPattern count="few">{0} kilobita</unitPattern>
 				<unitPattern count="other">{0} kilobitova</unitPattern>
 			</unit>
@@ -8147,20 +8204,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0}/u sekundi</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
+				<gender>feminine</gender>
 				<displayName>milisekunde</displayName>
 				<unitPattern count="one">{0} milisekunda</unitPattern>
+				<unitPattern count="one" case="genitive">{0} milisekunde</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} milisekundom</unitPattern>
 				<unitPattern count="few">{0} milisekunde</unitPattern>
 				<unitPattern count="other">{0} milisekundi</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
+				<gender>feminine</gender>
 				<displayName>mikrosekunde</displayName>
 				<unitPattern count="one">{0} mikrosekunda</unitPattern>
+				<unitPattern count="one" case="accusative">{0} mikrosekundu</unitPattern>
+				<unitPattern count="one" case="genitive">{0} mikrosekunde</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} mikrosekundom</unitPattern>
 				<unitPattern count="few">{0} mikrosekunde</unitPattern>
 				<unitPattern count="other">{0} mikrosekundi</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
+				<gender>feminine</gender>
 				<displayName>nanosekunde</displayName>
 				<unitPattern count="one">{0} nanosekunda</unitPattern>
+				<unitPattern count="one" case="accusative">{0} nanosekunde</unitPattern>
+				<unitPattern count="one" case="genitive">{0} nanosekunde</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} nanosekundom</unitPattern>
 				<unitPattern count="few">{0} nanosekunde</unitPattern>
 				<unitPattern count="other">{0} nanosekundi</unitPattern>
 			</unit>
@@ -8175,8 +8243,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ampera</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
+				<gender>inanimate</gender>
 				<displayName>miliamperi</displayName>
 				<unitPattern count="one">{0} miliamper</unitPattern>
+				<unitPattern count="one" case="genitive">{0} miliampera</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} miliamperom</unitPattern>
 				<unitPattern count="few">{0} miliampera</unitPattern>
 				<unitPattern count="other">{0} miliampera</unitPattern>
 			</unit>
@@ -8223,8 +8294,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} kalorija</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
+				<gender>inanimate</gender>
 				<displayName>kilodžuli</displayName>
 				<unitPattern count="one">{0} kilodžul</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilodžula</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilodžulom</unitPattern>
 				<unitPattern count="few">{0} kilodžula</unitPattern>
 				<unitPattern count="other">{0} kilodžula</unitPattern>
 			</unit>
@@ -8239,8 +8313,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} džula</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
+				<gender>inanimate</gender>
 				<displayName>kilovat-sati</displayName>
 				<unitPattern count="one">{0} kilovat-sat</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilovat-sata</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilovat-satom</unitPattern>
 				<unitPattern count="few">{0} kilovat-sata</unitPattern>
 				<unitPattern count="other">{0} kilovat-sati</unitPattern>
 			</unit>
@@ -8275,21 +8352,33 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} njutna</unitPattern>
 				<unitPattern count="other">{0} njutna</unitPattern>
 			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<gender>inanimate</gender>
+			</unit>
 			<unit type="frequency-gigahertz">
+				<gender>inanimate</gender>
 				<displayName>gigaherci</displayName>
 				<unitPattern count="one">{0} gigaherc</unitPattern>
+				<unitPattern count="one" case="genitive">{0} gigaherca</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} gigahercom</unitPattern>
 				<unitPattern count="few">{0} gigaherca</unitPattern>
 				<unitPattern count="other">{0} gigaherca</unitPattern>
 			</unit>
 			<unit type="frequency-megahertz">
+				<gender>inanimate</gender>
 				<displayName>megaherci</displayName>
 				<unitPattern count="one">{0} megaherc</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megaherca</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} megahercom</unitPattern>
 				<unitPattern count="few">{0} megaherca</unitPattern>
 				<unitPattern count="other">{0} megaherca</unitPattern>
 			</unit>
 			<unit type="frequency-kilohertz">
+				<gender>inanimate</gender>
 				<displayName>kiloherci</displayName>
 				<unitPattern count="one">{0} kiloherc</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kiloherca</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilohercom</unitPattern>
 				<unitPattern count="few">{0} kiloherca</unitPattern>
 				<unitPattern count="other">{0} kiloherca</unitPattern>
 			</unit>
@@ -8305,11 +8394,52 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="graphics-em">
 				<gender>inanimate</gender>
-				<unitPattern count="one">{0} em</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
 				<gender>inanimate</gender>
-				<unitPattern count="one">{0} px</unitPattern>
+				<unitPattern count="one">{0} piksel</unitPattern>
+				<unitPattern count="one" case="accusative">{0} piksel</unitPattern>
+				<unitPattern count="one" case="genitive">{0} piksela</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} pikselom</unitPattern>
+				<unitPattern count="few">{0} piksela</unitPattern>
+				<unitPattern count="few" case="accusative">{0} piksela</unitPattern>
+				<unitPattern count="few" case="genitive">{0} piksela</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} piksela</unitPattern>
+				<unitPattern count="other">{0} piksela</unitPattern>
+				<unitPattern count="other" case="accusative">{0} piksela</unitPattern>
+				<unitPattern count="other" case="genitive">{0} piksela</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} piksela</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<gender>inanimate</gender>
+				<displayName>megapikseli</displayName>
+				<unitPattern count="one">{0} megapiksel</unitPattern>
+				<unitPattern count="one" case="accusative">{0} megapiksel</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megapiksela</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} megapikselom</unitPattern>
+				<unitPattern count="few">{0} megapiksela</unitPattern>
+				<unitPattern count="few" case="accusative">{0} megapiksela</unitPattern>
+				<unitPattern count="few" case="genitive">{0} megapiksela</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} megapiksela</unitPattern>
+				<unitPattern count="other">{0} megapiksela</unitPattern>
+				<unitPattern count="other" case="accusative">{0} megapiksela</unitPattern>
+				<unitPattern count="other" case="genitive">{0} megapiksela</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} megapiksela</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<gender>inanimate</gender>
+				<unitPattern count="one">{0} piksel na centimetar</unitPattern>
+				<unitPattern count="one" case="accusative">{0} piksel na centimetar</unitPattern>
+				<unitPattern count="one" case="genitive">{0} piksela na centimetar</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} pikselom na centimetar</unitPattern>
+				<unitPattern count="few">{0} piksela na centimetar</unitPattern>
+				<unitPattern count="few" case="accusative">{0} piksela na centimetar</unitPattern>
+				<unitPattern count="few" case="genitive">{0} piksela na centimetar</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} piksela na centimetar</unitPattern>
+				<unitPattern count="other">{0} piksela na centimetar</unitPattern>
+				<unitPattern count="other" case="accusative">{0} piksela na centimetar</unitPattern>
+				<unitPattern count="other" case="genitive">{0} piksela na centimetar</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} piksela na centimetar</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
 				<displayName>tačka</displayName>
@@ -8319,11 +8449,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="length-earth-radius">
 				<displayName>poluprečnik Zemlje</displayName>
 				<unitPattern count="one">{0} poluprečnik Zemlje</unitPattern>
+				<unitPattern count="few">{0} poluprečnik Zemlje</unitPattern>
 				<unitPattern count="other">{0} poluprečnika Zemlje</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
+				<gender>inanimate</gender>
 				<displayName>kilometri</displayName>
 				<unitPattern count="one">{0} kilometar</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilometra</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilometrom</unitPattern>
 				<unitPattern count="few">{0} kilometra</unitPattern>
 				<unitPattern count="other">{0} kilometara</unitPattern>
 				<perUnitPattern>{0}/km</perUnitPattern>
@@ -8340,39 +8474,60 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0}/m</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
+				<gender>inanimate</gender>
 				<displayName>decimetri</displayName>
 				<unitPattern count="one">{0} decimetar</unitPattern>
+				<unitPattern count="one" case="genitive">{0} decimetra</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} decimetrom</unitPattern>
 				<unitPattern count="few">{0} decimetra</unitPattern>
 				<unitPattern count="other">{0} decimetara</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
+				<gender>inanimate</gender>
 				<displayName>centimetri</displayName>
 				<unitPattern count="one">{0} centimetar</unitPattern>
-				<unitPattern count="few">{0} centimentra</unitPattern>
+				<unitPattern count="one" case="genitive">{0} centimetra</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} centimetrom</unitPattern>
+				<unitPattern count="few">{0} centimetra</unitPattern>
+				<unitPattern count="few" case="accusative">{0} centimetra</unitPattern>
+				<unitPattern count="few" case="genitive">{0} centimetra</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} centimetra</unitPattern>
 				<unitPattern count="other">{0} centimetara</unitPattern>
 				<perUnitPattern>{0}/cm</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
+				<gender>inanimate</gender>
 				<displayName>milimetri</displayName>
 				<unitPattern count="one">{0} milimetar</unitPattern>
+				<unitPattern count="one" case="genitive">{0} milimetra</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} milimetrom</unitPattern>
 				<unitPattern count="few">{0} milimetra</unitPattern>
 				<unitPattern count="other">{0} milimetara</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
+				<gender>inanimate</gender>
 				<displayName>mikrometri</displayName>
 				<unitPattern count="one">{0} mikrometar</unitPattern>
+				<unitPattern count="one" case="genitive">{0} mikrometra</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} mikrometrom</unitPattern>
 				<unitPattern count="few">{0} mikrometra</unitPattern>
 				<unitPattern count="other">{0} mikrometara</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
+				<gender>inanimate</gender>
 				<displayName>nanometri</displayName>
 				<unitPattern count="one">{0} nanometar</unitPattern>
+				<unitPattern count="one" case="genitive">{0} nanometra</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} nanometrom</unitPattern>
 				<unitPattern count="few">{0} nanometra</unitPattern>
 				<unitPattern count="other">{0} nanometara</unitPattern>
 			</unit>
 			<unit type="length-picometer">
+				<gender>inanimate</gender>
 				<displayName>pikometri</displayName>
 				<unitPattern count="one">{0} pikometar</unitPattern>
+				<unitPattern count="one" case="genitive">{0} pikometra</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} pikometrom</unitPattern>
 				<unitPattern count="few">{0} pikometra</unitPattern>
 				<unitPattern count="other">{0} pikometara</unitPattern>
 			</unit>
@@ -8523,14 +8678,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} po gramu</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
+				<gender>inanimate</gender>
 				<displayName>miligrami</displayName>
 				<unitPattern count="one">{0} miligram</unitPattern>
+				<unitPattern count="one" case="genitive">{0} miligrama</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} miligramom</unitPattern>
 				<unitPattern count="few">{0} miligrama</unitPattern>
 				<unitPattern count="other">{0} miligrama</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
+				<gender>inanimate</gender>
 				<displayName>mikrogrami</displayName>
 				<unitPattern count="one">{0} mikrogram</unitPattern>
+				<unitPattern count="one" case="genitive">{0} mikrograma</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} mikrogramom</unitPattern>
 				<unitPattern count="few">{0} mikrograma</unitPattern>
 				<unitPattern count="other">{0} mikrograma</unitPattern>
 			</unit>
@@ -8601,20 +8762,29 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} grejna</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
+				<gender>inanimate</gender>
 				<displayName>gigavati</displayName>
 				<unitPattern count="one">{0} gigavat</unitPattern>
+				<unitPattern count="one" case="genitive">{0} gigavata</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} gigavatom</unitPattern>
 				<unitPattern count="few">{0} gigavata</unitPattern>
 				<unitPattern count="other">{0} gigavati</unitPattern>
 			</unit>
 			<unit type="power-megawatt">
+				<gender>inanimate</gender>
 				<displayName>megavati</displayName>
 				<unitPattern count="one">{0} megavat</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megavata</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} megavatom</unitPattern>
 				<unitPattern count="few">{0} megavata</unitPattern>
 				<unitPattern count="other">{0} megavati</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
+				<gender>inanimate</gender>
 				<displayName>kilovati</displayName>
 				<unitPattern count="one">{0} kilovat</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilovata</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilovatom</unitPattern>
 				<unitPattern count="few">{0} kilovata</unitPattern>
 				<unitPattern count="other">{0} kilovati</unitPattern>
 			</unit>
@@ -8629,8 +8799,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} vati</unitPattern>
 			</unit>
 			<unit type="power-milliwatt">
+				<gender>inanimate</gender>
 				<displayName>milivati</displayName>
 				<unitPattern count="one">{0} milivat</unitPattern>
+				<unitPattern count="one" case="genitive">{0} milivata</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} milivatom</unitPattern>
 				<unitPattern count="few">{0} milivata</unitPattern>
 				<unitPattern count="other">{0} milivati</unitPattern>
 			</unit>
@@ -8669,8 +8842,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} bara</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
+				<gender>inanimate</gender>
 				<displayName>milibari</displayName>
 				<unitPattern count="one">{0} milibar</unitPattern>
+				<unitPattern count="one" case="genitive">{0} milibara</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} milibarom</unitPattern>
 				<unitPattern count="few">{0} milibara</unitPattern>
 				<unitPattern count="other">{0} milibara</unitPattern>
 			</unit>
@@ -8695,32 +8871,47 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} paskala</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
+				<gender>inanimate</gender>
 				<displayName>hektopaskali</displayName>
 				<unitPattern count="one">{0} hektopaskal</unitPattern>
+				<unitPattern count="one" case="genitive">{0} hektopaskala</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} hektopaskalom</unitPattern>
 				<unitPattern count="few">{0} hektopaskala</unitPattern>
 				<unitPattern count="other">{0} hektopaskala</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
+				<gender>inanimate</gender>
 				<displayName>kilopaskali</displayName>
 				<unitPattern count="one">{0} kilopaskal</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilopaskala</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilopaskalom</unitPattern>
 				<unitPattern count="few">{0} kilopaskala</unitPattern>
 				<unitPattern count="other">{0} kilopaskala</unitPattern>
 			</unit>
 			<unit type="pressure-megapascal">
+				<gender>inanimate</gender>
 				<displayName>megapaskali</displayName>
 				<unitPattern count="one">{0} megapaskal</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megapaskala</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} megapaskalom</unitPattern>
 				<unitPattern count="few">{0} megapaskala</unitPattern>
 				<unitPattern count="other">{0} megapaskala</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
+				<gender>inanimate</gender>
 				<displayName>kilometri na sat</displayName>
 				<unitPattern count="one">{0} kilometar na sat</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilometra na sat</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilometrom na sat</unitPattern>
 				<unitPattern count="few">{0} kilometra na sat</unitPattern>
 				<unitPattern count="other">{0} kilometara na sat</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
+				<gender>inanimate</gender>
 				<displayName>metri u sekundi</displayName>
 				<unitPattern count="one">{0} metar u sekundi</unitPattern>
+				<unitPattern count="one" case="genitive">{0} metra u sekundi</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} metrom u sekundi</unitPattern>
 				<unitPattern count="few">{0} metra u sekundi</unitPattern>
 				<unitPattern count="other">{0} metara u sekundi</unitPattern>
 			</unit>
@@ -8776,27 +8967,39 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} funti sile stope</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
+				<gender>inanimate</gender>
 				<displayName>njutn-metri</displayName>
 				<unitPattern count="one">{0} njutn-metar</unitPattern>
+				<unitPattern count="one" case="genitive">{0} njutn-metra</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} njutn-metrom</unitPattern>
 				<unitPattern count="few">{0} njutn-metra</unitPattern>
 				<unitPattern count="other">{0} njutn-metara</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
+				<gender>inanimate</gender>
 				<displayName>kubni kilometri</displayName>
 				<unitPattern count="one">{0} kubni kilometar</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kubnog kilometra</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kubnim kilometrom</unitPattern>
 				<unitPattern count="few">{0} kubna kilometra</unitPattern>
 				<unitPattern count="other">{0} kubnih kilometara</unitPattern>
 			</unit>
 			<unit type="volume-cubic-meter">
+				<gender>inanimate</gender>
 				<displayName>kubni metri</displayName>
 				<unitPattern count="one">{0} kubni metar</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kubnog metra</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kubnim metrom</unitPattern>
 				<unitPattern count="few">{0} kubna metra</unitPattern>
 				<unitPattern count="other">{0} kubnih metara</unitPattern>
 				<perUnitPattern>{0}/m³</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
+				<gender>inanimate</gender>
 				<displayName>kubni centimetri</displayName>
 				<unitPattern count="one">{0} kubni centimetar</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kubnog centimetra</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kubnim centimetrom</unitPattern>
 				<unitPattern count="few">{0} kubna centimetra</unitPattern>
 				<unitPattern count="other">{0} kubnih centimetara</unitPattern>
 				<perUnitPattern>{0}/cm³</perUnitPattern>
@@ -8826,14 +9029,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} kubnih inča</unitPattern>
 			</unit>
 			<unit type="volume-megaliter">
+				<gender>inanimate</gender>
 				<displayName>megalitri</displayName>
 				<unitPattern count="one">{0} megalitar</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megalitra</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} megalitrom</unitPattern>
 				<unitPattern count="few">{0} megalitra</unitPattern>
 				<unitPattern count="other">{0} megalitara</unitPattern>
 			</unit>
 			<unit type="volume-hectoliter">
+				<gender>inanimate</gender>
 				<displayName>hektolitri</displayName>
 				<unitPattern count="one">{0} hektolitar</unitPattern>
+				<unitPattern count="one" case="genitive">{0} hektolitra</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} hektolitrom</unitPattern>
 				<unitPattern count="few">{0} hektolitra</unitPattern>
 				<unitPattern count="other">{0} hektolitara</unitPattern>
 			</unit>
@@ -8849,20 +9058,29 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} po litri</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
+				<gender>inanimate</gender>
 				<displayName>decilitri</displayName>
 				<unitPattern count="one">{0} decilitar</unitPattern>
+				<unitPattern count="one" case="genitive">{0} decilitra</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} decilitrom</unitPattern>
 				<unitPattern count="few">{0} decilitra</unitPattern>
 				<unitPattern count="other">{0} decilitara</unitPattern>
 			</unit>
 			<unit type="volume-centiliter">
+				<gender>inanimate</gender>
 				<displayName>centilitri</displayName>
 				<unitPattern count="one">{0} centilitar</unitPattern>
+				<unitPattern count="one" case="genitive">{0} centilitra</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} centilitrom</unitPattern>
 				<unitPattern count="few">{0} centilitra</unitPattern>
 				<unitPattern count="other">{0} centilitara</unitPattern>
 			</unit>
 			<unit type="volume-milliliter">
+				<gender>inanimate</gender>
 				<displayName>mililitri</displayName>
 				<unitPattern count="one">{0} mililitar</unitPattern>
+				<unitPattern count="one" case="genitive">{0} mililitra</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} mililitrom</unitPattern>
 				<unitPattern count="few">{0} mililitra</unitPattern>
 				<unitPattern count="other">{0} mililitara</unitPattern>
 			</unit>

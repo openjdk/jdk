@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
@@ -1434,7 +1436,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="E">ccc</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
 						<dateFormatItem id="Gy">G y</dateFormatItem>
-						<dateFormatItem id="GyMd">d/M/y</dateFormatItem>
+						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM G y</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM G y</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E d MMM G y</dateFormatItem>
@@ -2951,7 +2953,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="d">E d MMM – E d MMM G y</greatestDifference>
 							<greatestDifference id="G">E d MMM G y – E d MMM G y</greatestDifference>
 							<greatestDifference id="M">E d MMM – E d MMM G y</greatestDifference>
-							<greatestDifference id="y">E d MMM y – E d MMM y</greatestDifference>
+							<greatestDifference id="y">E d MMM G y – E d MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
@@ -7357,7 +7359,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">ลารีจอร์เจีย</displayName>
 				<symbol>GEL</symbol>
 				<symbol alt="narrow">₾</symbol>
-				<symbol alt="variant">₾</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>เซดีกานา (1979–2007)</displayName>

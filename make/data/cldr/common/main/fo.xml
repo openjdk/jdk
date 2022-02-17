@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -6852,8 +6852,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="concentr-permillion">
 				<displayName>partar/millión</displayName>
-				<unitPattern count="one">{0} partur/mill.</unitPattern>
-				<unitPattern count="other">{0} partar/mill.</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} pt./mill.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} pt./mill.</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>prosent</displayName>

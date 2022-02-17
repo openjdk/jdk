@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
@@ -5432,7 +5434,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">грузінскага лары</displayName>
 				<symbol>GEL</symbol>
 				<symbol alt="narrow">₾</symbol>
-				<symbol alt="variant">₾</symbol>
 			</currency>
 			<currency type="GHS">
 				<displayName>ганскі седзі</displayName>
@@ -8216,10 +8217,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="duration-decade">
 				<displayName>дзесяцігоддзе</displayName>
-				<unitPattern count="one">{0} дзесяцігоддзе</unitPattern>
-				<unitPattern count="few">{0} дзесяцігоддзі</unitPattern>
-				<unitPattern count="many">{0} дзесяцігоддзяў</unitPattern>
-				<unitPattern count="other">{0} дзесяцігоддзя</unitPattern>
+				<unitPattern count="one" draft="contributed">{0} дз.</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} дз.</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} дз.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} дз.</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>г.</displayName>

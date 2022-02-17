@@ -13,10 +13,10 @@ These are the grammatical features that are used in each locale to mark inflecte
 CLDR textual items may be tagged with grammatical features when these are needed to ensure that the
 correct forms are used in context.
 
-For instance, in Russian "Уменьши яркость света до 10 процентов" ("dim the light to 10 percent"),
+For instance, in Russian "Уменьши яркость света до 33 процентов" ("dim the light to 33 percent"),
 the 'percent' unit must be expressed in plural and in the genitive case, whereas "1%" would be
 expressed in different cases depending on the context. The case usage is implicit in short form
-"10%", but the full form requires the grammatical variant marked by case and number to be expressed
+"33%", but the full form requires the grammatical variant marked by case and number to be expressed
 correctly.
 
 In romance languages, nouns such as unit names have an intrinsic grammatical gender, which
@@ -56,7 +56,7 @@ plurals.xml and ordinals.xml. See those files and the LDML spec for more informa
     </grammaticalFeatures>
     <grammaticalFeatures targets="nominal" locales="fi">
       <grammaticalCase values="nominative abessive ablative adessive allative comitative elative essive genitive illative inessive instrumental partitive translative"/>
-      <grammaticalCase scope="units" values="nominative elative illative partitive"/>
+      <grammaticalCase scope="units" values="nominative elative illative partitive genitive"/>
       <!-- Finnish nouns also inflect in possessives, with agreement on number and person. -->
     </grammaticalFeatures>
     <grammaticalFeatures targets="nominal" locales="hu">
@@ -98,14 +98,14 @@ plurals.xml and ordinals.xml. See those files and the LDML spec for more informa
       <grammaticalCase scope="units"/>
       <grammaticalGender values="masculine feminine"/>
     </grammaticalFeatures>
-    <grammaticalFeatures targets="nominal" locales="ml">
+    <grammaticalFeatures targets="nominal" locales="ml"> <!-- Holding back on ml until we get more reliable information -->
       <grammaticalCase values="nominative genitive dative accusative instrumental locative comitative locativecopulative sociative"/>
-      <grammaticalCase scope="units" values="nominative genitive dative accusative instrumental locative sociative"/>
+      <grammaticalCase scope="units"/> 
       <grammaticalGender values="animate inanimate feminine neuter"/>
-      <grammaticalGender scope="units" values="neuter"/>
+      <grammaticalGender scope="units"/>
     </grammaticalFeatures>
     <grammaticalFeatures targets="nominal" locales="mr">
-      <grammaticalCase values="nominative oblique accusative dative ergative locative ablative genitive"/>
+      <grammaticalCase values="nominative accusative dative ergative locative ablative genitive"/>
       <grammaticalGender values="masculine feminine neuter"/>
       <!-- Genitive agrees in gender, case and number with the antecedent. -->
       <!-- Oblique can be further inflected by semantics-defining suffixes. -->
@@ -118,7 +118,7 @@ plurals.xml and ordinals.xml. See those files and the LDML spec for more informa
     </grammaticalFeatures>
     <grammaticalFeatures targets="nominal" locales="kn">
       <grammaticalCase values="nominative genitive accusative dative locative instrumental vocative"/>
-      <grammaticalCase scope="units" values="nominative genitive accusative dative locative vocative"/>
+      <grammaticalCase scope="units" values="nominative genitive accusative dative locative"/>
       <grammaticalGender values="masculine feminine neuter"/>
       <grammaticalGender scope="units" values="neuter"/>
     </grammaticalFeatures>
@@ -159,13 +159,11 @@ plurals.xml and ordinals.xml. See those files and the LDML spec for more informa
     </grammaticalFeatures>
     <grammaticalFeatures targets="nominal" locales="da">
       <grammaticalCase values="nominative genitive"/>
-      <grammaticalCase scope="units"/>
       <grammaticalGender values="common neuter"/>
       <grammaticalDefiniteness values="definite indefinite unspecified"/>
     </grammaticalFeatures>
     <grammaticalFeatures targets="nominal" locales="sv">
       <grammaticalCase values="nominative genitive"/>
-      <grammaticalCase scope="units"/>
       <grammaticalGender values="common neuter"/>
       <grammaticalDefiniteness values="definite indefinite"/>
     </grammaticalFeatures>
@@ -179,16 +177,14 @@ plurals.xml and ordinals.xml. See those files and the LDML spec for more informa
       <grammaticalDefiniteness values="definite indefinite"/>
       <!-- Gender is only used for expressing human activities/professions. -->
     </grammaticalFeatures>
-    <grammaticalFeatures targets="nominal" locales="nb no">
+    <grammaticalFeatures targets="nominal" locales="nb nn no">
       <grammaticalCase values="nominative genitive"/>
-      <grammaticalCase scope="units"/>
       <grammaticalGender values="masculine feminine neuter"/>
-      <grammaticalGender scope="units" values="masculine neuter"/>
       <grammaticalDefiniteness values="definite indefinite"/>
     </grammaticalFeatures>
     <grammaticalFeatures targets="nominal" locales="uk">
       <grammaticalCase values="nominative genitive dative accusative instrumental vocative locative"/>
-      <grammaticalCase scope="units" values="nominative genitive accusative"/>
+      <grammaticalCase scope="units" values="nominative genitive accusative dative locative instrumental"/>
       <grammaticalGender values="masculine feminine neuter"/>
     </grammaticalFeatures>
     <grammaticalFeatures targets="nominal" locales="lv">
@@ -203,7 +199,7 @@ plurals.xml and ordinals.xml. See those files and the LDML spec for more informa
     </grammaticalFeatures>
     <grammaticalFeatures targets="nominal" locales="cs sk">
       <grammaticalCase values="nominative genitive dative accusative instrumental vocative locative"/>
-      <grammaticalCase scope="units" values="nominative genitive accusative instrumental"/>
+      <grammaticalCase scope="units" values="nominative genitive dative accusative instrumental locative"/>
       <grammaticalGender values="animate inanimate feminine neuter"/>
       <grammaticalGender scope="units" values="inanimate feminine neuter"/>
       <!-- Czech also inflects in polarity (negation is a prefix) -->
@@ -245,7 +241,7 @@ plurals.xml and ordinals.xml. See those files and the LDML spec for more informa
 	<!-- from the grammatical case of the compound unit, determine the grammatical case of its components -->
 	<!-- The attributeValues of value0 and value1 are: compound (=the grammatical case of the compound),  or one of the valid grammatical case values for the language -->
 
-	  <deriveComponent feature="case" structure="per" value0="compound" value1="nominative"/> <!-- compound(gram-per-meter) ⇒ compound(gram) “per" accusative(meter) -->
+	  <deriveComponent feature="case" structure="per" value0="compound" value1="nominative"/> <!-- compound(gram-per-meter) ⇒ compound(gram) “per" nominative(meter) -->
 	  <deriveComponent feature="case" structure="times" value0="nominative"  value1="compound"/> <!-- compound(newton-meter) ⇒  nominative(newton) “-" compound(meter) -->
 	  <deriveComponent feature="case" structure="power" value0="nominative"  value1="compound"/> <!-- compound(square-meter) ⇒  nominative(square) compound(meter) -->
 	  <deriveComponent feature="case" structure="prefix" value0="nominative"  value1="compound"/><!--compound(kilometer) ⇒  nominative(kilo) compound(meter) -->
@@ -280,7 +276,7 @@ plurals.xml and ordinals.xml. See those files and the LDML spec for more informa
 	<!-- The attributeValues of value are: 0 (=gender of the first element), 1 (=gender of second element), or one of the valid gender values for the language -->
 	
 	  <deriveCompound feature="gender" structure="per" value="0"/> <!-- gender(gram-per-meter) ←  gender(gram) --> 
-	  <deriveCompound feature="gender" structure="times" value="0"/> <!-- gender(newton-meter) ←  gender(meter) --> 
+	  <deriveCompound feature="gender" structure="times" value="0"/> <!-- gender(newton-meter) ←  gender(newton) --> 
 	  <deriveCompound feature="gender" structure="power" value="0"/> <!-- gender(square-meter) ←  gender(meter) --> 
 	  <deriveCompound feature="gender" structure="prefix" value="0"/> <!-- gender(kilometer) ←  gender(meter)--> 
 	
@@ -288,8 +284,8 @@ plurals.xml and ordinals.xml. See those files and the LDML spec for more informa
 	<!-- The attributeValues of value0 and value1 are: compound (=the pluralCategory of the compound),  or one of the valid plural category values for the language -->
 	
 	  <deriveComponent feature="plural" structure="per" value0="compound" value1="one"/> <!-- compound(gram-per-meter) ⇒  compound(gram) “per" singular(meter) -->
-	  <deriveComponent feature="plural" structure="times" value0="compound"  value1="compound"/>  <!-- compound(newton-meter) ⇒  singular(newton) “-" compound(meter) -->
-	  <deriveComponent feature="plural" structure="power" value0="compound"  value1="compound"/>  <!-- compound(square-meter) ⇒  singular(square) compound(meter) -->
+	  <deriveComponent feature="plural" structure="times" value0="compound"  value1="compound"/>  <!-- compound(newton-meter) ⇒  compound(newton) “-" compound(meter) -->
+	  <deriveComponent feature="plural" structure="power" value0="compound"  value1="compound"/>  <!-- compound(square-meter) ⇒  compound(square) compound(meter) -->
 	  <deriveComponent feature="plural" structure="prefix" value0="one"  value1="compound"/> <!-- compound(kilometer) ⇒  singular(kilo) compound(meter) -->
 	
 	</grammaticalDerivations>

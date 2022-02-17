@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
@@ -3965,6 +3967,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Pacific/Enderbury">
 				<exemplarCity>എൻഡബറി</exemplarCity>
 			</zone>
+			<zone type="Pacific/Kanton">
+				<exemplarCity draft="contributed">കാൻട്ടൻ</exemplarCity>
+			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>കിരിറ്റിമാറ്റി</exemplarCity>
 			</zone>
@@ -6307,7 +6312,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">ജോർജ്ജിയൻ ലാറിസ്</displayName>
 				<symbol>GEL</symbol>
 				<symbol alt="narrow">₾</symbol>
-				<symbol alt="variant">₾</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>ഘാന കെഡി (1979–2007)</displayName>
@@ -7396,7 +7400,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<caseMinimalPairs case="nominative" draft="contributed">{0} ദിവസം</caseMinimalPairs>
 			<caseMinimalPairs case="sociative" draft="contributed">{0} ദിവസത്തിനോട്</caseMinimalPairs>
 			<genderMinimalPairs gender="feminine" draft="contributed">{0} സ്ത്രീലിംഗം</genderMinimalPairs>
-			<genderMinimalPairs gender="neuter" draft="provisional">{0} neuter</genderMinimalPairs>
+			<genderMinimalPairs gender="neuter" draft="contributed">{0} neuter</genderMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
@@ -7484,35 +7488,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</compoundUnit>
 			<compoundUnit type="power2">
 				<compoundUnitPattern1 count="one">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" case="accusative">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" case="dative">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" case="genitive">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" case="instrumental">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" case="locative">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" case="sociative">വർഗ്ഗം {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" case="accusative">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" case="dative">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" case="genitive">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" case="instrumental">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" case="locative">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" case="sociative">വർഗ്ഗം {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="power3">
 				<compoundUnitPattern1 count="one">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" case="accusative">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" case="dative">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" case="genitive">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" case="instrumental">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" case="locative">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" case="sociative">ക്യുബിക് {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" case="accusative">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" case="dative">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" case="genitive">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" case="instrumental">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" case="locative">ക്യുബിക് {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" case="sociative">ക്യുബിക് {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<gender draft="contributed">neuter</gender>
@@ -7925,14 +7905,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="accusative">{0} നൂറ്റാണ്ടിനെ</unitPattern>
 				<unitPattern count="one" case="dative">{0} നൂറ്റാണ്ടിന്</unitPattern>
 				<unitPattern count="one" case="genitive">{0} നൂറ്റാണ്ടിന്റെ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} നൂറ്റാണ്ട്</unitPattern>
 				<unitPattern count="one" case="locative">{0} നൂറ്റാണ്ടിൽ</unitPattern>
 				<unitPattern count="one" case="sociative">{0} നൂറ്റാണ്ടിനോട്</unitPattern>
 				<unitPattern count="other">{0} നൂറ്റാണ്ടുകൾ</unitPattern>
 				<unitPattern count="other" case="accusative">{0} നൂറ്റാണ്ടുകളുടെ</unitPattern>
 				<unitPattern count="other" case="dative">{0} നൂറ്റാണ്ടിലെ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} നൂറ്റാണ്ടിന്റെ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} നൂറ്റാണ്ടുകൾ</unitPattern>
 				<unitPattern count="other" case="locative">{0} നൂറ്റാണ്ടുകൾ</unitPattern>
 				<unitPattern count="other" case="sociative">{0} നൂറ്റാണ്ടുകൾ</unitPattern>
 			</unit>
@@ -7961,130 +7939,52 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" case="accusative">{0} വർഷത്തിനെ</unitPattern>
 				<unitPattern count="one" case="dative">{0} വർഷത്തിന്</unitPattern>
 				<unitPattern count="one" case="genitive">{0} വർഷത്തിന്റെ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} വർഷം</unitPattern>
-				<unitPattern count="one" case="locative">{0} വർഷം</unitPattern>
-				<unitPattern count="one" case="sociative">{0} വർഷം</unitPattern>
 				<unitPattern count="other">{0} വർഷം</unitPattern>
 				<unitPattern count="other" case="accusative">{0} വർഷം</unitPattern>
 				<unitPattern count="other" case="dative">{0} വർഷം</unitPattern>
 				<unitPattern count="other" case="genitive">{0} വർഷം</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} വർഷം</unitPattern>
-				<unitPattern count="other" case="locative">{0} വർഷം</unitPattern>
-				<unitPattern count="other" case="sociative">{0} വർഷം</unitPattern>
 				<perUnitPattern>{0} / വർഷം</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<gender draft="contributed">neuter</gender>
 				<displayName>മാസം</displayName>
 				<unitPattern count="one">{0} മാസം</unitPattern>
-				<unitPattern count="one" case="accusative">{0} മാസം</unitPattern>
-				<unitPattern count="one" case="dative">{0} മാസം</unitPattern>
-				<unitPattern count="one" case="genitive">{0} മാസം</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} മാസം</unitPattern>
-				<unitPattern count="one" case="locative">{0} മാസം</unitPattern>
-				<unitPattern count="one" case="sociative">{0} മാസം</unitPattern>
 				<unitPattern count="other">{0} മാസം</unitPattern>
-				<unitPattern count="other" case="accusative">{0} മാസം</unitPattern>
-				<unitPattern count="other" case="dative">{0} മാസം</unitPattern>
-				<unitPattern count="other" case="genitive">{0} മാസം</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} മാസം</unitPattern>
-				<unitPattern count="other" case="locative">{0} മാസം</unitPattern>
-				<unitPattern count="other" case="sociative">{0} മാസം</unitPattern>
 				<perUnitPattern>{0} / മാസം</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<gender draft="contributed">neuter</gender>
 				<displayName>ആഴ്ച</displayName>
 				<unitPattern count="one">{0} ആഴ്ച</unitPattern>
-				<unitPattern count="one" case="accusative">{0} ആഴ്ച</unitPattern>
-				<unitPattern count="one" case="dative">{0} ആഴ്ച</unitPattern>
-				<unitPattern count="one" case="genitive">{0} ആഴ്ച</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} ആഴ്ച</unitPattern>
-				<unitPattern count="one" case="locative">{0} ആഴ്ച</unitPattern>
-				<unitPattern count="one" case="sociative">{0} ആഴ്ച</unitPattern>
 				<unitPattern count="other">{0} ആഴ്ച</unitPattern>
-				<unitPattern count="other" case="accusative">{0} ആഴ്ച</unitPattern>
-				<unitPattern count="other" case="dative">{0} ആഴ്ച</unitPattern>
-				<unitPattern count="other" case="genitive">{0} ആഴ്ച</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} ആഴ്ച</unitPattern>
-				<unitPattern count="other" case="locative">{0} ആഴ്ച</unitPattern>
-				<unitPattern count="other" case="sociative">{0} ആഴ്ച</unitPattern>
 				<perUnitPattern>{0} / ആഴ്ച</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<gender draft="contributed">neuter</gender>
 				<displayName>ദിവസം</displayName>
 				<unitPattern count="one">{0} ദിവസം</unitPattern>
-				<unitPattern count="one" case="accusative">{0} ദിവസം</unitPattern>
-				<unitPattern count="one" case="dative">{0} ദിവസം</unitPattern>
-				<unitPattern count="one" case="genitive">{0} ദിവസം</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} ദിവസം</unitPattern>
-				<unitPattern count="one" case="locative">{0} ദിവസം</unitPattern>
-				<unitPattern count="one" case="sociative">{0} ദിവസം</unitPattern>
 				<unitPattern count="other">{0} ദിവസം</unitPattern>
-				<unitPattern count="other" case="accusative">{0} ദിവസം</unitPattern>
-				<unitPattern count="other" case="dative">{0} ദിവസം</unitPattern>
-				<unitPattern count="other" case="genitive">{0} ദിവസം</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} ദിവസം</unitPattern>
-				<unitPattern count="other" case="locative">{0} ദിവസം</unitPattern>
-				<unitPattern count="other" case="sociative">{0} ദിവസം</unitPattern>
 				<perUnitPattern>{0} / ദിവസം</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<gender draft="contributed">neuter</gender>
 				<displayName>മണിക്കൂർ</displayName>
 				<unitPattern count="one">{0} മണിക്കൂർ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} മണിക്കൂർ</unitPattern>
-				<unitPattern count="one" case="dative">{0} മണിക്കൂർ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} മണിക്കൂർ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} മണിക്കൂർ</unitPattern>
-				<unitPattern count="one" case="locative">{0} മണിക്കൂർ</unitPattern>
-				<unitPattern count="one" case="sociative">{0} മണിക്കൂർ</unitPattern>
 				<unitPattern count="other">{0} മണിക്കൂർ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} മണിക്കൂർ</unitPattern>
-				<unitPattern count="other" case="dative">{0} മണിക്കൂർ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} മണിക്കൂർ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} മണിക്കൂർ</unitPattern>
-				<unitPattern count="other" case="locative">{0} മണിക്കൂർ</unitPattern>
-				<unitPattern count="other" case="sociative">{0} മണിക്കൂർ</unitPattern>
 				<perUnitPattern>{0} / മണിക്കൂർ</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<gender draft="contributed">neuter</gender>
 				<displayName>മിനിറ്റ്</displayName>
 				<unitPattern count="one">{0} മിനിറ്റ്</unitPattern>
-				<unitPattern count="one" case="accusative">{0} മിനിറ്റ്</unitPattern>
-				<unitPattern count="one" case="dative">{0} മിനിറ്റ്</unitPattern>
-				<unitPattern count="one" case="genitive">{0} മിനിറ്റ്</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} മിനിറ്റ്</unitPattern>
-				<unitPattern count="one" case="locative">{0} മിനിറ്റ്</unitPattern>
-				<unitPattern count="one" case="sociative">{0} മിനിറ്റ്</unitPattern>
 				<unitPattern count="other">{0} മിനിറ്റ്</unitPattern>
-				<unitPattern count="other" case="accusative">{0} മിനിറ്റ്</unitPattern>
-				<unitPattern count="other" case="dative">{0} മിനിറ്റ്</unitPattern>
-				<unitPattern count="other" case="genitive">{0} മിനിറ്റ്</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} മിനിറ്റ്</unitPattern>
-				<unitPattern count="other" case="locative">{0} മിനിറ്റ്</unitPattern>
-				<unitPattern count="other" case="sociative">{0} മിനിറ്റ്</unitPattern>
 				<perUnitPattern>{0} / മിനിറ്റ്</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<gender draft="contributed">neuter</gender>
 				<displayName>സെക്കൻഡ്</displayName>
 				<unitPattern count="one">{0} സെക്കൻഡ്</unitPattern>
-				<unitPattern count="one" case="accusative">{0} സെക്കൻഡ്</unitPattern>
-				<unitPattern count="one" case="dative">{0} സെക്കൻഡ്</unitPattern>
-				<unitPattern count="one" case="genitive">{0} സെക്കൻഡ്</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} സെക്കൻഡ്</unitPattern>
-				<unitPattern count="one" case="locative">{0} സെക്കൻഡ്</unitPattern>
-				<unitPattern count="one" case="sociative">{0} സെക്കൻഡ്</unitPattern>
 				<unitPattern count="other">{0} സെക്കൻഡ്</unitPattern>
-				<unitPattern count="other" case="accusative">{0} സെക്കൻഡ്</unitPattern>
-				<unitPattern count="other" case="dative">{0} സെക്കൻഡ്</unitPattern>
-				<unitPattern count="other" case="genitive">{0} സെക്കൻഡ്</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} സെക്കൻഡ്</unitPattern>
-				<unitPattern count="other" case="locative">{0} സെക്കൻഡ്</unitPattern>
-				<unitPattern count="other" case="sociative">{0} സെക്കൻഡ്</unitPattern>
 				<perUnitPattern>{0} / സെക്കൻഡ്</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
@@ -8307,19 +8207,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender draft="contributed">neuter</gender>
 				<displayName>മീറ്റർ</displayName>
 				<unitPattern count="one">{0} മീറ്റർ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} മീറ്റർ</unitPattern>
-				<unitPattern count="one" case="dative">{0} മീറ്റർ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} മീറ്റർ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} മീറ്റർ</unitPattern>
-				<unitPattern count="one" case="locative">{0} മീറ്റർ</unitPattern>
-				<unitPattern count="one" case="sociative">{0} മീറ്റർ</unitPattern>
 				<unitPattern count="other">{0} മീറ്റർ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} മീറ്റർ</unitPattern>
-				<unitPattern count="other" case="dative">{0} മീറ്റർ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} മീറ്റർ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} മീറ്റർ</unitPattern>
-				<unitPattern count="other" case="locative">{0} മീറ്റർ</unitPattern>
-				<unitPattern count="other" case="sociative">{0} മീറ്റർ</unitPattern>
 				<perUnitPattern>{0} / മീറ്റർ</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
@@ -8409,19 +8297,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender draft="contributed">neuter</gender>
 				<displayName>സ്കാൻഡിനേവിയൻ മൈൽ</displayName>
 				<unitPattern count="one">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
-				<unitPattern count="one" case="dative">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
-				<unitPattern count="one" case="locative">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
-				<unitPattern count="one" case="sociative">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
 				<unitPattern count="other">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
-				<unitPattern count="other" case="dative">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
-				<unitPattern count="other" case="locative">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
-				<unitPattern count="other" case="sociative">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
 			</unit>
 			<unit type="length-point">
 				<displayName>പോയിന്റ്</displayName>
@@ -8448,14 +8324,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="light-candela">
 				<gender draft="contributed">neuter</gender>
-				<unitPattern count="one">{0} cd</unitPattern>
 				<unitPattern count="one" case="accusative">{0} കാൻഡെലയെ</unitPattern>
 				<unitPattern count="one" case="dative">{0} കാൻഡെലയ്ക്ക്</unitPattern>
 				<unitPattern count="one" case="genitive">{0} കാൻഡെലയുടെ</unitPattern>
 				<unitPattern count="one" case="instrumental">{0} കാൻഡെലയാൽ</unitPattern>
 				<unitPattern count="one" case="locative">{0} കാൻഡെലയിൽ</unitPattern>
 				<unitPattern count="one" case="sociative">{0} കാൻഡെലയോട്</unitPattern>
-				<unitPattern count="other">{0} cd</unitPattern>
 				<unitPattern count="other" case="accusative">{0} കാൻഡെലയെ</unitPattern>
 				<unitPattern count="other" case="dative">{0} കാൻഡെലയ്ക്ക്</unitPattern>
 				<unitPattern count="other" case="genitive">{0} കാൻഡെലയുടെ</unitPattern>
@@ -8465,14 +8339,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="light-lumen">
 				<gender draft="contributed">neuter</gender>
-				<unitPattern count="one">{0} lm</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ലൂമെനെ</unitPattern>
 				<unitPattern count="one" case="dative">{0} ലൂമെന്</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ലൂമെന്റെ</unitPattern>
 				<unitPattern count="one" case="instrumental">{0} ലൂമെനാൽ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ലൂമെനിൽ</unitPattern>
 				<unitPattern count="one" case="sociative">{0} ലൂമെനോട്</unitPattern>
-				<unitPattern count="other">{0} lm</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ലൂമെനെ</unitPattern>
 				<unitPattern count="other" case="dative">{0} ലൂമെന്</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ലൂമെന്റെ</unitPattern>
@@ -8886,19 +8758,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender draft="contributed">neuter</gender>
 				<displayName>ലിറ്റർ</displayName>
 				<unitPattern count="one">{0} ലിറ്റർ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} ലിറ്റർ</unitPattern>
-				<unitPattern count="one" case="dative">{0} ലിറ്റർ</unitPattern>
-				<unitPattern count="one" case="genitive">{0} ലിറ്റർ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} ലിറ്റർ</unitPattern>
-				<unitPattern count="one" case="locative">{0} ലിറ്റർ</unitPattern>
-				<unitPattern count="one" case="sociative">{0} ലിറ്റർ</unitPattern>
 				<unitPattern count="other">{0} ലിറ്റർ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} ലിറ്റർ</unitPattern>
-				<unitPattern count="other" case="dative">{0} ലിറ്റർ</unitPattern>
-				<unitPattern count="other" case="genitive">{0} ലിറ്റർ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} ലിറ്റർ</unitPattern>
-				<unitPattern count="other" case="locative">{0} ലിറ്റർ</unitPattern>
-				<unitPattern count="other" case="sociative">{0} ലിറ്റർ</unitPattern>
 				<perUnitPattern>{0} / ലിറ്റർ</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
@@ -8920,37 +8780,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<gender draft="contributed">neuter</gender>
 				<displayName>മെട്രിക് പൈന്റ്</displayName>
 				<unitPattern count="one">{0} മെട്രിക് പൈന്റ്</unitPattern>
-				<unitPattern count="one" case="accusative">{0} മെട്രിക് പൈന്റ്</unitPattern>
-				<unitPattern count="one" case="dative">{0} മെട്രിക് പൈന്റ്</unitPattern>
-				<unitPattern count="one" case="genitive">{0} മെട്രിക് പൈന്റ്</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} മെട്രിക് പൈന്റ്</unitPattern>
-				<unitPattern count="one" case="locative">{0} മെട്രിക് പൈന്റ്</unitPattern>
-				<unitPattern count="one" case="sociative">{0} മെട്രിക് പൈന്റ്</unitPattern>
 				<unitPattern count="other">{0} മെട്രിക് പൈന്റ്</unitPattern>
-				<unitPattern count="other" case="accusative">{0} മെട്രിക് പൈന്റ്</unitPattern>
-				<unitPattern count="other" case="dative">{0} മെട്രിക് പൈന്റ്</unitPattern>
-				<unitPattern count="other" case="genitive">{0} മെട്രിക് പൈന്റ്</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} മെട്രിക് പൈന്റ്</unitPattern>
-				<unitPattern count="other" case="locative">{0} മെട്രിക് പൈന്റ്</unitPattern>
-				<unitPattern count="other" case="sociative">{0} മെട്രിക് പൈന്റ്</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
 				<gender draft="contributed">neuter</gender>
 				<displayName>മെട്രിക് കപ്പ്</displayName>
 				<unitPattern count="one">{0} മെട്രിക് കപ്പ്</unitPattern>
-				<unitPattern count="one" case="accusative">{0} മെട്രിക് കപ്പ്</unitPattern>
-				<unitPattern count="one" case="dative">{0} മെട്രിക് കപ്പ്</unitPattern>
-				<unitPattern count="one" case="genitive">{0} മെട്രിക് കപ്പ്</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} മെട്രിക് കപ്പ്</unitPattern>
-				<unitPattern count="one" case="locative">{0} മെട്രിക് കപ്പ്</unitPattern>
-				<unitPattern count="one" case="sociative">{0} മെട്രിക് കപ്പ്</unitPattern>
 				<unitPattern count="other">{0} മെട്രിക് കപ്പ്</unitPattern>
-				<unitPattern count="other" case="accusative">{0} മെട്രിക് കപ്പ്</unitPattern>
-				<unitPattern count="other" case="dative">{0} മെട്രിക് കപ്പ്</unitPattern>
-				<unitPattern count="other" case="genitive">{0} മെട്രിക് കപ്പ്</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} മെട്രിക് കപ്പ്</unitPattern>
-				<unitPattern count="other" case="locative">{0} മെട്രിക് കപ്പ്</unitPattern>
-				<unitPattern count="other" case="sociative">{0} മെട്രിക് കപ്പ്</unitPattern>
 			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>ഏക്കർ അടി</displayName>
@@ -10317,8 +10153,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="2">{0} കൂടാതെ {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="or">
-			<listPatternPart type="start">{0}, {1} എന്നിവ</listPatternPart>
-			<listPatternPart type="middle">{0}, {1} എന്നിവ</listPatternPart>
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, അല്ലെങ്കിൽ {1}</listPatternPart>
 			<listPatternPart type="2">{0} അല്ലെങ്കിൽ {1}</listPatternPart>
 		</listPattern>

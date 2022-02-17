@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
@@ -1774,7 +1776,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="Gy">G y</dateFormatItem>
 						<dateFormatItem id="GyMd">d/M/GGGGG y</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM, G y</dateFormatItem>
-						<dateFormatItem id="GyMMMd">d MMM y</dateFormatItem>
+						<dateFormatItem id="GyMMMd">d MMM, G y</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E d MMM, G y</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
@@ -3660,6 +3662,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Pacific/Enderbury">
 				<exemplarCity>ਏਂਡਰਬਰੀ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kanton">
+				<exemplarCity>ਕੈਂਟੋਨ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>ਕਿਰਿਤਿਮਤੀ</exemplarCity>
@@ -5895,7 +5900,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">ਜਾਰਜੀਆਈ ਲਾਰੀ</displayName>
 				<symbol>GEL</symbol>
 				<symbol alt="narrow">₾</symbol>
-				<symbol alt="variant">₾</symbol>
 			</currency>
 			<currency type="GHS">
 				<displayName>ਘਾਨਾਈ ਸੇਡੀ</displayName>
@@ -6369,9 +6373,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<symbol>RUB</symbol>
 				<symbol alt="narrow">₽</symbol>
 			</currency>
-			<currency type="RUR">
-				<symbol alt="narrow" draft="contributed">р.</symbol>
-			</currency>
 			<currency type="RWF">
 				<displayName>ਰਵਾਂਡਨ ਫ੍ਰੈਂਕ</displayName>
 				<displayName count="one">ਰਵਾਂਡਨ ਫ੍ਰੈਂਕ</displayName>
@@ -6742,7 +6743,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPrefixPattern>ਮਿਲੀ{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-6">
-				<unitPrefixPattern>ਮਾਈਕ੍ਰੋ{0}</unitPrefixPattern>
+				<unitPrefixPattern>ਮਾਈਕਰੋ{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-9">
 				<unitPrefixPattern>ਨੈਨੋ{0}</unitPrefixPattern>
@@ -6781,7 +6782,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPrefixPattern>ਟੈਰਾ{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p15">
-				<unitPrefixPattern>ਪੇਟਾ{0}</unitPrefixPattern>
+				<unitPrefixPattern>ਪੈਟਾ{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p18">
 				<unitPrefixPattern>ਐਕਸਾ{0}</unitPrefixPattern>
@@ -6793,28 +6794,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPrefixPattern>ਯੋਟਾ{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p1">
-				<unitPrefixPattern draft="contributed">ਕੀਬੀ{0}</unitPrefixPattern>
+				<unitPrefixPattern>ਕੀਬੀ{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p2">
-				<unitPrefixPattern draft="contributed">ਮੇਬੀ{0}</unitPrefixPattern>
+				<unitPrefixPattern>ਮੇਬੀ{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p3">
-				<unitPrefixPattern draft="contributed">ਗੀਬੀ{0}</unitPrefixPattern>
+				<unitPrefixPattern>ਗੀਬੀ{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p4">
-				<unitPrefixPattern draft="contributed">ਟੇਬੀ{0}</unitPrefixPattern>
+				<unitPrefixPattern>ਟੇਬੀ{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p5">
-				<unitPrefixPattern draft="contributed">ਪੇਬੀ{0}</unitPrefixPattern>
+				<unitPrefixPattern>ਪੇਬੀ{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p6">
-				<unitPrefixPattern draft="contributed">ਐਕਸਬੀ{0}</unitPrefixPattern>
+				<unitPrefixPattern>ਐਕਸਬੀ{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p7">
-				<unitPrefixPattern draft="contributed">ਜ਼ੇਬੀ{0}</unitPrefixPattern>
+				<unitPrefixPattern>ਜ਼ੇਬੀ{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p8">
-				<unitPrefixPattern draft="contributed">ਯੋਬ{0}</unitPrefixPattern>
+				<unitPrefixPattern>ਯੋਬ{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0} ਪ੍ਰਤੀ {1}</compoundUnitPattern>
@@ -6822,56 +6823,59 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="power2">
 				<compoundUnitPattern1>ਵਰਗ{0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one">ਵਰਗ{0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" case="oblique" draft="contributed">ਵਰਗ{0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" draft="contributed">ਵਰਗ{0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="oblique" draft="contributed">ਵਰਗ{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" case="oblique">ਵਰਗ{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" gender="feminine">ਵਰਗ{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" gender="feminine" case="oblique">ਵਰਗ{0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">ਵਰਗ{0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" case="oblique" draft="contributed">ਵਰਗ{0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" draft="contributed">ਵਰਗ{0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="oblique" draft="contributed">ਵਰਗ{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" case="oblique">ਵਰਗ{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" gender="feminine">ਵਰਗ{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" gender="feminine" case="oblique">ਵਰਗ{0}</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="power3">
 				<compoundUnitPattern1>ਘਣ{0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one">ਘਣ{0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" case="oblique" draft="contributed">ਘਣ{0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" draft="contributed">ਘਣ{0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one" gender="feminine" case="oblique" draft="contributed">ਘਣ{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" case="oblique">ਘਣ{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" gender="feminine">ਘਣ{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" gender="feminine" case="oblique">ਘਣ{0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">ਘਣ{0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" case="oblique" draft="contributed">ਘਣ{0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" draft="contributed">ਘਣ{0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other" gender="feminine" case="oblique" draft="contributed">ਘਣ{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" case="oblique">ਘਣ{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" gender="feminine">ਘਣ{0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" gender="feminine" case="oblique">ਘਣ{0}</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਗੁਰੂਤਾਕਰਸ਼ਣ ਬਲ</displayName>
 				<unitPattern count="one">{0} ਗੁਰੂਤਾਕਰਸ਼ਣ ਬਲ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਗੁਰੂਤਾਕਰਸ਼ਣ ਬਲ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਗੁਰੂਤਾਕਰਸ਼ਣ ਬਲ</unitPattern>
 				<unitPattern count="other">{0} ਗੁਰੂਤਾਕਰਸ਼ਣ ਬਲ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਗੁਰੂਤਾਕਰਸ਼ਣ ਬਲ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਗੁਰੂਤਾਕਰਸ਼ਣ ਬਲ</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
+				<gender>masculine</gender>
 				<displayName>ਮੀਟਰ ਪ੍ਰਤੀ ਵਰਗ ਸਕਿੰਟ</displayName>
 				<unitPattern count="one">{0} ਮੀਟਰ ਪ੍ਰਤੀ ਵਰਗ ਸਕਿੰਟ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮੀਟਰ ਪ੍ਰਤੀ ਵਰਗ ਸਕਿੰਟ</unitPattern>
 				<unitPattern count="other">{0} ਮੀਟਰ ਪ੍ਰਤੀ ਵਰਗ ਸਕਿੰਟ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮੀਟਰ ਪ੍ਰਤੀ ਵਰਗ ਸਕਿੰਟ</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>ਪਰਿਕਰਮਾ</displayName>
 				<unitPattern count="one">{0} ਪਰਿਕਰਮਾ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਪਰਿਕਰਮਾ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਪਰਿਕਰਮਾ</unitPattern>
 				<unitPattern count="other">{0} ਪਰਿਕਰਮਾ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਪਰਿਕਰਮਾ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਪਰਿਕਰਮਾ</unitPattern>
 			</unit>
 			<unit type="angle-radian">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਰੇਡੀਅਨ</displayName>
 				<unitPattern count="one">{0} ਰੇਡੀਅਨ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਰੇਡੀਅਨ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਰੇਡੀਅਨ</unitPattern>
 				<unitPattern count="other">{0} ਰੇਡੀਅਨ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਰੇਡੀਅਨ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਰੇਡੀਅਨ</unitPattern>
 			</unit>
 			<unit type="angle-degree">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>ਡਿਗਰੀ</displayName>
 				<unitPattern count="one">{0} ਡਿਗਰੀ</unitPattern>
 				<unitPattern count="one" case="oblique">{0} ਡਿਗਰੀ</unitPattern>
@@ -6879,45 +6883,54 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="oblique">{0} ਡਿਗਰੀ</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਚਾਪ-ਮਿੰਟ</displayName>
 				<unitPattern count="one">{0} ਚਾਪ-ਮਿੰਟ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਚਾਪ-ਮਿੰਟ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਚਾਪ-ਮਿੰਟ</unitPattern>
 				<unitPattern count="other">{0} ਚਾਪ-ਮਿੰਟ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਚਾਪ-ਮਿੰਟ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਚਾਪ-ਮਿੰਟ</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਚਾਪ-ਸਕਿੰਟ</displayName>
 				<unitPattern count="one">{0} ਚਾਪ-ਸਕਿੰਟ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਚਾਪ-ਸਕਿੰਟ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਚਾਪ-ਸਕਿੰਟ</unitPattern>
 				<unitPattern count="other">{0} ਚਾਪ-ਸਕਿੰਟ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਚਾਪ-ਸਕਿੰਟ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਚਾਪ-ਸਕਿੰਟ</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
+				<gender>masculine</gender>
 				<displayName>ਵਰਗ ਕਿਲੋਮੀਟਰ</displayName>
 				<unitPattern count="one">{0} ਵਰਗ ਕਿਲੋਮੀਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਵਰਗ ਕਿਲੋਮੀਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਵਰਗ ਕਿਲੋਮੀਟਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਵਰਗ ਕਿਲੋਮੀਟਰ</unitPattern>
 				<perUnitPattern>{0} ਪ੍ਰਤੀ ਵਰਗ ਕਿਲੋਮੀਟਰ</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਹੈਕਟੇਅਰ</displayName>
 				<unitPattern count="one">{0} ਹੈਕਟੇਅਰ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਹੈਕਟੇਅਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਹੈਕਟੇਅਰ</unitPattern>
 				<unitPattern count="other">{0} ਹੈਕਟੇਅਰ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਹੈਕਟੇਅਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਹੈਕਟੇਅਰ</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
+				<gender>masculine</gender>
 				<displayName>ਵਰਗ ਮੀਟਰ</displayName>
 				<unitPattern count="one">{0} ਵਰਗ ਮੀਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਵਰਗ ਮੀਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਵਰਗ ਮੀਟਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਵਰਗ ਮੀਟਰ</unitPattern>
 				<perUnitPattern>{0} ਪ੍ਰਤੀ ਵਰਗ ਮੀਟਰ</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
+				<gender>masculine</gender>
 				<displayName>ਵਰਗ ਸੈਂਟੀਮੀਟਰ</displayName>
 				<unitPattern count="one">{0} ਵਰਗ ਸੈਂਟੀਮੀਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਵਰਗ ਸੈਂਟੀਮੀਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਵਰਗ ਸੈਂਟੀਮੀਟਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਵਰਗ ਸੈਂਟੀਮੀਟਰ</unitPattern>
 				<perUnitPattern>{0} ਪ੍ਰਤੀ ਵਰਗ ਸੈਂਟੀਮੀਟਰ</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
@@ -6953,12 +6966,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ਦੁਨਮ</unitPattern>
 			</unit>
 			<unit type="concentr-karat">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਕੇਰਟ</displayName>
 				<unitPattern count="one">{0} ਕੇਰਟ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਕੇਰਟ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਕੇਰਟ</unitPattern>
 				<unitPattern count="other">{0} ਕੇਰਟ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਕੇਰਟ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਕੇਰਟ</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>ਮਿਲੀਗ੍ਰਾਮ ਪ੍ਰਤੀ ਡੈਸੀਲਿਟਰ</displayName>
@@ -6966,64 +6979,76 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ਮਿਲੀਗ੍ਰਾਮ ਪ੍ਰਤੀ ਡੈਸੀਲਿਟਰ</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
+				<gender>masculine</gender>
 				<displayName>ਮਿਲੀਮੋਲ ਪ੍ਰਤੀ ਲਿਟਰ</displayName>
 				<unitPattern count="one">{0} ਮਿਲੀਮੋਲ ਪ੍ਰਤੀ ਲਿਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮਿਲੀਮੋਲ ਪ੍ਰਤੀ ਲਿਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਮਿਲੀਮੋਲ ਪ੍ਰਤੀ ਲਿਟਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮਿਲੀਮੋਲ ਪ੍ਰਤੀ ਲਿਟਰ</unitPattern>
 			</unit>
 			<unit type="concentr-item">
+				<gender>feminine</gender>
 				<displayName>ਆਈਟਮਾਂ</displayName>
 				<unitPattern count="one">{0} ਆਈਟਮ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਆਈਟਮ</unitPattern>
 				<unitPattern count="other">{0} ਆਈਟਮਾਂ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਆਈਟਮਾਂ</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਹਿੱਸੇ ਪ੍ਰਤੀ ਮਿਲੀਅਨ</displayName>
 				<unitPattern count="one">{0} ਹਿੱਸਾ ਪ੍ਰਤੀ ਮਿਲੀਅਨ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਹਿੱਸਾ ਪ੍ਰਤੀ ਮਿਲੀਅਨ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਹਿੱਸਾ ਪ੍ਰਤੀ ਮਿਲੀਅਨ</unitPattern>
 				<unitPattern count="other">{0} ਹਿੱਸੇ ਪ੍ਰਤੀ ਮਿਲੀਅਨ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਹਿੱਸੇ ਪ੍ਰਤੀ ਮਿਲੀਅਨ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਹਿੱਸੇ ਪ੍ਰਤੀ ਮਿਲੀਅਨ</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਪ੍ਰਤੀਸ਼ਤ</displayName>
 				<unitPattern count="one">{0} ਪ੍ਰਤੀਸ਼ਤ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਪ੍ਰਤੀਸ਼ਤ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਪ੍ਰਤੀਸ਼ਤ</unitPattern>
 				<unitPattern count="other">{0} ਪ੍ਰਤੀਸ਼ਤ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਪ੍ਰਤੀਸ਼ਤ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਪ੍ਰਤੀਸ਼ਤ</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਪਰਮਾਈਲ</displayName>
 				<unitPattern count="one">{0} ਪਰਮਾਈਲ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਪਰਮਾਈਲ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਪਰਮਾਈਲ</unitPattern>
 				<unitPattern count="other">{0} ਪਰਮਾਈਲ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਪਰਮਾਈਲ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਪਰਮਾਈਲ</unitPattern>
 			</unit>
 			<unit type="concentr-permyriad">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਪ੍ਰਤੀ ਦਸ ਹਜ਼ਾਰ</displayName>
 				<unitPattern count="one">{0} ਪ੍ਰਤੀ ਦਸ ਹਜ਼ਾਰ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਪ੍ਰਤੀ ਦਸ ਹਜ਼ਾਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਪ੍ਰਤੀ ਦਸ ਹਜ਼ਾਰ</unitPattern>
 				<unitPattern count="other">{0} ਪ੍ਰਤੀ ਦਸ ਹਜ਼ਾਰ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਪ੍ਰਤੀ ਦਸ ਹਜ਼ਾਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਪ੍ਰਤੀ ਦਸ ਹਜ਼ਾਰ</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਮੋਲ</displayName>
 				<unitPattern count="one">{0} ਮੋਲ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਮੋਲ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮੋਲ</unitPattern>
 				<unitPattern count="other">{0} ਮੋਲ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਮੋਲ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮੋਲ</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
+				<gender>masculine</gender>
 				<displayName>ਲਿਟਰ ਪ੍ਰਤੀ ਕਿਲੋਮੀਟਰ</displayName>
 				<unitPattern count="one">{0} ਲਿਟਰ ਪ੍ਰਤੀ ਕਿਲੋਮੀਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਲਿਟਰ ਪ੍ਰਤੀ ਕਿਲੋਮੀਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਲਿਟਰ ਪ੍ਰਤੀ ਕਿਲੋਮੀਟਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਲਿਟਰ ਪ੍ਰਤੀ ਕਿਲੋਮੀਟਰ</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
+				<gender>masculine</gender>
 				<displayName>ਲਿਟਰ ਪ੍ਰਤੀ 100 ਕਿਲੋਮੀਟਰ</displayName>
 				<unitPattern count="one">{0} ਲਿਟਰ ਪ੍ਰਤੀ 100 ਕਿਲੋਮੀਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਲਿਟਰ ਪ੍ਰਤੀ 100 ਕਿਲੋਮੀਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਲਿਟਰ ਪ੍ਰਤੀ 100 ਕਿਲੋਮੀਟਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਲਿਟਰ ਪ੍ਰਤੀ 100 ਕਿਲੋਮੀਟਰ</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>ਮੀਲ ਪ੍ਰਤੀ ਗੈਲਨ</displayName>
@@ -7036,68 +7061,95 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ਮੀਲ ਪ੍ਰਤੀ ਇੰਪ. ਗੈਲਨ</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
+				<gender>feminine</gender>
 				<displayName>ਪੈਟਾਬਾਇਟ</displayName>
 				<unitPattern count="one">{0} ਪੈਟਾਬਾਇਟ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਪੈਟਾਬਾਇਟ</unitPattern>
 				<unitPattern count="other">{0} ਪੈਟਾਬਾਇਟ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਪੈਟਾਬਾਇਟ</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
+				<gender>feminine</gender>
 				<displayName>ਟੈਰਾਬਾਇਟ</displayName>
 				<unitPattern count="one">{0} ਟੈਰਾਬਾਇਟ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਟੈਰਾਬਾਇਟ</unitPattern>
 				<unitPattern count="other">{0} ਟੈਰਾਬਾਇਟ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਟੈਰਾਬਾਇਟ</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
+				<gender>feminine</gender>
 				<displayName>ਟੇਰਾਬਿਟ</displayName>
 				<unitPattern count="one">{0} ਟੇਰਾਬਿਟ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਟੇਰਾਬਿਟ</unitPattern>
 				<unitPattern count="other">{0} ਟੇਰਾਬਿਟ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਟੇਰਾਬਿਟ</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
+				<gender>feminine</gender>
 				<displayName>ਗੀਗਾਬਾਇਟ</displayName>
 				<unitPattern count="one">{0} ਗੀਗਾਬਾਇਟ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਗੀਗਾਬਾਇਟ</unitPattern>
 				<unitPattern count="other">{0} ਗੀਗਾਬਾਇਟ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਗੀਗਾਬਾਇਟ</unitPattern>
 			</unit>
 			<unit type="digital-gigabit">
+				<gender>feminine</gender>
 				<displayName>ਗੀਗਾਬਿਟ</displayName>
 				<unitPattern count="one">{0} ਗੀਗਾਬਿਟ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਗੀਗਾਬਿਟ</unitPattern>
 				<unitPattern count="other">{0} ਗੀਗਾਬਿਟ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਗੀਗਾਬਿਟ</unitPattern>
 			</unit>
 			<unit type="digital-megabyte">
+				<gender>feminine</gender>
 				<displayName>ਮੈਗਾਬਾਇਟ</displayName>
 				<unitPattern count="one">{0} ਮੈਗਾਬਾਇਟ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮੈਗਾਬਾਇਟ</unitPattern>
 				<unitPattern count="other">{0} ਮੈਗਾਬਾਇਟ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮੈਗਾਬਾਇਟ</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
+				<gender>feminine</gender>
 				<displayName>ਮੈਗਾਬਿਟ</displayName>
 				<unitPattern count="one">{0} ਮੈਗਾਬਿਟ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮੈਗਾਬਿਟ</unitPattern>
 				<unitPattern count="other">{0} ਮੈਗਾਬਿਟ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮੈਗਾਬਿਟ</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
+				<gender>feminine</gender>
 				<displayName>ਕਿਲੋਬਾਇਟ</displayName>
 				<unitPattern count="one">{0} ਕਿਲੋਬਾਇਟ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਕਿਲੋਬਾਇਟ</unitPattern>
 				<unitPattern count="other">{0} ਕਿਲੋਬਾਇਟ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਕਿਲੋਬਾਇਟ</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
+				<gender>feminine</gender>
 				<displayName>ਕਿਲੋਬਿਟ</displayName>
 				<unitPattern count="one">{0} ਕਿਲੋਬਿਟ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਕਿਲੋਬਿਟ</unitPattern>
 				<unitPattern count="other">{0} ਕਿਲੋਬਿਟ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਕਿਲੋਬਿਟ</unitPattern>
 			</unit>
 			<unit type="digital-byte">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>ਬਾਇਟ</displayName>
 				<unitPattern count="one">{0} ਬਾਇਟ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਬਾਇਟ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਬਾਇਟ</unitPattern>
 				<unitPattern count="other">{0} ਬਾਇਟ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਬਾਇਟ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਬਾਇਟ</unitPattern>
 			</unit>
 			<unit type="digital-bit">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>ਬਿਟ</displayName>
 				<unitPattern count="one">{0} ਬਿਟ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਬਿਟ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਬਿਟ</unitPattern>
 				<unitPattern count="other">{0} ਬਿਟ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਬਿਟ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਬਿਟ</unitPattern>
 			</unit>
 			<unit type="duration-century">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>ਸਦੀਆਂ</displayName>
 				<unitPattern count="one">{0} ਸਦੀ</unitPattern>
 				<unitPattern count="one" case="oblique">{0} ਸਦੀ</unitPattern>
@@ -7105,42 +7157,42 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="oblique">{0} ਸਦੀਆਂ</unitPattern>
 			</unit>
 			<unit type="duration-decade">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਦਹਾਕੇ</displayName>
 				<unitPattern count="one">{0} ਦਹਾਕਾ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਦਹਾਕੇ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਦਹਾਕੇ</unitPattern>
 				<unitPattern count="other">{0} ਦਹਾਕੇ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਦਹਾਕਿਆਂ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਦਹਾਕਿਆਂ</unitPattern>
 			</unit>
 			<unit type="duration-year">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਸਾਲ</displayName>
 				<unitPattern count="one">{0} ਸਾਲ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਸਾਲ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਸਾਲ</unitPattern>
 				<unitPattern count="other">{0} ਸਾਲ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਸਾਲਾਂ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਸਾਲਾਂ</unitPattern>
 				<perUnitPattern>{0} ਪ੍ਰਤੀ ਸਾਲ</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਮਹੀਨੇ</displayName>
 				<unitPattern count="one">{0} ਮਹੀਨਾ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਮਹੀਨੇ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮਹੀਨੇ</unitPattern>
 				<unitPattern count="other">{0} ਮਹੀਨੇ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਮਹੀਨਿਆਂ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮਹੀਨਿਆਂ</unitPattern>
 				<perUnitPattern>{0} ਪ੍ਰਤੀ ਮਹੀਨਾ</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਹਫ਼ਤੇ</displayName>
 				<unitPattern count="one">{0} ਹਫ਼ਤਾ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਹਫ਼ਤੇ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਹਫ਼ਤੇ</unitPattern>
 				<unitPattern count="other">{0} ਹਫ਼ਤੇ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਹਫ਼ਤਿਆਂ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਹਫ਼ਤਿਆਂ</unitPattern>
 				<perUnitPattern>{0} ਪ੍ਰਤੀ ਹਫ਼ਤਾ</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਦਿਨ</displayName>
 				<unitPattern count="one">{0} ਦਿਨ</unitPattern>
 				<unitPattern count="one" case="oblique">{0} ਦਿਨ</unitPattern>
@@ -7149,75 +7201,87 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} ਪ੍ਰਤੀ ਦਿਨ</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਘੰਟੇ</displayName>
 				<unitPattern count="one">{0} ਘੰਟਾ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਘੰਟੇ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਘੰਟੇ</unitPattern>
 				<unitPattern count="other">{0} ਘੰਟੇ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਘੰਟਿਆਂ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਘੰਟਿਆਂ</unitPattern>
 				<perUnitPattern>{0} ਪ੍ਰਤੀ ਘੰਟਾ</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਮਿੰਟ</displayName>
 				<unitPattern count="one">{0} ਮਿੰਟ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਮਿੰਟ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮਿੰਟ</unitPattern>
 				<unitPattern count="other">{0} ਮਿੰਟ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਮਿੰਟਾਂ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮਿੰਟਾਂ</unitPattern>
 				<perUnitPattern>{0} ਪ੍ਰਤੀ ਮਿੰਟ</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਸਕਿੰਟ</displayName>
 				<unitPattern count="one">{0} ਸਕਿੰਟ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਸਕਿੰਟ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਸਕਿੰਟ</unitPattern>
 				<unitPattern count="other">{0} ਸਕਿੰਟ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਸਕਿੰਟਾਂ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਸਕਿੰਟਾਂ</unitPattern>
 				<perUnitPattern>{0} ਪ੍ਰਤੀ ਸਕਿੰਟ</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
+				<gender>masculine</gender>
 				<displayName>ਮਿਲੀਸਕਿੰਟ</displayName>
 				<unitPattern count="one">{0} ਮਿਲੀਸਕਿੰਟ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮਿਲੀਸਕਿੰਟ</unitPattern>
 				<unitPattern count="other">{0} ਮਿਲੀਸਕਿੰਟ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮਿਲੀਸਕਿੰਟ</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
+				<gender>masculine</gender>
 				<displayName>ਮਾਈਕਰੋਸਕਿੰਟ</displayName>
 				<unitPattern count="one">{0} ਮਾਈਕਰੋਸਕਿੰਟ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮਾਈਕਰੋਸਕਿੰਟ</unitPattern>
 				<unitPattern count="other">{0} ਮਾਈਕਰੋਸਕਿੰਟ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮਾਈਕਰੋਸਕਿੰਟ</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
+				<gender>masculine</gender>
 				<displayName>ਨੈਨੋਸਕਿੰਟ</displayName>
 				<unitPattern count="one">{0} ਨੈਨੋਸਕਿੰਟ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਨੈਨੋਸਕਿੰਟ</unitPattern>
 				<unitPattern count="other">{0} ਨੈਨੋਸਕਿੰਟ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਨੈਨੋਸਕਿੰਟ</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਐਮਪੀਅਰ</displayName>
 				<unitPattern count="one">{0} ਐਮਪੀਅਰ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਐਮਪੀਅਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਐਮਪੀਅਰ</unitPattern>
 				<unitPattern count="other">{0} ਐਮਪੀਅਰ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਐਮਪੀਅਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਐਮਪੀਅਰ</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
+				<gender>masculine</gender>
 				<displayName>ਮਿਲੀਐਮਪੀਅਰ</displayName>
 				<unitPattern count="one">{0} ਮਿਲੀਐਮਪੀਅਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮਿਲੀਐਮਪੀਅਰ</unitPattern>
 				<unitPattern count="other">{0} ਮਿਲੀਐਮਪੀਅਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮਿਲੀਐਮਪੀਅਰ</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਓਹਮ</displayName>
 				<unitPattern count="one">{0} ਓਹਮ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਓਹਮ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਓਹਮ</unitPattern>
 				<unitPattern count="other">{0} ਓਹਮ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਓਹਮ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਓਹਮ</unitPattern>
 			</unit>
 			<unit type="electric-volt">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਵੋਲਟ</displayName>
 				<unitPattern count="one">{0} ਵੋਲਟ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਵੋਲਟ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਵੋਲਟ</unitPattern>
 				<unitPattern count="other">{0} ਵੋਲਟ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਵੋਲਟ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਵੋਲਟ</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
 				<displayName>ਕਿਲੋਕੈਲੋਰੀਆਂ</displayName>
@@ -7225,12 +7289,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ਕਿਲੋਕੈਲੋਰੀਆਂ</unitPattern>
 			</unit>
 			<unit type="energy-calorie">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>ਕੈਲੋਰੀਆਂ</displayName>
 				<unitPattern count="one">{0} ਕੈਲੋਰੀ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਕੈਲੋਰੀ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਕੈਲੋਰੀ</unitPattern>
 				<unitPattern count="other">{0} ਕੈਲੋਰੀਆਂ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਕੈਲੋਰੀਆਂ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਕੈਲੋਰੀਆਂ</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
 				<displayName>ਕੈਲੋਰੀਆਂ</displayName>
@@ -7238,22 +7302,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ਕੈਲੋਰੀਆਂ</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
+				<gender>masculine</gender>
 				<displayName>ਕਿਲੋਜੂਲ</displayName>
 				<unitPattern count="one">{0} ਕਿਲੋਜੂਲ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਕਿਲੋਜੂਲ</unitPattern>
 				<unitPattern count="other">{0} ਕਿਲੋਜੂਲ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਕਿਲੋਜੂਲ</unitPattern>
 			</unit>
 			<unit type="energy-joule">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਜੂਲ</displayName>
 				<unitPattern count="one">{0} ਜੂਲ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਜੂਲ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਜੂਲ</unitPattern>
 				<unitPattern count="other">{0} ਜੂਲ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਜੂਲ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਜੂਲ</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
+				<gender>masculine</gender>
 				<displayName>ਕਿਲੋਵਾਟ-ਘੰਟੇ</displayName>
 				<unitPattern count="one">{0} ਕਿਲੋਵਾਟ ਘੰਟਾ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਕਿਲੋਵਾਟ ਘੰਟਾ</unitPattern>
 				<unitPattern count="other">{0} ਕਿਲੋਵਾਟ ਘੰਟੇ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਕਿਲੋਵਾਟ ਘੰਟੇ</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
 				<displayName>ਇਲੈਕਟ੍ਰਾਨਵੋਲਟ</displayName>
@@ -7274,66 +7344,84 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ਪੌਂਡ ਬਲ</unitPattern>
 			</unit>
 			<unit type="force-newton">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਨਿਊਟਨ</displayName>
 				<unitPattern count="one">{0} ਨਿਊਟਨ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਨਿਊਟਨ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਨਿਊਟਨ</unitPattern>
 				<unitPattern count="other">{0} ਨਿਊਟਨ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਨਿਊਟਨ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਨਿਊਟਨ</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<gender>masculine</gender>
 				<displayName>ਕਿੱਲੋਵਾਟ-ਘੰਟਾ ਪ੍ਰਤੀ 100 ਕਿੱਲੋਮੀਟਰ</displayName>
 				<unitPattern count="one">{0} ਕਿੱਲੋਵਾਟ-ਘੰਟਾ ਪ੍ਰਤੀ 100 ਕਿੱਲੋਮੀਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਕਿੱਲੋਵਾਟ-ਘੰਟਾ ਪ੍ਰਤੀ 100 ਕਿੱਲੋਮੀਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਕਿੱਲੋਵਾਟ-ਘੰਟਾ ਪ੍ਰਤੀ 100 ਕਿੱਲੋਮੀਟਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਕਿੱਲੋਵਾਟ-ਘੰਟਾ ਪ੍ਰਤੀ 100 ਕਿੱਲੋਮੀਟਰ</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
+				<gender>masculine</gender>
 				<displayName>ਗੀਗਾਹਰਟਜ਼</displayName>
 				<unitPattern count="one">{0} ਗੀਗਾਹਰਟਜ਼</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਗੀਗਾਹਰਟਜ਼</unitPattern>
 				<unitPattern count="other">{0} ਗੀਗਾਹਰਟਜ਼</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਗੀਗਾਹਰਟਜ਼</unitPattern>
 			</unit>
 			<unit type="frequency-megahertz">
+				<gender>masculine</gender>
 				<displayName>ਮੈਗਾਹਰਟਜ਼</displayName>
 				<unitPattern count="one">{0} ਮੈਗਾਹਰਟਜ਼</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮੈਗਾਹਰਟਜ਼</unitPattern>
 				<unitPattern count="other">{0} ਮੈਗਾਹਰਟਜ਼</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮੈਗਾਹਰਟਜ਼</unitPattern>
 			</unit>
 			<unit type="frequency-kilohertz">
+				<gender>masculine</gender>
 				<displayName>ਕਿਲੋਹਰਟਜ਼</displayName>
 				<unitPattern count="one">{0} ਕਿਲੋਹਰਟਜ਼</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਕਿਲੋਹਰਟਜ਼</unitPattern>
 				<unitPattern count="other">{0} ਕਿਲੋਹਰਟਜ਼</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਕਿਲੋਹਰਟਜ਼</unitPattern>
 			</unit>
 			<unit type="frequency-hertz">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਹਰਟਜ਼</displayName>
 				<unitPattern count="one">{0} ਹਰਟਜ਼</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਹਰਟਜ਼</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਹਰਟਜ਼</unitPattern>
 				<unitPattern count="other">{0} ਹਰਟਜ਼</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਹਰਟਜ਼</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਹਰਟਜ਼</unitPattern>
 			</unit>
 			<unit type="graphics-em">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਟਾਈਪੋਗ੍ਰਾਫ਼ਿਕ ਐਮ</displayName>
 				<unitPattern count="one">{0} ਟਾਈਪੋਗ੍ਰਾਫ਼ਿਕ ਐਮ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਟਾਈਪੋਗ੍ਰਾਫ਼ਿਕ ਐਮ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਟਾਈਪੋਗ੍ਰਾਫ਼ਿਕ ਐਮ</unitPattern>
 				<unitPattern count="other">{0} ਟਾਈਪੋਗ੍ਰਾਫ਼ਿਕ ਐਮ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਟਾਈਪੋਗ੍ਰਾਫ਼ਿਕ ਐਮ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਟਾਈਪੋਗ੍ਰਾਫ਼ਿਕ ਐਮ</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਪਿਕਸਲ</displayName>
 				<unitPattern count="one">{0} ਪਿਕਸਲ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਪਿਕਸਲ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਪਿਕਸਲ</unitPattern>
 				<unitPattern count="other">{0} ਪਿਕਸਲ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਪਿਕਸਲ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਪਿਕਸਲ</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
+				<gender>masculine</gender>
 				<displayName>ਮੈਗਾਪਿਕਸਲ</displayName>
 				<unitPattern count="one">{0} ਮੈਗਾਪਿਕਸਲ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮੈਗਾਪਿਕਸਲ</unitPattern>
 				<unitPattern count="other">{0} ਮੈਗਾਪਿਕਸਲ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮੈਗਾਪਿਕਸਲ</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-centimeter">
+				<gender>masculine</gender>
 				<displayName>ਪਿਕਸਲ ਪ੍ਰਤੀ ਸੈਂਟੀਮੀਟਰ</displayName>
 				<unitPattern count="one">{0} ਪਿਕਸਲ ਪ੍ਰਤੀ ਸੈਂਟੀਮੀਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਪਿਕਸਲ ਪ੍ਰਤੀ ਸੈਂਟੀਮੀਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਪਿਕਸਲ ਪ੍ਰਤੀ ਸੈਂਟੀਮੀਟਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਪਿਕਸਲ ਪ੍ਰਤੀ ਸੈਂਟੀਮੀਟਰ</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-inch">
 				<displayName>ਪਿਕਸਲ ਪ੍ਰਤੀ ਇੰਚ</displayName>
@@ -7361,50 +7449,71 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ਧਰਤੀ ਦਾ ਘੇਰਾ</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
+				<gender>masculine</gender>
 				<displayName>ਕਿਲੋਮੀਟਰ</displayName>
 				<unitPattern count="one">{0} ਕਿਲੋਮੀਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਕਿਲੋਮੀਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਕਿਲੋਮੀਟਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਕਿਲੋਮੀਟਰ</unitPattern>
 				<perUnitPattern>{0} ਪ੍ਰਤੀ ਕਿਲੋਮੀਟਰ</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਮੀਟਰ</displayName>
 				<unitPattern count="one">{0} ਮੀਟਰ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਮੀਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮੀਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਮੀਟਰ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਮੀਟਰਾਂ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮੀਟਰਾਂ</unitPattern>
 				<perUnitPattern>{0} ਪ੍ਰਤੀ ਮੀਟਰ</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
+				<gender>masculine</gender>
 				<displayName>ਡੈਸੀਮੀਟਰ</displayName>
 				<unitPattern count="one">{0} ਡੈਸੀਮੀਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਡੈਸੀਮੀਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਡੈਸੀਮੀਟਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਡੈਸੀਮੀਟਰ</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
+				<gender>masculine</gender>
 				<displayName>ਸੈਂਟੀਮੀਟਰ</displayName>
 				<unitPattern count="one">{0} ਸੈਂਟੀਮੀਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਸੈਂਟੀਮੀਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਸੈਂਟੀਮੀਟਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਸੈਂਟੀਮੀਟਰ</unitPattern>
 				<perUnitPattern>{0} ਪ੍ਰਤੀ ਸੈਂਟੀਮੀਟਰ</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
+				<gender>masculine</gender>
 				<displayName>ਮਿਲੀਮੀਟਰ</displayName>
 				<unitPattern count="one">{0} ਮਿਲੀਮੀਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮਿਲੀਮੀਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਮਿਲੀਮੀਟਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮਿਲੀਮੀਟਰ</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
+				<gender>masculine</gender>
 				<displayName>ਮਾਈਕਰੋਮੀਟਰ</displayName>
 				<unitPattern count="one">{0} ਮਾਈਕਰੋਮੀਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮਾਈਕਰੋਮੀਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਮਾਈਕਰੋਮੀਟਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮਾਈਕਰੋਮੀਟਰ</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
+				<gender>masculine</gender>
 				<displayName>ਨੈਨੋਮੀਟਰ</displayName>
 				<unitPattern count="one">{0} ਨੈਨੋਮੀਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਨੈਨੋਮੀਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਨੈਨੋਮੀਟਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਨੈਨੋਮੀਟਰ</unitPattern>
 			</unit>
 			<unit type="length-picometer">
+				<gender>masculine</gender>
 				<displayName>ਪਿਕੋਮੀਟਰ</displayName>
 				<unitPattern count="one">{0} ਪਿਕੋਮੀਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਪਿਕੋਮੀਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਪਿਕੋਮੀਟਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਪਿਕੋਮੀਟਰ</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<displayName>ਮੀਲ</displayName>
@@ -7459,12 +7568,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ਨੋਟੀਕਲ ਮੀਲ</unitPattern>
 			</unit>
 			<unit type="length-mile-scandinavian">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਮੀਲ-ਸਕੈਂਡਿਨੇਵਿਆਈ</displayName>
 				<unitPattern count="one">{0} ਮੀਲ-ਸਕੈਂਡਿਨੇਵਿਆਈ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਮੀਲ-ਸਕੈਂਡਿਨੇਵਿਆਈ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮੀਲ-ਸਕੈਂਡਿਨੇਵਿਆਈ</unitPattern>
 				<unitPattern count="other">{0} ਮੀਲ-ਸਕੈਂਡਿਨੇਵਿਆਈ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਮੀਲ-ਸਕੈਂਡਿਨੇਵਿਆਈ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮੀਲ-ਸਕੈਂਡਿਨੇਵਿਆਈ</unitPattern>
 			</unit>
 			<unit type="length-point">
 				<displayName>ਪੁਆਇੰਟ</displayName>
@@ -7477,28 +7586,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ਸੋਲਰ ਰੇਡੀਅਸ</unitPattern>
 			</unit>
 			<unit type="light-lux">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਲਕਸ</displayName>
 				<unitPattern count="one">{0} ਲਕਸ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਲਕਸ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਲਕਸ</unitPattern>
 				<unitPattern count="other">{0} ਲਕਸ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਲਕਸ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਲਕਸ</unitPattern>
 			</unit>
 			<unit type="light-candela">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਕੈਂਡੇਲਾ</displayName>
 				<unitPattern count="one">{0} ਕੈਂਡੇਲਾ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਕੈਂਡੇਲਾ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਕੈਂਡੇਲਾ</unitPattern>
 				<unitPattern count="other">{0} ਕੈਂਡੇਲਾ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਕੈਂਡੇਲਾ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਕੈਂਡੇਲਾ</unitPattern>
 			</unit>
 			<unit type="light-lumen">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਲੁਮੇਨ</displayName>
 				<unitPattern count="one">{0} ਲੁਮੇਨ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਲੁਮੇਨ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਲੁਮੇਨ</unitPattern>
 				<unitPattern count="other">{0} ਲੁਮੇਨ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਲੁਮੇਨ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਲੁਮੇਨ</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>ਸੋਲਰ ਲੂਮਨਾਸਿਟੀ</displayName>
@@ -7506,40 +7615,46 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ਸੋਲਰ ਲੂਮਨਾਸਿਟੀ</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਮੀਟਰਿਕ ਟਨ</displayName>
 				<unitPattern count="one">{0} ਮੀਟਰਿਕ ਟਨ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਮੀਟਰਿਕ ਟਨ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮੀਟਰਿਕ ਟਨ</unitPattern>
 				<unitPattern count="other">{0} ਮੀਟਰਿਕ ਟਨ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਮੀਟਰਿਕ ਟਨ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮੀਟਰਿਕ ਟਨ</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਕਿਲੋਗ੍ਰਾਮ</displayName>
 				<unitPattern count="one">{0} ਕਿਲੋਗ੍ਰਾਮ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਕਿਲੋਗ੍ਰਾਮ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਕਿਲੋਗ੍ਰਾਮ</unitPattern>
 				<unitPattern count="other">{0} ਕਿਲੋਗ੍ਰਾਮ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਕਿਲੋਗ੍ਰਾਮ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਕਿਲੋਗ੍ਰਾਮ</unitPattern>
 				<perUnitPattern>{0} ਪ੍ਰਤੀ ਕਿਲੋਗ੍ਰਾਮ</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਗ੍ਰਾਮ</displayName>
 				<unitPattern count="one">{0} ਗ੍ਰਾਮ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਗ੍ਰਾਮ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਗ੍ਰਾਮ</unitPattern>
 				<unitPattern count="other">{0} ਗ੍ਰਾਮ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਗ੍ਰਾਮ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਗ੍ਰਾਮ</unitPattern>
 				<perUnitPattern>{0} ਪ੍ਰਤੀ ਗ੍ਰਾਮ</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
+				<gender>masculine</gender>
 				<displayName>ਮਿਲੀਗ੍ਰਾਮ</displayName>
 				<unitPattern count="one">{0} ਮਿਲੀਗ੍ਰਾਮ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮਿਲੀਗ੍ਰਾਮ</unitPattern>
 				<unitPattern count="other">{0} ਮਿਲੀਗ੍ਰਾਮ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮਿਲੀਗ੍ਰਾਮ</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
+				<gender>masculine</gender>
 				<displayName>ਮਾਈਕਰੋਗ੍ਰਾਮ</displayName>
 				<unitPattern count="one">{0} ਮਾਈਕਰੋਗ੍ਰਾਮ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮਾਈਕਰੋਗ੍ਰਾਮ</unitPattern>
 				<unitPattern count="other">{0} ਮਾਈਕਰੋਗ੍ਰਾਮ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮਾਈਕਰੋਗ੍ਰਾਮ</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>ਅਮਰੀਕੀ ਟਨ</displayName>
@@ -7569,12 +7684,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ਟਰੌਏ ਔਂਸ</unitPattern>
 			</unit>
 			<unit type="mass-carat">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਕੈਰਟ</displayName>
 				<unitPattern count="one">{0} ਕੈਰਟ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਕੈਰਟ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਕੈਰਟ</unitPattern>
 				<unitPattern count="other">{0} ਕੈਰਟ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਕੈਰਟ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਕੈਰਟ</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
 				<displayName>ਡਾਲਟਨ</displayName>
@@ -7597,32 +7712,44 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ਗ੍ਰੇਨ</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
+				<gender>masculine</gender>
 				<displayName>ਗੀਗਾਵਾਟ</displayName>
 				<unitPattern count="one">{0} ਗੀਗਾਵਾਟ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਗੀਗਾਵਾਟ</unitPattern>
 				<unitPattern count="other">{0} ਗੀਗਾਵਾਟ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਗੀਗਾਵਾਟ</unitPattern>
 			</unit>
 			<unit type="power-megawatt">
+				<gender>masculine</gender>
 				<displayName>ਮੈਗਾਵਾਟ</displayName>
 				<unitPattern count="one">{0} ਮੈਗਾਵਾਟ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮੈਗਾਵਾਟ</unitPattern>
 				<unitPattern count="other">{0} ਮੈਗਾਵਾਟ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮੈਗਾਵਾਟ</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
+				<gender>masculine</gender>
 				<displayName>ਕਿਲੋਵਾਟ</displayName>
 				<unitPattern count="one">{0} ਕਿਲੋਵਾਟ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਕਿਲੋਵਾਟ</unitPattern>
 				<unitPattern count="other">{0} ਕਿਲੋਵਾਟ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਕਿਲੋਵਾਟ</unitPattern>
 			</unit>
 			<unit type="power-watt">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>ਵਾਟ</displayName>
 				<unitPattern count="one">{0} ਵਾਟ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਵਾਟ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਵਾਟ</unitPattern>
 				<unitPattern count="other">{0} ਵਾਟ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਵਾਟ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਵਾਟ</unitPattern>
 			</unit>
 			<unit type="power-milliwatt">
+				<gender>masculine</gender>
 				<displayName>ਮਿਲੀਵਾਟ</displayName>
 				<unitPattern count="one">{0} ਮਿਲੀਵਾਟ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮਿਲੀਵਾਟ</unitPattern>
 				<unitPattern count="other">{0} ਮਿਲੀਵਾਟ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮਿਲੀਵਾਟ</unitPattern>
 			</unit>
 			<unit type="power-horsepower">
 				<displayName>ਹੌਰਸਪਾਵਰ</displayName>
@@ -7645,7 +7772,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ਇੰਚ ਪਾਰਾ</unitPattern>
 			</unit>
 			<unit type="pressure-bar">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਬਾਰ</displayName>
 				<unitPattern count="one">{0} ਬਾਰ</unitPattern>
 				<unitPattern count="one" case="oblique">{0} ਬਾਰ</unitPattern>
@@ -7653,12 +7780,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="oblique">{0} ਬਾਰ</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
+				<gender>masculine</gender>
 				<displayName>ਮਿਲੀਬਾਰ</displayName>
 				<unitPattern count="one">{0} ਮਿਲੀਬਾਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮਿਲੀਬਾਰ</unitPattern>
 				<unitPattern count="other">{0} ਮਿਲੀਬਾਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮਿਲੀਬਾਰ</unitPattern>
 			</unit>
 			<unit type="pressure-atmosphere">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਵਾਯੂਮੰਡਲ</displayName>
 				<unitPattern count="one">{0} ਵਾਯੂਮੰਡਲ</unitPattern>
 				<unitPattern count="one" case="oblique">{0} ਵਾਯੂਮੰਡਲ</unitPattern>
@@ -7666,7 +7796,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="oblique">{0} ਵਾਯੂਮੰਡਲ</unitPattern>
 			</unit>
 			<unit type="pressure-pascal">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਪੈਸਕਲ</displayName>
 				<unitPattern count="one">{0} ਪੈਸਕਲ</unitPattern>
 				<unitPattern count="one" case="oblique">{0} ਪੈਸਕਲ</unitPattern>
@@ -7674,29 +7804,44 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="oblique">{0} ਪੈਸਕਲ</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
+				<gender>masculine</gender>
 				<displayName>ਹੈਕਟੋਪਾਸਕਲ</displayName>
 				<unitPattern count="one">{0} ਹੈਕਟੋਪਾਸਕਲ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਹੈਕਟੋਪਾਸਕਲ</unitPattern>
 				<unitPattern count="other">{0} ਹੈਕਟੋਪਾਸਕਲ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਹੈਕਟੋਪਾਸਕਲ</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
+				<gender>masculine</gender>
 				<displayName>ਕਿੱਲੋਪਾਸਕਲ</displayName>
 				<unitPattern count="one">{0} ਕਿੱਲੋਪਾਸਕਲ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਕਿੱਲੋਪਾਸਕਲ</unitPattern>
 				<unitPattern count="other">{0} ਕਿੱਲੋਪਾਸਕਲ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਕਿੱਲੋਪਾਸਕਲ</unitPattern>
 			</unit>
 			<unit type="pressure-megapascal">
+				<gender>masculine</gender>
 				<displayName>ਮੈਗਾਪਾਸਕਲ</displayName>
 				<unitPattern count="one">{0} ਮੈਗਾਪਾਸਕਲ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮੈਗਾਪਾਸਕਲ</unitPattern>
 				<unitPattern count="other">{0} ਮੈਗਾਪਾਸਕਲ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮੈਗਾਪਾਸਕਲ</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
+				<gender>masculine</gender>
 				<displayName>ਕਿਲੋਮੀਟਰ ਪ੍ਰਤੀ ਘੰਟਾ</displayName>
 				<unitPattern count="one">{0} ਕਿਲੋਮੀਟਰ ਪ੍ਰਤੀ ਘੰਟਾ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਕਿਲੋਮੀਟਰ ਪ੍ਰਤੀ ਘੰਟਾ</unitPattern>
 				<unitPattern count="other">{0} ਕਿਲੋਮੀਟਰ ਪ੍ਰਤੀ ਘੰਟਾ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਕਿਲੋਮੀਟਰ ਪ੍ਰਤੀ ਘੰਟਾ</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
+				<gender>masculine</gender>
 				<displayName>ਮੀਟਰ ਪ੍ਰਤੀ ਸਕਿੰਟ</displayName>
 				<unitPattern count="one">{0} ਮੀਟਰ ਪ੍ਰਤੀ ਸਕਿੰਟ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮੀਟਰ ਪ੍ਰਤੀ ਸਕਿੰਟ</unitPattern>
 				<unitPattern count="other">{0} ਮੀਟਰ ਪ੍ਰਤੀ ਸਕਿੰਟ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮੀਟਰ ਪ੍ਰਤੀ ਸਕਿੰਟ</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
 				<displayName>ਮੀਲ ਪ੍ਰਤੀ ਘੰਟਾ</displayName>
@@ -7709,7 +7854,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ਨੌਟ</unitPattern>
 			</unit>
 			<unit type="temperature-generic">
-				<gender draft="contributed">feminine</gender>
+				<gender>feminine</gender>
 				<displayName>°</displayName>
 				<unitPattern count="one">{0} ਡਿਗਰੀ</unitPattern>
 				<unitPattern count="one" case="oblique">{0} ਡਿਗਰੀ</unitPattern>
@@ -7717,7 +7862,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="oblique">{0} ਡਿਗਰੀ</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਡਿਗਰੀ ਸੈਲਸੀਅਸ</displayName>
 				<unitPattern count="one">{0} ਡਿਗਰੀ ਸੈਲਸੀਅਸ</unitPattern>
 				<unitPattern count="one" case="oblique">{0} ਡਿਗਰੀ ਸੈਲਸੀਅਸ</unitPattern>
@@ -7730,7 +7875,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ਡਿਗਰੀ ਫਾਰੇਨਹਾਈਟ</unitPattern>
 			</unit>
 			<unit type="temperature-kelvin">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਕੈਲਵਿਨ</displayName>
 				<unitPattern count="one">{0} ਕੈਲਵਿਨ</unitPattern>
 				<unitPattern count="one" case="oblique">{0} ਕੈਲਵਿਨ</unitPattern>
@@ -7743,25 +7888,37 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ਪੌਂਡ-ਫੁੱਟ</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
+				<gender>masculine</gender>
 				<displayName>ਨਿਊਟਨ-ਮੀਟਰ</displayName>
 				<unitPattern count="one">{0} ਨਿਊਟਨ-ਮੀਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਨਿਊਟਨ-ਮੀਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਨਿਊਟਨ-ਮੀਟਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਨਿਊਟਨ-ਮੀਟਰ</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
+				<gender>masculine</gender>
 				<displayName>ਘਣ ਕਿਲੋਮੀਟਰ</displayName>
 				<unitPattern count="one">{0} ਘਣ ਕਿਲੋਮੀਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਘਣ ਕਿਲੋਮੀਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਘਣ ਕਿਲੋਮੀਟਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਘਣ ਕਿਲੋਮੀਟਰ</unitPattern>
 			</unit>
 			<unit type="volume-cubic-meter">
+				<gender>masculine</gender>
 				<displayName>ਘਣ ਮੀਟਰ</displayName>
 				<unitPattern count="one">{0} ਘਣ ਮੀਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਘਣ ਮੀਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਘਣ ਮੀਟਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਘਣ ਮੀਟਰ</unitPattern>
 				<perUnitPattern>{0} ਪ੍ਰਤੀ ਘਣ ਮੀਟਰ</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
+				<gender>masculine</gender>
 				<displayName>ਘਣ ਸੈਂਟੀਮੀਟਰ</displayName>
 				<unitPattern count="one">{0} ਘਣ ਸੈਂਟੀਮੀਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਘਣ ਸੈਂਟੀਮੀਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਘਣ ਸੈਂਟੀਮੀਟਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਘਣ ਸੈਂਟੀਮੀਟਰ</unitPattern>
 				<perUnitPattern>{0} ਪ੍ਰਤੀ ਘਣ ਸੈਂਟੀਮੀਟਰ</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
@@ -7785,54 +7942,69 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ਘਣ ਇੰਚ</unitPattern>
 			</unit>
 			<unit type="volume-megaliter">
+				<gender>masculine</gender>
 				<displayName>ਮੈਗਾਲਿਟਰ</displayName>
 				<unitPattern count="one">{0} ਮੈਗਾਲਿਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮੈਗਾਲਿਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਮੈਗਾਲਿਟਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮੈਗਾਲਿਟਰ</unitPattern>
 			</unit>
 			<unit type="volume-hectoliter">
+				<gender>masculine</gender>
 				<displayName>ਹੈਕਟੋਲਿਟਰ</displayName>
 				<unitPattern count="one">{0} ਹੈਕਟੋਲਿਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਹੈਕਟੋਲਿਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਹੈਕਟੋਲਿਟਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਹੈਕਟੋਲਿਟਰ</unitPattern>
 			</unit>
 			<unit type="volume-liter">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਲਿਟਰ</displayName>
 				<unitPattern count="one">{0} ਲਿਟਰ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਲਿਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਲਿਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਲਿਟਰ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਲਿਟਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਲਿਟਰ</unitPattern>
 				<perUnitPattern>{0} ਪ੍ਰਤੀ ਲਿਟਰ</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
+				<gender>masculine</gender>
 				<displayName>ਡੈਸੀਲਿਟਰ</displayName>
 				<unitPattern count="one">{0} ਡੈਸੀਲਿਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਡੈਸੀਲਿਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਡੈਸੀਲਿਟਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਡੈਸੀਲਿਟਰ</unitPattern>
 			</unit>
 			<unit type="volume-centiliter">
+				<gender>masculine</gender>
 				<displayName>ਸੈਂਟੀਲਿਟਰ</displayName>
 				<unitPattern count="one">{0} ਸੈਂਟੀਲਿਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਸੈਂਟੀਲਿਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਸੈਂਟੀਲਿਟਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਸੈਂਟੀਲਿਟਰ</unitPattern>
 			</unit>
 			<unit type="volume-milliliter">
+				<gender>masculine</gender>
 				<displayName>ਮਿਲੀਲਿਟਰ</displayName>
 				<unitPattern count="one">{0} ਮਿਲੀਲਿਟਰ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮਿਲੀਲਿਟਰ</unitPattern>
 				<unitPattern count="other">{0} ਮਿਲੀਲਿਟਰ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮਿਲੀਲਿਟਰ</unitPattern>
 			</unit>
 			<unit type="volume-pint-metric">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਮੀਟਰਿਕ ਪਿੰਟ</displayName>
 				<unitPattern count="one">{0} ਮੀਟਰਿਕ ਪਿੰਟ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਮੀਟਰਿਕ ਪਿੰਟ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮੀਟਰਿਕ ਪਿੰਟ</unitPattern>
 				<unitPattern count="other">{0} ਮੀਟਰਿਕ ਪਿੰਟ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਮੀਟਰਿਕ ਪਿੰਟ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮੀਟਰਿਕ ਪਿੰਟ</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
-				<gender draft="contributed">masculine</gender>
+				<gender>masculine</gender>
 				<displayName>ਮੀਟਰਿਕ ਕੱਪ</displayName>
 				<unitPattern count="one">{0} ਮੀਟਰਿਕ ਕੱਪ</unitPattern>
-				<unitPattern count="one" case="oblique" draft="contributed">{0} ਮੀਟਰਿਕ ਕੱਪ</unitPattern>
+				<unitPattern count="one" case="oblique">{0} ਮੀਟਰਿਕ ਕੱਪ</unitPattern>
 				<unitPattern count="other">{0} ਮੀਟਰਿਕ ਕੱਪ</unitPattern>
-				<unitPattern count="other" case="oblique" draft="contributed">{0} ਮੀਟਰਿਕ ਕੱਪ</unitPattern>
+				<unitPattern count="other" case="oblique">{0} ਮੀਟਰਿਕ ਕੱਪ</unitPattern>
 			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>ਏਕੜ ਫੁੱਟ</displayName>
@@ -9158,6 +9330,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} GB</unitPattern>
 			</unit>
 			<unit type="digital-gigabit">
+				<displayName>Gb</displayName>
 				<unitPattern count="one">{0} Gb</unitPattern>
 				<unitPattern count="other">{0} Gb</unitPattern>
 			</unit>

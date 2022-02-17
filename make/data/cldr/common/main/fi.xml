@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
@@ -6774,6 +6776,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Kroatian kuna</displayName>
 				<displayName count="one">Kroatian kuna</displayName>
 				<displayName count="other">Kroatian kunaa</displayName>
+				<symbol>HRK</symbol>
 				<symbol alt="narrow">HRK</symbol>
 			</currency>
 			<currency type="HTG">
@@ -7962,6 +7965,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<pluralMinimalPairs count="other">{0} päivää</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">Käänny {0}. risteyksestä oikealle.</ordinalMinimalPairs>
 			<caseMinimalPairs case="elative">{0} päivästä</caseMinimalPairs>
+			<caseMinimalPairs case="genitive">tarjous voimassa {0} ajan</caseMinimalPairs>
 			<caseMinimalPairs case="illative">{0} päivään</caseMinimalPairs>
 			<caseMinimalPairs case="nominative">{0} päivä</caseMinimalPairs>
 			<caseMinimalPairs case="partitive">{0} päivää</caseMinimalPairs>
@@ -8070,26 +8074,38 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>G-voimat</displayName>
 				<unitPattern count="one">{0} G-voima</unitPattern>
 				<unitPattern count="one" case="elative">{0} G-voimasta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} G-voiman</unitPattern>
 				<unitPattern count="one" case="illative">{0} G-voimaan</unitPattern>
 				<unitPattern count="one" case="partitive">{0} G-voimaa</unitPattern>
 				<unitPattern count="other">{0} G-voimaa</unitPattern>
 				<unitPattern count="other" case="elative">{0} G-voimasta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} G-voiman</unitPattern>
 				<unitPattern count="other" case="illative">{0} G-voimaan</unitPattern>
 				<unitPattern count="other" case="partitive">{0} G-voimaa</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
 				<displayName>metrit per sekunti toiseen</displayName>
 				<unitPattern count="one">{0} metri per sekunti toiseen</unitPattern>
+				<unitPattern count="one" case="elative">{0} metristä per sekunti toiseen</unitPattern>
+				<unitPattern count="one" case="genitive">{0} metrin per sekunti toiseen</unitPattern>
+				<unitPattern count="one" case="illative">{0} metriin per sekunti toiseen</unitPattern>
+				<unitPattern count="one" case="partitive">{0} metriä per sekunti toiseen</unitPattern>
 				<unitPattern count="other">{0} metriä per sekunti toiseen</unitPattern>
+				<unitPattern count="other" case="elative">{0} metristä per sekunti toiseen</unitPattern>
+				<unitPattern count="other" case="genitive">{0} metrin per sekunti toiseen</unitPattern>
+				<unitPattern count="other" case="illative">{0} metriin per sekunti toiseen</unitPattern>
+				<unitPattern count="other" case="partitive">{0} metriä per sekunti toiseen</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
 				<displayName>kierros</displayName>
 				<unitPattern count="one">{0} kierros</unitPattern>
 				<unitPattern count="one" case="elative">{0} kierroksesta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kierroksen</unitPattern>
 				<unitPattern count="one" case="illative">{0} kierrokseen</unitPattern>
 				<unitPattern count="one" case="partitive">{0} kierrosta</unitPattern>
 				<unitPattern count="other">{0} kierrosta</unitPattern>
 				<unitPattern count="other" case="elative">{0} kierroksesta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kierroksen</unitPattern>
 				<unitPattern count="other" case="illative">{0} kierrokseen</unitPattern>
 				<unitPattern count="other" case="partitive">{0} kierrosta</unitPattern>
 			</unit>
@@ -8097,10 +8113,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>radiaanit</displayName>
 				<unitPattern count="one">{0} radiaani</unitPattern>
 				<unitPattern count="one" case="elative">{0} radiaanista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} radiaanin</unitPattern>
 				<unitPattern count="one" case="illative">{0} radiaaniin</unitPattern>
 				<unitPattern count="one" case="partitive">{0} radiaania</unitPattern>
 				<unitPattern count="other">{0} radiaania</unitPattern>
 				<unitPattern count="other" case="elative">{0} radiaanista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} radiaanin</unitPattern>
 				<unitPattern count="other" case="illative">{0} radiaaniin</unitPattern>
 				<unitPattern count="other" case="partitive">{0} radiaania</unitPattern>
 			</unit>
@@ -8108,10 +8126,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>asteet</displayName>
 				<unitPattern count="one">{0} aste</unitPattern>
 				<unitPattern count="one" case="elative">{0} asteesta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} asteen</unitPattern>
 				<unitPattern count="one" case="illative">{0} asteeseen</unitPattern>
 				<unitPattern count="one" case="partitive">{0} astetta</unitPattern>
 				<unitPattern count="other">{0} astetta</unitPattern>
 				<unitPattern count="other" case="elative">{0} asteesta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} asteen</unitPattern>
 				<unitPattern count="other" case="illative">{0} asteeseen</unitPattern>
 				<unitPattern count="other" case="partitive">{0} astetta</unitPattern>
 			</unit>
@@ -8119,10 +8139,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>kulmaminuutit</displayName>
 				<unitPattern count="one">{0} kulmaminuutti</unitPattern>
 				<unitPattern count="one" case="elative">{0} kulmaminuutista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kulmaninuutin</unitPattern>
 				<unitPattern count="one" case="illative">{0} kulmaminuuttiin</unitPattern>
 				<unitPattern count="one" case="partitive">{0} kulmaminuuttia</unitPattern>
 				<unitPattern count="other">{0} kulmaminuuttia</unitPattern>
 				<unitPattern count="other" case="elative">{0} kulmaminuutista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kulmaminuutin</unitPattern>
 				<unitPattern count="other" case="illative">{0} kulmaminuuttiin</unitPattern>
 				<unitPattern count="other" case="partitive">{0} kulmaminuuttia</unitPattern>
 			</unit>
@@ -8130,40 +8152,68 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>kulmasekunnit</displayName>
 				<unitPattern count="one">{0} kulmasekunti</unitPattern>
 				<unitPattern count="one" case="elative">{0} kulmasekunnista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kulmasekunnin</unitPattern>
 				<unitPattern count="one" case="illative">{0} kulmasekuntiin</unitPattern>
 				<unitPattern count="one" case="partitive">{0} kulmasekuntia</unitPattern>
 				<unitPattern count="other">{0} kulmasekuntia</unitPattern>
 				<unitPattern count="other" case="elative">{0} kulmasekunnista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kulmasekunnin</unitPattern>
 				<unitPattern count="other" case="illative">{0} kulmasekuntiin</unitPattern>
 				<unitPattern count="other" case="partitive">{0} kulmasekuntia</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
 				<displayName>neliökilometrit</displayName>
 				<unitPattern count="one">{0} neliökilometri</unitPattern>
+				<unitPattern count="one" case="elative">{0} neliökilometristä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} neliökilometrin</unitPattern>
+				<unitPattern count="one" case="illative">{0} neliökilometriin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} neliökilometriä</unitPattern>
 				<unitPattern count="other">{0} neliökilometriä</unitPattern>
+				<unitPattern count="other" case="elative">{0} neliökilometristä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} neliökilometrin</unitPattern>
+				<unitPattern count="other" case="illative">{0} neliökilometriin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} neliökilometriä</unitPattern>
 				<perUnitPattern>{0} / neliökilometri</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>hehtaarit</displayName>
 				<unitPattern count="one">{0} hehtaari</unitPattern>
 				<unitPattern count="one" case="elative">{0} hehtaarista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} hehtaarin</unitPattern>
 				<unitPattern count="one" case="illative">{0} hehtaariin</unitPattern>
 				<unitPattern count="one" case="partitive">{0} hehtaaria</unitPattern>
 				<unitPattern count="other">{0} hehtaaria</unitPattern>
 				<unitPattern count="other" case="elative">{0} hehtaarista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} hehtaarin</unitPattern>
 				<unitPattern count="other" case="illative">{0} hehtaariin</unitPattern>
 				<unitPattern count="other" case="partitive">{0} hehtaaria</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
 				<displayName>neliömetrit</displayName>
 				<unitPattern count="one">{0} neliömetri</unitPattern>
+				<unitPattern count="one" case="elative">{0} neliömetristä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} neliömetrin</unitPattern>
+				<unitPattern count="one" case="illative">{0} neliömetriin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} neliömetriä</unitPattern>
 				<unitPattern count="other">{0} neliömetriä</unitPattern>
+				<unitPattern count="other" case="elative">{0} neliömetristä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} neliömetrin</unitPattern>
+				<unitPattern count="other" case="illative">{0} neliömetriin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} neliömetriä</unitPattern>
 				<perUnitPattern>{0} / neliömetri</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
 				<displayName>neliösenttimetrit</displayName>
 				<unitPattern count="one">{0} neliösenttimetri</unitPattern>
+				<unitPattern count="one" case="elative">{0} neliösenttimetristä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} neliösenttimetrin</unitPattern>
+				<unitPattern count="one" case="illative">{0} neliösenttimetriin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} neliösenttimetriä</unitPattern>
 				<unitPattern count="other">{0} neliösenttimetriä</unitPattern>
+				<unitPattern count="other" case="elative">{0} neliösenttimetristä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} neliösenttimetrin</unitPattern>
+				<unitPattern count="other" case="illative">{0} neliösenttimetriin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} neliösenttimetriä</unitPattern>
 				<perUnitPattern>{0} / neliösenttimetri</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
@@ -8202,10 +8252,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>karaatit</displayName>
 				<unitPattern count="one">{0} karaatti</unitPattern>
 				<unitPattern count="one" case="elative">{0} karaatista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} karaatin</unitPattern>
 				<unitPattern count="one" case="illative">{0} karaattiin</unitPattern>
 				<unitPattern count="one" case="partitive">{0} karaattia</unitPattern>
 				<unitPattern count="other">{0} karaattia</unitPattern>
 				<unitPattern count="other" case="elative">{0} karaatista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} karaatin</unitPattern>
 				<unitPattern count="other" case="illative">{0} karaattiin</unitPattern>
 				<unitPattern count="other" case="partitive">{0} karaattia</unitPattern>
 			</unit>
@@ -8217,21 +8269,39 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="concentr-millimole-per-liter">
 				<displayName>millimoolit litrassa</displayName>
 				<unitPattern count="one">{0} millimooli litrassa</unitPattern>
+				<unitPattern count="one" case="elative">{0} millimoolista litrassa</unitPattern>
+				<unitPattern count="one" case="genitive">{0} millimoolin litrassa</unitPattern>
+				<unitPattern count="one" case="illative">{0} millimooliin litrassa</unitPattern>
+				<unitPattern count="one" case="partitive">{0} millimoolia litrassa</unitPattern>
 				<unitPattern count="other">{0} millimoolia litrassa</unitPattern>
+				<unitPattern count="other" case="elative">{0} millimoolista litrassa</unitPattern>
+				<unitPattern count="other" case="genitive">{0} millimoolin litrassa</unitPattern>
+				<unitPattern count="other" case="illative">{0} millimooliin litrassa</unitPattern>
+				<unitPattern count="other" case="partitive">{0} millimoolia litrassa</unitPattern>
 			</unit>
 			<unit type="concentr-item">
 				<displayName>kohteet</displayName>
 				<unitPattern count="one">{0} kohde</unitPattern>
+				<unitPattern count="one" case="elative">{0} kohteesta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kohteen</unitPattern>
+				<unitPattern count="one" case="illative">{0} kohteeseen</unitPattern>
+				<unitPattern count="one" case="partitive">{0} kohdetta</unitPattern>
 				<unitPattern count="other">{0} kohdetta</unitPattern>
+				<unitPattern count="other" case="elative">{0} kohteesta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kohteen</unitPattern>
+				<unitPattern count="other" case="illative">{0} kohteeseen</unitPattern>
+				<unitPattern count="other" case="partitive">{0} kohdetta</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
 				<displayName>miljoonasosat</displayName>
 				<unitPattern count="one">{0} miljoonasosa</unitPattern>
 				<unitPattern count="one" case="elative">{0} miljoonasosasta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} miljoonasosan</unitPattern>
 				<unitPattern count="one" case="illative">{0} miljoonasosaan</unitPattern>
 				<unitPattern count="one" case="partitive">{0} miljoonasosaa</unitPattern>
 				<unitPattern count="other">{0} miljoonasosaa</unitPattern>
 				<unitPattern count="other" case="elative">{0} miljoonasosasta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} miljoonasosan</unitPattern>
 				<unitPattern count="other" case="illative">{0} miljoonasosaan</unitPattern>
 				<unitPattern count="other" case="partitive">{0} miljoonasosaa</unitPattern>
 			</unit>
@@ -8239,10 +8309,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>prosentit</displayName>
 				<unitPattern count="one">{0} prosentti</unitPattern>
 				<unitPattern count="one" case="elative">{0} prosentista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} prosentin</unitPattern>
 				<unitPattern count="one" case="illative">{0} prosenttiin</unitPattern>
 				<unitPattern count="one" case="partitive">{0} prosenttia</unitPattern>
 				<unitPattern count="other">{0} prosenttia</unitPattern>
 				<unitPattern count="other" case="elative">{0} prosentista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} prosentin</unitPattern>
 				<unitPattern count="other" case="illative">{0} prosenttiin</unitPattern>
 				<unitPattern count="other" case="partitive">{0} prosenttia</unitPattern>
 			</unit>
@@ -8250,10 +8322,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>promillet</displayName>
 				<unitPattern count="one">{0} promille</unitPattern>
 				<unitPattern count="one" case="elative">{0} promillesta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} promillen</unitPattern>
 				<unitPattern count="one" case="illative">{0} promilleen</unitPattern>
 				<unitPattern count="one" case="partitive">{0} promillea</unitPattern>
 				<unitPattern count="other">{0} promillea</unitPattern>
 				<unitPattern count="other" case="elative">{0} promillesta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} promillen</unitPattern>
 				<unitPattern count="other" case="illative">{0} promilleen</unitPattern>
 				<unitPattern count="other" case="partitive">{0} promillea</unitPattern>
 			</unit>
@@ -8261,10 +8335,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>peruspiste</displayName>
 				<unitPattern count="one">{0} peruspiste</unitPattern>
 				<unitPattern count="one" case="elative">{0} peruspisteestä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} peruspisteen</unitPattern>
 				<unitPattern count="one" case="illative">{0} peruspisteeseen</unitPattern>
 				<unitPattern count="one" case="partitive">{0} peruspistettä</unitPattern>
 				<unitPattern count="other">{0} peruspistettä</unitPattern>
 				<unitPattern count="other" case="elative">{0} peruspisteestä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} peruspisteen</unitPattern>
 				<unitPattern count="other" case="illative">{0} peruspisteeseen</unitPattern>
 				<unitPattern count="other" case="partitive">{0} peruspistettä</unitPattern>
 			</unit>
@@ -8272,22 +8348,40 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>moolit</displayName>
 				<unitPattern count="one">{0} mooli</unitPattern>
 				<unitPattern count="one" case="elative">{0} moolista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} moolin</unitPattern>
 				<unitPattern count="one" case="illative">{0} mooliin</unitPattern>
 				<unitPattern count="one" case="partitive">{0} moolia</unitPattern>
 				<unitPattern count="other">{0} moolia</unitPattern>
 				<unitPattern count="other" case="elative">{0} moolista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} moolin</unitPattern>
 				<unitPattern count="other" case="illative">{0} mooliin</unitPattern>
 				<unitPattern count="other" case="partitive">{0} moolia</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>litrat / kilometri</displayName>
 				<unitPattern count="one">{0} litra / kilometri</unitPattern>
+				<unitPattern count="one" case="elative">{0} litrasta / kilometri</unitPattern>
+				<unitPattern count="one" case="genitive">{0} litran / kilometri</unitPattern>
+				<unitPattern count="one" case="illative">{0} litraan / kilometri</unitPattern>
+				<unitPattern count="one" case="partitive">{0} litraa / kilometri</unitPattern>
 				<unitPattern count="other">{0} litraa / kilometri</unitPattern>
+				<unitPattern count="other" case="elative">{0} litrasta / kilometri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} litran / kilometri</unitPattern>
+				<unitPattern count="other" case="illative">{0} litraan / kilometri</unitPattern>
+				<unitPattern count="other" case="partitive">{0} litraa / kilometri</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>litrat / 100 kilometriä</displayName>
 				<unitPattern count="one">{0} litra / 100 km</unitPattern>
+				<unitPattern count="one" case="elative">{0} litrasta / 100 km</unitPattern>
+				<unitPattern count="one" case="genitive">{0} litran / 100 km</unitPattern>
+				<unitPattern count="one" case="illative">{0} litraan / 100 km</unitPattern>
+				<unitPattern count="one" case="partitive">{0} litraa / 100 km</unitPattern>
 				<unitPattern count="other">{0} litraa / 100 km</unitPattern>
+				<unitPattern count="other" case="elative">{0} litrasta / 100 km</unitPattern>
+				<unitPattern count="other" case="genitive">{0} litran / 100 km</unitPattern>
+				<unitPattern count="other" case="illative">{0} litraan / 100 km</unitPattern>
+				<unitPattern count="other" case="partitive">{0} litraa / 100 km</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>mailit / am. gallona</displayName>
@@ -8302,56 +8396,130 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="digital-petabyte">
 				<displayName>petatavut</displayName>
 				<unitPattern count="one">{0} petatavu</unitPattern>
+				<unitPattern count="one" case="elative">{0} petatavusta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} petatavun</unitPattern>
+				<unitPattern count="one" case="illative">{0} petatavuun</unitPattern>
+				<unitPattern count="one" case="partitive">{0} petatavua</unitPattern>
 				<unitPattern count="other">{0} petatavua</unitPattern>
+				<unitPattern count="other" case="elative">{0} petatavusta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} petatavun</unitPattern>
+				<unitPattern count="other" case="illative">{0} petatavuun</unitPattern>
+				<unitPattern count="other" case="partitive">{0} petatavua</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>teratavut</displayName>
 				<unitPattern count="one">{0} teratavu</unitPattern>
+				<unitPattern count="one" case="elative">{0} teratavusta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} teratavun</unitPattern>
+				<unitPattern count="one" case="illative">{0} teratavuun</unitPattern>
+				<unitPattern count="one" case="partitive">{0} teratavua</unitPattern>
 				<unitPattern count="other">{0} teratavua</unitPattern>
+				<unitPattern count="other" case="elative">{0} teratavusta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} teratavun</unitPattern>
+				<unitPattern count="other" case="illative">{0} teratavuun</unitPattern>
+				<unitPattern count="other" case="partitive">{0} teratavua</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
 				<displayName>terabitit</displayName>
 				<unitPattern count="one">{0} terabitti</unitPattern>
+				<unitPattern count="one" case="elative">{0} terabitistä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} terabitin</unitPattern>
+				<unitPattern count="one" case="illative">{0} terabittiin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} terabittiä</unitPattern>
 				<unitPattern count="other">{0} terabittiä</unitPattern>
+				<unitPattern count="other" case="elative">{0} terabitistä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} terabitin</unitPattern>
+				<unitPattern count="other" case="illative">{0} terabittiin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} terabittiä</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
 				<displayName>gigatavut</displayName>
 				<unitPattern count="one">{0} gigatavu</unitPattern>
+				<unitPattern count="one" case="elative">{0} gigatavusta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} gigatavun</unitPattern>
+				<unitPattern count="one" case="illative">{0} gigatavuun</unitPattern>
+				<unitPattern count="one" case="partitive">{0} gigatavua</unitPattern>
 				<unitPattern count="other">{0} gigatavua</unitPattern>
+				<unitPattern count="other" case="elative">{0} gigatavusta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} gigatavun</unitPattern>
+				<unitPattern count="other" case="illative">{0} gigatavuun</unitPattern>
+				<unitPattern count="other" case="partitive">{0} gigatavua</unitPattern>
 			</unit>
 			<unit type="digital-gigabit">
 				<displayName>gigabitit</displayName>
 				<unitPattern count="one">{0} gigabitti</unitPattern>
+				<unitPattern count="one" case="elative">{0} gigabitistä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} gigabitin</unitPattern>
+				<unitPattern count="one" case="illative">{0} gigabittiin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} gigabittiä</unitPattern>
 				<unitPattern count="other">{0} gigabittiä</unitPattern>
+				<unitPattern count="other" case="elative">{0} gigabitistä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} gigabitin</unitPattern>
+				<unitPattern count="other" case="illative">{0} gigabittiin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} gigabittiä</unitPattern>
 			</unit>
 			<unit type="digital-megabyte">
 				<displayName>megatavut</displayName>
 				<unitPattern count="one">{0} megatavu</unitPattern>
+				<unitPattern count="one" case="elative">{0} megatavusta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megatavun</unitPattern>
+				<unitPattern count="one" case="illative">{0} megatavuun</unitPattern>
+				<unitPattern count="one" case="partitive">{0} megatavua</unitPattern>
 				<unitPattern count="other">{0} megatavua</unitPattern>
+				<unitPattern count="other" case="elative">{0} megatavusta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} megatavun</unitPattern>
+				<unitPattern count="other" case="illative">{0} megatavuun</unitPattern>
+				<unitPattern count="other" case="partitive">{0} megatavua</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
 				<displayName>megabitit</displayName>
 				<unitPattern count="one">{0} megabitti</unitPattern>
+				<unitPattern count="one" case="elative">{0} megabitistä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megabitin</unitPattern>
+				<unitPattern count="one" case="illative">{0} megabittiin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} megabittiä</unitPattern>
 				<unitPattern count="other">{0} megabittiä</unitPattern>
+				<unitPattern count="other" case="elative">{0} megabitistä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} megabitin</unitPattern>
+				<unitPattern count="other" case="illative">{0} megabittiin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} megabittiä</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
 				<displayName>kilotavut</displayName>
 				<unitPattern count="one">{0} kilotavu</unitPattern>
+				<unitPattern count="one" case="elative">{0} kilotavusta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilotavun</unitPattern>
+				<unitPattern count="one" case="illative">{0} kilotavuun</unitPattern>
+				<unitPattern count="one" case="partitive">{0} kilotavua</unitPattern>
 				<unitPattern count="other">{0} kilotavua</unitPattern>
+				<unitPattern count="other" case="elative">{0} kilotavusta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilotavun</unitPattern>
+				<unitPattern count="other" case="illative">{0} kilotavuun</unitPattern>
+				<unitPattern count="other" case="partitive">{0} kilotavua</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
 				<displayName>kilobitit</displayName>
 				<unitPattern count="one">{0} kilobitti</unitPattern>
+				<unitPattern count="one" case="elative">{0} kilobitistä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilobitin</unitPattern>
+				<unitPattern count="one" case="illative">{0} kilobittiin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} kilobittiä</unitPattern>
 				<unitPattern count="other">{0} kilobittiä</unitPattern>
+				<unitPattern count="other" case="elative">{0} kilobitistä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilobitin</unitPattern>
+				<unitPattern count="other" case="illative">{0} kilobittiin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} kilobittiä</unitPattern>
 			</unit>
 			<unit type="digital-byte">
 				<displayName>tavut</displayName>
 				<unitPattern count="one">{0} tavu</unitPattern>
 				<unitPattern count="one" case="elative">{0} tavusta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} tavun</unitPattern>
 				<unitPattern count="one" case="illative">{0} tavuun</unitPattern>
 				<unitPattern count="one" case="partitive">{0} tavua</unitPattern>
 				<unitPattern count="other">{0} tavua</unitPattern>
 				<unitPattern count="other" case="elative">{0} tavusta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} tavun</unitPattern>
 				<unitPattern count="other" case="illative">{0} tavuun</unitPattern>
 				<unitPattern count="other" case="partitive">{0} tavua</unitPattern>
 			</unit>
@@ -8359,10 +8527,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>bitit</displayName>
 				<unitPattern count="one">{0} bitti</unitPattern>
 				<unitPattern count="one" case="elative">{0} bitistä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} bitin</unitPattern>
 				<unitPattern count="one" case="illative">{0} bittiin</unitPattern>
 				<unitPattern count="one" case="partitive">{0} bittiä</unitPattern>
 				<unitPattern count="other">{0} bittiä</unitPattern>
 				<unitPattern count="other" case="elative">{0} bitistä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} bitin</unitPattern>
 				<unitPattern count="other" case="illative">{0} bittiin</unitPattern>
 				<unitPattern count="other" case="partitive">{0} bittiä</unitPattern>
 			</unit>
@@ -8370,10 +8540,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>vuosisadat</displayName>
 				<unitPattern count="one">{0} vuosisata</unitPattern>
 				<unitPattern count="one" case="elative">{0} vuosisadasta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} vuosisadan</unitPattern>
 				<unitPattern count="one" case="illative">{0} vuosisataan</unitPattern>
 				<unitPattern count="one" case="partitive">{0} vuosisataa</unitPattern>
 				<unitPattern count="other">{0} vuosisataa</unitPattern>
 				<unitPattern count="other" case="elative">{0} vuosisadasta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} vuosisadan</unitPattern>
 				<unitPattern count="other" case="illative">{0} vuosisataan</unitPattern>
 				<unitPattern count="other" case="partitive">{0} vuosisataa</unitPattern>
 			</unit>
@@ -8381,10 +8553,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>vuosikymmenet</displayName>
 				<unitPattern count="one">{0} vuosikymmen</unitPattern>
 				<unitPattern count="one" case="elative">{0} vuosikymmenestä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} vuosikymmenen</unitPattern>
 				<unitPattern count="one" case="illative">{0} vuosikymmeneen</unitPattern>
 				<unitPattern count="one" case="partitive">{0} vuosikymmentä</unitPattern>
 				<unitPattern count="other">{0} vuosikymmentä</unitPattern>
 				<unitPattern count="other" case="elative">{0} vuosikymmenestä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} vuosikymmenen</unitPattern>
 				<unitPattern count="other" case="illative">{0} vuosikymmeneen</unitPattern>
 				<unitPattern count="other" case="partitive">{0} vuosikymmentä</unitPattern>
 			</unit>
@@ -8392,10 +8566,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>vuodet</displayName>
 				<unitPattern count="one">{0} vuosi</unitPattern>
 				<unitPattern count="one" case="elative">{0} vuodesta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} vuoden</unitPattern>
 				<unitPattern count="one" case="illative">{0} vuoteen</unitPattern>
 				<unitPattern count="one" case="partitive">{0} vuotta</unitPattern>
 				<unitPattern count="other">{0} vuotta</unitPattern>
 				<unitPattern count="other" case="elative">{0} vuodesta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} vuoden</unitPattern>
 				<unitPattern count="other" case="illative">{0} vuoteen</unitPattern>
 				<unitPattern count="other" case="partitive">{0} vuoteen</unitPattern>
 				<perUnitPattern>{0} / vuosi</perUnitPattern>
@@ -8404,10 +8580,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>kuukaudet</displayName>
 				<unitPattern count="one">{0} kuukausi</unitPattern>
 				<unitPattern count="one" case="elative">{0} kuukaudesta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kuukauden</unitPattern>
 				<unitPattern count="one" case="illative">{0} kuukauteen</unitPattern>
 				<unitPattern count="one" case="partitive">{0} kuukautta</unitPattern>
 				<unitPattern count="other">{0} kuukautta</unitPattern>
 				<unitPattern count="other" case="elative">{0} kuukaudesta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kuukauden</unitPattern>
 				<unitPattern count="other" case="illative">{0} kuukauteen</unitPattern>
 				<unitPattern count="other" case="partitive">{0} kuukautta</unitPattern>
 				<perUnitPattern>{0} / kuukausi</perUnitPattern>
@@ -8416,10 +8594,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>viikot</displayName>
 				<unitPattern count="one">{0} viikko</unitPattern>
 				<unitPattern count="one" case="elative">{0} viikosta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} viikon</unitPattern>
 				<unitPattern count="one" case="illative">{0} viikkoon</unitPattern>
 				<unitPattern count="one" case="partitive">{0} viikkoa</unitPattern>
 				<unitPattern count="other">{0} viikkoa</unitPattern>
 				<unitPattern count="other" case="elative">{0} viikosta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} viikon</unitPattern>
 				<unitPattern count="other" case="illative">{0} viikkoon</unitPattern>
 				<unitPattern count="other" case="partitive">{0} viikkoa</unitPattern>
 				<perUnitPattern>{0} / viikko</perUnitPattern>
@@ -8428,10 +8608,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>päivät</displayName>
 				<unitPattern count="one">{0} päivä</unitPattern>
 				<unitPattern count="one" case="elative">{0} päivästä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} päivän</unitPattern>
 				<unitPattern count="one" case="illative">{0} päivään</unitPattern>
 				<unitPattern count="one" case="partitive">{0} päivää</unitPattern>
 				<unitPattern count="other">{0} päivää</unitPattern>
 				<unitPattern count="other" case="elative">{0} päivästä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} päivän</unitPattern>
 				<unitPattern count="other" case="illative">{0} päivään</unitPattern>
 				<unitPattern count="other" case="partitive">{0} päivää</unitPattern>
 				<perUnitPattern>{0} / päivä</perUnitPattern>
@@ -8440,10 +8622,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>tunnit</displayName>
 				<unitPattern count="one">{0} tunti</unitPattern>
 				<unitPattern count="one" case="elative">{0} tunnista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} tunnin</unitPattern>
 				<unitPattern count="one" case="illative">{0} tuntiin</unitPattern>
 				<unitPattern count="one" case="partitive">{0} tuntia</unitPattern>
 				<unitPattern count="other">{0} tuntia</unitPattern>
 				<unitPattern count="other" case="elative">{0} tunnista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} tunnin</unitPattern>
 				<unitPattern count="other" case="illative">{0} tuntiin</unitPattern>
 				<unitPattern count="other" case="partitive">{0} tuntia</unitPattern>
 				<perUnitPattern>{0} / tunti</perUnitPattern>
@@ -8452,10 +8636,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>minuutit</displayName>
 				<unitPattern count="one">{0} minuutti</unitPattern>
 				<unitPattern count="one" case="elative">{0} minuutista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} minuutin</unitPattern>
 				<unitPattern count="one" case="illative">{0} minuuttiin</unitPattern>
 				<unitPattern count="one" case="partitive">{0} minuuttia</unitPattern>
 				<unitPattern count="other">{0} minuuttia</unitPattern>
 				<unitPattern count="other" case="elative">{0} minuutista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} minuutin</unitPattern>
 				<unitPattern count="other" case="illative">{0} minuutista</unitPattern>
 				<unitPattern count="other" case="partitive">{0} minuuttia</unitPattern>
 				<perUnitPattern>{0} / minuutti</perUnitPattern>
@@ -8464,10 +8650,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>sekunnit</displayName>
 				<unitPattern count="one">{0} sekunti</unitPattern>
 				<unitPattern count="one" case="elative">{0} sekunnista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} sekunnin</unitPattern>
 				<unitPattern count="one" case="illative">{0} sekuntiin</unitPattern>
 				<unitPattern count="one" case="partitive">{0} sekuntia</unitPattern>
 				<unitPattern count="other">{0} sekuntia</unitPattern>
 				<unitPattern count="other" case="elative">{0} sekunnista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} sekunnin</unitPattern>
 				<unitPattern count="other" case="illative">{0} sekuntiin</unitPattern>
 				<unitPattern count="other" case="partitive">{0} sekuntia</unitPattern>
 				<perUnitPattern>{0} / sekunti</perUnitPattern>
@@ -8475,42 +8663,78 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="duration-millisecond">
 				<displayName>millisekunnit</displayName>
 				<unitPattern count="one">{0} millisekunti</unitPattern>
+				<unitPattern count="one" case="elative">{0} millisekunnista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} millisekunnin</unitPattern>
+				<unitPattern count="one" case="illative">{0} millisekuntiin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} millisekuntia</unitPattern>
 				<unitPattern count="other">{0} millisekuntia</unitPattern>
+				<unitPattern count="other" case="elative">{0} millisekunnista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} millisekunnin</unitPattern>
+				<unitPattern count="other" case="illative">{0} millisekuntiin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} millisekuntia</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
 				<displayName>mikrosekunnit</displayName>
 				<unitPattern count="one">{0} mikrosekunti</unitPattern>
+				<unitPattern count="one" case="elative">{0} mikrosekunnista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} mikrosekunnin</unitPattern>
+				<unitPattern count="one" case="illative">{0} mikrosekuntiin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} mikrosekuntia</unitPattern>
 				<unitPattern count="other">{0} mikrosekuntia</unitPattern>
+				<unitPattern count="other" case="elative">{0} mikrosekunnista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} mikrosekunnin</unitPattern>
+				<unitPattern count="other" case="illative">{0} mikrosekuntiin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} mikrosekuntia</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
 				<displayName>nanosekunnit</displayName>
 				<unitPattern count="one">{0} nanosekunti</unitPattern>
+				<unitPattern count="one" case="elative">{0} nanosekunnista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} nanosekunnin</unitPattern>
+				<unitPattern count="one" case="illative">{0} nanosekuntiin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} nanosekuntia</unitPattern>
 				<unitPattern count="other">{0} nanosekuntia</unitPattern>
+				<unitPattern count="other" case="elative">{0} nanosekunnista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} nanosekunnin</unitPattern>
+				<unitPattern count="other" case="illative">{0} nanosekuntiin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} nanosekuntia</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
 				<displayName>ampeerit</displayName>
 				<unitPattern count="one">{0} ampeeri</unitPattern>
 				<unitPattern count="one" case="elative">{0} ampeerista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ampeerin</unitPattern>
 				<unitPattern count="one" case="illative">{0} ampeeriin</unitPattern>
 				<unitPattern count="one" case="partitive">{0} ampeeria</unitPattern>
 				<unitPattern count="other">{0} ampeeria</unitPattern>
 				<unitPattern count="other" case="elative">{0} ampeerista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ampeerin</unitPattern>
 				<unitPattern count="other" case="illative">{0} ampeeriin</unitPattern>
 				<unitPattern count="other" case="partitive">{0} ampeeria</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
 				<displayName>milliampeerit</displayName>
 				<unitPattern count="one">{0} milliampeeri</unitPattern>
+				<unitPattern count="one" case="elative">{0} milliampeerista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} milliampeerin</unitPattern>
+				<unitPattern count="one" case="illative">{0} milliampeeriin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} milliampeeria</unitPattern>
 				<unitPattern count="other">{0} milliampeeria</unitPattern>
+				<unitPattern count="other" case="elative">{0} milliampeerista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} milliampeerin</unitPattern>
+				<unitPattern count="other" case="illative">{0} milliampeeriin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} milliampeeria</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
 				<displayName>ohmit</displayName>
 				<unitPattern count="one">{0} ohmi</unitPattern>
 				<unitPattern count="one" case="elative">{0} ohmista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ohmin</unitPattern>
 				<unitPattern count="one" case="illative">{0} ohmiin</unitPattern>
 				<unitPattern count="one" case="partitive">{0} ohmia</unitPattern>
 				<unitPattern count="other">{0} ohmia</unitPattern>
 				<unitPattern count="other" case="elative">{0} ohmista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ohmin</unitPattern>
 				<unitPattern count="other" case="illative">{0} ohmiin</unitPattern>
 				<unitPattern count="other" case="partitive">{0} ohmia</unitPattern>
 			</unit>
@@ -8518,10 +8742,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>voltit</displayName>
 				<unitPattern count="one">{0} voltti</unitPattern>
 				<unitPattern count="one" case="elative">{0} voltista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} voltin</unitPattern>
 				<unitPattern count="one" case="illative">{0} volttiin</unitPattern>
 				<unitPattern count="one" case="partitive">{0} volttia</unitPattern>
 				<unitPattern count="other">{0} volttia</unitPattern>
 				<unitPattern count="other" case="elative">{0} voltista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} voltin</unitPattern>
 				<unitPattern count="other" case="illative">{0} volttiin</unitPattern>
 				<unitPattern count="other" case="partitive">{0} volttia</unitPattern>
 			</unit>
@@ -8534,10 +8760,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>kalorit</displayName>
 				<unitPattern count="one">{0} kalori</unitPattern>
 				<unitPattern count="one" case="elative">{0} kalorista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kalorin</unitPattern>
 				<unitPattern count="one" case="illative">{0} kaloriin</unitPattern>
 				<unitPattern count="one" case="partitive">{0} kaloria</unitPattern>
 				<unitPattern count="other">{0} kaloria</unitPattern>
 				<unitPattern count="other" case="elative">{0} kalorista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kalorin</unitPattern>
 				<unitPattern count="other" case="illative">{0} kaloriin</unitPattern>
 				<unitPattern count="other" case="partitive">{0} kaloria</unitPattern>
 			</unit>
@@ -8549,23 +8777,41 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="energy-kilojoule">
 				<displayName>kilojoulet</displayName>
 				<unitPattern count="one">{0} kilojoule</unitPattern>
+				<unitPattern count="one" case="elative">{0} kilojoulesta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilojoulen</unitPattern>
+				<unitPattern count="one" case="illative">{0} kilojouleen</unitPattern>
+				<unitPattern count="one" case="partitive">{0} kilojoulea</unitPattern>
 				<unitPattern count="other">{0} kilojoulea</unitPattern>
+				<unitPattern count="other" case="elative">{0} kilojoulesta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilojoulen</unitPattern>
+				<unitPattern count="other" case="illative">{0} kilojouleen</unitPattern>
+				<unitPattern count="other" case="partitive">{0} kilojoulea</unitPattern>
 			</unit>
 			<unit type="energy-joule">
 				<displayName>joulet</displayName>
 				<unitPattern count="one">{0} joule</unitPattern>
 				<unitPattern count="one" case="elative">{0} joulesta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} joulen</unitPattern>
 				<unitPattern count="one" case="illative">{0} jouleen</unitPattern>
 				<unitPattern count="one" case="partitive">{0} joulea</unitPattern>
 				<unitPattern count="other">{0} joulea</unitPattern>
 				<unitPattern count="other" case="elative">{0} joulesta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} joulen</unitPattern>
 				<unitPattern count="other" case="illative">{0} jouleen</unitPattern>
 				<unitPattern count="other" case="partitive">{0} joulea</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
 				<displayName>kilowattitunnit</displayName>
 				<unitPattern count="one">{0} kilowattitunti</unitPattern>
+				<unitPattern count="one" case="elative">{0} kilowattitunnista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilowattitunnin</unitPattern>
+				<unitPattern count="one" case="illative">{0} kilowattituntiin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} kilowattituntia</unitPattern>
 				<unitPattern count="other">{0} kilowattituntia</unitPattern>
+				<unitPattern count="other" case="elative">{0} kilowattitunnista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilowattitunnin</unitPattern>
+				<unitPattern count="other" case="illative">{0} kilowattituntiin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} kilowattituntia</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
 				<displayName>elektronivoltit</displayName>
@@ -8586,52 +8832,90 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>newtonit</displayName>
 				<unitPattern count="one">{0} newton</unitPattern>
 				<unitPattern count="one" case="elative">{0} newtonista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} newtonin</unitPattern>
 				<unitPattern count="one" case="illative">{0} newtoniin</unitPattern>
 				<unitPattern count="one" case="partitive">{0} newtonia</unitPattern>
 				<unitPattern count="other">{0} newtonia</unitPattern>
 				<unitPattern count="other" case="elative">{0} newtonista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} newtonin</unitPattern>
 				<unitPattern count="other" case="illative">{0} newtoniin</unitPattern>
 				<unitPattern count="other" case="partitive">{0} newtonia</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
-				<displayName>kilowattitunnit 100 kilometrillä</displayName>
+				<displayName>kilowattitunnit / 100 kilometriä</displayName>
 				<unitPattern count="one">{0} kilowattitunti 100 kilometrillä</unitPattern>
+				<unitPattern count="one" case="elative">{0} kilowattitunnista / 100 km</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilowattitunnin / 100 km</unitPattern>
+				<unitPattern count="one" case="illative">{0} kilowattituntiin / 100 km</unitPattern>
+				<unitPattern count="one" case="partitive">{0} kilowattituntia / 100 km</unitPattern>
 				<unitPattern count="other">{0} kilowattituntia 100 kilometrillä</unitPattern>
+				<unitPattern count="other" case="elative">{0} kilowattitunnista / 100 km</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilowattitunnin / 100 km</unitPattern>
+				<unitPattern count="other" case="illative">{0} kilowattituntiin / 100 km</unitPattern>
+				<unitPattern count="other" case="partitive">{0} kilowattituntia / 100 km</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>gigahertsit</displayName>
 				<unitPattern count="one">{0} gigahertsi</unitPattern>
+				<unitPattern count="one" case="elative">{0} gigahertsistä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} gigahertsin</unitPattern>
+				<unitPattern count="one" case="illative">{0} gigahertsiin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} gigahertsiä</unitPattern>
 				<unitPattern count="other">{0} gigahertsiä</unitPattern>
+				<unitPattern count="other" case="elative">{0} gigahertsistä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} gigahertsin</unitPattern>
+				<unitPattern count="other" case="illative">{0} gigahertsiin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} gigahertsiä</unitPattern>
 			</unit>
 			<unit type="frequency-megahertz">
 				<displayName>megahertsit</displayName>
 				<unitPattern count="one">{0} megahertsi</unitPattern>
+				<unitPattern count="one" case="elative">{0} megahertsistä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megahertsin</unitPattern>
+				<unitPattern count="one" case="illative">{0} megahertsiin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} megahertsiä</unitPattern>
 				<unitPattern count="other">{0} megahertsiä</unitPattern>
+				<unitPattern count="other" case="elative">{0} megahertsistä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} megahertsin</unitPattern>
+				<unitPattern count="other" case="illative">{0} megahertsiin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} megahertsiä</unitPattern>
 			</unit>
 			<unit type="frequency-kilohertz">
 				<displayName>kilohertsit</displayName>
 				<unitPattern count="one">{0} kilohertsi</unitPattern>
+				<unitPattern count="one" case="elative">{0} kilohertsistä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilohertsin</unitPattern>
+				<unitPattern count="one" case="illative">{0} kilohertsiin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} kilohertsiä</unitPattern>
 				<unitPattern count="other">{0} kilohertsiä</unitPattern>
+				<unitPattern count="other" case="elative">{0} kilohertsistä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilohertsin</unitPattern>
+				<unitPattern count="other" case="illative">{0} kilohertsiin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} kilohertsiä</unitPattern>
 			</unit>
 			<unit type="frequency-hertz">
 				<displayName>hertsit</displayName>
 				<unitPattern count="one">{0} hertsi</unitPattern>
 				<unitPattern count="one" case="elative">{0} hertsistä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} hertsin</unitPattern>
 				<unitPattern count="one" case="illative">{0} hertsiin</unitPattern>
 				<unitPattern count="one" case="partitive">{0} hertsiä</unitPattern>
 				<unitPattern count="other">{0} hertsiä</unitPattern>
 				<unitPattern count="other" case="elative">{0} hertsistä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} hertsin</unitPattern>
 				<unitPattern count="other" case="illative">{0} hertsiin</unitPattern>
 				<unitPattern count="other" case="partitive">{0} hertsiä</unitPattern>
 			</unit>
 			<unit type="graphics-em">
 				<displayName>em-väli</displayName>
-				<unitPattern count="one">{0} em</unitPattern>
+				<unitPattern count="one">{0} em-väli</unitPattern>
 				<unitPattern count="one" case="elative">{0} em-välistä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} em-välin</unitPattern>
 				<unitPattern count="one" case="illative">{0} em-väliin</unitPattern>
 				<unitPattern count="one" case="partitive">{0} em-väliä</unitPattern>
 				<unitPattern count="other">{0} em-väliä</unitPattern>
 				<unitPattern count="other" case="elative">{0} em-välistä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} em-välin</unitPattern>
 				<unitPattern count="other" case="illative">{0} em-väliin</unitPattern>
 				<unitPattern count="other" case="partitive">{0} em-väliä</unitPattern>
 			</unit>
@@ -8639,12 +8923,45 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>pikselit</displayName>
 				<unitPattern count="one">{0} pikseli</unitPattern>
 				<unitPattern count="one" case="elative">{0} pikselistä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} pikselin</unitPattern>
 				<unitPattern count="one" case="illative">{0} pikseliin</unitPattern>
 				<unitPattern count="one" case="partitive">{0} pikseliä</unitPattern>
 				<unitPattern count="other">{0} pikseliä</unitPattern>
 				<unitPattern count="other" case="elative">{0} pikselistä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} pikselin</unitPattern>
 				<unitPattern count="other" case="illative">{0} pikseliin</unitPattern>
 				<unitPattern count="other" case="partitive">{0} pikseliä</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>megapikselit</displayName>
+				<unitPattern count="one">{0} megapikseliä</unitPattern>
+				<unitPattern count="one" case="elative">{0} megapikselistä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megapikselin</unitPattern>
+				<unitPattern count="one" case="illative">{0} megapikseliin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} megapikseliä</unitPattern>
+				<unitPattern count="other">{0} megapikseliä</unitPattern>
+				<unitPattern count="other" case="elative">{0} megapikselistä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} megapikselin</unitPattern>
+				<unitPattern count="other" case="illative">{0} megapikseliin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} megapikseliä</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>pikselit/senttimetri</displayName>
+				<unitPattern count="one">{0} pikseli / senttimetri</unitPattern>
+				<unitPattern count="one" case="elative">{0} pikselistä / senttimetri</unitPattern>
+				<unitPattern count="one" case="genitive">{0} pikselin / senttimetri</unitPattern>
+				<unitPattern count="one" case="illative">{0} pikseliin / senttimetri</unitPattern>
+				<unitPattern count="one" case="partitive">{0} pikseliä / senttimetri</unitPattern>
+				<unitPattern count="other">{0} pikseliä / senttimetri</unitPattern>
+				<unitPattern count="other" case="elative">{0} pikselistä / senttimetri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} pikselin / senttimetri</unitPattern>
+				<unitPattern count="other" case="illative">{0} pikseliin / senttimetri</unitPattern>
+				<unitPattern count="other" case="partitive">{0} pikseliä / senttimetri</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>dpi</displayName>
+				<unitPattern count="one">{0} dpi</unitPattern>
+				<unitPattern count="other">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
 				<displayName>piste</displayName>
@@ -8659,51 +8976,109 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="length-kilometer">
 				<displayName>kilometrit</displayName>
 				<unitPattern count="one">{0} kilometri</unitPattern>
+				<unitPattern count="one" case="elative">{0} kilometristä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilometrin</unitPattern>
+				<unitPattern count="one" case="illative">{0} kilometriin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} kilometriä</unitPattern>
 				<unitPattern count="other">{0} kilometriä</unitPattern>
+				<unitPattern count="other" case="elative">{0} kilometristä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilometrin</unitPattern>
+				<unitPattern count="other" case="illative">{0} kilometriin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} kilometriä</unitPattern>
 				<perUnitPattern>{0} / kilometri</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>metrit</displayName>
 				<unitPattern count="one">{0} metri</unitPattern>
-				<unitPattern count="one" case="elative" draft="contributed">{0} metristä</unitPattern>
-				<unitPattern count="one" case="illative" draft="contributed">{0} metriin</unitPattern>
-				<unitPattern count="one" case="partitive" draft="contributed">{0} metriä</unitPattern>
+				<unitPattern count="one" case="elative">{0} metristä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} metrin</unitPattern>
+				<unitPattern count="one" case="illative">{0} metriin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} metriä</unitPattern>
 				<unitPattern count="other">{0} metriä</unitPattern>
-				<unitPattern count="other" case="elative" draft="contributed">{0} metristä</unitPattern>
-				<unitPattern count="other" case="illative" draft="contributed">{0} metriin</unitPattern>
-				<unitPattern count="other" case="partitive" draft="contributed">{0} metriä</unitPattern>
+				<unitPattern count="other" case="elative">{0} metristä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} metrin</unitPattern>
+				<unitPattern count="other" case="illative">{0} metriin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} metriä</unitPattern>
 				<perUnitPattern>{0} / metri</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
 				<displayName>desimetrit</displayName>
 				<unitPattern count="one">{0} desimetri</unitPattern>
+				<unitPattern count="one" case="elative">{0} desimetristä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} desimetrin</unitPattern>
+				<unitPattern count="one" case="illative">{0} desimetriin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} desimetriä</unitPattern>
 				<unitPattern count="other">{0} desimetriä</unitPattern>
+				<unitPattern count="other" case="elative">{0} desimetristä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} desimetrin</unitPattern>
+				<unitPattern count="other" case="illative">{0} desimetriin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} desimetriä</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName>senttimetrit</displayName>
 				<unitPattern count="one">{0} senttimetri</unitPattern>
+				<unitPattern count="one" case="elative">{0} senttimetristä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} senttimetrin</unitPattern>
+				<unitPattern count="one" case="illative">{0} senttimetriin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} senttimetriä</unitPattern>
 				<unitPattern count="other">{0} senttimetriä</unitPattern>
+				<unitPattern count="other" case="elative">{0} senttimetristä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} senttimetrin</unitPattern>
+				<unitPattern count="other" case="illative">{0} senttimetriin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} senttimetriä</unitPattern>
 				<perUnitPattern>{0} / senttimetri</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>millimetrit</displayName>
 				<unitPattern count="one">{0} millimetri</unitPattern>
+				<unitPattern count="one" case="elative">{0} millimetristä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} millimetrin</unitPattern>
+				<unitPattern count="one" case="illative">{0} millimetriin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} millimetrin</unitPattern>
 				<unitPattern count="other">{0} millimetriä</unitPattern>
+				<unitPattern count="other" case="elative">{0} millimetristä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} millimetrin</unitPattern>
+				<unitPattern count="other" case="illative">{0} millimetriin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} millimetriä</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
 				<displayName>mikrometrit</displayName>
 				<unitPattern count="one">{0} mikrometri</unitPattern>
+				<unitPattern count="one" case="elative">{0} mikrometristä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} mikrometrin</unitPattern>
+				<unitPattern count="one" case="illative">{0} mikrometriin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} mikrometriä</unitPattern>
 				<unitPattern count="other">{0} mikrometriä</unitPattern>
+				<unitPattern count="other" case="elative">{0} mikrometristä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} mikrometrin</unitPattern>
+				<unitPattern count="other" case="illative">{0} mikrometriin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} mikrometriä</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
 				<displayName>nanometrit</displayName>
 				<unitPattern count="one">{0} nanometri</unitPattern>
+				<unitPattern count="one" case="elative">{0} nanometristä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} nanometrin</unitPattern>
+				<unitPattern count="one" case="illative">{0} nanometriin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} nanometriä</unitPattern>
 				<unitPattern count="other">{0} nanometriä</unitPattern>
+				<unitPattern count="other" case="elative">{0} nanometristä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} nanometrin</unitPattern>
+				<unitPattern count="other" case="illative">{0} nanometriin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} nanometriä</unitPattern>
 			</unit>
 			<unit type="length-picometer">
 				<displayName>pikometrit</displayName>
 				<unitPattern count="one">{0} pikometri</unitPattern>
+				<unitPattern count="one" case="elative">{0} pikometristä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} pikometrin</unitPattern>
+				<unitPattern count="one" case="illative">{0} pikometriin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} pikometriä</unitPattern>
 				<unitPattern count="other">{0} pikometriä</unitPattern>
+				<unitPattern count="other" case="elative">{0} pikometristä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} pikometrin</unitPattern>
+				<unitPattern count="other" case="illative">{0} pikometriin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} pikometriä</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<displayName>mailit</displayName>
@@ -8761,10 +9136,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>peninkulmat</displayName>
 				<unitPattern count="one">{0} peninkulma</unitPattern>
 				<unitPattern count="one" case="elative">{0} peninkulmasta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} peninkulman</unitPattern>
 				<unitPattern count="one" case="illative">{0} peninkulmaan</unitPattern>
 				<unitPattern count="one" case="partitive">{0} peninkulmaa</unitPattern>
 				<unitPattern count="other">{0} peninkulmaa</unitPattern>
 				<unitPattern count="other" case="elative">{0} peninkulmasta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} peninkulman</unitPattern>
 				<unitPattern count="other" case="illative">{0} peninkulmaan</unitPattern>
 				<unitPattern count="other" case="partitive">{0} peninkulmaa</unitPattern>
 			</unit>
@@ -8782,10 +9159,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>luksit</displayName>
 				<unitPattern count="one">{0} luksi</unitPattern>
 				<unitPattern count="one" case="elative">{0} luksista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} luksin</unitPattern>
 				<unitPattern count="one" case="illative">{0} luksiin</unitPattern>
 				<unitPattern count="one" case="partitive">{0} luksia</unitPattern>
 				<unitPattern count="other">{0} luksia</unitPattern>
 				<unitPattern count="other" case="elative">{0} luksista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} luksin</unitPattern>
 				<unitPattern count="other" case="illative">{0} luksiin</unitPattern>
 				<unitPattern count="other" case="partitive">{0} luksia</unitPattern>
 			</unit>
@@ -8793,10 +9172,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>kandelat</displayName>
 				<unitPattern count="one">{0} kandela</unitPattern>
 				<unitPattern count="one" case="elative">{0} kandelasta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kandelan</unitPattern>
 				<unitPattern count="one" case="illative">{0} kandelaan</unitPattern>
 				<unitPattern count="one" case="partitive">{0} kandelaa</unitPattern>
 				<unitPattern count="other">{0} kandelaa</unitPattern>
 				<unitPattern count="other" case="elative">{0} kandelasta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kandelan</unitPattern>
 				<unitPattern count="other" case="illative">{0} kandelaan</unitPattern>
 				<unitPattern count="other" case="partitive">{0} kandelaa</unitPattern>
 			</unit>
@@ -8804,10 +9185,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>luumenit</displayName>
 				<unitPattern count="one">{0} luumen</unitPattern>
 				<unitPattern count="one" case="elative">{0} luumenista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} luumenin</unitPattern>
 				<unitPattern count="one" case="illative">{0} luumeniin</unitPattern>
 				<unitPattern count="one" case="partitive">{0} luumenia</unitPattern>
 				<unitPattern count="other">{0} luumenia</unitPattern>
 				<unitPattern count="other" case="elative">{0} luumenista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} luumenin</unitPattern>
 				<unitPattern count="other" case="illative">{0} luumeniin</unitPattern>
 				<unitPattern count="other" case="partitive">{0} luumenia</unitPattern>
 			</unit>
@@ -8820,10 +9203,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>tonnit</displayName>
 				<unitPattern count="one">{0} tonni</unitPattern>
 				<unitPattern count="one" case="elative">{0} tonnista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} tonnin</unitPattern>
 				<unitPattern count="one" case="illative">{0} tonniin</unitPattern>
 				<unitPattern count="one" case="partitive">{0} tonnia</unitPattern>
 				<unitPattern count="other">{0} tonnia</unitPattern>
 				<unitPattern count="other" case="elative">{0} tonnista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} tonnin</unitPattern>
 				<unitPattern count="other" case="illative">{0} tonniin</unitPattern>
 				<unitPattern count="other" case="partitive">{0} tonnia</unitPattern>
 			</unit>
@@ -8831,10 +9216,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>kilogrammat</displayName>
 				<unitPattern count="one">{0} kilogramma</unitPattern>
 				<unitPattern count="one" case="elative">{0} kilogrammasta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilogramman</unitPattern>
 				<unitPattern count="one" case="illative">{0} kilogrammaan</unitPattern>
 				<unitPattern count="one" case="partitive">{0} kilogrammaa</unitPattern>
 				<unitPattern count="other">{0} kilogrammaa</unitPattern>
 				<unitPattern count="other" case="elative">{0} kilogrammasta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilogramman</unitPattern>
 				<unitPattern count="other" case="illative">{0} kilogrammaan</unitPattern>
 				<unitPattern count="other" case="partitive">{0} kilogrammaa</unitPattern>
 				<perUnitPattern>{0} / kilogramma</perUnitPattern>
@@ -8843,10 +9230,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>grammat</displayName>
 				<unitPattern count="one">{0} gramma</unitPattern>
 				<unitPattern count="one" case="elative">{0} grammasta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} gramman</unitPattern>
 				<unitPattern count="one" case="illative">{0} grammaan</unitPattern>
 				<unitPattern count="one" case="partitive">{0} grammaa</unitPattern>
 				<unitPattern count="other">{0} grammaa</unitPattern>
 				<unitPattern count="other" case="elative">{0} grammasta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} gramman</unitPattern>
 				<unitPattern count="other" case="illative">{0} grammaan</unitPattern>
 				<unitPattern count="other" case="partitive">{0} grammaa</unitPattern>
 				<perUnitPattern>{0} / gramma</perUnitPattern>
@@ -8854,12 +9243,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="mass-milligram">
 				<displayName>milligrammat</displayName>
 				<unitPattern count="one">{0} milligramma</unitPattern>
+				<unitPattern count="one" case="elative">{0} milligrammasta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} milligramman</unitPattern>
+				<unitPattern count="one" case="illative">{0} milligrammaan</unitPattern>
+				<unitPattern count="one" case="partitive">{0} milligrammaa</unitPattern>
 				<unitPattern count="other">{0} milligrammaa</unitPattern>
+				<unitPattern count="other" case="elative">{0} milligrammasta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} milligramman</unitPattern>
+				<unitPattern count="other" case="illative">{0} milligrammaan</unitPattern>
+				<unitPattern count="other" case="partitive">{0} milligrammaa</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
 				<displayName>mikrogrammat</displayName>
 				<unitPattern count="one">{0} mikrogramma</unitPattern>
+				<unitPattern count="one" case="elative">{0} mikrogrammasta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} mikrogramman</unitPattern>
+				<unitPattern count="one" case="illative">{0} mikrogrammaan</unitPattern>
+				<unitPattern count="one" case="partitive">{0} mikrogrammaa</unitPattern>
 				<unitPattern count="other">{0} mikrogrammaa</unitPattern>
+				<unitPattern count="other" case="elative">{0} mikrogrammasta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} mikrogramman</unitPattern>
+				<unitPattern count="other" case="illative">{0} mikrogrammaan</unitPattern>
+				<unitPattern count="other" case="partitive">{0} mikrogrammaa</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>am. tonnit</displayName>
@@ -8892,10 +9297,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>karaatit</displayName>
 				<unitPattern count="one">{0} karaatti</unitPattern>
 				<unitPattern count="one" case="elative">{0} karaatista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} karaatin</unitPattern>
 				<unitPattern count="one" case="illative">{0} karaattiin</unitPattern>
 				<unitPattern count="one" case="partitive">{0} karaattia</unitPattern>
 				<unitPattern count="other">{0} karaattia</unitPattern>
 				<unitPattern count="other" case="elative">{0} karaatista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} karaatin</unitPattern>
 				<unitPattern count="other" case="illative">{0} karaattiin</unitPattern>
 				<unitPattern count="other" case="partitive">{0} karaattia</unitPattern>
 			</unit>
@@ -8922,33 +9329,67 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="power-gigawatt">
 				<displayName>gigawatit</displayName>
 				<unitPattern count="one">{0} gigawatti</unitPattern>
+				<unitPattern count="one" case="elative">{0} gigawatista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} gigawatin</unitPattern>
+				<unitPattern count="one" case="illative">{0} gigawattiin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} gigawattia</unitPattern>
 				<unitPattern count="other">{0} gigawattia</unitPattern>
+				<unitPattern count="other" case="elative">{0} gigawatista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} gigawatin</unitPattern>
+				<unitPattern count="other" case="illative">{0} gigawattiin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} gigawattia</unitPattern>
 			</unit>
 			<unit type="power-megawatt">
 				<displayName>megawatit</displayName>
 				<unitPattern count="one">{0} megawatti</unitPattern>
+				<unitPattern count="one" case="elative">{0} megawatista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megawatin</unitPattern>
+				<unitPattern count="one" case="illative">{0} megawattiin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} megawattia</unitPattern>
 				<unitPattern count="other">{0} megawattia</unitPattern>
+				<unitPattern count="other" case="elative">{0} megawatista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} megawatin</unitPattern>
+				<unitPattern count="other" case="illative">{0} megawattiin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} megawattia</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
 				<displayName>kilowatit</displayName>
 				<unitPattern count="one">{0} kilowatti</unitPattern>
+				<unitPattern count="one" case="elative">{0} kilowatista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilowatin</unitPattern>
+				<unitPattern count="one" case="illative">{0} kilowattiin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} kilowattia</unitPattern>
 				<unitPattern count="other">{0} kilowattia</unitPattern>
+				<unitPattern count="other" case="elative">{0} kilowatista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilowatin</unitPattern>
+				<unitPattern count="other" case="illative">{0} kilowattiin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} kilowattia</unitPattern>
 			</unit>
 			<unit type="power-watt">
 				<displayName>watit</displayName>
 				<unitPattern count="one">{0} watti</unitPattern>
 				<unitPattern count="one" case="elative">{0} watista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} watin</unitPattern>
 				<unitPattern count="one" case="illative">{0} wattiin</unitPattern>
 				<unitPattern count="one" case="partitive">{0} wattia</unitPattern>
 				<unitPattern count="other">{0} wattia</unitPattern>
 				<unitPattern count="other" case="elative">{0} watista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} watin</unitPattern>
 				<unitPattern count="other" case="illative">{0} wattiin</unitPattern>
 				<unitPattern count="other" case="partitive">{0} wattia</unitPattern>
 			</unit>
 			<unit type="power-milliwatt">
 				<displayName>milliwatit</displayName>
 				<unitPattern count="one">{0} milliwatti</unitPattern>
+				<unitPattern count="one" case="elative">{0} milliwatista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} milliwatin</unitPattern>
+				<unitPattern count="one" case="illative">{0} milliwattiin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} milliwattia</unitPattern>
 				<unitPattern count="other">{0} milliwattia</unitPattern>
+				<unitPattern count="other" case="elative">{0} milliwatista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} milliwatin</unitPattern>
+				<unitPattern count="other" case="illative">{0} milliwattiin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} milliwattia</unitPattern>
 			</unit>
 			<unit type="power-horsepower">
 				<displayName>hevosvoimat</displayName>
@@ -8974,26 +9415,38 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>baarit</displayName>
 				<unitPattern count="one">{0} baari</unitPattern>
 				<unitPattern count="one" case="elative">{0} baarista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} baarin</unitPattern>
 				<unitPattern count="one" case="illative">{0} baariin</unitPattern>
 				<unitPattern count="one" case="partitive">{0} baaria</unitPattern>
 				<unitPattern count="other">{0} baaria</unitPattern>
 				<unitPattern count="other" case="elative">{0} baarista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} baarin</unitPattern>
 				<unitPattern count="other" case="illative">{0} baariin</unitPattern>
 				<unitPattern count="other" case="partitive">{0} baaria</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
 				<displayName>millibaarit</displayName>
 				<unitPattern count="one">{0} millibaari</unitPattern>
+				<unitPattern count="one" case="elative">{0} millibaarista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} millibaarin</unitPattern>
+				<unitPattern count="one" case="illative">{0} millibaariin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} millibaaria</unitPattern>
 				<unitPattern count="other">{0} millibaaria</unitPattern>
+				<unitPattern count="other" case="elative">{0} millibaarista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} millibaarin</unitPattern>
+				<unitPattern count="other" case="illative">{0} millibaariin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} millibaaria</unitPattern>
 			</unit>
 			<unit type="pressure-atmosphere">
 				<displayName>normaali-ilmakehät</displayName>
 				<unitPattern count="one">{0} normaali-ilmakehä</unitPattern>
 				<unitPattern count="one" case="elative">{0} normaali-ilmakehästä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} normaali-ilmakehän</unitPattern>
 				<unitPattern count="one" case="illative">{0} normaali-ilmakehään</unitPattern>
 				<unitPattern count="one" case="partitive">{0} normaali-ilmakehää</unitPattern>
 				<unitPattern count="other">{0} normaali-ilmakehää</unitPattern>
 				<unitPattern count="other" case="elative">{0} normaali-ilmakehästä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} normaali-ilmakehän</unitPattern>
 				<unitPattern count="other" case="illative">{0} normaali-ilmakehään</unitPattern>
 				<unitPattern count="other" case="partitive">{0} normaali-ilmakehää</unitPattern>
 			</unit>
@@ -9001,37 +9454,79 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>pascalit</displayName>
 				<unitPattern count="one">{0} pascal</unitPattern>
 				<unitPattern count="one" case="elative">{0} pascalista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} pascalin</unitPattern>
 				<unitPattern count="one" case="illative">{0} pascaliin</unitPattern>
 				<unitPattern count="one" case="partitive">{0} pascalia</unitPattern>
 				<unitPattern count="other">{0} pascalia</unitPattern>
 				<unitPattern count="other" case="elative">{0} pascalista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} pascalin</unitPattern>
 				<unitPattern count="other" case="illative">{0} pascaliin</unitPattern>
 				<unitPattern count="other" case="partitive">{0} pascalia</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
 				<displayName>hehtopascalit</displayName>
 				<unitPattern count="one">{0} hehtopascal</unitPattern>
+				<unitPattern count="one" case="elative">{0} hehtopascalista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} hehtopascalin</unitPattern>
+				<unitPattern count="one" case="illative">{0} hehtopascaliin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} hehtopascalia</unitPattern>
 				<unitPattern count="other">{0} hehtopascalia</unitPattern>
+				<unitPattern count="other" case="elative">{0} hehtopascalista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} hehtopascalin</unitPattern>
+				<unitPattern count="other" case="illative">{0} hehtopascaliin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} hehtopascalia</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
 				<displayName>kilopascalit</displayName>
 				<unitPattern count="one">{0} kilopascal</unitPattern>
+				<unitPattern count="one" case="elative">{0} kilopascalista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilopascalin</unitPattern>
+				<unitPattern count="one" case="illative">{0} kilopascaliin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} kilopascalia</unitPattern>
 				<unitPattern count="other">{0} kilopascalia</unitPattern>
+				<unitPattern count="other" case="elative">{0} kilopascalista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilopascalin</unitPattern>
+				<unitPattern count="other" case="illative">{0} kilopascaliin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} kilopascalia</unitPattern>
 			</unit>
 			<unit type="pressure-megapascal">
 				<displayName>megapascalit</displayName>
 				<unitPattern count="one">{0} megapascal</unitPattern>
+				<unitPattern count="one" case="elative">{0} megapascalista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megapascalin</unitPattern>
+				<unitPattern count="one" case="illative">{0} megapascaliin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} megapascalia</unitPattern>
 				<unitPattern count="other">{0} megapascalia</unitPattern>
+				<unitPattern count="other" case="elative">{0} megapascalista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} megapascalin</unitPattern>
+				<unitPattern count="other" case="illative">{0} megapascaliin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} megapascalia</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>kilometrit tunnissa</displayName>
 				<unitPattern count="one">{0} kilometri tunnissa</unitPattern>
+				<unitPattern count="one" case="elative">{0} kilometristä tunnissa</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilometrin tunnissa</unitPattern>
+				<unitPattern count="one" case="illative">{0} kilometriin tunnissa</unitPattern>
+				<unitPattern count="one" case="partitive">{0} kilometriä tunnissa</unitPattern>
 				<unitPattern count="other">{0} kilometriä tunnissa</unitPattern>
+				<unitPattern count="other" case="elative">{0} kilometristä tunnissa</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilometrin tunnissa</unitPattern>
+				<unitPattern count="other" case="illative">{0} kilometriin tunnissa</unitPattern>
+				<unitPattern count="other" case="partitive">{0} kilometriä tunnissa</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
 				<displayName>metrit sekunnissa</displayName>
 				<unitPattern count="one">{0} metri sekunnissa</unitPattern>
+				<unitPattern count="one" case="elative">{0} metristä sekunnissa</unitPattern>
+				<unitPattern count="one" case="genitive">{0} metrin sekunnissa</unitPattern>
+				<unitPattern count="one" case="illative">{0} metriin sekunnissa</unitPattern>
+				<unitPattern count="one" case="partitive">{0} metriä sekunnissa</unitPattern>
 				<unitPattern count="other">{0} metriä sekunnissa</unitPattern>
+				<unitPattern count="other" case="elative">{0} metristä sekunnissa</unitPattern>
+				<unitPattern count="other" case="genitive">{0} metrin sekunnissa</unitPattern>
+				<unitPattern count="other" case="illative">{0} metriin sekunnissa</unitPattern>
+				<unitPattern count="other" case="partitive">{0} metriä sekunnissa</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
 				<displayName>mailit tunnissa</displayName>
@@ -9047,10 +9542,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>asteet</displayName>
 				<unitPattern count="one">{0} aste</unitPattern>
 				<unitPattern count="one" case="elative">{0} asteesta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} asteen</unitPattern>
 				<unitPattern count="one" case="illative">{0} asteeseen</unitPattern>
 				<unitPattern count="one" case="partitive">{0} astetta</unitPattern>
 				<unitPattern count="other">{0} astetta</unitPattern>
 				<unitPattern count="other" case="elative">{0} asteesta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} asteen</unitPattern>
 				<unitPattern count="other" case="illative">{0} asteeseen</unitPattern>
 				<unitPattern count="other" case="partitive">{0} astetta</unitPattern>
 			</unit>
@@ -9058,10 +9555,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>celsiusasteet</displayName>
 				<unitPattern count="one">{0} celsiusaste</unitPattern>
 				<unitPattern count="one" case="elative">{0} celsiusasteesta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} celsiusasteen</unitPattern>
 				<unitPattern count="one" case="illative">{0} celsiusasteeseen</unitPattern>
 				<unitPattern count="one" case="partitive">{0} celsiusastetta</unitPattern>
 				<unitPattern count="other">{0} celsiusastetta</unitPattern>
 				<unitPattern count="other" case="elative">{0} celsiusasteesta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} celsiusasteen</unitPattern>
 				<unitPattern count="other" case="illative">{0} celsiusasteeseen</unitPattern>
 				<unitPattern count="other" case="partitive">{0} celsiusastetta</unitPattern>
 			</unit>
@@ -9074,10 +9573,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>kelvinit</displayName>
 				<unitPattern count="one">{0} kelvin</unitPattern>
 				<unitPattern count="one" case="elative">{0} kelvinistä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kelvinin</unitPattern>
 				<unitPattern count="one" case="illative">{0} kelviniin</unitPattern>
 				<unitPattern count="one" case="partitive">{0} kelviniä</unitPattern>
 				<unitPattern count="other">{0} kelviniä</unitPattern>
 				<unitPattern count="other" case="elative">{0} kelvinistä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kelvinin</unitPattern>
 				<unitPattern count="other" case="illative">{0} kelviniin</unitPattern>
 				<unitPattern count="other" case="partitive">{0} kelviniä</unitPattern>
 			</unit>
@@ -9089,23 +9590,55 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="torque-newton-meter">
 				<displayName>newtonmetrit</displayName>
 				<unitPattern count="one">{0} newtonmetri</unitPattern>
+				<unitPattern count="one" case="elative">{0} newtonmetristä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} newtonmetrin</unitPattern>
+				<unitPattern count="one" case="illative">{0} newtonmetriin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} newtonmetriä</unitPattern>
 				<unitPattern count="other">{0} newtonmetriä</unitPattern>
+				<unitPattern count="other" case="elative">{0} newtonmetristä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} newtonmetrin</unitPattern>
+				<unitPattern count="other" case="illative">{0} newtonmetriin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} newtonmetriä</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>kuutiokilometrit</displayName>
 				<unitPattern count="one">{0} kuutiokilometri</unitPattern>
+				<unitPattern count="one" case="elative">{0} kuutiokilometristä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kuutiokilometrin</unitPattern>
+				<unitPattern count="one" case="illative">{0} kuutiokilometriin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} kuutiokilometriä</unitPattern>
 				<unitPattern count="other">{0} kuutiokilometriä</unitPattern>
+				<unitPattern count="other" case="elative">{0} kuutiokilometristä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kuutiokilometrin</unitPattern>
+				<unitPattern count="other" case="illative">{0} kuutiokilometriin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} kuutiokilometriä</unitPattern>
 			</unit>
 			<unit type="volume-cubic-meter">
 				<displayName>kuutiometrit</displayName>
 				<unitPattern count="one">{0} kuutiometri</unitPattern>
+				<unitPattern count="one" case="elative">{0} kuutiometristä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kuutiometrin</unitPattern>
+				<unitPattern count="one" case="illative">{0} kuutiometriin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} kuutiometriä</unitPattern>
 				<unitPattern count="other">{0} kuutiometriä</unitPattern>
+				<unitPattern count="other" case="elative">{0} kuutiometristä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kuutiometrin</unitPattern>
+				<unitPattern count="other" case="illative">{0} kuutiometriin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} kuutiometriä</unitPattern>
 				<perUnitPattern>{0} / kuutiometri</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
 				<displayName>kuutiosenttimetrit</displayName>
 				<unitPattern count="one">{0} kuutiosenttimetri</unitPattern>
+				<unitPattern count="one" case="elative">{0} kuutiosenttimetristä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kuutiosenttimetrin</unitPattern>
+				<unitPattern count="one" case="illative">{0} kuutiosenttimetriin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} kuutiosenttimetriä</unitPattern>
 				<unitPattern count="other">{0} kuutiosenttimetriä</unitPattern>
+				<unitPattern count="other" case="elative">{0} kuutiosenttimetristä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kuutiosenttimetrin</unitPattern>
+				<unitPattern count="other" case="illative">{0} kuutiosenttimetriin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} kuutiosenttimetriä</unitPattern>
 				<perUnitPattern>{0} / kuutiosenttimetri</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
@@ -9131,21 +9664,39 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="volume-megaliter">
 				<displayName>megalitrat</displayName>
 				<unitPattern count="one">{0} megalitra</unitPattern>
+				<unitPattern count="one" case="elative">{0} megalitrasta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} megalitran</unitPattern>
+				<unitPattern count="one" case="illative">{0} megalitraan</unitPattern>
+				<unitPattern count="one" case="partitive">{0} megalitraa</unitPattern>
 				<unitPattern count="other">{0} megalitraa</unitPattern>
+				<unitPattern count="other" case="elative">{0} megalitrasta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} megalitran</unitPattern>
+				<unitPattern count="other" case="illative">{0} megalitraan</unitPattern>
+				<unitPattern count="other" case="partitive">{0} megalitraa</unitPattern>
 			</unit>
 			<unit type="volume-hectoliter">
 				<displayName>hehtolitrat</displayName>
 				<unitPattern count="one">{0} hehtolitra</unitPattern>
+				<unitPattern count="one" case="elative">{0} hehtolitrasta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} hehtolitran</unitPattern>
+				<unitPattern count="one" case="illative">{0} hehtolitraan</unitPattern>
+				<unitPattern count="one" case="partitive">{0} hehtolitraa</unitPattern>
 				<unitPattern count="other">{0} hehtolitraa</unitPattern>
+				<unitPattern count="other" case="elative">{0} hehtolitrasta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} hehtolitran</unitPattern>
+				<unitPattern count="other" case="illative">{0} hehtolitraan</unitPattern>
+				<unitPattern count="other" case="partitive">{0} hehtolitraa</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>litrat</displayName>
 				<unitPattern count="one">{0} litra</unitPattern>
 				<unitPattern count="one" case="elative">{0} litrasta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} litran</unitPattern>
 				<unitPattern count="one" case="illative">{0} litraan</unitPattern>
 				<unitPattern count="one" case="partitive">{0} litraa</unitPattern>
 				<unitPattern count="other">{0} litraa</unitPattern>
 				<unitPattern count="other" case="elative">{0} litrasta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} litran</unitPattern>
 				<unitPattern count="other" case="illative">{0} litraan</unitPattern>
 				<unitPattern count="other" case="partitive">{0} litraa</unitPattern>
 				<perUnitPattern>{0} / litra</perUnitPattern>
@@ -9153,26 +9704,52 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="volume-deciliter">
 				<displayName>desilitrat</displayName>
 				<unitPattern count="one">{0} desilitra</unitPattern>
+				<unitPattern count="one" case="elative">{0} desilitrasta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} desilitran</unitPattern>
+				<unitPattern count="one" case="illative">{0} desilitraan</unitPattern>
+				<unitPattern count="one" case="partitive">{0} desilitraa</unitPattern>
 				<unitPattern count="other">{0} desilitraa</unitPattern>
+				<unitPattern count="other" case="elative">{0} desilitrasta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} desilitran</unitPattern>
+				<unitPattern count="other" case="illative">{0} desilitraan</unitPattern>
+				<unitPattern count="other" case="partitive">{0} desilitraa</unitPattern>
 			</unit>
 			<unit type="volume-centiliter">
 				<displayName>senttilitrat</displayName>
 				<unitPattern count="one">{0} senttilitra</unitPattern>
+				<unitPattern count="one" case="elative">{0} senttilitrasta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} senttilitran</unitPattern>
+				<unitPattern count="one" case="illative">{0} senttilitraan</unitPattern>
+				<unitPattern count="one" case="partitive">{0} senttilitraa</unitPattern>
 				<unitPattern count="other">{0} senttilitraa</unitPattern>
+				<unitPattern count="other" case="elative">{0} senttilitrasta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} senttilitran</unitPattern>
+				<unitPattern count="other" case="illative">{0} senttilitraan</unitPattern>
+				<unitPattern count="other" case="partitive">{0} senttilitraa</unitPattern>
 			</unit>
 			<unit type="volume-milliliter">
 				<displayName>millilitrat</displayName>
 				<unitPattern count="one">{0} millilitra</unitPattern>
+				<unitPattern count="one" case="elative">{0} millilitrasta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} millilitran</unitPattern>
+				<unitPattern count="one" case="illative">{0} millilitraan</unitPattern>
+				<unitPattern count="one" case="partitive">{0} millilitraa</unitPattern>
 				<unitPattern count="other">{0} millilitraa</unitPattern>
+				<unitPattern count="other" case="elative">{0} millilitrasta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} millilitran</unitPattern>
+				<unitPattern count="other" case="illative">{0} millilitraan</unitPattern>
+				<unitPattern count="other" case="partitive">{0} millilitraa</unitPattern>
 			</unit>
 			<unit type="volume-pint-metric">
 				<displayName>tuopit</displayName>
 				<unitPattern count="one">{0} tuoppi</unitPattern>
 				<unitPattern count="one" case="elative">{0} tuopista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} tuopin</unitPattern>
 				<unitPattern count="one" case="illative">{0} tuoppiin</unitPattern>
 				<unitPattern count="one" case="partitive">{0} tuoppia</unitPattern>
 				<unitPattern count="other">{0} tuoppia</unitPattern>
 				<unitPattern count="other" case="elative">{0} tuopista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} tuopin</unitPattern>
 				<unitPattern count="other" case="illative">{0} tuoppiin</unitPattern>
 				<unitPattern count="other" case="partitive">{0} tuoppia</unitPattern>
 			</unit>
@@ -9180,10 +9757,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>teekupit</displayName>
 				<unitPattern count="one">{0} teekuppi</unitPattern>
 				<unitPattern count="one" case="elative">{0} teekupista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} teekupin</unitPattern>
 				<unitPattern count="one" case="illative">{0} teekuppiin</unitPattern>
 				<unitPattern count="one" case="partitive">{0} teekuppia</unitPattern>
 				<unitPattern count="other">{0} teekuppia</unitPattern>
 				<unitPattern count="other" case="elative">{0} teekupista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} teekupin</unitPattern>
 				<unitPattern count="other" case="illative">{0} teekuppiin</unitPattern>
 				<unitPattern count="other" case="partitive">{0} teekuppia</unitPattern>
 			</unit>

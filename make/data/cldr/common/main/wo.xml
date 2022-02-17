@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -234,9 +234,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="BZ">Belis</territory>
 			<territory type="CA">Kanadaa</territory>
 			<territory type="CC">Duni Koko (Kilin)</territory>
-			<territory type="CD" alt="variant">Kongo (R K D)</territory>
+			<territory type="CD">Kongo (R K D)</territory>
 			<territory type="CF">Repiblik Sàntar Afrik</territory>
-			<territory type="CG" alt="variant">Réewum Kongo</territory>
+			<territory type="CG">Réewum Kongo</territory>
 			<territory type="CH">Siwis</territory>
 			<territory type="CI">Kodiwaar</territory>
 			<territory type="CK">Duni Kuuk</territory>
@@ -288,7 +288,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="GU">Guwam</territory>
 			<territory type="GW">Gine-Bisaawóo</territory>
 			<territory type="GY">Giyaan</territory>
-			<territory type="HK" alt="short">Ooŋ Koŋ</territory>
+			<territory type="HK">Ooŋ Koŋ</territory>
 			<territory type="HM">Duni Hërd ak Duni MakDonald</territory>
 			<territory type="HN">Onduraas</territory>
 			<territory type="HR">Korowasi</territory>
@@ -340,7 +340,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ML">Mali</territory>
 			<territory type="MM">Miyanmaar</territory>
 			<territory type="MN">Mongoli</territory>
-			<territory type="MO" alt="short">Makaawo</territory>
+			<territory type="MO">Makaawo</territory>
 			<territory type="MP">Duni Mariyaan Noor</territory>
 			<territory type="MQ">Martinik</territory>
 			<territory type="MR">Mooritani</territory>

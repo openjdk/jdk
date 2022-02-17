@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
@@ -5443,7 +5445,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">Gürcüstan larisi</displayName>
 				<symbol>GEL</symbol>
 				<symbol alt="narrow">₾</symbol>
-				<symbol alt="variant">₾</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>Qana Sedisi (1979–2007)</displayName>
@@ -6529,8 +6530,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
-			<pluralMinimalPairs count="one">Alış-veriş katınızda {0} X var. Almaq istəyirsiniz?</pluralMinimalPairs>
-			<pluralMinimalPairs count="other">Alış-veriş kartınızda {0} X var. Almaq istəyirsiniz?</pluralMinimalPairs>
+			<pluralMinimalPairs count="one">Alış-veriş kartınızda {0} var. Alınsın?</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">Alış-veriş kartınızda {0} var. Alınsınlar?</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="few">{0}-cü sağ döngəni seçin.</ordinalMinimalPairs>
 			<ordinalMinimalPairs ordinal="many">{0}-cı sağ döngəni seçin.</ordinalMinimalPairs>
 			<ordinalMinimalPairs ordinal="one">{0}-ci sağ döngəni seçin.</ordinalMinimalPairs>

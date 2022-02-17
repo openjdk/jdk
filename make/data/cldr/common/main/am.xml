@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
@@ -2137,7 +2139,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
-						<dateFormatItem id="GyMd" draft="provisional">M/d/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMd" draft="contributed">M/d/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G y MMM d</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y MMM d, E</dateFormatItem>
@@ -3640,6 +3642,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Pacific/Enderbury">
 				<exemplarCity>ኢንደርበሪ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kanton">
+				<exemplarCity draft="contributed">ካንቶን</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>ኪሪቲማቲ</exemplarCity>
@@ -5673,7 +5678,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">የጆርጅያ ላሪ</displayName>
 				<symbol>GEL</symbol>
 				<symbol alt="narrow">₾</symbol>
-				<symbol alt="variant">₾</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>የጋና ሴዲ</displayName>
@@ -6442,8 +6446,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<pluralMinimalPairs count="one">{0} ቀን</pluralMinimalPairs>
 			<pluralMinimalPairs count="other">{0} ቀናት</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">በቀኝ በኩል ባለው በ{0}ኛው መታጠፊያ ግባ።</ordinalMinimalPairs>
-			<caseMinimalPairs case="accusative">ልጁ ለ {0} ቀረ</caseMinimalPairs>
-			<caseMinimalPairs case="nominative">{0} ዩኬ የሻይ ማንኪያ</caseMinimalPairs>
+			<caseMinimalPairs case="accusative">{0} ዩኬ የሻይ ማንኪያው</caseMinimalPairs>
+			<caseMinimalPairs case="nominative">የዩኬ {0} የሻይ ማንኪያ</caseMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
@@ -6532,7 +6536,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="acceleration-meter-per-square-second">
 				<displayName>ሜ/ሰ²</displayName>
 				<unitPattern count="one">{0} ሜ/ሰ²</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ሜ/ሰ²</unitPattern>
 				<unitPattern count="other">{0} ሜ/ሰ²</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ሜ/ሰ²</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
 				<displayName>rev</displayName>
@@ -6572,7 +6578,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="area-square-kilometer">
 				<displayName>ካሬ ኪሎሜትር</displayName>
 				<unitPattern count="one">{0} ካሬ ኪሎሜትር</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ካሬ ኪሎሜትር</unitPattern>
 				<unitPattern count="other">{0} ካሬ ኪሎሜትር</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ካሬ ኪሎሜትር</unitPattern>
 				<perUnitPattern>{0}/ኪሜ²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
@@ -6585,13 +6593,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="area-square-meter">
 				<displayName>ካሬ ሜትር</displayName>
 				<unitPattern count="one">{0} ካሬ ሜትር</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ካሬ ሜትር</unitPattern>
 				<unitPattern count="other">{0} ካሬ ሜትር</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ካሬ ሜትር</unitPattern>
 				<perUnitPattern>{0}/ሜ²</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
 				<displayName>ሴሜ²</displayName>
 				<unitPattern count="one">{0} ሴሜ²</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ሴሜ²</unitPattern>
 				<unitPattern count="other">{0} ሴሜ²</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ሴሜ²</unitPattern>
 				<perUnitPattern>{0}/ሴሜ²</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
@@ -6641,12 +6653,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="concentr-millimole-per-liter">
 				<displayName>mmol/L</displayName>
 				<unitPattern count="one">{0} mmol/L</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} mmol/L</unitPattern>
 				<unitPattern count="other">{0} mmol/L</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} mmol/L</unitPattern>
 			</unit>
 			<unit type="concentr-item">
 				<displayName>ንጥሎች</displayName>
 				<unitPattern count="one">{0} ንጥል</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ንጥል</unitPattern>
 				<unitPattern count="other">{0} ንጥሎች</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ንጥሎች</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
@@ -6678,12 +6694,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ሊ/ኪሜ</displayName>
 				<unitPattern count="one">{0} ሊ/ኪሜ</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ሊ/ኪሜ</unitPattern>
 				<unitPattern count="other">{0} ሊ/ኪሜ</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ሊ/ኪሜ</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>ሊትሮች በ100 ኪሎሜትሮች</displayName>
 				<unitPattern count="one">{0} ሊትር በ100 ኪሎሜትሮች</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ሊትር በ100 ኪሎሜትሮች</unitPattern>
 				<unitPattern count="other">{0} ሊትሮች በ100 ኪሎሜትሮች</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ሊትሮች በ100 ኪሎሜትሮች</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>mpg</displayName>
@@ -6698,47 +6718,65 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="digital-petabyte">
 				<displayName>ፔታ ባይት</displayName>
 				<unitPattern count="one">{0} ፔታ ባይት</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ፔታ ባይት</unitPattern>
 				<unitPattern count="other">{0} ፔታ ባይቶች</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ፔታ ባይቶች</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>ቴራባይት</displayName>
 				<unitPattern count="one">{0} ቴራባይት</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ቴራባይት</unitPattern>
 				<unitPattern count="other">{0} ቴራባይት</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ቴራባይት</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
 				<displayName>ቴራባይትስ</displayName>
 				<unitPattern count="one">{0} ቴባ</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ቴባ</unitPattern>
 				<unitPattern count="other">{0} ቴባ</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ቴባ</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
 				<displayName>ጊባ</displayName>
 				<unitPattern count="one">{0} ጊባ</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ጊባ</unitPattern>
 				<unitPattern count="other">{0} ጊባ</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ጊባ</unitPattern>
 			</unit>
 			<unit type="digital-gigabit">
 				<displayName>ጊጋባይት</displayName>
 				<unitPattern count="one">{0} ጊጋባይት</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ጊጋባይት</unitPattern>
 				<unitPattern count="other">{0} ጊጋባይት</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ጊጋባይት</unitPattern>
 			</unit>
 			<unit type="digital-megabyte">
 				<displayName>ሜጋባይት</displayName>
 				<unitPattern count="one">{0} ሜጋባይት</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ሜጋባይት</unitPattern>
 				<unitPattern count="other">{0} ሜጋባይት</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ሜጋባይት</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
 				<displayName>ሜባ</displayName>
 				<unitPattern count="one">{0} ሜባ</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ሜባ</unitPattern>
 				<unitPattern count="other">{0} ሜባ</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ሜባ</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
 				<displayName>ኪባ</displayName>
 				<unitPattern count="one">{0} ኪባ</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ኪባ</unitPattern>
 				<unitPattern count="other">{0} ኪባ</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ኪባ</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
 				<displayName>ኪሎባይት</displayName>
 				<unitPattern count="one">{0} ኪሎባይት</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ኪሎባይት</unitPattern>
 				<unitPattern count="other">{0} ኪሎባይት</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ኪሎባይት</unitPattern>
 			</unit>
 			<unit type="digital-byte">
 				<displayName>ባይት</displayName>
@@ -6762,11 +6800,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="accusative" draft="contributed">{0} ምዕተ ዓመት</unitPattern>
 			</unit>
 			<unit type="duration-decade">
-				<displayName>አስር አመታት</displayName>
-				<unitPattern count="one">{0} አስር አመታት</unitPattern>
-				<unitPattern count="one" case="accusative">{0} አስር አመታት</unitPattern>
-				<unitPattern count="other">{0} አስር አመታት</unitPattern>
-				<unitPattern count="other" case="accusative">{0} አስር አመታት</unitPattern>
+				<displayName>ዓሠርተ-ዓመት</displayName>
+				<unitPattern count="one">{0} ዓሠርተ-ዓመት</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ዓሠርተ-ዓመት</unitPattern>
+				<unitPattern count="other">{0} ዓሠርተ-ዓመታት</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ዓሠርተ-ዓመታት</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>ዓመታት</displayName>
@@ -6827,17 +6865,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="duration-millisecond">
 				<displayName>ሚሊሰከንድ</displayName>
 				<unitPattern count="one">{0} ሚሊሰከንድ</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ሚሊሰከንድ</unitPattern>
 				<unitPattern count="other">{0} ሚሊሰከንድ</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ሚሊሰከንድ</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
 				<displayName>ማይክሮሰከንድ</displayName>
 				<unitPattern count="one">{0} ማይክሮሰከንድ</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ማይክሮሰከንድ</unitPattern>
 				<unitPattern count="other">{0} ማይክሮሰከንድ</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ማይክሮሰከንድ</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
 				<displayName>ናኖሰከንድ</displayName>
 				<unitPattern count="one">{0} ናኖሰከንድ</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ናኖሰከንድ</unitPattern>
 				<unitPattern count="other">{0} ናኖሰከንድ</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ናኖሰከንድ</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
 				<displayName>amp</displayName>
@@ -6849,7 +6893,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="electric-milliampere">
 				<displayName>mA</displayName>
 				<unitPattern count="one">{0} mA</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} mA</unitPattern>
 				<unitPattern count="other">{0} mA</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} mA</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
 				<displayName>ohm</displayName>
@@ -6885,7 +6931,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
 				<unitPattern count="one">{0} kJ</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} kJ</unitPattern>
 				<unitPattern count="other">{0} kJ</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} kJ</unitPattern>
 			</unit>
 			<unit type="energy-joule">
 				<displayName>joule</displayName>
@@ -6897,7 +6945,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="energy-kilowatt-hour">
 				<displayName>kWh</displayName>
 				<unitPattern count="one">{0} kWh</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} kWh</unitPattern>
 				<unitPattern count="other">{0} kWh</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} kWh</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
 				<displayName>ኤቮ</displayName>
@@ -6914,22 +6964,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="force-kilowatt-hour-per-100-kilometer">
 				<displayName>ኪሎዋት-ሰዓት በየ 100 ኪሎሜትሮች</displayName>
 				<unitPattern count="one">{0} ኪሎዋት-ሰዓት በየ 100 ኪሎሜትሮች</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ኪሎዋት-ሰዓት በየ 100 ኪሎሜትሮች</unitPattern>
 				<unitPattern count="other">{0} ኪሎዋት-ሰዓታት በየ 100 ኪሎሜትሮች</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ኪሎዋት-ሰዓታት በየ 100 ኪሎሜትሮች</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>GHz</displayName>
 				<unitPattern count="one">{0} GHz</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} GHz</unitPattern>
 				<unitPattern count="other">{0} GHz</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} GHz</unitPattern>
 			</unit>
 			<unit type="frequency-megahertz">
 				<displayName>MHz</displayName>
 				<unitPattern count="one">{0} MHz</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} MHz</unitPattern>
 				<unitPattern count="other">{0} MHz</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} MHz</unitPattern>
 			</unit>
 			<unit type="frequency-kilohertz">
 				<displayName>kHz</displayName>
 				<unitPattern count="one">{0} kHz</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} kHz</unitPattern>
 				<unitPattern count="other">{0} kHz</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} kHz</unitPattern>
 			</unit>
 			<unit type="frequency-hertz">
 				<displayName>Hz</displayName>
@@ -6955,12 +7013,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="graphics-megapixel">
 				<displayName draft="contributed">ሜጋ ፒክስል</displayName>
 				<unitPattern count="one" draft="contributed">{0} ሜጋ ፒክስል</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ሜጋ ፒክስል</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} ሜጋ ፒክስል</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ሜጋ ፒክስል</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-centimeter">
 				<displayName draft="contributed">ፒበሴሜ</displayName>
 				<unitPattern count="one" draft="contributed">{0} ፒበሴሜ</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ፒበሴሜ</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} ፒበሴሜ</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ፒበሴሜ</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-inch">
 				<displayName draft="contributed">ፒበኢ</displayName>
@@ -6985,7 +7047,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="length-kilometer">
 				<displayName>ኪሎሜትር</displayName>
 				<unitPattern count="one">{0} ኪሎሜትር</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ኪሎሜትር</unitPattern>
 				<unitPattern count="other">{0} ኪሎሜትር</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ኪሎሜትር</unitPattern>
 				<perUnitPattern>{0}/ኪሜ</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
@@ -6999,33 +7063,45 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="length-decimeter">
 				<displayName>ዴሲ ሜትር</displayName>
 				<unitPattern count="one">{0} ዴሲ ሜትር</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ዴሲ ሜትር</unitPattern>
 				<unitPattern count="other">{0} ዴሲ ሜትር</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ዴሲ ሜትር</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName>ሴንቲሜትር</displayName>
 				<unitPattern count="one">{0} ሴንቲሜትር</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ሴንቲሜትር</unitPattern>
 				<unitPattern count="other">{0} ሴንቲሜትር</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ሴንቲሜትር</unitPattern>
 				<perUnitPattern>{0}/ሴሜ</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>ሚሊሜትር</displayName>
 				<unitPattern count="one">{0} ሚሊሜትር</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ሚሊሜትር</unitPattern>
 				<unitPattern count="other">{0} ሚሊሜትር</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ሚሊሜትር</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
 				<displayName>ማይክሮ ሜትር</displayName>
 				<unitPattern count="one">{0} ማይክሮ ሜትር</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ማይክሮ ሜትር</unitPattern>
 				<unitPattern count="other">{0} ማይክሮ ሜትር</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ማይክሮ ሜትር</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
 				<displayName>ናኖ ሜትር</displayName>
 				<unitPattern count="one">{0} ናኖ ሜትር</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ናኖ ሜትር</unitPattern>
 				<unitPattern count="other">{0} ናኖ ሜትር</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ናኖ ሜትር</unitPattern>
 			</unit>
 			<unit type="length-picometer">
 				<displayName>ፒኮሜትር</displayName>
 				<unitPattern count="one">{0} ፒኮሜትር</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ፒኮሜትር</unitPattern>
 				<unitPattern count="other">{0} ፒኮሜትር</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ፒኮሜትር</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<displayName>ማይል</displayName>
@@ -7143,12 +7219,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="mass-milligram">
 				<displayName>mg</displayName>
 				<unitPattern count="one">{0} mg</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} mg</unitPattern>
 				<unitPattern count="other">{0} mg</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} mg</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
 				<displayName>μg</displayName>
 				<unitPattern count="one">{0} μg</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ማይክሮ ግራም</unitPattern>
 				<unitPattern count="other">{0} μg</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ማይክሮ ግራም</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>ቶን</displayName>
@@ -7207,17 +7287,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="power-gigawatt">
 				<displayName>GW</displayName>
 				<unitPattern count="one">{0} GW</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} GW</unitPattern>
 				<unitPattern count="other">{0} GW</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} GW</unitPattern>
 			</unit>
 			<unit type="power-megawatt">
 				<displayName>MW</displayName>
 				<unitPattern count="one">{0} MW</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} MW</unitPattern>
 				<unitPattern count="other">{0} MW</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} MW</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
 				<displayName>ኪሎዋት</displayName>
 				<unitPattern count="one">{0} ኪሎዋት</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ኪሎዋት</unitPattern>
 				<unitPattern count="other">{0} ኪሎዋት</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ኪሎዋት</unitPattern>
 			</unit>
 			<unit type="power-watt">
 				<displayName>ዋት</displayName>
@@ -7229,7 +7315,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="power-milliwatt">
 				<displayName>mW</displayName>
 				<unitPattern count="one">{0} mW</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} mW</unitPattern>
 				<unitPattern count="other">{0} mW</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} mW</unitPattern>
 			</unit>
 			<unit type="power-horsepower">
 				<displayName>የፈረስ ጉልበት</displayName>
@@ -7261,7 +7349,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="pressure-millibar">
 				<displayName>ሚሊባር</displayName>
 				<unitPattern count="one">{0} ሚሊባር</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ሚሊባር</unitPattern>
 				<unitPattern count="other">{0} ሚሊባር</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ሚሊባር</unitPattern>
 			</unit>
 			<unit type="pressure-atmosphere">
 				<displayName>ከባቢ አየር</displayName>
@@ -7280,27 +7370,37 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="pressure-hectopascal">
 				<displayName>ሄክቶፓስካል</displayName>
 				<unitPattern count="one">{0} ሄክቶፓስካል</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ሄክቶፓስካል</unitPattern>
 				<unitPattern count="other">{0} ሄክቶፓስካል</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ሄክቶፓስካል</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
 				<displayName>ኪሎፓስካል</displayName>
 				<unitPattern count="one">{0} ኪሎፓስካል</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ኪሎፓስካል</unitPattern>
 				<unitPattern count="other">{0} ኪሎፓስካል</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ኪሎፓስካል</unitPattern>
 			</unit>
 			<unit type="pressure-megapascal">
 				<displayName>ሜጋፓስካል</displayName>
 				<unitPattern count="one">{0} ሜጋፓስካል</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ሜጋፓስካል</unitPattern>
 				<unitPattern count="other">{0} ሜጋፓስካሎች</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ሜጋፓስካሎች</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>ኪሎሜትር በሰዓት</displayName>
 				<unitPattern count="one">{0} ኪሎሜትር በሰዓት</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ኪሎሜትር በሰዓት</unitPattern>
 				<unitPattern count="other">{0} ኪሎሜትር በሰዓት</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ኪሎሜትር በሰዓት</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
 				<displayName>ሜትር በሰከንድ</displayName>
 				<unitPattern count="one">{0} ሜትር በሰከንድ</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ሜትር በሰከንድ</unitPattern>
 				<unitPattern count="other">{0} ሜትር በሰከንድ</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ሜትር በሰከንድ</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
 				<displayName>ማይል በሰዓት</displayName>
@@ -7341,23 +7441,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="torque-newton-meter">
 				<displayName>ኒ.ሜ</displayName>
 				<unitPattern count="one">{0} ኒ.ሜ</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ኒ.ሜ</unitPattern>
 				<unitPattern count="other">{0} ኒ.ሜ</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ኒ.ሜ</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>ኩቢክ ኪሎሜትር</displayName>
 				<unitPattern count="one">{0} ኩቢክ ኪሎሜትር</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ኩቢክ ኪሎሜትር</unitPattern>
 				<unitPattern count="other">{0} ኩቢክ ኪሎሜትር</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ኩቢክ ኪሎሜትር</unitPattern>
 			</unit>
 			<unit type="volume-cubic-meter">
 				<displayName>ሜ³</displayName>
 				<unitPattern count="one">{0} ሜ³</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ሜ³</unitPattern>
 				<unitPattern count="other">{0} ሜ³</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ሜ³</unitPattern>
 				<perUnitPattern>{0}/ሜ³</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
 				<displayName>ሴሜ³</displayName>
 				<unitPattern count="one">{0} ሴሜ³</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ሴሜ³</unitPattern>
 				<unitPattern count="other">{0} ሴሜ³</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ሴሜ³</unitPattern>
 				<perUnitPattern>{0}/ሴሜ³</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
@@ -7383,12 +7491,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="volume-megaliter">
 				<displayName>ML</displayName>
 				<unitPattern count="one">{0} ML</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ሜሊ</unitPattern>
 				<unitPattern count="other">{0} ML</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ሜሊ</unitPattern>
 			</unit>
 			<unit type="volume-hectoliter">
 				<displayName>hL</displayName>
 				<unitPattern count="one">{0} hL</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ሄሊ</unitPattern>
 				<unitPattern count="other">{0} hL</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ሄሊ</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>ሊትር</displayName>
@@ -7401,17 +7513,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="volume-deciliter">
 				<displayName>ዴሲ ሊትር</displayName>
 				<unitPattern count="one">{0} ዴሲ ሊትር</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ዴሲ ሊትር</unitPattern>
 				<unitPattern count="other">{0} ዴሲ ሊትር</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ዴሲ ሊትር</unitPattern>
 			</unit>
 			<unit type="volume-centiliter">
 				<displayName>ሴንቲ ሊትር</displayName>
 				<unitPattern count="one">{0} ሴንቲ ሊትር</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ሴንቲ ሊትር</unitPattern>
 				<unitPattern count="other">{0} ሴንቲ ሊትር</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ሴንቲ ሊትር</unitPattern>
 			</unit>
 			<unit type="volume-milliliter">
 				<displayName>ሚሊ ሊትር</displayName>
 				<unitPattern count="one">{0} ሚሊ ሊትር</unitPattern>
+				<unitPattern count="one" case="accusative" draft="contributed">{0} ሚሊ ሊትር</unitPattern>
 				<unitPattern count="other">{0} ሚሊ ሊትር</unitPattern>
+				<unitPattern count="other" case="accusative" draft="contributed">{0} ሚሊ ሊትር</unitPattern>
 			</unit>
 			<unit type="volume-pint-metric">
 				<displayName>mpt</displayName>
@@ -7802,9 +7920,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ምዕተ ዓመት</unitPattern>
 			</unit>
 			<unit type="duration-decade">
-				<displayName draft="contributed">አስር አመታት</displayName>
-				<unitPattern count="one" draft="contributed">{0} አስር አመታት</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} አስር አመታት</unitPattern>
+				<displayName draft="contributed">ዓሠርተ-ዓመት</displayName>
+				<unitPattern count="one" draft="contributed">{0} ዓሠ.ዓ</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ዓሠ.ዓ</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>ዓመታት</displayName>
@@ -8613,10 +8731,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="duration-century">
 				<unitPattern count="one">{0}ም.ዓ</unitPattern>
 				<unitPattern count="other">{0}ም.ዓ</unitPattern>
-			</unit>
-			<unit type="duration-decade">
-				<unitPattern count="one" draft="contributed">{0} አስርተ አመታት</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} አስርተ አመታት</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>ዓመታት</displayName>

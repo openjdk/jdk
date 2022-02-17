@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
@@ -3564,6 +3566,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>iotâ{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>yobe{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="power2">
 				<compoundUnitPattern1>{0} quadrados</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one">{0} quadrado</compoundUnitPattern1>
@@ -3600,10 +3605,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} milimole por litro</unitPattern>
 				<unitPattern count="other">{0} milimoles por litro</unitPattern>
 			</unit>
-			<unit type="concentr-item">
-				<unitPattern count="one" draft="contributed">{0} item</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} itens</unitPattern>
-			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>litros por quilómetro</displayName>
 				<unitPattern count="one">{0} litro por quilómetro</unitPattern>
@@ -3613,14 +3614,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>litros por 100 quilómetros</displayName>
 				<unitPattern count="one">{0} litro por 100 quilómetros</unitPattern>
 				<unitPattern count="other">{0} litros por 100 quilómetros</unitPattern>
-			</unit>
-			<unit type="digital-byte">
-				<unitPattern count="one">{0} byte</unitPattern>
-				<unitPattern count="other">{0} bytes</unitPattern>
-			</unit>
-			<unit type="digital-bit">
-				<unitPattern count="one">{0} bit</unitPattern>
-				<unitPattern count="other">{0} bits</unitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<perUnitPattern>{0}/h</perUnitPattern>
