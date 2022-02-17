@@ -311,7 +311,7 @@ public class AdditionalLauncher {
         if (!rawProperties.contains(LAUNCHER_AS_SERVICE)) {
             appVerifier.executeAndVerifyOutput();
         } else if (!cmd.isPackageUnpacked(String.format(
-                "Not verifying contents of test output file for %s launcher",
+                "Not verifying contents of test output file for [%s] launcher",
                 launcherPath))) {
             appVerifier.verifyOutput();
         }
