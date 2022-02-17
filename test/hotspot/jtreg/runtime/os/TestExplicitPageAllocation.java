@@ -35,73 +35,88 @@ package runtime.os;
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Collections;
 import jdk.test.lib.Utils;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.List;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.Scanner;
 import java.io.FileWriter;
 
-public class TestExplicitPageAllocation {
-    private static String file1GHugePages = "/sys/kernel/mm/hugepages/hugepages-1048576kB/free_hugepages";
-    private static String file2MHugePages = "/sys/kernel/mm/hugepages/hugepages-2048kB/free_hugepages";
-    private static String file1GHugePagesResv = "/sys/kernel/mm/hugepages/hugepages-1048576kB/resv_hugepages";
-    private static String file2MHugePagesResv = "/sys/kernel/mm/hugepages/hugepages-2048kB/resv_hugepages";
+class MyClass {
+    public static void main(String args[]) {
+    System.out.println("Inside MyClass");
+    }
+}
 
-    private static String heapPrefix = "Heap:";
-    private static Pattern heapPattern = Pattern.compile(heapPrefix);
+public class TestExplicitPageAllocation {
+
+    private static final String DIR_HUGE_PAGES = "/sys/kernel/mm/hugepages/";
+    private static final int HEAP_SIZE_IN_KB = 2097152;
+
+    private static final Pattern HEAP_PATTERN = Pattern.compile("Heap:");
+    private static final Pattern PAGE_SIZE_PATTERN = Pattern.compile(".*page_size=([^ ]+).*");
+    private static final Pattern HUGEPAGE_PATTERN = Pattern.compile(".*hugepages-([^ ]+).*kB");
+
     private static FileInputStream fis;
     private static DataInputStream dis;
-    private static int orig1GPageCount;
-    private static int orig2MPageCount;
-    private static int resv1GPageCount;
-    private static int resv2MPageCount;
-
     private static String errorMessage = null;
 
+    private static final int SIZE=32;
+    private static boolean[] pageSizes = new boolean[SIZE];
+    private static int[] pageCount = new int[SIZE];
+    private static int vmPageSizeIndex;
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String args[]) {
         try {
             doSetup();
-            testCase1();
-            testCase2();
-            testCase3();
-            testCase4();
+            for (int i = 31;i > vmPageSizeIndex;i--) {
+                if (pageSizes[i]) {
+                    testCase(i);
+                    break;
+                }
+            }
         } catch(Exception e) {
            System.out.println("Exception"+e);
         }
-        if (errorMessage!=null) {
-            throw new AssertionError(errorMessage);
-        }
 
     }
 
-    private static boolean matchPattern(String line, Pattern regex) {
-        return regex.matcher(line).find();
+
+    private static int requiredPageCount(int index) {
+        int pageSizeInKB =  1 << (index-10);
+        return HEAP_SIZE_IN_KB/pageSizeInKB;
     }
-    private static boolean matchPattern(String line) {
-        return matchPattern(line, heapPattern);
+
+    private static String sizeFromIndex(int index) {
+        int k = 1024;
+        int m = 1024*1024;
+        int g = 1024*1024*1024;
+        int sizeInBytes = 1 << index;
+        if (sizeInBytes < m)
+           return Integer.toString(sizeInBytes/k)+"K";
+        if(sizeInBytes < g)
+           return Integer.toString(sizeInBytes/m)+"M";
+        else
+           return Integer.toString(sizeInBytes/g)+"G";
     }
 
     private static boolean checkOutput(OutputAnalyzer out, String pageSize) throws Exception {
         List<String> lines = out.asLines();
-        String traceLinePatternString = ".*page_size=([^ ]+).*";
-        Pattern traceLinePattern = Pattern.compile(traceLinePatternString);
         for (int i = 0; i < lines.size(); ++i) {
             String line = lines.get(i);
             System.out.println(line);
-            if (matchPattern(line)) {
-                Matcher trace = traceLinePattern.matcher(line);
+            if (HEAP_PATTERN.matcher(line).find()) {
+                Matcher trace = PAGE_SIZE_PATTERN.matcher(line);
                 trace.find();
                 String tracePageSize = trace.group(1);
-                if(pageSize.contains(tracePageSize)) {
+                if (pageSize.contains(tracePageSize)) {
                     return true;
                 }
             }
@@ -109,123 +124,84 @@ public class TestExplicitPageAllocation {
         return false;
     }
 
-    public static int checkAndReadFile(String filename, String errorstr) throws Exception {
-        try {
-            fis = new FileInputStream(filename);
-            dis = new DataInputStream(fis);
-            int pagecount = Integer.parseInt(dis.readLine());
-            dis.close();
-            fis.close();
-            return pagecount;
-        } catch (Exception e) {
-            System.out.println(errorstr);
-        }
-        return -1;
+    public static int checkAndReadFile(String filename, String pageSize) throws Exception {
+        fis = new FileInputStream(filename);
+        dis = new DataInputStream(fis);
+        int pagecount = Integer.parseInt(dis.readLine());
+        dis.close();
+        fis.close();
+        return pagecount;
     }
 
-    public static void doSetup() throws Exception{
-        File file;
-        // Legality check for 1G , 2M pages.
-        orig1GPageCount = checkAndReadFile(file1GHugePages, "System does not support 1G pages");
-        if (orig1GPageCount >= 0) {
-            System.out.println("Number of 1G pages = " + orig1GPageCount + "\n");
-        }
-        orig2MPageCount =  checkAndReadFile(file2MHugePages, "System does not support 2M pages");
-        if (orig2MPageCount >= 0) {
-            System.out.println("Number of 2M pages = " + orig2MPageCount + "\n");
-        }
-        resv1GPageCount = checkAndReadFile(file1GHugePagesResv, "System does not support 1G pages");
-        if (resv2MPageCount >= 0) {
-            System.out.println("Number of reserved 1G pages = " + resv1GPageCount + "\n");
-        }
-        resv2MPageCount =  checkAndReadFile(file2MHugePagesResv, "System does not support 2M pages");
-        if (resv2MPageCount >= 0) {
-            System.out.println("Number of reserved 2M pages = " + resv2MPageCount + "\n");
-        }
+    public static void doSetup() throws Exception {
+        // Large page sizes
+        File[] directories = new File(DIR_HUGE_PAGES).listFiles(File::isDirectory);
+        for (File dir : directories) {
+            String pageSizeFileName = dir.getName();
+            Matcher matcher = HUGEPAGE_PATTERN.matcher(pageSizeFileName);
+            matcher.find();
+            String pageSize = matcher.group(1);
 
+            if (pageSize != null) {
+                int freePageCount = checkAndReadFile(DIR_HUGE_PAGES+pageSizeFileName+"/free_hugepages", pageSize);
+                int resvPageCount = checkAndReadFile(DIR_HUGE_PAGES+pageSizeFileName+"/resv_hugepages", pageSize);
+
+                int availablePages = freePageCount - resvPageCount;
+                if (availablePages >= 0) {
+                    System.out.println("Number of available "+pageSize+"kB pages = "+availablePages);
+                } else {
+                    System.out.println("System does not support"+pageSize+"kB pages");
+                    continue;
+                }
+
+                int index = Integer.numberOfTrailingZeros(Integer.parseInt(pageSize)*1024);
+                pageSizes[index] = true;
+                pageCount[index] = availablePages;
+            }
+        }
+        // OS vm page size
+        ProcessBuilder processBuilder = new ProcessBuilder();
+        processBuilder.command("getconf", "PAGE_SIZE");
+        Process process = processBuilder.start();
+        StringBuilder output = new StringBuilder();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        String vmPageSize = reader.readLine();
+
+        vmPageSizeIndex = Integer.numberOfTrailingZeros(Integer.parseInt(vmPageSize));
+        pageSizes[vmPageSizeIndex] = true;
+        pageCount[vmPageSizeIndex] = Integer.MAX_VALUE;
     }
 
-    public static void testCase1() throws Exception {
-        if((orig1GPageCount - resv1GPageCount)  < 2) {
-            System.out.println("TestCase1 skipped\n");
-            return;
-        }
+    public static void testCase(int index) throws Exception {
+        String pageSize = sizeFromIndex(index);
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:pagesize",
-                                                                  "-XX:LargePageSizeInBytes=1G",
+                                                                  "-XX:LargePageSizeInBytes="+pageSize,
                                                                   "-XX:+UseParallelGC",
                                                                   "-XX:+UseLargePages",
                                                                   "-Xmx2g",
                                                                   "-Xms1g",
-                                                                  TestExplicitPageAllocation.class.getName());
+                                                                  MyClass.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
-        if(!checkOutput(output,"1G")) {
-           errorMessage = "Failed 1G page allocation\n";
-        } else {
-           System.out.println("TestCase1 Passed\n");
-        }
-    }
 
-    public static void testCase2() throws Exception {
-        if((orig1GPageCount - resv1GPageCount) > 0 || (orig2MPageCount - resv2MPageCount) < 1280) {
-            System.out.println("TestCase2 skipped\n");
-            return;
+        for (int i = index;i >= vmPageSizeIndex;i--) {
+            if(pageSizes[i]) {
+                String size = sizeFromIndex(i);
+                System.out.println("Checking allocation for " + size);
+                if (!checkOutput(output,size)) {
+                    if (requiredPageCount(i) > pageCount[i]) {
+                       continue;
+                    }
+                    errorMessage += "TestCase Failed for "+size+" page allocation\n";
+                } else {
+                    System.out.println("TestCase Passed for pagesize: "+pageSize+", allocated pagesize:"+size);
+                    break;
+                }
+            }
         }
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:pagesize",
-                                                                  "-XX:LargePageSizeInBytes=1G",
-                                                                  "-XX:+UseParallelGC",
-                                                                  "-XX:+UseLargePages",
-                                                                  "-Xmx2g",
-                                                                  "-Xms1g",
-                                                                  TestExplicitPageAllocation.class.getName());
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldHaveExitValue(0);
-        if(!checkOutput(output,"2M")) {
-           errorMessage = "Failed 2M page allocation\n";
-        } else {
-           System.out.println("TestCase2 Passed\n");
-        }
-    }
 
-    public static void testCase3() throws Exception {
-        if((orig1GPageCount - resv1GPageCount) > 0 || (orig2MPageCount - resv2MPageCount) > 0) {
-            System.out.println("TestCase3 skipped\n");
-            return;
-        }
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:pagesize",
-                                                                 "-XX:LargePageSizeInBytes=1G",
-                                                                 "-XX:+UseParallelGC",
-                                                                 "-XX:+UseLargePages",
-                                                                 "-Xmx2g",
-                                                                 "-Xms1g",
-                                                                 TestExplicitPageAllocation.class.getName());
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldHaveExitValue(0);
-        if(!checkOutput(output,"4K")) {
-           errorMessage = "Failed 4K page allocation\n";
-        } else {
-           System.out.println("TestCase3 Passed\n");
-        }
-    }
-
-    public static void testCase4() throws Exception {
-        if((orig2MPageCount - resv2MPageCount) < 1280) {
-            System.out.println("TestCase4 skipped\n");
-            return;
-        }
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:pagesize",
-                                                                 "-XX:LargePageSizeInBytes=2M",
-                                                                 "-XX:+UseParallelGC",
-                                                                 "-XX:+UseLargePages",
-                                                                 "-Xmx2g",
-                                                                 "-Xms1g",
-                                                                 TestExplicitPageAllocation.class.getName());
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldHaveExitValue(0);
-        if(!checkOutput(output,"2M")) {
-           errorMessage = "Failed 2M page allocation\n";
-        } else {
-           System.out.println("TestCase4 Passed\n");
+        if (errorMessage!=null) {
+            throw new AssertionError(errorMessage);
         }
     }
 }
