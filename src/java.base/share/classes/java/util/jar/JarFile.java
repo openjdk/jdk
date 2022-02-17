@@ -873,12 +873,12 @@ public class JarFile extends ZipFile {
             // assure the name and entry match for verification
             return ((JarFileEntry)ze).realEntry();
         }
-        // ZipEntry::getName should not return null
+        // ZipEntry::getName should not return null, if it does, return null
         var entryName = ze.getName();
         if (entryName != null) {
             ze = getJarEntry(entryName);
         } else {
-            throw new ZipException("ZipEntry::getName returned null");
+            return null;
         }
         if (ze instanceof JarFileEntry) {
             return ((JarFileEntry)ze).realEntry();
