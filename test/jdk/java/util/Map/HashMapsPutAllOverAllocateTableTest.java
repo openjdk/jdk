@@ -29,8 +29,7 @@
  *          java.base/java.util:open
  * @author  Xeno Amess
  *
- * @compile HashMapsPutAllOverAllocateTableTest.java
- * @run junit/othervm HashMapsPutAllOverAllocateTableTest
+ * @run junit HashMapsPutAllOverAllocateTableTest
  */
 
 import java.lang.reflect.Array;
