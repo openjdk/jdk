@@ -156,7 +156,10 @@ public class WindowsHelper {
             }
         }
 
-        TKit.assertNotNull(description, "Failed to get file description");
+        if (description == null) {
+            throw new RuntimeException(String.format(
+                    "Failed to get file description of [%s]", pathToExeFile));
+        }
 
         return description;
     }

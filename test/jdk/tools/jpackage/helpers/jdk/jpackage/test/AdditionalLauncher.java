@@ -262,7 +262,7 @@ public final class AdditionalLauncher {
             String actualDescription =
                     WindowsHelper.getExecutableDesciption(launcherPath);
             TKit.assertEquals(expectedDescription, actualDescription,
-                    "Invalid file description");
+                    String.format("Check file description of [%s]", launcherPath));
         } else if (TKit.isLinux() && !cmd.isImagePackageType()) {
             String expectedDescription = getDesciption(cmd);
             Path desktopFile = LinuxHelper.getDesktopFile(cmd, name);
