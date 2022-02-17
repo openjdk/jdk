@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
 
-import sun.net.www.MessageHeader;
+import jdk.test.lib.net.HttpHeaderParser;
+
 
 public class TunnelProxy {
 
@@ -261,7 +262,7 @@ public class TunnelProxy {
             try {
                 InputStream is = new BufferedInputStream (new NioInputStream (chan));
                 String requestline = readLine (is);
-                MessageHeader mhead = new MessageHeader (is);
+                HttpHeaderParser mhead = new HttpHeaderParser (is);
                 String[] req = requestline.split (" ");
                 if (req.length < 2) {
                     /* invalid request line */
