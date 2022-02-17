@@ -25,6 +25,7 @@ import java.awt.Robot;
 import java.awt.event.KeyEvent;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -43,6 +44,7 @@ import static java.util.stream.Collectors.toList;
  * @run main SpaceKeyActivatesButton
  */
 public class SpaceKeyActivatesButton {
+
     private static volatile boolean buttonPressed;
     private static JFrame frame;
     private static JButton focusedButton;
@@ -68,8 +70,8 @@ public class SpaceKeyActivatesButton {
                     setLookAndFeel(laf);
                     createUI();
                 });
-                int waitCount = 0;
 
+                int waitCount = 0;
                 while (!isFocusOwner()) {
                     robot.delay(100);
                     waitCount++;
@@ -95,8 +97,10 @@ public class SpaceKeyActivatesButton {
 
     }
 
-    private static boolean isFocusOwner() {
-        return focusedButton.isFocusOwner();
+    private static boolean isFocusOwner() throws Exception {
+        AtomicBoolean isFocusOwner = new AtomicBoolean(false);
+        SwingUtilities.invokeAndWait(() -> isFocusOwner.set(focusedButton.isFocusOwner()));
+        return isFocusOwner.get();
     }
 
     private static void setLookAndFeel(String lafName) {
