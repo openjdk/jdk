@@ -575,7 +575,7 @@ implements X509Extension {
      * {@code List} whose first entry is an {@code Integer}
      * (the name type, 0-8) and whose second entry is a {@code String}
      * or a byte array (the name, in string or ASN.1 DER encoded form,
-     * respectively). More entries can exist depending on the name type.
+     * respectively). More entries may exist depending on the name type.
      * <p>
      * <a href="http://www.ietf.org/rfc/rfc822.txt">RFC 822</a>, DNS, and URI
      * names are returned as {@code String}s,
@@ -640,7 +640,7 @@ implements X509Extension {
      * {@code List} whose first entry is an {@code Integer}
      * (the name type, 0-8) and whose second entry is a {@code String}
      * or a byte array (the name, in string or ASN.1 DER encoded form,
-     * respectively).  More entries can exist depending on the name type.
+     * respectively).  More entries may exist depending on the name type.
      * For more details about the formats used for each
      * name type, see the {@code getSubjectAlternativeNames} method.
      * <p>
