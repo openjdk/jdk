@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -199,9 +199,12 @@ class Thread: public ThreadShadow {
   }
 
  public:
-  // Is the target JavaThread protected by the calling Thread
-  // or by some other mechanism:
-  static bool is_JavaThread_protected(const JavaThread* p);
+  // Is the target JavaThread protected by the calling Thread or by some other
+  // mechanism?
+  static bool is_JavaThread_protected(const JavaThread* target);
+  // Is the target JavaThread protected by a ThreadsListHandle (TLH) associated
+  // with the calling Thread?
+  static bool is_JavaThread_protected_by_TLH(const JavaThread* target);
 
   void* operator new(size_t size) throw() { return allocate(size, true); }
   void* operator new(size_t size, const std::nothrow_t& nothrow_constant) throw() {
@@ -236,12 +239,6 @@ class Thread: public ThreadShadow {
 #endif
 
  private:
-  // Active_handles points to a block of handles
-  JNIHandleBlock* _active_handles;
-
-  // One-element thread local free list
-  JNIHandleBlock* _free_handle_block;
-
   // Point to the last handle mark
   HandleMark* _last_handle_mark;
 
@@ -414,12 +411,6 @@ class Thread: public ThreadShadow {
   OSThread* osthread() const                     { return _osthread;   }
   void set_osthread(OSThread* thread)            { _osthread = thread; }
 
-  // JNI handle support
-  JNIHandleBlock* active_handles() const         { return _active_handles; }
-  void set_active_handles(JNIHandleBlock* block) { _active_handles = block; }
-  JNIHandleBlock* free_handle_block() const      { return _free_handle_block; }
-  void set_free_handle_block(JNIHandleBlock* block) { _free_handle_block = block; }
-
   // Internal handle support
   HandleArea* handle_area() const                { return _handle_area; }
   void set_handle_area(HandleArea* area)         { _handle_area = area; }
@@ -559,8 +550,8 @@ protected:
   void    set_stack_size(size_t size)  { _stack_size = size; }
   address stack_end()  const           { return stack_base() - stack_size(); }
   void    record_stack_base_and_size();
-  void    register_thread_stack_with_NMT() NOT_NMT_RETURN;
-  void    unregister_thread_stack_with_NMT() NOT_NMT_RETURN;
+  void    register_thread_stack_with_NMT();
+  void    unregister_thread_stack_with_NMT();
 
   int     lgrp_id() const        { return _lgrp_id; }
   void    set_lgrp_id(int value) { _lgrp_id = value; }
@@ -605,7 +596,6 @@ protected:
   // Code generation
   static ByteSize exception_file_offset()        { return byte_offset_of(Thread, _exception_file); }
   static ByteSize exception_line_offset()        { return byte_offset_of(Thread, _exception_line); }
-  static ByteSize active_handles_offset()        { return byte_offset_of(Thread, _active_handles); }
 
   static ByteSize stack_base_offset()            { return byte_offset_of(Thread, _stack_base); }
   static ByteSize stack_size_offset()            { return byte_offset_of(Thread, _stack_size); }
@@ -744,6 +734,13 @@ class JavaThread: public Thread {
   ObjectMonitor* volatile _current_pending_monitor;     // ObjectMonitor this thread is waiting to lock
   bool           _current_pending_monitor_is_from_java; // locking is from Java code
   ObjectMonitor* volatile _current_waiting_monitor;     // ObjectMonitor on which this thread called Object.wait()
+
+  // Active_handles points to a block of handles
+  JNIHandleBlock* _active_handles;
+
+  // One-element thread local free list
+  JNIHandleBlock* _free_handle_block;
+
  public:
   volatile intptr_t _Stalled;
 
@@ -770,6 +767,15 @@ class JavaThread: public Thread {
   void set_current_waiting_monitor(ObjectMonitor* monitor) {
     Atomic::store(&_current_waiting_monitor, monitor);
   }
+
+  // JNI handle support
+  JNIHandleBlock* active_handles() const         { return _active_handles; }
+  void set_active_handles(JNIHandleBlock* block) { _active_handles = block; }
+  JNIHandleBlock* free_handle_block() const      { return _free_handle_block; }
+  void set_free_handle_block(JNIHandleBlock* block) { _free_handle_block = block; }
+
+  void push_jni_handle_block();
+  void pop_jni_handle_block();
 
  private:
   MonitorChunk* _monitor_chunks;              // Contains the off stack monitors
@@ -1281,6 +1287,8 @@ class JavaThread: public Thread {
   static ByteSize exception_handler_pc_offset()  { return byte_offset_of(JavaThread, _exception_handler_pc); }
   static ByteSize is_method_handle_return_offset() { return byte_offset_of(JavaThread, _is_method_handle_return); }
 
+  static ByteSize active_handles_offset()        { return byte_offset_of(JavaThread, _active_handles); }
+
   // StackOverflow offsets
   static ByteSize stack_overflow_limit_offset()  {
     return byte_offset_of(JavaThread, _stack_overflow_state._stack_overflow_limit);
@@ -1290,6 +1298,12 @@ class JavaThread: public Thread {
   }
   static ByteSize reserved_stack_activation_offset() {
     return byte_offset_of(JavaThread, _stack_overflow_state._reserved_stack_activation);
+  }
+  static ByteSize shadow_zone_safe_limit()  {
+    return byte_offset_of(JavaThread, _stack_overflow_state._shadow_zone_safe_limit);
+  }
+  static ByteSize shadow_zone_growth_watermark()  {
+    return byte_offset_of(JavaThread, _stack_overflow_state._shadow_zone_growth_watermark);
   }
 
   static ByteSize suspend_flags_offset()         { return byte_offset_of(JavaThread, _suspend_flags); }
@@ -1304,16 +1318,21 @@ class JavaThread: public Thread {
   // Returns the jni environment for this thread
   JNIEnv* jni_environment()                      { return &_jni_environment; }
 
+  // Returns the current thread as indicated by the given JNIEnv.
+  // We don't assert it is Thread::current here as that is done at the
+  // external JNI entry points where the JNIEnv is passed into the VM.
   static JavaThread* thread_from_jni_environment(JNIEnv* env) {
-    JavaThread *thread_from_jni_env = (JavaThread*)((intptr_t)env - in_bytes(jni_environment_offset()));
-    // Only return NULL if thread is off the thread list; starting to
-    // exit should not return NULL.
-    if (thread_from_jni_env->is_terminated()) {
-      thread_from_jni_env->block_if_vm_exited();
-      return NULL;
-    } else {
-      return thread_from_jni_env;
+    JavaThread* current = (JavaThread*)((intptr_t)env - in_bytes(jni_environment_offset()));
+    // We can't get here in a thread that has completed its execution and so
+    // "is_terminated", but a thread is also considered terminated if the VM
+    // has exited, so we have to check this and block in case this is a daemon
+    // thread returning to the VM (the JNI DirectBuffer entry points rely on
+    // this).
+    if (current->is_terminated()) {
+      current->block_if_vm_exited();
+      ShouldNotReachHere();
     }
+    return current;
   }
 
   // JNI critical regions. These can nest.
@@ -1741,6 +1760,15 @@ class UnlockFlagSaver {
     ~UnlockFlagSaver() {
       _thread->set_do_not_unlock_if_synchronized(_do_not_unlock);
     }
+};
+
+class JNIHandleMark : public StackObj {
+  JavaThread* _thread;
+ public:
+  JNIHandleMark(JavaThread* thread) : _thread(thread) {
+    thread->push_jni_handle_block();
+  }
+  ~JNIHandleMark() { _thread->pop_jni_handle_block(); }
 };
 
 #endif // SHARE_RUNTIME_THREAD_HPP

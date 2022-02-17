@@ -42,7 +42,7 @@ import jdk.tools.jlink.internal.Utils;
  * Filter resource resources using path matcher.
  */
 public class ResourceFilter implements Predicate<String> {
-    private final static List<String> EMPTY_LIST = Collections.emptyList();
+    private static final List<String> EMPTY_LIST = Collections.emptyList();
 
     private final List<PathMatcher> matchers;
     private final boolean include;

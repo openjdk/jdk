@@ -29,8 +29,6 @@ import java.awt.event.*;
 import java.beans.*;
 import java.io.*;
 import java.util.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import javax.swing.*;
 import javax.swing.event.*;
@@ -697,7 +695,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
     }
 
     static final int space = 10;
-    class IndentIcon implements Icon {
+    static class IndentIcon implements Icon {
 
         Icon icon = null;
         int depth = 0;
@@ -1068,7 +1066,7 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
     }
 
     @SuppressWarnings("serial") // JDK-implementation class
-    private class AlignedLabel extends JLabel {
+    private static class AlignedLabel extends JLabel {
         private AlignedLabel[] group;
         private int maxWidth = 0;
 

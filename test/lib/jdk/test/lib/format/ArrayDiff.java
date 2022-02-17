@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,6 @@
 
 package jdk.test.lib.format;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -93,7 +91,7 @@ public class ArrayDiff<E> implements Diff {
      * @param second the second array
      * @return an ArrayDiff instance for the two arrays
      */
-    public static ArrayDiff of(Object first, Object second) {
+    public static ArrayDiff<?> of(Object first, Object second) {
         return ArrayDiff.of(first, second, Diff.Defaults.WIDTH, Diff.Defaults.CONTEXT_BEFORE);
     }
 
@@ -109,7 +107,8 @@ public class ArrayDiff<E> implements Diff {
      * @throws NullPointerException if at least one of the arrays is null
      * @return an ArrayDiff instance for the two arrays and formatting parameters provided
      */
-    public static ArrayDiff of(Object first, Object second, int width, int contextBefore) {
+    @SuppressWarnings("rawtypes")
+    public static ArrayDiff<?> of(Object first, Object second, int width, int contextBefore) {
         Objects.requireNonNull(first);
         Objects.requireNonNull(second);
 
@@ -204,4 +203,3 @@ public class ArrayDiff<E> implements Diff {
     }
 
 }
-

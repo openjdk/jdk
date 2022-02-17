@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,34 +25,37 @@
 
 package jdk.internal.foreign;
 
-import jdk.incubator.foreign.MemoryAccess;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.NativeSymbol;
 import jdk.incubator.foreign.ResourceScope;
 import jdk.incubator.foreign.SymbolLookup;
 import jdk.incubator.foreign.MemoryAddress;
-import jdk.internal.loader.NativeLibraries;
 import jdk.internal.loader.NativeLibrary;
+import jdk.internal.loader.RawNativeLibraries;
 
+import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
-import static jdk.incubator.foreign.CLinker.C_POINTER;
+import sun.security.action.GetPropertyAction;
+
+import static jdk.incubator.foreign.ValueLayout.ADDRESS;
 
 public class SystemLookup implements SymbolLookup {
 
     private SystemLookup() { }
 
-    final static SystemLookup INSTANCE = new SystemLookup();
+    static final SystemLookup INSTANCE = new SystemLookup();
 
     /*
      * On POSIX systems, dlsym will allow us to lookup symbol in library dependencies; the same trick doesn't work
      * on Windows. For this reason, on Windows we do not generate any side-library, and load msvcrt.dll directly instead.
      */
     private static final SymbolLookup syslookup = switch (CABI.current()) {
-        case SysV, LinuxAArch64, MacOsAArch64 -> libLookup(libs -> libs.loadLibrary("syslookup"));
+        case SysV, LinuxAArch64, MacOsAArch64 -> libLookup(libs -> libs.load(jdkLibraryPath("syslookup")));
         case Win64 -> makeWindowsLookup(); // out of line to workaround javac crash
     };
 
@@ -63,19 +66,18 @@ public class SystemLookup implements SymbolLookup {
 
         boolean useUCRT = Files.exists(ucrtbase);
         Path stdLib = useUCRT ? ucrtbase : msvcrt;
-        SymbolLookup lookup = libLookup(libs -> libs.loadLibrary(null, stdLib.toFile()));
+        SymbolLookup lookup = libLookup(libs -> libs.load(stdLib));
 
         if (useUCRT) {
             // use a fallback lookup to look up inline functions from fallback lib
-
-            SymbolLookup fallbackLibLookup = libLookup(libs -> libs.loadLibrary("WinFallbackLookup"));
+            SymbolLookup fallbackLibLookup = libLookup(libs -> libs.load(jdkLibraryPath("WinFallbackLookup")));
 
             int numSymbols = WindowsFallbackSymbols.values().length;
-            MemorySegment funcs = fallbackLibLookup.lookup("funcs").orElseThrow()
-                .asSegment(C_POINTER.byteSize() * numSymbols, ResourceScope.newImplicitScope());
+            MemorySegment funcs = MemorySegment.ofAddress(fallbackLibLookup.lookup("funcs").orElseThrow().address(),
+                ADDRESS.byteSize() * numSymbols, ResourceScope.globalScope());
 
             SymbolLookup fallbackLookup = name -> Optional.ofNullable(WindowsFallbackSymbols.valueOfOrNull(name))
-                .map(symbol -> MemoryAccess.getAddressAtIndex(funcs, symbol.ordinal()));
+                .map(symbol -> NativeSymbol.ofAddress(symbol.name(), funcs.getAtIndex(ADDRESS, symbol.ordinal()), ResourceScope.globalScope()));
 
             final SymbolLookup finalLookup = lookup;
             lookup = name -> finalLookup.lookup(name).or(() -> fallbackLookup.lookup(name));
@@ -84,22 +86,36 @@ public class SystemLookup implements SymbolLookup {
         return lookup;
     }
 
-    private static SymbolLookup libLookup(Function<NativeLibraries, NativeLibrary> loader) {
-        NativeLibrary lib = loader.apply(NativeLibraries.rawNativeLibraries(SystemLookup.class, false));
+    private static SymbolLookup libLookup(Function<RawNativeLibraries, NativeLibrary> loader) {
+        NativeLibrary lib = loader.apply(RawNativeLibraries.newInstance(MethodHandles.lookup()));
         return name -> {
             Objects.requireNonNull(name);
             try {
                 long addr = lib.lookup(name);
                 return addr == 0 ?
-                        Optional.empty() : Optional.of(MemoryAddress.ofLong(addr));
+                        Optional.empty() :
+                        Optional.of(NativeSymbol.ofAddress(name, MemoryAddress.ofLong(addr), ResourceScope.globalScope()));
             } catch (NoSuchMethodException e) {
                 return Optional.empty();
             }
         };
     }
 
+    /*
+     * Returns the path of the given library name from JDK
+     */
+    private static Path jdkLibraryPath(String name) {
+        Path javahome = Path.of(GetPropertyAction.privilegedGetProperty("java.home"));
+        String lib = switch (CABI.current()) {
+            case SysV, LinuxAArch64, MacOsAArch64 -> "lib";
+            case Win64 -> "bin";
+        };
+        String libname = System.mapLibraryName(name);
+        return javahome.resolve(lib).resolve(libname);
+    }
+
     @Override
-    public Optional<MemoryAddress> lookup(String name) {
+    public Optional<NativeSymbol> lookup(String name) {
         return syslookup.lookup(name);
     }
 

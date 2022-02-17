@@ -165,6 +165,9 @@ private:
                            Bytecodes::Code  bc,
                            constantTag      tag);
 
+  ciConstant unbox_primitive_value(ciObject* cibox, BasicType expected_bt = T_ILLEGAL);
+  ciConstant get_resolved_constant(const constantPoolHandle& cpool, int obj_index);
+
   // Get a ciObject from the object factory.  Ensures uniqueness
   // of ciObjects.
   ciObject* get_object(oop o) {
@@ -429,6 +432,8 @@ public:
   }
   ciInstance* unloaded_ciinstance();
 
+  ciInstanceKlass* get_box_klass_for_primitive_type(BasicType type);
+
   // Note:  To find a class from its name string, use ciSymbol::make,
   // but consider adding to vmSymbols.hpp instead.
 
@@ -508,8 +513,8 @@ public:
   void record_lambdaform(Thread* thread, oop obj);
   void record_member(Thread* thread, oop obj);
   void record_mh(Thread* thread, oop obj);
-  void record_call_site_obj(Thread* thread, const constantPoolHandle& pool, const Handle appendix);
-  void record_call_site_method(Thread* thread, const constantPoolHandle& pool, Method* adapter);
+  void record_call_site_obj(Thread* thread, oop obj);
+  void record_call_site_method(Thread* thread, Method* adapter);
   void process_invokedynamic(const constantPoolHandle &cp, int index, JavaThread* thread);
   void process_invokehandle(const constantPoolHandle &cp, int index, JavaThread* thread);
   void find_dynamic_call_sites();

@@ -97,7 +97,7 @@ public final class ChunkParser {
     private final RecordingInput input;
     private final ChunkHeader chunkHeader;
     private final TimeConverter timeConverter;
-
+    private final ParserState parserState;
     private final LongMap<ConstantLookup> constantLookups;
 
     private LongMap<Type> typeMap;
@@ -105,24 +105,24 @@ public final class ChunkParser {
     private boolean chunkFinished;
 
     private ParserConfiguration configuration;
-    private volatile boolean closed;
     private MetadataDescriptor previousMetadata;
     private MetadataDescriptor metadata;
     private boolean staleMetadata = true;
 
-    public ChunkParser(RecordingInput input) throws IOException {
-        this(input, new ParserConfiguration());
+    public ChunkParser(RecordingInput input, ParserState ps) throws IOException {
+        this(input, new ParserConfiguration(), ps);
     }
 
-    ChunkParser(RecordingInput input, ParserConfiguration pc) throws IOException {
-       this(new ChunkHeader(input), null, pc);
+    ChunkParser(RecordingInput input, ParserConfiguration pc, ParserState ps) throws IOException {
+       this(new ChunkHeader(input), null, pc, ps);
     }
 
-    private ChunkParser(ChunkParser previous) throws IOException {
-        this(new ChunkHeader(previous.input), previous, new ParserConfiguration());
+    private ChunkParser(ChunkParser previous, ParserState ps) throws IOException {
+        this(new ChunkHeader(previous.input), previous, new ParserConfiguration(), ps);
      }
 
-    private ChunkParser(ChunkHeader header, ChunkParser previous, ParserConfiguration pc) throws IOException {
+    private ChunkParser(ChunkHeader header, ChunkParser previous, ParserConfiguration pc, ParserState ps) throws IOException {
+        this.parserState = ps;
         this.configuration = pc;
         this.input = header.getInput();
         this.chunkHeader = header;
@@ -155,7 +155,7 @@ public final class ChunkParser {
     }
 
     public ChunkParser nextChunkParser() throws IOException {
-        return new ChunkParser(chunkHeader.nextHeader(), this, configuration);
+        return new ChunkParser(chunkHeader.nextHeader(), this, configuration, parserState);
     }
 
     private void updateConfiguration() {
@@ -280,7 +280,7 @@ public final class ChunkParser {
             Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Waiting for more data (streaming). Read so far: " + chunkHeader.getChunkSize() + " bytes");
         }
         while (true) {
-            if (closed) {
+            if (parserState.isClosed()) {
                 return true;
             }
             if (chunkHeader.getLastNanos() > filterEnd)  {
@@ -437,7 +437,7 @@ public final class ChunkParser {
     }
 
     ChunkParser newChunkParser() throws IOException {
-        return new ChunkParser(this);
+        return new ChunkParser(this, parserState);
     }
 
     public boolean isChunkFinished() {
@@ -457,7 +457,7 @@ public final class ChunkParser {
     }
 
     public void close() {
-        this.closed = true;
+        parserState.close();
         try {
             input.close();
         } catch(IOException e) {

@@ -90,7 +90,13 @@ inline   bool is_concrete() {
 #ifndef AMD64
   if (is_Register()) return true;
 #endif // AMD64
-  return is_even(value());
+  // Do not use is_XMMRegister() here as it depends on the UseAVX setting.
+  if (value() >= ConcreteRegisterImpl::max_fpr && value() < ConcreteRegisterImpl::max_xmm) {
+    int base = value() - ConcreteRegisterImpl::max_fpr;
+    return base % XMMRegisterImpl::max_slots_per_register == 0;
+  } else {
+    return is_even(value());   // General, float, and K registers are all two slots wide
+  }
 }
 
 #endif // CPU_X86_VMREG_X86_HPP

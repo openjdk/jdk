@@ -307,7 +307,6 @@ final class Filter {
             dbgIndent++;
         }
 
-        String type, value;
         int valueStart, valueEnd, typeStart, typeEnd;
 
         int eq;

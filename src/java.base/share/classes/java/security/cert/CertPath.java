@@ -123,7 +123,7 @@ public abstract class CertPath implements Serializable {
     private static final long serialVersionUID = 6068470306649138683L;
 
     /** The type of certificates in this chain. */
-    private String type;
+    private final transient String type;
 
     /**
      * Creates a {@code CertPath} of the specified type.
@@ -270,9 +270,11 @@ public abstract class CertPath implements Serializable {
 
     /**
      * Replaces the {@code CertPath} to be serialized with a
-     * {@code CertPathRep} object.
+     * {@link CertPathRep CertPathRep} object containing the
+     * {@code Certificate} type and encoded bytes of the {@code CertPath}.
      *
-     * @return the {@code CertPathRep} to be serialized
+     * @return a {@code CertPathRep} containing the {@code Certificate} type
+     *         and encoded bytes of the {@code CertPath}
      *
      * @throws ObjectStreamException if a {@code CertPathRep} object
      * representing this certification path could not be created
@@ -299,16 +301,16 @@ public abstract class CertPath implements Serializable {
         @java.io.Serial
         private static final long serialVersionUID = 3015633072427920915L;
 
-        /** The Certificate type */
+        /** The type of {@code Certificate}s in the {@code CertPath}. */
         private String type;
-        /** The encoded form of the cert path */
+        /** The encoded form of the {@code CertPath}. */
         private byte[] data;
 
         /**
          * Creates a {@code CertPathRep} with the specified
          * type and encoded form of a certification path.
          *
-         * @param type the standard name of a {@code CertPath} type
+         * @param type the standard name of a {@code Certificate} type
          * @param data the encoded form of the certification path
          */
         protected CertPathRep(String type, byte[] data) {
@@ -317,11 +319,12 @@ public abstract class CertPath implements Serializable {
         }
 
         /**
-         * Returns a {@code CertPath} constructed from the type and data.
+         * Returns a {@code CertPath} constructed from the type and data of
+         * this {@code CertPathRep}.
          *
          * @return the resolved {@code CertPath} object
          *
-         * @throws ObjectStreamException if a {@code CertPath} could not
+         * @throws ObjectStreamException if a {@code CertPath} object could not
          * be constructed
          */
         @java.io.Serial

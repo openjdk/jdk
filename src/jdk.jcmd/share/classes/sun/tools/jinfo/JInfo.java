@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import sun.tools.common.PrintStreamPrinter;
  * and decides if the command should be satisfied using the VM attach mechanism
  * or an SA tool.
  */
-final public class JInfo {
+public final class JInfo {
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {

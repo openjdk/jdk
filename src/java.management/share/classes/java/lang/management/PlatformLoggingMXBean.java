@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package java.lang.management;
 
 /**
- * The management interface for the {@linkplain java.util.logging logging} facility.
+ * The management interface for the {@linkplain java.logging/java.util.logging logging} facility.
  *
  * <p>There is a single global instance of the {@code PlatformLoggingMXBean}.
  * The {@link java.lang.management.ManagementFactory#getPlatformMXBean(Class)
@@ -41,17 +41,18 @@ package java.lang.management;
  * The {@link javax.management.ObjectName ObjectName} for uniquely
  * identifying the {@code PlatformLoggingMXBean} within an MBeanServer is:
  * <pre>
- *      {@link java.util.logging.LogManager#LOGGING_MXBEAN_NAME java.util.logging:type=Logging}
+ *      {@link java.logging/java.util.logging.LogManager#LOGGING_MXBEAN_NAME java.util.logging:type=Logging}
  * </pre>
  *
  * @since   1.7
  */
+@SuppressWarnings("doclint:reference") // cross-module links
 public interface PlatformLoggingMXBean extends PlatformManagedObject {
 
     /**
      * Returns the list of the currently registered
-     * {@linkplain java.util.logging.Logger logger} names. This method
-     * calls {@link java.util.logging.LogManager#getLoggerNames} and
+     * {@linkplain java.logging/java.util.logging.Logger logger} names. This method
+     * calls {@link java.logging/java.util.logging.LogManager#getLoggerNames} and
      * returns a list of the logger names.
      *
      * @return A list of {@code String} each of which is a
@@ -60,15 +61,15 @@ public interface PlatformLoggingMXBean extends PlatformManagedObject {
     java.util.List<String> getLoggerNames();
 
     /**
-     * Gets the name of the log {@linkplain java.util.logging.Logger#getLevel
+     * Gets the name of the log {@linkplain java.logging/java.util.logging.Logger#getLevel
      * level} associated with the specified logger.
      * If the specified logger does not exist, {@code null}
      * is returned.
      * This method first finds the logger of the given name and
      * then returns the name of the log level by calling:
      * <blockquote>
-     *   {@link java.util.logging.Logger#getLevel
-     *    Logger.getLevel()}.{@link java.util.logging.Level#getName getName()};
+     *   {@link java.logging/java.util.logging.Logger#getLevel
+     *    Logger.getLevel()}.{@link java.logging/java.util.logging.Level#getName getName()};
      * </blockquote>
      *
      * <p>
@@ -83,16 +84,16 @@ public interface PlatformLoggingMXBean extends PlatformManagedObject {
      *         is {@code null}.  If the specified logger does not
      *         exist, {@code null} is returned.
      *
-     * @see java.util.logging.Logger#getLevel
+     * @see java.logging/java.util.logging.Logger#getLevel
      */
     String getLoggerLevel(String loggerName);
 
     /**
      * Sets the specified logger to the specified new
-     * {@linkplain java.util.logging.Logger#setLevel level}.
+     * {@linkplain java.logging/java.util.logging.Logger#setLevel level}.
      * If the {@code levelName} is not {@code null}, the level
      * of the specified logger is set to the parsed
-     * {@link java.util.logging.Level Level}
+     * {@link java.logging/java.util.logging.Level Level}
      * matching the {@code levelName}.
      * If the {@code levelName} is {@code null}, the level
      * of the specified logger is set to {@code null} and
@@ -111,13 +112,13 @@ public interface PlatformLoggingMXBean extends PlatformManagedObject {
      * @throws SecurityException if a security manager exists and if
      * the caller does not have LoggingPermission("control").
      *
-     * @see java.util.logging.Logger#setLevel
+     * @see java.logging/java.util.logging.Logger#setLevel
      */
     void setLoggerLevel(String loggerName, String levelName);
 
     /**
      * Returns the name of the
-     * {@linkplain java.util.logging.Logger#getParent parent}
+     * {@linkplain java.logging/java.util.logging.Logger#getParent parent}
      * for the specified logger.
      * If the specified logger does not exist, {@code null} is returned.
      * If the specified logger is the root {@code Logger} in the namespace,

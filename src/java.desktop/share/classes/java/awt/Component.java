@@ -3931,7 +3931,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      *
      * @see sun.java2d.SunGraphicsEnvironment#isFlipStrategyPreferred(ComponentPeer)
      */
-    private class ProxyCapabilities extends ExtendedBufferCapabilities {
+    private static class ProxyCapabilities extends ExtendedBufferCapabilities {
         private BufferCapabilities orig;
         private ProxyCapabilities(BufferCapabilities orig) {
             super(orig.getFrontBufferCapabilities(),
@@ -4132,7 +4132,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
         }
 
         /**
-         * @return direct access to the back buffer, as an image.
+         * Provides direct access to the back buffer as an image.
+         *
+         * @return the back buffer as an image
          * @exception IllegalStateException if the buffers have not yet
          * been created
          */
@@ -4692,8 +4694,11 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
-     * @return whether or not paint messages received from the operating system
+     * Returns whether or not paint messages received from the operating system
      * should be ignored.
+     *
+     * @return whether or not paint messages received from the operating system
+     * should be ignored
      *
      * @since 1.4
      * @see #setIgnoreRepaint
@@ -4944,8 +4949,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
             // the active/passive/peered clients loose focus.
             if (id == FocusEvent.FOCUS_GAINED) {
                 InputContext inputContext = getInputContext();
-                if (inputContext != null && inputContext instanceof sun.awt.im.InputContext) {
-                    ((sun.awt.im.InputContext)inputContext).disableNativeIM();
+                if (inputContext instanceof sun.awt.im.InputContext ctx) {
+                    ctx.disableNativeIM();
                 }
             }
         }

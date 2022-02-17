@@ -2035,7 +2035,7 @@ public class JavacParser implements Parser {
                     args.append(parseExpression());
                 }
             }
-            accept(RPAREN);
+            accept(RPAREN, tk -> Errors.Expected2(RPAREN, COMMA));
         } else {
             syntaxError(token.pos, Errors.Expected(LPAREN));
         }
@@ -2123,7 +2123,7 @@ public class JavacParser implements Parser {
                     nextToken();
                     break;
                 default:
-                    args.append(syntaxError(token.pos, Errors.Expected(GT)));
+                    args.append(syntaxError(token.pos, Errors.Expected2(GT, COMMA)));
                     break;
                 }
                 return args.toList();
@@ -3031,9 +3031,9 @@ public class JavacParser implements Parser {
         }
         case DEFAULT: {
             nextToken();
+            JCCaseLabel defaultPattern = toP(F.at(pos).DefaultCaseLabel());
             CaseTree.CaseKind caseKind;
             JCTree body = null;
-            int patternPos = token.pos;
             if (token.kind == ARROW) {
                 checkSourceLevel(Feature.SWITCH_RULE);
                 accept(ARROW);
@@ -3049,7 +3049,6 @@ public class JavacParser implements Parser {
                 caseKind = JCCase.STATEMENT;
                 stats = blockStatements();
             }
-            JCCaseLabel defaultPattern = toP(F.at(patternPos).DefaultCaseLabel());
             c = F.at(pos).Case(caseKind, List.of(defaultPattern), stats, body);
             if (stats.isEmpty())
                 storeEnd(c, S.prevToken().endPos);
@@ -3380,7 +3379,7 @@ public class JavacParser implements Parser {
                     buf.append(annotationValue());
                 }
             }
-            accept(RBRACE);
+            accept(RBRACE, tk -> Errors.AnnotationMissingElementValue);
             return toP(F.at(pos).NewArray(null, List.nil(), buf.toList()));
         default:
             selectExprMode();
@@ -4988,7 +4987,7 @@ public class JavacParser implements Parser {
 
     }
 
-    protected static abstract class AbstractEndPosTable implements EndPosTable {
+    protected abstract static class AbstractEndPosTable implements EndPosTable {
         /**
          * The current parser.
          */

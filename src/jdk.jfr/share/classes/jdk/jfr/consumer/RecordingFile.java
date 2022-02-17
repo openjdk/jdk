@@ -41,6 +41,7 @@ import jdk.jfr.internal.Type;
 import jdk.jfr.internal.consumer.ChunkHeader;
 import jdk.jfr.internal.consumer.ChunkParser;
 import jdk.jfr.internal.consumer.FileAccess;
+import jdk.jfr.internal.consumer.ParserState;
 import jdk.jfr.internal.consumer.RecordingInput;
 
 /**
@@ -48,19 +49,13 @@ import jdk.jfr.internal.consumer.RecordingInput;
  * <p>
  * The following example shows how read and print all events in a recording file.
  *
- * <pre>{@literal
- * try (RecordingFile recordingFile = new RecordingFile(Paths.get("recording.jfr"))) {
- *   while (recordingFile.hasMoreEvents()) {
- *     RecordedEvent event = recordingFile.readEvent();
- *     System.out.println(event);
- *   }
- * }
- * }</pre>
+ * {@snippet class="Snippets" region="RecordingFileOverview"}
  *
  * @since 9
  */
 public final class RecordingFile implements Closeable {
 
+    private final ParserState parserState = new ParserState();
     private boolean isLastEventInChunk;
     private final File file;
     private RecordingInput input;
@@ -247,7 +242,7 @@ public final class RecordingFile implements Closeable {
     private void findNext() throws IOException {
         while (nextEvent == null) {
             if (chunkParser == null) {
-                chunkParser = new ChunkParser(input);
+                chunkParser = new ChunkParser(input, parserState);
             } else if (!chunkParser.isLastChunk()) {
                 chunkParser = chunkParser.nextChunkParser();
             } else {

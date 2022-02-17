@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -741,7 +741,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   assert(thread->osthread() == NULL, "caller responsible");
 
   // Allocate the OSThread object.
-  OSThread* osthread = new OSThread(NULL, NULL);
+  OSThread* osthread = new OSThread();
   if (osthread == NULL) {
     return false;
   }
@@ -855,7 +855,7 @@ bool os::create_attached_thread(JavaThread* thread) {
 #endif
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread(NULL, NULL);
+  OSThread* osthread = new OSThread();
 
   if (osthread == NULL) {
     return false;
@@ -1131,7 +1131,11 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
 }
 
 int os::get_loaded_modules_info(os::LoadedModulesCallbackFunc callback, void *param) {
-  // Not yet implemented.
+
+  if (!LoadedLibraries::for_each(callback, param)) {
+    return -1;
+  }
+
   return 0;
 }
 

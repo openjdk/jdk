@@ -155,14 +155,15 @@ void CodeInstaller::pd_relocate_JavaMethod(CodeBuffer &, JVMCIObject hotspot_met
     method = JVMCIENV->asMethod(hotspot_method);
   }
 #endif
+  NativeCall* call = NULL;
   switch (_next_call_type) {
     case INLINE_INVOKE:
-      break;
+      return;
     case INVOKEVIRTUAL:
     case INVOKEINTERFACE: {
       assert(method == NULL || !method->is_static(), "cannot call static method with invokeinterface");
 
-      NativeCall* call = nativeCall_at(_instructions->start() + pc_offset);
+      call = nativeCall_at(_instructions->start() + pc_offset);
       call->set_destination(SharedRuntime::get_resolve_virtual_call_stub());
       _instructions->relocate(call->instruction_address(),
                                              virtual_call_Relocation::spec(_invoke_mark_pc),
@@ -172,7 +173,7 @@ void CodeInstaller::pd_relocate_JavaMethod(CodeBuffer &, JVMCIObject hotspot_met
     case INVOKESTATIC: {
       assert(method == NULL || method->is_static(), "cannot call non-static method with invokestatic");
 
-      NativeCall* call = nativeCall_at(_instructions->start() + pc_offset);
+      call = nativeCall_at(_instructions->start() + pc_offset);
       call->set_destination(SharedRuntime::get_resolve_static_call_stub());
       _instructions->relocate(call->instruction_address(),
                                              relocInfo::static_call_type, Assembler::call32_operand);
@@ -180,15 +181,18 @@ void CodeInstaller::pd_relocate_JavaMethod(CodeBuffer &, JVMCIObject hotspot_met
     }
     case INVOKESPECIAL: {
       assert(method == NULL || !method->is_static(), "cannot call static method with invokespecial");
-      NativeCall* call = nativeCall_at(_instructions->start() + pc_offset);
+      call = nativeCall_at(_instructions->start() + pc_offset);
       call->set_destination(SharedRuntime::get_resolve_opt_virtual_call_stub());
       _instructions->relocate(call->instruction_address(),
                               relocInfo::opt_virtual_call_type, Assembler::call32_operand);
       break;
     }
     default:
-      JVMCI_ERROR("invalid _next_call_type value");
-      break;
+      JVMCI_ERROR("invalid _next_call_type value: %d", _next_call_type);
+      return;
+  }
+  if (!call->is_displacement_aligned()) {
+    JVMCI_ERROR("unaligned displacement for call at offset %d", pc_offset);
   }
 }
 

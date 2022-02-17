@@ -659,7 +659,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
         updateComboBox();
     }
 
-    final static class ResolvableHelper implements Serializable {
+    static final class ResolvableHelper implements Serializable {
 
         private static final long serialVersionUID = 1L;
 

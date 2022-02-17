@@ -59,8 +59,7 @@ public class SummaryAPIListBuilder {
         INTERFACE,
         CLASS,
         ENUM,
-        EXCEPTION,              // no ElementKind mapping
-        ERROR,                  // no ElementKind mapping
+        EXCEPTION_CLASS,        // no ElementKind mapping
         RECORD_CLASS,
         ANNOTATION_TYPE,
         FIELD,
@@ -121,10 +120,8 @@ public class SummaryAPIListBuilder {
                         eset.add(te);
                     }
                     case CLASS -> {
-                        if (utils.isError(te)) {
-                            eset = summaryMap.get(SummaryElementKind.ERROR);
-                        } else if (utils.isException(te)) {
-                            eset = summaryMap.get(SummaryElementKind.EXCEPTION);
+                        if (utils.isThrowable(te)) {
+                            eset = summaryMap.get(SummaryElementKind.EXCEPTION_CLASS);
                         } else {
                             eset = summaryMap.get(SummaryElementKind.CLASS);
                         }

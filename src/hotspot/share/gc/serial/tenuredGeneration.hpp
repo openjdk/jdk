@@ -97,8 +97,6 @@ class TenuredGeneration: public CardGeneration {
 
   HeapWord* expand_and_allocate(size_t size, bool is_tlab);
 
-  virtual void prepare_for_verify();
-
   virtual void gc_prologue(bool full);
   virtual void gc_epilogue(bool full);
 

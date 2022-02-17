@@ -98,7 +98,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
         boolean showUsage;
     }
 
-    static abstract class Option {
+    abstract static class Option {
         Option(boolean hasArg, String... aliases) {
             this.hasArg = hasArg;
             this.aliases = aliases;

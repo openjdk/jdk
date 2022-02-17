@@ -202,8 +202,6 @@ protected:
                    size_t max_byte_size,
                    const char* policy="Serial young collection pauses");
 
-  virtual void ref_processor_init();
-
   virtual Generation::Name kind() { return Generation::DefNew; }
 
   // Accessing spaces

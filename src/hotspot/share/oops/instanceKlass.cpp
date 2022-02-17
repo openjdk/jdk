@@ -141,6 +141,7 @@
 
 #endif //  ndef DTRACE_ENABLED
 
+bool InstanceKlass::_finalization_enabled = true;
 
 static inline bool is_class_loader(const Symbol* class_name,
                                    const ClassFileParser& parser) {
@@ -728,7 +729,6 @@ oop InstanceKlass::protection_domain() const {
   return java_lang_Class::protection_domain(java_mirror());
 }
 
-// To remove these from requires an incompatible change and CCC request.
 objArrayOop InstanceKlass::signers() const {
   // return the signers from the mirror
   return java_lang_Class::signers(java_mirror());
@@ -1061,7 +1061,7 @@ void InstanceKlass::clean_initialization_error_table() {
     }
   };
 
-  MutexLocker ml(ClassInitError_lock);
+  assert_locked_or_safepoint(ClassInitError_lock);
   InitErrorTableCleaner cleaner;
   _initialization_error_table.unlink(&cleaner);
 }
@@ -2062,25 +2062,14 @@ Method* InstanceKlass::lookup_method_in_all_interfaces(Symbol* name,
   return NULL;
 }
 
-/* jni_id_for_impl for jfieldIds only */
-JNIid* InstanceKlass::jni_id_for_impl(int offset) {
-  MutexLocker ml(JfieldIdCreation_lock);
-  // Retry lookup after we got the lock
-  JNIid* probe = jni_ids() == NULL ? NULL : jni_ids()->find(offset);
-  if (probe == NULL) {
-    // Slow case, allocate new static field identifier
-    probe = new JNIid(this, offset, jni_ids());
-    set_jni_ids(probe);
-  }
-  return probe;
-}
-
-
 /* jni_id_for for jfieldIds only */
 JNIid* InstanceKlass::jni_id_for(int offset) {
+  MutexLocker ml(JfieldIdCreation_lock);
   JNIid* probe = jni_ids() == NULL ? NULL : jni_ids()->find(offset);
   if (probe == NULL) {
-    probe = jni_id_for_impl(offset);
+    // Allocate new static field identifier
+    probe = new JNIid(this, offset, jni_ids());
+    set_jni_ids(probe);
   }
   return probe;
 }
@@ -2428,7 +2417,9 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   } else {
     it->push(&_default_vtable_indices);
   }
-  it->push(&_fields);
+
+  // _fields might be written into by Rewriter::scan_method() -> fd.set_has_initialized_final_update()
+  it->push(&_fields, MetaspaceClosure::_writable);
 
   if (itable_length() > 0) {
     itableOffsetEntry* ioe = (itableOffsetEntry*)start_of_itable();
@@ -2599,6 +2590,11 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
 // retrieved during dump time.
 // Verification of archived old classes will be performed during run time.
 bool InstanceKlass::can_be_verified_at_dumptime() const {
+  if (MetaspaceShared::is_in_shared_metaspace(this)) {
+    // This is a class that was dumped into the base archive, so we know
+    // it was verified at dump time.
+    return true;
+  }
   if (major_version() < 50 /*JAVA_6_VERSION*/) {
     return false;
   }

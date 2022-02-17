@@ -220,7 +220,6 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         data.put("APPLICATION_VENDOR", VENDOR.fetchFrom(params));
         data.put("APPLICATION_VERSION", VERSION.fetchFrom(params));
         data.put("APPLICATION_DESCRIPTION", DESCRIPTION.fetchFrom(params));
-        data.put("APPLICATION_RELEASE", RELEASE.fetchFrom(params));
 
         String defaultDeps = String.join(", ", getListOfNeededPackages(params));
         String customDeps = LINUX_PACKAGE_DEPENDENCIES.fetchFrom(params).strip();

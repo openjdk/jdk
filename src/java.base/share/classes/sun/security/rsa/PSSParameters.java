@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,8 +102,13 @@ public final class PSSParameters extends AlgorithmParametersSpi {
                 if (!val.getOID().equals(AlgorithmId.MGF1_oid)) {
                     throw new IOException("Only MGF1 mgf is supported");
                 }
+
+                byte[] encodedParams = val.getEncodedParams();
+                if (encodedParams == null) {
+                    throw new IOException("Missing MGF1 parameters");
+                }
                 AlgorithmId params = AlgorithmId.parse(
-                        new DerValue(val.getEncodedParams()));
+                        new DerValue(encodedParams));
                 String mgfDigestName = params.getName();
                 switch (mgfDigestName) {
                 case "SHA-1":
@@ -180,7 +185,7 @@ public final class PSSParameters extends AlgorithmParametersSpi {
     protected <T extends AlgorithmParameterSpec>
             T engineGetParameterSpec(Class<T> paramSpec)
             throws InvalidParameterSpecException {
-        if (PSSParameterSpec.class.isAssignableFrom(paramSpec)) {
+        if (paramSpec.isAssignableFrom(PSSParameterSpec.class)) {
             return paramSpec.cast(spec);
         } else {
             throw new InvalidParameterSpecException

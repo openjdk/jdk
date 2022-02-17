@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.CallerSensitiveAdapter;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.ForceInline;
 import sun.invoke.util.ValueConversions;
@@ -63,7 +64,9 @@ import java.util.stream.Stream;
 import static java.lang.invoke.LambdaForm.BasicType.V_TYPE;
 import static java.lang.invoke.MethodHandleImpl.Intrinsic;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
+import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 import static java.lang.invoke.MethodHandleStatics.newIllegalArgumentException;
+import static java.lang.invoke.MethodHandleStatics.newInternalError;
 import static java.lang.invoke.MethodType.methodType;
 
 /**
@@ -106,25 +109,37 @@ public class MethodHandles {
      * <p>
      * This method is caller sensitive, which means that it may return different
      * values to different callers.
+     * In cases where {@code MethodHandles.lookup} is called from a context where
+     * there is no caller frame on the stack (e.g. when called directly
+     * from a JNI attached thread), {@code IllegalCallerException} is thrown.
+     * To obtain a {@link Lookup lookup object} in such a context, use an auxiliary class that will
+     * implicitly be identified as the caller, or use {@link MethodHandles#publicLookup()}
+     * to obtain a low-privileged lookup instead.
      * @return a lookup object for the caller of this method, with
      * {@linkplain Lookup#ORIGINAL original} and
      * {@linkplain Lookup#hasFullPrivilegeAccess() full privilege access}.
+     * @throws IllegalCallerException if there is no caller frame on the stack.
      */
     @CallerSensitive
     @ForceInline // to ensure Reflection.getCallerClass optimization
     public static Lookup lookup() {
-        return new Lookup(Reflection.getCallerClass());
+        final Class<?> c = Reflection.getCallerClass();
+        if (c == null) {
+            throw new IllegalCallerException("no caller frame");
+        }
+        return new Lookup(c);
     }
 
     /**
-     * This reflected$lookup method is the alternate implementation of
-     * the lookup method when being invoked by reflection.
+     * This lookup method is the alternate implementation of
+     * the lookup method with a leading caller class argument which is
+     * non-caller-sensitive.  This method is only invoked by reflection
+     * and method handle.
      */
-    @CallerSensitive
-    private static Lookup reflected$lookup() {
-        Class<?> caller = Reflection.getCallerClass();
+    @CallerSensitiveAdapter
+    private static Lookup lookup(Class<?> caller) {
         if (caller.getClassLoader() == null) {
-            throw newIllegalArgumentException("illegal lookupClass: "+caller);
+            throw newInternalError("calling lookup() reflectively is not supported: "+caller);
         }
         return new Lookup(caller);
     }
@@ -329,7 +344,7 @@ public class MethodHandles {
              throw new IllegalAccessException(caller + " does not have ORIGINAL access");
          }
 
-         Object classdata = MethodHandleNatives.classData(caller.lookupClass());
+         Object classdata = classData(caller.lookupClass());
          if (classdata == null) return null;
 
          try {
@@ -339,6 +354,17 @@ public class MethodHandles {
          } catch (Throwable e) {
              throw new InternalError(e);
          }
+    }
+
+    /*
+     * Returns the class data set by the VM in the Class::classData field.
+     *
+     * This is also invoked by LambdaForms as it cannot use condy via
+     * MethodHandles::classData due to bootstrapping issue.
+     */
+    static Object classData(Class<?> c) {
+        UNSAFE.ensureClassInitialized(c);
+        return SharedSecrets.getJavaLangAccess().classData(c);
     }
 
     /**
@@ -860,40 +886,20 @@ public class MethodHandles {
      * with all public types that are accessible to {@code M0}. {@code M0}
      * reads {@code M1} and hence the set of accessible types includes:
      *
-     * <table class="striped">
-     * <caption style="display:none">
-     * Public types in the following packages are accessible to the
-     * lookup class and the previous lookup class.
-     * </caption>
-     * <thead>
-     * <tr>
-     * <th scope="col">Equally accessible types to {@code M0} and {@code M1}</th>
-     * </tr>
-     * </thead>
-     * <tbody>
-     * <tr>
-     * <th scope="row" style="text-align:left">unconditional-exported packages from {@code M1}</th>
-     * </tr>
-     * <tr>
-     * <th scope="row" style="text-align:left">unconditional-exported packages from {@code M0} if {@code M1} reads {@code M0}</th>
-     * </tr>
-     * <tr>
-     * <th scope="row" style="text-align:left">unconditional-exported packages from a third module {@code M2}
-     * if both {@code M0} and {@code M1} read {@code M2}</th>
-     * </tr>
-     * <tr>
-     * <th scope="row" style="text-align:left">qualified-exported packages from {@code M1} to {@code M0}</th>
-     * </tr>
-     * <tr>
-     * <th scope="row" style="text-align:left">qualified-exported packages from {@code M0} to {@code M1}
-     * if {@code M1} reads {@code M0}</th>
-     * </tr>
-     * <tr>
-     * <th scope="row" style="text-align:left">qualified-exported packages from a third module {@code M2} to
-     * both {@code M0} and {@code M1} if both {@code M0} and {@code M1} read {@code M2}</th>
-     * </tr>
-     * </tbody>
-     * </table>
+     * <ul>
+     * <li>unconditional-exported packages from {@code M1}</li>
+     * <li>unconditional-exported packages from {@code M0} if {@code M1} reads {@code M0}</li>
+     * <li>
+     *     unconditional-exported packages from a third module {@code M2}if both {@code M0}
+     *     and {@code M1} read {@code M2}
+     * </li>
+     * <li>qualified-exported packages from {@code M1} to {@code M0}</li>
+     * <li>qualified-exported packages from {@code M0} to {@code M1} if {@code M1} reads {@code M0}</li>
+     * <li>
+     *     qualified-exported packages from a third module {@code M2} to both {@code M0} and
+     *     {@code M1} if both {@code M0} and {@code M1} read {@code M2}
+     * </li>
+     * </ul>
      *
      * <h2><a id="access-modes"></a>Access modes</h2>
      *
@@ -960,7 +966,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code CL.in(D).in(C)} hop back to module</td>
+     * <th scope="row" style="text-align:left">{@code CL.in(D).in(C)} hop back to module</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -969,7 +975,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1 = privateLookupIn(C1,CL)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI1 = privateLookupIn(C1,CL)}</th>
      * <td></td>
      * <td style="text-align:center">PRO</td>
      * <td style="text-align:center">PRI</td>
@@ -978,7 +984,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1a = privateLookupIn(C,PRI1)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI1a = privateLookupIn(C,PRI1)}</th>
      * <td></td>
      * <td style="text-align:center">PRO</td>
      * <td style="text-align:center">PRI</td>
@@ -987,7 +993,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.in(C1)} same package</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.in(C1)} same package</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -996,7 +1002,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.in(C1)} different package</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.in(C1)} different package</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1005,7 +1011,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.in(D)} different module</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.in(D)} different module</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1014,7 +1020,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.dropLookupMode(PROTECTED)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.dropLookupMode(PROTECTED)}</th>
      * <td></td>
      * <td></td>
      * <td style="text-align:center">PRI</td>
@@ -1023,7 +1029,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.dropLookupMode(PRIVATE)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.dropLookupMode(PRIVATE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1032,7 +1038,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.dropLookupMode(PACKAGE)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.dropLookupMode(PACKAGE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1041,7 +1047,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.dropLookupMode(MODULE)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.dropLookupMode(MODULE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1050,7 +1056,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.dropLookupMode(PUBLIC)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.dropLookupMode(PUBLIC)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1058,7 +1064,7 @@ public class MethodHandles {
      * <td></td>
      * <td style="text-align:center">none</td>
      * <tr>
-     * <td>{@code PRI2 = privateLookupIn(D,CL)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI2 = privateLookupIn(D,CL)}</th>
      * <td></td>
      * <td style="text-align:center">PRO</td>
      * <td style="text-align:center">PRI</td>
@@ -1067,7 +1073,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code privateLookupIn(D,PRI1)}</td>
+     * <th scope="row" style="text-align:left">{@code privateLookupIn(D,PRI1)}</th>
      * <td></td>
      * <td style="text-align:center">PRO</td>
      * <td style="text-align:center">PRI</td>
@@ -1076,7 +1082,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code privateLookupIn(C,PRI2)} fails</td>
+     * <th scope="row" style="text-align:left">{@code privateLookupIn(C,PRI2)} fails</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1085,7 +1091,7 @@ public class MethodHandles {
      * <td style="text-align:center">IAE</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.in(D2)} same package</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.in(D2)} same package</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1094,7 +1100,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.in(D2)} different package</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.in(D2)} different package</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1103,7 +1109,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.in(C1)} hop back to module</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.in(C1)} hop back to module</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1112,7 +1118,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.in(E)} hop to third module</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.in(E)} hop to third module</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1121,7 +1127,7 @@ public class MethodHandles {
      * <td style="text-align:center">none</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.dropLookupMode(PROTECTED)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.dropLookupMode(PROTECTED)}</th>
      * <td></td>
      * <td></td>
      * <td style="text-align:center">PRI</td>
@@ -1130,7 +1136,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.dropLookupMode(PRIVATE)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.dropLookupMode(PRIVATE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1139,7 +1145,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.dropLookupMode(PACKAGE)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.dropLookupMode(PACKAGE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1148,7 +1154,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.dropLookupMode(MODULE)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.dropLookupMode(MODULE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1157,7 +1163,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.dropLookupMode(PUBLIC)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.dropLookupMode(PUBLIC)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1166,7 +1172,7 @@ public class MethodHandles {
      * <td style="text-align:center">none</td>
      * </tr>
      * <tr>
-     * <td>{@code CL.dropLookupMode(PROTECTED)}</td>
+     * <th scope="row" style="text-align:left">{@code CL.dropLookupMode(PROTECTED)}</th>
      * <td></td>
      * <td></td>
      * <td style="text-align:center">PRI</td>
@@ -1175,7 +1181,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code CL.dropLookupMode(PRIVATE)}</td>
+     * <th scope="row" style="text-align:left">{@code CL.dropLookupMode(PRIVATE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1184,7 +1190,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code CL.dropLookupMode(PACKAGE)}</td>
+     * <th scope="row" style="text-align:left">{@code CL.dropLookupMode(PACKAGE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1193,7 +1199,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code CL.dropLookupMode(MODULE)}</td>
+     * <th scope="row" style="text-align:left">{@code CL.dropLookupMode(MODULE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1202,7 +1208,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code CL.dropLookupMode(PUBLIC)}</td>
+     * <th scope="row" style="text-align:left">{@code CL.dropLookupMode(PUBLIC)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1211,7 +1217,7 @@ public class MethodHandles {
      * <td style="text-align:center">none</td>
      * </tr>
      * <tr>
-     * <td>{@code PUB = publicLookup()}</td>
+     * <th scope="row" style="text-align:left">{@code PUB = publicLookup()}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1220,7 +1226,7 @@ public class MethodHandles {
      * <td style="text-align:center">U</td>
      * </tr>
      * <tr>
-     * <td>{@code PUB.in(D)} different module</td>
+     * <th scope="row" style="text-align:left">{@code PUB.in(D)} different module</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1229,7 +1235,7 @@ public class MethodHandles {
      * <td style="text-align:center">U</td>
      * </tr>
      * <tr>
-     * <td>{@code PUB.in(D).in(E)} third module</td>
+     * <th scope="row" style="text-align:left">{@code PUB.in(D).in(E)} third module</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1238,7 +1244,7 @@ public class MethodHandles {
      * <td style="text-align:center">U</td>
      * </tr>
      * <tr>
-     * <td>{@code PUB.dropLookupMode(UNCONDITIONAL)}</td>
+     * <th scope="row" style="text-align:left">{@code PUB.dropLookupMode(UNCONDITIONAL)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1247,7 +1253,7 @@ public class MethodHandles {
      * <td style="text-align:center">none</td>
      * </tr>
      * <tr>
-     * <td>{@code privateLookupIn(C1,PUB)} fails</td>
+     * <th scope="row" style="text-align:left">{@code privateLookupIn(C1,PUB)} fails</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1256,7 +1262,7 @@ public class MethodHandles {
      * <td style="text-align:center">IAE</td>
      * </tr>
      * <tr>
-     * <td>{@code ANY.in(X)}, for inaccessible {@code X}</td>
+     * <th scope="row" style="text-align:left">{@code ANY.in(X)}, for inaccessible {@code X}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -2007,7 +2013,7 @@ public class MethodHandles {
          * there is no internal form available to record in any class's constant pool.
          * A hidden class or interface is not discoverable by {@link Class#forName(String, boolean, ClassLoader)},
          * {@link ClassLoader#loadClass(String, boolean)}, or {@link #findClass(String)}, and
-         * is not {@linkplain java.lang.instrument.Instrumentation#isModifiableClass(Class)
+         * is not {@linkplain java.instrument/java.lang.instrument.Instrumentation#isModifiableClass(Class)
          * modifiable} by Java agents or tool agents using the <a href="{@docRoot}/../specs/jvmti.html">
          * JVM Tool Interface</a>.
          *
@@ -2110,6 +2116,7 @@ public class MethodHandles {
          * @jvms 5.5 Initialization
          * @jls 12.7 Unloading of Classes and Interfaces
          */
+        @SuppressWarnings("doclint:reference") // cross-module links
         public Lookup defineHiddenClass(byte[] bytes, boolean initialize, ClassOption... options)
                 throws IllegalAccessException
         {
@@ -2359,15 +2366,16 @@ public class MethodHandles {
 
         /**
          * Returns a ClassDefiner that creates a {@code Class} object of a hidden class
-         * from the given bytes.  No package name check on the given name.
+         * from the given bytes and the given options.  No package name check on the given name.
          *
          * @param name    fully-qualified name that specifies the prefix of the hidden class
          * @param bytes   class bytes
-         * @return ClassDefiner that defines a hidden class of the given bytes.
+         * @param options class options
+         * @return ClassDefiner that defines a hidden class of the given bytes and options.
          */
-        ClassDefiner makeHiddenClassDefiner(String name, byte[] bytes) {
+        ClassDefiner makeHiddenClassDefiner(String name, byte[] bytes, Set<ClassOption> options) {
             // skip name and access flags validation
-            return makeHiddenClassDefiner(ClassFile.newInstanceNoCheck(name, bytes), Set.of(), false);
+            return makeHiddenClassDefiner(ClassFile.newInstanceNoCheck(name, bytes), options, false);
         }
 
         /**

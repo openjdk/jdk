@@ -1019,7 +1019,7 @@ public final class NimbusStyle extends SynthStyle {
      * fonts, painters, etc associated with some state for this
      * style.
      */
-    private final class RuntimeState implements Cloneable {
+    private static final class RuntimeState implements Cloneable {
         int state;
         Painter<Object> backgroundPainter;
         Painter<Object> foregroundPainter;

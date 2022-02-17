@@ -154,7 +154,7 @@ implements CertAttrSet<String> {
 
             if (next.isContextSpecific(TAG_REQUIRE) && !next.isConstructed()) {
                 if (this.require != -1)
-                    throw new IOException("Duplicate requireExplicitPolicy" +
+                    throw new IOException("Duplicate requireExplicitPolicy " +
                           "found in the PolicyConstraintsExtension");
                 next.resetTag(DerValue.tag_Integer);
                 this.require = next.getInteger();
@@ -162,7 +162,7 @@ implements CertAttrSet<String> {
             } else if (next.isContextSpecific(TAG_INHIBIT) &&
                        !next.isConstructed()) {
                 if (this.inhibit != -1)
-                    throw new IOException("Duplicate inhibitPolicyMapping" +
+                    throw new IOException("Duplicate inhibitPolicyMapping " +
                           "found in the PolicyConstraintsExtension");
                 next.resetTag(DerValue.tag_Integer);
                 this.inhibit = next.getInteger();

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -355,6 +355,18 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
     IS_GNU_TIME=no
   fi
   AC_SUBST(IS_GNU_TIME)
+
+  # Check if it's a GNU date compatible version
+  AC_MSG_CHECKING([if date is a GNU compatible version])
+  check_date=`$DATE --version 2>&1 | $GREP "GNU\|BusyBox"`
+  if test "x$check_date" != x; then
+    AC_MSG_RESULT([yes])
+    IS_GNU_DATE=yes
+  else
+    AC_MSG_RESULT([no])
+    IS_GNU_DATE=no
+  fi
+  AC_SUBST(IS_GNU_DATE)
 
   if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
     UTIL_REQUIRE_PROGS(DSYMUTIL, dsymutil)

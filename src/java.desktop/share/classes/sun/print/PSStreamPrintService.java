@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -320,8 +320,7 @@ public class PSStreamPrintService extends StreamPrintService
             MediaSize mediaSize = (MediaSize)attributes.get(MediaSize.class);
             if (mediaSize == null) {
                 Media media = (Media)attributes.get(Media.class);
-                if (media != null && media instanceof MediaSizeName) {
-                    MediaSizeName msn = (MediaSizeName)media;
+                if (media instanceof MediaSizeName msn) {
                     mediaSize = MediaSize.getMediaSizeForName(msn);
                 }
             }
@@ -428,7 +427,17 @@ public class PSStreamPrintService extends StreamPrintService
             if (attr == OrientationRequested.REVERSE_PORTRAIT ||
                 (flavor != null) &&
                 !(flavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE) ||
-                flavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE))) {
+                  flavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE) ||
+                  flavor.equals(DocFlavor.INPUT_STREAM.GIF) ||
+                  flavor.equals(DocFlavor.INPUT_STREAM.JPEG) ||
+                  flavor.equals(DocFlavor.INPUT_STREAM.PNG) ||
+                  flavor.equals(DocFlavor.BYTE_ARRAY.GIF) ||
+                  flavor.equals(DocFlavor.BYTE_ARRAY.JPEG) ||
+                  flavor.equals(DocFlavor.BYTE_ARRAY.PNG) ||
+                  flavor.equals(DocFlavor.URL.GIF) ||
+                  flavor.equals(DocFlavor.URL.JPEG) ||
+                  flavor.equals(DocFlavor.URL.PNG)))
+            {
                 return false;
             }
         } else if (attr.getCategory() == PageRanges.class) {
@@ -441,7 +450,7 @@ public class PSStreamPrintService extends StreamPrintService
             if (flavor != null &&
                 !(flavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE) ||
                 flavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE))) {
-                return false;
+                return attr == SheetCollate.UNCOLLATED;
             }
         } else if (attr.getCategory() == Sides.class) {
             if (flavor != null &&

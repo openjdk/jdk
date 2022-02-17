@@ -27,6 +27,7 @@ package java.net;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Objects;
 import java.util.Set;
 
@@ -99,19 +100,30 @@ public abstract class DatagramSocketImpl implements SocketOptions {
      * packet has been received for that address, then a subsequent call to
      * send or receive may throw a PortUnreachableException.
      * Note, there is no guarantee that the exception will be thrown.
+     *
+     * @implSpec The default implementation of this method throws {@code SocketException}.
+     *
      * @param   address the remote InetAddress to connect to
      * @param   port the remote port number
      * @throws  SocketException may be thrown if the socket cannot be
      *          connected to the remote destination
      * @since   1.4
      */
-    protected void connect(InetAddress address, int port) throws SocketException {}
+    protected void connect(InetAddress address, int port) throws SocketException {
+        throw new SocketException("connect not implemented");
+    }
 
     /**
      * Disconnects a datagram socket from its remote destination.
+     *
+     * @implSpec The default implementation of this method throws {@code UncheckedIOException}.
+     *
+     * @throws UncheckedIOException if disconnect fails or no implementation is provided
      * @since 1.4
      */
-    protected void disconnect() {}
+    protected void disconnect() {
+        throw new UncheckedIOException(new SocketException("disconnect not implemented"));
+    }
 
     /**
      * Peek at the packet to see who it is from. Updates the specified {@code InetAddress}
