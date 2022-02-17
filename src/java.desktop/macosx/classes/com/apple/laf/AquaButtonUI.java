@@ -307,9 +307,8 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         // performs icon and text rect calculations
         final String text;
         final View v = (View)c.getClientProperty(BasicHTML.propertyKey);
-
-        // use zero insets for view since
         if (v != null) {
+            // use zero insets for view since layout only handles text calculations
             text = layoutAndGetText(g, b, aquaBorder, new
                     Insets(0,0,0,0), viewRect, iconRect, textRect);
         } else {
