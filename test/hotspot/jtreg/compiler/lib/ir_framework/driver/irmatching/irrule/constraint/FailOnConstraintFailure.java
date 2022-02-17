@@ -36,14 +36,14 @@ import java.util.List;
  */
 class FailOnConstraintFailure extends ConstraintFailure {
 
-    public FailOnConstraintFailure(String nodeRegex, int regexNodeId, List<String> matchedNodes) {
-        super(nodeRegex, regexNodeId, matchedNodes);
+    public FailOnConstraintFailure(String nodeRegex, int constraintIndex, List<String> matchedNodes) {
+        super(nodeRegex, constraintIndex, matchedNodes);
         TestFramework.check(!matchedNodes.isEmpty(), "must have at least one matched node");
     }
 
     @Override
     public String buildFailureMessage(int indentationSize) {
-        return buildRegexHeader(indentationSize)
+        return buildConstraintHeader(indentationSize)
                + buildMatchedNodesMessage(indentationSize + 2);
     }
 

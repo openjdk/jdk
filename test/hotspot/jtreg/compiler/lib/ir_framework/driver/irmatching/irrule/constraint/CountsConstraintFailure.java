@@ -37,16 +37,15 @@ import java.util.List;
 class CountsConstraintFailure extends ConstraintFailure {
     private final String failedComparison;
 
-    public CountsConstraintFailure(String nodeRegex, int nodeId, Comparison<Integer> comparison, List<String> matches) {
-                              List<String> matches) {
-        super(nodeRegex, nodeId, matches);
+    public CountsConstraintFailure(String nodeRegex, int constraintIndex, Comparison<Integer> comparison, List<String> matches) {
+        super(nodeRegex, constraintIndex, matches);
         this.failedComparison = "[found] " + matches.size() + " " + comparison.getComparator() + " "
                                 + comparison.getGivenValue() + " [given]";
     }
 
     @Override
     public String buildFailureMessage(int indentationSize) {
-        return buildRegexHeader(indentationSize)
+        return buildConstraintHeader(indentationSize)
                + buildFailedComparisonMessage(indentationSize + 2)
                + buildMatchedNodesMessage(indentationSize + 2);
     }

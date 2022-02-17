@@ -34,11 +34,11 @@ import java.util.Map;
  *
  * @see IRMethod
  */
-public class IRMethodParser {
+public class MethodCompilationParser {
     private final IREncodingParser irEncodingParser;
     private final HotSpotPidFileParser hotSpotPidFileParser;
 
-    public IRMethodParser(Class<?> testClass) {
+    public MethodCompilationParser(Class<?> testClass) {
         this.irEncodingParser = new IREncodingParser(testClass);
         this.hotSpotPidFileParser = new HotSpotPidFileParser(testClass.getName());
     }

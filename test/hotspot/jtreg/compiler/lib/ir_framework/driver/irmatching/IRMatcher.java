@@ -26,7 +26,7 @@ package compiler.lib.ir_framework.driver.irmatching;
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
-import compiler.lib.ir_framework.driver.irmatching.parser.IRMethodParser;
+import compiler.lib.ir_framework.driver.irmatching.parser.MethodCompilationParser;
 
 import java.util.*;
 
@@ -37,15 +37,15 @@ public class IRMatcher {
     public static final String SAFEPOINT_WHILE_PRINTING_MESSAGE = "<!-- safepoint while printing -->";
 
     public IRMatcher(String hotspotPidFileName, String irEncoding, Class<?> testClass) {
-        IRMethodParser irMethodParser = new IRMethodParser(testClass);
-        Collection<IRMethod> irMethods = irMethodParser.parse(hotspotPidFileName, irEncoding);
+        MethodCompilationParser methodCompilationParser = new MethodCompilationParser(testClass);
+        Collection<IRMethod> irMethods = methodCompilationParser.parse(hotspotPidFileName, irEncoding);
         if (irMethods != null) {
             applyIRRules(irMethods);
         }
     }
 
     /**
-     * Do an IR matching of all methods with applicable @IR rules prepared with by the {@link IRMethodParser}.
+     * Do an IR matching of all methods with applicable @IR rules prepared with by the {@link MethodCompilationParser}.
      */
     private void applyIRRules(Collection<IRMethod> irMethods) {
         List<IRMethodMatchResult> results = new ArrayList<>();

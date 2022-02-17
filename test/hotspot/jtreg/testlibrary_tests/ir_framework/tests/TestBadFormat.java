@@ -57,8 +57,9 @@ public class TestBadFormat {
         expectTestFormatException(BadBaseTests.class);
         expectTestFormatException(BadRunTests.class);
         expectTestFormatException(BadCheckTest.class);
-        expectTestFormatException(BadIRAnnotations.class);
         expectTestFormatException(BadIRAnnotationBeforeFlagVM.class);
+        expectTestFormatException(BadIRAnnotations.class);
+        expectTestFormatException(BadIRAnnotationsAfterTestVM.class);
         expectTestFormatException(BadInnerClassTest.class);
         expectTestFormatException(BadCompileClassInitializer.class, BadCompileClassInitializerHelper1.class,
                                   BadCompileClassInitializerHelper2.class, BadCompileClassInitializerHelper3.class);
@@ -139,8 +140,8 @@ public class TestBadFormat {
         String msg = e.getMessage();
         Violations violations = getViolations(clazz, helpers);
         violations.getFailedMethods().forEach(
-                f -> Asserts.assertTrue(msg.contains(f),
-                                        "Could not find " + f + " in violations" + System.lineSeparator() + msg));
+                m -> Asserts.assertTrue(msg.contains(m),
+                                        "Could not find method \"" + m + "\" in violations" + System.lineSeparator() + msg));
         int violationCount = getViolationCount(msg);
         Asserts.assertEQ(violationCount, violations.getViolationCount(), msg);
     }
@@ -705,6 +706,26 @@ class BadCheckTest {
     public void invalidRunWithArgAnnotation(TestInfo info) {}
 }
 
+
+class BadIRAnnotationBeforeFlagVM {
+
+    @Test
+    @IR(failOn = IRNode.CALL, phase = {})
+    public void emptyCompilePhases() {}
+
+    @Test
+    @IR(failOn = IRNode.CALL, phase = {CompilePhase.DEFAULT, CompilePhase.PRINT_IDEAL})
+    public void wrongCombo1() {}
+
+    @Test
+    @IR(failOn = IRNode.CALL, phase = {CompilePhase.PRINT_OPTO_ASSEMBLY, CompilePhase.DEFAULT})
+    public void wrongCombo2() {}
+
+    @Test
+    @IR(failOn = IRNode.CALL, phase = {CompilePhase.PRINT_OPTO_ASSEMBLY, CompilePhase.PRINT_IDEAL, CompilePhase.DEFAULT})
+    public void wrongCombo3() {}
+}
+
 class BadIRAnnotations {
     @IR(failOn = IRNode.CALL)
     public void noIRAtNonTest() {}
@@ -951,23 +972,69 @@ class BadIRAnnotations {
     public void anyValueForStringFlags() {}
 }
 
-class BadIRAnnotationBeforeFlagVM {
+class BadIRAnnotationsAfterTestVM {
+    @Test
+    @FailCount(4)
+    @IR(failOn = {IRNode.STORE_OF_CLASS, ""})
+    @IR(failOn = {IRNode.STORE_OF_CLASS, "", IRNode.LOAD_B_OF_CLASS, ""})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "", "3"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "", "3", IRNode.LOAD_B_OF_CLASS, "", "3"})
+    public void emtpyUserProvidedPostfix() {}
 
     @Test
-    @IR(failOn = IRNode.CALL, phase = {})
-    public void emptyCompilePhases() {}
+    @FailCount(2)
+    @IR(counts = {IRNode.STORE})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo"})
+    public void missingCountString() {}
 
     @Test
-    @IR(failOn = IRNode.CALL, phase = {CompilePhase.DEFAULT, CompilePhase.PRINT_IDEAL})
-    public void wrongCombo1() {}
-
-    @Test
-    @IR(failOn = IRNode.CALL, phase = {CompilePhase.PRINT_OPTO_ASSEMBLY, CompilePhase.DEFAULT})
-    public void wrongCombo2() {}
-
-    @Test
-    @IR(failOn = IRNode.CALL, phase = {CompilePhase.PRINT_OPTO_ASSEMBLY, CompilePhase.PRINT_IDEAL, CompilePhase.DEFAULT})
-    public void wrongCombo3() {}
+    @FailCount(45)
+    @IR(counts = {IRNode.STORE, IRNode.STORE})
+    @IR(counts = {IRNode.STORE, IRNode.STORE, IRNode.STORE, IRNode.STORE})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", IRNode.STORE})
+    @IR(counts = {IRNode.STORE, ""})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", ""})
+    @IR(counts = {IRNode.STORE, "<"})
+    @IR(counts = {IRNode.STORE, "!"})
+    @IR(counts = {IRNode.STORE, "!3"})
+    @IR(counts = {IRNode.STORE, "=="})
+    @IR(counts = {IRNode.STORE, "-45"})
+    @IR(counts = {IRNode.STORE, "3.0"})
+    @IR(counts = {IRNode.STORE, "a3"})
+    @IR(counts = {IRNode.STORE, "0x1"})
+    @IR(counts = {IRNode.STORE, ">-45"})
+    @IR(counts = {IRNode.STORE, ">3.0"})
+    @IR(counts = {IRNode.STORE, ">a3"})
+    @IR(counts = {IRNode.STORE, ">0x1"})
+    @IR(counts = {IRNode.STORE, "> -45"})
+    @IR(counts = {IRNode.STORE, "> 3.0"})
+    @IR(counts = {IRNode.STORE, "> a3"})
+    @IR(counts = {IRNode.STORE, "> 0x1"})
+    @IR(counts = {IRNode.STORE, " > -45"})
+    @IR(counts = {IRNode.STORE, " > 3.0"})
+    @IR(counts = {IRNode.STORE, " > a3"})
+    @IR(counts = {IRNode.STORE, " > 0x1"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "<"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "!"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "!3"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "=="})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "-45"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "3.0"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "a3"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "0x1"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", ">-45"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", ">3.0"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", ">a3"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", ">0x1"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "> -45"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "> 3.0"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "> a3"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "> 0x1"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", " > -45"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", " > 3.0"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", " > a3"})
+    @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", " > 0x1"})
+    public void wrongCountString() {}
 }
 
 @ClassFail

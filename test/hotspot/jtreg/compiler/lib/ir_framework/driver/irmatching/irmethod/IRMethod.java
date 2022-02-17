@@ -28,6 +28,8 @@ import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRule;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
+import compiler.lib.ir_framework.shared.TestFormat;
+import compiler.lib.ir_framework.shared.TestFormatException;
 
 import java.lang.reflect.Method;
 import java.util.*;
@@ -47,7 +49,12 @@ public class IRMethod {
         this.method = method;
         this.irRules = new ArrayList<>();
         for (int ruleId : ruleIds) {
-            irRules.add(new IRRule(this, ruleId, irAnnos[ruleId - 1]));
+            try {
+                irRules.add(new IRRule(this, ruleId, irAnnos[ruleId - 1]));
+            } catch (TestFormatException e) {
+                String postfixErrorMsg = " for IR rule " + ruleId + " at " + method;
+                TestFormat.failNoThrow(e.getMessage() + postfixErrorMsg);
+            }
         }
         this.completeOutput = "";
         this.optoAssemblyOutput = "";

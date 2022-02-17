@@ -26,14 +26,11 @@ package compiler.lib.ir_framework.driver.irmatching.irrule;
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.RawConstraint;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.RawCountsConstraint;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.CountsAttributeParser;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.FailOnAttributeParser;
-import compiler.lib.ir_framework.shared.TestFormat;
-import compiler.lib.ir_framework.shared.TestFormatException;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.RawConstraint;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.RawCountsConstraint;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -62,11 +59,7 @@ public class IRRule {
 
     private List<RawCountsConstraint> initCountsRegexes(String[] rawCounts) {
         if (rawCounts != null) {
-            try {
-                return CountsAttributeParser.parse(rawCounts);
-            } catch (TestFormatException e) {
-                reportFormatFailure(e);
-            }
+            return CountsAttributeParser.parse(rawCounts);
         }
         return null;
     }
@@ -75,21 +68,12 @@ public class IRRule {
                                                       List<RawCountsConstraint> countsNodeRegexes,
                                                       CompilePhase[] compilePhases) {
         List<CompilePhaseIRRule> compilePhaseIRRules = new ArrayList<>();
-        try {
-            for (CompilePhase compilePhase : compilePhases) {
-                List<CompilePhaseIRRule> rulesList = CompilePhaseIRRuleBuilder.create(failOnRawConstraints, countsNodeRegexes,
-                                                                                      compilePhase, irMethod);
-                compilePhaseIRRules.addAll(rulesList);
-            }
-        } catch (TestFormatException e) {
-            reportFormatFailure(e);
+        for (CompilePhase compilePhase : compilePhases) {
+            List<CompilePhaseIRRule> rulesList = CompilePhaseIRRuleBuilder.create(failOnRawConstraints, countsNodeRegexes,
+                                                                                  compilePhase, irMethod);
+            compilePhaseIRRules.addAll(rulesList);
         }
         return compilePhaseIRRules;
-    }
-
-    private void reportFormatFailure(TestFormatException e) {
-        String postfixErrorMsg = " in count constraint for IR rule " + ruleId + " at " + getMethod();
-        TestFormat.failNoThrow(e.getMessage() + postfixErrorMsg);
     }
 
     public int getRuleId() {
@@ -98,10 +82,6 @@ public class IRRule {
 
     public IR getIRAnno() {
         return irAnno;
-    }
-
-    public Method getMethod() {
-        return irMethod.getMethod();
     }
 
     /**

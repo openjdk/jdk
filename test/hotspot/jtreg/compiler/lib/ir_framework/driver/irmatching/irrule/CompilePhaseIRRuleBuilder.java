@@ -46,20 +46,20 @@ import java.util.stream.Collectors;
  * @see IR#failOn()
  */
 public class CompilePhaseIRRuleBuilder {
-    public static List<CompilePhaseIRRule> create(List<RawConstraint> failOnRawConstraints, List<RawCountsConstraint> countsNodeRegexes,
+    public static List<CompilePhaseIRRule> create(List<RawConstraint> failOnRawConstraints, List<RawCountsConstraint> rawCountsConstraints,
                                                   CompilePhase compilePhase, IRMethod irMethod) {
         if (compilePhase != CompilePhase.DEFAULT) {
-            return createForNormalPhase(failOnRawConstraints, countsNodeRegexes, compilePhase, irMethod);
+            return createForNormalPhase(failOnRawConstraints, rawCountsConstraints, compilePhase, irMethod);
         } else {
-            return createForDefaultPhase(failOnRawConstraints, countsNodeRegexes, irMethod);
+            return createForDefaultPhase(failOnRawConstraints, rawCountsConstraints, irMethod);
         }
     }
 
     private static List<CompilePhaseIRRule> createForNormalPhase(List<RawConstraint> failOnRawConstraints,
-                                                                 List<RawCountsConstraint> countsNodeRegexes,
+                                                                 List<RawCountsConstraint> rawCountsConstraints,
                                                                  CompilePhase compilePhase, IRMethod irMethod) {
         FailOn failOn = RawFailOnConstraintParser.parse(failOnRawConstraints, compilePhase);
-        Counts counts = RawCountsConstraintParser.parse(countsNodeRegexes, compilePhase);
+        Counts counts = RawCountsConstraintParser.parse(rawCountsConstraints, compilePhase);
         return Collections.singletonList(new CompilePhaseIRRule(irMethod, compilePhase, failOn, counts));
     }
 

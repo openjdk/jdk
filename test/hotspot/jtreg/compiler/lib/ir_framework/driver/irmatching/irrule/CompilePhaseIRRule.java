@@ -43,7 +43,7 @@ public class CompilePhaseIRRule {
     }
 
     /**
-     * Apply this IR rule by checking any failOn and counts attributes.
+     * Apply an IR rule for a compile phase by checking any failOn and counts attributes.
      */
     public CompilePhaseMatchResult applyCheckAttributes() {
         return applyCheckAttributes(compilePhase);

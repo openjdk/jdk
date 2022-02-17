@@ -78,9 +78,17 @@ public class RawCountsConstraintParser extends RawConstraintParser<CountsConstra
 
     private static Comparison<Long> parseComparison(String rawNodeString, String countString) {
         try {
-            return ComparisonConstraintParser.parse(countString, Long::parseLong);
+            return ComparisonConstraintParser.parse(countString, RawCountsConstraintParser::parsePositiveLong);
         } catch (TestFormatException e) {
-            throw new TestFormatException(e.getMessage() + ", node \"" + rawNodeString + "\",");
+            throw new TestFormatException(e.getMessage() + ", node \"" + rawNodeString + "\", in count string");
         }
+    }
+
+    public static long parsePositiveLong(String s) {
+        long result = Long.parseLong(s);
+        if (result < 0) {
+            throw new NumberFormatException("cannot be negative");
+        }
+        return result;
     }
 }

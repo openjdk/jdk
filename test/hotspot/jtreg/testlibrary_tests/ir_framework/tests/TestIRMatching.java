@@ -1615,10 +1615,10 @@ abstract class RegexConstraint extends Constraint {
     private static Pattern initIRPattern(String category, int ruleIdx) {
         if (category.equals("failOn")) {
             return Pattern.compile("rule " + ruleIdx + ":.*\\R.*- failOn: Graph contains forbidden nodes.*\\R" +
-                                   ".*Regex \\d+:.*\\R.*Matched forbidden node.*");
+                                   ".*Constraint \\d+:.*\\R.*Matched forbidden node.*");
         } else {
             return Pattern.compile("rule " + ruleIdx + ":.*\\R.*- counts: Graph contains wrong number of nodes:\\R" +
-                                   ".*Regex \\d+:.*\\R.*Expected.*");
+                                   ".*Constraint \\d+:.*\\R.*Expected.*");
         }
     }
 
@@ -1638,14 +1638,14 @@ abstract class RegexConstraint extends Constraint {
         Pattern pattern;
         Matcher matcher;
         for (int regexIndex : this.regexIndexes) {
-            pattern = Pattern.compile("Regex " + regexIndex + ":.*");
+            pattern = Pattern.compile("Constraint " + regexIndex + ":.*");
             matcher = pattern.matcher(categoryString);
             if (isGood) {
-                Asserts.assertFalse(matcher.find(), errorPrefix() + " failed with Regex " + regexIndex);
+                Asserts.assertFalse(matcher.find(), errorPrefix() + " failed with Constraint " + regexIndex);
                 matched = true;
             } else {
-                Asserts.assertTrue(matcher.find(), errorPrefix() + " should have failed at Regex " + regexIndex);
-                String[] splitRegex = categoryString.split("Regex ");
+                Asserts.assertTrue(matcher.find(), errorPrefix() + " should have failed at Constraint " + regexIndex);
+                String[] splitRegex = categoryString.split("Constraint ");
                 if (matches != null) {
                     for (int i = 1; i < splitRegex.length; i++) {
                         String regexString = splitRegex[i];
@@ -1653,7 +1653,7 @@ abstract class RegexConstraint extends Constraint {
                             // Do matching on actual match and not on regex string
                             String actualMatch = regexString.split("\\R", 2)[1];
                             Asserts.assertTrue(matches.stream().allMatch(actualMatch::contains),
-                                               errorPrefix() + " could not find all matches at Regex " + regexIndex);
+                                               errorPrefix() + " could not find all matches at Constraint " + regexIndex);
                             matched = true;
                         }
                     }

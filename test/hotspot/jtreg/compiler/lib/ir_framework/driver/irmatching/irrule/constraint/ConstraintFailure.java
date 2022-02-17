@@ -24,7 +24,6 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
 import compiler.lib.ir_framework.driver.irmatching.FailureMessage;
-import compiler.lib.ir_framework.driver.irmatching.irrule.IRRule;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,12 +37,12 @@ import java.util.stream.Collectors;
  */
 abstract class ConstraintFailure implements FailureMessage {
     private final String nodeRegex;
-    private final int regexNodeId;
+    private final int constraintIndex;
     protected final List<String> matchedNodes;
 
-    public ConstraintFailure(String nodeRegex, int regexNodeId, List<String> matchedNodes) {
+    public ConstraintFailure(String nodeRegex, int constraintIndex, List<String> matchedNodes) {
         this.nodeRegex = nodeRegex;
-        this.regexNodeId = regexNodeId;
+        this.constraintIndex = constraintIndex;
         this.matchedNodes = matchedNodes;
     }
 
@@ -59,8 +58,8 @@ abstract class ConstraintFailure implements FailureMessage {
         return matchedNodes.size();
     }
 
-    protected String buildRegexHeader(int indentation) {
-        return getIndentation(indentation) + "* Regex " + regexNodeId + ": \"" + nodeRegex + "\"" + System.lineSeparator();
+    protected String buildConstraintHeader(int indentation) {
+        return getIndentation(indentation) + "* Constraint " + constraintIndex + ": \"" + nodeRegex + "\"" + System.lineSeparator();
     }
 
     protected String buildMatchedNodesMessage(int indentation) {
