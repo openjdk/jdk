@@ -43,7 +43,7 @@ public class ArrayType {
             Class<?> arrayClazz = clazz.arrayType();
             throw new RuntimeException("Expected exception not thrown: " +
                                        arrayClazz);
-        } catch (IllegalArgumentException iae) {
+        } catch (UnsupportedOperationException uoe) {
             ; // Expected
         }
     }
