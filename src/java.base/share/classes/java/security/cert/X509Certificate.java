@@ -591,11 +591,12 @@ implements X509Extension {
      * X.400 names or EDI party names. They are returned as byte arrays
      * containing the ASN.1 DER encoded form of the name. otherNames are also
      * returned as byte arrays containing the ASN.1 DER encoded form of the
-     * name. There may be a third entry in the list for their {@code type-id}
-     * in string form, and a fourth entry for their {@code value} as either
-     * a string (if the value is a valid supported character string)
-     * or (otherwise) a byte array containing the ASN.1 DER encoded from of
-     * the value without the context-specific constructed tag with number 0.
+     * name. A third entry may also be present in the list containing the
+     * {@code type-id} of the otherName in string form, and a fourth entry
+     * containing its {@code value} as either a string (if the value is
+     * a valid supported character string) or a byte array containing the
+     * ASN.1 DER encoded form of the value without the context-specific
+     * constructed tag with number 0.
      * <p>
      * Note that the {@code Collection} returned may contain more
      * than one name of the same type. Also, note that the returned
@@ -609,7 +610,7 @@ implements X509Extension {
      * should override this method with a correct implementation.
      *
      * @implNote The JDK SUN provider supports the third and fourth
-     * otherName elements.
+     * otherName entries.
      *
      * @return an immutable {@code Collection} of subject alternative
      * names (or {@code null})
