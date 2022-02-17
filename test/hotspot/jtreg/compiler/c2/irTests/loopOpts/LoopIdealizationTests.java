@@ -84,15 +84,15 @@ public class LoopIdealizationTests {
     // Checks that a for loop with 1 iteration is simplified to straight code
     public void oneIterForLoop2() {
         for (int i = 0; i < 500; i++) {
-			this.blackhole();
-           	if (i == 0) {
-            	break;
-           	}
-           	else {
+            this.blackhole();
+            if (i == 0) {
+                break;
+            }
+            else {
                this.blackhole();
                i++;
-           	}
-		}
+            }
+        }
     }
 
     @Test

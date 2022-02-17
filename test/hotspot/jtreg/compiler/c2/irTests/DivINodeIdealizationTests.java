@@ -38,8 +38,8 @@ public class DivINodeIdealizationTests {
     }
 
     @Run(test = {"constant", "identity", "identityAgain", "identityThird",
-                 "retainDenominator", "divByNegOne", "divByPow2AND",
-                 "divByPow2AND1",  "divByPow2", "divByNegPow2",
+                 "retainDenominator", "divByNegOne", "divByPow2And",
+                 "divByPow2And1",  "divByPow2", "divByNegPow2",
                  "magicDiv"})
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
@@ -85,8 +85,8 @@ public class DivINodeIdealizationTests {
         Asserts.assertEQ(a / 1        , identity(a));
         Asserts.assertEQ(a / (13 / 13), identityAgain(a));
         Asserts.assertEQ(a / -1       , divByNegOne(a));
-        Asserts.assertEQ((a & -4) / 2 , divByPow2AND(a));
-        Asserts.assertEQ((a & -2) / 2 , divByPow2AND1(a));
+        Asserts.assertEQ((a & -4) / 2 , divByPow2And(a));
+        Asserts.assertEQ((a & -2) / 2 , divByPow2And1(a));
         Asserts.assertEQ(a / 8        , divByPow2(a));
         Asserts.assertEQ(a / -8       , divByNegPow2(a));
         Asserts.assertEQ(a / 13       , magicDiv(a));
@@ -145,9 +145,9 @@ public class DivINodeIdealizationTests {
     @IR(counts = {IRNode.AND, "1",
                   IRNode.RSHIFT, "1",
                  })
-    // Checks (x & -(2^c0)) / 2^c1 => (x >> c1) & (2^c0 >> c1) => (x >> c1) & c3 where 2^c0 > |2^c1| and c3 = 2^c0 >> c1
+    // Checks (x & -(2^c0)) / 2^c1 => (x >> c1) & (2^c0 >> c1) => (x >> c1) & c3 where 2^c0 > |2^c1| "AND" c3 = 2^c0 >> c1
     // Having a large enough and in the dividend removes the need to account for rounding when converting to shifts and multiplies as in divByPow2()
-    public int divByPow2AND(int x) {
+    public int divByPow2And(int x) {
         return (x & -4) / 2;
     }
 
@@ -156,7 +156,7 @@ public class DivINodeIdealizationTests {
     @IR(counts = {IRNode.RSHIFT, "1"})
     // Checks (x & -(2^c0)) / 2^c0 => x >> c0
     // If the negative of the constant within the & equals the divisor then the and can be removed as it only affects bits that will be shifted off
-    public int divByPow2AND1(int x) {
+    public int divByPow2And1(int x) {
         return (x & -2) / 2;
     }
 
