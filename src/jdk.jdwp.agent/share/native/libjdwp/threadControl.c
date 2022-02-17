@@ -73,6 +73,7 @@ typedef struct ThreadNode {
     unsigned int popFrameEvent : 1;
     unsigned int popFrameProceed : 1;
     unsigned int popFrameThread : 1;
+    unsigned int handlingAppResume : 1;
     EventIndex current_ei; /* Used to determine if we are currently handling an event on this thread. */
     jobject pendingStop;   /* Object we are throwing to stop the thread (ThreadReferenceImpl.stop). */
     jint suspendCount;
@@ -254,12 +255,36 @@ findThread(ThreadList *list, jthread thread)
             node = nonTlsSearch(getEnv(), &otherThreads, thread);
         }
         /*
-         * Search runningThreads list. The TLS lookup may have failed because the
-         * thread has terminated, but the ThreadNode may still be present.
+         * Normally we can assume that a thread with no TLS will never be in the runningThreads
+         * list. This is because we always set the TLS when adding to runningThreads.
+         * However, when a thread exits, its TLS is automatically cleared. Normally this
+         * is not a problem because the debug agent will first get a THREAD_END event,
+         * and that will cause the thread to be removed from runningThreads, thus we
+         * avoid this situation of having a thread in runningThreads, but with no TLS.
+         *
+         * However... there is one exception to this. While handling VM_DEATH, the first thing
+         * the debug agent does is clear all the callbacks. This means we will no longer
+         * get THREAD_END events as threads exit. This means we might find threads on
+         * runningThreads with no TLS during VM_DEATH. Essentially the THREAD_END that
+         * would normally have resulted in removing the thread from runningThreads is
+         * missed, so the thread remains on runningThreads.
+         *
+         * The end result of all this is that if the TLS lookup failed, we still need to check
+         * if the thread is on runningThreads, but only if JVMTI callbacks have been cleared.
+         * Otherwise the thread should not be on the runningThreads.
          */
-        if ( node == NULL ) {
-            if ( list == NULL || list == &runningThreads ) {
-                node = nonTlsSearch(getEnv(), &runningThreads, thread);
+        if ( !gdata->jvmtiCallBacksCleared ) {
+            /* The thread better not be on runningThreads if the TLS lookup failed. */
+            JDI_ASSERT(!nonTlsSearch(getEnv(), &runningThreads, thread));
+        } else {
+            /*
+             * Search the runningThreads list. The TLS lookup may have failed because the
+             * thread has terminated, but we never got the THREAD_END event.
+             */
+            if ( node == NULL ) {
+                if ( list == NULL || list == &runningThreads ) {
+                    node = nonTlsSearch(getEnv(), &runningThreads, thread);
+                }
             }
         }
     }
@@ -655,7 +680,10 @@ pendingAppResume(jboolean includeSuspended)
                 if (error != JVMTI_ERROR_NONE) {
                     EXIT_ERROR(error, "getting thread state");
                 }
-                if (!(state & JVMTI_THREAD_STATE_SUSPENDED)) {
+                /* !node->handlingAppResume && resumeFrameDepth > 0
+                 * means the thread has entered Thread.resume() */
+                if (!(state & JVMTI_THREAD_STATE_SUSPENDED) &&
+                    !node->handlingAppResume) {
                     return JNI_TRUE;
                 }
             }
@@ -728,6 +756,11 @@ blockOnDebuggerSuspend(jthread thread)
     }
 }
 
+/*
+ * The caller is expected to hold threadLock and handlerLock.
+ * eventHandler_createInternalThreadOnly() can deadlock because of
+ * wrong lock ordering if the caller does not hold handlerLock.
+ */
 static void
 trackAppResume(jthread thread)
 {
@@ -776,28 +809,19 @@ handleAppResumeBreakpoint(JNIEnv *env, EventInfo *evinfo,
                           struct bag *eventBag)
 {
     jthread resumer = evinfo->thread;
-    jthread resumee = getResumee(resumer);
 
     debugMonitorEnter(threadLock);
-    if (resumee != NULL) {
-        /*
-         * Hold up any attempt to resume as long as the debugger
-         * has suspended the resumee.
-         */
-        blockOnDebuggerSuspend(resumee);
-    }
 
+    /*
+     * Actual handling has to be deferred. We cannot block right here if the
+     * target of the resume call is suspended by the debugger since we are
+     * holding handlerLock which must not be released. See doPendingTasks().
+     */
     if (resumer != NULL) {
-        /*
-         * Track the resuming thread by marking it as being within
-         * a resume and by setting up for notification on
-         * a frame pop or exception. We won't allow the debugger
-         * to suspend threads while any thread is within a
-         * call to resume. This (along with the block above)
-         * ensures that when the debugger
-         * suspends a thread it will remain suspended.
-         */
-        trackAppResume(resumer);
+        ThreadNode* node = findThread(&runningThreads, resumer);
+        if (node != NULL) {
+            node->handlingAppResume = JNI_TRUE;
+        }
     }
 
     debugMonitorExit(threadLock);
@@ -2155,6 +2179,59 @@ threadControl_onEventHandlerEntry(jbyte sessionID, EventInfo *evinfo, jobject cu
 static void
 doPendingTasks(JNIEnv *env, ThreadNode *node)
 {
+    /* Deferred breakpoint handling for Thread.resume() */
+    if (node->handlingAppResume) {
+        jthread resumer = node->thread;
+        jthread resumee = getResumee(resumer);
+
+        if (resumer != NULL) {
+            /*
+             * trackAppResume indirectly aquires handlerLock. For proper lock
+             * ordering handlerLock has to be acquired before threadLock.
+             */
+            debugMonitorExit(threadLock);
+            eventHandler_lock();
+            debugMonitorEnter(threadLock);
+
+            /*
+             * Track the resuming thread by marking it as being within
+             * a resume and by setting up for notification on
+             * a frame pop or exception. We won't allow the debugger
+             * to suspend threads while any thread is within a
+             * call to resume. This (along with the block below)
+             * ensures that when the debugger
+             * suspends a thread it will remain suspended.
+             */
+            trackAppResume(resumer);
+
+            /*
+             * handlerLock is not needed anymore. We must release it before calling
+             * blockOnDebuggerSuspend() because it is required for resumes done by
+             * the debugger. If resumee is currently suspended by the debugger, then
+             * blockOnDebuggerSuspend() will block until a debugger resume is done.
+             * If it blocks while holding the handlerLock, then the resume will deadlock.
+             */
+            eventHandler_unlock();
+        }
+
+        if (resumee != NULL) {
+            /*
+             * Hold up any attempt to resume as long as the debugger
+             * has suspended the resumee.
+             */
+            blockOnDebuggerSuspend(resumee);
+        }
+
+        node->handlingAppResume = JNI_FALSE;
+
+        /*
+         * The blocks exit condition: resumee's suspendCount == 0.
+         *
+         * Debugger suspends are blocked if any thread is executing
+         * Thread.resume(), i.e. !handlingAppResume && frameDepth > 0.
+         */
+    }
+
     /*
      * Take care of any pending interrupts/stops, and clear out
      * info on pending interrupts/stops.
@@ -2455,6 +2532,8 @@ threadControl_reset(void)
     /* Everything should have been resumed */
     JDI_ASSERT(otherThreads.first == NULL);
 
+    /* Threads could be waiting in blockOnDebuggerSuspend */
+    debugMonitorNotifyAll(threadLock);
     debugMonitorExit(threadLock);
     eventHandler_unlock();
 }
@@ -2560,6 +2639,17 @@ threadControl_dumpAllThreads()
     dumpThreadList(&runningThreads);
     tty_message("Dumping otherThreads:\n");
     dumpThreadList(&otherThreads);
+}
+
+void
+threadControl_dumpThread(jthread thread)
+{
+    ThreadNode* node = findThread(NULL, thread);
+    if (node == NULL) {
+        tty_message("Thread not found");
+    } else {
+        dumpThread(node);
+    }
 }
 
 static void

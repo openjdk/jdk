@@ -30,15 +30,6 @@
 #include "oops/cpCache.inline.hpp"
 #include "runtime/atomic.hpp"
 
-inline CPSlot ConstantPool::slot_at(int which) const {
-  assert(is_within_bounds(which), "index out of bounds");
-  assert(!tag_at(which).is_unresolved_klass() && !tag_at(which).is_unresolved_klass_in_error(), "Corrupted constant pool");
-  // Uses volatile because the klass slot changes without a lock.
-  intptr_t adr = Atomic::load_acquire(obj_at_addr(which));
-  assert(adr != 0 || which == 0, "cp entry for klass should not be zero");
-  return CPSlot(adr);
-}
-
 inline Klass* ConstantPool::resolved_klass_at(int which) const {  // Used by Compiler
   guarantee(tag_at(which).is_klass(), "Corrupted constant pool");
   // Must do an acquire here in case another thread resolved the klass

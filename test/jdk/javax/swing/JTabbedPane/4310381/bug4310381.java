@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,7 +187,7 @@ class TestUI {
         String instructions
             = "See for different look and feel tabbed panes titles \n"
             + "   contain three dots(...) at the end if the pane size \n"
-            + "   cannot accommadate the title completely.\n"
+            + "   cannot accommodate the title completely.\n"
             + "If yes, click on 'pass' else click on 'fail'\n";
 
         instructionTextArea = new JTextArea();

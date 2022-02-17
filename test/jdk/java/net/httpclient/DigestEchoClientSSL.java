@@ -39,12 +39,6 @@
  * @run main/othervm/timeout=300
  *          DigestEchoClientSSL SSL
  * @run main/othervm/timeout=300
- *          DigestEchoClientSSL SSL
- * @run main/othervm/timeout=300
- *          -Djdk.http.auth.proxying.disabledSchemes=
- *          -Djdk.http.auth.tunneling.disabledSchemes=
- *          DigestEchoClientSSL SSL PROXY
- * @run main/othervm/timeout=300
  *          -Djdk.http.auth.proxying.disabledSchemes=
  *          -Djdk.http.auth.tunneling.disabledSchemes=
  *          DigestEchoClientSSL SSL PROXY

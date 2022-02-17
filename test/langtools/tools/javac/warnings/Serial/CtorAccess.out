@@ -1,0 +1,3 @@
+CtorAccess.java:15:12: compiler.warn.serializable.missing.access.no.arg.ctor: CtorAccess
+CtorAccess.java:30:5: compiler.warn.serializable.missing.access.no.arg.ctor: CtorAccess.MemberSuper
+2 warnings

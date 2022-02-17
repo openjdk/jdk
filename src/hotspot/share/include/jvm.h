@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,7 +151,10 @@ JNIEXPORT jboolean JNICALL
 JVM_IsUseContainerSupport(void);
 
 JNIEXPORT void * JNICALL
-JVM_LoadLibrary(const char *name);
+JVM_LoadZipLibrary();
+
+JNIEXPORT void * JNICALL
+JVM_LoadLibrary(const char *name, jboolean throwException);
 
 JNIEXPORT void JNICALL
 JVM_UnloadLibrary(void * handle);
@@ -170,20 +173,20 @@ JVM_InitializeFromArchive(JNIEnv* env, jclass cls);
 
 JNIEXPORT void JNICALL
 JVM_RegisterLambdaProxyClassForArchiving(JNIEnv* env, jclass caller,
-                                         jstring invokedName,
-                                         jobject invokedType,
-                                         jobject methodType,
-                                         jobject implMethodMember,
-                                         jobject instantiatedMethodType,
+                                         jstring interfaceMethodName,
+                                         jobject factoryType,
+                                         jobject interfaceMethodType,
+                                         jobject implementationMember,
+                                         jobject dynamicMethodType,
                                          jclass lambdaProxyClass);
 
 JNIEXPORT jclass JNICALL
 JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env, jclass caller,
-                                      jstring invokedName,
-                                      jobject invokedType,
-                                      jobject methodType,
-                                      jobject implMethodMember,
-                                      jobject instantiatedMethodType);
+                                      jstring interfaceMethodName,
+                                      jobject factoryType,
+                                      jobject interfaceMethodType,
+                                      jobject implementationMember,
+                                      jobject dynamicMethodType);
 
 JNIEXPORT jboolean JNICALL
 JVM_IsCDSDumpingEnabled(JNIEnv* env);
@@ -752,6 +755,15 @@ JVM_AssertionStatusDirectives(JNIEnv *env, jclass unused);
  */
 JNIEXPORT jboolean JNICALL
 JVM_SupportsCX8(void);
+
+/*
+ * java.lang.ref.Finalizer
+ */
+JNIEXPORT void JNICALL
+JVM_ReportFinalizationComplete(JNIEnv *env, jobject finalizee);
+
+JNIEXPORT jboolean JNICALL
+JVM_IsFinalizationEnabled(JNIEnv *env);
 
 /*************************************************************************
  PART 2: Support for the Verifier and Class File Format Checker

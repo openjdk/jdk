@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 
 package nsk.jdi.StackFrame.getValues;
 
-import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
@@ -94,8 +93,8 @@ public class getvalues001a {
     //------------------------------------------------------  section tested
 
                 case 0:
-                         Threadgetvalues001a test_thread =
-                             new Threadgetvalues001a("testedThread");
+                         Thread test_thread =
+                                 JDIThreadFactory.newThread(new Threadgetvalues001a("testedThread"));
                          log1("       thread2 is created");
 
                          label:
@@ -147,7 +146,7 @@ public class getvalues001a {
 
 
 
-class Threadgetvalues001a extends Thread {
+class Threadgetvalues001a extends NamedTask {
 
     public Threadgetvalues001a(String threadName) {
         super(threadName);

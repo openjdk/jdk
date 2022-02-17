@@ -62,11 +62,16 @@ public class MacHelper {
 
         final Path mountPoint = Path.of(plist.queryValue("mount-point"));
         try {
-            Path dmgImage = mountPoint.resolve(cmd.name() +
-                    (cmd.isRuntime() ? "" : ".app"));
-            TKit.trace(String.format("Exploded [%s] in [%s] directory",
-                    cmd.outputBundle(), dmgImage));
-            ThrowingConsumer.toConsumer(consumer).accept(dmgImage);
+            // code here used to copy just <runtime name> or <app name>.app
+            // We now have option to include arbitrary content, so we copy
+            // everything in the mounted image.
+            String[] children = mountPoint.toFile().list();
+            for (String child : children) {
+                Path childPath = mountPoint.resolve(child);
+                TKit.trace(String.format("Exploded [%s] in [%s] directory",
+                        cmd.outputBundle(), childPath));
+                ThrowingConsumer.toConsumer(consumer).accept(childPath);
+            }
         } finally {
             String cmdline[] = {
                 "/usr/bin/hdiutil",

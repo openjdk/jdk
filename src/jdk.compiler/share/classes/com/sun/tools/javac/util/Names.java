@@ -122,6 +122,7 @@ public class Names {
 
     // module names
     public final Name java_base;
+    public final Name jdk_unsupported;
 
     // attribute names
     public final Name Annotation;
@@ -215,6 +216,10 @@ public class Names {
     public final Name permits;
     public final Name sealed;
 
+    // pattern switches
+    public final Name typeSwitch;
+    public final Name enumSwitch;
+
     public final Name.Table table;
 
     public Names(Context context) {
@@ -297,6 +302,7 @@ public class Names {
 
         // module names
         java_base = fromString("java.base");
+        jdk_unsupported = fromString("jdk.unsupported");
 
         // attribute names
         Annotation = fromString("Annotation");
@@ -384,6 +390,10 @@ public class Names {
         // sealed types
         permits = fromString("permits");
         sealed = fromString("sealed");
+
+        // pattern switches
+        typeSwitch = fromString("typeSwitch");
+        enumSwitch = fromString("enumSwitch");
     }
 
     protected Name.Table createTable(Options options) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,12 +91,11 @@ public class TestInvalidRelativeNames extends JavacTestingAbstractProcessor {
             System.out.println("expected exception thrown: " + expected);
             return;
         } catch (Exception e) {
-            messager.printMessage(Diagnostic.Kind.ERROR,
-                    "relative path: " + relative + ", kind: " + kind + ", unexpected exception: " + e);
+            messager.printError("relative path: " + relative + ", kind: " + kind +
+                                ", unexpected exception: " + e);
             return;
         }
-        messager.printMessage(Diagnostic.Kind.ERROR,
-                "relative path: " + relative + ", kind: " + kind + ", no exception thrown");
+        messager.printError("relative path: " + relative + ", kind: " + kind + ", no exception thrown");
     }
 }
 

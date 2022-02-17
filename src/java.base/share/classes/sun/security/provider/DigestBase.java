@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.security.ProviderException;
 import java.util.Arrays;
 import java.util.Objects;
 
+import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
@@ -105,9 +106,7 @@ abstract class DigestBase extends MessageDigestSpi implements Cloneable {
         if (len == 0) {
             return;
         }
-        if ((ofs < 0) || (len < 0) || (ofs > b.length - len)) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
+        Preconditions.checkFromIndexSize(ofs, len, b.length, Preconditions.AIOOBE_FORMATTER);
         if (bytesProcessed < 0) {
             engineReset();
         }
@@ -159,10 +158,7 @@ abstract class DigestBase extends MessageDigestSpi implements Cloneable {
         }
 
         Objects.requireNonNull(b);
-
-        if (ofs < 0 || ofs >= b.length) {
-            throw new ArrayIndexOutOfBoundsException(ofs);
-        }
+        Preconditions.checkIndex(ofs, b.length, Preconditions.AIOOBE_FORMATTER);
 
         int endIndex = (limit / blockSize) * blockSize  + blockSize - 1;
         if (endIndex >= b.length) {
@@ -188,8 +184,7 @@ abstract class DigestBase extends MessageDigestSpi implements Cloneable {
         try {
             engineDigest(b, 0, b.length);
         } catch (DigestException e) {
-            throw (ProviderException)
-                new ProviderException("Internal error").initCause(e);
+            throw new ProviderException("Internal error", e);
         }
         return b;
     }

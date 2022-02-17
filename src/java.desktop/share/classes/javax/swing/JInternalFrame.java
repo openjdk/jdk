@@ -188,6 +188,8 @@ public class JInternalFrame extends JComponent implements
     protected String  title;
     /**
      * The icon that is displayed when this internal frame is iconified.
+     * Subclassers must ensure this is set to a non-null value
+     * during construction and not subsequently set this to null.
      * @see #iconable
      */
     protected JDesktopIcon desktopIcon;
@@ -1231,10 +1233,9 @@ public class JInternalFrame extends JComponent implements
     @BeanProperty(bound = false, expert = true, description
             = "Specifies what desktop layer is used.")
     public void setLayer(Integer layer) {
-        if(getParent() != null && getParent() instanceof JLayeredPane) {
+        if (getParent() instanceof JLayeredPane p) {
             // Normally we want to do this, as it causes the LayeredPane
             // to draw properly.
-            JLayeredPane p = (JLayeredPane)getParent();
             p.setLayer(this, layer.intValue(), p.getPosition(this));
         } else {
              // Try to do the right thing
@@ -1307,11 +1308,15 @@ public class JInternalFrame extends JComponent implements
      * <code>JInternalFrame</code>.
      *
      * @param d the <code>JDesktopIcon</code> to display on the desktop
+     * @throws NullPointerException if the {@code d} is {@code null}
      * @see #getDesktopIcon
      */
     @BeanProperty(description
             = "The icon shown when this internal frame is minimized.")
     public void setDesktopIcon(JDesktopIcon d) {
+        if (d == null) {
+            throw new NullPointerException("JDesktopIcon is null");
+        }
         JDesktopIcon oldValue = getDesktopIcon();
         desktopIcon = d;
         firePropertyChange("desktopIcon", oldValue, d);

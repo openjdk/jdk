@@ -421,8 +421,8 @@ public class TestSearch extends JavadocTester {
                 "<div class=\"nav-list-search\">",
                 """
                     <label for="search-input">SEARCH:</label>
-                    <input type="text" id="search-input" value="search" disabled="disabled">
-                    <input type="reset" id="reset-button" value="reset" disabled="disabled">
+                    <input type="text" id="search-input" disabled placeholder="Search">
+                    <input type="reset" id="reset-button" disabled value="reset">
                     """);
         checkOutput(fileName, true,
                 "<div class=\"flex-box\">");
@@ -540,8 +540,9 @@ public class TestSearch extends JavadocTester {
                     <dt><a href="../pkg/package-summary.html#SingleWord" class="search-tag-link">Sin\
                     gleWord</a> - Search tag in package pkg</dt>""",
                 """
-                    <br><a href="../allclasses-index.html">All&nbsp;Classes</a><span class="vertical\
-                    -separator">|</span><a href="../allpackages-index.html">All&nbsp;Packages</a>""");
+                    <br><a href="../allclasses-index.html">All&nbsp;Classes&nbsp;and&nbsp;Interfaces\
+                    </a><span class="vertical-separator">|</span><a href="../allpackages-index.html"\
+                    >All&nbsp;Packages</a>""");
         checkOutput("index-files/index-10.html", true,
                 """
                     <dt><a href="../pkg/package-summary.html#phrasewithspaces" class="search-tag-lin\
@@ -710,12 +711,6 @@ public class TestSearch extends JavadocTester {
         checkOutput("search.js", true,
                 "function searchIndexWithMatcher(indexArray, matcher, category, nameFunc) {",
                 """
-                    search.on('click keydown paste', function() {
-                            if ($(this).val() === watermark) {
-                                $(this).val('').removeClass('watermark');
-                            }
-                        });""",
-                """
                     function getURLPrefix(ui) {
                         var urlPrefix="";
                         var slash = "/";
@@ -823,14 +818,10 @@ public class TestSearch extends JavadocTester {
                     <button id="all-classes-table-tab5" role="tab" aria-selected="false" aria-contro\
                     ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
                     ck="show('all-classes-table', 'all-classes-table-tab5', 2)" class="table-tab">Ex\
-                    ceptions</button>\
+                    ception Classes</button>\
                     <button id="all-classes-table-tab6" role="tab" aria-selected="false" aria-contro\
                     ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
-                    ck="show('all-classes-table', 'all-classes-table-tab6', 2)" class="table-tab">Er\
-                    rors</button>\
-                    <button id="all-classes-table-tab7" role="tab" aria-selected="false" aria-contro\
-                    ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
-                    ck="show('all-classes-table', 'all-classes-table-tab7', 2)" class="table-tab">An\
+                    ck="show('all-classes-table', 'all-classes-table-tab6', 2)" class="table-tab">An\
                     notation Interfaces</button>\
                     </div>
                     <div id="all-classes-table.tabpanel" role="tabpanel">
@@ -846,13 +837,14 @@ public class TestSearch extends JavadocTester {
                     """);
         checkOutput("type-search-index.js", true,
                 """
-                    {"l":"All Classes","u":"allclasses-index.html"}""");
+                    {"l":"All Classes and Interfaces","u":"allclasses-index.html"}""");
         checkOutput("package-search-index.js", true,
                 """
                     {"l":"All Packages","u":"allpackages-index.html"}""");
         checkOutput("index-all.html", true,
-                    """
-                        <br><a href="allclasses-index.html">All&nbsp;Classes</a><span class="vertical-se\
-                        parator">|</span><a href="allpackages-index.html">All&nbsp;Packages</a>""");
+                """
+                    <br><a href="allclasses-index.html">All&nbsp;Classes&nbsp;and&nbsp;Interface\
+                    s</a><span class="vertical-separator">|</span><a href="allpackages-index.htm\
+                    l">All&nbsp;Packages</a>""");
     }
 }

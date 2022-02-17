@@ -41,6 +41,7 @@ public class SAXSourceLocator extends LocatorImpl
   /** The SAX Locator object.
    *  @serial
    */
+  @SuppressWarnings("serial") // Type of field is not Serializable
   Locator m_locator;
 
   /**

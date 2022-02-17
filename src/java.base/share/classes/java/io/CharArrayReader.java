@@ -46,7 +46,7 @@ public class CharArrayReader extends Reader {
     protected int markedPos = 0;
 
     /**
-     *  The index of the end of this buffer.  There is not valid
+     *  The index of the end of this buffer.  There is no valid
      *  data at or beyond this index.
      */
     protected int count;

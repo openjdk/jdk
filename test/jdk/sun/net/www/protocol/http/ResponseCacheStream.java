@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,33 +25,48 @@
  * @test
  * @bug 6262486
  * @library /test/lib
- * @modules java.base/sun.net.www
- * @library ../../httptest/
- * @build HttpCallback TestHttpServer ClosedChannelList HttpTransaction
  * @run main/othervm -Dhttp.keepAlive=false ResponseCacheStream
  * @summary COMPATIBILITY: jagex_com - Monkey Puzzle applet fails to load
  */
 
-import java.net.*;
-import java.io.*;
-import java.util.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.net.CacheRequest;
+import java.net.CacheResponse;
+import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ResponseCache;
+import java.net.URI;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Executors;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
 import jdk.test.lib.net.URIBuilder;
 
-public class ResponseCacheStream implements HttpCallback {
+public class ResponseCacheStream implements HttpHandler {
 
-    void okReply (HttpTransaction req) throws IOException {
-        req.setResponseEntityBody ("Hello, This is the response body. Let's make it as long as possible since we need to test the cache mechanism.");
-        req.sendResponse (200, "Ok");
-            System.out.println ("Server: sent response");
-        req.orderlyClose();
+    void okReply (HttpExchange req) throws IOException {
+        req.sendResponseHeaders(200, 0);
+        try(PrintWriter pw = new PrintWriter(req.getResponseBody())) {
+            pw.print("Hello, This is the response body. Let's make it as long as possible since we need to test the cache mechanism.");
+        }
+        System.out.println ("Server: sent response");
     }
 
-    public void request (HttpTransaction req) {
-        try {
-            okReply (req);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+
+    @Override
+    public void handle(HttpExchange exchange) throws IOException {
+        okReply(exchange);
+        exchange.close();
     }
 
     static class MyCacheRequest extends CacheRequest {
@@ -94,19 +109,22 @@ public class ResponseCacheStream implements HttpCallback {
         }
     }
 
-    static TestHttpServer server;
+    static HttpServer server;
 
     public static void main(String[] args) throws Exception {
         MyResponseCache cache = new MyResponseCache();
         try {
             InetAddress loopback = InetAddress.getLoopbackAddress();
             ResponseCache.setDefault(cache);
-            server = new TestHttpServer (new ResponseCacheStream(), loopback, 0);
-            System.out.println ("Server: listening on port: " + server.getLocalPort());
+            server = HttpServer.create(new InetSocketAddress(loopback, 0), 10);
+            server.createContext("/", new ResponseCacheStream());
+            server.setExecutor(Executors.newSingleThreadExecutor());
+            server.start();
+            System.out.println("Server: listening on port: " + server.getAddress().getPort());
             URL url = URIBuilder.newBuilder()
                 .scheme("http")
                 .loopback()
-                .port(server.getLocalPort())
+                .port(server.getAddress().getPort())
                 .path("/")
                 .toURL();
             System.out.println ("Client: connecting to " + url);
@@ -149,10 +167,10 @@ public class ResponseCacheStream implements HttpCallback {
             }
         } catch (Exception e) {
             if (server != null) {
-                server.terminate();
+                server.stop(1);
             }
             throw e;
         }
-        server.terminate();
+        server.stop(1);
     }
 }

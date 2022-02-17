@@ -108,7 +108,6 @@ static void SetJavaLauncherProp();
 static void SetClassPath(const char *s);
 static void SetMainModule(const char *s);
 static void SelectVersion(int argc, char **argv, char **main_class);
-static void SetJvmEnvironment(int argc, char **argv);
 static jboolean ParseArguments(int *pargc, char ***pargv,
                                int *pmode, char **pwhat,
                                int *pret, const char *jrepath);
@@ -283,9 +282,6 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
                                jrepath, sizeof(jrepath),
                                jvmpath, sizeof(jvmpath),
                                jvmcfg,  sizeof(jvmcfg));
-
-    /* Set env. Must be done before LoadJavaVM. */
-    SetJvmEnvironment(argc, argv);
 
     ifn.CreateJavaVM = 0;
     ifn.GetDefaultJavaVMInitArgs = 0;
@@ -796,84 +792,6 @@ CheckJvmType(int *pargc, char ***argv, jboolean speculative) {
     }
 
     return jvmtype;
-}
-
-/*
- * This method must be called before the VM is loaded, primarily
- * used to parse and set any VM related options or env variables.
- * This function is non-destructive leaving the argument list intact.
- */
-static void
-SetJvmEnvironment(int argc, char **argv) {
-
-    static const char*  NMT_Env_Name    = "NMT_LEVEL_";
-    const char* NMT_Arg_Name = IsJavaArgs() ? "-J-XX:NativeMemoryTracking=" : "-XX:NativeMemoryTracking=";
-    int i;
-    /* process only the launcher arguments */
-    for (i = 0; i < argc; i++) {
-        char *arg = argv[i];
-        /*
-         * Java launcher (!IsJavaArgs()):
-         *   Since this must be a VM flag we stop processing once we see
-         *   an argument the launcher would not have processed beyond (such
-         *   as -version or -h), or an argument that indicates the following
-         *   arguments are for the application (i.e. the main class name, or
-         *   the -jar argument).
-         * Other launchers (IsJavaArgs()):
-         *   All arguments have to be scanned to see if it is a -J argument.
-         */
-        if (!IsJavaArgs() && i > 0) {
-            char *prev = argv[i - 1];
-            // skip non-dash arg preceded by class path specifiers
-            if (*arg != '-' && IsWhiteSpaceOption(prev)) {
-                continue;
-            }
-
-            if (*arg != '-' || isTerminalOpt(arg)) {
-                return;
-            }
-        }
-        /*
-         * The following case checks for "-XX:NativeMemoryTracking=value".
-         * If value is non null, an environmental variable set to this value
-         * will be created to be used by the JVM.
-         * The argument is passed to the JVM, which will check validity.
-         * The JVM is responsible for removing the env variable.
-         */
-        if (JLI_StrCCmp(arg, NMT_Arg_Name) == 0) {
-            int retval;
-            // get what follows this parameter, include "="
-            size_t pnlen = JLI_StrLen(NMT_Arg_Name);
-            if (JLI_StrLen(arg) > pnlen) {
-                char* value = arg + pnlen;
-                size_t pbuflen = pnlen + JLI_StrLen(value) + 10; // 10 max pid digits
-
-                /*
-                 * ensures that malloc successful
-                 * DONT JLI_MemFree() pbuf.  JLI_PutEnv() uses system call
-                 *   that could store the address.
-                 */
-                char * pbuf = (char*)JLI_MemAlloc(pbuflen);
-
-                JLI_Snprintf(pbuf, pbuflen, "%s%d=%s", NMT_Env_Name, JLI_GetPid(), value);
-                retval = JLI_PutEnv(pbuf);
-                if (JLI_IsTraceLauncher()) {
-                    char* envName;
-                    char* envBuf;
-
-                    // ensures that malloc successful
-                    envName = (char*)JLI_MemAlloc(pbuflen);
-                    JLI_Snprintf(envName, pbuflen, "%s%d", NMT_Env_Name, JLI_GetPid());
-
-                    printf("TRACER_MARKER: NativeMemoryTracking: env var is %s\n",envName);
-                    printf("TRACER_MARKER: NativeMemoryTracking: putenv arg %s\n",pbuf);
-                    envBuf = getenv(envName);
-                    printf("TRACER_MARKER: NativeMemoryTracking: got value %s\n",envBuf);
-                    free(envName);
-                }
-            }
-        }
-    }
 }
 
 /* copied from HotSpot function "atomll()" */

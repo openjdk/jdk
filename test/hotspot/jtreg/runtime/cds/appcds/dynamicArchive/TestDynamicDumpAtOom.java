@@ -53,7 +53,7 @@ public class TestDynamicDumpAtOom extends DynamicArchiveTestBase {
              jarFile,
              mainClass,
              "1024").assertAbnormalExit(output -> {
-                 output.shouldContain("ArchiveClassesAtExit has failed")
+                 output.shouldContain("Dynamic dump has failed")
                        .shouldContain("java.lang.OutOfMemoryError: Java heap space");
              });
     }

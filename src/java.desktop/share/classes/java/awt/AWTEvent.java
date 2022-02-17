@@ -355,8 +355,7 @@ public abstract class AWTEvent extends EventObject {
         Component comp = null;
         if (newSource instanceof Component) {
             comp = (Component)newSource;
-            while (comp != null && comp.peer != null &&
-                   (comp.peer instanceof LightweightPeer)) {
+            while (comp != null && (comp.peer instanceof LightweightPeer)) {
                 comp = comp.parent;
             }
         }

@@ -104,8 +104,8 @@ public class AppImageFileTest {
                     "<launcher></launcher>",
                 "</jpackage-state>");
         Assert.assertEquals("Foo", file.getLauncherName());
-        Assert.assertArrayEquals(new String[0],
-                file.getAddLauncherNames().toArray(String[]::new));
+
+        Assert.assertEquals(0, file.getAddLaunchers().size());
     }
 
     @Test
@@ -119,7 +119,7 @@ public class AppImageFileTest {
     }
 
     @Test
-    public void testAddLauncherNames() throws IOException {
+    public void testAddLaunchers() throws IOException {
         Map<String, ? super Object> params = new LinkedHashMap<>();
         List<Map<String, ? super Object>> launchersAsMap = new ArrayList<>();
 
@@ -136,10 +136,14 @@ public class AppImageFileTest {
         params.put("add-launcher", launchersAsMap);
         AppImageFile aif = create(params);
 
-        List<String> addLauncherNames = aif.getAddLauncherNames();
-        Assert.assertEquals(2, addLauncherNames.size());
-        Assert.assertTrue(addLauncherNames.contains("Launcher2Name"));
-        Assert.assertTrue(addLauncherNames.contains("Launcher3Name"));
+        List<AppImageFile.LauncherInfo> addLaunchers = aif.getAddLaunchers();
+        Assert.assertEquals(2, addLaunchers.size());
+        List<String> names = new ArrayList<String>();
+        names.add(addLaunchers.get(0).getName());
+        names.add(addLaunchers.get(1).getName());
+
+        Assert.assertTrue(names.contains("Launcher2Name"));
+        Assert.assertTrue(names.contains("Launcher3Name"));
 
     }
 
@@ -150,7 +154,7 @@ public class AppImageFileTest {
 
     private void assertInvalid(AppImageFile file) {
         Assert.assertNull(file.getLauncherName());
-        Assert.assertNull(file.getAddLauncherNames());
+        Assert.assertNull(file.getAddLaunchers());
     }
 
     private AppImageFile createFromXml(String... xmlData) throws IOException {

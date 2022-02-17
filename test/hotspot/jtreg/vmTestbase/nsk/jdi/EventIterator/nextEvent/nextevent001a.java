@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ public class nextevent001a {
     //------------------------------------------------------  section tested
 
                     case 0:
-                          thread2 = new Thread3nextevent001a("thread2");
+                          thread2 = JDIThreadFactory.newThread(new Thread3nextevent001a("thread2"));
                           threadStart(thread2);
                           try {
                               // we should wait here for thread2 completion (see 6671428)
@@ -118,9 +118,9 @@ public class nextevent001a {
 
                           for (int n1 = 0; n1 < threadsN; n1++) {
                               if (n1 < threadsN-1)
-                                  threads[n1] =  new Thread1nextevent001a(threadNames[n1]);
+                                  threads[n1] =  JDIThreadFactory.newThread(new Thread1nextevent001a(threadNames[n1]));
                               else
-                                  threads[n1] =  new Thread2nextevent001a(threadNames[n1]);
+                                  threads[n1] =  JDIThreadFactory.newThread(new Thread2nextevent001a(threadNames[n1]));
                           }
                           log1("       threads has been created");
 
@@ -182,7 +182,7 @@ public class nextevent001a {
 
     static volatile int n = 0;
 
-    static class Thread1nextevent001a extends Thread {
+    static class Thread1nextevent001a extends NamedTask {
 
         int threadIndex;
 
@@ -213,7 +213,7 @@ public class nextevent001a {
 
     }
 
-    static class Thread2nextevent001a extends Thread {
+    static class Thread2nextevent001a extends NamedTask {
 
         int threadIndex;
 
@@ -248,21 +248,18 @@ public class nextevent001a {
 
     }
 
-    static class Thread3nextevent001a extends Thread {
-
-        String tName = null;
+    static class Thread3nextevent001a extends NamedTask {
 
         public Thread3nextevent001a(String threadName) {
             super(threadName);
-            tName = threadName;
         }
 
         public void run() {
-            log3("  'run': enter  :: threadName == " + tName);
+            log3("  'run': enter  :: threadName == " + getName());
             synchronized (waitnotifyObj) {
                     waitnotifyObj.notify();
             }
-            log3("  'run': exit   :: threadName == " + tName);
+            log3("  'run': exit   :: threadName == " + getName());
             return;
         }
     }

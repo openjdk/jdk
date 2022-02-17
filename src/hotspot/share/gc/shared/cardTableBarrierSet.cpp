@@ -168,7 +168,7 @@ void CardTableBarrierSet::flush_deferred_card_mark_barrier(JavaThread* thread) {
       assert(!_card_table->is_in_young(old_obj),
              "Else should have been filtered in on_slowpath_allocation_exit()");
       assert(oopDesc::is_oop(old_obj, true), "Not an oop");
-      assert(deferred.word_size() == (size_t)(old_obj->size()),
+      assert(deferred.word_size() == old_obj->size(),
              "Mismatch: multiple objects?");
     }
     write_region(deferred);
@@ -187,7 +187,7 @@ void CardTableBarrierSet::on_thread_detach(Thread* thread) {
   // card-table (or other remembered set structure) before GC starts
   // processing the card-table (or other remembered set).
   if (thread->is_Java_thread()) { // Only relevant for Java threads.
-    flush_deferred_card_mark_barrier(thread->as_Java_thread());
+    flush_deferred_card_mark_barrier(JavaThread::cast(thread));
   }
 }
 

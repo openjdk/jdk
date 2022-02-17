@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -343,6 +343,12 @@ class GraphKit : public Phase {
   Node* load_object_klass(Node* object);
   // Find out the length of an array.
   Node* load_array_length(Node* array);
+  // Cast array allocation's length as narrow as possible.
+  // If replace_length_in_map is true, replace length with CastIINode in map.
+  // This method is invoked after creating/moving ArrayAllocationNode or in load_array_length
+  Node* array_ideal_length(AllocateArrayNode* alloc,
+                           const TypeOopPtr* oop_type,
+                           bool replace_length_in_map);
 
 
   // Helper function to do a NULL pointer check or ZERO check based on type.
@@ -654,7 +660,7 @@ class GraphKit : public Phase {
                               Node* ctrl = NULL);
 
   // Return a load of array element at idx.
-  Node* load_array_element(Node* ctl, Node* ary, Node* idx, const TypeAryPtr* arytype);
+  Node* load_array_element(Node* ary, Node* idx, const TypeAryPtr* arytype, bool set_ctrl);
 
   //---------------- Dtrace support --------------------
   void make_dtrace_method_entry_exit(ciMethod* method, bool is_entry);
@@ -783,9 +789,6 @@ class GraphKit : public Phase {
 
   // rounding for strict double precision conformance
   Node* dprecision_rounding(Node* n);
-
-  // rounding for non-strict double stores
-  Node* dstore_rounding(Node* n);
 
   // Helper functions for fast/slow path codes
   Node* opt_iff(Node* region, Node* iff);

@@ -24,10 +24,7 @@
 /*
  * @test 8242529
  * @summary javac defines type annotations incorrectly for record members (constructor and property accessor)
- * @modules
- *      jdk.compiler/com.sun.tools.javac.util
- * @compile --enable-preview -source ${jdk.version} RecordNotPreservingNestedTypeAnnotationsTest.java
- * @run main/othervm --enable-preview RecordNotPreservingNestedTypeAnnotationsTest
+ * @modules jdk.compiler/com.sun.tools.javac.util
  */
 
 import java.lang.annotation.Annotation;

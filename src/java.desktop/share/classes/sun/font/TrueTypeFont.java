@@ -503,7 +503,9 @@ public class TrueTypeFont extends FileFont {
                 /* checksum */ ibuffer.get();
                 table.offset = ibuffer.get() & 0x7FFFFFFF;
                 table.length = ibuffer.get() & 0x7FFFFFFF;
-                if (table.offset + table.length > fileSize) {
+                if ((table.offset + table.length < table.length) ||
+                    (table.offset + table.length > fileSize))
+                {
                     throw new FontFormatException("bad table, tag="+table.tag);
                 }
             }
@@ -517,6 +519,10 @@ public class TrueTypeFont extends FileFont {
             if (getDirectoryEntry(hmtxTag) != null
                     && getDirectoryEntry(hheaTag) == null) {
                 throw new FontFormatException("missing hhea table");
+            }
+            ByteBuffer maxpTable = getTableBuffer(maxpTag);
+            if (maxpTable.getChar(4) == 0) {
+                throw new FontFormatException("zero glyphs");
             }
             initNames();
         } catch (Exception e) {
@@ -794,8 +800,11 @@ public class TrueTypeFont extends FileFont {
                 break;
             }
         }
+
         if (entry == null || entry.length == 0 ||
-            entry.offset+entry.length > fileSize) {
+            (entry.offset + entry.length < entry.length) ||
+            (entry.offset + entry.length > fileSize))
+        {
             return null;
         }
 
@@ -884,6 +893,9 @@ public class TrueTypeFont extends FileFont {
             return false;
         }
         ByteBuffer eblcTable = getTableBuffer(EBLCTag);
+        if (eblcTable == null) {
+            return false;
+        }
         int numSizes = eblcTable.getInt(4);
         /* The bitmapSizeTable's start at offset of 8.
          * Each bitmapSizeTable entry is 48 bytes.
@@ -981,24 +993,36 @@ public class TrueTypeFont extends FileFont {
 
     private void setStrikethroughMetrics(ByteBuffer os_2Table, int upem) {
         if (os_2Table == null || os_2Table.capacity() < 30 || upem < 0) {
-            stSize = .05f;
-            stPos = -.4f;
+            stSize = 0.05f;
+            stPos = -0.4f;
             return;
         }
         ShortBuffer sb = os_2Table.asShortBuffer();
         stSize = sb.get(13) / (float)upem;
         stPos = -sb.get(14) / (float)upem;
+        if (stSize < 0f) {
+            stSize = 0.05f;
+        }
+        if (Math.abs(stPos) > 2.0f) {
+            stPos = -0.4f;
+        }
     }
 
     private void setUnderlineMetrics(ByteBuffer postTable, int upem) {
         if (postTable == null || postTable.capacity() < 12 || upem < 0) {
-            ulSize = .05f;
-            ulPos = .1f;
+            ulSize = 0.05f;
+            ulPos = 0.1f;
             return;
         }
         ShortBuffer sb = postTable.asShortBuffer();
         ulSize = sb.get(5) / (float)upem;
         ulPos = -sb.get(4) / (float)upem;
+        if (ulSize < 0f) {
+            ulSize = 0.05f;
+        }
+        if (Math.abs(ulPos) > 2.0f) {
+            ulPos = 0.1f;
+        }
     }
 
     @Override

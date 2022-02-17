@@ -84,7 +84,7 @@ public abstract class OutputStream implements Closeable, Flushable {
             }
 
             @Override
-            public void write(byte b[], int off, int len) throws IOException {
+            public void write(byte[] b, int off, int len) throws IOException {
                 Objects.checkFromIndexSize(off, len, b.length);
                 ensureOpen();
             }
@@ -123,7 +123,7 @@ public abstract class OutputStream implements Closeable, Flushable {
      * @throws     IOException  if an I/O error occurs.
      * @see        java.io.OutputStream#write(byte[], int, int)
      */
-    public void write(byte b[]) throws IOException {
+    public void write(byte[] b) throws IOException {
         write(b, 0, b.length);
     }
 
@@ -155,7 +155,7 @@ public abstract class OutputStream implements Closeable, Flushable {
      *             an {@code IOException} is thrown if the output
      *             stream is closed.
      */
-    public void write(byte b[], int off, int len) throws IOException {
+    public void write(byte[] b, int off, int len) throws IOException {
         Objects.checkFromIndexSize(off, len, b.length);
         // len == 0 condition implicitly handled by loop bounds
         for (int i = 0 ; i < len ; i++) {

@@ -44,10 +44,8 @@ define_pd_global(intx, CompileThreshold,             10000);
 
 define_pd_global(intx, OnStackReplacePercentage,     140);
 define_pd_global(intx, ConditionalMoveLimit,         3);
-define_pd_global(intx, FLOATPRESSURE,                32);
 define_pd_global(intx, FreqInlineSize,               325);
 define_pd_global(intx, MinJumpTableSize,             10);
-define_pd_global(intx, INTPRESSURE,                  24);
 define_pd_global(intx, InteriorEntryAlignment,       16);
 define_pd_global(intx, NewSizeThreadIncrease, ScaleForWordSize(4*K));
 define_pd_global(intx, LoopUnrollLimit,              60);

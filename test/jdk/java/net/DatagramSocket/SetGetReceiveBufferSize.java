@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
  * @summary Check that setReceiveBufferSize and getReceiveBufferSize work as expected
  * @run testng SetGetReceiveBufferSize
  * @run testng/othervm -Djava.net.preferIPv4Stack=true SetGetReceiveBufferSize
- * @run testng/othervm -Djdk.net.usePlainDatagramSocketImpl SetGetReceiveBufferSize
  */
 
 import org.testng.annotations.DataProvider;

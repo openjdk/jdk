@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.util.regex.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.Files;
-import java.nio.charset.*;
 
 /*
  * Linux specific implementation of the PlatformSupport routines
@@ -206,7 +205,7 @@ public class PlatformSupportImpl extends PlatformSupport {
         }
 
         try {
-            for (String line : Files.readAllLines(statusPath, StandardCharsets.UTF_8)) {
+            for (String line : Files.readAllLines(statusPath)) {
                 String[] parts = line.split(":");
                 if (parts.length == 2 && parts[0].trim().equals("NSpid")) {
                     parts = parts[1].trim().split("\\s+");

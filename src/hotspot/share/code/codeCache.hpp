@@ -271,7 +271,6 @@ class CodeCache : AllStatic {
 
   // RedefineClasses support
   // Flushing and deoptimization in case of evolution
-  static void mark_for_evol_deoptimization(InstanceKlass* dependee);
   static int  mark_dependents_for_evol_deoptimization();
   static void mark_all_nmethods_for_evol_deoptimization();
   static void flush_evol_dependents();

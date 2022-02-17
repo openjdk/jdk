@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -947,18 +947,12 @@ public abstract class Signature extends SignatureSpi {
      * @return a string representation of this signature object.
      */
     public String toString() {
-        String initState = "";
-        switch (state) {
-        case UNINITIALIZED:
-            initState = "<not initialized>";
-            break;
-        case VERIFY:
-            initState = "<initialized for verifying>";
-            break;
-        case SIGN:
-            initState = "<initialized for signing>";
-            break;
-        }
+        String initState = switch (state) {
+            case UNINITIALIZED -> "<not initialized>";
+            case VERIFY        -> "<initialized for verifying>";
+            case SIGN          -> "<initialized for signing>";
+            default -> "";
+        };
         return "Signature object: " + getAlgorithm() + initState;
     }
 
@@ -1152,13 +1146,12 @@ public abstract class Signature extends SignatureSpi {
         public Object clone() throws CloneNotSupportedException {
             chooseFirstProvider();
             if (sigSpi instanceof Cloneable) {
-                // Because 'algorithm' and 'provider' are private
-                // members of our supertype, we must perform a cast to
-                // access them.
+                // Because 'algorithm' is private member of our supertype,
+                // we must perform a cast to access it.
                 Signature that = new CloneableDelegate(
                    (SignatureSpi)sigSpi.clone(),
                    ((Signature)this).algorithm);
-                that.provider = ((Signature)this).provider;
+                that.provider = this.provider;
                 return that;
             } else {
                 throw new CloneNotSupportedException();
@@ -1317,26 +1310,13 @@ public abstract class Signature extends SignatureSpi {
                 AlgorithmParameterSpec params, SecureRandom random)
                 throws InvalidKeyException, InvalidAlgorithmParameterException {
             switch (type) {
-            case I_PUB:
-                spi.engineInitVerify((PublicKey)key);
-                break;
-            case I_PUB_PARAM:
-                spi.engineInitVerify((PublicKey)key, params);
-                break;
-            case I_PRIV:
-                spi.engineInitSign((PrivateKey)key);
-                break;
-            case I_PRIV_SR:
-                spi.engineInitSign((PrivateKey)key, random);
-                break;
-            case I_PRIV_PARAM_SR:
-                spi.engineInitSign((PrivateKey)key, params, random);
-                break;
-            case S_PARAM:
-                spi.engineSetParameter(params);
-                break;
-            default:
-                throw new AssertionError("Internal error: " + type);
+                case I_PUB           -> spi.engineInitVerify((PublicKey) key);
+                case I_PUB_PARAM     -> spi.engineInitVerify((PublicKey) key, params);
+                case I_PRIV          -> spi.engineInitSign((PrivateKey) key);
+                case I_PRIV_SR       -> spi.engineInitSign((PrivateKey) key, random);
+                case I_PRIV_PARAM_SR -> spi.engineInitSign((PrivateKey) key, params, random);
+                case S_PARAM         -> spi.engineSetParameter(params);
+                default -> throw new AssertionError("Internal error: " + type);
             }
         }
 

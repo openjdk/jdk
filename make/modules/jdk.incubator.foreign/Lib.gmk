@@ -45,6 +45,15 @@ else ifeq ($(call isTargetOs, windows), false)
       LIBS := $(LIBCXX), \
   ))
 
+else # windows
+
+  $(eval $(call SetupJdkLibrary, BUILD_SYSLOOKUPLIB, \
+      NAME := WinFallbackLookup, \
+      CFLAGS := $(CFLAGS_JDKLIB), \
+      CXXFLAGS := $(CXXFLAGS_JDKLIB), \
+      LDFLAGS := $(LDFLAGS_JDKLIB), \
+      LIBS := $(LIBCXX), \
+  ))
 
 endif
 

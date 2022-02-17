@@ -59,9 +59,9 @@
     max_array_allocation_length = 0x01000000
   };
 
-  int lock_object(Register hdr, Register obj, Register disp_hdr, Register tmp, Label& slow_case);
+  int lock_object(Register hdr, Register obj, Register disp_hdr, Label& slow_case);
 
-  void unlock_object(Register hdr, Register obj, Register disp_hdr, Register tmp, Label& slow_case);
+  void unlock_object(Register hdr, Register obj, Register disp_hdr, Label& slow_case);
 
   // This platform only uses signal-based null checks. The Label is not needed.
   void null_check(Register r, Label *Lnull = NULL) { MacroAssembler::null_check(r); }

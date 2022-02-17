@@ -255,7 +255,7 @@ class GetCurrentLocationClosure : public HandshakeClosure {
       _bci(0),
       _completed(false) {}
   void do_thread(Thread *target) {
-    JavaThread *jt = target->as_Java_thread();
+    JavaThread *jt = JavaThread::cast(target);
     ResourceMark rmark; // jt != Thread::current()
     RegisterMap rm(jt, false);
     // There can be a race condition between a handshake

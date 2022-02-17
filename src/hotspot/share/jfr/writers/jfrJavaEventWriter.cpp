@@ -45,7 +45,6 @@ static int start_pos_address_offset = invalid_offset;
 static int current_pos_offset = invalid_offset;
 static int max_pos_offset = invalid_offset;
 static int notified_offset = invalid_offset;
-static int thread_id_offset = invalid_offset;
 static int valid_offset = invalid_offset;
 
 static bool find_field(InstanceKlass* ik,
@@ -171,7 +170,7 @@ class JfrJavaEventWriterNotificationClosure : public ThreadClosure {
  public:
    void do_thread(Thread* t) {
      if (t->is_Java_thread()) {
-       JfrJavaEventWriter::notify(t->as_Java_thread());
+       JfrJavaEventWriter::notify(JavaThread::cast(t));
      }
    }
 };

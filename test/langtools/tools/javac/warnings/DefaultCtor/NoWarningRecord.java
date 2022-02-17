@@ -24,8 +24,7 @@
 /*
  * @test
  * @bug 8071961
- * @compile -Xlint:missing-explicit-ctor -Werror
- *          --enable-preview -source ${jdk.version} NoWarningRecord.java
+ * @compile -Xlint:missing-explicit-ctor -Werror NoWarningRecord.java
  */
 
 public record NoWarningRecord(/* no components */) {

@@ -37,6 +37,42 @@ import java.util.function.Function;
 public class Preconditions {
 
     /**
+     * Utility exception formatters which can be used in {@code Preconditions}
+     * check functions below.
+     *
+     * These anonymous inner classes can be syntactically replaced by lambda
+     * expression or method reference, but it's not feasible in practices,
+     * because {@code Preconditions} is used in many fundamental classes such
+     * as {@code java.lang.String}, lambda expressions or method references
+     * exercise many other code at VM startup, this could lead a recursive
+     * calls when fundamental classes is used in lambda expressions or method
+     * references.
+     */
+    public static final BiFunction<String, List<Number>, StringIndexOutOfBoundsException>
+            SIOOBE_FORMATTER = Preconditions.outOfBoundsExceptionFormatter(new Function<>() {
+        @Override
+        public StringIndexOutOfBoundsException apply(String s) {
+            return new StringIndexOutOfBoundsException(s);
+        }
+    });
+
+    public static final BiFunction<String, List<Number>, ArrayIndexOutOfBoundsException>
+            AIOOBE_FORMATTER = Preconditions.outOfBoundsExceptionFormatter(new Function<>() {
+        @Override
+        public ArrayIndexOutOfBoundsException apply(String s) {
+            return new ArrayIndexOutOfBoundsException(s);
+        }
+    });
+
+    public static final BiFunction<String,List<Number>, IndexOutOfBoundsException>
+            IOOBE_FORMATTER = Preconditions.outOfBoundsExceptionFormatter(new Function<>() {
+        @Override
+        public IndexOutOfBoundsException apply(String s) {
+            return new IndexOutOfBoundsException(s);
+        }
+    });
+
+    /**
      * Maps out-of-bounds values to a runtime exception.
      *
      * @param checkKind the kind of bounds check, whose name may correspond

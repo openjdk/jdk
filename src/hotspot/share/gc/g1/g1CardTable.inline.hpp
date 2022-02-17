@@ -31,7 +31,7 @@
 
 inline uint G1CardTable::region_idx_for(CardValue* p) {
   size_t const card_idx = pointer_delta(p, _byte_map, sizeof(CardValue));
-  return (uint)(card_idx >> (HeapRegion::LogOfHRGrainBytes - card_shift));
+  return (uint)(card_idx >> (HeapRegion::LogOfHRGrainBytes - _card_shift));
 }
 
 inline bool G1CardTable::mark_clean_as_dirty(CardValue* card) {
@@ -43,7 +43,7 @@ inline bool G1CardTable::mark_clean_as_dirty(CardValue* card) {
   return false;
 }
 
-inline size_t G1CardTable::mark_region_dirty(size_t start_card_index, size_t num_cards) {
+inline size_t G1CardTable::mark_range_dirty(size_t start_card_index, size_t num_cards) {
   assert(is_aligned(start_card_index, sizeof(size_t)), "Start card index must be aligned.");
   assert(is_aligned(num_cards, sizeof(size_t)), "Number of cards to change must be evenly divisible.");
 

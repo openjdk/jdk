@@ -211,25 +211,17 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
             throw new SocketException("Reply from SOCKS server has bad length: " + n);
         if (data[0] != 0 && data[0] != 4)
             throw new SocketException("Reply from SOCKS server has bad version");
-        SocketException ex = null;
-        switch (data[1]) {
-        case 90:
-            // Success!
-            external_address = endpoint;
-            break;
-        case 91:
-            ex = new SocketException("SOCKS request rejected");
-            break;
-        case 92:
-            ex = new SocketException("SOCKS server couldn't reach destination");
-            break;
-        case 93:
-            ex = new SocketException("SOCKS authentication failed");
-            break;
-        default:
-            ex = new SocketException("Reply from SOCKS server contains bad status");
-            break;
-        }
+        SocketException ex = switch (data[1]) {
+            case 90 -> {
+                // Success!
+                external_address = endpoint;
+                yield null;
+            }
+            case 91 -> new SocketException("SOCKS request rejected");
+            case 92 -> new SocketException("SOCKS server couldn't reach destination");
+            case 93 -> new SocketException("SOCKS authentication failed");
+            default -> new SocketException("Reply from SOCKS server contains bad status");
+        };
         if (ex != null) {
             in.close();
             out.close();

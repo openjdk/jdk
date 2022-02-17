@@ -98,6 +98,20 @@ public class Messages {
     /**
      * Reports an error message to the doclet's reporter.
      *
+     * @param path  a path identifying the position to be included with the message
+     * @param start the start of a range of characters to be associated with the message
+     * @param pos   the position to be associated with the message
+     * @param end   the end of a range of characters to be associated with the message
+     * @param key   the name of a resource containing the message to be printed
+     * @param args  optional arguments to be replaced in the message
+     */
+    public void error(DocTreePath path, int start, int pos, int end, String key, Object... args) {
+        report(ERROR, path, start, pos, end, resources.getText(key, args));
+    }
+
+    /**
+     * Reports an error message to the doclet's reporter.
+     *
      * @param fo    the file object to be associated with the message
      * @param start the start of a range of characters to be associated with the message
      * @param pos   the position to be associated with the message
@@ -132,6 +146,20 @@ public class Messages {
         if (configuration.showMessage(path, key)) {
             report(WARNING, path, resources.getText(key, args));
         }
+    }
+
+    /**
+     * Reports a warning message to the doclet's reporter.
+     *
+     * @param path  a path identifying the position to be included with the message
+     * @param start the start of a range of characters to be associated with the message
+     * @param pos   the position to be associated with the message
+     * @param end   the end of a range of characters to be associated with the message
+     * @param key   the name of a resource containing the message to be printed
+     * @param args  optional arguments to be replaced in the message
+     */
+    public void warning(DocTreePath path, int start, int pos, int end, String key, Object... args) {
+        report(WARNING, path, start, pos, end, resources.getText(key, args));
     }
 
     /**
@@ -193,5 +221,9 @@ public class Messages {
 
     private void report(Diagnostic.Kind k, FileObject fo, int start, int pos, int end, String msg) {
         reporter.print(k, fo, start, pos, end, msg);
+    }
+
+    private void report(Diagnostic.Kind k, DocTreePath path, int start, int pos, int end, String msg) {
+        reporter.print(k, path, start, pos, end, msg);
     }
 }

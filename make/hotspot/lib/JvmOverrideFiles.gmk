@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ ifeq ($(TOOLCHAIN_TYPE), gcc)
   BUILD_LIBJVM_assembler_x86.cpp_CXXFLAGS := -Wno-maybe-uninitialized
   BUILD_LIBJVM_cardTableBarrierSetAssembler_x86.cpp_CXXFLAGS := -Wno-maybe-uninitialized
   BUILD_LIBJVM_interp_masm_x86.cpp_CXXFLAGS := -Wno-uninitialized
+  BUILD_LIBJVM_ad_$(HOTSPOT_TARGET_CPU_ARCH).cpp_CXXFLAGS := -Wno-nonnull
   ifeq ($(DEBUG_LEVEL), release)
     # Need extra inlining to collapse shared marking code into the hot marking loop
     BUILD_LIBJVM_shenandoahMark.cpp_CXXFLAGS := --param inline-unit-growth=1000

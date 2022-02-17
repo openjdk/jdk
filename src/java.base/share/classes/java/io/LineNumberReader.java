@@ -187,7 +187,7 @@ public class LineNumberReader extends BufferedReader {
      * @throws  IOException {@inheritDoc}
      */
     @SuppressWarnings("fallthrough")
-    public int read(char cbuf[], int off, int len) throws IOException {
+    public int read(char[] cbuf, int off, int len) throws IOException {
         synchronized (lock) {
             int n = super.read(cbuf, off, len);
 

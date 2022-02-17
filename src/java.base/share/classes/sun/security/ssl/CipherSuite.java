@@ -25,12 +25,8 @@
 
 package sun.security.ssl;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
+
 import static sun.security.ssl.CipherSuite.HashAlg.*;
 import static sun.security.ssl.CipherSuite.KeyExchange.*;
 import static sun.security.ssl.CipherSuite.MacAlg.*;
@@ -857,6 +853,39 @@ enum CipherSuite {
 
     final boolean exportable;
 
+    private static final Map<Integer, CipherSuite> cipherSuiteIds;
+    private static final Map<String, CipherSuite> cipherSuiteNames;
+    private static final List<CipherSuite> allowedCipherSuites;
+    private static final List<CipherSuite> defaultCipherSuites;
+
+    static {
+        Map<Integer, CipherSuite> ids = new HashMap<>();
+        Map<String, CipherSuite> names = new HashMap<>();
+        List<CipherSuite> allowedCS = new ArrayList<>();
+        List<CipherSuite> defaultCS = new ArrayList<>();
+
+        for(CipherSuite cs : CipherSuite.values()) {
+            ids.put(cs.id, cs);
+            names.put(cs.name, cs);
+            for (String alias : cs.aliases) {
+                names.put(alias, cs);
+            }
+
+            if (!cs.supportedProtocols.isEmpty()) {
+                allowedCS.add(cs);
+            }
+
+            if (cs.isDefaultEnabled) {
+                defaultCS.add(cs);
+            }
+        }
+
+        cipherSuiteIds = Map.copyOf(ids);
+        cipherSuiteNames = Map.copyOf(names);
+        allowedCipherSuites = List.copyOf(allowedCS);
+        defaultCipherSuites = List.copyOf(defaultCS);
+    }
+
     // known but unsupported cipher suite
     private CipherSuite(String name, int id) {
         this(id, false, name, "",
@@ -894,62 +923,29 @@ enum CipherSuite {
     }
 
     static CipherSuite nameOf(String ciperSuiteName) {
-        for (CipherSuite cs : CipherSuite.values()) {
-            if (cs.name.equals(ciperSuiteName) ||
-                    cs.aliases.contains(ciperSuiteName)) {
-                return cs;
-            }
-        }
-
-        return null;
+        return cipherSuiteNames.get(ciperSuiteName);
     }
 
     static CipherSuite valueOf(int id) {
-        for (CipherSuite cs : CipherSuite.values()) {
-            if (cs.id == id) {
-                return cs;
-            }
-        }
-
-        return null;
+        return cipherSuiteIds.get(id);
     }
 
     static String nameOf(int id) {
-        for (CipherSuite cs : CipherSuite.values()) {
-            if (cs.id == id) {
-                return cs.name;
-            }
+        CipherSuite cs = cipherSuiteIds.get(id);
+
+        if (cs != null) {
+            return cs.name;
         }
 
         return "UNKNOWN-CIPHER-SUITE(" + Utilities.byte16HexString(id) + ")";
     }
 
     static Collection<CipherSuite> allowedCipherSuites() {
-        Collection<CipherSuite> cipherSuites = new LinkedList<>();
-        for (CipherSuite cs : CipherSuite.values()) {
-            if (!cs.supportedProtocols.isEmpty()) {
-                cipherSuites.add(cs);
-            } else {
-                // values() is ordered, remaining cipher suites are
-                // not supported.
-                break;
-            }
-        }
-        return cipherSuites;
+        return allowedCipherSuites;
     }
 
     static Collection<CipherSuite> defaultCipherSuites() {
-        Collection<CipherSuite> cipherSuites = new LinkedList<>();
-        for (CipherSuite cs : CipherSuite.values()) {
-            if (cs.isDefaultEnabled) {
-                cipherSuites.add(cs);
-            } else {
-                // values() is ordered, remaining cipher suites are
-                // not enabled.
-                break;
-            }
-        }
-        return cipherSuites;
+        return defaultCipherSuites;
     }
 
     /**
@@ -972,19 +968,11 @@ enum CipherSuite {
             }
 
             boolean found = false;
-            for (CipherSuite cs : CipherSuite.values()) {
-                if (!cs.supportedProtocols.isEmpty()) {
-                    if (cs.name.equals(name) ||
-                            cs.aliases.contains(name)) {
-                        cipherSuites.add(cs);
-                        found = true;
-                        break;
-                    }
-                } else {
-                    // values() is ordered, remaining cipher suites are
-                    // not supported.
-                    break;
-                }
+            CipherSuite cs;
+            if ((cs = cipherSuiteNames.get(name)) != null
+                    && !cs.supportedProtocols.isEmpty()) {
+                cipherSuites.add(cs);
+                found = true;
             }
             if (!found) {
                 throw new IllegalArgumentException(

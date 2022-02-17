@@ -25,6 +25,7 @@
  * @test
  * @build DummyWebSocketServer
  * @run testng/othervm
+ *      -Djdk.httpclient.sendBufferSize=8192
  *       PendingPingTextClose
  */
 
@@ -52,6 +53,7 @@ public class PendingPingTextClose extends PendingOperations {
         try {
             repeatable(() -> {
                 server = Support.notReadingServer();
+                server.setReceiveBufferSize(1024);
                 server.open();
                 webSocket = httpClient().newWebSocketBuilder()
                         .buildAsync(server.getURI(), new WebSocket.Listener() { })

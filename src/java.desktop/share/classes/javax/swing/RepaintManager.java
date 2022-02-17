@@ -799,8 +799,7 @@ public class RepaintManager
 
         Set<Window> windows = new HashSet<Window>();
         Set<Component> dirtyComps = dirtyComponents.keySet();
-        for (Iterator<Component> it = dirtyComps.iterator(); it.hasNext();) {
-            Component dirty = it.next();
+        for (Component dirty : dirtyComps) {
             Window window = dirty instanceof Window ?
                 (Window)dirty :
                 SwingUtilities.getWindowAncestor(dirty);
@@ -929,7 +928,7 @@ public class RepaintManager
         for (int i = roots.size() - 1; i >= index; i--) {
             Component c = roots.get(i);
             for(;;) {
-                if (c == root || c == null || !(c instanceof JComponent)) {
+                if (c == root || !(c instanceof JComponent)) {
                     break;
                 }
                 c = c.getParent();
@@ -1813,7 +1812,7 @@ public class RepaintManager
         }
     }
 
-    private class DoubleBufferInfo {
+    private static class DoubleBufferInfo {
         public Image image;
         public Dimension size;
         public boolean needsReset = false;

@@ -290,7 +290,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // Register the result of a compilation.
   JVMCI::CodeInstallResult register_method(JVMCIEnv* JVMCIENV,
                        const methodHandle&       target,
-                       nmethod*&                 nm,
+                       nmethodLocker&            code_handle,
                        int                       entry_bci,
                        CodeOffsets*              offsets,
                        int                       orig_pc_offset,

@@ -108,14 +108,29 @@ public class TestSerializedForm extends JavadocTester {
                     <h4>Serialized Fields</h4>
                     <ul class="block-list">
                     <li class="block-list">
+                    <h5>i</h5>
+                    <pre>int i</pre>
+                    <div class="block">an int</div>
+                    </li>
+                    <li class="block-list">
                     <h5>longs</h5>
-                    <pre>Long[] longs</pre>
+                    <pre>java.lang.Long[] longs</pre>
                     <div class="block">the longs</div>
+                    </li>
+                    <li class="block-list">
+                    <h5>m</h5>
+                    <pre>double[][] m</pre>
+                    <div class="block">the doubles</div>
                     </li>
                     <li class="block-list">
                     <h5>name</h5>
                     <pre>java.lang.String name</pre>
-                    <div class="block">a test</div>""");
+                    <div class="block">a test</div>
+                    </li>
+                    <li class="block-list">
+                    <h5>next</h5>
+                    <pre><a href="SerializedForm.html" title="class in Unnamed Package">SerializedForm</a> next</pre>
+                    <div class="block">a linked reference</div>""");
     }
 
     @Test
@@ -160,14 +175,29 @@ public class TestSerializedForm extends JavadocTester {
                     <h4>Serialized Fields</h4>
                     <ul class="block-list">
                     <li class="block-list">
+                    <h5>i</h5>
+                    <pre>int i</pre>
+                    <div class="block">an int</div>
+                    </li>
+                    <li class="block-list">
                     <h5>longs</h5>
-                    <pre>Long[] longs</pre>
+                    <pre>java.lang.Long[] longs</pre>
                     <div class="block">the longs</div>
+                    </li>
+                    <li class="block-list">
+                    <h5>m</h5>
+                    <pre>double[][] m</pre>
+                    <div class="block">the doubles</div>
                     </li>
                     <li class="block-list">
                     <h5>name</h5>
                     <pre>java.lang.String name</pre>
-                    <div class="block">a test</div>""");
+                    <div class="block">a test</div>
+                    </li>
+                    <li class="block-list">
+                    <h5>next</h5>
+                    <pre><a href="SerializedForm.html" title="class in Unnamed Package">SerializedForm</a> next</pre>
+                    <div class="block">a linked reference</div>""");
     }
 
     @Test
@@ -180,8 +210,10 @@ public class TestSerializedForm extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOrder("serialized-form.html",
-                "int[] a1",
-                "int[][] a2",
+                """
+                    int[] a1""",
+                """
+                    int[][] a2""",
                 """
                     <a href="pkg2/Fields.html" title="class in pkg2">Fields</a>[][] doubleArray""",
                 """

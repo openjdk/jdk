@@ -67,21 +67,6 @@ JVMFlag::Error ParallelGCThreadsConstraintFunc(uint value, bool verbose) {
   return status;
 }
 
-// As ConcGCThreads should be smaller than ParallelGCThreads,
-// we need constraint function.
-JVMFlag::Error ConcGCThreadsConstraintFunc(uint value, bool verbose) {
-  // G1 GC use ConcGCThreads.
-  if (GCConfig::is_gc_selected(CollectedHeap::G1) && (value > ParallelGCThreads)) {
-    JVMFlag::printError(verbose,
-                        "ConcGCThreads (" UINT32_FORMAT ") must be "
-                        "less than or equal to ParallelGCThreads (" UINT32_FORMAT ")\n",
-                        value, ParallelGCThreads);
-    return JVMFlag::VIOLATES_CONSTRAINT;
-  }
-
-  return JVMFlag::SUCCESS;
-}
-
 static JVMFlag::Error MinPLABSizeBounds(const char* name, size_t value, bool verbose) {
   if ((GCConfig::is_gc_selected(CollectedHeap::G1) || GCConfig::is_gc_selected(CollectedHeap::Parallel)) &&
       (value < PLAB::min_size())) {
@@ -433,6 +418,18 @@ JVMFlag::Error MaxMetaspaceSizeConstraintFunc(size_t value, bool verbose) {
                         "MaxMetaspaceSize (" SIZE_FORMAT ") must be "
                         "greater than or equal to MetaspaceSize (" SIZE_FORMAT ")\n",
                         value, MaxMetaspaceSize);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  } else {
+    return JVMFlag::SUCCESS;
+  }
+}
+
+JVMFlag::Error GCCardSizeInBytesConstraintFunc(uint value, bool verbose) {
+  if (!is_power_of_2(value)) {
+    JVMFlag::printError(verbose,
+                        "GCCardSizeInBytes ( %u ) must be "
+                        "a power of 2\n",
+                        value);
     return JVMFlag::VIOLATES_CONSTRAINT;
   } else {
     return JVMFlag::SUCCESS;

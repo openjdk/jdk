@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -255,6 +255,16 @@ public class PKCS7 {
         }
     }
 
+    //    SignedData ::= SEQUENCE {
+    //     version Version,
+    //     digestAlgorithms DigestAlgorithmIdentifiers,
+    //     contentInfo ContentInfo,
+    //     certificates
+    //        [0] IMPLICIT ExtendedCertificatesAndCertificates
+    //          OPTIONAL,
+    //     crls
+    //       [1] IMPLICIT CertificateRevocationLists OPTIONAL,
+    //     signerInfos SignerInfos }
     private void parseSignedData(DerValue val)
         throws ParsingException, IOException {
 
@@ -294,9 +304,9 @@ public class PKCS7 {
          * check if certificates (implicit tag) are provided
          * (certificates are OPTIONAL)
          */
-        if ((byte)(dis.peekByte()) == (byte)0xA0) {
-            DerValue[] certVals = dis.getSet(2, true);
-
+        var certDer = dis.getOptionalImplicitContextSpecific(0, DerValue.tag_SetOf);
+        if (certDer.isPresent()) {
+            DerValue[] certVals = certDer.get().subs(DerValue.tag_SetOf, 2);
             len = certVals.length;
             certificates = new X509Certificate[len];
             int count = 0;
@@ -339,9 +349,9 @@ public class PKCS7 {
         }
 
         // check if crls (implicit tag) are provided (crls are OPTIONAL)
-        if ((byte)(dis.peekByte()) == (byte)0xA1) {
-            DerValue[] crlVals = dis.getSet(1, true);
-
+        var crlsDer = dis.getOptionalImplicitContextSpecific(1, DerValue.tag_SetOf);
+        if (crlsDer.isPresent()) {
+            DerValue[] crlVals = crlsDer.get().subs(DerValue.tag_SetOf, 1);
             len = crlVals.length;
             crls = new X509CRL[len];
 
@@ -578,19 +588,18 @@ public class PKCS7 {
     public SignerInfo[] verify(byte[] bytes)
     throws NoSuchAlgorithmException, SignatureException {
 
-        Vector<SignerInfo> intResult = new Vector<>();
+        ArrayList<SignerInfo> intResult = new ArrayList<>();
         for (int i = 0; i < signerInfos.length; i++) {
 
             SignerInfo signerInfo = verify(signerInfos[i], bytes);
             if (signerInfo != null) {
-                intResult.addElement(signerInfo);
+                intResult.add(signerInfo);
             }
         }
         if (!intResult.isEmpty()) {
 
             SignerInfo[] result = new SignerInfo[intResult.size()];
-            intResult.copyInto(result);
-            return result;
+            return intResult.toArray(result);
         }
         return null;
     }

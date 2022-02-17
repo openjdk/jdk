@@ -102,11 +102,11 @@ public class bug8041694 {
             }
             System.out.println(String.format(
                 "The selected directory is '%s'.", selectedDir.getAbsolutePath()));
-            if (selectedDir.getName().equals("d")) {
+            if (selectedDir.getName().toLowerCase().equals("d")) {
                 throw new RuntimeException(
                     "JFileChooser removed trailing spaces in the selected directory name. " +
                     "Expected 'd ' got '" + selectedDir.getName() + "'.");
-            } else if (!selectedDir.getName().equals("d ")) {
+            } else if (!selectedDir.getName().toLowerCase().equals("d ")) {
                 throw new RuntimeException("The selected directory name is not "
                     + "the expected 'd ' but '" + selectedDir.getName() + "'.");
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,8 @@ private:
   ZBarrierSet       _barrier_set;
   ZInitialize       _initialize;
   ZHeap             _heap;
-  ZDirector*        _director;
   ZDriver*          _driver;
+  ZDirector*        _director;
   ZStat*            _stat;
   ZRuntimeWorkers   _runtime_workers;
 
@@ -75,7 +75,7 @@ public:
 
   virtual uint32_t hash_oop(oop obj) const;
 
-  virtual oop array_allocate(Klass* klass, int size, int length, bool do_zero, TRAPS);
+  virtual oop array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS);
   virtual HeapWord* mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded);
   virtual MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
                                                        size_t size,
@@ -95,7 +95,7 @@ public:
   virtual GrowableArray<MemoryPool*> memory_pools();
 
   virtual void object_iterate(ObjectClosure* cl);
-  virtual ParallelObjectIterator* parallel_object_iterator(uint nworkers);
+  virtual ParallelObjectIteratorImpl* parallel_object_iterator(uint nworkers);
 
   virtual void keep_alive(oop obj);
 
@@ -104,7 +104,7 @@ public:
   virtual void flush_nmethod(nmethod* nm);
   virtual void verify_nmethod(nmethod* nmethod);
 
-  virtual WorkGang* safepoint_workers();
+  virtual WorkerThreads* safepoint_workers();
 
   virtual void gc_threads_do(ThreadClosure* tc) const;
 

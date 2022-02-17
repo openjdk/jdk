@@ -196,8 +196,14 @@ Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int c
 
   if (!inst_src->klass_is_exact()) {
     ciInstanceKlass* ik = inst_src->klass()->as_instance_klass();
-    assert(!ik->is_interface() && !ik->has_subklass(), "inconsistent klass hierarchy");
-    phase->C->dependencies()->assert_leaf_type(ik);
+    assert(!ik->is_interface(), "inconsistent klass hierarchy");
+    if (ik->has_subklass()) {
+      // Concurrent class loading.
+      // Fail fast and return NodeSentinel to indicate that the transform failed.
+      return NodeSentinel;
+    } else {
+      phase->C->dependencies()->assert_leaf_type(ik);
+    }
   }
 
   ciInstanceKlass* ik = inst_src->klass()->as_instance_klass();

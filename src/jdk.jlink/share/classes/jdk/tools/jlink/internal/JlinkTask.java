@@ -39,8 +39,11 @@ import java.lang.module.ResolvedModule;
 import java.net.URI;
 import java.nio.ByteOrder;
 import java.nio.file.Files;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -75,7 +78,7 @@ import jdk.internal.module.ModuleResolution;
  * ## Should use jdk.joptsimple some day.
  */
 public class JlinkTask {
-    static final boolean DEBUG = Boolean.getBoolean("jlink.debug");
+    public static final boolean DEBUG = Boolean.getBoolean("jlink.debug");
 
     // jlink API ignores by default. Remove when signing is implemented.
     static final boolean IGNORE_SIGNING_DEFAULT = true;
@@ -225,6 +228,7 @@ public class JlinkTask {
             setLog(new PrintWriter(System.out, true),
                    new PrintWriter(System.err, true));
         }
+        Path outputPath = null;
         try {
             List<String> remaining = optionsHelper.handleOptions(this, args);
             if (remaining.size() > 0 && !options.suggestProviders) {
@@ -265,6 +269,7 @@ public class JlinkTask {
             }
 
             JlinkConfiguration config = initJlinkConfig();
+            outputPath = config.getOutput();
             if (options.suggestProviders) {
                 suggestProviders(config, remaining);
             } else {
@@ -279,8 +284,14 @@ public class JlinkTask {
             log.println(taskHelper.getMessage("error.prefix") + " " + e.getMessage());
             e.printStackTrace(log);
             return EXIT_ERROR;
-        } catch (PluginException | IllegalArgumentException |
-                 UncheckedIOException |IOException | ResolutionException e) {
+        } catch (PluginException | UncheckedIOException | IOException e) {
+            log.println(taskHelper.getMessage("error.prefix") + " " + e.getMessage());
+            if (DEBUG) {
+                e.printStackTrace(log);
+            }
+            cleanupOutput(outputPath);
+            return EXIT_ERROR;
+        } catch (IllegalArgumentException | ResolutionException e) {
             log.println(taskHelper.getMessage("error.prefix") + " " + e.getMessage());
             if (DEBUG) {
                 e.printStackTrace(log);
@@ -298,9 +309,23 @@ public class JlinkTask {
         } catch (Throwable x) {
             log.println(taskHelper.getMessage("error.prefix") + " " + x.getMessage());
             x.printStackTrace(log);
+            cleanupOutput(outputPath);
             return EXIT_ABNORMAL;
         } finally {
             log.flush();
+        }
+    }
+
+    private void cleanupOutput(Path dir) {
+        try {
+            if (dir != null && Files.isDirectory(dir)) {
+                deleteDirectory(dir);
+            }
+        } catch (IOException io) {
+            log.println(taskHelper.getMessage("error.prefix") + " " + io.getMessage());
+            if (DEBUG) {
+                io.printStackTrace(log);
+            }
         }
     }
 
@@ -372,7 +397,7 @@ public class JlinkTask {
         }
 
         ModuleFinder finder = newModuleFinder(options.modulePath, options.limitMods, roots);
-        if (!finder.find("java.base").isPresent()) {
+        if (finder.find("java.base").isEmpty()) {
             Path defModPath = getDefaultModulePath();
             if (defModPath != null) {
                 options.modulePath.add(defModPath);
@@ -468,9 +493,31 @@ public class JlinkTask {
         return finder;
     }
 
+    private static void deleteDirectory(Path dir) throws IOException {
+        Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                    throws IOException {
+                Files.delete(file);
+                return FileVisitResult.CONTINUE;
+            }
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException e)
+                    throws IOException {
+                if (e == null) {
+                    Files.delete(dir);
+                    return FileVisitResult.CONTINUE;
+                } else {
+                    // directory iteration failed.
+                    throw e;
+                }
+            }
+        });
+    }
+
     private static Path toPathLocation(ResolvedModule m) {
         Optional<URI> ouri = m.reference().location();
-        if (!ouri.isPresent())
+        if (ouri.isEmpty())
             throw new InternalError(m + " does not have a location");
         URI uri = ouri.get();
         return Paths.get(uri);

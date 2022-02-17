@@ -224,7 +224,7 @@ public class TestPrivateClasses extends JavadocTester {
                 //Since private flag is used, we can document that private interface method
                 //with generic parameters has been implemented.
                 """
-                    <span class="descfrm-type-label">Description copied from interface:&nbsp;<code><\
+                    <span class="description-from-type-label">Description copied from interface:&nbsp;<code><\
                     a href="I.html#hello(T)">I</a></code></span>""",
                 """
                     <dt>Specified by:</dt>

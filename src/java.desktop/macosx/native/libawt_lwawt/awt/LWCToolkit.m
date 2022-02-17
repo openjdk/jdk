@@ -259,6 +259,7 @@ BOOL isSWTInWebStart(JNIEnv* env) {
 
 static void AWT_NSUncaughtExceptionHandler(NSException *exception) {
     NSLog(@"Apple AWT Internal Exception: %@", [exception description]);
+    NSLog(@"trace: %@", [exception callStackSymbols]);
 }
 
 @interface AWTStarter : NSObject

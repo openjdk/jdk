@@ -852,11 +852,11 @@ public class Pretty extends JCTree.Visitor {
 
     public void visitCase(JCCase tree) {
         try {
-            if (tree.pats.isEmpty()) {
+            if (tree.labels.size() == 1 && tree.labels.get(0).hasTag(DEFAULTCASELABEL)) {
                 print("default");
             } else {
                 print("case ");
-                printExprs(tree.pats);
+                printExprs(tree.labels);
             }
             if (tree.caseKind == JCCase.STATEMENT) {
                 print(":");
@@ -867,8 +867,21 @@ public class Pretty extends JCTree.Visitor {
                 align();
             } else {
                 print(" -> ");
-                printStat(tree.stats.head);
+                if (tree.stats.size() == 1) {
+                    printStat(tree.stats.head);
+                } else {
+                    printBlock(tree.stats);
+                }
             }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public void visitDefaultCaseLabel(JCTree.JCDefaultCaseLabel that) {
+        try {
+            print("default");
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -897,6 +910,28 @@ public class Pretty extends JCTree.Visitor {
     public void visitBindingPattern(JCBindingPattern patt) {
         try {
             printExpr(patt.var);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public void visitParenthesizedPattern(JCParenthesizedPattern patt) {
+        try {
+            print("(");
+            printExpr(patt.pattern);
+            print(")");
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public void visitGuardPattern(JCGuardPattern patt) {
+        try {
+            printExpr(patt.patt);
+            print(" && ");
+            printExpr(patt.expr);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

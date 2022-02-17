@@ -52,6 +52,7 @@ public class TestG1TraceEagerReclaimHumongousObjects {
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
+    System.out.println(output.getStdout());
     // As G1ReclaimDeadHumongousObjectsAtYoungGC is set(default), below logs should be displayed.
     output.shouldContain("Humongous Reclaim");
     output.shouldContain("Humongous Total");
@@ -60,8 +61,8 @@ public class TestG1TraceEagerReclaimHumongousObjects {
 
     // As G1TraceReclaimDeadHumongousObjectsAtYoungGC is set and GCWithHumongousObjectTest has humongous objects,
     // these logs should be displayed.
-    output.shouldContain("Live humongous");
-    output.shouldContain("Dead humongous region");
+    output.shouldContain("Humongous region");
+    output.shouldContain("Reclaimed humongous region");
     output.shouldHaveExitValue(0);
   }
 

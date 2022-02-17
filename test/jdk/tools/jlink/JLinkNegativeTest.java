@@ -130,6 +130,9 @@ public class JLinkNegativeTest {
                 .output(image)
                 .addMods("leaf1")
                 .call().assertFailure("Error: directory already exists: .*failure4.image(\n|\r|.)*");
+        if (Files.notExists(image)) {
+            throw new RuntimeException("output directory should not have been deleted");
+        }
     }
 
     public void testModuleNotFound() {

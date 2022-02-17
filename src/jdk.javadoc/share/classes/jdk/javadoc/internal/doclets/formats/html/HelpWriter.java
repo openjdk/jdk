@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ public class HelpWriter extends HtmlDocletWriter {
         // yes, INDEX is correct in the following line
         overviewLink = links.createLink(DocPaths.INDEX, resources.getText("doclet.Overview"));
         allPackagesLink = links.createLink(DocPaths.ALLPACKAGES_INDEX, resources.getText("doclet.All_Packages"));
-        allClassesLink = links.createLink(DocPaths.ALLCLASSES_INDEX, resources.getText("doclet.All_Classes"));
+        allClassesLink = links.createLink(DocPaths.ALLCLASSES_INDEX, resources.getText("doclet.All_Classes_And_Interfaces"));
         DocPath dp = options.splitIndex()
                 ? DocPaths.INDEX_FILES.resolve(DocPaths.indexN(1))
                 : DocPaths.INDEX_ALL;
@@ -128,9 +128,7 @@ public class HelpWriter extends HtmlDocletWriter {
      * </ul>
      */
     protected void addHelpFileContents(Content contentTree) {
-        HtmlTree mainTOC = new HtmlTree(TagName.UL).setStyle(HtmlStyle.helpTOC);
-
-
+        HtmlTree mainTOC = HtmlTree.UL(HtmlStyle.helpTOC);
 
         contentTree.add(HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, HtmlStyle.title,
                                         getContent("doclet.help.main_heading")))
@@ -185,7 +183,7 @@ public class HelpWriter extends HtmlDocletWriter {
         }
         content.add(navSection);
 
-        HtmlTree subTOC = new HtmlTree(TagName.UL).setStyle(HtmlStyle.helpSubTOC);
+        HtmlTree subTOC = HtmlTree.UL(HtmlStyle.helpSubTOC);
 
         HtmlTree section;
 
@@ -193,7 +191,7 @@ public class HelpWriter extends HtmlDocletWriter {
         if (options.createIndex()) {
             section = newHelpSection(getContent("doclet.help.search.head"), subTOC, HtmlIds.HELP_SEARCH);
             Content searchIntro = HtmlTree.P(getContent("doclet.help.search.intro"));
-            Content searchExamples = new HtmlTree(TagName.UL).setStyle(HtmlStyle.helpSectionList);
+            Content searchExamples = HtmlTree.UL(HtmlStyle.helpSectionList);
             for (String[] example : SEARCH_EXAMPLES) {
                 searchExamples.add(HtmlTree.LI(
                         getContent("doclet.help.search.example",
@@ -240,7 +238,7 @@ public class HelpWriter extends HtmlDocletWriter {
                 .add(HtmlTree.HEADING(Headings.CONTENT_HEADING, pageKindsHeading).setId(HtmlIds.HELP_PAGES))
                 .add(contents.getContent("doclet.help.page_kinds.intro"));
 
-        HtmlTree subTOC = new HtmlTree(TagName.UL).setStyle(HtmlStyle.helpSubTOC);
+        HtmlTree subTOC = HtmlTree.UL(HtmlStyle.helpSubTOC);
 
         HtmlTree section;
 
@@ -274,8 +272,7 @@ public class HelpWriter extends HtmlDocletWriter {
                         contents.interfaces,
                         contents.classes,
                         contents.enums,
-                        contents.exceptions,
-                        contents.errors,
+                        contents.exceptionClasses,
                         contents.annotationTypes));
         pageKindsSection.add(section);
 
@@ -346,21 +343,30 @@ public class HelpWriter extends HtmlDocletWriter {
             pageKindsSection.add(section);
         }
 
-        // Deprecated
-        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.DEPRECATED)) {
-            section = newHelpSection(contents.deprecatedAPI, PageMode.DEPRECATED, subTOC);
-            Content deprBody = getContent("doclet.help.deprecated.body",
-                    links.createLink(DocPaths.DEPRECATED_LIST, resources.getText("doclet.Deprecated_API")));
-            section.add(HtmlTree.P(deprBody));
-            pageKindsSection.add(section);
-        }
-
         // Preview
         if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.PREVIEW)) {
             section = newHelpSection(contents.previewAPI, PageMode.PREVIEW, subTOC);
             Content previewBody = getContent("doclet.help.preview.body",
                     links.createLink(DocPaths.PREVIEW_LIST, contents.previewAPI));
             section.add(HtmlTree.P(previewBody));
+            pageKindsSection.add(section);
+        }
+
+        // New
+        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.NEW)) {
+            section = newHelpSection(contents.newAPI, PageMode.NEW, subTOC);
+            Content newBody = getContent("doclet.help.new.body",
+                    links.createLink(DocPaths.NEW_LIST, contents.newAPI));
+            section.add(HtmlTree.P(newBody));
+            pageKindsSection.add(section);
+        }
+
+        // Deprecated
+        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.DEPRECATED)) {
+            section = newHelpSection(contents.deprecatedAPI, PageMode.DEPRECATED, subTOC);
+            Content deprBody = getContent("doclet.help.deprecated.body",
+                    links.createLink(DocPaths.DEPRECATED_LIST, resources.getText("doclet.Deprecated_API")));
+            section.add(HtmlTree.P(deprBody));
             pageKindsSection.add(section);
         }
 

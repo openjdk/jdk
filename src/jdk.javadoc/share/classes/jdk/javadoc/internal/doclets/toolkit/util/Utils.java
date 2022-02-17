@@ -34,7 +34,6 @@ import java.text.ParseException;
 import java.text.RuleBasedCollator;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
@@ -81,7 +80,6 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.ElementFilter;
-import javax.lang.model.util.ElementKindVisitor14;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleAnnotationValueVisitor14;
 import javax.lang.model.util.SimpleElementVisitor14;
@@ -109,7 +107,6 @@ import com.sun.source.doctree.SerialTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.ThrowsTree;
-import com.sun.source.doctree.UnknownBlockTagTree;
 import com.sun.source.doctree.UsesTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.LineMap;
@@ -127,7 +124,6 @@ import jdk.javadoc.internal.doclets.toolkit.taglets.Taglet;
 import jdk.javadoc.internal.tool.DocEnvImpl;
 
 import static javax.lang.model.element.ElementKind.*;
-import static javax.lang.model.element.Modifier.*;
 import static javax.lang.model.type.TypeKind.*;
 
 import static com.sun.source.doctree.DocTree.Kind.*;
@@ -183,13 +179,7 @@ public class Utils {
         return getSymbol("java.lang.Object");
     }
 
-    public TypeMirror getExceptionType() {
-        return getSymbol("java.lang.Exception");
-    }
-
-    public TypeMirror getErrorType() {
-        return getSymbol("java.lang.Error");
-    }
+    public TypeMirror getThrowableType() { return getSymbol("java.lang.Throwable"); }
 
     public TypeMirror getSerializableType() {
         return getSymbol("java.io.Serializable");
@@ -491,104 +481,6 @@ public class Utils {
         return configuration.workArounds.definesSerializableFields( aclass);
     }
 
-    public String modifiersToString(Element e, boolean trailingSpace) {
-        SortedSet<Modifier> modifiers = new TreeSet<>(e.getModifiers());
-        modifiers.remove(NATIVE);
-        modifiers.remove(STRICTFP);
-        modifiers.remove(SYNCHRONIZED);
-
-        return new ElementKindVisitor14<String, SortedSet<Modifier>>() {
-            final StringBuilder sb = new StringBuilder();
-
-            void addVisibilityModifier(Set<Modifier> modifiers) {
-                if (modifiers.contains(PUBLIC)) {
-                    append("public");
-                } else if (modifiers.contains(PROTECTED)) {
-                    append("protected");
-                } else if (modifiers.contains(PRIVATE)) {
-                    append("private");
-                }
-            }
-
-            void addStatic(Set<Modifier> modifiers) {
-                if (modifiers.contains(STATIC)) {
-                    append("static");
-                }
-            }
-
-            void addSealed(TypeElement e) {
-                if (e.getModifiers().contains(Modifier.SEALED)) {
-                    append("sealed");
-                } else if (e.getModifiers().contains(Modifier.NON_SEALED)) {
-                    append("non-sealed");
-                }
-            }
-
-            void addModifiers(Set<Modifier> modifiers) {
-                modifiers.stream()
-                        .map(Modifier::toString)
-                        .forEachOrdered(this::append);
-            }
-
-            void append(String s) {
-                if (sb.length() > 0) {
-                    sb.append(" ");
-                }
-                sb.append(s);
-            }
-
-            String finalString(String s) {
-                append(s);
-                if (trailingSpace) {
-                    sb.append(" ");
-                }
-                return sb.toString();
-            }
-
-            @Override
-            public String visitTypeAsInterface(TypeElement e, SortedSet<Modifier> mods) {
-                addVisibilityModifier(mods);
-                addStatic(mods);
-                addSealed(e);
-                return finalString("interface");
-            }
-
-            @Override
-            public String visitTypeAsEnum(TypeElement e, SortedSet<Modifier> mods) {
-                addVisibilityModifier(mods);
-                addStatic(mods);
-                return finalString("enum");
-            }
-
-            @Override
-            public String visitTypeAsAnnotationType(TypeElement e, SortedSet<Modifier> mods) {
-                addVisibilityModifier(mods);
-                addStatic(mods);
-                return finalString("@interface");
-            }
-
-            @Override
-            public String visitTypeAsRecord(TypeElement e, SortedSet<Modifier> mods) {
-                mods.remove(FINAL); // suppress the implicit `final`
-                return visitTypeAsClass(e, mods);
-            }
-
-            @Override
-            public String visitTypeAsClass(TypeElement e, SortedSet<Modifier> mods) {
-                addModifiers(mods);
-                String keyword = e.getKind() == ElementKind.RECORD ? "record" : "class";
-                return finalString(keyword);
-            }
-
-            @Override
-            protected String defaultAction(Element e, SortedSet<Modifier> mods) {
-                addModifiers(mods);
-                return sb.toString().trim();
-            }
-
-        }.visit(e, modifiers);
-    }
-
     public boolean isFunctionalInterface(AnnotationMirror amirror) {
         return amirror.getAnnotationType().equals(getFunctionalInterface()) &&
                 configuration.docEnv.getSourceVersion()
@@ -603,10 +495,7 @@ public class Utils {
         if (isEnum(te) || isInterface(te) || isAnnotationType(te) || isRecord(te)) {
             return false;
         }
-        if (isError(te) || isException(te)) {
-            return false;
-        }
-        return true;
+        return !isThrowable(te);
     }
 
     public boolean isUndocumentedEnclosure(TypeElement enclosingTypeElement) {
@@ -615,18 +504,11 @@ public class Utils {
                 && !isLinkable(enclosingTypeElement);
     }
 
-    public boolean isError(TypeElement te) {
+    public boolean isThrowable(TypeElement te) {
         if (isEnum(te) || isInterface(te) || isAnnotationType(te)) {
             return false;
         }
-        return typeUtils.isSubtype(te.asType(), getErrorType());
-    }
-
-    public boolean isException(TypeElement te) {
-        if (isEnum(te) || isInterface(te) || isAnnotationType(te)) {
-            return false;
-        }
-        return typeUtils.isSubtype(te.asType(), getExceptionType());
+        return typeUtils.isSubtype(te.asType(), getThrowableType());
     }
 
     public boolean isPrimitive(TypeMirror t) {
@@ -1075,6 +957,21 @@ public class Utils {
     }
 
     /**
+     * Returns true if {@code type} or any of its enclosing types has non-empty type arguments.
+     * @param type the type
+     * @return {@code true} if type arguments were found
+     */
+    public boolean isGenericType(TypeMirror type) {
+        while (type instanceof DeclaredType dt) {
+            if (!dt.getTypeArguments().isEmpty()) {
+                return true;
+            }
+            type = dt.getEnclosingType();
+        }
+        return false;
+    }
+
+    /**
      * TODO: FIXME: port to javax.lang.model
      * Find a class within the context of this class. Search order: qualified name, in this class
      * (inner), in this package, in the class imports, in the package imports. Return the
@@ -1361,8 +1258,7 @@ public class Utils {
             case RECORD ->
                     "doclet.RecordClass";
             case CLASS ->
-                    isException(te) ? "doclet.Exception"
-                    : isError(te) ? "doclet.Error"
+                    isThrowable(te) ? "doclet.ExceptionClass"
                     : "doclet.Class";
             default ->
                     throw new IllegalArgumentException(te.getKind().toString());
@@ -1503,12 +1399,30 @@ public class Utils {
     }
 
     /**
-     * Return true if the given Element is deprecated for removal.
+     * Returns true if the given Element is deprecated for removal.
      *
      * @param e the Element to check.
      * @return true if the given Element is deprecated for removal.
      */
     public boolean isDeprecatedForRemoval(Element e) {
+        Object forRemoval = getDeprecatedElement(e, "forRemoval");
+        return forRemoval != null && (boolean) forRemoval;
+    }
+
+    /**
+     * Returns the value of the {@code Deprecated.since} element if it is set on the given Element.
+     *
+     * @param e the Element to check.
+     * @return the Deprecated.since value for e, or null.
+     */
+    public String getDeprecatedSince(Element e) {
+        return (String) getDeprecatedElement(e, "since");
+    }
+
+    /**
+     * Returns the Deprecated annotation element value of the given element, or null.
+     */
+    private Object getDeprecatedElement(Element e, String elementName) {
         List<? extends AnnotationMirror> annotationList = e.getAnnotationMirrors();
         JavacTypes jctypes = ((DocEnvImpl) configuration.docEnv).toolEnv.typeutils;
         for (AnnotationMirror anno : annotationList) {
@@ -1516,14 +1430,14 @@ public class Utils {
                 Map<? extends ExecutableElement, ? extends AnnotationValue> pairs = anno.getElementValues();
                 if (!pairs.isEmpty()) {
                     for (ExecutableElement element : pairs.keySet()) {
-                        if (element.getSimpleName().contentEquals("forRemoval")) {
-                            return Boolean.parseBoolean((pairs.get(element)).toString());
+                        if (element.getSimpleName().contentEquals(elementName)) {
+                            return (pairs.get(element)).getValue();
                         }
                     }
                 }
             }
         }
-        return false;
+        return null;
     }
 
     /**
@@ -2062,31 +1976,6 @@ public class Utils {
     }
 
     /**
-     * Returns a list of classes that are not errors or exceptions
-     * @param e Element
-     * @return List
-     */
-    public List<TypeElement> getOrdinaryClasses(Element e) {
-        return getClasses(e).stream()
-                .filter(te -> (!isException(te) && !isError(te)))
-                .toList();
-    }
-
-    public List<TypeElement> getErrors(Element e) {
-        return getClasses(e)
-                .stream()
-                .filter(this::isError)
-                .toList();
-    }
-
-    public List<TypeElement> getExceptions(Element e) {
-        return getClasses(e)
-                .stream()
-                .filter(this::isException)
-                .toList();
-    }
-
-    /**
      * Returns a list of documented elements of a given type with a given kind.
      * If the root of the search is a package, the search is recursive.
      *
@@ -2241,7 +2130,7 @@ public class Utils {
 
                 @Override
                 public String visitType(TypeElement e, Void p) {
-                    StringBuilder sb = new StringBuilder(e.getSimpleName());
+                    StringBuilder sb = new StringBuilder(e.getSimpleName().toString());
                     Element enclosed = e.getEnclosingElement();
                     while (enclosed != null
                             && (enclosed.getKind().isClass() || enclosed.getKind().isInterface())) {
@@ -3004,8 +2893,11 @@ public class Utils {
     }
 
     public PreviewSummary declaredUsingPreviewAPIs(Element el) {
-        List<TypeElement> usedInDeclaration = new ArrayList<>();
-        usedInDeclaration.addAll(annotations2Classes(el));
+        if (el.asType().getKind() == ERROR) {
+            // Can happen with undocumented --ignore-source-errors option
+            return new PreviewSummary(Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
+        }
+        List<TypeElement> usedInDeclaration = new ArrayList<>(annotations2Classes(el));
         switch (el.getKind()) {
             case ANNOTATION_TYPE, CLASS, ENUM, INTERFACE, RECORD -> {
                 TypeElement te = (TypeElement) el;
@@ -3196,11 +3088,12 @@ public class Utils {
             flags.add(ElementFlag.DEPRECATED);
         }
 
-        if (!previewLanguageFeaturesUsed(el).isEmpty() ||
-            configuration.workArounds.isPreviewAPI(el) ||
-            !previewAPIs.previewAPI.isEmpty() ||
-            !previewAPIs.reflectivePreviewAPI.isEmpty() ||
-            !previewAPIs.declaredUsingPreviewFeature.isEmpty())  {
+        if ((!previewLanguageFeaturesUsed(el).isEmpty() ||
+             configuration.workArounds.isPreviewAPI(el) ||
+             !previewAPIs.previewAPI.isEmpty() ||
+             !previewAPIs.reflectivePreviewAPI.isEmpty() ||
+             !previewAPIs.declaredUsingPreviewFeature.isEmpty()) &&
+            !hasNoProviewAnnotation(el)) {
             flags.add(ElementFlag.PREVIEW);
         }
 
@@ -3216,4 +3109,9 @@ public class Utils {
         PREVIEW
     }
 
+    private boolean hasNoProviewAnnotation(Element el) {
+        return el.getAnnotationMirrors()
+                 .stream()
+                 .anyMatch(am -> "jdk.internal.javac.NoPreview".equals(getQualifiedTypeName(am.getAnnotationType())));
+    }
 }

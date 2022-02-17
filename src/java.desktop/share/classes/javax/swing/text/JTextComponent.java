@@ -32,10 +32,10 @@ import java.security.PrivilegedAction;
 import java.beans.JavaBean;
 import java.beans.BeanProperty;
 import java.beans.Transient;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Enumeration;
-import java.util.Vector;
 
 import java.util.concurrent.*;
 
@@ -52,11 +52,7 @@ import java.awt.font.TextAttribute;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 
-import java.awt.print.Printable;
-import java.awt.print.PrinterException;
-
 import javax.print.PrintService;
-import javax.print.attribute.PrintRequestAttributeSet;
 
 import java.text.*;
 import java.text.AttributedCharacterIterator.Attribute;
@@ -3306,8 +3302,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
 
             // Fixes bug 4487492
             Document doc = JTextComponent.this.getDocument();
-            if (doc != null && doc instanceof StyledDocument) {
-                StyledDocument sDoc = (StyledDocument)doc;
+            if (doc instanceof StyledDocument sDoc) {
                 int offset = startIndex;
                 int length = endIndex - startIndex;
                 sDoc.setCharacterAttributes(offset, length, as, true);
@@ -4216,14 +4211,14 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
             }
             KeyStroke[] retValue = null;
             // Determine local bindings first.
-            Vector<KeyStroke> keyStrokes = null;
+            ArrayList<KeyStroke> keyStrokes = null;
             for (Enumeration<KeyStroke> keys = bindings.keys(); keys.hasMoreElements();) {
                 KeyStroke key = keys.nextElement();
                 if (bindings.get(key) == a) {
                     if (keyStrokes == null) {
-                        keyStrokes = new Vector<KeyStroke>();
+                        keyStrokes = new ArrayList<KeyStroke>();
                     }
-                    keyStrokes.addElement(key);
+                    keyStrokes.add(key);
                 }
             }
             // See if the parent has any.
@@ -4242,12 +4237,12 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
                     }
                     if (rCount > 0 && rCount < pStrokes.length) {
                         if (keyStrokes == null) {
-                            keyStrokes = new Vector<KeyStroke>();
+                            keyStrokes = new ArrayList<>();
                         }
                         for (int counter = pStrokes.length - 1; counter >= 0;
                              counter--) {
                             if (pStrokes[counter] != null) {
-                                keyStrokes.addElement(pStrokes[counter]);
+                                keyStrokes.add(pStrokes[counter]);
                             }
                         }
                     }
@@ -4258,7 +4253,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
                         else {
                             retValue = new KeyStroke[keyStrokes.size() +
                                                     pStrokes.length];
-                            keyStrokes.copyInto(retValue);
+                            keyStrokes.toArray(retValue);
                             System.arraycopy(pStrokes, 0, retValue,
                                         keyStrokes.size(), pStrokes.length);
                             keyStrokes = null;
@@ -4267,8 +4262,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
                 }
             }
             if (keyStrokes != null) {
-                retValue = new KeyStroke[keyStrokes.size()];
-                keyStrokes.copyInto(retValue);
+                retValue = keyStrokes.toArray(new KeyStroke[0]);
             }
             return retValue;
         }
@@ -5110,7 +5104,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
     //
     // Runnable class for invokeLater() to set caret position later.
     //
-    private class DoSetCaretPosition implements Runnable {
+    private static class DoSetCaretPosition implements Runnable {
         JTextComponent host;
         Position newPos;
 

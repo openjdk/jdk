@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -628,7 +628,7 @@ ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment, size_t page_
   }
 
   if (_fd_for_heap != -1) {
-    os::close(_fd_for_heap);
+    ::close(_fd_for_heap);
   }
 }
 
@@ -1036,7 +1036,7 @@ void VirtualSpace::check_for_contiguity() {
   assert(high() <= upper_high(), "upper high");
 }
 
-void VirtualSpace::print_on(outputStream* out) {
+void VirtualSpace::print_on(outputStream* out) const {
   out->print   ("Virtual space:");
   if (special()) out->print(" (pinned in memory)");
   out->cr();
@@ -1046,7 +1046,7 @@ void VirtualSpace::print_on(outputStream* out) {
   out->print_cr(" - [low_b, high_b]: [" INTPTR_FORMAT ", " INTPTR_FORMAT "]",  p2i(low_boundary()), p2i(high_boundary()));
 }
 
-void VirtualSpace::print() {
+void VirtualSpace::print() const {
   print_on(tty);
 }
 

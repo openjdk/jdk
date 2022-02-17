@@ -33,6 +33,57 @@
 #include "memory/iterator.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/thread.inline.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/macros.hpp"
+
+ThreadsList::Iterator::Iterator(ThreadsList* list, uint i) :
+  _thread_ptr(list->threads() + check_index(list, i))
+  DEBUG_ONLY(COMMA _list(list))
+{}
+
+bool ThreadsList::Iterator::operator==(Iterator i) const {
+  assert_not_singular();
+  assert_same_list(i);
+  return _thread_ptr == i._thread_ptr;
+}
+
+bool ThreadsList::Iterator::operator!=(Iterator i) const {
+  return !operator==(i);
+}
+
+JavaThread* ThreadsList::Iterator::operator*() const {
+  assert_not_singular();
+  assert_dereferenceable();
+  Prefetch::read(const_cast<JavaThread**>(_thread_ptr), PrefetchScanIntervalInBytes);
+  return *_thread_ptr;
+}
+
+JavaThread* ThreadsList::Iterator::operator->() const {
+  return operator*();
+}
+
+ThreadsList::Iterator& ThreadsList::Iterator::operator++() {
+  assert_not_singular();
+  assert_dereferenceable();
+  ++_thread_ptr;
+  return *this;
+}
+
+ThreadsList::Iterator ThreadsList::Iterator::operator++(int) {
+  assert_not_singular();
+  assert_dereferenceable();
+  Iterator result = *this;
+  ++_thread_ptr;
+  return result;
+}
+
+ThreadsList::Iterator ThreadsList::begin() {
+  return Iterator(this, 0);
+}
+
+ThreadsList::Iterator ThreadsList::end() {
+  return Iterator(this, length());
+}
 
 // Devirtualize known thread closure types.
 template <class T>
@@ -55,6 +106,9 @@ inline void ThreadsList::threads_do(T *cl) const {
     threads_do_dispatch(cl, current);
   }
 }
+
+ThreadsListHandle::Iterator ThreadsListHandle::begin() { return list()->begin(); }
+ThreadsListHandle::Iterator ThreadsListHandle::end() { return list()->end(); }
 
 // These three inlines are private to ThreadsSMRSupport, but
 // they are called by public inline update_tlh_stats() below:

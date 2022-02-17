@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package sun.management.counter.perf;
 
-import java.io.UnsupportedEncodingException;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * A typesafe enumeration for the data types supported for
@@ -88,12 +88,7 @@ class PerfDataType {
     private PerfDataType(String name, String c, int size) {
         this.name = name;
         this.size = size;
-        try {
-            byte[] b = c.getBytes("UTF-8");
-            this.value = b[0];
-        } catch (UnsupportedEncodingException e) {
-            // ignore, "UTF-8" is always a known encoding
-            throw new InternalError("Unknown encoding", e);
-        }
+        byte[] b = c.getBytes(UTF_8);
+        this.value = b[0];
     }
 }

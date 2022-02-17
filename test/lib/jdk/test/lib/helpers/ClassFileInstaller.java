@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.io.ByteArrayInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -102,12 +100,17 @@ public class ClassFileInstaller {
     }
 
     // Add commonly used inner classes that are often omitted by mistake. Currently
-    // we support only sun.hotspot.WhiteBox$WhiteBoxPermission. See JDK-8199290
+    // we support only jdk.test.whitebox.WhiteBox$WhiteBoxPermission and
+    // sun/hotspot/WhiteBox$WhiteBoxPermission. See JDK-8199290
     private static String[] addInnerClasses(String[] classes, int startIdx) {
-        boolean seenWB = false;
-        boolean seenWBInner = false;
-        final String wb = "sun.hotspot.WhiteBox";
-        final String wbInner = "sun.hotspot.WhiteBox$WhiteBoxPermission";
+        boolean seenNewWb = false;
+        boolean seenNewWbInner = false;
+        boolean seenOldWb = false;
+        boolean seenOldWbInner = false;
+        final String newWb = "jdk.test.whitebox.WhiteBox";
+        final String newWbInner = newWb + "$WhiteBoxPermission";
+        final String oldWb = "sun.hotspot.WhiteBox";
+        final String oldWbInner = oldWb + "$WhiteBoxPermission";
 
         ArrayList<String> list = new ArrayList<>();
 
@@ -115,12 +118,17 @@ public class ClassFileInstaller {
             String cls = classes[i];
             list.add(cls);
             switch (cls) {
-            case wb:      seenWB      = true; break;
-            case wbInner: seenWBInner = true; break;
+            case newWb:      seenNewWb      = true; break;
+            case newWbInner: seenNewWbInner = true; break;
+            case oldWb:      seenOldWb      = true; break;
+            case oldWbInner: seenOldWbInner = true; break;
             }
         }
-        if (seenWB && !seenWBInner) {
-            list.add(wbInner);
+        if (seenNewWb && !seenNewWbInner) {
+            list.add(newWbInner);
+        }
+        if (seenOldWb && !seenOldWbInner) {
+            list.add(oldWbInner);
         }
 
         String[] array = new String[list.size()];

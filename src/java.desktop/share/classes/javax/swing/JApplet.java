@@ -105,6 +105,9 @@ public class JApplet extends Applet implements Accessible,
                                TransferHandler.HasGetTransferHandler
 {
     /**
+     * The <code>JRootPane</code> instance that manages the
+     * <code>contentPane</code>.
+     *
      * @see #getRootPane
      * @see #setRootPane
      */

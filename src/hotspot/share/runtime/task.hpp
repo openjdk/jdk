@@ -62,7 +62,7 @@ class PeriodicTask: public CHeapObj<mtInternal> {
   friend class WatcherThread;
  public:
   PeriodicTask(size_t interval_time); // interval is in milliseconds of elapsed time
-  ~PeriodicTask();
+  virtual ~PeriodicTask();
 
   // Make the task active
   // For dynamic enrollment at the time T, the task will execute somewhere

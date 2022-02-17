@@ -318,7 +318,11 @@ enum reg_save_layout {
 // expensive.  The deopt blob is the only thing which needs to
 // describe FPU registers.  In all other cases it should be sufficient
 // to simply save their current value.
-
+//
+// Register is a class, but it would be assigned numerical value.
+// "0" is assigned for rax. Thus we need to ignore -Wnonnull.
+PRAGMA_DIAG_PUSH
+PRAGMA_NONNULL_IGNORED
 static OopMap* generate_oop_map(StubAssembler* sasm, int num_rt_args,
                                 bool save_fpu_registers = true) {
 
@@ -418,6 +422,7 @@ static OopMap* generate_oop_map(StubAssembler* sasm, int num_rt_args,
 
   return map;
 }
+PRAGMA_DIAG_POP
 
 #define __ this->
 
@@ -1492,7 +1497,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         save_live_registers(sasm, 1);
 
         __ NOT_LP64(push(rax)) LP64_ONLY(mov(c_rarg0, rax));
-        __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_object_alloc)));
+        __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc))));
         NOT_LP64(__ pop(rax));
 
         restore_live_registers(sasm);

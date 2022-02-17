@@ -85,7 +85,7 @@ public:
   PlaceholderEntry* find_and_add(unsigned int hash,
                                  Symbol* name, ClassLoaderData* loader_data,
                                  classloadAction action, Symbol* supername,
-                                 Thread* thread);
+                                 JavaThread* thread);
 
   void remove_entry(unsigned int hash,
                     Symbol* name, ClassLoaderData* loader_data);
@@ -94,7 +94,7 @@ public:
   // If all queues are empty and definer is null, remove the PlacheholderEntry completely
   void find_and_remove(unsigned int hash,
                        Symbol* name, ClassLoaderData* loader_data,
-                       classloadAction action, Thread* thread);
+                       classloadAction action, JavaThread* thread);
 
   void print_on(outputStream* st) const;
   void print() const;
@@ -116,7 +116,7 @@ class PlaceholderEntry : public HashtableEntry<Symbol*, mtClass> {
  private:
   ClassLoaderData*  _loader_data;   // initiating loader
   Symbol*           _supername;
-  Thread*           _definer;       // owner of define token
+  JavaThread*       _definer;       // owner of define token
   InstanceKlass*    _instanceKlass; // InstanceKlass from successful define
   SeenThread*       _superThreadQ;  // doubly-linked queue of Threads loading a superclass for this class
   SeenThread*       _loadInstanceThreadQ;  // loadInstance thread
@@ -130,8 +130,8 @@ class PlaceholderEntry : public HashtableEntry<Symbol*, mtClass> {
 
   SeenThread* actionToQueue(PlaceholderTable::classloadAction action);
   void set_threadQ(SeenThread* seenthread, PlaceholderTable::classloadAction action);
-  void add_seen_thread(Thread* thread, PlaceholderTable::classloadAction action);
-  bool remove_seen_thread(Thread* thread, PlaceholderTable::classloadAction action);
+  void add_seen_thread(JavaThread* thread, PlaceholderTable::classloadAction action);
+  bool remove_seen_thread(JavaThread* thread, PlaceholderTable::classloadAction action);
 
  public:
   // Simple accessors, used only by SystemDictionary
@@ -146,8 +146,8 @@ class PlaceholderEntry : public HashtableEntry<Symbol*, mtClass> {
     if (_supername != NULL) _supername->increment_refcount();
   }
 
-  Thread*            definer()             const {return _definer; }
-  void               set_definer(Thread* definer) { _definer = definer; }
+  JavaThread*        definer()             const {return _definer; }
+  void               set_definer(JavaThread* definer) { _definer = definer; }
 
   InstanceKlass*     instance_klass()      const {return _instanceKlass; }
   void               set_instance_klass(InstanceKlass* ik) { _instanceKlass = ik; }
@@ -158,7 +158,7 @@ class PlaceholderEntry : public HashtableEntry<Symbol*, mtClass> {
   SeenThread*        loadInstanceThreadQ() const { return _loadInstanceThreadQ; }
   void               set_loadInstanceThreadQ(SeenThread* SeenThread) { _loadInstanceThreadQ = SeenThread; }
 
-  SeenThread*        defineThreadQ()        const { return _defineThreadQ; }
+  SeenThread*        defineThreadQ()       const { return _defineThreadQ; }
   void               set_defineThreadQ(SeenThread* SeenThread) { _defineThreadQ = SeenThread; }
 
   PlaceholderEntry* next() const {
@@ -188,7 +188,7 @@ class PlaceholderEntry : public HashtableEntry<Symbol*, mtClass> {
   }
 
   // Used for ClassCircularityError checking
-  bool check_seen_thread(Thread* thread, PlaceholderTable::classloadAction action);
+  bool check_seen_thread(JavaThread* thread, PlaceholderTable::classloadAction action);
 
   // Print method doesn't append a cr
   void print_entry(outputStream* st) const;

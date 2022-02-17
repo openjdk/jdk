@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,9 +45,6 @@ public abstract class RTMGenericCommandLineOptionTest {
             + "flag is off";
     protected static final String RTM_COUNT_INCR_WARNING
             = "must be a power of 2, resetting it to 64";
-    protected static final String RTM_BIASED_LOCKING_WARNING
-            = "Biased locking is not supported with RTM locking; "
-            + "ignoring UseBiasedLocking flag";
 
     protected final String optionName;
     protected final String errorMessage;

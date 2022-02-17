@@ -53,6 +53,7 @@ import static com.sun.tools.javac.code.Flags.SYNTHETIC;
 import static com.sun.tools.javac.code.Kinds.Kind.MDL;
 import static com.sun.tools.javac.code.Kinds.Kind.MTH;
 import static com.sun.tools.javac.code.Kinds.Kind.PCK;
+import static com.sun.tools.javac.code.Kinds.Kind.TYP;
 import static com.sun.tools.javac.code.Kinds.Kind.VAR;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.TypeTag.ARRAY;
@@ -344,7 +345,7 @@ public class Annotate {
 
             Assert.checkNonNull(c, "Failed to create annotation");
 
-            if (a.type.tsym.isAnnotationType()) {
+            if (a.type.isErroneous() || a.type.tsym.isAnnotationType()) {
                 if (annotated.containsKey(a.type.tsym)) {
                     if (!allowRepeatedAnnos) {
                         log.error(DiagnosticFlag.SOURCE_LEVEL, a.pos(), Feature.REPEATED_ANNOTATIONS.error(sourceName));
@@ -369,13 +370,18 @@ public class Annotate {
                 }
             }
 
-            // Note: @Deprecated has no effect on local variables and parameters
             if (!c.type.isErroneous()
                     && types.isSameType(c.type, syms.previewFeatureType)) {
                 toAnnotate.flags_field |= Flags.PREVIEW_API;
                 if (isAttributeTrue(c.member(names.reflective))) {
                     toAnnotate.flags_field |= Flags.PREVIEW_REFLECTIVE;
                 }
+            }
+
+            if (!c.type.isErroneous()
+                    && toAnnotate.kind == TYP
+                    && types.isSameType(c.type, syms.valueBasedType)) {
+                toAnnotate.flags_field |= Flags.VALUE_BASED;
             }
         }
 
@@ -666,6 +672,12 @@ public class Annotate {
             log.error(tree.pos(), Errors.AttributeValueMustBeConstant);
             return new Attribute.Error(expectedElementType);
         }
+
+        // Scan the annotation element value and then attribute nested annotations if present
+        if (tree.type != null && tree.type.tsym != null) {
+            queueScanTreeAndTypeAnnotate(tree, env, tree.type.tsym, tree.pos());
+        }
+
         result = cfolder.coerce(result, expectedElementType);
         return new Attribute.Constant(expectedElementType, result.constValue());
     }

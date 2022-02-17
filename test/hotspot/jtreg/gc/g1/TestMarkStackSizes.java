@@ -81,7 +81,7 @@ public class TestMarkStackSizes {
 
         runTest(true, "-XX:ConcGCThreads=3", "-XX:ParallelGCThreads=3");
         runTest(true, "-XX:ConcGCThreads=0", "-XX:ParallelGCThreads=3");
-        runTest(false, "-XX:ConcGCThreads=4", "-XX:ParallelGCThreads=3");
+        runTest(true, "-XX:ConcGCThreads=4", "-XX:ParallelGCThreads=3");
 
         // With that high ParallelGCThreads the default ergonomics would calculate
         // a mark stack size higher than maximum mark stack size.

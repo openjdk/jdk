@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,9 @@ import java.util.Set;
  *   <li>Create a Zip file system</li>
  *   <li>Open an existing file as a Zip file system</li>
  * </ul>
+ *
+ * The Zip file system provider does not support opening an existing Zip file
+ * that contains entries with "." or ".." in its name elements.
  *
  * <h2>URI Scheme Used to Identify the Zip File System</h2>
  *

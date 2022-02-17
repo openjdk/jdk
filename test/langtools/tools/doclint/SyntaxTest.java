@@ -8,11 +8,14 @@
  * @run main DocLintTester -ref SyntaxTest.out SyntaxTest.java
  */
 
-/** */
+/** . */
 public class SyntaxTest {
     /**
      * a < b
      */
     public void syntax_error() { }
+
+    /** . */
+    private SyntaxTest() { }
 }
 

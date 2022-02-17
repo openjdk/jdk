@@ -96,7 +96,7 @@ public abstract class JCmdTestDumpBase {
     }
 
     private static void checkCDSEnabled() throws Exception {
-        boolean cdsEnabled = WhiteBox.getWhiteBox().getBooleanVMFlag("UseSharedSpaces");
+        boolean cdsEnabled = WhiteBox.getWhiteBox().isSharingEnabled();
         if (!cdsEnabled) {
             throw new SkippedException("CDS is not available for this JDK.");
         }
@@ -172,7 +172,7 @@ public abstract class JCmdTestDumpBase {
         }
     }
 
-    protected static void test(String fileName, long pid,
+    protected static OutputAnalyzer test(String fileName, long pid,
                              boolean useBoot, boolean expectOK, String... messages) throws Exception {
         System.out.println("Expected: " + (expectOK ? "SUCCESS" : "FAIL"));
         String archiveFileName = fileName != null ? fileName :
@@ -200,6 +200,7 @@ public abstract class JCmdTestDumpBase {
                 checkFileExistence(archiveFileName, false);
             }
         }
+        return output;
     }
 
     protected static void print2ln(String arg) {

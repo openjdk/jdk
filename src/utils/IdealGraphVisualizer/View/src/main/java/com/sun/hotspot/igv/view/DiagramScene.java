@@ -151,12 +151,9 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
     @Override
     public void zoomOut() {
         double zoom = getZoomFactor();
-        Point viewPosition = getScrollPane().getViewport().getViewPosition();
         double newZoom = zoom / DiagramScene.ZOOM_INCREMENT;
         if (newZoom > DiagramScene.ZOOM_MIN_FACTOR) {
-            setZoomFactor(newZoom);
-            validate();
-            getScrollPane().getViewport().setViewPosition(new Point((int) (viewPosition.x / DiagramScene.ZOOM_INCREMENT), (int) (viewPosition.y / DiagramScene.ZOOM_INCREMENT)));
+            zoom(newZoom);
         }
     }
 
@@ -164,15 +161,21 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
     public void zoomIn() {
 
         double zoom = getZoomFactor();
-        Point viewPosition = getScrollPane().getViewport().getViewPosition();
         double newZoom = zoom * DiagramScene.ZOOM_INCREMENT;
         if (newZoom < DiagramScene.ZOOM_MAX_FACTOR) {
-            setZoomFactor(newZoom);
-            validate();
-            getScrollPane().getViewport().setViewPosition(new Point((int) (viewPosition.x * DiagramScene.ZOOM_INCREMENT), (int) (viewPosition.y * DiagramScene.ZOOM_INCREMENT)));
+            zoom(newZoom);
         }
     }
 
+    private void zoom(double newZoom) {
+        double currentZoom = getZoomFactor();
+        Point viewPosition = getScrollPane().getViewport().getViewPosition();
+        Rectangle viewRect = getScrollPane().getViewport().getViewRect();
+        setZoomFactor(newZoom);
+        validate();
+        getScrollPane().getViewport().validate();
+        getScrollPane().getViewport().setViewPosition(new Point((int) ((viewPosition.x + viewRect.width / 2) * newZoom / currentZoom - viewRect.width / 2), (int) ((viewPosition.y + viewRect.height / 2) * newZoom / currentZoom - viewRect.height / 2)));
+    }
 
     @Override
     public void centerFigures(List<Figure> list) {

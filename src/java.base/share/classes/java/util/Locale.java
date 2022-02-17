@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -455,9 +455,11 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *
  * <p>For the backward compatible behavior, the system property
  * {@systemProperty java.locale.useOldISOCodes} reverts the behavior
- * back to prior to Java SE 17 one. If the system property is set
- * to {@code true}, those three current language codes are mapped to their
- * backward compatible forms.
+ * back to that of before Java SE 17. If the system property is set to
+ * {@code true}, those three current language codes are mapped to their
+ * backward compatible forms. The property is only read at Java runtime
+ * startup and subsequent calls to {@code System.setProperty()} will
+ * have no effect.
  *
  * <p>The APIs added in 1.7 map between the old and new language codes,
  * maintaining the mapped codes internal to Locale (so that
@@ -1124,8 +1126,9 @@ public final class Locale implements Cloneable, Serializable {
      * The returned array represents the union of locales supported
      * by the Java runtime environment and by installed
      * {@link java.util.spi.LocaleServiceProvider LocaleServiceProvider}
-     * implementations.  It must contain at least a {@code Locale}
-     * instance equal to {@link java.util.Locale#US Locale.US}.
+     * implementations. At a minimum, the returned array must contain a
+     * {@code Locale} instance equal to {@link Locale#ROOT Locale.ROOT} and
+     * a {@code Locale} instance equal to {@link Locale#US Locale.US}.
      *
      * @return An array of installed locales.
      */
@@ -2000,7 +2003,7 @@ public final class Locale implements Cloneable, Serializable {
     /**
      * Returns a name for the locale that is appropriate for display
      * to the user.  This will be the values returned by
-     * getDisplayLanguage(), getDisplayScript(),getDisplayCountry()
+     * getDisplayLanguage(), getDisplayScript(), getDisplayCountry(),
      * getDisplayVariant(), and optional <a href="./Locale.html#def_locale_extension">
      * Unicode extensions</a> assembled into a single string. The non-empty
      * values are used in order, with the second and subsequent names in

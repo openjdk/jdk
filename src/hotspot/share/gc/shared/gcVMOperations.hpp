@@ -42,7 +42,6 @@
 //        VM_GC_HeapInspection
 //        VM_PopulateDynamicDumpSharedSpace
 //        VM_GenCollectFull
-//        VM_GenCollectFullConcurrent
 //        VM_ParallelGCSystemGC
 //        VM_CollectForAllocation
 //          VM_GenCollectForAllocation
@@ -71,7 +70,6 @@
 //     allocate afterwards;
 //
 //  VM_GenCollectFull
-//  VM_GenCollectFullConcurrent
 //  VM_ParallelGCSystemGC
 //   - these operations preform full collection of heaps of
 //     different kind
@@ -244,8 +242,6 @@ class VM_CollectForMetadataAllocation: public VM_GC_Operation {
   virtual VMOp_Type type() const { return VMOp_CollectForMetadataAllocation; }
   virtual void doit();
   MetaWord* result() const       { return _result; }
-
-  bool initiate_concurrent_GC();
 };
 
 class SvcGCMarker : public StackObj {

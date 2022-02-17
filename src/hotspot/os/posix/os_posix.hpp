@@ -25,6 +25,15 @@
 #ifndef OS_POSIX_OS_POSIX_HPP
 #define OS_POSIX_OS_POSIX_HPP
 
+// Note: the Posix API aims to capture functionality available on all Posix
+// compliant platforms, but in practice the implementations may depend on
+// non-Posix functionality. For example, the use of lseek64 and ftruncate64.
+// This use of non-Posix API's is made possible by compiling/linking in a mode
+// that is not restricted to being fully Posix complaint, such as by declaring
+// -D_GNU_SOURCE. But be aware that in doing so we may enable non-Posix
+// behaviour in API's that are defined by Posix. For example, that SIGSTKSZ
+// is not defined as a constant as of Glibc 2.34.
+
 // File conventions
 static const char* file_separator() { return "/"; }
 static const char* line_separator() { return "\n"; }

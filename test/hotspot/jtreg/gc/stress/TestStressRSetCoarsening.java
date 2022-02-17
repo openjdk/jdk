@@ -102,6 +102,8 @@ public class TestStressRSetCoarsening {
     private static final long KB = 1024;
     private static final long MB = 1024 * KB;
 
+    private static final int CARDSIZE = 512; // Card size in bytes.
+
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
     public final ObjStorage storage;
@@ -229,11 +231,13 @@ public class TestStressRSetCoarsening {
     }
 
     public void go() throws InterruptedException {
-        // threshold for sparce -> fine
-        final int FINE = WB.getIntxVMFlag("G1RSetSparseRegionEntries").intValue();
+        // Threshold for Array of Cards -> Howl
+        final int ARRAY_TO_HOWL_THRESHOLD = WB.getUintVMFlag("G1RemSetArrayOfCardsEntries").intValue();
 
-        // threshold for fine -> coarse
-        final int COARSE = WB.getIntxVMFlag("G1RSetRegionEntries").intValue();
+        // Threshold for Howl -> Full
+        int coarsenHowlToFullPercent = WB.getUintVMFlag("G1RemSetCoarsenHowlToFullPercent").intValue();
+        int cardsPerRegion = WB.getSizeTVMFlag("G1HeapRegionSize").intValue() / CARDSIZE;
+        final int HOWL_TO_FULL_THRESHOLD = (cardsPerRegion * coarsenHowlToFullPercent) / 100;
 
         // regToRegRefCounts - array of reference counts from region to region
         // at the the end of iteration.
@@ -241,8 +245,13 @@ public class TestStressRSetCoarsening {
         // If c[i] > c[i-1] then during the iteration i more references will
         // be created.
         // If c[i] < c[i-1] then some referenes will be cleaned.
-        int[] regToRegRefCounts = {0, FINE / 2, 0, FINE, (FINE + COARSE) / 2, 0,
-            COARSE, COARSE + 10, FINE + 1, FINE / 2, 0};
+        int[] regToRegRefCounts = {
+            0, ARRAY_TO_HOWL_THRESHOLD / 2,
+            0, ARRAY_TO_HOWL_THRESHOLD,
+            (ARRAY_TO_HOWL_THRESHOLD + HOWL_TO_FULL_THRESHOLD) / 2, 0,
+            HOWL_TO_FULL_THRESHOLD, HOWL_TO_FULL_THRESHOLD + 10,
+            ARRAY_TO_HOWL_THRESHOLD + 1, ARRAY_TO_HOWL_THRESHOLD / 2,
+            0};
 
         // For progress tracking
         int[] progress = new int[regToRegRefCounts.length];

@@ -25,6 +25,7 @@
  * @test
  * @bug 8022865
  * @summary Tests for different combination of UseCompressedOops options
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

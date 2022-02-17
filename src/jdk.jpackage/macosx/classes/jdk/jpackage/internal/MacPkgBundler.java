@@ -46,6 +46,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.VERBOSE;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
+import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
 import static jdk.jpackage.internal.MacAppImageBuilder.APP_STORE;
@@ -499,7 +500,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             commandLine.add(CONFIG_ROOT.fetchFrom(params).toAbsolutePath().toString());
 
             // maybe sign
-            if (Optional.ofNullable(MacAppImageBuilder.
+            if (Optional.ofNullable(
                     SIGN_BUNDLE.fetchFrom(params)).orElse(Boolean.TRUE)) {
                 if (Platform.getMajorVersion() > 10 ||
                     (Platform.getMajorVersion() == 10 &&
@@ -603,7 +604,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             }
 
             // reject explicitly set sign to true and no valid signature key
-            if (Optional.ofNullable(MacAppImageBuilder.
+            if (Optional.ofNullable(
                     SIGN_BUNDLE.fetchFrom(params)).orElse(Boolean.FALSE)) {
                 String signingIdentity =
                         DEVELOPER_ID_INSTALLER_SIGNING_KEY.fetchFrom(params);

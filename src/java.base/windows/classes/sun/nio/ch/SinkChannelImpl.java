@@ -34,6 +34,7 @@ import java.net.SocketOption;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.channels.spi.*;
+import java.util.Objects;
 
 
 /**
@@ -139,8 +140,7 @@ class SinkChannelImpl
     public long write(ByteBuffer[] srcs, int offset, int length)
         throws IOException
     {
-        if ((offset < 0) || (length < 0) || (offset > srcs.length - length))
-           throw new IndexOutOfBoundsException();
+        Objects.checkFromIndexSize(offset, length, srcs.length);
         try {
             return write(Util.subsequence(srcs, offset, length));
         } catch (AsynchronousCloseException x) {

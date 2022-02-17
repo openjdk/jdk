@@ -70,7 +70,7 @@ static NSRange javaIntArrayToNSRange(JNIEnv* env, jintArray array) {
     GET_CACCESSIBILITY_CLASS_RETURN(nil);
     DECLARE_STATIC_METHOD_RETURN(sjm_getAccessibleName, sjc_CAccessibility, "getAccessibleName",
                           "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)Ljava/lang/String;", nil);
-    if ([[self accessibilityRoleAttribute] isEqualToString:NSAccessibilityStaticTextRole]) {
+    if ([[self accessibilityRole] isEqualToString:NSAccessibilityStaticTextRole]) {
         jobject axName = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility,
                            sjm_getAccessibleName, fAccessible, fComponent);
         CHECK_EXCEPTION();

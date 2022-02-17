@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import javax.tools.ToolProvider;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.util.Context;
 import jdk.javadoc.internal.api.JavadocTaskImpl;
-import jdk.javadoc.internal.tool.Messager;
+import jdk.javadoc.internal.tool.JavadocLog;
 
 /**
  *  Misc tests for JavacTaskImpl.
@@ -81,7 +81,7 @@ public class JavadocTaskImplTest extends APITest {
         JavaFileObject srcFile = createSimpleJavaFileObject();
         Iterable<? extends JavaFileObject> files = Arrays.asList(srcFile);
         Context c = new Context();
-        Messager.preRegister(c, "javadoc");
+        JavadocLog.preRegister(c, "javadoc");
         try (StandardJavaFileManager fm = new JavacFileManager(c, true, null)) {
             File outDir = getOutDir();
             fm.setLocation(DocumentationTool.Location.DOCUMENTATION_OUTPUT, Arrays.asList(outDir));
@@ -99,7 +99,7 @@ public class JavadocTaskImplTest extends APITest {
         JavaFileObject srcFile = null; // error, provokes NPE
         Iterable<? extends JavaFileObject> files = Arrays.asList(srcFile);
         Context c = new Context();
-        Messager.preRegister(c, "javadoc");
+        JavadocLog.preRegister(c, "javadoc");
         try (StandardJavaFileManager fm = new JavacFileManager(c, true, null)) {
             File outDir = getOutDir();
             fm.setLocation(DocumentationTool.Location.DOCUMENTATION_OUTPUT, Arrays.asList(outDir));

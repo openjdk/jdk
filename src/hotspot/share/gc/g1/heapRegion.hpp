@@ -36,6 +36,7 @@
 #include "runtime/mutex.hpp"
 #include "utilities/macros.hpp"
 
+class G1CardSetConfiguration;
 class G1CollectedHeap;
 class G1CMBitMap;
 class G1Predictions;
@@ -75,7 +76,7 @@ class HeapRegion : public CHeapObj<mtGC> {
   HeapWord* _compaction_top;
 
   G1BlockOffsetTablePart _bot_part;
-  Mutex _par_alloc_lock;
+
   // When we need to retire an allocation region, while other threads
   // are also concurrently trying to allocate into it, we typically
   // allocate a dummy object at the end of the region to ensure that
@@ -150,23 +151,23 @@ public:
 
   void object_iterate(ObjectClosure* blk);
 
-  // Allocation (return NULL if full).  Assumes the caller has established
-  // mutually exclusive access to the HeapRegion.
-  HeapWord* allocate(size_t min_word_size, size_t desired_word_size, size_t* actual_word_size);
-  // Allocation (return NULL if full).  Enforces mutual exclusion internally.
-  HeapWord* par_allocate(size_t min_word_size, size_t desired_word_size, size_t* actual_word_size);
+  // At the given address create an object with the given size. If the region
+  // is old the BOT will be updated if the object spans a threshold.
+  void fill_with_dummy_object(HeapWord* address, size_t word_size, bool zap = true);
 
-  HeapWord* allocate(size_t word_size);
-  HeapWord* par_allocate(size_t word_size);
+  // All allocations are done without updating the BOT. The BOT
+  // needs to be kept in sync for old generation regions and
+  // this is done by explicit updates when crossing thresholds.
+  inline HeapWord* par_allocate(size_t min_word_size, size_t desired_word_size, size_t* word_size);
+  inline HeapWord* allocate(size_t word_size);
+  inline HeapWord* allocate(size_t min_word_size, size_t desired_word_size, size_t* actual_size);
 
-  inline HeapWord* par_allocate_no_bot_updates(size_t min_word_size, size_t desired_word_size, size_t* word_size);
-  inline HeapWord* allocate_no_bot_updates(size_t word_size);
-  inline HeapWord* allocate_no_bot_updates(size_t min_word_size, size_t desired_word_size, size_t* actual_size);
+  // Update BOT if this obj is the first entering a new card (i.e. crossing the card boundary).
+  inline void update_bot_for_obj(HeapWord* obj_start, size_t obj_size);
 
   // Full GC support methods.
 
-  HeapWord* initialize_threshold();
-  HeapWord* cross_threshold(HeapWord* start, HeapWord* end);
+  void update_bot_for_block(HeapWord* start, HeapWord* end);
 
   // Update heap region that has been compacted to be consistent after Full GC.
   void reset_compacted_after_full_gc();
@@ -190,10 +191,6 @@ public:
   template<typename ApplyToMarkedClosure>
   inline void apply_to_marked_objects(G1CMBitMap* bitmap, ApplyToMarkedClosure* closure);
 
-  void reset_bot() {
-    _bot_part.reset_bot();
-  }
-
   void update_bot() {
     _bot_part.update();
   }
@@ -209,9 +206,6 @@ private:
 
   // For a humongous region, region in which it starts.
   HeapRegion* _humongous_start_region;
-
-  // True iff an attempt to evacuate an object in the region failed.
-  volatile bool _evacuation_failed;
 
   static const uint InvalidCSetIndex = UINT_MAX;
 
@@ -284,7 +278,10 @@ private:
   // starting at p extending to at most the prev TAMS using the given mark bitmap.
   inline size_t block_size_using_bitmap(const HeapWord* p, const G1CMBitMap* const prev_bitmap) const;
 public:
-  HeapRegion(uint hrm_index, G1BlockOffsetTable* bot, MemRegion mr);
+  HeapRegion(uint hrm_index,
+             G1BlockOffsetTable* bot,
+             MemRegion mr,
+             G1CardSetConfiguration* config);
 
   // If this region is a member of a HeapRegionManager, the index in that
   // sequence, otherwise -1.
@@ -448,6 +445,7 @@ public:
   // Unsets the humongous-related fields on the region.
   void clear_humongous();
 
+  void set_rem_set(HeapRegionRemSet* rem_set) { _rem_set = rem_set; }
   // If the region has a remembered set, return a pointer to it.
   HeapRegionRemSet* rem_set() const {
     return _rem_set;
@@ -497,15 +495,6 @@ public:
   void hr_clear(bool clear_space);
   // Clear the card table corresponding to this region.
   void clear_cardtable();
-
-  // Returns the "evacuation_failed" property of the region.
-  inline bool evacuation_failed() const;
-
-  // Sets the "evacuation_failed" property of the region, returning true if this
-  // has been the first call, false otherwise.
-  inline bool set_evacuation_failed();
-
-  inline void reset_evacuation_failed();
 
   // Notify the region that we are about to start processing
   // self-forwarded objects during evac failure handling.
@@ -574,41 +563,34 @@ public:
 
   // Routines for managing a list of code roots (attached to the
   // this region's RSet) that point into this heap region.
-  void add_strong_code_root(nmethod* nm);
-  void add_strong_code_root_locked(nmethod* nm);
-  void remove_strong_code_root(nmethod* nm);
+  void add_code_root(nmethod* nm);
+  void add_code_root_locked(nmethod* nm);
+  void remove_code_root(nmethod* nm);
 
   // Applies blk->do_code_blob() to each of the entries in
-  // the strong code roots list for this region
-  void strong_code_roots_do(CodeBlobClosure* blk) const;
+  // the code roots list for this region
+  void code_roots_do(CodeBlobClosure* blk) const;
 
   uint node_index() const { return _node_index; }
   void set_node_index(uint node_index) { _node_index = node_index; }
 
-  // Verify that the entries on the strong code root list for this
+  // Verify that the entries on the code root list for this
   // region are live and include at least one pointer into this region.
-  void verify_strong_code_roots(VerifyOption vo, bool* failures) const;
+  void verify_code_roots(VerifyOption vo, bool* failures) const;
 
   void print() const;
   void print_on(outputStream* st) const;
 
   // vo == UsePrevMarking -> use "prev" marking information,
-  // vo == UseNextMarking -> use "next" marking information
   // vo == UseFullMarking -> use "next" marking bitmap but no TAMS
   //
   // NOTE: Only the "prev" marking information is guaranteed to be
   // consistent most of the time, so most calls to this should use
   // vo == UsePrevMarking.
-  // Currently, there is only one case where this is called with
-  // vo == UseNextMarking, which is to verify the "next" marking
-  // information at the end of remark.
   // Currently there is only one place where this is called with
   // vo == UseFullMarking, which is to verify the marking during a
   // full GC.
   void verify(VerifyOption vo, bool *failures) const;
-
-  // Verify using the "prev" marking information
-  void verify() const;
 
   void verify_rem_set(VerifyOption vo, bool *failures) const;
   void verify_rem_set() const;

@@ -70,8 +70,14 @@ public class AnchorCertificates {
                             if (alias.contains(" [jdk")) {
                                 X509Certificate cert = (X509Certificate) cacerts
                                         .getCertificate(alias);
-                                certs.add(X509CertImpl.getFingerprint(HASH, cert));
-                                certIssuers.add(cert.getSubjectX500Principal());
+                                String fp =
+                                    X509CertImpl.getFingerprint(HASH, cert, debug);
+                                // only add trust anchor if fingerprint can
+                                // be calculated
+                                if (fp != null) {
+                                    certs.add(fp);
+                                    certIssuers.add(cert.getSubjectX500Principal());
+                                }
                             }
                         }
                     }
@@ -93,8 +99,8 @@ public class AnchorCertificates {
      * @return true if the certificate is a JDK trust anchor
      */
     public static boolean contains(X509Certificate cert) {
-        String key = X509CertImpl.getFingerprint(HASH, cert);
-        boolean result = certs.contains(key);
+        String key = X509CertImpl.getFingerprint(HASH, cert, debug);
+        boolean result = (key == null ? false : certs.contains(key));
         if (result && debug != null) {
             debug.println("AnchorCertificate.contains: matched " +
                     cert.getSubjectX500Principal());

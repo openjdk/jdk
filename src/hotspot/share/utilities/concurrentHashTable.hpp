@@ -189,6 +189,10 @@ class ConcurrentHashTable : public CHeapObj<F> {
 
     Bucket* get_buckets() { return _buckets; }
     Bucket* get_bucket(size_t idx) { return &_buckets[idx]; }
+
+    size_t get_mem_size() {
+      return sizeof(*this) + _size * sizeof(Bucket);
+    }
   };
 
   // For materializing a supplied value.
@@ -384,8 +388,10 @@ class ConcurrentHashTable : public CHeapObj<F> {
 
   TableRateStatistics _stats_rate;
 
+  size_t get_mem_size(Thread* thread);
+
   size_t get_size_log2(Thread* thread);
-  size_t get_node_size() const { return sizeof(Node); }
+  static size_t get_node_size() { return sizeof(Node); }
   bool is_max_size_reached() { return _size_limit_reached; }
 
   // This means no paused bucket resize operation is going to resume

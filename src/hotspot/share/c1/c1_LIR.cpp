@@ -33,19 +33,20 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vm_version.hpp"
 
-Register LIR_OprDesc::as_register() const {
+Register LIR_Opr::as_register() const {
   return FrameMap::cpu_rnr2reg(cpu_regnr());
 }
 
-Register LIR_OprDesc::as_register_lo() const {
+Register LIR_Opr::as_register_lo() const {
   return FrameMap::cpu_rnr2reg(cpu_regnrLo());
 }
 
-Register LIR_OprDesc::as_register_hi() const {
+Register LIR_Opr::as_register_hi() const {
   return FrameMap::cpu_rnr2reg(cpu_regnrHi());
 }
 
 LIR_Opr LIR_OprFact::illegalOpr = LIR_OprFact::illegal();
+LIR_Opr LIR_OprFact::nullOpr = LIR_Opr();
 
 LIR_Opr LIR_OprFact::value_type(ValueType* type) {
   ValueTag tag = type->tag();
@@ -92,7 +93,7 @@ LIR_Address::Scale LIR_Address::scale(BasicType type) {
 
 //---------------------------------------------------
 
-char LIR_OprDesc::type_char(BasicType t) {
+char LIR_Opr::type_char(BasicType t) {
   switch (t) {
     case T_ARRAY:
       t = T_OBJECT;
@@ -120,7 +121,7 @@ char LIR_OprDesc::type_char(BasicType t) {
 }
 
 #ifndef PRODUCT
-void LIR_OprDesc::validate_type() const {
+void LIR_Opr::validate_type() const {
 
 #ifdef ASSERT
   if (!is_pointer() && !is_illegal()) {
@@ -131,17 +132,15 @@ void LIR_OprDesc::validate_type() const {
              size_field() == double_size, "must match");
       break;
     case T_FLOAT:
-      // FP return values can be also in CPU registers on ARM and PPC32 (softfp ABI)
+      // FP return values can be also in CPU registers on ARM (softfp ABI)
       assert((kindfield == fpu_register || kindfield == stack_value
-             ARM_ONLY(|| kindfield == cpu_register)
-             PPC32_ONLY(|| kindfield == cpu_register) ) &&
+             ARM_ONLY(|| kindfield == cpu_register) ) &&
              size_field() == single_size, "must match");
       break;
     case T_DOUBLE:
-      // FP return values can be also in CPU registers on ARM and PPC32 (softfp ABI)
+      // FP return values can be also in CPU registers on ARM (softfp ABI)
       assert((kindfield == fpu_register || kindfield == stack_value
-             ARM_ONLY(|| kindfield == cpu_register)
-             PPC32_ONLY(|| kindfield == cpu_register) ) &&
+             ARM_ONLY(|| kindfield == cpu_register) ) &&
              size_field() == double_size, "must match");
       break;
     case T_BOOLEAN:
@@ -172,7 +171,7 @@ void LIR_OprDesc::validate_type() const {
 #endif // PRODUCT
 
 
-bool LIR_OprDesc::is_oop() const {
+bool LIR_Opr::is_oop() const {
   if (is_pointer()) {
     return pointer()->is_oop_pointer();
   } else {
@@ -403,7 +402,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
   switch (op->code()) {
 
 // LIR_Op0
-    case lir_backwardbranch_target:    // result and info always invalid
     case lir_fpop_raw:                 // result and info always invalid
     case lir_breakpoint:               // result and info always invalid
     case lir_membar:                   // result and info always invalid
@@ -497,10 +495,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       assert(opConvert->_info == NULL, "must be");
       if (opConvert->_opr->is_valid())       do_input(opConvert->_opr);
       if (opConvert->_result->is_valid())    do_output(opConvert->_result);
-#ifdef PPC32
-      if (opConvert->_tmp1->is_valid())      do_temp(opConvert->_tmp1);
-      if (opConvert->_tmp2->is_valid())      do_temp(opConvert->_tmp2);
-#endif
       do_stub(opConvert->_stub);
 
       break;
@@ -880,6 +874,19 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       break;
     }
 
+// LIR_OpLoadKlass
+    case lir_load_klass:
+    {
+      LIR_OpLoadKlass* opLoadKlass = op->as_OpLoadKlass();
+      assert(opLoadKlass != NULL, "must be");
+
+      do_input(opLoadKlass->_obj);
+      do_output(opLoadKlass->_result);
+      if (opLoadKlass->_info) do_info(opLoadKlass->_info);
+      break;
+    }
+
+
 // LIR_OpProfileCall:
     case lir_profile_call: {
       assert(op->as_OpProfileCall() != NULL, "must be");
@@ -1047,6 +1054,10 @@ void LIR_OpLock::emit_code(LIR_Assembler* masm) {
   if (stub()) {
     masm->append_code_stub(stub());
   }
+}
+
+void LIR_OpLoadKlass::emit_code(LIR_Assembler* masm) {
+  masm->emit_load_klass(this);
 }
 
 #ifdef ASSERT
@@ -1373,7 +1384,7 @@ void LIR_List::unlock_object(LIR_Opr hdr, LIR_Opr obj, LIR_Opr lock, LIR_Opr scr
 
 void check_LIR() {
   // cannot do the proper checking as PRODUCT and other modes return different results
-  // guarantee(sizeof(LIR_OprDesc) == wordSize, "may not have a v-table");
+  // guarantee(sizeof(LIR_Opr) == wordSize, "may not have a v-table");
 }
 
 
@@ -1448,12 +1459,12 @@ void print_LIR(BlockList* blocks) {
 }
 
 #else
-// LIR_OprDesc
-void LIR_OprDesc::print() const {
+// LIR_Opr
+void LIR_Opr::print() const {
   print(tty);
 }
 
-void LIR_OprDesc::print(outputStream* out) const {
+void LIR_Opr::print(outputStream* out) const {
   if (is_illegal()) {
     return;
   }
@@ -1569,7 +1580,7 @@ static void print_block(BlockBegin* x) {
     }
   }
 
-  if (x->number_of_sux() > 0) {
+  if (end != NULL && x->number_of_sux() > 0) {
     tty->print("sux: ");
     for (int i = 0; i < x->number_of_sux(); i ++) {
       tty->print("B%d ", x->sux_at(i)->block_id());
@@ -1637,7 +1648,6 @@ const char * LIR_Op::name() const {
      case lir_label:                 s = "label";         break;
      case lir_nop:                   s = "nop";           break;
      case lir_on_spin_wait:          s = "on_spin_wait";  break;
-     case lir_backwardbranch_target: s = "backbranch";    break;
      case lir_std_entry:             s = "std_entry";     break;
      case lir_osr_entry:             s = "osr_entry";     break;
      case lir_fpop_raw:              s = "fpop_raw";      break;
@@ -1781,8 +1791,6 @@ const char * LIR_Op1::name() const {
     switch (move_kind()) {
     case lir_move_normal:
       return "move";
-    case lir_move_unaligned:
-      return "unaligned move";
     case lir_move_volatile:
       return "volatile_move";
     case lir_move_wide:
@@ -1860,12 +1868,6 @@ void LIR_OpConvert::print_instr(outputStream* out) const {
   print_bytecode(out, bytecode());
   in_opr()->print(out);                  out->print(" ");
   result_opr()->print(out);              out->print(" ");
-#ifdef PPC32
-  if(tmp1()->is_valid()) {
-    tmp1()->print(out); out->print(" ");
-    tmp2()->print(out); out->print(" ");
-  }
-#endif
 }
 
 void LIR_OpConvert::print_bytecode(outputStream* out, Bytecodes::Code code) {
@@ -1971,6 +1973,11 @@ void LIR_OpLock::print_instr(outputStream* out) const {
     _scratch->print(out);  out->print(" ");
   }
   out->print("[lbl:" INTPTR_FORMAT "]", p2i(stub()->entry()));
+}
+
+void LIR_OpLoadKlass::print_instr(outputStream* out) const {
+  obj()->print(out);        out->print(" ");
+  result_opr()->print(out); out->print(" ");
 }
 
 #ifdef ASSERT

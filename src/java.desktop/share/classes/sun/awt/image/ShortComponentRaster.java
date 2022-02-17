@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 
 package sun.awt.image;
+
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.awt.image.RasterFormatException;
@@ -877,10 +878,10 @@ public class ShortComponentRaster extends SunWritableRaster {
     }
 
     public String toString() {
-        return new String ("ShortComponentRaster: width = "+width
-                           +" height = " + height
-                           +" #numDataElements "+numDataElements);
-                           // +" xOff = "+xOffset+" yOff = "+yOffset);
+        return "ShortComponentRaster: width = " + width
+                + " height = " + height
+                + " #numDataElements " + numDataElements;
+                // +" xOff = "+xOffset+" yOff = "+yOffset);
     }
 
 }

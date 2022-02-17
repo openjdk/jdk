@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,6 +207,13 @@ TEST(LogDecorators, none) {
   LogDecorators dec = LogDecorators::None;
   for (size_t i = 0; i < LogDecorators::Count; i++) {
     EXPECT_FALSE(dec.is_decorator(decorator_array[i]));
+  }
+}
+
+TEST(LogDecorators, all) {
+  LogDecorators dec = LogDecorators::All;
+  for (size_t i = 0; i < LogDecorators::Count; i++) {
+    EXPECT_TRUE(dec.is_decorator(decorator_array[i]));
   }
 }
 

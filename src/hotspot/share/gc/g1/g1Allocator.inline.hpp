@@ -53,16 +53,29 @@ inline HeapWord* G1Allocator::attempt_allocation(size_t min_word_size,
                                                  size_t desired_word_size,
                                                  size_t* actual_word_size) {
   uint node_index = current_node_index();
+
   HeapWord* result = mutator_alloc_region(node_index)->attempt_retained_allocation(min_word_size, desired_word_size, actual_word_size);
   if (result != NULL) {
     return result;
   }
+
   return mutator_alloc_region(node_index)->attempt_allocation(min_word_size, desired_word_size, actual_word_size);
+}
+
+inline HeapWord* G1Allocator::attempt_allocation_using_new_region(size_t word_size) {
+  uint node_index = current_node_index();
+  size_t temp;
+  HeapWord* result = mutator_alloc_region(node_index)->attempt_allocation_using_new_region(word_size, word_size, &temp);
+  assert(result != NULL || mutator_alloc_region(node_index)->get() == NULL,
+         "Must not have a mutator alloc region if there is no memory, but is " PTR_FORMAT,
+         p2i(mutator_alloc_region(node_index)->get()));
+  return result;
 }
 
 inline HeapWord* G1Allocator::attempt_allocation_locked(size_t word_size) {
   uint node_index = current_node_index();
   HeapWord* result = mutator_alloc_region(node_index)->attempt_allocation_locked(word_size);
+
   assert(result != NULL || mutator_alloc_region(node_index)->get() == NULL,
          "Must not have a mutator alloc region if there is no memory, but is " PTR_FORMAT, p2i(mutator_alloc_region(node_index)->get()));
   return result;

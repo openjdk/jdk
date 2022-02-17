@@ -128,14 +128,11 @@ public enum IsoEra implements Era {
      * @throws DateTimeException if the value is invalid
      */
     public static IsoEra of(int isoEra) {
-        switch (isoEra) {
-            case 0:
-                return BCE;
-            case 1:
-                return CE;
-            default:
-                throw new DateTimeException("Invalid era: " + isoEra);
-        }
+        return switch (isoEra) {
+            case 0  -> BCE;
+            case 1  -> CE;
+            default -> throw new DateTimeException("Invalid era: " + isoEra);
+        };
     }
 
     //-----------------------------------------------------------------------

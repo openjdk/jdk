@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,10 @@
  * questions.
  */
 
-
 package javax.net.ssl;
 
 import java.io.*;
 import java.net.*;
-
 
 /**
  * This class extends <code>ServerSocket</code> and
@@ -199,13 +197,13 @@ public abstract class SSLServerSocket extends ServerSocket {
      * The returned array includes cipher suites from the list of standard
      * cipher suite names in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
-     * JSSE Cipher Suite Names</a> section of the Java Cryptography
-     * Architecture Standard Algorithm Name Documentation, and may also
-     * include other cipher suites that the provider supports.
+     * JSSE Cipher Suite Names</a> section of the Java Security Standard
+     * Algorithm Names Specification, and may also include other cipher
+     * suites that the provider supports.
      *
      * @return an array of cipher suites enabled
      * @see #getSupportedCipherSuites()
-     * @see #setEnabledCipherSuites(String [])
+     * @see #setEnabledCipherSuites(String[])
      */
     public abstract String [] getEnabledCipherSuites();
 
@@ -225,10 +223,10 @@ public abstract class SSLServerSocket extends ServerSocket {
      * Note that the standard list of cipher suite names may be found in the
      * <a href=
      * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
-     * JSSE Cipher Suite Names</a> section of the Java Cryptography
-     * Architecture Standard Algorithm Name Documentation.  Providers
-     * may support cipher suite names not found in this list or might not
-     * use the recommended name for a certain cipher suite.
+     * JSSE Cipher Suite Names</a> section of the Java Security Standard
+     * Algorithm Names Specification.  Providers  may support cipher suite
+     * names not found in this list or might not use the recommended name
+     * for a certain cipher suite.
      * <P>
      * <code>SSLSocket</code>s returned from <code>accept()</code>
      * inherit this setting.
@@ -255,13 +253,13 @@ public abstract class SSLServerSocket extends ServerSocket {
      * The returned array includes cipher suites from the list of standard
      * cipher suite names in the <a href=
      * "{@docRoot}/../specs/security/standard-names.html#jsse-cipher-suite-names">
-     * JSSE Cipher Suite Names</a> section of the Java Cryptography
-     * Architecture Standard Algorithm Name Documentation, and may also
-     * include other cipher suites that the provider supports.
+     * JSSE Cipher Suite Names</a> section of the Java Security Standard
+     * Algorithm Names Specification, and may also include other cipher
+     * suites that the provider supports.
      *
      * @return an array of cipher suite names
      * @see #getEnabledCipherSuites()
-     * @see #setEnabledCipherSuites(String [])
+     * @see #setEnabledCipherSuites(String[])
      */
     public abstract String [] getSupportedCipherSuites();
 
@@ -271,7 +269,7 @@ public abstract class SSLServerSocket extends ServerSocket {
      *
      * @return an array of protocol names supported
      * @see #getEnabledProtocols()
-     * @see #setEnabledProtocols(String [])
+     * @see #setEnabledProtocols(String[])
      */
     public abstract String [] getSupportedProtocols();
 
@@ -287,7 +285,7 @@ public abstract class SSLServerSocket extends ServerSocket {
      *
      * @return an array of protocol names
      * @see #getSupportedProtocols()
-     * @see #setEnabledProtocols(String [])
+     * @see #setEnabledProtocols(String[])
      */
     public abstract String [] getEnabledProtocols();
 

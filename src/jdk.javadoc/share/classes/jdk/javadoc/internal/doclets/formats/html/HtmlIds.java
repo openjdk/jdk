@@ -89,6 +89,8 @@ public class HtmlIds {
     static final HtmlId METHOD_SUMMARY_TABLE = HtmlId.of("method-summary-table");
     static final HtmlId MODULES = HtmlId.of("modules-summary");
     static final HtmlId MODULE_DESCRIPTION = HtmlId.of("module-description");
+    static final HtmlId NAVBAR_SUB_LIST = HtmlId.of("navbar-sub-list");
+    static final HtmlId NAVBAR_TOGGLE_BUTTON = HtmlId.of("navbar-toggle-button");
     static final HtmlId NAVBAR_TOP = HtmlId.of("navbar-top");
     static final HtmlId NAVBAR_TOP_FIRSTROW = HtmlId.of("navbar-top-firstrow");
     static final HtmlId NESTED_CLASS_SUMMARY = HtmlId.of("nested-class-summary");
@@ -216,7 +218,7 @@ public class HtmlIds {
      * @return the 1.4.x style anchor for the executable element
      */
     protected HtmlId forErasure(ExecutableElement executableElement) {
-        final StringBuilder buf = new StringBuilder(executableElement.getSimpleName());
+        final StringBuilder buf = new StringBuilder(executableElement.getSimpleName().toString());
         buf.append("(");
         List<? extends VariableElement> parameters = executableElement.getParameters();
         boolean foundTypeVariable = false;
@@ -237,7 +239,7 @@ public class HtmlIds {
 
                 @Override
                 public Boolean visitTypeVariable(TypeVariable t, Void p) {
-                    buf.append(utils.asTypeElement(t).getQualifiedName());
+                    buf.append(utils.asTypeElement(t).getQualifiedName().toString());
                     foundTypeVariable = true;
                     return foundTypeVariable;
                 }
@@ -415,8 +417,7 @@ public class HtmlIds {
             case INTERFACE -> "interface";
             case CLASS -> "class";
             case ENUM -> "enum-class";
-            case EXCEPTION -> "exception";
-            case ERROR -> "error";
+            case EXCEPTION_CLASS -> "exception-class";
             case ANNOTATION_TYPE -> "annotation-interface";
             case FIELD -> "field";
             case METHOD -> "method";
@@ -441,6 +442,8 @@ public class HtmlIds {
             case FIELDS -> FIELD_SUMMARY;
             case CONSTRUCTORS -> CONSTRUCTOR_SUMMARY;
             case METHODS -> METHOD_SUMMARY;
+            // We generate separate summaries for optional and required annotation members
+            case ANNOTATION_TYPE_MEMBER -> throw new IllegalArgumentException("unsupported member kind");
             case ANNOTATION_TYPE_MEMBER_OPTIONAL -> ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY;
             case ANNOTATION_TYPE_MEMBER_REQUIRED -> ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY;
             case PROPERTIES -> PROPERTY_SUMMARY;

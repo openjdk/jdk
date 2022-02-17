@@ -323,7 +323,7 @@ public class Taskbar {
     }
 
     /**
-     * Changes this application's icon to the provided image.
+     * Requests the system to change this application's icon to the provided {@code image}.
      *
      * @param image to change
      * @throws SecurityException if a security manager exists and it denies the
@@ -339,6 +339,10 @@ public class Taskbar {
 
     /**
      * Obtains an image of this application's icon.
+     *
+     * @apiNote The returned icon image may not be equal
+     * to an image set by {@link java.awt.Taskbar#setIconImage},
+     * but should be visually similar.
      *
      * @return an image of this application's icon
      * @throws SecurityException if a security manager exists and it denies the

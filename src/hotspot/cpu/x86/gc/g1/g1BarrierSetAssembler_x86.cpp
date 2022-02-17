@@ -298,7 +298,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
   const Register cardtable = tmp2;
 
   __ movptr(card_addr, store_addr);
-  __ shrptr(card_addr, CardTable::card_shift);
+  __ shrptr(card_addr, CardTable::card_shift());
   // Do not use ExternalAddress to load 'byte_map_base', since 'byte_map_base' is NOT
   // a valid address and therefore is not properly handled by the relocation code.
   __ movptr(cardtable, (intptr_t)ct->card_table()->byte_map_base());
@@ -420,7 +420,7 @@ void G1BarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrier
   Register pre_val_reg = stub->pre_val()->as_register();
 
   if (stub->do_load()) {
-    ce->mem2reg(stub->addr(), stub->pre_val(), T_OBJECT, stub->patch_code(), stub->info(), false /*wide*/, false /*unaligned*/);
+    ce->mem2reg(stub->addr(), stub->pre_val(), T_OBJECT, stub->patch_code(), stub->info(), false /*wide*/);
   }
 
   __ cmpptr(pre_val_reg, (int32_t)NULL_WORD);
@@ -540,7 +540,7 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
   const Register card_addr = rcx;
 
   __ load_parameter(0, card_addr);
-  __ shrptr(card_addr, CardTable::card_shift);
+  __ shrptr(card_addr, CardTable::card_shift());
   // Do not use ExternalAddress to load 'byte_map_base', since 'byte_map_base' is NOT
   // a valid address and therefore is not properly handled by the relocation code.
   __ movptr(cardtable, (intptr_t)ct->card_table()->byte_map_base());

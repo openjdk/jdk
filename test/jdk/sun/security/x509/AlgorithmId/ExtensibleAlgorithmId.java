@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,60 +23,100 @@
 
 /*
  * @test
- * @bug 4162868 8130181 8242151
+ * @bug 4162868 8130181 8242151 8267397
  * @modules java.base/sun.security.x509
  * @modules java.base/sun.security.util
  * @run main/othervm ExtensibleAlgorithmId
- * @summary Algorithm Name-to-OID mapping needs to be made extensible.
+ * @summary Check that AlgorithmId Name-to-OID mapping is extensible and
+ *      up-to-date.
  */
-
-// Run in othervm, coz AlgorithmId.oidTable is only initialized once
 
 import java.security.*;
 import sun.security.x509.AlgorithmId;
 
 public class ExtensibleAlgorithmId {
 
+    private static void test(String alg, String expOid) throws Exception {
+        System.out.println("Testing " + alg + " and " + expOid );
+        try {
+            AlgorithmId algid = AlgorithmId.get(alg);
+            if (expOid == null) {
+                throw new Exception("Expected NSAE not thrown");
+            }
+            if (!expOid.equals(algid.getOID().toString())) {
+                throw new Exception("Oid mismatch, expected " + expOid +
+                        ", got " + algid.getOID().toString());
+            }
+            if (!alg.equals(algid.getName())) {
+                throw new Exception("Name mismatch, expected " + alg +
+                        ", got " + algid.getName());
+            }
+            // try AlgorithmId.get() using 'expOid' if (alg != expOid)
+            if (alg != expOid) {
+                algid = AlgorithmId.get(expOid);
+                if (!expOid.equals(algid.getOID().toString())) {
+                    throw new Exception("Oid2 mismatch, expected " + expOid +
+                        ", got " + algid.getOID().toString());
+                }
+                if (!alg.equals(algid.getName())) {
+                    throw new Exception("Name2 mismatch, expected " + alg +
+                            ", got " + algid.getName());
+                }
+            }
+            System.out.println(" => passed");
+        } catch (NoSuchAlgorithmException nsae) {
+            if (expOid != null) {
+                nsae.printStackTrace();
+                throw new Exception("Unexpected NSAE for " + alg);
+            }
+            System.out.println(" => expected NSAE thrown");
+        }
+    }
+
     public static void main(String[] args) throws Exception {
+
         TestProvider p = new TestProvider();
-        Security.addProvider(p);
-        AlgorithmId algid = AlgorithmId.getAlgorithmId(TestProvider.ALG_NAME);
-        String oid = algid.getOID().toString();
-        if (!oid.equals(TestProvider.ALG_OID)) {
-            throw new Exception("Provider alias oid not used, found " + oid);
-        }
-        String name = algid.getName();
-        if (!name.equalsIgnoreCase(TestProvider.ALG_NAME)) {
-            throw new Exception("provider alias name not used, found " + name);
-        }
-        String alias = "Alg.Alias.Signature.OID." + oid;
+        String alias = "Alg.Alias.Signature.OID." + TestProvider.ALG_OID;
         String stdAlgName = p.getProperty(alias);
         if (stdAlgName == null ||
                 !stdAlgName.equalsIgnoreCase(TestProvider.ALG_NAME)) {
             throw new Exception("Wrong OID");
         }
+
+        // scenario#1: test before adding TestProvider
+        System.out.println("Before adding test provider");
+        test(TestProvider.ALG_NAME, null);
+        test(TestProvider.ALG_OID, TestProvider.ALG_OID);
+        test(TestProvider.ALG_OID2, TestProvider.ALG_OID2);
+
+        Security.addProvider(p);
+        // scenario#2: test again after adding TestProvider
+        System.out.println("After adding test provider");
+        test(TestProvider.ALG_NAME, TestProvider.ALG_OID);
+        test(TestProvider.ALG_OID2, TestProvider.ALG_OID2);
+
+        Security.removeProvider(p.getName());
+        // scenario#3: test after removing TestProvider; should be same as
+        // scenario#1
+        System.out.println("After removing test provider");
+        test(TestProvider.ALG_NAME, null);
+        test(TestProvider.ALG_OID, TestProvider.ALG_OID);
+        test(TestProvider.ALG_OID2, TestProvider.ALG_OID2);
     }
 
     static class TestProvider extends Provider {
 
         static String ALG_OID = "1.2.3.4.5.6.7.8.9.0";
+        static String ALG_OID2 = "0.2.7.6.5.4.3.2.1.0";
         static String ALG_NAME = "XYZ";
 
         public TestProvider() {
-        super("Dummy", "1.0", "XYZ algorithm");
+            super("Dummy", "1.0", "XYZ algorithm");
 
-            AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
-
-                    put("Signature." + ALG_NAME, "test.xyz");
-                    // preferred OID
-                    put("Alg.Alias.Signature.OID." + ALG_OID,
-                        ALG_NAME);
-                    put("Alg.Alias.Signature.9.8.7.6.5.4.3.2.1.0",
-                        ALG_NAME);
-                    return null;
-                }
-            });
+            put("Signature." + ALG_NAME, "test.xyz");
+            // preferred OID for name<->oid mapping
+            put("Alg.Alias.Signature.OID." + ALG_OID, ALG_NAME);
+            put("Alg.Alias.Signature." + ALG_OID2, ALG_NAME);
         }
     }
 }

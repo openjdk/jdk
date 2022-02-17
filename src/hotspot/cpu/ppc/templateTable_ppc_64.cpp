@@ -3793,11 +3793,7 @@ void TemplateTable::_new() {
     // --------------------------------------------------------------------------
     // Init2: Initialize the header: mark, klass
     // Init mark.
-    if (UseBiasedLocking) {
-      __ ld(Rscratch, in_bytes(Klass::prototype_header_offset()), RinstanceKlass);
-    } else {
-      __ load_const_optimized(Rscratch, markWord::prototype().value(), R0);
-    }
+    __ load_const_optimized(Rscratch, markWord::prototype().value(), R0);
     __ std(Rscratch, oopDesc::mark_offset_in_bytes(), RallocatedObject);
 
     // Init klass.
@@ -3807,7 +3803,7 @@ void TemplateTable::_new() {
     // Check and trigger dtrace event.
     SkipIfEqualZero::skip_to_label_if_equal_zero(_masm, Rscratch, &DTraceAllocProbes, Ldone);
     __ push(atos);
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_object_alloc));
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc)));
     __ pop(atos);
 
     __ b(Ldone);

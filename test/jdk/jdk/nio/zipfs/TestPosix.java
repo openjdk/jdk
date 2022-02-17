@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2019, 2021, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ import static org.testng.Assert.fail;
 
 /**
  * @test
- * @bug 8213031
+ * @bug 8213031 8273935
  * @modules jdk.zipfs
  *          jdk.jartool
  * @run testng TestPosix
@@ -595,7 +595,7 @@ public class TestPosix {
             assertTrue(throwsUOE(()->Files.setPosixFilePermissions(entry, UW)));
             assertTrue(throwsUOE(()->Files.getOwner(entry)));
             assertTrue(throwsUOE(()->Files.setOwner(entry, DUMMY_USER)));
-            assertTrue(throwsUOE(()->Files.getFileAttributeView(entry, PosixFileAttributeView.class)));
+            assertNull(Files.getFileAttributeView(entry, PosixFileAttributeView.class));
         }
 
         // test with posix = true -> default values

@@ -49,10 +49,7 @@ ciMethodData::ciMethodData(MethodData* md)
   _saw_free_extra_data(false),
   // Initialize the escape information (to "don't know.");
   _eflags(0), _arg_local(0), _arg_stack(0), _arg_returned(0),
-  _creation_mileage(0),
-  _current_mileage(0),
   _invocation_counter(0),
-  _backedge_counter(0),
   _orig(),
   _parameters(NULL) {}
 
@@ -250,10 +247,7 @@ bool ciMethodData::load_data() {
   load_remaining_extra_data();
 
   // Note:  Extra data are all BitData, and do not need translation.
-  _creation_mileage = mdo->creation_mileage();
-  _current_mileage = MethodData::mileage_of(mdo->method());
   _invocation_counter = mdo->invocation_count();
-  _backedge_counter = mdo->backedge_count();
   _state = mdo->is_mature()? mature_state: immature_state;
 
   _eflags = mdo->eflags();
@@ -647,7 +641,8 @@ void ciMethodData::dump_replay_data_type_helper(outputStream* out, int round, in
     if (round == 0) {
       count++;
     } else {
-      out->print(" %d %s", (int)(dp_to_di(pdata->dp() + in_bytes(offset)) / sizeof(intptr_t)), k->name()->as_quoted_ascii());
+      out->print(" %d %s", (int)(dp_to_di(pdata->dp() + in_bytes(offset)) / sizeof(intptr_t)),
+                           CURRENT_ENV->replay_name(k));
     }
   }
 }
@@ -703,13 +698,9 @@ void ciMethodData::dump_replay_data(outputStream* out) {
   ResourceMark rm;
   MethodData* mdo = get_MethodData();
   Method* method = mdo->method();
-  Klass* holder = method->method_holder();
-  out->print("ciMethodData %s %s %s %d %d",
-             holder->name()->as_quoted_ascii(),
-             method->name()->as_quoted_ascii(),
-             method->signature()->as_quoted_ascii(),
-             _state,
-             current_mileage());
+  out->print("ciMethodData ");
+  ciMethod::dump_name_as_ascii(out, method);
+  out->print(" %d %d", _state, _invocation_counter);
 
   // dump the contents of the MDO header as raw data
   unsigned char* orig = (unsigned char*)&_orig;

@@ -32,7 +32,10 @@ import java.security.cert.CertificateEncodingException;
 import java.security.*;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.NamedParameterSpec;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.TimeZone;
 
 import sun.security.pkcs10.PKCS10;
 import sun.security.util.SignatureUtil;
@@ -304,6 +307,12 @@ public final class CertAndKeyGen {
         try {
             lastDate = new Date ();
             lastDate.setTime (firstDate.getTime () + validity * 1000);
+            Calendar c = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+            c.setTime(lastDate);
+            if (c.get(Calendar.YEAR) > 9999) {
+                throw new CertificateException("Validity period ends at calendar year " +
+                        c.get(Calendar.YEAR) + " which is greater than 9999");
+            }
 
             CertificateValidity interval =
                                    new CertificateValidity(firstDate,lastDate);

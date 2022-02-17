@@ -731,10 +731,6 @@ private jboolean isValid(void);
         return -1;
     }
 
-    private int stiFileTableIndex(int sti, int lti) {
-        return fileTableIndex(sti, lineTable[lti].fileId);
-    }
-
     private jboolean isValid(void) {
         return sourceMapIsValid;
     }

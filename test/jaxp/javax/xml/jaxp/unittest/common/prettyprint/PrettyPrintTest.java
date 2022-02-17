@@ -33,8 +33,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -66,7 +64,7 @@ import org.xml.sax.SAXException;
 
 /*
  * @test
- * @bug 6439439 8087303 8174025 8223291 8249867 8261209 8260858
+ * @bug 6439439 8087303 8174025 8223291 8249867 8261209 8260858 8265073
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow common.prettyprint.PrettyPrintTest
  * @run testng/othervm common.prettyprint.PrettyPrintTest
@@ -178,6 +176,54 @@ public class PrettyPrintTest {
             {"yes", false},
             {"", false}
         };
+    }
+
+    private final String xml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+            + "<a><b>element b</b><c>element c</c><d xml:space=\"preserve\">TRUE</d><e>test</e></a>";
+    private final String expected1 = "<a>\n"
+            + "    <b>element b</b>\n"
+            + "    <c>element c</c>\n"
+            + "    <d xml:space=\"preserve\">TRUE</d>\n"
+            + "    <e>test</e>\n"
+            + "</a>\n";
+
+    private final String xml2 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+            + "<l0><l1><l2 xml:space=\"preserve\">level 2</l2> level 1 <l2>level 2</l2></l1>"
+            + "<l1 xml:space=\"preserve\"><l2>level 2</l2> level 1 <l2>level 2</l2></l1></l0>";
+    private final String expected2 = "<l0>\n"
+            + "    <l1>\n"
+            + "        <l2 xml:space=\"preserve\">level 2</l2>\n"
+            + "         level 1 \n"
+            + "        <l2>level 2</l2>\n"
+            + "    </l1>\n"
+            + "    <l1 xml:space=\"preserve\"><l2>level 2</l2> level 1 <l2>level 2</l2></l1>\n"
+            + "</l0>\n";
+
+    /*
+     * Bug: 8265073
+     * source and expected output
+     */
+    @DataProvider
+    public Object[][] preserveSpace() {
+        return new Object[][]{
+            {xml1, expected1},
+            {xml2, expected2},
+        };
+    }
+
+    /**
+     * Bug: 8265073
+     * Verifies that the scope of the preserve attribute is applied properly
+     * within the relevant elements.
+     * @param xml the source
+     * @param expected the expected result
+     * @throws Exception if the assertion fails or an error occurs in the
+     * transform process
+     */
+    @Test(dataProvider = "preserveSpace")
+    public void test(String xml, String expected) throws Exception {
+        String result = transform(null, xml, true, true, false, false, false);
+        Assert.assertEquals(result.replaceAll("\r\n", "\n"), expected);
     }
 
     /*

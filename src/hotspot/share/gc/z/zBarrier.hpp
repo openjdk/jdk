@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 #ifndef SHARE_GC_Z_ZBARRIER_HPP
 #define SHARE_GC_Z_ZBARRIER_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "memory/iterator.hpp"
 #include "oops/oop.hpp"
 
@@ -97,10 +97,8 @@ public:
   static oop weak_load_barrier_on_oop_field(volatile oop* p);
   static oop weak_load_barrier_on_oop_field_preloaded(volatile oop* p, oop o);
   static oop weak_load_barrier_on_weak_oop(oop o);
-  static oop weak_load_barrier_on_weak_oop_field(volatile oop* p);
   static oop weak_load_barrier_on_weak_oop_field_preloaded(volatile oop* p, oop o);
   static oop weak_load_barrier_on_phantom_oop(oop o);
-  static oop weak_load_barrier_on_phantom_oop_field(volatile oop* p);
   static oop weak_load_barrier_on_phantom_oop_field_preloaded(volatile oop* p, oop o);
 
   // Is alive barrier
@@ -116,7 +114,6 @@ public:
   // Mark barrier
   static void mark_barrier_on_oop_field(volatile oop* p, bool finalizable);
   static void mark_barrier_on_oop_array(volatile oop* p, size_t length, bool finalizable);
-  static void mark_barrier_on_invisible_root_oop_field(oop* p);
 
   // Narrow oop variants, never used.
   static oop  load_barrier_on_oop_field(volatile narrowOop* p);

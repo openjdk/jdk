@@ -272,7 +272,8 @@ public class Cipher {
         // See bug 4341369 & 4334690 for more info.
         // If the caller is trusted, then okay.
         // Otherwise throw an IllegalArgumentException.
-        if (!JceSecurityManager.INSTANCE.isCallerTrusted(provider)) {
+        if (!JceSecurityManager.INSTANCE.isCallerTrusted(
+                JceSecurityManager.WALKER.getCallerClass(), provider)) {
             throw new IllegalArgumentException("Cannot construct cipher");
         }
         this.spi = cipherSpi;
@@ -339,7 +340,7 @@ public class Cipher {
                                            "format:" + transformation);
         }
         if ((parts[0] == null) || (parts[0].isEmpty())) {
-            throw new NoSuchAlgorithmException("Invalid transformation:" +
+            throw new NoSuchAlgorithmException("Invalid transformation: " +
                                    "algorithm not specified-"
                                    + transformation);
         }
@@ -2832,7 +2833,7 @@ public class Cipher {
                 break;
             default:
                 // should never happen
-                sb.append("error:").append(Integer.toString(opmode));
+                sb.append("error:").append(opmode);
         }
         sb.append(", algorithm from: ").append(getProviderName());
         return sb.toString();

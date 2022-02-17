@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
 /**
  * @test
  * @bug 8012453 8016046
- * @run main/othervm -Djava.security.manager=allow ExecCommand
+ * @requires (os.family == "windows")
+ * @run testng/othervm -Djava.security.manager=allow ExecCommand
  * @summary workaround for legacy applications with Runtime.getRuntime().exec(String command)
  */
 
@@ -36,9 +37,25 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.AccessControlException;
+import java.security.Permission;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
 
+import org.testng.Assert;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
+
+@SuppressWarnings("removal")
 public class ExecCommand {
+
+    private static final String JDK_LANG_PROCESS_ALLOW_AMBIGUOUS_COMMANDS =
+            "jdk.lang.Process.allowAmbiguousCommands";
+
     static class SecurityMan extends SecurityManager {
         public static String unquote(String str)
         {
@@ -68,162 +85,189 @@ public class ExecCommand {
             super.checkExec(cmd);
         }
 
+        public void checkPermission(Permission perm) {
+            if (perm instanceof RuntimePermission ||
+                    perm instanceof java.lang.reflect.ReflectPermission)
+                return;
+            super.checkPermission(perm);
+        };
+        @Override public void checkRead(String file) {}       // TestNG reads files
+        @Override public void checkWrite(String file) {}      // TestNG writes files
         @Override public void checkDelete(String file) {}
-        @Override public void checkRead(String file) {}
+        @Override public void checkPropertiesAccess() {}
+        @Override public void checkPropertyAccess(String name) {}  // TestNG reads properties
     }
 
-    // Parameters for the Runtime.exec calls
-    private static final String TEST_RTE_ARG[] = {
-        "cmd /C dir > dirOut.txt",
-        "cmd /C dir > \".\\Program Files\\dirOut.txt\"",
-        ".\\Program Files\\do.cmd",
-        "\".\\Program Files\\doNot.cmd\" arg",
-        "\".\\Program Files\\do.cmd\" arg",
-        // compatibility
-        "\".\\Program.cmd\" arg",
-        ".\\Program.cmd arg",
-    };
-
-    private static final String doCmdCopy[] = {
+    private static final List<String> doCmdCopy = List.of(
         ".\\Program.cmd",
         ".\\Program Files\\doNot.cmd",
-        ".\\Program Files\\do.cmd",
-    };
+        ".\\Program Files\\do.cmd");
 
-    // Golden image for results
-    private static final String TEST_RTE_GI[][] = {
-                    //Def Legacy mode, Enforced mode, Set Legacy mode, Set Legacy mode & SM
-        // [cmd /C dir > dirOut.txt]
-        new String[]{"Success",
-                     "IOException",  // [cmd /C dir ">" dirOut.txt] no redirection
-                     "Success",
-                     "IOException"}, //SM - no legacy mode, bad command
+    @BeforeClass
+    void setup() throws Exception {
 
-        // [cmd /C dir > ".\Program Files\dirOut.txt"]
-        new String[]{"Success",
-                     "IOException",  // [cmd /C dir ">" ".\Program Files\dirOut.txt"] no redirection
-                     "Success",
-                     "IOException"}, //SM - no legacy mode, bad command
-
-        // [.\Program File\do.cmd]
-        new String[]{"Success",
-                     "IOException",  // [.\Program] not found
-                     "Success",
-                     "IOException"}, //SM - no legacy mode [.\Program] - OK
-
-        // [".\Program File\doNot.cmd" arg]
-        new String[]{"Success",
-                     "Success",
-                     "Success",
-                     "AccessControlException"}, //SM   - [".\Program] - OK,
-                                 //     [.\\Program Files\\doNot.cmd] - Fail
-
-        // [".\Program File\do.cmd" arg]
-        // AccessControlException
-        new String[]{"Success",
-                     "Success",
-                     "Success",
-                     "Success"}, //SM - [".\Program] - OK,
-                                 //     [.\\Program Files\\do.cmd] - OK
-
-        // compatibility
-        new String[]{"Success", "Success", "Success", "Success"}, //[".\Program.cmd"]
-        new String[]{"Success", "Success", "Success", "Success"}  //[.\Program.cmd]
-    };
-
-    private static void deleteOut(String path) {
-        try {
-            Files.delete(FileSystems.getDefault().getPath(path));
-        } catch (IOException ex) {
-            //that is OK
-        }
-    }
-    private static void checkOut(String path) throws FileNotFoundException {
-        if (Files.notExists(FileSystems.getDefault().getPath(path)))
-            throw new FileNotFoundException(path);
-    }
-
-    public static void main(String[] _args) throws Exception {
-        if (!System.getProperty("os.name").startsWith("Windows")) {
-            return;
-        }
-
-        // tear up
+        // Create files to be execute
         try {
             new File(".\\Program Files").mkdirs();
-            for (int i = 0; i < doCmdCopy.length; ++i) {
+            for (String cmdFile : doCmdCopy) {
                 try (BufferedWriter outCmd = new BufferedWriter(
-                             new FileWriter(doCmdCopy[i]))) {
+                        new FileWriter(cmdFile))) {
                     outCmd.write("@echo %1");
                 }
             }
         } catch (IOException e) {
             throw new Error(e.getMessage());
         }
+    }
 
-        // action
-        for (int k = 0; k < 4; ++k) {
-            switch (k) {
-            case 0:
-                // the "jdk.lang.Process.allowAmbiguousCommands" is undefined
-                // "true" by default with the legacy verification procedure
-                break;
-            case 1:
-                System.setProperty("jdk.lang.Process.allowAmbiguousCommands", "false");
-                break;
-            case 2:
-                System.setProperty("jdk.lang.Process.allowAmbiguousCommands", "");
-                break;
-            case 3:
-                System.setSecurityManager( new SecurityMan() );
-                break;
+    /**
+     * Sequence of tests and test results in the TEST_RTE_ARGS DataProvider below.
+     * The ordinals are used as indices in the lists of expected results.
+     */
+    private enum Mode {
+        UNSET_NO_SM, // 0) no SM and default allowAmbiguousCommands; equivalent to true
+        EMPTY_NO_SM, // 1) no SM and allowAmbiguousCommand is empty; equivalent to true
+        FALSE_NO_SM, // 2) no SM and allowAmbiguousCommands = false
+        EMPTY_SM,    // 3) SM and default allowAmbiguousCommands is empty; equivalent to false
+    };
+
+    /**
+     * The command for Runtime.exec calls to execute in each of 4 modes,
+     * and the expected exception for each mode.
+     * Modes above define the indices in the List of expected results for each mode.
+     */
+    @DataProvider(name = "TEST_RTE_ARGS")
+    Object[][] TEST_RTE_ARGS() {
+        return new Object[][]{
+                {"cmd /C dir > dirOut.txt",
+                        "dirOut.txt",
+                        Arrays.asList(null,
+                                null,
+                                FileNotFoundException.class,
+                                FileNotFoundException.class)
+                },
+                {"cmd /C dir > \".\\Program Files\\dirOut.txt\"",
+                        "./Program Files/dirOut.txt",
+                        Arrays.asList(null,
+                                null,
+                                FileNotFoundException.class,
+                                FileNotFoundException.class)
+                },
+                {".\\Program Files\\do.cmd",
+                        null,
+                        Arrays.asList(null,
+                                null,
+                                IOException.class,
+                                IOException.class)
+                },
+                {"\".\\Program Files\\doNot.cmd\" arg",
+                        null,
+                        Arrays.asList(null,
+                                null,
+                                null,
+                                AccessControlException.class)
+                },
+                {"\".\\Program Files\\do.cmd\" arg",
+                        null,
+                        // AccessControlException
+                        Arrays.asList(null, null, null, null)
+                },
+                {"\".\\Program.cmd\" arg",
+                        null,
+                        Arrays.asList(null, null, null, null)
+                },
+                {".\\Program.cmd arg",
+                        null,
+                        Arrays.asList(null, null, null, null)
+                },
+        };
+    }
+
+    /**
+     * Test each command with no SM and default allowAmbiguousCommands.
+     * @param command a command
+     * @param perModeExpected an expected Exception class or null
+     */
+    @Test(dataProvider = "TEST_RTE_ARGS")
+    void testCommandAmbiguousUnset(String command, String testFile, List<Class<Exception>> perModeExpected) {
+        // the JDK_LANG_PROCESS_ALLOW_AMBIGUOUS_COMMANDS is undefined
+        // "true" by default with the legacy verification procedure
+        Properties props = System.getProperties();
+        props.remove(JDK_LANG_PROCESS_ALLOW_AMBIGUOUS_COMMANDS);
+        System.setSecurityManager(null);
+
+        testCommandMode(command, "Ambiguous Unset", testFile,
+                perModeExpected.get(Mode.UNSET_NO_SM.ordinal()));
+    }
+
+    /**
+     * Test each command with no SM and allowAmbiguousCommand is empty.
+     * @param command a command
+     * @param perModeExpected an expected Exception class or null
+     */
+    @Test(dataProvider = "TEST_RTE_ARGS")
+    void testCommandAmbiguousEmpty(String command, String testFile, List<Class<Exception>> perModeExpected) {
+        Properties props = System.getProperties();
+        props.setProperty(JDK_LANG_PROCESS_ALLOW_AMBIGUOUS_COMMANDS, "");
+        System.setSecurityManager(null);
+        testCommandMode(command, "Ambiguous Empty", testFile,
+                perModeExpected.get(Mode.EMPTY_NO_SM.ordinal()));
+    }
+
+    /**
+     * Test each command with no SM and allowAmbiguousCommands = false.
+     * @param command a command
+     * @param perModeExpected an expected Exception class or null
+     */
+    @Test(dataProvider = "TEST_RTE_ARGS")
+    void testCommandAmbiguousFalse(String command, String testFile, List<Class<Exception>> perModeExpected) {
+        Properties props = System.getProperties();
+        props.setProperty(JDK_LANG_PROCESS_ALLOW_AMBIGUOUS_COMMANDS, "false");
+        System.setSecurityManager(null);
+
+        testCommandMode(command, "Ambiguous false", testFile,
+                perModeExpected.get(Mode.FALSE_NO_SM.ordinal()));
+    }
+
+    /**
+     * Test each command with SecurityManager and default allowAmbiguousCommands is empty.
+     * @param command a command
+     * @param perModeExpected an expected Exception class or null
+     */
+    @Test(dataProvider = "TEST_RTE_ARGS")
+    void testCommandWithSM(String command, String testFile, List<Class<Exception>> perModeExpected) {
+        Properties props = System.getProperties();
+        props.setProperty(JDK_LANG_PROCESS_ALLOW_AMBIGUOUS_COMMANDS, "");
+        System.setSecurityManager(new SecurityMan());
+
+        testCommandMode(command, "SecurityManager and Ambiguous Empty", testFile,
+                perModeExpected.get(Mode.EMPTY_SM.ordinal()));
+    }
+
+    private void testCommandMode(String command, String kind,
+                                 String testFile,
+                                 Class<Exception> perModeExpected) {
+        try {
+            // Ensure the file that will be created does not exist.
+            if (testFile != null) {
+                Files.deleteIfExists(Path.of(testFile));
             }
-            for (int i = 0; i < TEST_RTE_ARG.length; ++i) {
-                String outRes;
-                try {
-                    // tear up
-                    switch (i) {
-                    case 0:
-                        // [cmd /C dir > dirOut.txt]
-                        deleteOut(".\\dirOut.txt");
-                        break;
-                    case 1:
-                        // [cmd /C dir > ".\Program Files\dirOut.txt"]
-                        deleteOut(".\\Program Files\\dirOut.txt");
-                        break;
-                    }
 
-                    Process exec = Runtime.getRuntime().exec(TEST_RTE_ARG[i]);
-                    exec.waitFor();
+            Process exec = Runtime.getRuntime().exec(command);
+            exec.waitFor();
 
-                    //exteded check
-                    switch (i) {
-                    case 0:
-                        // [cmd /C dir > dirOut.txt]
-                        checkOut(".\\dirOut.txt");
-                        break;
-                    case 1:
-                        // [cmd /C dir > ".\Program Files\dirOut.txt"]
-                        checkOut(".\\Program Files\\dirOut.txt");
-                        break;
-                    }
-                    outRes = "Success";
-                } catch (IOException ioe) {
-                    outRes = "IOException: " + ioe.getMessage();
-                } catch (IllegalArgumentException iae) {
-                    outRes = "IllegalArgumentException: " + iae.getMessage();
-                } catch (AccessControlException se) {
-                    outRes = "AccessControlException: " + se.getMessage();
-                }
-
-                if (!outRes.startsWith(TEST_RTE_GI[i][k])) {
-                    throw new Error("Unexpected output! Step" + k + ":" + i
-                                + "\nArgument: " + TEST_RTE_ARG[i]
-                                + "\nExpected: " + TEST_RTE_GI[i][k]
-                                + "\n  Output: " + outRes);
-                } else {
-                    System.out.println("RTE OK:" + TEST_RTE_ARG[i]);
-                }
+            // extended check
+            if (testFile != null) {
+                if (Files.notExists(FileSystems.getDefault().getPath(testFile)))
+                    throw new FileNotFoundException(testFile);
+            }
+            Assert.assertNull(perModeExpected, "Missing exception");
+        } catch (Exception ex) {
+            if (!ex.getClass().equals(perModeExpected)) {
+                Assert.fail("Unexpected exception! Step " + kind + ":"
+                        + "\nArgument: " + command
+                        + "\nExpected: " + perModeExpected
+                        + "\n  Output: " + ex, ex);
             }
         }
     }

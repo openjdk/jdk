@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,11 +41,11 @@ class verification_type_info {
   address tag_addr() const { return (address)this; }
   address cpool_index_addr() const { return tag_addr() + sizeof(u1); }
   address bci_addr() const { return cpool_index_addr(); }
+  NONCOPYABLE(verification_type_info);
 
  protected:
   // No constructors  - should be 'private', but GCC issues a warning if it is
   verification_type_info() {}
-  verification_type_info(const verification_type_info&) {}
 
  public:
 
@@ -169,12 +169,13 @@ FOR_EACH_STACKMAP_FRAME_TYPE(SM_FORWARD_DECL, x, x)
 #undef SM_FORWARD_DECL
 
 class stack_map_frame {
+  NONCOPYABLE(stack_map_frame);
+
  protected:
   address frame_type_addr() const { return (address)this; }
 
   // No constructors  - should be 'private', but GCC issues a warning if it is
   stack_map_frame() {}
-  stack_map_frame(const stack_map_frame&) {}
 
  public:
 
@@ -901,11 +902,11 @@ class stack_map_table {
   address entries_addr() const {
     return number_of_entries_addr() + sizeof(u2);
   }
+  NONCOPYABLE(stack_map_table);
 
  protected:
   // No constructors  - should be 'private', but GCC issues a warning if it is
   stack_map_table() {}
-  stack_map_table(const stack_map_table&) {}
 
  public:
 
@@ -933,11 +934,11 @@ class stack_map_table_attribute {
       return name_index_addr() + sizeof(u2); }
   address stack_map_table_addr() const {
       return attribute_length_addr() + sizeof(u4); }
+  NONCOPYABLE(stack_map_table_attribute);
 
  protected:
   // No constructors  - should be 'private', but GCC issues a warning if it is
   stack_map_table_attribute() {}
-  stack_map_table_attribute(const stack_map_table_attribute&) {}
 
  public:
 

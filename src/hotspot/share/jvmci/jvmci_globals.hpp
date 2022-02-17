@@ -30,6 +30,8 @@
 
 class fileStream;
 
+#define LIBJVMCI_ERR_FILE "hs_err_pid%p_libjvmci.log"
+
 //
 // Declare all global flags used by the JVMCI compiler. Only flags that need
 // to be accessible to the JVMCI C++ code should be defined here.
@@ -122,6 +124,11 @@ class fileStream;
           "instead of loading it from class files and executing it "        \
           "on the HotSpot heap. Defaults to true if EnableJVMCIProduct is " \
           "true and a JVMCI native library is available.")                  \
+                                                                            \
+  product(ccstr, JVMCINativeLibraryErrorFile, NULL, EXPERIMENTAL,           \
+          "If an error in the JVMCI native library occurs, save the "       \
+          "error data to this file"                                         \
+          "[default: ./" LIBJVMCI_ERR_FILE "] (%p replaced with pid)")      \
                                                                             \
   NOT_COMPILER2(product(bool, UseMultiplyToLenIntrinsic, false, DIAGNOSTIC, \
           "Enables intrinsification of BigInteger.multiplyToLen()"))        \

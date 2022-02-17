@@ -136,8 +136,12 @@ inline uintptr_t ZForwarding::insert(uintptr_t from_index, uintptr_t to_offset, 
   const ZForwardingEntry new_entry(from_index, to_offset);
   const ZForwardingEntry old_entry; // Empty
 
+  // Make sure that object copy is finished
+  // before forwarding table installation
+  OrderAccess::release();
+
   for (;;) {
-    const ZForwardingEntry prev_entry = Atomic::cmpxchg(entries() + *cursor, old_entry, new_entry);
+    const ZForwardingEntry prev_entry = Atomic::cmpxchg(entries() + *cursor, old_entry, new_entry, memory_order_relaxed);
     if (!prev_entry.populated()) {
       // Success
       return to_offset;

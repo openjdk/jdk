@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public class bug4235420 {
             System.out.println("Testing L&F: " + LF.getClassName());
 
             if ("Nimbus".equals(UIManager.getLookAndFeel().getName()) ||
-                "GTK".equals(UIManager.getLookAndFeel().getName())) {
+                "GTK".equals(UIManager.getLookAndFeel().getID())) {
                 System.out.println("The test is skipped for Nimbus and GTK");
 
                 continue;

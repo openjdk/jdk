@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,8 +85,6 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                      "java.lang.constant.ConstantDesc",
                      "java.io.Serializable");
 
-    private static final Set<String> previewModifiers = Collections.emptySet();
-
     protected final TypeElement typeElement;
 
     protected final ClassTree classtree;
@@ -107,8 +105,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     @Override
     public Content getHeader(String header) {
         HtmlTree bodyTree = getBody(getWindowTitle(utils.getSimpleName(typeElement)));
-        HtmlTree div = new HtmlTree(TagName.DIV);
-        div.setStyle(HtmlStyle.header);
+        HtmlTree div = HtmlTree.DIV(HtmlStyle.header);
         if (configuration.showModules) {
             ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(typeElement);
             Content classModuleLabel = HtmlTree.SPAN(HtmlStyle.moduleLabelInType, contents.moduleLabel);
@@ -197,28 +194,9 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     }
 
     @Override
-    public void addClassSignature(String modifiers, Content classInfoTree) {
-        ContentBuilder mods = new ContentBuilder();
-        String sep = null;
-        for (String modifiersPart : modifiers.split(" ")) {
-            if (sep != null) {
-                mods.add(sep);
-            }
-            if (previewModifiers.contains(modifiersPart)) {
-                mods.add(modifiersPart);
-                mods.add(HtmlTree.SUP(links.createLink(htmlIds.forPreviewSection(typeElement),
-                                                       contents.previewMark)));
-            } else {
-                mods.add(modifiersPart);
-            }
-            sep = " ";
-        }
-        if (modifiers.endsWith(" ")) {
-            mods.add(" ");
-        }
+    public void addClassSignature(Content classInfoTree) {
         classInfoTree.add(new HtmlTree(TagName.HR));
         classInfoTree.add(new Signatures.TypeSignature(typeElement, this)
-                .setModifiers(mods)
                 .toContent());
     }
 
@@ -402,10 +380,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                 dl.add(HtmlTree.DT(utils.isInterface(e)
                         ? contents.enclosingInterfaceLabel
                         : contents.enclosingClassLabel));
-                Content dd = new HtmlTree(TagName.DD);
-                dd.add(getLink(new HtmlLinkInfo(configuration,
-                        HtmlLinkInfo.Kind.CLASS, e)));
-                dl.add(dd);
+                dl.add(HtmlTree.DD(getClassLinks(HtmlLinkInfo.Kind.CLASS, List.of(e))));
                 classInfoTree.add(dl);
                 return null;
             }
@@ -425,7 +400,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     }
 
     public boolean isFunctionalInterface() {
-        List<? extends AnnotationMirror> annotationMirrors = ((Element) typeElement).getAnnotationMirrors();
+        List<? extends AnnotationMirror> annotationMirrors = typeElement.getAnnotationMirrors();
         for (AnnotationMirror anno : annotationMirrors) {
             if (utils.isFunctionalInterface(anno)) {
                 return true;

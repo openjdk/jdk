@@ -1156,6 +1156,13 @@ public class JPEGImageReader extends ImageReader {
                 throw new IIOException("Unsupported Image Type");
             }
 
+            if ((long)width * height > Integer.MAX_VALUE - 2) {
+                // We are not able to properly decode image that has number
+                // of pixels greater than Integer.MAX_VALUE - 2
+                throw new IIOException("Can not read image of the size "
+                        + width + " by " + height);
+            }
+
             image = getDestination(param, imageTypes, width, height);
             imRas = image.getRaster();
 
@@ -1275,9 +1282,8 @@ public class JPEGImageReader extends ImageReader {
         // and set knownPassCount
         if (imageIndex == imageMetadataIndex) { // We have metadata
             knownPassCount = 0;
-            for (Iterator<MarkerSegment> iter =
-                    imageMetadata.markerSequence.iterator(); iter.hasNext();) {
-                if (iter.next() instanceof SOSMarkerSegment) {
+            for (MarkerSegment markerSegment : imageMetadata.markerSequence) {
+                if (markerSegment instanceof SOSMarkerSegment) {
                     knownPassCount++;
                 }
             }

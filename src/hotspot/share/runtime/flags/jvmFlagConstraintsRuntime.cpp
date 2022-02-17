@@ -65,62 +65,6 @@ JVMFlag::Error ContendedPaddingWidthConstraintFunc(intx value, bool verbose) {
   }
 }
 
-JVMFlag::Error BiasedLockingBulkRebiasThresholdFunc(intx value, bool verbose) {
-  if (value > BiasedLockingBulkRevokeThreshold) {
-    JVMFlag::printError(verbose,
-                        "BiasedLockingBulkRebiasThreshold (" INTX_FORMAT ") must be "
-                        "less than or equal to BiasedLockingBulkRevokeThreshold (" INTX_FORMAT ")\n",
-                        value, BiasedLockingBulkRevokeThreshold);
-    return JVMFlag::VIOLATES_CONSTRAINT;
-  } else {
-    return JVMFlag::SUCCESS;
-  }
-}
-
-JVMFlag::Error BiasedLockingStartupDelayFunc(intx value, bool verbose) {
-  if ((value % PeriodicTask::interval_gran) != 0) {
-    JVMFlag::printError(verbose,
-                        "BiasedLockingStartupDelay (" INTX_FORMAT ") must be "
-                        "evenly divisible by PeriodicTask::interval_gran (%d)\n",
-                        value, PeriodicTask::interval_gran);
-    return JVMFlag::VIOLATES_CONSTRAINT;
-  } else {
-    return JVMFlag::SUCCESS;
-  }
-}
-
-JVMFlag::Error BiasedLockingBulkRevokeThresholdFunc(intx value, bool verbose) {
-  if (value < BiasedLockingBulkRebiasThreshold) {
-    JVMFlag::printError(verbose,
-                        "BiasedLockingBulkRevokeThreshold (" INTX_FORMAT ") must be "
-                        "greater than or equal to BiasedLockingBulkRebiasThreshold (" INTX_FORMAT ")\n",
-                        value, BiasedLockingBulkRebiasThreshold);
-    return JVMFlag::VIOLATES_CONSTRAINT;
-  } else if ((double)value/(double)BiasedLockingDecayTime > 0.1) {
-    JVMFlag::printError(verbose,
-                        "The ratio of BiasedLockingBulkRevokeThreshold (" INTX_FORMAT ")"
-                        " to BiasedLockingDecayTime (" INTX_FORMAT ") must be "
-                        "less than or equal to 0.1\n",
-                        value, BiasedLockingBulkRebiasThreshold);
-    return JVMFlag::VIOLATES_CONSTRAINT;
-  } else {
-    return JVMFlag::SUCCESS;
-  }
-}
-
-JVMFlag::Error BiasedLockingDecayTimeFunc(intx value, bool verbose) {
-  if (BiasedLockingBulkRebiasThreshold/(double)value > 0.1) {
-    JVMFlag::printError(verbose,
-                        "The ratio of BiasedLockingBulkRebiasThreshold (" INTX_FORMAT ")"
-                        " to BiasedLockingDecayTime (" INTX_FORMAT ") must be "
-                        "less than or equal to 0.1\n",
-                        BiasedLockingBulkRebiasThreshold, value);
-    return JVMFlag::VIOLATES_CONSTRAINT;
-  } else {
-    return JVMFlag::SUCCESS;
-  }
-}
-
 JVMFlag::Error PerfDataSamplingIntervalFunc(intx value, bool verbose) {
   if ((value % PeriodicTask::interval_gran != 0)) {
     JVMFlag::printError(verbose,

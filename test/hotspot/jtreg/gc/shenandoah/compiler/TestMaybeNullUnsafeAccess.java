@@ -22,7 +22,7 @@
  */
 
 /**
- * @test TestMaybeNullUnsafeAccess
+ * @test
  * @summary cast before unsafe access moved in dominating null check null path causes crash
  * @requires vm.gc.Shenandoah
  * @modules java.base/jdk.internal.misc:+open

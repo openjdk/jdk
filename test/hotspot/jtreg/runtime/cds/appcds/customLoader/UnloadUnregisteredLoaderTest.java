@@ -39,10 +39,15 @@
  * @run driver UnloadUnregisteredLoaderTest
  */
 
+import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.process.OutputAnalyzer;
 import sun.hotspot.WhiteBox;
 
 public class UnloadUnregisteredLoaderTest {
+    static {
+        // EpsilonGC does not support class unloading.
+        CDSOptions.disableRuntimePrefixForEpsilonGC();
+    }
     public static void main(String[] args) throws Exception {
         String appJar1 = JarBuilder.build("UnloadUnregisteredLoader_app1", "UnloadUnregisteredLoader");
         String appJar2 = JarBuilder.build(true, "UnloadUnregisteredLoader_app2",

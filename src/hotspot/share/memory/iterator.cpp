@@ -40,10 +40,6 @@ void ObjectToOopClosure::do_object(oop obj) {
   obj->oop_iterate(_cl);
 }
 
-void VoidClosure::do_void() {
-  ShouldNotCallThis();
-}
-
 void CodeBlobToOopClosure::do_nmethod(nmethod* nm) {
   nm->oops_do(_cl);
   if (_fix_relocations) {

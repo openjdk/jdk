@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -30,7 +32,7 @@ import jdk.test.lib.process.ProcessTools;
  *          generates a warning when not done from a boot class
  *
  * @library /test/lib
- * @run main/othervm/native TestRegisterNativesWarning
+ * @run main/native TestRegisterNativesWarning
  */
 
 public class TestRegisterNativesWarning {
@@ -61,15 +63,17 @@ public class TestRegisterNativesWarning {
     public static void main(String[] args) throws Exception {
         String warning = "Re-registering of platform native method: java.lang.Thread.yield()V from code in a different classloader";
 
-        OutputAnalyzer output = ProcessTools.executeTestJvm(Tester.class.getName());
+        String cp = Utils.TEST_CLASS_PATH;
+        String libp = Utils.TEST_NATIVE_PATH;
+        OutputAnalyzer output = ProcessTools.executeTestJvm("-Djava.library.path=" + libp,
+                                                            Tester.class.getName());
         output.shouldContain(warning);
         output.shouldHaveExitValue(0);
         output.reportDiagnosticSummary();
 
         // If we run everything from the "boot" loader there should be no warning
-        String cp = System.getProperty("test.class.path");
-        String libp = System.getProperty("java.library.path");
-        output = ProcessTools.executeTestJvm("-Xbootclasspath/a:" + cp,
+        output = ProcessTools.executeTestJvm("-Djava.library.path=" + libp,
+                                             "-Xbootclasspath/a:" + cp,
                                              "-Dsun.boot.library.path=" + libp,
                                              Tester.class.getName());
         output.shouldNotContain(warning);

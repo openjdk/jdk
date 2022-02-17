@@ -125,8 +125,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
                 @SuppressWarnings("removal")
                 String systemFonts = AccessController.doPrivileged(
                     new GetPropertyAction("swing.useSystemFontSettings"));
-                useSystemFonts = (systemFonts != null &&
-                               (Boolean.valueOf(systemFonts).booleanValue()));
+                useSystemFonts = Boolean.parseBoolean(systemFonts);
             }
             checkedWindows = true;
         }
@@ -1398,8 +1397,8 @@ public class MetalLookAndFeel extends BasicLookAndFeel
             "Tree.openIcon",(LazyValue) t -> MetalIconFactory.getTreeFolderIcon(),
             "Tree.closedIcon",(LazyValue) t -> MetalIconFactory.getTreeFolderIcon(),
             "Tree.leafIcon",(LazyValue) t -> MetalIconFactory.getTreeLeafIcon(),
-            "Tree.expandedIcon",(LazyValue) t -> MetalIconFactory.getTreeControlIcon(Boolean.valueOf(MetalIconFactory.DARK)),
-            "Tree.collapsedIcon",(LazyValue) t -> MetalIconFactory.getTreeControlIcon(Boolean.valueOf( MetalIconFactory.LIGHT )),
+            "Tree.expandedIcon",(LazyValue) t -> MetalIconFactory.getTreeControlIcon(MetalIconFactory.DARK),
+            "Tree.collapsedIcon",(LazyValue) t -> MetalIconFactory.getTreeControlIcon(MetalIconFactory.LIGHT),
 
             "Tree.line", primaryControl, // horiz lines
             "Tree.hash", primaryControl,  // legs

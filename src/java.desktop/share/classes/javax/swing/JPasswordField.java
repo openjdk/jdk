@@ -510,20 +510,19 @@ public class JPasswordField extends JTextField {
          * @since 1.6
          */
         public String getAtIndex(int part, int index) {
-           String str = null;
             if (part == AccessibleText.CHARACTER) {
-                str = super.getAtIndex(part, index);
+                return getEchoString(super.getAtIndex(part, index));
             } else {
                 // Treat the text displayed in the JPasswordField
                 // as one word and sentence.
-                char[] password = getPassword();
-                if (password == null ||
-                    index < 0 || index >= password.length) {
+                int length = getDocument().getLength();
+                if (index < 0 || index >= length) {
                     return null;
                 }
-                str = new String(password);
+                char[] password = new char[length];
+                Arrays.fill(password, getEchoChar());
+                return new String(password);
             }
-            return getEchoString(str);
         }
 
         /**
@@ -544,8 +543,7 @@ public class JPasswordField extends JTextField {
          */
         public String getAfterIndex(int part, int index) {
             if (part == AccessibleText.CHARACTER) {
-                String str = super.getAfterIndex(part, index);
-                return getEchoString(str);
+                return getEchoString(super.getAfterIndex(part, index));
             } else {
                 // There is no word or sentence after the text
                 // displayed in the JPasswordField.
@@ -571,8 +569,7 @@ public class JPasswordField extends JTextField {
          */
         public String getBeforeIndex(int part, int index) {
             if (part == AccessibleText.CHARACTER) {
-                String str = super.getBeforeIndex(part, index);
-                return getEchoString(str);
+                return getEchoString(super.getBeforeIndex(part, index));
             } else {
                 // There is no word or sentence before the text
                 // displayed in the JPasswordField.
@@ -627,14 +624,14 @@ public class JPasswordField extends JTextField {
             } else {
                 // Treat the text displayed in the JPasswordField
                 // as one word, sentence, line and attribute run
-                char[] password = getPassword();
-                if (password == null ||
-                    index < 0 || index >= password.length) {
+                int length = getDocument().getLength();
+                if (index < 0 || index >= length) {
                     return null;
                 }
+                char[] password = new char[length];
+                Arrays.fill(password, getEchoChar());
                 String text = new String(password);
-                return new AccessibleTextSequence(0, password.length - 1,
-                                                  getEchoString(text));
+                return new AccessibleTextSequence(0, password.length - 1, text);
             }
         }
 

@@ -39,11 +39,16 @@
  * @run driver HelloCustom
  */
 
+import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import sun.hotspot.WhiteBox;
 
 public class HelloCustom {
+    static {
+        // EpsilonGC does not support class unloading.
+        CDSOptions.disableRuntimePrefixForEpsilonGC();
+    }
     public static void main(String[] args) throws Exception {
         run();
     }

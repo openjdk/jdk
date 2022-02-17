@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,32 +177,7 @@ class SocketAdaptor
             throw new SocketException("Socket is not connected");
         if (!sc.isInputOpen())
             throw new SocketException("Socket input is shutdown");
-        return new InputStream() {
-            @Override
-            public int read() throws IOException {
-                byte[] a = new byte[1];
-                int n = read(a, 0, 1);
-                return (n > 0) ? (a[0] & 0xff) : -1;
-            }
-            @Override
-            public int read(byte[] b, int off, int len) throws IOException {
-                int timeout = SocketAdaptor.this.timeout;
-                if (timeout > 0) {
-                    long nanos = MILLISECONDS.toNanos(timeout);
-                    return sc.blockingRead(b, off, len, nanos);
-                } else {
-                    return sc.blockingRead(b, off, len, 0);
-                }
-            }
-            @Override
-            public int available() throws IOException {
-                return sc.available();
-            }
-            @Override
-            public void close() throws IOException {
-                sc.close();
-            }
-        };
+        return new SocketInputStream(sc, () -> timeout);
     }
 
     @Override
@@ -213,21 +188,7 @@ class SocketAdaptor
             throw new SocketException("Socket is not connected");
         if (!sc.isOutputOpen())
             throw new SocketException("Socket output is shutdown");
-        return new OutputStream() {
-            @Override
-            public void write(int b) throws IOException {
-                byte[] a = new byte[]{(byte) b};
-                write(a, 0, 1);
-            }
-            @Override
-            public void write(byte[] b, int off, int len) throws IOException {
-                sc.blockingWriteFully(b, off, len);
-            }
-            @Override
-            public void close() throws IOException {
-                sc.close();
-            }
-        };
+        return new SocketOutputStream(sc);
     }
 
     private void setBooleanOption(SocketOption<Boolean> name, boolean value)

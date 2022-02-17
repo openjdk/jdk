@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.reflect.Field;
 import java.nio.file.Path;
 
 /**
@@ -101,33 +100,6 @@ public class GatherProcessInfoTimeoutHandler extends TimeoutHandler {
             }
         }
     }
-
-    @Override
-    protected long getProcessId(Process process) {
-        long result = super.getProcessId(process);
-        if (result == 0L) {
-            /* jtreg didn't find pid, most probably we are on JDK < 9
-               there is no Process::getPid */
-            if (HAS_NATIVE_LIBRARY && "windows".equals(OS.current().family)) {
-                try {
-                    Field field = process.getClass().getDeclaredField("handle");
-                    boolean old = field.canAccess(process);
-                    try {
-                        field.setAccessible(true);
-                        long handle = field.getLong(process);
-                        result = getWin32Pid(handle);
-                    } finally {
-                        field.setAccessible(old);
-                    }
-                } catch (ReflectiveOperationException e) {
-                    e.printStackTrace(log);
-                }
-            }
-        }
-        return result;
-    }
-
-    private native long getWin32Pid(long handle);
 
     private void runGatherer(String name, Path workDir, PrintWriter log,
                              PrintWriter out, long pid) {

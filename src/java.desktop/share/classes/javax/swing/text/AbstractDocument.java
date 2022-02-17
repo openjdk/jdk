@@ -37,6 +37,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.text.Bidi;
+import java.util.ArrayList;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.EventListener;
@@ -1083,7 +1084,7 @@ public abstract class AbstractDocument implements Document, Serializable {
         byte[] levels = calculateBidiLevels( firstPStart, lastPEnd );
 
 
-        Vector<Element> newElements = new Vector<Element>();
+        ArrayList<Element> newElements = new ArrayList<Element>();
 
         // Calculate the first span of characters in the affected range with
         // the same bidi level.  If this level is the same as the level of the
@@ -1102,9 +1103,9 @@ public abstract class AbstractDocument implements Document, Serializable {
             if( prevLevel==levels[0] ) {
                 firstSpanStart = prevElem.getStartOffset();
             } else if( prevElem.getEndOffset() > firstPStart ) {
-                newElements.addElement(new BidiElement(bidiRoot,
-                                                       prevElem.getStartOffset(),
-                                                       firstPStart, prevLevel));
+                newElements.add(new BidiElement(bidiRoot,
+                                                prevElem.getStartOffset(),
+                                                firstPStart, prevLevel));
             } else {
                 removeFromIndex++;
             }
@@ -1151,32 +1152,32 @@ public abstract class AbstractDocument implements Document, Serializable {
         // Otherwise, create elements for the first and last spans as well as
         // any spans in between.
         if((firstSpanEnd==lastSpanStart)&&(levels[0]==levels[levels.length-1])){
-            newElements.addElement(new BidiElement(bidiRoot, firstSpanStart,
-                                                   lastSpanEnd, levels[0]));
+            newElements.add(new BidiElement(bidiRoot, firstSpanStart,
+                                            lastSpanEnd, levels[0]));
         } else {
             // Create an element for the first span.
-            newElements.addElement(new BidiElement(bidiRoot, firstSpanStart,
-                                                   firstSpanEnd+firstPStart,
-                                                   levels[0]));
+            newElements.add(new BidiElement(bidiRoot, firstSpanStart,
+                                            firstSpanEnd+firstPStart,
+                                            levels[0]));
             // Create elements for the spans in between the first and last
             for( int i=firstSpanEnd; i<lastSpanStart; ) {
                 //System.out.println("executed line 872");
                 int j;
                 for( j=i;  (j<levels.length) && (levels[j] == levels[i]); j++ );
-                newElements.addElement(new BidiElement(bidiRoot, firstPStart+i,
-                                                       firstPStart+j,
-                                                       (int)levels[i]));
+                newElements.add(new BidiElement(bidiRoot, firstPStart+i,
+                                                firstPStart+j,
+                                                (int)levels[i]));
                 i=j;
             }
             // Create an element for the last span.
-            newElements.addElement(new BidiElement(bidiRoot,
-                                                   lastSpanStart+firstPStart,
-                                                   lastSpanEnd,
-                                                   levels[levels.length-1]));
+            newElements.add(new BidiElement(bidiRoot,
+                                            lastSpanStart+firstPStart,
+                                            lastSpanEnd,
+                                            levels[levels.length-1]));
         }
 
         if( newNextElem != null )
-            newElements.addElement( newNextElem );
+            newElements.add( newNextElem );
 
 
         // Calculate the set of existing bidi elements which must be
@@ -1190,8 +1191,7 @@ public abstract class AbstractDocument implements Document, Serializable {
             removedElems[i] = bidiRoot.getElement(removeFromIndex+i);
         }
 
-        Element[] addedElems = new Element[ newElements.size() ];
-        newElements.copyInto( addedElems );
+        Element[] addedElems = newElements.toArray(new Element[0]);
 
         // Update the change record.
         ElementEdit ee = new ElementEdit( bidiRoot, removeFromIndex,

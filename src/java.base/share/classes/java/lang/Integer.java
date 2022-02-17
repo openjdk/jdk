@@ -517,13 +517,9 @@ public final class Integer extends Number
         }
 
         // We know there are at most two digits left at this point.
-        q = i / 10;
-        r = (q * 10) - i;
-        buf[--charPos] = (byte)('0' + r);
-
-        // Whatever left is the remaining digit.
-        if (q < 0) {
-            buf[--charPos] = (byte)('0' - q);
+        buf[--charPos] = DigitOnes[-i];
+        if (i < -9) {
+            buf[--charPos] = DigitTens[-i];
         }
 
         if (negative) {
@@ -709,10 +705,8 @@ public final class Integer extends Number
     public static int parseInt(CharSequence s, int beginIndex, int endIndex, int radix)
                 throws NumberFormatException {
         Objects.requireNonNull(s);
+        Objects.checkFromToIndex(beginIndex, endIndex, s.length());
 
-        if (beginIndex < 0 || beginIndex > endIndex || endIndex > s.length()) {
-            throw new IndexOutOfBoundsException();
-        }
         if (radix < Character.MIN_RADIX) {
             throw new NumberFormatException("radix " + radix +
                                             " less than Character.MIN_RADIX");
@@ -892,10 +886,8 @@ public final class Integer extends Number
     public static int parseUnsignedInt(CharSequence s, int beginIndex, int endIndex, int radix)
                 throws NumberFormatException {
         Objects.requireNonNull(s);
+        Objects.checkFromToIndex(beginIndex, endIndex, s.length());
 
-        if (beginIndex < 0 || beginIndex > endIndex || endIndex > s.length()) {
-            throw new IndexOutOfBoundsException();
-        }
         int start = beginIndex, len = endIndex - beginIndex;
 
         if (len > 0) {
@@ -1417,7 +1409,7 @@ public final class Integer extends Number
         int radix = 10;
         int index = 0;
         boolean negative = false;
-        Integer result;
+        int result;
 
         if (nm.isEmpty())
             throw new NumberFormatException("Zero length string");
@@ -1447,15 +1439,15 @@ public final class Integer extends Number
             throw new NumberFormatException("Sign character in wrong position");
 
         try {
-            result = Integer.valueOf(nm.substring(index), radix);
-            result = negative ? Integer.valueOf(-result.intValue()) : result;
+            result = parseInt(nm, index, nm.length(), radix);
+            result = negative ? -result : result;
         } catch (NumberFormatException e) {
             // If number is Integer.MIN_VALUE, we'll end up here. The next line
             // handles this case, and causes any genuine format error to be
             // rethrown.
             String constant = negative ? ("-" + nm.substring(index))
                                        : nm.substring(index);
-            result = Integer.valueOf(constant, radix);
+            result = parseInt(constant, radix);
         }
         return result;
     }

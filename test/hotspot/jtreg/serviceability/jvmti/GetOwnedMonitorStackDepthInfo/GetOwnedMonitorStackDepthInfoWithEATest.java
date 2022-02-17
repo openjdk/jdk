@@ -40,7 +40,7 @@
  *                  -XX:-TieredCompilation
  *                  -Xbatch
  *                  -XX:CICompilerCount=1
- *                  -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks -XX:+UseBiasedLocking
+ *                  -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
  *                  GetOwnedMonitorStackDepthInfoWithEATest
  * @run main/othervm/native
  *                  -agentlib:GetOwnedMonitorStackDepthInfoWithEATest
@@ -52,7 +52,7 @@
  *                  -XX:-TieredCompilation
  *                  -Xbatch
  *                  -XX:CICompilerCount=1
- *                  -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:-EliminateLocks -XX:+EliminateNestedLocks -XX:+UseBiasedLocking -XX:-UseOptoBiasInlining
+ *                  -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:-EliminateLocks -XX:+EliminateNestedLocks
  *                  GetOwnedMonitorStackDepthInfoWithEATest
  * @run main/othervm/native
  *                  -agentlib:GetOwnedMonitorStackDepthInfoWithEATest
@@ -64,7 +64,7 @@
  *                  -XX:-TieredCompilation
  *                  -Xbatch
  *                  -XX:CICompilerCount=1
- *                  -XX:+DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks -XX:+UseBiasedLocking
+ *                  -XX:+DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
  *                  GetOwnedMonitorStackDepthInfoWithEATest
  * @run main/othervm/native
  *                  -agentlib:GetOwnedMonitorStackDepthInfoWithEATest
@@ -76,43 +76,7 @@
  *                  -XX:-TieredCompilation
  *                  -Xbatch
  *                  -XX:CICompilerCount=1
- *                  -XX:-DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks -XX:+UseBiasedLocking
- *                  GetOwnedMonitorStackDepthInfoWithEATest
- * @run main/othervm/native
- *                  -agentlib:GetOwnedMonitorStackDepthInfoWithEATest
- *                  -XX:+UnlockDiagnosticVMOptions
- *                  -Xms128m -Xmx128m
- *                  -XX:CompileCommand=dontinline,*::dontinline_*
- *                  -XX:+PrintCompilation
- *                  -XX:+PrintInlining
- *                  -XX:-TieredCompilation
- *                  -Xbatch
- *                  -XX:CICompilerCount=1
- *                  -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks -XX:-UseBiasedLocking
- *                  GetOwnedMonitorStackDepthInfoWithEATest
- * @run main/othervm/native
- *                  -agentlib:GetOwnedMonitorStackDepthInfoWithEATest
- *                  -XX:+UnlockDiagnosticVMOptions
- *                  -Xms128m -Xmx128m
- *                  -XX:CompileCommand=dontinline,*::dontinline_*
- *                  -XX:+PrintCompilation
- *                  -XX:+PrintInlining
- *                  -XX:-TieredCompilation
- *                  -Xbatch
- *                  -XX:CICompilerCount=1
- *                  -XX:+DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks -XX:-UseBiasedLocking
- *                  GetOwnedMonitorStackDepthInfoWithEATest
- * @run main/othervm/native
- *                  -agentlib:GetOwnedMonitorStackDepthInfoWithEATest
- *                  -XX:+UnlockDiagnosticVMOptions
- *                  -Xms128m -Xmx128m
- *                  -XX:CompileCommand=dontinline,*::dontinline_*
- *                  -XX:+PrintCompilation
- *                  -XX:+PrintInlining
- *                  -XX:-TieredCompilation
- *                  -Xbatch
- *                  -XX:CICompilerCount=1
- *                  -XX:-DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks -XX:-UseBiasedLocking
+ *                  -XX:-DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
  *                  GetOwnedMonitorStackDepthInfoWithEATest
  */
 

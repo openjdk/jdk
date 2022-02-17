@@ -38,10 +38,10 @@
 
   void explicit_null_check(Register addr, CodeEmitInfo* info);
 
-  int store(LIR_Opr from_reg, Register base, int offset, BasicType type, bool wide, bool unaligned);
+  int store(LIR_Opr from_reg, Register base, int offset, BasicType type, bool wide);
   int store(LIR_Opr from_reg, Register base, Register disp, BasicType type, bool wide);
 
-  int load(Register base, int offset, LIR_Opr to_reg, BasicType type, bool wide, bool unaligned);
+  int load(Register base, int offset, LIR_Opr to_reg, BasicType type, bool wide);
   int load(Register base, Register disp, LIR_Opr to_reg, BasicType type, bool wide);
 
   int shift_amount(BasicType t);

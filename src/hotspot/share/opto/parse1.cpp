@@ -1193,17 +1193,22 @@ void Parse::do_method_entry() {
     make_dtrace_method_entry(method());
   }
 
+#ifdef ASSERT
   // Narrow receiver type when it is too broad for the method being parsed.
-  ciInstanceKlass* callee_holder = method()->holder();
   if (!method()->is_static()) {
+    ciInstanceKlass* callee_holder = method()->holder();
     const Type* holder_type = TypeInstPtr::make(TypePtr::BotPTR, callee_holder);
 
     Node* receiver_obj = local(0);
     const TypeInstPtr* receiver_type = _gvn.type(receiver_obj)->isa_instptr();
 
     if (receiver_type != NULL && !receiver_type->higher_equal(holder_type)) {
+      // Receiver should always be a subtype of callee holder.
+      // But, since C2 type system doesn't properly track interfaces,
+      // the invariant can't be expressed in the type system for default methods.
+      // Example: for unrelated C <: I and D <: I, (C `meet` D) = Object </: I.
+      assert(callee_holder->is_interface(), "missing subtype check");
 
-#ifdef ASSERT
       // Perform dynamic receiver subtype check against callee holder class w/ a halt on failure.
       Node* holder_klass = _gvn.makecon(TypeKlassPtr::make(callee_holder));
       Node* not_subtype_ctrl = gen_subtype_check(receiver_obj, holder_klass);
@@ -1211,23 +1216,9 @@ void Parse::do_method_entry() {
 
       Node* halt = _gvn.transform(new HaltNode(not_subtype_ctrl, frameptr(), "failed receiver subtype check"));
       C->root()->add_req(halt);
-#endif // ASSERT
-
-      // Receiver should always be a subtype of callee holder.
-      // But, since C2 type system doesn't properly track interfaces,
-      // the invariant on default methods can't be expressed in the type system.
-      // Example: for unrelated C <: I and D <: I, (C `meet` D) = Object </: I.
-      // (Downcasting interface receiver type to concrete class is fine, though it doesn't happen in practice.)
-      if (!callee_holder->is_interface()) {
-        assert(callee_holder->is_subtype_of(receiver_type->klass()), "sanity");
-        assert(!receiver_type->klass()->is_interface(), "interface receiver type");
-        receiver_type = receiver_type->join_speculative(holder_type)->is_instptr(); // keep speculative part
-        Node* casted_receiver_obj = _gvn.transform(new CheckCastPPNode(control(), receiver_obj, receiver_type));
-        set_local(0, casted_receiver_obj);
-      }
-
     }
   }
+#endif // ASSERT
 
   // If the method is synchronized, we need to construct a lock node, attach
   // it to the Start node, and pin it there.

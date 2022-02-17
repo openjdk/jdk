@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,56 +73,7 @@ public class Checksum {
     // draft-brezak-win2k-krb-rc4-hmac-04.txt
     public static final int CKSUMTYPE_HMAC_MD5_ARCFOUR = -138;
 
-    // default checksum type, -1 if not set
-    static int CKSUMTYPE_DEFAULT;
-    static int SAFECKSUMTYPE_DEFAULT;
-
     private static boolean DEBUG = Krb5.DEBUG;
-    static {
-        initStatic();
-    }
-
-    public static void initStatic() {
-        String temp = null;
-        Config cfg = null;
-        try {
-            cfg = Config.getInstance();
-            temp = cfg.get("libdefaults", "default_checksum");
-            if (temp != null) {
-                CKSUMTYPE_DEFAULT = Config.getType(temp);
-            } else {
-                CKSUMTYPE_DEFAULT = -1;
-            }
-        } catch (Exception exc) {
-            if (DEBUG) {
-                System.out.println("Exception in getting default checksum "+
-                                   "value from the configuration. " +
-                                   "No default checksum set.");
-                exc.printStackTrace();
-            }
-            CKSUMTYPE_DEFAULT = -1;
-        }
-
-
-        try {
-            temp = cfg.get("libdefaults", "safe_checksum_type");
-            if (temp != null)
-                {
-                    SAFECKSUMTYPE_DEFAULT = Config.getType(temp);
-                } else {
-                    SAFECKSUMTYPE_DEFAULT = -1;
-                }
-        } catch (Exception exc) {
-            if (DEBUG) {
-                System.out.println("Exception in getting safe default " +
-                                   "checksum value " +
-                                   "from the configuration. " +
-                                   "No safe default checksum set.");
-                exc.printStackTrace();
-            }
-            SAFECKSUMTYPE_DEFAULT = -1;
-        }
-    }
 
     /**
      * Constructs a new Checksum using the raw data and type.
@@ -168,21 +119,6 @@ public class Checksum {
         checksum = CksumType.getInstance(cksumType).calculateChecksum(
                     data, data.length, key.getBytes(), usage);
     }
-
-    /**
-     * Verifies the keyed checksum over the data passed in.
-     */
-    public boolean verifyKeyedChecksum(byte[] data, EncryptionKey key, int usage)
-            throws KdcErrException, KrbApErrException, KrbCryptoException {
-        CksumType cksumEngine = CksumType.getInstance(cksumType);
-        if (!cksumEngine.isKeyed()) {
-            throw new KrbApErrException(Krb5.KRB_AP_ERR_INAPP_CKSUM);
-        } else {
-            return cksumEngine.verifyChecksum(
-                    data, data.length, key.getBytes(), checksum, usage);
-        }
-    }
-
 
     /**
      * Verifies the checksum over the data passed in. The checksum might

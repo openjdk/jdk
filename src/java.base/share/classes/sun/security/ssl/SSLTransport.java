@@ -110,7 +110,7 @@ interface SSLTransport {
             plaintexts =
                     context.inputRecord.decode(srcs, srcsOffset, srcsLength);
         } catch (UnsupportedOperationException unsoe) {         // SSLv2Hello
-            // Hack code to deliver SSLv2 error message for SSL/TLS connections.
+            // Code to deliver SSLv2 error message for SSL/TLS connections.
             if (!context.sslContext.isDTLS()) {
                 context.outputRecord.encodeV2NoCipher();
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {

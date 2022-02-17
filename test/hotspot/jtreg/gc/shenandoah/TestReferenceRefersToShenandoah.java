@@ -23,7 +23,7 @@
 
 package gc.shenandoah;
 
-/* @test
+/* @test id=satb
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
@@ -35,7 +35,7 @@ package gc.shenandoah;
  *      gc.shenandoah.TestReferenceRefersToShenandoah
  */
 
-/* @test
+/* @test id=iu
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
@@ -47,7 +47,7 @@ package gc.shenandoah;
  *      gc.shenandoah.TestReferenceRefersToShenandoah
  */
 
-/* @test
+/* @test id=satb-100
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
@@ -60,7 +60,7 @@ package gc.shenandoah;
  *      gc.shenandoah.TestReferenceRefersToShenandoah
  */
 
-/* @test
+/* @test id=iu-100
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @build sun.hotspot.WhiteBox

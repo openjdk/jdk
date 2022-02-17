@@ -372,12 +372,9 @@ public class SSLContext {
         try {
             return contextSpi.engineCreateSSLEngine();
         } catch (AbstractMethodError e) {
-            UnsupportedOperationException unsup =
-                new UnsupportedOperationException(
-                    "Provider: " + getProvider() +
-                    " doesn't support this operation");
-            unsup.initCause(e);
-            throw unsup;
+            throw new UnsupportedOperationException(
+                "Provider: " + getProvider() +
+                " doesn't support this operation", e);
         }
     }
 
@@ -412,12 +409,9 @@ public class SSLContext {
         try {
             return contextSpi.engineCreateSSLEngine(peerHost, peerPort);
         } catch (AbstractMethodError e) {
-            UnsupportedOperationException unsup =
-                new UnsupportedOperationException(
-                    "Provider: " + getProvider() +
-                    " does not support this operation");
-            unsup.initCause(e);
-            throw unsup;
+            throw new UnsupportedOperationException(
+                "Provider: " + getProvider() +
+                " does not support this operation", e);
         }
     }
 

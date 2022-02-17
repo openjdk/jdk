@@ -49,7 +49,7 @@ import javax.net.ssl.SSLSocket;
 
 /**
  * @test
- * @bug 8238990
+ * @bug 8238990 8258951
  * @run main/othervm -Djdk.internal.httpclient.debug=true HandshakeFailureTest TLSv1.2
  * @run main/othervm -Djdk.internal.httpclient.debug=true HandshakeFailureTest TLSv1.3
  * @summary Verify SSLHandshakeException is received when the handshake fails,

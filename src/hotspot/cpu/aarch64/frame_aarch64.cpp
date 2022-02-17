@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -272,6 +272,9 @@ void frame::patch_pc(Thread* thread, address pc) {
     tty->print_cr("patch_pc at address " INTPTR_FORMAT " [" INTPTR_FORMAT " -> " INTPTR_FORMAT "]",
                   p2i(pc_addr), p2i(*pc_addr), p2i(pc));
   }
+
+  // Only generated code frames should be patched, therefore the return address will not be signed.
+  assert(pauth_ptr_is_raw(*pc_addr), "cannot be signed");
   // Either the return address is the original one or we are going to
   // patch in the same address that's already there.
   assert(_pc == *pc_addr || pc == *pc_addr, "must be");
@@ -355,13 +358,19 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
   assert(map->include_argument_oops(), "should be set by clear");
   vmassert(jfa->last_Java_pc() != NULL, "not walkable");
   frame fr(jfa->last_Java_sp(), jfa->last_Java_fp(), jfa->last_Java_pc());
+  fr.set_sp_is_trusted();
 
   return fr;
 }
 
-JavaFrameAnchor* OptimizedEntryBlob::jfa_for_frame(const frame& frame) const {
+OptimizedEntryBlob::FrameData* OptimizedEntryBlob::frame_data_for_frame(const frame& frame) const {
   ShouldNotCallThis();
   return nullptr;
+}
+
+bool frame::optimized_entry_frame_is_first() const {
+  ShouldNotCallThis();
+  return false;
 }
 
 frame frame::sender_for_optimized_entry_frame(RegisterMap* map) const {
@@ -446,19 +455,30 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
   }
 #endif // COMPILER2_OR_JVMCI
 
-  return frame(sender_sp, unextended_sp, link(), sender_pc());
+  // Use the raw version of pc - the interpreter should not have signed it.
+
+  return frame(sender_sp, unextended_sp, link(), sender_pc_maybe_signed());
 }
 
 
 //------------------------------------------------------------------------------
 // frame::sender_for_compiled_frame
 frame frame::sender_for_compiled_frame(RegisterMap* map) const {
-  // we cannot rely upon the last fp having been saved to the thread
-  // in C2 code but it will have been pushed onto the stack. so we
-  // have to find it relative to the unextended sp
+  // When the sp of a compiled frame is correct, we can get the correct sender sp
+  // by unextended sp + frame size.
+  // For the following two scenarios, the sp of a compiled frame is correct:
+  //  a) This compiled frame is built from the anchor.
+  //  b) This compiled frame is built from a callee frame, and the callee frame can
+  //    calculate its sp correctly.
+  //
+  // For b), if the callee frame is a native code frame (such as leaf call), the sp of
+  // the compiled frame cannot be calculated correctly. There is currently no suitable
+  // solution to solve this problem perfectly. But when PreserveFramePointer is enabled,
+  // we can get the correct sender sp by fp + 2 (that is sender_sp()).
 
   assert(_cb->frame_size() >= 0, "must have non-zero frame size");
-  intptr_t* l_sender_sp = unextended_sp() + _cb->frame_size();
+  intptr_t* l_sender_sp = (!PreserveFramePointer || _sp_is_trusted) ? unextended_sp() + _cb->frame_size()
+                                                                    : sender_sp();
   intptr_t* unextended_sp = l_sender_sp;
 
   // the return_address is always the word on the stack
@@ -509,6 +529,7 @@ frame frame::sender_raw(RegisterMap* map) const {
 
   // Must be native-compiled frame, i.e. the marshaling code for native
   // methods that exists in the core system.
+
   return frame(sender_sp(), link(), sender_pc());
 }
 
@@ -803,7 +824,6 @@ frame::frame(void* sp, void* fp, void* pc) {
   init((intptr_t*)sp, (intptr_t*)fp, (address)pc);
 }
 
-void frame::pd_ps() {}
 #endif
 
 void JavaFrameAnchor::make_walkable(JavaThread* thread) {

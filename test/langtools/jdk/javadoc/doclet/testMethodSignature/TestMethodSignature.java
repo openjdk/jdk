@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8214126 8241470
+ * @bug      8214126 8241470 8259499
  * @summary  Method signatures not formatted correctly in browser
  * @library  ../../lib/
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -123,7 +123,32 @@ public class TestMethodSignature extends JavadocTester {
                                                                              throws <span class="exc\
                     eptions">java.lang.IllegalArgumentException,
                     java.lang.IllegalStateException</span></div>
-                    <div class="block">Generic method with eight type args and annotation.</div>""");
+                    <div class="block">Generic method with eight type args and annotation.</div>""",
+                """
+                    <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
+                    lass="return-type"><a href="C.Generic.html" title="class in pkg">C.Generic</a>&l\
+                    t;java.lang.Integer&gt;.<a href="C.Generic.Inner.html" title="class in pkg">Inne\
+                    r</a></span>&nbsp;<span class="element-name">nestedGeneric1</span><wbr><span cla\
+                    ss="parameters">(<a href="C.Generic.html" title="class in pkg">C.Generic</a>&lt;\
+                    java.lang.Integer&gt;.<a href="C.Generic.Inner.html" title="class in pkg">Inner<\
+                    /a>&nbsp;i,
+                     <a href="C.Generic.html" title="class in pkg">C.Generic</a>&lt;<a href="C.html"\
+                     title="class in pkg">C</a>&gt;.<a href="C.Generic.Inner.html" title="class in p\
+                    kg">Inner</a>&nbsp;j)</span></div>""",
+                """
+                    <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
+                    lass="return-type"><a href="C.Generic.html" title="class in pkg">C.Generic</a>&l\
+                    t;<a href="C.F0.html" title="interface in pkg">C.F0</a>&lt;<a href="C.html" titl\
+                    e="class in pkg">C</a>&gt;&gt;.<a href="C.Generic.Inner.html" title="class in pk\
+                    g">Inner</a>.<a href="C.Generic.Inner.Foo.html" title="class in pkg">Foo</a></sp\
+                    an>&nbsp;<span class="element-name">nestedGeneric2</span><wbr><span class="param\
+                    eters">(<a href="C.Generic.html" title="class in pkg">C.Generic</a>&lt;java.lang\
+                    .Integer&gt;.<a href="C.Generic.Inner.html" title="class in pkg">Inner</a>.<a hr\
+                    ef="C.Generic.Inner.Foo.html" title="class in pkg">Foo</a>&nbsp;f,
+                     <a href="C.Generic.html" title="class in pkg">C.Generic</a>&lt;<a href="C.F0.ht\
+                    ml" title="interface in pkg">C.F0</a>&lt;<a href="C.html" title="class in pkg">C\
+                    </a>&gt;&gt;.<a href="C.Generic.Inner.html" title="class in pkg">Inner</a>.<a hr\
+                    ef="C.Generic.Inner.Foo.html" title="class in pkg">Foo</a>&nbsp;g)</span></div>""");
 
     }
 }

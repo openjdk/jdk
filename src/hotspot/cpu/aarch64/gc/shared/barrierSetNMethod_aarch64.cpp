@@ -116,7 +116,7 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
     log_trace(nmethod, barrier)("deoptimize(nmethod: %s(%p), return_addr: %p, osr: %d, thread: %p(%s), making rsp: %p) -> %p",
                                 nm->method()->name_and_sig_as_C_string(),
                                 nm, *(address *) return_address_ptr, nm->is_osr_method(), thread,
-                                thread->get_thread_name(), frame.sp(), nm->verified_entry_point());
+                                thread->name(), frame.sp(), nm->verified_entry_point());
   }
 
   new_frame->sp = frame.sp();

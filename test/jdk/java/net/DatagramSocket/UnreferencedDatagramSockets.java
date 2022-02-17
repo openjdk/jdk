@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
  *          java.base/sun.net java.base/sun.nio.ch:+open
  * @run main/othervm UnreferencedDatagramSockets
  * @run main/othervm -Djava.net.preferIPv4Stack=true UnreferencedDatagramSockets
- * @run main/othervm -Djdk.net.usePlainDatagramSocketImpl UnreferencedDatagramSockets
  * @summary Check that unreferenced datagram sockets are closed
  */
 

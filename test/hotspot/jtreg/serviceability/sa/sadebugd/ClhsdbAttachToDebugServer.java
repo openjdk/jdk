@@ -38,7 +38,7 @@ import jtreg.SkippedException;
  * @requires vm.hasSA
  * @requires os.family != "windows"
  * @library /test/lib
- * @run main/othervm ClhsdbAttachToDebugServer
+ * @run driver ClhsdbAttachToDebugServer
  */
 
 public class ClhsdbAttachToDebugServer {

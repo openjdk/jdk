@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,15 @@
  */
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "logging/logAsyncWriter.hpp"
 #include "logging/logDecorators.hpp"
 #include "logging/logDecorations.hpp"
 #include "logging/logFileStreamOutput.hpp"
 #include "logging/logMessageBuffer.hpp"
 #include "memory/allocation.inline.hpp"
 #include "utilities/defaultStream.hpp"
+
+const char* const LogFileStreamOutput::FoldMultilinesOptionKey = "foldmultilines";
 
 static bool initialized;
 static union {
@@ -49,6 +52,22 @@ LogFileStreamInitializer::LogFileStreamInitializer() {
     ::new (&StderrLog) LogStderrOutput();
     initialized = true;
   }
+}
+
+bool LogFileStreamOutput::set_option(const char* key, const char* value, outputStream* errstream) {
+  bool success = false;
+  if (strcmp(FoldMultilinesOptionKey, key) == 0) {
+    if (strcmp(value, "true") == 0) {
+      _fold_multilines = true;
+      success = true;
+    } else if (strcmp(value, "false") == 0) {
+      _fold_multilines = false;
+      success = true;
+    } else {
+      errstream->print_cr("Invalid option: %s must be 'true' or 'false'.", key);
+    }
+  }
+  return success;
 }
 
 int LogFileStreamOutput::write_decorations(const LogDecorations& decorations) {
@@ -117,32 +136,74 @@ bool LogFileStreamOutput::flush() {
   total += result;                                            \
 }
 
-int LogFileStreamOutput::write(const LogDecorations& decorations, const char* msg) {
+int LogFileStreamOutput::write_internal(const LogDecorations& decorations, const char* msg) {
+  int written = 0;
   const bool use_decorations = !_decorators.is_empty();
 
-  int written = 0;
-  FileLocker flocker(_stream);
   if (use_decorations) {
     WRITE_LOG_WITH_RESULT_CHECK(write_decorations(decorations), written);
     WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
   }
-  WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg), written);
+
+  if (!_fold_multilines) {
+    WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg), written);
+  } else {
+    char *dupstr = os::strdup_check_oom(msg, mtLogging);
+    char *cur = dupstr;
+    char *next;
+    do {
+      next = strpbrk(cur, "\n\\");
+      if (next == NULL) {
+        WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", cur), written);
+      } else {
+        const char *found = (*next == '\n') ? "\\n" : "\\\\";
+        *next = '\0';
+        WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s%s", cur, found), written);
+        cur = next + 1;
+      }
+    } while (next != NULL);
+    os::free(dupstr);
+  }
+  return written;
+}
+
+int LogFileStreamOutput::write_blocking(const LogDecorations& decorations, const char* msg) {
+  int written = write_internal(decorations, msg);
+  return flush() ? written : -1;
+}
+
+int LogFileStreamOutput::write(const LogDecorations& decorations, const char* msg) {
+  AsyncLogWriter* aio_writer = AsyncLogWriter::instance();
+  if (aio_writer != nullptr) {
+    aio_writer->enqueue(*this, decorations, msg);
+    return 0;
+  }
+
+  FileLocker flocker(_stream);
+  int written = write_internal(decorations, msg);
 
   return flush() ? written : -1;
 }
 
 int LogFileStreamOutput::write(LogMessageBuffer::Iterator msg_iterator) {
-  const bool use_decorations = !_decorators.is_empty();
+  AsyncLogWriter* aio_writer = AsyncLogWriter::instance();
+  if (aio_writer != nullptr) {
+    aio_writer->enqueue(*this, msg_iterator);
+    return 0;
+  }
 
   int written = 0;
   FileLocker flocker(_stream);
   for (; !msg_iterator.is_at_end(); msg_iterator++) {
-    if (use_decorations) {
-      WRITE_LOG_WITH_RESULT_CHECK(write_decorations(msg_iterator.decorations()), written);
-      WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
-    }
-    WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg_iterator.message()), written);
+    written += write_internal(msg_iterator.decorations(), msg_iterator.message());
   }
 
   return flush() ? written : -1;
+}
+
+void LogFileStreamOutput::describe(outputStream *out) {
+  LogOutput::describe(out);
+  out->print(" ");
+
+  out->print("foldmultilines=%s", _fold_multilines ? "true" : "false");
 }

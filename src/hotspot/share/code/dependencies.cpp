@@ -51,7 +51,7 @@
 static bool must_be_in_vm() {
   Thread* thread = Thread::current();
   if (thread->is_Java_thread()) {
-    return thread->as_Java_thread()->thread_state() == _thread_in_vm;
+    return JavaThread::cast(thread)->thread_state() == _thread_in_vm;
   } else {
     return true;  // Could be VMThread or GC thread
   }
@@ -116,6 +116,12 @@ void Dependencies::assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm,
   }
 }
 
+void Dependencies::assert_unique_implementor(ciInstanceKlass* ctxk, ciInstanceKlass* uniqk) {
+  check_ctxk(ctxk);
+  check_unique_implementor(ctxk, uniqk);
+  assert_common_2(unique_implementor, ctxk, uniqk);
+}
+
 void Dependencies::assert_has_no_finalizable_subclasses(ciKlass* ctxk) {
   check_ctxk(ctxk);
   assert_common_1(no_finalizable_subclasses, ctxk);
@@ -171,6 +177,13 @@ void Dependencies::assert_abstract_with_unique_concrete_subtype(Klass* ctxk, Kla
   DepValue ctxk_dv(_oop_recorder, ctxk);
   DepValue conck_dv(_oop_recorder, conck, &ctxk_dv);
   assert_common_2(abstract_with_unique_concrete_subtype, ctxk_dv, conck_dv);
+}
+
+void Dependencies::assert_unique_implementor(InstanceKlass* ctxk, InstanceKlass* uniqk) {
+  check_ctxk(ctxk);
+  assert(ctxk->is_interface(), "not an interface");
+  assert(ctxk->implementor() == uniqk, "not a unique implementor");
+  assert_common_2(unique_implementor, DepValue(_oop_recorder, ctxk), DepValue(_oop_recorder, uniqk));
 }
 
 void Dependencies::assert_unique_concrete_method(Klass* ctxk, Method* uniqm) {
@@ -239,7 +252,9 @@ void Dependencies::assert_common_2(DepType dept,
       }
     }
   } else {
-    if (note_dep_seen(dept, x0) && note_dep_seen(dept, x1)) {
+    bool dep_seen_x0 = note_dep_seen(dept, x0); // records x0 for future queries
+    bool dep_seen_x1 = note_dep_seen(dept, x1); // records x1 for future queries
+    if (dep_seen_x0 && dep_seen_x1) {
       // look in this bucket for redundant assertions
       const int stride = 2;
       for (int i = deps->length(); (i -= stride) >= 0; ) {
@@ -266,7 +281,10 @@ void Dependencies::assert_common_4(DepType dept,
   GrowableArray<ciBaseObject*>* deps = _deps[dept];
 
   // see if the same (or a similar) dep is already recorded
-  if (note_dep_seen(dept, x1) && note_dep_seen(dept, x2) && note_dep_seen(dept, x3)) {
+  bool dep_seen_x1 = note_dep_seen(dept, x1); // records x1 for future queries
+  bool dep_seen_x2 = note_dep_seen(dept, x2); // records x2 for future queries
+  bool dep_seen_x3 = note_dep_seen(dept, x3); // records x3 for future queries
+  if (dep_seen_x1 && dep_seen_x2 && dep_seen_x3) {
     // look in this bucket for redundant assertions
     const int stride = 4;
     for (int i = deps->length(); (i -= stride) >= 0; ) {
@@ -339,7 +357,9 @@ void Dependencies::assert_common_2(DepType dept,
       }
     }
   } else {
-    if (note_dep_seen(dept, x0) && note_dep_seen(dept, x1)) {
+    bool dep_seen_x0 = note_dep_seen(dept, x0); // records x0 for future queries
+    bool dep_seen_x1 = note_dep_seen(dept, x1); // records x1 for future queries
+    if (dep_seen_x0 && dep_seen_x1) {
       // look in this bucket for redundant assertions
       const int stride = 2;
       for (int i = deps->length(); (i -= stride) >= 0; ) {
@@ -573,6 +593,7 @@ const char* Dependencies::_dep_name[TYPE_LIMIT] = {
   "abstract_with_unique_concrete_subtype",
   "unique_concrete_method_2",
   "unique_concrete_method_4",
+  "unique_implementor",
   "no_finalizable_subclasses",
   "call_site_target_value"
 };
@@ -584,6 +605,7 @@ int Dependencies::_dep_args[TYPE_LIMIT] = {
   2, // abstract_with_unique_concrete_subtype ctxk, k
   2, // unique_concrete_method_2 ctxk, m
   4, // unique_concrete_method_4 ctxk, m, resolved_klass, resolved_method
+  2, // unique_implementor ctxk, implementor
   1, // no_finalizable_subclasses ctxk
   2  // call_site_target_value call_site, method_handle
 };
@@ -1237,9 +1259,9 @@ class ConcreteMethodFinder : public AbstractClassHierarchyWalker {
   virtual Klass* find_witness_in(KlassDepChange& changes);
   virtual Klass* find_witness_anywhere(InstanceKlass* context_type);
 
+ public:
   bool witnessed_reabstraction_in_supers(Klass* k);
 
- public:
   ConcreteMethodFinder(Method* m, Klass* participant = NULL) : AbstractClassHierarchyWalker(participant) {
     assert(m != NULL && m->is_method(), "sanity");
     _name      = m->name();
@@ -1752,18 +1774,118 @@ Klass* Dependencies::find_unique_concrete_subtype(InstanceKlass* ctxk) {
   }
 }
 
+// Try to determine whether root method in some context is concrete or not based on the information about the unique method
+// in that context. It exploits the fact that concrete root method is always inherited into the context when there's a unique method.
+// Hence, unique method holder is always a supertype of the context class when root method is concrete.
+// Examples for concrete_root_method
+//      C (C.m uniqm)
+//      |
+//      CX (ctxk) uniqm is inherited into context.
+//
+//      CX (ctxk) (CX.m uniqm) here uniqm is defined in ctxk.
+// Examples for !concrete_root_method
+//      CX (ctxk)
+//      |
+//      C (C.m uniqm) uniqm is in subtype of ctxk.
+bool Dependencies::is_concrete_root_method(Method* uniqm, InstanceKlass* ctxk) {
+  if (uniqm == NULL) {
+    return false; // match Dependencies::is_concrete_method() behavior
+  }
+  // Theoretically, the "direction" of subtype check matters here.
+  // On one hand, in case of interface context with a single implementor, uniqm can be in a superclass of the implementor which
+  // is not related to context class.
+  // On another hand, uniqm could come from an interface unrelated to the context class, but right now it is not possible:
+  // it is required that uniqm->method_holder() is the participant (uniqm->method_holder() <: ctxk), hence a default method
+  // can't be used as unique.
+  if (ctxk->is_interface()) {
+    InstanceKlass* implementor = ctxk->implementor();
+    assert(implementor != ctxk, "single implementor only"); // should have been invalidated earlier
+    ctxk = implementor;
+  }
+  InstanceKlass* holder = uniqm->method_holder();
+  assert(!holder->is_interface(), "no default methods allowed");
+  assert(ctxk->is_subclass_of(holder) || holder->is_subclass_of(ctxk), "not related");
+  return ctxk->is_subclass_of(holder);
+}
+
 // If a class (or interface) has a unique concrete method uniqm, return NULL.
 // Otherwise, return a class that contains an interfering method.
 Klass* Dependencies::check_unique_concrete_method(InstanceKlass* ctxk,
                                                   Method* uniqm,
                                                   NewKlassDepChange* changes) {
-  // Here is a missing optimization:  If uniqm->is_final(),
-  // we don't really need to search beneath it for overrides.
-  // This is probably not important, since we don't use dependencies
-  // to track final methods.  (They can't be "definalized".)
   ConcreteMethodFinder wf(uniqm, uniqm->method_holder());
   Klass* k = wf.find_witness(ctxk, changes);
-  return k;
+  if (k != NULL) {
+    return k;
+  }
+  if (!Dependencies::is_concrete_root_method(uniqm, ctxk) || changes != NULL) {
+    Klass* conck = find_witness_AME(ctxk, uniqm, changes);
+    if (conck != NULL) {
+      // Found a concrete subtype 'conck' which does not override abstract root method.
+      return conck;
+    }
+  }
+  return NULL;
+}
+
+Klass* Dependencies::check_unique_implementor(InstanceKlass* ctxk, Klass* uniqk, NewKlassDepChange* changes) {
+  assert(ctxk->is_interface(), "sanity");
+  assert(ctxk->nof_implementors() > 0, "no implementors");
+  if (ctxk->nof_implementors() == 1) {
+    assert(ctxk->implementor() == uniqk, "sanity");
+    return NULL;
+  }
+  return ctxk; // no unique implementor
+}
+
+// Search for AME.
+// There are two version of checks.
+//   1) Spot checking version(Classload time). Newly added class is checked for AME.
+//      Checks whether abstract/overpass method is inherited into/declared in newly added concrete class.
+//   2) Compile time analysis for abstract/overpass(abstract klass) root_m. The non uniqm subtrees are checked for concrete classes.
+Klass* Dependencies::find_witness_AME(InstanceKlass* ctxk, Method* m, KlassDepChange* changes) {
+  if (m != NULL) {
+    if (changes != NULL) {
+      // Spot checking version.
+      ConcreteMethodFinder wf(m);
+      Klass* new_type = changes->as_new_klass_change()->new_type();
+      if (wf.witnessed_reabstraction_in_supers(new_type)) {
+        return new_type;
+      }
+    } else {
+      // Note: It is required that uniqm->method_holder() is the participant (see ClassHierarchyWalker::found_method()).
+      ConcreteSubtypeFinder wf(m->method_holder());
+      Klass* conck = wf.find_witness(ctxk);
+      if (conck != NULL) {
+        Method* cm = InstanceKlass::cast(conck)->find_instance_method(m->name(), m->signature(), Klass::PrivateLookupMode::skip);
+        if (!Dependencies::is_concrete_method(cm, conck)) {
+          return conck;
+        }
+      }
+    }
+  }
+  return NULL;
+}
+
+// This function is used by find_unique_concrete_method(non vtable based)
+// to check whether subtype method overrides the base method.
+static bool overrides(Method* sub_m, Method* base_m) {
+  assert(base_m != NULL, "base method should be non null");
+  if (sub_m == NULL) {
+    return false;
+  }
+  /**
+   *  If base_m is public or protected then sub_m always overrides.
+   *  If base_m is !public, !protected and !private (i.e. base_m is package private)
+   *  then sub_m should be in the same package as that of base_m.
+   *  For package private base_m this is conservative approach as it allows only subset of all allowed cases in
+   *  the jvm specification.
+   **/
+  if (base_m->is_public() || base_m->is_protected() ||
+      base_m->method_holder()->is_same_class_package(sub_m->method_holder())) {
+    return true;
+  }
+  return false;
 }
 
 // Find the set of all non-abstract methods under ctxk that match m.
@@ -1787,6 +1909,9 @@ Method* Dependencies::find_unique_concrete_method(InstanceKlass* ctxk, Method* m
   if (participant != NULL) {
     (*participant) = wf.participant(0);
   }
+  if (!Dependencies::is_concrete_method(fm, NULL)) {
+    fm = NULL; // ignore abstract methods
+  }
   if (Dependencies::is_concrete_method(m, ctxk)) {
     if (fm == NULL) {
       // It turns out that m was always the only implementation.
@@ -1796,7 +1921,14 @@ Method* Dependencies::find_unique_concrete_method(InstanceKlass* ctxk, Method* m
       // (This can happen if m is inherited into ctxk and fm overrides it.)
       return NULL;
     }
+  } else if (Dependencies::find_witness_AME(ctxk, fm) != NULL) {
+    // Found a concrete subtype which does not override abstract root method.
+    return NULL;
+  } else if (!overrides(fm, m)) {
+    // Found method doesn't override abstract root method.
+    return NULL;
   }
+  assert(Dependencies::is_concrete_root_method(fm, ctxk) == Dependencies::is_concrete_method(m, ctxk), "mismatch");
 #ifndef PRODUCT
   // Make sure the dependency mechanism will pass this discovery:
   if (VerifyDependencies && fm != NULL) {
@@ -1954,6 +2086,9 @@ Klass* Dependencies::DepStream::check_new_klass_dependency(NewKlassDepChange* ch
     break;
   case unique_concrete_method_4:
     witness = check_unique_concrete_method(context_type(), method_argument(1), type_argument(2), method_argument(3), changes);
+    break;
+  case unique_implementor:
+    witness = check_unique_implementor(context_type(), type_argument(1), changes);
     break;
   case no_finalizable_subclasses:
     witness = check_has_no_finalizable_subclasses(context_type(), changes);

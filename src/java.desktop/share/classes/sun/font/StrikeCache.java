@@ -61,7 +61,6 @@ free native memory resources.
 
  */
 
-@SuppressWarnings("removal")
 public final class StrikeCache {
 
     static final Unsafe unsafe = Unsafe.getUnsafe();
@@ -135,6 +134,11 @@ public final class StrikeCache {
     static native void getGlyphCacheDescription(long[] infoArray);
 
     static {
+        initStatic();
+    }
+
+    @SuppressWarnings("removal")
+    private static void initStatic() {
 
         long[] nativeInfo = new long[13];
         getGlyphCacheDescription(nativeInfo);

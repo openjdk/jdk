@@ -29,7 +29,7 @@
 
 class CardTableBarrierSetC1 : public ModRefBarrierSetC1 {
 protected:
-  virtual void post_barrier(LIRAccess& access, LIR_OprDesc* addr, LIR_OprDesc* new_val);
+  virtual void post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Opr new_val);
 };
 
 #endif // SHARE_GC_SHARED_C1_CARDTABLEBARRIERSETC1_HPP

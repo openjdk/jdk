@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 
 # Minimum supported versions, empty means unspecified
 TOOLCHAIN_MINIMUM_VERSION_clang="3.5"
-TOOLCHAIN_MINIMUM_VERSION_gcc="5.0"
+TOOLCHAIN_MINIMUM_VERSION_gcc="6.0"
 TOOLCHAIN_MINIMUM_VERSION_microsoft="19.10.0.0" # VS2017
 TOOLCHAIN_MINIMUM_VERSION_xlc=""
 
@@ -221,6 +221,12 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
   AC_ARG_WITH(toolchain-type, [AS_HELP_STRING([--with-toolchain-type],
       [the toolchain type (or family) to use, use '--help' to show possible values @<:@platform dependent@:>@])])
 
+  # Linux x86_64 needs higher binutils after 8265783
+  # (this really is a dependency on as version, but we take ld as a check for a general binutils version)
+  if test "x$OPENJDK_TARGET_CPU" = "xx86_64"; then
+    TOOLCHAIN_MINIMUM_LD_VERSION_gcc="2.25"
+  fi
+
   # Use indirect variable referencing
   toolchain_var_name=VALID_TOOLCHAINS_$OPENJDK_BUILD_OS
   VALID_TOOLCHAINS=${!toolchain_var_name}
@@ -228,7 +234,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
     if test -n "$XCODEBUILD"; then
       # On Mac OS X, default toolchain to clang after Xcode 5
-      XCODE_VERSION_OUTPUT=`"$XCODEBUILD" -version 2>&1 | $HEAD -n 1`
+      XCODE_VERSION_OUTPUT=`"$XCODEBUILD" -version | $HEAD -n 1`
       $ECHO "$XCODE_VERSION_OUTPUT" | $GREP "Xcode " > /dev/null
       if test $? -ne 0; then
         AC_MSG_NOTICE([xcodebuild output: $XCODE_VERSION_OUTPUT])
@@ -677,9 +683,10 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   TOOLCHAIN_PREPARE_FOR_LD_VERSION_COMPARISONS
 
   if test "x$TOOLCHAIN_MINIMUM_LD_VERSION" != x; then
+    AC_MSG_NOTICE([comparing linker version to minimum version $TOOLCHAIN_MINIMUM_LD_VERSION])
     TOOLCHAIN_CHECK_LINKER_VERSION(VERSION: $TOOLCHAIN_MINIMUM_LD_VERSION,
         IF_OLDER_THAN: [
-          AC_MSG_WARN([You are using a linker older than $TOOLCHAIN_MINIMUM_LD_VERSION. This is not a supported configuration.])
+          AC_MSG_ERROR([You are using a linker older than $TOOLCHAIN_MINIMUM_LD_VERSION. This is not a supported configuration.])
         ]
     )
   fi

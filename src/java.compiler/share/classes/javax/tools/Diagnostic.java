@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ public interface Diagnostic<S> {
     /**
      * Used to signal that no position is available.
      */
-    public final static long NOPOS = -1;
+    public static final long NOPOS = -1;
 
     /**
      * Returns the kind of this diagnostic, for example, error or

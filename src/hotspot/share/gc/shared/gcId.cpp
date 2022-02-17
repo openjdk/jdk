@@ -67,14 +67,16 @@ size_t GCId::print_prefix(char* buf, size_t len) {
   return 0;
 }
 
-GCIdMark::GCIdMark() : _previous_gc_id(currentNamedthread()->gc_id()) {
+GCIdMark::GCIdMark() {
+  assert(currentNamedthread()->gc_id() == GCId::undefined(), "nested");
   currentNamedthread()->set_gc_id(GCId::create());
 }
 
-GCIdMark::GCIdMark(uint gc_id) : _previous_gc_id(currentNamedthread()->gc_id()) {
+GCIdMark::GCIdMark(uint gc_id) {
+  assert(currentNamedthread()->gc_id() == GCId::undefined(), "nested");
   currentNamedthread()->set_gc_id(gc_id);
 }
 
 GCIdMark::~GCIdMark() {
-  currentNamedthread()->set_gc_id(_previous_gc_id);
+  currentNamedthread()->set_gc_id(GCId::undefined());
 }

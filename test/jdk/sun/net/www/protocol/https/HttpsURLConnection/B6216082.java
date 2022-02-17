@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,22 +34,39 @@
  * @library .. /test/lib
  * @build jdk.test.lib.NetworkConfiguration
  *        jdk.test.lib.Platform
- *        HttpCallback TestHttpsServer ClosedChannelList
- *        HttpTransaction TunnelProxy
+ *        ClosedChannelList
+ *        TunnelProxy
  * @key intermittent
  * @run main/othervm B6216082
  */
 
-import java.io.*;
-import java.net.*;
-import javax.net.ssl.*;
-import java.util.*;
+import java.io.FileInputStream;
+import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
+import java.net.ProxySelector;
+import java.net.URL;
+import java.security.KeyStore;
+import java.util.Optional;
+import java.util.concurrent.Executors;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManagerFactory;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpsConfigurator;
+import com.sun.net.httpserver.HttpsServer;
 import jdk.test.lib.NetworkConfiguration;
 
 public class B6216082 {
     static SimpleHttpTransaction httpTrans;
-    static TestHttpsServer server;
+    static HttpsServer server;
     static TunnelProxy proxy;
 
     // it seems there's no proxy ever if a url points to 'localhost',
@@ -66,25 +83,17 @@ public class B6216082 {
             if (!setupEnv()) {
                 return;
             }
-
             startHttpServer();
-
             // https.proxyPort can only be set after the TunnelProxy has been
             // created as it will use an ephemeral port.
-            System.setProperty("https.proxyPort",
-                        (new Integer(proxy.getLocalPort())).toString() );
-
+            ProxySelector.setDefault(ProxySelector.of(new InetSocketAddress(firstNonLoAddress, proxy.getLocalPort())));
             makeHttpCall();
-
-            if (httpTrans.hasBadRequest) {
-                throw new RuntimeException("Test failed : bad http request");
-            }
         } finally {
             if (proxy != null) {
                 proxy.terminate();
             }
             if (server != null) {
-               server.terminate();
+               server.stop(1);
             }
             HttpsURLConnection.setDefaultHostnameVerifier(reservedHV);
         }
@@ -135,21 +144,47 @@ public class B6216082 {
         return oaddr.orElseGet(() -> null);
     }
 
-    public static void startHttpServer() throws IOException {
+    public static void startHttpServer() throws  Exception {
         // Both the https server and the proxy let the
         // system pick up an ephemeral port.
         httpTrans = new SimpleHttpTransaction();
-        server = new TestHttpsServer(httpTrans, 1, 10, firstNonLoAddress, 0);
+        // create and initialize a SSLContext
+        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ts = KeyStore.getInstance("JKS");
+        char[] passphrase = "passphrase".toCharArray();
+
+        ks.load(new FileInputStream(System.getProperty("javax.net.ssl.keyStore")), passphrase);
+        ts.load(new FileInputStream(System.getProperty("javax.net.ssl.trustStore")), passphrase);
+
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+        kmf.init(ks, passphrase);
+
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+        tmf.init(ts);
+
+        SSLContext sslCtx = SSLContext.getInstance("TLS");
+
+        sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+
+        server = HttpsServer.create(new InetSocketAddress(firstNonLoAddress, 0), 10);
+        server.setHttpsConfigurator(new HttpsConfigurator(sslCtx));
+        server.createContext("/", httpTrans);
+        server.setExecutor(Executors.newSingleThreadExecutor());
+        server.start();
         proxy = new TunnelProxy(1, 10, firstNonLoAddress, 0);
     }
 
     public static void makeHttpCall() throws Exception {
-        System.out.println("https server listen on: " + server.getLocalPort());
+        System.out.println("https server listen on: " + server.getAddress().getPort());
         System.out.println("https proxy listen on: " + proxy.getLocalPort());
         URL url = new URL("https" , firstNonLoAddress.getHostAddress(),
-                            server.getLocalPort(), "/");
+                            server.getAddress().getPort(), "/");
         HttpURLConnection uc = (HttpURLConnection)url.openConnection();
         System.out.println(uc.getResponseCode());
+        if(uc.getResponseCode() != 200) {
+            uc.disconnect();
+            throw new RuntimeException("Test failed : bad http request with response code : "+ uc.getResponseCode());
+        }
         uc.disconnect();
     }
 
@@ -160,31 +195,21 @@ public class B6216082 {
     }
 }
 
-class SimpleHttpTransaction implements HttpCallback {
-    public boolean hasBadRequest = false;
+class SimpleHttpTransaction implements HttpHandler {
 
     /*
      * Our http server which simply redirect first call
      */
-    public void request(HttpTransaction trans) {
+    public void handle(HttpExchange trans) {
         try {
             String path = trans.getRequestURI().getPath();
             if (path.equals("/")) {
                 // the first call, redirect it
                 String location = "/redirect";
-                trans.addResponseHeader("Location", location);
-                trans.sendResponse(302, "Moved Temporarily");
+                trans.getResponseHeaders().set("Location", location);
+                trans.sendResponseHeaders(302, -1);
             } else {
-                // if the bug exsits, it'll send 2 GET commands
-                // check 2nd GET here
-                String duplicatedGet = trans.getRequestHeader(null);
-                if (duplicatedGet != null &&
-                    duplicatedGet.toUpperCase().indexOf("GET") >= 0) {
-                    trans.sendResponse(400, "Bad Request");
-                    hasBadRequest = true;
-                } else {
-                    trans.sendResponse(200, "OK");
-                }
+                trans.sendResponseHeaders(200, -1);
             }
         } catch (Exception e) {
             throw new RuntimeException(e);

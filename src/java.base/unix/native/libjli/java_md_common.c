@@ -45,20 +45,27 @@ static char* findLastPathComponent(char *buffer, const char *comp) {
 /*
  * Removes the trailing file name and any intermediate platform
  * directories, if any, and its enclosing directory.
+ * Second parameter is a hint about the type of a file. JNI_TRUE is for
+ * shared libraries and JNI_FALSE is for executables.
  * Ex: if a buffer contains "/foo/bin/javac" or "/foo/bin/x64/javac", the
  * truncated resulting buffer will contain "/foo".
  */
 static jboolean
-TruncatePath(char *buf)
+TruncatePath(char *buf, jboolean pathisdll)
 {
-    // try bin directory, maybe an executable
-    char *p = findLastPathComponent(buf, "/bin/");
+    /*
+     * If the file is a library, try lib directory first and then bin
+     * directory.
+     * If the file is an executable, try bin directory first and then lib
+     * directory.
+     */
+
+    char *p = findLastPathComponent(buf, pathisdll ? "/lib/" : "/bin/");
     if (p != NULL) {
         *p = '\0';
         return JNI_TRUE;
     }
-    // try lib directory, maybe a library
-    p = findLastPathComponent(buf, "/lib/");
+    p = findLastPathComponent(buf, pathisdll ? "/bin/" : "/lib/");
     if (p != NULL) {
         *p = '\0';
         return JNI_TRUE;
@@ -80,7 +87,7 @@ GetApplicationHome(char *buf, jint bufsize)
     } else {
         return JNI_FALSE;
     }
-    return TruncatePath(buf);
+    return TruncatePath(buf, JNI_FALSE);
 }
 
 /*
@@ -95,7 +102,7 @@ GetApplicationHomeFromDll(char *buf, jint bufsize)
     if (dladdr((void*)&GetApplicationHomeFromDll, &info) != 0) {
         char *path = realpath(info.dli_fname, buf);
         if (path == buf) {
-            return TruncatePath(buf);
+            return TruncatePath(buf, JNI_TRUE);
         }
     }
     return JNI_FALSE;

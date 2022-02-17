@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,7 +129,7 @@ public final class CompactByteArray implements Cloneable {
     {
         if (isCompact)
             expand();
-        values[(int)index] = value;
+        values[index] = value;
         touchBlock(index >> BLOCKSHIFT, value);
     }
 
@@ -326,15 +326,9 @@ public final class CompactByteArray implements Cloneable {
             for (i = 0; i < INDEXCOUNT; ++i) {
                 indices[i] = (short)(i<<BLOCKSHIFT);
             }
-            values = null;
             values = tempArray;
             isCompact = false;
         }
-    }
-
-    private byte[] getArray()
-    {
-        return values;
     }
 
     private static  final int BLOCKSHIFT =7;
@@ -347,4 +341,4 @@ public final class CompactByteArray implements Cloneable {
     private short indices[];
     private boolean isCompact;
     private int[] hashes;
-};
+}

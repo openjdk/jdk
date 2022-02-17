@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,50 +24,65 @@ package org.openjdk.bench.java.lang;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.Threads;
+import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Thread)
+@Warmup(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
+@Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+@Fork(3)
 public class Longs {
 
     @Param("500")
     private int size;
 
+    private String[] strings;
     private long[] longArraySmall;
     private long[] longArrayBig;
 
     @Setup
     public void setup() {
+        var random = ThreadLocalRandom.current();
+        strings = new String[size];
         longArraySmall = new long[size];
         longArrayBig = new long[size];
         for (int i = 0; i < size; i++) {
+            strings[i] = "" + (random.nextLong(10000) - 5000);
             longArraySmall[i] = 100L * i + i + 103L;
-            longArrayBig[i] = ((100L * i + i) << 32) + 4543 + i * 4;
+            longArrayBig[i] = ((100L * i + i) << 32) + 4543 + i * 4L;
         }
     }
 
-    /** Performs toString on a bunch of java.lang.Long:s, all with small values, just a couple of digits. */
+    /** Performs toString on small values, just a couple of digits. */
     @Benchmark
-    @Threads(Threads.MAX)
     public void toStringSmall(Blackhole bh) {
         for (long value : longArraySmall) {
             bh.consume(Long.toString(value));
         }
     }
 
-    /** Performs toString on a bunch of java.lang.Long:s, all with large values, around 10 digits. */
     @Benchmark
-    @Threads(Threads.MAX)
+    public void decode(Blackhole bh) {
+        for (String s : strings) {
+            bh.consume(Long.decode(s));
+        }
+    }
+
+    /** Performs toString on large values, around 10 digits. */
+    @Benchmark
     public void toStringBig(Blackhole bh) {
         for (long value : longArrayBig) {
             bh.consume(Long.toString(value));
@@ -80,7 +95,6 @@ public class Longs {
     public int innerLoops = 1500;
 
     @Benchmark
-    @Threads(Threads.MAX)
     public long repetitiveSubtraction() {
         long x = 127, dx = 0;
 

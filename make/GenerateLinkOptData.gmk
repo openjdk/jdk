@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,10 @@ $(CLASSLIST_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXECUTABLE_SUFFIX) $(CLASSLIST
 	        $(CAT) $(LINK_OPT_DIR)/stderr $(JLI_TRACE_FILE) ; \
 	        exit $$exitcode \
 	    )
-	$(GREP) -v HelloClasslist $@.raw.2 > $@
+	$(GREP) -v HelloClasslist $@.raw.2 > $@.raw.3
+	$(FIXPATH) $(INTERIM_IMAGE_DIR)/bin/java \
+	    -cp $(SUPPORT_OUTPUTDIR)/classlist.jar \
+	    build.tools.classlist.SortClasslist $@.raw.3 > $@
 
 # The jli trace is created by the same recipe as classlist. By declaring these
 # dependencies, make will correctly rebuild both jli trace and classlist

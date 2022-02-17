@@ -794,7 +794,7 @@ void Canonicalizer::do_If(If* x) {
         if (cmp->x() == cmp->y()) {
           do_If(canon);
         } else {
-          if (compilation()->profile_branches() || compilation()->count_backedges()) {
+          if (compilation()->profile_branches() || compilation()->is_profiling()) {
             // TODO: If profiling, leave floating point comparisons unoptimized.
             // We currently do not support profiling of the unordered case.
             switch(cmp->op()) {
@@ -857,171 +857,16 @@ void Canonicalizer::do_Throw          (Throw*           x) {}
 void Canonicalizer::do_Base           (Base*            x) {}
 void Canonicalizer::do_OsrEntry       (OsrEntry*        x) {}
 void Canonicalizer::do_ExceptionObject(ExceptionObject* x) {}
-
-static bool match_index_and_scale(Instruction*  instr,
-                                  Instruction** index,
-                                  int*          log2_scale) {
-  // Skip conversion ops. This works only on 32bit because of the implicit l2i that the
-  // unsafe performs.
-#ifndef _LP64
-  Convert* convert = instr->as_Convert();
-  if (convert != NULL && convert->op() == Bytecodes::_i2l) {
-    assert(convert->value()->type() == intType, "invalid input type");
-    instr = convert->value();
-  }
-#endif
-
-  ShiftOp* shift = instr->as_ShiftOp();
-  if (shift != NULL) {
-    if (shift->op() == Bytecodes::_lshl) {
-      assert(shift->x()->type() == longType, "invalid input type");
-    } else {
-#ifndef _LP64
-      if (shift->op() == Bytecodes::_ishl) {
-        assert(shift->x()->type() == intType, "invalid input type");
-      } else {
-        return false;
-      }
-#else
-      return false;
-#endif
-    }
-
-
-    // Constant shift value?
-    Constant* con = shift->y()->as_Constant();
-    if (con == NULL) return false;
-    // Well-known type and value?
-    IntConstant* val = con->type()->as_IntConstant();
-    assert(val != NULL, "Should be an int constant");
-
-    *index = shift->x();
-    int tmp_scale = val->value();
-    if (tmp_scale >= 0 && tmp_scale < 4) {
-      *log2_scale = tmp_scale;
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  ArithmeticOp* arith = instr->as_ArithmeticOp();
-  if (arith != NULL) {
-    // See if either arg is a known constant
-    Constant* con = arith->x()->as_Constant();
-    if (con != NULL) {
-      *index = arith->y();
-    } else {
-      con = arith->y()->as_Constant();
-      if (con == NULL) return false;
-      *index = arith->x();
-    }
-    long const_value;
-    // Check for integer multiply
-    if (arith->op() == Bytecodes::_lmul) {
-      assert((*index)->type() == longType, "invalid input type");
-      LongConstant* val = con->type()->as_LongConstant();
-      assert(val != NULL, "expecting a long constant");
-      const_value = val->value();
-    } else {
-#ifndef _LP64
-      if (arith->op() == Bytecodes::_imul) {
-        assert((*index)->type() == intType, "invalid input type");
-        IntConstant* val = con->type()->as_IntConstant();
-        assert(val != NULL, "expecting an int constant");
-        const_value = val->value();
-      } else {
-        return false;
-      }
-#else
-      return false;
-#endif
-    }
-    switch (const_value) {
-    case 1: *log2_scale = 0; return true;
-    case 2: *log2_scale = 1; return true;
-    case 4: *log2_scale = 2; return true;
-    case 8: *log2_scale = 3; return true;
-    default:            return false;
-    }
-  }
-
-  // Unknown instruction sequence; don't touch it
-  return false;
-}
-
-
-static bool match(UnsafeRawOp* x,
-                  Instruction** base,
-                  Instruction** index,
-                  int*          log2_scale) {
-  ArithmeticOp* root = x->base()->as_ArithmeticOp();
-  if (root == NULL) return false;
-  // Limit ourselves to addition for now
-  if (root->op() != Bytecodes::_ladd) return false;
-
-  bool match_found = false;
-  // Try to find shift or scale op
-  if (match_index_and_scale(root->y(), index, log2_scale)) {
-    *base = root->x();
-    match_found = true;
-  } else if (match_index_and_scale(root->x(), index, log2_scale)) {
-    *base = root->y();
-    match_found = true;
-  } else if (NOT_LP64(root->y()->as_Convert() != NULL) LP64_ONLY(false)) {
-    // Skipping i2l works only on 32bit because of the implicit l2i that the unsafe performs.
-    // 64bit needs a real sign-extending conversion.
-    Convert* convert = root->y()->as_Convert();
-    if (convert->op() == Bytecodes::_i2l) {
-      assert(convert->value()->type() == intType, "should be an int");
-      // pick base and index, setting scale at 1
-      *base  = root->x();
-      *index = convert->value();
-      *log2_scale = 0;
-      match_found = true;
-    }
-  }
-  // The default solution
-  if (!match_found) {
-    *base = root->x();
-    *index = root->y();
-    *log2_scale = 0;
-  }
-
-  // If the value is pinned then it will be always be computed so
-  // there's no profit to reshaping the expression.
-  return !root->is_pinned();
-}
-
-
-void Canonicalizer::do_UnsafeRawOp(UnsafeRawOp* x) {
-  Instruction* base = NULL;
-  Instruction* index = NULL;
-  int          log2_scale;
-
-  if (match(x, &base, &index, &log2_scale)) {
-    x->set_base(base);
-    x->set_index(index);
-    x->set_log2_scale(log2_scale);
-    if (PrintUnsafeOptimization) {
-      tty->print_cr("Canonicalizer: UnsafeRawOp id %d: base = id %d, index = id %d, log2_scale = %d",
-                    x->id(), x->base()->id(), x->index()->id(), x->log2_scale());
-    }
-  }
-}
-
-void Canonicalizer::do_RoundFP(RoundFP* x) {}
-void Canonicalizer::do_UnsafeGetRaw(UnsafeGetRaw* x) { if (OptimizeUnsafes) do_UnsafeRawOp(x); }
-void Canonicalizer::do_UnsafePutRaw(UnsafePutRaw* x) { if (OptimizeUnsafes) do_UnsafeRawOp(x); }
-void Canonicalizer::do_UnsafeGetObject(UnsafeGetObject* x) {}
-void Canonicalizer::do_UnsafePutObject(UnsafePutObject* x) {}
-void Canonicalizer::do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) {}
-void Canonicalizer::do_ProfileCall(ProfileCall* x) {}
+void Canonicalizer::do_RoundFP        (RoundFP*         x) {}
+void Canonicalizer::do_UnsafeGet      (UnsafeGet*       x) {}
+void Canonicalizer::do_UnsafePut      (UnsafePut*       x) {}
+void Canonicalizer::do_UnsafeGetAndSet(UnsafeGetAndSet* x) {}
+void Canonicalizer::do_ProfileCall    (ProfileCall*     x) {}
 void Canonicalizer::do_ProfileReturnType(ProfileReturnType* x) {}
-void Canonicalizer::do_ProfileInvoke(ProfileInvoke* x) {}
-void Canonicalizer::do_RuntimeCall(RuntimeCall* x) {}
+void Canonicalizer::do_ProfileInvoke  (ProfileInvoke*   x) {}
+void Canonicalizer::do_RuntimeCall    (RuntimeCall*     x) {}
 void Canonicalizer::do_RangeCheckPredicate(RangeCheckPredicate* x) {}
 #ifdef ASSERT
-void Canonicalizer::do_Assert(Assert* x) {}
+void Canonicalizer::do_Assert         (Assert*          x) {}
 #endif
-void Canonicalizer::do_MemBar(MemBar* x) {}
+void Canonicalizer::do_MemBar         (MemBar*          x) {}

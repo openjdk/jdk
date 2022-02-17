@@ -122,9 +122,8 @@ public class WorkArounds {
         return false;
     }
 
-    // TODO: fix jx.l.m add this method.
-    public boolean isSynthesized(AnnotationMirror aDesc) {
-        return ((Attribute)aDesc).isSynthesized();
+    public boolean isMandated(AnnotationMirror aDesc) {
+        return elementUtils.getOrigin(null, aDesc) == Elements.Origin.MANDATED;
     }
 
     // TODO: DocTrees: Trees.getPath(Element e) is slow a factor 4-5 times.
@@ -197,18 +196,6 @@ public class WorkArounds {
 
         // finally, search by qualified name in all modules
         return elementUtils.getTypeElement(className);
-    }
-
-
-    // TODO: The following should be replaced by a new method such as Elements.isAutomaticModule
-    // see JDK-8261625
-    public boolean isAutomaticModule(ModuleElement me) {
-        if (me == null) {
-            return false;
-        } else {
-            ModuleSymbol msym = (ModuleSymbol) me;
-            return (msym.flags() & Flags.AUTOMATIC_MODULE) != 0;
-        }
     }
 
     // TODO:  need to re-implement this using j.l.m. correctly!, this has

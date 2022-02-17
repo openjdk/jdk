@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ public class TestHtmlTableStyles extends JavadocTester {
         checkOutput("deprecated-list.html", true,
             """
                     <div id="method">
-                    <div class="caption"><span>Methods</span></div>
+                    <div class="caption"><span>Deprecated Methods</span></div>
                     <div class="summary-table two-column-summary">""");
 
         checkOutput("constant-values.html", true,

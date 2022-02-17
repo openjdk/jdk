@@ -404,6 +404,8 @@ public class WebSocketProxyTest {
 
     @BeforeMethod
     public void breakBetweenTests() {
+        System.gc();
+        try {Thread.sleep(100); } catch (InterruptedException x) { /* OK */ }
         System.out.println("\n-------\n");
     }
 }

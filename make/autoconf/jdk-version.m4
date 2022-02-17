@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,17 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   AC_SUBST(PRODUCT_SUFFIX)
   AC_SUBST(JDK_RC_PLATFORM_NAME)
   AC_SUBST(HOTSPOT_VM_DISTRO)
+
+  # Setup username (for use in adhoc version strings etc)
+  AC_ARG_WITH([build-user], [AS_HELP_STRING([--with-build-user],
+      [build username to use in version strings])])
+  if test "x$with_build_user" != x; then
+    USERNAME="$with_build_user"
+  else
+    # Outer [ ] to quote m4.
+    [ USERNAME=`$ECHO "$USER" | $TR -d -c '[a-z][A-Z][0-9]'` ]
+  fi
+  AC_SUBST(USERNAME)
 
   # Set the JDK RC name
   AC_ARG_WITH(jdk-rc-name, [AS_HELP_STRING([--with-jdk-rc-name],
@@ -188,6 +199,10 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
           && test "x$VERSION_BUILD$VERSION_OPT" = x; then
         AC_MSG_ERROR([Version string contains + but both 'BUILD' and 'OPT' are missing])
       fi
+      if test "x$VERSION_BUILD" = x0; then
+        AC_MSG_WARN([Version build 0 is interpreted as no build number])
+        VERSION_BUILD=
+      fi
       # Stop the version part process from setting default values.
       # We still allow them to explicitly override though.
       NO_DEFAULT_VERSION_PARTS=true
@@ -239,9 +254,10 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     fi
   else
     if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
-      # Default is to calculate a string like this 'adhoc.<username>.<base dir name>'
+      # Default is to calculate a string like this:
+      # 'adhoc.<username>.<base dir name>'
       # Outer [ ] to quote m4.
-      [ basedirname=`$BASENAME "$TOPDIR" | $TR -d -c '[a-z][A-Z][0-9].-'` ]
+      [ basedirname=`$BASENAME "$WORKSPACE_ROOT" | $TR -d -c '[a-z][A-Z][0-9].-'` ]
       VERSION_OPT="adhoc.$USERNAME.$basedirname"
     fi
   fi
@@ -260,13 +276,15 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
       VERSION_BUILD=
     else
       JDKVER_CHECK_AND_SET_NUMBER(VERSION_BUILD, $with_version_build)
+      if test "x$VERSION_BUILD" = "x0"; then
+        AC_MSG_WARN([--with-version-build=0 is interpreted as --without-version-build])
+        VERSION_BUILD=
+      fi
     fi
   else
     if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
       # Default is to not have a build number.
       VERSION_BUILD=""
-      # FIXME: Until all code can cope with an empty VERSION_BUILD, set it to 0.
-      VERSION_BUILD=0
     fi
   fi
 
@@ -439,13 +457,22 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   for i in 1 2 3 4 5 6 ; do stripped_version_number=${stripped_version_number%.0} ; done
   VERSION_NUMBER=$stripped_version_number
 
-  # The complete version string, with additional build information
-  if test "x$VERSION_BUILD$VERSION_OPT" = x; then
-    VERSION_STRING=$VERSION_NUMBER${VERSION_PRE:+-$VERSION_PRE}
-  else
-    # If either build or opt is set, we need a + separator
-    VERSION_STRING=$VERSION_NUMBER${VERSION_PRE:+-$VERSION_PRE}+$VERSION_BUILD${VERSION_OPT:+-$VERSION_OPT}
+  # A build number of "0" is interpreted as "no build number".
+  if test "x$VERSION_BUILD" = x0; then
+    VERSION_BUILD=
   fi
+
+  # Compute the complete version string, with additional build information
+  version_with_pre=$VERSION_NUMBER${VERSION_PRE:+-$VERSION_PRE}
+  if test "x$VERSION_BUILD" != x || \
+      ( test "x$VERSION_OPT" != x && test "x$VERSION_PRE" = x ); then
+    # As per JEP 223, if build is set, or if opt is set but not pre,
+    # we need a + separator
+    version_with_build=$version_with_pre+$VERSION_BUILD
+  else
+    version_with_build=$version_with_pre
+  fi
+  VERSION_STRING=$version_with_build${VERSION_OPT:+-$VERSION_OPT}
 
   # The short version string, just VERSION_NUMBER and PRE, if present.
   VERSION_SHORT=$VERSION_NUMBER${VERSION_PRE:+-$VERSION_PRE}
@@ -525,7 +552,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     MACOSX_BUNDLE_BUILD_VERSION="$VERSION_BUILD"
     # If VERSION_OPT consists of only numbers and periods, add it.
     if [ [[ $VERSION_OPT =~ ^[0-9\.]+$ ]] ]; then
-      MACOSX_BUNDLE_BUILD_VERSION+=".$VERSION_OPT"
+      MACOSX_BUNDLE_BUILD_VERSION="$MACOSX_BUNDLE_BUILD_VERSION.$VERSION_OPT"
     fi
   fi
   AC_SUBST(MACOSX_BUNDLE_BUILD_VERSION)
@@ -533,6 +560,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   # We could define --with flags for these, if really needed
   VERSION_CLASSFILE_MAJOR="$DEFAULT_VERSION_CLASSFILE_MAJOR"
   VERSION_CLASSFILE_MINOR="$DEFAULT_VERSION_CLASSFILE_MINOR"
+  VERSION_DOCS_API_SINCE="$DEFAULT_VERSION_DOCS_API_SINCE"
   JDK_SOURCE_TARGET_VERSION="$DEFAULT_JDK_SOURCE_TARGET_VERSION"
 
   AC_MSG_CHECKING([for version string])
@@ -557,5 +585,6 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   AC_SUBST(VENDOR_VERSION_STRING)
   AC_SUBST(VERSION_CLASSFILE_MAJOR)
   AC_SUBST(VERSION_CLASSFILE_MINOR)
+  AC_SUBST(VERSION_DOCS_API_SINCE)
   AC_SUBST(JDK_SOURCE_TARGET_VERSION)
 ])

@@ -23,7 +23,7 @@
  */
 
 /*
- * @test TestVerifyJCStress
+ * @test id=passive
  * @summary Tests that we pass at least one jcstress-like test with all verification turned on
  * @requires vm.gc.Shenandoah
  * @modules java.base/jdk.internal.misc
@@ -41,7 +41,7 @@
  */
 
 /*
- * @test TestVerifyJCStress
+ * @test id=default
  * @summary Tests that we pass at least one jcstress-like test with all verification turned on
  * @requires vm.gc.Shenandoah
  * @modules java.base/jdk.internal.misc
@@ -59,7 +59,7 @@
  */
 
 /*
- * @test TestVerifyJCStress
+ * @test id=iu
  * @summary Tests that we pass at least one jcstress-like test with all verification turned on
  * @requires vm.gc.Shenandoah
  * @modules java.base/jdk.internal.misc

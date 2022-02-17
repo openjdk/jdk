@@ -107,6 +107,11 @@ public final class SSLSocketImpl
     private static final boolean trustNameService =
             Utilities.getBooleanProperty("jdk.tls.trustNameService", false);
 
+    /*
+     * Default timeout to skip bytes from the open socket
+     */
+    private static final int DEFAULT_SKIP_TIMEOUT = 1;
+
     /**
      * Package-private constructor used to instantiate an unconnected
      * socket.
@@ -587,7 +592,7 @@ public final class SSLSocketImpl
         } catch (IOException ioe) {
             // ignore the exception
             if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                SSLLogger.warning("SSLSocket duplex close failed", ioe);
+                SSLLogger.warning("SSLSocket duplex close failed. Debug info only. Exception details:", ioe);
             }
         } finally {
             if (!isClosed()) {
@@ -597,7 +602,7 @@ public final class SSLSocketImpl
                 } catch (IOException ioe) {
                     // ignore the exception
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                        SSLLogger.warning("SSLSocket close failed", ioe);
+                        SSLLogger.warning("SSLSocket close failed. Debug info only. Exception details:", ioe);
                     }
                 } finally {
                     tlsIsClosed = true;
@@ -1134,7 +1139,7 @@ public final class SSLSocketImpl
             } catch (IOException ioe) {
                 // ignore the exception
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                    SSLLogger.warning("input stream close failed", ioe);
+                    SSLLogger.warning("input stream close failed. Debug info only. Exception details:", ioe);
                 }
             }
         }
@@ -1329,7 +1334,7 @@ public final class SSLSocketImpl
             } catch (IOException ioe) {
                 // ignore the exception
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                    SSLLogger.warning("output stream close failed", ioe);
+                    SSLLogger.warning("output stream close failed. Debug info only. Exception details:", ioe);
                 }
             }
         }
@@ -1777,6 +1782,30 @@ public final class SSLSocketImpl
         }
 
         if (autoClose || !isLayered()) {
+            // Try to clear the kernel buffer to avoid TCP connection resets.
+            if (conContext.inputRecord instanceof
+                    SSLSocketInputRecord inputRecord && isConnected) {
+                if (appInput.readLock.tryLock()) {
+                    int soTimeout = getSoTimeout();
+                    try {
+                        // deplete could hang on the skip operation
+                        // in case of infinite socket read timeout.
+                        // Change read timeout to avoid deadlock.
+                        // This workaround could be replaced later
+                        // with the right synchronization
+                        if (soTimeout == 0)
+                            setSoTimeout(DEFAULT_SKIP_TIMEOUT);
+                        inputRecord.deplete(false);
+                    } catch (java.net.SocketTimeoutException stEx) {
+                        // skip timeout exception during deplete
+                    } finally {
+                        if (soTimeout == 0)
+                            setSoTimeout(soTimeout);
+                        appInput.readLock.unlock();
+                    }
+                }
+            }
+
             super.close();
         } else if (selfInitiated) {
             if (!conContext.isInboundClosed() && !isInputShutdown()) {

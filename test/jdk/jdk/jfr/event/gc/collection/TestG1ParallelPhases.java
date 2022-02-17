@@ -115,14 +115,18 @@ public class TestG1ParallelPhases {
             "MergePSS",
             "NonYoungFreeCSet",
             "YoungFreeCSet",
-            "RebuildFreeList"
+            "RebuildFreeList",
+            "SampleCandidates",
+            "CLDClearClaimedMarks",
+            "ResetMarkingState",
+            "NoteStartOfMark"
         );
 
         // Some GC phases may or may not occur depending on environment. Filter them out
         // since we can not reliably guarantee that they occur (or not).
         Set<String> optPhases = of(
             // The following two phases only occur on evacuation failure.
-            "RemoveSelfForwardingPtr",
+            "RestoreRetainedRegions",
             "RestorePreservedMarks",
 
             "OptScanHR",

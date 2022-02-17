@@ -27,6 +27,7 @@ package sun.security.ssl;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.security.CryptoPrimitive;
 import java.security.GeneralSecurityException;
 import java.security.PublicKey;
 import java.security.interfaces.ECPublicKey;
@@ -35,6 +36,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.NamedParameterSpec;
 import java.text.MessageFormat;
+import java.util.EnumSet;
 import java.util.Locale;
 import javax.crypto.SecretKey;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
@@ -317,12 +319,19 @@ final class ECDHClientKeyExchange {
 
             // create the credentials
             try {
-                NamedGroup ng = namedGroup;  // "effectively final" the lambda
-                // AlgorithmConstraints are checked internally.
-                SSLCredentials sslCredentials = namedGroup.decodeCredentials(
-                        cke.encodedPoint, shc.algorithmConstraints,
-                        s -> shc.conContext.fatal(Alert.INSUFFICIENT_SECURITY,
-                        "ClientKeyExchange " + ng + ": " + s));
+                SSLCredentials sslCredentials =
+                        namedGroup.decodeCredentials(cke.encodedPoint);
+                if (shc.algorithmConstraints != null &&
+                        sslCredentials instanceof
+                            NamedGroupCredentials namedGroupCredentials) {
+                    if (!shc.algorithmConstraints.permits(
+                            EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
+                            namedGroupCredentials.getPublicKey())) {
+                        shc.conContext.fatal(Alert.INSUFFICIENT_SECURITY,
+                            "ClientKeyExchange for " + namedGroup +
+                            " does not comply with algorithm constraints");
+                    }
+                }
 
                 shc.handshakeCredentials.add(sslCredentials);
             } catch (GeneralSecurityException e) {
@@ -497,12 +506,19 @@ final class ECDHClientKeyExchange {
 
             // create the credentials
             try {
-                NamedGroup ng = namedGroup; // "effectively final" the lambda
-                // AlgorithmConstraints are checked internally.
-                SSLCredentials sslCredentials = namedGroup.decodeCredentials(
-                        cke.encodedPoint, shc.algorithmConstraints,
-                        s -> shc.conContext.fatal(Alert.INSUFFICIENT_SECURITY,
-                        "ClientKeyExchange " + ng + ": " + s));
+                SSLCredentials sslCredentials =
+                        namedGroup.decodeCredentials(cke.encodedPoint);
+                if (shc.algorithmConstraints != null &&
+                        sslCredentials instanceof
+                                NamedGroupCredentials namedGroupCredentials) {
+                    if (!shc.algorithmConstraints.permits(
+                            EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
+                            namedGroupCredentials.getPublicKey())) {
+                        shc.conContext.fatal(Alert.INSUFFICIENT_SECURITY,
+                            "ClientKeyExchange for " + namedGroup +
+                            " does not comply with algorithm constraints");
+                    }
+                }
 
                 shc.handshakeCredentials.add(sslCredentials);
             } catch (GeneralSecurityException e) {

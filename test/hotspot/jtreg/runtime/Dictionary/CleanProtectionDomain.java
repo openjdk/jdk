@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Verifies the creation and cleaup of entries in the Protection Domain Table
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @build sun.hotspot.WhiteBox

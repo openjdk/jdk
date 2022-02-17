@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import jdk.test.lib.hprof.model.Snapshot;
  *          jdk.hotspot.agent/sun.jvm.hotspot.utilities
  *          jdk.hotspot.agent/sun.jvm.hotspot.oops
  *          jdk.hotspot.agent/sun.jvm.hotspot.debugger
- * @run main/othervm TestHeapDumpForInvokeDynamic
+ * @run driver TestHeapDumpForInvokeDynamic
  */
 
 public class TestHeapDumpForInvokeDynamic {

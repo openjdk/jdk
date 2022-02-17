@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2488,9 +2488,8 @@ void SuperWord::output() {
       } else if (VectorNode::is_scalar_rotate(n)) {
         Node* in1 = low_adr->in(1);
         Node* in2 = p->at(0)->in(2);
-        assert(in2->bottom_type()->isa_int(), "Shift must always be an int value");
         // If rotation count is non-constant or greater than 8bit value create a vector.
-        if (!in2->is_Con() || -0x80 > in2->get_int() || in2->get_int() >= 0x80) {
+        if (!in2->is_Con() || !Matcher::supports_vector_constant_rotates(in2->get_int())) {
           in2 =  vector_opd(p, 2);
         }
         vn = VectorNode::make(opc, in1, in2, vlen, velt_basic_type(n));
@@ -2554,10 +2553,18 @@ void SuperWord::output() {
                  opc == Op_AbsF || opc == Op_AbsD ||
                  opc == Op_AbsI || opc == Op_AbsL ||
                  opc == Op_NegF || opc == Op_NegD ||
-                 opc == Op_PopCountI) {
+                 opc == Op_PopCountI || opc == Op_PopCountL) {
         assert(n->req() == 2, "only one input expected");
         Node* in = vector_opd(p, 1);
         vn = VectorNode::make(opc, in, NULL, vlen, velt_basic_type(n));
+        vlen_in_bytes = vn->as_Vector()->length_in_bytes();
+      } else if (opc == Op_ConvI2F || opc == Op_ConvL2D ||
+                 opc == Op_ConvF2I || opc == Op_ConvD2L) {
+        assert(n->req() == 2, "only one input expected");
+        BasicType bt = velt_basic_type(n);
+        int vopc = VectorNode::opcode(opc, bt);
+        Node* in = vector_opd(p, 1);
+        vn = VectorCastNode::make(vopc, in, bt, vlen);
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (is_cmov_pack(p)) {
         if (can_process_post_loop) {
@@ -2694,7 +2701,7 @@ void SuperWord::output() {
           // if vector resources are limited, do not allow additional unrolling, also
           // do not unroll more on pure vector loops which were not reduced so that we can
           // program the post loop to single iteration execution.
-          if (FLOATPRESSURE > 8) {
+          if (Matcher::float_pressure_limit() > 8) {
             C->set_major_progress();
             cl->mark_do_unroll_only();
           }
@@ -2921,6 +2928,7 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) {
     }
     return true;
   }
+
   if (VectorNode::is_muladds2i(use)) {
     // MulAddS2I takes shorts and produces ints - hence the special checks
     // on alignment and size.
@@ -2936,6 +2944,24 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) {
     }
     return true;
   }
+
+  if (VectorNode::is_vpopcnt_long(use)) {
+    // VPOPCNT_LONG takes long and produces int - hence the special checks
+    // on alignment and size.
+    if (u_pk->size() != d_pk->size()) {
+      return false;
+    }
+    for (uint i = 0; i < MIN2(d_pk->size(), u_pk->size()); i++) {
+      Node* ui = u_pk->at(i);
+      Node* di = d_pk->at(i);
+      if (alignment(ui) * 2 != alignment(di)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+
   if (u_pk->size() != d_pk->size())
     return false;
   for (uint i = 0; i < u_pk->size(); i++) {
@@ -3604,7 +3630,7 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
 CountedLoopEndNode* SuperWord::find_pre_loop_end(CountedLoopNode* cl) const {
   // The loop cannot be optimized if the graph shape at
   // the loop entry is inappropriate.
-  if (!PhaseIdealLoop::is_canonical_loop_entry(cl)) {
+  if (cl->is_canonical_loop_entry() == NULL) {
     return NULL;
   }
 

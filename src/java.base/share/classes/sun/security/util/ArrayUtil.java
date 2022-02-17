@@ -37,11 +37,6 @@ import jdk.internal.util.Preconditions;
 
 public final class ArrayUtil {
 
-    private static final BiFunction<String, List<Number>,
-            ArrayIndexOutOfBoundsException> AIOOBE_SUPPLIER =
-            Preconditions.outOfBoundsExceptionFormatter
-            (ArrayIndexOutOfBoundsException::new);
-
     public static void blockSizeCheck(int len, int blockSize) {
         if ((len % blockSize) != 0) {
             throw new ProviderException("Internal error in input buffering");
@@ -50,7 +45,7 @@ public final class ArrayUtil {
 
     public static void nullAndBoundsCheck(byte[] array, int offset, int len) {
         // NPE is thrown when array is null
-        Preconditions.checkFromIndexSize(offset, len, array.length, AIOOBE_SUPPLIER);
+        Preconditions.checkFromIndexSize(offset, len, array.length, Preconditions.AIOOBE_FORMATTER);
     }
 
     private static void swap(byte[] arr, int i, int j) {

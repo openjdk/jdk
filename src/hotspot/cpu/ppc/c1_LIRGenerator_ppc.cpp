@@ -243,7 +243,7 @@ LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_o
 
 
 LIR_Opr LIRGenerator::load_immediate(int x, BasicType type) {
-  LIR_Opr r = NULL;
+  LIR_Opr r;
   if (type == T_LONG) {
     r = LIR_OprFact::longConst(x);
   } else if (type == T_INT) {
@@ -309,12 +309,7 @@ bool LIRGenerator::strength_reduce_multiply(LIR_Opr left, jint c, LIR_Opr result
 void LIRGenerator::store_stack_parameter(LIR_Opr item, ByteSize offset_from_sp) {
   BasicType t = item->type();
   LIR_Opr sp_opr = FrameMap::SP_opr;
-  if ((t == T_LONG || t == T_DOUBLE) &&
-      (in_bytes(offset_from_sp) % 8 != 0)) {
-    __ unaligned_move(item, new LIR_Address(sp_opr, in_bytes(offset_from_sp), t));
-  } else {
-    __ move(item, new LIR_Address(sp_opr, in_bytes(offset_from_sp), t));
-  }
+  __ move(item, new LIR_Address(sp_opr, in_bytes(offset_from_sp), t));
 }
 
 
@@ -727,7 +722,8 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
       __ abs(value.result(), dst, LIR_OprFact::illegalOpr);
       break;
     }
-    case vmIntrinsics::_dsqrt: {
+    case vmIntrinsics::_dsqrt:
+    case vmIntrinsics::_dsqrt_strict: {
       if (VM_Version::has_fsqrt()) {
         assert(x->number_of_arguments() == 1, "wrong type");
         LIRItem value(x->argument_at(0), this);
@@ -748,6 +744,7 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
       address runtime_entry = NULL;
       switch (x->id()) {
         case vmIntrinsics::_dsqrt:
+        case vmIntrinsics::_dsqrt_strict:
           runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsqrt);
           break;
         case vmIntrinsics::_dsin:

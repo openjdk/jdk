@@ -698,7 +698,7 @@ jobject Modules::get_module(jclass clazz, TRAPS) {
       ls.print("get_module(): module ");
       java_lang_String::print(module_name, tty);
     } else {
-      ls.print("get_module(): Unamed Module");
+      ls.print("get_module(): Unnamed Module");
     }
     if (klass != NULL) {
       ls.print_cr(" for class %s", klass->external_name());

@@ -26,8 +26,7 @@
 #import "MTLTexturePool.h"
 #import "Trace.h"
 
-#define SCREEN_MEMORY_SIZE_4K (4096*2160*4) //~33,7 mb
-#define MAX_POOL_MEMORY SCREEN_MEMORY_SIZE_4K/2
+#define SCREEN_MEMORY_SIZE_5K (5120*4096*4) //~84 mb
 #define MAX_POOL_ITEM_LIFETIME_SEC 30
 
 #define CELL_WIDTH_BITS 5 // ~ 32 pixel
@@ -305,6 +304,7 @@
     void ** _cells;
     int _poolCellWidth;
     int _poolCellHeight;
+    uint64_t _maxPoolMemory;
 }
 
 @synthesize device;
@@ -320,6 +320,16 @@
     _cells = (void **)malloc(cellsCount * sizeof(void*));
     memset(_cells, 0, cellsCount * sizeof(void*));
     self.device = dev;
+
+    // recommendedMaxWorkingSetSize typically greatly exceeds SCREEN_MEMORY_SIZE_5K constant.
+    // It usually corresponds to the VRAM available to the graphics card
+    _maxPoolMemory = self.device.recommendedMaxWorkingSetSize/2;
+
+    // Set maximum to handle at least 5K screen size
+    if (_maxPoolMemory < SCREEN_MEMORY_SIZE_5K) {
+        _maxPoolMemory = SCREEN_MEMORY_SIZE_5K;
+    }
+
     return self;
 }
 
@@ -345,9 +355,9 @@
         // 1. clean pool if necessary
         const int requestedPixels = width*height;
         const int requestedBytes = requestedPixels*4;
-        if (_memoryTotalAllocated + requestedBytes > MAX_POOL_MEMORY) {
+        if (_memoryTotalAllocated + requestedBytes > _maxPoolMemory) {
             [self cleanIfNecessary:0]; // release all free textures
-        } else if (_memoryTotalAllocated + requestedBytes > MAX_POOL_MEMORY/2) {
+        } else if (_memoryTotalAllocated + requestedBytes > _maxPoolMemory/2) {
             [self cleanIfNecessary:MAX_POOL_ITEM_LIFETIME_SEC]; // release only old free textures
         }
 

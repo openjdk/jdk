@@ -938,7 +938,7 @@ public class SSLFlowDelegate {
         @Override
         public String toString() {
             return "WRITER: " + super.toString()
-                    + ", writeList size: " + Integer.toString(writeList.size())
+                    + ", writeList size: " + writeList.size()
                     + ", scheduler: " + (scheduler.isStopped() ? "stopped" : "running")
                     + ", status: " + lastWrappedStatus;
                     //" writeList: " + writeList.toString();
@@ -1113,7 +1113,7 @@ public class SSLFlowDelegate {
         exec.execute(() -> {
             try {
                 List<Runnable> nextTasks = tasks;
-                if (debug.on()) debug.log("#tasks to execute: " + Integer.toString(nextTasks.size()));
+                if (debug.on()) debug.log("#tasks to execute: " + nextTasks.size());
                 do {
                     nextTasks.forEach(Runnable::run);
                     if (engine.getHandshakeStatus() == HandshakeStatus.NEED_TASK) {

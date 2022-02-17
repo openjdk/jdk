@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @author Gary Ellison
  * @bug 4106600
- * @summary java.net.PlainSocketImpl backlog value bug avoidance
+ * @summary java.net.SocketImpl backlog value bug avoidance
  */
 
 import java.io.*;

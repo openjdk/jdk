@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package com.sun.jndi.ldap;
 
 import javax.naming.*;
 import javax.naming.directory.*;
-import java.util.Vector;
+import java.util.ArrayList;
 
 /**
  * Netscape's 3.1 servers have some schema bugs:
@@ -519,7 +519,7 @@ final class LdapSchemaParser {
         throws NamingException {
 
         int begin, end;
-        Vector<String> values = new Vector<>(5);
+        ArrayList<String> values = new ArrayList<>(5);
 
         if (debug) {
             System.err.println("ReadQDescrList: pos="+pos[0]);
@@ -543,7 +543,7 @@ final class LdapSchemaParser {
                                    "' at begin=" + begin + " end =" + end);
             }
 
-            values.addElement(one[0]);
+            values.add(one[0]);
             skipWhitespace(string, pos);
             begin = pos[0];
         }
@@ -552,7 +552,7 @@ final class LdapSchemaParser {
 
         String[] answer = new String[values.size()];
         for (int i = 0; i < answer.length; i++) {
-            answer[i] = values.elementAt(i);
+            answer[i] = values.get(i);
         }
         return answer;
     }
@@ -613,7 +613,7 @@ final class LdapSchemaParser {
 
         int     begin, cur, end;
         String  oidName = null;
-        Vector<String> values = new Vector<>(5);
+        ArrayList<String> values = new ArrayList<>(5);
 
         if (debug) {
             System.err.println("ReadOIDList: pos="+pos[0]);
@@ -641,7 +641,7 @@ final class LdapSchemaParser {
                 System.err.println("ReadOIDList: found '" + oidName +
                                    "' at begin=" + begin + " end =" + end);
             }
-            values.addElement(oidName);
+            values.add(oidName);
             pos[0] = cur + 1;
             skipWhitespace(string, pos);
             begin = pos[0];
@@ -656,13 +656,13 @@ final class LdapSchemaParser {
 
         int wsBegin = findTrailingWhitespace(string, end - 1);
         oidName = string.substring(begin, wsBegin);
-        values.addElement(oidName);
+        values.add(oidName);
 
         pos[0] = end+1;
 
         String[] answer = new String[values.size()];
         for (int i = 0; i < answer.length; i++) {
-            answer[i] = values.elementAt(i);
+            answer[i] = values.get(i);
         }
         return answer;
     }

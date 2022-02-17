@@ -57,6 +57,9 @@ class HeapRegionClaimer;
 // external heap references into it.  Uses a mod ref bs to track updates,
 // so that they can be used to update the individual region remsets.
 class G1RemSet: public CHeapObj<mtGC> {
+public:
+  typedef CardTable::CardValue CardValue;
+
 private:
   G1RemSetScanState* _scan_state;
 
@@ -72,10 +75,10 @@ private:
   void print_merge_heap_roots_stats();
 
   void assert_scan_top_is_null(uint hrm_index) NOT_DEBUG_RETURN;
+
+  void enqueue_for_reprocessing(CardValue* card_ptr);
+
 public:
-
-  typedef CardTable::CardValue CardValue;
-
   // Initialize data that depends on the heap size being known.
   void initialize(uint max_reserved_regions);
 
@@ -107,7 +110,10 @@ public:
   // Prepare for and cleanup after scanning the heap roots. Must be called
   // once before and after in sequential code.
   void prepare_for_scan_heap_roots();
-  // Creates a gang task for cleaining up temporary data structures and the
+
+  // Print coarsening stats.
+  void print_coarsen_stats();
+  // Creates a task for cleaining up temporary data structures and the
   // card table, removing temporary duplicate detection information.
   G1AbstractSubTask* create_cleanup_after_scan_heap_roots_task();
   // Excludes the given region from heap root scanning.
@@ -143,8 +149,8 @@ public:
   void print_periodic_summary_info(const char* header, uint period_count);
 
   // Rebuilds the remembered set by scanning from bottom to TARS for all regions
-  // using the given work gang.
-  void rebuild_rem_set(G1ConcurrentMark* cm, WorkGang* workers, uint worker_id_offset);
+  // using the given workers.
+  void rebuild_rem_set(G1ConcurrentMark* cm, WorkerThreads* workers, uint worker_id_offset);
 };
 
 #endif // SHARE_GC_G1_G1REMSET_HPP

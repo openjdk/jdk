@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,14 @@ import nsk.share.*;
 import nsk.share.jvmti.*;
 
 public class suspendthrd003 extends DebugeeClass {
+    private final static String AGENT_LIB = "suspendthrd003";
+    private final static int DEF_TIME_MAX = 30;  // default max # secs to test
 
-    final static int N_THREADS = 10;
+    public static Wicket mainEntrance;
 
     // load native library if required
     static {
-        System.loadLibrary("suspendthrd003");
+        System.loadLibrary(AGENT_LIB);
     }
 
     // run test from command line
@@ -67,8 +69,26 @@ public class suspendthrd003 extends DebugeeClass {
         log = new Log(out, argHandler);
         timeout = argHandler.getWaitTime() * 60 * 1000; // milliseconds
 
-        for (int i = 0; i < N_THREADS; i++) {
-            System.out.println("Starting TestedThread #" + i + ".");
+        String[] args = argHandler.getArguments();
+        int timeMax = 0;
+        if (args.length == 0) {
+            timeMax = DEF_TIME_MAX;
+        } else {
+            try {
+                timeMax = Integer.parseUnsignedInt(args[0]);
+            } catch (NumberFormatException nfe) {
+                System.err.println("'" + args[0] + "': invalid timeMax value.");
+                usage();
+            }
+        }
+
+        System.out.println("About to execute for " + timeMax + " seconds.");
+
+        long count = 0;
+        int res = -1;
+        long start_time = System.currentTimeMillis();
+        while (System.currentTimeMillis() < start_time + (timeMax * 1000)) {
+            count++;
 
             // Original suspendthrd001 test block starts here:
             //
@@ -76,15 +96,14 @@ public class suspendthrd003 extends DebugeeClass {
             // Note: Cannot use TestedThread-N for thread name since
             // the agent has to know the thread's name.
             thread = new suspendthrd003Thread("TestedThread");
+            mainEntrance = new Wicket();
 
             // run tested thread
             log.display("Starting tested thread");
             try {
                 thread.start();
                 // SP1-w - wait for TestedThread-N to be ready
-                if (!thread.checkReady()) {
-                    throw new Failure("Unable to prepare tested thread: " + thread);
-                }
+                mainEntrance.waitFor();
 
                 // testing sync
                 log.display("Sync: thread started");
@@ -122,7 +141,19 @@ public class suspendthrd003 extends DebugeeClass {
             resetAgentData();  // reset for another iteration
         }
 
+        System.out.println("Executed " + count + " loops in " + timeMax +
+                           " seconds.");
+
         return status;
+    }
+
+    public static void usage() {
+        System.err.println("Usage: " + AGENT_LIB + " [time_max]");
+        System.err.println("where:");
+        System.err.println("    time_max  max looping time in seconds");
+        System.err.println("              (default is " + DEF_TIME_MAX +
+                           " seconds)");
+        System.exit(1);
     }
 }
 
@@ -130,7 +161,6 @@ public class suspendthrd003 extends DebugeeClass {
 
 // basic class for tested threads
 class suspendthrd003Thread extends Thread {
-    private volatile boolean threadReady = false;
     private volatile boolean shouldFinish = false;
 
     // make thread with specific name
@@ -142,7 +172,7 @@ class suspendthrd003Thread extends Thread {
     public void run() {
         // run in a loop
         // SP1-n - tell main we are ready
-        threadReady = true;
+        suspendthrd003.mainEntrance.unlock();
         int i = 0;
         int n = 1000;
         while (!shouldFinish) {
@@ -155,18 +185,6 @@ class suspendthrd003Thread extends Thread {
             }
             i = i + 1;
         }
-    }
-
-    // check if thread is ready
-    public boolean checkReady() {
-        try {
-            while (!threadReady) {
-                sleep(1000);
-            }
-        } catch (InterruptedException e) {
-            throw new Failure("Interruption while preparing tested thread: \n\t" + e);
-        }
-        return threadReady;
     }
 
     // let thread to finish

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ public:
       oop new_obj = o->forwardee();
       if (log_develop_is_enabled(Trace, gc, scavenge)) {
         ResourceMark rm; // required by internal_name()
-        log_develop_trace(gc, scavenge)("{%s %s " PTR_FORMAT " -> " PTR_FORMAT " (%d)}",
+        log_develop_trace(gc, scavenge)("{%s %s " PTR_FORMAT " -> " PTR_FORMAT " (" SIZE_FORMAT ")}",
                                         "forwarding",
                                         new_obj->klass()->internal_name(), p2i((void *)o), p2i((void *)new_obj), new_obj->size());
       }
@@ -90,13 +90,8 @@ public:
     if (PSScavenge::should_scavenge(p)) {
       assert(PSScavenge::should_scavenge(p, true), "revisiting object?");
 
-      oop o = *p;
-      oop new_obj;
-      if (o->is_forwarded()) {
-        new_obj = o->forwardee();
-      } else {
-        new_obj = _pm->copy_to_survivor_space</*promote_immediately=*/false>(o);
-      }
+      oop o = RawAccess<IS_NOT_NULL>::oop_load(p);
+      oop new_obj = _pm->copy_to_survivor_space</*promote_immediately=*/false>(o);
       RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
 
       if (PSScavenge::is_obj_in_young(new_obj)) {

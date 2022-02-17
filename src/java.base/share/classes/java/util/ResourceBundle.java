@@ -2888,7 +2888,7 @@ public abstract class ResourceBundle {
                 if (language.equals("nb") || isNorwegianBokmal) {
                     List<Locale> tmpList = getDefaultList("nb", script, region, variant);
                     // Insert a locale replacing "nb" with "no" for every list entry with precedence
-                    List<Locale> bokmalList = new LinkedList<>();
+                    List<Locale> bokmalList = new ArrayList<>();
                     for (Locale l_nb : tmpList) {
                         var isRoot = l_nb.getLanguage().isEmpty();
                         var l_no = Locale.getInstance(isRoot ? "" : "no",
@@ -2928,7 +2928,7 @@ public abstract class ResourceBundle {
                 List<String> variants = null;
 
                 if (!variant.isEmpty()) {
-                    variants = new LinkedList<>();
+                    variants = new ArrayList<>();
                     int idx = variant.length();
                     while (idx != -1) {
                         variants.add(variant.substring(0, idx));
@@ -2936,7 +2936,7 @@ public abstract class ResourceBundle {
                     }
                 }
 
-                List<Locale> list = new LinkedList<>();
+                List<Locale> list = new ArrayList<>();
 
                 if (variants != null) {
                     for (String v : variants) {
@@ -3729,7 +3729,7 @@ public abstract class ResourceBundle {
 
     }
 
-    private static final boolean TRACE_ON = Boolean.valueOf(
+    private static final boolean TRACE_ON = Boolean.parseBoolean(
         GetPropertyAction.privilegedGetProperty("resource.bundle.debug", "false"));
 
     private static void trace(String format, Object... params) {

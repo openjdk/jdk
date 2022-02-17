@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ oop ZObjArrayAllocator::finish(HeapWord* mem) const {
 
     if (remaining > 0) {
       // Safepoint
-      ThreadBlockInVM tbivm(_thread->as_Java_thread());
+      ThreadBlockInVM tbivm(JavaThread::cast(_thread));
     }
   }
 

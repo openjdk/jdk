@@ -27,8 +27,9 @@
  * @summary DumpLoadedClassList should exclude generated classes, classes in bootclasspath/a and
  *          --patch-module.
  * @requires vm.cds
+ * @modules jdk.jfr
  * @library /test/lib
- * @compile test-classes/ArrayListTest.java
+ * @compile test-classes/DumpClassListApp.java
  * @run driver DumpClassList
  */
 
@@ -40,25 +41,25 @@ import jdk.test.lib.helpers.ClassFileInstaller;
 public class DumpClassList {
     public static void main(String[] args) throws Exception {
         // build The app
-        String[] appClass = new String[] {"ArrayListTest"};
+        String[] appClass = new String[] {"DumpClassListApp"};
         String classList = "app.list";
 
         JarBuilder.build("app", appClass[0]);
         String appJar = TestCommon.getTestJar("app.jar");
 
         // build patch-module
-        String source = "package java.lang; "                       +
+        String source = "package jdk.jfr; "                         +
                         "public class NewClass { "                  +
                         "    static { "                             +
                         "        System.out.println(\"NewClass\"); "+
                         "    } "                                    +
                         "}";
 
-        ClassFileInstaller.writeClassToDisk("java/lang/NewClass",
-             InMemoryJavaCompiler.compile("java.lang.NewClass", source, "--patch-module=java.base"),
+        ClassFileInstaller.writeClassToDisk("jdk/jfr/NewClass",
+             InMemoryJavaCompiler.compile("jdk.jfr.NewClass", source, "--patch-module=jdk.jfr"),
              System.getProperty("test.classes"));
 
-        String patchJar = JarBuilder.build("javabase", "java/lang/NewClass");
+        String patchJar = JarBuilder.build("jdk_jfr", "jdk/jfr/NewClass");
 
         // build bootclasspath/a
         String source2 = "package boot.append; "                 +
@@ -76,7 +77,7 @@ public class DumpClassList {
 
         // dump class list
         CDSTestUtils.dumpClassList(classList,
-                                   "--patch-module=java.base=" + patchJar,
+                                   "--patch-module=jdk.jfr=" + patchJar,
                                    "-Xbootclasspath/a:" + appendJar,
                                    "-cp",
                                    appJar,
@@ -90,10 +91,14 @@ public class DumpClassList {
             .addPrefix("-cp", appJar,
                        "-Xbootclasspath/a:" + appendJar,
                        "-Xlog:class+load",
+                       "-Xlog:cds+class=debug",
                        "-XX:SharedClassListFile=" + classList);
         CDSTestUtils.createArchiveAndCheck(opts)
             .shouldNotContain("Preload Warning: Cannot find java/lang/invoke/LambdaForm")
             .shouldNotContain("Preload Warning: Cannot find boot/append/Foo")
-            .shouldContain("[info][class,load] boot.append.Foo");
+            .shouldNotContain("Preload Warning: Cannot find jdk/jfr/NewClass")
+            .shouldMatch("class,load *. boot.append.Foo")      // from -Xlog:class+load
+            .shouldMatch("cds,class.*boot  boot.append.Foo")   // from -Xlog:cds+class
+            .shouldNotMatch("class,load *. jdk.jfr.NewClass"); // from -Xlog:class+load
     }
 }

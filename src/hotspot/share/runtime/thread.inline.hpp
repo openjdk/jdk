@@ -41,7 +41,14 @@
 inline jlong Thread::cooked_allocated_bytes() {
   jlong allocated_bytes = Atomic::load_acquire(&_allocated_bytes);
   if (UseTLAB) {
-    size_t used_bytes = tlab().used_bytes();
+    // These reads are unsynchronized and unordered with the thread updating its tlab pointers.
+    // Use only if top > start && used_bytes <= max_tlab_size_bytes.
+    const HeapWord* const top = tlab().top_relaxed();
+    const HeapWord* const start = tlab().start_relaxed();
+    if (top <= start) {
+      return allocated_bytes;
+    }
+    const size_t used_bytes = pointer_delta(top, start, 1);
     if (used_bytes <= ThreadLocalAllocBuffer::max_size_in_bytes()) {
       // Comparing used_bytes with the maximum allowed size will ensure
       // that we don't add the used bytes from a semi-initialized TLAB
@@ -64,11 +71,6 @@ inline ThreadsList* Thread::get_threads_hazard_ptr() const {
 
 inline void Thread::set_threads_hazard_ptr(ThreadsList* new_list) {
   Atomic::release_store_fence(&_threads_hazard_ptr, new_list);
-}
-
-inline const WorkerThread* Thread::as_Worker_thread() const {
-  assert(is_Worker_thread(), "incorrect cast to const WorkerThread");
-  return static_cast<const WorkerThread*>(this);
 }
 
 #if defined(__APPLE__) && defined(AARCH64)
@@ -120,13 +122,20 @@ inline void JavaThread::clear_obj_deopt_flag() {
   clear_suspend_flag(_obj_deopt);
 }
 
+inline bool JavaThread::clear_async_exception_condition() {
+  bool ret = has_async_exception_condition();
+  clear_suspend_flag(_has_async_exception);
+  return ret;
+}
+
 inline void JavaThread::set_pending_async_exception(oop e) {
   _pending_async_exception = e;
-  set_async_exception_condition(_async_exception);
-  // Set _suspend_flags too so we save a comparison in the transition from native to Java
-  // in the native wrappers. It will be cleared in check_and_handle_async_exceptions()
-  // when we actually install the exception.
   set_suspend_flag(_has_async_exception);
+}
+
+inline void JavaThread::set_pending_unsafe_access_error() {
+  set_suspend_flag(_has_async_exception);
+  DEBUG_ONLY(_is_unsafe_access_error = true);
 }
 
 inline JavaThreadState JavaThread::thread_state() const    {

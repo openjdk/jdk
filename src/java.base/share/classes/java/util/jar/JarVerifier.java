@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,6 +84,9 @@ class JarVerifier {
     /** the bytes for the manDig object */
     byte manifestRawBytes[] = null;
 
+    /** the manifest name this JarVerifier is created upon */
+    final String manifestName;
+
     /** controls eager signature validation */
     boolean eagerValidation;
 
@@ -93,7 +96,12 @@ class JarVerifier {
     /** collect -DIGEST-MANIFEST values for deny list */
     private List<Object> manifestDigests;
 
-    public JarVerifier(byte rawBytes[]) {
+    /* A cache mapping code signers to the algorithms used to digest jar
+       entries, and whether or not the algorithms are permitted. */
+    private Map<CodeSigner[], Map<String, Boolean>> signersToAlgs;
+
+    public JarVerifier(String name, byte[] rawBytes) {
+        manifestName = name;
         manifestRawBytes = rawBytes;
         sigFileSigners = new Hashtable<>();
         verifiedSigners = new Hashtable<>();
@@ -101,6 +109,7 @@ class JarVerifier {
         pendingBlocks = new ArrayList<>();
         baos = new ByteArrayOutputStream();
         manifestDigests = new ArrayList<>();
+        signersToAlgs = new HashMap<>();
     }
 
     /**
@@ -180,7 +189,7 @@ class JarVerifier {
 
         // only set the jev object for entries that have a signature
         // (either verified or not)
-        if (!name.equals(JarFile.MANIFEST_NAME)) {
+        if (!name.equalsIgnoreCase(JarFile.MANIFEST_NAME)) {
             if (sigFileSigners.get(name) != null ||
                     verifiedSigners.get(name) != null) {
                 mev.setEntry(name, je);
@@ -240,7 +249,8 @@ class JarVerifier {
         if (!parsingBlockOrSF) {
             JarEntry je = mev.getEntry();
             if ((je != null) && (je.signers == null)) {
-                je.signers = mev.verify(verifiedSigners, sigFileSigners);
+                je.signers = mev.verify(verifiedSigners, sigFileSigners,
+                                        signersToAlgs);
                 je.certs = mapSignersToCertArray(je.signers);
             }
         } else {
@@ -270,7 +280,8 @@ class JarVerifier {
                             }
 
                             sfv.setSignatureFile(bytes);
-                            sfv.process(sigFileSigners, manifestDigests);
+                            sfv.process(sigFileSigners, manifestDigests,
+                                    manifestName);
                         }
                     }
                     return;
@@ -313,7 +324,7 @@ class JarVerifier {
                         sfv.setSignatureFile(bytes);
                     }
                 }
-                sfv.process(sigFileSigners, manifestDigests);
+                sfv.process(sigFileSigners, manifestDigests, manifestName);
 
             } catch (IOException | CertificateException |
                     NoSuchAlgorithmException | SignatureException e) {
@@ -419,9 +430,9 @@ class JarVerifier {
         manDig = null;
         // MANIFEST.MF is always treated as signed and verified,
         // move its signers from sigFileSigners to verifiedSigners.
-        if (sigFileSigners.containsKey(JarFile.MANIFEST_NAME)) {
-            CodeSigner[] codeSigners = sigFileSigners.remove(JarFile.MANIFEST_NAME);
-            verifiedSigners.put(JarFile.MANIFEST_NAME, codeSigners);
+        if (sigFileSigners.containsKey(manifestName)) {
+            CodeSigner[] codeSigners = sigFileSigners.remove(manifestName);
+            verifiedSigners.put(manifestName, codeSigners);
         }
     }
 
@@ -439,7 +450,7 @@ class JarVerifier {
         {
             this.is = Objects.requireNonNull(is);
             this.jv = jv;
-            this.mev = new ManifestEntryVerifier(man);
+            this.mev = new ManifestEntryVerifier(man, jv.manifestName);
             this.jv.beginEntry(je, mev);
             this.numLeft = je.getSize();
             if (this.numLeft == 0)
@@ -461,7 +472,7 @@ class JarVerifier {
             }
         }
 
-        public int read(byte b[], int off, int len) throws IOException {
+        public int read(byte[] b, int off, int len) throws IOException {
             ensureOpen();
             if ((numLeft > 0) && (numLeft < len)) {
                 len = (int)numLeft;
@@ -873,7 +884,7 @@ class JarVerifier {
      */
     boolean isTrustedManifestEntry(String name) {
         // How many signers? MANIFEST.MF is always verified
-        CodeSigner[] forMan = verifiedSigners.get(JarFile.MANIFEST_NAME);
+        CodeSigner[] forMan = verifiedSigners.get(manifestName);
         if (forMan == null) {
             return true;
         }

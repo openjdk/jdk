@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -35,7 +35,7 @@ import jdk.xml.internal.SecuritySupport;
  *
  * @author Sandy Gao, IBM
  *
- * @LastModified: Sep 2017
+ * @LastModified: Oct 2021
  */
 public class DatatypeException extends Exception {
 
@@ -44,6 +44,7 @@ public class DatatypeException extends Exception {
 
     // used to store error code and error substitution arguments
     protected String key;
+    @SuppressWarnings("serial") // Array component type is not Serializable
     protected Object[] args;
 
     /**

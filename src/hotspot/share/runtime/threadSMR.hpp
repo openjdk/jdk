@@ -29,6 +29,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/timer.hpp"
+#include "utilities/debug.hpp"
 
 class JavaThread;
 class Monitor;
@@ -192,6 +193,10 @@ public:
   explicit ThreadsList(int entries);
   ~ThreadsList();
 
+  class Iterator;
+  inline Iterator begin();
+  inline Iterator end();
+
   template <class T>
   void threads_do(T *cl) const;
 
@@ -209,6 +214,29 @@ public:
 #ifdef ASSERT
   static bool is_valid(ThreadsList* list) { return list->_magic == THREADS_LIST_MAGIC; }
 #endif
+};
+
+class ThreadsList::Iterator {
+  JavaThread* const* _thread_ptr;
+  DEBUG_ONLY(ThreadsList* _list;)
+
+  static uint check_index(ThreadsList* list, uint i) NOT_DEBUG({ return i; });
+  void assert_not_singular() const NOT_DEBUG_RETURN;
+  void assert_dereferenceable() const NOT_DEBUG_RETURN;
+  void assert_same_list(Iterator i) const NOT_DEBUG_RETURN;
+
+public:
+  Iterator() NOT_DEBUG(= default); // Singular iterator.
+  inline Iterator(ThreadsList* list, uint i);
+
+  inline bool operator==(Iterator other) const;
+  inline bool operator!=(Iterator other) const;
+
+  inline JavaThread* operator*() const;
+  inline JavaThread* operator->() const;
+
+  inline Iterator& operator++();
+  inline Iterator operator++(int);
 };
 
 // An abstract safe ptr to a ThreadsList comprising either a stable hazard ptr
@@ -299,6 +327,10 @@ public:
   ThreadsList *list() const {
     return _list_ptr.list();
   }
+
+  using Iterator = ThreadsList::Iterator;
+  inline Iterator begin();
+  inline Iterator end();
 
   template <class T>
   void threads_do(T *cl) const {

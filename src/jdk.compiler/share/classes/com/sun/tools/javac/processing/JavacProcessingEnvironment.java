@@ -37,7 +37,6 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Predicate;
 import java.util.regex.*;
-import java.util.stream.Collectors;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
@@ -46,7 +45,6 @@ import javax.lang.model.util.*;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
-import javax.tools.StandardJavaFileManager;
 
 import static javax.tools.StandardLocation.*;
 
@@ -971,7 +969,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
      * Computes the set of annotations on the symbol in question.
      * Leave class public for external testing purposes.
      */
-    @SuppressWarnings("preview")
     public static class ComputeAnnotationSet extends
         ElementScanner14<Set<TypeElement>, Set<TypeElement>> {
         final Elements elements;
@@ -1643,7 +1640,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                     List<? extends RecordComponent> recordComponents = node.sym.getRecordComponents();
                     for (RecordComponent rc : recordComponents) {
                         List<JCAnnotation> originalAnnos = rc.getOriginalAnnos();
-                        originalAnnos.stream().forEach(a -> visitAnnotation(a));
+                        originalAnnos.forEach(a -> visitAnnotation(a));
                     }
                     // we should empty the list of permitted subclasses for next round
                     node.sym.permitted = List.nil();

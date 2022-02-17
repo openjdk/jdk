@@ -25,60 +25,31 @@
 #ifndef SHARE_GC_G1_G1YOUNGGCPOSTEVACUATETASKS_HPP
 #define SHARE_GC_G1_G1YOUNGGCPOSTEVACUATETASKS_HPP
 
-#include "gc/g1/g1BatchedGangTask.hpp"
+#include "gc/g1/g1BatchedTask.hpp"
 #include "gc/g1/g1EvacFailure.hpp"
 
 class FreeCSetStats;
 
 class G1CollectedHeap;
-class G1EvacuationInfo;
+class G1EvacFailureRegions;
+class G1EvacInfo;
 class G1ParScanThreadStateSet;
-class G1RedirtyCardsQueueSet;
 
 // First set of post evacuate collection set tasks containing ("s" means serial):
 // - Merge PSS (s)
 // - Recalculate Used (s)
+// - Sample Collection Set Candidates (s)
 // - Remove Self Forwards (on evacuation failure)
 // - Clear Card Table
-class G1PostEvacuateCollectionSetCleanupTask1 : public G1BatchedGangTask {
+class G1PostEvacuateCollectionSetCleanupTask1 : public G1BatchedTask {
   class MergePssTask;
   class RecalculateUsedTask;
+  class SampleCollectionSetCandidatesTask;
   class RemoveSelfForwardPtrsTask;
 
 public:
   G1PostEvacuateCollectionSetCleanupTask1(G1ParScanThreadStateSet* per_thread_states,
-                                          G1RedirtyCardsQueueSet* rdcqs);
-};
-
-class G1PostEvacuateCollectionSetCleanupTask1::MergePssTask : public G1AbstractSubTask {
-  G1ParScanThreadStateSet* _per_thread_states;
-
-public:
-  MergePssTask(G1ParScanThreadStateSet* per_thread_states);
-
-  double worker_cost() const override { return 1.0; }
-  void do_work(uint worker_id) override;
-};
-
-class G1PostEvacuateCollectionSetCleanupTask1::RecalculateUsedTask : public G1AbstractSubTask {
-public:
-  RecalculateUsedTask() : G1AbstractSubTask(G1GCPhaseTimes::RecalculateUsed) { }
-
-  double worker_cost() const override;
-  void do_work(uint worker_id) override;
-};
-
-class G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask : public G1AbstractSubTask {
-  G1ParRemoveSelfForwardPtrsTask _task;
-
-public:
-  RemoveSelfForwardPtrsTask(G1RedirtyCardsQueueSet* rdcqs);
-  ~RemoveSelfForwardPtrsTask();
-
-  static bool should_execute();
-
-  double worker_cost() const override;
-  void do_work(uint worker_id) override;
+                                          G1EvacFailureRegions* evac_failure_regions);
 };
 
 // Second set of post evacuate collection set tasks containing (s means serial):
@@ -89,7 +60,7 @@ public:
 // - Redirty Logged Cards
 // - Restore Preserved Marks (on evacuation failure)
 // - Free Collection Set
-class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedGangTask {
+class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedTask {
   class EagerlyReclaimHumongousObjectsTask;
   class PurgeCodeRootsTask;
   class ResetHotCardCacheTask;
@@ -102,97 +73,9 @@ class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedGangTask {
   class FreeCollectionSetTask;
 
 public:
-  G1PostEvacuateCollectionSetCleanupTask2(PreservedMarksSet* preserved_marks_set,
-                                          G1RedirtyCardsQueueSet* rdcqs,
-                                          G1EvacuationInfo* evacuation_info,
-                                          const size_t* surviving_young_words);
-};
-
-class G1PostEvacuateCollectionSetCleanupTask2::ResetHotCardCacheTask : public G1AbstractSubTask {
-public:
-  ResetHotCardCacheTask() : G1AbstractSubTask(G1GCPhaseTimes::ResetHotCardCache) { }
-
-  double worker_cost() const override { return 0.5; }
-  void do_work(uint worker_id) override;
-};
-
-class G1PostEvacuateCollectionSetCleanupTask2::PurgeCodeRootsTask : public G1AbstractSubTask {
-public:
-  PurgeCodeRootsTask() : G1AbstractSubTask(G1GCPhaseTimes::PurgeCodeRoots) { }
-
-  double worker_cost() const override { return 1.0; }
-  void do_work(uint worker_id) override;
-};
-
-#if COMPILER2_OR_JVMCI
-class G1PostEvacuateCollectionSetCleanupTask2::UpdateDerivedPointersTask : public G1AbstractSubTask {
-public:
-  UpdateDerivedPointersTask() : G1AbstractSubTask(G1GCPhaseTimes::UpdateDerivedPointers) { }
-
-  double worker_cost() const override { return 1.0; }
-  void do_work(uint worker_id) override;
-};
-#endif
-
-class G1PostEvacuateCollectionSetCleanupTask2::EagerlyReclaimHumongousObjectsTask : public G1AbstractSubTask {
-  uint _humongous_regions_reclaimed;
-  size_t _bytes_freed;
-
-public:
-  EagerlyReclaimHumongousObjectsTask();
-  virtual ~EagerlyReclaimHumongousObjectsTask();
-
-  static bool should_execute();
-
-  double worker_cost() const override { return 1.0; }
-  void do_work(uint worker_id) override;
-};
-
-class G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask : public G1AbstractSubTask {
-  PreservedMarksSet* _preserved_marks;
-  AbstractGangTask* _task;
-
-public:
-  RestorePreservedMarksTask(PreservedMarksSet* preserved_marks);
-  virtual ~RestorePreservedMarksTask();
-
-  static bool should_execute();
-
-  double worker_cost() const override;
-  void do_work(uint worker_id) override;
-};
-
-class G1PostEvacuateCollectionSetCleanupTask2::RedirtyLoggedCardsTask : public G1AbstractSubTask {
-  G1RedirtyCardsQueueSet* _rdcqs;
-  BufferNode* volatile _nodes;
-
-public:
-  RedirtyLoggedCardsTask(G1RedirtyCardsQueueSet* rdcqs);
-  virtual ~RedirtyLoggedCardsTask();
-
-  double worker_cost() const override;
-  void do_work(uint worker_id) override;
-};
-
-class G1PostEvacuateCollectionSetCleanupTask2::FreeCollectionSetTask : public G1AbstractSubTask {
-  G1CollectedHeap*  _g1h;
-  G1EvacuationInfo* _evacuation_info;
-  FreeCSetStats*    _worker_stats;
-  HeapRegionClaimer _claimer;
-  const size_t*     _surviving_young_words;
-  uint              _active_workers;
-
-  FreeCSetStats* worker_stats(uint worker);
-  void report_statistics();
-
-public:
-  FreeCollectionSetTask(G1EvacuationInfo* evacuation_info, const size_t* surviving_young_words);
-  virtual ~FreeCollectionSetTask();
-
-  double worker_cost() const override;
-  void set_max_workers(uint max_workers) override;
-
-  void do_work(uint worker_id) override;
+  G1PostEvacuateCollectionSetCleanupTask2(G1ParScanThreadStateSet* per_thread_states,
+                                          G1EvacInfo* evacuation_info,
+                                          G1EvacFailureRegions* evac_failure_regions);
 };
 
 #endif // SHARE_GC_G1_G1YOUNGGCPOSTEVACUATETASKS_HPP

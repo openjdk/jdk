@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -256,11 +256,6 @@ static BOOL unmapViewOfFile(LPCVOID lpBaseAddress) {
     log_info(os)("UnmapViewOfFile(" PTR_FORMAT ") failed (%u).",  p2i(lpBaseAddress), ple.v);
   }
   return result;
-}
-
-bool os::unsetenv(const char* name) {
-  assert(name != NULL, "Null pointer");
-  return (SetEnvironmentVariable(name, NULL) == TRUE);
 }
 
 char** os::get_environ() { return _environ; }
@@ -534,7 +529,7 @@ static unsigned __stdcall thread_native_entry(Thread* thread) {
     res = 20115;    // java thread
   }
 
-  log_info(os, thread)("Thread is alive (tid: " UINTX_FORMAT ").", os::current_thread_id());
+  log_info(os, thread)("Thread is alive (tid: " UINTX_FORMAT ", stacksize: " SIZE_FORMAT "k).", os::current_thread_id(), thread->stack_size() / 1024);
 
 #ifdef USE_VECTORED_EXCEPTION_HANDLING
   // Any exception is caught by the Vectored Exception Handler, so VM can
@@ -573,7 +568,7 @@ static unsigned __stdcall thread_native_entry(Thread* thread) {
 static OSThread* create_os_thread(Thread* thread, HANDLE thread_handle,
                                   int thread_id) {
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread(NULL, NULL);
+  OSThread* osthread = new OSThread();
   if (osthread == NULL) return NULL;
 
   // Initialize the JDK library's interrupt event.
@@ -676,10 +671,13 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   unsigned thread_id;
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread(NULL, NULL);
+  OSThread* osthread = new OSThread();
   if (osthread == NULL) {
     return false;
   }
+
+  // Initial state is ALLOCATED but not INITIALIZED
+  osthread->set_state(ALLOCATED);
 
   // Initialize the JDK library's interrupt event.
   // This should really be done when OSThread is constructed,
@@ -712,8 +710,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
       } // else fall through:
         // use VMThreadStackSize if CompilerThreadStackSize is not defined
     case os::vm_thread:
-    case os::pgc_thread:
-    case os::cgc_thread:
+    case os::gc_thread:
     case os::asynclog_thread:
     case os::watcher_thread:
       if (VMThreadStackSize > 0) stack_size = (size_t)(VMThreadStackSize * K);
@@ -743,21 +740,27 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   // flag appears to work with _beginthredex() as well.
 
   const unsigned initflag = CREATE_SUSPENDED | STACK_SIZE_PARAM_IS_A_RESERVATION;
-  HANDLE thread_handle =
-    (HANDLE)_beginthreadex(NULL,
-                           (unsigned)stack_size,
-                           (unsigned (__stdcall *)(void*)) thread_native_entry,
-                           thread,
-                           initflag,
-                           &thread_id);
+  HANDLE thread_handle;
+  int limit = 3;
+  do {
+    thread_handle =
+      (HANDLE)_beginthreadex(NULL,
+                             (unsigned)stack_size,
+                             (unsigned (__stdcall *)(void*)) thread_native_entry,
+                             thread,
+                             initflag,
+                             &thread_id);
+  } while (thread_handle == NULL && errno == EAGAIN && limit-- > 0);
 
+  ResourceMark rm;
   char buf[64];
   if (thread_handle != NULL) {
-    log_info(os, thread)("Thread started (tid: %u, attributes: %s)",
-      thread_id, describe_beginthreadex_attributes(buf, sizeof(buf), stack_size, initflag));
+    log_info(os, thread)("Thread \"%s\" started (tid: %u, attributes: %s)",
+                         thread->name(), thread_id,
+                         describe_beginthreadex_attributes(buf, sizeof(buf), stack_size, initflag));
   } else {
-    log_warning(os, thread)("Failed to start thread - _beginthreadex failed (%s) for attributes: %s.",
-      os::errno_name(errno), describe_beginthreadex_attributes(buf, sizeof(buf), stack_size, initflag));
+    log_warning(os, thread)("Failed to start thread \"%s\" - _beginthreadex failed (%s) for attributes: %s.",
+                            thread->name(), os::errno_name(errno), describe_beginthreadex_attributes(buf, sizeof(buf), stack_size, initflag));
     // Log some OS information which might explain why creating the thread failed.
     log_info(os, thread)("Number of threads approx. running in the VM: %d", Threads::number_of_threads());
     LogStream st(Log(os, thread)::info());
@@ -777,7 +780,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   osthread->set_thread_handle(thread_handle);
   osthread->set_thread_id(thread_id);
 
-  // Initial thread state is INITIALIZED, not SUSPENDED
+  // Thread state now is INITIALIZED, not SUSPENDED
   osthread->set_state(INITIALIZED);
 
   // The thread is returned suspended (in state INITIALIZED), and is started higher up in the call chain
@@ -885,7 +888,61 @@ uint os::processor_id() {
   return (uint)GetCurrentProcessorNumber();
 }
 
+// For dynamic lookup of SetThreadDescription API
+typedef HRESULT (WINAPI *SetThreadDescriptionFnPtr)(HANDLE, PCWSTR);
+typedef HRESULT (WINAPI *GetThreadDescriptionFnPtr)(HANDLE, PWSTR*);
+static SetThreadDescriptionFnPtr _SetThreadDescription = NULL;
+DEBUG_ONLY(static GetThreadDescriptionFnPtr _GetThreadDescription = NULL;)
+
+// forward decl.
+static errno_t convert_to_unicode(char const* char_path, LPWSTR* unicode_path);
+
 void os::set_native_thread_name(const char *name) {
+
+  // From Windows 10 and Windows 2016 server, we have a direct API
+  // for setting the thread name/description:
+  // https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-setthreaddescription
+
+  if (_SetThreadDescription != NULL) {
+    // SetThreadDescription takes a PCWSTR but we have conversion routines that produce
+    // LPWSTR. The only difference is that PCWSTR is a pointer to const WCHAR.
+    LPWSTR unicode_name;
+    errno_t err = convert_to_unicode(name, &unicode_name);
+    if (err == ERROR_SUCCESS) {
+      HANDLE current = GetCurrentThread();
+      HRESULT hr = _SetThreadDescription(current, unicode_name);
+      if (FAILED(hr)) {
+        log_debug(os, thread)("set_native_thread_name: SetThreadDescription failed - falling back to debugger method");
+        FREE_C_HEAP_ARRAY(WCHAR, unicode_name);
+      } else {
+        log_trace(os, thread)("set_native_thread_name: SetThreadDescription succeeded - new name: %s", name);
+
+#ifdef ASSERT
+        // For verification purposes in a debug build we read the thread name back and check it.
+        PWSTR thread_name;
+        HRESULT hr2 = _GetThreadDescription(current, &thread_name);
+        if (FAILED(hr2)) {
+          log_debug(os, thread)("set_native_thread_name: GetThreadDescription failed!");
+        } else {
+          int res = CompareStringW(LOCALE_USER_DEFAULT,
+                                   0, // no special comparison rules
+                                   unicode_name,
+                                   -1, // null-terminated
+                                   thread_name,
+                                   -1  // null-terminated
+                                   );
+          assert(res == CSTR_EQUAL,
+                 "Name strings were not the same - set: %ls, but read: %ls", unicode_name, thread_name);
+          LocalFree(thread_name);
+        }
+#endif
+        FREE_C_HEAP_ARRAY(WCHAR, unicode_name);
+        return;
+      }
+    } else {
+      log_debug(os, thread)("set_native_thread_name: convert_to_unicode failed - falling back to debugger method");
+    }
+  }
 
   // See: http://msdn.microsoft.com/en-us/library/xcb2z8hs.aspx
   //
@@ -895,6 +952,7 @@ void os::set_native_thread_name(const char *name) {
 
   // If there is no debugger attached skip raising the exception
   if (!IsDebuggerPresent()) {
+    log_debug(os, thread)("set_native_thread_name: no debugger present so unable to set thread name");
     return;
   }
 
@@ -914,11 +972,6 @@ void os::set_native_thread_name(const char *name) {
   __try {
     RaiseException (MS_VC_EXCEPTION, 0, sizeof(info)/sizeof(DWORD), (const ULONG_PTR*)&info );
   } __except(EXCEPTION_EXECUTE_HANDLER) {}
-}
-
-bool os::bind_to_processor(uint processor_id) {
-  // Not yet implemented.
-  return false;
 }
 
 void os::win32::initialize_performance_counter() {
@@ -1500,7 +1553,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
      ||
      // Read location of signature
      (sizeof(signature_offset) !=
-     (os::read(fd, (void*)&signature_offset, sizeof(signature_offset))))
+     (::read(fd, (void*)&signature_offset, sizeof(signature_offset))))
      ||
      // Go to COFF File Header in dll
      // that is located after "signature" (4 bytes long)
@@ -1509,7 +1562,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
      ||
      // Read field that contains code of architecture
      // that dll was built for
-     (sizeof(lib_arch) != (os::read(fd, (void*)&lib_arch, sizeof(lib_arch))))
+     (sizeof(lib_arch) != (::read(fd, (void*)&lib_arch, sizeof(lib_arch))))
     );
 
   ::close(fd);
@@ -1808,11 +1861,19 @@ void os::win32::print_windows_version(outputStream* st) {
 
   case 10000:
     if (is_workstation) {
-      st->print("10");
+      if (build_number >= 22000) {
+        st->print("11");
+      } else {
+        st->print("10");
+      }
     } else {
-      // distinguish Windows Server 2016 and 2019 by build number
-      // Windows server 2019 GA 10/2018 build number is 17763
-      if (build_number > 17762) {
+      // distinguish Windows Server by build number
+      // - 2016 GA 10/2016 build: 14393
+      // - 2019 GA 11/2018 build: 17763
+      // - 2022 GA 08/2021 build: 20348
+      if (build_number > 20347) {
+        st->print("Server 2022");
+      } else if (build_number > 17762) {
         st->print("Server 2019");
       } else {
         st->print("Server 2016");
@@ -2233,7 +2294,7 @@ LONG Handle_Exception(struct _EXCEPTION_POINTERS* exceptionInfo,
 
   // Save pc in thread
   if (thread != nullptr && thread->is_Java_thread()) {
-    thread->as_Java_thread()->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->PC_NAME);
+    JavaThread::cast(thread)->set_saved_exception_pc((address)(DWORD_PTR)exceptionInfo->ContextRecord->PC_NAME);
   }
 
   // Set pc to handler
@@ -2378,7 +2439,7 @@ LONG WINAPI Handle_FLT_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   case EXCEPTION_FLT_OVERFLOW:
   case EXCEPTION_FLT_STACK_CHECK:
   case EXCEPTION_FLT_UNDERFLOW:
-    jint fp_control_word = (* (jint*) StubRoutines::addr_fpu_cntrl_wrd_std());
+    jint fp_control_word = (* (jint*) StubRoutines::x86::addr_fpu_cntrl_wrd_std());
     if (fp_control_word != ctx->FloatSave.ControlWord) {
       // Restore FPCW and mask out FLT exceptions
       ctx->FloatSave.ControlWord = fp_control_word | 0xffffffc0;
@@ -2527,7 +2588,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #endif
 
   if (t != NULL && t->is_Java_thread()) {
-    JavaThread* thread = t->as_Java_thread();
+    JavaThread* thread = JavaThread::cast(t);
     bool in_java = thread->thread_state() == _thread_in_Java;
     bool in_native = thread->thread_state() == _thread_in_native;
     bool in_vm = thread->thread_state() == _thread_in_vm;
@@ -4105,8 +4166,8 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
     _endthreadex((unsigned)exit_code);
   } else if (what == EPT_PROCESS) {
     ::exit(exit_code);
-  } else {
-    _exit(exit_code);
+  } else { // EPT_PROCESS_DIE
+    ::_exit(exit_code);
   }
 
   // Should not reach here
@@ -4192,6 +4253,7 @@ extern "C" {
 }
 
 static jint initSock();
+
 
 // this is called _after_ the global arguments have been parsed
 jint os::init_2(void) {
@@ -4310,6 +4372,24 @@ jint os::init_2(void) {
   if (!ReduceSignalUsage) {
     jdk_misc_signal_init();
   }
+
+  // Lookup SetThreadDescription - the docs state we must use runtime-linking of
+  // kernelbase.dll, so that is what we do.
+  HINSTANCE _kernelbase = LoadLibrary(TEXT("kernelbase.dll"));
+  if (_kernelbase != NULL) {
+    _SetThreadDescription =
+      reinterpret_cast<SetThreadDescriptionFnPtr>(
+                                                  GetProcAddress(_kernelbase,
+                                                                 "SetThreadDescription"));
+#ifdef ASSERT
+    _GetThreadDescription =
+      reinterpret_cast<GetThreadDescriptionFnPtr>(
+                                                  GetProcAddress(_kernelbase,
+                                                                 "GetThreadDescription"));
+#endif
+  }
+  log_info(os, thread)("The SetThreadDescription API is%s available.", _SetThreadDescription == NULL ? " not" : "");
+
 
   return JNI_OK;
 }
@@ -4674,20 +4754,20 @@ int os::open(const char *path, int oflag, int mode) {
   return fd;
 }
 
-FILE* os::open(int fd, const char* mode) {
+FILE* os::fdopen(int fd, const char* mode) {
   return ::_fdopen(fd, mode);
 }
 
-size_t os::write(int fd, const void *buf, unsigned int nBytes) {
+ssize_t os::write(int fd, const void *buf, unsigned int nBytes) {
   return ::write(fd, buf, nBytes);
-}
-
-int os::close(int fd) {
-  return ::close(fd);
 }
 
 void os::exit(int num) {
   win32::exit_process_or_thread(win32::EPT_PROCESS, num);
+}
+
+void os::_exit(int num) {
+  win32::exit_process_or_thread(win32::EPT_PROCESS_DIE, num);
 }
 
 // Is a (classpath) directory empty?
@@ -4732,9 +4812,7 @@ bool os::dir_is_empty(const char* path) {
 // create binary file, rewriting existing file if required
 int os::create_binary_file(const char* path, bool rewrite_existing) {
   int oflags = _O_CREAT | _O_WRONLY | _O_BINARY;
-  if (!rewrite_existing) {
-    oflags |= _O_EXCL;
-  }
+  oflags |= rewrite_existing ? _O_TRUNC : _O_EXCL;
   return ::open(path, oflags, _S_IREAD | _S_IWRITE);
 }
 
@@ -5545,7 +5623,7 @@ int os::PlatformMonitor::wait(jlong millis) {
 
 // Run the specified command in a separate process. Return its exit value,
 // or -1 on failure (e.g. can't create a new process).
-int os::fork_and_exec(const char* cmd, bool dummy /* ignored */) {
+int os::fork_and_exec(const char* cmd) {
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
   DWORD exit_code;
@@ -5641,10 +5719,6 @@ struct hostent* os::get_host_by_name(char* name) {
 
 int os::socket_close(int fd) {
   return ::closesocket(fd);
-}
-
-int os::socket(int domain, int type, int protocol) {
-  return ::socket(domain, type, protocol);
 }
 
 int os::connect(int fd, struct sockaddr* him, socklen_t len) {

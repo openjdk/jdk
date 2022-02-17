@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import javax.annotation.processing.*;
 import javax.lang.model.element.*;
 import javax.lang.model.type.*;
 import javax.lang.model.util.*;
-import static javax.tools.Diagnostic.Kind.*;
+
 
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.util.Log;
@@ -101,7 +101,7 @@ public class TestMissingElement extends JavacTestingAbstractProcessor {
             out.println("unexpected " + label + ": " + te + "\n"
                     + " found: " + found + "\n"
                     + "expect: " + expect);
-            messager.printMessage(ERROR, "unexpected " + label + " found: " + found + "; expected: " + expect, te);
+            messager.printError("unexpected " + label + " found: " + found + "; expected: " + expect, te);
         }
     }
 

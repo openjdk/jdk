@@ -138,6 +138,11 @@
     return false;
   }
 
+  // Does the CPU supports vector constant rotate instructions?
+  static constexpr bool supports_vector_constant_rotates(int shift) {
+    return false;
+  }
+
   // Does the CPU supports vector unsigned comparison instructions?
   static constexpr bool supports_vector_comparison_unsigned(int vlen, BasicType bt) {
     return false;
@@ -156,5 +161,7 @@
     return VM_Version::has_fcfids();
   }
 
+  // Implements a variant of EncodeISOArrayNode that encode ASCII only
+  static const bool supports_encode_ascii_array = true;
 
 #endif // CPU_PPC_MATCHER_PPC_HPP

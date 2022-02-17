@@ -28,11 +28,12 @@
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/hashtable.inline.hpp"
+#include "utilities/resizeableResourceHash.hpp"
 
 #define LAMBDA_PROXY_TAG "@lambda-proxy"
 #define LAMBDA_FORM_TAG  "@lambda-form-invoker"
 
+class constantPoolHandle;
 class Thread;
 
 class CDSIndyInfo {
@@ -66,7 +67,9 @@ public:
 };
 
 class ClassListParser : public StackObj {
-  typedef KVHashtable<int, InstanceKlass*, mtInternal> ID2KlassTable;
+  // Must be C_HEAP allocated -- we don't want nested resource allocations.
+  typedef ResizeableResourceHashtable<int, InstanceKlass*,
+                                      ResourceObj::C_HEAP, mtClassShared> ID2KlassTable;
 
   enum {
     _unspecified      = -999,
@@ -80,7 +83,9 @@ class ClassListParser : public StackObj {
     _line_buf_size        = _max_allowed_line_len + _line_buf_extra
   };
 
-  static const int INITIAL_TABLE_SIZE = 1987;
+  // Use a small initial size in debug build to test resizing logic
+  static const int INITIAL_TABLE_SIZE = DEBUG_ONLY(17) NOT_DEBUG(1987);
+  static const int MAX_TABLE_SIZE = 61333;
   static volatile Thread* _parsing_thread; // the thread that created _instance
   static ClassListParser* _instance; // the singleton.
   const char* _classlist_file;
@@ -106,13 +111,13 @@ class ClassListParser : public StackObj {
   bool parse_int_option(const char* option_name, int* value);
   bool parse_uint_option(const char* option_name, int* value);
   InstanceKlass* load_class_from_source(Symbol* class_name, TRAPS);
-  ID2KlassTable* table() {
+  ID2KlassTable* id2klass_table() {
     return &_id2klass_table;
   }
   InstanceKlass* lookup_class_by_id(int id);
   void print_specified_interfaces();
   void print_actual_interfaces(InstanceKlass *ik);
-  bool is_matching_cp_entry(constantPoolHandle &pool, int cp_index, TRAPS);
+  bool is_matching_cp_entry(const constantPoolHandle &pool, int cp_index, TRAPS);
 
   void resolve_indy(JavaThread* current, Symbol* class_name_symbol);
   void resolve_indy_impl(Symbol* class_name_symbol, TRAPS);
@@ -161,7 +166,7 @@ public:
     return _super;
   }
   void check_already_loaded(const char* which, int id) {
-    if (_id2klass_table.lookup(id) == NULL) {
+    if (!id2klass_table()->contains(id)) {
       error("%s id %d is not yet loaded", which, id);
     }
   }

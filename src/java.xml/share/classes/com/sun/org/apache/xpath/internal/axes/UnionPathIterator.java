@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -39,7 +39,7 @@ import java.util.List;
  * As each node is iterated via nextNode(), the node is also stored
  * in the NodeVector, so that previousNode() can easily be done.
  * @xsl.usage advanced
- * @LastModified: May 2020
+ * @LastModified: Oct 2021
  */
 public class UnionPathIterator extends LocPathIterator
         implements Cloneable, DTMIterator, java.io.Serializable, PathComponent
@@ -470,6 +470,7 @@ public class UnionPathIterator extends LocPathIterator
    * path</a> contained in the union expression.
    * @serial
    */
+  @SuppressWarnings("serial") // Array component type is not Serializable
   protected DTMIterator[] m_iterators;
 
   /**

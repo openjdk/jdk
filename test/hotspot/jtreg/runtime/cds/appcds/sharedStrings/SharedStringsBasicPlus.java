@@ -25,7 +25,8 @@
 /*
  * @test
  * @summary Basic plus test for shared strings
- * @requires vm.cds.archived.java.heap
+ * @requires vm.cds.write.archived.java.heap
+ * @requires vm.gc == null
  * @library /test/hotspot/jtreg/runtime/cds/appcds /test/lib
  * @build HelloStringPlus sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox

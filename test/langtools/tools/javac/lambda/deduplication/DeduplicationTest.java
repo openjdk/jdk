@@ -93,9 +93,9 @@ public class DeduplicationTest {
                         Arrays.asList(
                                 "-d",
                                 ".",
+                                "-g:none",
                                 "-XDdebug.dumpLambdaToMethodDeduplication",
-                                "-XDdebug.dumpLambdaToMethodStats",
-                                "--enable-preview", "-source", sourceVersion),
+                                "-XDdebug.dumpLambdaToMethodStats"),
                         null,
                         fileManager.getJavaFileObjects(file));
         Map<JCLambda, JCLambda> dedupedLambdas = new LinkedHashMap<>();

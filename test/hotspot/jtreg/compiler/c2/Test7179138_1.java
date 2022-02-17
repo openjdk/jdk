@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 Skip Balk.  All Rights Reserved.
+ * Copyright 2012, 2021, Skip Balk.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,14 @@
 
 /*
  * @test
- * @bug 7179138
+ * @key stress randomness
+ * @bug 7179138 8271341
  * @summary Incorrect result with String concatenation optimization
  *
  * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation
  *      compiler.c2.Test7179138_1
+ * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN compiler.c2.Test7179138_1
  *
  * @author Skip Balk
  */
@@ -67,4 +70,3 @@ public class Test7179138_1 {
         }
     }
 }
-

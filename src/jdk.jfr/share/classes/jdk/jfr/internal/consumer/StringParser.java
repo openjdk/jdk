@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,9 @@ package jdk.jfr.internal.consumer;
 import java.io.IOException;
 import java.nio.charset.Charset;
 
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public final class StringParser extends Parser {
 
     public enum Encoding {
@@ -53,8 +56,6 @@ public final class StringParser extends Parser {
         }
 
     }
-    private static final Charset UTF8 = Charset.forName("UTF-8");
-    private static final Charset LATIN1 = Charset.forName("ISO-8859-1");
 
     private static final class CharsetParser extends Parser {
         private final Charset charset;
@@ -154,8 +155,8 @@ public final class StringParser extends Parser {
 
     private final ConstantLookup stringLookup;
     private final CharArrayParser charArrayParser = new CharArrayParser();
-    private final CharsetParser utf8parser = new CharsetParser(UTF8);
-    private final CharsetParser latin1parser = new CharsetParser(LATIN1);
+    private final CharsetParser utf8parser = new CharsetParser(UTF_8);
+    private final CharsetParser latin1parser = new CharsetParser(ISO_8859_1);
     private final boolean event;
 
     public StringParser(ConstantLookup stringLookup, boolean event) {

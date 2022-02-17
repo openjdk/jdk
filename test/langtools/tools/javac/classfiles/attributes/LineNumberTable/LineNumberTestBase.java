@@ -65,7 +65,7 @@ public class LineNumberTestBase extends TestBase {
             try {
                 writeToFileIfEnabled(Paths.get(testCase.getName() + ".java"), testCase.src);
                 Set<Integer> coveredLines = new HashSet<>();
-                for (JavaFileObject file : compile(testCase.src).getClasses().values()) {
+                for (JavaFileObject file : compile(testCase.extraCompilerOptions, testCase.src).getClasses().values()) {
                     ClassFile classFile = ClassFile.read(file.openInputStream());
                     for (Method m : classFile.methods) {
                         Code_attribute code_attribute = (Code_attribute) m.attributes.get(Code);
@@ -84,10 +84,17 @@ public class LineNumberTestBase extends TestBase {
                                         .collect(toList()));
                     }
                 }
-                assertTrue(coveredLines.containsAll(testCase.expectedLines),
-                        format("All significant lines are not covered.%n" +
-                                "Covered: %s%n" +
-                                "Expected: %s%n", coveredLines, testCase.expectedLines));
+                if (testCase.exactLines) {
+                    assertTrue(coveredLines.equals(testCase.expectedLines),
+                            format("Incorrect covered lines.%n" +
+                                    "Covered: %s%n" +
+                                    "Expected: %s%n", coveredLines, testCase.expectedLines));
+                } else {
+                    assertTrue(coveredLines.containsAll(testCase.expectedLines),
+                            format("All significant lines are not covered.%n" +
+                                    "Covered: %s%n" +
+                                    "Expected: %s%n", coveredLines, testCase.expectedLines));
+                }
             } catch (AssertionFailedException | CompilationException ex) {
                 System.err.printf("#       %-20s#%n", testCase.getName());
                 int l = 0;

@@ -23,7 +23,7 @@
  */
 
 /*
- * @test TestPacing
+ * @test
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:-ShenandoahPacing -Xmx128m TestPacing

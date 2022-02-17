@@ -143,7 +143,7 @@ public:
   void prepare_for_graceful_shutdown();
   bool in_graceful_shutdown();
 
-  char* name() const { return (char*)"ShenandoahControlThread";}
+  const char* name() const { return "ShenandoahControlThread";}
 
   // Printing
   void print_on(outputStream* st) const;

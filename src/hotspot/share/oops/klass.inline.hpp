@@ -31,12 +31,9 @@
 #include "oops/klassVtable.hpp"
 #include "oops/markWord.hpp"
 
-// This loads the klass's holder as a phantom. This is useful when a weak Klass
-// pointer has been "peeked" and then must be kept alive before it may
-// be used safely.  All uses of klass_holder need to apply the appropriate barriers,
-// except during GC.
+// This loads and keeps the klass's loader alive.
 inline oop Klass::klass_holder() const {
-  return class_loader_data()->holder_phantom();
+  return class_loader_data()->holder();
 }
 
 inline bool Klass::is_non_strong_hidden() const {
@@ -49,11 +46,6 @@ inline bool Klass::is_non_strong_hidden() const {
 // unloading, and hence during concurrent class unloading.
 inline bool Klass::is_loader_alive() const {
   return class_loader_data()->is_alive();
-}
-
-inline void Klass::set_prototype_header(markWord header) {
-  assert(!header.has_bias_pattern() || is_instance_klass(), "biased locking currently only supported for Java instances");
-  _prototype_header = header;
 }
 
 inline oop Klass::java_mirror() const {

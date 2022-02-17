@@ -138,9 +138,15 @@
     return false;
   }
 
-  // Does the CPU supports vector unsigned comparison instructions?
-  static constexpr bool supports_vector_comparison_unsigned(int vlen, BasicType bt) {
+  // Does the CPU supports vector constant rotate instructions?
+  static constexpr bool supports_vector_constant_rotates(int shift) {
     return false;
+  }
+
+  // Does the CPU supports vector unsigned comparison instructions?
+  static const bool supports_vector_comparison_unsigned(int vlen, BasicType bt) {
+    // Not supported on SVE yet.
+    return !UseSVE;
   }
 
   // Some microarchitectures have mask registers used on vectors
@@ -153,5 +159,8 @@
   static constexpr bool convL2FSupported(void) {
       return true;
   }
+
+  // Implements a variant of EncodeISOArrayNode that encode ASCII only
+  static const bool supports_encode_ascii_array = true;
 
 #endif // CPU_AARCH64_MATCHER_AARCH64_HPP

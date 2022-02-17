@@ -533,7 +533,7 @@ juint os::cpu_microcode_revision() {
 
 void os::setup_fpu() {
 #ifndef AMD64
-  int fpu_cntrl_word = StubRoutines::fpu_cntrl_wrd_std();
+  int fpu_cntrl_word = StubRoutines::x86::fpu_cntrl_wrd_std();
   __asm fldcw fpu_cntrl_word;
 #endif // !AMD64
 }

@@ -315,25 +315,23 @@ public final class MinguoDate
             if (getLong(chronoField) == newValue) {
                 return this;
             }
-            switch (chronoField) {
-                case PROLEPTIC_MONTH:
+            return switch (chronoField) {
+                case PROLEPTIC_MONTH -> {
                     getChronology().range(chronoField).checkValidValue(newValue, chronoField);
-                    return plusMonths(newValue - getProlepticMonth());
-                case YEAR_OF_ERA:
-                case YEAR:
-                case ERA: {
-                    int nvalue = getChronology().range(chronoField).checkValidIntValue(newValue, chronoField);
-                    switch (chronoField) {
-                        case YEAR_OF_ERA:
-                            return with(isoDate.withYear(getProlepticYear() >= 1 ? nvalue + YEARS_DIFFERENCE : (1 - nvalue)  + YEARS_DIFFERENCE));
-                        case YEAR:
-                            return with(isoDate.withYear(nvalue + YEARS_DIFFERENCE));
-                        case ERA:
-                            return with(isoDate.withYear((1 - getProlepticYear()) + YEARS_DIFFERENCE));
-                    }
+                    yield plusMonths(newValue - getProlepticMonth());
                 }
-            }
-            return with(isoDate.with(field, newValue));
+                case YEAR_OF_ERA -> {
+                    int nvalue = getChronology().range(chronoField).checkValidIntValue(newValue, chronoField);
+                    yield with(isoDate.withYear(getProlepticYear() >= 1 ? nvalue + YEARS_DIFFERENCE : (1 - nvalue) + YEARS_DIFFERENCE));
+                }
+                case YEAR -> {
+                    int nvalue = getChronology().range(chronoField).checkValidIntValue(newValue, chronoField);
+                    yield with(isoDate.withYear(nvalue + YEARS_DIFFERENCE));
+                }
+                case ERA -> with(isoDate.withYear((1 - getProlepticYear()) + YEARS_DIFFERENCE));
+
+                default -> with(isoDate.with(field, newValue));
+            };
         }
         return super.with(field, newValue);
     }

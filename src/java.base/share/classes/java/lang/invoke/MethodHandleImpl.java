@@ -42,6 +42,8 @@ import sun.invoke.util.Wrapper;
 
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Collections;
@@ -50,6 +52,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -57,6 +60,7 @@ import java.util.stream.Stream;
 import static java.lang.invoke.LambdaForm.*;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
+import static java.lang.invoke.MethodHandles.Lookup.ClassOption.NESTMATE;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
 /**
@@ -109,39 +113,39 @@ abstract class MethodHandleImpl {
         // final fields.
 
         static String opName(ArrayAccess a) {
-            switch (a) {
-                case GET: return "getElement";
-                case SET: return "setElement";
-                case LENGTH: return "length";
-            }
-            throw unmatchedArrayAccess(a);
+            return switch (a) {
+                case GET    -> "getElement";
+                case SET    -> "setElement";
+                case LENGTH -> "length";
+                default -> throw unmatchedArrayAccess(a);
+            };
         }
 
         static MethodHandle objectAccessor(ArrayAccess a) {
-            switch (a) {
-                case GET: return ArrayAccessor.OBJECT_ARRAY_GETTER;
-                case SET: return ArrayAccessor.OBJECT_ARRAY_SETTER;
-                case LENGTH: return ArrayAccessor.OBJECT_ARRAY_LENGTH;
-            }
-            throw unmatchedArrayAccess(a);
+            return switch (a) {
+                case GET    -> ArrayAccessor.OBJECT_ARRAY_GETTER;
+                case SET    -> ArrayAccessor.OBJECT_ARRAY_SETTER;
+                case LENGTH -> ArrayAccessor.OBJECT_ARRAY_LENGTH;
+                default -> throw unmatchedArrayAccess(a);
+            };
         }
 
         static int cacheIndex(ArrayAccess a) {
-            switch (a) {
-                case GET: return ArrayAccessor.GETTER_INDEX;
-                case SET: return ArrayAccessor.SETTER_INDEX;
-                case LENGTH: return ArrayAccessor.LENGTH_INDEX;
-            }
-            throw unmatchedArrayAccess(a);
+            return switch (a) {
+                case GET    -> ArrayAccessor.GETTER_INDEX;
+                case SET    -> ArrayAccessor.SETTER_INDEX;
+                case LENGTH -> ArrayAccessor.LENGTH_INDEX;
+                default -> throw unmatchedArrayAccess(a);
+            };
         }
 
         static Intrinsic intrinsic(ArrayAccess a) {
-            switch (a) {
-                case GET: return Intrinsic.ARRAY_LOAD;
-                case SET: return Intrinsic.ARRAY_STORE;
-                case LENGTH: return Intrinsic.ARRAY_LENGTH;
-            }
-            throw unmatchedArrayAccess(a);
+            return switch (a) {
+                case GET    -> Intrinsic.ARRAY_LOAD;
+                case SET    -> Intrinsic.ARRAY_STORE;
+                case LENGTH -> Intrinsic.ARRAY_LENGTH;
+                default -> throw unmatchedArrayAccess(a);
+            };
         }
     }
 
@@ -213,21 +217,21 @@ abstract class MethodHandleImpl {
                 arrayArgClass = Object[].class;
                 elemClass = Object.class;
             }
-            switch (access) {
-                case GET:    return MethodType.methodType(elemClass,  arrayArgClass, int.class);
-                case SET:    return MethodType.methodType(void.class, arrayArgClass, int.class, elemClass);
-                case LENGTH: return MethodType.methodType(int.class,  arrayArgClass);
-            }
-            throw unmatchedArrayAccess(access);
+            return switch (access) {
+                case GET    -> MethodType.methodType(elemClass, arrayArgClass, int.class);
+                case SET    -> MethodType.methodType(void.class, arrayArgClass, int.class, elemClass);
+                case LENGTH -> MethodType.methodType(int.class, arrayArgClass);
+                default -> throw unmatchedArrayAccess(access);
+            };
         }
         static MethodType correctType(Class<?> arrayClass, ArrayAccess access) {
             Class<?> elemClass = arrayClass.getComponentType();
-            switch (access) {
-                case GET:    return MethodType.methodType(elemClass,  arrayClass, int.class);
-                case SET:    return MethodType.methodType(void.class, arrayClass, int.class, elemClass);
-                case LENGTH: return MethodType.methodType(int.class,  arrayClass);
-            }
-            throw unmatchedArrayAccess(access);
+            return switch (access) {
+                case GET    -> MethodType.methodType(elemClass, arrayClass, int.class);
+                case SET    -> MethodType.methodType(void.class, arrayClass, int.class, elemClass);
+                case LENGTH -> MethodType.methodType(int.class, arrayClass);
+                default -> throw unmatchedArrayAccess(access);
+            };
         }
         static MethodHandle getAccessor(Class<?> arrayClass, ArrayAccess access) {
             String     name = name(arrayClass, access);
@@ -493,12 +497,12 @@ abstract class MethodHandleImpl {
             if (newArity == collectArg+1 &&
                 type.parameterType(collectArg).isAssignableFrom(newType.parameterType(collectArg))) {
                 // if arity and trailing parameter are compatible, do normal thing
-                return asTypeCache = asFixedArity().asType(newType);
+                return asFixedArity().asType(newType);
             }
             // check cache
             MethodHandle acc = asCollectorCache;
             if (acc != null && acc.type().parameterCount() == newArity)
-                return asTypeCache = acc.asType(newType);
+                return acc.asType(newType);
             // build and cache a collector
             int arrayLength = newArity - collectArg;
             MethodHandle collector;
@@ -509,7 +513,7 @@ abstract class MethodHandleImpl {
                 throw new WrongMethodTypeException("cannot build collector", ex);
             }
             asCollectorCache = collector;
-            return asTypeCache = collector.asType(newType);
+            return collector.asType(newType);
         }
 
         @Override
@@ -737,7 +741,7 @@ abstract class MethodHandleImpl {
             } else {
                 wrapper = newTarget; // no need for a counting wrapper anymore
             }
-            return (asTypeCache = wrapper);
+            return wrapper;
         }
 
         boolean countDown() {
@@ -980,13 +984,12 @@ abstract class MethodHandleImpl {
 
     static MethodHandle[] FAKE_METHOD_HANDLE_INVOKE = new MethodHandle[2];
     static MethodHandle fakeMethodHandleInvoke(MemberName method) {
-        int idx;
         assert(method.isMethodHandleInvoke());
-        switch (method.getName()) {
-        case "invoke":       idx = 0; break;
-        case "invokeExact":  idx = 1; break;
-        default:             throw new InternalError(method.getName());
-        }
+        int idx = switch (method.getName()) {
+            case "invoke"      -> 0;
+            case "invokeExact" -> 1;
+            default -> throw new InternalError(method.getName());
+        };
         MethodHandle mh = FAKE_METHOD_HANDLE_INVOKE[idx];
         if (mh != null)  return mh;
         MethodType type = MethodType.methodType(Object.class, UnsupportedOperationException.class,
@@ -1031,6 +1034,7 @@ abstract class MethodHandleImpl {
     // That way we can lazily load the code and set up the constants.
     private static class BindCaller {
         private static MethodType INVOKER_MT = MethodType.methodType(Object.class, MethodHandle.class, Object[].class);
+        private static MethodType REFLECT_INVOKER_MT = MethodType.methodType(Object.class, MethodHandle.class, Object.class, Object[].class);
 
         static MethodHandle bindCaller(MethodHandle mh, Class<?> hostClass) {
             // Code in the boot layer should now be careful while creating method handles or
@@ -1043,15 +1047,48 @@ abstract class MethodHandleImpl {
                        hostClass.getName().startsWith("java.lang.invoke."))) {
                 throw new InternalError();  // does not happen, and should not anyway
             }
+
+            MemberName member = mh.internalMemberName();
+            if (member != null) {
+                // Look up the CSM adapter method with the same method name
+                // but with an additional caller class parameter.  If present,
+                // bind the adapter's method handle with the lookup class as
+                // the caller class argument
+                MemberName csmAdapter = IMPL_LOOKUP.resolveOrNull(member.getReferenceKind(),
+                        new MemberName(member.getDeclaringClass(),
+                                       member.getName(),
+                                       member.getMethodType().appendParameterTypes(Class.class),
+                                       member.getReferenceKind()));
+                if (csmAdapter != null) {
+                    assert !csmAdapter.isCallerSensitive();
+                    MethodHandle dmh = DirectMethodHandle.make(csmAdapter);
+                    dmh = MethodHandles.insertArguments(dmh, dmh.type().parameterCount() - 1, hostClass);
+                    dmh = new WrappedMember(dmh, mh.type(), member, mh.isInvokeSpecial(), hostClass);
+                    return dmh;
+                }
+            }
+
+            // If no adapter method for CSM with an additional Class parameter
+            // is present, then inject an invoker class that is the caller
+            // invoking the method handle of the CSM
+            try {
+                return bindCallerWithInjectedInvoker(mh, hostClass);
+            } catch (ReflectiveOperationException ex) {
+                throw uncaughtException(ex);
+            }
+        }
+
+        private static MethodHandle bindCallerWithInjectedInvoker(MethodHandle mh, Class<?> hostClass)
+                throws ReflectiveOperationException
+        {
             // For simplicity, convert mh to a varargs-like method.
             MethodHandle vamh = prepareForInvoker(mh);
             // Cache the result of makeInjectedInvoker once per argument class.
-            MethodHandle bccInvoker = CV_makeInjectedInvoker.get(hostClass);
+            MethodHandle bccInvoker = CV_makeInjectedInvoker.get(hostClass).invoker();
             return restoreToType(bccInvoker.bindTo(vamh), mh, hostClass);
         }
 
-        private static MethodHandle makeInjectedInvoker(Class<?> targetClass) {
-            try {
+        private static Class<?> makeInjectedInvoker(Class<?> targetClass) {
                 /*
                  * The invoker class defined to the same class loader as the lookup class
                  * but in an unnamed package so that the class bytes can be cached and
@@ -1065,20 +1102,79 @@ abstract class MethodHandleImpl {
                     name = name.replace('/', '_');
                 }
                 Class<?> invokerClass = new Lookup(targetClass)
-                        .makeHiddenClassDefiner(name, INJECTED_INVOKER_TEMPLATE)
-                        .defineClass(true);
+                        .makeHiddenClassDefiner(name, INJECTED_INVOKER_TEMPLATE, Set.of(NESTMATE))
+                        .defineClass(true, targetClass);
                 assert checkInjectedInvoker(targetClass, invokerClass);
-                return IMPL_LOOKUP.findStatic(invokerClass, "invoke_V", INVOKER_MT);
-            } catch (ReflectiveOperationException ex) {
-                throw uncaughtException(ex);
-            }
+                return invokerClass;
         }
 
-        private static ClassValue<MethodHandle> CV_makeInjectedInvoker = new ClassValue<MethodHandle>() {
-            @Override protected MethodHandle computeValue(Class<?> hostClass) {
-                return makeInjectedInvoker(hostClass);
+        private static ClassValue<InjectedInvokerHolder> CV_makeInjectedInvoker = new ClassValue<>() {
+            @Override
+            protected InjectedInvokerHolder computeValue(Class<?> hostClass) {
+                return new InjectedInvokerHolder(makeInjectedInvoker(hostClass));
             }
         };
+
+        /*
+         * Returns a method handle of an invoker class injected for reflection
+         * implementation use with the following signature:
+         *     reflect_invoke_V(MethodHandle mh, Object target, Object[] args)
+         *
+         * Method::invoke on a caller-sensitive method will call
+         * MethodAccessorImpl::invoke(Object, Object[]) through reflect_invoke_V
+         *     target.csm(args)
+         *     NativeMethodAccesssorImpl::invoke(target, args)
+         *     MethodAccessImpl::invoke(target, args)
+         *     InjectedInvoker::reflect_invoke_V(vamh, target, args);
+         *     method::invoke(target, args)
+         *     p.Foo::m
+         *
+         * An injected invoker class is a hidden class which has the same
+         * defining class loader, runtime package, and protection domain
+         * as the given caller class.
+         */
+        static MethodHandle reflectiveInvoker(Class<?> caller) {
+            return BindCaller.CV_makeInjectedInvoker.get(caller).reflectInvoker();
+        }
+
+        private static final class InjectedInvokerHolder {
+            private final Class<?> invokerClass;
+            // lazily resolved and cached DMH(s) of invoke_V methods
+            private MethodHandle invoker;
+            private MethodHandle reflectInvoker;
+
+            private InjectedInvokerHolder(Class<?> invokerClass) {
+                this.invokerClass = invokerClass;
+            }
+
+            private MethodHandle invoker() {
+                var mh = invoker;
+                if (mh == null) {
+                    try {
+                        invoker = mh = IMPL_LOOKUP.findStatic(invokerClass, "invoke_V", INVOKER_MT);
+                    } catch (Error | RuntimeException ex) {
+                        throw ex;
+                    } catch (Throwable ex) {
+                        throw new InternalError(ex);
+                    }
+                }
+                return mh;
+            }
+
+            private MethodHandle reflectInvoker() {
+                var mh = reflectInvoker;
+                if (mh == null) {
+                    try {
+                        reflectInvoker = mh = IMPL_LOOKUP.findStatic(invokerClass, "reflect_invoke_V", REFLECT_INVOKER_MT);
+                    } catch (Error | RuntimeException ex) {
+                        throw ex;
+                    } catch (Throwable ex) {
+                        throw new InternalError(ex);
+                    }
+                }
+                return mh;
+            }
+        }
 
         // Adapt mh so that it can be called directly from an injected invoker:
         private static MethodHandle prepareForInvoker(MethodHandle mh) {
@@ -1116,6 +1212,8 @@ abstract class MethodHandleImpl {
                 MethodHandle invoker = IMPL_LOOKUP.findStatic(invokerClass, "invoke_V", INVOKER_MT);
                 MethodHandle vamh = prepareForInvoker(MH_checkCallerClass);
                 return (boolean)invoker.invoke(vamh, new Object[]{ invokerClass });
+            } catch (Error|RuntimeException ex) {
+                throw ex;
             } catch (Throwable ex) {
                 throw new InternalError(ex);
             }
@@ -1152,27 +1250,50 @@ abstract class MethodHandleImpl {
             ClassWriter cw = new ClassWriter(0);
 
             // private static class InjectedInvoker {
+            //     /* this is used to wrap DMH(s) of caller-sensitive methods */
             //     @Hidden
             //     static Object invoke_V(MethodHandle vamh, Object[] args) throws Throwable {
             //        return vamh.invokeExact(args);
             //     }
+            //     /* this is used in caller-sensitive reflective method accessor */
+            //     @Hidden
+            //     static Object reflect_invoke_V(MethodHandle vamh, Object target, Object[] args) throws Throwable {
+            //        return vamh.invokeExact(target, args);
+            //     }
             // }
-            cw.visit(52, ACC_PRIVATE | ACC_SUPER, "InjectedInvoker", null, "java/lang/Object", null);
+            // }
+            cw.visit(CLASSFILE_VERSION, ACC_PRIVATE | ACC_SUPER, "InjectedInvoker", null, "java/lang/Object", null);
+            {
+                var mv = cw.visitMethod(ACC_STATIC, "invoke_V",
+                        "(Ljava/lang/invoke/MethodHandle;[Ljava/lang/Object;)Ljava/lang/Object;",
+                        null, null);
 
-            MethodVisitor mv = cw.visitMethod(ACC_STATIC, "invoke_V",
-                          "(Ljava/lang/invoke/MethodHandle;[Ljava/lang/Object;)Ljava/lang/Object;",
-                          null, null);
+                mv.visitCode();
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitVarInsn(ALOAD, 1);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/invoke/MethodHandle", "invokeExact",
+                        "([Ljava/lang/Object;)Ljava/lang/Object;", false);
+                mv.visitInsn(ARETURN);
+                mv.visitMaxs(2, 2);
+                mv.visitEnd();
 
-            mv.visitCode();
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitVarInsn(ALOAD, 1);
-            mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/invoke/MethodHandle", "invokeExact",
-                               "([Ljava/lang/Object;)Ljava/lang/Object;", false);
-            mv.visitInsn(ARETURN);
-            mv.visitMaxs(2, 2);
-            mv.visitEnd();
+                cw.visitEnd();
+            }
 
-            cw.visitEnd();
+            {
+                var mv = cw.visitMethod(ACC_STATIC, "reflect_invoke_V",
+                        "(Ljava/lang/invoke/MethodHandle;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;",
+                        null, null);
+                mv.visitCode();
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitVarInsn(ALOAD, 1);
+                mv.visitVarInsn(ALOAD, 2);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/invoke/MethodHandle", "invokeExact",
+                        "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", false);
+                mv.visitInsn(ARETURN);
+                mv.visitMaxs(3, 3);
+                mv.visitEnd();
+            }
             return cw.toByteArray();
         }
     }
@@ -1214,7 +1335,7 @@ abstract class MethodHandleImpl {
         public MethodHandle asTypeUncached(MethodType newType) {
             // This MH is an alias for target, except for the MemberName
             // Drop the MemberName if there is any conversion.
-            return asTypeCache = target.asType(newType);
+            return target.asType(newType);
         }
     }
 
@@ -1277,7 +1398,7 @@ abstract class MethodHandleImpl {
         public MethodHandle asTypeUncached(MethodType newType) {
             // This MH is an alias for target, except for the intrinsic name
             // Drop the name if there is any conversion.
-            return asTypeCache = target.asType(newType);
+            return target.asType(newType);
         }
 
         @Override
@@ -1395,32 +1516,24 @@ abstract class MethodHandleImpl {
 
     private static NamedFunction createFunction(byte func) {
         try {
-            switch (func) {
-                case NF_checkSpreadArgument:
-                    return new NamedFunction(MethodHandleImpl.class
-                            .getDeclaredMethod("checkSpreadArgument", Object.class, int.class));
-                case NF_guardWithCatch:
-                    return new NamedFunction(MethodHandleImpl.class
-                            .getDeclaredMethod("guardWithCatch", MethodHandle.class, Class.class,
-                                    MethodHandle.class, Object[].class));
-                case NF_tryFinally:
-                    return new NamedFunction(MethodHandleImpl.class
-                            .getDeclaredMethod("tryFinally", MethodHandle.class, MethodHandle.class, Object[].class));
-                case NF_loop:
-                    return new NamedFunction(MethodHandleImpl.class
-                            .getDeclaredMethod("loop", BasicType[].class, LoopClauses.class, Object[].class));
-                case NF_throwException:
-                    return new NamedFunction(MethodHandleImpl.class
-                            .getDeclaredMethod("throwException", Throwable.class));
-                case NF_profileBoolean:
-                    return new NamedFunction(MethodHandleImpl.class
-                            .getDeclaredMethod("profileBoolean", boolean.class, int[].class));
-                case NF_tableSwitch:
-                    return new NamedFunction(MethodHandleImpl.class
-                            .getDeclaredMethod("tableSwitch", int.class, MethodHandle.class, CasesHolder.class, Object[].class));
-                default:
-                    throw new InternalError("Undefined function: " + func);
-            }
+            return switch (func) {
+                case NF_checkSpreadArgument -> new NamedFunction(MethodHandleImpl.class
+                                                .getDeclaredMethod("checkSpreadArgument", Object.class, int.class));
+                case NF_guardWithCatch      -> new NamedFunction(MethodHandleImpl.class
+                                                .getDeclaredMethod("guardWithCatch", MethodHandle.class, Class.class,
+                                                   MethodHandle.class, Object[].class));
+                case NF_tryFinally          -> new NamedFunction(MethodHandleImpl.class
+                                                .getDeclaredMethod("tryFinally", MethodHandle.class, MethodHandle.class, Object[].class));
+                case NF_loop                -> new NamedFunction(MethodHandleImpl.class
+                                                .getDeclaredMethod("loop", BasicType[].class, LoopClauses.class, Object[].class));
+                case NF_throwException      -> new NamedFunction(MethodHandleImpl.class
+                                                .getDeclaredMethod("throwException", Throwable.class));
+                case NF_profileBoolean      -> new NamedFunction(MethodHandleImpl.class
+                                                .getDeclaredMethod("profileBoolean", boolean.class, int[].class));
+                case NF_tableSwitch         -> new NamedFunction(MethodHandleImpl.class
+                                                .getDeclaredMethod("tableSwitch", int.class, MethodHandle.class, CasesHolder.class, Object[].class));
+                default -> throw new InternalError("Undefined function: " + func);
+            };
         } catch (ReflectiveOperationException ex) {
             throw newInternalError(ex);
         }
@@ -1511,6 +1624,52 @@ abstract class MethodHandleImpl {
             @Override
             public VarHandle insertCoordinates(VarHandle target, int pos, Object... values) {
                 return VarHandles.insertCoordinates(target, pos, values);
+            }
+
+
+            @Override
+            public MethodHandle unreflectConstructor(Constructor<?> ctor) throws IllegalAccessException {
+                return IMPL_LOOKUP.unreflectConstructor(ctor);
+            }
+
+            @Override
+            public MethodHandle unreflectField(Field field, boolean isSetter) throws IllegalAccessException {
+                return isSetter ? IMPL_LOOKUP.unreflectSetter(field) : IMPL_LOOKUP.unreflectGetter(field);
+            }
+
+            @Override
+            public MethodHandle findVirtual(Class<?> defc, String name, MethodType type) throws IllegalAccessException {
+                try {
+                    return IMPL_LOOKUP.findVirtual(defc, name, type);
+                } catch (NoSuchMethodException e) {
+                    return null;
+                }
+            }
+
+            @Override
+            public MethodHandle findStatic(Class<?> defc, String name, MethodType type) throws IllegalAccessException {
+                try {
+                    return IMPL_LOOKUP.findStatic(defc, name, type);
+                } catch (NoSuchMethodException e) {
+                    return null;
+                }
+            }
+
+            @Override
+            public MethodHandle reflectiveInvoker(Class<?> caller) {
+                Objects.requireNonNull(caller);
+                return BindCaller.reflectiveInvoker(caller);
+            }
+
+            @Override
+            public Lookup defineHiddenClassWithClassData(Lookup caller, String name, byte[] bytes, Object classData, boolean initialize) {
+                // skip name and access flags validation
+                return caller.makeHiddenClassDefiner(name, bytes, Set.of()).defineClassAsLookup(initialize, classData);
+            }
+
+            @Override
+            public Class<?>[] exceptionTypes(MethodHandle handle) {
+                return VarHandles.exceptionTypes(handle);
             }
         });
     }
@@ -2118,15 +2277,16 @@ abstract class MethodHandleImpl {
 
     // Indexes into constant method handles:
     static final int
-            MH_cast                  = 0,
-            MH_selectAlternative     = 1,
-            MH_countedLoopPred       = 2,
-            MH_countedLoopStep       = 3,
-            MH_initIterator          = 4,
-            MH_iteratePred           = 5,
-            MH_iterateNext           = 6,
-            MH_Array_newInstance     = 7,
-            MH_LIMIT                 = 8;
+            MH_cast                  =              0,
+            MH_selectAlternative     =              1,
+            MH_countedLoopPred       =              2,
+            MH_countedLoopStep       =              3,
+            MH_initIterator          =              4,
+            MH_iteratePred           =              5,
+            MH_iterateNext           =              6,
+            MH_Array_newInstance     =              7,
+            MH_VarHandles_handleCheckedExceptions = 8,
+            MH_LIMIT                 =              9;
 
     static MethodHandle getConstantHandle(int idx) {
         MethodHandle handle = HANDLES[idx];
@@ -2176,6 +2336,9 @@ abstract class MethodHandleImpl {
                 case MH_Array_newInstance:
                     return IMPL_LOOKUP.findStatic(Array.class, "newInstance",
                             MethodType.methodType(Object.class, Class.class, int.class));
+                case MH_VarHandles_handleCheckedExceptions:
+                    return IMPL_LOOKUP.findStatic(VarHandles.class, "handleCheckedExceptions",
+                            MethodType.methodType(void.class, Throwable.class));
             }
         } catch (ReflectiveOperationException ex) {
             throw newInternalError(ex);

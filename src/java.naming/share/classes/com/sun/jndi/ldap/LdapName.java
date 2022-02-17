@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import javax.naming.directory.Attributes;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.BasicAttributes;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * <code>LdapName</code> implements compound names for LDAP v3 as
@@ -900,11 +901,7 @@ public final class LdapName implements Name {
                         // Convert hex-encoded UTF-8 to 16-bit chars.
                         byte[] utf8 = getUtf8Octets(chars, i, end);
                         if (utf8.length > 0) {
-                            try {
-                                buf.append(new String(utf8, "UTF8"));
-                            } catch (java.io.UnsupportedEncodingException e) {
-                                // shouldn't happen
-                            }
+                            buf.append(new String(utf8, UTF_8));
                             i += utf8.length * 3 - 1;
                         } else {
                             throw new IllegalArgumentException(

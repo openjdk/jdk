@@ -75,9 +75,10 @@ import java.util.List;
  *         <code>{@linkplain FileObject#openReader(boolean)}</code>
  *         must succeed if the following would succeed (ignoring
  *         encoding issues):
- *         <blockquote>
- *           <pre>new {@linkplain java.io.FileInputStream#FileInputStream(File) FileInputStream}(new {@linkplain File#File(java.net.URI) File}({@linkplain FileObject fileObject}.{@linkplain FileObject#toUri() toUri}()))</pre>
- *         </blockquote>
+ *         {@snippet id="equiv-input" lang=java :
+ *             // @link substring=FileInputStream target="java.io.FileInputStream#FileInputStream(File)" @link regex="File\b" target="File#File(java.net.URI)" @link substring=fileObject target=FileObject @link substring=toUri target="FileObject#toUri()" :
+ *             new FileInputStream(new File(fileObject.toUri()))
+ *             }
  *       </li>
  *       <li>
  *         and the methods
@@ -85,9 +86,10 @@ import java.util.List;
  *         <code>{@linkplain FileObject#openWriter()}</code> must
  *         succeed if the following would succeed (ignoring encoding
  *         issues):
- *         <blockquote>
- *           <pre>new {@linkplain java.io.FileOutputStream#FileOutputStream(File) FileOutputStream}(new {@linkplain File#File(java.net.URI) File}({@linkplain FileObject fileObject}.{@linkplain FileObject#toUri() toUri}()))</pre>
- *         </blockquote>
+ *         {@snippet id="equiv-output" lang=java :
+ *             // @link substring=FileOutputStream target="java.io.FileOutputStream#FileOutputStream(File)" @link regex="File\b" target="File#File(java.net.URI)" @link substring=fileObject target=FileObject @link substring=toUri target="FileObject#toUri()" :
+ *             new FileOutputStream(new File(fileObject.toUri()))
+ *             }
  *       </li>
  *     </ul>
  *   </li>
@@ -190,16 +192,16 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * Returns file objects representing the given paths.
      *
      * @implSpec
-     * The default implementation converts each path to a file and calls
-     * {@link #getJavaFileObjectsFromFiles getJavaObjectsFromFiles}.
-     * IllegalArgumentException will be thrown if any of the paths
-     * cannot be converted to a file.
+     * The default implementation lazily converts each path to a file and calls
+     * {@link #getJavaFileObjectsFromFiles(Iterable) getJavaFileObjectsFromFiles}.
+     * {@code IllegalArgumentException} will be thrown
+     * if any of the paths cannot be converted to a file at the point the conversion happens.
      *
      * @param paths a list of paths
      * @return a list of file objects
      * @throws IllegalArgumentException if the list of paths includes
      * a directory or if this file manager does not support any of the
-     * given paths.
+     * given paths
      *
      * @since 13
      */
@@ -212,10 +214,10 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * Returns file objects representing the given paths.
      *
      * @implSpec
-     * The default implementation converts each path to a file and calls
-     * {@link #getJavaFileObjectsFromFiles getJavaObjectsFromFiles}.
-     * IllegalArgumentException will be thrown if any of the paths
-     * cannot be converted to a file.
+     * The default implementation lazily converts each path to a file and calls
+     * {@link #getJavaFileObjectsFromPaths(Collection) getJavaFileObjectsFromPaths}.
+     * {@code IllegalArgumentException} will be thrown
+     * if any of the paths cannot be converted to a file at the point the conversion happens.
      *
      * @param paths a list of paths
      * @return a list of file objects
@@ -241,14 +243,15 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * Returns file objects representing the given files.
      * Convenience method equivalent to:
      *
-     * <pre>
-     *     getJavaFileObjectsFromFiles({@linkplain java.util.Arrays#asList Arrays.asList}(files))
-     * </pre>
+     * {@snippet id="equiv-getJavaFileObjects" lang=java :
+     *     getJavaFileObjectsFromFiles(Arrays.asList(files)) // @link substring="Arrays.asList" target="Arrays#asList"
+     *     }
      *
      * @param files an array of files
      * @return a list of file objects
      * @throws IllegalArgumentException if the array of files includes
-     * a directory
+     * a directory or if this file manager does not support any of the
+     * given paths
      * @throws NullPointerException if the given array contains null
      * elements
      */
@@ -258,14 +261,19 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * Returns file objects representing the given paths.
      * Convenience method equivalent to:
      *
-     * <pre>
-     *     getJavaFileObjectsFromPaths({@linkplain java.util.Arrays#asList Arrays.asList}(paths))
-     * </pre>
+     * {@snippet id="equiv-getJavaFileObjectsFromPaths" lang=java :
+     *     getJavaFileObjectsFromPaths(Arrays.asList(paths)) // @link substring="Arrays.asList" target="Arrays#asList"
+     *     }
+     *
+     * @implSpec
+     * The default implementation will only throw {@code NullPointerException}
+     * if {@linkplain #getJavaFileObjectsFromPaths(Collection)} throws it.
      *
      * @param paths an array of paths
      * @return a list of file objects
      * @throws IllegalArgumentException if the array of files includes
-     * a directory
+     * a directory or if this file manager does not support any of the
+     * given paths
      * @throws NullPointerException if the given array contains null
      * elements
      *
@@ -290,9 +298,9 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * Returns file objects representing the given file names.
      * Convenience method equivalent to:
      *
-     * <pre>
-     *     getJavaFileObjectsFromStrings({@linkplain java.util.Arrays#asList Arrays.asList}(names))
-     * </pre>
+     * {@snippet id="equiv-getJavaFileObjectsFromStrings" lang=java :
+     *     getJavaFileObjectsFromStrings(Arrays.asList(names)) // @link substring="Arrays.asList" target="Arrays#asList"
+     *     }
      *
      * @param names a list of file names
      * @return a list of file objects
@@ -332,10 +340,10 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * will be cancelled.
      *
      * @implSpec
-     * The default implementation converts each path to a file and calls
-     * {@link #getJavaFileObjectsFromFiles getJavaObjectsFromFiles}.
-     * {@linkplain IllegalArgumentException IllegalArgumentException}
-     * will be thrown if any of the paths cannot be converted to a file.
+     * The default implementation lazily converts each path to a file and calls
+     * {@link #setLocation setLocation}.
+     * {@code IllegalArgumentException} will be thrown if any of the paths cannot
+     * be converted to a file at the point the conversion happens.
      *
      * @param location a location
      * @param paths a list of paths, if {@code null} use the default
@@ -365,6 +373,9 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * new search path is associated with the location by calling
      * {@linkplain #setLocation setLocation} or
      * {@linkplain #setLocationFromPaths setLocationFromPaths}.
+     *
+     * @implSpec
+     * The default implementation throws {@link UnsupportedOperationException}.
      *
      * @throws IllegalStateException if the location is not a module-oriented
      *  or output location.

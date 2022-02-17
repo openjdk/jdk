@@ -94,6 +94,9 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   address generate_CRC32_update_entry();
   address generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind);
   address generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind);
+#ifdef AMD64
+  address generate_currentThread();
+#endif
 #ifdef IA32
   address generate_Float_intBitsToFloat_entry();
   address generate_Float_floatToRawIntBits_entry();
@@ -113,6 +116,10 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
 #ifdef AARCH64
   void generate_transcendental_entry(AbstractInterpreter::MethodKind kind, int fpargs);
 #endif // AARCH64
+
+#ifdef ARM32
+  void generate_math_runtime_call(AbstractInterpreter::MethodKind kind);
+#endif // ARM32
 
 #ifdef PPC
   void lock_method(Register Rflags, Register Rscratch1, Register Rscratch2, bool flags_preloaded=false);

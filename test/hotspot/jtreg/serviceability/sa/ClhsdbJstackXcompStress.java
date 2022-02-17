@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -38,7 +38,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @requires vm.hasSA
  * @requires vm.opt.DeoptimizeALot != true
  * @library /test/lib
- * @run main/othervm ClhsdbJstackXcompStress
+ * @run driver ClhsdbJstackXcompStress
  */
 public class ClhsdbJstackXcompStress {
 

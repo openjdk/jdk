@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @bug 8022301
  * @bug 8025519
  * @summary sigaction(sig) results in process hang/timed-out if sig is much greater than SIGRTMAX
- * @requires (os.family == "linux")
+ * @requires os.family != "windows"
  * @library /test/lib
  * @compile TestJNI.java
  * @run driver Testjsig
@@ -53,6 +53,7 @@ public class Testjsig {
 
         // Start the process and check the output
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
         output.shouldContain("old handler");
     }
 }

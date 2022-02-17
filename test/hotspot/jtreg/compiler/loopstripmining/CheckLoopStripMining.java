@@ -39,8 +39,6 @@ import jdk.test.lib.process.ProcessTools;
 public class CheckLoopStripMining {
     public static void main(String args[]) throws Exception {
         ProcessTools.executeTestJvm("-XX:+UnlockDiagnosticVMOptions",
-                                    // to prevent biased locking handshakes from changing the timing of this test
-                                    "-XX:-UseBiasedLocking",
                                     "-XX:+SafepointTimeout",
                                     "-XX:+SafepointALot",
                                     "-XX:+AbortVMOnSafepointTimeout",
@@ -57,8 +55,6 @@ public class CheckLoopStripMining {
             .stdoutShouldContain("sum: 715827882");
 
         ProcessTools.executeTestJvm("-XX:+UnlockDiagnosticVMOptions",
-                                    // to prevent biased locking handshakes from changing the timing of this test
-                                    "-XX:-UseBiasedLocking",
                                     "-XX:+SafepointTimeout",
                                     "-XX:+SafepointALot",
                                     "-XX:+AbortVMOnSafepointTimeout",

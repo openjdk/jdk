@@ -231,19 +231,6 @@ public interface SerializedFormWriter {
          * Adds the member header.
          *
          * @param fieldType the type of the field
-         * @param fieldTypeStr the type of the field in string format, used
-         *                     only if the type cannot be linked
-         * @param fieldDimensions the dimensions of the field
-         * @param fieldName the name of the field
-         * @param contentTree content tree to which the member header will be added
-         */
-        void addMemberHeader(TypeElement fieldType, String fieldTypeStr, String fieldDimensions,
-                             String fieldName, Content contentTree);
-
-        /**
-         * Adds the member header.
-         *
-         * @param fieldType the type of the field
          * @param fieldName the name of the field
          * @param contentTree content tree to which the member header will be added
          */

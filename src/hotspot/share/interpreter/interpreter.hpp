@@ -46,17 +46,15 @@ class InterpreterCodelet: public Stub {
   friend class VMStructs;
   friend class CodeCacheDumper; // possible extension [do not remove]
  private:
-  int         _size;                             // the size in bytes
-  const char* _description;                      // a description of the codelet, for debugging & printing
-  Bytecodes::Code _bytecode;                     // associated bytecode if any
-  NOT_PRODUCT(CodeStrings _strings;)              // Comments for annotating assembler output.
+  int         _size;                      // the size in bytes
+  const char* _description;               // a description of the codelet, for debugging & printing
+  Bytecodes::Code _bytecode;              // associated bytecode if any
+  NOT_PRODUCT(AsmRemarks _asm_remarks;)   // Comments for annotating assembler output.
+  NOT_PRODUCT(DbgStrings _dbg_strings;)   // Debug strings used in generated code.
 
  public:
   // Initialization/finalization
-  void    initialize(int size,
-                     CodeStrings& strings)       { _size = size;
-                                                   NOT_PRODUCT(_strings = CodeStrings();)
-                                                   NOT_PRODUCT(_strings.copy(strings);) }
+  void    initialize(int size)                   { _size = size; }
   void    finalize()                             { ShouldNotCallThis(); }
 
   // General info/converters
@@ -79,6 +77,15 @@ class InterpreterCodelet: public Stub {
   int         code_size() const                  { return code_end() - code_begin(); }
   const char* description() const                { return _description; }
   Bytecodes::Code bytecode() const               { return _bytecode; }
+#ifndef PRODUCT
+ ~InterpreterCodelet() {
+    // InterpreterCodelets reside in the StubQueue and should not be deleted,
+    // nor are they ever finalized (see above).
+    ShouldNotCallThis();
+  }
+  void use_remarks(AsmRemarks &remarks) { _asm_remarks.share(remarks); }
+  void use_strings(DbgStrings &strings) { _dbg_strings.share(strings); }
+#endif
 };
 
 // Define a prototype interface

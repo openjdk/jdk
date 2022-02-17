@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,42 @@
  */
 
 /*
- * @test
+ * @test id=special
  * @bug 8226956
  * @summary Run invocation tests against C1 compiler
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc
- * @compile shared/AbstractGenerator.java shared/AccessCheck.java shared/AccessType.java
- *          shared/Caller.java shared/ExecutorGenerator.java shared/Utils.java
- *          shared/ByteArrayClassLoader.java shared/Checker.java shared/GenericClassGenerator.java
  * @compile invokespecial/Checker.java invokespecial/ClassGenerator.java invokespecial/Generator.java
- *          invokevirtual/Checker.java invokevirtual/ClassGenerator.java invokevirtual/Generator.java
- *          invokeinterface/Checker.java invokeinterface/ClassGenerator.java invokeinterface/Generator.java
  *
- * @run driver/timeout=1800 invocationC1Tests
+ * @run driver/timeout=1800 invocationC1Tests special
+ */
+
+/*
+ * @test id=virtual
+ * @bug 8226956
+ * @summary Run invocation tests against C1 compiler
+ * @requires vm.flagless
+ * @library /test/lib
+ * @modules java.base/jdk.internal.org.objectweb.asm
+ *          java.base/jdk.internal.misc
+ * @compile invokevirtual/Checker.java invokevirtual/ClassGenerator.java invokevirtual/Generator.java
+ *
+ * @run driver/timeout=1800 invocationC1Tests virtual
+ */
+
+/*
+ * @test id=interface
+ * @bug 8226956
+ * @summary Run invocation tests against C1 compiler
+ * @requires vm.flagless
+ * @library /test/lib
+ * @modules java.base/jdk.internal.org.objectweb.asm
+ *          java.base/jdk.internal.misc
+ * @compile invokeinterface/Checker.java invokeinterface/ClassGenerator.java invokeinterface/Generator.java
+ *
+ * @run driver/timeout=1800 invocationC1Tests interface
  */
 
 import jdk.test.lib.process.ProcessTools;
@@ -72,11 +94,27 @@ public class invocationC1Tests {
     }
 
     public static void main(String args[]) throws Throwable {
+        if (args.length < 1) {
+            throw new IllegalArgumentException("Should provide the test name");
+        }
+        String testName = args[0];
+
         // Get current major class file version and test with it.
         byte klassbuf[] = InMemoryJavaCompiler.compile("blah", "public class blah { }");
         int major_version = klassbuf[6] << 8 | klassbuf[7];
-        runTest("invokespecial.Generator", String.valueOf(major_version));
-        runTest("invokeinterface.Generator", String.valueOf(major_version));
-        runTest("invokevirtual.Generator", String.valueOf(major_version));
+
+        switch (testName) {
+            case "special":
+                runTest("invokespecial.Generator", String.valueOf(major_version));
+                break;
+            case "virtual":
+                runTest("invokevirtual.Generator", String.valueOf(major_version));
+                break;
+            case "interface":
+                runTest("invokeinterface.Generator", String.valueOf(major_version));
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown test name: " + testName);
+        }
     }
 }

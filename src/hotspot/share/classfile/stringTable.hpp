@@ -112,6 +112,7 @@ class StringTable : public CHeapObj<mtSymbol>{
   static oop create_archived_string(oop s) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
   static void write_to_archive(const DumpedInternedStrings* dumped_interned_strings) NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize_shared_table_header(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
+  static void transfer_shared_strings_to_local_table() NOT_CDS_JAVA_HEAP_RETURN;
 
   // Jcmd
   static void dump(outputStream* st, bool verbose=false);

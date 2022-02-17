@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import nsk.share.jvmti.*;
  *    <li>sets callbacks for <code>COMPILED_METHOD_LOAD</code>,
  *        <code>COMPILED_METHOD_UNLOAD</code> events during the OnLoad phase;</li>
  *    <li>enables these events during the <code>OnLoad</code> phase;</li>
- *    <li>provides the state to provoke generation of choosen events (see details below);</li>
+ *    <li>provides the state to provoke generation of chosen events (see details below);</li>
  *    <li>checks number of <code>COMPILED_METHOD_UNLOAD</code> events is less than
  *        <code>COMPILED_METHOD_LOAD</code> or equal.</li>
  * </ol>

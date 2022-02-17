@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
  * @test
  * @bug 8248791
  * @summary Test cloning with more than 8 (=ArrayCopyLoadStoreMaxElem) where loads are wrongly replaced by zero.
+ * @requires vm.compiler2.enabled | vm.graal.enabled
+ *
  * @run main/othervm -XX:-ReduceBulkZeroing
  *                   -XX:CompileCommand=dontinline,compiler.arraycopy.TestCloneAccess::*
  *                   compiler.arraycopy.TestCloneAccess

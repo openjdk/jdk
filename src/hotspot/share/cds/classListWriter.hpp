@@ -29,54 +29,44 @@
 #include "runtime/thread.hpp"
 #include "utilities/ostream.hpp"
 
-class ClassListWriter {
-  friend const char* make_log_name(const char* log_name, const char* force_directory);
+class ClassFileStream;
 
-  static fileStream* _classlist_file;
-  MutexLocker _locker;
-public:
+class ClassListWriter {
 #if INCLUDE_CDS
+  class IDTable;
+  static fileStream* _classlist_file;
+  static IDTable* _id_table;
+  static int _total_ids;
+  MutexLocker _locker;
+
+  static int get_id(const InstanceKlass* k);
+  static bool has_id(const InstanceKlass* k);
+  static void assert_locked() { assert_lock_strong(ClassListFile_lock); }
+public:
   ClassListWriter() : _locker(Thread::current(), ClassListFile_lock, Mutex::_no_safepoint_check_flag) {}
-#else
-  ClassListWriter() : _locker(Thread::current(), NULL, Mutex::_no_safepoint_check_flag) {}
-#endif
 
   outputStream* stream() {
     return _classlist_file;
   }
 
+  void handle_class_unloading(const InstanceKlass* klass);
+
   static bool is_enabled() {
-#if INCLUDE_CDS
     return _classlist_file != NULL && _classlist_file->is_open();
+  }
+
 #else
+public:
+  static bool is_enabled() {
     return false;
-#endif
   }
+#endif // INCLUDE_CDS
 
-  static void init() {
-#if INCLUDE_CDS
-  // For -XX:DumpLoadedClassList=<file> option
-  if (DumpLoadedClassList != NULL) {
-    const char* list_name = make_log_name(DumpLoadedClassList, NULL);
-    _classlist_file = new(ResourceObj::C_HEAP, mtInternal)
-                         fileStream(list_name);
-    _classlist_file->print_cr("# NOTE: Do not modify this file.");
-    _classlist_file->print_cr("#");
-    _classlist_file->print_cr("# This file is generated via the -XX:DumpLoadedClassList=<class_list_file> option");
-    _classlist_file->print_cr("# and is used at CDS archive dump time (see -Xshare:dump).");
-    _classlist_file->print_cr("#");
-    FREE_C_HEAP_ARRAY(char, list_name);
-  }
-#endif
-  }
 
-  static void delete_classlist() {
-#if INCLUDE_CDS
-    if (_classlist_file != NULL) {
-        delete _classlist_file;
-    }
-#endif
-  }
+  static void init() NOT_CDS_RETURN;
+  static void write(const InstanceKlass* k, const ClassFileStream* cfs) NOT_CDS_RETURN;
+  static void write_to_stream(const InstanceKlass* k, outputStream* stream, const ClassFileStream* cfs = NULL) NOT_CDS_RETURN;
+  static void delete_classlist() NOT_CDS_RETURN;
 };
 
 #endif // SHARE_CDS_CLASSLISTWRITER_HPP

@@ -24,7 +24,7 @@
 /*
  * @test TestSSE4Disabled
  * @bug 8158214
- * @requires (vm.simpleArch == "x64")
+ * @requires vm.cpu.features ~= ".*sse4.*"
  * @summary Test correct execution without SSE 4.
  *
  * @run main/othervm -Xcomp -XX:UseSSE=3 compiler.cpuflags.TestSSE4Disabled

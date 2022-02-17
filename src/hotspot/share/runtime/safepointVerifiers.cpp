@@ -33,13 +33,13 @@
 
 NoSafepointVerifier::NoSafepointVerifier() : _thread(Thread::current()) {
   if (_thread->is_Java_thread()) {
-    _thread->as_Java_thread()->inc_no_safepoint_count();
+    JavaThread::cast(_thread)->inc_no_safepoint_count();
   }
 }
 
 NoSafepointVerifier::~NoSafepointVerifier() {
   if (_thread->is_Java_thread()) {
-    _thread->as_Java_thread()->dec_no_safepoint_count();
+    JavaThread::cast(_thread)->dec_no_safepoint_count();
   }
 }
 
@@ -47,13 +47,13 @@ PauseNoSafepointVerifier::PauseNoSafepointVerifier(NoSafepointVerifier* nsv)
     : _nsv(nsv) {
   assert(_nsv->_thread == Thread::current(), "must be");
   if (_nsv->_thread->is_Java_thread()) {
-    _nsv->_thread->as_Java_thread()->dec_no_safepoint_count();
+    JavaThread::cast(_nsv->_thread)->dec_no_safepoint_count();
   }
 }
 
 PauseNoSafepointVerifier::~PauseNoSafepointVerifier() {
   if (_nsv->_thread->is_Java_thread()) {
-    _nsv->_thread->as_Java_thread()->inc_no_safepoint_count();
+    JavaThread::cast(_nsv->_thread)->inc_no_safepoint_count();
   }
 }
 #endif // ASSERT

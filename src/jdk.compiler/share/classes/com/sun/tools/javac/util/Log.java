@@ -90,7 +90,7 @@ public class Log extends AbstractLog {
      * Note that javax.tools.DiagnosticListener (if set) is called later in the
      * diagnostic pipeline.
      */
-    public static abstract class DiagnosticHandler {
+    public abstract static class DiagnosticHandler {
         /**
          * The previously installed diagnostic handler.
          */
@@ -306,39 +306,6 @@ public class Log extends AbstractLog {
 
         writers.put(WriterKind.STDOUT, out);
         writers.put(WriterKind.STDERR, err);
-
-        return writers;
-    }
-
-    /**
-     * Construct a log with given I/O redirections.
-     * @deprecated
-     * This constructor is provided to support
-     *      jdk.javadoc.internal.tool.Messager.Messager(com.sun.tools.javac.util.Context,
-     *          java.lang.String, java.io.PrintWriter, java.io.PrintWriter)
-     */
-    @Deprecated
-    protected Log(Context context, PrintWriter errWriter, PrintWriter warnWriter, PrintWriter noticeWriter) {
-        this(context, initWriters(errWriter, warnWriter, noticeWriter));
-    }
-
-    /**
-     * Initialize a writer map with different streams for different types of diagnostics.
-     * @param errWriter a stream for writing error messages
-     * @param warnWriter a stream for writing warning messages
-     * @param noticeWriter a stream for writing notice messages
-     * @return a map of writers
-     * @deprecated This method exists to support a supported but now deprecated javadoc entry point.
-     */
-    @Deprecated
-    private static Map<WriterKind, PrintWriter>  initWriters(PrintWriter errWriter, PrintWriter warnWriter, PrintWriter noticeWriter) {
-        Map<WriterKind, PrintWriter> writers = new EnumMap<>(WriterKind.class);
-        writers.put(WriterKind.ERROR, errWriter);
-        writers.put(WriterKind.WARNING, warnWriter);
-        writers.put(WriterKind.NOTICE, noticeWriter);
-
-        writers.put(WriterKind.STDOUT, noticeWriter);
-        writers.put(WriterKind.STDERR, errWriter);
 
         return writers;
     }
@@ -773,7 +740,6 @@ public class Log extends AbstractLog {
         writer.flush();
     }
 
-    @Deprecated
     protected PrintWriter getWriterForDiagnosticType(DiagnosticType dt) {
         switch (dt) {
         case FRAGMENT:

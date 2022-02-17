@@ -46,7 +46,6 @@ import javax.print.attribute.EnumSyntax;
 import javax.print.attribute.standard.PrinterName;
 
 
-@SuppressWarnings("removal")
 public class CUPSPrinter  {
     private static final String debugPrefix = "CUPSPrinter>> ";
     private static final double PRINTER_DPI = 72.0;
@@ -81,6 +80,11 @@ public class CUPSPrinter  {
     private static int cupsPort = 0;
 
     static {
+        initStatic();
+    }
+
+    @SuppressWarnings("removal")
+    private static void initStatic() {
         // load awt library to access native code
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {
@@ -283,6 +287,7 @@ public class CUPSPrinter  {
                 IPPPrintService.getIPPConnection(url);
 
             if (urlConnection != null) {
+                @SuppressWarnings("removal")
                 OutputStream os = java.security.AccessController.
                     doPrivileged(new java.security.PrivilegedAction<OutputStream>() {
                         public OutputStream run() {
@@ -383,6 +388,7 @@ public class CUPSPrinter  {
                 IPPPrintService.getIPPConnection(url);
 
             if (urlConnection != null) {
+                @SuppressWarnings("removal")
                 OutputStream os = java.security.AccessController.
                     doPrivileged(new java.security.PrivilegedAction<OutputStream>() {
                         public OutputStream run() {

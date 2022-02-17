@@ -363,7 +363,7 @@ void LIRGenerator::set_card(LIR_Opr value, LIR_Address* card_addr) {
   }
 }
 
-void LIRGenerator::CardTableBarrierSet_post_barrier_helper(LIR_OprDesc* addr, LIR_Const* card_table_base) {
+void LIRGenerator::CardTableBarrierSet_post_barrier_helper(LIR_Opr addr, LIR_Const* card_table_base) {
   assert(addr->is_register(), "must be a register at this point");
 
   LIR_Opr tmp = FrameMap::LR_ptr_opr;
@@ -377,7 +377,7 @@ void LIRGenerator::CardTableBarrierSet_post_barrier_helper(LIR_OprDesc* addr, LI
 
   // Use unsigned type T_BOOLEAN here rather than (signed) T_BYTE since signed load
   // byte instruction does not support the addressing mode we need.
-  LIR_Address* card_addr = new LIR_Address(tmp, addr, (LIR_Address::Scale) -CardTable::card_shift, 0, T_BOOLEAN);
+  LIR_Address* card_addr = new LIR_Address(tmp, addr, (LIR_Address::Scale) -CardTable::card_shift(), 0, T_BOOLEAN);
   if (UseCondCardMark) {
     LIR_Opr cur_value = new_register(T_INT);
     __ move(card_addr, cur_value);
@@ -412,21 +412,13 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
   LIR_Opr lock = new_pointer_register();
   LIR_Opr hdr  = new_pointer_register();
 
-  // Need a scratch register for biased locking on arm
-  LIR_Opr scratch = LIR_OprFact::illegalOpr;
-  if(UseBiasedLocking) {
-    scratch = new_pointer_register();
-  } else {
-    scratch = atomicLockOpr();
-  }
-
   CodeEmitInfo* info_for_exception = NULL;
   if (x->needs_null_check()) {
     info_for_exception = state_for(x);
   }
 
   CodeEmitInfo* info = state_for(x, x->state(), true);
-  monitor_enter(obj.result(), lock, hdr, scratch,
+  monitor_enter(obj.result(), lock, hdr, LIR_OprFact::illegalOpr,
                 x->monitor_no(), info_for_exception, info);
 }
 
@@ -638,7 +630,7 @@ void LIRGenerator::do_ArithmeticOp_Int(ArithmeticOp* x) {
     }
     rlock_result(x);
     assert(right_arg->is_constant() || right_arg->is_register(), "wrong state of right");
-    arithmetic_op_int(x->op(), x->operand(), left_arg->result(), right_arg->result(), NULL);
+    arithmetic_op_int(x->op(), x->operand(), left_arg->result(), right_arg->result(), LIR_OprFact::nullOpr);
   }
 }
 
@@ -796,7 +788,8 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
       return;
 #endif // __SOFTFP__
     }
-    case vmIntrinsics::_dsqrt: {
+    case vmIntrinsics::_dsqrt:
+    case vmIntrinsics::_dsqrt_strict: {
 #ifdef __SOFTFP__
       runtime_func = CAST_FROM_FN_PTR(address, SharedRuntime::dsqrt);
       break;

@@ -26,34 +26,42 @@ package jdk.jfr.internal.jfc.model;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.charset.Charset;
+import java.io.Reader;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import jdk.jfr.internal.SecuritySupport.SafePath;
+import jdk.jfr.internal.jfc.JFC;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 // Holds the structure of a .jfc file similar to an XML DOM.
 public final class JFCModel {
     private final Map<String, List<ControlElement>> controls = new LinkedHashMap<>();
     private final XmlConfiguration configuration;
 
-    public JFCModel(SafePath file) throws ParseException, IOException {
-        this.configuration = createConfiguration(file);
-        this.configuration.validate();
-        addControls();
-        wireConditions();
-        wireSettings();
+    private JFCModel(XmlConfiguration configuration) throws ParseException {
+        configuration.validate();
+        this.configuration = configuration;
     }
 
-    public JFCModel(List<SafePath> files) throws IOException, ParseException {
+    public JFCModel(Reader reader,  Consumer<String> logger) throws ParseException, IOException {
+        this(Parser.parse(reader));
+        addControls();
+        wireConditions();
+        wireSettings(logger);
+    }
+
+    public JFCModel(List<SafePath> files, Consumer<String> logger) throws IOException, ParseException {
         this.configuration = new XmlConfiguration();
         this.configuration.setAttribute("version", "2.0");
         for (SafePath file : files) {
-            JFCModel model = new JFCModel(file);
+            JFCModel model = JFCModel.create(file, logger);
             for (var entry : model.controls.entrySet()) {
                 String name = entry.getKey();
                 // Fail-fast checks that prevents an ambiguous file to be written later
@@ -65,6 +73,18 @@ public final class JFCModel {
             for (XmlElement child : model.configuration.getChildren()) {
                 this.configuration.addChild(child);
             }
+        }
+    }
+
+    public static JFCModel create(SafePath file, Consumer<String> logger) throws ParseException, IOException {
+        if (file.toString().equals("none")) {
+            XmlConfiguration configuration = new XmlConfiguration();
+            configuration.setAttribute("version", "2.0");
+            configuration.setAttribute("label", "None");
+            return new JFCModel(configuration);
+        }
+        try (Reader r = JFC.newReader(file)) {
+            return new JFCModel(r, logger);
         }
     }
 
@@ -120,8 +140,18 @@ public final class JFCModel {
         return configuration;
     }
 
+    public LinkedHashMap<String, String> getSettings() {
+        LinkedHashMap<String, String> result = new LinkedHashMap<>();
+        for (XmlEvent event : configuration.getEvents()) {
+            for (XmlSetting setting : event.getSettings()) {
+                result.put(event.getName() + "#" + setting.getName(), setting.getContent());
+            }
+        }
+        return result;
+    }
+
     public void saveToFile(SafePath path) throws IOException {
-        try (PrintWriter p = new PrintWriter(path.toFile(), Charset.forName("UTF-8"))) {
+        try (PrintWriter p = new PrintWriter(path.toFile(), UTF_8)) {
             PrettyPrinter pp = new PrettyPrinter(p);
             pp.print(configuration);
             if (p.checkError()) {
@@ -172,14 +202,14 @@ public final class JFCModel {
         }
     }
 
-    private void wireSettings() {
+    private void wireSettings(Consumer<String> logger) {
         for (XmlEvent event : configuration.getEvents()) {
             for (XmlSetting setting : event.getSettings()) {
                 var controlName = setting.getControl();
                 if (controlName.isPresent()) {
                     List<ControlElement> controls = getControlElements(controlName.get());
                     if (controls.isEmpty()) {
-                        System.out.println("Warning! Setting '" + setting.getFullName() + "' refers to missing control '" + controlName.get() + "'");
+                        logger.accept("Setting '" + setting.getFullName() + "' refers to missing control '" + controlName.get() + "'");
                     }
                     for (ControlElement ce : controls) {
                         XmlElement control = (XmlElement) ce;
@@ -192,15 +222,5 @@ public final class JFCModel {
 
     private void add(ControlElement control) {
         controls.computeIfAbsent(control.getName(), x -> new ArrayList<>()).add(control);
-    }
-
-    private XmlConfiguration createConfiguration(SafePath file) throws ParseException, IOException {
-        if (file.toString().equals("none")) {
-            XmlConfiguration configuration = new XmlConfiguration();
-            configuration.setAttribute("version", "2.0");
-            configuration.setAttribute("label", "None");
-            return configuration;
-        }
-        return Parser.parse(file.toPath());
     }
 }

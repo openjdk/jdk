@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,7 +150,7 @@ public class DummyWebSocketServer implements Closeable {
                         err.println("Error in connection: " + channel + ", " + e);
                     } finally {
                         err.println("Closed: " + channel);
-                        close(channel);
+                        closeChannel(channel);
                         readReady.countDown();
                     }
                 }
@@ -182,6 +182,10 @@ public class DummyWebSocketServer implements Closeable {
             read.put(b);
             b.clear();
         }
+    }
+
+    protected void closeChannel(SocketChannel channel) {
+        close(channel);
     }
 
     protected void write(SocketChannel ch) throws IOException { }

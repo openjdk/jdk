@@ -509,6 +509,16 @@ const jfloat max_jfloat = jfloat_cast(max_jintFloat);
 const int max_method_code_size = 64*K - 1;  // JVM spec, 2nd ed. section 4.8.1 (p.134)
 
 //----------------------------------------------------------------------------------------------------
+// old CDS options
+extern bool DumpSharedSpaces;
+extern bool DynamicDumpSharedSpaces;
+extern bool RequireSharedSpaces;
+extern "C" {
+// Make sure UseSharedSpaces is accessible to the serviceability agent.
+extern JNIEXPORT jboolean UseSharedSpaces;
+}
+
+//----------------------------------------------------------------------------------------------------
 // Object alignment, in units of HeapWords.
 //
 // Minimum is max(BytesPerLong, BytesPerDouble, BytesPerOop) / HeapWordSize, so jlong, jdouble and
@@ -1198,7 +1208,7 @@ typedef const char* ccstr;
 typedef const char* ccstrlist;   // represents string arguments which accumulate
 
 //----------------------------------------------------------------------------------------------------
-// Default hash/equals functions used by ResourceHashtable and KVHashtable
+// Default hash/equals functions used by ResourceHashtable
 
 template<typename K> unsigned primitive_hash(const K& k) {
   unsigned hash = (unsigned)((uintptr_t)k);

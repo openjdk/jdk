@@ -297,7 +297,6 @@ public class TypeAnnotationPosition {
 
     public void updatePosOffset(int to) {
         offset = to;
-        lvarOffset = new int[]{to};
         isValidOffset = true;
     }
 

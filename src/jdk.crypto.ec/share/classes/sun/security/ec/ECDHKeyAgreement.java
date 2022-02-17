@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import sun.security.ec.point.AffinePoint;
 import sun.security.ec.point.Point;
 import sun.security.util.ArrayUtil;
 import sun.security.util.CurveDB;
+import sun.security.util.ECUtil;
 import sun.security.util.NamedCurve;
 import sun.security.util.math.ImmutableIntegerModuloP;
 import sun.security.util.math.IntegerFieldModuloP;
@@ -92,6 +93,7 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
                 "Curve not supported: " + (nc != null ? nc.toString() :
                     "unknown"));
         }
+        ECUtil.checkPrivateKey(privateKey);
         privateKeyOps = opsOpt.get();
     }
 
@@ -195,7 +197,7 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         EllipticCurve curve = spec.getCurve();
         BigInteger rhs = x.modPow(BigInteger.valueOf(3), p).add(curve.getA()
             .multiply(x)).add(curve.getB()).mod(p);
-        BigInteger lhs = y.modPow(BigInteger.valueOf(2), p).mod(p);
+        BigInteger lhs = y.modPow(BigInteger.TWO, p);
         if (!rhs.equals(lhs)) {
             throw new InvalidKeyException("Point is not on curve");
         }

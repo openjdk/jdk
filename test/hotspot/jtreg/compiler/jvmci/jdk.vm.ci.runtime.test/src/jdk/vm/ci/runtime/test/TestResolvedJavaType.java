@@ -163,6 +163,19 @@ public class TestResolvedJavaType extends TypeUniverse {
     }
 
     @Test
+    public void internalNameTest() {
+        // Verify that the last slash in lambda types are not replaced with a '.' as they
+        // are part of the type name.
+        Supplier<Runnable> lambda = () -> () -> System.out.println("run");
+        ResolvedJavaType lambdaType = metaAccess.lookupJavaType(lambda.getClass());
+        String typeName = lambdaType.getName();
+        int typeNameLen = TestResolvedJavaType.class.getSimpleName().length();
+        int index = typeName.indexOf(TestResolvedJavaType.class.getSimpleName());
+        String suffix = typeName.substring(index + typeNameLen, typeName.length() - 1);
+        assertEquals(TestResolvedJavaType.class.getName() + suffix, lambdaType.toJavaName());
+    }
+
+    @Test
     public void getModifiersTest() {
         for (Class<?> c : classes) {
             ResolvedJavaType type = metaAccess.lookupJavaType(c);

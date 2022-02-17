@@ -26,6 +26,7 @@
  * @bug 8069469
  * @summary Make sure -Xlog:class+load=info works properly with "modules" jimage,
             --patch-module, and with -Xbootclasspath/a
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @compile PatchModuleMain.java
@@ -56,6 +57,7 @@ public class PatchModuleTraceCL {
              "-Xlog:class+load=info", "PatchModuleMain", "javax.naming.spi.NamingManager");
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
         // "modules" jimage case.
         output.shouldContain("[class,load] java.lang.Thread source: jrt:/java.base");
         // --patch-module case.
