@@ -74,8 +74,6 @@ ifeq ($(HSDIS_BACKEND), llvm)
     LLVM_OS := apple-darwin
   else ifeq ($(call isTargetOs, windows), true)
     LLVM_OS := pc-windows-msvc
-    # Disable warning
-    HSDIS_TOOLCHAIN_CFLAGS += -wd4244
   else
     $(error No support for LLVM on this platform)
   endif

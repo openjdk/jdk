@@ -109,10 +109,10 @@ class hsdis_backend_base {
         fprintf(fp, "</" NS_PFX "%s>", event);
       } else {
         /* split out the closing attributes as <dis:foo_done attr='val'/> */
-        int event_prefix = (argp - event);
-        fprintf(fp, "<" NS_PFX "%.*s_done", event_prefix, event);
+        size_t event_prefix =(argp - event);
+        fprintf(fp, "<" NS_PFX "%.*s_done", (int) event_prefix, event);
         fprintf(fp, argp, arg);
-        fprintf(fp, "/></" NS_PFX "%.*s>", event_prefix, event);
+        fprintf(fp, "/></" NS_PFX "%.*s>", (int) event_prefix, event);
       }
     }
 #undef NS_PFX
