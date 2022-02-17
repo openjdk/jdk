@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 JetBrains s.r.o.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,93 +19,85 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
+*/
 
 /*
  * @test
  * @key headful
  * @bug 8015854
- * @summary JButton text set as html image had additional unwanted padding
+ * @requires (os.family == "mac")
+ * @summary Tests HTML image as JButton text for unwanted padding on Aqua LAF on MacOS
  * @run main HtmlButtonImageTest
  */
 
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Point;
-import java.awt.Insets;
-import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
 import java.awt.Robot;
-import java.net.URL;
 import java.nio.file.Path;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.SwingConstants;
-import javax.swing.UnsupportedLookAndFeelException;
-import javax.imageio.ImageIO;
+import java.awt.Color;
 import java.io.IOException;
+import javax.imageio.ImageIO;
 import java.io.File;
-
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 
 public final class HtmlButtonImageTest {
     private static JFrame frame;
     private static Point point;
-    private static URL urlImage;
     private static JButton button;
-
-    private static Path srcDir;
+    private static Path testDir;
 
     public static final int BUTTON_HEIGHT = 37;
     public static final int BUTTON_WIDTH = 37;
     public static final int SQUARE_HEIGHT = 19;
     public static final int SQUARE_WIDTH = 19;
-    public static final int PIXEL_BUFFER = 3;
+    public static final int PIXEL_BUFFER = 1;
 
     public static void main(String[] args) throws Exception {
+        try {
+            UIManager.setLookAndFeel("com.apple.laf.AquaLookAndFeel");
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException("Unsupported LookAndFeel: " + e);
+        }
+
         Robot robot = new Robot();
         robot.setAutoDelay(2000);
         robot.setAutoWaitForIdle(true);
 
         // store path to source directory to locate image
-        srcDir = Path.of(System.getProperty("test.src", "."));
+        testDir = Path.of(System.getProperty("test.classes", "."));
 
         // generate red_square.png image to use as JButton text
+        generateImage();
+
         SwingUtilities.invokeAndWait(() -> {
-            generateImage();
+            createAndShowGUI();
         });
 
-        // cycle test through all available LAFs
-        for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
-            SwingUtilities.invokeAndWait(() -> {
-                setLookAndFeel(laf);
-                createAndShowGUI();
-            });
+        // retrieve color of pixels at each edge of square image by starting at the center of the button
+        robot.mouseMove(frame.getLocationOnScreen().x, frame.getLocationOnScreen().y);
+        robot.mouseMove(button.getLocationOnScreen().x, button.getLocationOnScreen().y);
 
-            // retrieve color of pixels at each edge of square image by starting at the center of the button
-            robot.mouseMove(frame.getLocationOnScreen().x, frame.getLocationOnScreen().y);
-            robot.mouseMove(button.getLocationOnScreen().x, button.getLocationOnScreen().y);
+        setupCenterCoord();
+        robot.mouseMove(point.x, point.y);
 
-            setupCenterCoord();
-            robot.mouseMove(point.x, point.y);
+        // store each pixel color on the edge of each side of the red square
+        Color leftClr = robot.getPixelColor(point.x - (SQUARE_WIDTH/2) + PIXEL_BUFFER, point.y);
+        Color rightClr = robot.getPixelColor(point.x + (SQUARE_WIDTH/2) - PIXEL_BUFFER, point.y);
+        Color topClr = robot.getPixelColor(point.x, point.y - (SQUARE_HEIGHT/2) + PIXEL_BUFFER);
+        Color botClr = robot.getPixelColor(point.x, point.y + (SQUARE_HEIGHT/2) - PIXEL_BUFFER);
 
-            // store each pixel color on the edge of each side of the red square
-            Color leftClr = robot.getPixelColor(point.x - (SQUARE_WIDTH/2) + PIXEL_BUFFER, point.y);
-            Color rightClr = robot.getPixelColor(point.x + (SQUARE_WIDTH/2) - PIXEL_BUFFER, point.y);
-            Color topClr = robot.getPixelColor(point.x, point.y - (SQUARE_HEIGHT/2) + PIXEL_BUFFER);
-            Color botClr = robot.getPixelColor(point.x, point.y + (SQUARE_HEIGHT/2) - PIXEL_BUFFER);
+        // dispose frame when done testing for a LAF before continuing
+        SwingUtilities.invokeAndWait(() -> {
+            frame.dispose();
+        });
 
-            // close frame when complete
-            SwingUtilities.invokeAndWait(() -> {
-                frame.dispose();
-            });
-
-            testImageCentering(leftClr, rightClr, topClr, botClr);
-        }
-
+        testImageCentering(leftClr, rightClr, topClr, botClr);
     }
 
     private static void createAndShowGUI()
@@ -118,7 +110,7 @@ public final class HtmlButtonImageTest {
         button = new JButton();
         button.setFocusPainted(false);
         button.setPreferredSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
-        button.setText("<html><img src='" + srcDir.resolve("red_square.png").toUri() + "'></html>");
+        button.setText("<html><img src='" + testDir.resolve("red_square.png").toUri() + "'></html>");
 
         frame.add(button);
         frame.pack();
@@ -144,23 +136,10 @@ public final class HtmlButtonImageTest {
     private static void testImageCentering(Color left, Color right, Color top, Color bottom) {
         // check if all colors at each edge of square are red
         if(!checkRedness(left) || !checkRedness(right) || !checkRedness(top) || !checkRedness(bottom)) {
-            System.out.println("-- Failed");
-//            throw new RuntimeException("HTML image not centered in button" + left + right + top + bottom);
+            throw new RuntimeException("HTML image not centered in button");
         }
         else {
             System.out.println("-- Passed");
-        }
-    }
-
-    private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
-        try {
-            UIManager.setLookAndFeel(laf.getClassName());
-            System.out.println("-- " + laf.getName());
-        } catch (UnsupportedLookAndFeelException ignored){
-            System.out.println("Unsupported LookAndFeel: " + laf.getClassName());
-        } catch (ClassNotFoundException | InstantiationException |
-                IllegalAccessException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -171,12 +150,9 @@ public final class HtmlButtonImageTest {
         cg.setColor(Color.RED);
         cg.fillRect(0, 0, SQUARE_WIDTH, SQUARE_HEIGHT);
         try {
-            if (ImageIO.write(bImg, "png", new File(srcDir + "/red_square.png")))
-            {
-                System.out.println("-- Saved Image");
-            }
+            ImageIO.write(bImg, "png", new File(testDir + "/red_square.png"));
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed image generation: " + e);
         }
     }
 }

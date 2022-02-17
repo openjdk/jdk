@@ -1126,13 +1126,8 @@ public class SwingUtilities implements SwingConstants
             }
             v = (c != null) ? (View) c.getClientProperty("html") : null;
             if (v != null) {
-                if(availTextWidth < (int) v.getPreferredSpan(View.X_AXIS)){
-                    text = SwingUtilities2.clipString(c, fm, text, availTextWidth);
-                    textR.width = SwingUtilities2.stringWidth(c, fm, text);
-                }
-                else{
-                    textR.width = Math.min(availTextWidth, (int) v.getPreferredSpan(View.X_AXIS));
-                }
+                textR.width = Math.min(availTextWidth,
+                                       (int) v.getPreferredSpan(View.X_AXIS));
                 textR.height = (int) v.getPreferredSpan(View.Y_AXIS);
             } else {
                 textR.width = SwingUtilities2.stringWidth(c, fm, text);
