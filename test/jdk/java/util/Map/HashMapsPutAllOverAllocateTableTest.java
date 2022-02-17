@@ -29,46 +29,64 @@
  *          java.base/java.util:open
  * @author  Xeno Amess
  *
+ * @library /test/lib
  * @compile HashMapsPutAllOverAllocateTableTest.java
- * @run main HashMapsPutAllOverAllocateTableTest
+ * @run junit/othervm HashMapsPutAllOverAllocateTableTest
  */
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+
+@RunWith(Parameterized.class)
 public class HashMapsPutAllOverAllocateTableTest {
 
-    public static void main(String[] args) throws Exception {
-        testOneMapClass(HashMap.class);
-        testOneMapClass(WeakHashMap.class);
-        testOneMapClass(IdentityHashMap.class);
+    @Parameterized.Parameters
+    public static List<Object[]> testFunctionsList() {
+        return List.of(
+                new Object[]{
+                        (Supplier<Map<Object, Object>>) HashMap::new,
+                        (Function<Integer, Map<Object, Object>>) HashMap::new,
+                        (Function<Map<Object, Object>, Map<Object, Object>>) HashMap::new,
+                },
+                new Object[]{
+                        (Supplier<Map<Object, Object>>) WeakHashMap::new,
+                        (Function<Integer, Map<Object, Object>>) WeakHashMap::new,
+                        (Function<Map<Object, Object>, Map<Object, Object>>) WeakHashMap::new,
+                },
+                new Object[]{
+                        (Supplier<Map<Object, Object>>) IdentityHashMap::new,
+                        (Function<Integer, Map<Object, Object>>) IdentityHashMap::new,
+                        (Function<Map<Object, Object>, Map<Object, Object>>) IdentityHashMap::new,
+                }
+        );
     }
 
-    public static <T extends Map<Object, Object>> void testOneMapClass(Class<T> mapClass) throws Exception {
-        Map<Object, Object> a = mapClass.getDeclaredConstructor().newInstance();
-        fill12(a);
-        Map<Object, Object> b = mapClass.getDeclaredConstructor(int.class).newInstance(12);
-        fill12(b);
-        Map<Object, Object> c = mapClass.getDeclaredConstructor(Map.class).newInstance(a);
-        Map<Object, Object> d = mapClass.getDeclaredConstructor().newInstance();
-        d.putAll(a);
-        int lengthA = getArrayLength(a);
-        int lengthB = getArrayLength(b);
-        int lengthC = getArrayLength(c);
-        int lengthD = getArrayLength(d);
-        if (lengthA != lengthB) {
-            throw new RuntimeException("lengthA not equals lengthB! lengthA : " + lengthA + " , lengthB : " + lengthB);
-        }
-        if (lengthA != lengthC) {
-            throw new RuntimeException("lengthA not equals lengthB! lengthA : " + lengthA + " , lengthC : " + lengthC);
-        }
-        if (lengthA != lengthD) {
-            throw new RuntimeException("lengthA not equals lengthB! lengthA : " + lengthA + " , lengthD : " + lengthD);
-        }
+    private final Supplier<Map<Object, Object>> createNewMap;
+
+    private final Function<Integer, Map<Object, Object>> createNewMapWithInt;
+
+    private final Function<Map<Object, Object>, Map<Object, Object>> createNewMapWithMap;
+
+    public HashMapsPutAllOverAllocateTableTest(
+            Supplier<Map<Object, Object>> createNewMap,
+            Function<Integer, Map<Object, Object>> createNewMapWithInt,
+            Function<Map<Object, Object>, Map<Object, Object>> createNewMapWithMap
+    ) {
+        this.createNewMap = createNewMap;
+        this.createNewMapWithInt = createNewMapWithInt;
+        this.createNewMapWithMap = createNewMapWithMap;
     }
 
     public static void fill12(Map<Object, Object> map) {
@@ -82,6 +100,55 @@ public class HashMapsPutAllOverAllocateTableTest {
         field.setAccessible(true);
         Object table = field.get(map);
         return Array.getLength(table);
+    }
+
+    @Test
+    public void test() throws NoSuchFieldException, IllegalAccessException {
+
+        Map<Object, Object> a = createNewMap.get();
+        fill12(a);
+
+        {
+            int length = getArrayLength(a);
+            Assert.assertEquals(
+                    "length a not equals to 16",
+                    16,
+                    length
+            );
+        }
+
+        {
+            Map<Object, Object> b = createNewMapWithInt.apply(12);
+            fill12(b);
+            int length = getArrayLength(b);
+            Assert.assertEquals(
+                    "length b not equals to 16",
+                    16,
+                    length
+            );
+        }
+
+        {
+            Map<Object, Object> c = createNewMapWithMap.apply(a);
+            int length = getArrayLength(c);
+            Assert.assertEquals(
+                    "length c not equals to 16",
+                    16,
+                    length
+            );
+        }
+
+        {
+            Map<Object, Object> d = createNewMap.get();
+            d.putAll(a);
+            int length = getArrayLength(d);
+            Assert.assertEquals(
+                    "length d not equals to 16",
+                    16,
+                    length
+            );
+        }
+
     }
 
 }
