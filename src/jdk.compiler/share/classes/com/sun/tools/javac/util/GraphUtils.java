@@ -141,8 +141,9 @@ public class GraphUtils {
 
         public abstract Iterable<? extends N> getAllDependencies();
 
+        @Override
         public int compareTo(N o) {
-            return (index < o.index) ? -1 : (index == o.index) ? 0 : 1;
+            return Integer.compare(index, o.index);
         }
     }
 
