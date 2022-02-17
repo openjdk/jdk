@@ -48,8 +48,8 @@ import java.util.List;
  * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.vm.annotation
  * @run testng/othervm  -XX:-TieredCompilation --add-opens jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED
- * -XX:+UnlockDiagnosticVMOptions -XX:+UseKNLSetting -XX:+UseZGC -XX:+IgnoreUnrecognizedVMOptions
- * VectorMaxConversionTests
+ *                      -XX:+UnlockDiagnosticVMOptions -XX:+UseKNLSetting -XX:+UseZGC -XX:+IgnoreUnrecognizedVMOptions
+ *                      VectorMaxConversionTests
  */
 
 @Test
