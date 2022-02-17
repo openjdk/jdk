@@ -105,15 +105,12 @@ class CodeBlob_sizes {
   bool is_empty() const                          { return count == 0; }
 
   void print(const char* title) const {
-    if (is_empty())
-    {
+    if (is_empty()) {
       tty->print_cr(" #%d %s = %dK",
                     count,
                     title,
                     (int)(total()               / K));
-    }
-    else
-    {
+    } else {
       tty->print_cr(" #%d %s = %dK (hdr %dK, loc %dK, code %dK, stub %dK, [oops %dK, metadata %dK, data %dK, pcs %dK])",
                     count,
                     title,
@@ -1483,8 +1480,8 @@ void CodeCache::print() {
   }
 
   struct {
-    const char *name;
-    const CodeBlob_sizes *sizes;
+    const char* name;
+    const CodeBlob_sizes* sizes;
   } stubs[] = {
     { "runtime",        &runtimeStub },
     { "uncommon trap",  &uncommonTrapStub },
@@ -1494,7 +1491,7 @@ void CodeCache::print() {
     { "other",          &other },
   };
   tty->print_cr("Stubs:");
-  for (auto &stub: stubs) {
+  for (auto& stub: stubs) {
     stub.sizes->print(stub.name);
   }
 
