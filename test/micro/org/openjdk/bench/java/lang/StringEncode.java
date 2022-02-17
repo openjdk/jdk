@@ -30,8 +30,8 @@ import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3)
-@Warmup(iterations = 5, time = 2)
+@Fork(value = 2)
+@Warmup(iterations = 5, time = 3)
 @Measurement(iterations = 5, time = 3)
 @State(Scope.Thread)
 public class StringEncode {
@@ -92,6 +92,12 @@ public class StringEncode {
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public byte[] encodeUTF16() throws Exception {
+        return utf16String.getBytes(charset);
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public byte[] encodeUTF16LongEnd() throws Exception {
         return longUtf16EndString.getBytes(charset);
     }
@@ -104,8 +110,8 @@ public class StringEncode {
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public byte[] encodeUTF16() throws Exception {
-        return utf16String.getBytes(charset);
+    public byte[] encodeUTF16LongOnly() throws Exception {
+        return longUtf16OnlyString.getBytes(charset);
     }
 
     @Benchmark
@@ -119,31 +125,25 @@ public class StringEncode {
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public byte[] encodeUTF16LongOnly() throws Exception {
-        return longUtf16OnlyString.getBytes(charset);
-    }
-
-    @Benchmark
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public byte[] encodeLatin1Short() throws Exception {
         return latin1String.getBytes(charset);
     }
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public byte[] encodeLatin1OnlyLong() throws Exception {
+    public byte[] encodeLatin1LongOnly() throws Exception {
         return longLatin1OnlyString.getBytes(charset);
     }
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public byte[] encodeLatin1StartLong() throws Exception {
+    public byte[] encodeLatin1LongStart() throws Exception {
         return longLatin1StartString.getBytes(charset);
     }
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public byte[] encodeLatin1EndLong() throws Exception {
+    public byte[] encodeLatin1LongEnd() throws Exception {
         return longLatin1EndString.getBytes(charset);
     }
 
