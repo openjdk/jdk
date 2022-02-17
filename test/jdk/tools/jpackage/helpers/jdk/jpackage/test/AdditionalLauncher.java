@@ -158,6 +158,8 @@ public class AdditionalLauncher {
     private void initialize(JPackageCommand cmd) {
         Path propsFile = TKit.workDir().resolve(name + ".properties");
         if (Files.exists(propsFile)) {
+            // File with the given name exists, pick another name that
+            // will not reference existing file.
             try {
                 propsFile = TKit.createTempFile(propsFile);
                 TKit.deleteIfExists(propsFile);

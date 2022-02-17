@@ -42,6 +42,9 @@ public abstract class RunnablePackageTest {
                     .filter(Predicate.not(Action.FINALIZE::equals))
                     .collect(Collectors.toList()));
             if (hasAction(Action.PURGE) && !actionList.contains(Action.PURGE)) {
+                // Default action list contains "purge" action meaning
+                // packages are not needed for further processing.
+                // Copy this behavior in custom action list.
                 actionList.add(Action.PURGE);
             }
         }
