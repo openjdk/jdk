@@ -45,9 +45,11 @@ public class StringDecode {
     private byte[] utf16String;
     private byte[] longUtf16EndString;
     private byte[] longUtf16StartString;
+    private byte[] longUtf16OnlyString;
     private byte[] latin1String;
     private byte[] longLatin1EndString;
     private byte[] longLatin1StartString;
+    private byte[] longLatin1OnlyString;
 
     private static final String LOREM = """
              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam ac sem eu
@@ -68,11 +70,13 @@ public class StringDecode {
         asciiString = LOREM.substring(0, 32).getBytes(charset);
         longAsciiString = LOREM.repeat(200).getBytes(charset);
         utf16String = "UTF-\uFF11\uFF16 string".getBytes(charset);
-        longUtf16EndString = LOREM.repeat(2).concat(UTF16_STRING).getBytes(charset);
-        longUtf16StartString = UTF16_STRING.concat(LOREM.repeat(2)).getBytes(charset);
+        longUtf16EndString = LOREM.repeat(4).concat(UTF16_STRING).getBytes(charset);
+        longUtf16StartString = UTF16_STRING.concat(LOREM.repeat(4)).getBytes(charset);
+        longUtf16OnlyString = UTF16_STRING.repeat(10).getBytes(charset);
         latin1String = LATIN1_STRING.getBytes(charset);
-        longLatin1EndString = LOREM.repeat(2).concat(LATIN1_STRING).getBytes(charset);
-        longLatin1StartString = LATIN1_STRING.concat(LOREM.repeat(2)).getBytes(charset);
+        longLatin1EndString = LOREM.repeat(4).concat(LATIN1_STRING).getBytes(charset);
+        longLatin1StartString = LATIN1_STRING.concat(LOREM.repeat(4)).getBytes(charset);
+        longLatin1OnlyString = LATIN1_STRING.repeat(10).getBytes(charset);
     }
 
     @Benchmark
@@ -109,10 +113,17 @@ public class StringDecode {
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public String decodeLatin1LongOnly() throws Exception {
+        return new String(longLatin1OnlyString, charset);
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public void decodeLatin1Mixed(Blackhole bh) throws Exception {
         bh.consume(new String(longLatin1EndString, charset));
         bh.consume(new String(longLatin1StartString, charset));
         bh.consume(new String(latin1String, charset));
+        bh.consume(new String(longLatin1OnlyString, charset));
     }
 
     @Benchmark
@@ -135,10 +146,17 @@ public class StringDecode {
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public String decodeUTF16LongOnly() throws Exception {
+        return new String(longUtf16OnlyString, charset);
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public void decodeUTF16Mixed(Blackhole bh) throws Exception {
         bh.consume(new String(longUtf16StartString, charset));
         bh.consume(new String(longUtf16EndString, charset));
         bh.consume(new String(utf16String, charset));
+        bh.consume(new String(longUtf16OnlyString, charset));
     }
 
     @Benchmark
@@ -147,9 +165,11 @@ public class StringDecode {
         bh.consume(new String(utf16String, charset));
         bh.consume(new String(longUtf16EndString, charset));
         bh.consume(new String(longUtf16StartString, charset));
+        bh.consume(new String(longUtf16OnlyString, charset));
         bh.consume(new String(latin1String, charset));
         bh.consume(new String(longLatin1EndString, charset));
         bh.consume(new String(longLatin1StartString, charset));
+        bh.consume(new String(longLatin1OnlyString, charset));
         bh.consume(new String(asciiString, charset));
         bh.consume(new String(longAsciiString, charset));
     }

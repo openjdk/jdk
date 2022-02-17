@@ -44,9 +44,11 @@ public class StringEncode {
     private String utf16String;
     private String longUtf16EndString;
     private String longUtf16StartString;
+    private String longUtf16OnlyString;
     private String latin1String;
     private String longLatin1EndString;
     private String longLatin1StartString;
+    private String longLatin1OnlyString;
 
     private static final String LOREM = """
              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam ac sem eu
@@ -67,11 +69,13 @@ public class StringEncode {
         asciiString = LOREM.substring(0, 32);
         longAsciiString = LOREM.repeat(200);
         utf16String = "UTF-\uFF11\uFF16 string";
-        longUtf16EndString = LOREM.repeat(2).concat(UTF16_STRING);
-        longUtf16StartString = UTF16_STRING.concat(LOREM.repeat(2));
+        longUtf16EndString = LOREM.repeat(4).concat(UTF16_STRING);
+        longUtf16StartString = UTF16_STRING.concat(LOREM.repeat(4));
+        longUtf16OnlyString = UTF16_STRING.repeat(10);
         latin1String = LATIN1_STRING;
-        longLatin1EndString = LOREM.repeat(2).concat(LATIN1_STRING);
-        longLatin1StartString = LATIN1_STRING.concat(LOREM.repeat(2));
+        longLatin1EndString = LOREM.repeat(4).concat(LATIN1_STRING);
+        longLatin1StartString = LATIN1_STRING.concat(LOREM.repeat(4));
+        longLatin1OnlyString = LATIN1_STRING.repeat(10);
     }
 
     @Benchmark
@@ -110,12 +114,25 @@ public class StringEncode {
         bh.consume(utf16String.getBytes(charset));
         bh.consume(longUtf16StartString.getBytes(charset));
         bh.consume(longUtf16EndString.getBytes(charset));
+        bh.consume(longUtf16OnlyString.getBytes(charset));
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public byte[] encodeUTF16LongOnly() throws Exception {
+        return longUtf16OnlyString.getBytes(charset);
     }
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public byte[] encodeLatin1Short() throws Exception {
         return latin1String.getBytes(charset);
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public byte[] encodeLatin1OnlyLong() throws Exception {
+        return longLatin1OnlyString.getBytes(charset);
     }
 
     @Benchmark
@@ -135,6 +152,7 @@ public class StringEncode {
     public void encodeLatin1Mixed(Blackhole bh) throws Exception {
         bh.consume(longLatin1EndString.getBytes(charset));
         bh.consume(longLatin1StartString.getBytes(charset));
+        bh.consume(longLatin1OnlyString.getBytes(charset));
         bh.consume(latin1String.getBytes(charset));
     }
 
@@ -144,8 +162,10 @@ public class StringEncode {
         bh.consume(utf16String.getBytes(charset));
         bh.consume(longUtf16StartString.getBytes(charset));
         bh.consume(longUtf16EndString.getBytes(charset));
+        bh.consume(longUtf16OnlyString.getBytes(charset));
         bh.consume(longLatin1EndString.getBytes(charset));
         bh.consume(longLatin1StartString.getBytes(charset));
+        bh.consume(longLatin1OnlyString.getBytes(charset));
         bh.consume(latin1String.getBytes(charset));
         bh.consume(asciiString.getBytes(charset));
         bh.consume(longAsciiString.getBytes(charset));
