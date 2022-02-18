@@ -706,7 +706,7 @@ public class GetInputStreamNPETest {
             (byte) 0x0, (byte) 0x0, (byte) 0xf1, (byte) 0x6, (byte) 0x0,
             (byte) 0x0, (byte) 0x6a, (byte) 0x61, (byte) 0x76, (byte) 0x61,
             (byte) 0x78, (byte) 0x2f, (byte) 0x69, (byte) 0x6e, (byte) 0x6a,
-            // We will modify 0x53, "S" within the CEN filename entry
+            // We will modify 0x53, "S", within the CEN filename entry
             (byte) 0x65, (byte) 0x63, (byte) 0x74, (byte) 0x2f, (byte) 0x53,
             (byte) 0x69, (byte) 0x6e, (byte) 0x67, (byte) 0x6c, (byte) 0x65,
             (byte) 0x74, (byte) 0x6f, (byte) 0x6e, (byte) 0x2e, (byte) 0x63,
@@ -751,7 +751,35 @@ public class GetInputStreamNPETest {
     /**
      * Create Jar files used by the tests.
      *
+     * The signed jar was created from the jar {@code Valid-EntryName.jar} via:
+     * <pre>
+     *     {@code
+     *        keytool -genkey -keyalg RSA -alias myFirstKey -keystore myKeystore -storepass changeit -keypass changeit}
+     *        jarsigner -keystore myKeystore -verbose Valid-EntryName.jar -signedjar signed.jar myFirstKey}
+     *      }
+     * </pre>
+     *
+     * The {@code Valid-EntryName.jar} and {@code Signed-Valid-EntryName.jar}
+     * that are written to disk at the start of the test run within
+     * the {@code setup} method were converted to a {@code ByteArray} using the
+     * utility method {@code createByteArray} using code similar to:
+     *
+     * <pre>
+     *  {@code
+     *     var jar = Files.readAllBytes(VALID_ENTRY_NAME_JAR);
+     *     var validEntryName = createByteArray(fooJar, "VALID_ENTRY_NAME");
+     *     var signedJar = Files.readAllBytes(SIGNED_VALID_ENTRY_NAME_JAR);
+     *     var signedValidEntryName = createByteArray(fooJar, "SIGNED_VALID_ENTRY_NAME");
+     *  }
+     * </pre>
+     *
+     * The jar files {@code Invalid-EntryName.jar} and
+     * {@code Signed-Invalid-EntryName.jar} are created by modifying
+     * the CEN filename entry changing the value from
+     * {@code 0x53}, "S", to the value {@code 0x13}
+     * 
      * @throws IOException If an error occurs
+     *
      */
     @BeforeTest
     public static void setup() throws IOException {
