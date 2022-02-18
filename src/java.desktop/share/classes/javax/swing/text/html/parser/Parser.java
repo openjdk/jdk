@@ -298,6 +298,7 @@ class Parser implements DTDConstants {
      * @param text  the comment being handled
      */
     protected void handleComment(char[] text) {
+        System.out.println("Parser");
     }
 
     /**
@@ -1658,6 +1659,7 @@ class Parser implements DTDConstants {
      */
     @SuppressWarnings("fallthrough")
     void parseTag() throws IOException {
+        System.out.println("---- parseTag");
         Element elem;
         boolean net = false;
         boolean warned = false;
@@ -2018,6 +2020,7 @@ class Parser implements DTDConstants {
 
         // ensure a legal context for the tag
         TagElement tag = makeTag(elem, false);
+        System.out.println("still here");
 
 
         /** In dealing with forms, we have decided to treat
@@ -2082,6 +2085,7 @@ class Parser implements DTDConstants {
                                         "</SCRIPT>".toCharArray();
 
     void parseScript() throws IOException {
+        System.out.println("-- parseScript");
         char[] charsToAdd = new char[SCRIPT_END_TAG.length];
         boolean insideComment = false;
 
@@ -2162,6 +2166,7 @@ class Parser implements DTDConstants {
      * Parse Content. [24] 320:1
      */
     void parseContent() throws IOException {
+        System.out.println("-- parseContent");
         Thread curThread = Thread.currentThread();
 
         for (;;) {
@@ -2188,6 +2193,7 @@ class Parser implements DTDConstants {
                                       str.length() - END_COMMENT.length());
                 }
 
+                System.out.println("str: " + str);
                 /* Handle resulting chars as comment */
                 handleComment(str.toCharArray());
                 endTag(false);

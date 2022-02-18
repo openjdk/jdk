@@ -178,10 +178,14 @@ public class DocumentParser extends javax.swing.text.html.parser.Parser {
 
 
     protected void handleComment(char[] text) {
+        System.out.println("DocumentParser");
         if (debugFlag) {
             debug("comment: ->" + new String(text) + "<-"
                   + " pos: " + getCurrentPos());
         }
+        System.out.println("comment: ->" + new String(text) + "<-"
+                + " pos: " + getCurrentPos());
+        System.out.println("block start: " + getBlockStartPosition());
         callback.handleComment(text, getBlockStartPosition());
     }
 

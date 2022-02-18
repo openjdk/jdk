@@ -2831,6 +2831,7 @@ public class HTMLDocument extends DefaultStyledDocument {
         }
 
         public void handleComment(char[] data, int pos) {
+            System.out.println("HTMLDocument");
             if (receivedEndHTML) {
                 addExternalComment(new String(data));
                 return;
