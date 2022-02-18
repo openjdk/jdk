@@ -222,7 +222,7 @@ class CompileBroker: AllStatic {
   static int _sum_standard_bytes_compiled;
   static int _sum_nmethod_size;
   static int _sum_nmethod_code_size;
-  static long _peak_compilation_time;
+  static jlong _peak_compilation_time;
 
   static CompilerStatistics _stats_per_level[];
 
@@ -411,8 +411,8 @@ public:
   static int get_sum_standard_bytes_compiled() {    return _sum_standard_bytes_compiled; }
   static int get_sum_nmethod_size() {               return _sum_nmethod_size;}
   static int get_sum_nmethod_code_size() {          return _sum_nmethod_code_size; }
-  static long get_peak_compilation_time() {         return _peak_compilation_time; }
-  static long get_total_compilation_time() {        return _t_total_compilation.milliseconds(); }
+  static jlong get_peak_compilation_time() {        return _peak_compilation_time; }
+  static jlong get_total_compilation_time() {       return _t_total_compilation.milliseconds(); }
 
   // Log that compilation profiling is skipped because metaspace is full.
   static void log_metaspace_failure();

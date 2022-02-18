@@ -87,7 +87,7 @@ void G1BlockOffsetTablePart::update() {
   while (next_addr < limit) {
     prev_addr = next_addr;
     next_addr  = prev_addr + block_size(prev_addr);
-    alloc_block(prev_addr, next_addr);
+    update_for_block(prev_addr, next_addr);
   }
   assert(next_addr == limit, "Should stop the scan at the limit.");
 }
@@ -212,8 +212,8 @@ void G1BlockOffsetTablePart::check_all_cards(size_t start_card, size_t end_card)
 //       ( ^    ]
 //         blk_start
 //
-void G1BlockOffsetTablePart::alloc_block_work(HeapWord* blk_start,
-                                              HeapWord* blk_end) {
+void G1BlockOffsetTablePart::update_for_block_work(HeapWord* blk_start,
+                                                   HeapWord* blk_end) {
   HeapWord* const cur_card_boundary = align_up_by_card_size(blk_start);
   size_t const index =  _bot->index_for_raw(cur_card_boundary);
 
@@ -335,8 +335,8 @@ void G1BlockOffsetTablePart::print_on(outputStream* out) {
 #endif // !PRODUCT
 
 void G1BlockOffsetTablePart::set_for_starts_humongous(HeapWord* obj_top, size_t fill_size) {
-  alloc_block(_hr->bottom(), obj_top);
+  update_for_block(_hr->bottom(), obj_top);
   if (fill_size > 0) {
-    alloc_block(obj_top, fill_size);
+    update_for_block(obj_top, fill_size);
   }
 }

@@ -375,9 +375,10 @@ void DynamicArchive::check_for_dynamic_dump() {
       vm_exit_during_initialization("-XX:+RecordDynamicDumpInfo" __THEMSG, NULL);
     } else {
       assert(ArchiveClassesAtExit != nullptr, "sanity");
-      vm_exit_during_initialization("-XX:ArchiveClassesAtExit" __THEMSG, NULL);
-#undef __THEMSG
+      warning("-XX:ArchiveClassesAtExit" __THEMSG);
     }
+#undef __THEMSG
+    DynamicDumpSharedSpaces = false;
   }
 }
 

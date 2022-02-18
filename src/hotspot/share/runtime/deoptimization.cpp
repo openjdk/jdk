@@ -704,6 +704,21 @@ void Deoptimization::unwind_callee_save_values(frame* f, vframeArray* vframe_arr
   assert(f->is_interpreted_frame(), "must be interpreted");
 }
 
+#ifndef PRODUCT
+static bool falls_through(Bytecodes::Code bc) {
+  switch (bc) {
+    // List may be incomplete.  Here we really only care about bytecodes where compiled code
+    // can deoptimize.
+    case Bytecodes::_goto:
+    case Bytecodes::_goto_w:
+    case Bytecodes::_athrow:
+      return false;
+    default:
+      return true;
+  }
+}
+#endif
+
 // Return BasicType of value being returned
 JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_mode))
 
@@ -801,7 +816,7 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
           // calls. It seems to be hard to tell whether the compiler
           // has emitted debug information matching the "state before"
           // a given bytecode or the state after, so we try both
-          if (!Bytecodes::is_invoke(cur_code) && cur_code != Bytecodes::_athrow) {
+          if (!Bytecodes::is_invoke(cur_code) && falls_through(cur_code)) {
             // Get expression stack size for the next bytecode
             InterpreterOopMap next_mask;
             OopMapCache::compute_one_oop_map(mh, str.bci(), &next_mask);

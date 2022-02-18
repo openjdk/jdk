@@ -479,7 +479,6 @@ protected:
   VerifyOption _vo;
 public:
   // _vo == UsePrevMarking -> use "prev" marking information,
-  // _vo == UseNextMarking -> use "next" marking information,
   // _vo == UseFullMarking -> use "next" marking bitmap but no TAMS.
   G1VerificationClosure(G1CollectedHeap* g1h, VerifyOption vo) :
     _g1h(g1h), _ct(g1h->card_table()),
@@ -787,8 +786,8 @@ void HeapRegion::mangle_unused_area() {
 }
 #endif
 
-void HeapRegion::alloc_block_in_bot(HeapWord* start, HeapWord* end) {
-  _bot_part.alloc_block(start, end);
+void HeapRegion::update_bot_for_block(HeapWord* start, HeapWord* end) {
+  _bot_part.update_for_block(start, end);
 }
 
 void HeapRegion::object_iterate(ObjectClosure* blk) {
