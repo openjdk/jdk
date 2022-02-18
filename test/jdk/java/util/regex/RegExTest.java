@@ -51,14 +51,9 @@ import java.nio.CharBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Scanner;
+import java.util.*;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.MatchResult;
@@ -67,6 +62,7 @@ import java.util.regex.PatternSyntaxException;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.testng.Assert;
 
@@ -3854,11 +3850,11 @@ public class RegExTest {
         }
 
         // bounds/word align
-        twoFindIndexes(" \u0180sherman\u0400 ", bound, 1, 10);
+        twoFindIndexes(" \u0180sherman\u0400 ", boundU, 1, 10);
         assertTrue(bwbU.reset("\u0180sherman\u0400").matches());
-        twoFindIndexes(" \u0180sh\u0345erman\u0400 ", bound, 1, 11);
+        twoFindIndexes(" \u0180sh\u0345erman\u0400 ", boundU, 1, 11);
         assertTrue(bwbU.reset("\u0180sh\u0345erman\u0400").matches());
-        twoFindIndexes(" \u0724\u0739\u0724 ", bound, 1, 4);
+        twoFindIndexes(" \u0724\u0739\u0724 ", boundU, 1, 4);
         assertTrue(bwbU.reset("\u0724\u0739\u0724").matches());
         assertTrue(bwbEU.reset("\u0724\u0739\u0724").matches());
     }
@@ -4555,5 +4551,60 @@ public class RegExTest {
         var e = expectThrows(PatternSyntaxException.class, () ->
                 Pattern.compile(pattern));
         assertTrue(e.getMessage().contains("Bad intersection syntax"));
+    }
+
+    //This test is for 8264160
+    public static void wordBoundaryInconsistencies() {
+        Pattern basicWordCharPattern = Pattern.compile("\\w");
+        Pattern basicWordCharBoundaryPattern =
+                Pattern.compile(";\\b.", Pattern.DOTALL);
+
+        Pattern unicodeWordCharPattern =
+                Pattern.compile("\\w", Pattern.UNICODE_CHARACTER_CLASS);
+
+        Pattern unicodeWordCharBoundaryPattern =
+                Pattern.compile(";\\b.",
+                        Pattern.DOTALL | Pattern.UNICODE_CHARACTER_CLASS);
+
+        IntFunction<Boolean> basicWordCharCheck =
+                (cp) -> cpMatches(basicWordCharPattern, cp, false);
+
+        IntFunction<Boolean> basicBoundaryCharCheck =
+                (cp) -> cpMatches(basicWordCharBoundaryPattern,
+                                  cp, true);
+
+        IntFunction<Boolean> unicodeWordCharCheck =
+                (cp) -> cpMatches(unicodeWordCharPattern, cp, false);
+
+        IntFunction<Boolean> unicodeBoundaryCharCheck =
+                (cp) -> cpMatches(unicodeWordCharBoundaryPattern,
+                                  cp,true);
+
+        //basic pattern comparison
+        for(int cp = 0; cp <= Character.MAX_CODE_POINT; cp++){
+            assertEquals(basicWordCharCheck.apply(cp),
+                    basicBoundaryCharCheck.apply(cp),
+                    "Codepoint: " + cp);
+            assertEquals(unicodeWordCharCheck.apply(cp),
+                    unicodeBoundaryCharCheck.apply(cp),
+                    "Codepoint: " + cp);
+        }
+    }
+
+    private static boolean cpMatches(Pattern p, int cp, boolean boundary) {
+        String cpString;
+        if (Character.isBmpCodePoint(cp)) {
+            cpString = "" + ((char) cp);
+        }
+        else {
+            cpString = "" + Character.highSurrogate(cp) + 
+                    Character.lowSurrogate(cp);
+        }
+
+        if (boundary) {
+            return p.matcher(";" + cpString).matches();
+        } else {
+            return p.matcher(cpString).matches();
+        }
     }
 }

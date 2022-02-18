@@ -5364,7 +5364,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
 
         boolean isWord(int ch) {
             return useUWORD ? CharPredicates.WORD().is(ch)
-                            : (ch == '_' || Character.isLetterOrDigit(ch));
+                            : CharPredicates.ASCII_WORD().is(ch);
         }
 
         int check(Matcher matcher, int i, CharSequence seq) {
