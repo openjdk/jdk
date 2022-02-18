@@ -466,7 +466,7 @@ public class WeakHashMap<K,V>
         modCount++;
         Entry<K,V> e = tab[i];
         tab[i] = new Entry<>(k, value, queue, h, e);
-        if (++size >= threshold)
+        if (++size > threshold)
             resize(tab.length * 2);
         return null;
     }
