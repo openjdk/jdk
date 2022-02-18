@@ -71,6 +71,9 @@ $(GENDATA_CACERTS): $(BUILD_TOOLS_JDK) $(wildcard $(GENDATA_CACERTS_SRC)/*)
 ifeq ($(CACERTS_FILE), )
   TARGETS += $(GENDATA_CACERTS)
 endif
+ifneq ($(CACERTS_SRC), )
+  GENDATA_CACERTS_SRC := $(CACERTS_SRC)
+endif
 
 ################################################################################
 
