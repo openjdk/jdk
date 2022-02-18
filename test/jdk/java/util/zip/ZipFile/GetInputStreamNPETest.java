@@ -777,7 +777,6 @@ public class GetInputStreamNPETest {
      * {@code Signed-Invalid-EntryName.jar} are created by modifying
      * the CEN filename entry changing the value from
      * {@code 0x53}, "S", to the value {@code 0x13}
-     * 
      * @throws IOException If an error occurs
      *
      */
