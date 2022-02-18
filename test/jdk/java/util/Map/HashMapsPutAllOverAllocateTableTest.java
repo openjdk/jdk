@@ -42,6 +42,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -54,7 +55,7 @@ public class HashMapsPutAllOverAllocateTableTest {
     @Parameterized.Parameters
     public static List<Object[]> testFunctionsList() {
         List<Object[]> testParameters = new ArrayList<>(200);
-        for (int i = 8; i <= 128; ++i) {
+        for (int i = 0; i <= 128; ++i) {
             testParameters.add(
                     new Object[]{
                             (Supplier<Map<Object, Object>>) HashMap::new,
@@ -68,6 +69,14 @@ public class HashMapsPutAllOverAllocateTableTest {
                             (Supplier<Map<Object, Object>>) WeakHashMap::new,
                             (Function<Integer, Map<Object, Object>>) WeakHashMap::new,
                             (Function<Map<Object, Object>, Map<Object, Object>>) WeakHashMap::new,
+                            i
+                    }
+            );
+            testParameters.add(
+                    new Object[]{
+                            (Supplier<Map<Object, Object>>) IdentityHashMap::new,
+                            (Function<Integer, Map<Object, Object>>) IdentityHashMap::new,
+                            (Function<Map<Object, Object>, Map<Object, Object>>) IdentityHashMap::new,
                             i
                     }
             );
@@ -119,20 +128,18 @@ public class HashMapsPutAllOverAllocateTableTest {
             Map<Object, Object> b = createNewMapWithInt.apply(mapSize);
             fillN(mapSize, b);
             int length = getArrayLength(b);
-            Assert.assertEquals(
-                    "length b not equals to 16",
-                    lengthA,
-                    length
+            Assert.assertTrue(
+                    "length b larger than length a!",
+                    lengthA <= length
             );
         }
 
         {
             Map<Object, Object> c = createNewMapWithMap.apply(a);
             int length = getArrayLength(c);
-            Assert.assertEquals(
-                    "length c not equals to 16",
-                    lengthA,
-                    length
+            Assert.assertTrue(
+                    "length c larger than length a!",
+                    length <= lengthA
             );
         }
 
@@ -140,10 +147,9 @@ public class HashMapsPutAllOverAllocateTableTest {
             Map<Object, Object> d = createNewMap.get();
             d.putAll(a);
             int length = getArrayLength(d);
-            Assert.assertEquals(
-                    "length d not equals to 16",
-                    lengthA,
-                    length
+            Assert.assertTrue(
+                    "length d larger than length a!",
+                    length <= lengthA
             );
         }
 
