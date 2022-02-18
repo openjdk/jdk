@@ -78,108 +78,117 @@ public enum AccessFlag {
      * The access flag {@code ACC_PUBLIC}, corresponding to the source
      * modifier {@link Modifier#PUBLIC public}.
      */
-    PUBLIC(Modifier.PUBLIC, true, Set.of(TYPE, CONSTRUCTOR, METHOD, FIELD)),
+    PUBLIC(Modifier.PUBLIC, true,
+           Set.of(Location.CLASS, Location.FIELD, Location.METHOD,
+                  Location.INNER_CLASS)),
 
     /**
      * The access flag {@code ACC_PRIVATE}, corresponding to the
      * source modifier {@link Modifier#PRIVATE private}.
      */
-    PRIVATE(Modifier.PRIVATE, true, Set.of(CONSTRUCTOR, METHOD, FIELD)),
+    PRIVATE(Modifier.PRIVATE, true,
+            Set.of(Location.FIELD, Location.METHOD, Location.INNER_CLASS)),
 
     /**
      * The access flag {@code ACC_PROTECTED}, corresponding to the
      * source modifier {@link Modifier#PROTECTED protected}.
      */
-    PROTECTED(Modifier.PROTECTED, true, Set.of(CONSTRUCTOR, METHOD, FIELD)),
+    PROTECTED(Modifier.PROTECTED, true,
+              Set.of(Location.FIELD, Location.METHOD, Location.INNER_CLASS)),
 
     /**
      * The access flag {@code ACC_STATIC}, corresponding to the source
      * modifier {@link Modifier#STATIC static}.
      */
-    STATIC(Modifier.STATIC, true, Set.of(FIELD, METHOD)),
+    STATIC(Modifier.STATIC, true,
+           Set.of(Location.FIELD, Location.METHOD, Location.INNER_CLASS)),
 
     /**
      * The access flag {@code ACC_FINAL}, corresponding to the source
      * modifier {@link Modifier#FINAL final}.
      */
-    FINAL(Modifier.FINAL, true, Set.of(FIELD, METHOD, PARAMETER, TYPE)),
+    FINAL(Modifier.FINAL, true,
+          Set.of(Location.CLASS, Location.FIELD, Location.METHOD,
+                 Location.INNER_CLASS, Location.METHOD_PARAMETER)),
 
     /**
      * The access flag {@code ACC_SUPER}.
      */
-    SUPER(0x0000_0020, false, Set.of(TYPE)),
+    SUPER(0x0000_0020, false, Set.of(Location.CLASS)),
 
     /**
      * The module flag {@code ACC_OPEN}.
      * @see java.lang.module.ModuleDescriptor#isOpen
      */
-    OPEN(0x0000_0020, false, Set.of(ElementType.MODULE)),
+    OPEN(0x0000_0020, false, Set.of(Location.MODULE)),
 
     /**
      * The module requires flag {@code ACC_TRANSITIVE}.
      * @see java.lang.module.ModuleDescriptor.Requires.Modifier#TRANSITIVE
      */
-    TRANSITIVE(0x0000_0020, false, Set.of()),
+    TRANSITIVE(0x0000_0020, false, Set.of(Location.MODULE_REQUIRES)),
 
     /**
      * The access flag {@code ACC_SYNCHRONIZED}, corresponding to the
      * source modifier {@link Modifier#SYNCHRONIZED synchronized}.
      */
-    SYNCHRONIZED(Modifier.SYNCHRONIZED, true, Set.of(METHOD, CONSTRUCTOR)),
+    SYNCHRONIZED(Modifier.SYNCHRONIZED, true, Set.of(Location.METHOD)),
 
     /**
      * The module requires flag {@code ACC_STATIC_PHASE}.
      * @see java.lang.module.ModuleDescriptor.Requires.Modifier#STATIC
      */
-    STATIC_PHASE(0x0000_0040, false, Set.of()),
+    STATIC_PHASE(0x0000_0040, false, Set.of(Location.MODULE_REQUIRES)),
 
      /**
       * The access flag {@code ACC_VOLATILE}, corresponding to the
       * source modifier {@link Modifier#VOLATILE volatile}.
       */
-    VOLATILE(Modifier.VOLATILE, true, Set.of(FIELD)),
+    VOLATILE(Modifier.VOLATILE, true, Set.of(Location.FIELD)),
 
     /**
      * The access flag {@code ACC_BRIDGE}
      * @see Method#isBridge()
      */
-    BRIDGE(0x0000_0040, false, Set.of(METHOD, CONSTRUCTOR)),
+    BRIDGE(0x0000_0040, false, Set.of(Location.METHOD)),
 
     /**
      * The access flag {@code ACC_TRANSIENT}, corresponding to the
      * source modifier {@link Modifier#TRANSIENT transient}.
      */
-    TRANSIENT(Modifier.TRANSIENT, true, Set.of(FIELD)),
+    TRANSIENT(Modifier.TRANSIENT, true, Set.of(Location.FIELD)),
 
     /**
      * The access flag {@code ACC_VARARGS}.
      * @see Executable#isVarArgs()
      */
-    VARARGS(0x0000_0080, false, Set.of(METHOD, CONSTRUCTOR)),
+    VARARGS(0x0000_0080, false, Set.of(Location.METHOD)),
 
     /**
      * The access flag {@code ACC_NATIVE}, corresponding to the source
      * modifier {@link Modifier#NATIVE native}.
      */
-    NATIVE(Modifier.NATIVE, true, Set.of(METHOD)),
+    NATIVE(Modifier.NATIVE, true, Set.of(Location.METHOD)),
 
     /**
      * The access flag {@code ACC_INTERFACE}.
      * @see Class#isInterface()
      */
-    INTERFACE(Modifier.INTERFACE, false, Set.of(TYPE)),
+    INTERFACE(Modifier.INTERFACE, false,
+              Set.of(Location.CLASS, Location.INNER_CLASS)),
 
     /**
      * The access flag {@code ACC_ABSTRACT}, corresponding to the
      * source modifier {@code link Modifier#ABSTRACT abstract}.
      */
-    ABSTRACT(Modifier.ABSTRACT, true, Set.of(TYPE, METHOD)),
+    ABSTRACT(Modifier.ABSTRACT, true,
+             Set.of(Location.CLASS, Location.METHOD, Location.INNER_CLASS)),
 
     /**
      * The access flag {@code ACC_STRICT}, corresponding to the source
      * modifier {@link Modifier#STRICT strictfp}.
      */
-    STRICT(Modifier.STRICT, true, Set.of(METHOD, CONSTRUCTOR)),
+    STRICT(Modifier.STRICT, true, Set.of(Location.METHOD)),
 
     /**
      * The access flag {@code ACC_SYNTHETIC}.
@@ -188,29 +197,37 @@ public enum AccessFlag {
      * @see java.lang.module.ModuleDescriptor.Modifier#SYNTHETIC
      */
     SYNTHETIC(0x0000_1000, false,
-              Set.of(TYPE, FIELD, METHOD, CONSTRUCTOR, ElementType.MODULE, PARAMETER)),
+              Set.of(Location.CLASS, Location.FIELD, Location.METHOD,
+                     Location.INNER_CLASS, Location.METHOD_PARAMETER,
+                     Location.MODULE, Location.MODULE_REQUIRES,
+                     Location.MODULE_EXPORTS, Location.MODULE_OPENS)),
 
     /**
      * The access flag {@code ACC_ANNOTATION}.
      * @see Class#isAnnotation()
      */
-    ANNOTATION(0x0000_2000, false, Set.of(TYPE)),
+    ANNOTATION(0x0000_2000, false,
+               Set.of(Location.CLASS, Location.INNER_CLASS)),
 
-   /**
-    * The access flag {@code ACC_ENUM}.
-    * @see Class#isEnum()
-    */
-    ENUM(0x0000_4000, false, Set.of(TYPE, FIELD)),
+    /**
+     * The access flag {@code ACC_ENUM}.
+     * @see Class#isEnum()
+     */
+    ENUM(0x0000_4000, false,
+         Set.of(Location.CLASS, Location.FIELD, Location.INNER_CLASS)),
 
     /**
      * The access flag {@code ACC_MANDATED}.
      */
-    MANDATED(0x0000_8000, false, Set.of(ElementType.MODULE, PARAMETER)),
+    MANDATED(0x0000_8000, false,
+             Set.of(Location.METHOD_PARAMETER,
+                    Location.MODULE, Location.MODULE_REQUIRES,
+                    Location.MODULE_EXPORTS, Location.MODULE_OPENS)),
 
     /**
      * The access flag {@code ACC_MODULE}.
      */
-    MODULE(0x0000_8000, false, Set.of(TYPE))
+    MODULE(0x0000_8000, false, Set.of(Location.CLASS))
     ;
 
     // May want to override toString for a different enum constant ->
@@ -223,18 +240,18 @@ public enum AccessFlag {
     // type.
     // Intentionally using Set rather than EnumSet since EnumSet is
     // mutable.
-    private Set<ElementType> targets;
+    private Set<Location> locations;
 
-    private AccessFlag(Set<ElementType> targets) {
+    private AccessFlag(Set<Location> locations) {
         this.mask = 0x0;
         this.sourceModifier = false;
-        this.targets = targets;
+        this.locations = locations;
     }
 
-    private AccessFlag(int mask, boolean sourceModifier, Set<ElementType> targets) {
+    private AccessFlag(int mask, boolean sourceModifier, Set<Location> locations) {
         this.mask = mask;
         this.sourceModifier = sourceModifier;
-        this.targets = targets;
+        this.locations = locations;
     }
 
     /**
@@ -255,9 +272,70 @@ public enum AccessFlag {
     /**
      * {@return kinds of constructs the flag can be applied to}
      */
-    public Set<ElementType> targets() {
-        return targets;
+    public Set<Location> locations() {
+        return locations;
     }
+
+    /**
+     * A location within a class file where flags can be applied.
+     * <em>Just stub-out constant descriptions for now</em>.
+     */
+    public enum Location {
+        /**
+         * Class location.
+         * @jvms 4.1 The ClassFile Structure
+         */
+        CLASS,
+
+        /**
+         * Field location.
+         * @jvms 4.5 Fields
+         */
+        FIELD,
+
+        /**
+         * Method location.
+         * @jvms 4.6 Method
+         */
+        METHOD,
+
+        /**
+         * Inner class location.
+         * @jvms 4.7.6 The InnerClasses Attribute
+         */
+        INNER_CLASS,
+
+        /**
+         * Method parameter loccation.
+         * @jvms 4.7.24. The MethodParameters Attribute
+         */
+        METHOD_PARAMETER,
+
+        /**
+         * Module location
+         * @jvms 4.7.25. The Module Attribute
+         */
+        MODULE,
+
+        /**
+         * Module requires location
+         * @jvms 4.7.25. The Module Attribute
+         */
+        MODULE_REQUIRES,
+
+        /**
+         * Module exports location
+         * @jvms 4.7.25. The Module Attribute
+         */
+        MODULE_EXPORTS,
+
+        /**
+         * Module opens location
+         * @jvms 4.7.25. The Module Attribute
+         */
+        MODULE_OPENS;
+    }
+
     // -------------------------------------------------------------
 
     // Future utilities and static factories of this enum class will
