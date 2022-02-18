@@ -93,7 +93,7 @@ public class OtherName implements GeneralNameInterface {
         if (derValue1.isContextSpecific((byte) 0) && derValue1.isConstructed()) {
             nameValue = derValue1.data.toByteArray();
         } else {
-            throw new IOException("value is not [0]");
+            throw new IOException("value is not EXPLICTly tagged [0]");
         }
         gni = getGNI(oid, nameValue);
         if (gni != null) {
