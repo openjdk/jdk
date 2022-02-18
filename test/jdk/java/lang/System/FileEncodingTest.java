@@ -40,7 +40,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 public class FileEncodingTest {
-    private static final boolean IS_WINDOWS = System.getProperty("os.name").startsWith("Windows");
+    private static final String OS_NAME = System.getProperty("os.name");
 
     @DataProvider
     public Object[][] fileEncodingToDefault() {
@@ -56,7 +56,7 @@ public class FileEncodingTest {
     @Test(dataProvider = "fileEncodingToDefault")
     public void testFileEncodingToDefault(String fileEncoding, String expected) throws Exception {
         if (fileEncoding.equals("COMPAT")) {
-            if (IS_WINDOWS) {
+            if (OS_NAME.startsWith("Windows")) {
                 // Only tests on English locales
                 if (Locale.getDefault().getLanguage().equals("en")) {
                     expected = "windows-1252";
@@ -64,6 +64,8 @@ public class FileEncodingTest {
                     System.out.println("Tests only run on Windows with English locales");
                     return;
                 }
+            } else if (OS_NAME.startsWith("AIX")) {
+                expected = "ISO-8859-1";
             } else {
                 expected = "US-ASCII";
             }
