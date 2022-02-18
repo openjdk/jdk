@@ -285,18 +285,16 @@ public class VisibleMemberTable {
     }
 
     /**
-     * Returns the simply overridden method.
+     * {@return true if the specified method is NOT a simple override of some
+     * other method, otherwise false}
+     *
      * @param e the method to check
-     * @return the overridden method or null
      */
-    public ExecutableElement getSimplyOverriddenMethod(ExecutableElement e) {
+    public boolean isNotSimpleOverride(ExecutableElement e) {
         ensureInitialized();
 
-        OverriddenMethodInfo found = overriddenMethodTable.get(e);
-        if (found != null && found.simpleOverride) {
-            return found.overriddenMethod;
-        }
-        return null;
+        var info = overriddenMethodTable.get(e);
+        return info == null || !info.simpleOverride;
     }
 
     /**
@@ -982,7 +980,7 @@ public class VisibleMemberTable {
     public List<ExecutableElement> getImplementedMethods(ExecutableElement method) {
         ImplementedMethods imf = getImplementedMethodsFinder(method);
         return imf.getImplementedMethods().stream()
-                .filter(m -> getSimplyOverriddenMethod(m) == null)
+                .filter(this::isNotSimpleOverride)
                 .toList();
     }
 
