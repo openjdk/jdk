@@ -4331,16 +4331,17 @@ void MacroAssembler::remove_frame(int framesize) {
 }
 
 
-// This method checks if provided byte array contains byte with highest bit set.
-address MacroAssembler::has_negatives(Register ary1, Register len, Register result) {
+// This method counts leading positive bytes (highest bit not set) in provided byte array
+address MacroAssembler::count_positives(Register ary1, Register len, Register result) {
     // Simple and most common case of aligned small array which is not at the
     // end of memory page is placed here. All other cases are in stub.
     Label LOOP, END, STUB, STUB_LONG, SET_RESULT, DONE;
     const uint64_t UPPER_BIT_MASK=0x8080808080808080;
     assert_different_registers(ary1, len, result);
 
+    mov(result, len);
     cmpw(len, 0);
-    br(LE, SET_RESULT);
+    br(LE, DONE);
     cmpw(len, 4 * wordSize);
     br(GE, STUB_LONG); // size > 32 then go to stub
 
@@ -4362,16 +4363,16 @@ address MacroAssembler::has_negatives(Register ary1, Register len, Register resu
     br(EQ, SET_RESULT);
 
   BIND(END);
-    ldr(result, Address(ary1));
+    ldr(rscratch1, Address(ary1));
     sub(len, zr, len, LSL, 3); // LSL 3 is to get bits from bytes
-    lslv(result, result, len);
-    tst(result, UPPER_BIT_MASK);
+    lslv(rscratch1, rscratch1, len);
+    tst(rscratch1, UPPER_BIT_MASK);
     b(SET_RESULT);
 
   BIND(STUB);
-    RuntimeAddress has_neg = RuntimeAddress(StubRoutines::aarch64::has_negatives());
-    assert(has_neg.target() != NULL, "has_negatives stub has not been generated");
-    address tpc1 = trampoline_call(has_neg);
+    RuntimeAddress count_pos = RuntimeAddress(StubRoutines::aarch64::count_positives());
+    assert(count_pos.target() != NULL, "count_positives stub has not been generated");
+    address tpc1 = trampoline_call(count_pos);
     if (tpc1 == NULL) {
       DEBUG_ONLY(reset_labels(STUB_LONG, SET_RESULT, DONE));
       postcond(pc() == badAddress);
@@ -4380,9 +4381,9 @@ address MacroAssembler::has_negatives(Register ary1, Register len, Register resu
     b(DONE);
 
   BIND(STUB_LONG);
-    RuntimeAddress has_neg_long = RuntimeAddress(StubRoutines::aarch64::has_negatives_long());
-    assert(has_neg_long.target() != NULL, "has_negatives stub has not been generated");
-    address tpc2 = trampoline_call(has_neg_long);
+    RuntimeAddress count_pos_long = RuntimeAddress(StubRoutines::aarch64::count_positives_long());
+    assert(count_pos_long.target() != NULL, "count_positives_long stub has not been generated");
+    address tpc2 = trampoline_call(count_pos_long);
     if (tpc2 == NULL) {
       DEBUG_ONLY(reset_labels(SET_RESULT, DONE));
       postcond(pc() == badAddress);
@@ -4391,7 +4392,7 @@ address MacroAssembler::has_negatives(Register ary1, Register len, Register resu
     b(DONE);
 
   BIND(SET_RESULT);
-    cset(result, NE); // set true or false
+    csel(result, zr, result, NE); // set len or 0
 
   BIND(DONE);
   postcond(pc() != badAddress);

@@ -91,6 +91,11 @@ public class TestCountPositives {
                     int r = Helper.StringCodingCountPositives(tBa, off, len);
                     int t = countPositives(tBa, off, len);
                     if (r != t) {
+                        if (t == 0 && r < len) {
+                            // allow intrinsics to bail out and return zero when there
+                            // are negative bytes
+                            continue;
+                        }
                         throw new Exception("Failed test countPositives " + "offset: " + off + " "
                                 + "length: " + len + " " + "return: " + r + " expected: " + t + " negatives: "
                                 + ng);
