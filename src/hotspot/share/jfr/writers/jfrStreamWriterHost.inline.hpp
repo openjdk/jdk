@@ -87,9 +87,7 @@ inline void StreamWriterHost<Adapter, AP>::write_bytes(const u1* buf, intptr_t l
         ThreadInVMfromNative transition(jt);
         JfrJavaSupport::abort(JfrJavaSupport::new_string(msg, jt), jt, false);
     }
-    else {
-        guarantee(num_written > 0, "Nothing got written, or os::write() failed");
-    }
+    guarantee(num_written > 0, "Nothing got written, or os::write() failed");
 
     _stream_pos += num_written;
     len -= num_written;
