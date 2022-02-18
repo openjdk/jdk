@@ -25,50 +25,54 @@
  * @test
  * @bug 8281631
  * @summary HashMap copy constructor and putAll can over-allocate table
- * @modules java.base/java.lang:open
- *          java.base/java.util:open
  * @author  Xeno Amess
  *
- * @run junit HashMapsPutAllOverAllocateTableTest
+ * @run junit/othervm/timeout=1000
+ *      --add-opens java.base/java.lang=ALL-UNNAMED
+ *      --add-opens java.base/java.util=ALL-UNNAMED
+ *      HashMapsPutAllOverAllocateTableTest
  */
-
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.WeakHashMap;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
 @RunWith(Parameterized.class)
 public class HashMapsPutAllOverAllocateTableTest {
 
     @Parameterized.Parameters
     public static List<Object[]> testFunctionsList() {
-        return List.of(
-                new Object[]{
-                        (Supplier<Map<Object, Object>>) HashMap::new,
-                        (Function<Integer, Map<Object, Object>>) HashMap::new,
-                        (Function<Map<Object, Object>, Map<Object, Object>>) HashMap::new,
-                },
-                new Object[]{
-                        (Supplier<Map<Object, Object>>) WeakHashMap::new,
-                        (Function<Integer, Map<Object, Object>>) WeakHashMap::new,
-                        (Function<Map<Object, Object>, Map<Object, Object>>) WeakHashMap::new,
-                },
-                new Object[]{
-                        (Supplier<Map<Object, Object>>) IdentityHashMap::new,
-                        (Function<Integer, Map<Object, Object>>) IdentityHashMap::new,
-                        (Function<Map<Object, Object>, Map<Object, Object>>) IdentityHashMap::new,
-                }
-        );
+        List<Object[]> testParameters = new ArrayList<>(200);
+        for (int i = 8; i <= 128; ++i) {
+            testParameters.add(
+                    new Object[]{
+                            (Supplier<Map<Object, Object>>) HashMap::new,
+                            (Function<Integer, Map<Object, Object>>) HashMap::new,
+                            (Function<Map<Object, Object>, Map<Object, Object>>) HashMap::new,
+                            i
+                    }
+            );
+            testParameters.add(
+                    new Object[]{
+                            (Supplier<Map<Object, Object>>) WeakHashMap::new,
+                            (Function<Integer, Map<Object, Object>>) WeakHashMap::new,
+                            (Function<Map<Object, Object>, Map<Object, Object>>) WeakHashMap::new,
+                            i
+                    }
+            );
+        }
+        return testParameters;
     }
 
     private final Supplier<Map<Object, Object>> createNewMap;
@@ -77,23 +81,28 @@ public class HashMapsPutAllOverAllocateTableTest {
 
     private final Function<Map<Object, Object>, Map<Object, Object>> createNewMapWithMap;
 
+    private final int mapSize;
+
     public HashMapsPutAllOverAllocateTableTest(
             Supplier<Map<Object, Object>> createNewMap,
             Function<Integer, Map<Object, Object>> createNewMapWithInt,
-            Function<Map<Object, Object>, Map<Object, Object>> createNewMapWithMap
+            Function<Map<Object, Object>, Map<Object, Object>> createNewMapWithMap,
+            int mapSize
     ) {
         this.createNewMap = createNewMap;
         this.createNewMapWithInt = createNewMapWithInt;
         this.createNewMapWithMap = createNewMapWithMap;
+        this.mapSize = mapSize;
     }
 
-    public static void fill12(Map<Object, Object> map) {
-        for (int i = 0; i < 12; i++) {
+    public static void fillN(int mapSize, Map<Object, Object> map) {
+        for (int i = 0; i < mapSize; i++) {
             map.put(i, i);
         }
     }
 
-    public static int getArrayLength(Map<Object, Object> map) throws NoSuchFieldException, IllegalAccessException {
+    public static int getArrayLength(Map<Object, Object> map) throws
+            NoSuchFieldException, IllegalAccessException {
         Field field = map.getClass().getDeclaredField("table");
         field.setAccessible(true);
         Object table = field.get(map);
@@ -104,24 +113,15 @@ public class HashMapsPutAllOverAllocateTableTest {
     public void test() throws NoSuchFieldException, IllegalAccessException {
 
         Map<Object, Object> a = createNewMap.get();
-        fill12(a);
-
+        fillN(mapSize, a);
+        int lengthA = getArrayLength(a);
         {
-            int length = getArrayLength(a);
-            Assert.assertEquals(
-                    "length a not equals to 16",
-                    16,
-                    length
-            );
-        }
-
-        {
-            Map<Object, Object> b = createNewMapWithInt.apply(12);
-            fill12(b);
+            Map<Object, Object> b = createNewMapWithInt.apply(mapSize);
+            fillN(mapSize, b);
             int length = getArrayLength(b);
             Assert.assertEquals(
                     "length b not equals to 16",
-                    16,
+                    lengthA,
                     length
             );
         }
@@ -131,7 +131,7 @@ public class HashMapsPutAllOverAllocateTableTest {
             int length = getArrayLength(c);
             Assert.assertEquals(
                     "length c not equals to 16",
-                    16,
+                    lengthA,
                     length
             );
         }
@@ -142,7 +142,7 @@ public class HashMapsPutAllOverAllocateTableTest {
             int length = getArrayLength(d);
             Assert.assertEquals(
                     "length d not equals to 16",
-                    16,
+                    lengthA,
                     length
             );
         }
