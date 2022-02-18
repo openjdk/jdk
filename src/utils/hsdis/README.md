@@ -76,6 +76,12 @@ diagnostic option `-XX:+PrintAssembly`. Note that since this is a diagnostic
 option, you need to unlock these first, so in practice you activate it using
 `-XX:+UnlockDiagnosticVMOptions -XX:+PrintAssembly`.
 
+If using the LLVM backend on Windows, you need to be sure that the LLVM DLL file
+(or files) can be found by hsdis. In practice, this means that you either need
+to copy `LLVM-C.DLL` to a place on your `PATH` or the JDK `bin` directory, or
+you need to augment your `PATH` variable to also point to where you installed
+LLVM (like `C:\LLVM\bin`).
+
 More information is available at the [HotSpot
 wiki](https://wiki.openjdk.java.net/display/HotSpot/PrintAssembly).
 
