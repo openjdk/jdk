@@ -283,8 +283,6 @@ final class CompilerToVM {
      */
     native HotSpotResolvedJavaMethodImpl lookupMethodInPool(HotSpotConstantPool constantPool, int cpi, byte opcode);
 
-    // TODO resolving JVM_CONSTANT_Dynamic
-
     /**
      * Ensures that the type referenced by the specified {@code JVM_CONSTANT_InvokeDynamic} entry at
      * index {@code cpi} in {@code constantPool} is loaded and initialized.
@@ -293,6 +291,30 @@ final class CompilerToVM {
      * {@code JVM_CONSTANT_InvokeDynamic} entry.
      */
     native void resolveInvokeDynamicInPool(HotSpotConstantPool constantPool, int cpi);
+
+    /**
+     * Resolves the details for invoking the bootstrap method associated with the
+     * {@code CONSTANT_Dynamic_info} or @{code CONSTANT_InvokeDynamic_info} entry at {@code cpi} in
+     * {@code constant pool}.
+     *
+     * The return value encodes the details in an object array that is described by the pseudo Java
+     * object {@code info} below:
+     *
+     * <pre>
+     *     bsm_invocation = [
+     *         ResolvedJavaMethod[] method,
+     *         String name,
+     *         Object type,             // JavaConstant: reference to Class (condy) or MethodType (indy)
+     *         Object staticArguments,  // null: no static arguments
+     *                                  // JavaConstant: single static argument
+     *                                  // JavaConstant[]: multiple static arguments
+     *                                  // int[]: static arguments to be resolved via BootstrapCallInfo
+     *     ]
+     * </pre>
+     *
+     * @return bootstrap method invocation details as encoded above
+     */
+    native Object[] resolveBootstrapMethod(HotSpotConstantPool constantPool, int cpi);
 
     /**
      * If {@code cpi} denotes an entry representing a signature polymorphic method ({@jvms 2.9}),
