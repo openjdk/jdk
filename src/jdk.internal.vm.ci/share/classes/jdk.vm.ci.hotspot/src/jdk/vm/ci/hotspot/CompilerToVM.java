@@ -295,11 +295,9 @@ final class CompilerToVM {
     native void resolveInvokeDynamicInPool(HotSpotConstantPool constantPool, int cpi);
 
     /**
-     * If {@code cpi} denotes an entry representing a
-     * <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-2.html#jvms-2.9">signature
-     * polymorphic</a> method, this method ensures that the type referenced by the entry is loaded
-     * and initialized. It {@code cpi} does not denote a signature polymorphic method, this method
-     * does nothing.
+     * If {@code cpi} denotes an entry representing a signature polymorphic method ({@jvms 2.9}),
+     * this method ensures that the type referenced by the entry is loaded and initialized. It
+     * {@code cpi} does not denote a signature polymorphic method, this method does nothing.
      */
     native void resolveInvokeHandleInPool(HotSpotConstantPool constantPool, int cpi);
 
