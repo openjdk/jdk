@@ -299,7 +299,7 @@ public class WindowsAsynchronousFileChannelImpl
         if (!shared && !writing)
             throw new NonWritableChannelException();
 
-        long len = size != 0 ? size : Long.MAX_VALUE - Math.max(0, position);
+        long len = (size != 0) ? size : Long.MAX_VALUE - Math.max(0, position);
 
         // add to lock table
         FileLockImpl fli = addToFileLockTable(position, len, shared);
