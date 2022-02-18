@@ -162,6 +162,9 @@ public class IdealDefaultRegexes {
     public static final String VECTOR_CAST_L2X = START + "VectorCastL2X" + MID + END;
     public static final String VECTOR_CAST_F2X = START + "VectorCastF2X" + MID + END;
     public static final String VECTOR_CAST_D2X = START + "VectorCastD2X" + MID + END;
+    public static final String VECTOR_UCAST_B2X = START + "VectorUCastB2X" + MID + END;
+    public static final String VECTOR_UCAST_S2X = START + "VectorUCastS2X" + MID + END;
+    public static final String VECTOR_UCAST_I2X = START + "VectorUCastI2X" + MID + END;
     public static final String VECTOR_REINTERPRET = START + "VectorReinterpret" + MID + END;
 
     public static void initMaps() {
@@ -255,6 +258,9 @@ public class IdealDefaultRegexes {
         initMaps(IRNode.VECTOR_CAST_L2X, VECTOR_CAST_L2X);
         initMaps(IRNode.VECTOR_CAST_F2X, VECTOR_CAST_F2X);
         initMaps(IRNode.VECTOR_CAST_D2X, VECTOR_CAST_D2X);
+        initMaps(IRNode.VECTOR_UCAST_B2X, VECTOR_UCAST_B2X);
+        initMaps(IRNode.VECTOR_UCAST_S2X, VECTOR_UCAST_S2X);
+        initMaps(IRNode.VECTOR_UCAST_I2X, VECTOR_UCAST_I2X);
         initMaps(IRNode.VECTOR_REINTERPRET, VECTOR_REINTERPRET);
     }
 
