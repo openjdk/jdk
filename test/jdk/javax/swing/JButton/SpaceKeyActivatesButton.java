@@ -33,14 +33,14 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
-
 import static java.util.stream.Collectors.toList;
 
 /*
  * @test
  * @key headful
+ * @bug 8281738
  * @summary Check whether pressing <Space> key generates
- * ActionEvent on focused Button or not.
+ *          ActionEvent on focused Button or not.
  * @run main SpaceKeyActivatesButton
  */
 public class SpaceKeyActivatesButton {
@@ -64,12 +64,19 @@ public class SpaceKeyActivatesButton {
             try {
                 buttonPressed = false;
                 System.out.println("Testing L&F: " + laf);
-                SwingUtilities.invokeAndWait(() -> frame = new JFrame());
-                robot.waitForIdle();
+                AtomicBoolean lafSetSuccess = new AtomicBoolean(false);
                 SwingUtilities.invokeAndWait(() -> {
-                    setLookAndFeel(laf);
-                    createUI();
+                    lafSetSuccess.set(setLookAndFeel(laf));
+                    // Call createUI() only if setting LnF succeeded.
+                    if (lafSetSuccess.get()) {
+                        createUI();
+                    }
                 });
+                // If setting LnF failed, then just get next LnF and continue.
+                if (!lafSetSuccess.get()) {
+                    continue;
+                }
+                robot.waitForIdle();
 
                 int waitCount = 0;
                 while (!isFocusOwner()) {
@@ -103,18 +110,21 @@ public class SpaceKeyActivatesButton {
         return isFocusOwner.get();
     }
 
-    private static void setLookAndFeel(String lafName) {
+    private static boolean setLookAndFeel(String lafName) {
         try {
             UIManager.setLookAndFeel(lafName);
         } catch (UnsupportedLookAndFeelException ignored) {
             System.out.println("Ignoring Unsupported L&F: " + lafName);
+            return false;
         } catch (ClassNotFoundException | InstantiationException
                 | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
+        return true;
     }
 
     private static void createUI() {
+        frame = new JFrame();
         JPanel panel = new JPanel();
         panel.add(new JButton("Button1"));
         focusedButton = new JButton("Button2");
