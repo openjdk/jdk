@@ -37,30 +37,34 @@ import java.util.stream.Collectors;
  * @see IR#failOn()
  * @see CheckAttribute
  */
-public class FailOn extends CheckAttribute<Constraint> {
+public class FailOn extends CheckAttribute<Constraint, FailOnMatchResult> {
     private final Pattern quickPattern;
 
-    public FailOn(List<Constraint> constraints) {
-        super(constraints);
+    public FailOn(List<Constraint> constraints, String compilationOutput) {
+        super(constraints, compilationOutput);
         String patternString = constraints.stream().map(Constraint::getRegex).collect(Collectors.joining("|"));
         this.quickPattern = Pattern.compile(String.join("|", patternString));
     }
 
     @Override
-    public FailOnMatchResult apply(String compilation) {
-        FailOnMatchResult result = new FailOnMatchResult();
-        Matcher matcher = quickPattern.matcher(compilation);
-        if (matcher.find()) {
-            List<ConstraintFailure> constraintFailures = checkConstraints(compilation);
-            TestFramework.check(!constraintFailures.isEmpty(), "must find at least one match");
-            result.setFailures(constraintFailures);
-        }
-        return result;
+    protected FailOnMatchResult createMatchResult() {
+        return new FailOnMatchResult();
     }
 
     @Override
-    protected void checkConstraint(List<ConstraintFailure> constraintFailures, Constraint constraint, String compilation) {
-        List<String> matches = getMatchedNodes(constraint, compilation);
+    public FailOnMatchResult match() {
+        Matcher matcher = quickPattern.matcher(compilationOutput);
+        if (matcher.find()) {
+            FailOnMatchResult failOnMatchResult = super.match();
+            TestFramework.check(failOnMatchResult.fail(), "must fail (i.e. find at least one match)");
+            return failOnMatchResult;
+        }
+        return new FailOnMatchResult();
+    }
+
+    @Override
+    protected void checkConstraint(List<ConstraintFailure> constraintFailures, Constraint constraint) {
+        List<String> matches = getMatchedNodes(constraint);
         if (!matches.isEmpty()) {
             constraintFailures.add(new FailOnConstraintFailure(constraint.getRegex(), constraint.getIndex(), matches));
         }

@@ -21,53 +21,47 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule;
+package compiler.lib.ir_framework.driver.irmatching.irrule.phase;
 
 import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.*;
+import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.driver.irmatching.Matching;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CheckAttribute;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CheckAttributeMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Counts;
+import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOn;
 
 import java.util.function.Consumer;
 
-public class CompilePhaseIRRule {
+/**
+ * This class represents an IR rule of an IR method for a specific compile phase. It contains a fully parsed (i.e.
+ * all placeholder strings of {@link IRNode} replaced and composite nodes merged) {@link FailOn} and {@link Counts}
+ * attribute which are ready to be IR matched against.
+ *
+ * @see CompilePhaseIRRule
+ */
+public class CompilePhaseIRRule implements Matching {
     protected final CompilePhase compilePhase;
     protected final FailOn failOn;
     protected final Counts counts;
-    protected final IRMethod irMethod;
 
-    public CompilePhaseIRRule(IRMethod irMethod, CompilePhase compilePhase, FailOn failOn, Counts counts) {
+    public CompilePhaseIRRule(CompilePhase compilePhase, FailOn failOn, Counts counts) {
         this.compilePhase = compilePhase;
         this.failOn = failOn;
         this.counts = counts;
-        this.irMethod = irMethod;
     }
 
-    /**
-     * Apply an IR rule for a compile phase by checking any failOn and counts attributes.
-     */
-    public CompilePhaseMatchResult applyCheckAttributes() {
-        return applyCheckAttributes(compilePhase);
-    }
-
-    protected CompilePhaseMatchResult applyCheckAttributes(CompilePhase compilePhase) {
+    @Override
+    public CompilePhaseMatchResult match() {
         CompilePhaseMatchResult compilePhaseMatchResult = new CompilePhaseMatchResult(compilePhase);
-        String compilationOutput = irMethod.getOutput(compilePhase);
-        applyFailOn(compilePhaseMatchResult, compilationOutput);
-        applyCounts(compilePhaseMatchResult, compilationOutput);
+        applyCheckAttribute(failOn, compilePhaseMatchResult::setFailOnMatchResult);
+        applyCheckAttribute(counts, compilePhaseMatchResult::setCountsMatchResult);
         return compilePhaseMatchResult;
     }
 
-    private void applyFailOn(CompilePhaseMatchResult compilePhaseMatchResult, String compilationOutput) {
-        applyCheckAttribute(compilePhaseMatchResult::setFailOnMatchResult, failOn, compilationOutput);
-    }
-
-    private void applyCounts(CompilePhaseMatchResult compilePhaseMatchResult, String compilationOutput) {
-        applyCheckAttribute(compilePhaseMatchResult::setCountsMatchResult, counts, compilationOutput);
-    }
-
-    private void applyCheckAttribute(Consumer<CheckAttributeMatchResult> consumer, CheckAttribute<?> checkAttribute, String compilationOutput) {
+    private void applyCheckAttribute(CheckAttribute<?, ?> checkAttribute, Consumer<CheckAttributeMatchResult> consumer) {
         if (checkAttribute != null) {
-            CheckAttributeMatchResult matchResult = checkAttribute.apply(compilationOutput);
+            CheckAttributeMatchResult matchResult = checkAttribute.match();
             if (matchResult.fail()) {
                 consumer.accept(matchResult);
             }

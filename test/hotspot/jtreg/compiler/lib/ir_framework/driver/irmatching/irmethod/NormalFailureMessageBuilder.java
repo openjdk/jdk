@@ -23,7 +23,6 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
-import compiler.lib.ir_framework.driver.irmatching.FailureMessage;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 
 import java.util.List;

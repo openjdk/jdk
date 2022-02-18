@@ -21,22 +21,36 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.irrule;
+package compiler.lib.ir_framework.driver.irmatching.irrule.phase;
 
 import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
+import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Counts;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOn;
 
+/**
+ * This class represents an IR rule of an IR method for constraints that could not be mapped to {@link CompilePhase#PRINT_IDEAL}
+ * or {@link CompilePhase#PRINT_OPTO_ASSEMBLY} (i.e. usage of custom user defined regexes). It additionally contains
+ * {@link CompilePhaseIRRule} instances (see {@link DefaultPhaseIRRuleBuilder}) with the same constraints in order to find out,
+ * how the user defined regexes were matched (on PrintIdeal and/or PrintOptoAssembly). This allows us to filter the compilation
+ * output to reduce noise.
+ *
+ * @see CompilePhaseIRRule
+ * @see DefaultPhaseIRRuleBuilder
+ */
 public class DefaultPhaseIRRule extends CompilePhaseIRRule {
+    private final CompilePhaseIRRule idealIRRule;
+    private final CompilePhaseIRRule optoAssemblyIRRule;
 
-    public DefaultPhaseIRRule(IRMethod irMethod, FailOn failOn, Counts counts) {
-        super(irMethod, CompilePhase.DEFAULT, failOn, counts);
+    public DefaultPhaseIRRule(FailOn failOn, Counts counts, CompilePhaseIRRule idealIRRule, CompilePhaseIRRule optoAssemblyIRRule) {
+        super(CompilePhase.DEFAULT, failOn, counts);
+        this.idealIRRule = idealIRRule;
+        this.optoAssemblyIRRule = optoAssemblyIRRule;
     }
 
     @Override
-    public CompilePhaseMatchResult applyCheckAttributes() {
-        CompilePhaseMatchResult compilePhaseMatchResult = applyCheckAttributes(CompilePhase.DEFAULT);
+    public CompilePhaseMatchResult match() {
+        CompilePhaseMatchResult compilePhaseMatchResult = super.match();
         if (compilePhaseMatchResult.fail()) {
             return replaceCompilePhaseMatchResult(compilePhaseMatchResult);
         }
@@ -44,8 +58,8 @@ public class DefaultPhaseIRRule extends CompilePhaseIRRule {
     }
 
     private CompilePhaseMatchResult replaceCompilePhaseMatchResult(CompilePhaseMatchResult resultDefault) {
-        CompilePhaseMatchResult resultIdeal = applyCheckAttributes(CompilePhase.PRINT_IDEAL);
-        CompilePhaseMatchResult resultOptoAssembly = applyCheckAttributes(CompilePhase.PRINT_OPTO_ASSEMBLY);
+        CompilePhaseMatchResult resultIdeal = idealIRRule.match();
+        CompilePhaseMatchResult resultOptoAssembly = optoAssemblyIRRule.match();
         int totalMatchesDefault = resultDefault.getTotalMatchedNodesCount();
         int totalMatchesIdeal = resultIdeal.getTotalMatchedNodesCount();
         int totalMatchesOptoAssembly = resultOptoAssembly.getTotalMatchedNodesCount();

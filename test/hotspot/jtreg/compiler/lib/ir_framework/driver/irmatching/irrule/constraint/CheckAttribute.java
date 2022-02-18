@@ -25,6 +25,7 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.driver.irmatching.Matching;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,29 +41,36 @@ import java.util.regex.Pattern;
  *
  * @see IR
  */
-abstract public class CheckAttribute<T extends Constraint> {
-    private final List<T> constraints;
+abstract public class CheckAttribute<C extends Constraint, R extends CheckAttributeMatchResult> implements Matching {
+    private final List<C> constraints;
+    protected String compilationOutput;
 
-    public CheckAttribute(List<T> constraints) {
+    public CheckAttribute(List<C> constraints, String compilationOutput) {
         this.constraints = constraints;
+        this.compilationOutput = compilationOutput;
     }
 
-    abstract public CheckAttributeMatchResult apply(String compilation);
-
-        protected List<ConstraintFailure> checkConstraints(String compilation) {
+    @Override
+    public R match() {
+        R matchResult = createMatchResult();
         List<ConstraintFailure> constraintFailures = new ArrayList<>();
-        for (T constraint : constraints) {
-            checkConstraint(constraintFailures, constraint, compilation);
+        for (C constraint : constraints) {
+            checkConstraint(constraintFailures, constraint);
         }
-        return constraintFailures;
+        if (!constraintFailures.isEmpty()) {
+            matchResult.setFailures(constraintFailures);
+        }
+        return matchResult;
     }
 
-    abstract void checkConstraint(List<ConstraintFailure> constraintFailures, T constraint, String compilation);
+    abstract protected R createMatchResult();
 
-    protected List<String> getMatchedNodes(Constraint constraint, String compilation) {
+    abstract void checkConstraint(List<ConstraintFailure> constraintFailures, C constraint);
+
+    protected List<String> getMatchedNodes(Constraint constraint) {
         String regex = constraint.getRegex();
         Pattern p = Pattern.compile(regex);
-        Matcher m = p.matcher(compilation);
+        Matcher m = p.matcher(compilationOutput);
         List<String> matches = new ArrayList<>();
         if (m.find()) {
             do {

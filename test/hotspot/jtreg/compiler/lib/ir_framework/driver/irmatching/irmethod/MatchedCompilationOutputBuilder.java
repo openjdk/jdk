@@ -24,7 +24,7 @@
 package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
 import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.driver.irmatching.irrule.CompilePhaseMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 
 import java.util.LinkedHashSet;

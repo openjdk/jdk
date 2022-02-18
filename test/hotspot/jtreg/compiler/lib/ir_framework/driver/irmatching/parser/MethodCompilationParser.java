@@ -26,6 +26,7 @@ package compiler.lib.ir_framework.driver.irmatching.parser;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -35,22 +36,21 @@ import java.util.Map;
  * @see IRMethod
  */
 public class MethodCompilationParser {
-    private final IREncodingParser irEncodingParser;
-    private final HotSpotPidFileParser hotSpotPidFileParser;
+    private final Class<?> testClass;
 
     public MethodCompilationParser(Class<?> testClass) {
-        this.irEncodingParser = new IREncodingParser(testClass);
-        this.hotSpotPidFileParser = new HotSpotPidFileParser(testClass.getName());
+        this.testClass = testClass;
     }
 
     /**
      * Parse the IR encoding and hotspot_pid* file to create a collection of {@link IRMethod} objects.
      * Return null if there are no applicable @IR rules in any method of the test class.
      */
-    public Collection<IRMethod> parse(String hotspotPidFileName, String irEncoding) {
-        Map<String, IRMethod> compilationsMap = irEncodingParser.parseIRMethods(irEncoding);
-        if (!compilationsMap.isEmpty()) {
-            hotSpotPidFileParser.setCompilationsMap(compilationsMap);
+    public List<IRMethod> parse(String hotspotPidFileName, String irEncoding) {
+        IREncodingParser irEncodingParser = new IREncodingParser(testClass);
+        Map<String, TestMethod> testCompilationsMap = irEncodingParser.parse(irEncoding);
+        if (!testCompilationsMap.isEmpty()) {
+            HotSpotPidFileParser hotSpotPidFileParser = new HotSpotPidFileParser(testClass.getName(), testCompilationsMap);
             return hotSpotPidFileParser.parseCompilations(hotspotPidFileName);
         }
         return null;

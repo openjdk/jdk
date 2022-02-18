@@ -24,6 +24,7 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule;
 
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseMatchResult;
 
 import java.util.ArrayList;
 import java.util.List;

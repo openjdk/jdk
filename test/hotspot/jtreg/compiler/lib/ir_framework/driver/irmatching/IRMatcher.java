@@ -38,7 +38,7 @@ public class IRMatcher {
 
     public IRMatcher(String hotspotPidFileName, String irEncoding, Class<?> testClass) {
         MethodCompilationParser methodCompilationParser = new MethodCompilationParser(testClass);
-        Collection<IRMethod> irMethods = methodCompilationParser.parse(hotspotPidFileName, irEncoding);
+        List<IRMethod> irMethods = methodCompilationParser.parse(hotspotPidFileName, irEncoding);
         if (irMethods != null) {
             applyIRRules(irMethods);
         }
@@ -47,7 +47,7 @@ public class IRMatcher {
     /**
      * Do an IR matching of all methods with applicable @IR rules prepared with by the {@link MethodCompilationParser}.
      */
-    private void applyIRRules(Collection<IRMethod> irMethods) {
+    private void applyIRRules(List<IRMethod> irMethods) {
         List<IRMethodMatchResult> results = new ArrayList<>();
         irMethods.forEach(irMethod -> applyIRRule(irMethod, results));
         if (!results.isEmpty()) {
@@ -59,7 +59,7 @@ public class IRMatcher {
         if (TestFramework.VERBOSE) {
             printMethodOutput(irMethod);
         }
-        IRMethodMatchResult result = irMethod.applyIRRules();
+        IRMethodMatchResult result = irMethod.match();
         if (result.fail()) {
             results.add(result);
         }

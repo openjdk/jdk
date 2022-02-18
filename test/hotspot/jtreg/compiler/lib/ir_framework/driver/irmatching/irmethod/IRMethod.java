@@ -25,7 +25,9 @@ package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.Test;
 import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.driver.irmatching.Matching;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRule;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 import compiler.lib.ir_framework.shared.TestFormat;
@@ -36,18 +38,22 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Class to store information about a method that needs to be IR matched.
+ * This class represents a {@link Test @Test} annotated method that has an associated non-empty list of applicable IR rules.
+ *
+ * @see IRRule
+ * @see Test
  */
-public class IRMethod {
+public class IRMethod implements Matching {
     private final Method method;
-    private final List<IRRule> irRules;
+    private final Map<CompilePhase, String> compilationOutputMap;
     private String completeOutput;
-    private String optoAssemblyOutput;
-    private final Map<CompilePhase, String> outputMap;
+    private final List<IRRule> irRules;
 
-    public IRMethod(Method method, int[] ruleIds, IR[] irAnnos) {
+    public IRMethod(Method method, int[] ruleIds, IR[] irAnnos, Map<CompilePhase, String> compilationOutputMap) {
         this.method = method;
         this.irRules = new ArrayList<>();
+        this.compilationOutputMap = compilationOutputMap;
+        this.completeOutput = "";
         for (int ruleId : ruleIds) {
             try {
                 irRules.add(new IRRule(this, ruleId, irAnnos[ruleId - 1]));
@@ -56,9 +62,6 @@ public class IRMethod {
                 TestFormat.failNoThrow(e.getMessage() + postfixErrorMsg);
             }
         }
-        this.completeOutput = "";
-        this.optoAssemblyOutput = "";
-        this.outputMap = new LinkedHashMap<>(); // Keep order of insertion
     }
 
     public Method getMethod() {
@@ -76,11 +79,12 @@ public class IRMethod {
     }
 
     private String createCompleteOutput() {
-        String idealOutputs = outputMap.entrySet().stream()
-                                       .filter(e -> e.getKey() == CompilePhase.PRINT_OPTO_ASSEMBLY)
-                                       .map(Map.Entry::getValue)
-                                       .collect(Collectors.joining(System.lineSeparator() + System.lineSeparator()));
-        if (!optoAssemblyOutput.isEmpty()) {
+        String idealOutputs = compilationOutputMap.entrySet().stream()
+                                                  .filter(e -> e.getKey() == CompilePhase.PRINT_OPTO_ASSEMBLY)
+                                                  .map(Map.Entry::getValue)
+                                                  .collect(Collectors.joining(System.lineSeparator() + System.lineSeparator()));
+        String optoAssemblyOutput = compilationOutputMap.get(CompilePhase.PRINT_OPTO_ASSEMBLY);
+        if (optoAssemblyOutput != null) {
             // PrintOptoAssembly output is reported before the PrintIdeal output of PHASE_FINAL.
             // Put PrintOptoAssembly output last.
             return idealOutputs + System.lineSeparator() + System.lineSeparator() + optoAssemblyOutput;
@@ -89,40 +93,14 @@ public class IRMethod {
     }
 
     public String getOutput(CompilePhase phase) {
-        return outputMap.get(phase);
-    }
-
-    /**
-     * We might parse multiple C2 compilations of this method. Only keep the very last one by overriding the outputMap.
-     */
-    public void setIdealOutput(String idealOutput, CompilePhase phase) {
-        String idealOutputWithHeader = "PrintIdeal" + getPhaseNameString(phase) + ":" + System.lineSeparator() + idealOutput;
-        outputMap.put(phase, idealOutputWithHeader);
-        if (phase == CompilePhase.PRINT_IDEAL) {
-            outputMap.put(CompilePhase.DEFAULT, idealOutputWithHeader);
-        }
-    }
-
-    private String getPhaseNameString(CompilePhase phase) {
-        return " - " + phase.getName();
-    }
-
-    /**
-     * We might parse multiple C2 compilations of this method. Only keep the very last one by overriding the outputMap.
-     */
-    public void setOptoAssemblyOutput(String optoAssemblyOutput) {
-        this.optoAssemblyOutput = "PrintOptoAssembly:" + System.lineSeparator() + optoAssemblyOutput;
-        outputMap.put(CompilePhase.PRINT_OPTO_ASSEMBLY, this.optoAssemblyOutput);
-        String idealOutput = outputMap.get(CompilePhase.DEFAULT);
-        TestFramework.check(idealOutput != null && !idealOutput.isEmpty(), "must be non-empty");
-        outputMap.put(CompilePhase.DEFAULT, idealOutput + System.lineSeparator() + System.lineSeparator()
-                                            + this.optoAssemblyOutput);
+        return compilationOutputMap.get(phase);
     }
 
     /**
      * Apply all IR rules of this IR method on their specified compile phases.
      */
-    public IRMethodMatchResult applyIRRules() {
+    @Override
+    public IRMethodMatchResult match() {
         TestFramework.check(!irRules.isEmpty(), "IRMethod cannot be created if there are no IR rules to apply");
         List<IRRuleMatchResult> results = new ArrayList<>();
         if (getCompleteOutput().isEmpty()) {
@@ -134,7 +112,7 @@ public class IRMethod {
 
     private NormalMatchResult getNormalMatchResult(List<IRRuleMatchResult> results) {
         for (IRRule irRule : irRules) {
-            IRRuleMatchResult result = irRule.applyCheckAttributesForPhases();
+            IRRuleMatchResult result = irRule.match();
             if (result.fail()) {
                 results.add(result);
             }

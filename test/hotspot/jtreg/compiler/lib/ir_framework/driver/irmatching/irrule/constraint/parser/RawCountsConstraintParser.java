@@ -57,12 +57,12 @@ public class RawCountsConstraintParser extends RawConstraintParser<CountsConstra
      * Returns a new {@link Counts} object by parsing the provided {@code rawCountsConstraints} list or null if this
      * list is empty.
      */
-    public static Counts parse(List<RawCountsConstraint> rawCountsConstraints, CompilePhase compilePhase) {
+    public static List<CountsConstraint> parse(List<RawCountsConstraint> rawCountsConstraints, CompilePhase compilePhase) {
         if (!rawCountsConstraints.isEmpty()) {
             List<CountsConstraint> constraintResultList = new ArrayList<>();
             new RawCountsConstraintParser().parseNonEmptyConstraints(constraintResultList, rawCountsConstraints, compilePhase);
             TestFramework.check(!constraintResultList.isEmpty(), "must be non-empty");
-            return new Counts(constraintResultList);
+            return constraintResultList;
         }
         return null;
     }

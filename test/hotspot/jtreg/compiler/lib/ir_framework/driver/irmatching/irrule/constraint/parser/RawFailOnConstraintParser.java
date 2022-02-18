@@ -49,12 +49,12 @@ public class RawFailOnConstraintParser extends RawConstraintParser<Constraint, R
      * Returns a new {@link FailOn} object by parsing the provided {@code rawFailOnConstraints} list or null if this
      * list is empty.
      */
-    public static FailOn parse(List<RawConstraint> rawFailOnConstraints, CompilePhase compilePhase) {
+    public static List<Constraint> parse(List<RawConstraint> rawFailOnConstraints, CompilePhase compilePhase) {
         if (!rawFailOnConstraints.isEmpty()) {
             List<Constraint> constraintResultList = new ArrayList<>();
             new RawFailOnConstraintParser().parseNonEmptyConstraints(constraintResultList, rawFailOnConstraints, compilePhase);
             TestFramework.check(!constraintResultList.isEmpty(), "must be non-empty");
-            return new FailOn(constraintResultList);
+            return constraintResultList;
         }
         return null;
     }

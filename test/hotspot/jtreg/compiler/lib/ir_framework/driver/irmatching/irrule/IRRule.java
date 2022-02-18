@@ -23,57 +23,31 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule;
 
-import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.driver.irmatching.Matching;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.CountsAttributeParser;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.FailOnAttributeParser;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.RawConstraint;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.RawCountsConstraint;
+import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRule;
+import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleBuilder;
+import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseMatchResult;
 
-import java.util.ArrayList;
 import java.util.List;
 
-public class IRRule {
-    private final IRMethod irMethod;
+/**
+ * This class represents a generic IR rule of an IR method. It contains a list of compile phase specific IR rule
+ * versions where placeholder strings of {@link IRNode} are replaced by default regexes matching the compile phase.
+ *
+ * @see CompilePhaseIRRule
+ */
+public class IRRule implements Matching {
     private final int ruleId;
     private final IR irAnno;
     private final List<CompilePhaseIRRule> compilePhaseIRRules;
 
     public IRRule(IRMethod irMethod, int ruleId, IR irAnno) {
-        this.irMethod = irMethod;
         this.ruleId = ruleId;
         this.irAnno = irAnno;
-        List<RawConstraint> failOnRawConstraints = initFailOnRegexes(irAnno.failOn());
-        List<RawCountsConstraint> countsNodeRegexes = initCountsRegexes(irAnno.counts());
-        this.compilePhaseIRRules = initPhaseIRRules(failOnRawConstraints, countsNodeRegexes, irAnno.phase());
-    }
-
-    private List<RawConstraint> initFailOnRegexes(String[] rawFailOn) {
-        if (rawFailOn != null) {
-            return FailOnAttributeParser.parse(rawFailOn);
-        } else {
-            return null;
-        }
-    }
-
-    private List<RawCountsConstraint> initCountsRegexes(String[] rawCounts) {
-        if (rawCounts != null) {
-            return CountsAttributeParser.parse(rawCounts);
-        }
-        return null;
-    }
-
-    private List<CompilePhaseIRRule> initPhaseIRRules(List<RawConstraint> failOnRawConstraints,
-                                                      List<RawCountsConstraint> countsNodeRegexes,
-                                                      CompilePhase[] compilePhases) {
-        List<CompilePhaseIRRule> compilePhaseIRRules = new ArrayList<>();
-        for (CompilePhase compilePhase : compilePhases) {
-            List<CompilePhaseIRRule> rulesList = CompilePhaseIRRuleBuilder.create(failOnRawConstraints, countsNodeRegexes,
-                                                                                  compilePhase, irMethod);
-            compilePhaseIRRules.addAll(rulesList);
-        }
-        return compilePhaseIRRules;
+        this.compilePhaseIRRules = CompilePhaseIRRuleBuilder.create(irAnno, irMethod);
     }
 
     public int getRuleId() {
@@ -87,10 +61,11 @@ public class IRRule {
     /**
      * Apply this IR rule by checking any failOn and counts attributes.
      */
-    public IRRuleMatchResult applyCheckAttributesForPhases() {
+    @Override
+    public IRRuleMatchResult match() {
         IRRuleMatchResult irRuleMatchResult = new IRRuleMatchResult(this);
         for (CompilePhaseIRRule compilePhaseIRRule : compilePhaseIRRules) {
-            CompilePhaseMatchResult compilePhaseMatchResult = compilePhaseIRRule.applyCheckAttributes();
+            CompilePhaseMatchResult compilePhaseMatchResult = compilePhaseIRRule.match();
             if (compilePhaseMatchResult.fail()) {
                 irRuleMatchResult.addCompilePhaseMatchResult(compilePhaseMatchResult);
             }
