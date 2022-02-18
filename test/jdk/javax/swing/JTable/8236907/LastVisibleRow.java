@@ -24,7 +24,7 @@
  * @test
  * @key headful
  * @bug 8236907
- * @summary  Verifies if Jtable last row is visible.
+ * @summary  Verifies if JTable last row is visible.
  * @run main LastVisibleRow
  */
 
@@ -33,7 +33,6 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.event.InputEvent;
 import java.awt.image.BufferedImage;
-import java.text.MessageFormat;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
@@ -42,7 +41,6 @@ import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 
 import javax.swing.BorderFactory;
-import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTable;
@@ -51,7 +49,6 @@ import javax.swing.WindowConstants;
 
 public class LastVisibleRow {
     static JFrame frame;
-    static JDialog dialog;
     static JTable table;
     static Robot testRobot;
     private static BufferedImage bufferedImageAfter;
@@ -85,17 +82,15 @@ public class LastVisibleRow {
             }
         } finally {
             if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
-            if (dialog != null) SwingUtilities.invokeAndWait(() -> dialog.dispose());
         }
     }
 
     /***
      *
      * Get clickable screen point for particular row and column of a table
-     * @param row
-     * @param column
+     * @param row   Row Number
+     * @param column    Column Number
      * @return Point
-     * @throws Exception
      */
     private static Point getCellClickPoint(final int row, final int column) {
         Point result;
@@ -120,7 +115,6 @@ public class LastVisibleRow {
         JPanel tablePaneContainer = new JPanel(new BorderLayout());
         JPanel tablePane = new JPanel(new BorderLayout());
         table = new JTable(new Object[][]{{"row_1_col_1", "row_1_col_2", "row_1_col_3"}, {"row_2_col_1", "row_2_col_2", "row_2_col_3"}, {"row_3_col_1", "row_3_col_2", "row_3_col_3"}, {"row_4_col_1", "row_4_col_2", "row_4_col_3"}}, new String[]{"Col1", "Col2", "Col3"});
-        //JTable table = new JTable(new Object[][] {{"row_1_col_1", "row_1_col_2", "row_1_col_3"}, {"row_2_col_1", "row_2_col_2", "row_2_col_3"}, {"row_3_col_1", "row_3_col_2", "row_3_col_3"}, {"row_4_col_1", "row_4_col_2", "row_4_col_3"}, {"row_5_col_1", "row_5_col_2", "row_5_col_3"}, {"row_6_col_1", "row_6_col_2", "row_6_col_3"}, {"row_7_col_1", "row_7_col_2", "row_7_col_3"}}, new String[] {"Col1", "Col2", "Col3"});
         table.setPreferredSize(new Dimension(0, (table.getRowHeight() * 3)));
 
         tablePane.add(table.getTableHeader(), BorderLayout.NORTH);
@@ -128,8 +122,9 @@ public class LastVisibleRow {
         tablePaneContainer.add(tablePane, BorderLayout.CENTER);
         centerPane.add(tablePaneContainer, BorderLayout.NORTH);
         contentPane.add(centerPane, BorderLayout.CENTER);
-        frame.setSize(800, 600);
+        frame.setSize(400, 120);
         frame.setVisible(true);
+        frame.setLocationRelativeTo(null);
 
     }
 
@@ -232,8 +227,8 @@ public class LastVisibleRow {
 
     /***
      * Compare method - to compare two images.
-     * @param bufferedImage1
-     * @param bufferedImage2
+     * @param bufferedImage1    Buffered Image Before click
+     * @param bufferedImage2    Buffered Image After click
      * @return Boolean
      */
 
