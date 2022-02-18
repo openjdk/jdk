@@ -4360,7 +4360,7 @@ address MacroAssembler::count_positives(Register ary1, Register len, Register re
     subs(len, len, wordSize);
     br(GE, LOOP);
     cmpw(len, -wordSize);
-    br(EQ, SET_RESULT);
+    br(EQ, DONE);
 
   BIND(END);
     ldr(rscratch1, Address(ary1));
