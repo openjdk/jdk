@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,12 +66,6 @@ static bool should_be_archived(char* line) {
     }
   }
   return false;
-}
-
-void LambdaFormInvokers::append_filtered(char* line) {
-  if (should_be_archived(line)) {
-      append(line);
-  }
 }
 #undef NUM_FILTER
 
@@ -180,6 +174,15 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
   }
 }
 
+// check if a class name is a species
+bool is_a_species(const char* species_name) {
+  log_info(cds)("Checking class %s", species_name);
+  if (strstr(species_name, "java/lang/invoke/BoundMethodHandle$Species_") != nullptr) {
+    return true;
+  }
+  return false;
+}
+
 void LambdaFormInvokers::regenerate_class(char* name, ClassFileStream& st, TRAPS) {
   Symbol* class_name = SymbolTable::new_symbol((const char*)name);
   // the class must exist
@@ -188,6 +191,12 @@ void LambdaFormInvokers::regenerate_class(char* name, ClassFileStream& st, TRAPS
     log_info(cds)("Class %s not present, skip", name);
     return;
   }
+  // the species is shared in base archive, skip it.
+  if (klass->is_regenerated() && is_a_species(name)) {
+    log_info(cds)("Skip regenerating for shared  %s", name);
+    return;
+  }
+
   assert(klass->is_instance_klass(), "Should be");
 
   ClassLoaderData* cld = ClassLoaderData::the_null_class_loader_data();
@@ -211,8 +220,8 @@ void LambdaFormInvokers::regenerate_class(char* name, ClassFileStream& st, TRAPS
   MetaspaceShared::try_link_class(THREAD, result);
   assert(!HAS_PENDING_EXCEPTION, "Invariant");
 
-  // exclude the existing class from dump
-  SystemDictionaryShared::set_excluded(InstanceKlass::cast(klass));
+  result->set_regenerated();  // mark for regenerated
+  SystemDictionaryShared::set_excluded(InstanceKlass::cast(klass)); // exclude the existing class from dump
   SystemDictionaryShared::init_dumptime_info(result);
   log_info(cds, lambda)("Regenerated class %s, old: " INTPTR_FORMAT " new: " INTPTR_FORMAT,
                  name, p2i(klass), p2i(result));

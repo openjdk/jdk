@@ -67,7 +67,7 @@ bool BootstrapInfo::resolve_previously_linked_invokedynamic(CallInfo& result, TR
   if (!cpce->is_f1_null()) {
     methodHandle method(     THREAD, cpce->f1_as_method());
     Handle       appendix(   THREAD, cpce->appendix_if_resolved(_pool));
-    result.set_handle(method, appendix, THREAD);
+    result.set_handle(vmClasses::MethodHandle_klass(), method, appendix, THREAD);
     Exceptions::wrap_dynamic_exception(/* is_indy */ true, CHECK_false);
     return true;
   } else if (cpce->indy_resolution_failed()) {
@@ -221,7 +221,7 @@ bool BootstrapInfo::save_and_throw_indy_exc(TRAPS) {
 
 void BootstrapInfo::resolve_newly_linked_invokedynamic(CallInfo& result, TRAPS) {
   assert(is_resolved(), "");
-  result.set_handle(resolved_method(), resolved_appendix(), CHECK);
+  result.set_handle(vmClasses::MethodHandle_klass(), resolved_method(), resolved_appendix(), CHECK);
 }
 
 void BootstrapInfo::print_msg_on(outputStream* st, const char* msg) {

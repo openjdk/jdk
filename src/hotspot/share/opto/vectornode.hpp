@@ -1468,7 +1468,7 @@ class VectorCastNode : public VectorNode {
   virtual int Opcode() const;
 
   static VectorCastNode* make(int vopc, Node* n1, BasicType bt, uint vlen);
-  static int  opcode(BasicType bt);
+  static int  opcode(BasicType bt, bool is_signed = true);
   static bool implemented(BasicType bt, uint vlen);
 
   virtual Node* Identity(PhaseGVN* phase);
@@ -1518,6 +1518,30 @@ class VectorCastD2XNode : public VectorCastNode {
  public:
   VectorCastD2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
     assert(in->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE, "must be double");
+  }
+  virtual int Opcode() const;
+};
+
+class VectorUCastB2XNode : public VectorCastNode {
+ public:
+  VectorUCastB2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
+    assert(in->bottom_type()->is_vect()->element_basic_type() == T_BYTE, "must be byte");
+  }
+  virtual int Opcode() const;
+};
+
+class VectorUCastS2XNode : public VectorCastNode {
+ public:
+  VectorUCastS2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
+    assert(in->bottom_type()->is_vect()->element_basic_type() == T_SHORT, "must be short");
+  }
+  virtual int Opcode() const;
+};
+
+class VectorUCastI2XNode : public VectorCastNode {
+ public:
+  VectorUCastI2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
+    assert(in->bottom_type()->is_vect()->element_basic_type() == T_INT, "must be int");
   }
   virtual int Opcode() const;
 };
