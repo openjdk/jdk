@@ -81,7 +81,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     RestoreRetainedRegions,
     RemoveSelfForwardsInChunks,
     PrepareChunks,
-    SyncMarkedWordInRetainedRegions,
     ClearCardTable,
     RecalculateUsed,
     ResetHotCardCache,

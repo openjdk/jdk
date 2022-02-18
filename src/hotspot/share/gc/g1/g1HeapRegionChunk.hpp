@@ -55,29 +55,17 @@ public:
   template<typename ApplyToMarkedClosure>
   void apply_to_marked_objects(ApplyToMarkedClosure* closure);
 
-  HeapRegion* heap_region() const {
-    return _region;
-  }
+  HeapRegion* heap_region() const { return _region;}
 
-  HeapWord* first_obj_in_chunk() const {
-    return _first_obj_in_chunk;
-  }
+  HeapWord* first_obj_in_chunk() const { return _first_obj_in_chunk; }
 
-  HeapWord* next_obj_in_region() const {
-    return _next_obj_in_region;
-  }
+  HeapWord* next_obj_in_region() const { return _next_obj_in_region; }
 
-  bool empty() const {
-    return _first_obj_in_chunk >= _limit;
-  }
+  bool empty() const { return _first_obj_in_chunk >= _limit; }
 
-  bool include_first_obj_in_region() const {
-    return _include_first_obj_in_region;
-  }
+  bool include_first_obj_in_region() const { return _include_first_obj_in_region; }
 
-  bool include_last_obj_in_region() const {
-    return _include_last_obj_in_region;
-  }
+  bool include_last_obj_in_region() const { return _include_last_obj_in_region; }
 };
 
 class G1HeapRegionChunkClosure {
@@ -97,12 +85,8 @@ public:
 
   bool claim_chunk(uint chunk_idx);
 
-  uint chunk_size() {
-    return _chunk_size;
-  }
-  uint chunk_num() {
-    return _chunk_num;
-  }
+  uint chunk_size() { return _chunk_size; }
+  uint chunk_num() { return _chunk_num; }
 };
 
 // Iterate through chunks of regions, for each region do single preparation.

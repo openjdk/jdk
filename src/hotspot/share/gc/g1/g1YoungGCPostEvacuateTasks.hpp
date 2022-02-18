@@ -57,6 +57,7 @@ public:
 // - Purge Code Roots (s)
 // - Reset Hot Card Cache (s)
 // - Update Derived Pointers (s)
+// - Verify Retained Regions
 // - Redirty Logged Cards
 // - Restore Preserved Marks (on evacuation failure)
 // - Free Collection Set

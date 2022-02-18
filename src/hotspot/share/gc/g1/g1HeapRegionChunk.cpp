@@ -50,7 +50,7 @@ G1HeapRegionChunk::G1HeapRegionChunk(HeapRegion* region, uint chunk_idx, uint ch
 }
 
 G1HeapRegionChunksClaimer::G1HeapRegionChunksClaimer(uint region_idx, bool region_ready) :
-  _chunk_num(G1YoungGCEvacFailureInjector::evacuation_failure_heap_region_chunk_num()),
+  _chunk_num(G1EvacuationFailureHeapRegionChunkNum),
   _chunk_size(static_cast<uint>(G1HeapRegionSize / _chunk_num)),
   _region_idx(region_idx),
   _chunks(mtGC) {
@@ -71,7 +71,7 @@ G1ScanChunksInHeapRegionClosure::G1ScanChunksInHeapRegionClosure(G1HeapRegionChu
 }
 
 bool G1ScanChunksInHeapRegionClosure::do_heap_region(HeapRegion* r) {
-  G1GCPhaseTimes* phase_times = G1CollectedHeap::heap()->phase_times();
+  G1GCPhaseTimes* p = G1CollectedHeap::heap()->phase_times();
   G1HeapRegionChunksClaimer* claimer = _chunk_claimers[r->hrm_index()];
 
   uint total_workers = G1CollectedHeap::heap()->workers()->active_workers();
@@ -80,18 +80,18 @@ bool G1ScanChunksInHeapRegionClosure::do_heap_region(HeapRegion* r) {
 
   while (true) {
     if (claimer->claim_chunk(chunk_idx)) {
-      Ticks start2 = Ticks::now();
+      Ticks chunk_prepare_start = Ticks::now();
       G1HeapRegionChunk chunk(r, chunk_idx, claimer->chunk_size(), _bitmap);
-      phase_times->record_or_add_time_secs(G1GCPhaseTimes::PrepareChunks, _worker_id, (Ticks::now() - start2).seconds());
+      p->record_or_add_time_secs(G1GCPhaseTimes::PrepareChunks, _worker_id, (Ticks::now() - chunk_prepare_start).seconds());
 
       if (chunk.empty()) {
-        phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RemoveSelfForwardsInChunks, _worker_id, 1, G1GCPhaseTimes::RemoveSelfForwardEmptyChunksNum);
+        p->record_or_add_thread_work_item(G1GCPhaseTimes::RemoveSelfForwardsInChunks, _worker_id, 1, G1GCPhaseTimes::RemoveSelfForwardEmptyChunksNum);
         continue;
       }
-      phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RemoveSelfForwardsInChunks, _worker_id, 1, G1GCPhaseTimes::RemoveSelfForwardChunksNum);
+      p->record_or_add_thread_work_item(G1GCPhaseTimes::RemoveSelfForwardsInChunks, _worker_id, 1, G1GCPhaseTimes::RemoveSelfForwardChunksNum);
       Ticks start = Ticks::now();
       _closure->do_heap_region_chunk(&chunk);
-      phase_times->record_or_add_time_secs(G1GCPhaseTimes::RemoveSelfForwardsInChunks, _worker_id, (Ticks::now() - start).seconds());
+      p->record_or_add_time_secs(G1GCPhaseTimes::RemoveSelfForwardsInChunks, _worker_id, (Ticks::now() - start).seconds());
     }
 
     if (++chunk_idx == claimer->chunk_num()) {

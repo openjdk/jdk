@@ -45,8 +45,6 @@ inline void G1HeapRegionChunk::apply_to_marked_objects(ApplyToMarkedClosure* clo
       next_addr = _bitmap->get_next_marked_addr(next_addr, _limit);
     }
   }
-
-  // assert(next_addr == _limit, "Should stop the scan at the limit.");
 }
 
 #endif //SHARE_GC_G1_G1HEAPREGIONCHUNK_INLINE_HPP

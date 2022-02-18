@@ -106,7 +106,6 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[RestoreRetainedRegions] = new WorkerDataArray<double>("RestoreRetainedRegions", "Restore Retained Regions (ms):", max_gc_threads);
   _gc_par_phases[RemoveSelfForwardsInChunks] = new WorkerDataArray<double>("RemoveSelfForwardsInChunks", "Remove Self Forwards In Chunks (ms):", max_gc_threads);
   _gc_par_phases[PrepareChunks] = new WorkerDataArray<double>("PrepareChunks", "Prepare Chunks (ms):", max_gc_threads);
-  _gc_par_phases[SyncMarkedWordInRetainedRegions] = new WorkerDataArray<double>("SyncMarkedWordInRetainedRegions", "Sync Marked Words In Retained Regions (ms):", max_gc_threads);
   _gc_par_phases[ClearCardTable] = new WorkerDataArray<double>("ClearLoggedCards", "Clear Logged Cards (ms):", max_gc_threads);
   _gc_par_phases[RecalculateUsed] = new WorkerDataArray<double>("RecalculateUsed", "Recalculate Used Memory (ms):", max_gc_threads);
   _gc_par_phases[ResetHotCardCache] = new WorkerDataArray<double>("ResetHotCardCache", "Reset Hot Card Cache (ms):", max_gc_threads);
@@ -496,7 +495,6 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed
     debug_phase(_gc_par_phases[RestoreRetainedRegions], 1);
     debug_phase(_gc_par_phases[PrepareChunks], 2);
     debug_phase(_gc_par_phases[RemoveSelfForwardsInChunks], 2);
-    debug_phase(_gc_par_phases[SyncMarkedWordInRetainedRegions], 1);
   }
 
   trace_phase(_gc_par_phases[RedirtyCards]);
@@ -504,7 +502,9 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed
   if (evacuation_failed) {
     debug_phase(_gc_par_phases[RecalculateUsed], 1);
     debug_phase(_gc_par_phases[RestorePreservedMarks], 1);
-    debug_phase(_gc_par_phases[VerifyAfterSelfForwardingPtrRemoval], 1);
+    if (G1VerifyBitmaps) {
+      debug_phase(_gc_par_phases[VerifyAfterSelfForwardingPtrRemoval], 1);
+    }
   }
   debug_phase(_gc_par_phases[ResetHotCardCache], 1);
   debug_phase(_gc_par_phases[PurgeCodeRoots], 1);

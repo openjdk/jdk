@@ -111,7 +111,7 @@ public:
 
   double worker_cost() const override {
     assert(_evac_failure_regions->evacuation_failed(), "Should not call this if not executed");
-    return _evac_failure_regions->num_regions_failed_evacuation() * G1YoungGCEvacFailureInjector::evacuation_failure_worker_cost();
+    return _evac_failure_regions->num_regions_failed_evacuation() * G1RemoveSelfForwardPtrsWorkerCost;
   }
 
   void do_work(uint worker_id) override {
