@@ -29,6 +29,7 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import javax.swing.JButton;
@@ -37,6 +38,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 import static javax.swing.UIManager.getInstalledLookAndFeels;
 
@@ -51,9 +53,9 @@ import static javax.swing.UIManager.getInstalledLookAndFeels;
 public class TabShiftsFocusToNextComponent {
 
     private static JFrame frame;
-    private static JTextArea editor;
+    private static JTextArea textArea;
     private static Robot robot;
-    private static boolean passed = false;
+    private static volatile boolean passed = false;
 
     public static void main(String[] s) throws Exception {
         runTest();
@@ -68,24 +70,46 @@ public class TabShiftsFocusToNextComponent {
                                   .collect(Collectors.toList());
         for (final String laf : lafs) {
             try {
-                SwingUtilities.invokeAndWait(() -> frame = new JFrame());
-                robot.waitForIdle();
-                AtomicReference<Point> editorLoc = new AtomicReference<Point>();
+                AtomicBoolean lafSetSuccess = new AtomicBoolean(false);
                 SwingUtilities.invokeAndWait(() -> {
-                    setLookAndFeel(laf);
-                    createUI();
-                    editorLoc.set(editor.getLocationOnScreen());
+                    lafSetSuccess.set(setLookAndFeel(laf));
+                    if (lafSetSuccess.get()) {
+                        createUI();
+                    }
                 });
+                if (!lafSetSuccess.get()) {
+                    continue;
+                }
+                robot.waitForIdle();
+
+                SwingUtilities.invokeAndWait(() -> textArea.requestFocusInWindow());
+                int waitCount = 0;
+                // Waits until the textArea becomes the focus owner.
+                while (!isFocusOwner()) {
+                    robot.delay(100);
+                    waitCount++;
+                    if (waitCount > 20) {
+                        throw new RuntimeException("Test Failed, waited for long, " +
+                                "but the JTextArea can't gain focus for L&F: " + laf);
+                    }
+                }
+
+                AtomicReference<Point> textAreaLoc = new AtomicReference<Point>();
+                SwingUtilities.invokeAndWait(() -> {
+                    textAreaLoc.set(textArea.getLocationOnScreen());
+                });
+
                 passed = false;
 
-                final int x = editorLoc.get().x;
-                final int y = editorLoc.get().y;
-                robot.mouseMove(x, y);
+                final int x = textAreaLoc.get().x;
+                final int y = textAreaLoc.get().y;
+                robot.mouseMove(x + 5, y + 5);
                 robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-                robot.mouseMove(x + 20, y);
+                robot.mouseMove(x + 20, y + 5);
                 robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
                 robot.keyPress(KeyEvent.VK_TAB);
                 robot.keyRelease(KeyEvent.VK_TAB);
+
                 if (passed) {
                     System.out.println(" Test passed for " + laf);
                 } else {
@@ -97,12 +121,18 @@ public class TabShiftsFocusToNextComponent {
         }
     }
 
+    private static boolean isFocusOwner() throws Exception {
+        AtomicBoolean isFocusOwner = new AtomicBoolean(false);
+        SwingUtilities.invokeAndWait(() -> isFocusOwner.set(textArea.isFocusOwner()));
+        return isFocusOwner.get();
+    }
 
     private static void createUI() {
+        frame = new JFrame();
         JPanel panel = new JPanel();
-        editor = new JTextArea("I am a JTextArea");
-        editor.setEditable(false);
-        panel.add(editor);
+        textArea = new JTextArea("I am a JTextArea");
+        textArea.setEditable(false);
+        panel.add(textArea);
         JButton button = new JButton("Button");
         panel.add(button);
         button.addFocusListener(new FocusAdapter() {
@@ -118,17 +148,19 @@ public class TabShiftsFocusToNextComponent {
         frame.setAlwaysOnTop(true);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
-        editor.requestFocusInWindow();
-
     }
 
-    private static void setLookAndFeel(final String laf) {
+    private static boolean setLookAndFeel(String lafName) {
         try {
-            UIManager.setLookAndFeel(laf);
-            System.out.println("LookAndFeel: " + laf);
-        } catch (Exception e) {
+            UIManager.setLookAndFeel(lafName);
+        } catch (UnsupportedLookAndFeelException ignored) {
+            System.out.println("Ignoring Unsupported L&F: " + lafName);
+            return false;
+        } catch (ClassNotFoundException | InstantiationException
+                | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
+        return true;
     }
 
     private static void disposeFrame() {
