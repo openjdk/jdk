@@ -25,6 +25,7 @@ package ir_framework.tests;
 
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
+import compiler.lib.ir_framework.driver.irmatching.regexes.IdealDefaultRegexes;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
 import jdk.test.whitebox.WhiteBox;

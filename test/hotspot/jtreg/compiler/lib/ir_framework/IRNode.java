@@ -23,8 +23,10 @@
 
 package compiler.lib.ir_framework;
 
+import compiler.lib.ir_framework.driver.irmatching.regexes.DefaultRegexes;
+import compiler.lib.ir_framework.driver.irmatching.regexes.IdealDefaultRegexes;
+import compiler.lib.ir_framework.driver.irmatching.regexes.OptoAssemblyDefaultRegexes;
 import compiler.lib.ir_framework.shared.CheckedTestFrameworkException;
-import compiler.lib.ir_framework.shared.TestFormatException;
 import jdk.test.lib.Platform;
 import sun.hotspot.WhiteBox;
 
@@ -184,7 +186,7 @@ public class IRNode {
     }
 
     /**
-     * Is default regex supported on current platform, used VM build, etc.?
+     * Is this IR node supported on current platform, used VM build, etc.?
      * Throws a {@link CheckedTestFrameworkException} if the default regex is unsupported.
      */
     public static void checkDefaultIRNodeSupported(String node) throws CheckedTestFrameworkException {
@@ -199,7 +201,7 @@ public class IRNode {
                     throw new CheckedTestFrameworkException("CHECKCAST_ARRAYCOPY is unsupported on s390.");
                 }
             }
-            // default: do nothing -> default regex is supported
+            // default: do nothing -> IR node is supported and can be used by the user.
         }
     }
 }

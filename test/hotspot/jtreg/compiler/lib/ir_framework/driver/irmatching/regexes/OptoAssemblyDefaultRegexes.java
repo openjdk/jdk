@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +21,43 @@
  * questions.
  */
 
-package compiler.lib.ir_framework;
+package compiler.lib.ir_framework.driver.irmatching.regexes;
 
-import compiler.lib.ir_framework.shared.TestFormatException;
+import compiler.lib.ir_framework.CompilePhase;
+import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.IRNode;
 
 import java.util.EnumMap;
 
-import static compiler.lib.ir_framework.DefaultRegexes.*;
+import static compiler.lib.ir_framework.driver.irmatching.regexes.DefaultRegexes.*;
 
 /**
- * This class provides default regex strings that can be used in {@link IR @IR} annotations to specify IR constraints.
+ * This class provides default regex strings for matches on PrintOptoAssembly. These default regexes replace any usages
+ * of placeholder strings from {@link IRNode} in check attributes {@link IR#failOn()} and {@link IR#counts()} if the
+ * compile phase {@link CompilePhase#PRINT_OPTO_ASSEMBLY} or {@link CompilePhase#DEFAULT} is found in {@link IR#phase()}.
  * <p>
+ *
+ * Each new default regex for any node that needs to be matched on PrintOptoAssembly should be defined here together with
+ * a mapping for {@link CompilePhase#PRINT_OPTO_ASSEMBLY} and {@link CompilePhase#DEFAULT} added as entry to
+ * {@link DefaultRegexes#PLACEHOLDER_TO_REGEX_MAP}.
+ * <p>
+ *
+ * The usage of these regexes for other compile phases is forbidden and will result in a format violation.
+ * <p>
+ *
  * There are two types of default regexes:
  * <ul>
- *     <li><p>Standalone regexes: Use them directly.</li>
- *     <li><p>Composite regexes: Their names contain "{@code _OF}" and expect another string in a list in
- *            {@link IR#failOn()} and {@link IR#counts()}. They cannot be use as standalone regex and will result in a
- *            {@link TestFormatException} when doing so.</li>
+ *     <li><p>Standalone regexes: Replace the placeholder string from {@link IRNode} directly.</li>
+ *     <li><p>Composite regexes: The placeholder string from {@link IRNode} contain an additional "{@code P#}" prefix.
+ *                               This placeholder strings expect another user provided string in the constraint list of
+ *                               {@link IR#failOn()} and {@link IR#counts()}. They cannot be use as standalone regex.
+ *                               Trying to do so will result in a format violation error.</li>
  * </ul>
  *
  * @see IR
+ * @see IRNode
+ * @see CompilePhase
+ * @see DefaultRegexes
  */
 public class OptoAssemblyDefaultRegexes {
     public static final String ALLOC = "(.*precise .*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*|.*LGHI.*)\\R)*.*(?i:call,static).*wrapper for: _new_instance_Java" + END;

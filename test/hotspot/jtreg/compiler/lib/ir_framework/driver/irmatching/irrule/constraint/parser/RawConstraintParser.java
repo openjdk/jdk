@@ -24,7 +24,7 @@
 package compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser;
 
 import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.DefaultRegexes;
+import compiler.lib.ir_framework.driver.irmatching.regexes.DefaultRegexes;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
 import compiler.lib.ir_framework.shared.TestFormat;
@@ -56,7 +56,7 @@ abstract class RawConstraintParser<C extends Constraint, RC extends RawConstrain
     }
 
     private String parseDefaultNode(CompilePhase compilePhase, RawConstraint rawConstraint, String rawNodeString) {
-        String parsedNodeString = DefaultRegexes.getRegexForIRNode(rawNodeString, compilePhase);
+        String parsedNodeString = DefaultRegexes.getDefaultRegexForIRNode(rawNodeString, compilePhase);
         if (rawConstraint.hasCompositeNode()) {
             String userPostfixString = rawConstraint.getUserPostfixString();
             TestFormat.checkNoReport(!userPostfixString.isEmpty(),

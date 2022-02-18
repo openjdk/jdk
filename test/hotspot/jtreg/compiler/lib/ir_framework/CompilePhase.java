@@ -116,6 +116,7 @@ public enum CompilePhase {
     private enum OutputType {
         IDEAL, MACH, OPTO_ASSEMBLY, DEFAULT;
     }
+
     private final String name;
     private final int level;
     private final OutputType outputType;
