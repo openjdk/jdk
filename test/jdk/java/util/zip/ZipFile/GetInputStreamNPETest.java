@@ -223,8 +223,8 @@ public class GetInputStreamNPETest {
      * The jar was signed via:
      * <pre>
      *     {@code
-     *        keytool -genkey -keyalg RSA -alias myFirstKey -keystore myKeystore -storepass changeit -keypass changeit}
-     *        jarsigner -keystore myKeystore -verbose Valid-EntryName.jar -signedjar signed.jar myFirstKey}
+     *        keytool -genkey -keyalg RSA -alias myFirstKey -keystore myKeystore -storepass changeit -keypass changeit
+     *        jarsigner -keystore myKeystore -verbose Valid-EntryName.jar -signedjar signed.jar myFirstKey
      *      }
      * </pre>
      */
@@ -754,8 +754,8 @@ public class GetInputStreamNPETest {
      * The signed jar was created from the jar {@code Valid-EntryName.jar} via:
      * <pre>
      *     {@code
-     *        keytool -genkey -keyalg RSA -alias myFirstKey -keystore myKeystore -storepass changeit -keypass changeit}
-     *        jarsigner -keystore myKeystore -verbose Valid-EntryName.jar -signedjar signed.jar myFirstKey}
+     *        keytool -genkey -keyalg RSA -alias myFirstKey -keystore myKeystore -storepass changeit -keypass changeit
+     *        jarsigner -keystore myKeystore -verbose Valid-EntryName.jar -signedjar signed.jar myFirstKey
      *      }
      * </pre>
      *
