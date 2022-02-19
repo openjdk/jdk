@@ -29,6 +29,8 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -39,6 +41,7 @@ import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+
 
 import static javax.swing.UIManager.getInstalledLookAndFeels;
 
@@ -55,7 +58,8 @@ public class TabShiftsFocusToNextComponent {
     private static JFrame frame;
     private static JTextArea textArea;
     private static Robot robot;
-    private static volatile boolean passed = false;
+    private static CountDownLatch textAreaGainedFocusLatch;
+    private static CountDownLatch buttonGainedFocusLatch;
 
     public static void main(String[] s) throws Exception {
         runTest();
@@ -69,6 +73,8 @@ public class TabShiftsFocusToNextComponent {
                                   .map(UIManager.LookAndFeelInfo::getClassName)
                                   .collect(Collectors.toList());
         for (final String laf : lafs) {
+            textAreaGainedFocusLatch = new CountDownLatch(1);
+            buttonGainedFocusLatch = new CountDownLatch(1);
             try {
                 AtomicBoolean lafSetSuccess = new AtomicBoolean(false);
                 SwingUtilities.invokeAndWait(() -> {
@@ -83,23 +89,17 @@ public class TabShiftsFocusToNextComponent {
                 robot.waitForIdle();
 
                 SwingUtilities.invokeAndWait(() -> textArea.requestFocusInWindow());
-                int waitCount = 0;
-                // Waits until the textArea becomes the focus owner.
-                while (!isFocusOwner()) {
-                    robot.delay(100);
-                    waitCount++;
-                    if (waitCount > 20) {
-                        throw new RuntimeException("Test Failed, waited for long, " +
-                                "but the JTextArea can't gain focus for L&F: " + laf);
-                    }
+
+                // Waits until the textArea gains focus.
+                if (!textAreaGainedFocusLatch.await(3, TimeUnit.SECONDS)) {
+                    throw new RuntimeException("Test Failed, waited for long, " +
+                            "but the JTextArea can't gain focus for L&F: " + laf);
                 }
 
                 AtomicReference<Point> textAreaLoc = new AtomicReference<Point>();
                 SwingUtilities.invokeAndWait(() -> {
                     textAreaLoc.set(textArea.getLocationOnScreen());
                 });
-
-                passed = false;
 
                 final int x = textAreaLoc.get().x;
                 final int y = textAreaLoc.get().y;
@@ -110,10 +110,12 @@ public class TabShiftsFocusToNextComponent {
                 robot.keyPress(KeyEvent.VK_TAB);
                 robot.keyRelease(KeyEvent.VK_TAB);
 
-                if (passed) {
-                    System.out.println(" Test passed for " + laf);
+                // Waits until the button gains focus.
+                if (!buttonGainedFocusLatch.await(3, TimeUnit.SECONDS)) {
+                    throw new RuntimeException("Test Failed, waited for long, " +
+                            "but the Button can't gain focus when 'Tab' key pressed for L&F: " + laf);
                 } else {
-                    throw new RuntimeException("Test failed for " + laf);
+                    System.out.println(" Test passed for " + laf);
                 }
             } finally {
                 SwingUtilities.invokeAndWait(TabShiftsFocusToNextComponent::disposeFrame);
@@ -121,16 +123,17 @@ public class TabShiftsFocusToNextComponent {
         }
     }
 
-    private static boolean isFocusOwner() throws Exception {
-        AtomicBoolean isFocusOwner = new AtomicBoolean(false);
-        SwingUtilities.invokeAndWait(() -> isFocusOwner.set(textArea.isFocusOwner()));
-        return isFocusOwner.get();
-    }
 
     private static void createUI() {
         frame = new JFrame();
         JPanel panel = new JPanel();
         textArea = new JTextArea("I am a JTextArea");
+        textArea.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                textAreaGainedFocusLatch.countDown();
+            }
+        });
         textArea.setEditable(false);
         panel.add(textArea);
         JButton button = new JButton("Button");
@@ -138,11 +141,12 @@ public class TabShiftsFocusToNextComponent {
         button.addFocusListener(new FocusAdapter() {
             @Override
             public void focusGained(FocusEvent e) {
-                passed = true;
+                buttonGainedFocusLatch.countDown();
             }
         });
 
         frame.add(panel);
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.setUndecorated(true);
         frame.pack();
         frame.setAlwaysOnTop(true);
