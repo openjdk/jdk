@@ -22,9 +22,13 @@
  */
 
 import java.awt.Robot;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.awt.event.KeyEvent;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -32,6 +36,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+
 
 import static java.util.stream.Collectors.toList;
 
@@ -48,6 +53,7 @@ public class SpaceKeyActivatesButton {
     private static volatile boolean buttonPressed;
     private static JFrame frame;
     private static JButton focusedButton;
+    private static CountDownLatch buttonGainedFocusLatch;
 
     public static void main(String[] s) throws Exception {
         runTest();
@@ -57,10 +63,12 @@ public class SpaceKeyActivatesButton {
         Robot robot = new Robot();
         robot.setAutoDelay(100);
         robot.setAutoWaitForIdle(true);
+
         List<String> lafs = Arrays.stream(UIManager.getInstalledLookAndFeels())
                                   .map(laf -> laf.getClassName())
                                   .collect(toList());
         for (String laf : lafs) {
+            buttonGainedFocusLatch = new CountDownLatch(1);
             try {
                 buttonPressed = false;
                 System.out.println("Testing L&F: " + laf);
@@ -78,14 +86,10 @@ public class SpaceKeyActivatesButton {
                 }
                 robot.waitForIdle();
 
-                int waitCount = 0;
-                while (!isFocusOwner()) {
-                    robot.delay(100);
-                    waitCount++;
-                    if (waitCount > 20) {
-                        throw new RuntimeException("Test Failed, waited for long, " +
-                                "but the button can't gain focus for L&F: " + laf);
-                    }
+                // Wait until the button2 gains focus.
+                if (!buttonGainedFocusLatch.await(3, TimeUnit.SECONDS)) {
+                    throw new RuntimeException("Test Failed, waited for long, " +
+                            "but the button can't gain focus for L&F: " + laf);
                 }
 
                 robot.keyPress(KeyEvent.VK_SPACE);
@@ -102,12 +106,6 @@ public class SpaceKeyActivatesButton {
             }
         }
 
-    }
-
-    private static boolean isFocusOwner() throws Exception {
-        AtomicBoolean isFocusOwner = new AtomicBoolean(false);
-        SwingUtilities.invokeAndWait(() -> isFocusOwner.set(focusedButton.isFocusOwner()));
-        return isFocusOwner.get();
     }
 
     private static boolean setLookAndFeel(String lafName) {
@@ -129,9 +127,15 @@ public class SpaceKeyActivatesButton {
         panel.add(new JButton("Button1"));
         focusedButton = new JButton("Button2");
         focusedButton.addActionListener(e -> buttonPressed = true);
+        focusedButton.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                buttonGainedFocusLatch.countDown();
+            }
+        });
         panel.add(focusedButton);
 
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.add(panel);
         frame.pack();
         frame.setLocationRelativeTo(null);
