@@ -620,7 +620,8 @@ public class ReflectionFactory {
     private static final int ALL_MH_ACCESSORS = METHOD_MH_ACCESSOR | FIELD_MH_ACCESSOR;
 
     /**
-     * The configuration is lazily initialized after the module system is initialized.
+     * The configuration is lazily initialized after the module system is initialized. The
+     * default config would be used before the proper config is loaded.
      *
      * The static initializer of ReflectionFactory is run before the system properties are set up.
      * The class initialization is caused by the class initialization of java.lang.reflect.Method
@@ -641,17 +642,17 @@ public class ReflectionFactory {
     // then switch to the bytecode-based implementations.
 
     private static final Config DEFAULT_CONFIG = new Config(false, // noInflation
-            15, // inflationThreshold
-            ALL_MH_ACCESSORS, // useDirectMethodHandle
-            false, // useNativeAccessorOnly
-            false); // disableSerialConstructorChecks
+                                                            15, // inflationThreshold
+                                                            ALL_MH_ACCESSORS, // useDirectMethodHandle
+                                                            false, // useNativeAccessorOnly
+                                                            false); // disableSerialConstructorChecks
 
     /**
      * The configurations for the reflection factory. Configurable via
      * system properties but only available after ReflectionFactory is
-     * loaded during early VM startup. See bug 8261407.
+     * loaded during early VM startup.
      *
-     * Note that the default implementation of the object methods of
+     * Note that the default implementations of the object methods of
      * this Config record (toString, equals, hashCode) use indy,
      * which is available to use only after initPhase1. These methods
      * are currently not called, but should they be needed, a workaround
@@ -719,13 +720,13 @@ public class ReflectionFactory {
         }
 
         disableSerialConstructorChecks =
-                "true".equals(props.getProperty("jdk.disableSerialConstructorChecks"));
+            "true".equals(props.getProperty("jdk.disableSerialConstructorChecks"));
 
         return new Config(noInflation,
-                inflationThreshold,
-                useDirectMethodHandle,
-                useNativeAccessorOnly,
-                disableSerialConstructorChecks);
+                          inflationThreshold,
+                          useDirectMethodHandle,
+                          useNativeAccessorOnly,
+                          disableSerialConstructorChecks);
     }
 
     /**
