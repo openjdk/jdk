@@ -537,6 +537,7 @@ static SpecialFlag const special_jvm_flags[] = {
 #ifdef PRODUCT
   { "UseHeavyMonitors",             JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
 #endif
+  { "ExtendedDTraceProbes",         JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -547,6 +548,7 @@ static SpecialFlag const special_jvm_flags[] = {
 
   { "FilterSpuriousWakeups",        JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
   { "MinInliningThreshold",         JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
+  { "PrefetchFieldsAhead",          JDK_Version::undefined(), JDK_Version::jdk(19), JDK_Version::jdk(20) },
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
 #endif
@@ -2886,6 +2888,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       }
     } else if (match_option(option, "-XX:+ExtendedDTraceProbes")) {
 #if defined(DTRACE_ENABLED)
+      warning("Option ExtendedDTraceProbes was deprecated in version 19 and will likely be removed in a future release.");
+      warning("Use the combination of -XX:+DTraceMethodProbes, -XX:+DTraceAllocProbes and -XX:+DTraceMonitorProbes instead.");
       if (FLAG_SET_CMDLINE(ExtendedDTraceProbes, true) != JVMFlag::SUCCESS) {
         return JNI_EINVAL;
       }
@@ -2901,6 +2905,18 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
 #else // defined(DTRACE_ENABLED)
       jio_fprintf(defaultStream::error_stream(),
                   "ExtendedDTraceProbes flag is not applicable for this configuration\n");
+      return JNI_EINVAL;
+    } else if (match_option(option, "-XX:+DTraceMethodProbes")) {
+      jio_fprintf(defaultStream::error_stream(),
+                  "DTraceMethodProbes flag is not applicable for this configuration\n");
+      return JNI_EINVAL;
+    } else if (match_option(option, "-XX:+DTraceAllocProbes")) {
+      jio_fprintf(defaultStream::error_stream(),
+                  "DTraceAllocProbes flag is not applicable for this configuration\n");
+      return JNI_EINVAL;
+    } else if (match_option(option, "-XX:+DTraceMonitorProbes")) {
+      jio_fprintf(defaultStream::error_stream(),
+                  "DTraceMonitorProbes flag is not applicable for this configuration\n");
       return JNI_EINVAL;
 #endif // defined(DTRACE_ENABLED)
 #ifdef ASSERT
@@ -3576,6 +3592,10 @@ void Arguments::init_shared_archive_paths() {
             SharedArchivePath = get_default_shared_archive_path();
             SharedArchiveFile = nullptr;
           } else {
+            if (AutoCreateSharedArchive) {
+              warning("-XX:+AutoCreateSharedArchive is unsupported when base CDS archive is not loaded. Run with -Xlog:cds for more info.");
+              AutoCreateSharedArchive = false;
+            }
             no_shared_spaces("invalid archive");
           }
         } else if (base_archive_path == NULL) {

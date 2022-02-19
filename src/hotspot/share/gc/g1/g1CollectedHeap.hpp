@@ -1236,11 +1236,6 @@ public:
   // the region to which the object belongs.
   inline bool is_obj_dead(const oop obj, const HeapRegion* hr) const;
 
-  // This function returns true when an object has been
-  // around since the previous marking and hasn't yet
-  // been marked during this marking, and is not in a closed archive region.
-  inline bool is_obj_ill(const oop obj, const HeapRegion* hr) const;
-
   // Determine if an object is dead, given only the object itself.
   // This will find the region to which the object belongs and
   // then call the region version of the same function.
@@ -1248,8 +1243,6 @@ public:
   // Added if it is NULL it isn't dead.
 
   inline bool is_obj_dead(const oop obj) const;
-
-  inline bool is_obj_ill(const oop obj) const;
 
   inline bool is_obj_dead_full(const oop obj, const HeapRegion* hr) const;
   inline bool is_obj_dead_full(const oop obj) const;
@@ -1302,15 +1295,11 @@ public:
   // Perform verification.
 
   // vo == UsePrevMarking -> use "prev" marking information,
-  // vo == UseNextMarking -> use "next" marking information
   // vo == UseFullMarking -> use "next" marking bitmap but no TAMS
   //
   // NOTE: Only the "prev" marking information is guaranteed to be
   // consistent most of the time, so most calls to this should use
   // vo == UsePrevMarking.
-  // Currently, there is only one case where this is called with
-  // vo == UseNextMarking, which is to verify the "next" marking
-  // information at the end of remark.
   // Currently there is only one place where this is called with
   // vo == UseFullMarking, which is to verify the marking during a
   // full GC.

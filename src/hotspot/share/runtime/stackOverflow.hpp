@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,8 @@ class StackOverflow {
     _stack_guard_state(stack_guard_unused),
     _stack_overflow_limit(nullptr),
     _reserved_stack_activation(nullptr),  // stack base not known yet
+    _shadow_zone_safe_limit(nullptr),
+    _shadow_zone_growth_watermark(nullptr),
     _stack_base(nullptr), _stack_end(nullptr) {}
 
   // Initialization after thread is started.
@@ -58,6 +60,7 @@ class StackOverflow {
      _stack_base = base;
      _stack_end = end;
     set_stack_overflow_limit();
+    set_shadow_zone_limits();
     set_reserved_stack_activation(base);
   }
  private:
@@ -68,6 +71,8 @@ class StackOverflow {
   // We load it from here to simplify the stack overflow check in assembly.
   address          _stack_overflow_limit;
   address          _reserved_stack_activation;
+  address          _shadow_zone_safe_limit;
+  address          _shadow_zone_growth_watermark;
 
   // Support for stack overflow handling, copied down from thread.
   address          _stack_base;
@@ -77,6 +82,9 @@ class StackOverflow {
   address stack_base() const           { assert(_stack_base != nullptr, "Sanity check"); return _stack_base; }
 
   // Stack overflow support
+  // --------------------------------------------------------------------------------
+  //
+  // The Java thread stack is structured as follows:
   //
   //  (low addresses)
   //
@@ -95,11 +103,24 @@ class StackOverflow {
   //  |                                      |
   //  |  reserved zone                       |
   //  |                                      |
-  //  --  <-- stack_reserved_zone_base()    ---      ---
-  //                                                 /|\  shadow     <--  stack_overflow_limit() (somewhere in here)
-  //                                                  |   zone
-  //                                                 \|/  size
-  //  some untouched memory                          ---
+  //  --  <-- stack_reserved_zone_base()    ---   ---
+  //                                               ^
+  //                                               |    <--  stack_overflow_limit() [somewhere in here]
+  //                                               |  shadow
+  //                                               |   zone
+  //                                               |   size
+  //                                               v
+  //                                              ---   <--  shadow_zone_safe_limit()
+  // (Here and below: not yet touched stack)
+  //
+  //
+  // (Here and below: touched at least once)      ---
+  //                                               ^
+  //                                               |  shadow
+  //                                               |   zone
+  //                                               |   size
+  //                                               v
+  //                                              ---   <--  shadow_zone_growth_watermark()
   //
   //
   //  --
@@ -120,6 +141,84 @@ class StackOverflow {
   //
   //  (high addresses)
   //
+  //
+  // The stack overflow mechanism detects overflows by touching ("banging") the stack
+  // ahead of current stack pointer (SP). The entirety of guard zone is memory protected,
+  // therefore such access would trap when touching the guard zone, and one of the following
+  // things would happen.
+  //
+  // Access in the red zone: unrecoverable stack overflow. Crash the VM, generate a report,
+  // crash dump, and other diagnostics.
+  //
+  // Access in the yellow zone: recoverable, reportable stack overflow. Create and throw
+  // a StackOverflowError, remove the protection of yellow zone temporarily to let exception
+  // handlers run. If exception handlers themselves run out of stack, they will crash VM due
+  // to access to red zone.
+  //
+  // Access in the reserved zone: recoverable, reportable, transparent for privileged methods
+  // stack overflow. Perform a stack walk to check if there's a method annotated with
+  // @ReservedStackAccess on the call stack. If such method is found, remove the protection of
+  // reserved zone temporarily, and let the method run. If not, handle the access like a yellow
+  // zone trap.
+  //
+  // The banging itself happens within the "shadow zone" that extends from the current SP.
+  //
+  // The goals for properly implemented shadow zone banging are:
+  //
+  //  a) Allow native/VM methods to run without stack overflow checks within some reasonable
+  //     headroom. Default shadow zone size should accommodate the largest normally expected
+  //     native/VM stack use.
+  //  b) Guarantee the stack overflow checks work even if SP is dangerously close to guard zone.
+  //     If SP is very low, banging at the edge of shadow zone (SP+shadow-zone-size) can slip
+  //     into adjacent thread stack, or even into other readable memory. This would potentially
+  //     pass the check by accident.
+  //  c) Allow for incremental stack growth on some OSes. This is enabled by handling traps
+  //     from not yet committed thread stacks, even outside the guard zone. The banging should
+  //     not allow uncommitted "gaps" on thread stack. See for example the uses of
+  //     os::map_stack_shadow_pages().
+  //  d) Make sure the stack overflow trap happens in the code that is known to runtime, so
+  //     the traps can be reasonably handled: handling a spurious trap from executing Java code
+  //     is hard, while properly handling the trap from VM/native code is nearly impossible.
+  //
+  // The simplest code that satisfies all these requirements is banging the shadow zone
+  // page by page at every Java/native method entry.
+  //
+  // While that code is sufficient, it comes with the large performance cost. This performance
+  // cost can be reduced by several *optional* techniques:
+  //
+  // 1. Guarantee that stack would not take another page. If so, the current bang was
+  // enough to verify we are not near the guard zone. This kind of insight is usually only
+  // available for compilers that can know the size of the frame exactly.
+  //
+  // Examples: PhaseOutput::need_stack_bang.
+  //
+  // 2. Check the current SP in relation to shadow zone safe limit.
+  //
+  // Define "safe limit" as the highest SP where banging would not touch the guard zone.
+  // Then, do the page-by-page bang only if current SP is above that safe limit, OR some
+  // OS-es need it to get the stack mapped.
+  //
+  // Examples: AbstractAssembler::generate_stack_overflow_check, JavaCalls::call_helper,
+  // os::stack_shadow_pages_available, os::map_stack_shadow_pages and their uses.
+  //
+  // 3. Check the current SP in relation to the shadow zone growth watermark.
+  //
+  // Define "shadow zone growth watermark" as the highest SP where we banged already.
+  // Invariant: growth watermark is always above the safe limit, which allows testing
+  // for watermark and safe limit at the same time in the most frequent case.
+  //
+  // Easy and overwhelmingly frequent case: SP is above the growth watermark, and
+  // by extension above the safe limit. In this case, we know that the guard zone is far away
+  // (safe limit), and that the stack was banged before for stack growth (growth watermark).
+  // Therefore, we can skip the banging altogether.
+  //
+  // Harder cases: SP is below the growth watermark. In might be due to two things:
+  // we have not banged the stack for growth (below growth watermark only), or we are
+  // close to guard zone (also below safe limit). Do the full banging. Once done, we
+  // can adjust the growth watermark, thus recording the bang for stack growth had
+  // happened.
+  //
+  // Examples: TemplateInterpreterGenerator::bang_stack_shadow_pages on x86 and others.
 
  private:
   // These values are derived from flags StackRedPages, StackYellowPages,
@@ -189,6 +288,11 @@ class StackOverflow {
     return _stack_shadow_zone_size;
   }
 
+  address shadow_zone_safe_limit() const {
+    assert(_shadow_zone_safe_limit != nullptr, "Don't call this before the field is initialized.");
+    return _shadow_zone_safe_limit;
+  }
+
   void create_stack_guard_pages();
   void remove_stack_guard_pages();
 
@@ -241,6 +345,13 @@ class StackOverflow {
   void set_stack_overflow_limit() {
     _stack_overflow_limit =
       stack_end() + MAX2(stack_guard_zone_size(), stack_shadow_zone_size());
+  }
+
+  void set_shadow_zone_limits() {
+    _shadow_zone_safe_limit =
+      stack_end() + stack_guard_zone_size() + stack_shadow_zone_size();
+    _shadow_zone_growth_watermark =
+      stack_base();
   }
 };
 
