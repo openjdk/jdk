@@ -22,10 +22,15 @@
  */
 
 import java.awt.Robot;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.awt.event.KeyEvent;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import javax.swing.JFrame;
 import javax.swing.JList;
@@ -37,6 +42,7 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
+
 
 import static javax.swing.UIManager.getInstalledLookAndFeels;
 
@@ -50,11 +56,12 @@ import static javax.swing.UIManager.getInstalledLookAndFeels;
  */
 public class JListSelectedElementTest {
 
-    private static final int MENU = KeyEvent.VK_F;
+    private static final int FILE_MENU = KeyEvent.VK_F;
     private static JFrame frame;
     private static JList<String> list;
     private static Robot robot;
-    private static volatile boolean menuSelected;
+    private static CountDownLatch listGainedFocusLatch;
+    private static CountDownLatch menuSelectedEventLatch;
 
     public static void main(String[] args) throws Exception {
         runTest();
@@ -65,12 +72,16 @@ public class JListSelectedElementTest {
         robot.setAutoWaitForIdle(true);
         robot.setAutoDelay(200);
 
-        final boolean isAMac = System.getProperty("os.name").toLowerCase().contains("os x");
+        final boolean isMac = System.getProperty("os.name")
+                                    .toLowerCase()
+                                    .contains("os x");
 
         List<String> lafs = Arrays.stream(getInstalledLookAndFeels())
                                   .map(UIManager.LookAndFeelInfo::getClassName)
                                   .collect(Collectors.toList());
         for (final String laf : lafs) {
+            listGainedFocusLatch = new CountDownLatch(1);
+            menuSelectedEventLatch = new CountDownLatch(1);
             try {
                 AtomicBoolean lafSetSuccess = new AtomicBoolean(false);
                 SwingUtilities.invokeAndWait(() -> {
@@ -84,63 +95,45 @@ public class JListSelectedElementTest {
                 }
                 robot.waitForIdle();
 
-                // Request for focus and wait until the list has focus.
-                SwingUtilities.invokeAndWait(() -> list.requestFocusInWindow());
-                int waitCount = 0;
-                while (!isFocusOwner()) {
-                    robot.delay(100);
-                    waitCount++;
-                    if (waitCount > 20) {
-                        throw new RuntimeException("Waited for long, but can't get focus for list");
-                    }
+                // Wait until the list gains focus.
+                if (!listGainedFocusLatch.await(3, TimeUnit.SECONDS)) {
+                    throw new RuntimeException("Waited for long, but can't gain focus for list");
                 }
 
                 // Select element named as 'bill'
-                robot.keyPress(KeyEvent.VK_B);
-                robot.keyRelease(KeyEvent.VK_B);
+                hitKeys(KeyEvent.VK_B);
 
-                // Assertion check to verify that selected node is 'bill'
-                String elementSel = list.getSelectedValue();
-                if (!"bill".equals(elementSel)) {
+                // Assertion check to verify that the selected node is 'bill'
+                AtomicReference<String> elementSel = new AtomicReference<>();
+                SwingUtilities.invokeAndWait(() -> elementSel.set(list.getSelectedValue()));
+                final String elementSelBefore = elementSel.get();
+                if (!"bill".equals(elementSelBefore)) {
                     throw new RuntimeException("Test failed for " + laf
                             + " as the list element selected: " + elementSel
                             + " is not the expected one 'bill'"
                     );
                 }
 
-                menuSelected = false;
                 // Now operate Menu using Mnemonics, different key combinations for different OS.
-                // For most of the OS its ALT+F, except non Nimbus LnFs in Mac, here its ALT+CNTRL+F.
-                if (isAMac && !laf.contains("Nimbus")) {
-                    robot.keyPress(KeyEvent.VK_ALT);
-                    robot.keyPress(KeyEvent.VK_CONTROL);
-                    robot.keyPress(MENU);
-                    robot.keyRelease(KeyEvent.VK_ALT);
-                    robot.keyRelease(KeyEvent.VK_CONTROL);
-                    robot.keyRelease(MENU);
-                }else{
-                    robot.keyPress(KeyEvent.VK_ALT);
-                    robot.keyPress(MENU);
-                    robot.keyRelease(KeyEvent.VK_ALT);
-                    robot.keyRelease(MENU);
+                // For most of the OS its ALT+F, except for non Nimbus LnFs in Mac where it is ALT+CNTRL+F.
+                if (isMac && !laf.contains("Nimbus")) {
+                    hitKeys(KeyEvent.VK_ALT, KeyEvent.VK_CONTROL, FILE_MENU);
+                } else {
+                    hitKeys(KeyEvent.VK_ALT, FILE_MENU);
                 }
 
-                waitCount = 0;
-                while (!menuSelected) {
-                    robot.delay(100);
-                    waitCount++;
-                    if (waitCount > 20) {
-                        throw new RuntimeException("Can't select menu using mnemonics for " + laf);
-                    }
+                // Wait until the menu got selected.
+                if (!menuSelectedEventLatch.await(3, TimeUnit.SECONDS)) {
+                    throw new RuntimeException("Waited for long, but can't select menu using mnemonics for " + laf);
                 }
 
-                robot.keyPress(KeyEvent.VK_ENTER);
-                robot.keyRelease(KeyEvent.VK_ENTER);
+                hitKeys(KeyEvent.VK_ENTER);
 
-                String elementSelAfter = list.getSelectedValue();
+                AtomicReference<String> elementSelAfter = new AtomicReference<>();
+                SwingUtilities.invokeAndWait(() -> elementSelAfter.set(list.getSelectedValue()));
 
                 // As per the fix of BugID 4618767, the list element selection should not change
-                if (!elementSel.equals(elementSelAfter)) {
+                if (!elementSelBefore.equals(elementSelAfter.get())) {
                     throw new RuntimeException("Test failed for " + laf
                             + " as list.getSelectedValue() before = " + elementSel
                             + " not equal to list.getSelectedValue() after pressing Enter = " + elementSelAfter
@@ -154,44 +147,54 @@ public class JListSelectedElementTest {
         }
     }
 
-    private static boolean isFocusOwner() throws Exception {
-        AtomicBoolean isFocusOwner = new AtomicBoolean(false);
-        SwingUtilities.invokeAndWait(() -> isFocusOwner.set(list.isFocusOwner()));
-        return isFocusOwner.get();
+    private static void hitKeys(int... keys) {
+        for (int key : keys) {
+            robot.keyPress(key);
+        }
+
+        for (int i = keys.length - 1; i >= 0; i--) {
+            robot.keyRelease(keys[i]);
+        }
     }
 
     private static void createUI() {
         frame = new JFrame();
-        list = new JList(new String[]{"anaheim", "bill", "chicago", "dingo", "ernie", "freak"});
+        list = new JList<>(new String[]{"anaheim", "bill", "chicago", "dingo", "ernie", "freak"});
+        list.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                listGainedFocusLatch.countDown();
+            }
+        });
         JMenu menu = new JMenu("File");
-        menu.setMnemonic(MENU);
+        menu.setMnemonic(FILE_MENU);
         JMenuItem menuItem = new JMenuItem("Dummy");
         menu.add(menuItem);
         menu.addMenuListener(new MenuListener() {
-                                 @Override
-                                 public void menuSelected(MenuEvent e) {
-                                     menuSelected = true;
-                                 }
-                                 @Override
-                                 public void menuDeselected(MenuEvent e) {
-                                 }
-                                 @Override
-                                 public void menuCanceled(MenuEvent e) {
-                                 }
-                             }
-        );
+            @Override
+            public void menuSelected(MenuEvent e) {
+                menuSelectedEventLatch.countDown();
+            }
+
+            @Override
+            public void menuDeselected(MenuEvent e) {
+            }
+
+            @Override
+            public void menuCanceled(MenuEvent e) {
+            }
+        });
 
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(menu);
 
         frame.setJMenuBar(menuBar);
         frame.setContentPane(list);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.pack();
         frame.setAlwaysOnTop(true);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
-
     }
 
     private static boolean setLookAndFeel(String lafName) {
