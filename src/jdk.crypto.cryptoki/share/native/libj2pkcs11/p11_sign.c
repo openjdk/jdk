@@ -148,7 +148,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1Sign
         bufP = (CK_BYTE_PTR) malloc(ckSignatureLength);
         if (bufP == NULL) {
             throwOutOfMemoryError(env, 0);
-            return NULL;
+            goto cleanup;
         }
         rv = (*ckpFunctions->C_Sign)(ckSessionHandle, ckpData, ckDataLength,
             bufP, &ckSignatureLength);
@@ -159,6 +159,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1Sign
         TRACE1("DEBUG C_Sign: signature length = %lu\n", ckSignatureLength);
     }
 
+cleanup:
     free(ckpData);
     if (bufP != BUF) { free(bufP); }
 
