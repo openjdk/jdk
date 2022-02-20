@@ -107,7 +107,7 @@ import java.util.stream.Stream;
  *
  */
 public interface RandomGenerator {
-    /**
+     /**
      * Returns an instance of {@link RandomGenerator} that utilizes the
      * {@code name} <a href="package-summary.html#algorithms">algorithm</a>.
      *
@@ -139,14 +139,12 @@ public interface RandomGenerator {
     static RandomGenerator getDefault() {
         return of("L32X64MixRandom");
     }
-
     /**
-     * Returns an instance of {@link java.util.Random} based on this
-     * {@code RandomGenerator}. If this generator is already an instance of
-     * {@code Random}, it is returned. Otherwise, this method returns an instance of
-     * {@code Random} that delegates all methods except setSeed to this generator.
-     * Its setSeed method always throws {@link UnsupportedOperationException}.
-     *
+     * Returns an instance of {@link java.util.Random} based on this {@code RandomGenerator}.
+     * If this generator is already an instance of {@code Random}, it is returned. Otherwise, this method
+     * returns an instance of {@code Random} that delegates all methods except setSeed to this
+     * generator. Its setSeed method always throws {@link UnsupportedOperationException}.
+     * 
      * @return {@link java.util.Random}
      */
     default Random asRandom() {
@@ -168,9 +166,9 @@ public interface RandomGenerator {
      *
      * @implSpec The default implementation checks for the @Deprecated annotation.
      */
-    default boolean isDeprecated() {
+     default boolean isDeprecated() {
         return this.getClass().isAnnotationPresent(Deprecated.class);
-    }
+     }
 
     /**
      * Returns an effectively unlimited stream of pseudorandomly chosen
@@ -259,7 +257,7 @@ public interface RandomGenerator {
      * calls {@link RandomGenerator#nextDouble(double, double)  nextDouble}(randomNumberOrigin, randomNumberBound).
      */
     default DoubleStream doubles(long streamSize, double randomNumberOrigin,
-            double randomNumberBound) {
+                double randomNumberBound) {
         RandomSupport.checkStreamSize(streamSize);
         RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
 
@@ -350,7 +348,7 @@ public interface RandomGenerator {
      * calls {@link RandomGenerator#nextInt(int, int) nextInt}(randomNumberOrigin, randomNumberBound).
      */
     default IntStream ints(long streamSize, int randomNumberOrigin,
-            int randomNumberBound) {
+              int randomNumberBound) {
         RandomSupport.checkStreamSize(streamSize);
         RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
 
@@ -441,7 +439,7 @@ public interface RandomGenerator {
      * calls {@link RandomGenerator#nextLong(long, long) nextLong}(randomNumberOrigin, randomNumberBound).
      */
     default LongStream longs(long streamSize, long randomNumberOrigin,
-            long randomNumberBound) {
+                long randomNumberBound) {
         RandomSupport.checkStreamSize(streamSize);
         RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
 
@@ -1058,7 +1056,6 @@ public interface RandomGenerator {
          *
          * @implSpec The default implementation calls {@link SplittableGenerator#splits() splits}().
          */
-        @Override
         default Stream<RandomGenerator> rngs() {
             return this.splits().map(x -> x);
         }
@@ -1078,7 +1075,6 @@ public interface RandomGenerator {
          *
          * @implSpec The default implementation calls {@link SplittableGenerator#splits(long) splits}(streamSize).
          */
-        @Override
         default Stream<RandomGenerator> rngs(long streamSize) {
             return this.splits(streamSize).map(x -> x);
         }
@@ -1215,7 +1211,6 @@ public interface RandomGenerator {
          *
          * @implSpec The default implementation calls {@link JumpableGenerator#jumps jumps}().
          */
-        @Override
         default Stream<RandomGenerator> rngs() {
             return this.jumps();
         }
@@ -1234,7 +1229,6 @@ public interface RandomGenerator {
          *
          * @implSpec The default implementation calls {@link JumpableGenerator#jumps(long) jumps}(streamSize).
          */
-        @Override
         default Stream<RandomGenerator> rngs(long streamSize) {
             return this.jumps(streamSize);
         }
@@ -1325,7 +1319,6 @@ public interface RandomGenerator {
          *
          * @return a new object that is a copy of this generator
          */
-        @Override
         LeapableGenerator copy();
 
         /**
@@ -1465,7 +1458,6 @@ public interface RandomGenerator {
          *
          * @return a new object that is a copy of this generator
          */
-        @Override
         ArbitrarilyJumpableGenerator copy();
 
         /**
@@ -1502,7 +1494,6 @@ public interface RandomGenerator {
          *
          * @implSpec The default implementation invokes jump(jumpDistance()).
          */
-        @Override
         default void jump() { jump(jumpDistance()); }
 
         /**
@@ -1559,7 +1550,6 @@ public interface RandomGenerator {
          * method
          * {@link ArbitrarilyJumpableGenerator#leapDistance() leapDistance}().
          */
-        @Override
         default void leap() { jump(leapDistance()); }
 
         /**
