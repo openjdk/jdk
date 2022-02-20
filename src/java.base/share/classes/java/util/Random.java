@@ -291,7 +291,7 @@ public class Random implements RandomGenerator, java.io.Serializable {
      * {@code Random}, it is returned. Otherwise, this method returns an instance of
      * {@code Random} that delegates all methods except setSeed to this generator.
      * Its setSeed method always throws {@link UnsupportedOperationException}.
-     *
+     * @param random the {@link java.util.random.RandomGenerator} to use
      * @return {@link Random}
      */
     public static Random from(RandomGenerator random) {
