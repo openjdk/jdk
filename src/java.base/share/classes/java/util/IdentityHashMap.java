@@ -267,23 +267,12 @@ public class IdentityHashMap<K,V>
      * @throws NullPointerException if the specified map is null
      */
     public IdentityHashMap(Map<? extends K, ? extends V> m) {
-        this(m, m.size());
-    }
-
-    /**
-     * Constructs a new identity hash map containing the keys-value mappings
-     * in the specified map, with expected size
-     *
-     * @param map the map whose mappings are to be placed into this map
-     * @param expectedSize the expected size of the created IdentityHashMap
-     * @throws NullPointerException if the specified map is null
-     */
-    private IdentityHashMap(Map<? extends K, ? extends V> map, int expectedSize) {
-        this(expectedSize);
-        if (expectedSize == 0) {
+        int expectedMaxSize = m.size();
+        init(capacity(expectedMaxSize));
+        if (expectedMaxSize == 0) {
             return;
         }
-        for (Entry<? extends K, ? extends V> e : map.entrySet()) {
+        for (Entry<? extends K, ? extends V> e : m.entrySet()) {
             put(e.getKey(), e.getValue());
         }
     }
