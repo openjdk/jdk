@@ -31,6 +31,7 @@ import java.util.random.RandomGenerator;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
+
 import jdk.internal.util.random.RandomSupport.*;
 
 import static jdk.internal.util.random.RandomSupport.*;
@@ -80,8 +81,143 @@ import jdk.internal.misc.Unsafe;
         name = "Random",
         i = 48, j = 0, k = 0,
         equidistribution = 0
-)
+        )
 public class Random implements RandomGenerator, java.io.Serializable {
+
+    /**
+     * Class used to wrap a {@link java.util.random.RandomGenerator} to
+     * {@link java.util.Random}.
+     */
+
+    @SuppressWarnings("serial")
+    private static class RandomWrapper extends Random implements RandomGenerator {
+        private final RandomGenerator generator;
+        private final boolean initialized;
+
+        private RandomWrapper(RandomGenerator randomToWrap) {
+            this.generator = randomToWrap;
+            this.initialized = true;
+        }
+
+        public static Random wrap(RandomGenerator random) {
+            // Check to see if its not wrapping another Random instance
+            if (random instanceof Random rand)
+                return rand;
+
+            return (Random) new Random.RandomWrapper(random);
+        }
+
+        /**
+         * setSeed does not exist in {@link java.util.random.RandomGenerator} so can't
+         * use it.
+         */
+        @Override
+        public void setSeed(long seed) {
+            if(initialized)
+                throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void nextBytes(byte[] bytes) {
+            this.generator.nextBytes(bytes);
+        }
+
+        @Override
+        public int nextInt() {
+            return this.generator.nextInt();
+        }
+
+        @Override
+        public int nextInt(int bound) {
+            return this.generator.nextInt(bound);
+        }
+
+        @Override
+        public long nextLong() {
+            return this.generator.nextLong();
+        }
+
+        @Override
+        public boolean nextBoolean() {
+            return this.generator.nextBoolean();
+        }
+
+        @Override
+        public float nextFloat() {
+            return this.generator.nextFloat();
+        }
+
+        @Override
+        public double nextDouble() {
+            return this.generator.nextDouble();
+        }
+
+        @Override
+        public double nextGaussian() {
+            return this.generator.nextGaussian();
+        }
+
+        @Override
+        public IntStream ints(long streamSize) {
+            return this.generator.ints(streamSize);
+        }
+
+        @Override
+        public IntStream ints() {
+            return this.generator.ints();
+        }
+
+        @Override
+        public IntStream ints(long streamSize, int randomNumberOrigin, int randomNumberBound) {
+            return this.generator.ints(streamSize, randomNumberOrigin, randomNumberBound);
+        }
+
+        @Override
+        public IntStream ints(int randomNumberOrigin, int randomNumberBound) {
+            return this.generator.ints(randomNumberOrigin, randomNumberBound);
+        }
+
+        @Override
+        public LongStream longs(long streamSize) {
+            return this.generator.longs(streamSize);
+        }
+
+        @Override
+        public LongStream longs() {
+            return this.generator.longs();
+        }
+
+        @Override
+        public LongStream longs(long streamSize, long randomNumberOrigin, long randomNumberBound) {
+            return this.generator.longs(streamSize, randomNumberOrigin, randomNumberBound);
+        }
+
+        @Override
+        public LongStream longs(long randomNumberOrigin, long randomNumberBound) {
+            return this.generator.longs(randomNumberOrigin, randomNumberBound);
+        }
+
+        @Override
+        public DoubleStream doubles(long streamSize) {
+            return this.generator.doubles(streamSize);
+        }
+
+        @Override
+        public DoubleStream doubles() {
+            return this.generator.doubles();
+        }
+
+        @Override
+        public DoubleStream doubles(long streamSize, double randomNumberOrigin, double randomNumberBound) {
+            return this.generator.doubles(streamSize, randomNumberOrigin, randomNumberBound);
+        }
+
+        @Override
+        public DoubleStream doubles(double randomNumberOrigin, double randomNumberBound) {
+            return this.generator.doubles(randomNumberOrigin, randomNumberBound);
+        }
+    }
+
     /** use serialVersionUID from JDK 1.1 for interoperability */
     @java.io.Serial
     static final long serialVersionUID = 3905348978240129619L;
@@ -120,7 +256,7 @@ public class Random implements RandomGenerator, java.io.Serializable {
     }
 
     private static final AtomicLong seedUniquifier
-            = new AtomicLong(8682522807148012L);
+    = new AtomicLong(8682522807148012L);
 
     /**
      * Creates a new random number generator using a single {@code long} seed.
@@ -232,8 +368,8 @@ public class Random implements RandomGenerator, java.io.Serializable {
     public void nextBytes(byte[] bytes) {
         for (int i = 0, len = bytes.length; i < len; )
             for (int rnd = nextInt(),
-                 n = Math.min(len - i, Integer.SIZE/Byte.SIZE);
-                 n-- > 0; rnd >>= Byte.SIZE)
+            n = Math.min(len - i, Integer.SIZE/Byte.SIZE);
+                    n-- > 0; rnd >>= Byte.SIZE)
                 bytes[i++] = (byte)rnd;
     }
 
@@ -325,8 +461,8 @@ public class Random implements RandomGenerator, java.io.Serializable {
             r = (int)((bound * (long)r) >> 31);
         else { // reject over-represented candidates
             for (int u = r;
-                 u - (r = u % bound) + m < 0;
-                 u = next(31))
+                    u - (r = u % bound) + m < 0;
+                    u = next(31))
                 ;
         }
         return r;
@@ -880,7 +1016,7 @@ public class Random implements RandomGenerator, java.io.Serializable {
         return AbstractSpliteratorGenerator.doubles(this);
     }
 
-   /**
+    /**
      * Returns a stream producing the given {@code streamSize} number of
      * pseudorandom {@code double} values, each conforming to the given origin
      * (inclusive) and bound (exclusive).
