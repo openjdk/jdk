@@ -412,7 +412,7 @@ public class RandomTest {
         });
         assertEquals(counter.sum(), size);
     }
-    
+
     /**
      * Test shuffling a list with Random.from()
      */
