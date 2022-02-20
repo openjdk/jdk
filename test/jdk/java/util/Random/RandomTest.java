@@ -417,32 +417,32 @@ public class RandomTest {
      * Test shuffling a list with Random.from()
      */
     public void testShufflingList() {
-	final ArrayList listTest = new ArrayList<Integer>();
-	final RandomGenerator randomGenerator = RandomGenerator.getDefault();
-	final Random random = Random.from(randomGenerator);
-	
-	for (int i = 0; i < 100; i++) {
-	    listTest.add(i * 2);
-	}
-	final var listCopy = new ArrayList<Integer>(listTest);
-	
-	Collections.shuffle(listCopy, random);
-	
-	assertFalse(listCopy.equals(listTest));
+        final ArrayList listTest = new ArrayList<Integer>();
+        final RandomGenerator randomGenerator = RandomGenerator.getDefault();
+        final Random random = Random.from(randomGenerator);
+
+        for (int i = 0; i < 100; i++) {
+            listTest.add(i * 2);
+        }
+        final var listCopy = new ArrayList<Integer>(listTest);
+
+        Collections.shuffle(listCopy, random);
+
+        assertFalse(listCopy.equals(listTest));
     }
+
     /**
      * Test if Random.from returns this
      */
     public void testRandomFromInstance() {
-	final RandomGenerator randomGenerator = RandomGenerator.getDefault();
-	
-	final Random randomInstance = Random.from(randomGenerator);
-	
-	//we wrap the same instance again
-	final Random randomInstanceCopy = Random.from(randomInstance);
-	
-	
-	assertSame(randomInstance,randomInstanceCopy);
+        final RandomGenerator randomGenerator = RandomGenerator.getDefault();
+
+        final Random randomInstance = Random.from(randomGenerator);
+
+        // we wrap the same instance again
+        final Random randomInstanceCopy = Random.from(randomInstance);
+
+        assertSame(randomInstance, randomInstanceCopy);
     }
 
 }
