@@ -52,10 +52,19 @@ import java.util.function.Supplier;
 @RunWith(Parameterized.class)
 public class HashMapsPutAllOverAllocateTableTest {
 
+    private static final int TEST_SIZE = 128;
+    private static final Integer[] INTEGER_ARRAY = new Integer[TEST_SIZE];
+
+    static {
+        for (int i = 0; i < TEST_SIZE; ++i) {
+            INTEGER_ARRAY[i] = i;
+        }
+    }
+
     @Parameterized.Parameters
     public static List<Object[]> testFunctionsList() {
-        List<Object[]> testParameters = new ArrayList<>(200);
-        for (int i = 0; i <= 128; ++i) {
+        List<Object[]> testParameters = new ArrayList<>(TEST_SIZE * 3);
+        for (int i = 0; i <= TEST_SIZE; ++i) {
             testParameters.add(
                     new Object[]{
                             (Supplier<Map<Object, Object>>) HashMap::new,
@@ -106,7 +115,7 @@ public class HashMapsPutAllOverAllocateTableTest {
 
     public static void fillN(int mapSize, Map<Object, Object> map) {
         for (int i = 0; i < mapSize; i++) {
-            map.put(i, i);
+            map.put(INTEGER_ARRAY[i], INTEGER_ARRAY[i]);
         }
     }
 
@@ -115,6 +124,9 @@ public class HashMapsPutAllOverAllocateTableTest {
         Field field = map.getClass().getDeclaredField("table");
         field.setAccessible(true);
         Object table = field.get(map);
+        if (table == null) {
+            return -1;
+        }
         return Array.getLength(table);
     }
 
@@ -130,7 +142,7 @@ public class HashMapsPutAllOverAllocateTableTest {
             int length = getArrayLength(b);
             Assert.assertTrue(
                     "length b larger than length a!",
-                    lengthA <= length
+                    length <= lengthA
             );
         }
 
