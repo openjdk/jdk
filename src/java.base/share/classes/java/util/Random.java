@@ -285,6 +285,18 @@ public class Random implements RandomGenerator, java.io.Serializable {
     private static long initialScramble(long seed) {
         return (seed ^ multiplier) & mask;
     }
+    /**
+     * Returns an instance of {@link Random} based on this
+     * {@code java.util.random.RandomGenerator}. If this generator is already an instance of
+     * {@code Random}, it is returned. Otherwise, this method returns an instance of
+     * {@code Random} that delegates all methods except setSeed to this generator.
+     * Its setSeed method always throws {@link UnsupportedOperationException}.
+     *
+     * @return {@link Random}
+     */
+    public static Random from(RandomGenerator random) {
+        return RandomWrapper.wrap(random);
+    }
 
     /**
      * Sets the seed of this random number generator using a single
