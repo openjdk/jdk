@@ -46,7 +46,6 @@ import javax.swing.border.EmptyBorder;
 /* @test
  * @bug 8276849
  * @summary Update the window icon on DPI scale factor changes
- * @compile WindowIconUpdateOnDPIChangingTest.java
  * @run main/manual WindowIconUpdateOnDPIChangingTest
  */
 public class WindowIconUpdateOnDPIChangingTest {
