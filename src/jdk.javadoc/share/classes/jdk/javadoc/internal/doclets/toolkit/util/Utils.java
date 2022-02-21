@@ -901,30 +901,31 @@ public class Utils {
      */
     public Set<TypeMirror> getAllInterfaces(TypeElement te) {
         Set<TypeMirror> results = new LinkedHashSet<>();
-        getAllInterfaces(te.asType(), results);
+        addSuperInterfaces(te.asType(), results);
         return results;
     }
 
-    private void getAllInterfaces(TypeMirror type, Set<TypeMirror> results) {
-        List<? extends TypeMirror> intfacs = typeUtils.directSupertypes(type);
+    private void addSuperInterfaces(TypeMirror type, Set<TypeMirror> results) {
         TypeMirror superType = null;
-        for (TypeMirror intfac : intfacs) {
-            if (typeUtils.isSameType(intfac, getObjectType()))
+        for (TypeMirror t : typeUtils.directSupertypes(type)) {
+            if (typeUtils.isSameType(t, getObjectType()))
                 continue;
-            TypeElement e = asTypeElement(intfac);
+            TypeElement e = asTypeElement(t);
             if (isInterface(e)) {
-                if (isPublic(e) || isLinkable(e))
-                    results.add(intfac);
-
-                getAllInterfaces(intfac, results);
+                if (isPublic(e) || isLinkable(e)) {
+                    results.add(t);
+                }
+                addSuperInterfaces(t, results);
             } else {
+                // there can be at most one superclass and it is not null
+                assert superType == null && t != null : superType;
                 // Save the supertype for later.
-                superType = intfac;
+                superType = t;
             }
         }
         // Collect the super-interfaces of the supertype.
         if (superType != null)
-            getAllInterfaces(superType, results);
+            addSuperInterfaces(superType, results);
     }
 
     /**
