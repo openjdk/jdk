@@ -786,6 +786,7 @@ public:
     Flag_is_expensive                = 1 << 14,
     Flag_is_predicated_vector        = 1 << 15,
     Flag_for_post_loop_opts_igvn     = 1 << 16,
+    Flag_is_removed_by_peephole      = 1 << 17,
     _last_flag                       = Flag_for_post_loop_opts_igvn
   };
 
@@ -1263,8 +1264,8 @@ public:
   static void init_NodeProperty();
 
   #if OPTO_DU_ITERATOR_ASSERT
+  uint        _del_tick;               // Bumped when a deletion happens.
   const Node* _last_del;               // The last deleted node.
-  uint        _del_tick;               // Bumped when a deletion happens..
   #endif
 #endif
 };
