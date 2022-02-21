@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,7 @@ public class IRNode {
     public static final String STORE_D = START + "StoreD" + MID + END;
     public static final String STORE_P = START + "StoreP" + MID + END;
     public static final String STORE_N = START + "StoreN" + MID + END;
+    public static final String STORE_VECTOR = START + "StoreVector" + MID + END;
     public static final String STORE_OF_CLASS = COMPOSITE_PREFIX + START + "Store(B|C|S|I|L|F|D|P|N)" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
     public static final String STORE_B_OF_CLASS = COMPOSITE_PREFIX + START + "StoreB" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
     public static final String STORE_C_OF_CLASS = COMPOSITE_PREFIX + START + "StoreC" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
@@ -96,6 +97,7 @@ public class IRNode {
     public static final String LOAD_D = START + "LoadD" + MID + END;
     public static final String LOAD_P = START + "LoadP" + MID + END;
     public static final String LOAD_N = START + "LoadN" + MID + END;
+    public static final String LOAD_VECTOR = START + "LoadVector" + MID + END;
     public static final String LOAD_OF_CLASS = COMPOSITE_PREFIX + START + "Load(B|UB|S|US|I|L|F|D|P|N)" + MID + "@\\S*"+  IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
     public static final String LOAD_B_OF_CLASS = COMPOSITE_PREFIX + START + "LoadB" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
     public static final String LOAD_UB_OF_CLASS = COMPOSITE_PREFIX + START + "LoadUB" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
@@ -113,6 +115,7 @@ public class IRNode {
     public static final String LOOP   = START + "Loop" + MID + END;
     public static final String COUNTEDLOOP = START + "CountedLoop\\b" + MID + END;
     public static final String COUNTEDLOOP_MAIN = START + "CountedLoop\\b" + MID + "main" + END;
+    public static final String IF = START + "If\\b" + MID + END;
 
     public static final String CALL = START + "Call.*Java" + MID + END;
     public static final String CALL_OF_METHOD = COMPOSITE_PREFIX + START + "Call.*Java" + MID + IS_REPLACED + " " +  END;
@@ -133,14 +136,25 @@ public class IRNode {
     public static final String SCOPE_OBJECT = "(.*# ScObj.*" + END;
     public static final String MEMBAR = START + "MemBar" + MID + END;
 
+    public static final String ABS_I = START + "AbsI" + MID + END;
+    public static final String ABS_L = START + "AbsL" + MID + END;
+    public static final String ABS_F = START + "AbsF" + MID + END;
+    public static final String ABS_D = START + "AbsD" + MID + END;
     public static final String AND_I = START + "AndI" + MID + END;
     public static final String AND_L = START + "AndL" + MID + END;
+    public static final String XOR_I = START + "XorI" + MID + END;
+    public static final String XOR_L = START + "XorL" + MID + END;
     public static final String LSHIFT_I = START + "LShiftI" + MID + END;
     public static final String LSHIFT_L = START + "LShiftL" + MID + END;
     public static final String ADD_I = START + "AddI" + MID + END;
     public static final String ADD_L = START + "AddL" + MID + END;
+    public static final String ADD_VD = START + "AddVD" + MID + END;
     public static final String SUB_I = START + "SubI" + MID + END;
     public static final String SUB_L = START + "SubL" + MID + END;
+    public static final String SUB_F = START + "SubF" + MID + END;
+    public static final String SUB_D = START + "SubD" + MID + END;
+    public static final String MUL_I = START + "MulI" + MID + END;
+    public static final String MUL_L = START + "MulL" + MID + END;
     public static final String CONV_I2L = START + "ConvI2L" + MID + END;
 
     public static final String VECTOR_CAST_B2X = START + "VectorCastB2X" + MID + END;
@@ -149,6 +163,9 @@ public class IRNode {
     public static final String VECTOR_CAST_L2X = START + "VectorCastL2X" + MID + END;
     public static final String VECTOR_CAST_F2X = START + "VectorCastF2X" + MID + END;
     public static final String VECTOR_CAST_D2X = START + "VectorCastD2X" + MID + END;
+    public static final String VECTOR_UCAST_B2X = START + "VectorUCastB2X" + MID + END;
+    public static final String VECTOR_UCAST_S2X = START + "VectorUCastS2X" + MID + END;
+    public static final String VECTOR_UCAST_I2X = START + "VectorUCastI2X" + MID + END;
     public static final String VECTOR_REINTERPRET = START + "VectorReinterpret" + MID + END;
 
     /**

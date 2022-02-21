@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -824,7 +824,7 @@ public final class Files {
      * java.io.File#createTempFile(String,String,File)} method.
      *
      * <p> As with the {@code File.createTempFile} methods, this method is only
-     * part of a temporary-file facility. Where used as a <em>work files</em>,
+     * part of a temporary-file facility. Where used as a <em>work file</em>,
      * the resulting file may be opened using the {@link
      * StandardOpenOption#DELETE_ON_CLOSE DELETE_ON_CLOSE} option so that the
      * file is deleted when the appropriate {@code close} method is invoked.

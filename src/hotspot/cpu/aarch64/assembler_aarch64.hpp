@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
 #define CPU_AARCH64_ASSEMBLER_AARCH64_HPP
 
 #include "asm/register.hpp"
+#include "metaprogramming/enableIf.hpp"
 
 #ifdef __GNUC__
 
@@ -404,18 +405,11 @@ class Address {
     : _mode(no_mode) { }
   Address(Register r)
     : _base(r), _index(noreg), _offset(0), _mode(base_plus_offset), _target(0) { }
-  Address(Register r, int o)
-    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
-  Address(Register r, long o)
-    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
-  Address(Register r, long long o)
-    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
-  Address(Register r, unsigned int o)
-    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
-  Address(Register r, unsigned long o)
-    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
-  Address(Register r, unsigned long long o)
-    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
+
+  template<typename T, ENABLE_IF(std::is_integral<T>::value)>
+  Address(Register r, T o)
+    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) {}
+
   Address(Register r, ByteSize disp)
     : Address(r, in_bytes(disp)) { }
   Address(Register r, Register r1, extend ext = lsl())
@@ -1726,7 +1720,7 @@ void mvnw(Register Rd, Register Rm,
 
 #define INSN(NAME, op)                                                  \
   void NAME(Register Rn, Register Rm, int imm, Condition cond) {        \
-    int regNumber = (Rm == zr ? 31 : (uintptr_t)Rm);                    \
+    int regNumber = (Rm == zr ? 31 : Rm->encoding());                   \
     conditional_compare(op, 0, 0, 0, Rn, regNumber, imm, cond);         \
   }                                                                     \
                                                                         \
@@ -2424,6 +2418,12 @@ public:
   INSN(cnt,    0, 0b100000010110, 0); // accepted arrangements: T8B, T16B
   INSN(uaddlp, 1, 0b100000001010, 2); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
   INSN(uaddlv, 1, 0b110000001110, 1); // accepted arrangements: T8B, T16B, T4H, T8H,      T4S
+  // Zero compare.
+  INSN(cmeq,   0, 0b100000100110, 3); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
+  INSN(cmge,   1, 0b100000100010, 3); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
+  INSN(cmgt,   0, 0b100000100010, 3); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
+  INSN(cmle,   1, 0b100000100110, 3); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
+  INSN(cmlt,   0, 0b100000101010, 3); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
 
 #undef INSN
 
@@ -3045,6 +3045,7 @@ public:
   INSN(sve_and,  0b00000100, 0b011010000); // vector and
   INSN(sve_andv, 0b00000100, 0b011010001); // bitwise and reduction to scalar
   INSN(sve_asr,  0b00000100, 0b010000100); // vector arithmetic shift right
+  INSN(sve_bic,  0b00000100, 0b011011000); // vector bitwise clear
   INSN(sve_cnt,  0b00000100, 0b011010101); // count non-zero bits
   INSN(sve_cpy,  0b00000101, 0b100000100); // copy scalar to each active vector element
   INSN(sve_eor,  0b00000100, 0b011001000); // vector eor

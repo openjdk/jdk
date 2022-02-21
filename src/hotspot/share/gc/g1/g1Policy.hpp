@@ -382,7 +382,7 @@ public:
   // This must be called at the very beginning of an evacuation pause.
   void decide_on_concurrent_start_pause();
 
-  size_t young_list_target_length() const { return _young_list_target_length; }
+  uint young_list_target_length() const { return _young_list_target_length; }
 
   bool should_allocate_mutator_region() const;
 

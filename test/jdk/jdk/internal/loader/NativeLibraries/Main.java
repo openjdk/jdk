@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,13 @@
 
 /*
  * @test
- * @bug 8240975
+ * @bug 8240975 8281335
  * @modules java.base/jdk.internal.loader
  * @build java.base/* p.Test Main
  * @run main/othervm/native -Xcheck:jni Main
  * @summary Test loading and unloading of native libraries
  */
 
-import jdk.internal.loader.*;
 import jdk.internal.loader.NativeLibrariesTest;
 
 import java.io.IOException;
@@ -42,6 +41,7 @@ public class Main {
     public static void main(String... args) throws Exception {
         setup();
 
+        // Verify a native library from test.nativepath
         NativeLibrariesTest test = new NativeLibrariesTest();
         test.runTest();
 
@@ -53,10 +53,11 @@ public class Main {
         test.unload();
         System.loadLibrary(NativeLibrariesTest.LIB_NAME);
 
-        // expect NativeLibraries to fail since the library has been loaded by System::loadLibrary
-        try {
-            test.load(false);
-        } catch (UnsatisfiedLinkError e) { e.printStackTrace(); }
+        // expect NativeLibraries to succeed even the library has been loaded by System::loadLibrary
+        test.load(true);
+
+        // load zip library from JDK
+        test.load(System.mapLibraryName("zip"));
     }
     /*
      * move p/Test.class out from classpath to the scratch directory

@@ -122,13 +122,13 @@ public class HttpClient extends NetworkClient {
                                          recomputing the value of keepingAlive */
     int keepAliveConnections = -1;    /* number of keep-alives left */
 
-    /**Idle timeout value, in milliseconds. Zero means infinity,
-     * iff keepingAlive=true.
-     * Unfortunately, we can't always believe this one.  If I'm connected
-     * through a Netscape proxy to a server that sent me a keep-alive
-     * time of 15 sec, the proxy unilaterally terminates my connection
-     * after 5 sec.  So we have to hard code our effective timeout to
-     * 4 sec for the case where we're using a proxy. *SIGH*
+    /*
+     * The timeout if specified by the server. Following values possible
+     *  0: the server specified no keep alive headers
+     * -1: the server provided "Connection: keep-alive" but did not specify a
+     *     a particular time in a "Keep-Alive:" headers
+     * Positive values are the number of seconds specified by the server
+     * in a "Keep-Alive" header
      */
     int keepAliveTimeout = 0;
 
@@ -144,10 +144,25 @@ public class HttpClient extends NetworkClient {
     // Traffic capture tool, if configured. See HttpCapture class for info
     private HttpCapture capture = null;
 
+    /* "jdk.https.negotiate.cbt" property can be set to "always" (always sent), "never" (never sent) or
+     * "domain:a,c.d,*.e.f" (sent to host a, or c.d or to the domain e.f and any of its subdomains). This is
+     * a comma separated list of arbitrary length with no white-space allowed.
+     * If enabled (for a particular destination) then Negotiate/SPNEGO authentication requests will include
+     * a channel binding token for the destination server. The default behavior and setting for the
+     * property is "never"
+     */
+    private static final String spnegoCBT;
+
     private static final PlatformLogger logger = HttpURLConnection.getHttpLogger();
+
     private static void logFinest(String msg) {
         if (logger.isLoggable(PlatformLogger.Level.FINEST)) {
             logger.finest(msg);
+        }
+    }
+    private static void logError(String msg) {
+        if (logger.isLoggable(PlatformLogger.Level.SEVERE)) {
+            logger.severe(msg);
         }
     }
 
@@ -165,12 +180,27 @@ public class HttpClient extends NetworkClient {
         return keepAliveTimeout;
     }
 
+    static String normalizeCBT(String s) {
+        if (s == null || s.equals("never")) {
+            return "never";
+        }
+        if (s.equals("always") || s.startsWith("domain:")) {
+            return s;
+        } else {
+            logError("Unexpected value for \"jdk.https.negotiate.cbt\" system property");
+            return "never";
+        }
+    }
+
     static {
         Properties props = GetPropertyAction.privilegedGetProperties();
         String keepAlive = props.getProperty("http.keepAlive");
         String retryPost = props.getProperty("sun.net.http.retryPost");
         String cacheNTLM = props.getProperty("jdk.ntlm.cache");
         String cacheSPNEGO = props.getProperty("jdk.spnego.cache");
+
+        String s = props.getProperty("jdk.https.negotiate.cbt");
+        spnegoCBT = normalizeCBT(s);
 
         if (keepAlive != null) {
             keepAliveProp = Boolean.parseBoolean(keepAlive);
@@ -205,6 +235,9 @@ public class HttpClient extends NetworkClient {
         return keepAliveProp;
     }
 
+    public String getSpnegoCBT() {
+        return spnegoCBT;
+    }
 
     protected HttpClient() {
     }
@@ -864,7 +897,7 @@ public class HttpClient extends NetworkClient {
                             responses.findValue("Keep-Alive"));
                         /* default should be larger in case of proxy */
                         keepAliveConnections = p.findInt("max", usingProxy?50:5);
-                        keepAliveTimeout = p.findInt("timeout", usingProxy?60:5);
+                        keepAliveTimeout = p.findInt("timeout", -1);
                     }
                 } else if (b[7] != '0') {
                     /*
@@ -1115,6 +1148,10 @@ public class HttpClient extends NetworkClient {
         } else {
             return ((InetSocketAddress)proxy.address()).getHostString();
         }
+    }
+
+    public boolean getUsingProxy() {
+        return usingProxy;
     }
 
     /**

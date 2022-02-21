@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,13 +144,9 @@ public:
   void load_vector_mask(XMMRegister dst, XMMRegister src, int vlen_in_bytes, BasicType elem_bt, bool is_legacy);
   void load_vector_mask(KRegister dst, XMMRegister src, XMMRegister xtmp, Register tmp, bool novlbwdq, int vlen_enc);
 
+  void load_vector(XMMRegister dst, Address src, int vlen_in_bytes);
+  void load_vector(XMMRegister dst, AddressLiteral src, int vlen_in_bytes, Register rscratch = rscratch1);
   void load_iota_indices(XMMRegister dst, Register scratch, int vlen_in_bytes);
-
-  // vector compare
-  void vpcmpu(BasicType typ, XMMRegister dst, XMMRegister src1, XMMRegister src2, ComparisonPredicate comparison, int vlen_in_bytes,
-              XMMRegister vtmp1, XMMRegister vtmp2, Register scratch);
-  void vpcmpu32(BasicType typ, XMMRegister dst, XMMRegister src1, XMMRegister src2, ComparisonPredicate comparison, int vlen_in_bytes,
-                XMMRegister vtmp1, XMMRegister vtmp2, XMMRegister vtmp3, Register scratch);
 
   // Reductions for vectors of bytes, shorts, ints, longs, floats, and doubles.
 
@@ -234,6 +230,12 @@ public:
                               Register rtmp2, XMMRegister xtmp, int mask_len, int vec_enc);
 #endif
 
+  void vector_maskall_operation(KRegister dst, Register src, int mask_len);
+
+#ifndef _LP64
+  void vector_maskall_operation32(KRegister dst, Register src, KRegister ktmp, int mask_len);
+#endif
+
   void string_indexof_char(Register str1, Register cnt1, Register ch, Register result,
                            XMMRegister vec1, XMMRegister vec2, XMMRegister vec3, Register tmp);
 
@@ -305,4 +307,14 @@ public:
   void vector_castD2L_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
                            KRegister ktmp1, KRegister ktmp2, AddressLiteral double_sign_flip,
                            Register scratch, int vec_enc);
+
+  void vector_unsigned_cast(XMMRegister dst, XMMRegister src, int vlen_enc,
+                            BasicType from_elem_bt, BasicType to_elem_bt);
+
+  void evpternlog(XMMRegister dst, int func, KRegister mask, XMMRegister src2, XMMRegister src3,
+                  bool merge, BasicType bt, int vlen_enc);
+
+  void evpternlog(XMMRegister dst, int func, KRegister mask, XMMRegister src2, Address src3,
+                  bool merge, BasicType bt, int vlen_enc);
+
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP

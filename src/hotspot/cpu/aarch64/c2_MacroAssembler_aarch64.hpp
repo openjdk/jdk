@@ -32,8 +32,7 @@
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
                       Register tmp1, Register tmp2, FloatRegister vtmp1,
-                      FloatRegister vtmp2, FloatRegister vtmp3,
-                      PRegister pgtmp1, PRegister pgtmp2, int ae);
+                      FloatRegister vtmp2, FloatRegister vtmp3, int ae);
 
   void string_indexof(Register str1, Register str2,
                       Register cnt1, Register cnt2,
@@ -87,6 +86,10 @@
 
   void sve_reduce_integral(int opc, Register dst, BasicType bt, Register src1,
                            FloatRegister src2, PRegister pg, FloatRegister tmp);
+
+  // Set elements of the dst predicate to true if the element number is
+  // in the range of [0, lane_cnt), or to false otherwise.
+  void sve_ptrue_lanecnt(PRegister dst, SIMD_RegVariant size, int lane_cnt);
 
   // Generate predicate through whilelo, by comparing ZR with an unsigned
   // immediate. rscratch1 will be clobbered.

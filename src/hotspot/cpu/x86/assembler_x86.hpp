@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -377,7 +377,7 @@ class AddressLiteral {
  private:
 
   address target() { return _target; }
-  bool is_lval() { return _is_lval; }
+  bool is_lval() const { return _is_lval; }
 
   relocInfo::relocType reloc() const { return _rspec.type(); }
   const RelocationHolder& rspec() const { return _rspec; }
@@ -1467,6 +1467,7 @@ private:
   void movb(Register dst, Address src);
 
   void movddup(XMMRegister dst, XMMRegister src);
+  void vmovddup(XMMRegister dst, Address src, int vector_len);
 
   void kandbl(KRegister dst, KRegister src1, KRegister src2);
   void kandwl(KRegister dst, KRegister src1, KRegister src2);
@@ -1510,12 +1511,15 @@ private:
 
   void kxnorbl(KRegister dst, KRegister src1, KRegister src2);
   void kshiftlbl(KRegister dst, KRegister src, int imm8);
+  void kshiftlql(KRegister dst, KRegister src, int imm8);
   void kshiftrbl(KRegister dst, KRegister src, int imm8);
   void kshiftrwl(KRegister dst, KRegister src, int imm8);
   void kshiftrdl(KRegister dst, KRegister src, int imm8);
   void kshiftrql(KRegister dst, KRegister src, int imm8);
   void ktestq(KRegister src1, KRegister src2);
   void ktestd(KRegister src1, KRegister src2);
+  void kunpckdql(KRegister dst, KRegister src1, KRegister src2);
+
 
   void ktestql(KRegister dst, KRegister src);
   void ktestdl(KRegister dst, KRegister src);
@@ -1818,12 +1822,14 @@ private:
   void pmovzxbw(XMMRegister dst, XMMRegister src);
   void pmovzxbw(XMMRegister dst, Address src);
   void pmovzxbd(XMMRegister dst, XMMRegister src);
-  void vpmovzxbw( XMMRegister dst, Address src, int vector_len);
-  void pmovzxdq(XMMRegister dst, XMMRegister src);
+  void vpmovzxbw(XMMRegister dst, Address src, int vector_len);
   void vpmovzxbw(XMMRegister dst, XMMRegister src, int vector_len);
-  void vpmovzxdq(XMMRegister dst, XMMRegister src, int vector_len);
   void vpmovzxbd(XMMRegister dst, XMMRegister src, int vector_len);
   void vpmovzxbq(XMMRegister dst, XMMRegister src, int vector_len);
+  void vpmovzxwd(XMMRegister dst, XMMRegister src, int vector_len);
+  void vpmovzxwq(XMMRegister dst, XMMRegister src, int vector_len);
+  void pmovzxdq(XMMRegister dst, XMMRegister src);
+  void vpmovzxdq(XMMRegister dst, XMMRegister src, int vector_len);
   void evpmovzxbw(XMMRegister dst, KRegister mask, Address src, int vector_len);
 
   // Sign extend moves
@@ -1840,9 +1846,6 @@ private:
 
   void evpmovwb(Address dst, XMMRegister src, int vector_len);
   void evpmovwb(Address dst, KRegister mask, XMMRegister src, int vector_len);
-
-  void vpmovzxwd(XMMRegister dst, XMMRegister src, int vector_len);
-
   void evpmovdb(Address dst, XMMRegister src, int vector_len);
 
   // Multiply add
@@ -1866,6 +1869,7 @@ private:
   void popcntl(Register dst, Register src);
 
   void vpopcntd(XMMRegister dst, XMMRegister src, int vector_len);
+  void vpopcntq(XMMRegister dst, XMMRegister src, int vector_len);
 
 #ifdef _LP64
   void popcntq(Register dst, Address src);
@@ -2409,6 +2413,12 @@ private:
   void evprorq(XMMRegister dst, KRegister mask, XMMRegister src, int shift, bool merge, int vector_len);
   void evprorvd(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
   void evprorvq(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
+
+  void evpternlogd(XMMRegister dst, int imm8, KRegister mask, XMMRegister src2, XMMRegister src3, bool merge, int vector_len);
+  void evpternlogd(XMMRegister dst, int imm8, KRegister mask, XMMRegister src2, Address src3, bool merge, int vector_len);
+  void evpternlogq(XMMRegister dst, int imm8, KRegister mask, XMMRegister src2, XMMRegister src3, bool merge, int vector_len);
+  void evpternlogq(XMMRegister dst, int imm8, KRegister mask, XMMRegister src2, Address src3, bool merge, int vector_len);
+
 
   // Sub packed integers
   void psubb(XMMRegister dst, XMMRegister src);

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -811,7 +811,10 @@ AC_DEFUN([JDKOPT_BUILD_BINUTILS],
 AC_DEFUN_ONCE([JDKOPT_SETUP_HSDIS],
 [
   AC_ARG_WITH([hsdis], [AS_HELP_STRING([--with-hsdis],
-      [what hsdis backend to use ('none', 'binutils') @<:@none@:>@])])
+      [what hsdis backend to use ('none', 'capstone', 'binutils') @<:@none@:>@])])
+
+  AC_ARG_WITH(capstone, [AS_HELP_STRING([--with-capstone],
+      [where to find the Capstone files needed for hsdis/capstone])])
 
   AC_ARG_WITH([binutils], [AS_HELP_STRING([--with-binutils],
       [where to find the binutils files needed for hsdis/binutils])])
@@ -826,6 +829,41 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_HSDIS],
   elif test "x$with_hsdis" = xnone || test "x$with_hsdis" = xno || test "x$with_hsdis" = x; then
     HSDIS_BACKEND=none
     AC_MSG_RESULT(['none', hsdis will not be built])
+  elif test "x$with_hsdis" = xcapstone; then
+    HSDIS_BACKEND=capstone
+    AC_MSG_RESULT(['capstone'])
+
+    if test "x$with_capstone" != x; then
+      AC_MSG_CHECKING([for capstone])
+      CAPSTONE="$with_capstone"
+      AC_MSG_RESULT([$CAPSTONE])
+
+      HSDIS_CFLAGS="-I${CAPSTONE}/include/capstone"
+      if test "x$OPENJDK_TARGET_OS" != xwindows; then
+        HSDIS_LDFLAGS="-L${CAPSTONE}/lib"
+        HSDIS_LIBS="-lcapstone"
+      else
+        HSDIS_LDFLAGS="-nodefaultlib:libcmt.lib"
+        HSDIS_LIBS="${CAPSTONE}/capstone.lib"
+      fi
+    else
+      if test "x$OPENJDK_TARGET_OS" = xwindows; then
+        # There is no way to auto-detect capstone on Windowos
+        AC_MSG_NOTICE([You must specify capstone location using --with-capstone=<path>])
+        AC_MSG_ERROR([Cannot continue])
+      fi
+
+      PKG_CHECK_MODULES(CAPSTONE, capstone, [CAPSTONE_FOUND=yes], [CAPSTONE_FOUND=no])
+      if test "x$CAPSTONE_FOUND" = xyes; then
+        HSDIS_CFLAGS="$CAPSTONE_CFLAGS"
+        HSDIS_LDFLAGS="$CAPSTONE_LDFLAGS"
+        HSDIS_LIBS="$CAPSTONE_LIBS"
+      else
+        HELP_MSG_MISSING_DEPENDENCY([capstone])
+        AC_MSG_NOTICE([Cannot locate capstone which is needed for hsdis/capstone. Try using --with-capstone=<path>. $HELP_MSG])
+        AC_MSG_ERROR([Cannot continue])
+      fi
+    fi
   elif test "x$with_hsdis" = xbinutils; then
     HSDIS_BACKEND=binutils
     AC_MSG_RESULT(['binutils'])
@@ -847,11 +885,13 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_HSDIS],
       AC_CHECK_LIB(opcodes, disassembler, [ HSDIS_LIBS="$HSDIS_LIBS -lopcodes" ], [ binutils_system_error="libopcodes not found" ])
       AC_CHECK_LIB(iberty, xmalloc, [ HSDIS_LIBS="$HSDIS_LIBS -liberty" ], [ binutils_system_error="libiberty not found" ])
       AC_CHECK_LIB(z, deflate, [ HSDIS_LIBS="$HSDIS_LIBS -lz" ], [ binutils_system_error="libz not found" ])
+      HSDIS_CFLAGS="-DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB"
     elif test "x$BINUTILS_DIR" != x; then
       if test -e $BINUTILS_DIR/bfd/libbfd.a && \
           test -e $BINUTILS_DIR/opcodes/libopcodes.a && \
           test -e $BINUTILS_DIR/libiberty/libiberty.a; then
         HSDIS_CFLAGS="-I$BINUTILS_DIR/include -I$BINUTILS_DIR/bfd -DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB"
+        HSDIS_LDFLAGS=""
         HSDIS_LIBS="$BINUTILS_DIR/bfd/libbfd.a $BINUTILS_DIR/opcodes/libopcodes.a $BINUTILS_DIR/libiberty/libiberty.a $BINUTILS_DIR/zlib/libz.a"
       fi
     fi
@@ -864,7 +904,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_HSDIS],
           AC_MSG_ERROR([binutils on system is supported for Linux only])
         elif test "x$binutils_system_error" = x; then
           AC_MSG_RESULT([system])
-          HSDIS_CFLAGS="-DSYSTEM_BINUTILS"
+          HSDIS_CFLAGS="$HSDIS_CFLAGS -DSYSTEM_BINUTILS"
         else
           AC_MSG_RESULT([invalid])
           AC_MSG_ERROR([$binutils_system_error])
@@ -894,5 +934,6 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_HSDIS],
 
   AC_SUBST(HSDIS_BACKEND)
   AC_SUBST(HSDIS_CFLAGS)
+  AC_SUBST(HSDIS_LDFLAGS)
   AC_SUBST(HSDIS_LIBS)
 ])

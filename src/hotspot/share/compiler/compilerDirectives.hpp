@@ -67,6 +67,7 @@
 NOT_PRODUCT(cflags(TraceOptoPipelining, bool, TraceOptoPipelining, TraceOptoPipelining)) \
 NOT_PRODUCT(cflags(TraceOptoOutput,     bool, TraceOptoOutput, TraceOptoOutput)) \
 NOT_PRODUCT(cflags(PrintIdeal,          bool, PrintIdeal, PrintIdeal)) \
+NOT_PRODUCT(cflags(PrintIdealPhase,     ccstrlist, "", PrintIdealPhase)) \
     cflags(TraceSpilling,           bool, TraceSpilling, TraceSpilling) \
     cflags(Vectorize,               bool, false, Vectorize) \
     cflags(CloneMapDebug,           bool, false, CloneMapDebug) \
@@ -107,6 +108,7 @@ private:
   InlineMatcher* _inlinematchers;
   CompilerDirectives* _directive;
   TriBoolArray<(size_t)vmIntrinsics::number_of_intrinsics(), int> _intrinsic_control_words;
+  uint64_t _ideal_phase_name_mask;
 
 public:
   DirectiveSet(CompilerDirectives* directive);
@@ -136,7 +138,6 @@ public:
 
  private:
   bool _modified[number_of_flags]; // Records what options where set by a directive
-
  public:
 #define flag_store_definition(name, type, dvalue, cc_flag) type name##Option;
   compilerdirectives_common_flags(flag_store_definition)
@@ -148,6 +149,9 @@ public:
   compilerdirectives_common_flags(set_function_definition)
   compilerdirectives_c2_flags(set_function_definition)
   compilerdirectives_c1_flags(set_function_definition)
+
+  void set_ideal_phase_mask(uint64_t mask) { _ideal_phase_name_mask = mask; };
+  uint64_t ideal_phase_mask() { return _ideal_phase_name_mask; };
 
   void print_intx(outputStream* st, ccstr n, intx v, bool mod) { if (mod) { st->print("%s:" INTX_FORMAT " ", n, v); } }
   void print_uintx(outputStream* st, ccstr n, intx v, bool mod) { if (mod) { st->print("%s:" UINTX_FORMAT " ", n, v); } }
