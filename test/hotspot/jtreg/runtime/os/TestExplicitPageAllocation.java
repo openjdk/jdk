@@ -21,17 +21,22 @@
  * questions.
  */
 
+package runtime.os;
+
 /* @test
  * @bug 8271195
  * @summary Use largest available large page size smaller than LargePageSizeInBytes when available.
  * @requires os.family == "linux"
  * @requires vm.gc != "Z"
- * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver runtime.os.TestExplicitPageAllocation
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm
+ *      -Xbootclasspath/a:.
+ *      -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+WhiteBoxAPI
+ *      runtime.os.TestExplicitPageAllocation
  */
-
-package runtime.os;
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -48,17 +53,12 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.Scanner;
 import java.io.FileWriter;
-
-class MyClass {
-    public static void main(String args[]) {
-    System.out.println("Inside MyClass");
-    }
-}
+import jdk.test.whitebox.WhiteBox;
 
 public class TestExplicitPageAllocation {
 
     private static final String DIR_HUGE_PAGES = "/sys/kernel/mm/hugepages/";
-    private static final int HEAP_SIZE_IN_KB = 2097152;
+    private static final int HEAP_SIZE_IN_KB = 1 * 1024 *1024;
 
     private static final Pattern HEAP_PATTERN = Pattern.compile("Heap:");
     private static final Pattern PAGE_SIZE_PATTERN = Pattern.compile(".*page_size=([^ ]+).*");
@@ -68,15 +68,16 @@ public class TestExplicitPageAllocation {
     private static DataInputStream dis;
     private static String errorMessage = null;
 
-    private static final int SIZE=32;
-    private static boolean[] pageSizes = new boolean[SIZE];
-    private static int[] pageCount = new int[SIZE];
+    private static final int MAX_NUMBER_OF_PAGESIZE=64;
+    private static boolean[] pageSizes = new boolean[MAX_NUMBER_OF_PAGESIZE];
+    private static int[] pageCount = new int[MAX_NUMBER_OF_PAGESIZE];
     private static int vmPageSizeIndex;
+    private static final WhiteBox wb = WhiteBox.getWhiteBox();
 
     public static void main(String args[]) {
         try {
             doSetup();
-            for (int i = 31;i > vmPageSizeIndex;i--) {
+            for (int i = MAX_NUMBER_OF_PAGESIZE-1;i > vmPageSizeIndex;i--) {
                 if (pageSizes[i]) {
                     testCase(i);
                     break;
@@ -126,7 +127,7 @@ public class TestExplicitPageAllocation {
 
     public static int checkAndReadFile(String filename, String pageSize) throws Exception {
         fis = new FileInputStream(filename);
-        dis = new DataInputStream(fis);
+        dis = new DataInputStream(fis)
         int pagecount = Integer.parseInt(dis.readLine());
         dis.close();
         fis.close();
@@ -141,33 +142,17 @@ public class TestExplicitPageAllocation {
             Matcher matcher = HUGEPAGE_PATTERN.matcher(pageSizeFileName);
             matcher.find();
             String pageSize = matcher.group(1);
-
-            if (pageSize != null) {
-                int freePageCount = checkAndReadFile(DIR_HUGE_PAGES+pageSizeFileName+"/free_hugepages", pageSize);
-                int resvPageCount = checkAndReadFile(DIR_HUGE_PAGES+pageSizeFileName+"/resv_hugepages", pageSize);
-
-                int availablePages = freePageCount - resvPageCount;
-                if (availablePages >= 0) {
-                    System.out.println("Number of available "+pageSize+"kB pages = "+availablePages);
-                } else {
-                    System.out.println("System does not support"+pageSize+"kB pages");
-                    continue;
-                }
-
-                int index = Integer.numberOfTrailingZeros(Integer.parseInt(pageSize)*1024);
-                pageSizes[index] = true;
-                pageCount[index] = availablePages;
+            assert pageSize != null;
+            int availablePages = checkAndReadFile(DIR_HUGE_PAGES+pageSizeFileName+"/free_hugepages", pageSize);
+            if (availablePages == 0) {
+                System.out.println("No Pages configured for "+pageSize+"kB");
             }
+            int index = Integer.numberOfTrailingZeros(Integer.parseInt(pageSize)*1024);
+            pageSizes[index] = true;
+            pageCount[index] = availablePages;
         }
         // OS vm page size
-        ProcessBuilder processBuilder = new ProcessBuilder();
-        processBuilder.command("getconf", "PAGE_SIZE");
-        Process process = processBuilder.start();
-        StringBuilder output = new StringBuilder();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-        String vmPageSize = reader.readLine();
-
-        vmPageSizeIndex = Integer.numberOfTrailingZeros(Integer.parseInt(vmPageSize));
+        vmPageSizeIndex = Integer.numberOfTrailingZeros(wb.getVMPageSize());
         pageSizes[vmPageSizeIndex] = true;
         pageCount[vmPageSizeIndex] = Integer.MAX_VALUE;
     }
@@ -180,10 +165,9 @@ public class TestExplicitPageAllocation {
                                                                   "-XX:+UseLargePages",
                                                                   "-Xmx2g",
                                                                   "-Xms1g",
-                                                                  MyClass.class.getName());
+                                                                  "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
-
         for (int i = index;i >= vmPageSizeIndex;i--) {
             if(pageSizes[i]) {
                 String size = sizeFromIndex(i);
@@ -198,6 +182,7 @@ public class TestExplicitPageAllocation {
                     break;
                 }
             }
+
         }
 
         if (errorMessage!=null) {
