@@ -65,7 +65,7 @@ public class LastVisibleRow {
                         createAndShowGUI();
                     } catch (Exception e) {
                         e.printStackTrace();
-						throw new RuntimeException("Exception while creating UI");
+                        throw new RuntimeException("Exception while creating UI");
                     }
                 }
             });
