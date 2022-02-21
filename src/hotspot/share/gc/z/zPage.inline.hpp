@@ -225,6 +225,11 @@ inline uintptr_t ZPage::local_offset(zoffset offset) const {
   return offset - start();
 }
 
+inline uintptr_t ZPage::local_offset(zoffset_end offset) const {
+  assert(offset <= end(), "Wrong offset");
+  return offset - start();
+}
+
 inline uintptr_t ZPage::local_offset(zaddress addr) const {
   const zoffset offset = ZAddress::offset(addr);
   return local_offset(offset);
@@ -350,41 +355,37 @@ inline void ZPage::object_iterate(Function function) {
 inline void ZPage::remember(volatile zpointer* p) {
   const zaddress addr = to_zaddress((uintptr_t)p);
   const uintptr_t l_offset = local_offset(addr);
-  _remembered_set.set(l_offset);
+  _remembered_set.set_current(l_offset);
 }
 
-inline void ZPage::clear_current_remset_non_par(uintptr_t l_offset) {
-  _remembered_set.unset_current_non_par(l_offset);
+inline void ZPage::clear_remset_bit_non_par_current(uintptr_t l_offset) {
+  _remembered_set.unset_non_par_current(l_offset);
 }
 
-inline void ZPage::clear_previous_remset_non_par(uintptr_t l_offset) {
-  _remembered_set.unset_previous_non_par(l_offset);
+inline void ZPage::clear_remset_range_non_par_current(uintptr_t l_offset, size_t size) {
+  _remembered_set.unset_range_non_par_current(l_offset, size);
 }
 
-inline void ZPage::clear_current_remset_range_non_par(uintptr_t l_offset, size_t size) {
-  _remembered_set.unset_current_range_non_par(l_offset, size);
+inline void ZPage::remset_mark_dirty() {
+  _remembered_set.dirty();
 }
 
-inline void ZPage::clear_previous_remset_range_non_par(uintptr_t l_offset, size_t size) {
-  _remembered_set.unset_previous_range_non_par(l_offset, size);
+inline ZRememberedSetReverseIterator ZPage::remset_reverse_iterator_previous() {
+  return _remembered_set.iterator_reverse_previous();
 }
 
-inline ZRememberedSetReverseIterator ZPage::remset_reverse_iterator() {
-  return _remembered_set.iterator_reverse();
+inline ZRememberedSetIterator ZPage::remset_iterator_limited_current(uintptr_t l_offset, size_t size) {
+  return _remembered_set.iterator_limited_current(l_offset, size);
 }
 
-inline ZRememberedSetIterator ZPage::remset_iterator_current_limited(uintptr_t l_offset, size_t size) {
-  return _remembered_set.iterator_current_limited(l_offset, size);
-}
-
-inline ZRememberedSetIterator ZPage::remset_iterator_previous_limited(uintptr_t l_offset, size_t size) {
-  return _remembered_set.iterator_previous_limited(l_offset, size);
+inline ZRememberedSetIterator ZPage::remset_iterator_limited_previous(uintptr_t l_offset, size_t size) {
+  return _remembered_set.iterator_limited_previous(l_offset, size);
 }
 
 inline bool ZPage::is_remembered(volatile zpointer* p) {
   const zaddress addr = to_zaddress((uintptr_t)p);
   const uintptr_t l_offset = local_offset(addr);
-  return _remembered_set.get(l_offset);
+  return _remembered_set.at_current(l_offset);
 }
 
 inline zaddress_unsafe ZPage::find_base(volatile zpointer* p) {
@@ -405,7 +406,7 @@ inline zaddress_unsafe ZPage::find_base(volatile zpointer* p) {
 
 template <typename Function>
 inline void ZPage::oops_do_remembered(Function function) {
-  _remembered_set.iterate([&](uintptr_t local_offset) {
+  _remembered_set.iterate_previous([&](uintptr_t local_offset) {
     const zoffset offset = start() + local_offset;
     const zaddress addr = ZOffset::address(offset);
 

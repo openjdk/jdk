@@ -55,8 +55,8 @@ bool ZForwarding::claim() {
   return Atomic::cmpxchg(&_claimed, false, true) == false;
 }
 
-void ZForwarding::in_place_relocation_start() {
-  _page->log_msg(" In-place reloc start");
+void ZForwarding::in_place_relocation_start(zoffset relocated_watermark) {
+  _page->log_msg(" In-place reloc start  - relocated to: " PTR_FORMAT, untype(relocated_watermark));
 
   _in_place = true;
 
@@ -71,14 +71,6 @@ void ZForwarding::in_place_relocation_finish() {
 
   _page->log_msg(" In-place reloc finish - top at start: " PTR_FORMAT, untype(_in_place_top_at_start));
 
-  if (_from_age == ZPageAge::old && _to_age == ZPageAge::old) {
-    // The old to old relocation reused the ZPage
-    // It took ownership of clearing and updating the remset up to,
-    // and including, the last from object. Clear the rest.
-    in_place_relocation_clear_remset_up_to(_in_place_top_at_start - _page->start());
-
-  }
-
   if (_from_age == ZPageAge::old || _to_age != ZPageAge::old) {
     // Only do this for non-promoted pages, that still need to reset live map.
     // Done with iterating over the "from-page" view, so can now drop the _livemap.
@@ -92,23 +84,6 @@ void ZForwarding::in_place_relocation_finish() {
 bool ZForwarding::in_place_relocation_is_below_top_at_start(zoffset offset) const {
   // Only the relocating thread is allowed to know about the old relocation top.
   return Atomic::load(&_in_place_thread) == Thread::current() && offset < _in_place_top_at_start;
-}
-
-void ZForwarding::in_place_relocation_clear_remset_up_to(uintptr_t local_offset) const {
-  const size_t size = local_offset - _in_place_clear_remset_watermark;
-  if (size > 0) {
-    _page->log_msg(" In-place clear  : " PTR_FORMAT, untype(_page->start() + local_offset));
-    if (ZGeneration::young()->is_phase_mark()) {
-      _page->clear_previous_remset_range_non_par(_in_place_clear_remset_watermark, size);
-    } else {
-      _page->clear_current_remset_range_non_par(_in_place_clear_remset_watermark, size);
-    }
-  }
-}
-
-void ZForwarding::in_place_relocation_set_clear_remset_watermark(uintptr_t local_offset) {
-  _page->log_msg(" In-place cleared: " PTR_FORMAT, untype(_page->start() + local_offset));
-  _in_place_clear_remset_watermark = local_offset;
 }
 
 bool ZForwarding::retain_page() {
@@ -257,9 +232,11 @@ void ZForwarding::abort_page() {
 // 0: Starting state - neither OC nor YC has stated their intentions
 // 1: The OC has completed relocating all objects, and published an array
 //    of all to-space fields that should have a remembered set entry.
-// 2: The YC found a forwarding/page that had not yet been fully relocated.
-//    It ignored whatever fields the OC was collecting, and started figuring
-//    it out itself.
+// 2: The OC relocation of the page happened concurrentely with the YC
+//    remset scanning. Two situations:
+//    a) The page had not been released yet: The YC eagerly relocated and scanned
+//    the to-space objects with remset entries.
+//    b) The page had been released: The YC accepts the array published in (1).
 // 3: The YC found that the forwarding/page had already been relocated when
 //    the YC started.
 //
@@ -274,43 +251,56 @@ void ZForwarding::abort_page() {
 //  3 ->   - Invalid state - will not happen
 //
 // When the YC fails to retain the page the state transitions are:
-// 0 -> 3 - The page was relocated before the YC started
-// 1 -> 3 - The OC completed relocation before YC visited this forwarding.
+// 0 -> x - The page was relocated before the YC started
+// 1 -> x - The OC completed relocation before YC visited this forwarding.
 //          The YC will use the remembered set info collected by the OC.
-// 2 -> 3 - A previous YC has already handled the remembered set info
-// 3 -> 3 - See above
+// 2 -> x - A previous YC has already handled the remembered set info
+// 3 -> x - See above
+//
+// x is:
+//  2 - if the relocation finished while the current YC was running
+//  3 - if the relocation finished before the current YC started
+//
+// Note the subtlety that even though the relocation could released the page
+// and made it non-retainable, the relocation code might not have gotten to
+// the point where the page is removed from the page table. It could also be
+// the case that the relocated page became in-place relocated, and we therefore
+// shouldn't be scanning it this YC.
 //
 // The (2) state is the "dangerous" state, where both OC and YC work on
-// the same forwarding/page. This state is checked for in the YC remembered
-// set scanning code that tries to scan pages that were *not* part of the
-// OC relocation set.
+// the same forwarding/page somewhat concurrently. While (3) denotes that
+// that the entire relocation of a page (including freeing/reusing it) was
+// completed before the current YC started.
 //
-// When visiting the remembered sets of non-relocating old generation pages,
-// all pages with virtual address that are not part of the old relocation set
-// needs to be visited. Some of the virtual addresses that matches the old
-// relocation set will contain new pages that contain objects that were relocated
-// from one old region to another. If the relocation happened before the YC
-// started, their remembered sets need to be scanned as well. This is where things
-// get tricky, we need to be able to differentiate pages that were relocated before
-// the YC was started and those that were not. And this is where we use state (2).
+// After all remset entries of relocated objects have been scanned, the code
+// proceeds to visit all pages in the page table, to scan all pages not part
+// of the OC relocation set. Pages with virtual addresses that doesn't match
+// any of the once in the OC relocation set will be visited. Pages with
+// virtual address that *do* have a corresponding forwarding entry has two
+// cases:
 //
-// State (2) denotes that whatever happened, the YC managed retained the page and
-// scanned the remembered set fields. If a new page has been installed to the same
-// address, it means that the page was installed *after* the YC was started. So,
-// forwardings with state (2) will be excluded from the ZRememberedScanPageTask.
+// a) The forwarding entry is marked with (2). This means that the
+//    corresponding page is guaranteed to be one that has been relocated by the
+//    current OC during the active YC. Any remset entry is guaranteed to have
+//    already been scanned by the scan_forwarding code.
 //
-// It's actually important that we don't scan pages that map to the same virtual
-// address as the state (2) forwarding. "Normally" newly allocated pages would be fine
-// to visit, all their scanned remembered set bits would be 0. However, some
-// pages could be in-place relocated. The in-place relocated pages could be
-// concurrently be compacted and remembered set bits moved around. If it weren't
-// for those pages, we could probably simplify this by redundantly scanning the
-// normally allocated pages.
+// b) The forwarding entry is marked with (3). This means that the page was
+//    *not* created by the OC relocation during this YC, which means that the
+//    page must be scanned.
 //
 
+void ZForwarding::relocated_remembered_fields_after_relocate() {
+  assert(from_age() == ZPageAge::old, "Only old pages have remsets");
+
+  _relocated_remembered_fields_publish_young_seqnum = ZGeneration::young()->seqnum();
+
+  if (ZGeneration::young()->is_phase_mark()) {
+    relocated_remembered_fields_publish();
+  }
+}
+
 void ZForwarding::relocated_remembered_fields_publish() {
-  // Invariant: page is being retained
-  assert(ZGeneration::young()->is_phase_mark(), "Only called when");
+
 
   // The OC has relocated all objects and collected all fields that
   // used to have remembered set entries. Now publish the fields to
@@ -356,7 +346,6 @@ void ZForwarding::relocated_remembered_fields_notify_concurrent_scan_of() {
   //    OC relocation and YC remembered fields scanning - not possible
   //    since the page has been retained (still being relocated) and
   //    we are in the process of scanning fields
-
 
   if (res == 0) {
     // Successfully notified and rejected any collected data from the OC

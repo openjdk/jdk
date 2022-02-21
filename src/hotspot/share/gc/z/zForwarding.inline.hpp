@@ -69,9 +69,10 @@ inline ZForwarding::ZForwarding(ZPage* page, ZPageAge to_age, size_t nentries) :
     _ref_abort(false),
     _relocated_remembered_fields_state(0),
     _relocated_remembered_fields_array(),
+    _relocated_remembered_fields_publish_young_seqnum(0),
     _in_place(false),
-    _in_place_clear_remset_watermark(0),
     _in_place_top_at_start(),
+    _in_place_remset_relocated_watermark(),
     _in_place_thread(NULL) {}
 
 inline ZPageType ZForwarding::type() const {
@@ -174,6 +175,14 @@ void ZForwarding::oops_do_in_forwarded_via_table(Function function) {
 inline bool ZForwarding::in_place_relocation() const {
   assert(Atomic::load(&_ref_count) != 0, "The page has been released/detached");
   return _in_place;
+}
+
+inline uintptr_t ZForwarding::in_place_relocation_remset_relocated_watermark() const {
+  return _in_place_remset_relocated_watermark;
+}
+
+inline void ZForwarding::in_place_relocation_set_remset_relocated_watermark(uintptr_t local_offset) {
+  _in_place_remset_relocated_watermark = local_offset;
 }
 
 inline ZForwardingEntry* ZForwarding::entries() const {
@@ -305,7 +314,20 @@ inline void ZForwarding::relocated_remembered_fields_apply_to_published(Function
     _relocated_remembered_fields_array.clear_and_deallocate();
   }
 
-  Atomic::store(&_relocated_remembered_fields_state, 3);
+  assert(_relocated_remembered_fields_publish_young_seqnum != 0, "Must have been set");
+  if (_relocated_remembered_fields_publish_young_seqnum == ZGeneration::young()->seqnum()) {
+    // The page was relocated concurrently with the current young generation
+    // collection. Mark that it is unsafe (and unnecessary) to call scan_page
+    // on the page in the page table.
+    assert(res != 3, "Unexpected");
+    Atomic::store(&_relocated_remembered_fields_state, 2);
+  } else {
+    // Guaranteed that the page was fully relocated and removed from page table.
+    // Because of this we can signal to scan_page that any page found in page table
+    // of the same slot as the current forwarding is a page that is safe to scan,
+    // and in fact must be scanned.
+    Atomic::store(&_relocated_remembered_fields_state, 3);
+  }
 }
 
 #endif // SHARE_GC_Z_ZFORWARDING_INLINE_HPP

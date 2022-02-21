@@ -547,6 +547,15 @@ private:
     return to_addr;
   }
 
+  void in_place_relocation_clear_stale_current_remset_bits_up_to(uintptr_t local_offset) const {
+    const uintptr_t watermark = _forwarding->in_place_relocation_remset_relocated_watermark();
+    const size_t size = local_offset - watermark;
+    if (size > 0) {
+      ZPage* const page = _forwarding->page();
+      page->clear_remset_range_non_par_current(watermark, size);
+    }
+  }
+
   void update_remset_old_to_old(zaddress from_addr, zaddress to_addr) const {
     // Old-to-old relocation - move existing remset bits
 
@@ -561,11 +570,6 @@ private:
     const bool in_place = _forwarding->in_place_relocation();
     ZPage* const from_page = _forwarding->page();
     const uintptr_t from_local_offset = from_page->local_offset(from_addr);
-
-    if (in_place) {
-      // Make sure remset entries of dead objects are cleared
-      _forwarding->in_place_relocation_clear_remset_up_to(from_local_offset);
-    }
 
     // Note: even with in-place relocation, the to_page could be another page
     ZPage* const to_page = ZHeap::heap()->page(to_addr);
@@ -598,26 +602,33 @@ private:
     // remset bits for the page, or it will find an empty bitmap for the page. It
     // doesn't matter for correctness, because the young generation marking has
     // already taken care of the bits.
-    ZRememberedSetIterator iter = ZGeneration::young()->is_phase_mark()
-        ? from_page->remset_iterator_previous_limited(from_local_offset, size)
-        : from_page->remset_iterator_current_limited(from_local_offset, size);
 
-    if (ZGeneration::young()->is_phase_mark()) {
-      ZRememberedSetIterator iter = from_page->remset_iterator_current_limited(from_local_offset, size);
-      for (uintptr_t field_local_offset; iter.next(&field_local_offset);) {
-        log_debug(gc, remset)("Multiple minor collections flipped the remset bitmaps");
-      }
+    const bool active_remset_is_current = ZGeneration::old()->active_remset_is_current();
+
+    // When in-place relocation is done and the old remset bits are located in
+    // the bitmap that is going to be used for the new remset bits, then we
+    // need to clear the old bits before the new bits are inserted.
+    const bool in_place_clear_current_remset = in_place && active_remset_is_current;
+
+    if (in_place_clear_current_remset) {
+      // The iteration code below clears the remset bits of relocated objects.
+      // That is not enough, since there could be remset bits for objects that
+      // have died. We need to clear those bits as well.
+      in_place_relocation_clear_stale_current_remset_bits_up_to(from_local_offset);
     }
 
+    ZRememberedSetIterator iter = active_remset_is_current
+        ? from_page->remset_iterator_limited_current(from_local_offset, size)
+        : from_page->remset_iterator_limited_previous(from_local_offset, size);
+
     for (uintptr_t field_local_offset; iter.next(&field_local_offset);) {
-      if (in_place) {
+      // In-place relocation slides objects and needs to clear the remset
+      // bits of the old fields. The 'previous' remset is cleared at the end
+      // of the relocation.
+      if (in_place_clear_current_remset) {
         // Need to forget the bit in the from-page. This is performed during
         // in-place relocation, which will slide the objects in the current page.
-        if (ZGeneration::young()->is_phase_mark()) {
-          from_page->clear_previous_remset_non_par(field_local_offset);
-        } else {
-          from_page->clear_current_remset_non_par(field_local_offset);
-        }
+        from_page->clear_remset_bit_non_par_current(field_local_offset);
       }
 
       // Add remset entry in the to-page
@@ -636,9 +647,9 @@ private:
       }
     }
 
-    if (in_place) {
+    if (in_place_clear_current_remset) {
       // Record that the code above cleared all remset bits inside the from-object
-      _forwarding->in_place_relocation_set_clear_remset_watermark(from_local_offset + size);
+      _forwarding->in_place_relocation_set_remset_relocated_watermark(from_local_offset + size);
     }
   }
 
@@ -725,7 +736,7 @@ private:
 
   void update_remset_for_fields(zaddress from_addr, zaddress to_addr) const {
     if (_forwarding->to_age() == ZPageAge::old) {
-      // Need to deal with remset when moving stuff to old
+      // Need to deal with remset when moving objects to the old generation
       if (_forwarding->from_age() == ZPageAge::old) {
         update_remset_old_to_old(from_addr, to_addr);
       } else {
@@ -746,24 +757,52 @@ private:
     return true;
   }
 
-  ZPage* start_in_place_relocation() {
-    _forwarding->in_place_relocation_claim_page();
-    _forwarding->in_place_relocation_start();
+  void start_in_place_relocation_clear_remset(ZPage* from_page, zoffset relocated_watermark) {
+    if (_forwarding->from_age() != ZPageAge::old) {
+      // Only old pages have use remset bits
+      return;
+    }
 
-    ZPage* prev_page = _forwarding->page();
-    ZPageAge new_age = _forwarding->to_age();
-    bool promotion = _forwarding->is_promotion();
+    const uintptr_t local_relocated_watermark = from_page->local_offset(relocated_watermark);
+    if (local_relocated_watermark == 0) {
+      // Nothing to clear
+      return;
+    }
+
+    if (ZGeneration::old()->active_remset_is_current()) {
+      from_page->clear_remset_range_non_par_current(0, local_relocated_watermark);
+
+      // Remember how far we have cleared the bits
+      _forwarding->in_place_relocation_set_remset_relocated_watermark(local_relocated_watermark);
+    } else {
+      // 'Previous' bits cleared at the end of relocation
+    }
+  }
+
+  ZPage* start_in_place_relocation(zoffset relocated_watermark) {
+    _forwarding->in_place_relocation_claim_page();
+    _forwarding->in_place_relocation_start(relocated_watermark);
+
+    ZPage* const from_page = _forwarding->page();
+
+    // Clear remset bits for all objects that were relocated
+    // before this page became an in-place relocated page.
+    start_in_place_relocation_clear_remset(from_page, relocated_watermark);
+
+    const ZPageAge to_age = _forwarding->to_age();
+    const bool promotion = _forwarding->is_promotion();
+
     // Promotions happen through a new cloned page
-    ZPage* new_page = promotion ? prev_page->clone_limited() : prev_page;
-    new_page->reset(new_age, ZPageResetType::InPlaceRelocation);
+    ZPage* const to_page = promotion ? from_page->clone_limited() : from_page;
+    to_page->reset(to_age, ZPageResetType::InPlaceRelocation);
 
     if (promotion) {
       // Register the the promotion
-      ZGeneration::young()->in_place_relocate_promote(prev_page, new_page);
-      ZGeneration::young()->register_in_place_relocate_promoted(prev_page);
+      ZGeneration::young()->in_place_relocate_promote(from_page, to_page);
+      ZGeneration::young()->register_in_place_relocate_promoted(from_page);
     }
 
-    return new_page;
+    return to_page;
   }
 
   void relocate_object(oop obj) {
@@ -784,7 +823,7 @@ private:
       // Start in-place relocation to block other threads from accessing
       // the page, or its forwarding table, until it has been released
       // (relocation completed).
-      to_page = start_in_place_relocation();
+      to_page = start_in_place_relocation(ZAddress::offset(addr));
       set_target(to_age, to_page);
     }
   }
@@ -807,6 +846,103 @@ public:
     _generation->increase_compacted(_other_compacted);
   }
 
+  bool active_remset_is_current() const {
+    // Normal old-to-old relocation can treat the from-page remset as a
+    // read-only copy, and then copy over the appropriate remset bits to the
+    // cleared to-page's 'current' remset bitmap.
+    //
+    // In-place relocation is more complicated. Since, the same page is both
+    // a from-page and a to-page, we need to remove the old remset bits, and
+    // add remset bits that corresponds to the new locations of the relocated
+    // objects.
+    //
+    // Depending on how long ago (in terms of number of young GC's and the
+    // current young GC's phase), the page was allocated, the active
+    // remembered set will be in either the 'current' or 'previous' bitmap.
+    //
+    // If the active bits are in the 'previous' bitmap, we know that the
+    // 'current' bitmap was cleared at some earlier point in time, and we can
+    // simply set new bits in 'current' bitmap, and later when relocation has
+    // read all the old remset bits, we could just clear the 'previous' remset
+    // bitmap.
+    //
+    // If, on the other hand, the active bits are in the 'current' bitmap, then
+    // that bitmap will be used to both read the old remset bits, and the
+    // destination for the remset bits that we copy when an object is copied
+    // to it's new location within the page. We need to *carefully* remove all
+    // all old remset bits, without clearing out the newly set bits.
+    return ZGeneration::old()->active_remset_is_current();
+  }
+
+  void verify_remset() const {
+#ifdef ASSERT
+    // Only verify old relocation
+    if (_forwarding->from_age() == ZPageAge::old) {
+      if (active_remset_is_current()) {
+        _forwarding->page()->verify_remset_cleared_previous();
+      } else {
+        _forwarding->page()->verify_remset_cleared_current();
+      }
+    }
+#endif
+  }
+
+  void clear_remset_before_reuse(ZPage* page, bool in_place) {
+    if (_forwarding->from_age() != ZPageAge::old) {
+      // No remset bits
+      return;
+    }
+
+    if (in_place) {
+      // Note: that once a page becomes in-place relocating, then no other
+      // thread will be able to retain the page until it has been released,
+      // and therefore the young generation will not be reading the remset
+      // concurrently.
+
+      // Verify or clear 'previous' remset bits
+      if (active_remset_is_current()) {
+        // In-place relocation cleared and set bits in the 'current' bitmap.
+        // It is expected that the 'previous' bitmap was cleared at some
+        // earlier point in time.
+        page->verify_remset_cleared_previous();
+      } else {
+        // In-place relocation responsible for clearing the previous remset bits
+        page->clear_remset_previous();
+      }
+
+      return;
+    }
+
+    // Normal relocate
+
+    // Clear active remset bits
+    if (active_remset_is_current()) {
+      page->clear_remset_current();
+    } else {
+      page->clear_remset_previous();
+    }
+
+    // Verify that inactive remset bits are all cleared
+    if (active_remset_is_current()) {
+      page->verify_remset_cleared_previous();
+    } else {
+      page->verify_remset_cleared_current();
+    }
+  }
+
+  void finish_in_place_relocation() {
+    if (_forwarding->from_age() == ZPageAge::old && active_remset_is_current()) {
+      // In-place for old-to-old relocations cleared old remset bits up to the
+      // last live object. There might still be remset bits in dead objects
+      // above the last relocated object. Clear those bits.
+      const uintptr_t local_end = _forwarding->page()->local_offset(_forwarding->page()->end());
+      in_place_relocation_clear_stale_current_remset_bits_up_to(local_end);
+    }
+
+    // We are done with the from_space copy of the page
+    _forwarding->in_place_relocation_finish();
+  }
+
   void do_forwarding(ZForwarding* forwarding) {
     _forwarding = forwarding;
 
@@ -816,16 +952,10 @@ public:
       return;
     }
 
-    if (forwarding->from_age() == ZPageAge::old) {
-      log_trace(gc, page)("Relocate old from: " PTR_FORMAT " " PTR_FORMAT, untype(forwarding->page()->start()), untype(forwarding->page()->end()));
-    }
+    verify_remset();
 
     // Relocate objects
     _forwarding->object_iterate([&](oop obj) { relocate_object(obj); });
-
-    if (forwarding->from_age() == ZPageAge::old) {
-      log_trace(gc, page)("Relocate old from: " PTR_FORMAT " " PTR_FORMAT " done", untype(forwarding->page()->start()), untype(forwarding->page()->end()));
-    }
 
     // Verify
     if (ZVerifyForwarding) {
@@ -837,27 +967,38 @@ public:
     // Deal with in-place relocation
     const bool in_place = _forwarding->in_place_relocation();
     if (in_place) {
-      // We are done with the from_space copy of the page
-      _forwarding->in_place_relocation_finish();
+      finish_in_place_relocation();
     }
 
-    // Publish relocated remembered fields to the young collector.
-    // Needs to be done before the page is released.
-    if (_forwarding->from_age() == ZPageAge::old && ZGeneration::young()->is_phase_mark()) {
-      _forwarding->relocated_remembered_fields_publish();
+    // Old from-space pages need to deal with remset bits
+    if (_forwarding->from_age() == ZPageAge::old) {
+      _forwarding->relocated_remembered_fields_after_relocate();
     }
 
     // Release relocated page
     _forwarding->release_page();
 
     if (in_place) {
+      ZPage* const page = target(_forwarding->to_age());
+
+      // Ensure that previous remset bits are cleared
+      clear_remset_before_reuse(page, true /* in_place */);
+
       // The relocated page has been relocated in-place and should not
       // be freed. Keep it as target page until it is full, and offer to
       // share it with other worker threads.
-      _allocator->share_target_page(target(_forwarding->to_age()));
+      _allocator->share_target_page(page);
+
     } else {
-      // Detach and free relocated page
+      // Detach relocated page
       ZPage* const page = _forwarding->detach_page();
+
+      // Ensure that all remset bits are cleared
+      // Note: cleared after detach_page, when we know that
+      // the young generation isn't scanning the remset.
+      clear_remset_before_reuse(page, false /* in_place */);
+
+      // Free page
       ZHeap::heap()->free_page(page);
     }
   }

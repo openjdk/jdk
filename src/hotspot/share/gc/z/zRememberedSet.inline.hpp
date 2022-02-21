@@ -38,6 +38,10 @@ inline CHeapBitMap* ZRememberedSet::previous() {
   return &_bitmap[_current ^ 1];
 }
 
+inline const CHeapBitMap* ZRememberedSet::previous() const {
+  return &_bitmap[_current ^ 1];
+}
+
 inline uintptr_t ZRememberedSet::to_offset(BitMap::idx_t index) {
   // One bit per possible oop* address
   return index * oopSize;
@@ -52,41 +56,25 @@ inline BitMap::idx_t ZRememberedSet::to_bit_size(size_t size) {
   return size / oopSize;
 }
 
-inline bool ZRememberedSet::get(uintptr_t offset) const {
+inline bool ZRememberedSet::at_current(uintptr_t offset) const {
   const BitMap::idx_t index = to_index(offset);
   return current()->at(index);
 }
 
-inline bool ZRememberedSet::set(uintptr_t offset) {
+inline bool ZRememberedSet::set_current(uintptr_t offset) {
   const BitMap::idx_t index = to_index(offset);
   return current()->par_set_bit(index, memory_order_relaxed);
 }
 
-inline void ZRememberedSet::unset_non_par(CHeapBitMap* bitmap, uintptr_t offset) {
+inline void ZRememberedSet::unset_non_par_current(uintptr_t offset) {
   const BitMap::idx_t index = to_index(offset);
-  bitmap->clear_bit(index);
+  current()->clear_bit(index);
 }
 
-inline void ZRememberedSet::unset_current_non_par(uintptr_t offset) {
-  return unset_non_par(current(), offset);
-}
-
-inline void ZRememberedSet::unset_previous_non_par(uintptr_t offset) {
-  return unset_non_par(previous(), offset);
-}
-
-inline void ZRememberedSet::unset_range_non_par(CHeapBitMap* bitmap, uintptr_t offset, size_t size) {
+inline void ZRememberedSet::unset_range_non_par_current(uintptr_t offset, size_t size) {
   const BitMap::idx_t start_index = to_index(offset);
   const BitMap::idx_t end_index = to_index(offset + size);
-  bitmap->clear_range(start_index, end_index);
-}
-
-inline void ZRememberedSet::unset_current_range_non_par(uintptr_t offset, size_t size) {
-  unset_range_non_par(current(), offset, size);
-}
-
-inline void ZRememberedSet::unset_previous_range_non_par(uintptr_t offset, size_t size) {
-  unset_range_non_par(previous(), offset, size);
+  current()->clear_range(start_index, end_index);
 }
 
 template <typename Function>
@@ -101,7 +89,7 @@ void ZRememberedSet::iterate_bitmap(Function function, CHeapBitMap* bitmap) {
 }
 
 template <typename Function>
-void ZRememberedSet::iterate(Function function) {
+void ZRememberedSet::iterate_previous(Function function) {
   iterate_bitmap(function, previous());
 }
 

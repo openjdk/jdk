@@ -61,11 +61,12 @@ private:
   // Relocated remembered set fields support
   int                    _relocated_remembered_fields_state;
   PointerArray           _relocated_remembered_fields_array;
+  uint32_t               _relocated_remembered_fields_publish_young_seqnum;
 
   // In-place relocation support
   bool                   _in_place;
-  uintptr_t              _in_place_clear_remset_watermark;
   zoffset                _in_place_top_at_start;
+  uintptr_t              _in_place_remset_relocated_watermark;
 
   // Debugging
   volatile Thread*       _in_place_thread;
@@ -116,11 +117,11 @@ public:
   // In-place relocation support
   bool in_place_relocation() const;
   void in_place_relocation_claim_page();
-  void in_place_relocation_start();
+  void in_place_relocation_start(zoffset relocated_watermark);
   void in_place_relocation_finish();
   bool in_place_relocation_is_below_top_at_start(zoffset addr) const;
-  void in_place_relocation_clear_remset_up_to(uintptr_t local_offset) const;
-  void in_place_relocation_set_clear_remset_watermark(uintptr_t local_offset);
+  void in_place_relocation_set_remset_relocated_watermark(uintptr_t local_offset);
+  uintptr_t in_place_relocation_remset_relocated_watermark() const;
 
   bool retain_page();
   void release_page();
@@ -137,6 +138,7 @@ public:
 
   // Relocated remembered set fields support
   void relocated_remembered_fields_register(volatile zpointer* p);
+  void relocated_remembered_fields_after_relocate();
   void relocated_remembered_fields_publish();
   void relocated_remembered_fields_notify_concurrent_scan_of();
   bool relocated_remembered_fields_is_concurrently_scanned() const;

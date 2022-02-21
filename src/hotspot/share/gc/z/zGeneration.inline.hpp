@@ -174,4 +174,12 @@ inline ReferenceDiscoverer* ZGenerationOld::reference_discoverer() {
   return &_reference_processor;
 }
 
+inline bool ZGenerationOld::active_remset_is_current() const {
+  // The remembered set bits flip every time a new young collection starts
+  const uint32_t seqnum = ZGeneration::young()->seqnum();
+  const uint32_t seqnum_diff = seqnum - _young_seqnum_at_reloc_start;
+  const bool in_current = (seqnum_diff & 1u) == 0u;
+  return in_current;
+}
+
 #endif // SHARE_GC_Z_ZGENERATION_INLINE_HPP

@@ -159,7 +159,7 @@ void ZGeneration::free_empty_pages(ZRelocationSetSelector* selector, int bulk) {
   // the page allocator lock, and trying to satisfy stalled allocations
   // too frequently.
   if (selector->should_free_empty_pages(bulk)) {
-    size_t freed = ZHeap::heap()->free_pages(selector->empty_pages());
+    size_t freed = ZHeap::heap()->free_empty_pages(selector->empty_pages());
     increase_freed(freed);
     selector->clear_empty_pages();
   }
@@ -822,7 +822,8 @@ ZGenerationOld::ZGenerationOld(ZPageTable* page_table, ZPageAllocator* page_allo
   _reference_processor(&_workers),
   _weak_roots_processor(&_workers),
   _unload(&_workers),
-  _total_collections_at_end(0) {
+  _total_collections_at_end(0),
+  _young_seqnum_at_reloc_start(0) {
   ZGeneration::_old = this;
 }
 
@@ -1192,6 +1193,9 @@ void ZGenerationOld::relocate_start() {
 
   // Notify JVMTI
   JvmtiTagMap::set_needs_rehashing();
+
+  // Need to know the remset parity when relocating objects
+  _young_seqnum_at_reloc_start = ZGeneration::young()->seqnum();
 
   _relocate.start();
 }

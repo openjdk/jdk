@@ -37,7 +37,8 @@ void ZRememberedSet::flip() {
 }
 
 ZRememberedSet::ZRememberedSet() :
-    _bitmap() {
+    _bitmap(),
+    _dirty(false) {
   // Defer initialization of the bitmaps until the owning
   // page becomes old and its remembered set is initialized.
 }
@@ -63,7 +64,15 @@ void ZRememberedSet::resize(size_t page_size) {
   }
 }
 
-void ZRememberedSet::clear() {
+bool ZRememberedSet::is_cleared_current() const {
+  return current()->is_empty();
+}
+
+bool ZRememberedSet::is_cleared_previous() const {
+  return previous()->is_empty();
+}
+
+void ZRememberedSet::clear_all() {
   clear_current();
   clear_previous();
 }
@@ -72,27 +81,40 @@ void ZRememberedSet::clear_current() {
   current()->clear_large();
 }
 
-void ZRememberedSet::clear_current(uintptr_t offset) {
-  const BitMap::idx_t index = to_index(offset);
-  current()->clear_range(0, index);
-}
-
 void ZRememberedSet::clear_previous() {
   previous()->clear_large();
 }
 
-ZRememberedSetReverseIterator ZRememberedSet::iterator_reverse() {
+void ZRememberedSet::dirty() {
+  assert(!_dirty, "Unexpected");
+  assert(is_initialized(), "Unexpected");
+  _dirty = true;
+}
+
+bool ZRememberedSet::is_dirty() const {
+  return _dirty;
+}
+
+void ZRememberedSet::clean() {
+  assert(_dirty, "Unexpected");
+
+  clear_all();
+
+  _dirty = false;
+}
+
+ZRememberedSetReverseIterator ZRememberedSet::iterator_reverse_previous() {
   return ZRememberedSetReverseIterator(previous());
 }
 
-ZRememberedSetIterator ZRememberedSet::iterator_current_limited(uintptr_t offset, size_t size) {
+ZRememberedSetIterator ZRememberedSet::iterator_limited_current(uintptr_t offset, size_t size) {
   const size_t index = to_index(offset);;
   const size_t bit_size = to_bit_size(size);
 
   return ZRememberedSetIterator(current(), index, index + bit_size);
 }
 
-ZRememberedSetIterator ZRememberedSet::iterator_previous_limited(uintptr_t offset, size_t size) {
+ZRememberedSetIterator ZRememberedSet::iterator_limited_previous(uintptr_t offset, size_t size) {
   const size_t index = to_index(offset);;
   const size_t bit_size = to_bit_size(size);
 
@@ -161,9 +183,9 @@ zaddress_unsafe ZRememberedSetContainingIterator::to_addr(size_t index) {
 
 ZRememberedSetContainingIterator::ZRememberedSetContainingIterator(ZPage* page) :
     _page(page),
-    _remset_iter(page->remset_reverse_iterator()),
+    _remset_iter(page->remset_reverse_iterator_previous()),
     _obj(zaddress_unsafe::null),
-    _obj_remset_iter(page->remset_reverse_iterator()) {}
+    _obj_remset_iter(page->remset_reverse_iterator_previous()) {}
 
 bool ZRememberedSetContainingIterator::next(ZRememberedSetContaining* containing) {
   // Note: to skip having to read the contents of the heap, when collecting the

@@ -254,6 +254,7 @@ private:
   ZWeakRootsProcessor _weak_roots_processor;
   ZUnload             _unload;
   int                 _total_collections_at_end;
+  uint32_t            _young_seqnum_at_reloc_start;
 
   void mark_start();
   void mark_roots();
@@ -287,6 +288,8 @@ public:
   void set_soft_reference_policy(bool clear);
 
   int total_collections_at_end() const;
+
+  bool active_remset_is_current() const;
 };
 
 #endif // SHARE_GC_Z_ZGENERATION_HPP

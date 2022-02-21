@@ -113,11 +113,13 @@ private:
   static int _current;
 
   CHeapBitMap _bitmap[2];
+  bool        _dirty;
 
   CHeapBitMap* current();
   const CHeapBitMap* current() const;
 
   CHeapBitMap* previous();
+  const CHeapBitMap* previous() const;
 
   template <typename Function>
   void iterate_bitmap(Function function, CHeapBitMap* bitmap);
@@ -136,30 +138,33 @@ public:
 
   void resize(size_t page_size);
 
-  bool get(uintptr_t offset) const;
-  bool set(uintptr_t offset);
-  void unset_non_par(CHeapBitMap* bitmap, uintptr_t offset);
-  void unset_current_non_par(uintptr_t offset);
-  void unset_previous_non_par(uintptr_t offset);
-  void unset_range_non_par(CHeapBitMap* bitmap, uintptr_t offset, size_t size);
-  void unset_current_range_non_par(uintptr_t offset, size_t size);
-  void unset_previous_range_non_par(uintptr_t offset, size_t size);
+  bool at_current(uintptr_t offset) const;
+  bool set_current(uintptr_t offset);
+  void unset_non_par_current(uintptr_t offset);
+  void unset_range_non_par_current(uintptr_t offset, size_t size);
 
   // Visit all set offsets.
   template <typename Function /* void(uintptr_t offset) */>
-  void iterate(Function function);
+  void iterate_previous(Function function);
 
   template <typename Function /* void(uintptr_t offset) */>
   void iterate_current(Function function);
 
-  void clear();
+  bool is_cleared_current() const;
+  bool is_cleared_previous() const;
+
+  void clear_all();
   void clear_current();
-  void clear_current(uintptr_t end_offset);
   void clear_previous();
 
-  ZRememberedSetReverseIterator iterator_reverse();
-  ZRememberedSetIterator iterator_current_limited(uintptr_t offset, size_t size);
-  ZRememberedSetIterator iterator_previous_limited(uintptr_t offset, size_t size);
+  // Support for free without clearing
+  void dirty();
+  bool is_dirty() const;
+  void clean();
+
+  ZRememberedSetReverseIterator iterator_reverse_previous();
+  ZRememberedSetIterator iterator_limited_current(uintptr_t offset, size_t size);
+  ZRememberedSetIterator iterator_limited_previous(uintptr_t offset, size_t size);
 };
 
 #endif // SHARE_GC_Z_ZREMEMBEREDSET_HPP

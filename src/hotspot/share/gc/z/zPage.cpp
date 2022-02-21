@@ -98,10 +98,18 @@ void ZPage::reset_remembered_set(ZPageAge prev_age, ZPageResetType type) {
       return;
     }
 
+    // Workaround for free_empty_pages
+    if (_remembered_set.is_dirty()) {
+      log_msg(" (cleaning dirty remset)");
+      _remembered_set.clean();
+    }
+
+    verify_remset_cleared_previous();
+    verify_remset_cleared_current();
     // We don't clear the remset when pages are recycled and transition from
     // old to young. Therefore we can end up in a situation where a young page
     // already has an initialized remset.
-    _remembered_set.clear();
+    _remembered_set.clear_all();
     return;
   }
 
@@ -113,22 +121,30 @@ void ZPage::reset_remembered_set(ZPageAge prev_age, ZPageResetType type) {
     break;
 
   case ZPageResetType::InPlaceRelocation:
-    // Relocation failed and page is being compacted in-place. Current bits
-    // are needed to copy the remset incrementally. It will get cleared later on.
-    if (ZGeneration::young()->is_phase_mark()) {
-      _remembered_set.clear_current();
+    // Relocation failed and page is being compacted in-place.
+    // Need to be careful with the remembered set bits.
+    if (ZGeneration::old()->active_remset_is_current()) {
+      verify_remset_cleared_previous();
     } else {
-      _remembered_set.clear_previous();
+      verify_remset_cleared_current();
     }
     break;
 
   case ZPageResetType::FlipAging:
+    fatal("Should not have called this for old-to-old flipping");
     // Page stayed in the old gen. Needs new, fresh bits.
-    _remembered_set.clear();
+    _remembered_set.clear_all();
     break;
 
   case ZPageResetType::Allocation:
-    _remembered_set.clear();
+    // Workaround for free_empty_pages
+    if (_remembered_set.is_dirty()) {
+      log_msg(" (cleaning dirty remset)");
+      _remembered_set.clean();
+    }
+
+    verify_remset_cleared_previous();
+    verify_remset_cleared_current();
     break;
   };
 }
@@ -241,11 +257,41 @@ public:
   oop result() const { return _result; }
 };
 
-void ZPage::clear_current_remembered() {
+bool ZPage::is_remset_cleared_current() const {
+  return _remembered_set.is_cleared_current();
+}
+
+bool ZPage::is_remset_cleared_previous() const {
+  return _remembered_set.is_cleared_previous();
+}
+
+#ifdef ASSERT
+void ZPage::verify_remset_cleared_current() const {
+  assert(!_remembered_set.is_dirty(), "Remset is dirty");
+  if (!is_remset_cleared_current()) {
+    log_msg(" Current remset not cleared");
+    assert(is_remset_cleared_current(), "Should be cleared "
+           PTR_FORMAT " " PTR_FORMAT " " PTR_FORMAT,
+           untype(start()), untype(top()), untype(end()));
+  }
+}
+
+void ZPage::verify_remset_cleared_previous() const {
+  assert(!_remembered_set.is_dirty(), "Remset is dirty");
+  if (!is_remset_cleared_previous()) {
+    log_msg(" Previous remset not cleared");
+    assert(is_remset_cleared_previous(), "Should be cleared "
+           PTR_FORMAT " " PTR_FORMAT " " PTR_FORMAT,
+           untype(start()), untype(top()), untype(end()));
+  }
+}
+#endif
+
+void ZPage::clear_remset_current() {
  _remembered_set.clear_current();
 }
 
-void ZPage::clear_previous_remembered() {
+void ZPage::clear_remset_previous() {
  _remembered_set.clear_previous();
 }
 

@@ -142,6 +142,7 @@ public:
   bool is_in(zaddress addr) const;
 
   uintptr_t local_offset(zoffset offset) const;
+  uintptr_t local_offset(zoffset_end offset) const;
   uintptr_t local_offset(zaddress addr) const;
   uintptr_t local_offset(zaddress_unsafe addr) const;
 
@@ -164,14 +165,16 @@ public:
   void object_iterate(Function function);
 
   void remember(volatile zpointer* p);
-  void clear_current_remset_non_par(uintptr_t l_offset);
-  void clear_previous_remset_non_par(uintptr_t l_offset);
-  void clear_current_remset_range_non_par(uintptr_t l_offset, size_t size);
-  void clear_previous_remset_range_non_par(uintptr_t l_offset, size_t size);
 
-  ZRememberedSetReverseIterator remset_reverse_iterator();
-  ZRememberedSetIterator remset_iterator_current_limited(uintptr_t l_offset, size_t size);
-  ZRememberedSetIterator remset_iterator_previous_limited(uintptr_t l_offset, size_t size);
+  // In-place relocation support
+  void clear_remset_bit_non_par_current(uintptr_t l_offset);
+  void clear_remset_range_non_par_current(uintptr_t l_offset, size_t size);
+
+  void remset_mark_dirty();
+
+  ZRememberedSetReverseIterator remset_reverse_iterator_previous();
+  ZRememberedSetIterator remset_iterator_limited_current(uintptr_t l_offset, size_t size);
+  ZRememberedSetIterator remset_iterator_limited_previous(uintptr_t l_offset, size_t size);
 
   zaddress_unsafe find_base(volatile zpointer* p);
 
@@ -185,8 +188,14 @@ public:
   template <typename Function>
   void oops_do_current_remembered(Function function);
 
-  void clear_current_remembered();
-  void clear_previous_remembered();
+  bool is_remset_cleared_current() const;
+  bool is_remset_cleared_previous() const;
+
+  void verify_remset_cleared_current() const NOT_DEBUG_RETURN;
+  void verify_remset_cleared_previous() const NOT_DEBUG_RETURN;
+
+  void clear_remset_current();
+  void clear_remset_previous();
 
   zaddress alloc_object(size_t size);
   zaddress alloc_object_atomic(size_t size);
