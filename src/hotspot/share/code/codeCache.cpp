@@ -890,11 +890,11 @@ size_t CodeCache::max_capacity() {
 }
 
 
-// Returns the reverse free ratio. E.g., if 25% (1/4) of the code heap
+// Returns the reverse free ratio. E.g., if 25% (1/4) of the code cache
 // is free, reverse_free_ratio() returns 4.
 // Since code heap for each type of code blobs falls forward to the next
 // type of code heap, return the reverse free ratio for the entire
-// code heap.
+// code cache.
 double CodeCache::reverse_free_ratio() {
   double unallocated = MAX2((double)unallocated_capacity(), 1.0); // Avoid division by 0;
   double max = (double)max_capacity();
