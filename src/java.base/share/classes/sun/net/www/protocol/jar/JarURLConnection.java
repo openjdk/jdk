@@ -25,21 +25,17 @@
 
 package sun.net.www.protocol.jar;
 
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.FileNotFoundException;
 import java.io.BufferedInputStream;
-import java.net.URL;
-import java.net.URLConnection;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
-import java.net.UnknownServiceException;
-import java.util.Enumeration;
-import java.util.Map;
+import java.net.URL;
+import java.security.Permission;
 import java.util.List;
+import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.jar.Manifest;
-import java.security.Permission;
 
 /**
  * @author Benjamin Renaud
@@ -47,25 +43,9 @@ import java.security.Permission;
  */
 public class JarURLConnection extends java.net.JarURLConnection {
 
-    private static final boolean debug = false;
-
     /* the Jar file factory. It handles both retrieval and caching.
      */
     private static final JarFileFactory factory = JarFileFactory.getInstance();
-
-    /* the url for the Jar file */
-    private URL jarFileURL;
-
-    /* the permission to get this JAR file. This is the actual, ultimate,
-     * permission, returned by the jar file factory.
-     */
-    private Permission permission;
-
-    /* the url connection for the JAR file */
-    private URLConnection jarFileURLConnection;
-
-    /* the entry name, if any */
-    private String entryName;
 
     /* the JarEntry */
     private JarEntry jarEntry;
@@ -80,12 +60,10 @@ public class JarURLConnection extends java.net.JarURLConnection {
     throws MalformedURLException, IOException {
         super(url);
 
-        jarFileURL = getJarFileURL();
-        jarFileURLConnection = jarFileURL.openConnection();
+        jarFileURLConnection = getJarFileURL().openConnection();
         // whether, or not, the embedded URL should use the cache will depend
         // on this instance's cache value
         jarFileURLConnection.setUseCaches(useCaches);
-        entryName = getEntryName();
     }
 
     public JarFile getJarFile() throws IOException {
@@ -120,7 +98,7 @@ public class JarURLConnection extends java.net.JarURLConnection {
     public void connect() throws IOException {
         if (!connected) {
             boolean useCaches = getUseCaches();
-            String entryName = this.entryName;
+            String entryName = getEntryName();
 
             /* the factory call will do the security checks */
             URL url = getJarFileURL();
@@ -176,6 +154,7 @@ public class JarURLConnection extends java.net.JarURLConnection {
 
         InputStream result = null;
 
+        String entryName = getEntryName();
         if (entryName == null) {
             throw new IOException("no entry name specified");
         } else {
@@ -216,7 +195,7 @@ public class JarURLConnection extends java.net.JarURLConnection {
         Object result = null;
 
         connect();
-        if (entryName == null) {
+        if (getEntryName() == null) {
             result = jarFile;
         } else {
             result = super.getContent();
@@ -226,6 +205,7 @@ public class JarURLConnection extends java.net.JarURLConnection {
 
     public String getContentType() {
         if (contentType == null) {
+            String entryName = getEntryName();
             if (entryName == null) {
                 contentType = "x-java/jar";
             } else {

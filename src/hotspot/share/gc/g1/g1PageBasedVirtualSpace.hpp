@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,9 +86,6 @@ class G1PageBasedVirtualSpace {
 
   // Uncommit the given memory range.
   void uncommit_internal(size_t start_page, size_t end_page);
-
-  // Pretouch the given memory range.
-  void pretouch_internal(size_t start_page, size_t end_page);
 
   // Returns the index of the page which contains the given address.
   size_t  addr_to_page_index(char* addr) const;

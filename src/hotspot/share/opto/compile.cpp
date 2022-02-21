@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -535,6 +535,26 @@ void Compile::print_compile_messages() {
 #endif
 }
 
+#ifndef PRODUCT
+void Compile::print_ideal_ir(const char* phase_name) {
+  ttyLocker ttyl;
+  // keep the following output all in one block
+  // This output goes directly to the tty, not the compiler log.
+  // To enable tools to match it up with the compilation activity,
+  // be sure to tag this tty output with the compile ID.
+  if (xtty != NULL) {
+    xtty->head("ideal compile_id='%d'%s compile_phase='%s'",
+               compile_id(),
+               is_osr_compilation() ? " compile_kind='osr'" : "",
+               phase_name);
+  }
+  root()->dump(9999);
+  if (xtty != NULL) {
+    xtty->tail("ideal");
+  }
+}
+#endif
+
 // ============================================================================
 //------------------------------Compile standard-------------------------------
 debug_only( int Compile::_debug_idx = 100000; )
@@ -563,7 +583,6 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
 #ifndef PRODUCT
                   _igv_idx(0),
                   _trace_opto_output(directive->TraceOptoOutputOption),
-                  _print_ideal(directive->PrintIdealOption),
 #endif
                   _has_method_handle_invokes(false),
                   _clinit_barrier_on_entry(false),
@@ -582,7 +601,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _for_post_loop_igvn(comp_arena(), 8, 0, NULL),
                   _coarsened_locks   (comp_arena(), 8, 0, NULL),
                   _congraph(NULL),
-                  NOT_PRODUCT(_printer(NULL) COMMA)
+                  NOT_PRODUCT(_igv_printer(NULL) COMMA)
                   _dead_node_list(comp_arena()),
                   _dead_node_count(0),
                   _node_arena(mtCompiler),
@@ -764,8 +783,8 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   set_default_node_notes(NULL);
 
 #ifndef PRODUCT
-  if (should_print(1)) {
-    _printer->print_inlining();
+  if (should_print_igv(1)) {
+    _igv_printer->print_inlining();
   }
 #endif
 
@@ -792,20 +811,8 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   NOT_PRODUCT( verify_graph_edges(); )
 
 #ifndef PRODUCT
-  if (print_ideal()) {
-    ttyLocker ttyl;  // keep the following output all in one block
-    // This output goes directly to the tty, not the compiler log.
-    // To enable tools to match it up with the compilation activity,
-    // be sure to tag this tty output with the compile ID.
-    if (xtty != NULL) {
-      xtty->head("ideal compile_id='%d'%s", compile_id(),
-                 is_osr_compilation()    ? " compile_kind='osr'" :
-                 "");
-    }
-    root()->dump(9999);
-    if (xtty != NULL) {
-      xtty->tail("ideal");
-    }
+  if (should_print_ideal()) {
+    print_ideal_ir("print_ideal");
   }
 #endif
 
@@ -861,7 +868,6 @@ Compile::Compile( ciEnv* ci_env,
 #ifndef PRODUCT
     _igv_idx(0),
     _trace_opto_output(directive->TraceOptoOutputOption),
-    _print_ideal(directive->PrintIdealOption),
 #endif
     _has_method_handle_invokes(false),
     _clinit_barrier_on_entry(false),
@@ -873,7 +879,7 @@ Compile::Compile( ciEnv* ci_env,
     _log(ci_env->log()),
     _failure_reason(NULL),
     _congraph(NULL),
-    NOT_PRODUCT(_printer(NULL) COMMA)
+    NOT_PRODUCT(_igv_printer(NULL) COMMA)
     _dead_node_list(comp_arena()),
     _dead_node_count(0),
     _node_arena(mtCompiler),
@@ -1886,7 +1892,7 @@ bool Compile::inline_incrementally_one() {
         return false;
       } else if (inlining_progress()) {
         _late_inlines_pos = i+1; // restore the position in case new elements were inserted
-        print_method(PHASE_INCREMENTAL_INLINE_STEP, cg->call_node(), 3);
+        print_method(PHASE_INCREMENTAL_INLINE_STEP, 3, cg->call_node());
         break; // process one call site at a time
       }
     } else {
@@ -2080,7 +2086,7 @@ void Compile::Optimize() {
 
   NOT_PRODUCT( verify_graph_edges(); )
 
-  print_method(PHASE_AFTER_PARSING);
+  print_method(PHASE_AFTER_PARSING, 1);
 
  {
   // Iterative Global Value Numbering, including ideal transforms
@@ -2351,7 +2357,7 @@ void Compile::inline_vector_reboxing_calls() {
       CallGenerator* cg = _vector_reboxing_late_inlines.pop();
       cg->do_late_inline();
       if (failing())  return;
-      print_method(PHASE_INLINE_VECTOR_REBOX, cg->call_node());
+      print_method(PHASE_INLINE_VECTOR_REBOX, 3, cg->call_node());
     }
     _vector_reboxing_late_inlines.trunc_to(0);
   }
@@ -2375,7 +2381,6 @@ bool Compile::has_vbox_nodes() {
 
 static bool is_vector_unary_bitwise_op(Node* n) {
   return n->Opcode() == Op_XorV &&
-         n->req() == 2 &&
          VectorNode::is_vector_bitwise_not_pattern(n);
 }
 
@@ -2383,7 +2388,7 @@ static bool is_vector_binary_bitwise_op(Node* n) {
   switch (n->Opcode()) {
     case Op_AndV:
     case Op_OrV:
-      return n->req() == 2;
+      return true;
 
     case Op_XorV:
       return !is_vector_unary_bitwise_op(n);
@@ -2415,11 +2420,12 @@ static bool is_vector_bitwise_cone_root(Node* n) {
   return true;
 }
 
-static uint collect_unique_inputs(Node* n, Unique_Node_List& partition, Unique_Node_List& inputs) {
+static uint collect_unique_inputs(Node* n, Unique_Node_List& inputs) {
   uint cnt = 0;
   if (is_vector_bitwise_op(n)) {
+    uint inp_cnt = n->is_predicated_vector() ? n->req()-1 : n->req();
     if (VectorNode::is_vector_bitwise_not_pattern(n)) {
-      for (uint i = 1; i < n->req(); i++) {
+      for (uint i = 1; i < inp_cnt; i++) {
         Node* in = n->in(i);
         bool skip = VectorNode::is_all_ones_vector(in);
         if (!skip && !inputs.member(in)) {
@@ -2429,9 +2435,9 @@ static uint collect_unique_inputs(Node* n, Unique_Node_List& partition, Unique_N
       }
       assert(cnt <= 1, "not unary");
     } else {
-      uint last_req = n->req();
+      uint last_req = inp_cnt;
       if (is_vector_ternary_bitwise_op(n)) {
-        last_req = n->req() - 1; // skip last input
+        last_req = inp_cnt - 1; // skip last input
       }
       for (uint i = 1; i < last_req; i++) {
         Node* def = n->in(i);
@@ -2441,7 +2447,6 @@ static uint collect_unique_inputs(Node* n, Unique_Node_List& partition, Unique_N
         }
       }
     }
-    partition.push(n);
   } else { // not a bitwise operations
     if (!inputs.member(n)) {
       inputs.push(n);
@@ -2476,7 +2481,10 @@ Node* Compile::xform_to_MacroLogicV(PhaseIterGVN& igvn,
   Node* in3 = (inputs.size() == 3 ? inputs.at(2) : in2);
 
   uint func = compute_truth_table(partition, inputs);
-  return igvn.transform(MacroLogicVNode::make(igvn, in3, in2, in1, func, vt));
+
+  Node* pn = partition.at(partition.size() - 1);
+  Node* mask = pn->is_predicated_vector() ? pn->in(pn->req()-1) : NULL;
+  return igvn.transform(MacroLogicVNode::make(igvn, in1, in2, in3, mask, func, vt));
 }
 
 static uint extract_bit(uint func, uint pos) {
@@ -2556,11 +2564,11 @@ uint Compile::compute_truth_table(Unique_Node_List& partition, Unique_Node_List&
 
   // Populate precomputed functions for inputs.
   // Each input corresponds to one column of 3 input truth-table.
-  uint input_funcs[] = { 0xAA,   // (_, _, a) -> a
+  uint input_funcs[] = { 0xAA,   // (_, _, c) -> c
                          0xCC,   // (_, b, _) -> b
-                         0xF0 }; // (c, _, _) -> c
+                         0xF0 }; // (a, _, _) -> a
   for (uint i = 0; i < inputs.size(); i++) {
-    eval_map.put(inputs.at(i), input_funcs[i]);
+    eval_map.put(inputs.at(i), input_funcs[2-i]);
   }
 
   for (uint i = 0; i < partition.size(); i++) {
@@ -2603,6 +2611,14 @@ uint Compile::compute_truth_table(Unique_Node_List& partition, Unique_Node_List&
   return res;
 }
 
+// Criteria under which nodes gets packed into a macro logic node:-
+//  1) Parent and both child nodes are all unmasked or masked with
+//     same predicates.
+//  2) Masked parent can be packed with left child if it is predicated
+//     and both have same predicates.
+//  3) Masked parent can be packed with right child if its un-predicated
+//     or has matching predication condition.
+//  4) An unmasked parent can be packed with an unmasked child.
 bool Compile::compute_logic_cone(Node* n, Unique_Node_List& partition, Unique_Node_List& inputs) {
   assert(partition.size() == 0, "not empty");
   assert(inputs.size() == 0, "not empty");
@@ -2612,44 +2628,71 @@ bool Compile::compute_logic_cone(Node* n, Unique_Node_List& partition, Unique_No
 
   bool is_unary_op = is_vector_unary_bitwise_op(n);
   if (is_unary_op) {
-    assert(collect_unique_inputs(n, partition, inputs) == 1, "not unary");
+    assert(collect_unique_inputs(n, inputs) == 1, "not unary");
     return false; // too few inputs
   }
 
-  assert(is_vector_binary_bitwise_op(n), "not binary");
-  Node* in1 = n->in(1);
-  Node* in2 = n->in(2);
+  bool pack_left_child = true;
+  bool pack_right_child = true;
 
-  int in1_unique_inputs_cnt = collect_unique_inputs(in1, partition, inputs);
-  int in2_unique_inputs_cnt = collect_unique_inputs(in2, partition, inputs);
-  partition.push(n);
+  bool left_child_LOP = is_vector_bitwise_op(n->in(1));
+  bool right_child_LOP = is_vector_bitwise_op(n->in(2));
 
-  // Too many inputs?
-  if (inputs.size() > 3) {
-    partition.clear();
-    inputs.clear();
-    { // Recompute in2 inputs
-      Unique_Node_List not_used;
-      in2_unique_inputs_cnt = collect_unique_inputs(in2, not_used, not_used);
+  int left_child_input_cnt = 0;
+  int right_child_input_cnt = 0;
+
+  bool parent_is_predicated = n->is_predicated_vector();
+  bool left_child_predicated = n->in(1)->is_predicated_vector();
+  bool right_child_predicated = n->in(2)->is_predicated_vector();
+
+  Node* parent_pred = parent_is_predicated ? n->in(n->req()-1) : NULL;
+  Node* left_child_pred = left_child_predicated ? n->in(1)->in(n->in(1)->req()-1) : NULL;
+  Node* right_child_pred = right_child_predicated ? n->in(1)->in(n->in(1)->req()-1) : NULL;
+
+  do {
+    if (pack_left_child && left_child_LOP &&
+        ((!parent_is_predicated && !left_child_predicated) ||
+        ((parent_is_predicated && left_child_predicated &&
+          parent_pred == left_child_pred)))) {
+       partition.push(n->in(1));
+       left_child_input_cnt = collect_unique_inputs(n->in(1), inputs);
+    } else {
+       inputs.push(n->in(1));
+       left_child_input_cnt = 1;
     }
-    // Pick the node with minimum number of inputs.
-    if (in1_unique_inputs_cnt >= 3 && in2_unique_inputs_cnt >= 3) {
-      return false; // still too many inputs
+
+    if (pack_right_child && right_child_LOP &&
+        (!right_child_predicated ||
+         (right_child_predicated && parent_is_predicated &&
+          parent_pred == right_child_pred))) {
+       partition.push(n->in(2));
+       right_child_input_cnt = collect_unique_inputs(n->in(2), inputs);
+    } else {
+       inputs.push(n->in(2));
+       right_child_input_cnt = 1;
     }
-    // Recompute partition & inputs.
-    Node* child       = (in1_unique_inputs_cnt < in2_unique_inputs_cnt ? in1 : in2);
-    collect_unique_inputs(child, partition, inputs);
 
-    Node* other_input = (in1_unique_inputs_cnt < in2_unique_inputs_cnt ? in2 : in1);
-    inputs.push(other_input);
+    if (inputs.size() > 3) {
+      assert(partition.size() > 0, "");
+      inputs.clear();
+      partition.clear();
+      if (left_child_input_cnt > right_child_input_cnt) {
+        pack_left_child = false;
+      } else {
+        pack_right_child = false;
+      }
+    } else {
+      break;
+    }
+  } while(true);
 
+  if(partition.size()) {
     partition.push(n);
   }
 
   return (partition.size() == 2 || partition.size() == 3) &&
          (inputs.size()    == 2 || inputs.size()    == 3);
 }
-
 
 void Compile::process_logic_cone_root(PhaseIterGVN &igvn, Node *n, VectorSet &visited) {
   assert(is_vector_bitwise_op(n), "not a root");
@@ -2670,8 +2713,19 @@ void Compile::process_logic_cone_root(PhaseIterGVN &igvn, Node *n, VectorSet &vi
   Unique_Node_List inputs;
   if (compute_logic_cone(n, partition, inputs)) {
     const TypeVect* vt = n->bottom_type()->is_vect();
-    Node* macro_logic = xform_to_MacroLogicV(igvn, vt, partition, inputs);
-    igvn.replace_node(n, macro_logic);
+    Node* pn = partition.at(partition.size() - 1);
+    Node* mask = pn->is_predicated_vector() ? pn->in(pn->req()-1) : NULL;
+    if (mask == NULL ||
+        Matcher::match_rule_supported_vector_masked(Op_MacroLogicV, vt->length(), vt->element_basic_type())) {
+      Node* macro_logic = xform_to_MacroLogicV(igvn, vt, partition, inputs);
+#ifdef ASSERT
+      if (TraceNewVectors) {
+        tty->print("new Vector node: ");
+        macro_logic->dump();
+      }
+#endif
+      igvn.replace_node(n, macro_logic);
+    }
   }
 }
 
@@ -2798,7 +2852,7 @@ void Compile::Code_Gen() {
     output.install();
   }
 
-  print_method(PHASE_FINAL_CODE);
+  print_method(PHASE_FINAL_CODE, 1);
 
   // He's dead, Jim.
   _cfg     = (PhaseCFG*)((intptr_t)0xdeadbeef);
@@ -3758,7 +3812,7 @@ bool Compile::final_graph_reshaping() {
       // 'fall-thru' path, so expected kids is 1 less.
       if (n->is_PCTable() && n->in(0) && n->in(0)->in(0)) {
         if (n->in(0)->in(0)->is_Call()) {
-          CallNode *call = n->in(0)->in(0)->as_Call();
+          CallNode* call = n->in(0)->in(0)->as_Call();
           if (call->entry_point() == OptoRuntime::rethrow_stub()) {
             required_outcnt--;      // Rethrow always has 1 less kid
           } else if (call->req() > TypeFunc::Parms &&
@@ -3767,22 +3821,25 @@ bool Compile::final_graph_reshaping() {
             // detected that the virtual call will always result in a null
             // pointer exception. The fall-through projection of this CatchNode
             // will not be populated.
-            Node *arg0 = call->in(TypeFunc::Parms);
+            Node* arg0 = call->in(TypeFunc::Parms);
             if (arg0->is_Type() &&
                 arg0->as_Type()->type()->higher_equal(TypePtr::NULL_PTR)) {
               required_outcnt--;
             }
-          } else if (call->entry_point() == OptoRuntime::new_array_Java() &&
-                     call->req() > TypeFunc::Parms+1 &&
-                     call->is_CallStaticJava()) {
-            // Check for negative array length. In such case, the optimizer has
+          } else if (call->entry_point() == OptoRuntime::new_array_Java() ||
+                     call->entry_point() == OptoRuntime::new_array_nozero_Java()) {
+            // Check for illegal array length. In such case, the optimizer has
             // detected that the allocation attempt will always result in an
             // exception. There is no fall-through projection of this CatchNode .
-            Node *arg1 = call->in(TypeFunc::Parms+1);
-            if (arg1->is_Type() &&
-                arg1->as_Type()->type()->join(TypeInt::POS)->empty()) {
+            assert(call->is_CallStaticJava(), "static call expected");
+            assert(call->req() == call->jvms()->endoff() + 1, "missing extra input");
+            Node* valid_length_test = call->in(call->req()-1);
+            call->del_req(call->req()-1);
+            if (valid_length_test->find_int_con(1) == 0) {
               required_outcnt--;
             }
+            assert(n->outcnt() == required_outcnt, "malformed control flow");
+            continue;
           }
         }
       }
@@ -3790,6 +3847,14 @@ bool Compile::final_graph_reshaping() {
       if (n->outcnt() != required_outcnt) {
         record_method_not_compilable("malformed control flow");
         return true;            // Not all targets reachable!
+      }
+    } else if (n->is_PCTable() && n->in(0) && n->in(0)->in(0) && n->in(0)->in(0)->is_Call()) {
+      CallNode* call = n->in(0)->in(0)->as_Call();
+      if (call->entry_point() == OptoRuntime::new_array_Java() ||
+          call->entry_point() == OptoRuntime::new_array_nozero_Java()) {
+        assert(call->is_CallStaticJava(), "static call expected");
+        assert(call->req() == call->jvms()->endoff() + 1, "missing extra input");
+        call->del_req(call->req()-1); // valid length test useless now
       }
     }
     // Check that I actually visited all kids.  Unreached kids
@@ -4030,7 +4095,7 @@ void Compile::record_failure(const char* reason) {
   }
 
   if (!C->failure_reason_is(C2Compiler::retry_no_subsuming_loads())) {
-    C->print_method(PHASE_FAILURE);
+    C->print_method(PHASE_FAILURE, 1);
   }
   _root = NULL;  // flush the graph, too
 }
@@ -4760,56 +4825,79 @@ void Compile::sort_macro_nodes() {
   }
 }
 
-void Compile::print_method(CompilerPhaseType cpt, const char *name, int level) {
+void Compile::print_method(CompilerPhaseType cpt, int level, Node* n) {
   EventCompilerPhase event;
   if (event.should_commit()) {
     CompilerEvent::PhaseEvent::post(event, C->_latest_stage_start_counter, cpt, C->_compile_id, level);
   }
 #ifndef PRODUCT
-  if (should_print(level)) {
-    _printer->print_method(name, level);
+  ResourceMark rm;
+  stringStream ss;
+  ss.print_raw(CompilerPhaseTypeHelper::to_name(cpt));
+  if (n != nullptr) {
+    ss.print(": %d %s ", n->_idx, NodeClassNames[n->Opcode()]);
+  }
+
+  const char* name = ss.as_string();
+  if (should_print_igv(level)) {
+    _igv_printer->print_method(name, level);
+  }
+  if (should_print_phase(cpt)) {
+    print_ideal_ir(CompilerPhaseTypeHelper::to_name(cpt));
   }
 #endif
   C->_latest_stage_start_counter.stamp();
 }
 
-void Compile::print_method(CompilerPhaseType cpt, int level, int idx) {
-  char output[1024];
+// Only used from CompileWrapper
+void Compile::begin_method() {
 #ifndef PRODUCT
-  if (idx != 0) {
-    jio_snprintf(output, sizeof(output), "%s:%d", CompilerPhaseTypeHelper::to_string(cpt), idx);
-  } else {
-    jio_snprintf(output, sizeof(output), "%s", CompilerPhaseTypeHelper::to_string(cpt));
+  if (_method != NULL && should_print_igv(1)) {
+    _igv_printer->begin_method();
   }
 #endif
-  print_method(cpt, output, level);
+  C->_latest_stage_start_counter.stamp();
 }
 
-void Compile::print_method(CompilerPhaseType cpt, Node* n, int level) {
-  ResourceMark rm;
-  stringStream ss;
-  ss.print_raw(CompilerPhaseTypeHelper::to_string(cpt));
-  if (n != NULL) {
-    ss.print(": %d %s ", n->_idx, NodeClassNames[n->Opcode()]);
-  } else {
-    ss.print_raw(": NULL");
-  }
-  C->print_method(cpt, ss.as_string(), level);
-}
-
-void Compile::end_method(int level) {
+// Only used from CompileWrapper
+void Compile::end_method() {
   EventCompilerPhase event;
   if (event.should_commit()) {
-    CompilerEvent::PhaseEvent::post(event, C->_latest_stage_start_counter, PHASE_END, C->_compile_id, level);
+    CompilerEvent::PhaseEvent::post(event, C->_latest_stage_start_counter, PHASE_END, C->_compile_id, 1);
   }
 
 #ifndef PRODUCT
-  if (_method != NULL && should_print(level)) {
-    _printer->end_method();
+  if (_method != NULL && should_print_igv(1)) {
+    _igv_printer->end_method();
   }
 #endif
 }
 
+bool Compile::should_print_phase(CompilerPhaseType cpt) {
+#ifndef PRODUCT
+  if ((_directive->ideal_phase_mask() & CompilerPhaseTypeHelper::to_bitmask(cpt)) != 0) {
+    return true;
+  }
+#endif
+  return false;
+}
+
+bool Compile::should_print_igv(int level) {
+#ifndef PRODUCT
+  if (PrintIdealGraphLevel < 0) { // disabled by the user
+    return false;
+  }
+
+  bool need = directive()->IGVPrintLevelOption >= level;
+  if (need && !_igv_printer) {
+    _igv_printer = IdealGraphPrinter::printer();
+    _igv_printer->set_compile(this);
+  }
+  return need;
+#else
+  return false;
+#endif
+}
 
 #ifndef PRODUCT
 IdealGraphPrinter* Compile::_debug_file_printer = NULL;

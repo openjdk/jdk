@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1024,13 +1024,15 @@ private:
   GrowableArray<float> _freqs; // cache frequencies
   PhaseIdealLoop* _phase;
 
-  void set_rounding(int mode) {
-    // fesetround is broken on windows
-    NOT_WINDOWS(fesetround(mode);)
-  }
-
-  void check_frequency(float f) {
-    NOT_WINDOWS(assert(f <= 1 && f >= 0, "Incorrect frequency");)
+  float check_and_truncate_frequency(float f) {
+    assert(f >= 0, "Incorrect frequency");
+    // We do not perform an exact (f <= 1) check
+    // this would be error prone with rounding of floats.
+    // Performing a check like (f <= 1+eps) would be of benefit,
+    // however, it is not evident how to determine such an eps,
+    // given that an arbitrary number of add/mul operations
+    // are performed on these frequencies.
+    return (f > 1) ? 1 : f;
   }
 
 public:
@@ -1040,7 +1042,6 @@ public:
 
   float to(Node* n) {
     // post order walk on the CFG graph from n to _dom
-    set_rounding(FE_TOWARDZERO); // make sure rounding doesn't push frequency above 1
     IdealLoopTree* loop = _phase->get_loop(_dom);
     Node* c = n;
     for (;;) {
@@ -1067,14 +1068,12 @@ public:
                 inner_head = inner_loop->_head->as_Loop();
                 inner_head->verify_strip_mined(1);
               }
-              set_rounding(FE_UPWARD);  // make sure rounding doesn't push frequency above 1
               float loop_exit_cnt = 0.0f;
               for (uint i = 0; i < inner_loop->_body.size(); i++) {
                 Node *n = inner_loop->_body[i];
                 float c = inner_loop->compute_profile_trip_cnt_helper(n);
                 loop_exit_cnt += c;
               }
-              set_rounding(FE_TOWARDZERO);
               float cnt = -1;
               if (n->in(0)->is_If()) {
                 IfNode* iff = n->in(0)->as_If();
@@ -1094,9 +1093,9 @@ public:
                 cnt = p * jmp->_fcnt;
               }
               float this_exit_f = cnt > 0 ? cnt / loop_exit_cnt : 0;
-              check_frequency(this_exit_f);
+              this_exit_f = check_and_truncate_frequency(this_exit_f);
               f = f * this_exit_f;
-              check_frequency(f);
+              f = check_and_truncate_frequency(f);
             } else {
               float p = -1;
               if (n->in(0)->is_If()) {
@@ -1109,7 +1108,7 @@ public:
                 p = n->in(0)->as_Jump()->_probs[n->as_JumpProj()->_con];
               }
               f = f * p;
-              check_frequency(f);
+              f = check_and_truncate_frequency(f);
             }
             _freqs.at_put_grow(n->_idx, (float)f, -1);
             _stack.pop();
@@ -1117,7 +1116,7 @@ public:
             float prev_f = _freqs_stack.pop();
             float new_f = f;
             f = new_f + prev_f;
-            check_frequency(f);
+            f = check_and_truncate_frequency(f);
             uint i = _stack.index();
             if (i < n->req()) {
               c = n->in(i);
@@ -1130,9 +1129,7 @@ public:
           }
         }
         if (_stack.size() == 0) {
-          set_rounding(FE_TONEAREST);
-          check_frequency(f);
-          return f;
+          return check_and_truncate_frequency(f);
         }
       } else if (c->is_Loop()) {
         ShouldNotReachHere();
@@ -1192,7 +1189,7 @@ public:
             assert(con >= CatchProjNode::catch_all_index, "what else?");
             _freqs.at_put_grow(c->_idx, 0, -1);
           }
-        } else if (c->unique_ctrl_out() == NULL && !c->is_If() && !c->is_Jump()) {
+        } else if (c->unique_ctrl_out_or_null() == NULL && !c->is_If() && !c->is_Jump()) {
           ShouldNotReachHere();
         } else {
           c = c->in(0);
@@ -1367,7 +1364,7 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree *loop, ProjNode*
   invar.map_ctrl(proj, new_predicate_proj); // so that invariance test can be appropriate
 
   // Eliminate the old If in the loop body
-  dominated_by( new_predicate_proj, iff, proj->_con != new_predicate_proj->_con );
+  dominated_by( new_predicate_proj->as_IfProj(), iff, proj->_con != new_predicate_proj->_con );
 
   C->set_major_progress();
   return true;

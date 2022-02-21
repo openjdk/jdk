@@ -1,4 +1,4 @@
-.\" Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -509,6 +509,15 @@ This option stops expanding \f[CB]\@\f[R]\-argfiles after the option.
 Allows classes to depend on \f[B]preview features\f[R]
 [https://docs.oracle.com/en/java/javase/12/language/index.html#JSLAN\-GUID\-5A82FE0E\-0CA4\-4F1F\-B075\-564874FE2823]
 of the release.
+.RS
+.RE
+.TP
+.B \f[CB]\-\-finalization=\f[R]\f[I]value\f[R]
+Controls whether the JVM performs finalization of objects.
+Valid values are "enabled" and "disabled".
+Finalization is enabled by default, so the value "enabled" does nothing.
+The value "disabled" disables finalization, so that no finalizers are
+invoked.
 .RS
 .RE
 .TP
@@ -1081,8 +1090,10 @@ Require using shared class data, otherwise fail.
 .RS
 .PP
 \f[B]Note:\f[R] The \f[CB]\-Xshare:on\f[R] option is used for testing
-purposes only and may cause intermittent failures due to the use of
-address space layout randomization by the operation system.
+purposes only.
+It may cause the VM to unexpectedly exit during start\-up when the CDS
+archive cannot be used (for example, when certain VM parameters are
+changed, or when a different JDK is used).
 This option should not be used in production environments.
 .RE
 .TP
@@ -1427,14 +1438,6 @@ By default, the system\[aq]s temporary directory is used.
 .B \f[CB]retransform=\f[R]{\f[CB]true\f[R]|\f[CB]false\f[R]}
 Specifies whether event classes should be retransformed using JVMTI.
 If false, instrumentation is added when event classes are loaded.
-By default, this parameter is enabled.
-.RS
-.RE
-.TP
-.B \f[CB]samplethreads=\f[R]{\f[CB]true\f[R]|\f[CB]false\f[R]}
-Specifies whether thread sampling is enabled.
-Thread sampling occurs only if the sampling event is enabled along with
-this parameter.
 By default, this parameter is enabled.
 .RS
 .RE
@@ -2974,11 +2977,19 @@ different JDK version.
 .RE
 .RE
 .TP
-.B \f[CB]\-XX:+ExtendedDTraceProbes\f[R]
-\f[B]Linux and macOS:\f[R] Enables additional \f[CB]dtrace\f[R] tool probes
-that affect the performance.
-By default, this option is disabled and \f[CB]dtrace\f[R] performs only
-standard probes.
+.B \f[CB]\-XX:+DTraceAllocProbes\f[R]
+\f[B]Linux and macOS:\f[R] Enable \f[CB]dtrace\f[R] tool probes for object allocation.
+.RS
+.RE
+.TP
+.B \f[CB]\-XX:+DTraceMethodProbes\f[R]
+\f[B]Linux and macOS:\f[R] Enable \f[CB]dtrace\f[R] tool probes for method-entry
+and method-exit.
+.RS
+.RE
+.TP
+.B \f[CB]\-XX:+DTraceMonitorProbes\f[R]
+\f[B]Linux and macOS:\f[R] Enable \f[CB]dtrace\f[R] tool probes for monitor events.
 .RS
 .RE
 .TP
@@ -4003,6 +4014,16 @@ See Enable Logging with the JVM Unified Logging Framework.
 Example:
 .PP
 \f[CB]\-Xlog:gc:garbage\-collection.log\f[R]
+.RE
+.TP
+.B \f[CB]\-XX:+ExtendedDTraceProbes\f[R]
+\f[B]Linux and macOS:\f[R] Enables additional \f[CB]dtrace\f[R] tool probes
+that affect performance.
+By default, this option is disabled and \f[CB]dtrace\f[R] performs only
+standard probes.
+Use the combination of these flags instead: \f[CB]\-XX:+DTraceMethodProbes\f[R],
+\f[CB]\-XX:+DTraceAllocProbes\f[R], \f[CB]\-XX:+DTraceMonitorProbes\f[R].
+.RS
 .RE
 .TP
 .B \f[CB]\-XX:+FlightRecorder\f[R]
@@ -5255,293 +5276,83 @@ who\[aq]s running the application, because administrators by default
 don\[aq]t have the privilege to lock pages in memory.
 .SH APPLICATION CLASS DATA SHARING
 .PP
-Application Class Data Sharing (AppCDS) extends class data sharing (CDS)
-to enable application classes to be placed in a shared archive.
+Application Class Data Sharing (AppCDS) stores classes used by your
+applications in an archive file.
+Since these classes are stored in a format that can be loaded very
+quickly (compared to classes stored in a JAR file), AppCDS can improve
+the start\-up time of your applications.
+In addition, AppCDS can reduce the runtime memory footprint by sharing
+parts of these classes across multiple processes.
 .PP
-In addition to the core library classes, AppCDS supports \f[B]Class Data
-Sharing\f[R]
-[https://docs.oracle.com/en/java/javase/12/vm/class\-data\-sharing.html#GUID\-7EAA3411\-8CF0\-4D19\-BD05\-DF5E1780AA91]
-from the following locations:
-.IP \[bu] 2
-Platform classes from the runtime image
-.IP \[bu] 2
-Application classes from the runtime image
-.IP \[bu] 2
-Application classes from the class path
-.IP \[bu] 2
-Application classes from the module path
+Classes in the CDS archive are stored in an optimized format that\[aq]s
+about 2 to 5 times larger than classes stored in JAR files or the JDK
+runtime image.
+Therefore, it\[aq]s a good idea to archive only those classes that are
+actually used by your application.
+These usually are just a small portion of all available classes.
+For example, your application may use only a few APIs provided by a
+large library.
+.SS Using CDS Archives
 .PP
-Archiving application classes provides better start up time at runtime.
-When running multiple JVM processes, AppCDS also reduces the runtime
-footprint with memory sharing for read\-only metadata.
+By default, in most JDK distributions, unless \f[CB]\-Xshare:off\f[R] is
+specified, the JVM starts up with a default CDS archive, which is
+usually located in \f[CB]JAVA_HOME/lib/server/classes.jsa\f[R] (or
+\f[CB]JAVA_HOME\\bin\\server\\classes.jsa\f[R] on Windows).
+This archive contains about 1300 core library classes that are used by
+most applications.
 .PP
-CDS/AppCDS supports archiving classes from JAR files only.
-.PP
-Prior to JDK 11, a non\-empty directory was reported as a fatal error in
-the following conditions:
-.IP \[bu] 2
-For base CDS, a non\-empty directory cannot exist in the
-\f[CB]\-Xbootclasspath/a\f[R] path
-.IP \[bu] 2
-With \f[CB]\-XX:+UseAppCDS\f[R], a non\-empty directory could not exist in
-the \f[CB]\-Xbootclasspath/a\f[R] path, class path, and module path.
-.PP
-In JDK 11 and later, \f[CB]\-XX:+UseAppCDS\f[R] is obsolete and the
-behavior for a non\-empty directory is based on the class types in the
-classlist.
-A non\-empty directory is reported as a fatal error in the following
-conditions:
-.IP \[bu] 2
-If application classes or platform classes are not loaded, dump time
-only reports an error if a non\-empty directory exists in
-\f[CB]\-Xbootclasspath/a\f[R] path
-.IP \[bu] 2
-If application classes or platform classes are loaded, dump time reports
-an error for a non\-empty directory that exists in
-\f[CB]\-Xbootclasspath/a\f[R] path, class path, or module path
-.PP
-In JDK 11 and later, using
-\f[CB]\-XX:DumpLoadedClassList=\f[R]\f[I]class_list_file\f[R] results a
-generated classlist with all classes (both system library classes and
-application classes) included.
-You no longer have to specify \f[CB]\-XX:+UseAppCDS\f[R] with
-\f[CB]\-XX:DumpLoadedClassList\f[R] to produce a complete class list.
-.PP
-In JDK 11 and later, because \f[CB]UseAppCDS\f[R] is obsolete,
-\f[CB]SharedArchiveFile\f[R] becomes a product flag by default.
-Specifying \f[CB]+UnlockDiagnosticVMOptions\f[R] for
-\f[CB]SharedArchiveFile\f[R] is no longer needed in any configuration.
-.PP
-Class Data Sharing (CDS)/AppCDS does not support archiving array classes
-in a class list.
-When an array in the class list is encountered, CDS dump time gives the
-explicit error message:
+To use CDS for the exact set of classes used by your application, you
+can use the \f[CB]\-XX:SharedArchiveFile\f[R] option, which has the
+general form:
 .RS
 .PP
-\f[CB]Preload\ Warning:\ Cannot\ find\f[R] \f[I]array_name\f[R]
+\f[CB]\-XX:SharedArchiveFile=<static_archive>:<dynamic_archive>\f[R]
 .RE
-.PP
-Although an array in the class list is not allowed, some array classes
-can still be created at CDS/AppCDS dump time.
-Those arrays are created during the execution of the Java code used by
-the Java class loaders (\f[CB]PlatformClassLoader\f[R] and the system
-class loader) to load classes at dump time.
-The created arrays are archived with the rest of the loaded classes.
-.SS Extending Class Data Sharing to Support the Module Path
-.PP
-In JDK 11, Class Data Sharing (CDS) has been improved to support
-archiving classes from the module path.
 .IP \[bu] 2
-To create a CDS archive using the \f[CB]\-\-module\-path\f[R] VM option,
-use the following command line syntax:
-.RS 2
+The \f[CB]<static_archive>\f[R] overrides the default CDS archive.
+.IP \[bu] 2
+The \f[CB]<dynamic_archive>\f[R] provides additional classes that can be
+loaded on top of those in the \f[CB]<static_archive>\f[R].
+.IP \[bu] 2
+On Windows, the above path delimiter \f[CB]:\f[R] should be replaced with
+\f[CB];\f[R]
+.PP
+(The names "static" and "dyanmic" are used for historical reasons.
+The only significance is that the "static" archive is loaded first and
+the "dynamic" archive is loaded second).
+.PP
+The JVM can use up to two archives.
+To use only a single \f[CB]<static_archive>\f[R], you can omit the
+\f[CB]<dynamic_archive>\f[R] portion:
 .RS
 .PP
-\f[CB]java\ \-Xshare:dump\ \-XX:SharedClassListFile=\f[R]\f[I]class_list_file\f[R]
-\f[CB]\-XX:SharedArchiveFile=\f[R]\f[I]shared_archive_file\f[R]
-\f[CB]\-\-module\-path=\f[R]\f[I]path_to_modular_jar\f[R] \f[CB]\-m\f[R]
-\f[I]module_name\f[R]
+\f[CB]\-XX:SharedArchiveFile=<static_archive>\f[R]
 .RE
-.RE
-.IP \[bu] 2
-To run with a CDS archive using the \f[CB]\-\-module\-path\f[R] VM option,
-use the following the command line syntax:
-.RS 2
+.PP
+For convenience, the \f[CB]<dynamic_archive>\f[R] records the location of
+the \f[CB]<static_archive>\f[R].
+Therefore, you can omit the \f[CB]<static_archive>\f[R] by saying only:
 .RS
 .PP
-\f[CB]java\ \-XX:SharedArchiveFile=\f[R]\f[I]shared_archive_file\f[R]
-\f[CB]\-\-module\-path=\f[R]\f[I]path_to_modular_jar\f[R] \f[CB]\-m\f[R]
-\f[I]module_name\f[R]
+\f[CB]\-XX:SharedArchiveFile=<dynamic_archive>\f[R]
 .RE
-.RE
+.SS Creating CDS Archives
 .PP
-The following table describes how the VM options related to module paths
-can be used along with the \f[CB]\-Xshare\f[R] option.
-.PP
-.TS
-tab(@);
-l l l.
-T{
-Option
-T}@T{
-\-Xshare:dump
-T}@T{
-\-Xshare:{on,auto}
-T}
-_
-T{
-\f[CB]\-\-module\-path\f[R][1] \f[I]mp\f[R]
-T}@T{
-Allowed
-T}@T{
-Allowed[2]
-T}
-T{
-\f[CB]\-\-module\f[R]
-T}@T{
-Allowed
-T}@T{
-Allowed
-T}
-T{
-\f[CB]\-\-add\-module\f[R]
-T}@T{
-Allowed
-T}@T{
-Allowed
-T}
-T{
-\f[CB]\-\-upgrade\-module\-path\f[R][3]
-T}@T{
-Disallowed (exits if specified)
-T}@T{
-Allowed (disables CDS)
-T}
-T{
-\f[CB]\-\-patch\-module\f[R][4]
-T}@T{
-Disallowed (exits if specified)
-T}@T{
-Allowed (disables CDS)
-T}
-T{
-\f[CB]\-\-limit\-modules\f[R][5]
-T}@T{
-Disallowed (exits if specified)
-T}@T{
-Allowed (disables CDS)
-T}
-.TE
-.PP
-[1] Although there are two ways of specifying a module in a
-\f[CB]\-\-module\-path\f[R], that is, modular JAR or exploded module, only
-modular JARs are supported.
-.PP
-[2] Different \f[I]mp\f[R] can be specified during dump time versus run
-time.
-If an archived class K was loaded from \f[CB]mp1.jar\f[R] at dump time,
-but changes in \f[I]mp\f[R] cause it to be available from a different
-\f[CB]mp2.jar\f[R] at run time, then the archived version of K will be
-disregarded at run time; K will be loaded dynamically.
-.PP
-[3] Currently, only two system modules are upgradeable
-(\f[CB]java.compiler\f[R] and \f[CB]jdk.internal.vm.compiler\f[R]).
-However, these modules are seldom upgraded in production software.
-.PP
-[4] As documented in JEP 261, using \f[CB]\-\-patch\-module\f[R] is
-strongly discouraged for production use.
-.PP
-[5] \f[CB]\-\-limit\-modules\f[R] is intended for testing purposes.
-It is seldom used in production software.
-.PP
-If \f[CB]\-\-upgrade\-module\-path\f[R], \f[CB]\-\-patch\-module\f[R], or
-\f[CB]\-\-limit\-modules\f[R] is specified at dump time, an error will be
-printed and the JVM will exit.
-For example, if the \f[CB]\-\-limit\-modules\f[R] option is specified at
-dump time, the user will see the following error:
-.IP
-.nf
-\f[CB]
-Error\ occurred\ during\ initialization\ of\ VM
-Cannot\ use\ the\ following\ option\ when\ dumping\ the\ shared\ archive:\ \-\-limit\-modules
-\f[R]
-.fi
-.PP
-If \f[CB]\-\-upgrade\-module\-path\f[R], \f[CB]\-\-patch\-module\f[R], or
-\f[CB]\-\-limit\-modules\f[R] is specified at run time, a warning message
-will be printed indicating that CDS is disabled.
-For example, if the \f[CB]\-\-limit\-modules\f[R] options is specified at
-run time, the user will see the following warning:
-.IP
-.nf
-\f[CB]
-Java\ HotSpot(TM)\ 64\-Bit\ Server\ VM\ warning:\ CDS\ is\ disabled\ when\ the\ \-\-limit\-modules\ option\ is\ specified.
-\f[R]
-.fi
-.PP
-Several other noteworthy things include:
+CDS archives can be created with several methods:
 .IP \[bu] 2
-Any valid combinations of \f[CB]\-cp\f[R] and \f[CB]\-\-module\-path\f[R]
-are supported.
+\f[CB]\-Xshare:dump\f[R]
 .IP \[bu] 2
-A non\-empty directory in the module path causes a fatal error.
-The user will see the following error messages:
-.RS 2
-.IP
-.nf
-\f[CB]
-Error:\ non\-empty\ directory\ <directory>\ Hint:\ enable\ \-Xlog:class+path=info\ to\ diagnose\ the\ failure\ Error\ occurred\ during\ initialization\ of\ VM\ Cannot\ have\ non\-empty\ directory\ in\ paths
-\f[R]
-.fi
-.RE
+\f[CB]\-XX:ArchiveClassesAtExit\f[R]
 .IP \[bu] 2
-Unlike the class path, there\[aq]s no restriction that the module path
-at dump time must be equal to or be a prefix of the module path at run
-time.
-.IP \[bu] 2
-The archive is invalidated if an existing JAR in the module path is
-updated after archive generation.
-.IP \[bu] 2
-Removing a JAR from the module path does not invalidate the shared
-archive.
-Archived classes from the removed JAR are not used at runtime.
-.SS Dynamic CDS archive
+\f[CB]jcmd\ VM.cds\f[R]
 .PP
-Dynamic CDS archive extends AppCDS to allow archiving of classes when a
-Java application exits.
-It improves the usability of AppCDS by eliminating the trial run step
-for creating a class list for each application.
-The archived classes include all loaded application classes and library
-classes that are not present in the default CDS archive which is
-included in the JDK.
+One common operation in all these methods is a "trial run", where you
+run the application once to determine the classes that should be stored
+in the archive.
+.SS Creating a Static CDS Archive File with \-Xshare:dump
 .PP
-A base archive is required when creating a dynamic archive.
-If the base archive is not specified, the default CDS archive is used as
-the base archive.
-.PP
-To create a dynamic CDS archive with the default CDS archive as the base
-archive, just add the
-\f[CB]\-XX:ArchiveClassesAtExit=<dynamic\ archive>\f[R] option to the
-command line for running the Java application.
-.PP
-If the default CDS archive does not exist, the VM will exit with the
-following error:
-.IP
-.nf
-\f[CB]
-ArchiveClassesAtExit\ not\ supported\ when\ base\ CDS\ archive\ is\ not\ loaded
-\f[R]
-.fi
-.PP
-To run the Java application using a dynamic CDS archive, just add the
-\f[CB]\-XX:SharedArchiveFile=<dynamic\ archive>\f[R] option to the command
-line for running the Java application.
-.PP
-The base archive is not required to be specified in the command line.
-The base archive information, including its name and full path, will be
-retrieved from the dynamic archive header.
-Note that the user could also use the \f[CB]\-XX:SharedArchiveFile\f[R]
-option for specifying a regular AppCDS archive.
-Therefore, the specified archive in the \f[CB]\-XX:SharedArchiveFile\f[R]
-option could be either a regular or dynamic archive.
-During VM start up the specified archive header will be read.
-If \f[CB]\-XX:SharedArchiveFile\f[R] refers to a regular archive, then the
-behavior will be unchanged.
-If \f[CB]\-XX:SharedArchiveFile\f[R] refers to a dynamic archive, the VM
-will retrieve the base archive location from the dynamic archive.
-If the dynamic archive was created with the default CDS archive, then
-the current default CDS archive will be used, and will be found relative
-to the current run time environment.
-.PP
-Please refer to \f[B]JDK\-8221706\f[R]
-[https://bugs.openjdk.java.net/browse/JDK\-8221706] for details on error
-checking during dynamic CDS archive dump time and run time.
-.SS Creating a Shared Archive File and Using It to Run an Application
-.SS AppCDS archive
-.PP
-The following steps create a shared archive file that contains all the
-classes used by the \f[CB]test.Hello\f[R] application.
-The last step runs the application with the shared archive file.
+The following steps create a static CDS archive file that contains all
+the classes used by the \f[CB]test.Hello\f[R] application.
 .IP "1." 3
 Create a list of all classes used by the \f[CB]test.Hello\f[R]
 application.
@@ -5553,23 +5364,20 @@ contains a list of all classes used by this application:
 \f[CB]java\ \-Xshare:off\ \-XX:DumpLoadedClassList=hello.classlist\ \-cp\ hello.jar\ test.Hello\f[R]
 .RE
 .PP
-Note that the classpath specified by the \f[CB]\-cp\f[R] parameter must
-contain only JAR files.
+The classpath specified by the \f[CB]\-cp\f[R] parameter must contain only
+JAR files.
 .RE
 .IP "2." 3
-Create a shared archive, named \f[CB]hello.jsa\f[R], that contains all the
+Create a static archive, named \f[CB]hello.jsa\f[R], that contains all the
 classes in \f[CB]hello.classlist\f[R]:
 .RS 4
 .RS
 .PP
 \f[CB]java\ \-Xshare:dump\ \-XX:SharedArchiveFile=hello.jsa\ \-XX:SharedClassListFile=hello.classlist\ \-cp\ hello.jar\f[R]
 .RE
-.PP
-Note that the classpath used at archive creation time must be the same
-as (or a prefix of) the classpath used at run time.
 .RE
 .IP "3." 3
-Run the application \f[CB]test.Hello\f[R] with the shared archive
+Run the application \f[CB]test.Hello\f[R] with the archive
 \f[CB]hello.jsa\f[R]:
 .RS 4
 .RS
@@ -5583,23 +5391,27 @@ using the class contained in the \f[CB]hello.jsa\f[R] shared archive:
 .RS 4
 .RS
 .PP
-\f[CB]java\ \-XX:SharedArchiveFile=hello.jsa\ \-cp\ hello.jar\ \-verbose:class\ test.Hello\f[R]
+\f[CB]java\ \-XX:SharedArchiveFile=hello.jsa\ \-cp\ hello.jar\ \-Xlog:class+load\ test.Hello\f[R]
 .RE
 .PP
 The output of this command should contain the following text:
-.IP
-.nf
-\f[CB]
-Loaded\ test.Hello\ from\ shared\ objects\ file\ by\ sun/misc/Launcher$AppClassLoader
-\f[R]
-.fi
+.RS
+.PP
+\f[CB][info][class,load]\ test.Hello\ source:\ shared\ objects\ file\f[R]
 .RE
-.SS Dynamic CDS archive
+.RE
+.SS Creating a Dynamic CDS Archive File with \-XX:SharedArchiveFile
+.PP
+Advantages of dynamic CDS archives are:
+.IP \[bu] 2
+They usually use less disk space, since they don\[aq]t need to store the
+classes that are already in the static archive.
+.IP \[bu] 2
+They are created with one fewer step than the comparable static archive.
 .PP
 The following steps create a dynamic CDS archive file that contains the
-classes used by the \f[CB]test.Hello\f[R] application and are not included
-in the default CDS archive.
-The second step runs the application with the dynamic CDS archive.
+classes that are used by the \f[CB]test.Hello\f[R] application, excluding
+those that are already in the default CDS archive.
 .IP "1." 3
 Create a dynamic CDS archive, named \f[CB]hello.jsa\f[R], that contains
 all the classes in \f[CB]hello.jar\f[R] loaded by the application
@@ -5609,9 +5421,6 @@ all the classes in \f[CB]hello.jar\f[R] loaded by the application
 .PP
 \f[CB]java\ \-XX:ArchiveClassesAtExit=hello.jsa\ \-cp\ hello.jar\ Hello\f[R]
 .RE
-.PP
-Note that the classpath used at archive creation time must be the same
-as (or a prefix of) the classpath used at run time.
 .RE
 .IP "2." 3
 Run the application \f[CB]test.Hello\f[R] with the shared archive
@@ -5627,218 +5436,87 @@ Run the application \f[CB]test.Hello\f[R] with the shared archive
 the \f[CB]test.Hello\f[R] application is using the class contained in the
 \f[CB]hello.jsa\f[R] shared archive.
 .PP
-To automate the above steps 1 and 2, one can write a script such as the
-following:
-.IP
-.nf
-\f[CB]
-\ \ \ \ ARCHIVE=hello.jsa
-\ \ \ \ if\ test\ \-f\ $ARCHIVE;\ then
-\ \ \ \ \ \ \ \ FLAG="\-XX:SharedArchiveFile=$ARCHIVE"
-\ \ \ \ else
-\ \ \ \ \ \ \ \ FLAG="\-XX:ArchiveClassesAtExit=$ARCHIVE"
-\ \ \ \ fi
-\ \ \ \ $JAVA_HOME/bin/java\ \-cp\ hello.jar\ $FLAG\ test.Hello
-\f[R]
-.fi
-.PP
-Like an AppCDS archive, the archive needs to be re\-generated if the
-Java version has changed.
-The above script could be adjusted to account for the Java version as
-follows:
-.IP
-.nf
-\f[CB]
-\ \ \ \ ARCHIVE=hello.jsa
-\ \ \ \ VERSION=foo.version
-\ \ \ \ if\ test\ \-f\ $ARCHIVE\ \-a\ \-f\ $VERSION\ &&\ cmp\ \-s\ $VERSION\ $JAVA_HOME/release;\ then
-\ \ \ \ \ \ \ \ FLAG="\-XX:SharedArchiveFile=$ARCHIVE"
-\ \ \ \ else
-\ \ \ \ \ \ \ \ FLAG="\-XX:ArchiveClassesAtExit=$ARCHIVE"
-\ \ \ \ \ \ \ \ cp\ \-f\ $JAVA_HOME/release\ $VERSION
-\ \ \ \ fi
-\ \ \ \ $JAVA_HOME/bin/java\ \-cp\ hello.jar\ $FLAG\ test.Hello
-\f[R]
-.fi
-.PP
-Currently, we don\[aq]t support concurrent dumping operations to the
-same CDS archive.
-Care should be taken to avoid multiple writers to the same CDS archive.
-.PP
-The user could also create a dynamic CDS archive with a specific base
-archive, e.g.
-named as \f[CB]base.jsa\f[R] as follows:
+It\[aq]s also possible to create a dynamic CDS archive with a
+non\-default static CDS archive.
+E.g.,
 .RS
 .PP
 \f[CB]java\ \-XX:SharedArchiveFile=base.jsa\ \-XX:ArchiveClassesAtExit=hello.jsa\ \-cp\ hello.jar\ Hello\f[R]
 .RE
 .PP
-To run the application using the dynamic CDS archive \f[CB]hello.jsa\f[R]
-and a specific base CDS archive \f[CB]base.jsa\f[R]:
+To run the application using this dynamic CDS archive:
 .RS
 .PP
 \f[CB]java\ \-XX:SharedArchiveFile=base.jsa:hello.jsa\ \-cp\ hello.jar\ Hello\f[R]
 .RE
 .PP
-Note that on Windows, the above path delimiter \f[CB]:\f[R] should be
-replaced with \f[CB];\f[R].
+(On Windows, the above path delimiter \f[CB]:\f[R] should be replaced with
+\f[CB];\f[R])
 .PP
-The above command for specifying a base archive is useful if the base
-archive used for creating the dynamic archive has been moved.
-Normally, just specifying the dynamic archive should be sufficient since
-the base archive info can be retrieved from the dynamic archive header.
-.SS Sharing a Shared Archive Across Multiple Application Processes
-.PP
-You can share the same archive file across multiple applications
-processes.
-This reduces memory usage because the archive is memory\-mapped into the
-address space of the processes.
-The operating system automatically shares the read\-only pages across
-these processes.
-.PP
-The following steps demonstrate how to create a common archive that can
-be shared by different applications.
-Classes from \f[CB]common.jar\f[R], \f[CB]hello.jar\f[R] and \f[CB]hi.jar\f[R]
-are archived in the \f[CB]common.jsa\f[R] because they are all in the
-classpath during the archiving step (step 3).
-.PP
-To include classes from \f[CB]hello.jar\f[R] and \f[CB]hi.jar\f[R], the
-\f[CB]\&.jar\f[R] files must be added to the classpath specified by the
-\f[CB]\-cp\f[R] parameter.
-.IP "1." 3
-Create a list of all classes used by the \f[CB]Hello\f[R] application and
-another list for the \f[CB]Hi\f[R] application:
-.RS 4
+As mention above, the name of the static archive can be skipped:
 .RS
 .PP
-\f[CB]java\ \-XX:DumpLoadedClassList=hello.classlist\ \-cp\ common.jar:hello.jar\ Hello\f[R]
+\f[CB]java\ \-XX:SharedArchiveFile=hello.jsa\ \-cp\ hello.jar\ Hello\f[R]
 .RE
+.SS Creating CDS Archive Files with jcmd
+.PP
+The previous two sections require you to modify the application\[aq]s
+start\-up script in order to create a CDS archive.
+Sometimes this could be difficult, for example, if the application\[aq]s
+class path is set up by complex routines.
+.PP
+The \f[CB]jcmd\ VM.cds\f[R] command provides a less intrusive way for
+creating a CDS archive by connecting to a running JVM process.
+You can create either a static:
 .RS
 .PP
-\f[CB]java\ \-XX:DumpLoadedClassList=hi.classlist\ \-cp\ common.jar:hi.jar\ Hi\f[R]
+\f[CB]jcmd\ <pid>\ VM.cds\ static_dump\ my_static_archive.jsa\f[R]
 .RE
-.RE
-.IP "2." 3
-Create a single list of classes used by all the applications that will
-share the shared archive file.
-.RS 4
 .PP
-\f[B]Linux and macOS\f[R] The following commands combine the files
-\f[CB]hello.classlist\f[R] and \f[CB]hi.classlist\f[R] into one file,
-\f[CB]common.classlist\f[R]:
+or a dynamic archive:
 .RS
 .PP
-\f[CB]cat\ hello.classlist\ hi.classlist\ >\ common.classlist\f[R]
+\f[CB]jcmd\ <pid>\ VM.cds\ dynamic_dump\ my_dynamic_archive.jsa\f[R]
 .RE
 .PP
-\f[B]Windows\f[R] The following commands combine the files
-\f[CB]hello.classlist\f[R] and \f[CB]hi.classlist\f[R] into one file,
-\f[CB]common.classlist\f[R]:
+To use the resulting archive file in a subsequent run of the application
+without modifying the application\[aq]s start\-up script, you can use
+the following technique:
 .RS
 .PP
-\f[CB]type\ hello.classlist\ hi.classlist\ >\ common.classlist\f[R]
+\f[CB]env\ JAVA_TOOL_OPTIONS=\-XX:SharedArchiveFile=my_static_archive.jsa\ bash\ app_start.sh\f[R]
 .RE
-.RE
-.IP "3." 3
-Create a shared archive named \f[CB]common.jsa\f[R] that contains all the
-classes in \f[CB]common.classlist\f[R]:
-.RS 4
+.PP
+Note: to use \f[CB]jcmd\ <pid>\ VM.cds\ dynamic_dump\f[R], the JVM process
+identified by \f[CB]<pid>\f[R] must be started with
+\f[CB]\-XX:+RecordDynamicDumpInfo\f[R], which can also be passed to the
+application start\-up script with the same technique:
 .RS
 .PP
-\f[CB]java\ \-Xshare:dump\ \-XX:SharedArchiveFile=common.jsa\ \-XX:SharedClassListFile=common.classlist\ \-cp\ common.jar:hello.jar:hi.jar\f[R]
+\f[CB]env\ JAVA_TOOL_OPTIONS=\-XX:+RecordDynamicDumpInfo\ bash\ app_start.sh\f[R]
 .RE
-.PP
-The classpath parameter used is the common class path prefix shared by
-the \f[CB]Hello\f[R] and \f[CB]Hi\f[R] applications.
-.RE
-.IP "4." 3
-Run the \f[CB]Hello\f[R] and \f[CB]Hi\f[R] applications with the same shared
-archive:
-.RS 4
-.RS
-.PP
-\f[CB]java\ \-XX:SharedArchiveFile=common.jsa\ \-cp\ common.jar:hello.jar:hi.jar\ Hello\f[R]
-.RE
-.RS
-.PP
-\f[CB]java\ \-XX:SharedArchiveFile=common.jsa\ \-cp\ common.jar:hello.jar:hi.jar\ Hi\f[R]
-.RE
-.RE
-.SS Specifying Additional Shared Data Added to an Archive File
-.PP
-The \f[CB]SharedArchiveConfigFile\f[R] option is used to specify
-additional shared data to add to the archive file.
-.RS
-.PP
-\f[CB]\-XX:SharedArchiveConfigFile=\f[R]\f[I]shared_config_file\f[R]
-.RE
-.PP
-JDK 9 and later supports adding both symbols and string objects to an
-archive for memory sharing when you have multiple JVM processes running
-on the same host.
-An example of this is having multiple JVM processes that use the same
-set of Java EE classes.
-When these common classes are loaded and used, new symbols and strings
-may be created and added to the JVM\[aq]s internal "symbol" and "string"
-tables.
-At runtime, the symbols or string objects mapped from the archive file
-can be shared across multiple JVM processes, resulting in a reduction of
-overall memory usage.
-In addition, archiving strings also provides added performance benefits
-in both startup time and runtime execution.
-.PP
-In JDK 10 and later, CONSTANT_String entries in archived classes are
-resolved to interned String objects at dump time, and all interned
-String objects are archived.
-However, even though all CONSTANT_String literals in all archived
-classes are resolved, it might still beneficial to add additional
-strings that are not string literals in class files, but are likely to
-be used by your application at run time.
-.PP
-Symbol data should be generated by the \f[CB]jcmd\f[R] tool attaching to a
-running JVM process.
-See \f[B]jcmd\f[R].
-.PP
-The following is an example of the symbol dumping command in
-\f[CB]jcmd\f[R]:
-.RS
-.PP
-\f[CB]jcmd\f[R] \f[I]pid\f[R] \f[CB]VM.symboltable\ \-verbose\f[R]
-.RE
-.RS
-.PP
-\f[B]Note:\f[R] The first line (process ID) and the second line
-(\f[CB]\@VERSION\ ...\f[R]) of this \f[CB]jcmd\f[R] output should be
-excluded from the configuration file.
-.RE
-.SS Example of a Configuration File
-.PP
-The following is an example of a configuration file:
-.IP
-.nf
-\f[CB]
-VERSION:\ 1.0
-\@SECTION:\ Symbol
-10\ \-1:\ linkMethod
-\f[R]
-.fi
-.PP
-In the configuration file example, the \f[CB]\@SECTION:\ Symbol\f[R] entry
-uses the following format:
-.RS
-.PP
-\f[I]length\f[R] \f[I]refcount\f[R]\f[CB]:\f[R] \f[I]symbol\f[R]
-.RE
-.PP
-The \f[I]refcount\f[R] for a shared symbol is always \f[CB]\-1\f[R].
-.PP
-\f[CB]\@SECTION\f[R] specifies the type of the section that follows it.
-All data within the section must be the same type that\[aq]s specified
-by \f[CB]\@SECTION\f[R].
-Different types of data can\[aq]t be mixed.
-Multiple separated data sections for the same type specified by
-different \f[CB]\@SECTION\f[R] are allowed within one
-\f[CB]shared_config_file\f[R] .
+.SS Restrictions on Class Path and Module Path
+.IP \[bu] 2
+Neither the class path (\f[CB]\-classpath\f[R] and
+\f[CB]\-Xbootclasspath/a\f[R]) nor the module path
+(\f[CB]\-\-module\-path\f[R]) can contain non\-empty directories.
+.IP \[bu] 2
+Only modular JAR files are supported in \f[CB]\-\-module\-path\f[R].
+Exploded modules are not supported.
+.IP \[bu] 2
+The class path used at archive creation time must be the same as (or a
+prefix of) the class path used at run time.
+(There\[aq]s no such requirement for the module path.)
+.IP \[bu] 2
+The CDS archive cannot be loaded if any JAR files in the class path or
+module path are modified after the archive is generated.
+.IP \[bu] 2
+If any of the VM options \f[CB]\-\-upgrade\-module\-path\f[R],
+\f[CB]\-\-patch\-module\f[R] or \f[CB]\-\-limit\-modules\f[R] are specified,
+CDS is disabled.
+This means that the JVM will execute without loading any CDS archives.
+In addition, if you try to create a CDS archive with any of these 3
+options specified, the JVM will report an error.
 .SH PERFORMANCE TUNING EXAMPLES
 .PP
 You can use the Java advanced runtime options to optimize the

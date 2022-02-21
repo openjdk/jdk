@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -830,10 +830,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
     return false;
   }
 
-
   IfNode* exit_test = head->loopexit();
-  BoolTest::mask mask = exit_test->as_BaseCountedLoopEnd()->test_trip();
-  Node* cmp = exit_test->as_BaseCountedLoopEnd()->cmp_node();
 
   assert(back_control->Opcode() == Op_IfTrue, "wrong projection for back edge");
 
@@ -2849,7 +2846,7 @@ bool OuterStripMinedLoopEndNode::is_expanded(PhaseGVN *phase) const {
   if (phase->is_IterGVN()) {
     Node* backedge = proj_out_or_null(true);
     if (backedge != NULL) {
-      Node* head = backedge->unique_ctrl_out();
+      Node* head = backedge->unique_ctrl_out_or_null();
       if (head != NULL && head->is_OuterStripMinedLoop()) {
         if (head->find_out_with(Op_Phi) != NULL) {
           return true;
@@ -5728,38 +5725,45 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
   }
   assert(early == legal || legal != C->root(), "bad dominance of inputs");
 
+  if (least != early) {
+    // Move the node above predicates as far up as possible so a
+    // following pass of loop predication doesn't hoist a predicate
+    // that depends on it above that node.
+    Node* new_ctrl = least;
+    for (;;) {
+      if (!new_ctrl->is_Proj()) {
+        break;
+      }
+      CallStaticJavaNode* call = new_ctrl->as_Proj()->is_uncommon_trap_if_pattern(Deoptimization::Reason_none);
+      if (call == NULL) {
+        break;
+      }
+      int req = call->uncommon_trap_request();
+      Deoptimization::DeoptReason trap_reason = Deoptimization::trap_request_reason(req);
+      if (trap_reason != Deoptimization::Reason_loop_limit_check &&
+          trap_reason != Deoptimization::Reason_predicate &&
+          trap_reason != Deoptimization::Reason_profile_predicate) {
+        break;
+      }
+      Node* c = new_ctrl->in(0)->in(0);
+      if (is_dominator(c, early) && c != early) {
+        break;
+      }
+      new_ctrl = c;
+    }
+    least = new_ctrl;
+  }
   // Try not to place code on a loop entry projection
   // which can inhibit range check elimination.
   if (least != early) {
-    Node* ctrl_out = least->unique_ctrl_out();
-    if (ctrl_out && ctrl_out->is_Loop() &&
-        least == ctrl_out->in(LoopNode::EntryControl)) {
-      // Move the node above predicates as far up as possible so a
-      // following pass of loop predication doesn't hoist a predicate
-      // that depends on it above that node.
-      Node* new_ctrl = least;
-      for (;;) {
-        if (!new_ctrl->is_Proj()) {
-          break;
-        }
-        CallStaticJavaNode* call = new_ctrl->as_Proj()->is_uncommon_trap_if_pattern(Deoptimization::Reason_none);
-        if (call == NULL) {
-          break;
-        }
-        int req = call->uncommon_trap_request();
-        Deoptimization::DeoptReason trap_reason = Deoptimization::trap_request_reason(req);
-        if (trap_reason != Deoptimization::Reason_loop_limit_check &&
-            trap_reason != Deoptimization::Reason_predicate &&
-            trap_reason != Deoptimization::Reason_profile_predicate) {
-          break;
-        }
-        Node* c = new_ctrl->in(0)->in(0);
-        if (is_dominator(c, early) && c != early) {
-          break;
-        }
-        new_ctrl = c;
+    Node* ctrl_out = least->unique_ctrl_out_or_null();
+    if (ctrl_out != NULL && ctrl_out->is_Loop() &&
+        least == ctrl_out->in(LoopNode::EntryControl) &&
+        (ctrl_out->is_CountedLoop() || ctrl_out->is_OuterStripMinedLoop())) {
+      Node* least_dom = idom(least);
+      if (get_loop(least_dom)->is_member(get_loop(least))) {
+        least = least_dom;
       }
-      least = new_ctrl;
     }
   }
 

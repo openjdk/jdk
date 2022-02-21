@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -263,7 +264,7 @@ public class HtmlDocletWriter {
         do {
             int match = docrootMatcher.start();
             // append htmlstr up to start of next {@docroot}
-            buf.append(htmlstr.substring(prevEnd, match));
+            buf.append(htmlstr, prevEnd, match);
             prevEnd = docrootMatcher.end();
             if (options.docrootParent().length() > 0 && htmlstr.startsWith("/..", prevEnd)) {
                 // Insert the absolute link if {@docRoot} is followed by "/..".
@@ -452,7 +453,7 @@ public class HtmlDocletWriter {
             throws DocFileIOException {
         List<DocPath> additionalStylesheets = configuration.getAdditionalStylesheets();
         additionalStylesheets.addAll(localStylesheets);
-        Head head = new Head(path, configuration.getDocletVersion(), configuration.startTime)
+        Head head = new Head(path, configuration.getDocletVersion(), configuration.getBuildDate())
                 .setTimestamp(!options.noTimestamp())
                 .setDescription(description)
                 .setGenerator(getGenerator(getClass()))
@@ -549,8 +550,7 @@ public class HtmlDocletWriter {
     protected Content getNavLinkMainTree(String label) {
         Content mainTreeContent = links.createLink(pathToRoot.resolve(DocPaths.OVERVIEW_TREE),
                 Text.of(label));
-        Content li = HtmlTree.LI(mainTreeContent);
-        return li;
+        return HtmlTree.LI(mainTreeContent);
     }
 
     /**
@@ -623,7 +623,7 @@ public class HtmlDocletWriter {
         } else {
             flags = EnumSet.noneOf(ElementFlag.class);
         }
-        DocLink targetLink = null;
+        DocLink targetLink;
         if (included || packageElement == null) {
             targetLink = new DocLink(pathString(packageElement, DocPaths.PACKAGE_SUMMARY));
         } else {
@@ -1531,18 +1531,11 @@ public class HtmlDocletWriter {
                         return false;
                     }
                     sb.append("=");
-                    String quote;
-                    switch (node.getValueKind()) {
-                        case DOUBLE:
-                            quote = "\"";
-                            break;
-                        case SINGLE:
-                            quote = "'";
-                            break;
-                        default:
-                            quote = "";
-                            break;
-                    }
+                    String quote = switch (node.getValueKind()) {
+                        case DOUBLE -> "\"";
+                        case SINGLE -> "'";
+                        default -> "";
+                    };
                     sb.append(quote);
                     result.add(sb);
                     Content docRootContent = new ContentBuilder();
@@ -1794,9 +1787,9 @@ public class HtmlDocletWriter {
         if (detail.isEmpty() || detail.get().isEmpty()) {
             return HtmlTree.SPAN(HtmlStyle.invalidTag, Text.of(summary));
         }
-        return new HtmlTree(TagName.DETAILS).addStyle(HtmlStyle.invalidTag)
-                .add(new HtmlTree(TagName.SUMMARY).add(Text.of(summary)))
-                .add(new HtmlTree(TagName.PRE).add(detail.get()));
+        return HtmlTree.DETAILS(HtmlStyle.invalidTag)
+                .add(HtmlTree.SUMMARY(Text.of(summary)))
+                .add(HtmlTree.PRE(detail.get()));
     }
 
     /**
@@ -2226,17 +2219,13 @@ public class HtmlDocletWriter {
         for (Element e: chain) {
             String name;
             switch (e.getKind()) {
-                case MODULE:
-                case PACKAGE:
+                case MODULE, PACKAGE -> {
                     name = ((QualifiedNameable) e).getQualifiedName().toString();
                     if (name.length() == 0) {
                         name = "<unnamed>";
                     }
-                    break;
-
-                default:
-                    name = e.getSimpleName().toString();
-                    break;
+                }
+                default -> name = e.getSimpleName().toString();
             }
 
             if (sb.length() == 0) {
@@ -2380,8 +2369,7 @@ public class HtmlDocletWriter {
                 Content leadingNote = contents.getContent("doclet.PreviewLeadingNote", nameCode);
                 previewDiv.add(HtmlTree.SPAN(HtmlStyle.previewLabel,
                                              leadingNote));
-                HtmlTree ul = new HtmlTree(TagName.UL);
-                ul.setStyle(HtmlStyle.previewComment);
+                HtmlTree ul = HtmlTree.UL(HtmlStyle.previewComment);
                 for (Content note : previewNotes) {
                     ul.add(HtmlTree.LI(note));
                 }
@@ -2445,8 +2433,7 @@ public class HtmlDocletWriter {
     private Content withPreviewFeatures(String key, String className, String featureName, List<String> features) {
         String[] sep = new String[] {""};
         ContentBuilder featureCodes = new ContentBuilder();
-        features.stream()
-                .forEach(c -> {
+        features.forEach(c -> {
                     featureCodes.add(sep[0]);
                     featureCodes.add(HtmlTree.CODE(new ContentBuilder().add(c)));
                     sep[0] = ", ";
@@ -2461,7 +2448,7 @@ public class HtmlDocletWriter {
         String[] sep = new String[] {""};
         ContentBuilder links = new ContentBuilder();
         elements.stream()
-                .sorted((te1, te2) -> te1.getSimpleName().toString().compareTo(te2.getSimpleName().toString()))
+                .sorted(Comparator.comparing(te -> te.getSimpleName().toString()))
                 .distinct()
                 .map(te -> getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.CLASS, te)
                         .label(HtmlTree.CODE(Text.of(te.getSimpleName()))).skipPreview(true)))

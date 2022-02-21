@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -278,34 +278,140 @@ void JVMCIEnv::describe_pending_exception(bool clear) {
   }
 }
 
-void JVMCIEnv::translate_hotspot_exception_to_jni_exception(JavaThread* THREAD, const Handle& throwable) {
-  assert(!is_hotspot(), "must_be");
-  // Resolve HotSpotJVMCIRuntime class explicitly as HotSpotJVMCI::compute_offsets
-  // may not have been called.
-  Klass* runtimeKlass = SystemDictionary::resolve_or_fail(vmSymbols::jdk_vm_ci_hotspot_HotSpotJVMCIRuntime(), true, CHECK);
-  JavaCallArguments jargs;
-  jargs.push_oop(throwable);
-  JavaValue result(T_OBJECT);
-  JavaCalls::call_static(&result,
-                          runtimeKlass,
-                          vmSymbols::encodeThrowable_name(),
-                          vmSymbols::encodeThrowable_signature(), &jargs, THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    JVMCIRuntime::fatal_exception(this, "HotSpotJVMCIRuntime.encodeThrowable should not throw an exception");
+// Shared code for translating an exception from HotSpot to libjvmci or vice versa.
+class ExceptionTranslation: public StackObj {
+ protected:
+  JVMCIEnv*  _from_env; // Source of translation. Can be nullptr.
+  JVMCIEnv*  _to_env;   // Destination of translation. Never nullptr.
+
+  ExceptionTranslation(JVMCIEnv* from_env, JVMCIEnv* to_env) : _from_env(from_env), _to_env(to_env) {}
+
+  // Encodes the exception in `_from_env` into `buffer`.
+  // Where N is the number of bytes needed for the encoding, returns N if N <= `buffer_size`
+  // and the encoding was written to `buffer` otherwise returns -N.
+  virtual int encode(JavaThread* THREAD, Klass* runtimeKlass, jlong buffer, int buffer_size) = 0;
+
+  // Decodes the exception in `buffer` in `_to_env` and throws it.
+  virtual void decode(JavaThread* THREAD, Klass* runtimeKlass, jlong buffer) = 0;
+
+ public:
+  void doit(JavaThread* THREAD) {
+    // Resolve HotSpotJVMCIRuntime class explicitly as HotSpotJVMCI::compute_offsets
+    // may not have been called.
+    Klass* runtimeKlass = SystemDictionary::resolve_or_fail(vmSymbols::jdk_vm_ci_hotspot_HotSpotJVMCIRuntime(), true, CHECK);
+
+    int buffer_size = 2048;
+    while (true) {
+      ResourceMark rm;
+      jlong buffer = (jlong) NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, jbyte, buffer_size);
+      int res = encode(THREAD, runtimeKlass, buffer, buffer_size);
+      if ((_from_env != nullptr && _from_env->has_pending_exception()) || HAS_PENDING_EXCEPTION) {
+        JVMCIRuntime::fatal_exception(_from_env, "HotSpotJVMCIRuntime.encodeThrowable should not throw an exception");
+      }
+      if (res < 0) {
+        int required_buffer_size = -res;
+        if (required_buffer_size > buffer_size) {
+          buffer_size = required_buffer_size;
+        }
+      } else {
+        decode(THREAD, runtimeKlass, buffer);
+        if (!_to_env->has_pending_exception()) {
+          JVMCIRuntime::fatal_exception(_to_env, "HotSpotJVMCIRuntime.decodeAndThrowThrowable should throw an exception");
+        }
+        return;
+      }
+    }
+  }
+};
+
+// Translates an exception on the HotSpot heap to an exception on the shared library heap.
+class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
+ private:
+  const Handle& _throwable;
+
+  int encode(JavaThread* THREAD, Klass* runtimeKlass, jlong buffer, int buffer_size) {
+    JavaCallArguments jargs;
+    jargs.push_oop(_throwable);
+    jargs.push_long(buffer);
+    jargs.push_int(buffer_size);
+    JavaValue result(T_INT);
+    JavaCalls::call_static(&result,
+                            runtimeKlass,
+                            vmSymbols::encodeThrowable_name(),
+                            vmSymbols::encodeThrowable_signature(), &jargs, THREAD);
+    return result.get_jint();
   }
 
-  oop encoded_throwable_string = result.get_oop();
+  void decode(JavaThread* THREAD, Klass* runtimeKlass, jlong buffer) {
+    JNIAccessMark jni(_to_env, THREAD);
+    jni()->CallStaticVoidMethod(JNIJVMCI::HotSpotJVMCIRuntime::clazz(),
+                                JNIJVMCI::HotSpotJVMCIRuntime::decodeAndThrowThrowable_method(),
+                                buffer);
+  }
+ public:
+  HotSpotToSharedLibraryExceptionTranslation(JVMCIEnv* hotspot_env, JVMCIEnv* jni_env, const Handle& throwable) :
+    ExceptionTranslation(hotspot_env, jni_env), _throwable(throwable) {}
+};
 
-  ResourceMark rm;
-  const char* encoded_throwable_chars = java_lang_String::as_utf8_string(encoded_throwable_string);
+// Translates an exception on the shared library heap to an exception on the HotSpot heap.
+class SharedLibraryToHotSpotExceptionTranslation : public ExceptionTranslation {
+ private:
+  jthrowable _throwable;
 
-  JNIAccessMark jni(this, THREAD);
-  jobject jni_encoded_throwable_string = jni()->NewStringUTF(encoded_throwable_chars);
-  jthrowable jni_throwable = (jthrowable) jni()->CallStaticObjectMethod(JNIJVMCI::HotSpotJVMCIRuntime::clazz(),
-                                JNIJVMCI::HotSpotJVMCIRuntime::decodeThrowable_method(),
-                                jni_encoded_throwable_string);
-  jni()->Throw(jni_throwable);
+  int encode(JavaThread* THREAD, Klass* runtimeKlass, jlong buffer, int buffer_size) {
+    JNIAccessMark jni(_from_env, THREAD);
+    return jni()->CallStaticIntMethod(JNIJVMCI::HotSpotJVMCIRuntime::clazz(),
+                                      JNIJVMCI::HotSpotJVMCIRuntime::encodeThrowable_method(),
+                                      _throwable, buffer, buffer_size);
+  }
+
+  void decode(JavaThread* THREAD, Klass* runtimeKlass, jlong buffer) {
+    JavaCallArguments jargs;
+    jargs.push_long(buffer);
+    JavaValue result(T_VOID);
+    JavaCalls::call_static(&result,
+                            runtimeKlass,
+                            vmSymbols::decodeAndThrowThrowable_name(),
+                            vmSymbols::long_void_signature(), &jargs, THREAD);
+  }
+ public:
+  SharedLibraryToHotSpotExceptionTranslation(JVMCIEnv* hotspot_env, JVMCIEnv* jni_env, jthrowable throwable) :
+    ExceptionTranslation(jni_env, hotspot_env), _throwable(throwable) {}
+};
+
+void JVMCIEnv::translate_to_jni_exception(JavaThread* THREAD, const Handle& throwable, JVMCIEnv* hotspot_env, JVMCIEnv* jni_env) {
+  HotSpotToSharedLibraryExceptionTranslation(hotspot_env, jni_env, throwable).doit(THREAD);
 }
+
+void JVMCIEnv::translate_from_jni_exception(JavaThread* THREAD, jthrowable throwable, JVMCIEnv* hotspot_env, JVMCIEnv* jni_env) {
+  SharedLibraryToHotSpotExceptionTranslation(hotspot_env, jni_env, throwable).doit(THREAD);
+}
+
+jboolean JVMCIEnv::transfer_pending_exception(JavaThread* THREAD, JVMCIEnv* peer_env) {
+  if (is_hotspot()) {
+    if (HAS_PENDING_EXCEPTION) {
+      Handle throwable = Handle(THREAD, PENDING_EXCEPTION);
+      CLEAR_PENDING_EXCEPTION;
+      translate_to_jni_exception(THREAD, throwable, this, peer_env);
+      return true;
+    }
+  } else {
+    jthrowable ex = nullptr;
+    {
+      JNIAccessMark jni(this, THREAD);
+      ex = jni()->ExceptionOccurred();
+      if (ex != nullptr) {
+        jni()->ExceptionClear();
+      }
+    }
+    if (ex != nullptr) {
+      translate_from_jni_exception(THREAD, ex, peer_env, this);
+      return true;
+    }
+  }
+  return false;
+}
+
 
 JVMCIEnv::~JVMCIEnv() {
   if (_throw_to_caller) {
@@ -318,7 +424,7 @@ JVMCIEnv::~JVMCIEnv() {
         if (HAS_PENDING_EXCEPTION) {
           Handle throwable = Handle(THREAD, PENDING_EXCEPTION);
           CLEAR_PENDING_EXCEPTION;
-          translate_hotspot_exception_to_jni_exception(THREAD, throwable);
+          translate_to_jni_exception(THREAD, throwable, nullptr, this);
         }
       }
     }
@@ -447,7 +553,7 @@ void JVMCIEnv::put_int_at(JVMCIPrimitiveArray array, int index, jint value) {
   }
 }
 
-long JVMCIEnv::get_long_at(JVMCIPrimitiveArray array, int index) {
+jlong JVMCIEnv::get_long_at(JVMCIPrimitiveArray array, int index) {
   if (is_hotspot()) {
     return HotSpotJVMCI::resolve(array)->long_at(index);
   } else {
@@ -801,6 +907,23 @@ JVMCIObject JVMCIEnv::call_HotSpotJVMCIRuntime_callToString(JVMCIObject object, 
   }
 }
 
+void JVMCIEnv::call_HotSpotJVMCIRuntime_postTranslation(JVMCIObject object, JVMCIEnv* JVMCIENV) {
+  JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current()); // For exception macros.
+  if (is_hotspot()) {
+    JavaCallArguments jargs;
+    jargs.push_oop(Handle(THREAD, HotSpotJVMCI::resolve(object)));
+    JavaValue result(T_VOID);
+    JavaCalls::call_static(&result,
+                           HotSpotJVMCI::HotSpotJVMCIRuntime::klass(),
+                           vmSymbols::postTranslation_name(),
+                           vmSymbols::object_void_signature(), &jargs, CHECK);
+  } else {
+    JNIAccessMark jni(this, THREAD);
+    jni()->CallStaticVoidMethod(JNIJVMCI::HotSpotJVMCIRuntime::clazz(),
+                                JNIJVMCI::HotSpotJVMCIRuntime::postTranslation_method(),
+                                object.as_jobject());
+  }
+}
 
 JVMCIObject JVMCIEnv::call_JavaConstant_forPrimitive(JVMCIObject kind, jlong value, JVMCI_TRAPS) {
   JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current()); // For exception macros.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,7 +159,7 @@ public:
       if (_disable_writing) {
         return false;
       }
-      return (UseG1GC && UseCompressedOops && UseCompressedClassPointers);
+      return (UseG1GC && UseCompressedClassPointers);
     )
     NOT_CDS_JAVA_HEAP(return false;)
   }
@@ -169,7 +169,7 @@ public:
   }
   // Can this VM map archived heap regions? Currently only G1+compressed{oops,cp}
   static bool can_map() {
-    CDS_JAVA_HEAP_ONLY(return (UseG1GC && UseCompressedOops && UseCompressedClassPointers);)
+    CDS_JAVA_HEAP_ONLY(return (UseG1GC && UseCompressedClassPointers);)
     NOT_CDS_JAVA_HEAP(return false;)
   }
   static bool is_mapped() {
@@ -297,9 +297,12 @@ private:
   static void init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
                                          int num, TRAPS);
 
-  // Used by decode_from_archive
+  // UseCompressedOops only: Used by decode_from_archive
   static address _narrow_oop_base;
   static int     _narrow_oop_shift;
+
+  // !UseCompressedOops only: used to relocate pointers to the archived objects
+  static ptrdiff_t _runtime_delta;
 
   typedef ResourceHashtable<oop, bool,
       15889, // prime number
@@ -310,7 +313,6 @@ private:
   static SeenObjectsTable *_seen_objects_table;
 
   static GrowableArrayCHeap<oop, mtClassShared>* _pending_roots;
-  static narrowOop _roots_narrow;
   static OopHandle _roots;
 
   static void init_seen_objects_table() {
@@ -418,11 +420,22 @@ private:
   static oop get_root(int index, bool clear=false);
 
   // Run-time only
-  static void set_roots(narrowOop roots);
   static void clear_root(int index);
+
+  static void set_runtime_delta(ptrdiff_t delta) {
+    assert(!UseCompressedOops, "must be");
+    _runtime_delta = delta;
+  }
+
 #endif // INCLUDE_CDS_JAVA_HEAP
 
  public:
+  static ptrdiff_t runtime_delta() {
+    assert(!UseCompressedOops, "must be");
+    CDS_JAVA_HEAP_ONLY(return _runtime_delta;)
+    NOT_CDS_JAVA_HEAP_RETURN_(0L);
+  }
+
   static void run_full_gc_in_vm_thread() NOT_CDS_JAVA_HEAP_RETURN;
 
   static bool is_heap_region(int idx) {
@@ -468,7 +481,7 @@ private:
 
   static void init_for_dumping(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void write_subgraph_info_table() NOT_CDS_JAVA_HEAP_RETURN;
-  static void serialize_subgraph_info_table_header(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
+  static void serialize(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
 };
 
 #if INCLUDE_CDS_JAVA_HEAP

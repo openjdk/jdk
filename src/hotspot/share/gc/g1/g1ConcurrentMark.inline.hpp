@@ -41,7 +41,26 @@
 #include "utilities/bitMap.inline.hpp"
 
 inline bool G1CMIsAliveClosure::do_object_b(oop obj) {
-  return !_g1h->is_obj_ill(obj);
+  // Check whether the passed in object is null. During discovery the referent
+  // may be cleared between the initial check and being passed in here.
+  if (obj == NULL) {
+    // Return true to avoid discovery when the referent is NULL.
+    return true;
+  }
+
+  HeapRegion* hr = _g1h->heap_region_containing(cast_from_oop<HeapWord*>(obj));
+  // All objects allocated since the start of marking are considered live.
+  if (hr->obj_allocated_since_next_marking(obj)) {
+    return true;
+  }
+
+  // All objects in closed archive regions are live.
+  if (hr->is_closed_archive()) {
+    return true;
+  }
+
+  // All objects that are marked are live.
+  return _g1h->is_marked_next(obj);
 }
 
 inline bool G1CMSubjectToDiscoveryClosure::do_object_b(oop obj) {
@@ -110,7 +129,6 @@ inline void G1CMTask::push(G1TaskQueueEntry task_entry) {
   assert(task_entry.is_array_slice() || _g1h->is_in_reserved(task_entry.obj()), "invariant");
   assert(task_entry.is_array_slice() || !_g1h->is_on_master_free_list(
               _g1h->heap_region_containing(task_entry.obj())), "invariant");
-  assert(task_entry.is_array_slice() || !_g1h->is_obj_ill(task_entry.obj()), "invariant");  // FIXME!!!
   assert(task_entry.is_array_slice() || _next_mark_bitmap->is_marked(cast_from_oop<HeapWord*>(task_entry.obj())), "invariant");
 
   if (!_task_queue->push(task_entry)) {
