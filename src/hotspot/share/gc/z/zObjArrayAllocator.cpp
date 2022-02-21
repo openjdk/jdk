@@ -32,6 +32,10 @@
 ZObjArrayAllocator::ZObjArrayAllocator(Klass* klass, size_t word_size, int length, bool do_zero, Thread* thread) :
     ObjArrayAllocator(klass, word_size, length, do_zero, thread) {}
 
+void ZObjArrayAllocator::yield_for_safepoint() const {
+  ThreadBlockInVM tbivm(JavaThread::cast(_thread));
+}
+
 oop ZObjArrayAllocator::initialize(HeapWord* mem) const {
   // ZGC specializes the initialization by performing segmented clearing
   // to allow shorter time-to-safepoints.
@@ -74,6 +78,17 @@ oop ZObjArrayAllocator::initialize(HeapWord* mem) const {
   // over such objects.
   ZThreadLocalData::set_invisible_root(_thread, (zaddress_unsafe*)&mem);
 
+  uint32_t old_seqnum_before = ZGeneration::old()->seqnum();
+  uint32_t young_seqnum_before = ZGeneration::young()->seqnum();
+  uintptr_t color_before = ZPointerStoreGoodMask;
+  auto gc_safepoint_happened = [&]() {
+    return old_seqnum_before != ZGeneration::old()->seqnum() ||
+           young_seqnum_before != ZGeneration::young()->seqnum() ||
+           color_before != ZPointerStoreGoodMask;
+  };
+
+  bool seen_gc_safepoint = false;
+
   for (size_t processed = 0; processed < payload_size; processed += segment_max) {
     // Clear segment
     uintptr_t* const start = (uintptr_t*)(mem + header + processed);
@@ -87,11 +102,25 @@ oop ZObjArrayAllocator::initialize(HeapWord* mem) const {
     // of how many GC flips later it will arrive. That's why we OR in 11
     // (ZPointerRememberedMask) in the remembered bits, similar to how
     // forgotten old oops also have 11, for the very same reason.
-    const uintptr_t fill_value = is_reference_type(element_type) ? (ZPointerStoreGoodMask | ZPointerRememberedMask) : 0;
+    // However, we opportunistically try to color without the 11 remembered
+    // bits, hoping to not get interrupted in the middle of a GC safepoint.
+    // Most of the time, we manage to do that, and can the avoid having GC
+    // barriers trigger slow paths for this.
+    const uintptr_t colored_null = seen_gc_safepoint ? (ZPointerStoreGoodMask | ZPointerRememberedMask)
+                                                     : ZPointerStoreGoodMask;
+    const uintptr_t fill_value = is_reference_type(element_type) ? colored_null : 0;
     ZUtils::fill(start, segment, fill_value);
 
     // Safepoint
-    ThreadBlockInVM tbivm(JavaThread::cast(_thread));
+    yield_for_safepoint();
+
+    // Deal with safepoints
+    if (!seen_gc_safepoint && gc_safepoint_happened()) {
+      // The first time we observe a GC safepoint in the yield point,
+      // we have to restart processing with 11 remembered bits.
+      processed = 0;
+      seen_gc_safepoint = true;
+    }
   }
 
   ZThreadLocalData::clear_invisible_root(_thread);
