@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.security.util;
+package java.security;
 
 import java.io.IOException;
 
@@ -122,9 +122,9 @@ public final class ECParameters extends AlgorithmParametersSpi {
             int keySize = ((ECKeySizeParameterSpec)paramSpec).getKeySize();
             namedCurve = CurveDB.lookup(keySize);
         } else {
-            throw new InvalidParameterSpecException
-                ("Only ECParameterSpec, ECGenParameterSpec " +
-                        "and ECKeySizeParameterSpec supported");
+            throw new InvalidParameterSpecException(
+                "Only ECParameterSpec, ECGenParameterSpec " +
+                "and ECKeySizeParameterSpec supported");
         }
 
         if (namedCurve == null) {
@@ -215,7 +215,7 @@ public final class ECParameters extends AlgorithmParametersSpi {
 
         throw new InvalidParameterSpecException(
             "Only ECParameterSpec, ECGenParameterSpec " +
-                    "and ECKeySizeParameterSpec supported");
+            "and ECKeySizeParameterSpec supported");
     }
 
     protected byte[] engineGetEncoded() throws IOException {
