@@ -97,6 +97,12 @@ public final class RecordingStream implements AutoCloseable, EventStream {
      *         {@code FlightRecorderPermission("accessFlightRecorder")}
      */
     public RecordingStream() {
+        // This object is needed so Objects.requireNonNull can be invoked
+        // in other constructor before this constructor is executed
+        this(Boolean.FALSE); 
+    }
+
+    private RecordingStream(Object dummyObject) {
         Utils.checkAccessFlightRecorder();
         @SuppressWarnings("removal")
         AccessControlContext acc = AccessController.getContext();
@@ -148,7 +154,7 @@ public final class RecordingStream implements AutoCloseable, EventStream {
      * @see Configuration
      */
     public RecordingStream(Configuration configuration) {
-        this();
+        this(Objects.requireNonNull(configuration, "configuration").getSettings());
         recording.setSettings(configuration.getSettings());
     }
 

@@ -34,6 +34,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 
 import jdk.jfr.EventType;
 import jdk.jfr.internal.MetadataDescriptor;
@@ -75,6 +76,7 @@ public final class RecordingFile implements Closeable {
      *         {@code checkRead} method denies read access to the file.
      */
     public RecordingFile(Path file) throws IOException {
+        Objects.requireNonNull(file, "file");
         this.file = file.toFile();
         this.input = new RecordingInput(this.file, FileAccess.UNPRIVILEGED);
         findNext();
