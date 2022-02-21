@@ -58,13 +58,14 @@ public class LastVisibleRow {
         try {
             testRobot = new Robot();
 
-            javax.swing.SwingUtilities.invokeAndWait(new Runnable() {
+            SwingUtilities.invokeAndWait(new Runnable() {
 
                 public void run() {
                     try {
                         createAndShowGUI();
                     } catch (Exception e) {
                         e.printStackTrace();
+						throw new RuntimeException("Exception while creating UI");
                     }
                 }
             });
