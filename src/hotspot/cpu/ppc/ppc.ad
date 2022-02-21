@@ -12785,7 +12785,7 @@ instruct count_positives(iRegPsrc ary1, iRegIsrc len, iRegIdst result, iRegLdst 
   match(Set result (CountPositives ary1 len));
   effect(TEMP_DEF result, TEMP tmp1, TEMP tmp2, KILL ctr, KILL cr0);
   ins_cost(300);
-  format %{ "has negatives byte[] $ary1,$len -> $result \t// KILL $tmp1, $tmp2" %}
+  format %{ "count positives byte[] $ary1,$len -> $result \t// KILL $tmp1, $tmp2" %}
   ins_encode %{
     __ count_positives($ary1$$Register, $len$$Register, $result$$Register,
                        $tmp1$$Register, $tmp2$$Register);
