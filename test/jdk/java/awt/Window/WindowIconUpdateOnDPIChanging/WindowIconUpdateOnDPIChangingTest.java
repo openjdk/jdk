@@ -27,8 +27,10 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.RenderingHints;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.font.TextLayout;
 import java.awt.image.BufferedImage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -129,9 +131,16 @@ public class WindowIconUpdateOnDPIChangingTest {
     private static Image createIcon(int size) {
         BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = image.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        g.setColor(Color.WHITE);
+        g.fillRect(0, 0, size, size);
         g.setFont(new Font("dialog", Font.BOLD, 12));
         g.setColor(Color.BLACK);
-        g.drawString(String.valueOf(size), 0, size - (size - g.getFont().getSize()) / 2);
+
+        TextLayout layout = new TextLayout(String.valueOf(size), g.getFont(), g.getFontRenderContext());
+        int height = (int) layout.getBounds().getHeight();
+        int width = (int) layout.getBounds().getWidth();
+        layout.draw(g, (size - width) / 2f - 1, (size + height) / 2f);
         return image;
     }
 }
