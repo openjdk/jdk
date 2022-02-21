@@ -7443,16 +7443,53 @@ instruct decI_mem(memory dst, immI_M1 src, rFlagsReg cr)
   ins_pipe(ialu_mem_imm);
 %}
 
-instruct leaI_rReg_immI(rRegI dst, rRegI src0, immI src1)
+instruct leaI_rReg_immI2_immI(rRegI dst, rRegI index, immI2 scale, immI disp)
 %{
-  match(Set dst (AddI src0 src1));
+  match(Set dst (AddI (LShiftI index scale) disp));
 
-  ins_cost(110);
-  format %{ "addr32 leal $dst, [$src0 + $src1]\t# int" %}
+  format %{ "addr32 leal $dst, [$index * $scale + $disp]\t# int" %}
   ins_encode %{
-    __ leal($dst$$Register, Address($src0$$Register, $src1$$constant));
+    Address::ScaleFactor scale = static_cast<Address::ScaleFactor>($scale$$constant);
+    __ leal($dst$$Register, Address(noreg, $index$$Register, scale, $disp$$constant));
   %}
-  ins_pipe(ialu_reg_reg);
+  ins_pipe(ialu_reg_reg_fat);
+%}
+
+instruct leaI_rReg_rReg_immI(rRegI dst, rRegI src1, rRegI src2, immI disp)
+%{
+  match(Set dst (AddI (AddI src1 src2) disp));
+
+  format %{ "addr32 leal $dst, [$src1 + $src2 + $disp]\t# int" %}
+  ins_encode %{
+    __ leal($dst$$Register, Address($src1$$Register, $src2$$Register, Address::times_1, $disp$$constant));
+  %}
+  ins_pipe(ialu_reg_reg_fat);
+%}
+
+instruct leaI_rReg_rReg_immI2(rRegI dst, rRegI base, rRegI index, immI2 scale)
+%{
+  match(Set dst (AddI base (LShiftI index scale)));
+  match(Set dst (AddI (LShiftI index scale) base));
+
+  format %{ "addr32 leal $dst, [$base + $index * $scale]\t# int" %}
+  ins_encode %{
+    Address::ScaleFactor scale = static_cast<Address::ScaleFactor>($scale$$constant);
+    __ leal($dst$$Register, Address($base$$Register, $index$$Register, scale));
+  %}
+  ins_pipe(ialu_reg_reg_fat);
+%}
+
+instruct leaI_rReg_rReg_immI2_immI(rRegI dst, rRegI base, rRegI index, immI2 scale, immI disp)
+%{
+  match(Set dst (AddI (AddI base (LShiftI index scale)) disp));
+  match(Set dst (AddI (AddI (LShiftI index scale) base) disp));
+
+  format %{ "addr32 leal $dst, [$base + $index * $scale + $disp]\t# int" %}
+  ins_encode %{
+    Address::ScaleFactor scale = static_cast<Address::ScaleFactor>($scale$$constant);
+    __ leal($dst$$Register, Address($base$$Register, $index$$Register, scale, $disp$$constant));
+  %}
+  ins_pipe(ialu_reg_reg_fat);
 %}
 
 instruct addL_rReg(rRegL dst, rRegL src, rFlagsReg cr)
@@ -7574,16 +7611,53 @@ instruct decL_mem(memory dst, immL_M1 src, rFlagsReg cr)
   ins_pipe(ialu_mem_imm);
 %}
 
-instruct leaL_rReg_immL(rRegL dst, rRegL src0, immL32 src1)
+instruct leaL_rReg_immI2_immL32(rRegL dst, rRegL index, immI2 scale, immL32 disp)
 %{
-  match(Set dst (AddL src0 src1));
+  match(Set dst (AddL (LShiftL index scale) disp));
 
-  ins_cost(110);
-  format %{ "leaq    $dst, [$src0 + $src1]\t# long" %}
+  format %{ "leaq $dst, [$index * $scale + $disp]\t# long" %}
   ins_encode %{
-    __ leaq($dst$$Register, Address($src0$$Register, $src1$$constant));
+    Address::ScaleFactor scale = static_cast<Address::ScaleFactor>($scale$$constant);
+    __ leaq($dst$$Register, Address(noreg, $index$$Register, scale, $disp$$constant));
   %}
-  ins_pipe(ialu_reg_reg);
+  ins_pipe(ialu_reg_reg_fat);
+%}
+
+instruct leaL_rReg_rReg_immL32(rRegL dst, rRegL src1, rRegL src2, immL32 disp)
+%{
+  match(Set dst (AddL (AddL src1 src2) disp));
+
+  format %{ "leaq $dst, [$src1 + $src2 + $disp]\t# long" %}
+  ins_encode %{
+    __ leaq($dst$$Register, Address($src1$$Register, $src2$$Register, Address::times_1, $disp$$constant));
+  %}
+  ins_pipe(ialu_reg_reg_fat);
+%}
+
+instruct leaL_rReg_rReg_immI2(rRegL dst, rRegL base, rRegL index, immI2 scale)
+%{
+  match(Set dst (AddL base (LShiftL index scale)));
+  match(Set dst (AddL (LShiftL index scale) base));
+
+  format %{ "leaq $dst, [$base + $index * $scale]\t# long" %}
+  ins_encode %{
+    Address::ScaleFactor scale = static_cast<Address::ScaleFactor>($scale$$constant);
+    __ leaq($dst$$Register, Address($base$$Register, $index$$Register, scale));
+  %}
+  ins_pipe(ialu_reg_reg_fat);
+%}
+
+instruct leaL_rReg_rReg_immI2_immL(rRegL dst, rRegL base, rRegL index, immI2 scale, immL32 disp)
+%{
+  match(Set dst (AddL (AddL base (LShiftL index scale)) disp));
+  match(Set dst (AddL (AddL (LShiftL index scale) base) disp));
+
+  format %{ "leaq $dst, [$base + $index * $scale + $disp]\t# long" %}
+  ins_encode %{
+    Address::ScaleFactor scale = static_cast<Address::ScaleFactor>($scale$$constant);
+    __ leaq($dst$$Register, Address($base$$Register, $index$$Register, scale, $disp$$constant));
+  %}
+  ins_pipe(ialu_reg_reg_fat);
 %}
 
 instruct addP_rReg(rRegP dst, rRegL src, rFlagsReg cr)
@@ -8725,17 +8799,17 @@ instruct modL_rReg(rdx_RegL rdx, rax_RegL rax, no_rax_rdx_RegL div,
 %}
 
 // Integer Shift Instructions
-// Shift Left by one
-instruct salI_rReg_1(rRegI dst, immI_1 shift, rFlagsReg cr)
+// Shift Left by one, two, three
+instruct salI_rReg_immI2(rRegI dst, rRegI src, immI2 shift)
 %{
-  match(Set dst (LShiftI dst shift));
-  effect(KILL cr);
+  match(Set dst (LShiftI src shift));
 
-  format %{ "sall    $dst, $shift" %}
+  format %{ "leal    $dst, [$src << $shift]" %}
   ins_encode %{
-    __ sall($dst$$Register, $shift$$constant);
+    Address::ScaleFactor scale = static_cast<Address::ScaleFactor>($shift$$constant);
+    __ leal($dst$$Register, Address(noreg, $src$$Register, scale));
   %}
-  ins_pipe(ialu_reg);
+  ins_pipe(ialu_reg_reg);
 %}
 
 // Shift Left by one
@@ -8959,17 +9033,17 @@ instruct shrI_mem_CL(memory dst, rcx_RegI shift, rFlagsReg cr)
 %}
 
 // Long Shift Instructions
-// Shift Left by one
-instruct salL_rReg_1(rRegL dst, immI_1 shift, rFlagsReg cr)
+// Shift Left by one, two, three
+instruct salL_rReg_immI2(rRegL dst, rRegL src, immI2 shift)
 %{
-  match(Set dst (LShiftL dst shift));
-  effect(KILL cr);
+  match(Set dst (LShiftL src shift));
 
-  format %{ "salq    $dst, $shift" %}
+  format %{ "leaq    $dst, [$src << $shift]" %}
   ins_encode %{
-    __ salq($dst$$Register, $shift$$constant);
+    Address::ScaleFactor scale = static_cast<Address::ScaleFactor>($shift$$constant);
+    __ leaq($dst$$Register, Address(noreg, $src$$Register, scale));
   %}
-  ins_pipe(ialu_reg);
+  ins_pipe(ialu_reg_reg);
 %}
 
 // Shift Left by one
