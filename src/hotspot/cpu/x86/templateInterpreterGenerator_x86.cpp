@@ -1738,21 +1738,21 @@ void TemplateInterpreterGenerator::set_vtos_entry_points(Template* t,
 #ifndef _LP64
   fep = __ pc();     // ftos entry point
       __ push(ftos);
-      __ jmp(L);
+      __ jmpb(L);
   dep = __ pc();     // dtos entry point
       __ push(dtos);
-      __ jmp(L);
+      __ jmpb(L);
 #else
   fep = __ pc();     // ftos entry point
       __ push_f(xmm0);
-      __ jmp(L);
+      __ jmpb(L);
   dep = __ pc();     // dtos entry point
       __ push_d(xmm0);
-      __ jmp(L);
+      __ jmpb(L);
 #endif // _LP64
   lep = __ pc();     // ltos entry point
       __ push_l();
-      __ jmp(L);
+      __ jmpb(L);
   aep = bep = cep = sep = iep = __ pc();      // [abcsi]tos entry point
       __ push_i_or_ptr();
   vep = __ pc();    // vtos entry point

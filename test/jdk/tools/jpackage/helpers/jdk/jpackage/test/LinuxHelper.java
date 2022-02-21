@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,7 @@ import jdk.jpackage.internal.IOUtils;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
 
 
-
-public class LinuxHelper {
+public final class LinuxHelper {
     private static String getReleaseSuffix(JPackageCommand cmd) {
         String value = null;
         final PackageType packageType = cmd.packageType();
@@ -183,7 +182,10 @@ public class LinuxHelper {
         };
         deb.uninstallHandler = cmd -> {
             cmd.verifyIsOfType(PackageType.LINUX_DEB);
-            Executor.of("sudo", "dpkg", "-r", getPackageName(cmd)).execute();
+            var packageName = getPackageName(cmd);
+            String script = String.format("! dpkg -s %s || sudo dpkg -r %s",
+                    packageName, packageName);
+            Executor.of("sh", "-c", script).execute();
         };
         deb.unpackHandler = (cmd, destinationDir) -> {
             cmd.verifyIsOfType(PackageType.LINUX_DEB);
@@ -200,13 +202,16 @@ public class LinuxHelper {
         PackageHandlers rpm = new PackageHandlers();
         rpm.installHandler = cmd -> {
             cmd.verifyIsOfType(PackageType.LINUX_RPM);
-            Executor.of("sudo", "rpm", "-i")
+            Executor.of("sudo", "rpm", "-U")
             .addArgument(cmd.outputBundle())
             .execute();
         };
         rpm.uninstallHandler = cmd -> {
             cmd.verifyIsOfType(PackageType.LINUX_RPM);
-            Executor.of("sudo", "rpm", "-e", getPackageName(cmd)).execute();
+            var packageName = getPackageName(cmd);
+            String script = String.format("! rpm -q %s || sudo rpm -e %s",
+                    packageName, packageName);
+            Executor.of("sh", "-c", script).execute();
         };
         rpm.unpackHandler = (cmd, destinationDir) -> {
             cmd.verifyIsOfType(PackageType.LINUX_RPM);
@@ -363,10 +368,10 @@ public class LinuxHelper {
 
         test.addInstallVerifier(cmd -> {
             // Verify .desktop files.
-            try (var files = Files.walk(cmd.appLayout().destktopIntegrationDirectory(), 1)) {
+            try (var files = Files.list(cmd.appLayout().destktopIntegrationDirectory())) {
                 List<Path> desktopFiles = files
                         .filter(path -> path.getFileName().toString().endsWith(".desktop"))
-                        .collect(Collectors.toList());
+                        .toList();
                 if (!integrated) {
                     TKit.assertStringListEquals(List.of(),
                             desktopFiles.stream().map(Path::toString).collect(
@@ -470,23 +475,18 @@ public class LinuxHelper {
 
                 String desktopFileName = queryMimeTypeDefaultHandler(mimeType);
 
-                Path desktopFile = getSystemDesktopFilesFolder().resolve(
+                Path systemDesktopFile = getSystemDesktopFilesFolder().resolve(
+                        desktopFileName);
+                Path appDesktopFile = cmd.appLayout().destktopIntegrationDirectory().resolve(
                         desktopFileName);
 
-                TKit.assertFileExists(desktopFile);
+                TKit.assertFileExists(systemDesktopFile);
+                TKit.assertFileExists(appDesktopFile);
 
-                TKit.trace(String.format("Reading [%s] file...", desktopFile));
-                String mimeHandler = Files.readAllLines(desktopFile).stream().peek(
-                        v -> TKit.trace(v)).filter(
-                                v -> v.startsWith("Exec=")).map(
-                                v -> v.split("=", 2)[1]).findFirst().orElseThrow();
-
-                TKit.trace(String.format("Done"));
-
-                TKit.assertEquals(cmd.appLauncherPath().toString(),
-                        mimeHandler, String.format(
-                                "Check mime type handler is the main application launcher"));
-
+                TKit.assertStringListEquals(Files.readAllLines(appDesktopFile),
+                        Files.readAllLines(systemDesktopFile), String.format(
+                        "Check [%s] file is a copy of [%s] file",
+                        systemDesktopFile, appDesktopFile));
             });
         });
 

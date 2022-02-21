@@ -1822,12 +1822,14 @@ private:
   void pmovzxbw(XMMRegister dst, XMMRegister src);
   void pmovzxbw(XMMRegister dst, Address src);
   void pmovzxbd(XMMRegister dst, XMMRegister src);
-  void vpmovzxbw( XMMRegister dst, Address src, int vector_len);
-  void pmovzxdq(XMMRegister dst, XMMRegister src);
+  void vpmovzxbw(XMMRegister dst, Address src, int vector_len);
   void vpmovzxbw(XMMRegister dst, XMMRegister src, int vector_len);
-  void vpmovzxdq(XMMRegister dst, XMMRegister src, int vector_len);
   void vpmovzxbd(XMMRegister dst, XMMRegister src, int vector_len);
   void vpmovzxbq(XMMRegister dst, XMMRegister src, int vector_len);
+  void vpmovzxwd(XMMRegister dst, XMMRegister src, int vector_len);
+  void vpmovzxwq(XMMRegister dst, XMMRegister src, int vector_len);
+  void pmovzxdq(XMMRegister dst, XMMRegister src);
+  void vpmovzxdq(XMMRegister dst, XMMRegister src, int vector_len);
   void evpmovzxbw(XMMRegister dst, KRegister mask, Address src, int vector_len);
 
   // Sign extend moves
@@ -1844,9 +1846,6 @@ private:
 
   void evpmovwb(Address dst, XMMRegister src, int vector_len);
   void evpmovwb(Address dst, KRegister mask, XMMRegister src, int vector_len);
-
-  void vpmovzxwd(XMMRegister dst, XMMRegister src, int vector_len);
-
   void evpmovdb(Address dst, XMMRegister src, int vector_len);
 
   // Multiply add

@@ -637,7 +637,6 @@ class Compile : public Phase {
   bool          trace_opto_output() const       { return _trace_opto_output; }
   void          print_ideal_ir(const char* phase_name);
   bool          should_print_ideal() const      { return _directive->PrintIdealOption; }
-  bool          should_print_ideal(uint level) const { return _directive->PrintIdealLevelOption >= level; }
   bool              parsed_irreducible_loop() const { return _parsed_irreducible_loop; }
   void          set_parsed_irreducible_loop(bool z) { _parsed_irreducible_loop = z; }
   int _in_dump_cnt;  // Required for dumping ir nodes.

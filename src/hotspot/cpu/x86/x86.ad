@@ -1457,6 +1457,9 @@ const bool Matcher::match_rule_supported(int opcode) {
     case Op_VectorCastL2X:
     case Op_VectorCastF2X:
     case Op_VectorCastD2X:
+    case Op_VectorUCastB2X:
+    case Op_VectorUCastS2X:
+    case Op_VectorUCastI2X:
       if (UseAVX < 1) { // enabled for AVX only
         return false;
       }
@@ -7207,6 +7210,22 @@ instruct vcastDtoL_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, 
     __ vector_castD2L_evex($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
                            $xtmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister,
                            ExternalAddress(vector_double_signflip()), $scratch$$Register, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vucast(vec dst, vec src) %{
+  match(Set dst (VectorUCastB2X src));
+  match(Set dst (VectorUCastS2X src));
+  match(Set dst (VectorUCastI2X src));
+  format %{ "vector_ucast $dst,$src\t!" %}
+  ins_encode %{
+    assert(UseAVX > 0, "required");
+
+    BasicType from_elem_bt = Matcher::vector_element_basic_type(this, $src);
+    BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
+    int vlen_enc = vector_length_encoding(this);
+    __ vector_unsigned_cast($dst$$XMMRegister, $src$$XMMRegister, vlen_enc, from_elem_bt, to_elem_bt);
   %}
   ins_pipe( pipe_slow );
 %}

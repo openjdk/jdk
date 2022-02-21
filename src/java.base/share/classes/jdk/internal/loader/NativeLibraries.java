@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.Objects;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -62,8 +61,6 @@ public final class NativeLibraries {
     // unless specified
     private final Class<?> caller;      // may be null
     private final boolean searchJavaLibraryPath;
-    // loading JNI native libraries
-    private final boolean isJNI;
 
     /**
      * Creates a NativeLibraries instance for loading JNI native libraries
@@ -81,48 +78,14 @@ public final class NativeLibraries {
      * @see <a href="${docroot}/specs/jni/invocation.html##library-and-version-management">
      *     JNI Specification: Library and Version Management</a>
      */
-    public static NativeLibraries jniNativeLibraries(ClassLoader loader) {
-        return new NativeLibraries(loader);
+    public static NativeLibraries newInstance(ClassLoader loader) {
+        return new NativeLibraries(loader, loader != null ? null : NativeLibraries.class, loader != null);
     }
 
-    /**
-     * Creates a raw NativeLibraries instance that has the following properties:
-     * 1. Native libraries loaded in this raw NativeLibraries instance are
-     *    not JNI native libraries.  Hence JNI_OnLoad and JNI_OnUnload will
-     *    be ignored.  No support for linking of native method.
-     * 2. Native libraries not auto-unloaded.  They may be explicitly unloaded
-     *    via NativeLibraries::unload.
-     * 3. No relationship with class loaders.
-     *
-     * This static factory method is restricted for JDK trusted class use.
-     */
-    public static NativeLibraries rawNativeLibraries(Class<?> trustedCaller,
-                                                     boolean searchJavaLibraryPath) {
-        return new NativeLibraries(trustedCaller, searchJavaLibraryPath);
-    }
-
-    private NativeLibraries(ClassLoader loader) {
-        // for null loader, default the caller to this class and
-        // do not search java.library.path
+    private NativeLibraries(ClassLoader loader, Class<?> caller, boolean searchJavaLibraryPath) {
         this.loader = loader;
-        this.caller = loader != null ? null : NativeLibraries.class;
-        this.searchJavaLibraryPath = loader != null ? true : false;
-        this.isJNI = true;
-    }
-
-    /*
-     * Constructs a NativeLibraries instance of no relationship with class loaders
-     * and disabled auto unloading.
-     */
-    private NativeLibraries(Class<?> caller, boolean searchJavaLibraryPath) {
-        Objects.requireNonNull(caller);
-        if (!VM.isSystemDomainLoader(caller.getClassLoader())) {
-            throw new IllegalArgumentException("must be JDK trusted class");
-        }
-        this.loader = caller.getClassLoader();
         this.caller = caller;
         this.searchJavaLibraryPath = searchJavaLibraryPath;
-        this.isJNI = false;
     }
 
     /*
@@ -227,7 +190,7 @@ public final class NativeLibraries {
                 }
             }
 
-            NativeLibraryImpl lib = new NativeLibraryImpl(fromClass, name, isBuiltin, isJNI);
+            NativeLibraryImpl lib = new NativeLibraryImpl(fromClass, name, isBuiltin, true);
             // load the native library
             NativeLibraryContext.push(lib);
             try {
@@ -237,8 +200,7 @@ public final class NativeLibraries {
                 // auto unloading is only supported for JNI native libraries
                 // loaded by custom class loaders that can be unloaded.
                 // built-in class loaders are never unloaded.
-                boolean autoUnload = isJNI && !VM.isSystemDomainLoader(loader)
-                        && loader != ClassLoaders.appClassLoader();
+                boolean autoUnload = !VM.isSystemDomainLoader(loader) && loader != ClassLoaders.appClassLoader();
                 if (autoUnload) {
                     // register the loaded native library for auto unloading
                     // when the class loader is reclaimed, all native libraries
@@ -269,8 +231,6 @@ public final class NativeLibraries {
      */
     public NativeLibrary loadLibrary(String name) {
         assert name.indexOf(File.separatorChar) < 0;
-        assert caller != null;
-
         return loadLibrary(caller, name);
     }
 
@@ -291,29 +251,6 @@ public final class NativeLibraries {
             lib = findFromPaths(LibraryPaths.USER_PATHS, fromClass, name);
         }
         return lib;
-    }
-
-    /**
-     * Unloads the given native library
-     *
-     * @param lib native library
-     */
-    public void unload(NativeLibrary lib) {
-        if (isJNI) {
-            throw new UnsupportedOperationException("explicit unloading cannot be used with auto unloading");
-        }
-        Objects.requireNonNull(lib);
-        acquireNativeLibraryLock(lib.name());
-        try {
-            NativeLibraryImpl nl = libraries.remove(lib.name());
-            if (nl != lib) {
-                throw new IllegalArgumentException(lib.name() + " not loaded by this NativeLibraries instance");
-            }
-            // unload the native library and also remove from the global name registry
-            nl.unloader().run();
-        } finally {
-            releaseNativeLibraryLock(lib.name());
-        }
     }
 
     private NativeLibrary findFromPaths(String[] paths, Class<?> fromClass, String name) {
@@ -380,7 +317,11 @@ public final class NativeLibraries {
             return findEntry0(this, name);
         }
 
-        Runnable unloader() {
+        /*
+         * Unloader::run method is invoked to unload the native library
+         * when this class loader becomes phantom reachable.
+         */
+        private Runnable unloader() {
             return new Unloader(name, handle, isBuiltin, isJNI);
         }
 
@@ -393,6 +334,13 @@ public final class NativeLibraries {
             }
 
             return load(this, name, isBuiltin, isJNI, loadLibraryOnlyIfPresent);
+        }
+
+        /*
+         * Close this native library.
+         */
+        void close() {
+            unload(name, isBuiltin, isJNI, handle);
         }
     }
 
@@ -429,7 +377,7 @@ public final class NativeLibraries {
             acquireNativeLibraryLock(name);
             try {
                 /* remove the native library name */
-                if (!loadedLibraryNames.remove(name)) {
+                if (isJNI && !loadedLibraryNames.remove(name)) {
                     throw new IllegalStateException(name + " has already been unloaded");
                 }
                 NativeLibraryContext.push(UNLOADER);
