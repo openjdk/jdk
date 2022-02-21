@@ -104,7 +104,6 @@ public class CTextPipe implements TextPipe {
     }
 
     private GlyphVector getGlyphVectorWithRange(final Font font, final GlyphVector gV, int start, int count) {
-        final int length = gV.getNumGlyphs();
         int[] glyphs = new int[count];
         for (int i = 0; i < count; i++) {
             glyphs[i] = gV.getGlyphCode(start+i) & CompositeGlyphMapper.GLYPHMASK;
