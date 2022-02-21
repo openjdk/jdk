@@ -1248,14 +1248,15 @@ public:
 #ifdef ASSERT
   void verify_construction();
   bool verify_jvms(const JVMState* jvms) const;
-  int  _debug_idx;                     // Unique value assigned to every node.
-  int   debug_idx() const              { return _debug_idx; }
-  void  set_debug_idx( int debug_idx ) { _debug_idx = debug_idx; }
 
   Node* _debug_orig;                   // Original version of this, if any.
   Node*  debug_orig() const            { return _debug_orig; }
   void   set_debug_orig(Node* orig);   // _debug_orig = orig
   void   dump_orig(outputStream *st, bool print_key = true) const;
+
+  int  _debug_idx;                     // Unique value assigned to every node.
+  int   debug_idx() const              { return _debug_idx; }
+  void  set_debug_idx( int debug_idx ) { _debug_idx = debug_idx; }
 
   int        _hash_lock;               // Barrier to modifications of nodes in the hash table
   void  enter_hash_lock() { ++_hash_lock; assert(_hash_lock < 99, "in too many hash tables?"); }
@@ -1264,8 +1265,8 @@ public:
   static void init_NodeProperty();
 
   #if OPTO_DU_ITERATOR_ASSERT
-  uint        _del_tick;               // Bumped when a deletion happens.
   const Node* _last_del;               // The last deleted node.
+  uint        _del_tick;               // Bumped when a deletion happens..
   #endif
 #endif
 };
