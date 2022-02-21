@@ -160,7 +160,7 @@ final class EventParser extends Parser {
     public Object parseReferences(RecordingInput input) throws IOException {
         return CompositeParser.parseReferences(input, parsers);
     }
-    
+
     @Override
     public void skip(RecordingInput input) throws IOException {
         throw new InternalError("Should not call this method. More efficient to read event size and skip ahead");

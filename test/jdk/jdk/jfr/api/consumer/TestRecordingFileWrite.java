@@ -107,7 +107,7 @@ public class TestRecordingFileWrite {
     }
 
     private static void createRecording(Path file) throws Exception {
-        // Use profile configuration so more complex data structures 
+        // Use profile configuration so more complex data structures
         // are serialized
         Configuration c = Configuration.getConfiguration("profile");
         try (Recording r = new Recording(c)) {

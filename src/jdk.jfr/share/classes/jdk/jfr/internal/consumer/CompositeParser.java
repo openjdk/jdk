@@ -70,5 +70,5 @@ public final class CompositeParser extends Parser {
             return refs.get(0);
         }
         return refs.toArray();
-    }      
+    }
 }

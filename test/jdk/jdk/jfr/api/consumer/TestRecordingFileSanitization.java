@@ -59,7 +59,7 @@ public class TestRecordingFileSanitization {
             r.start();
             SensitiveEvent e = new SensitiveEvent();
             e.shortPassword = SHORT_PASSWORD; 
-            e.longPassword = LONG_PASSWORD; 
+            e.longPassword = LONG_PASSWORD;
             e.commit();
             r.stop();
             r.dump(sensitive);
@@ -67,7 +67,7 @@ public class TestRecordingFileSanitization {
         try (RecordingFile r = new RecordingFile(sensitive)) {
             r.write(sanitized, e -> !e.getEventType().getName().equals("Sensitive"));
         }
-        
+
         expect(sensitive, SHORT_PASSWORD);
         expect(sensitive, LONG_PASSWORD);
         missing(sanitized, SHORT_PASSWORD);

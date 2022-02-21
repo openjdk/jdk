@@ -95,9 +95,9 @@ final class Scrub extends Command {
         stream.println();
         stream.println("Example usage:");
         stream.println();
-        stream.println(" jfr scrub --include-events jdk.Socket* recording.jfr socket-only.jfr");
+        stream.println(" jfr scrub --include-events 'jdk.Socket*' recording.jfr socket-only.jfr");
         stream.println();
-        stream.println(" jfr scrub --exclude-events EnvironmentVariable recording.jfr no-psw.jfr");
+        stream.println(" jfr scrub --exclude-events InitialEnvironmentVariable recording.jfr no-psw.jfr");
         stream.println();
         stream.println(" jfr scrub --include-threads main recording.jfr");
         stream.println();
@@ -110,22 +110,33 @@ final class Scrub extends Command {
 
     @Override
     public void execute(Deque<String> options) throws UserSyntaxException, UserDataException {
-        ensureMinArgumentCount(options, 2);
+        ensureMinArgumentCount(options, 1);
 
-        Path input = null;
+        Path last = Path.of(options.pollLast());
+        ensureFileExtension(last, ".jfr");
         Path output = null;
+        Path input = null;
+        String peek = options.peekLast();
+        if (peek != null && peek.endsWith(".jfr")) {
+            // Both source and destination specified
+            input =  Path.of(options.pollLast());
+            output = last;
+        } else {
+            // Only source file specified
+            Path file = last.getFileName();
+            Path dir = last.getParent();
+            String filename = file.toString();
+            int index = filename.lastIndexOf(".");
+            String s = filename.substring(0, index);
+            String t = s + "-scrubbed.jfr";
+            input = last;
+            output = dir == null ? Path.of(t) : dir.resolve(t);
+        }
+        ensureFileDoesNotExist(output);
+
         List<Predicate<RecordedEvent>> filters = new ArrayList<>();
         int optionCount = options.size();
         while (optionCount > 0) {
-            if (acceptOption(options, "--input")) {
-                input = Path.of(options.remove());
-                ensureFileExtension(input, ".jfr");
-            }
-            if (acceptOption(options, "--output")) {
-                output = Path.of(options.remove());
-                ensureFileDoesNotExist(output);
-                ensureFileExtension(output, ".jfr");
-            }
             if (acceptFilterOption(options, "--include-events")) {
                 String filter = options.remove();
                 warnForWildcardExpansion("--include-events", filter);
@@ -154,13 +165,13 @@ final class Scrub extends Command {
                 String filter = options.remove();
                 warnForWildcardExpansion("--include-threads", filter);
                 var f = Filters.createThreadFilter(filter);
-                filters.add(Filters.fromRecordedThread(f));
+                filters.add(Filters.fromRecordedThread(f, false));
             }
             if (acceptFilterOption(options, "--exclude-threads")) {
                 String filter = options.remove();
                 warnForWildcardExpansion("--exclude-threads", filter);
-                var f = Filters.createThreadFilter(filter);
-                filters.add(Filters.fromRecordedThread(f.negate()));
+                var f = Filters.createThreadFilter(filter).negate();
+                filters.add(Filters.fromRecordedThread(f, true));
             }
             if (optionCount == options.size()) {
                 // No progress made
@@ -171,22 +182,13 @@ final class Scrub extends Command {
             }
             optionCount = options.size();
         }
-        if (input == null) {
-            throw new UserSyntaxException("missing input file");
-        }
-        if (output == null) {
-            Path file = input.getFileName();
-            Path dir = input.getParent();
-            String filename = file.toString();
-            int index = filename.lastIndexOf(".");
-            String s = filename.substring(0, index);
-            String t = s + "-scrubbed.jfr";
-            output = dir == null ? Path.of(t) : dir.resolve(t);
-        }
+
         try (RecordingFile rf = new RecordingFile(input)) {
             rf.write(output, Filters.matchAny(filters));
         } catch (IOException ioe) {
             couldNotReadError(input, ioe);
         }
+        println("Scrubbed recording file written to:");
+        println(output.toAbsolutePath().toString());
     }
 }

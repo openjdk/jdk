@@ -39,6 +39,7 @@ import jdk.jfr.consumer.RecordedEvent;
  * Helper class for creating filters.
  */
 public class Filters {
+    private static final Predicate<RecordedThread> FALSE_THREAD_PREDICATE = e -> false;
 
     static Predicate<EventType> createCategoryFilter(String filterText) throws UserSyntaxException {
         List<String> filters = explodeFilter(filterText);
@@ -97,22 +98,28 @@ public class Filters {
         return e -> filter.test(e.getEventType());
     }
 
-    static Predicate<RecordedEvent> fromRecordedThread(Predicate<RecordedThread> filter) {
-        return e -> filter.test(e.getThread());
+    static Predicate<RecordedEvent> fromRecordedThread(Predicate<RecordedThread> filter, boolean resultIfMissing) {
+        Predicate<RecordedThread> cachePredicate = createCache(filter, RecordedThread::getId);
+        return event -> {
+            RecordedThread t = event.getThread();
+            if (t == null || t.getJavaName() == null) {
+                return resultIfMissing;
+            }
+            return cachePredicate.test(t);
+        };
     }
 
     static Predicate<RecordedThread> createThreadFilter(String filterText) throws UserSyntaxException {
         List<String> filters = explodeFilter(filterText);
-        Predicate<RecordedThread> f = thread -> {
+        return thread -> {
+            String threadName = thread.getJavaName();
             for (String filter : filters) {
-                String threadName = thread.getJavaName();
                 if (match(threadName, filter)) {
                     return true;
                 }
             }
             return false;
         };
-        return createCache(f, RecordedThread::getId);
     }
 
     private static final <T, X> Predicate<T> createCache(final Predicate<T> filter, Function<T, X> cacheFunction) {

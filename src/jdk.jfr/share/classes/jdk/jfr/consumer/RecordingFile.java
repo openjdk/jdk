@@ -86,7 +86,7 @@ public final class RecordingFile implements Closeable {
         this.chunkWriter = null;
         findNext();
     }
-    
+
     // Only used by RecordingFile::write(Path, Predicate<RecordedEvent>)
     private RecordingFile(ChunkWriter chunkWriter) throws IOException {
         this.file = null; // not used
@@ -311,7 +311,7 @@ public final class RecordingFile implements Closeable {
             return new ChunkParser(input, parserState);
         }
     }
-    
+
     private void endChunkParser() throws IOException {
         if (chunkWriter != null) {
             chunkWriter.endChunk(chunkParser.getHeader());
@@ -325,7 +325,7 @@ public final class RecordingFile implements Closeable {
         ChunkParser next = chunkParser.nextChunkParser();
         if (chunkWriter != null) {
             chunkWriter.beginChunk(next.getHeader());
-        } 
+        }
         return next;
     }
 

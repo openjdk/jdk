@@ -268,9 +268,7 @@ public class TestScrub {
         List<String> arguments = new ArrayList<>();
         arguments.add("scrub");
         arguments.addAll(Arrays.asList(options));
-        arguments.add("--input");
         arguments.add(input.toAbsolutePath().toString());
-        arguments.add("--output");
         arguments.add(output.toAbsolutePath().toString());
 
         var outp = ExecuteHelper.jfr(arguments.toArray(String[]::new));
