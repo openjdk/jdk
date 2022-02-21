@@ -34,13 +34,13 @@ public class MicroLargePages {
     @Param({"1073741824"})
     public int ARRAYSIZE;
 
-    @Param({"1","2","4"})
+    @Param({"1", "2", "4"})
     public int NUM;
 
     public static final int ITERS = 100;
 
     public long[][] INP;
-    public long[][]  OUT;
+    public long[][] OUT;
 
     @Setup(Level.Trial)
     public void BmSetup() {

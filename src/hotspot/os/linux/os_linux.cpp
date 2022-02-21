@@ -3478,7 +3478,6 @@ int os::Linux::hugetlbfs_page_size_flag(size_t page_size) {
 }
 
 bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
-
   // Include the page size flag to ensure we sanity check the correct page size.
   int flags = MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | hugetlbfs_page_size_flag(page_size);
   void *p = mmap(NULL, page_size, PROT_READ|PROT_WRITE, flags, -1, 0);
