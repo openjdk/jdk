@@ -132,7 +132,8 @@ public final class TypeAnnotationParser {
             Class<?> declaringClass = ctor.getDeclaringClass();
             if (!declaringClass.isEnum() &&
                 (declaringClass.isMemberClass() &&
-                 (declaringClass.getModifiers() & Modifier.STATIC) == 0) ) {
+                 (declaringClass.getModifiers() & Modifier.STATIC) == 0) &&
+                 filter == TypeAnnotation.TypeAnnotationTarget.METHOD_FORMAL_PARAMETER) {
                 offset = true;
             }
         }

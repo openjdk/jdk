@@ -154,6 +154,8 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     // Unimplemented for subword types since bit count changes
     // depending on size of lane (and sign bit).
     return (bt == T_INT ? Op_PopCountVI : 0);
+  case Op_PopCountL:
+    return Op_PopCountVL;
   case Op_LShiftI:
     switch (bt) {
     case T_BOOLEAN:
@@ -296,6 +298,16 @@ bool VectorNode::is_muladds2i(Node* n) {
   }
   return false;
 }
+
+bool VectorNode::is_vpopcnt_long(Node* n) {
+  if (n->Opcode() == Op_PopCountL) {
+    return true;
+  }
+  return false;
+}
+
+
+
 
 bool VectorNode::is_roundopD(Node* n) {
   if (n->Opcode() == Op_RoundDoubleMode) {
@@ -531,6 +543,7 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, b
   case Op_SqrtVD: return new SqrtVDNode(n1, vt);
 
   case Op_PopCountVI: return new PopCountVINode(n1, vt);
+  case Op_PopCountVL: return new PopCountVLNode(n1, vt);
   case Op_RotateLeftV: return new RotateLeftVNode(n1, n2, vt);
   case Op_RotateRightV: return new RotateRightVNode(n1, n2, vt);
 
@@ -1080,23 +1093,27 @@ VectorStoreMaskNode* VectorStoreMaskNode::make(PhaseGVN& gvn, Node* in, BasicTyp
 VectorCastNode* VectorCastNode::make(int vopc, Node* n1, BasicType bt, uint vlen) {
   const TypeVect* vt = TypeVect::make(bt, vlen);
   switch (vopc) {
-    case Op_VectorCastB2X: return new VectorCastB2XNode(n1, vt);
-    case Op_VectorCastS2X: return new VectorCastS2XNode(n1, vt);
-    case Op_VectorCastI2X: return new VectorCastI2XNode(n1, vt);
-    case Op_VectorCastL2X: return new VectorCastL2XNode(n1, vt);
-    case Op_VectorCastF2X: return new VectorCastF2XNode(n1, vt);
-    case Op_VectorCastD2X: return new VectorCastD2XNode(n1, vt);
+    case Op_VectorCastB2X:  return new VectorCastB2XNode(n1, vt);
+    case Op_VectorCastS2X:  return new VectorCastS2XNode(n1, vt);
+    case Op_VectorCastI2X:  return new VectorCastI2XNode(n1, vt);
+    case Op_VectorCastL2X:  return new VectorCastL2XNode(n1, vt);
+    case Op_VectorCastF2X:  return new VectorCastF2XNode(n1, vt);
+    case Op_VectorCastD2X:  return new VectorCastD2XNode(n1, vt);
+    case Op_VectorUCastB2X: return new VectorUCastB2XNode(n1, vt);
+    case Op_VectorUCastS2X: return new VectorUCastS2XNode(n1, vt);
+    case Op_VectorUCastI2X: return new VectorUCastI2XNode(n1, vt);
     default:
       assert(false, "unknown node: %s", NodeClassNames[vopc]);
       return NULL;
   }
 }
 
-int VectorCastNode::opcode(BasicType bt) {
+int VectorCastNode::opcode(BasicType bt, bool is_signed) {
+  assert((is_integral_type(bt) && bt != T_LONG) || is_signed, "");
   switch (bt) {
-    case T_BYTE:   return Op_VectorCastB2X;
-    case T_SHORT:  return Op_VectorCastS2X;
-    case T_INT:    return Op_VectorCastI2X;
+    case T_BYTE:   return is_signed ? Op_VectorCastB2X : Op_VectorUCastB2X;
+    case T_SHORT:  return is_signed ? Op_VectorCastS2X : Op_VectorUCastS2X;
+    case T_INT:    return is_signed ? Op_VectorCastI2X : Op_VectorUCastI2X;
     case T_LONG:   return Op_VectorCastL2X;
     case T_FLOAT:  return Op_VectorCastF2X;
     case T_DOUBLE: return Op_VectorCastD2X;

@@ -665,7 +665,7 @@ public class BasicTreeUI extends TreeUI
     /**
       * Returns the Rectangle enclosing the label portion that the
       * last item in path will be drawn into.  Will return null if
-      * any component in path is currently valid.
+      * any component in path is currently invalid.
       */
     public Rectangle getPathBounds(JTree tree, TreePath path) {
         if(tree != null && treeState != null) {

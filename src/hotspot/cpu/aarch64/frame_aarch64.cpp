@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -358,6 +358,7 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
   assert(map->include_argument_oops(), "should be set by clear");
   vmassert(jfa->last_Java_pc() != NULL, "not walkable");
   frame fr(jfa->last_Java_sp(), jfa->last_Java_fp(), jfa->last_Java_pc());
+  fr.set_sp_is_trusted();
 
   return fr;
 }
@@ -463,12 +464,21 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
 //------------------------------------------------------------------------------
 // frame::sender_for_compiled_frame
 frame frame::sender_for_compiled_frame(RegisterMap* map) const {
-  // we cannot rely upon the last fp having been saved to the thread
-  // in C2 code but it will have been pushed onto the stack. so we
-  // have to find it relative to the unextended sp
+  // When the sp of a compiled frame is correct, we can get the correct sender sp
+  // by unextended sp + frame size.
+  // For the following two scenarios, the sp of a compiled frame is correct:
+  //  a) This compiled frame is built from the anchor.
+  //  b) This compiled frame is built from a callee frame, and the callee frame can
+  //    calculate its sp correctly.
+  //
+  // For b), if the callee frame is a native code frame (such as leaf call), the sp of
+  // the compiled frame cannot be calculated correctly. There is currently no suitable
+  // solution to solve this problem perfectly. But when PreserveFramePointer is enabled,
+  // we can get the correct sender sp by fp + 2 (that is sender_sp()).
 
   assert(_cb->frame_size() >= 0, "must have non-zero frame size");
-  intptr_t* l_sender_sp = unextended_sp() + _cb->frame_size();
+  intptr_t* l_sender_sp = (!PreserveFramePointer || _sp_is_trusted) ? unextended_sp() + _cb->frame_size()
+                                                                    : sender_sp();
   intptr_t* unextended_sp = l_sender_sp;
 
   // the return_address is always the word on the stack

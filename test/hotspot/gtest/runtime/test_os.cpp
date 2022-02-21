@@ -351,6 +351,23 @@ TEST_VM(os, jio_snprintf) {
   test_snprintf(jio_snprintf, false);
 }
 
+#ifdef __APPLE__
+// Not all macOS versions can use os::reserve_memory (i.e. anon_mmap) API
+// to reserve executable memory, so before attempting to use it,
+// we need to verify that we can do so by asking for a tiny executable
+// memory chunk.
+static inline bool can_reserve_executable_memory(void) {
+  bool executable = true;
+  size_t len = 128;
+  char* p = os::reserve_memory(len, executable);
+  bool exec_supported = (p != NULL);
+  if (exec_supported) {
+    os::release_memory(p, len);
+  }
+  return exec_supported;
+}
+#endif
+
 // Test that os::release_memory() can deal with areas containing multiple mappings.
 #define PRINT_MAPPINGS(s) { tty->print_cr("%s", s); os::print_memory_mappings((char*)p, total_range_len, tty); }
 //#define PRINT_MAPPINGS
@@ -360,6 +377,13 @@ TEST_VM(os, jio_snprintf) {
 //  (from multiple calls to os::reserve_memory)
 static address reserve_multiple(int num_stripes, size_t stripe_len) {
   assert(is_aligned(stripe_len, os::vm_allocation_granularity()), "Sanity");
+
+#ifdef __APPLE__
+  // Workaround: try reserving executable memory to figure out
+  // if such operation is supported on this macOS version
+  const bool exec_supported = can_reserve_executable_memory();
+#endif
+
   size_t total_range_len = num_stripes * stripe_len;
   // Reserve a large contiguous area to get the address space...
   address p = (address)os::reserve_memory(total_range_len);
@@ -371,7 +395,11 @@ static address reserve_multiple(int num_stripes, size_t stripe_len) {
     address q = p + (stripe * stripe_len);
     // Commit, alternatingly with or without exec permission,
     //  to prevent kernel from folding these mappings.
+#ifdef __APPLE__
+    const bool executable = exec_supported ? (stripe % 2 == 0) : false;
+#else
     const bool executable = stripe % 2 == 0;
+#endif
     q = (address)os::attempt_reserve_memory_at((char*)q, stripe_len, executable);
     EXPECT_NE(q, (address)NULL);
     EXPECT_TRUE(os::commit_memory((char*)q, stripe_len, executable));
@@ -413,11 +441,7 @@ struct NUMASwitcher {
 #endif
 
 #ifndef _AIX // JDK-8257041
-#if defined(__APPLE__) && !defined(AARCH64)  // See JDK-8267341.
-  TEST_VM(os, DISABLED_release_multi_mappings) {
-#else
-  TEST_VM(os, release_multi_mappings) {
-#endif
+TEST_VM(os, release_multi_mappings) {
 
   // With NMT enabled, this will trigger JDK-8263464. For now disable the test if NMT=on.
   if (MemTracker::tracking_level() > NMT_off) {
@@ -425,8 +449,26 @@ struct NUMASwitcher {
   }
 
   // Test that we can release an area created with multiple reservation calls
-  const size_t stripe_len = 4 * M;
-  const int num_stripes = 4;
+  // What we do:
+  // A) we reserve 6 small segments (stripes) adjacent to each other. We commit
+  //    them with alternating permissions to prevent the kernel from folding them into
+  //    a single segment.
+  //    -stripe-stripe-stripe-stripe-stripe-stripe-
+  // B) we release the middle four stripes with a single os::release_memory call. This
+  //    tests that os::release_memory indeed works across multiple segments created with
+  //    multiple os::reserve calls.
+  //    -stripe-___________________________-stripe-
+  // C) Into the now vacated address range between the first and the last stripe, we
+  //    re-reserve a new memory range. We expect this to work as a proof that the address
+  //    range was really released by the single release call (B).
+  //
+  // Note that this is inherently racy. Between (B) and (C), some other thread may have
+  //  reserved something into the hole in the meantime. Therefore we keep that range small and
+  //  entrenched between the first and last stripe, which reduces the chance of some concurrent
+  //  thread grabbing that memory.
+
+  const size_t stripe_len = os::vm_allocation_granularity();
+  const int num_stripes = 6;
   const size_t total_range_len = stripe_len * num_stripes;
 
   // reserve address space...
@@ -434,22 +476,27 @@ struct NUMASwitcher {
   ASSERT_NE(p, (address)NULL);
   PRINT_MAPPINGS("A");
 
-  // .. release it...
+  // .. release the middle stripes...
+  address p_middle_stripes = p + stripe_len;
+  const size_t middle_stripe_len = (num_stripes - 2) * stripe_len;
   {
-    // On Windows, use UseNUMAInterleaving=1 which makes
-    //  os::release_memory accept multi-map-ranges.
-    //  Otherwise we would assert (see below for death test).
+    // On Windows, temporarily switch on UseNUMAInterleaving to allow release_memory to release
+    //  multiple mappings in one go (otherwise we assert, which we test too, see death test below).
     WINDOWS_ONLY(NUMASwitcher b(true);)
-    ASSERT_TRUE(os::release_memory((char*)p, total_range_len));
+    ASSERT_TRUE(os::release_memory((char*)p_middle_stripes, middle_stripe_len));
   }
   PRINT_MAPPINGS("B");
 
-  // re-reserve it. This should work unless release failed.
-  address p2 = (address)os::attempt_reserve_memory_at((char*)p, total_range_len);
-  ASSERT_EQ(p2, p);
+  // ...re-reserve the middle stripes. This should work unless release silently failed.
+  address p2 = (address)os::attempt_reserve_memory_at((char*)p_middle_stripes, middle_stripe_len);
+  ASSERT_EQ(p2, p_middle_stripes);
   PRINT_MAPPINGS("C");
 
-  ASSERT_TRUE(os::release_memory((char*)p, total_range_len));
+  // Clean up. Release all mappings.
+  {
+    WINDOWS_ONLY(NUMASwitcher b(true);) // allow release_memory to release multiple regions
+    ASSERT_TRUE(os::release_memory((char*)p, total_range_len));
+  }
 }
 #endif // !AIX
 

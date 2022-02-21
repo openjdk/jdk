@@ -46,22 +46,7 @@ import jdk.jfr.internal.Utils;
  * <p>
  * The following example shows how {@code AnnotationElement} can be used to dynamically define events.
  *
- * <pre>{@literal
- *   List<AnnotationElement> typeAnnotations = new ArrayList<>();
- *   typeAnnotations.add(new AnnotationElement(Name.class, "com.example.HelloWorld"));
- *   typeAnnotations.add(new AnnotationElement(Label.class, "Hello World"));
- *   typeAnnotations.add(new AnnotationElement(Description.class, "Helps programmer getting started"));
- *
- *   List<AnnotationElement> fieldAnnotations = new ArrayList<>();
- *   fieldAnnotations.add(new AnnotationElement(Label.class, "Message"));
- *
- *   List<ValueDescriptor> fields = new ArrayList<>();
- *   fields.add(new ValueDescriptor(String.class, "message", fieldAnnotations));
- *
- *   EventFactory f = EventFactory.create(typeAnnotations, fields);
- *   Event event = f.newEvent();
- *   event.commit();
- * }</pre>
+ * {@snippet class="Snippets" region="AnnotationElementOverview"}
  *
  * @since 9
  */

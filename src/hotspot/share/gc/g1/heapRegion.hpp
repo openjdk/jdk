@@ -162,18 +162,12 @@ public:
   inline HeapWord* allocate(size_t word_size);
   inline HeapWord* allocate(size_t min_word_size, size_t desired_word_size, size_t* actual_size);
 
-  // Update the BOT for the given address if it crosses the next
-  // BOT threshold at or after obj_start.
-  inline void update_bot_at(HeapWord* obj_start, size_t obj_size);
-  // Update BOT at the given threshold for the given object. The
-  // given object must cross the threshold.
-  inline void update_bot_crossing_threshold(HeapWord** threshold, HeapWord* obj_start, HeapWord* obj_end);
-  inline HeapWord* bot_threshold_for_addr(const void* addr);
+  // Update BOT if this obj is the first entering a new card (i.e. crossing the card boundary).
+  inline void update_bot_for_obj(HeapWord* obj_start, size_t obj_size);
 
   // Full GC support methods.
 
-  void initialize_bot_threshold();
-  void alloc_block_in_bot(HeapWord* start, HeapWord* end);
+  void update_bot_for_block(HeapWord* start, HeapWord* end);
 
   // Update heap region that has been compacted to be consistent after Full GC.
   void reset_compacted_after_full_gc();
@@ -197,16 +191,8 @@ public:
   template<typename ApplyToMarkedClosure>
   inline void apply_to_marked_objects(G1CMBitMap* bitmap, ApplyToMarkedClosure* closure);
 
-  void reset_bot() {
-    _bot_part.reset_bot();
-  }
-
   void update_bot() {
     _bot_part.update();
-  }
-
-  void update_bot_threshold() {
-    _bot_part.set_threshold(top());
   }
 
 private:
@@ -577,34 +563,30 @@ public:
 
   // Routines for managing a list of code roots (attached to the
   // this region's RSet) that point into this heap region.
-  void add_strong_code_root(nmethod* nm);
-  void add_strong_code_root_locked(nmethod* nm);
-  void remove_strong_code_root(nmethod* nm);
+  void add_code_root(nmethod* nm);
+  void add_code_root_locked(nmethod* nm);
+  void remove_code_root(nmethod* nm);
 
   // Applies blk->do_code_blob() to each of the entries in
-  // the strong code roots list for this region
-  void strong_code_roots_do(CodeBlobClosure* blk) const;
+  // the code roots list for this region
+  void code_roots_do(CodeBlobClosure* blk) const;
 
   uint node_index() const { return _node_index; }
   void set_node_index(uint node_index) { _node_index = node_index; }
 
-  // Verify that the entries on the strong code root list for this
+  // Verify that the entries on the code root list for this
   // region are live and include at least one pointer into this region.
-  void verify_strong_code_roots(VerifyOption vo, bool* failures) const;
+  void verify_code_roots(VerifyOption vo, bool* failures) const;
 
   void print() const;
   void print_on(outputStream* st) const;
 
   // vo == UsePrevMarking -> use "prev" marking information,
-  // vo == UseNextMarking -> use "next" marking information
   // vo == UseFullMarking -> use "next" marking bitmap but no TAMS
   //
   // NOTE: Only the "prev" marking information is guaranteed to be
   // consistent most of the time, so most calls to this should use
   // vo == UsePrevMarking.
-  // Currently, there is only one case where this is called with
-  // vo == UseNextMarking, which is to verify the "next" marking
-  // information at the end of remark.
   // Currently there is only one place where this is called with
   // vo == UseFullMarking, which is to verify the marking during a
   // full GC.

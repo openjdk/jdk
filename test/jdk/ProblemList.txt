@@ -242,7 +242,6 @@ sun/awt/shell/ShellFolderMemoryLeak.java 8197794 windows-all
 sun/java2d/DirectX/OnScreenRenderingResizeTest/OnScreenRenderingResizeTest.java 8022403 generic-all
 sun/java2d/DirectX/OverriddenInsetsTest/OverriddenInsetsTest.java 8196102 generic-all
 sun/java2d/DirectX/RenderingToCachedGraphicsTest/RenderingToCachedGraphicsTest.java 8196180 windows-all,macosx-all
-java/awt/Graphics2D/CopyAreaOOB.java 7001973 windows-all,macosx-all
 sun/java2d/SunGraphics2D/EmptyClipRenderingTest.java 8144029 macosx-all,linux-all
 sun/java2d/SunGraphics2D/DrawImageBilinear.java 8191406 generic-all
 sun/java2d/SunGraphics2D/PolyVertTest.java 6986565 generic-all
@@ -598,7 +597,6 @@ java/net/MulticastSocket/SetGetNetworkInterfaceTest.java        8219083 windows-
 
 java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc64
 
-
 ############################################################################
 
 # jdk_nio
@@ -821,12 +819,13 @@ javax/script/Test7.java                                         8239361 generic-
 
 # jdk_jfr
 
-jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java          8228990 generic-all
+jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java          8228990 macosx-all,linux-all,windows-all
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209 generic-all
 jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-all
 jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
-jdk/jfr/event/oldobject/TestLargeRootSet.java                   8276333 macosx-x64,windows-x64
+jdk/jfr/event/oldobject/TestLargeRootSet.java                   8276333 generic-x64
+jdk/jfr/api/consumer/recordingstream/TestOnEvent.java           8255404 linux-x64
 
 ############################################################################
 

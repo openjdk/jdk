@@ -364,11 +364,7 @@ public abstract non-sealed class AbstractMemorySegmentImpl extends MemorySegment
     }
 
     void checkValidState() {
-        try {
-            scope.checkValidState();
-        } catch (ScopedMemoryAccess.Scope.ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
-        }
+        scope.checkValidStateSlow();
     }
 
     @Override

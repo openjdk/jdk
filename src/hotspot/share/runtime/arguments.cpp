@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -412,7 +412,7 @@ void Arguments::init_system_properties() {
   // It can only be set by either:
   //    - -Xbootclasspath/a:
   //    - AddToBootstrapClassLoaderSearch during JVMTI OnLoad phase
-  _jdk_boot_class_path_append = new SystemProperty("jdk.boot.class.path.append", "", false, true);
+  _jdk_boot_class_path_append = new SystemProperty("jdk.boot.class.path.append", NULL, false, true);
 
   // Add to System Property list.
   PropertyList_add(&_system_properties, _sun_boot_library_path);
@@ -530,7 +530,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "AllowRedefinitionToAddDeleteMethods", JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "FlightRecorder",               JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
-  { "MinInliningThreshold",         JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
   { "DumpSharedSpaces",             JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "DynamicDumpSharedSpaces",      JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "RequireSharedSpaces",          JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
@@ -538,6 +537,7 @@ static SpecialFlag const special_jvm_flags[] = {
 #ifdef PRODUCT
   { "UseHeavyMonitors",             JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
 #endif
+  { "ExtendedDTraceProbes",         JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -547,6 +547,8 @@ static SpecialFlag const special_jvm_flags[] = {
   // -------------- Obsolete Flags - sorted by expired_in --------------
 
   { "FilterSpuriousWakeups",        JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
+  { "MinInliningThreshold",         JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
+  { "PrefetchFieldsAhead",          JDK_Version::undefined(), JDK_Version::jdk(19), JDK_Version::jdk(20) },
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
 #endif
@@ -1244,7 +1246,7 @@ bool Arguments::process_argument(const char* arg,
 }
 
 bool Arguments::process_settings_file(const char* file_name, bool should_exist, jboolean ignore_unrecognized) {
-  FILE* stream = fopen(file_name, "rb");
+  FILE* stream = os::fopen(file_name, "rb");
   if (stream == NULL) {
     if (should_exist) {
       jio_fprintf(defaultStream::error_stream(),
@@ -2015,16 +2017,23 @@ bool Arguments::check_vm_args_consistency() {
 
 #if !defined(X86) && !defined(AARCH64) && !defined(PPC64)
   if (UseHeavyMonitors) {
-    warning("UseHeavyMonitors is not fully implemented on this architecture");
+    jio_fprintf(defaultStream::error_stream(),
+                "UseHeavyMonitors is not fully implemented on this architecture");
+    return false;
   }
 #endif
 #if (defined(X86) || defined(PPC64)) && !defined(ZERO)
   if (UseHeavyMonitors && UseRTMForStackLocks) {
-    fatal("-XX:+UseHeavyMonitors and -XX:+UseRTMForStackLocks are mutually exclusive");
+    jio_fprintf(defaultStream::error_stream(),
+                "-XX:+UseHeavyMonitors and -XX:+UseRTMForStackLocks are mutually exclusive");
+
+    return false;
   }
 #endif
   if (VerifyHeavyMonitors && !UseHeavyMonitors) {
-    fatal("-XX:+VerifyHeavyMonitors requires -XX:+UseHeavyMonitors");
+    jio_fprintf(defaultStream::error_stream(),
+                "-XX:+VerifyHeavyMonitors requires -XX:+UseHeavyMonitors");
+    return false;
   }
 
   return status;
@@ -2879,6 +2888,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       }
     } else if (match_option(option, "-XX:+ExtendedDTraceProbes")) {
 #if defined(DTRACE_ENABLED)
+      warning("Option ExtendedDTraceProbes was deprecated in version 19 and will likely be removed in a future release.");
+      warning("Use the combination of -XX:+DTraceMethodProbes, -XX:+DTraceAllocProbes and -XX:+DTraceMonitorProbes instead.");
       if (FLAG_SET_CMDLINE(ExtendedDTraceProbes, true) != JVMFlag::SUCCESS) {
         return JNI_EINVAL;
       }
@@ -2894,6 +2905,18 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
 #else // defined(DTRACE_ENABLED)
       jio_fprintf(defaultStream::error_stream(),
                   "ExtendedDTraceProbes flag is not applicable for this configuration\n");
+      return JNI_EINVAL;
+    } else if (match_option(option, "-XX:+DTraceMethodProbes")) {
+      jio_fprintf(defaultStream::error_stream(),
+                  "DTraceMethodProbes flag is not applicable for this configuration\n");
+      return JNI_EINVAL;
+    } else if (match_option(option, "-XX:+DTraceAllocProbes")) {
+      jio_fprintf(defaultStream::error_stream(),
+                  "DTraceAllocProbes flag is not applicable for this configuration\n");
+      return JNI_EINVAL;
+    } else if (match_option(option, "-XX:+DTraceMonitorProbes")) {
+      jio_fprintf(defaultStream::error_stream(),
+                  "DTraceMonitorProbes flag is not applicable for this configuration\n");
       return JNI_EINVAL;
 #endif // defined(DTRACE_ENABLED)
 #ifdef ASSERT
@@ -3140,6 +3163,17 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
     DynamicDumpSharedSpaces = true;
   }
 
+  if (AutoCreateSharedArchive) {
+    if (SharedArchiveFile == NULL) {
+      log_warning(cds)("-XX:+AutoCreateSharedArchive requires -XX:SharedArchiveFile");
+      return JNI_ERR;
+    }
+    if (ArchiveClassesAtExit != NULL) {
+      log_warning(cds)("-XX:+AutoCreateSharedArchive does not work with ArchiveClassesAtExit");
+      return JNI_ERR;
+    }
+  }
+
   if (UseSharedSpaces && patch_mod_javabase) {
     no_shared_spaces("CDS is disabled when " JAVA_BASE_NAME " module is patched.");
   }
@@ -3312,13 +3346,13 @@ jint Arguments::parse_vm_options_file(const char* file_name, ScopedVMInitArgs* v
     jio_fprintf(defaultStream::error_stream(),
                 "Could not stat options file '%s'\n",
                 file_name);
-    os::close(fd);
+    ::close(fd);
     return JNI_ERR;
   }
 
   if (stbuf.st_size == 0) {
     // tell caller there is no option data and that is ok
-    os::close(fd);
+    ::close(fd);
     return JNI_OK;
   }
 
@@ -3329,15 +3363,15 @@ jint Arguments::parse_vm_options_file(const char* file_name, ScopedVMInitArgs* v
   if (NULL == buf) {
     jio_fprintf(defaultStream::error_stream(),
                 "Could not allocate read buffer for options file parse\n");
-    os::close(fd);
+    ::close(fd);
     return JNI_ENOMEM;
   }
 
   memset(buf, 0, bytes_alloc);
 
   // Fill buffer
-  ssize_t bytes_read = os::read(fd, (void *)buf, (unsigned)bytes_alloc);
-  os::close(fd);
+  ssize_t bytes_read = ::read(fd, (void *)buf, (unsigned)bytes_alloc);
+  ::close(fd);
   if (bytes_read < 0) {
     FREE_C_HEAP_ARRAY(char, buf);
     jio_fprintf(defaultStream::error_stream(),
@@ -3487,9 +3521,6 @@ void Arguments::extract_shared_archive_paths(const char* archive_path,
   char* cur_path = NEW_C_HEAP_ARRAY(char, len + 1, mtInternal);
   strncpy(cur_path, begin_ptr, len);
   cur_path[len] = '\0';
-  if (!FileMapInfo::check_archive((const char*)cur_path, true /*is_static*/)) {
-    return;
-  }
   *base_archive_path = cur_path;
 
   begin_ptr = ++end_ptr;
@@ -3501,9 +3532,6 @@ void Arguments::extract_shared_archive_paths(const char* archive_path,
   len = end_ptr - begin_ptr;
   cur_path = NEW_C_HEAP_ARRAY(char, len + 1, mtInternal);
   strncpy(cur_path, begin_ptr, len + 1);
-  if (!FileMapInfo::check_archive((const char*)cur_path, false /*is_static*/)) {
-    return;
-  }
   *top_archive_path = cur_path;
 }
 
@@ -3556,7 +3584,20 @@ void Arguments::init_shared_archive_paths() {
         bool success =
           FileMapInfo::get_base_archive_name_from_header(SharedArchiveFile, &base_archive_path);
         if (!success) {
-          no_shared_spaces("invalid archive");
+          // If +AutoCreateSharedArchive and the specified shared archive does not exist,
+          // regenerate the dynamic archive base on default archive.
+          if (AutoCreateSharedArchive && !os::file_exists(SharedArchiveFile)) {
+            DynamicDumpSharedSpaces = true;
+            ArchiveClassesAtExit = const_cast<char *>(SharedArchiveFile);
+            SharedArchivePath = get_default_shared_archive_path();
+            SharedArchiveFile = nullptr;
+          } else {
+            if (AutoCreateSharedArchive) {
+              warning("-XX:+AutoCreateSharedArchive is unsupported when base CDS archive is not loaded. Run with -Xlog:cds for more info.");
+              AutoCreateSharedArchive = false;
+            }
+            no_shared_spaces("invalid archive");
+          }
         } else if (base_archive_path == NULL) {
           // User has specified a single archive, which is a static archive.
           SharedArchivePath = const_cast<char *>(SharedArchiveFile);
@@ -3998,7 +4039,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   no_shared_spaces("CDS Disabled");
 #endif // INCLUDE_CDS
 
-#if INCLUDE_NMT
   // Verify NMT arguments
   const NMT_TrackingLevel lvl = NMTUtil::parse_tracking_level(NativeMemoryTracking);
   if (lvl == NMT_unknown) {
@@ -4010,13 +4050,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     warning("PrintNMTStatistics is disabled, because native memory tracking is not enabled");
     FLAG_SET_DEFAULT(PrintNMTStatistics, false);
   }
-#else
-  if (!FLAG_IS_DEFAULT(NativeMemoryTracking) || PrintNMTStatistics) {
-    warning("Native Memory Tracking is not supported in this VM");
-    FLAG_SET_DEFAULT(NativeMemoryTracking, "off");
-    FLAG_SET_DEFAULT(PrintNMTStatistics, false);
-  }
-#endif // INCLUDE_NMT
 
   if (TraceDependencies && VerifyDependencies) {
     if (!FLAG_IS_DEFAULT(TraceDependencies)) {

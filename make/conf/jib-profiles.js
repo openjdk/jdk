@@ -1165,19 +1165,12 @@ var getJibProfilesDependencies = function (input, common) {
         jmh: {
             organization: common.organization,
             ext: "tar.gz",
-            revision: "1.33+1.0"
+            revision: "1.34+1.0"
         },
 
         jcov: {
-            // Use custom build of JCov
-            // See CODETOOLS-7902734 for more info.
-            // server: "jpg",
-            // product: "jcov",
-            // version: "3.0",
-            // build_number: "b07",
-            // file: "bundles/jcov-3_0.zip",
             organization: common.organization,
-            revision: "3.0-9-jdk-asm+1.0",
+            revision: "3.0-12-jdk-asm+1.0",
             ext: "zip",
             environment_name: "JCOV_HOME",
         },
@@ -1431,7 +1424,10 @@ var getVersion = function (feature, interim, update, patch, extra1, extra2, extr
  * other version inputs
  */
 var versionArgs = function(input, common) {
-    var args = ["--with-version-build=" + common.build_number];
+    var args = [];
+    if (common.build_number != 0) {
+        args = concat(args, "--with-version-build=" + common.build_number);
+    }
     if (input.build_type == "promoted") {
         args = concat(args,
                       "--with-version-pre=" + version_numbers.get("DEFAULT_PROMOTED_VERSION_PRE"),

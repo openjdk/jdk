@@ -1454,7 +1454,8 @@ public:
   // Rework addressing expressions to get the most loop-invariant stuff
   // moved out.  We'd like to do all associative operators, but it's especially
   // important (common) to do address expressions.
-  Node *remix_address_expressions( Node *n );
+  Node* remix_address_expressions(Node* n);
+  Node* remix_address_expressions_add_left_shift(Node* n, IdealLoopTree* n_loop, Node* n_ctrl, BasicType bt);
 
   // Convert add to muladd to generate MuladdS2I under certain criteria
   Node * convert_add_to_muladd(Node * n);
@@ -1476,15 +1477,15 @@ public:
   Node *has_local_phi_input( Node *n );
   // Mark an IfNode as being dominated by a prior test,
   // without actually altering the CFG (and hence IDOM info).
-  void dominated_by( Node *prevdom, Node *iff, bool flip = false, bool exclude_loop_predicate = false );
+  void dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip = false, bool exclude_loop_predicate = false);
 
   // Split Node 'n' through merge point
-  Node *split_thru_region( Node *n, Node *region );
+  RegionNode* split_thru_region(Node* n, RegionNode* region);
   // Split Node 'n' through merge point if there is enough win.
   Node *split_thru_phi( Node *n, Node *region, int policy );
   // Found an If getting its condition-code input from a Phi in the
   // same block.  Split thru the Region.
-  void do_split_if( Node *iff );
+  void do_split_if(Node *iff, RegionNode** new_false_region = NULL, RegionNode** new_true_region = NULL);
 
   // Conversion of fill/copy patterns into intrinsic versions
   bool do_intrinsify_fill();
@@ -1659,6 +1660,9 @@ public:
 
   void strip_mined_nest_back_to_counted_loop(IdealLoopTree* loop, const BaseCountedLoopNode* head, Node* back_control,
                                              IfNode*&exit_test, SafePointNode*&safepoint);
+  void push_pinned_nodes_thru_region(IfNode* dom_if, Node* region);
+
+  bool try_merge_identical_ifs(Node* n);
 };
 
 

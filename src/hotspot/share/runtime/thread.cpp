@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -317,7 +317,6 @@ void Thread::record_stack_base_and_size() {
   }
 }
 
-#if INCLUDE_NMT
 void Thread::register_thread_stack_with_NMT() {
   MemTracker::record_thread_stack(stack_end(), stack_size());
 }
@@ -325,7 +324,6 @@ void Thread::register_thread_stack_with_NMT() {
 void Thread::unregister_thread_stack_with_NMT() {
   MemTracker::release_thread_stack(stack_end(), stack_size());
 }
-#endif // INCLUDE_NMT
 
 void Thread::call_run() {
   DEBUG_ONLY(_run_state = CALL_RUN;)
@@ -1646,24 +1644,10 @@ void JavaThread::check_and_handle_async_exceptions() {
 
     // We may be at method entry which requires we save the do-not-unlock flag.
     UnlockFlagSaver fs(this);
-    switch (thread_state()) {
-    case _thread_in_vm: {
-      JavaThread* THREAD = this;
-      Exceptions::throw_unsafe_access_internal_error(THREAD, __FILE__, __LINE__, "a fault occurred in an unsafe memory access operation");
-      // We might have blocked in a ThreadBlockInVM wrapper in the call above so make sure we process pending
-      // suspend requests and object reallocation operations if any since we might be going to Java after this.
-      SafepointMechanism::process_if_requested_with_exit_check(this, true /* check asyncs */);
-      return;
-    }
-    case _thread_in_Java: {
-      ThreadInVMfromJava tiv(this);
-      JavaThread* THREAD = this;
-      Exceptions::throw_unsafe_access_internal_error(THREAD, __FILE__, __LINE__, "a fault occurred in an unsafe memory access operation in compiled Java code");
-      return;
-    }
-    default:
-      ShouldNotReachHere();
-    }
+    Exceptions::throw_unsafe_access_internal_error(this, __FILE__, __LINE__, "a fault occurred in an unsafe memory access operation");
+    // We might have blocked in a ThreadBlockInVM wrapper in the call above so make sure we process pending
+    // suspend requests and object reallocation operations if any since we might be going to Java after this.
+    SafepointMechanism::process_if_requested_with_exit_check(this, true /* check asyncs */);
   }
 }
 
@@ -1770,27 +1754,19 @@ bool JavaThread::java_resume() {
 }
 
 // Wait for another thread to perform object reallocation and relocking on behalf of
-// this thread.
-// Raw thread state transition to _thread_blocked and back again to the original
-// state before returning are performed. The current thread is required to
-// change to _thread_blocked in order to be seen to be safepoint/handshake safe
-// whilst suspended and only after becoming handshake safe, the other thread can
-// complete the handshake used to synchronize with this thread and then perform
-// the reallocation and relocking. We cannot use the thread state transition
-// helpers because we arrive here in various states and also because the helpers
-// indirectly call this method.  After leaving _thread_blocked we have to check
-// for safepoint/handshake, except if _thread_in_native. The thread is safe
-// without blocking then. Allowed states are enumerated in
-// SafepointSynchronize::block(). See also EscapeBarrier::sync_and_suspend_*()
+// this thread. The current thread is required to change to _thread_blocked in order
+// to be seen to be safepoint/handshake safe whilst suspended and only after becoming
+// handshake safe, the other thread can complete the handshake used to synchronize
+// with this thread and then perform the reallocation and relocking.
+// See EscapeBarrier::sync_and_suspend_*()
 
 void JavaThread::wait_for_object_deoptimization() {
   assert(!has_last_Java_frame() || frame_anchor()->walkable(), "should have walkable stack");
   assert(this == Thread::current(), "invariant");
-  JavaThreadState state = thread_state();
 
   bool spin_wait = os::is_MP();
   do {
-    set_thread_state(_thread_blocked);
+    ThreadBlockInVM tbivm(this, true /* allow_suspend */);
     // Wait for object deoptimization if requested.
     if (spin_wait) {
       // A single deoptimization is typically very short. Microbenchmarks
@@ -1807,14 +1783,6 @@ void JavaThread::wait_for_object_deoptimization() {
       if (is_obj_deopt_suspend()) {
         ml.wait();
       }
-    }
-    // The current thread could have been suspended again. We have to check for
-    // suspend after restoring the saved state. Without this the current thread
-    // might return to _thread_in_Java and execute bytecode.
-    set_thread_state_fence(state);
-
-    if (state != _thread_in_native) {
-      SafepointMechanism::process_if_requested(this);
     }
     // A handshake for obj. deoptimization suspend could have been processed so
     // we must check after processing.
@@ -2734,10 +2702,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   jint parse_result = Arguments::parse(args);
   if (parse_result != JNI_OK) return parse_result;
 
-#if INCLUDE_NMT
   // Initialize NMT right after argument parsing to keep the pre-NMT-init window small.
   MemTracker::initialize();
-#endif // INCLUDE_NMT
 
   os::init_before_ergo();
 

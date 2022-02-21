@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -703,7 +703,7 @@ void Compilation::print_timers() {
 #ifndef PRODUCT
 void Compilation::compile_only_this_method() {
   ResourceMark rm;
-  fileStream stream(fopen("c1_compile_only", "wt"));
+  fileStream stream(os::fopen("c1_compile_only", "wt"));
   stream.print_cr("# c1 compile only directives");
   compile_only_this_scope(&stream, hir()->top_scope());
 }
@@ -717,7 +717,7 @@ void Compilation::compile_only_this_scope(outputStream* st, IRScope* scope) {
 }
 
 void Compilation::exclude_this_method() {
-  fileStream stream(fopen(".hotspot_compiler", "at"));
+  fileStream stream(os::fopen(".hotspot_compiler", "at"));
   stream.print("exclude ");
   method()->holder()->name()->print_symbol_on(&stream);
   stream.print(" ");
