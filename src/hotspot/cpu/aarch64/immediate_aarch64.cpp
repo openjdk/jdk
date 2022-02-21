@@ -126,7 +126,7 @@ static inline uint32_t uimm(uint32_t val, int hi, int lo)
 
 // SPEC
 //
-// bits(M*N) Replicate(bits(M) x, integer N);
+// bits(M*N) Replicate(bits(M) B, integer N);
 //
 // given bit string B of width M (M > 0) and count N (N > 0)
 // concatenate N copies of B to generate a bit string of width N * M
@@ -223,7 +223,7 @@ uint64_t replicate(uint64_t bits, int nbits, int count)
 //
 // implementation note:
 //
-// For hysterical reasons the implementation of this function is much
+// For historical reasons the implementation of this function is much
 // more convoluted than is really necessary.
 
 int expandLogicalImmediate(uint32_t immN, uint32_t immr,
