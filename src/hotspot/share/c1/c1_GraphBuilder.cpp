@@ -34,6 +34,7 @@
 #include "ci/ciMemberName.hpp"
 #include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
+#include "classfile/javaClasses.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
@@ -916,45 +917,39 @@ void GraphBuilder::ScopeData::incr_num_returns() {
 
 void GraphBuilder::load_constant() {
   ciConstant con = stream()->get_constant();
-  if (con.basic_type() == T_ILLEGAL) {
-    // FIXME: an unresolved Dynamic constant can get here,
-    // and that should not terminate the whole compilation.
-    BAILOUT("could not resolve a constant");
-  } else {
+  if (con.is_valid()) {
     ValueType* t = illegalType;
     ValueStack* patch_state = NULL;
     switch (con.basic_type()) {
-      case T_BOOLEAN: t = new IntConstant     (con.as_boolean()); break;
-      case T_BYTE   : t = new IntConstant     (con.as_byte   ()); break;
-      case T_CHAR   : t = new IntConstant     (con.as_char   ()); break;
-      case T_SHORT  : t = new IntConstant     (con.as_short  ()); break;
-      case T_INT    : t = new IntConstant     (con.as_int    ()); break;
-      case T_LONG   : t = new LongConstant    (con.as_long   ()); break;
-      case T_FLOAT  : t = new FloatConstant   (con.as_float  ()); break;
-      case T_DOUBLE : t = new DoubleConstant  (con.as_double ()); break;
-      case T_ARRAY  : t = new ArrayConstant   (con.as_object ()->as_array   ()); break;
-      case T_OBJECT :
-       {
+      case T_BOOLEAN: t = new IntConstant   (con.as_boolean()); break;
+      case T_BYTE   : t = new IntConstant   (con.as_byte   ()); break;
+      case T_CHAR   : t = new IntConstant   (con.as_char   ()); break;
+      case T_SHORT  : t = new IntConstant   (con.as_short  ()); break;
+      case T_INT    : t = new IntConstant   (con.as_int    ()); break;
+      case T_LONG   : t = new LongConstant  (con.as_long   ()); break;
+      case T_FLOAT  : t = new FloatConstant (con.as_float  ()); break;
+      case T_DOUBLE : t = new DoubleConstant(con.as_double ()); break;
+      case T_ARRAY  : // fall-through
+      case T_OBJECT : {
         ciObject* obj = con.as_object();
-        if (!obj->is_loaded()
-            || (PatchALot && obj->klass() != ciEnv::current()->String_klass())) {
-          // A Class, MethodType, MethodHandle, or String.
-          // Unloaded condy nodes show up as T_ILLEGAL, above.
+        if (!obj->is_loaded() || (PatchALot && (obj->is_null_object() || obj->klass() != ciEnv::current()->String_klass()))) {
+          // A Class, MethodType, MethodHandle, Dynamic, or String.
           patch_state = copy_state_before();
           t = new ObjectConstant(obj);
         } else {
           // Might be a Class, MethodType, MethodHandle, or Dynamic constant
           // result, which might turn out to be an array.
-          if (obj->is_null_object())
+          if (obj->is_null_object()) {
             t = objectNull;
-          else if (obj->is_array())
+          } else if (obj->is_array()) {
             t = new ArrayConstant(obj->as_array());
-          else
+          } else {
             t = new InstanceConstant(obj->as_instance());
+          }
         }
         break;
-       }
-      default       : ShouldNotReachHere();
+      }
+      default: ShouldNotReachHere();
     }
     Value x;
     if (patch_state != NULL) {
@@ -962,7 +957,27 @@ void GraphBuilder::load_constant() {
     } else {
       x = new Constant(t);
     }
+
+    // Unbox the value at runtime, if needed.
+    // ConstantDynamic entry can be of a primitive type, but it is cached in boxed form.
+    if (patch_state != NULL) {
+      int index = stream()->get_constant_pool_index();
+      BasicType type = stream()->get_basic_type_for_constant_at(index);
+      if (is_java_primitive(type)) {
+        ciInstanceKlass* box_klass = ciEnv::current()->get_box_klass_for_primitive_type(type);
+        assert(box_klass->is_loaded(), "sanity");
+        int offset = java_lang_boxing_object::value_offset(type);
+        ciField* value_field = box_klass->get_field_by_offset(offset, false /*is_static*/);
+        x = new LoadField(append(x), offset, value_field, false /*is_static*/, patch_state, false /*needs_patching*/);
+        t = as_ValueType(type);
+      } else {
+        assert(is_reference_type(type), "not a reference: %s", type2name(type));
+      }
+    }
+
     push(t, append(x));
+  } else {
+    BAILOUT("could not resolve a constant");
   }
 }
 

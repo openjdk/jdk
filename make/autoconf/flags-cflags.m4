@@ -782,10 +782,8 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
         test "x$ENABLE_REPRODUCIBLE_BUILD" = xtrue; then
       # There is a known issue with the pathmap if the mapping is made to the
       # empty string. Add a minimal string "s" as prefix to work around this.
-      workspace_root_win=`$FIXPATH_BASE print "${WORKSPACE_ROOT%/}"`
       # PATHMAP_FLAGS is also added to LDFLAGS in flags-ldflags.m4.
-      PATHMAP_FLAGS="-pathmap:${workspace_root_win//\//\\\\}=s \
-          -pathmap:${workspace_root_win}=s"
+      PATHMAP_FLAGS="-pathmap:${WORKSPACE_ROOT}=s"
       FILE_MACRO_CFLAGS="$PATHMAP_FLAGS"
       FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${FILE_MACRO_CFLAGS}],
           PREFIX: $3,

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2732,16 +2732,17 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
 
   // Store a non-null value into the box.
   std(box, BasicLock::displaced_header_offset_in_bytes(), box);
+  beq(flag, cont);
 
-# ifdef ASSERT
+  // Check for recursive locking.
+  cmpd(flag, current_header, R16_thread);
   bne(flag, cont);
-  // We have acquired the monitor, check some invariants.
-  addi(/*monitor=*/temp, temp, -ObjectMonitor::owner_offset_in_bytes());
-  // Invariant 1: _recursions should be 0.
-  //assert(ObjectMonitor::recursions_size_in_bytes() == 8, "unexpected size");
-  asm_assert_mem8_is_zero(ObjectMonitor::recursions_offset_in_bytes(), temp,
-                            "monitor->_recursions should be 0");
-# endif
+
+  // Current thread already owns the lock. Just increment recursions.
+  Register recursions = displaced_header;
+  ld(recursions, ObjectMonitor::recursions_offset_in_bytes()-ObjectMonitor::owner_offset_in_bytes(), temp);
+  addi(recursions, recursions, 1);
+  std(recursions, ObjectMonitor::recursions_offset_in_bytes()-ObjectMonitor::owner_offset_in_bytes(), temp);
 
 #if INCLUDE_RTM_OPT
   } // use_rtm()
@@ -2757,8 +2758,7 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
                                                  bool use_rtm) {
   assert_different_registers(oop, box, temp, displaced_header, current_header);
   assert(flag != CCR0, "bad condition register");
-  Label cont;
-  Label object_has_monitor;
+  Label cont, object_has_monitor, notRecursive;
 
 #if INCLUDE_RTM_OPT
   if (UseRTMForStackLocks && use_rtm) {
@@ -2830,11 +2830,16 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
 #endif
 
   ld(displaced_header, ObjectMonitor::recursions_offset_in_bytes(), current_header);
-  xorr(temp, R16_thread, temp);      // Will be 0 if we are the owner.
-  orr(temp, temp, displaced_header); // Will be 0 if there are 0 recursions.
-  cmpdi(flag, temp, 0);
+
+  cmpd(flag, temp, R16_thread);
   bne(flag, cont);
 
+  addic_(displaced_header, displaced_header, -1);
+  blt(CCR0, notRecursive); // Not recursive if negative after decrement.
+  std(displaced_header, ObjectMonitor::recursions_offset_in_bytes(), current_header);
+  b(cont); // flag is already EQ here.
+
+  bind(notRecursive);
   ld(temp,             ObjectMonitor::EntryList_offset_in_bytes(), current_header);
   ld(displaced_header, ObjectMonitor::cxq_offset_in_bytes(), current_header);
   orr(temp, temp, displaced_header); // Will be 0 if both are 0.

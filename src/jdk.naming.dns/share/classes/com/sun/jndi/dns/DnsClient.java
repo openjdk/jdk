@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,12 @@
 package com.sun.jndi.dns;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.DatagramSocket;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.PortUnreachableException;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.security.SecureRandom;
@@ -275,19 +277,22 @@ public class DnsClient {
                             } // servers
                         }
                         return new ResourceRecords(msg, msg.length, hdr, false);
-
+                    } catch (UncheckedIOException | PortUnreachableException ex) {
+                        // DatagramSocket.connect in doUdpQuery can throw UncheckedIOException
+                        // DatagramSocket.send in doUdpQuery can throw PortUnreachableException
+                        if (debug) {
+                            dprint("Caught Exception:" + ex);
+                        }
+                        if (caughtException == null) {
+                            caughtException = ex;
+                        }
+                        doNotRetry[i] = true;
                     } catch (IOException e) {
                         if (debug) {
                             dprint("Caught IOException:" + e);
                         }
                         if (caughtException == null) {
                             caughtException = e;
-                        }
-                        // Use reflection to allow pre-1.4 compilation.
-                        // This won't be needed much longer.
-                        if (e.getClass().getName().equals(
-                                "java.net.PortUnreachableException")) {
-                            doNotRetry[i] = true;
                         }
                     } catch (NameNotFoundException e) {
                         // This is authoritative, so return immediately

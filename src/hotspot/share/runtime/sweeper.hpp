@@ -66,8 +66,8 @@ class NMethodSweeper : public AllStatic {
     MadeZombie,
     Flushed
   };
-  static long      _traversals;                   // Stack scan count, also sweep ID.
-  static long      _total_nof_code_cache_sweeps;  // Total number of full sweeps of the code cache
+  static int64_t   _traversals;                   // Stack scan count, also sweep ID.
+  static int64_t   _total_nof_code_cache_sweeps;  // Total number of full sweeps of the code cache
   static CompiledMethodIterator _current;         // Current compiled method
   static int       _seen;                         // Nof. nmethod we have currently processed in current pass of CodeCache
   static size_t    _sweep_threshold_bytes;        // The threshold for when to invoke sweeps
@@ -78,8 +78,8 @@ class NMethodSweeper : public AllStatic {
                                                   //   1) alive       -> not_entrant
                                                   //   2) not_entrant -> zombie
   // Stat counters
-  static long      _total_nof_methods_reclaimed;    // Accumulated nof methods flushed
-  static long      _total_nof_c2_methods_reclaimed; // Accumulated nof C2-compiled methods flushed
+  static int64_t   _total_nof_methods_reclaimed;    // Accumulated nof methods flushed
+  static int64_t   _total_nof_c2_methods_reclaimed; // Accumulated nof C2-compiled methods flushed
   static size_t    _total_flushed_size;             // Total size of flushed methods
   static int       _hotness_counter_reset_val;
 
@@ -97,10 +97,10 @@ class NMethodSweeper : public AllStatic {
   static void do_stack_scanning();
   static void sweep();
  public:
-  static long traversal_count()                    { return _traversals; }
+  static int64_t traversal_count()                 { return _traversals; }
   static size_t sweep_threshold_bytes()              { return _sweep_threshold_bytes; }
   static void set_sweep_threshold_bytes(size_t threshold) { _sweep_threshold_bytes = threshold; }
-  static int  total_nof_methods_reclaimed()        { return _total_nof_methods_reclaimed; }
+  static int64_t total_nof_methods_reclaimed()     { return _total_nof_methods_reclaimed; }
   static const Tickspan total_time_sweeping()      { return _total_time_sweeping; }
   static const Tickspan peak_sweep_time()          { return _peak_sweep_time; }
   static const Tickspan peak_sweep_fraction_time() { return _peak_sweep_fraction_time; }
