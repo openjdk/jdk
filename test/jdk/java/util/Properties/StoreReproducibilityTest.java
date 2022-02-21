@@ -425,10 +425,13 @@ public class StoreReproducibilityTest {
         System.out.println("Found date comment " + dateComment + " in file " + destFile);
         final Date parsedDate;
         try {
-            Instant instant = Instant.from(DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN).parse(dateComment));
+            // use a neutral locale for parsing, since when the date comment was written by Properties.store(...),
+            // it internally calls the Date.toString() which always writes in a locale insensitive manner
+            var df = DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN).withLocale(Locale.ROOT);
+            Instant instant = Instant.from(df.parse(dateComment));
             parsedDate = new Date(instant.toEpochMilli());
         } catch (DateTimeParseException pe) {
-            throw new RuntimeException("Unexpected date " + dateComment + " in stored properties " + destFile);
+            throw new RuntimeException("Unexpected date " + dateComment + " in stored properties " + destFile, pe);
         }
         if (!parsedDate.after(date)) {
             throw new RuntimeException("Expected date comment " + dateComment + " to be after " + date
