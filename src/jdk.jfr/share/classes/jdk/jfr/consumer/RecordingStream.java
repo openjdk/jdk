@@ -99,7 +99,7 @@ public final class RecordingStream implements AutoCloseable, EventStream {
     public RecordingStream() {
         // This object is needed so Objects.requireNonNull can be invoked
         // in other constructor before this constructor is executed
-        this(Boolean.FALSE); 
+        this(Boolean.FALSE);
     }
 
     private RecordingStream(Object dummyObject) {
