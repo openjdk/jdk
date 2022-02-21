@@ -98,6 +98,7 @@ public class WindowIconUpdateOnDPIChangingTest {
         frame.getContentPane().add(createInstrumentsPane(), BorderLayout.CENTER);
         frame.getContentPane().add(createControlPanel(), BorderLayout.SOUTH);
         frame.setIconImages(IntStream.rangeClosed(16, 32).mapToObj(WindowIconUpdateOnDPIChangingTest::createIcon).toList());
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 
