@@ -51,7 +51,7 @@ import javax.swing.border.EmptyBorder;
 public class WindowIconUpdateOnDPIChangingTest {
 
     private static volatile boolean testResult = false;
-    private static volatile CountDownLatch countDownLatch;
+    private static final CountDownLatch countDownLatch = new CountDownLatch(1);
     private static JFrame frame;
 
     private static final String INSTRUCTIONS = "<html><body style=\"font-family: sans-serif\">\n"
@@ -74,7 +74,6 @@ public class WindowIconUpdateOnDPIChangingTest {
             + "</html>\n";
 
     public static void main(String[] args) throws Exception {
-        countDownLatch = new CountDownLatch(1);
         SwingUtilities.invokeLater(WindowIconUpdateOnDPIChangingTest::createUI);
         if (!countDownLatch.await(15, TimeUnit.MINUTES)) {
             frame.dispose();
@@ -96,7 +95,7 @@ public class WindowIconUpdateOnDPIChangingTest {
         frame.getContentPane().setLayout(new BorderLayout());
         frame.getContentPane().add(createInstrumentsPane(), BorderLayout.CENTER);
         frame.getContentPane().add(createControlPanel(), BorderLayout.SOUTH);
-        frame.setIconImages(IntStream.rangeClosed(16, 32).mapToObj(WindowIconUpdateOnDPIChangingTest::createIcon).toList());
+        frame.setIconImages(IntStream.rangeClosed(16, 32).mapToObj(size -> createIcon(size)).toList());
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
