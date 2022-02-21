@@ -25,7 +25,7 @@
 
 package jdk.internal.access;
 
-import jdk.internal.invoke.NativeEntryPoint;
+import jdk.internal.foreign.abi.NativeEntryPoint;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles.Lookup;

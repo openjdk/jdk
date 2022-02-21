@@ -74,7 +74,10 @@ class RecordComponent;
   f(java_lang_StackFrameInfo) \
   f(java_lang_LiveStackFrameInfo) \
   f(java_util_concurrent_locks_AbstractOwnableSynchronizer) \
-  f(jdk_internal_invoke_NativeEntryPoint) \
+  f(jdk_internal_foreign_abi_NativeEntryPoint) \
+  f(jdk_internal_foreign_abi_ABIDescriptor) \
+  f(jdk_internal_foreign_abi_VMStorage) \
+  f(jdk_internal_foreign_abi_CallConv) \
   f(jdk_internal_misc_UnsafeConstants) \
   f(java_lang_boxing_object) \
   f(vector_VectorPayload) \
@@ -1038,7 +1041,7 @@ class java_lang_invoke_LambdaForm: AllStatic {
 // Interface to java.lang.invoke.NativeEntryPoint objects
 // (These are a private interface for managing adapter code generation.)
 
-class jdk_internal_invoke_NativeEntryPoint: AllStatic {
+class jdk_internal_foreign_abi_NativeEntryPoint: AllStatic {
   friend class JavaClasses;
 
  private:
@@ -1064,6 +1067,90 @@ class jdk_internal_invoke_NativeEntryPoint: AllStatic {
   // Accessors for code generation:
   static int method_type_offset_in_bytes()     { return _method_type_offset;     }
   static int invoker_offset_in_bytes()         { return _invoker_offset;         }
+};
+
+class jdk_internal_foreign_abi_ABIDescriptor: AllStatic {
+  friend class JavaClasses;
+
+ private:
+  static int _inputStorage_offset;
+  static int _outputStorage_offset;
+  static int _volatileStorage_offset;
+  static int _stackAlignment_offset;
+  static int _shadowSpace_offset;
+  static int _targetAddrStorage_offset;
+  static int _retBufAddrStorage_offset;
+
+  static void compute_offsets();
+
+ public:
+  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
+
+  // Accessors
+  static objArrayOop inputStorage(oop entry);
+  static objArrayOop outputStorage(oop entry);
+  static objArrayOop volatileStorage(oop entry);
+  static jint        stackAlignment(oop entry);
+  static jint        shadowSpace(oop entry);
+  static oop         targetAddrStorage(oop entry);
+  static oop         retBufAddrStorage(oop entry);
+
+  // Testers
+  static bool is_subclass(Klass* klass) {
+    return vmClasses::ABIDescriptor_klass() != NULL &&
+      klass->is_subclass_of(vmClasses::ABIDescriptor_klass());
+  }
+  static bool is_instance(oop obj);
+};
+
+class jdk_internal_foreign_abi_VMStorage: AllStatic {
+  friend class JavaClasses;
+
+ private:
+  static int _type_offset;
+  static int _index_offset;
+  static int _debugName_offset;
+
+  static void compute_offsets();
+
+ public:
+  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
+
+  // Accessors
+  static jint        type(oop entry);
+  static jint        index(oop entry);
+  static oop         debugName(oop entry);
+
+  // Testers
+  static bool is_subclass(Klass* klass) {
+    return vmClasses::VMStorage_klass() != NULL &&
+      klass->is_subclass_of(vmClasses::VMStorage_klass());
+  }
+  static bool is_instance(oop obj);
+};
+
+class jdk_internal_foreign_abi_CallConv: AllStatic {
+  friend class JavaClasses;
+
+ private:
+  static int _argRegs_offset;
+  static int _retRegs_offset;
+
+  static void compute_offsets();
+
+ public:
+  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
+
+  // Accessors
+  static objArrayOop argRegs(oop entry);
+  static objArrayOop retRegs(oop entry);
+
+  // Testers
+  static bool is_subclass(Klass* klass) {
+    return vmClasses::CallConv_klass() != NULL &&
+      klass->is_subclass_of(vmClasses::CallConv_klass());
+  }
+  static bool is_instance(oop obj);
 };
 
 // Interface to java.lang.invoke.MemberName objects

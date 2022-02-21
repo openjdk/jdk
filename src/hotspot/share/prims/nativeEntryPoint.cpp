@@ -107,14 +107,21 @@ JNI_END
 
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
+#define METHOD_TYPE "Ljava/lang/invoke/MethodType;"
+#define ABI_DESC "Ljdk/internal/foreign/abi/ABIDescriptor;"
+#define VM_STORAGE_ARR "[Ljdk/internal/foreign/abi/VMStorage;"
 
 static JNINativeMethod NEP_methods[] = {
-  {CC "makeInvoker", CC "(Ljava/lang/invoke/MethodType;Ljdk/internal/invoke/ABIDescriptorProxy;[Ljdk/internal/invoke/VMStorageProxy;[Ljdk/internal/invoke/VMStorageProxy;Z)J", FN_PTR(NEP_makeInvoker)},
+  {CC "makeInvoker", CC "(" METHOD_TYPE ABI_DESC VM_STORAGE_ARR VM_STORAGE_ARR "Z)J", FN_PTR(NEP_makeInvoker)},
 };
+
+#undef METHOD_TYPE
+#undef ABI_DESC
+#undef VM_STORAGE_ARR
 
 JNI_ENTRY(void, JVM_RegisterNativeEntryPointMethods(JNIEnv *env, jclass NEP_class))
   ThreadToNativeFromVM ttnfv(thread);
   int status = env->RegisterNatives(NEP_class, NEP_methods, sizeof(NEP_methods)/sizeof(JNINativeMethod));
   guarantee(status == JNI_OK && !env->ExceptionOccurred(),
-            "register jdk.internal.invoke.NativeEntryPoint natives");
+            "register jdk.internal.foreign.abi.NativeEntryPoint natives");
 JNI_END

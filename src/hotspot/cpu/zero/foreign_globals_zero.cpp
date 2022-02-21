@@ -25,12 +25,7 @@
 #include "prims/foreign_globals.hpp"
 #include "utilities/debug.hpp"
 
-const ABIDescriptor ForeignGlobals::parse_abi_descriptor_impl(jobject jabi) const {
-  ShouldNotCallThis();
-  return {};
-}
-
-const CallRegs ForeignGlobals::parse_call_regs_impl(jobject jconv) const {
+const ABIDescriptor ForeignGlobals::parse_abi_descriptor(jobject jabi) {
   ShouldNotCallThis();
   return {};
 }

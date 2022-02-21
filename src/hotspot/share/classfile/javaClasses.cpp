@@ -55,6 +55,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "oops/recordComponent.hpp"
@@ -3860,34 +3861,160 @@ bool java_lang_invoke_LambdaForm::is_instance(oop obj) {
   return obj != NULL && is_subclass(obj->klass());
 }
 
-int jdk_internal_invoke_NativeEntryPoint::_method_type_offset;
-int jdk_internal_invoke_NativeEntryPoint::_invoker_offset;
+int jdk_internal_foreign_abi_NativeEntryPoint::_method_type_offset;
+int jdk_internal_foreign_abi_NativeEntryPoint::_invoker_offset;
 
 #define NEP_FIELDS_DO(macro) \
   macro(_method_type_offset,     k, "methodType",     java_lang_invoke_MethodType_signature, false); \
   macro(_invoker_offset,         k, "invoker",        long_signature, false);
 
-bool jdk_internal_invoke_NativeEntryPoint::is_instance(oop obj) {
+bool jdk_internal_foreign_abi_NativeEntryPoint::is_instance(oop obj) {
   return obj != NULL && is_subclass(obj->klass());
 }
 
-void jdk_internal_invoke_NativeEntryPoint::compute_offsets() {
+void jdk_internal_foreign_abi_NativeEntryPoint::compute_offsets() {
   InstanceKlass* k = vmClasses::NativeEntryPoint_klass();
   NEP_FIELDS_DO(FIELD_COMPUTE_OFFSET);
 }
 
 #if INCLUDE_CDS
-void jdk_internal_invoke_NativeEntryPoint::serialize_offsets(SerializeClosure* f) {
+void jdk_internal_foreign_abi_NativeEntryPoint::serialize_offsets(SerializeClosure* f) {
   NEP_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
 }
 #endif
 
-oop jdk_internal_invoke_NativeEntryPoint::method_type(oop entry) {
+oop jdk_internal_foreign_abi_NativeEntryPoint::method_type(oop entry) {
   return entry->obj_field(_method_type_offset);
 }
 
-jlong jdk_internal_invoke_NativeEntryPoint::invoker(oop entry) {
+jlong jdk_internal_foreign_abi_NativeEntryPoint::invoker(oop entry) {
   return entry->long_field(_invoker_offset);
+}
+
+int jdk_internal_foreign_abi_ABIDescriptor::_inputStorage_offset;
+int jdk_internal_foreign_abi_ABIDescriptor::_outputStorage_offset;
+int jdk_internal_foreign_abi_ABIDescriptor::_volatileStorage_offset;
+int jdk_internal_foreign_abi_ABIDescriptor::_stackAlignment_offset;
+int jdk_internal_foreign_abi_ABIDescriptor::_shadowSpace_offset;
+int jdk_internal_foreign_abi_ABIDescriptor::_targetAddrStorage_offset;
+int jdk_internal_foreign_abi_ABIDescriptor::_retBufAddrStorage_offset;
+
+#define ABIDescriptor_FIELDS_DO(macro) \
+  macro(_inputStorage_offset,      k, "inputStorage",      jdk_internal_foreign_abi_VMStorage_array_array_signature, false); \
+  macro(_outputStorage_offset,     k, "outputStorage",     jdk_internal_foreign_abi_VMStorage_array_array_signature, false); \
+  macro(_volatileStorage_offset,   k, "volatileStorage",   jdk_internal_foreign_abi_VMStorage_array_array_signature, false); \
+  macro(_stackAlignment_offset,    k, "stackAlignment",    int_signature, false); \
+  macro(_shadowSpace_offset,       k, "shadowSpace",       int_signature, false); \
+  macro(_targetAddrStorage_offset, k, "targetAddrStorage", jdk_internal_foreign_abi_VMStorage_signature, false); \
+  macro(_retBufAddrStorage_offset, k, "retBufAddrStorage", jdk_internal_foreign_abi_VMStorage_signature, false);
+
+bool jdk_internal_foreign_abi_ABIDescriptor::is_instance(oop obj) {
+  return obj != NULL && is_subclass(obj->klass());
+}
+
+void jdk_internal_foreign_abi_ABIDescriptor::compute_offsets() {
+  InstanceKlass* k = vmClasses::ABIDescriptor_klass();
+  ABIDescriptor_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+}
+
+#if INCLUDE_CDS
+void jdk_internal_foreign_abi_ABIDescriptor::serialize_offsets(SerializeClosure* f) {
+  ABIDescriptor_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+}
+#endif
+
+objArrayOop jdk_internal_foreign_abi_ABIDescriptor::inputStorage(oop entry) {
+  return oop_cast<objArrayOop>(entry->obj_field(_inputStorage_offset));
+}
+
+objArrayOop jdk_internal_foreign_abi_ABIDescriptor::outputStorage(oop entry) {
+  return oop_cast<objArrayOop>(entry->obj_field(_outputStorage_offset));
+}
+
+objArrayOop jdk_internal_foreign_abi_ABIDescriptor::volatileStorage(oop entry) {
+  return oop_cast<objArrayOop>(entry->obj_field(_volatileStorage_offset));
+}
+
+jint jdk_internal_foreign_abi_ABIDescriptor::stackAlignment(oop entry) {
+  return entry->int_field(_stackAlignment_offset);
+}
+
+jint jdk_internal_foreign_abi_ABIDescriptor::shadowSpace(oop entry) {
+  return entry->int_field(_shadowSpace_offset);
+}
+
+oop jdk_internal_foreign_abi_ABIDescriptor::targetAddrStorage(oop entry) {
+  return entry->obj_field(_targetAddrStorage_offset);
+}
+
+oop jdk_internal_foreign_abi_ABIDescriptor::retBufAddrStorage(oop entry) {
+  return entry->obj_field(_retBufAddrStorage_offset);
+}
+
+int jdk_internal_foreign_abi_VMStorage::_type_offset;
+int jdk_internal_foreign_abi_VMStorage::_index_offset;
+int jdk_internal_foreign_abi_VMStorage::_debugName_offset;
+
+#define VMStorage_FIELDS_DO(macro) \
+  macro(_type_offset,      k, "type",      int_signature, false); \
+  macro(_index_offset,     k, "index",     int_signature, false); \
+  macro(_debugName_offset, k, "debugName", string_signature, false); \
+
+bool jdk_internal_foreign_abi_VMStorage::is_instance(oop obj) {
+  return obj != NULL && is_subclass(obj->klass());
+}
+
+void jdk_internal_foreign_abi_VMStorage::compute_offsets() {
+  InstanceKlass* k = vmClasses::VMStorage_klass();
+  VMStorage_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+}
+
+#if INCLUDE_CDS
+void jdk_internal_foreign_abi_VMStorage::serialize_offsets(SerializeClosure* f) {
+  VMStorage_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+}
+#endif
+
+jint jdk_internal_foreign_abi_VMStorage::type(oop entry) {
+  return entry->int_field(_type_offset);
+}
+
+jint jdk_internal_foreign_abi_VMStorage::index(oop entry) {
+  return entry->int_field(_index_offset);
+}
+
+oop jdk_internal_foreign_abi_VMStorage::debugName(oop entry) {
+  return entry->obj_field(_debugName_offset);
+}
+
+int jdk_internal_foreign_abi_CallConv::_argRegs_offset;
+int jdk_internal_foreign_abi_CallConv::_retRegs_offset;
+
+#define CallConv_FIELDS_DO(macro) \
+  macro(_argRegs_offset, k, "argRegs", jdk_internal_foreign_abi_VMStorage_array_signature, false); \
+  macro(_retRegs_offset, k, "retRegs", jdk_internal_foreign_abi_VMStorage_array_signature, false); \
+
+bool jdk_internal_foreign_abi_CallConv::is_instance(oop obj) {
+  return obj != NULL && is_subclass(obj->klass());
+}
+
+void jdk_internal_foreign_abi_CallConv::compute_offsets() {
+  InstanceKlass* k = vmClasses::CallConv_klass();
+  CallConv_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+}
+
+#if INCLUDE_CDS
+void jdk_internal_foreign_abi_CallConv::serialize_offsets(SerializeClosure* f) {
+  CallConv_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+}
+#endif
+
+objArrayOop jdk_internal_foreign_abi_CallConv::argRegs(oop entry) {
+  return oop_cast<objArrayOop>(entry->obj_field(_argRegs_offset));
+}
+
+objArrayOop jdk_internal_foreign_abi_CallConv::retRegs(oop entry) {
+  return oop_cast<objArrayOop>(entry->obj_field(_retRegs_offset));
 }
 
 oop java_lang_invoke_MethodHandle::type(oop mh) {

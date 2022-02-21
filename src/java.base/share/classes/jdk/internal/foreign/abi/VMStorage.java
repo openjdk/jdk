@@ -24,11 +24,9 @@
  */
 package jdk.internal.foreign.abi;
 
-import jdk.internal.invoke.VMStorageProxy;
-
 import java.util.Objects;
 
-public class VMStorage implements VMStorageProxy {
+public class VMStorage {
     private final int type;
     private final int index;
 

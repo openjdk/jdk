@@ -43,31 +43,31 @@ bool ABIDescriptor::is_volatile_reg(FloatRegister reg) const {
         || _vector_additional_volatile_registers.contains(reg);
 }
 
-#define INTEGER_TYPE 0
-#define VECTOR_TYPE 1
+static constexpr int INTEGER_TYPE = 0;
+static constexpr int VECTOR_TYPE = 1;
 
-const ABIDescriptor ForeignGlobals::parse_abi_descriptor_impl(jobject jabi) const {
+const ABIDescriptor ForeignGlobals::parse_abi_descriptor(jobject jabi) {
   oop abi_oop = JNIHandles::resolve_non_null(jabi);
   ABIDescriptor abi;
   constexpr Register (*to_Register)(int) = as_Register;
 
-  objArrayOop inputStorage = oop_cast<objArrayOop>(abi_oop->obj_field(ABI.inputStorage_offset));
+  objArrayOop inputStorage = jdk_internal_foreign_abi_ABIDescriptor::inputStorage(abi_oop);
   loadArray(inputStorage, INTEGER_TYPE, abi._integer_argument_registers, to_Register);
   loadArray(inputStorage, VECTOR_TYPE, abi._vector_argument_registers, as_FloatRegister);
 
-  objArrayOop outputStorage = oop_cast<objArrayOop>(abi_oop->obj_field(ABI.outputStorage_offset));
+  objArrayOop outputStorage = jdk_internal_foreign_abi_ABIDescriptor::outputStorage(abi_oop);
   loadArray(outputStorage, INTEGER_TYPE, abi._integer_return_registers, to_Register);
   loadArray(outputStorage, VECTOR_TYPE, abi._vector_return_registers, as_FloatRegister);
 
-  objArrayOop volatileStorage = oop_cast<objArrayOop>(abi_oop->obj_field(ABI.volatileStorage_offset));
+  objArrayOop volatileStorage = jdk_internal_foreign_abi_ABIDescriptor::volatileStorage(abi_oop);
   loadArray(volatileStorage, INTEGER_TYPE, abi._integer_additional_volatile_registers, to_Register);
   loadArray(volatileStorage, VECTOR_TYPE, abi._vector_additional_volatile_registers, as_FloatRegister);
 
-  abi._stack_alignment_bytes = abi_oop->int_field(ABI.stackAlignment_offset);
-  abi._shadow_space_bytes = abi_oop->int_field(ABI.shadowSpace_offset);
+  abi._stack_alignment_bytes = jdk_internal_foreign_abi_ABIDescriptor::stackAlignment(abi_oop);
+  abi._shadow_space_bytes = jdk_internal_foreign_abi_ABIDescriptor::shadowSpace(abi_oop);
 
-  abi._target_addr_reg = parse_vmstorage(abi_oop->obj_field(ABI.targetAddrStorage_offset))->as_Register();
-  abi._ret_buf_addr_reg = parse_vmstorage(abi_oop->obj_field(ABI.retBufAddrStorage_offset))->as_Register();
+  abi._target_addr_reg = parse_vmstorage(jdk_internal_foreign_abi_ABIDescriptor::targetAddrStorage(abi_oop))->as_Register();
+  abi._ret_buf_addr_reg = parse_vmstorage(jdk_internal_foreign_abi_ABIDescriptor::retBufAddrStorage(abi_oop))->as_Register();
 
   return abi;
 }

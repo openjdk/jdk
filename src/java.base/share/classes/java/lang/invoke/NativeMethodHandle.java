@@ -26,7 +26,7 @@
 package java.lang.invoke;
 
 import jdk.internal.vm.annotation.ForceInline;
-import jdk.internal.invoke.NativeEntryPoint;
+import jdk.internal.foreign.abi.NativeEntryPoint;
 
 import static java.lang.invoke.LambdaForm.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.LM_TRUSTED;

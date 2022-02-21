@@ -27,7 +27,7 @@ package java.lang.invoke;
 
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.invoke.NativeEntryPoint;
+import jdk.internal.foreign.abi.NativeEntryPoint;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;

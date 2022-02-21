@@ -23,84 +23,17 @@
 
 #include "precompiled.hpp"
 #include "foreign_globals.hpp"
-#include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
-#include "classfile/vmSymbols.hpp"
+#include "classfile/javaClasses.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/foreign_globals.inline.hpp"
-#include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 
 #define FOREIGN_ABI "jdk/internal/foreign/abi/"
 
-static int field_offset(InstanceKlass* cls, const char* fieldname, Symbol* sigsym) {
-  TempNewSymbol fieldnamesym = SymbolTable::new_symbol(fieldname, (int)strlen(fieldname));
-  fieldDescriptor fd;
-  bool success = cls->find_field(fieldnamesym, sigsym, false, &fd);
-  assert(success, "Field not found");
-  return fd.offset();
-}
-
-static InstanceKlass* find_InstanceKlass(const char* name, TRAPS) {
-  TempNewSymbol sym = SymbolTable::new_symbol(name, (int)strlen(name));
-  Klass* k = SystemDictionary::resolve_or_null(sym, Handle(), Handle(), THREAD);
-  assert(k != nullptr, "Can not find class: %s", name);
-  return InstanceKlass::cast(k);
-}
-
-const ForeignGlobals& ForeignGlobals::instance() {
-  static ForeignGlobals globals; // thread-safe lazy init-once (since C++11)
-  return globals;
-}
-
-const ABIDescriptor ForeignGlobals::parse_abi_descriptor(jobject jabi) {
-  return instance().parse_abi_descriptor_impl(jabi);
-}
-
 const CallRegs ForeignGlobals::parse_call_regs(jobject jconv) {
-  return instance().parse_call_regs_impl(jconv);
-}
-
-VMReg ForeignGlobals::parse_vmstorage(oop storage) {
-  return instance().parse_vmstorage_impl(storage);
-}
-
-ForeignGlobals::ForeignGlobals() {
-  JavaThread* current_thread = JavaThread::current();
-  ResourceMark rm(current_thread);
-
-  // ABIDescriptor
-  InstanceKlass* k_ABI = find_InstanceKlass(FOREIGN_ABI "ABIDescriptor", current_thread);
-  const char* strVMSArrayArray = "[[L" FOREIGN_ABI "VMStorage;";
-  Symbol* symVMSArrayArray = SymbolTable::new_symbol(strVMSArrayArray);
-  ABI.inputStorage_offset = field_offset(k_ABI, "inputStorage", symVMSArrayArray);
-  ABI.outputStorage_offset = field_offset(k_ABI, "outputStorage", symVMSArrayArray);
-  ABI.volatileStorage_offset = field_offset(k_ABI, "volatileStorage", symVMSArrayArray);
-  ABI.stackAlignment_offset = field_offset(k_ABI, "stackAlignment", vmSymbols::int_signature());
-  ABI.shadowSpace_offset = field_offset(k_ABI, "shadowSpace", vmSymbols::int_signature());
-  const char* strVMS = "L" FOREIGN_ABI "VMStorage;";
-  Symbol* symVMS = SymbolTable::new_symbol(strVMS);
-  ABI.targetAddrStorage_offset = field_offset(k_ABI, "targetAddrStorage", symVMS);
-  ABI.retBufAddrStorage_offset = field_offset(k_ABI, "retBufAddrStorage", symVMS);
-
-  // VMStorage
-  InstanceKlass* k_VMS = find_InstanceKlass(FOREIGN_ABI "VMStorage", current_thread);
-  VMS.index_offset = field_offset(k_VMS, "index", vmSymbols::int_signature());
-  VMS.type_offset = field_offset(k_VMS, "type", vmSymbols::int_signature());
-
-  // CallRegs
-  const char* strVMSArray = "[L" FOREIGN_ABI "VMStorage;";
-  Symbol* symVMSArray = SymbolTable::new_symbol(strVMSArray);
-  InstanceKlass* k_CC = find_InstanceKlass(FOREIGN_ABI "ProgrammableUpcallHandler$CallRegs", current_thread);
-  CallConvOffsets.arg_regs_offset = field_offset(k_CC, "argRegs", symVMSArray);
-  CallConvOffsets.ret_regs_offset = field_offset(k_CC, "retRegs", symVMSArray);
-}
-
-const CallRegs ForeignGlobals::parse_call_regs_impl(jobject jconv) const {
   oop conv_oop = JNIHandles::resolve_non_null(jconv);
-  objArrayOop arg_regs_oop = oop_cast<objArrayOop>(conv_oop->obj_field(CallConvOffsets.arg_regs_offset));
-  objArrayOop ret_regs_oop = oop_cast<objArrayOop>(conv_oop->obj_field(CallConvOffsets.ret_regs_offset));
-
+  objArrayOop arg_regs_oop = jdk_internal_foreign_abi_CallConv::argRegs(conv_oop);
+  objArrayOop ret_regs_oop = jdk_internal_foreign_abi_CallConv::retRegs(conv_oop);
   CallRegs result;
   result._args_length = arg_regs_oop->length();
   result._arg_regs = NEW_RESOURCE_ARRAY(VMReg, result._args_length);
@@ -119,9 +52,9 @@ const CallRegs ForeignGlobals::parse_call_regs_impl(jobject jconv) const {
   return result;
 }
 
-VMReg ForeignGlobals::parse_vmstorage_impl(oop storage) const {
-  jint index = storage->int_field(VMS.index_offset);
-  jint type = storage->int_field(VMS.type_offset);
+VMReg ForeignGlobals::parse_vmstorage(oop storage) {
+  jint index = jdk_internal_foreign_abi_VMStorage::index(storage);
+  jint type = jdk_internal_foreign_abi_VMStorage::type(storage);
   return vmstorage_to_vmreg(type, index);
 }
 

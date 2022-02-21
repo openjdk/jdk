@@ -47,36 +47,9 @@ struct CallRegs {
 
 class ForeignGlobals {
 private:
-  struct {
-    int inputStorage_offset;
-    int outputStorage_offset;
-    int volatileStorage_offset;
-    int stackAlignment_offset;
-    int shadowSpace_offset;
-    int targetAddrStorage_offset;
-    int retBufAddrStorage_offset;
-  } ABI;
-
-  struct {
-    int index_offset;
-    int type_offset;
-  } VMS;
-
-  struct {
-    int arg_regs_offset;
-    int ret_regs_offset;
-  } CallConvOffsets;
-
-  ForeignGlobals();
-
-  static const ForeignGlobals& instance();
-
   template<typename T, typename Func>
-  void loadArray(objArrayOop jarray, int type_index, GrowableArray<T>& array, Func converter) const;
+  static void loadArray(objArrayOop jarray, int type_index, GrowableArray<T>& array, Func converter);
 
-  const ABIDescriptor parse_abi_descriptor_impl(jobject jabi) const;
-  const CallRegs parse_call_regs_impl(jobject jconv) const;
-  VMReg parse_vmstorage_impl(oop storage) const;
 public:
   static const ABIDescriptor parse_abi_descriptor(jobject jabi);
   static const CallRegs parse_call_regs(jobject jconv);

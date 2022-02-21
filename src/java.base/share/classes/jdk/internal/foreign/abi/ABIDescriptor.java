@@ -24,9 +24,12 @@
  */
 package jdk.internal.foreign.abi;
 
-import jdk.internal.invoke.ABIDescriptorProxy;
-
-public class ABIDescriptor implements ABIDescriptorProxy {
+/**
+ * Carrier class used to communicate with the VM
+ *
+ * It is particularly low-level since the VM will be accessing these fields directly
+ */
+public class ABIDescriptor {
     final Architecture arch;
 
     public final VMStorage[][] inputStorage;
@@ -51,11 +54,6 @@ public class ABIDescriptor implements ABIDescriptorProxy {
         this.shadowSpace = shadowSpace;
         this.targetAddrStorage = targetAddrStorage;
         this.retBufAddrStorage = retBufAddrStorage;
-    }
-
-    @Override
-    public int shadowSpaceBytes() {
-        return shadowSpace;
     }
 
     public VMStorage targetAddrStorage() {

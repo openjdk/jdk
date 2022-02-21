@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.internal.invoke;
+package jdk.internal.foreign.abi;
 
 import java.lang.invoke.MethodType;
 import java.util.Arrays;
@@ -40,11 +40,11 @@ public class NativeEntryPoint {
     }
 
     private final MethodType methodType;
-    private final long invoker;
+    private final long invoker; // read by VM
 
     private static final Map<CacheKey, Long> INVOKER_CACHE = new ConcurrentHashMap<>();
-    private record CacheKey(MethodType methodType, ABIDescriptorProxy abi,
-                            List<VMStorageProxy> argMoves, List<VMStorageProxy> retMoves,
+    private record CacheKey(MethodType methodType, ABIDescriptor abi,
+                            List<VMStorage> argMoves, List<VMStorage> retMoves,
                             boolean needsReturnBuffer) {}
 
     private NativeEntryPoint(MethodType methodType, long invoker) {
@@ -52,8 +52,8 @@ public class NativeEntryPoint {
         this.invoker = invoker;
     }
 
-    public static NativeEntryPoint make(ABIDescriptorProxy abi,
-                                        VMStorageProxy[] argMoves, VMStorageProxy[] returnMoves,
+    public static NativeEntryPoint make(ABIDescriptor abi,
+                                        VMStorage[] argMoves, VMStorage[] returnMoves,
                                         MethodType methodType, boolean needsReturnBuffer) {
         if (returnMoves.length > 1 != needsReturnBuffer) {
             throw new IllegalArgumentException("Multiple register return, but needsReturnBuffer was false");
@@ -69,8 +69,8 @@ public class NativeEntryPoint {
         return new NativeEntryPoint(methodType, invoker);
     }
 
-    private static native long makeInvoker(MethodType methodType, ABIDescriptorProxy abi,
-                                           VMStorageProxy[] encArgMoves, VMStorageProxy[] encRetMoves,
+    private static native long makeInvoker(MethodType methodType, ABIDescriptor abi,
+                                           VMStorage[] encArgMoves, VMStorage[] encRetMoves,
                                            boolean needsReturnBuffer);
 
     public MethodType type() {

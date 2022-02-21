@@ -27,12 +27,7 @@
 #include "utilities/debug.hpp"
 
 // Stubbed out, implement later
-const ABIDescriptor ForeignGlobals::parse_abi_descriptor_impl(jobject jabi) const {
-  Unimplemented();
-  return {};
-}
-
-const CallRegs ForeignGlobals::parse_call_regs_impl(jobject jconv) const {
+const ABIDescriptor ForeignGlobals::parse_abi_descriptor(jobject jabi) {
   Unimplemented();
   return {};
 }
