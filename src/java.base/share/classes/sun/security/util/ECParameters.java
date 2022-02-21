@@ -23,7 +23,7 @@
  * questions.
  */
 
-package java.security;
+package sun.security.util;
 
 import java.io.IOException;
 
