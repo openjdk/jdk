@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -47,7 +48,7 @@ import java.util.TreeSet;
  * @test
  * @summary tests the order in which the Properties.store() method writes out the properties
  * @bug 8231640
- * @run testng PropertiesStoreTest
+ * @run testng/othervm PropertiesStoreTest
  */
 public class PropertiesStoreTest {
 
@@ -88,6 +89,36 @@ public class PropertiesStoreTest {
                 {overrideCallsSuper, naturalOrder(overrideCallsSuper)},
                 {overridesEntrySet, overridesEntrySet.expectedKeyOrder()},
                 {doesNotOverrideEntrySet, naturalOrder(doesNotOverrideEntrySet)}
+        };
+    }
+
+    /**
+     * Returns a {@link Locale} to use for testing
+     */
+    @DataProvider(name = "localeProvider")
+    private Object[][] provideLocales() {
+        // pick a non-english locale for testing
+        Locale nonEnglishLocale = null;
+        for (Locale locale : Locale.getAvailableLocales()) {
+            // skip ROOT locale and ENGLISH language ones
+            if (!locale.getLanguage().isEmpty() && !locale.getLanguage().equals(Locale.ENGLISH.getLanguage())) {
+                nonEnglishLocale = locale;
+                System.out.println("Selected non-english locale: " + nonEnglishLocale + " for tests");
+                break;
+            }
+        }
+        if (nonEnglishLocale == null) {
+            return new Object[][] {
+                {Locale.getDefault()},
+                {Locale.US}, // guaranteed to be present
+                {Locale.ROOT}, // guaranteed to be present
+            };
+        }
+        return new Object[][]{
+                {Locale.getDefault()},
+                {Locale.US}, // guaranteed to be present
+                {Locale.ROOT}, // guaranteed to be present
+                {nonEnglishLocale}
         };
     }
 
@@ -153,29 +184,47 @@ public class PropertiesStoreTest {
     /**
      * Tests that {@link Properties#store(Writer, String)} writes out a proper date comment
      */
-    @Test
-    public void testStoreWriterDateComment() throws Exception {
-        final Properties props = new Properties();
-        props.setProperty("a", "b");
-        final Path tmpFile = Files.createTempFile("8231640", "props");
-        try (final Writer writer = Files.newBufferedWriter(tmpFile)) {
-            props.store(writer, null);
+    @Test(dataProvider = "localeProvider")
+    public void testStoreWriterDateComment(final Locale testLocale) throws Exception {
+        var prevLocale = Locale.getDefault();
+        // switch the default locale to the one being tested
+        Locale.setDefault(testLocale);
+        System.out.println("Using locale: " + testLocale + " for Properties#store(Writer) test");
+        try {
+            final Properties props = new Properties();
+            props.setProperty("a", "b");
+            final Path tmpFile = Files.createTempFile("8231640", "props");
+            try (final Writer writer = Files.newBufferedWriter(tmpFile)) {
+                props.store(writer, null);
+            }
+            testDateComment(tmpFile);
+        } finally {
+            // reset to the previous one
+            Locale.setDefault(prevLocale);
         }
-        testDateComment(tmpFile);
     }
 
     /**
      * Tests that {@link Properties#store(OutputStream, String)} writes out a proper date comment
      */
-    @Test
-    public void testStoreOutputStreamDateComment() throws Exception {
-        final Properties props = new Properties();
-        props.setProperty("a", "b");
-        final Path tmpFile = Files.createTempFile("8231640", "props");
-        try (final Writer writer = Files.newBufferedWriter(tmpFile)) {
-            props.store(writer, null);
+    @Test(dataProvider = "localeProvider")
+    public void testStoreOutputStreamDateComment(final Locale testLocale) throws Exception {
+        var prevLocale = Locale.getDefault();
+        // switch the default locale to the one being tested
+        Locale.setDefault(testLocale);
+        System.out.println("Using locale: " + testLocale + " for Properties#store(OutputStream) test");
+        try {
+            final Properties props = new Properties();
+            props.setProperty("a", "b");
+            final Path tmpFile = Files.createTempFile("8231640", "props");
+            try (final Writer writer = Files.newBufferedWriter(tmpFile)) {
+                props.store(writer, null);
+            }
+            testDateComment(tmpFile);
+        } finally {
+            // reset to the previous one
+            Locale.setDefault(prevLocale);
         }
-        testDateComment(tmpFile);
     }
 
     /**
@@ -199,7 +248,9 @@ public class PropertiesStoreTest {
             Assert.fail("No comment line found in the stored properties file " + file);
         }
         try {
-            DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN).parse(comment);
+            // use a neutral locale for parsing, since when the date comment was written by Properties.store(...),
+            // it internally calls the Date.toString() which always writes in a locale insensitive manner
+            DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN).withLocale(Locale.ROOT).parse(comment);
         } catch (DateTimeParseException pe) {
             Assert.fail("Unexpected date comment: " + comment, pe);
         }
