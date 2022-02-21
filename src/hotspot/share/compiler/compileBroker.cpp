@@ -2028,6 +2028,11 @@ void CompileBroker::init_compiler_thread_log() {
 }
 
 void CompileBroker::log_metaspace_failure() {
+  if (!Thread::current()->is_Java_thread()) {
+    // Metaspace failure not from a Java/compiler thread, no need to log.
+    return;
+  }
+
   const char* message = "some methods may not be compiled because metaspace "
                         "is out of memory";
   if (_compilation_log != NULL) {
