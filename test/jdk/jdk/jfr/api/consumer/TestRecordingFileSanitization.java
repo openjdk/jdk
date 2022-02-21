@@ -58,7 +58,7 @@ public class TestRecordingFileSanitization {
         try (Recording r = new Recording()) {
             r.start();
             SensitiveEvent e = new SensitiveEvent();
-            e.shortPassword = SHORT_PASSWORD; 
+            e.shortPassword = SHORT_PASSWORD;
             e.longPassword = LONG_PASSWORD;
             e.commit();
             r.stop();
