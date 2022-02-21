@@ -531,7 +531,7 @@ class StubGenerator: public StubCodeGenerator {
                 framesize
   };
 
-  assert(FPUStateSizeInWords == 27, "update stack layout");
+  assert(FPUStateSizeInWords == 64, "update stack layout");
 
     // Save outgoing argument to stack across push_FPU_state()
     __ subptr(rsp, wordSize * 2);

@@ -82,7 +82,7 @@ class RegisterSaver {
                 DEF_XMM_OFFS(5),
                 DEF_XMM_OFFS(6),
                 DEF_XMM_OFFS(7),
-                flags_off = xmm7_off + 16/BytesPerInt + 1, // 16-byte stack alignment fill word
+                flags_off = xmm7_off + 16/BytesPerInt, // 16-byte stack alignment fill word
                 rdi_off,
                 rsi_off,
                 ignore_off,  // extra copy of rbp,
@@ -152,7 +152,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   int frame_words = frame_size_in_bytes / wordSize;
   *total_frame_words = frame_words;
 
-  assert(FPUStateSizeInWords == 27, "update stack layout");
+  assert(FPUStateSizeInWords == 64, "update stack layout");
 
   // save registers, fpu state, and flags
   // We assume caller has already has return address slot on the stack

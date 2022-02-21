@@ -444,7 +444,7 @@ class InstructionAttr;
 
 // 64-bit refect the fxsave size which is 512 bytes and the new xsave area on EVEX which is another 2176 bytes
 // See fxsave and xsave(EVEX enabled) documentation for layout
-const int FPUStateSizeInWords = NOT_LP64(27) LP64_ONLY(2688 / wordSize);
+const int FPUStateSizeInWords = NOT_LP64(64) LP64_ONLY(2688 / wordSize);
 
 // The Intel x86/Amd64 Assembler: Pure assembler doing NO optimizations on the instruction
 // level (e.g. mov rax, 0 is not translated into xor rax, rax!); i.e., what you write

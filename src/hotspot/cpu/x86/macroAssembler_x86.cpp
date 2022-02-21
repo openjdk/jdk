@@ -2772,7 +2772,11 @@ void MacroAssembler::pop_CPU_state() {
 
 void MacroAssembler::pop_FPU_state() {
 #ifndef _LP64
-  frstor(Address(rsp, 0));
+  if (UseSSE >= 1) {
+    fxrstor(Address(rsp, 0));
+  } else {
+    frstor(Address(rsp, 0));
+  }
 #else
   fxrstor(Address(rsp, 0));
 #endif
@@ -2795,7 +2799,11 @@ void MacroAssembler::push_CPU_state() {
 void MacroAssembler::push_FPU_state() {
   subptr(rsp, FPUStateSizeInWords * wordSize);
 #ifndef _LP64
-  fnsave(Address(rsp, 0));
+  if (UseSSE >= 1) {
+    fxsave(Address(rsp, 0));
+  } else {
+    fnsave(Address(rsp, 0));
+  }
   fwait();
 #else
   fxsave(Address(rsp, 0));
