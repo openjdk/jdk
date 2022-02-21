@@ -3084,7 +3084,7 @@ public class Utils {
              !previewAPIs.previewAPI.isEmpty() ||
              !previewAPIs.reflectivePreviewAPI.isEmpty() ||
              !previewAPIs.declaredUsingPreviewFeature.isEmpty()) &&
-            !hasNoProviewAnnotation(el)) {
+            !hasNoPreviewAnnotation(el)) {
             flags.add(ElementFlag.PREVIEW);
         }
 
@@ -3100,7 +3100,7 @@ public class Utils {
         PREVIEW
     }
 
-    private boolean hasNoProviewAnnotation(Element el) {
+    private boolean hasNoPreviewAnnotation(Element el) {
         return el.getAnnotationMirrors()
                  .stream()
                  .anyMatch(am -> "jdk.internal.javac.NoPreview".equals(getQualifiedTypeName(am.getAnnotationType())));
