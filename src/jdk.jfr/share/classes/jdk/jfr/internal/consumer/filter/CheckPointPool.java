@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,43 +22,49 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jfr.internal.consumer.filter;
 
-package jdk.jfr.internal.consumer;
+import java.util.ArrayList;
+import java.util.List;
+/**
+ * Represents a constant pool in a checkpoint, both entries and type id
+ */
+final class CheckPointPool {
+    private final List<PoolEntry> entries = new ArrayList<>();
+    private final long typeId;
 
-import jdk.jfr.internal.Type;
-
-final class ConstantLookup {
-    final Type type;
-    private ConstantMap current;
-    private ConstantMap previous = ConstantMap.EMPTY;
-
-    ConstantLookup(ConstantMap current, Type type) {
-        this.current = current;
-        this.type = type;
+    public CheckPointPool(long typeId) {
+        this.typeId = typeId;
     }
 
-    public Type getType() {
-        return type;
+    public boolean isTouched() {
+        for (var entry : entries) {
+            if (entry.isTouched()) {
+                return true;
+            }
+        }
+        return false;
     }
 
-    public ConstantMap getLatestPool() {
-        return current;
+    public long getTouchedCount() {
+        int count = 0;
+        for (var entry : entries) {
+            if (entry.isTouched()) {
+                count++;
+            }
+        }
+        return count;
     }
 
-    public void newPool() {
-        previous = current;
-        current = new ConstantMap(current.factory, current.type);
+    public void add(PoolEntry pe) {
+        entries.add(pe);
     }
 
-    public Object getPreviousResolved(long key) {
-        return previous.getResolved(key);
+    public long getTypeId() {
+        return typeId;
     }
 
-    public Object getCurrentResolved(long key) {
-        return current.getResolved(key);
-    }
-
-    public Object getCurrent(long key) {
-        return current.get(key);
+    public List<PoolEntry> getEntries() {
+        return entries;
     }
 }
