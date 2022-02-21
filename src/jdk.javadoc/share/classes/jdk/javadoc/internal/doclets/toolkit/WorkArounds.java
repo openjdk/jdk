@@ -39,6 +39,7 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -202,15 +203,19 @@ public class WorkArounds {
     //        implications on testInterface, the note here is that javac's supertype
     //        does the right thing returning Parameters in scope.
     /*
-     * Returns the closest supertype (TypeElement) that contains a method that
-     * is both:
+     * Returns the closest superclass (not the superinterface) that contains
+     * a method that is both:
      *
      *   - overridden by the specified method, and
      *   - is not itself a *simple* override
      *
-     * If no such type can be found, returns null.
+     * If no such class can be found, returns null.
+     *
+     * If the specified method belongs to an interface, the only considered
+     * superclass is java.lang.Object no matter how many other interfaces
+     * that interface extends.
      */
-    public TypeMirror overriddenType(ExecutableElement method) {
+    public DeclaredType overriddenType(ExecutableElement method) {
         if (utils.isStatic(method)) {
             return null;
         }
@@ -228,7 +233,8 @@ public class WorkArounds {
                             utils.isSimpleOverride((MethodSymbol)sym2)) {
                         continue;
                     }
-                    return t;
+                    assert t.hasTag(TypeTag.CLASS) && !t.isInterface();
+                    return (Type.ClassType) t;
                 }
             }
         }

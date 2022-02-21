@@ -764,15 +764,19 @@ public class Utils {
     }
 
     /*
-     * Returns the closest supertype (TypeElement) that contains a method that
-     * is both:
+     * Returns the closest superclass (not the superinterface) that contains
+     * a method that is both:
      *
      *   - overridden by the specified method, and
      *   - is not itself a *simple* override
      *
-     * If no such type can be found, returns null.
+     * If no such class can be found, returns null.
+     *
+     * If the specified method belongs to an interface, the only considered
+     * superclass is java.lang.Object no matter how many other interfaces
+     * that interface extends.
      */
-    public TypeMirror overriddenType(ExecutableElement method) {
+    public DeclaredType overriddenType(ExecutableElement method) {
         return configuration.workArounds.overriddenType(method);
     }
 
@@ -791,7 +795,7 @@ public class Utils {
      * such class exists.
      *
      * @return a TypeElement representing the superclass that
-     * originally defined this method, null if this method does
+     * originally defined this method, or null if this method does
      * not override a definition in a superclass.
      */
     public TypeElement overriddenClass(ExecutableElement ee) {
