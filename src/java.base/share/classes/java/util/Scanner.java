@@ -309,82 +309,82 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  */
 public final class Scanner implements Iterator<String>, Closeable {
 
-    // Internal buffer used to hold input
+    /** Internal buffer used to hold input */
     private CharBuffer buf;
 
-    // Size of internal character buffer
+    /** Size of internal character buffer */
     private static final int BUFFER_SIZE = 1024; // change to 1024;
 
-    // The index into the buffer currently held by the Scanner
+    /** The index into the buffer currently held by the Scanner */
     private int position;
 
-    // Internal matcher used for finding delimiters
+    /** Internal matcher used for finding delimiters */
     private Matcher matcher;
 
-    // Pattern used to delimit tokens
+    /** Pattern used to delimit tokens */
     private Pattern delimPattern;
 
-    // Pattern found in last hasNext operation
+    /** Pattern found in last hasNext operation */
     private Pattern hasNextPattern;
 
-    // Position after last hasNext operation
+    /** Position after last hasNext operation */
     private int hasNextPosition;
 
-    // Result after last hasNext operation
+    /** Result after last hasNext operation */
     private String hasNextResult;
 
-    // The input source
+    /** The input source */
     private Readable source;
 
-    // Boolean is true if source is done
+    /** Boolean is true if source is done */
     private boolean sourceClosed = false;
 
-    // Boolean indicating more input is required
+    /** Boolean indicating more input is required */
     private boolean needInput = false;
 
-    // Boolean indicating if a delim has been skipped this operation
+    /** Boolean indicating if a delim has been skipped this operation */
     private boolean skipped = false;
 
-    // A store of a position that the scanner may fall back to
+    /** A store of a position that the scanner may fall back to */
     private int savedScannerPosition = -1;
 
-    // A cache of the last primitive type scanned
+    /** A cache of the last primitive type scanned */
     private Object typeCache = null;
 
-    // Boolean indicating if a match result is available
+    /** Boolean indicating if a match result is available */
     private boolean matchValid = false;
 
-    // Boolean indicating if this scanner has been closed
+    /** Boolean indicating if this scanner has been closed */
     private boolean closed = false;
 
-    // The current radix used by this scanner
+    /** The current radix used by this scanner */
     private int radix = 10;
 
-    // The default radix for this scanner
+    /** The default radix for this scanner */
     private int defaultRadix = 10;
 
-    // The locale used by this scanner
+    /** The locale used by this scanner */
     private Locale locale = null;
 
-    // A cache of the last few recently used Patterns
+    /** A cache of the last few recently used Patterns */
     private PatternLRUCache patternCache = new PatternLRUCache(7);
 
-    // A holder of the last IOException encountered
+    /** A holder of the last IOException encountered */
     private IOException lastException;
 
-    // Number of times this scanner's state has been modified.
-    // Generally incremented on most public APIs and checked
-    // within spliterator implementations.
+    /** Number of times this scanner's state has been modified.
+     * Generally incremented on most public APIs and checked
+     * within spliterator implementations.  */
     int modCount;
 
-    // A pattern for java whitespace
+    /** A pattern for java whitespace */
     private static Pattern WHITESPACE_PATTERN = Pattern.compile(
                                                 "\\p{javaWhitespace}+");
 
-    // A pattern for any token
+    /** A pattern for any token */
     private static Pattern FIND_ANY_PATTERN = Pattern.compile("(?s).*");
 
-    // A pattern for non-ASCII digits
+    /** A pattern for non-ASCII digits */
     private static Pattern NON_ASCII_DIGIT = Pattern.compile(
         "[\\p{javaDigit}&&[^0-9]]");
 
