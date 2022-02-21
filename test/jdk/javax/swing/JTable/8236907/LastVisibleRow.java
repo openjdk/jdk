@@ -36,6 +36,7 @@ import java.awt.image.BufferedImage;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
+import java.lang.reflect.InvocationTargetException;
 
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
@@ -51,32 +52,30 @@ public class LastVisibleRow {
     static JFrame frame;
     static JTable table;
     static Robot testRobot;
-    private static BufferedImage bufferedImageAfter;
-    private static BufferedImage bufferedImageBefore;
 
     public static void main(String[] args) throws Exception {
+        Point clkPoint;
         try {
             testRobot = new Robot();
 
             SwingUtilities.invokeAndWait(new Runnable() {
 
                 public void run() {
-                    try {
-                        createAndShowGUI();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        throw new RuntimeException("Exception while creating UI");
-                    }
+                    createAndShowGUI();
                 }
             });
+            testRobot.delay(1000);
             testRobot.waitForIdle();
-            CaptureBeforeClick();
+            BufferedImage bufferedImageBefore = testRobot.createScreenCapture(getCaptureRect());
+            testRobot.delay(1000);
             testRobot.waitForIdle();
-            MouseActions();
+            clkPoint = getMousePosition();
+            mouseEvents(clkPoint);
             testRobot.waitForIdle();
             clearSelect();
             testRobot.waitForIdle();
-            CaptureAfterClick();
+            BufferedImage bufferedImageAfter = testRobot.createScreenCapture(getCaptureRect());
+            testRobot.delay(1000);
 
             if (!compare(bufferedImageBefore, bufferedImageAfter)) {
                 throw new RuntimeException("Test Case Failed!!");
@@ -131,50 +130,33 @@ public class LastVisibleRow {
 
     /***
      *
-     * Capture the screen before click and sets the Before click Image
-     * @throws Exception
+     * mouseEvents for last row click
      */
-    private static void CaptureBeforeClick() throws Exception {
 
-        SwingUtilities.invokeAndWait(new Runnable() {
-
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                bufferedImageBefore = captureImage();
-                testRobot.delay(1000);
-            }
-        });
+    private static void mouseEvents(Point clkPnt)  {
+        testRobot.mouseMove(clkPnt.x, clkPnt.y);
+        testRobot.delay(50);
+        testRobot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        testRobot.delay(50);
+        testRobot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        testRobot.delay(50);
     }
-
     /***
      *
-     * Mouse Actions for last row click
+     * getMousePosition Actions for last row click
+     * @returns Point
      * @throws Exception
      */
 
-    private static void MouseActions() throws Exception {
+    private static Point getMousePosition() throws Exception {
+        final Point[] clickPoint = new Point[1];
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
             public void run() {
-                try {
-                    Point clickPoint = getCellClickPoint(2, 0);
-
-                    testRobot.mouseMove(clickPoint.x, clickPoint.y);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                testRobot.delay(50);
-                testRobot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-                testRobot.delay(50);
-                testRobot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-                testRobot.delay(50);
+                clickPoint[0] = getCellClickPoint(2, 0);
             }
         });
+        return clickPoint[0];
     }
 
     /***
@@ -184,9 +166,7 @@ public class LastVisibleRow {
      */
 
     private static void clearSelect() throws Exception {
-
         SwingUtilities.invokeAndWait(new Runnable() {
-
             @Override
             public void run() {
                 table.getSelectionModel().clearSelection();
@@ -195,35 +175,25 @@ public class LastVisibleRow {
         });
     }
 
-    /***
-     *
-     * Capture the screen after click and sets the After click Image
-     * @throws Exception
+    /****
+     * getCaptureRect Method - To Compute the Rectangle for
+     * Screen Capturing the Last Row for comparison
+     * @return Rectangle
      */
 
-    private static void CaptureAfterClick() throws Exception {
-
+    private static Rectangle getCaptureRect() throws InterruptedException, InvocationTargetException {
+        final Rectangle[] captureRect = new Rectangle[1];
         SwingUtilities.invokeAndWait(new Runnable() {
-
             @Override
             public void run() {
-                bufferedImageAfter = captureImage();
+                Rectangle cellRect = table.getCellRect(2, 0, true);
+                Point point = new Point(cellRect.x, cellRect.y);
+                SwingUtilities.convertPointToScreen(point, table);
+
+                captureRect[0] = new Rectangle(point.x, point.y, table.getColumnCount() * cellRect.width, cellRect.height);
             }
         });
-    }
-
-    /****
-     * Capture Method - To Screen Capture the Last Row for comparison
-     * @return BufferedImage
-     */
-
-    private static BufferedImage captureImage() {
-        Rectangle cellRect = table.getCellRect(2, 0, true);
-        Point point = new Point(cellRect.x, cellRect.y);
-        SwingUtilities.convertPointToScreen(point, table);
-
-        Rectangle captureRect = new Rectangle(point.x, point.y, table.getColumnCount() * cellRect.width, cellRect.height);
-        return testRobot.createScreenCapture(captureRect);
+        return captureRect[0];
     }
 
     /***
