@@ -432,7 +432,9 @@ inline void ZBarrier::remap_young_relocated(volatile zpointer* p, zpointer o) {
 
   assert(!is_null(good_ptr), "Always block raw null");
 
-  self_heal(is_load_good_fast_path, p, o, good_ptr, false /* allow_null */);
+  // Despite knowing good_ptr isn't null in this context, we use the
+  // load_good_or_null fast path, because it is faster.
+  self_heal(is_load_good_or_null_fast_path, p, o, good_ptr, false /* allow_null */);
 }
 
 inline zpointer ZBarrier::load_atomic(volatile zpointer* p) {
@@ -445,8 +447,8 @@ inline zpointer ZBarrier::load_atomic(volatile zpointer* p) {
 // Fast paths
 //
 
-inline bool ZBarrier::is_load_good_fast_path(zpointer ptr) {
-  return ZPointer::is_load_good(ptr);
+inline bool ZBarrier::is_load_good_or_null_fast_path(zpointer ptr) {
+  return ZPointer::is_load_good_or_null(ptr);
 }
 
 inline bool ZBarrier::is_mark_good_fast_path(zpointer ptr) {
@@ -521,7 +523,7 @@ inline zaddress ZBarrier::load_barrier_on_oop_field_preloaded(volatile zpointer*
     return addr;
   };
 
-  return barrier(is_load_good_fast_path, slow_path, color_load_good, p, o);
+  return barrier(is_load_good_or_null_fast_path, slow_path, color_load_good, p, o);
 }
 
 inline zaddress ZBarrier::keep_alive_load_barrier_on_oop_field_preloaded(volatile zpointer* p, zpointer o) {

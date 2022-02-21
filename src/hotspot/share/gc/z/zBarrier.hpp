@@ -86,7 +86,7 @@ private:
   static void mark_and_remember(volatile zpointer* p, zaddress addr);
 
   // Fast paths in increasing strength level
-  static bool is_load_good_fast_path(zpointer ptr);
+  static bool is_load_good_or_null_fast_path(zpointer ptr);
   static bool is_mark_good_fast_path(zpointer ptr);
   static bool is_store_good_fast_path(zpointer ptr);
   static bool is_store_good_or_null_any_fast_path(zpointer ptr);
