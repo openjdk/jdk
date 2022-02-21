@@ -407,7 +407,7 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
     }
   } else {
     __ movzwq(rnew_zpointer, ref_addr);
-    __ cmpq(Address(r15_thread, ZThreadLocalData::store_good_mask_offset()), rnew_zpointer);
+    __ testq(rnew_zpointer, Address(r15_thread, ZThreadLocalData::store_bad_mask_offset()));
     __ jcc(Assembler::notEqual, medium_path);
     __ bind(medium_path_continuation);
     if (rnew_zaddress == noreg) {
