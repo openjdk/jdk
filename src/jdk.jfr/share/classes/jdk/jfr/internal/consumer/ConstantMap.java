@@ -75,7 +75,7 @@ final class ConstantMap {
         if (value == null) {
             // unless id is 0 which is used to represent null
             if (id != 0) {
-                Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Missing object id=" + id + " in pool " + type.getName() + ". All ids should reference an object");
+                Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Missing object id=" + id + " in pool " + getName() + ". All ids should reference an object");
             }
             return null;
         }
@@ -152,7 +152,7 @@ final class ConstantMap {
         return type == null ? "<empty>" : type.getName();
     }
 
-    // May be null
+    // Can be null
     public Type getType() {
         return type;
     }

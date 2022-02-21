@@ -227,27 +227,23 @@ public final class StringParser extends Parser {
         if (Encoding.CONSTANT_POOL.is(encoding)) {
             return new Reference(stringLookup.getLatestPool(), input.readLong());
         }
-        if (Encoding.CONSTANT_POOL.is(encoding)) {
-            input.readLong();
-            return Reference.EMPTY_ARRAY;
-        }
         if (Encoding.EMPTY_STRING.is(encoding)) {
-            return Reference.EMPTY_ARRAY;
+            return null;
         }
         if (Encoding.NULL.is(encoding)) {
-            return Reference.EMPTY_ARRAY;
+            return null;
         }
         if (Encoding.CHAR_ARRAY.is(encoding)) {
             charArrayParser.skip(input);
-            return Reference.EMPTY_ARRAY;
+            return null;
         }
         if (Encoding.UT8_BYTE_ARRAY.is(encoding)) {
             utf8parser.skip(input);
-            return Reference.EMPTY_ARRAY;
+            return null;
         }
         if (Encoding.LATIN1_BYTE_ARRAY.is(encoding)) {
             latin1parser.skip(input);
-            return Reference.EMPTY_ARRAY;
+            return null;
         }
         throw new IOException("Unknown string encoding " + encoding);
     }

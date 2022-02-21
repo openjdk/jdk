@@ -35,24 +35,22 @@ abstract class Parser {
      * Parses data from a {@link RecordingInput} and return an object.
      *
      * @param input input to read from
-     * @return an Object, or a Object[]
+     * @return an {@code Object}, an {@code Object[]}, or {@code null}
      * @throws IOException if operation couldn't be completed due to I/O
      *         problems
      */
     public abstract Object parse(RecordingInput input) throws IOException;
 
     /**
-     * Parses data from a {@link RecordingInput} to find references to
-     * constants. If data is not a reference, {@code null} is returned.
+     * Parses data from a {@link RecordingInput} to find references to constants. If
+     * data is not a reference, {@code null} is returned.
      * <p>
-     * The default implementation skips data and returns null.
-     * <p>
-     * Parsers that references constants should override.
+     * @implSpec The default implementation of this method skips data and returns
+     * {@code Object}.
      *
      * @param input input to read from, not {@code null}
-     * @return a Reference, a Reference[], or null
-     * @throws IOException if operation couldn't be completed due to I/O
-     *         problems
+     * @return a {@code Reference}, a {@code Reference[]}, or {@code null}
+     * @throws IOException if operation couldn't be completed due to I/O problems
      */
     public Object parseReferences(RecordingInput input) throws IOException {
         skip(input);

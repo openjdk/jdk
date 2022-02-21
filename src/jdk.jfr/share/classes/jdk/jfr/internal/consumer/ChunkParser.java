@@ -59,13 +59,13 @@ public final class ChunkParser {
         long filterStart;
         long filterEnd;
 
-        public ParserConfiguration(long filterStart, long filterEnd, boolean reuse, boolean ordered, ParserFilter filter, ChunkWriter dataFilter) {
+        public ParserConfiguration(long filterStart, long filterEnd, boolean reuse, boolean ordered, ParserFilter filter, ChunkWriter chunkWriter) {
             this.filterStart = filterStart;
             this.filterEnd = filterEnd;
             this.reuse = reuse;
             this.ordered = ordered;
             this.eventFilter = filter;
-            this.chunkWriter = dataFilter;
+            this.chunkWriter = chunkWriter;
         }
 
         public ParserConfiguration() {

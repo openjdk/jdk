@@ -54,9 +54,7 @@ public class TestRecordingFileWrite {
     public static void main(String... args) throws Exception {
         Path scrubbed = Paths.get("scrubbed.jfr");
         Path original = Paths.get("original.jfr");
-        if (Files.exists(scrubbed)) {
-            Files.delete(scrubbed);
-        }
+
         createRecording(original);
         Queue<String> ids = scrubRecording(original, scrubbed);
         System.out.println("Original size: " + Files.size(original));

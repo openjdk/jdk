@@ -33,7 +33,6 @@ import jdk.jfr.internal.Type;
  * object references.
  */
 public record Reference(ConstantMap pool, long key) {
-    public static final Object[] EMPTY_ARRAY = new Reference[0];
 
     Object resolve() {
         return pool.get(key);

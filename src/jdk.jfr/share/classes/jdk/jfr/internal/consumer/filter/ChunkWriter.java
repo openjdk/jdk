@@ -185,11 +185,12 @@ public final class ChunkWriter implements Closeable {
         input.position(event.getStartPosition());
         long startPosition = output.position();
 
-        input.readLong(); // size
+        input.readLong(); // Read size
         output.writePaddedUnsignedInt(0); // Size, 4 bytes reserved
         output.writeLong(input.readLong()); // Constant pool id
         output.writeLong(input.readLong()); // Start time
         output.writeLong(input.readLong()); // Duration
+        input.readLong(); // Read delta
         output.writeLong(delta); // Delta
         output.writeByte(input.readByte()); // flush marker
 
