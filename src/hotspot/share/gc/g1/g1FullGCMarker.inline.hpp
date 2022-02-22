@@ -184,7 +184,7 @@ void G1FullGCMarker::follow_marking_stacks() {
     // Then process ObjArrays one at a time to avoid marking stack bloat.
     ObjArrayTask task;
     if (publish_or_pop_objarray_tasks(task) ||
-      _objarray_stack.pop_local(task)) {
+        _objarray_stack.pop_local(task)) {
       follow_array_chunk(objArrayOop(task.obj()), task.index());
     }
   } while (!is_empty());

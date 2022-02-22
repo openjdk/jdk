@@ -143,7 +143,7 @@ void ParCompactionManager::follow_marking_stacks() {
     // Process ObjArrays one at a time to avoid marking stack bloat.
     ObjArrayTask task;
     if (publish_or_pop_objarray_tasks(task) ||
-      _objarray_stack.pop_local(task)) {
+        _objarray_stack.pop_local(task)) {
       follow_array((objArrayOop)task.obj(), task.index());
     }
   } while (!marking_stacks_empty());
