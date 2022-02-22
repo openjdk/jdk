@@ -978,11 +978,6 @@ public class HtmlTree extends Content {
                 .addAll(items, mapper);
     }
 
-    @Override
-    public boolean isEmpty() {
-        return (!hasContent() && !hasAttrs());
-    }
-
     /**
      * Returns true if the HTML tree has content.
      *
@@ -1009,6 +1004,24 @@ public class HtmlTree extends Content {
      */
     public boolean hasAttr(HtmlAttr attrName) {
         return (attrs.containsKey(attrName));
+    }
+
+    /**
+     * Returns {@code true} if the HTML tree is empty.
+     *
+     * @implSpec This method always returns {@code false} for void elements (which are not
+     * expected to have content) as well as elements that may be used without content, such
+     * as the {@code script} or {@code a} elements. Other elements are considered empty
+     * if they do not contain any content.
+     *
+     * @return true if the HTML tree is empty
+     */
+    @Override
+    public boolean isEmpty() {
+        return !isVoid()
+            && !hasContent()
+            && tagName != TagName.SCRIPT
+            && tagName != TagName.A;
     }
 
     /**
