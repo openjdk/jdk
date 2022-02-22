@@ -997,19 +997,16 @@ public class BasicScrollPaneUI
         // MouseWheelListener
         //
         public void mouseWheelMoved(MouseWheelEvent e) {
-            System.out.println("scrollpane.isWheelScrollingEnabled()" + scrollpane.isWheelScrollingEnabled());
             if (scrollpane.isWheelScrollingEnabled() &&
                 e.getWheelRotation() != 0) {
                 JScrollBar toScroll = scrollpane.getVerticalScrollBar();
                 int direction = e.getWheelRotation() < 0 ? -1 : 1;
                 int orientation = SwingConstants.VERTICAL;
 
-                System.out.println("toScroll.isVisible() " + toScroll.isVisible() + "e.isShiftDown()" + e.isShiftDown());
                 // find which scrollbar to scroll, or return if none
                 if (toScroll == null || !toScroll.isVisible()
                         || e.isShiftDown()) {
                     JScrollBar hScroll = scrollpane.getHorizontalScrollBar();
-                    if (hScroll != null) System.out.println("horiz.isVisible()" + hScroll.isVisible());
                     if (hScroll == null) {
                         return;
                     } else if (hScroll.isVisible()) {
