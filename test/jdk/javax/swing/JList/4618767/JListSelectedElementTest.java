@@ -44,6 +44,7 @@ import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
 
+import static javax.swing.UIManager.LookAndFeelInfo;
 import static javax.swing.UIManager.getInstalledLookAndFeels;
 
 /*
@@ -78,7 +79,7 @@ public class JListSelectedElementTest {
                                     .contains("os x");
 
         List<String> lafs = Arrays.stream(getInstalledLookAndFeels())
-                                  .map(UIManager.LookAndFeelInfo::getClassName)
+                                  .map(LookAndFeelInfo::getClassName)
                                   .collect(Collectors.toList());
         for (final String laf : lafs) {
             listGainedFocusLatch = new CountDownLatch(1);
