@@ -1481,15 +1481,17 @@ void CodeCache::print() {
   }
 
   tty->print_cr("nmethod dependency checking time %fs", dependentCheckTime.seconds());
+
+  tty->print_cr("nmethod blobs per compilation level:");
   for (int i = 0; i <= CompLevel_full_optimization; i++) {
     const char *level_name;
     switch (i) {
-    case CompLevel_none: level_name = "CompLevel_none"; break;
-    case CompLevel_simple: level_name = "CompLevel_simple"; break;
-    case CompLevel_limited_profile: level_name = "CompLevel_limited_profile"; break;
-    case CompLevel_full_profile: level_name = "CompLevel_full_profile"; break;
-    case CompLevel_full_optimization: level_name = "CompLevel_full_optimization"; break;
-    default: assert(false, "invalid compLevel");
+    case CompLevel_none:              level_name = "none";              break;
+    case CompLevel_simple:            level_name = "simple";            break;
+    case CompLevel_limited_profile:   level_name = "limited profile";   break;
+    case CompLevel_full_profile:      level_name = "full profile";      break;
+    case CompLevel_full_optimization: level_name = "full optimization"; break;
+    default: assert(false, "invalid compilation level");
     }
     tty->print_cr("%s:", level_name);
     live[i].print("live");
