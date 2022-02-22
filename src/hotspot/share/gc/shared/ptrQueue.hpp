@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_SHARED_PTRQUEUE_HPP
 #define SHARE_GC_SHARED_PTRQUEUE_HPP
 
+#include "gc/shared/bufferNodeList.hpp"
 #include "memory/padded.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
@@ -181,17 +182,37 @@ class BufferNode::Allocator {
 #define DECLARE_PADDED_MEMBER(Id, Type, Name) \
   Type Name; DEFINE_PAD_MINUS_SIZE(Id, DEFAULT_CACHE_LINE_SIZE, sizeof(Type))
 
+  class PendingList {
+    BufferNode* _tail;
+    DECLARE_PADDED_MEMBER(1, BufferNode* volatile, _head);
+    DECLARE_PADDED_MEMBER(2, volatile size_t, _count);
+
+    NONCOPYABLE(PendingList);
+
+  public:
+    PendingList();
+    ~PendingList();
+
+    // Add node to the list.  Returns the number of nodes in the list.
+    // Thread-safe against concurrent add operations.
+    size_t add(BufferNode* node);
+
+    // Return the nodes in the list, leaving the list empty.
+    // Not thread-safe.
+    BufferNodeList take_all();
+  };
+
   const size_t _buffer_size;
   char _name[DEFAULT_CACHE_LINE_SIZE - sizeof(size_t)]; // Use name as padding.
-  DECLARE_PADDED_MEMBER(1, Stack, _pending_list);
+  PendingList _pending_lists[2];
+  DECLARE_PADDED_MEMBER(1, volatile uint, _active_pending_list);
   DECLARE_PADDED_MEMBER(2, Stack, _free_list);
-  DECLARE_PADDED_MEMBER(3, volatile size_t, _pending_count);
-  DECLARE_PADDED_MEMBER(4, volatile size_t, _free_count);
-  DECLARE_PADDED_MEMBER(5, volatile bool, _transfer_lock);
+  DECLARE_PADDED_MEMBER(3, volatile size_t, _free_count);
+  DECLARE_PADDED_MEMBER(4, volatile bool, _transfer_lock);
 
 #undef DECLARE_PADDED_MEMBER
 
-  void delete_list(BufferNode* list);
+  static void delete_list(BufferNode* list);
   bool try_transfer_pending();
 
   NONCOPYABLE(Allocator);

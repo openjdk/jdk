@@ -270,7 +270,7 @@ final class ParserFactory {
 
         @Override
         public void skip(RecordingInput input) throws IOException {
-            input.skipBytes(Float.SIZE);
+            input.skipBytes(Float.BYTES);
         }
     }
 
@@ -282,7 +282,7 @@ final class ParserFactory {
 
         @Override
         public void skip(RecordingInput input) throws IOException {
-            input.skipBytes(Double.SIZE);
+            input.skipBytes(Double.BYTES);
         }
     }
 

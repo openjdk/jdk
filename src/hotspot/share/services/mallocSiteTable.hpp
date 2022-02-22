@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,12 @@
 #ifndef SHARE_SERVICES_MALLOCSITETABLE_HPP
 #define SHARE_SERVICES_MALLOCSITETABLE_HPP
 
-#include "utilities/macros.hpp"
-
-#if INCLUDE_NMT
-
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
 #include "services/allocationSite.hpp"
 #include "services/mallocTracker.hpp"
 #include "services/nmtCommon.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/nativeCallStack.hpp"
 
 // MallocSite represents a code path that eventually calls
@@ -199,5 +196,4 @@ class MallocSiteTable : AllStatic {
   static const MallocSiteHashtableEntry*  _hash_entry_allocation_site;
 };
 
-#endif // INCLUDE_NMT
 #endif // SHARE_SERVICES_MALLOCSITETABLE_HPP

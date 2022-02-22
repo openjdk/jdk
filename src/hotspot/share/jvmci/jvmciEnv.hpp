@@ -251,7 +251,7 @@ public:
   jint get_int_at(JVMCIPrimitiveArray array, int index);
   void put_int_at(JVMCIPrimitiveArray array, int index, jint value);
 
-  long get_long_at(JVMCIPrimitiveArray array, int index);
+  jlong get_long_at(JVMCIPrimitiveArray array, int index);
   void put_long_at(JVMCIPrimitiveArray array, int index, jlong value);
 
   void copy_bytes_to(JVMCIPrimitiveArray src, jbyte* dest, int offset, jsize length);

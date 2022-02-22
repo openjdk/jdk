@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -288,8 +288,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     }
 
     static final String httpVersion = "HTTP/1.1";
-    static final String acceptString =
-        "text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2";
+    static final String acceptString = "*/*";
 
     // the following http request headers should NOT have their values
     // returned for security reasons.
@@ -1740,7 +1739,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     AuthenticationHeader authhdr = new AuthenticationHeader (
                             "Proxy-Authenticate",
                             responses,
-                            new HttpCallerInfo(url,
+                            getHttpCallerInfo(url,
                                                http.getProxyHostUsed(),
                                                http.getProxyPortUsed(),
                                                authenticator),
@@ -1815,7 +1814,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
                     srvHdr = new AuthenticationHeader (
                             "WWW-Authenticate", responses,
-                            new HttpCallerInfo(url, authenticator),
+                            getHttpCallerInfo(url, authenticator),
                             dontUseNegotiate
                     );
 
@@ -2211,7 +2210,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     AuthenticationHeader authhdr = new AuthenticationHeader(
                             "Proxy-Authenticate",
                             responses,
-                            new HttpCallerInfo(url,
+                            getHttpCallerInfo(url,
                                                http.getProxyHostUsed(),
                                                http.getProxyPortUsed(),
                                                authenticator),
@@ -2278,6 +2277,21 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
         // reset responses
         responses.reset();
+    }
+
+    /**
+     * Overridden in https to also include the server certificate
+     */
+    protected HttpCallerInfo getHttpCallerInfo(URL url, String proxy, int port,
+                                               Authenticator authenticator) {
+        return new HttpCallerInfo(url, proxy, port, authenticator);
+    }
+
+    /**
+     * Overridden in https to also include the server certificate
+     */
+    protected HttpCallerInfo getHttpCallerInfo(URL url, Authenticator authenticator) {
+        return new HttpCallerInfo(url, authenticator);
     }
 
     static String connectRequestURI(URL url) {

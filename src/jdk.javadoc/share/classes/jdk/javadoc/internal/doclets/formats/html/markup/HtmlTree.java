@@ -27,14 +27,17 @@ package jdk.javadoc.internal.doclets.formats.html.markup;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr.Role;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -237,6 +240,20 @@ public class HtmlTree extends Content {
         return this;
     }
 
+    /**
+     * Adds each of a collection of items, using a map function to create the content for each item.
+     *
+     * @param items  the items
+     * @param mapper the map function to generate the content for each item
+     *
+     * @return this object
+     */
+    @Override
+    public <T> HtmlTree addAll(Collection<T> items, Function<T, Content> mapper) {
+        items.forEach(item -> add(mapper.apply(item)));
+        return this;
+    }
+
     @Override
     public int charCount() {
         int n = 0;
@@ -316,6 +333,7 @@ public class HtmlTree extends Content {
 
     /**
      * Creates an HTML {@code A} element.
+     * The {@code ref} argument will be URL-encoded for use as the attribute value.
      *
      * @param ref the value for the {@code href} attribute}
      * @param body the content for element
@@ -324,6 +342,22 @@ public class HtmlTree extends Content {
     public static HtmlTree A(String ref, Content body) {
         return new HtmlTree(TagName.A)
                 .put(HtmlAttr.HREF, encodeURL(ref))
+                .add(body);
+    }
+
+    /**
+     * Creates an HTML {@code A} element.
+     * The {@code ref} argument is assumed to be already suitably encoded,
+     * and will <i>not</i> be additionally URL-encoded, but will be
+     * {@link URI#toASCIIString() converted} to ASCII for use as the attribute value.
+     *
+     * @param ref the value for the {@code href} attribute}
+     * @param body the content for element
+     * @return the element
+     */
+    public static HtmlTree A(URI ref, Content body) {
+        return new HtmlTree(TagName.A)
+                .put(HtmlAttr.HREF, ref.toASCIIString())
                 .add(body);
     }
 
@@ -358,6 +392,16 @@ public class HtmlTree extends Content {
     public static HtmlTree DD(Content body) {
         return new HtmlTree(TagName.DD)
                 .add(body);
+    }
+
+    /**
+     * Creates an HTML {@code DETAILS} element.
+     *
+     * @return the element
+     */
+    public static HtmlTree DETAILS(HtmlStyle style) {
+        return new HtmlTree(TagName.DETAILS)
+                .setStyle(style);
     }
 
     /**
@@ -510,12 +554,10 @@ public class HtmlTree extends Content {
     }
 
     private static TagName checkHeading(TagName headingTag) {
-        switch (headingTag) {
-            case H1: case H2: case H3: case H4: case H5: case H6:
-                return headingTag;
-            default:
-                throw new IllegalArgumentException(headingTag.toString());
-        }
+        return switch (headingTag) {
+            case H1, H2, H3, H4, H5, H6 -> headingTag;
+            default -> throw new IllegalArgumentException(headingTag.toString());
+        };
     }
 
     /**
@@ -698,6 +740,16 @@ public class HtmlTree extends Content {
     }
 
     /**
+     * Creates an HTML {@code PRE} element with some content.
+     *
+     * @param body  the content
+     * @return the element
+     */
+    public static HtmlTree PRE(Content body) {
+        return new HtmlTree(TagName.PRE).add(body);
+    }
+
+    /**
      * Creates an HTML {@code SCRIPT} element with some script content.
      * The type of the script is set to {@code text/javascript}.
      *
@@ -809,6 +861,17 @@ public class HtmlTree extends Content {
     }
 
     /**
+     * Creates an HTML {@code SUMMARY} element with the given content.
+     *
+     * @param body the content
+     * @return the element
+     */
+    public static HtmlTree SUMMARY(Content body) {
+        return new HtmlTree(TagName.SUMMARY)
+                .add(body);
+    }
+
+    /**
      * Creates an HTML {@code SUP} element with the given content.
      *
      * @param body  the content
@@ -901,6 +964,26 @@ public class HtmlTree extends Content {
     }
 
     /**
+     * Creates an HTML {@code UL} element with the given style and content generated
+     * from a collection of items..
+     *
+     * @param style the style
+     * @param items the items to be added to the list
+     * @param mapper a mapper to create the content for each item
+     * @return the element
+     */
+    public static <T> HtmlTree UL(HtmlStyle style, Collection<T> items, Function<T,Content> mapper) {
+        return new HtmlTree(TagName.UL)
+                .setStyle(style)
+                .addAll(items, mapper);
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return (!hasContent() && !hasAttrs());
+    }
+
+    /**
      * Returns true if the HTML tree has content.
      *
      * @return true if the HTML tree has content else return false
@@ -926,24 +1009,6 @@ public class HtmlTree extends Content {
      */
     public boolean hasAttr(HtmlAttr attrName) {
         return (attrs.containsKey(attrName));
-    }
-
-    /**
-     * Returns {@code true} if the HTML tree is empty.
-     *
-     * @implSpec This method always returns {@code false} for void elements (which are not
-     * expected to have content) as well as elements that may be used without content, such
-     * as the {@code script} or {@code a} elements. Other elements are considered empty
-     * if they do not contain any content.
-     *
-     * @return true if the HTML tree is empty
-     */
-    @Override
-    public boolean isEmpty() {
-        return !isVoid()
-            && !hasContent()
-            && tagName != TagName.SCRIPT
-            && tagName != TagName.A;
     }
 
     /**

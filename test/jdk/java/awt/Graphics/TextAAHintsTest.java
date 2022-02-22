@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,44 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6263951
  * @summary Text should be B&W, grayscale, and LCD.
- * @run main/manual=yesno TextAAHintsTest
+ * @requires (os.family != "mac")
+ * @run main/manual TextAAHintsTest
  */
-import java.awt.*;
-import java.awt.geom.*;
-import java.awt.image.*;
+
+import java.awt.AWTException;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.ImageCapabilities;
+import java.awt.Panel;
+import java.awt.RenderingHints;
+import java.awt.TextArea;
+import java.awt.image.BufferedImage;
+import java.awt.image.VolatileImage;
+import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class TextAAHintsTest extends Component {
 
-    String black = "This text should be solid black";
-    String gray  = "This text should be gray scale anti-aliased";
-    String lcd   = "This text should be LCD sub-pixel text (coloured).";
+    private static final String black = "This text should be solid black";
+    private static final String gray  = "This text should be gray scale anti-aliased";
+    private static final String lcd   = "This text should be LCD sub-pixel text (coloured).";
+    private static final CountDownLatch countDownLatch = new CountDownLatch(1);
+    private static volatile String failureReason;
+    private static volatile boolean testPassed = false;
+    private static Frame frame;
 
     public void paint(Graphics g) {
 
@@ -64,27 +87,23 @@ public class TextAAHintsTest extends Component {
         g2d.drawString(black, 10, 20);
 
         g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-                             RenderingHints.VALUE_TEXT_ANTIALIAS_GASP);
-        g2d.drawString(black, 10, 35);
-
-        g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
                              RenderingHints.VALUE_TEXT_ANTIALIAS_DEFAULT);
-        g2d.drawString(gray, 10, 50);
+        g2d.drawString(gray, 10, 35);
 
         g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
                              RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-        g2d.drawString(gray, 10, 65);
+        g2d.drawString(gray, 10, 50);
 
         /* For visual comparison, render grayscale with graphics AA off */
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                              RenderingHints.VALUE_ANTIALIAS_OFF);
-        g2d.drawString(gray, 10, 80);
+        g2d.drawString(gray, 10, 65);
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                              RenderingHints.VALUE_ANTIALIAS_ON);
 
         g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
                              RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
-        g2d.drawString(lcd, 10, 95);
+        g2d.drawString(lcd, 10, 80);
     }
 
     public void bufferedImageText(Graphics g) {
@@ -139,11 +158,80 @@ public class TextAAHintsTest extends Component {
         return new Dimension(500,300);
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void createTestUI() {
+        frame = new Frame("Composite and Text Test");
+        TextAAHintsTest textAAHintsTestObject = new TextAAHintsTest();
+        frame.add(textAAHintsTestObject, BorderLayout.NORTH);
 
-        Frame f = new Frame("Composite and Text Test");
-        f.add(new TextAAHintsTest(), BorderLayout.CENTER);
-        f.pack();
-        f.setVisible(true);
+        String instructions = """
+                Note: Texts are rendered with different TEXT_ANTIALIASING &
+                   VALUE_TEXT_ANTIALIAS. Text should be B&W, grayscale, and LCD.
+                   Note: The results may be visually the same.
+                1. Verify that first set of text are rendered correctly.
+                2. Second set of text are created using BufferedImage of the first text.
+                3. Third set of text are created using VolatileImage of the first text.
+                """;
+        TextArea instructionTextArea = new TextArea(instructions, 8, 50);
+        instructionTextArea.setEditable(false);
+        frame.add(instructionTextArea, BorderLayout.CENTER);
+
+        Panel controlPanel = new Panel();
+        Button passButton = new Button("Pass");
+        passButton.addActionListener(e -> {
+            testPassed = true;
+            countDownLatch.countDown();
+            frame.dispose();
+        });
+        Button failButton = new Button("Fail");
+        failButton.addActionListener(e -> {
+            getFailureReason();
+            testPassed = false;
+            countDownLatch.countDown();
+            frame.dispose();
+        });
+        controlPanel.add(passButton);
+        controlPanel.add(failButton);
+        frame.add(controlPanel, BorderLayout.SOUTH);
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+    }
+
+    public static void getFailureReason() {
+        // Show dialog to read why the testcase was failed and append the
+        // testcase failure reason to the output
+        final Dialog dialog = new Dialog(frame, "TestCase" +
+                " failure reason", true);
+        TextArea textArea = new TextArea("", 5, 60, TextArea.SCROLLBARS_BOTH);
+        dialog.add(textArea, BorderLayout.CENTER);
+
+        Button okButton = new Button("OK");
+        okButton.addActionListener(e1 -> {
+            failureReason = textArea.getText();
+            dialog.dispose();
+        });
+        Panel ctlPanel = new Panel();
+        ctlPanel.add(okButton);
+        dialog.add(ctlPanel, BorderLayout.SOUTH);
+        dialog.setLocationRelativeTo(null);
+        dialog.pack();
+        dialog.setVisible(true);
+    }
+
+    public static void main(String[] args) throws InterruptedException, InvocationTargetException {
+        EventQueue.invokeAndWait(TextAAHintsTest::createTestUI);
+        if (!countDownLatch.await(2, TimeUnit.MINUTES)) {
+            EventQueue.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
+            throw new RuntimeException("Timeout : No action was taken on the test.");
+        }
+
+        if (!testPassed) {
+            throw new RuntimeException("Test failed : Reason : " + failureReason);
+        }
     }
 }
+

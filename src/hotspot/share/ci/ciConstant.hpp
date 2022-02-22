@@ -127,6 +127,17 @@ public:
   bool is_valid() const {
     return basic_type() != T_ILLEGAL;
   }
+
+  bool is_loaded() const {
+    if (is_valid()) {
+      if (is_reference_type(basic_type())) {
+        return as_object()->is_loaded();
+      } else {
+        return true;
+      }
+    }
+    return false;
+  }
   // Debugging output
   void print();
 };

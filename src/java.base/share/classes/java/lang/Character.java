@@ -10302,9 +10302,10 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @see     Character#isJavaIdentifierPart(char)
      * @see     Character#isLetter(char)
      * @see     Character#isUnicodeIdentifierStart(char)
-     * @see     javax.lang.model.SourceVersion#isIdentifier(CharSequence)
+     * @see     java.compiler/javax.lang.model.SourceVersion#isIdentifier(CharSequence)
      * @since   1.1
      */
+    @SuppressWarnings("doclint:reference") // cross-module links
     public static boolean isJavaIdentifierStart(char ch) {
         return isJavaIdentifierStart((int)ch);
     }
@@ -10331,9 +10332,10 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @see     Character#isJavaIdentifierPart(int)
      * @see     Character#isLetter(int)
      * @see     Character#isUnicodeIdentifierStart(int)
-     * @see     javax.lang.model.SourceVersion#isIdentifier(CharSequence)
+     * @see     java.compiler/javax.lang.model.SourceVersion#isIdentifier(CharSequence)
      * @since   1.5
      */
+    @SuppressWarnings("doclint:reference") // cross-module links
     public static boolean isJavaIdentifierStart(int codePoint) {
         return CharacterData.of(codePoint).isJavaIdentifierStart(codePoint);
     }
@@ -10368,9 +10370,10 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @see     Character#isJavaIdentifierStart(char)
      * @see     Character#isLetterOrDigit(char)
      * @see     Character#isUnicodeIdentifierPart(char)
-     * @see     javax.lang.model.SourceVersion#isIdentifier(CharSequence)
+     * @see     java.compiler/javax.lang.model.SourceVersion#isIdentifier(CharSequence)
      * @since   1.1
      */
+    @SuppressWarnings("doclint:reference") // cross-module links
     public static boolean isJavaIdentifierPart(char ch) {
         return isJavaIdentifierPart((int)ch);
     }
@@ -10401,9 +10404,10 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @see     Character#isJavaIdentifierStart(int)
      * @see     Character#isLetterOrDigit(int)
      * @see     Character#isUnicodeIdentifierPart(int)
-     * @see     javax.lang.model.SourceVersion#isIdentifier(CharSequence)
+     * @see     java.compiler/javax.lang.model.SourceVersion#isIdentifier(CharSequence)
      * @since   1.5
      */
+    @SuppressWarnings("doclint:reference") // cross-module links
     public static boolean isJavaIdentifierPart(int codePoint) {
         return CharacterData.of(codePoint).isJavaIdentifierPart(codePoint);
     }
