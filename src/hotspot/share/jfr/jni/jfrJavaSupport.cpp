@@ -552,13 +552,15 @@ void JfrJavaSupport::throw_runtime_exception(const char* message, TRAPS) {
   create_and_throw(vmSymbols::java_lang_RuntimeException(), message, THREAD);
 }
 
-void JfrJavaSupport::abort(jstring errorMsg, JavaThread* t, bool dump_core) {
+void JfrJavaSupport::abort(jstring errorMsg, JavaThread* t) {
   DEBUG_ONLY(check_java_thread_in_vm(t));
-
   ResourceMark rm(t);
-  const char* const error_msg = c_str(errorMsg, t);
-  if (error_msg != NULL) {
-    log_error(jfr, system)("%s",error_msg);
+  abort(c_str(errorMsg, t));
+}
+
+void JfrJavaSupport::abort(const char* error_msg, bool dump_core /* true */) {
+  if (error_msg != nullptr) {
+    log_error(jfr, system)("%s", error_msg);
   }
   log_error(jfr, system)("%s", "An irrecoverable error in Jfr. Shutting down VM...");
   vm_abort(dump_core);

@@ -100,7 +100,8 @@ class JfrJavaSupport : public AllStatic {
   static bool set_handler(jobject clazz, jobject handler, TRAPS);
 
   // critical
-  static void abort(jstring errorMsg, TRAPS, bool dump_core=true);
+  static void abort(jstring errorMsg, TRAPS);
+  static void abort(const char* error_msg, bool dump_core = true);
   static void uncaught_exception(jthrowable throwable, JavaThread* t);
 
   // asserts
