@@ -25,9 +25,111 @@
 
 ################################################################################
 #
+# Helper function to setup hsdis using Capstone
+#
+AC_DEFUN([LIB_SETUP_HSDIS_CAPSTONE],
+[
+  AC_ARG_WITH(capstone, [AS_HELP_STRING([--with-capstone],
+      [where to find the Capstone files needed for hsdis/capstone])])
+
+  if test "x$with_capstone" != x; then
+    AC_MSG_CHECKING([for capstone])
+    CAPSTONE="$with_capstone"
+    AC_MSG_RESULT([$CAPSTONE])
+
+    HSDIS_CFLAGS="-I${CAPSTONE}/include/capstone"
+    if test "x$OPENJDK_TARGET_OS" != xwindows; then
+      HSDIS_LDFLAGS="-L${CAPSTONE}/lib"
+      HSDIS_LIBS="-lcapstone"
+    else
+      HSDIS_LDFLAGS="-nodefaultlib:libcmt.lib"
+      HSDIS_LIBS="${CAPSTONE}/capstone.lib"
+    fi
+  else
+    if test "x$OPENJDK_TARGET_OS" = xwindows; then
+      # There is no way to auto-detect capstone on Windowos
+      AC_MSG_NOTICE([You must specify capstone location using --with-capstone=<path>])
+      AC_MSG_ERROR([Cannot continue])
+    fi
+
+    PKG_CHECK_MODULES(CAPSTONE, capstone, [CAPSTONE_FOUND=yes], [CAPSTONE_FOUND=no])
+    if test "x$CAPSTONE_FOUND" = xyes; then
+      HSDIS_CFLAGS="$CAPSTONE_CFLAGS"
+      HSDIS_LDFLAGS="$CAPSTONE_LDFLAGS"
+      HSDIS_LIBS="$CAPSTONE_LIBS"
+    else
+      HELP_MSG_MISSING_DEPENDENCY([capstone])
+      AC_MSG_NOTICE([Cannot locate capstone which is needed for hsdis/capstone. Try using --with-capstone=<path>. $HELP_MSG])
+      AC_MSG_ERROR([Cannot continue])
+    fi
+  fi
+])
+
+################################################################################
+#
+# Helper function to setup hsdis using LLVM
+#
+AC_DEFUN([LIB_SETUP_HSDIS_LLVM],
+[
+  AC_ARG_WITH([llvm], [AS_HELP_STRING([--with-llvm],
+      [where to find the LLVM files needed for hsdis/llvm])])
+
+  if test "x$with_llvm" != x; then
+    LLVM_DIR="$with_llvm"
+  fi
+
+  if test "x$OPENJDK_TARGET_OS" != xwindows; then
+    if test "x$LLVM_DIR" = x; then
+      # Macs with homebrew can have llvm in different places
+      UTIL_LOOKUP_PROGS(LLVM_CONFIG, llvm-config, [$PATH:/usr/local/opt/llvm/bin:/opt/homebrew/opt/llvm/bin])
+      if test "x$LLVM_CONFIG" = x; then
+        AC_MSG_NOTICE([Cannot locate llvm-config which is needed for hsdis/llvm. Try using --with-llvm=<LLVM home>.])
+        AC_MSG_ERROR([Cannot continue])
+      fi
+    else
+      UTIL_LOOKUP_PROGS(LLVM_CONFIG, llvm-config, [$LLVM_DIR/bin])
+      if test "x$LLVM_CONFIG" = x; then
+        AC_MSG_NOTICE([Cannot locate llvm-config in $LLVM_DIR. Check your --with-llvm argument.])
+        AC_MSG_ERROR([Cannot continue])
+      fi
+    fi
+
+    # We need the LLVM flags and libs, and llvm-config provides them for us.
+    HSDIS_CFLAGS=`$LLVM_CONFIG --cflags`
+    HSDIS_LDFLAGS=`$LLVM_CONFIG --ldflags`
+    HSDIS_LIBS=`$LLVM_CONFIG --libs $OPENJDK_TARGET_CPU_ARCH ${OPENJDK_TARGET_CPU_ARCH}disassembler`
+  else
+    if test "x$LLVM_DIR" = x; then
+      AC_MSG_NOTICE([--with-llvm is needed on Windows to point out the LLVM home])
+      AC_MSG_ERROR([Cannot continue])
+    fi
+
+    # Official Windows installation of LLVM do not ship llvm-config, and self-built llvm-config
+    # produced unusable output, so just ignore it on Windows.
+    if ! test -e $LLVM_DIR/include/llvm-c/lto.h; then
+      AC_MSG_NOTICE([$LLVM_DIR does not seem like a valid LLVM home; include dir is missing])
+      AC_MSG_ERROR([Cannot continue])
+    fi
+    if ! test -e $LLVM_DIR/include/llvm-c/Disassembler.h; then
+      AC_MSG_NOTICE([$LLVM_DIR does not point to a complete LLVM installation. ])
+      AC_MSG_NOTICE([The official LLVM distribution is missing crucical files; you need to build LLVM yourself or get all include files elsewhere])
+      AC_MSG_ERROR([Cannot continue])
+    fi
+    if ! test -e $LLVM_DIR/lib/llvm-c.lib; then
+      AC_MSG_NOTICE([$LLVM_DIR does not seem like a valid LLVM home; lib dir is missing])
+      AC_MSG_ERROR([Cannot continue])
+    fi
+    HSDIS_CFLAGS="-I$LLVM_DIR/include"
+    HSDIS_LDFLAGS="-libpath:$LLVM_DIR/lib"
+    HSDIS_LIBS="llvm-c.lib"
+  fi
+])
+
+################################################################################
+#
 # Helper function to build binutils from source.
 #
-AC_DEFUN([JDKOPT_BUILD_BINUTILS],
+AC_DEFUN([LIB_BUILD_BINUTILS],
 [
   BINUTILS_SRC="$with_binutils_src"
   UTIL_FIXUP_PATH(BINUTILS_SRC)
@@ -101,24 +203,85 @@ AC_DEFUN([JDKOPT_BUILD_BINUTILS],
 
 ################################################################################
 #
+# Helper function to setup hsdis using binutils
+#
+AC_DEFUN([LIB_SETUP_HSDIS_BINUTILS],
+[
+  AC_ARG_WITH([binutils], [AS_HELP_STRING([--with-binutils],
+      [where to find the binutils files needed for hsdis/binutils])])
+
+  AC_ARG_WITH([binutils-src], [AS_HELP_STRING([--with-binutils-src],
+      [where to find the binutils source for building])])
+
+  # We need the binutils static libs and includes.
+  if test "x$with_binutils_src" != x; then
+    # Try building the source first. If it succeeds, it sets $BINUTILS_DIR.
+    LIB_BUILD_BINUTILS
+  fi
+
+  if test "x$with_binutils" != x; then
+    BINUTILS_DIR="$with_binutils"
+  fi
+
+  binutils_system_error=""
+  HSDIS_LIBS=""
+  if test "x$BINUTILS_DIR" = xsystem; then
+    AC_CHECK_LIB(bfd, bfd_openr, [ HSDIS_LIBS="-lbfd" ], [ binutils_system_error="libbfd not found" ])
+    AC_CHECK_LIB(opcodes, disassembler, [ HSDIS_LIBS="$HSDIS_LIBS -lopcodes" ], [ binutils_system_error="libopcodes not found" ])
+    AC_CHECK_LIB(iberty, xmalloc, [ HSDIS_LIBS="$HSDIS_LIBS -liberty" ], [ binutils_system_error="libiberty not found" ])
+    AC_CHECK_LIB(z, deflate, [ HSDIS_LIBS="$HSDIS_LIBS -lz" ], [ binutils_system_error="libz not found" ])
+    HSDIS_CFLAGS="-DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB"
+  elif test "x$BINUTILS_DIR" != x; then
+    if test -e $BINUTILS_DIR/bfd/libbfd.a && \
+        test -e $BINUTILS_DIR/opcodes/libopcodes.a && \
+        test -e $BINUTILS_DIR/libiberty/libiberty.a; then
+      HSDIS_CFLAGS="-I$BINUTILS_DIR/include -I$BINUTILS_DIR/bfd -DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB"
+      HSDIS_LDFLAGS=""
+      HSDIS_LIBS="$BINUTILS_DIR/bfd/libbfd.a $BINUTILS_DIR/opcodes/libopcodes.a $BINUTILS_DIR/libiberty/libiberty.a $BINUTILS_DIR/zlib/libz.a"
+    fi
+  fi
+
+  AC_MSG_CHECKING([for binutils to use with hsdis])
+  case "x$BINUTILS_DIR" in
+    xsystem)
+      if test "x$OPENJDK_TARGET_OS" != xlinux; then
+        AC_MSG_RESULT([invalid])
+        AC_MSG_ERROR([binutils on system is supported for Linux only])
+      elif test "x$binutils_system_error" = x; then
+        AC_MSG_RESULT([system])
+        HSDIS_CFLAGS="$HSDIS_CFLAGS -DSYSTEM_BINUTILS"
+      else
+        AC_MSG_RESULT([invalid])
+        AC_MSG_ERROR([$binutils_system_error])
+      fi
+      ;;
+    x)
+      AC_MSG_RESULT([missing])
+      AC_MSG_NOTICE([--with-hsdis=binutils requires specifying a binutils installation.])
+      AC_MSG_NOTICE([Download binutils from https://www.gnu.org/software/binutils and unpack it,])
+      AC_MSG_NOTICE([and point --with-binutils-src to the resulting directory, or use])
+      AC_MSG_NOTICE([--with-binutils to point to a pre-built binutils installation.])
+      AC_MSG_ERROR([Cannot continue])
+      ;;
+    *)
+      if test "x$HSDIS_LIBS" != x; then
+        AC_MSG_RESULT([$BINUTILS_DIR])
+      else
+        AC_MSG_RESULT([invalid])
+        AC_MSG_ERROR([$BINUTILS_DIR does not contain a proper binutils installation])
+      fi
+      ;;
+  esac
+])
+
+################################################################################
+#
 # Determine if hsdis should be built, and if so, with which backend.
 #
 AC_DEFUN_ONCE([LIB_SETUP_HSDIS],
 [
   AC_ARG_WITH([hsdis], [AS_HELP_STRING([--with-hsdis],
       [what hsdis backend to use ('none', 'capstone', 'llvm', 'binutils') @<:@none@:>@])])
-
-  AC_ARG_WITH(capstone, [AS_HELP_STRING([--with-capstone],
-      [where to find the Capstone files needed for hsdis/capstone])])
-
-  AC_ARG_WITH([llvm], [AS_HELP_STRING([--with-llvm],
-      [where to find the LLVM files needed for hsdis/llvm])])
-
-  AC_ARG_WITH([binutils], [AS_HELP_STRING([--with-binutils],
-      [where to find the binutils files needed for hsdis/binutils])])
-
-  AC_ARG_WITH([binutils-src], [AS_HELP_STRING([--with-binutils-src],
-      [where to find the binutils source for building])])
 
   AC_MSG_CHECKING([what hsdis backend to use])
 
@@ -131,153 +294,17 @@ AC_DEFUN_ONCE([LIB_SETUP_HSDIS],
     HSDIS_BACKEND=capstone
     AC_MSG_RESULT(['capstone'])
 
-    if test "x$with_capstone" != x; then
-      AC_MSG_CHECKING([for capstone])
-      CAPSTONE="$with_capstone"
-      AC_MSG_RESULT([$CAPSTONE])
-
-      HSDIS_CFLAGS="-I${CAPSTONE}/include/capstone"
-      if test "x$OPENJDK_TARGET_OS" != xwindows; then
-        HSDIS_LDFLAGS="-L${CAPSTONE}/lib"
-        HSDIS_LIBS="-lcapstone"
-      else
-        HSDIS_LDFLAGS="-nodefaultlib:libcmt.lib"
-        HSDIS_LIBS="${CAPSTONE}/capstone.lib"
-      fi
-    else
-      if test "x$OPENJDK_TARGET_OS" = xwindows; then
-        # There is no way to auto-detect capstone on Windowos
-        AC_MSG_NOTICE([You must specify capstone location using --with-capstone=<path>])
-        AC_MSG_ERROR([Cannot continue])
-      fi
-
-      PKG_CHECK_MODULES(CAPSTONE, capstone, [CAPSTONE_FOUND=yes], [CAPSTONE_FOUND=no])
-      if test "x$CAPSTONE_FOUND" = xyes; then
-        HSDIS_CFLAGS="$CAPSTONE_CFLAGS"
-        HSDIS_LDFLAGS="$CAPSTONE_LDFLAGS"
-        HSDIS_LIBS="$CAPSTONE_LIBS"
-      else
-        HELP_MSG_MISSING_DEPENDENCY([capstone])
-        AC_MSG_NOTICE([Cannot locate capstone which is needed for hsdis/capstone. Try using --with-capstone=<path>. $HELP_MSG])
-        AC_MSG_ERROR([Cannot continue])
-      fi
-    fi
+    LIB_SETUP_HSDIS_CAPSTONE
   elif test "x$with_hsdis" = xllvm; then
     HSDIS_BACKEND=llvm
     AC_MSG_RESULT(['llvm'])
 
-    if test "x$with_llvm" != x; then
-      LLVM_DIR="$with_llvm"
-    fi
-
-    if test "x$OPENJDK_TARGET_OS" != xwindows; then
-      if test "x$LLVM_DIR" = x; then
-        # Macs with homebrew can have llvm in different places
-        UTIL_LOOKUP_PROGS(LLVM_CONFIG, llvm-config, [$PATH:/usr/local/opt/llvm/bin:/opt/homebrew/opt/llvm/bin])
-        if test "x$LLVM_CONFIG" = x; then
-          AC_MSG_NOTICE([Cannot locate llvm-config which is needed for hsdis/llvm. Try using --with-llvm=<LLVM home>.])
-          AC_MSG_ERROR([Cannot continue])
-        fi
-      else
-        UTIL_LOOKUP_PROGS(LLVM_CONFIG, llvm-config, [$LLVM_DIR/bin])
-        if test "x$LLVM_CONFIG" = x; then
-          AC_MSG_NOTICE([Cannot locate llvm-config in $LLVM_DIR. Check your --with-llvm argument.])
-          AC_MSG_ERROR([Cannot continue])
-        fi
-      fi
-
-      # We need the LLVM flags and libs, and llvm-config provides them for us.
-      HSDIS_CFLAGS=`$LLVM_CONFIG --cflags`
-      HSDIS_LDFLAGS=`$LLVM_CONFIG --ldflags`
-      HSDIS_LIBS=`$LLVM_CONFIG --libs $OPENJDK_TARGET_CPU_ARCH ${OPENJDK_TARGET_CPU_ARCH}disassembler`
-    else
-      if test "x$LLVM_DIR" = x; then
-        AC_MSG_NOTICE([--with-llvm is needed on Windows to point out the LLVM home])
-        AC_MSG_ERROR([Cannot continue])
-      fi
-
-      # Official Windows installation of LLVM do not ship llvm-config, and self-built llvm-config
-      # produced unusable output, so just ignore it on Windows.
-      if ! test -e $LLVM_DIR/include/llvm-c/lto.h; then
-        AC_MSG_NOTICE([$LLVM_DIR does not seem like a valid LLVM home; include dir is missing])
-        AC_MSG_ERROR([Cannot continue])
-      fi
-      if ! test -e $LLVM_DIR/include/llvm-c/Disassembler.h; then
-        AC_MSG_NOTICE([$LLVM_DIR does not point to a complete LLVM installation. ])
-        AC_MSG_NOTICE([The official LLVM distribution is missing crucical files; you need to build LLVM yourself or get all include files elsewhere])
-        AC_MSG_ERROR([Cannot continue])
-      fi
-      if ! test -e $LLVM_DIR/lib/llvm-c.lib; then
-        AC_MSG_NOTICE([$LLVM_DIR does not seem like a valid LLVM home; lib dir is missing])
-        AC_MSG_ERROR([Cannot continue])
-      fi
-      HSDIS_CFLAGS="-I$LLVM_DIR/include"
-      HSDIS_LDFLAGS="-libpath:$LLVM_DIR/lib"
-      HSDIS_LIBS="llvm-c.lib"
-    fi
+    LIB_SETUP_HSDIS_LLVM
   elif test "x$with_hsdis" = xbinutils; then
     HSDIS_BACKEND=binutils
     AC_MSG_RESULT(['binutils'])
 
-    # We need the binutils static libs and includes.
-    if test "x$with_binutils_src" != x; then
-      # Try building the source first. If it succeeds, it sets $BINUTILS_DIR.
-      JDKOPT_BUILD_BINUTILS
-    fi
-
-    if test "x$with_binutils" != x; then
-      BINUTILS_DIR="$with_binutils"
-    fi
-
-    binutils_system_error=""
-    HSDIS_LIBS=""
-    if test "x$BINUTILS_DIR" = xsystem; then
-      AC_CHECK_LIB(bfd, bfd_openr, [ HSDIS_LIBS="-lbfd" ], [ binutils_system_error="libbfd not found" ])
-      AC_CHECK_LIB(opcodes, disassembler, [ HSDIS_LIBS="$HSDIS_LIBS -lopcodes" ], [ binutils_system_error="libopcodes not found" ])
-      AC_CHECK_LIB(iberty, xmalloc, [ HSDIS_LIBS="$HSDIS_LIBS -liberty" ], [ binutils_system_error="libiberty not found" ])
-      AC_CHECK_LIB(z, deflate, [ HSDIS_LIBS="$HSDIS_LIBS -lz" ], [ binutils_system_error="libz not found" ])
-      HSDIS_CFLAGS="-DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB"
-    elif test "x$BINUTILS_DIR" != x; then
-      if test -e $BINUTILS_DIR/bfd/libbfd.a && \
-          test -e $BINUTILS_DIR/opcodes/libopcodes.a && \
-          test -e $BINUTILS_DIR/libiberty/libiberty.a; then
-        HSDIS_CFLAGS="-I$BINUTILS_DIR/include -I$BINUTILS_DIR/bfd -DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB"
-        HSDIS_LDFLAGS=""
-        HSDIS_LIBS="$BINUTILS_DIR/bfd/libbfd.a $BINUTILS_DIR/opcodes/libopcodes.a $BINUTILS_DIR/libiberty/libiberty.a $BINUTILS_DIR/zlib/libz.a"
-      fi
-    fi
-
-    AC_MSG_CHECKING([for binutils to use with hsdis])
-    case "x$BINUTILS_DIR" in
-      xsystem)
-        if test "x$OPENJDK_TARGET_OS" != xlinux; then
-          AC_MSG_RESULT([invalid])
-          AC_MSG_ERROR([binutils on system is supported for Linux only])
-        elif test "x$binutils_system_error" = x; then
-          AC_MSG_RESULT([system])
-          HSDIS_CFLAGS="$HSDIS_CFLAGS -DSYSTEM_BINUTILS"
-        else
-          AC_MSG_RESULT([invalid])
-          AC_MSG_ERROR([$binutils_system_error])
-        fi
-        ;;
-      x)
-        AC_MSG_RESULT([missing])
-        AC_MSG_NOTICE([--with-hsdis=binutils requires specifying a binutils installation.])
-        AC_MSG_NOTICE([Download binutils from https://www.gnu.org/software/binutils and unpack it,])
-        AC_MSG_NOTICE([and point --with-binutils-src to the resulting directory, or use])
-        AC_MSG_NOTICE([--with-binutils to point to a pre-built binutils installation.])
-        AC_MSG_ERROR([Cannot continue])
-        ;;
-      *)
-        if test "x$HSDIS_LIBS" != x; then
-          AC_MSG_RESULT([$BINUTILS_DIR])
-        else
-          AC_MSG_RESULT([invalid])
-          AC_MSG_ERROR([$BINUTILS_DIR does not contain a proper binutils installation])
-        fi
-        ;;
-    esac
+    LIB_SETUP_HSDIS_BINUTILS
   else
     AC_MSG_RESULT([invalid])
     AC_MSG_ERROR([Incorrect hsdis backend "$with_hsdis"])
