@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8266670
  * @summary Basic tests of AccessFlag
@@ -30,11 +30,16 @@
 import java.lang.reflect.AccessFlag;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 public class BasicAccessFlagTest {
     public static void main(String... args) throws Exception {
         testSourceModifiers();
         testMaskOrdering();
+        testDisjoint();
     }
 
     private static void testSourceModifiers() throws Exception {
@@ -66,5 +71,58 @@ public class BasicAccessFlagTest {
                                            + right);
             }
         }
+    }
+
+    // Test that if access flags have a matching mask, their locations
+    // are disjoint.
+    private static void testDisjoint() {
+        // First build the mask -> access flags map...
+        Map<Integer, Set<AccessFlag>> maskToFlags = new LinkedHashMap<>();
+
+        for (var accessFlag : AccessFlag.values()) {
+            Integer mask = accessFlag.mask();
+            Set<AccessFlag> flags = maskToFlags.get(mask);
+
+            if (flags == null ) {
+                flags = new HashSet<>();
+                flags.add(accessFlag);
+                maskToFlags.put(mask, flags);
+            } else {
+                flags.add(accessFlag);
+            }
+        }
+
+        // Then test for disjointness
+        for (var entry : maskToFlags.entrySet()) {
+            var value = entry.getValue();
+            if (value.size() == 0) {
+                throw new AssertionError("Bad flag set " + entry);
+            } else if (value.size() == 1) {
+                // Need at least two flags to be non-disjointness to
+                // be possible
+                continue;
+            }
+
+            Set<AccessFlag.Location> locations = new HashSet<>();
+            for (var accessFlag : value) {
+                for (var location : accessFlag.locations()) {
+                    boolean added = locations.add(location);
+                    if (!added) {
+                        reportError(location, accessFlag,
+                                    entry.getKey(), value);
+                    }
+                }
+            }
+        }
+    }
+
+    private static void reportError(AccessFlag.Location location,
+                                    AccessFlag accessFlag,
+                                    Integer mask, Set<AccessFlag> value) {
+        System.err.println("Location " + location +
+                           " from " + accessFlag +
+                           " already present for 0x" +
+                           Integer.toHexString(mask) + ": " + value);
+        throw new RuntimeException();
     }
 }
