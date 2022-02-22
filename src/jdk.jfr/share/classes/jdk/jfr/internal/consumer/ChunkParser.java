@@ -254,7 +254,7 @@ public final class ChunkParser {
                     ChunkWriter chunkWriter = configuration.chunkWriter;
                     if (chunkWriter != null) {
                         if (chunkWriter.accept(event)) {
-                            chunkWriter.write(pos, input.position());
+                            chunkWriter.writeEvent(pos, input.position());
                             input.position(pos);
                             input.readInt(); // size
                             input.readLong(); // type

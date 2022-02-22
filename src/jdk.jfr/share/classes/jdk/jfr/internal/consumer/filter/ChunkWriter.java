@@ -28,23 +28,18 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.function.Predicate;
 
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.internal.LongMap;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.consumer.ChunkHeader;
-import jdk.jfr.internal.consumer.ChunkParser;
-import jdk.jfr.internal.consumer.ChunkParser.ParserConfiguration;
 import jdk.jfr.internal.consumer.FileAccess;
 import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
-import jdk.jfr.internal.consumer.ParserFilter;
-import jdk.jfr.internal.consumer.ParserState;
 import jdk.jfr.internal.consumer.RecordingInput;
 import jdk.jfr.internal.consumer.Reference;
 
@@ -56,7 +51,7 @@ import jdk.jfr.internal.consumer.Reference;
  */
 public final class ChunkWriter implements Closeable {
     private LongMap<Constants> pools = new LongMap<>();
-    private final List<CheckPointEvent> checkPoints = new ArrayList<>();
+    private final Deque<CheckPointEvent> checkPoints = new ArrayDeque<>();
     private final Path destination;
     private final RecordingInput input;
     private final RecordingOutput output;
@@ -64,6 +59,7 @@ public final class ChunkWriter implements Closeable {
 
     private long chunkStartPosition;
     private boolean chunkComplete;
+    private long lastCheckPoint;
 
     public ChunkWriter(Path source, Path destination, Predicate<RecordedEvent> filter) throws IOException {
         this.destination = destination;
@@ -117,6 +113,25 @@ public final class ChunkWriter implements Closeable {
             touch(entry.getReferences());
         }
     }
+    public void writeEvent(long startPosition, long endPosition) throws IOException {
+        writeCheckpointEvents(startPosition);
+        write(startPosition, endPosition);
+    }
+
+    // Write check point events before a position
+    private void writeCheckpointEvents(long before) throws IOException {
+        CheckPointEvent cp = checkPoints.peek();
+        while (cp != null && cp.getStartPosition() < before) {
+            checkPoints.poll();
+            long delta = 0;
+            if (lastCheckPoint != 0) {
+                delta = lastCheckPoint - output.position();
+            }
+            lastCheckPoint = output.position();
+            write(cp, delta);
+            cp = checkPoints.peek();
+        }
+    }
 
     public void write(long startPosition, long endPosition) throws IOException {
         if (endPosition < startPosition) {
@@ -155,20 +170,14 @@ public final class ChunkWriter implements Closeable {
     }
 
     public void endChunk(ChunkHeader header) throws IOException {
-        long constants = 0;
-        long delta = 0;
-        Collections.reverse(checkPoints);
-        for (CheckPointEvent event : checkPoints) {
-            constants = output.position();
-            write(event, delta);
-            delta = constants - output.position();
-        }
+        // write all outstanding checkpoints
+        writeCheckpointEvents(Long.MAX_VALUE);
         long metadata = output.position();
         writeMetadataEvent(header);
-        updateHeader(output.position(), constants, metadata);
+        updateHeader(output.position(), lastCheckPoint, metadata);
         pools = new LongMap<>();
-        checkPoints.clear();
         chunkComplete = true;
+        lastCheckPoint = 0;
     }
 
     private void writeMetadataEvent(ChunkHeader header) throws IOException {
