@@ -125,7 +125,7 @@ public final class RecordingStream implements AutoCloseable, EventStream {
             recording.setSettings(settings);
         }
     }
-    
+
     private List<Configuration> configurations() {
         try {
             return Configuration.getConfigurations();
