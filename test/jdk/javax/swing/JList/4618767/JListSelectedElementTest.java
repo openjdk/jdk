@@ -39,12 +39,12 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
 
-import static javax.swing.UIManager.LookAndFeelInfo;
 import static javax.swing.UIManager.getInstalledLookAndFeels;
 
 /*
