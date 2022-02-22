@@ -396,7 +396,7 @@ import jdk.internal.util.ArraysSupport;
  * <p> Backslashes within string literals in Java source code are interpreted
  * as required by
  * <cite>The Java Language Specification</cite>
- * as either Unicode escapes (section {@jls 3.3}) or other character escapes (section {@jls 3.10.6})
+ * as either Unicode escapes (section {@jls 3.3}) or other character escapes (section {@jls 3.10.6}).
  * It is therefore necessary to double backslashes in string
  * literals that represent regular expressions to protect them from
  * interpretation by the Java bytecode compiler.  The string literal
