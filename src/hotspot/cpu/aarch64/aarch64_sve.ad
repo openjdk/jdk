@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2020, 2021, Arm Limited. All rights reserved.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2022, Arm Limited. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1288,6 +1288,36 @@ instruct vnotL(vReg dst, vReg src, immL_M1 m1) %{
   ins_pipe(pipe_slow);
 %}
 
+// vector not - predicated
+
+instruct vnotI_masked(vReg dst, vReg src, immI_M1 m1, pRegGov pg) %{
+  predicate(UseSVE > 0);
+  match(Set dst (XorV (Binary src (ReplicateB m1)) pg));
+  match(Set dst (XorV (Binary src (ReplicateS m1)) pg));
+  match(Set dst (XorV (Binary src (ReplicateI m1)) pg));
+  ins_cost(SVE_COST);
+  format %{ "sve_not $dst, $pg, $src\t# vector (sve) B/H/S" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_not(as_FloatRegister($dst$$reg), __ elemType_to_regVariant(bt),
+               as_PRegister($pg$$reg), as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vnotL_masked(vReg dst, vReg src, immL_M1 m1, pRegGov pg) %{
+  predicate(UseSVE > 0);
+  match(Set dst (XorV (Binary src (ReplicateL m1)) pg));
+  ins_cost(SVE_COST);
+  format %{ "sve_not $dst, $pg, $src\t# vector (sve) D" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_not(as_FloatRegister($dst$$reg), __ elemType_to_regVariant(bt),
+               as_PRegister($pg$$reg), as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // vector and_not
 
 instruct vand_notI(vReg dst, vReg src1, vReg src2, immI_M1 m1) %{
@@ -1314,6 +1344,36 @@ instruct vand_notL(vReg dst, vReg src1, vReg src2, immL_M1 m1) %{
     __ sve_bic(as_FloatRegister($dst$$reg),
                as_FloatRegister($src1$$reg),
                as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector and_not - predicated
+
+instruct vand_notI_masked(vReg dst_src1, vReg src2, immI_M1 m1, pRegGov pg) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src1 (AndV (Binary dst_src1 (XorV src2 (ReplicateB m1))) pg));
+  match(Set dst_src1 (AndV (Binary dst_src1 (XorV src2 (ReplicateS m1))) pg));
+  match(Set dst_src1 (AndV (Binary dst_src1 (XorV src2 (ReplicateI m1))) pg));
+  ins_cost(SVE_COST);
+  format %{ "sve_bic $dst_src1, $pg, $dst_src1, $src2\t# vector (sve) B/H/S" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_bic(as_FloatRegister($dst_src1$$reg), __ elemType_to_regVariant(bt),
+               as_PRegister($pg$$reg), as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vand_notL_masked(vReg dst_src1, vReg src2, immL_M1 m1, pRegGov pg) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src1 (AndV (Binary dst_src1 (XorV src2 (ReplicateL m1))) pg));
+  ins_cost(SVE_COST);
+  format %{ "sve_bic $dst_src1, $pg, $dst_src1, $src2\t# vector (sve) D" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_bic(as_FloatRegister($dst_src1$$reg), __ elemType_to_regVariant(bt),
+               as_PRegister($pg$$reg), as_FloatRegister($src2$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
