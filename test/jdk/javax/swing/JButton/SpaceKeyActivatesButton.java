@@ -71,16 +71,16 @@ public class SpaceKeyActivatesButton {
             buttonGainedFocusLatch = new CountDownLatch(1);
             try {
                 buttonPressed = false;
-                System.out.println("Testing L&F: " + laf);
+                System.out.println("Testing laf : " + laf);
                 AtomicBoolean lafSetSuccess = new AtomicBoolean(false);
                 SwingUtilities.invokeAndWait(() -> {
                     lafSetSuccess.set(setLookAndFeel(laf));
-                    // Call createUI() only if setting LnF succeeded.
+                    // Call createUI() only if setting laf succeeded
                     if (lafSetSuccess.get()) {
                         createUI();
                     }
                 });
-                // If setting LnF failed, then just get next LnF and continue.
+                // If setting laf failed, then just get next laf and continue
                 if (!lafSetSuccess.get()) {
                     continue;
                 }
@@ -88,17 +88,17 @@ public class SpaceKeyActivatesButton {
 
                 // Wait until the button2 gains focus.
                 if (!buttonGainedFocusLatch.await(3, TimeUnit.SECONDS)) {
-                    throw new RuntimeException("Test Failed, waited for long, " +
-                            "but the button can't gain focus for L&F: " + laf);
+                    throw new RuntimeException("Test Failed, waited too long, " +
+                            "but the button can't gain focus for laf : " + laf);
                 }
 
                 robot.keyPress(KeyEvent.VK_SPACE);
                 robot.keyRelease(KeyEvent.VK_SPACE);
 
                 if (buttonPressed) {
-                    System.out.println("Test Passed for L&F: " + laf);
+                    System.out.println("Test Passed for laf : " + laf);
                 } else {
-                    throw new RuntimeException("Test Failed, button not pressed for L&F: " + laf);
+                    throw new RuntimeException("Test Failed, button not pressed for laf : " + laf);
                 }
 
             } finally {
@@ -112,7 +112,7 @@ public class SpaceKeyActivatesButton {
         try {
             UIManager.setLookAndFeel(lafName);
         } catch (UnsupportedLookAndFeelException ignored) {
-            System.out.println("Ignoring Unsupported L&F: " + lafName);
+            System.out.println("Ignoring Unsupported laf : " + lafName);
             return false;
         } catch (ClassNotFoundException | InstantiationException
                 | IllegalAccessException e) {
