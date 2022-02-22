@@ -567,8 +567,7 @@ public class WeakHashMap<K,V>
                 resize(newCapacity);
         }
 
-        for (Map.Entry<? extends K, ? extends V> e : m.entrySet())
-            put(e.getKey(), e.getValue());
+        m.forEach(this::put);
     }
 
     /**

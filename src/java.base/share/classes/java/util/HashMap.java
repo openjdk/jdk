@@ -508,11 +508,9 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                     resize();
             }
 
-            for (Map.Entry<? extends K, ? extends V> e : m.entrySet()) {
-                K key = e.getKey();
-                V value = e.getValue();
+            m.forEach((key, value) -> {
                 putVal(hash(key), key, value, false, evict);
-            }
+            });
         }
     }
 

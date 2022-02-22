@@ -536,8 +536,7 @@ public class Hashtable<K,V>
      * @since 1.2
      */
     public synchronized void putAll(Map<? extends K, ? extends V> t) {
-        for (Map.Entry<? extends K, ? extends V> e : t.entrySet())
-            put(e.getKey(), e.getValue());
+        t.forEach(this::put);
     }
 
     /**

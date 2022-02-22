@@ -150,12 +150,11 @@ public final class Collectors {
     private static <K, V, M extends Map<K,V>>
     BinaryOperator<M> uniqKeysMapMerger() {
         return (m1, m2) -> {
-            for (Map.Entry<K,V> e : m2.entrySet()) {
-                K k = e.getKey();
-                V v = Objects.requireNonNull(e.getValue());
+            m2.forEach((k, v) -> {
+                Objects.requireNonNull(v);
                 V u = m1.putIfAbsent(k, v);
                 if (u != null) throw duplicateKeyException(k, u, v);
-            }
+            });
             return m1;
         };
     }
@@ -428,8 +427,7 @@ public final class Collectors {
     private static <K, V, M extends Map<K,V>>
     BinaryOperator<M> mapMerger(BinaryOperator<V> mergeFunction) {
         return (m1, m2) -> {
-            for (Map.Entry<K,V> e : m2.entrySet())
-                m1.merge(e.getKey(), e.getValue(), mergeFunction);
+            m2.forEach((k, v) -> m1.merge(k, v, mergeFunction));
             return m1;
         };
     }

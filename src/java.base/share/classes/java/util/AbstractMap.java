@@ -277,8 +277,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * @throws IllegalArgumentException      {@inheritDoc}
      */
     public void putAll(Map<? extends K, ? extends V> m) {
-        for (Map.Entry<? extends K, ? extends V> e : m.entrySet())
-            put(e.getKey(), e.getValue());
+        m.forEach(this::put);
     }
 
     /**

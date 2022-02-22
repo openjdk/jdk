@@ -507,8 +507,7 @@ public class IdentityHashMap<K,V>
         if (n > size)
             resize(capacity(n)); // conservatively pre-expand
 
-        for (Entry<? extends K, ? extends V> e : m.entrySet())
-            put(e.getKey(), e.getValue());
+        m.forEach(this::put);
     }
 
     /**
