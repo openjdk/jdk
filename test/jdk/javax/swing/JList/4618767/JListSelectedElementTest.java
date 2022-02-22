@@ -50,8 +50,9 @@ import static javax.swing.UIManager.getInstalledLookAndFeels;
  * @test
  * @key headful
  * @bug 4618767
- * @summary Typing a letter while a JList has focus now makes the selection jump to the item whose text
- *          starts with that letter even though that letter is accompanied by modifier keys such as ALT or CTRL.
+ * @summary This test confirms that typing a letter while a JList has focus now makes the selection
+ *          not jump to the item whose text starts with that letter if that typed letter is accompanied
+ *          by modifier keys such as ALT or CTRL(eg: ALT+F).
  * @run main JListSelectedElementTest
  */
 public class JListSelectedElementTest {
@@ -97,7 +98,7 @@ public class JListSelectedElementTest {
 
                 // Wait until the list gains focus.
                 if (!listGainedFocusLatch.await(3, TimeUnit.SECONDS)) {
-                    throw new RuntimeException("Waited for long, but can't gain focus for list");
+                    throw new RuntimeException("Waited too long, but can't gain focus for list");
                 }
 
                 // Select element named as 'bill'
@@ -114,8 +115,8 @@ public class JListSelectedElementTest {
                     );
                 }
 
-                // Now operate Menu using Mnemonics, different key combinations for different OS.
-                // For most of the OS its ALT+F, except for non Nimbus LnFs in Mac where it is ALT+CNTRL+F.
+                // Now operate Menu using Mnemonics, different key combinations for different OSes.
+                // For most OSes it's ALT+F; on macOS it's ALT+CNTRL+F except for Nimbus LaF.
                 if (isMac && !laf.contains("Nimbus")) {
                     hitKeys(KeyEvent.VK_ALT, KeyEvent.VK_CONTROL, FILE_MENU);
                 } else {
@@ -124,7 +125,7 @@ public class JListSelectedElementTest {
 
                 // Wait until the menu got selected.
                 if (!menuSelectedEventLatch.await(3, TimeUnit.SECONDS)) {
-                    throw new RuntimeException("Waited for long, but can't select menu using mnemonics for " + laf);
+                    throw new RuntimeException("Waited too long, but can't select menu using mnemonics for " + laf);
                 }
 
                 hitKeys(KeyEvent.VK_ENTER);
