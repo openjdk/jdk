@@ -202,7 +202,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         }
     }
 
-    private void permits(AlgorithmParameters ap, ConstraintsParameters cp)
+    public void permits(AlgorithmParameters ap, ConstraintsParameters cp)
         throws CertPathValidatorException {
 
         switch (ap.getAlgorithm().toUpperCase(Locale.ENGLISH)) {
