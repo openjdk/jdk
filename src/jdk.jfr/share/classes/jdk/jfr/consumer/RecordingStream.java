@@ -121,7 +121,7 @@ public final class RecordingStream implements AutoCloseable, EventStream {
             this.recording.close();
             throw new IllegalStateException(ioe.getMessage());
         }
-        if (settings.isEmpty()) {
+        if (!settings.isEmpty()) {
             recording.setSettings(settings);
         }
     }
