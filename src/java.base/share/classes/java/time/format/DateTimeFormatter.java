@@ -1573,7 +1573,7 @@ public final class DateTimeFormatter {
     /**
      * Gets the DecimalStyle to be used during formatting.
      *
-     * @return the locale of this formatter, not null
+     * @return the DecimalStyle of this formatter, not null
      */
     public DecimalStyle getDecimalStyle() {
         return decimalStyle;
