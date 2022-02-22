@@ -76,7 +76,7 @@ public class WindowIconUpdateOnDPIChangingTest {
     public static void main(String[] args) throws Exception {
         SwingUtilities.invokeLater(WindowIconUpdateOnDPIChangingTest::createUI);
         if (!countDownLatch.await(15, TimeUnit.MINUTES)) {
-            frame.dispose();
+            SwingUtilities.invokeAndWait(() -> frame.dispose());
             throw new RuntimeException("Timed out!");
         } else if (!testResult) {
             throw new RuntimeException("Test fails!");
