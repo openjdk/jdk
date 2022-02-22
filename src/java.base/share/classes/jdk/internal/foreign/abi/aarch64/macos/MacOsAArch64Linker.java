@@ -25,32 +25,24 @@
  */
 package jdk.internal.foreign.abi.aarch64.macos;
 
-import java.lang.foreign.Linker;
+import jdk.internal.foreign.abi.AbstractLinker;
+import jdk.internal.foreign.abi.aarch64.CallArranger;
+
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
 import java.lang.foreign.VaList;
-
-import jdk.internal.foreign.SystemLookup;
-import jdk.internal.foreign.abi.SharedUtils;
-import jdk.internal.foreign.abi.aarch64.CallArranger;
-
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
  * ABI implementation for macOS on Apple silicon. Based on AAPCS with
  * changes to va_list and passing arguments on the stack.
  */
-public final class MacOsAArch64Linker implements Linker {
+public final class MacOsAArch64Linker extends AbstractLinker {
     private static MacOsAArch64Linker instance;
-
-    static final long ADDRESS_SIZE = 64; // bits
 
     public static MacOsAArch64Linker getInstance() {
         if (instance == null) {
@@ -60,24 +52,13 @@ public final class MacOsAArch64Linker implements Linker {
     }
 
     @Override
-    public final MethodHandle downcallHandle(FunctionDescriptor function) {
-        Objects.requireNonNull(function);
-        MethodType type = SharedUtils.inferMethodType(function, false);
-        MethodHandle handle = CallArranger.MACOS.arrangeDowncall(type, function);
-        handle = SharedUtils.maybeInsertAllocator(handle);
-        return SharedUtils.wrapDowncall(handle, function);
+    protected MethodHandle arrangeDowncall(MethodType inferredMethodType, FunctionDescriptor function) {
+        return CallArranger.MACOS.arrangeDowncall(inferredMethodType, function);
     }
 
     @Override
-    public final MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function, MemorySession session) {
-        Objects.requireNonNull(session);
-        Objects.requireNonNull(target);
-        Objects.requireNonNull(function);
-        MethodType type = SharedUtils.inferMethodType(function, true);
-        if (!type.equals(target.type())) {
-            throw new IllegalArgumentException("Wrong method handle type: " + target.type());
-        }
-        return CallArranger.MACOS.arrangeUpcall(target, target.type(), function, session);
+    protected MemorySegment arrangeUpcall(MethodHandle target, MethodType targetType, FunctionDescriptor function, MemorySession scope) {
+        return CallArranger.MACOS.arrangeUpcall(target, targetType, function, scope);
     }
 
     public static VaList newVaList(Consumer<VaList.Builder> actions, MemorySession session) {
@@ -92,10 +73,5 @@ public final class MacOsAArch64Linker implements Linker {
 
     public static VaList emptyVaList() {
         return MacOsAArch64VaList.empty();
-    }
-
-    @Override
-    public SystemLookup defaultLookup() {
-        return SystemLookup.getInstance();
     }
 }
