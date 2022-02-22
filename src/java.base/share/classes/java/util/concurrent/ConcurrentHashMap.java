@@ -1085,7 +1085,13 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      */
     public void putAll(Map<? extends K, ? extends V> m) {
         tryPresize(m.size());
-        m.forEach((k, v) -> putVal(k, v, false));
+        // Avoid lambdas before indy is ready in initPhase1
+        m.forEach(new BiConsumer<K, V>() {
+            @Override
+            public void accept(K k, V v) {
+                putVal(k, v, false);
+            }
+        });
     }
 
     /**

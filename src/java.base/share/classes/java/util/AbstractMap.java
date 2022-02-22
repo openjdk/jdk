@@ -25,6 +25,7 @@
 
 package java.util;
 import java.util.Map.Entry;
+import java.util.function.BiConsumer;
 
 /**
  * This class provides a skeletal implementation of the {@code Map}
@@ -277,7 +278,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * @throws IllegalArgumentException      {@inheritDoc}
      */
     public void putAll(Map<? extends K, ? extends V> m) {
-        m.forEach(this::put);
+        m.forEach(new PutConsumer<>(this));
     }
 
     /**
@@ -871,6 +872,24 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
             return key + "=" + value;
         }
 
+    }
+
+    /**
+     * A biconsumer that puts a key-value pair into a map. Maps are
+     * used before indy and lambda expressions are ready in initPhase1.
+     * Regular code can safely use {@code map::put} instead.
+     */
+    static final class PutConsumer<K, V> implements BiConsumer<K, V> {
+        private final Map<K, V> map;
+
+        PutConsumer(Map<K, V> map) {
+            this.map = map;
+        }
+
+        @Override
+        public void accept(K k, V v) {
+            this.map.put(k, v);
+        }
     }
 
 }

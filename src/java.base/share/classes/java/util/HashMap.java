@@ -508,8 +508,12 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                     resize();
             }
 
-            m.forEach((key, value) -> {
-                putVal(hash(key), key, value, false, evict);
+            // Avoid lambdas before indy is ready in initPhase1
+            m.forEach(new BiConsumer<K, V>() {
+                @Override
+                public void accept(K key, V value) {
+                    putVal(hash(key), key, value, false, evict);
+                }
             });
         }
     }

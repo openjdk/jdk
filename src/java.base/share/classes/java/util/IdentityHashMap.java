@@ -507,7 +507,7 @@ public class IdentityHashMap<K,V>
         if (n > size)
             resize(capacity(n)); // conservatively pre-expand
 
-        m.forEach(this::put);
+        m.forEach(new AbstractMap.PutConsumer<>(this));
     }
 
     /**

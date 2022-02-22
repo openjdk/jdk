@@ -536,7 +536,7 @@ public class Hashtable<K,V>
      * @since 1.2
      */
     public synchronized void putAll(Map<? extends K, ? extends V> t) {
-        t.forEach(this::put);
+        t.forEach(new AbstractMap.PutConsumer<>(this));
     }
 
     /**

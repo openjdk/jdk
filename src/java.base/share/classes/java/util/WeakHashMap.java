@@ -567,7 +567,7 @@ public class WeakHashMap<K,V>
                 resize(newCapacity);
         }
 
-        m.forEach(this::put);
+        m.forEach(new AbstractMap.PutConsumer<>(this));
     }
 
     /**
