@@ -2822,7 +2822,7 @@ public abstract class JComponent extends Container implements Serializable,
         Font oldFont = getFont();
         super.setFont(font);
         // font already bound in AWT1.2
-        if (font != oldFont) {
+        if (font != null && !font.equals(oldFont)) {
             revalidate();
             repaint();
         }
