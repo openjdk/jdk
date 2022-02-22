@@ -562,14 +562,15 @@ static void forte_fill_call_trace_given_top(JavaThread* thd,
 extern "C" {
 JNIEXPORT
 void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
-    if (trace->env_id == NULL || JavaThread::is_thread_from_jni_environment_terminated(trace->env_id)) {
+
+  JavaThread* thread;
+
+  if (trace->env_id == NULL ||
+      (thread = JavaThread::thread_from_jni_environment(trace->env_id))->is_exiting()) {
     // bad env_id, thread has exited or thread is exiting
     trace->num_frames = ticks_thread_exit; // -8
     return;
   }
-
-  JavaThread* thread = JavaThread::thread_from_jni_environment(trace->env_id);
-
 
   if (thread->in_deopt_handler()) {
     // thread is in the deoptimization handler so return no frames
