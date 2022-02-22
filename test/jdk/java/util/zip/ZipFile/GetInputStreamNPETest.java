@@ -68,8 +68,32 @@ public class GetInputStreamNPETest {
     public static final String ZIP_ENTRY_THAT_DOES_NOT_EXIST = "org/gotham/Batcave.class";
 
     /**
-     * Byte array representing valid jar file prior modifying a filename in the
-     * CEN
+     * Byte array representing a valid jar file prior modifying a filename in the
+     * CEN.
+     * The "Valid-EntryName.jar" jar file was created via:
+     * <pre>
+     *     {@code
+     *        jar cvf Valid-EntryName.jar javax/inject/Singleton.class
+     *        added manifest
+     *        adding: javax/inject/Singleton.class(in = 359) (out= 221)(deflated 38%)
+     *     }
+     * </pre>
+     * Its contents are:
+     * <pre>
+     *     {@code
+     *        jar tvf Valid-EntryName.jar
+     *         0 Wed Jan 26 14:27:26 EST 2022 META-INF/
+     *        66 Wed Jan 26 14:27:26 EST 2022 META-INF/MANIFEST.MF
+     *       359 Mon Jan 24 22:11:24 EST 2011 javax/inject/Singleton.class
+     *     }
+     * </pre>
+     * The ByteArray was created by:
+     * <pre>
+     *  {@code
+     *     var jar = Files.readAllBytes("Valid-EntryName.jar");
+     *     var validEntryName = createByteArray(fooJar, "VALID_ENTRY_NAME");
+     *  }
+     * </pre>
      */
     public static byte[] VALID_ENTRY_NAME = {
             (byte) 0x50, (byte) 0x4b, (byte) 0x3, (byte) 0x4, (byte) 0x14,
@@ -218,14 +242,21 @@ public class GetInputStreamNPETest {
     };
 
     /**
-     * Byte array representing valid signed jar file prior modifying a filename in the
-     * CEN
-     * The jar was signed via:
+     * Byte array representing a valid signed jar file prior modifying a filename
+     * in the CEN.
+     * The "Valid-EntryName.jar" jar file was signed via:
      * <pre>
      *     {@code
      *        keytool -genkey -keyalg RSA -alias myFirstKey -keystore myKeystore -storepass changeit -keypass changeit
-     *        jarsigner -keystore myKeystore -verbose Valid-EntryName.jar -signedjar signed.jar myFirstKey
+     *        jarsigner -keystore myKeystore -verbose Valid-EntryName.jar -signedjar Signed-Valid-EntryName.jar myFirstKey
      *      }
+     * </pre>
+     * The ByteArray was created by:
+     * <pre>
+     *  {@code
+     *     var signedJar = Files.readAllBytes("Signed-Valid-EntryName.jar");
+     *     var signedValidEntryName = createByteArray(fooJar, "SIGNED_VALID_ENTRY_NAME");
+     *  }
      * </pre>
      */
     public static byte[] SIGNED_VALID_ENTRY_NAME = {
@@ -751,32 +782,17 @@ public class GetInputStreamNPETest {
     /**
      * Create Jar files used by the tests.
      *
-     * The signed jar was created from the jar {@code Valid-EntryName.jar} via:
-     * <pre>
-     *     {@code
-     *        keytool -genkey -keyalg RSA -alias myFirstKey -keystore myKeystore -storepass changeit -keypass changeit
-     *        jarsigner -keystore myKeystore -verbose Valid-EntryName.jar -signedjar signed.jar myFirstKey
-     *      }
-     * </pre>
-     *
-     * The {@code Valid-EntryName.jar} and {@code Signed-Valid-EntryName.jar}
-     * that are written to disk at the start of the test run within
-     * the {@code setup} method were converted to a {@code ByteArray} using the
-     * utility method {@code createByteArray} using code similar to:
-     *
-     * <pre>
-     *  {@code
-     *     var jar = Files.readAllBytes(VALID_ENTRY_NAME_JAR);
-     *     var validEntryName = createByteArray(fooJar, "VALID_ENTRY_NAME");
-     *     var signedJar = Files.readAllBytes(SIGNED_VALID_ENTRY_NAME_JAR);
-     *     var signedValidEntryName = createByteArray(fooJar, "SIGNED_VALID_ENTRY_NAME");
-     *  }
-     * </pre>
+     * The {@code byte} arrays {@code VALID_ENTRY_NAME_JAR} and
+     * {@code SIGNED-VALID_ENTRY_NAME_JAR} are written to disk to create the jar
+     * files: {@code Valid-EntryName.jar} and {@code Signed-Valid-EntryName.jar}.
      *
      * The jar files {@code Invalid-EntryName.jar} and
-     * {@code Signed-Invalid-EntryName.jar} are created by modifying
-     * the CEN filename entry changing the value from
-     * {@code 0x53}, "S", to the value {@code 0x13}
+     * {@code Signed-Invalid-EntryName.jar} are created by copying the
+     * {@code byte} arrays {@code VALID_ENTRY_NAME} and
+     * {@code SIGNED-VALID_ENTRY_NAME} and modifying
+     * the CEN filename entry, "javax/inject/Singleton.class", changing the
+     * first character from {@code 0x53}, "S", to the {@code 0x13}.
+     *
      * @throws IOException If an error occurs
      *
      */
