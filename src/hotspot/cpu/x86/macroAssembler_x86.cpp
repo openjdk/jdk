@@ -8954,7 +8954,7 @@ void MacroAssembler::convert_f2l(Register dst, XMMRegister src) {
 void MacroAssembler::round_float(Register dst, XMMRegister src, Register rtmp, Register rcx) {
   // Following code is exactly mimicking the functionality of java.lang.Math.round(float) method.
   Label L_special_case, L_block1, L_exit;
-  movl(rtmp, 0x7F800000);
+  movl(rtmp, 0x7f800000);
   movdl(dst, src);
   andl(dst, rtmp);
   sarl(dst, 0x17);

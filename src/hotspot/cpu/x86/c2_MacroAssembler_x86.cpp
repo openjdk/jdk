@@ -4142,8 +4142,7 @@ void C2_MacroAssembler::vector_round_double_evex(XMMRegister dst, XMMRegister sr
   mov64(scratch, 4602678819172646912L);
   evpbroadcastq(xtmp1, scratch, vec_enc);
   vaddpd(xtmp1, src , xtmp1, vec_enc);
-  vrndscalepd(dst, xtmp1, 0x4, vec_enc);
-  evcvtpd2qq(dst, dst, vec_enc);
+  evcvtpd2qq(dst, xtmp1, vec_enc);
   vector_cast_double_special_cases_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, scratch, double_sign_flip, vec_enc);
   ldmxcsr(mxcsr_std);
 }
@@ -4158,8 +4157,7 @@ void C2_MacroAssembler::vector_round_float_evex(XMMRegister dst, XMMRegister src
   movl(scratch, 1056964608);
   evpbroadcastd(xtmp1, scratch, vec_enc);
   vaddps(xtmp1, src , xtmp1, vec_enc);
-  vrndscaleps(dst, xtmp1, 0x4, vec_enc);
-  vcvtps2dq(dst, dst, vec_enc);
+  vcvtps2dq(dst, xtmp1, vec_enc);
   vector_cast_float_special_cases_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, scratch, float_sign_flip, vec_enc);
   ldmxcsr(mxcsr_std);
 }
@@ -4175,8 +4173,7 @@ void C2_MacroAssembler::vector_round_float_avx(XMMRegister dst, XMMRegister src,
   movq(xtmp1, scratch);
   vpbroadcastd(xtmp1, xtmp1, vec_enc);
   vaddps(xtmp1, src , xtmp1, vec_enc);
-  vroundps(dst, xtmp1, 0x4, vec_enc);
-  vcvtps2dq(dst, dst, vec_enc);
+  vcvtps2dq(dst, xtmp1, vec_enc);
   vector_cast_float_special_cases_avx(dst, src, xtmp1, xtmp2, xtmp3, xtmp4, scratch, float_sign_flip, vec_enc);
   ldmxcsr(mxcsr_std);
 }
