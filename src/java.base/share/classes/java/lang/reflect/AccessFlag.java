@@ -68,6 +68,8 @@ import static java.lang.annotation.ElementType.*;
  *
  * @see java.lang.reflect.Modifier
  * @see java.lang.module.ModuleDescriptor.Modifier
+ * @see java.lang.module.ModuleDescriptor.Exports.Modifier
+ * @see java.lang.module.ModuleDescriptor.Opens.Modifier
  * @see java.lang.module.ModuleDescriptor.Requires.Modifier
  * @see java.compiler/javax.lang.model.element.Modifier
  * @since 19
@@ -236,17 +238,9 @@ public enum AccessFlag {
     private int mask;
     private boolean sourceModifier;
 
-    // For now, reuse ElementType rather than defining a separate
-    // type.
     // Intentionally using Set rather than EnumSet since EnumSet is
     // mutable.
     private Set<Location> locations;
-
-    private AccessFlag(Set<Location> locations) {
-        this.mask = 0x0;
-        this.sourceModifier = false;
-        this.locations = locations;
-    }
 
     private AccessFlag(int mask, boolean sourceModifier, Set<Location> locations) {
         this.mask = mask;
