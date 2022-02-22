@@ -133,7 +133,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       BUILD_CC_DISABLE_WARNING_PREFIX="-wd"
       CFLAGS_WARNINGS_ARE_ERRORS="-WX"
 
-      WARNINGS_ENABLE_ALL="-W3 -Zc:strictStrings"
+      WARNINGS_ENABLE_ALL="-W3"
       DISABLED_WARNINGS="4800"
       if test "x$TOOLCHAIN_VERSION" = x2017; then
         # VS2017 incorrectly triggers this warning for constexpr
@@ -496,8 +496,8 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     TOOLCHAIN_CFLAGS_JVM="-qtbtable=full -qtune=balanced \
         -qalias=noansi -qstrict -qtls=default -qnortti -qnoeh -qignerrno -qstackprotect"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    TOOLCHAIN_CFLAGS_JVM="-nologo -MD -MP"
-    TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:wchar_t-"
+    TOOLCHAIN_CFLAGS_JVM="-nologo -MD -Zc:strictStrings -MP"
+    TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:strictStrings -Zc:wchar_t-"
   fi
 
   # CFLAGS C language level for JDK sources (hotspot only uses C++)
