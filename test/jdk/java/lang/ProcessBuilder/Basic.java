@@ -78,6 +78,21 @@ public class Basic {
 
     /* used for AIX only */
     static final String libpath = System.getenv("LIBPATH");
+    static final String expectedLibpath;
+    static {
+        String libpathString = libpath;
+        if (AIX.is()) {
+            String nativepath = System.getProperty("test.nativepath");
+            if (nativepath != null) {
+                libpathString = Arrays.asList(
+                    libpathString.split(File.pathSeparator))
+                    .stream()
+                    .filter(s -> !s.equals(nativepath))
+                    .collect(Collectors.joining(File.pathSeparator));
+            }
+        }
+        expectedLibpath = libpathString;
+    }
 
     /* Used for regex String matching for long error messages */
     static final String PERMISSION_DENIED_ERROR_MSG = "(Permission denied|error=13)";
@@ -1305,18 +1320,6 @@ public class Basic {
 
     }
 
-    private static String removeTestNativepathString(String libpathString) {
-        String nativepath = System.getProperty("test.nativepath");
-        if (nativepath != null) {
-            libpathString = Arrays.asList(
-                libpathString.split(File.pathSeparator))
-                .stream()
-                .filter(s -> !s.equals(nativepath))
-                .collect(Collectors.joining(File.pathSeparator));
-        }
-        return libpathString;
-    }
-
     @SuppressWarnings("removal")
     private static void realMain(String[] args) throws Throwable {
         if (Windows.is())
@@ -1888,13 +1891,13 @@ public class Basic {
             }
             Process p = Runtime.getRuntime().exec(cmdp, envp);
             String expected = Windows.is() ? "=C:=\\,=ExitValue=3,SystemRoot="+systemRoot+"," : "=C:=\\,";
-            expected = AIX.is() ? expected + "LIBPATH="+removeTestNativepathString(libpath)+",": expected;
             String commandOutput = commandOutput(p);
             if (MacOSX.is()) {
                 commandOutput = removeMacExpectedVars(commandOutput);
             }
             if (AIX.is()) {
                 commandOutput = removeAixExpectedVars(commandOutput);
+                expected = expected + "LIBPATH="+expectedLibpath+",";
             }
             equal(commandOutput, expected);
             if (Windows.is()) {
@@ -1953,8 +1956,7 @@ public class Basic {
             check(commandOutput.equals(Windows.is()
                     ? "LC_ALL=C,SystemRoot="+systemRoot+","
                     : AIX.is()
-                            ? "LC_ALL=C,LIBPATH="+
-                               removeTestNativepathString(libpath)+","
+                            ? "LC_ALL=C,LIBPATH="+expectedLibpath+","
                             : "LC_ALL=C,"),
                   "Incorrect handling of envstrings containing NULs");
         } catch (Throwable t) { unexpected(t); }
