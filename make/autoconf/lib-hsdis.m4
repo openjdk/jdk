@@ -283,6 +283,10 @@ AC_DEFUN_ONCE([LIB_SETUP_HSDIS],
   AC_ARG_WITH([hsdis], [AS_HELP_STRING([--with-hsdis],
       [what hsdis backend to use ('none', 'capstone', 'llvm', 'binutils') @<:@none@:>@])])
 
+  UTIL_ARG_ENABLE(NAME: hsdis-bundling, DEFAULT: false,
+    RESULT: ENABLE_HSDIS_BUNDLING,
+    DESC: [enable bundling of hsdis to allow HotSpot disassembly out-of-the-box])
+
   AC_MSG_CHECKING([what hsdis backend to use])
 
   if test "x$with_hsdis" = xyes; then
@@ -314,4 +318,19 @@ AC_DEFUN_ONCE([LIB_SETUP_HSDIS],
   AC_SUBST(HSDIS_CFLAGS)
   AC_SUBST(HSDIS_LDFLAGS)
   AC_SUBST(HSDIS_LIBS)
+
+  AC_MSG_CHECKING([if hsdis should be bundled])
+  if test "x$ENABLE_HSDIS_BUNDLING" = "xtrue"; then
+    if test "x$HSDIS_BACKEND" = xnone; then
+      AC_MSG_RESULT([no, backend missing])
+      AC_MSG_ERROR([hsdis-bundling requires a hsdis backend. Please set --with-hsdis=<backend>]);
+    fi
+    AC_MSG_RESULT([yes])
+    if test "x$HSDIS_BACKEND" = xbinutils; then
+      AC_MSG_WARN([The resulting build might not be redistributable. Seek legal advice before distributing.])
+    fi
+  else
+    AC_MSG_RESULT([no])
+  fi
+  AC_SUBST(ENABLE_HSDIS_BUNDLING)
 ])
