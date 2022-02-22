@@ -85,12 +85,12 @@ public class LastVisibleRow {
         }
     }
 
-    /***
+    /*
      *
      * Get clickable screen point for particular row and column of a table
-     * @param row   Row Number
-     * @param column    Column Number
-     * @return Point
+     * param row   Row Number
+     * param column    Column Number
+     * return Point
      */
     private static Point getCellClickPoint(final int row, final int column) {
         Point result;
@@ -128,7 +128,7 @@ public class LastVisibleRow {
 
     }
 
-    /***
+    /*
      *
      * mouseEvents for last row click
      */
@@ -141,11 +141,11 @@ public class LastVisibleRow {
         testRobot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         testRobot.delay(50);
     }
-    /***
+    /*
      *
      * getMousePosition Actions for last row click
-     * @returns Point
-     * @throws Exception
+     * returns Point
+     * throws Exception
      */
 
     private static Point getMousePosition() throws Exception {
@@ -159,10 +159,10 @@ public class LastVisibleRow {
         return clickPoint[0];
     }
 
-    /***
+    /*
      *
      * Clears the selected table row
-     * @throws Exception
+     * throws Exception
      */
 
     private static void clearSelect() throws Exception {
@@ -175,10 +175,10 @@ public class LastVisibleRow {
         });
     }
 
-    /****
+    /*
      * getCaptureRect Method - To Compute the Rectangle for
      * Screen Capturing the Last Row for comparison
-     * @return Rectangle
+     * return Rectangle
      */
 
     private static Rectangle getCaptureRect() throws InterruptedException, InvocationTargetException {
@@ -196,11 +196,11 @@ public class LastVisibleRow {
         return captureRect[0];
     }
 
-    /***
+    /*
      * Compare method - to compare two images.
-     * @param bufferedImage1    Buffered Image Before click
-     * @param bufferedImage2    Buffered Image After click
-     * @return Boolean
+     * param bufferedImage1    Buffered Image Before click
+     * param bufferedImage2    Buffered Image After click
+     * return Boolean
      */
 
     static Boolean compare(BufferedImage bufferedImage1, BufferedImage bufferedImage2) {
