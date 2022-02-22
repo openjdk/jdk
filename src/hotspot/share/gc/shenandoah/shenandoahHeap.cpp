@@ -2111,10 +2111,18 @@ bool ShenandoahHeap::try_cancel_gc() {
     assert(prev == NOT_CANCELLED, "must be NOT_CANCELLED");
     Thread* thread = Thread::current();
     if (thread->is_Java_thread()) {
-      // We need to provide a safepoint here, otherwise we might
-      // spin forever if a SP is pending.
-      ThreadBlockInVM sp(JavaThread::cast(thread));
-      SpinPause();
+      JavaThread* java_thread = JavaThread::cast(thread);
+      if (java_thread->thread_state() == _thread_in_Java) {
+        // ThreadBlockInVM requires thread state to be _thread_in_vm.  If we are in Java, safely transition thread state.
+        ThreadInVMfromJava transition(java_thread);
+        // We need to provide a safepoint here.  Otherwise we might spin forever if a SP is pending.
+        ThreadBlockInVM sp(JavaThread::cast(thread));
+        SpinPause();
+      } else {
+        // We need to provide a safepoint here.  Otherwise we might spin forever if a SP is pending.
+        ThreadBlockInVM sp(JavaThread::cast(thread));
+        SpinPause();
+      }
     }
   }
 }
