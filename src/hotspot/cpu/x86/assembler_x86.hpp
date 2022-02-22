@@ -1367,6 +1367,7 @@ private:
 
 #ifdef _LP64
   void idivq(Register src);
+  void divq(Register src); // Unsigned division
 #endif
 
   void imull(Register src);

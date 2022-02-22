@@ -8580,6 +8580,68 @@ instruct divL_rReg(rax_RegL rax, rdx_RegL rdx, no_rax_rdx_RegL div,
   ins_pipe(ialu_reg_reg_alu0);
 %}
 
+instruct udivI_rReg(rax_RegI rax, no_rax_rdx_RegI div, rFlagsReg cr, rdx_RegI rdx)
+%{
+  match(Set rax (UDivI rax div));
+  effect(KILL rdx, KILL cr);
+
+  ins_cost(300);
+  format %{ "udivl $rax,$rax,$div\t# UDivI\n" %}
+  ins_encode %{
+    Label done;
+    Label neg_divisor_fastpath;
+    Register divisor = $div$$Register;
+    Register tmp_rdx = as_Register(RDX_enc); // $rdx$$Register
+    Register rax = as_Register(RAX_enc); // same as above
+    __ cmpl(divisor, 0);
+    __ jccb(Assembler::less, neg_divisor_fastpath);
+    __ xorl(tmp_rdx, tmp_rdx);
+    __ divl(divisor);
+    __ jmp(done);
+    __ bind(neg_divisor_fastpath); 
+    // Fastpath for divisor < 0: 
+    // quotient = (dividend & ~(dividend - divisor)) >>> (Integer.SIZE - 1)
+    // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.divideUnsigned()
+    __ movl(tmp_rdx, rax);
+    __ subl(tmp_rdx, divisor);
+    __ andnl(rax, tmp_rdx, rax);
+    __ shrl(rax, 31);
+    __ bind(done);
+  %}
+  ins_pipe(ialu_reg_reg_alu0);
+%}
+
+instruct udivL_rReg(rax_RegL rax, no_rax_rdx_RegL div, rFlagsReg cr, rdx_RegL rdx)
+%{
+  match(Set rax (UDivL rax div));
+  effect(KILL rdx, KILL cr);
+
+  ins_cost(300);
+  format %{ "udivq $rax,$rax,$div\t# UDivL\n" %}
+  ins_encode %{
+    Label done;
+    Label neg_divisor_fastpath;
+    Register divisor = $div$$Register;
+    Register tmp_rdx = as_Register(RDX_enc);
+    Register rax = as_Register(RAX_enc);
+    __ cmpq(divisor, 0);
+    __ jccb(Assembler::less, neg_divisor_fastpath);
+    __ xorl(tmp_rdx, tmp_rdx);
+    __ divq(divisor);
+    __ jmp(done);
+    __ bind(neg_divisor_fastpath);
+    // Fastpath for divisor < 0: 
+    // quotient = (dividend & ~(dividend - divisor)) >>> (Long.SIZE - 1)
+    // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.divideUnsigned()
+    __ movq(tmp_rdx, rax);
+    __ subq(tmp_rdx, divisor);
+    __ andnq(rax, tmp_rdx, rax);
+    __ shrq(rax, 63);
+    __ bind(done);
+  %}
+  ins_pipe(ialu_reg_reg_alu0);
+%}
+
 // Integer DIVMOD with Register, both quotient and mod results
 instruct divModI_rReg_divmod(rax_RegI rax, rdx_RegI rdx, no_rax_rdx_RegI div,
                              rFlagsReg cr)
@@ -8587,7 +8649,7 @@ instruct divModI_rReg_divmod(rax_RegI rax, rdx_RegI rdx, no_rax_rdx_RegI div,
   match(DivModI rax div);
   effect(KILL cr);
 
-  ins_cost(30*100+10*100); // XXX
+  ins_cost(30*100+10*100);
   format %{ "cmpl    rax, 0x80000000\t# idiv\n\t"
             "jne,s   normal\n\t"
             "xorl    rdx, rdx\n\t"
@@ -8620,6 +8682,93 @@ instruct divModL_rReg_divmod(rax_RegL rax, rdx_RegL rdx, no_rax_rdx_RegL div,
   ins_encode(cdqq_enc(div));
   ins_pipe(pipe_slow);
 %}
+
+// Unsigned integer DIVMOD with Register, both quotient and mod results
+instruct udivModI_rReg_divmod(rax_RegI rax, no_rax_rdx_RegI div, no_rax_rdx_RegI tmp, 
+              rFlagsReg cr, rdx_RegI rdx)
+%{
+  match(UDivModI rax div);
+  effect(TEMP tmp, KILL cr);
+
+  ins_cost(300);
+  format %{ "udivl $rax,$rax,$div\t# begin UDivModI\n\t"
+            "umodl $rdx,$rax,$div\t! using $tmp as TEMP # end UDivModI\n"
+          %}
+  ins_encode %{
+    Label done;
+    Label neg_divisor_fastpath;
+    Register divisor = $div$$Register;
+    Register tmp = $tmp$$Register;
+    Register rdx = as_Register(RDX_enc);
+    Register rax = as_Register(RAX_enc);
+   
+    __ cmpl(divisor, 0);
+    __ jccb(Assembler::less, neg_divisor_fastpath);
+    __ xorl(rdx, rdx);
+    __ divl(divisor);
+    __ jmp(done);
+    __ bind(neg_divisor_fastpath);
+    // Fastpath for divisor < 0: 
+    // quotient = (dividend & ~(dividend - divisor)) >>> (Integer.SIZE - 1)
+    // remainder = dividend - (((dividend & ~(dividend - divisor)) >> (Integer.SIZE - 1)) & divisor)
+    // See Hacker's Delight (2nd ed), section 9.3 which is implemented in 
+    // java.lang.Long.divideUnsigned() and java.lang.Long.remainderUnsigned()
+    __ movl(rdx, rax);
+    __ subl(rax, divisor);
+    __ andnl(rax, rax, rdx);
+    __ movl(tmp, rax);
+    __ shrl(rax, 31); // quotient
+    __ sarl(tmp, 31);
+    __ andl(tmp, divisor);
+    __ subl(rdx, tmp); // remainder
+    __ bind(done);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Unsigned long DIVMOD with Register, both quotient and mod results
+instruct udivModL_rReg_divmod(rax_RegL rax, no_rax_rdx_RegL div, no_rax_rdx_RegL tmp, 
+                              rFlagsReg cr, rdx_RegL rdx)
+%{
+  match(UDivModL rax div);
+  effect(TEMP tmp, KILL cr);
+
+  ins_cost(300);
+  format %{ "udivq $rax,$rax,$div\t# begin UDivModL\n\t"
+            "umodq $rdx,$rax,$div\t! using $tmp as TEMP # end UDivModL\n"
+          %}
+  ins_encode %{
+    Label done;
+    Label neg_divisor_fastpath;
+    Register divisor = $div$$Register;
+    Register tmp = $tmp$$Register;
+    Register rdx = as_Register(RDX_enc);
+    Register rax = as_Register(RAX_enc);
+   
+    __ cmpq(divisor, 0);
+    __ jccb(Assembler::less, neg_divisor_fastpath);
+    __ xorq(rdx, rdx);
+    __ divq(divisor);
+    __ jmp(done);
+    __ bind(neg_divisor_fastpath);
+    // Fastpath for divisor < 0: 
+    // quotient = (dividend & ~(dividend - divisor)) >>> (Long.SIZE - 1)
+    // remainder = dividend - (((dividend & ~(dividend - divisor)) >> (Long.SIZE - 1)) & divisor)
+    // See Hacker's Delight (2nd ed), section 9.3 which is implemented in 
+    // java.lang.Long.divideUnsigned() and java.lang.Long.remainderUnsigned()
+    __ movq(rdx, rax);
+    __ subq(rax, divisor);
+    __ andnq(rax, rax, rdx);
+    __ movq(tmp, rax);
+    __ shrq(rax, 63); // quotient
+    __ sarq(tmp, 63);
+    __ andq(tmp, divisor);
+    __ subq(rdx, tmp); // remainder
+    __ bind(done);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 
 //----------- DivL-By-Constant-Expansions--------------------------------------
 // DivI cases are handled by the compiler
@@ -8721,6 +8870,74 @@ instruct modL_rReg(rdx_RegL rdx, rax_RegL rax, no_rax_rdx_RegL div,
             "idivq   $div\n"
     "done:"        %}
   ins_encode(cdqq_enc(div));
+  ins_pipe(ialu_reg_reg_alu0);
+%}
+
+instruct umodI_rReg(rdx_RegI rdx, no_rax_rdx_RegI div, rFlagsReg cr, rax_RegI rax)
+%{
+  match(Set rdx (UModI rax div));
+  effect(KILL rax, KILL cr);
+
+  ins_cost(300); 
+  format %{ "umodl $rdx,$rax,$div\t# UModI\n" %}
+  ins_encode %{
+    Label done;
+    Label neg_divisor_fastpath;
+    Register divisor = $div$$Register;
+    Register rdx = as_Register(RDX_enc);
+    Register tmp_rax = as_Register(RAX_enc);
+   
+    __ cmpl(divisor, 0);
+    __ jccb(Assembler::less, neg_divisor_fastpath);
+    __ xorl(rdx, rdx);
+    __ divl(divisor);
+    __ jmp(done);
+    __ bind(neg_divisor_fastpath);
+    // Fastpath when divisor < 0: 
+    // remainder = dividend - (((dividend & ~(dividend - divisor)) >> (Integer.SIZE - 1)) & divisor)
+    // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.remainderUnsigned()
+    __ movl(rdx, tmp_rax);
+    __ subl(tmp_rax, divisor);
+    __ andnl(tmp_rax, tmp_rax, rdx);
+    __ sarl(tmp_rax, 31);
+    __ andl(tmp_rax, divisor);
+    __ subl(rdx, tmp_rax);
+    __ bind(done);
+  %}
+  ins_pipe(ialu_reg_reg_alu0);
+%}
+
+instruct umodL_rReg(rdx_RegL rdx, no_rax_rdx_RegL div, rFlagsReg cr, rax_RegL rax)
+%{
+  match(Set rdx (UModL rax div));
+  effect(KILL rax, KILL cr);
+
+  ins_cost(300);
+  format %{ "umodq $rdx,$rax,$div\t# UModL\n" %}
+  ins_encode %{
+    Label done;
+    Label neg_divisor_fastpath;
+    Register divisor = $div$$Register;
+    Register rdx = as_Register(RDX_enc);
+    Register tmp_rax = as_Register(RAX_enc);
+   
+    __ cmpq(divisor, 0);
+    __ jccb(Assembler::less, neg_divisor_fastpath);
+    __ xorq(rdx, rdx);
+    __ divq(divisor);
+    __ jmp(done);
+    __ bind(neg_divisor_fastpath);
+    // Fastpath when divisor < 0: 
+    // remainder = dividend - (((dividend & ~(dividend - divisor)) >> (Long.SIZE - 1)) & divisor)
+    // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.remainderUnsigned()
+    __ movq(rdx, tmp_rax);
+    __ subq(tmp_rax, divisor);
+    __ andnq(tmp_rax, tmp_rax, rdx);
+    __ sarq(tmp_rax, 63);
+    __ andq(tmp_rax, divisor);
+    __ subq(rdx, tmp_rax);
+    __ bind(done);
+  %}
   ins_pipe(ialu_reg_reg_alu0);
 %}
 

@@ -1663,6 +1663,7 @@ public final class Long extends Number
      * @see #remainderUnsigned
      * @since 1.8
      */
+    @IntrinsicCandidate
     public static long divideUnsigned(long dividend, long divisor) {
         /* See Hacker's Delight (2nd ed), section 9.3 */
         if (divisor >= 0) {
@@ -1685,6 +1686,7 @@ public final class Long extends Number
      * @see #divideUnsigned
      * @since 1.8
      */
+    @IntrinsicCandidate
     public static long remainderUnsigned(long dividend, long divisor) {
         /* See Hacker's Delight (2nd ed), section 9.3 */
         if (divisor >= 0) {

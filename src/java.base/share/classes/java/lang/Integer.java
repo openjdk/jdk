@@ -1542,6 +1542,7 @@ public final class Integer extends Number
      * @see #remainderUnsigned
      * @since 1.8
      */
+    @IntrinsicCandidate
     public static int divideUnsigned(int dividend, int divisor) {
         // In lieu of tricky code, for now just use long arithmetic.
         return (int)(toUnsignedLong(dividend) / toUnsignedLong(divisor));
@@ -1559,6 +1560,7 @@ public final class Integer extends Number
      * @see #divideUnsigned
      * @since 1.8
      */
+    @IntrinsicCandidate
     public static int remainderUnsigned(int dividend, int divisor) {
         // In lieu of tricky code, for now just use long arithmetic.
         return (int)(toUnsignedLong(dividend) % toUnsignedLong(divisor));
