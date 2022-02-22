@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  *      5026830 5023243 5070673 4052517 4811767 6192449 6397034 6413313
  *      6464154 6523983 6206031 4960438 6631352 6631966 6850957 6850958
  *      4947220 7018606 7034570 4244896 5049299 8003488 8054494 8058464
- *      8067796 8224905 8263729 8265173 8272600 8231297
+ *      8067796 8224905 8263729 8265173 8272600 8231297 8282219
  * @key intermittent
  * @summary Basic tests for Process and Environment Variable code
  * @modules java.base/java.lang:open
@@ -60,6 +60,7 @@ import java.util.concurrent.TimeUnit;
 import java.security.*;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 import static java.lang.System.getenv;
 import static java.lang.System.out;
 import static java.lang.Boolean.TRUE;
@@ -1304,6 +1305,18 @@ public class Basic {
 
     }
 
+    private static String removeTestNativepathString(String libpathString) {
+        String nativepath = System.getProperty("test.nativepath");
+        if (nativepath != null) {
+            libpathString = Arrays.asList(
+                libpathString.split(File.pathSeparator))
+                .stream()
+                .filter(s -> !s.equals(nativepath))
+                .collect(Collectors.joining(File.pathSeparator));
+        }
+        return libpathString;
+    }
+
     @SuppressWarnings("removal")
     private static void realMain(String[] args) throws Throwable {
         if (Windows.is())
@@ -1875,7 +1888,7 @@ public class Basic {
             }
             Process p = Runtime.getRuntime().exec(cmdp, envp);
             String expected = Windows.is() ? "=C:=\\,=ExitValue=3,SystemRoot="+systemRoot+"," : "=C:=\\,";
-            expected = AIX.is() ? expected + "LIBPATH="+libpath+",": expected;
+            expected = AIX.is() ? expected + "LIBPATH="+removeTestNativepathString(libpath)+",": expected;
             String commandOutput = commandOutput(p);
             if (MacOSX.is()) {
                 commandOutput = removeMacExpectedVars(commandOutput);
@@ -1940,7 +1953,8 @@ public class Basic {
             check(commandOutput.equals(Windows.is()
                     ? "LC_ALL=C,SystemRoot="+systemRoot+","
                     : AIX.is()
-                            ? "LC_ALL=C,LIBPATH="+libpath+","
+                            ? "LC_ALL=C,LIBPATH="+
+                               removeTestNativepathString(libpath)+","
                             : "LC_ALL=C,"),
                   "Incorrect handling of envstrings containing NULs");
         } catch (Throwable t) { unexpected(t); }
