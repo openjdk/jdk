@@ -168,7 +168,7 @@ public class HtmlTree extends Content {
      * Adds additional content for the HTML element.
      *
      * @implSpec In order to facilitate creation of succinct output this method
-     * silently drops empty content as determined by {@link #isEmpty()}.
+     * silently drops discardable content as determined by {@link #isDiscardable()}.
      * Use {@link #addUnchecked(Content)} to add content unconditionally.
      *
      * @param content the content
@@ -178,7 +178,7 @@ public class HtmlTree extends Content {
     public HtmlTree add(Content content) {
         if (content instanceof ContentBuilder cb) {
             cb.contents.forEach(this::add);
-        } else if (!content.isEmpty()) {
+        } else if (!content.isDiscardable()) {
             // quietly avoid adding empty or invalid nodes
             if (this.content.isEmpty())
                 this.content = new ArrayList<>();
@@ -188,7 +188,7 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Adds content to this HTML tree without checking for emptiness.
+     * Adds content to this HTML tree without checking whether it is discardable.
      *
      * @param content the content to add
      * @return this HTML tree
@@ -978,6 +978,11 @@ public class HtmlTree extends Content {
                 .addAll(items, mapper);
     }
 
+    @Override
+    public boolean isEmpty() {
+        return (!hasContent() && !hasAttrs());
+    }
+
     /**
      * Returns true if the HTML tree has content.
      *
@@ -1007,17 +1012,14 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Returns {@code true} if the HTML tree is empty.
+     * Returns {@code true} if the HTML tree does not affect the output and can be discarded.
+     * This implementation considers non-void elements without content as discardable, with the
+     * exception of {@code SCRIPT} and {@code A} which can sometimes be used without content.
      *
-     * @implSpec This method always returns {@code false} for void elements (which are not
-     * expected to have content) as well as elements that may be used without content, such
-     * as the {@code script} or {@code a} elements. Other elements are considered empty
-     * if they do not contain any content.
-     *
-     * @return true if the HTML tree is empty
+     * @return true if the HTML tree can be discarded without affecting the output
      */
     @Override
-    public boolean isEmpty() {
+    public boolean isDiscardable() {
         return !isVoid()
             && !hasContent()
             && tagName != TagName.SCRIPT

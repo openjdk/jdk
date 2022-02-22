@@ -128,6 +128,16 @@ public abstract class Content {
     public abstract boolean isEmpty();
 
     /**
+     * Returns true if this content does not affect the output and can be discarded.
+     * The default implementation considers empty content as discardable.
+     *
+     * @return true if this content can be discarded without affecting the output
+     */
+    public boolean isDiscardable() {
+        return isEmpty();
+    }
+
+    /**
      * Return the number of characters of plain text content in this object
      * (optional operation.)
      * @return the number of characters of plain text content in this
