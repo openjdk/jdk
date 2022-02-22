@@ -373,7 +373,6 @@ public final class ChunkParser {
                         Object resolved = lookup.getPreviousResolved(key);
                         if (resolved == null) {
                             Object v = parser.parse(input);
-                            resolved = v;
                             logConstant(key, v, false);
                             lookup.getLatestPool().put(key, v);
                         } else {
