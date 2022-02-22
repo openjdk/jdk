@@ -135,7 +135,7 @@ public class WindowIconUpdateOnDPIChangingTest {
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         g.setColor(Color.WHITE);
         g.fillRect(0, 0, size, size);
-        g.setFont(new Font("dialog", Font.BOLD, 12));
+        g.setFont(new Font("Dialog", Font.BOLD, 12));
         g.setColor(Color.BLACK);
 
         TextLayout layout = new TextLayout(String.valueOf(size), g.getFont(), g.getFontRenderContext());
