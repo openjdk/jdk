@@ -63,7 +63,7 @@ public class IntegerDivMod {
             if (divisorType.equals("positive")) divisor = Math.abs(divisor);
             else if (divisorType.equals("negative")) divisor = -Math.abs(divisor);
             divisors[i] = divisor;
-        }  
+        }
     }
 
     @Benchmark

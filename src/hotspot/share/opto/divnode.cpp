@@ -1354,7 +1354,7 @@ const Type* ModDNode::Value(PhaseGVN* phase) const {
   const Type* UModLNode::Value(PhaseGVN* phase) const {
     return TypeLong::LONG;
   }
-  
+
   Node* UModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return NULL;
   }

@@ -3516,7 +3516,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
           UDivModLNode* divmod = UDivModLNode::make(n);
           d->subsume_by(divmod->div_proj(), this);
           n->subsume_by(divmod->mod_proj(), this);
-        } 
+        }
       }
     }
     break;
