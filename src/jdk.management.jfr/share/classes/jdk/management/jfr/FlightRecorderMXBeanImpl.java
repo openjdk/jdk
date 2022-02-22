@@ -141,13 +141,13 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
     }
 
     @Override
-    public long openStream(long id, Map<String, String> streamOptions) throws IOException {
+    public long openStream(long id, Map<String, String> options) throws IOException {
         MBeanUtils.checkControl();
         if (!FlightRecorder.isInitialized()) {
             throw new IllegalArgumentException("No recording available with id " + id);
         }
         // Make local copy to prevent concurrent modification
-        Map<String, String> s = streamOptions == null ? new HashMap<>() : new HashMap<>(streamOptions);
+        Map<String, String> s = options == null ? new HashMap<>() : new HashMap<>(options);
         Instant starttime = MBeanUtils.parseTimestamp(s.get("startTime"), Instant.MIN);
         Instant endtime = MBeanUtils.parseTimestamp(s.get("endTime"), Instant.MAX);
         int blockSize = MBeanUtils.parseBlockSize(s.get("blockSize"), StreamManager.DEFAULT_BLOCK_SIZE);
