@@ -1865,17 +1865,16 @@ public class Basic {
             List<String> childArgs = new ArrayList<String>(javaChildArgs);
             childArgs.add("System.getenv()");
             String[] cmdp = childArgs.toArray(new String[childArgs.size()]);
-            String[] envp;
-            String[] envpWin = {"=C:=\\", "=ExitValue=3", "SystemRoot="+systemRoot};
-            String[] envpOth = {"=ExitValue=3", "=C:=\\"};
-            if (Windows.is()) {
-                envp = envpWin;
-            } else {
-                envp = envpOth;
-            }
+            String[] envp = {
+                "=ExitValue=3",
+                "=C:=\\",
+                (AIX.is() ? "LIBPATH="+libpath : ""),
+                (Windows.is() ? "SystemRoot="+systemRoot : "")
+            };
             Process p = Runtime.getRuntime().exec(cmdp, envp);
-            String expected = Windows.is() ? "=C:=\\,=ExitValue=3,SystemRoot="+systemRoot+"," : "=C:=\\,";
-            expected = AIX.is() ? expected + "LIBPATH="+libpath+",": expected;
+            String expected = "=C:=\\," +
+                (AIX.is() ? "LIBPATH="+libpath+"," : "") +
+                (Windows.is() ? "=ExitValue=3,SystemRoot="+systemRoot+"," : "");
             String commandOutput = commandOutput(p);
             if (MacOSX.is()) {
                 commandOutput = removeMacExpectedVars(commandOutput);
@@ -1911,16 +1910,12 @@ public class Basic {
             List<String> childArgs = new ArrayList<String>(javaChildArgs);
             childArgs.add("System.getenv()");
             String[] cmdp = childArgs.toArray(new String[childArgs.size()]);
-            String[] envpWin = {"SystemRoot="+systemRoot, "LC_ALL=C\u0000\u0000", // Yuck!
-                             "FO\u0000=B\u0000R"};
-            String[] envpOth = {"LC_ALL=C\u0000\u0000", // Yuck!
-                             "FO\u0000=B\u0000R"};
-            String[] envp;
-            if (Windows.is()) {
-                envp = envpWin;
-            } else {
-                envp = envpOth;
-            }
+            String[] envp = {
+                "LC_ALL=C\u0000\u0000", // Yuck!
+                "FO\u0000=B\u0000R",
+                (AIX.is() ? "LIBPATH="+libpath : ""),
+                (Windows.is() ? "SystemRoot="+systemRoot : "")
+            };
             System.out.println ("cmdp");
             for (int i=0; i<cmdp.length; i++) {
                 System.out.printf ("cmdp %d: %s\n", i, cmdp[i]);
@@ -1937,12 +1932,10 @@ public class Basic {
             if (AIX.is()) {
                 commandOutput = removeAixExpectedVars(commandOutput);
             }
-            check(commandOutput.equals(Windows.is()
-                    ? "LC_ALL=C,SystemRoot="+systemRoot+","
-                    : AIX.is()
-                            ? "LC_ALL=C,LIBPATH="+libpath+","
-                            : "LC_ALL=C,"),
-                  "Incorrect handling of envstrings containing NULs");
+            String expected = "LC_ALL=C," +
+                (AIX.is() ? "LIBPATH="+libpath+"," : "") +
+                (Windows.is() ? "SystemRoot="+systemRoot+"," : "");
+            check(commandOutput.equals(expected), "Incorrect handling of envstrings containing NULs");
         } catch (Throwable t) { unexpected(t); }
 
         //----------------------------------------------------------------
