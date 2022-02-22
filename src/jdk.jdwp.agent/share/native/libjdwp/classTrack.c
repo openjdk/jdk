@@ -88,7 +88,7 @@ classTrack_processUnloads(JNIEnv *env)
     /* Allocate new bag outside classTrackLock lock to avoid deadlock.
      *
      * Note: jvmtiAllocate/jvmtiDeallocate() may be blocked by ongoing safepoints.
-     * It is dangerous to call them (via bagCreateBag/bagDestroyBag())while holding monitor(s),
+     * It is dangerous to call them (via bagCreateBag/bagDestroyBag()) while holding monitor(s),
      * because jvmti may post events, e.g. JVMTI_EVENT_OBJECT_FREE at safepoints and event processing
      * code may acquire the same monitor(s), e.g. classTrackLock in cbTrackingObjectFree(),
      * which can lead to deadlock.
