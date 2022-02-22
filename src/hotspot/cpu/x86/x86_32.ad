@@ -7827,7 +7827,7 @@ instruct divI_eReg(eAXRegI rax, eDXRegI rdx, eCXRegI div, eFlagsReg cr) %{
 // Divide Register Long
 instruct divL_eReg( eADXRegL dst, eRegL src1, eRegL src2, eFlagsReg cr, eCXRegI cx, eBXRegI bx ) %{
   match(Set dst (DivL src1 src2));
-  effect( CALL );
+  effect(CALL);
   ins_cost(10000);
   format %{ "PUSH   $src1.hi\n\t"
             "PUSH   $src1.lo\n\t"
@@ -7875,7 +7875,7 @@ instruct modI_eReg(eDXRegI rdx, eAXRegI rax, eCXRegI div, eFlagsReg cr) %{
 // Remainder Register Long
 instruct modL_eReg( eADXRegL dst, eRegL src1, eRegL src2, eFlagsReg cr, eCXRegI cx, eBXRegI bx ) %{
   match(Set dst (ModL src1 src2));
-  effect( CALL );
+  effect(CALL);
   ins_cost(10000);
   format %{ "PUSH   $src1.hi\n\t"
             "PUSH   $src1.lo\n\t"
