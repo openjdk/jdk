@@ -773,7 +773,7 @@ void OptimizedEntryBlob::free(OptimizedEntryBlob* blob) {
 }
 
 void OptimizedEntryBlob::preserve_callee_argument_oops(frame fr, const RegisterMap* reg_map, OopClosure* f) {
-  // do nothing for now
+  ShouldNotReachHere(); // caller should never have to gc arguments
 }
 
 // Misc.
