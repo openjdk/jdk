@@ -8649,7 +8649,7 @@ instruct divModI_rReg_divmod(rax_RegI rax, rdx_RegI rdx, no_rax_rdx_RegI div,
   match(DivModI rax div);
   effect(KILL cr);
 
-  ins_cost(30*100+10*100);
+  ins_cost(30*100+10*100); // XXX
   format %{ "cmpl    rax, 0x80000000\t# idiv\n\t"
             "jne,s   normal\n\t"
             "xorl    rdx, rdx\n\t"
