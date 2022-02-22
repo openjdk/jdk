@@ -25,6 +25,7 @@ package compiler.lib.ir_framework.driver.irmatching.parser;
 
 import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
+import compiler.lib.ir_framework.shared.TestFormat;
 import compiler.lib.ir_framework.shared.TestFrameworkException;
 
 import java.io.IOException;
@@ -62,7 +63,9 @@ class HotSpotPidFileParser {
     public List<IRMethod> parseCompilations(String hotspotPidFileName) {
         try {
             processFileLines(hotspotPidFileName);
-            return testCompilationsMap.values().stream().map(TestMethod::createIRMethod).toList();
+            List<IRMethod> irMethods = testCompilationsMap.values().stream().map(TestMethod::createIRMethod).toList();
+            TestFormat.throwIfAnyFailures();
+            return irMethods;
         } catch (IOException e) {
             throw new TestFrameworkException("Error while reading " + hotspotPidFileName, e);
         } catch (FileCorruptedException e) {

@@ -62,10 +62,10 @@ public class TestMethod {
     /**
      * We might parse multiple C2 compilations of this method. Only keep the very last one by overriding the outputMap.
      */
-    public void setIdealOutput(String idealOutput, CompilePhase phase) {
-        String idealOutputWithHeader = "PrintIdeal" + getPhaseNameString(phase) + ":" + System.lineSeparator() + idealOutput;
-        compilationOutputMap.put(phase, idealOutputWithHeader);
-        if (phase == CompilePhase.PRINT_IDEAL) {
+    public void setIdealOutput(String idealOutput, CompilePhase compilePhase) {
+        String idealOutputWithHeader = "PrintIdeal" + getPhaseNameString(compilePhase) + ":" + System.lineSeparator() + idealOutput;
+        compilationOutputMap.put(compilePhase, idealOutputWithHeader);
+        if (compilePhase == CompilePhase.PRINT_IDEAL) {
             // Only need to set default output when parsing PrintIdeal output
             compilationOutputMap.put(CompilePhase.DEFAULT, idealOutputWithHeader);
         }

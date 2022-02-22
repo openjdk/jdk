@@ -80,7 +80,7 @@ public class IRMethod implements Matching {
 
     private String createCompleteOutput() {
         String idealOutputs = compilationOutputMap.entrySet().stream()
-                                                  .filter(e -> e.getKey() == CompilePhase.PRINT_OPTO_ASSEMBLY)
+                                                  .filter(e -> e.getKey() != CompilePhase.PRINT_OPTO_ASSEMBLY)
                                                   .map(Map.Entry::getValue)
                                                   .collect(Collectors.joining(System.lineSeparator() + System.lineSeparator()));
         String optoAssemblyOutput = compilationOutputMap.get(CompilePhase.PRINT_OPTO_ASSEMBLY);

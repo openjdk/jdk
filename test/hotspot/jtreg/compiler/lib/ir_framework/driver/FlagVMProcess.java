@@ -117,7 +117,7 @@ public class FlagVMProcess {
             throw new TestRunException("Failed to execute TestFramework flag VM", e);
         }
         testVMFlagsFile = FlagVM.TEST_VM_FLAGS_FILE_PREFIX + oa.pid()
-                          + FlagVM.TEST_VM_FLAGS_FILE_POSTFIX;
+                          + FlagVM.FILE_POSTFIX;
         checkFlagVMExitCode();
     }
 

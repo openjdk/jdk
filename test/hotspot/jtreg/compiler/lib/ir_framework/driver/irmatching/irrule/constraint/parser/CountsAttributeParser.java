@@ -54,7 +54,7 @@ public class CountsAttributeParser extends CheckAttributeParser<RawCountsConstra
                                                              countString, checkAttributeIterator.getCurrentConstraintIndex()));
     }
 
-    private String getCountString(String rawNodeString, CheckAttributeIterator checkAttributeIterator) {
+    private static String getCountString(String rawNodeString, CheckAttributeIterator checkAttributeIterator) {
         TestFormat.checkNoReport(checkAttributeIterator.hasConstraintsLeft(), "Missing count for node " + rawNodeString);
         return checkAttributeIterator.nextElement();
     }

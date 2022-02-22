@@ -30,60 +30,62 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public enum CompilePhase {
-    DEFAULT("PrintIdeal and PrintOptoAssembly", 0, OutputType.DEFAULT),
-    PRINT_IDEAL("print_ideal", 0), // TODO: change to PrintIdeal
-    PRINT_OPTO_ASSEMBLY("PrintOptoAssembly", 0, OutputType.OPTO_ASSEMBLY),
+    DEFAULT("PrintIdeal and PrintOptoAssembly", OutputType.DEFAULT),
+    PRINT_IDEAL("PrintIdeal"),
+    PRINT_OPTO_ASSEMBLY("PrintOptoAssembly", OutputType.OPTO_ASSEMBLY),
 
     // All available phases found in phasetype.hpp with the corresponding levels found throughout the C2 code
-    BEFORE_STRINGOPTS("Before StringOpts", 3),
-    AFTER_STRINGOPTS("After StringOpts", 3),
-    BEFORE_REMOVEUSELESS("Before RemoveUseless", 3),
-    AFTER_PARSING("After Parsing", 1),
-    ITER_GVN1("Iter GVN 1", 2),
-    EXPAND_VUNBOX("Expand VectorUnbox", 3),
-    SCALARIZE_VBOX("Scalarize VectorBox", 3),
-    INLINE_VECTOR_REBOX("Inline Vector Rebox Calls", 3),
-    EXPAND_VBOX("Expand VectorBox", 3),
-    ELIMINATE_VBOX_ALLOC("Eliminate VectorBoxAllocate", 3),
-    PHASEIDEAL_BEFORE_EA("PhaseIdealLoop before EA", 2),
-    ITER_GVN_AFTER_VECTOR("Iter GVN after vector box elimination", 3),
-    ITER_GVN_BEFORE_EA("Iter GVN before EA", 3),
-    ITER_GVN_AFTER_EA("Iter GVN after EA", 2),
-    ITER_GVN_AFTER_ELIMINATION("Iter GVN after eliminating allocations and locks", 2),
-    PHASEIDEALLOOP1("PhaseIdealLoop 1", 2),
-    PHASEIDEALLOOP2("PhaseIdealLoop 2", 2),
-    PHASEIDEALLOOP3("PhaseIdealLoop 3", 2),
-    CCP1("PhaseCCP 1", 2),
-    ITER_GVN2("Iter GVN 2", 2),
-    PHASEIDEALLOOP_ITERATIONS("PhaseIdealLoop iterations", 2),
-    OPTIMIZE_FINISHED("Optimize finished", 2),
-    GLOBAL_CODE_MOTION("Global code motion", 2, OutputType.MACH),
-    FINAL_CODE("Final Code", 1, OutputType.MACH),
-    AFTER_EA("After Escape Analysis", 2),
-    BEFORE_CLOOPS("Before CountedLoop", 3),
-    AFTER_CLOOPS("After CountedLoop", 3),
-    BEFORE_BEAUTIFY_LOOPS("Before beautify loops", 3),
-    AFTER_BEAUTIFY_LOOPS("After beautify loops", 3),
-    BEFORE_MATCHING("Before matching", 1),
-    MATCHING("After matching", 2, OutputType.MACH),
-    INCREMENTAL_INLINE("Incremental Inline", 2),
-    INCREMENTAL_INLINE_STEP("Incremental Inline Step", 3),
-    INCREMENTAL_INLINE_CLEANUP("Incremental Inline Cleanup", 3),
-    INCREMENTAL_BOXING_INLINE("Incremental Boxing Inline", 2),
-    MACRO_EXPANSION("Macro expand", 2, OutputType.MACH),
-    BARRIER_EXPANSION("Barrier expand", 2, OutputType.MACH),
-    END("End", 3),
-
-//    ALL("All", 3), // Apply for all phases if custom regex or all applicable phases if default regex (some might be unsupported, skip in this case) TODO
+    BEFORE_STRINGOPTS("Before StringOpts"),
+    AFTER_STRINGOPTS("After StringOpts"),
+    BEFORE_REMOVEUSELESS("Before RemoveUseless"),
+    AFTER_PARSING("After Parsing"),
+    ITER_GVN1("Iter GVN 1"),
+    EXPAND_VUNBOX("Expand VectorUnbox"),
+    SCALARIZE_VBOX("Scalarize VectorBox"),
+    INLINE_VECTOR_REBOX("Inline Vector Rebox Calls"),
+    EXPAND_VBOX("Expand VectorBox"),
+    ELIMINATE_VBOX_ALLOC("Eliminate VectorBoxAllocate"),
+    PHASEIDEAL_BEFORE_EA("PhaseIdealLoop before EA"),
+    ITER_GVN_AFTER_VECTOR("Iter GVN after vector box elimination"),
+    ITER_GVN_BEFORE_EA("Iter GVN before EA"),
+    ITER_GVN_AFTER_EA("Iter GVN after EA"),
+    ITER_GVN_AFTER_ELIMINATION("Iter GVN after eliminating allocations and locks"),
+    PHASEIDEALLOOP1("PhaseIdealLoop 1"),
+    PHASEIDEALLOOP2("PhaseIdealLoop 2"),
+    PHASEIDEALLOOP3("PhaseIdealLoop 3"),
+    CCP1("PhaseCCP 1"),
+    ITER_GVN2("Iter GVN 2"),
+    PHASEIDEALLOOP_ITERATIONS("PhaseIdealLoop iterations"),
+    OPTIMIZE_FINISHED("Optimize finished"),
+    GLOBAL_CODE_MOTION("Global code motion", OutputType.MACH),
+    FINAL_CODE("Final Code", OutputType.MACH),
+    AFTER_EA("After Escape Analysis"),
+    BEFORE_CLOOPS("Before CountedLoop"),
+    AFTER_CLOOPS("After CountedLoop"),
+    BEFORE_BEAUTIFY_LOOPS("Before beautify loops"),
+    AFTER_BEAUTIFY_LOOPS("After beautify loops"),
+    BEFORE_MATCHING("Before matching"),
+    MATCHING("After matching", OutputType.MACH),
+    INCREMENTAL_INLINE("Incremental Inline"),
+    INCREMENTAL_INLINE_STEP("Incremental Inline Step"),
+    INCREMENTAL_INLINE_CLEANUP("Incremental Inline Cleanup"),
+    INCREMENTAL_BOXING_INLINE("Incremental Boxing Inline"),
+    MACRO_EXPANSION("Macro expand", OutputType.MACH),
+    BARRIER_EXPANSION("Barrier expand", OutputType.MACH),
+    END("End"),
     ;
 
-    private static final Map<String, CompilePhase> PHASES_BY_NAME = new HashMap<>();
+    private static final Map<String, CompilePhase> PHASES_BY_PARSED_NAME = new HashMap<>();
     private static final List<CompilePhase> IDEAL_PHASES;
     private static final List<CompilePhase> MACH_PHASES;
 
     static {
         for (CompilePhase phase : CompilePhase.values()) {
-            PHASES_BY_NAME.put(phase.name, phase);
+            if (phase == PRINT_IDEAL) {
+                PHASES_BY_PARSED_NAME.put("print_ideal", phase);
+            } else {
+                PHASES_BY_PARSED_NAME.put(phase.name(), phase);
+            }
         }
         IDEAL_PHASES = initIdealPhases();
         MACH_PHASES = initMachPhases();
@@ -109,32 +111,21 @@ public enum CompilePhase {
         return MACH_PHASES;
     }
 
-    public static boolean isDefaultPhase(CompilePhase compilePhase) {
-        return compilePhase == PRINT_IDEAL || compilePhase == PRINT_OPTO_ASSEMBLY;
-    }
-
     private enum OutputType {
-        IDEAL, MACH, OPTO_ASSEMBLY, DEFAULT;
+        IDEAL, MACH, OPTO_ASSEMBLY, DEFAULT
     }
 
     private final String name;
-    private final int level;
     private final OutputType outputType;
 
-    CompilePhase(String name, int level) {
+    CompilePhase(String name) {
         this.name = name;
-        this.level = level;
         this.outputType = OutputType.IDEAL;
     }
 
-    CompilePhase(String name, int level, OutputType outputType) {
+    CompilePhase(String name, OutputType outputType) {
         this.name = name;
-        this.level = level;
         this.outputType = outputType;
-    }
-
-    public int getLevel() {
-        return level;
     }
 
     public String getName() {
@@ -142,7 +133,7 @@ public enum CompilePhase {
     }
 
     public static CompilePhase forName(String phaseName) {
-        CompilePhase phase = PHASES_BY_NAME.get(phaseName);
+        CompilePhase phase = PHASES_BY_PARSED_NAME.get(phaseName);
         TestFramework.check(phase != null, "Could not find phase with name \"" + phaseName + "\"");
         return phase;
     }
