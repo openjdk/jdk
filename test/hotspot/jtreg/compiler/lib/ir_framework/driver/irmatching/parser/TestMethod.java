@@ -81,9 +81,11 @@ public class TestMethod {
     public void setOptoAssemblyOutput(String optoAssemblyOutput) {
         optoAssemblyOutput = "PrintOptoAssembly:" + System.lineSeparator() + optoAssemblyOutput;
         compilationOutputMap.put(CompilePhase.PRINT_OPTO_ASSEMBLY, optoAssemblyOutput);
-        String idealOutput = compilationOutputMap.get(CompilePhase.DEFAULT);
-        TestFramework.check(idealOutput != null && !idealOutput.isEmpty(), "must be non-empty");
-        compilationOutputMap.put(CompilePhase.DEFAULT, idealOutput + System.lineSeparator() + System.lineSeparator()
-                                                       + optoAssemblyOutput);
+        String idealOutput = compilationOutputMap.getOrDefault(CompilePhase.DEFAULT, "");
+        if (!idealOutput.isEmpty()) {
+            // Ideal output could be empty
+            idealOutput = idealOutput + System.lineSeparator() + System.lineSeparator();
+        }
+        compilationOutputMap.put(CompilePhase.DEFAULT, idealOutput + optoAssemblyOutput);
     }
 }

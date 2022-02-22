@@ -57,7 +57,7 @@ abstract class RawConstraintParser<C extends Constraint, RC extends RawConstrain
 
     private String parseDefaultNode(CompilePhase compilePhase, RawConstraint rawConstraint, String rawNodeString) {
         String parsedNodeString = DefaultRegexes.getDefaultRegexForIRNode(rawNodeString, compilePhase);
-        if (rawConstraint.hasCompositeNode()) {
+        if (parsedNodeString != null && rawConstraint.hasCompositeNode()) {
             String userPostfixString = rawConstraint.getUserPostfixString();
             TestFormat.checkNoReport(!userPostfixString.isEmpty(),
                                      "Provided empty string for composite node " + rawNodeString

@@ -93,7 +93,7 @@ public class IRMethod implements Matching {
     }
 
     public String getOutput(CompilePhase phase) {
-        return compilationOutputMap.get(phase);
+        return compilationOutputMap.getOrDefault(phase, "");
     }
 
     /**

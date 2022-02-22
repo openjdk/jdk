@@ -34,6 +34,7 @@ import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.Coun
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.FailOnAttributeParser;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.RawConstraint;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.parser.RawCountsConstraint;
+import compiler.lib.ir_framework.shared.TestFormat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -77,14 +78,23 @@ abstract public class CompilePhaseIRRuleBuilder {
 
     protected FailOn createFailOn(List<Constraint> constraintsList, CompilePhase compilePhase) {
         if (constraintsList != null) {
+            checkNotEmpty(compilePhase);
             return new FailOn(constraintsList, irMethod.getOutput(compilePhase));
         } else {
             return null;
         }
     }
 
+    protected void checkNotEmpty(CompilePhase compilePhase) {
+        TestFormat.checkNoThrow(!irMethod.getOutput(compilePhase).isEmpty(),
+                                "No compilation output found for compile phase " + compilePhase + " for " +
+                                "method \"" + irMethod.getMethod() + "\". Make sure that " + compilePhase + " is always " +
+                                "emitted by a C2 compilation.");
+    }
+
     protected Counts createCounts(List<CountsConstraint> constraintList, CompilePhase compilePhase) {
         if (constraintList != null) {
+            checkNotEmpty(compilePhase);
             return new Counts(constraintList, irMethod.getOutput(compilePhase));
         } else {
             return null;

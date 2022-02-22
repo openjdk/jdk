@@ -26,8 +26,11 @@ package compiler.lib.ir_framework.driver.irmatching.regexes;
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.TestFramework;
 
 import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
 
 import static compiler.lib.ir_framework.driver.irmatching.regexes.DefaultRegexes.*;
 
@@ -167,108 +170,151 @@ public class IdealDefaultRegexes {
     public static final String VECTOR_UCAST_I2X = START + "VectorUCastI2X" + MID + END;
     public static final String VECTOR_REINTERPRET = START + "VectorReinterpret" + MID + END;
 
+    public static final String ALLOC = START + "Allocate" + MID + END;
+    public static final String ALLOC_ARRAY = START + "AllocateArray" + MID + END;
+
     public static void initMaps() {
-        initMaps(IRNode.STORE, STORE);
-        initMaps(IRNode.STORE_B, STORE_B);
-        initMaps(IRNode.STORE_C, STORE_C);
-        initMaps(IRNode.STORE_I, STORE_I);
-        initMaps(IRNode.STORE_L, STORE_L);
-        initMaps(IRNode.STORE_F, STORE_F);
-        initMaps(IRNode.STORE_D, STORE_D);
-        initMaps(IRNode.STORE_P, STORE_P);
-        initMaps(IRNode.STORE_N, STORE_N);
-        initMaps(IRNode.STORE_VECTOR, STORE_VECTOR);
-        initMaps(IRNode.STORE_OF_CLASS, STORE_OF_CLASS);
-        initMaps(IRNode.STORE_B_OF_CLASS, STORE_B_OF_CLASS);
-        initMaps(IRNode.STORE_C_OF_CLASS, STORE_C_OF_CLASS);
-        initMaps(IRNode.STORE_I_OF_CLASS, STORE_I_OF_CLASS);
-        initMaps(IRNode.STORE_L_OF_CLASS, STORE_L_OF_CLASS);
-        initMaps(IRNode.STORE_F_OF_CLASS, STORE_F_OF_CLASS);
-        initMaps(IRNode.STORE_D_OF_CLASS, STORE_D_OF_CLASS);
-        initMaps(IRNode.STORE_P_OF_CLASS, STORE_P_OF_CLASS);
-        initMaps(IRNode.STORE_N_OF_CLASS, STORE_N_OF_CLASS);
-        initMaps(IRNode.STORE_OF_FIELD, STORE_OF_FIELD);
-        initMaps(IRNode.LOAD, LOAD);
-        initMaps(IRNode.LOAD_B, LOAD_B);
-        initMaps(IRNode.LOAD_UB, LOAD_UB);
-        initMaps(IRNode.LOAD_S, LOAD_S);
-        initMaps(IRNode.LOAD_US, LOAD_US);
-        initMaps(IRNode.LOAD_I, LOAD_I);
-        initMaps(IRNode.LOAD_L, LOAD_L);
-        initMaps(IRNode.LOAD_F, LOAD_F);
-        initMaps(IRNode.LOAD_D, LOAD_D);
-        initMaps(IRNode.LOAD_P, LOAD_P);
-        initMaps(IRNode.LOAD_N, LOAD_N);
-        initMaps(IRNode.LOAD_VECTOR, LOAD_VECTOR);
-        initMaps(IRNode.LOAD_OF_CLASS, LOAD_OF_CLASS);
-        initMaps(IRNode.LOAD_B_OF_CLASS, LOAD_B_OF_CLASS);
-        initMaps(IRNode.LOAD_UB_OF_CLASS, LOAD_UB_OF_CLASS);
-        initMaps(IRNode.LOAD_S_OF_CLASS, LOAD_S_OF_CLASS);
-        initMaps(IRNode.LOAD_US_OF_CLASS, LOAD_US_OF_CLASS);
-        initMaps(IRNode.LOAD_I_OF_CLASS, LOAD_I_OF_CLASS);
-        initMaps(IRNode.LOAD_L_OF_CLASS, LOAD_L_OF_CLASS);
-        initMaps(IRNode.LOAD_F_OF_CLASS, LOAD_F_OF_CLASS);
-        initMaps(IRNode.LOAD_D_OF_CLASS, LOAD_D_OF_CLASS);
-        initMaps(IRNode.LOAD_P_OF_CLASS, LOAD_P_OF_CLASS);
-        initMaps(IRNode.LOAD_N_OF_CLASS, LOAD_N_OF_CLASS);
-        initMaps(IRNode.LOAD_OF_FIELD, LOAD_OF_FIELD);
-        initMaps(IRNode.LOAD_KLASS, LOAD_KLASS);
-        initMaps(IRNode.LOOP, LOOP);
-        initMaps(IRNode.COUNTEDLOOP, COUNTEDLOOP);
-        initMaps(IRNode.COUNTEDLOOP_MAIN, COUNTEDLOOP_MAIN);
-        initMaps(IRNode.IF, IF);
-        initMaps(IRNode.CALL, CALL);
-        initMaps(IRNode.CALL_OF_METHOD, CALL_OF_METHOD);
-        initMaps(IRNode.DYNAMIC_CALL_OF_METHOD, DYNAMIC_CALL_OF_METHOD);
-        initMaps(IRNode.STATIC_CALL_OF_METHOD, STATIC_CALL_OF_METHOD);
-        initMaps(IRNode.TRAP, TRAP);
-        initMaps(IRNode.PREDICATE_TRAP, PREDICATE_TRAP);
-        initMaps(IRNode.UNSTABLE_IF_TRAP, UNSTABLE_IF_TRAP);
-        initMaps(IRNode.CLASS_CHECK_TRAP, CLASS_CHECK_TRAP);
-        initMaps(IRNode.NULL_CHECK_TRAP, NULL_CHECK_TRAP);
-        initMaps(IRNode.NULL_ASSERT_TRAP, NULL_ASSERT_TRAP);
-        initMaps(IRNode.RANGE_CHECK_TRAP, RANGE_CHECK_TRAP);
-        initMaps(IRNode.UNHANDLED_TRAP, UNHANDLED_TRAP);
-        initMaps(IRNode.INTRINSIC_TRAP, INTRINSIC_TRAP);
-        initMaps(IRNode.INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP);
-        initMaps(IRNode.MEMBAR, MEMBAR);
-        initMaps(IRNode.ABS_I, ABS_I);
-        initMaps(IRNode.ABS_L, ABS_L);
-        initMaps(IRNode.ABS_F, ABS_F);
-        initMaps(IRNode.ABS_D, ABS_D);
-        initMaps(IRNode.AND_I, AND_I);
-        initMaps(IRNode.AND_L, AND_L);
-        initMaps(IRNode.XOR_I, XOR_I);
-        initMaps(IRNode.XOR_L, XOR_L);
-        initMaps(IRNode.LSHIFT_I, LSHIFT_I);
-        initMaps(IRNode.LSHIFT_L, LSHIFT_L);
-        initMaps(IRNode.ADD_I, ADD_I);
-        initMaps(IRNode.ADD_L, ADD_L);
-        initMaps(IRNode.ADD_VD, ADD_VD);
-        initMaps(IRNode.SUB_I, SUB_I);
-        initMaps(IRNode.SUB_L, SUB_L);
-        initMaps(IRNode.SUB_F, SUB_F);
-        initMaps(IRNode.SUB_D, SUB_D);
-        initMaps(IRNode.MUL_I, MUL_I);
-        initMaps(IRNode.MUL_L, MUL_L);
-        initMaps(IRNode.CONV_I2L, CONV_I2L);
-        initMaps(IRNode.VECTOR_CAST_B2X, VECTOR_CAST_B2X);
-        initMaps(IRNode.VECTOR_CAST_S2X, VECTOR_CAST_S2X);
-        initMaps(IRNode.VECTOR_CAST_I2X, VECTOR_CAST_I2X);
-        initMaps(IRNode.VECTOR_CAST_L2X, VECTOR_CAST_L2X);
-        initMaps(IRNode.VECTOR_CAST_F2X, VECTOR_CAST_F2X);
-        initMaps(IRNode.VECTOR_CAST_D2X, VECTOR_CAST_D2X);
-        initMaps(IRNode.VECTOR_UCAST_B2X, VECTOR_UCAST_B2X);
-        initMaps(IRNode.VECTOR_UCAST_S2X, VECTOR_UCAST_S2X);
-        initMaps(IRNode.VECTOR_UCAST_I2X, VECTOR_UCAST_I2X);
-        initMaps(IRNode.VECTOR_REINTERPRET, VECTOR_REINTERPRET);
+        initAvailableForAllIdealPhases(IRNode.STORE, STORE);
+        initAvailableForAllIdealPhases(IRNode.STORE_B, STORE_B);
+        initAvailableForAllIdealPhases(IRNode.STORE_C, STORE_C);
+        initAvailableForAllIdealPhases(IRNode.STORE_I, STORE_I);
+        initAvailableForAllIdealPhases(IRNode.STORE_L, STORE_L);
+        initAvailableForAllIdealPhases(IRNode.STORE_F, STORE_F);
+        initAvailableForAllIdealPhases(IRNode.STORE_D, STORE_D);
+        initAvailableForAllIdealPhases(IRNode.STORE_P, STORE_P);
+        initAvailableForAllIdealPhases(IRNode.STORE_N, STORE_N);
+        initRequireLoops(IRNode.STORE_VECTOR, STORE_VECTOR);
+        initAvailableForAllIdealPhases(IRNode.STORE_OF_CLASS, STORE_OF_CLASS);
+        initAvailableForAllIdealPhases(IRNode.STORE_B_OF_CLASS, STORE_B_OF_CLASS);
+        initAvailableForAllIdealPhases(IRNode.STORE_C_OF_CLASS, STORE_C_OF_CLASS);
+        initAvailableForAllIdealPhases(IRNode.STORE_I_OF_CLASS, STORE_I_OF_CLASS);
+        initAvailableForAllIdealPhases(IRNode.STORE_L_OF_CLASS, STORE_L_OF_CLASS);
+        initAvailableForAllIdealPhases(IRNode.STORE_F_OF_CLASS, STORE_F_OF_CLASS);
+        initAvailableForAllIdealPhases(IRNode.STORE_D_OF_CLASS, STORE_D_OF_CLASS);
+        initAvailableForAllIdealPhases(IRNode.STORE_P_OF_CLASS, STORE_P_OF_CLASS);
+        initAvailableForAllIdealPhases(IRNode.STORE_N_OF_CLASS, STORE_N_OF_CLASS);
+        initAvailableForAllIdealPhases(IRNode.STORE_OF_FIELD, STORE_OF_FIELD);
+        initAvailableForAllIdealPhases(IRNode.LOAD, LOAD);
+        initAvailableForAllIdealPhases(IRNode.LOAD_B, LOAD_B);
+        initAvailableForAllIdealPhases(IRNode.LOAD_UB, LOAD_UB);
+        initAvailableForAllIdealPhases(IRNode.LOAD_S, LOAD_S);
+        initAvailableForAllIdealPhases(IRNode.LOAD_US, LOAD_US);
+        initAvailableForAllIdealPhases(IRNode.LOAD_I, LOAD_I);
+        initAvailableForAllIdealPhases(IRNode.LOAD_L, LOAD_L);
+        initAvailableForAllIdealPhases(IRNode.LOAD_F, LOAD_F);
+        initAvailableForAllIdealPhases(IRNode.LOAD_D, LOAD_D);
+        initAvailableForAllIdealPhases(IRNode.LOAD_P, LOAD_P);
+        initAvailableForAllIdealPhases(IRNode.LOAD_N, LOAD_N);
+        initRequireLoops(IRNode.LOAD_VECTOR, LOAD_VECTOR);
+        initAvailableForAllIdealPhases(IRNode.LOAD_OF_CLASS, LOAD_OF_CLASS);
+        initAvailableForAllIdealPhases(IRNode.LOAD_B_OF_CLASS, LOAD_B_OF_CLASS);
+        initAvailableForAllIdealPhases(IRNode.LOAD_UB_OF_CLASS, LOAD_UB_OF_CLASS);
+        initAvailableForAllIdealPhases(IRNode.LOAD_S_OF_CLASS, LOAD_S_OF_CLASS);
+        initAvailableForAllIdealPhases(IRNode.LOAD_US_OF_CLASS, LOAD_US_OF_CLASS);
+        initAvailableForAllIdealPhases(IRNode.LOAD_I_OF_CLASS, LOAD_I_OF_CLASS);
+        initAvailableForAllIdealPhases(IRNode.LOAD_L_OF_CLASS, LOAD_L_OF_CLASS);
+        initAvailableForAllIdealPhases(IRNode.LOAD_F_OF_CLASS, LOAD_F_OF_CLASS);
+        initAvailableForAllIdealPhases(IRNode.LOAD_D_OF_CLASS, LOAD_D_OF_CLASS);
+        initAvailableForAllIdealPhases(IRNode.LOAD_P_OF_CLASS, LOAD_P_OF_CLASS);
+        initAvailableForAllIdealPhases(IRNode.LOAD_N_OF_CLASS, LOAD_N_OF_CLASS);
+        initAvailableForAllIdealPhases(IRNode.LOAD_OF_FIELD, LOAD_OF_FIELD);
+        initAvailableForAllIdealPhases(IRNode.LOAD_KLASS, LOAD_KLASS);
+        initRequireLoops(IRNode.LOOP, LOOP);
+        initCountedLoops(IRNode.COUNTEDLOOP, COUNTEDLOOP);
+        initCountedLoops(IRNode.COUNTEDLOOP_MAIN, COUNTEDLOOP_MAIN);
+        initAvailableForAllIdealPhases(IRNode.IF, IF);
+        initAvailableForAllIdealPhases(IRNode.CALL, CALL);
+        initAvailableForAllIdealPhases(IRNode.CALL_OF_METHOD, CALL_OF_METHOD);
+        initAvailableForAllIdealPhases(IRNode.DYNAMIC_CALL_OF_METHOD, DYNAMIC_CALL_OF_METHOD);
+        initAvailableForAllIdealPhases(IRNode.STATIC_CALL_OF_METHOD, STATIC_CALL_OF_METHOD);
+        initAvailableForAllIdealPhases(IRNode.TRAP, TRAP);
+        initAvailableForAllIdealPhases(IRNode.PREDICATE_TRAP, PREDICATE_TRAP);
+        initAvailableForAllIdealPhases(IRNode.UNSTABLE_IF_TRAP, UNSTABLE_IF_TRAP);
+        initAvailableForAllIdealPhases(IRNode.CLASS_CHECK_TRAP, CLASS_CHECK_TRAP);
+        initAvailableForAllIdealPhases(IRNode.NULL_CHECK_TRAP, NULL_CHECK_TRAP);
+        initAvailableForAllIdealPhases(IRNode.NULL_ASSERT_TRAP, NULL_ASSERT_TRAP);
+        initAvailableForAllIdealPhases(IRNode.RANGE_CHECK_TRAP, RANGE_CHECK_TRAP);
+        initAvailableForAllIdealPhases(IRNode.UNHANDLED_TRAP, UNHANDLED_TRAP);
+        initAvailableForAllIdealPhases(IRNode.INTRINSIC_TRAP, INTRINSIC_TRAP);
+        initAvailableForAllIdealPhases(IRNode.INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP);
+        initAvailableForAllIdealPhases(IRNode.MEMBAR, MEMBAR);
+        initAvailableForAllIdealPhases(IRNode.ABS_I, ABS_I);
+        initAvailableForAllIdealPhases(IRNode.ABS_L, ABS_L);
+        initAvailableForAllIdealPhases(IRNode.ABS_F, ABS_F);
+        initAvailableForAllIdealPhases(IRNode.ABS_D, ABS_D);
+        initAvailableForAllIdealPhases(IRNode.AND_I, AND_I);
+        initAvailableForAllIdealPhases(IRNode.AND_L, AND_L);
+        initAvailableForAllIdealPhases(IRNode.XOR_I, XOR_I);
+        initAvailableForAllIdealPhases(IRNode.XOR_L, XOR_L);
+        initAvailableForAllIdealPhases(IRNode.LSHIFT_I, LSHIFT_I);
+        initAvailableForAllIdealPhases(IRNode.LSHIFT_L, LSHIFT_L);
+        initAvailableForAllIdealPhases(IRNode.ADD_I, ADD_I);
+        initAvailableForAllIdealPhases(IRNode.ADD_L, ADD_L);
+        initAvailableForAllIdealPhases(IRNode.ADD_VD, ADD_VD);
+        initAvailableForAllIdealPhases(IRNode.SUB_I, SUB_I);
+        initAvailableForAllIdealPhases(IRNode.SUB_L, SUB_L);
+        initAvailableForAllIdealPhases(IRNode.SUB_F, SUB_F);
+        initAvailableForAllIdealPhases(IRNode.SUB_D, SUB_D);
+        initAvailableForAllIdealPhases(IRNode.MUL_I, MUL_I);
+        initAvailableForAllIdealPhases(IRNode.MUL_L, MUL_L);
+        initAvailableForAllIdealPhases(IRNode.CONV_I2L, CONV_I2L);
+        initRequireLoops(IRNode.VECTOR_CAST_B2X, VECTOR_CAST_B2X);
+        initRequireLoops(IRNode.VECTOR_CAST_S2X, VECTOR_CAST_S2X);
+        initRequireLoops(IRNode.VECTOR_CAST_I2X, VECTOR_CAST_I2X);
+        initRequireLoops(IRNode.VECTOR_CAST_L2X, VECTOR_CAST_L2X);
+        initRequireLoops(IRNode.VECTOR_CAST_F2X, VECTOR_CAST_F2X);
+        initRequireLoops(IRNode.VECTOR_CAST_D2X, VECTOR_CAST_D2X);
+        initRequireLoops(IRNode.VECTOR_UCAST_B2X, VECTOR_UCAST_B2X);
+        initRequireLoops(IRNode.VECTOR_UCAST_S2X, VECTOR_UCAST_S2X);
+        initRequireLoops(IRNode.VECTOR_UCAST_I2X, VECTOR_UCAST_I2X);
+        initRequireLoops(IRNode.VECTOR_REINTERPRET, VECTOR_REINTERPRET);
     }
 
-    private static void initMaps(String defaultRegexString, String idealString) {
+    /**
+     * Add additional mappings for IR nodes already defined in {@link MachDefaultRegexes} or
+     * {@link OptoAssemblyDefaultRegexes}. Update the enum map instead of establishing a new one.
+     */
+    public static void initAdditionalSharedMappings() {
+        initMapBeforeMacroExpansion(IRNode.ALLOC, ALLOC);
+        initMapBeforeMacroExpansion(IRNode.ALLOC_ARRAY, ALLOC_ARRAY);
+    }
+
+    private static void initAvailableForAllIdealPhases(String defaultRegexString, String idealString) {
         DEFAULT_TO_PHASE_MAP.put(defaultRegexString, CompilePhase.PRINT_IDEAL);
-        EnumMap<CompilePhase, String> enumMap = new EnumMap<>(CompilePhase.class);
-        CompilePhase.getIdealPhases().forEach(phase -> enumMap.put(phase, idealString));
+        initPlaceholderMap(defaultRegexString, idealString, CompilePhase.getIdealPhases());
+    }
+
+    private static void initPlaceholderMap(String defaultRegexString, String idealString, List<CompilePhase> compilePhases) {
+        Map<CompilePhase, String> enumMap = new EnumMap<>(CompilePhase.class);
+        compilePhases.forEach(phase -> enumMap.put(phase, idealString));
         enumMap.put(CompilePhase.DEFAULT, idealString);
         PLACEHOLDER_TO_REGEX_MAP.put(defaultRegexString, enumMap);
+    }
+
+    private static void initRequireLoops(String defaultRegexString, String idealString) {
+        initPlaceholderMap(defaultRegexString, idealString, CompilePhase.getIdealPhasesWithLoops());
+    }
+
+    private static void initCountedLoops(String defaultRegexString, String idealString) {
+        List<CompilePhase> compilePhases = CompilePhase.getIdealPhasesWithLoops()
+                                                       .stream()
+                                                       .filter(IdealDefaultRegexes::notCountedLoop)
+                                                       .toList();
+        initPlaceholderMap(defaultRegexString, idealString, compilePhases);
+    }
+
+    private static boolean notCountedLoop(CompilePhase compilePhase) {
+        return compilePhase != CompilePhase.AFTER_BEAUTIFY_LOOPS && compilePhase != CompilePhase.BEFORE_CLOOPS;
+    }
+
+    private static void initMapBeforeMacroExpansion(String defaultRegexString, String idealString) {
+        Map<CompilePhase, String> enumMap = PLACEHOLDER_TO_REGEX_MAP.get(defaultRegexString);
+        TestFramework.check(enumMap != null, "must be set by OptoAssemblyDefaultRegexes");
+        List<CompilePhase> compilePhases = CompilePhase.getIdealPhasesBeforeMacroExpansion();
+        updatePlaceholderMap(idealString, compilePhases, enumMap);
+    }
+
+    static void updatePlaceholderMap(String idealString, List<CompilePhase> compilePhases, Map<CompilePhase, String> enumMap) {
+        compilePhases.forEach(phase -> enumMap.put(phase, idealString));
     }
 }

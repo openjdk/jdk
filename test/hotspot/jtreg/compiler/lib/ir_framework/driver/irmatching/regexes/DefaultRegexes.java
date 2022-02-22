@@ -27,7 +27,6 @@ import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.shared.TestFormat;
-import compiler.lib.ir_framework.shared.TestFormatException;
 
 import java.util.*;
 
@@ -66,8 +65,10 @@ public class DefaultRegexes {
     public static final Map<String, CompilePhase> DEFAULT_TO_PHASE_MAP = new HashMap<>();
 
     static {
+        // Initialization of PLACEHOLDER_TO_REGEX and DEFAULT_TO_PHASE_MAP
         IdealDefaultRegexes.initMaps();
         OptoAssemblyDefaultRegexes.initMaps();
+        IdealDefaultRegexes.initAdditionalSharedMappings();
     }
 
     /**
@@ -88,10 +89,12 @@ public class DefaultRegexes {
         var phaseToRegexMap = DefaultRegexes.PLACEHOLDER_TO_REGEX_MAP.get(rawNodeString);
         TestFormat.checkNoReport(phaseToRegexMap != null,
                                  "Did you mix an IRNode string with an additional string? " +
-                                 "Must use a unique IRNode: \"" + rawNodeString + "\"");
+                                 "Must use a unique IRNode: \"" + rawNodeString + "\". Violation");
         String regex = phaseToRegexMap.get(compilePhase);
-        TestFormat.checkNoReport(regex != null, "Default regex \"" + rawNodeString
-                                                + "\" not defined for compile phase " + compilePhase);
+        TestFormat.checkNoReport(regex != null,
+                                 "IR Node \"" + rawNodeString + "\" defined in class IRNode has no regex " +
+                                 "defined for compile phase " + compilePhase + ". If you think it should be supported, " +
+                                 "add a mapping to DefaultRegexes.PLACEHOLDER_TO_REGEX_MAP. Violation");
         return regex;
     }
 }

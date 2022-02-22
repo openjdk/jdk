@@ -60,6 +60,7 @@ public class TestBadFormat {
         expectTestFormatException(BadIRAnnotationBeforeFlagVM.class);
         expectTestFormatException(BadIRAnnotations.class);
         expectTestFormatException(BadIRAnnotationsAfterTestVM.class);
+        expectTestFormatException(BadIRNodeForPhase.class);
         expectTestFormatException(BadInnerClassTest.class);
         expectTestFormatException(BadCompileClassInitializer.class, BadCompileClassInitializerHelper1.class,
                                   BadCompileClassInitializerHelper2.class, BadCompileClassInitializerHelper3.class);
@@ -1035,6 +1036,42 @@ class BadIRAnnotationsAfterTestVM {
     @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", " > a3"})
     @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", " > 0x1"})
     public void wrongCountString() {}
+}
+
+class BadIRNodeForPhase {
+    @Test
+    @FailCount(4)
+    @IR(failOn = IRNode.CHECKCAST_ARRAY, phase = CompilePhase.AFTER_PARSING)
+    @IR(failOn = IRNode.CHECKCAST_ARRAY, phase = CompilePhase.OPTIMIZE_FINISHED)
+    @IR(failOn = IRNode.CHECKCAST_ARRAY, phase = CompilePhase.PRINT_IDEAL)
+    @IR(failOn = IRNode.CHECKCAST_ARRAY, phase = CompilePhase.PRINT_OPTO_ASSEMBLY) // works
+    @IR(failOn = IRNode.FIELD_ACCESS, phase = CompilePhase.FINAL_CODE)
+    public void machNode() {}
+
+    @Test
+    @FailCount(4)
+    @IR(failOn = IRNode.ALLOC, phase = {CompilePhase.FINAL_CODE, CompilePhase.MACRO_EXPANSION})
+    @IR(failOn = IRNode.ALLOC, phase = CompilePhase.PRINT_IDEAL)
+    @IR(failOn = IRNode.ALLOC, phase = {CompilePhase.ITER_GVN1, CompilePhase.AFTER_PARSING,
+                                        CompilePhase.PRINT_OPTO_ASSEMBLY}) // works
+    @IR(failOn = IRNode.ALLOC_ARRAY, phase = {CompilePhase.FINAL_CODE, CompilePhase.MACRO_EXPANSION})
+    @IR(failOn = IRNode.ALLOC_ARRAY, phase = CompilePhase.PRINT_IDEAL)
+    @IR(failOn = IRNode.ALLOC_ARRAY, phase = {CompilePhase.ITER_GVN1, CompilePhase.AFTER_PARSING,
+                                        CompilePhase.PRINT_OPTO_ASSEMBLY}) // works
+    public void alloc() {}
+
+    @FailCount(2)
+    @Test
+    @IR(failOn = IRNode.ALLOC, phase = CompilePhase.PHASEIDEALLOOP1)
+    @IR(failOn = IRNode.ALLOC, phase = CompilePhase.INCREMENTAL_INLINE)
+    public void noCompilationOutput() {}
+
+//    @Test
+//    @FailCount(2)
+//    @IR(failOn = IRNode.LOOP, phase = CompilePhase.BEFORE_BEAUTIFY_LOOPS)
+//    @IR(failOn = IRNode.LOOP, phase = CompilePhase.BEFORE_BEAUTIFY_LOOPS)
+//    @IR(failOn = IRNode.ALLOC_ARRAY, phase = {CompilePhase.FINAL_CODE, CompilePhase.MACRO_EXPANSION})
+//    public void loops() {}
 }
 
 @ClassFail
