@@ -109,20 +109,28 @@ class CodeBlob_sizes {
       tty->print_cr(" #%d %s = %dK",
                     count,
                     title,
-                    (int)(total()               / K));
+                    total()                 / (int)K);
     } else {
-      tty->print_cr(" #%d %s = %dK (hdr %dK, loc %dK, code %dK, stub %dK, [oops %dK, metadata %dK, data %dK, pcs %dK])",
+      tty->print_cr(" #%d %s = %dK (hdr %dK %d%%, loc %dK %d%%, code %dK %d%%, stub %dK %d%%, [oops %dK %d%%, metadata %dK %d%%, data %dK %d%%, pcs %dK %d%%])",
                     count,
                     title,
-                    (int)(total()               / K),
-                    (int)(header_size           / K),
-                    (int)(relocation_size       / K),
-                    (int)(code_size             / K),
-                    (int)(stub_size             / K),
-                    (int)(scopes_oop_size       / K),
-                    (int)(scopes_metadata_size  / K),
-                    (int)(scopes_data_size      / K),
-                    (int)(scopes_pcs_size       / K));
+                    total()                 / (int)K,
+                    header_size             / (int)K,
+                    header_size             * 100 / total_size,
+                    relocation_size         / (int)K,
+                    relocation_size         * 100 / total_size,
+                    code_size               / (int)K,
+                    code_size               * 100 / total_size,
+                    stub_size               / (int)K,
+                    stub_size               * 100 / total_size,
+                    scopes_oop_size         / (int)K,
+                    scopes_oop_size         * 100 / total_size,
+                    scopes_metadata_size    / (int)K,
+                    scopes_metadata_size    * 100 / total_size,
+                    scopes_data_size        / (int)K,
+                    scopes_data_size        * 100 / total_size,
+                    scopes_pcs_size         / (int)K,
+                    scopes_pcs_size         * 100 / total_size);
     }
   }
 
@@ -1474,7 +1482,16 @@ void CodeCache::print() {
 
   tty->print_cr("nmethod dependency checking time %fs", dependentCheckTime.seconds());
   for (int i = 0; i <= CompLevel_full_optimization; i++) {
-    tty->print_cr("Tier %d:", i);
+    const char *level_name;
+    switch (i) {
+    case CompLevel_none: level_name = "CompLevel_none"; break;
+    case CompLevel_simple: level_name = "CompLevel_simple"; break;
+    case CompLevel_limited_profile: level_name = "CompLevel_limited_profile"; break;
+    case CompLevel_full_profile: level_name = "CompLevel_full_profile"; break;
+    case CompLevel_full_optimization: level_name = "CompLevel_full_optimization"; break;
+    default: assert(false, "invalid compLevel");
+    }
+    tty->print_cr("%s:", level_name);
     live[i].print("live");
     dead[i].print("dead");
   }
@@ -1482,7 +1499,7 @@ void CodeCache::print() {
   struct {
     const char* name;
     const CodeBlob_sizes* sizes;
-  } stubs[] = {
+  } non_nmethod_blobs[] = {
     { "runtime",        &runtimeStub },
     { "uncommon trap",  &uncommonTrapStub },
     { "deoptimization", &deoptimizationStub },
@@ -1490,9 +1507,9 @@ void CodeCache::print() {
     { "buffer blob",    &bufferBlob },
     { "other",          &other },
   };
-  tty->print_cr("Stubs:");
-  for (auto& stub: stubs) {
-    stub.sizes->print(stub.name);
+  tty->print_cr("Non-nmethod blobs:");
+  for (auto& blob: non_nmethod_blobs) {
+    blob.sizes->print(blob.name);
   }
 
   if (WizardMode) {
