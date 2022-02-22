@@ -8591,8 +8591,8 @@ instruct udivI_rReg(rax_RegI rax, no_rax_rdx_RegI div, rFlagsReg cr, rdx_RegI rd
     Label done;
     Label neg_divisor_fastpath;
     Register divisor = $div$$Register;
-    Register tmp_rdx = as_Register(RDX_enc); // $rdx$$Register
-    Register rax = as_Register(RAX_enc); // same as above
+    Register tmp_rdx = $rdx$$Register; 
+    Register rax = $rax$$Register;
     __ cmpl(divisor, 0);
     __ jccb(Assembler::less, neg_divisor_fastpath);
     __ xorl(tmp_rdx, tmp_rdx);
@@ -8622,8 +8622,8 @@ instruct udivL_rReg(rax_RegL rax, no_rax_rdx_RegL div, rFlagsReg cr, rdx_RegL rd
     Label done;
     Label neg_divisor_fastpath;
     Register divisor = $div$$Register;
-    Register tmp_rdx = as_Register(RDX_enc);
-    Register rax = as_Register(RAX_enc);
+    Register tmp_rdx = $rdx$$Register;;
+    Register rax = $rax$$Register;;
     __ cmpq(divisor, 0);
     __ jccb(Assembler::less, neg_divisor_fastpath);
     __ xorl(tmp_rdx, tmp_rdx);
@@ -8699,8 +8699,8 @@ instruct udivModI_rReg_divmod(rax_RegI rax, no_rax_rdx_RegI div, no_rax_rdx_RegI
     Label neg_divisor_fastpath;
     Register divisor = $div$$Register;
     Register tmp = $tmp$$Register;
-    Register rdx = as_Register(RDX_enc);
-    Register rax = as_Register(RAX_enc);
+    Register rdx = $rdx$$Register;;
+    Register rax = $rax$$Register;;
    
     __ cmpl(divisor, 0);
     __ jccb(Assembler::less, neg_divisor_fastpath);
@@ -8742,8 +8742,8 @@ instruct udivModL_rReg_divmod(rax_RegL rax, no_rax_rdx_RegL div, no_rax_rdx_RegL
     Label neg_divisor_fastpath;
     Register divisor = $div$$Register;
     Register tmp = $tmp$$Register;
-    Register rdx = as_Register(RDX_enc);
-    Register rax = as_Register(RAX_enc);
+    Register rdx = $rdx$$Register;;
+    Register rax = $rax$$Register;;
    
     __ cmpq(divisor, 0);
     __ jccb(Assembler::less, neg_divisor_fastpath);
@@ -8884,8 +8884,8 @@ instruct umodI_rReg(rdx_RegI rdx, no_rax_rdx_RegI div, rFlagsReg cr, rax_RegI ra
     Label done;
     Label neg_divisor_fastpath;
     Register divisor = $div$$Register;
-    Register rdx = as_Register(RDX_enc);
-    Register tmp_rax = as_Register(RAX_enc);
+    Register rdx = $rdx$$Register;;
+    Register tmp_rax = $rax$$Register;;
    
     __ cmpl(divisor, 0);
     __ jccb(Assembler::less, neg_divisor_fastpath);
@@ -8918,8 +8918,8 @@ instruct umodL_rReg(rdx_RegL rdx, no_rax_rdx_RegL div, rFlagsReg cr, rax_RegL ra
     Label done;
     Label neg_divisor_fastpath;
     Register divisor = $div$$Register;
-    Register rdx = as_Register(RDX_enc);
-    Register tmp_rax = as_Register(RAX_enc);
+    Register rdx = $rdx$$Register;;
+    Register tmp_rax = $rax$$Register;;
    
     __ cmpq(divisor, 0);
     __ jccb(Assembler::less, neg_divisor_fastpath);
