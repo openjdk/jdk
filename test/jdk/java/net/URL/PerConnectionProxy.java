@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,42 +24,57 @@
 /* @test
  * @bug 4920526
  * @summary Needs per connection proxy support for URLs
- * @modules java.base/sun.net.www
- * @library ../../../sun/net/www/httptest/ /test/lib
- * @build ClosedChannelList TestHttpServer HttpTransaction HttpCallback
+ * @library /test/lib
  * @compile PerConnectionProxy.java
  * @run main/othervm -Dhttp.proxyHost=inexistant -Dhttp.proxyPort=8080 PerConnectionProxy
  */
 
-import java.net.*;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.URL;
+import java.util.concurrent.Executors;
 
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
 import jdk.test.lib.net.URIBuilder;
 
-public class PerConnectionProxy implements HttpCallback {
-    static TestHttpServer server;
+public class PerConnectionProxy implements HttpHandler {
+    static HttpServer server;
 
-    public void request (HttpTransaction req) {
-        req.setResponseEntityBody ("Hello .");
+    public void handle (HttpExchange req) {
         try {
-            req.sendResponse (200, "Ok");
-            req.orderlyClose();
+            req.sendResponseHeaders(200, 0);
         } catch (IOException e) {
+        }
+        try(PrintWriter pw = new PrintWriter(req.getResponseBody())) {
+            pw.print("Hello .");
         }
     }
 
     public static void main(String[] args) {
         try {
             InetAddress loopbackAddress = InetAddress.getLoopbackAddress();
-            server = new TestHttpServer(new PerConnectionProxy(), 1, 10, loopbackAddress, 0);
-            ProxyServer pserver = new ProxyServer(loopbackAddress, server.getLocalPort());
+            server = HttpServer.create(new InetSocketAddress(loopbackAddress, 0), 10);
+            server.createContext("/", new PerConnectionProxy());
+            server.setExecutor(Executors.newSingleThreadExecutor());
+            server.start();
+            ProxyServer pserver = new ProxyServer(loopbackAddress, server.getAddress().getPort());
             // start proxy server
             new Thread(pserver).start();
 
             URL url = URIBuilder.newBuilder()
                     .scheme("http")
                     .loopback()
-                    .port(server.getLocalPort())
+                    .port(server.getAddress().getPort())
                     .toURLUnchecked();
 
             // for non existing proxy expect an IOException
@@ -101,7 +116,7 @@ public class PerConnectionProxy implements HttpCallback {
             throw new RuntimeException(e);
         } finally {
             if (server != null) {
-                server.terminate();
+                server.stop(1);
             }
         }
 
