@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -239,7 +239,7 @@ VERSION_DOCS_API_SINCE := @VERSION_DOCS_API_SINCE@
 JDK_SOURCE_TARGET_VERSION := @JDK_SOURCE_TARGET_VERSION@
 
 # Convenience CFLAGS settings for passing version information into native programs.
-VERSION_CFLAGS := \
+VERSION_CFLAGS = \
     -DVERSION_FEATURE=$(VERSION_FEATURE) \
     -DVERSION_INTERIM=$(VERSION_INTERIM) \
     -DVERSION_UPDATE=$(VERSION_UPDATE) \
@@ -361,6 +361,7 @@ ALLOW_ABSOLUTE_PATHS_IN_OUTPUT := @ALLOW_ABSOLUTE_PATHS_IN_OUTPUT@
 
 HSDIS_BACKEND := @HSDIS_BACKEND@
 HSDIS_CFLAGS := @HSDIS_CFLAGS@
+HSDIS_LDFLAGS := @HSDIS_LDFLAGS@
 HSDIS_LIBS := @HSDIS_LIBS@
 
 # The boot jdk to use. This is overridden in bootcycle-spec.gmk. Make sure to keep
@@ -419,7 +420,7 @@ GTEST_FRAMEWORK_SRC := @GTEST_FRAMEWORK_SRC@
 
 # Source file for cacerts
 CACERTS_FILE=@CACERTS_FILE@
-# Source folder for user provided cacerts PEM files 
+# Source folder for user provided cacerts PEM files
 CACERTS_SRC=@CACERTS_SRC@
 
 # Enable unlimited crypto policy
@@ -581,7 +582,6 @@ AR := @AR@
 ARFLAGS:=@ARFLAGS@
 
 NM:=@NM@
-GNM:=@GNM@
 STRIP:=@STRIP@
 OBJDUMP:=@OBJDUMP@
 CXXFILT:=@CXXFILT@
@@ -929,7 +929,12 @@ JDK_MACOSX_CONTENTS_DIR=$(JDK_MACOSX_BUNDLE_DIR)/$(JDK_MACOSX_CONTENTS_SUBDIR)
 JRE_MACOSX_CONTENTS_DIR=$(JRE_MACOSX_BUNDLE_DIR)/$(JRE_MACOSX_CONTENTS_SUBDIR)
 
 # Bundle names
-BASE_NAME := $(VERSION_SHORT)+$(VERSION_BUILD)_$(OPENJDK_TARGET_BUNDLE_PLATFORM)
+ifneq ($(VERSION_BUILD), )
+  BASE_NAME := $(VERSION_SHORT)+$(VERSION_BUILD)_$(OPENJDK_TARGET_BUNDLE_PLATFORM)
+else
+  BASE_NAME := $(VERSION_SHORT)_$(OPENJDK_TARGET_BUNDLE_PLATFORM)
+endif
+
 ifeq ($(DEBUG_LEVEL), fastdebug)
   DEBUG_PART := -debug
 else ifneq ($(DEBUG_LEVEL), release)
