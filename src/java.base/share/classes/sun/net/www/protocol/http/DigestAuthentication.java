@@ -34,8 +34,10 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivilegedAction;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Random;
+import java.util.Set;
 
 import sun.net.NetProperties;
 import sun.net.www.HeaderParser;
@@ -60,19 +62,38 @@ class DigestAuthentication extends AuthenticationInfo {
     private static final String compatPropName = "http.auth.digest." +
         "quoteParameters";
 
+    // default set of disabled message digest algorithms that are
+    // used for proxy connections, and plain text http server connections
+
+    private static final Set<String> defDisabledAlgs =
+	Set.of("MD-5");
+
+    // A net property which overrides the disabled set above. 
+    private static final String enabledAlgPropName = "http.auth.digest." +
+        "enabledDigestAlgs";
+
+    private static final Set<String> disabledAlgs = new HashSet<>();
+
     // true if http.auth.digest.quoteParameters Net property is true
     private static final boolean delimCompatFlag;
 
     static {
-        @SuppressWarnings("removal")
-        Boolean b = AccessController.doPrivileged(
+	@SuppressWarnings("removal")
+        (Void)AccessController.doPrivileged(
             new PrivilegedAction<>() {
-                public Boolean run() {
-                    return NetProperties.getBoolean(compatPropName);
+                public Void run() {
+                    boolean b = NetProperties.getBoolean(compatPropName);
+        	    delimCompatFlag = (b == null) ? false : b.booleanValue();
+                    
+                    disabledAlgs.addAll(defDisabledAlgs);
+                    String s = NetProperties.get(enabledAlgPropName);
+		    for (String alg : s.split(",")) {
+			disabledAlgs.remove(alg.toUpperCase());
+		    }
+		    return null;
                 }
             }
         );
-        delimCompatFlag = (b == null) ? false : b.booleanValue();
     }
 
     // Authentication parameters defined in RFC2617.
@@ -427,6 +448,20 @@ class DigestAuthentication extends AuthenticationInfo {
         checkResponse (header, method, url.getFile());
     }
 
+    private static void validateAlgorithm(String algorithm) throws IOException {
+	if (getAuthType() == AuthCacheValue.Type.Server && 
+		getProtocolScheme().equals("https")) {
+	    // HTTPS server authentication can use any algorithm
+	    return;
+	}
+        algorithm = algorithm.toUpperCase();
+        if (disabledAlgs.contains(algorithm)) {
+	    String msg = "Rejecting digest authentication with insecure algorithm: " 
+		+ algorithm;
+	    throw new IOException(msg);
+	}
+    }
+
     public void checkResponse (String header, String method, String uri)
                                                         throws IOException {
         char[] passwd = pw.getPassword();
@@ -442,6 +477,8 @@ class DigestAuthentication extends AuthenticationInfo {
         if (header == null) {
             throw new ProtocolException ("No authentication information in response");
         }
+
+        validateAlgorithm(algorithm);
 
         if (nccount != -1) {
             ncstring = Integer.toHexString (nccount).toUpperCase();
