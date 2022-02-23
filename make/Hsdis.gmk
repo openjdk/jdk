@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -36,89 +36,129 @@ include JdkNativeCompilation.gmk
 
 HSDIS_OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/hsdis
 
+HSDIS_TOOLCHAIN := TOOLCHAIN_DEFAULT
+HSDIS_TOOLCHAIN_CFLAGS := $(CFLAGS_JDKLIB)
+HSDIS_TOOLCHAIN_LDFLAGS := $(LDFLAGS_JDKLIB)
+
 ifeq ($(call isTargetOs, windows), true)
   INSTALLED_HSDIS_DIR := $(JDK_OUTPUTDIR)/bin
-
-  # On windows, we need to "fake" a completely different toolchain using gcc
-  # instead of the normal microsoft toolchain. This is quite hacky...
-
-  MINGW_BASE := x86_64-w64-mingw32
-
-  MINGW_SYSROOT = $(shell $(MINGW_BASE)-gcc -print-sysroot)
-  ifeq ($(wildcard $(MINGW_SYSROOT)), )
-    # Use fallback path
-    MINGW_SYSROOT := /usr/$(MINGW_BASE)
-    ifeq ($(wildcard $(MINGW_SYSROOT)), )
-      $(error mingw sysroot not found)
-    endif
-  endif
-
-  $(eval $(call DefineNativeToolchain, TOOLCHAIN_MINGW, \
-      CC := $(MINGW_BASE)-gcc, \
-      LD := $(MINGW_BASE)-ld, \
-      OBJCOPY := $(MINGW_BASE)-objcopy, \
-      RC := $(RC), \
-      SYSROOT_CFLAGS := --sysroot=$(MINGW_SYSROOT), \
-      SYSROOT_LDFLAGS := --sysroot=$(MINGW_SYSROOT), \
-  ))
-
-  MINGW_SYSROOT_LIB_PATH := $(MINGW_SYSROOT)/mingw/lib
-  ifeq ($(wildcard $(MINGW_SYSROOT_LIB_PATH)), )
-    # Try without mingw
-    MINGW_SYSROOT_LIB_PATH := $(MINGW_SYSROOT)/lib
-    ifeq ($(wildcard $(MINGW_SYSROOT_LIB_PATH)), )
-      $(error mingw sysroot lib path not found)
-    endif
-  endif
-
-  MINGW_VERSION = $(shell $(MINGW_BASE)-gcc -v 2>&1 | $(GREP) "gcc version" | $(CUT) -d " " -f 3)
-  MINGW_GCC_LIB_PATH := /usr/lib/gcc/$(MINGW_BASE)/$(MINGW_VERSION)
-  ifeq ($(wildcard $(MINGW_GCC_LIB_PATH)), )
-    # Try using only major version number
-    MINGW_VERSION_MAJOR := $(firstword $(subst ., , $(MINGW_VERSION)))
-    MINGW_GCC_LIB_PATH := /usr/lib/gcc/$(MINGW_BASE)/$(MINGW_VERSION_MAJOR)
-    ifeq ($(wildcard $(MINGW_GCC_LIB_PATH)), )
-      $(error mingw gcc lib path not found)
-    endif
-  endif
-
-  TOOLCHAIN_TYPE := gcc
-  OPENJDK_TARGET_OS := linux
-  CC_OUT_OPTION := -o$(SPACE)
-  LD_OUT_OPTION := -o$(SPACE)
-  GENDEPS_FLAGS := -MMD -MF
-  CFLAGS_DEBUG_SYMBOLS := -g
-  DISABLED_WARNINGS :=
-  DISABLE_WARNING_PREFIX := -Wno-
-  CFLAGS_WARNINGS_ARE_ERRORS := -Werror
-  SHARED_LIBRARY_FLAGS := -shared
-
-  HSDIS_TOOLCHAIN := TOOLCHAIN_MINGW
-  HSDIS_TOOLCHAIN_CFLAGS :=
-  HSDIS_TOOLCHAIN_LDFLAGS := -L$(MINGW_GCC_LIB_PATH) -L$(MINGW_SYSROOT_LIB_PATH)
-  MINGW_DLLCRT := $(MINGW_SYSROOT_LIB_PATH)/dllcrt2.o
-  HSDIS_TOOLCHAIN_LIBS := $(MINGW_DLLCRT) -lmingw32 -lgcc -lgcc_eh -lmoldname \
-      -lmingwex -lmsvcrt -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32
+  IMAGE_HSDIS_DIR := $(JDK_IMAGE_DIR)/bin
 else
   INSTALLED_HSDIS_DIR := $(JDK_OUTPUTDIR)/lib
-
-  HSDIS_TOOLCHAIN := TOOLCHAIN_DEFAULT
-  HSDIS_TOOLCHAIN_CFLAGS := $(CFLAGS_JDKLIB)
-  HSDIS_TOOLCHAIN_LDFLAGS := $(LDFLAGS_JDKLIB)
-  HSDIS_TOOLCHAIN_LIBS := -ldl
+  IMAGE_HSDIS_DIR := $(JDK_IMAGE_DIR)/lib
 endif
 
+ifeq ($(HSDIS_BACKEND), capstone)
+  ifeq ($(call isTargetCpuArch, x86), true)
+    CAPSTONE_ARCH := CS_ARCH_X86
+    CAPSTONE_MODE := CS_MODE_$(OPENJDK_TARGET_CPU_BITS)
+  else ifeq ($(call isTargetCpuArch, aarch64), true)
+    CAPSTONE_ARCH := CS_ARCH_ARM64
+    CAPSTONE_MODE := CS_MODE_ARM
+  else
+    $(error No support for Capstone on this platform)
+  endif
+
+  HSDIS_CFLAGS += -DCAPSTONE_ARCH=$(CAPSTONE_ARCH) \
+      -DCAPSTONE_MODE=$(CAPSTONE_MODE)
+endif
+
+ifeq ($(HSDIS_BACKEND), llvm)
+  # Use C++ instead of C
+  HSDIS_TOOLCHAIN_CFLAGS := $(CXXFLAGS_JDKLIB)
+  HSDIS_TOOLCHAIN := TOOLCHAIN_LINK_CXX
+
+  ifeq ($(call isTargetOs, linux), true)
+    LLVM_OS := pc-linux-gnu
+  else ifeq ($(call isTargetOs, macosx), true)
+    LLVM_OS := apple-darwin
+  else ifeq ($(call isTargetOs, windows), true)
+    LLVM_OS := pc-windows-msvc
+  else
+    $(error No support for LLVM on this platform)
+  endif
+
+  HSDIS_CFLAGS += -DLLVM_DEFAULT_TRIPLET='"$(OPENJDK_TARGET_CPU)-$(LLVM_OS)"'
+endif
+
+ifeq ($(HSDIS_BACKEND), binutils)
+  ifeq ($(call isTargetOs, windows), true)
+    # On windows, we need to "fake" a completely different toolchain using gcc
+    # instead of the normal microsoft toolchain. This is quite hacky...
+
+    MINGW_BASE := x86_64-w64-mingw32
+
+    MINGW_SYSROOT = $(shell $(MINGW_BASE)-gcc -print-sysroot)
+    ifeq ($(wildcard $(MINGW_SYSROOT)), )
+      # Use fallback path
+      MINGW_SYSROOT := /usr/$(MINGW_BASE)
+      ifeq ($(wildcard $(MINGW_SYSROOT)), )
+        $(error mingw sysroot not found)
+      endif
+    endif
+
+    $(eval $(call DefineNativeToolchain, TOOLCHAIN_MINGW, \
+        CC := $(MINGW_BASE)-gcc, \
+        LD := $(MINGW_BASE)-ld, \
+        OBJCOPY := $(MINGW_BASE)-objcopy, \
+        RC := $(RC), \
+        SYSROOT_CFLAGS := --sysroot=$(MINGW_SYSROOT), \
+        SYSROOT_LDFLAGS := --sysroot=$(MINGW_SYSROOT), \
+    ))
+
+    MINGW_SYSROOT_LIB_PATH := $(MINGW_SYSROOT)/mingw/lib
+    ifeq ($(wildcard $(MINGW_SYSROOT_LIB_PATH)), )
+      # Try without mingw
+      MINGW_SYSROOT_LIB_PATH := $(MINGW_SYSROOT)/lib
+      ifeq ($(wildcard $(MINGW_SYSROOT_LIB_PATH)), )
+        $(error mingw sysroot lib path not found)
+      endif
+    endif
+
+    MINGW_VERSION = $(shell $(MINGW_BASE)-gcc -v 2>&1 | $(GREP) "gcc version" | $(CUT) -d " " -f 3)
+    MINGW_GCC_LIB_PATH := /usr/lib/gcc/$(MINGW_BASE)/$(MINGW_VERSION)
+    ifeq ($(wildcard $(MINGW_GCC_LIB_PATH)), )
+      # Try using only major version number
+      MINGW_VERSION_MAJOR := $(firstword $(subst ., , $(MINGW_VERSION)))
+      MINGW_GCC_LIB_PATH := /usr/lib/gcc/$(MINGW_BASE)/$(MINGW_VERSION_MAJOR)
+      ifeq ($(wildcard $(MINGW_GCC_LIB_PATH)), )
+        $(error mingw gcc lib path not found)
+      endif
+    endif
+
+    TOOLCHAIN_TYPE := gcc
+    OPENJDK_TARGET_OS := linux
+    CC_OUT_OPTION := -o$(SPACE)
+    LD_OUT_OPTION := -o$(SPACE)
+    GENDEPS_FLAGS := -MMD -MF
+    CFLAGS_DEBUG_SYMBOLS := -g
+    DISABLED_WARNINGS :=
+    DISABLE_WARNING_PREFIX := -Wno-
+    CFLAGS_WARNINGS_ARE_ERRORS := -Werror
+    SHARED_LIBRARY_FLAGS := -shared
+
+    HSDIS_TOOLCHAIN := TOOLCHAIN_MINGW
+    HSDIS_TOOLCHAIN_CFLAGS :=
+    HSDIS_TOOLCHAIN_LDFLAGS := -L$(MINGW_GCC_LIB_PATH) -L$(MINGW_SYSROOT_LIB_PATH)
+    MINGW_DLLCRT := $(MINGW_SYSROOT_LIB_PATH)/dllcrt2.o
+    HSDIS_TOOLCHAIN_LIBS := $(MINGW_DLLCRT) -lmingw32 -lgcc -lgcc_eh -lmoldname \
+        -lmingwex -lmsvcrt -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32
+  else
+    HSDIS_TOOLCHAIN_LIBS := -ldl
+  endif
+endif
 
 $(eval $(call SetupJdkLibrary, BUILD_HSDIS, \
     NAME := hsdis, \
-    SRC := $(TOPDIR)/src/utils/hsdis, \
+    SRC := $(TOPDIR)/src/utils/hsdis/$(HSDIS_BACKEND), \
+    EXTRA_HEADER_DIRS := $(TOPDIR)/src/utils/hsdis, \
     TOOLCHAIN := $(HSDIS_TOOLCHAIN), \
     OUTPUT_DIR := $(HSDIS_OUTPUT_DIR), \
     OBJECT_DIR := $(HSDIS_OUTPUT_DIR), \
     DISABLED_WARNINGS_gcc := undef format-nonliteral sign-compare, \
     DISABLED_WARNINGS_clang := undef format-nonliteral, \
     CFLAGS := $(HSDIS_TOOLCHAIN_CFLAGS) $(HSDIS_CFLAGS), \
-    LDFLAGS := $(HSDIS_TOOLCHAIN_LDFLAGS) $(SHARED_LIBRARY_FLAGS), \
+    LDFLAGS := $(HSDIS_TOOLCHAIN_LDFLAGS) $(HSDIS_LDFLAGS) $(SHARED_LIBRARY_FLAGS), \
     LIBS := $(HSDIS_LIBS) $(HSDIS_TOOLCHAIN_LIBS), \
 ))
 
@@ -129,13 +169,18 @@ TARGETS += build
 INSTALLED_HSDIS_NAME := hsdis-$(OPENJDK_TARGET_CPU_LEGACY_LIB)$(SHARED_LIBRARY_SUFFIX)
 
 INSTALLED_HSDIS := $(INSTALLED_HSDIS_DIR)/$(INSTALLED_HSDIS_NAME)
+INSTALLED_HSDIS_IMAGE := $(IMAGE_HSDIS_DIR)/$(INSTALLED_HSDIS_NAME)
 
 $(INSTALLED_HSDIS): $(BUILD_HSDIS_TARGET)
-	$(call LogWarn, NOTE: The resulting build might not be redistributable. Seek legal advice before distibuting.)
+        ifeq ($(HSDIS_BACKEND), binutils)
+	  $(call LogWarn, NOTE: The resulting build might not be redistributable. Seek legal advice before distributing.)
+        endif
 	$(install-file)
 
+$(INSTALLED_HSDIS_IMAGE): $(INSTALLED_HSDIS)
+	$(install-file)
 
-install: $(INSTALLED_HSDIS)
+install: $(INSTALLED_HSDIS_IMAGE)
 
 TARGETS += install
 
