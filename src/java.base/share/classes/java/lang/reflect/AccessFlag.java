@@ -40,8 +40,8 @@ import static java.util.Map.entry;
  * and access flags have a one-to-one correspondence, such as {@code
  * public}. In other cases, some language-level modifiers do
  * <em>not</em> have an access flag, such as {@code sealed} (JVMS
- * {@jvms 4.7.31}) and some access flags have no corresponding
- * modifier, such as {@linkplain SYNTHETIC synthetic}
+ * {@jvms 4.7.31}) and some access flags have no corresponding 
+* modifier, such as {@linkplain SYNTHETIC synthetic}.
  *
  * <p>The values for the constants representing the access and module
  * flags are taken from sections of <cite>The Java Virtual Machine
@@ -49,7 +49,8 @@ import static java.util.Map.entry;
  * property modifiers), {@jvms 4.5} (field access and property flags),
  * {@jvms 4.6} (method access and property flags), {@jvms 4.7.6}
  * (nested class access and property flags), {@jvms 4.7.24} (method
- * parameters), and {@jvms 4.7.25} (module flags and requires flags).
+ * parameters), and {@jvms 4.7.25} (module flags and requires,
+ * exports, and opens flags).
  *
  * <p>The {@linkplain #mask() mask} values for the different access
  * flags are <em>not</em> distinct. Flags are defined for different
@@ -69,9 +70,9 @@ import static java.util.Map.entry;
  *
  * @see java.lang.reflect.Modifier
  * @see java.lang.module.ModuleDescriptor.Modifier
+ * @see java.lang.module.ModuleDescriptor.Requires.Modifier
  * @see java.lang.module.ModuleDescriptor.Exports.Modifier
  * @see java.lang.module.ModuleDescriptor.Opens.Modifier
- * @see java.lang.module.ModuleDescriptor.Requires.Modifier
  * @see java.compiler/javax.lang.model.element.Modifier
  * @since 19
  */
@@ -299,7 +300,10 @@ public enum AccessFlag {
 
     /**
      * A location within a class file where flags can be applied.
-     * <em>Just stub-out constant descriptions for now</em>.
+     *
+     * Note that since these locations represent class file structures
+     * rather than language structures many language structures, such
+     * as constructors and interfaces, are <em>not</em> present.
      */
     public enum Location {
         /**
@@ -389,63 +393,4 @@ public enum AccessFlag {
                           entry(Location.MODULE_OPENS,
                                 Set.of(SYNTHETIC, MANDATED)));
     }
-
-    // -------------------------------------------------------------
-
-    // Future utilities and static factories of this enum class will
-    // be written using the information below, copied from Modifier
-    // for bootstrapping.
-
-    // /**
-    // * The Java source modifiers that can be applied to a class.
-    // * @jls 8.1.1 Class Modifiers
-    // */
-    // private static final int CLASS_MODIFIERS =
-    // Modifier.PUBLIC | Modifier.PROTECTED | Modifier.PRIVATE |
-    // Modifier.ABSTRACT | Modifier.STATIC | Modifier.FINAL |
-    // Modifier.STRICT;
-
-    // /**
-    // * The Java source modifiers that can be applied to an interface.
-    // * @jls 9.1.1 Interface Modifiers
-    // */
-    // private static final int INTERFACE_MODIFIERS =
-    // Modifier.PUBLIC | Modifier.PROTECTED | Modifier.PRIVATE |
-    // Modifier.ABSTRACT | Modifier.STATIC | Modifier.STRICT;
-
-
-    // /**
-    // * The Java source modifiers that can be applied to a constructor.
-    // * @jls 8.8.3 Constructor Modifiers
-    // */
-    // private static final int CONSTRUCTOR_MODIFIERS =
-    // Modifier.PUBLIC | Modifier.PROTECTED | Modifier.PRIVATE;
-
-    // /**
-    // * The Java source modifiers that can be applied to a method.
-    // * @jls 8.4.3 Method Modifiers
-    // */
-    // private static final int METHOD_MODIFIERS =
-    // Modifier.PUBLIC | Modifier.PROTECTED | Modifier.PRIVATE |
-    // Modifier.ABSTRACT | Modifier.STATIC | Modifier.FINAL |
-    // Modifier.SYNCHRONIZED | Modifier.NATIVE | Modifier.STRICT;
-
-    // /**
-    // * The Java source modifiers that can be applied to a field.
-    // * @jls 8.3.1 Field Modifiers
-    // */
-    // private static final int FIELD_MODIFIERS =
-    // Modifier.PUBLIC | Modifier.PROTECTED | Modifier.PRIVATE |
-    // Modifier.STATIC | Modifier.FINAL | Modifier.TRANSIENT |
-    // Modifier.VOLATILE;
-
-    // /**
-    // * The Java source modifiers that can be applied to a method or constructor parameter.
-    // * @jls 8.4.1 Formal Parameters
-    // */
-    // private static final int PARAMETER_MODIFIERS =
-    // Modifier.FINAL;
-
-    // static final int ACCESS_MODIFIERS =
-    // Modifier.PUBLIC | Modifier.PROTECTED | Modifier.PRIVATE;
 }

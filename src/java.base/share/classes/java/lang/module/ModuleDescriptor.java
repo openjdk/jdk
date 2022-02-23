@@ -106,7 +106,7 @@ public class ModuleDescriptor
          * An open module. An open module does not declare any open packages
          * but the resulting module is treated as if all packages are open.
          */
-        OPEN,
+        OPEN(AccessFlag.OPEN.mask()),
 
         /**
          * An automatic module. An automatic module is treated as if it exports
@@ -115,19 +115,24 @@ public class ModuleDescriptor
          * @apiNote This modifier does not correspond to a module flag in the
          * binary form of a module declaration ({@code module-info.class}).
          */
-        AUTOMATIC,
+        AUTOMATIC(0 /* no flag per above comment */),
 
         /**
          * The module was not explicitly or implicitly declared.
          */
-        SYNTHETIC,
+        SYNTHETIC(AccessFlag.SYNTHETIC.mask()),
 
         /**
          * The module was implicitly declared.
          */
-        MANDATED;
-    }
+        MANDATED(AccessFlag.MANDATED.mask());
 
+        private int mask;
+        private Modifier(int mask) {
+            this.mask = mask;
+        }
+        private int mask() {return mask;}
+    }
 
     /**
      * <p> A dependence upon a module. </p>
@@ -219,7 +224,7 @@ public class ModuleDescriptor
             for (var modifier : mods) {
                 mask |= modifier.mask();
             }
-            return AccessFlag.maskToAccessFlags(mask, AccessFlag.Location.MODULE);
+            return AccessFlag.maskToAccessFlags(mask, AccessFlag.Location.MODULE_REQUIRES);
         }
 
         /**
@@ -1356,7 +1361,11 @@ public class ModuleDescriptor
      * @since 19
      */
     public Set<AccessFlag> accessFlags() {
-        return Set.of();
+        int mask = 0;
+        for (var modifier : modifiers) {
+            mask |= modifier.mask();
+        }
+        return AccessFlag.maskToAccessFlags(mask, AccessFlag.Location.MODULE);
     }
 
     /**
