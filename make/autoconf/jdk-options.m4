@@ -702,6 +702,18 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
     fi
   fi
 
+  ISO_8601_FORMAT_STRING="%Y-%m-%dT%H:%M:%SZ"
+  if test "x$SOURCE_DATE" != xupdated; then
+    # If we have a fixed value for SOURCE_DATE, we need to set SOURCE_DATE_EPOCH
+    # for the rest of configure.
+    SOURCE_DATE_EPOCH="$SOURCE_DATE"
+    if test "x$IS_GNU_DATE" = xyes; then
+      SOURCE_DATE_ISO_8601=`$DATE --utc --date="@$SOURCE_DATE" +"$ISO_8601_FORMAT_STRING" 2> /dev/null`
+    else
+      SOURCE_DATE_ISO_8601=`$DATE -u -j -f "%s" "$SOURCE_DATE" +"$ISO_8601_FORMAT_STRING" 2> /dev/null`
+    fi
+  fi
+
   REPRODUCIBLE_BUILD_DEFAULT=$with_source_date_present
 
   if test "x$OPENJDK_BUILD_OS" = xwindows && \
@@ -726,6 +738,8 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
 
   AC_SUBST(SOURCE_DATE)
   AC_SUBST(ENABLE_REPRODUCIBLE_BUILD)
+  AC_SUBST(ISO_8601_FORMAT_STRING)
+  AC_SUBST(SOURCE_DATE_ISO_8601)
 ])
 
 ################################################################################
