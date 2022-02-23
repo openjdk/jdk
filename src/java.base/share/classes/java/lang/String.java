@@ -539,22 +539,22 @@ public final class String
                     offset += dp;
                 }
                 while (offset < sl) {
-                    int b1 = bytes[offset];
+                    int b1 = bytes[offset++];
                     if (b1 >= 0) {
                         dst[dp++] = (byte)b1;
-                        offset++;
                         continue;
                     }
-                    if ((b1 & 0xfe) == 0xc2 && offset + 1 < sl) { // b1 either 0xc2 or 0xc3
-                        int b2 = bytes[offset + 1];
-                        if (!isNotContinuation(b2)) {
+                    if ((b1 & 0xfe) == 0xc2 && offset < sl) { // b1 either 0xc2 or 0xc3
+                        int b2 = bytes[offset];
+                        if (b2 < -64) { // continuation bytes are always negative values in the range -128 to -65
                             dst[dp++] = (byte)decode2(b1, b2);
-                            offset += 2;
+                            offset++;
                             continue;
                         }
                     }
-                    // anything not a latin1, including the repl
+                    // anything not a latin1, including the REPL
                     // we have to go with the utf16
+                    offset--;
                     break;
                 }
                 if (offset == sl) {
@@ -707,17 +707,16 @@ public final class String
                     continue;
                 }
                 if ((b1 & 0xfe) == 0xc2 && offset < sl) { // b1 either 0xc2 or 0xc3
-                    int b2 = bytes[offset++];
-                    if (!isNotContinuation(b2)) {
+                    int b2 = bytes[offset];
+                    if (b2 < -64) { // continuation bytes are always negative values in the range -128 to -65
                         dst[dp++] = (byte)decode2(b1, b2);
+                        offset++;
                         continue;
-                    } else {
-                        offset--;
                     }
                 }
-                offset--;
                 // anything not a latin1, including the REPL
                 // we have to go with the utf16
+                offset--;
                 break;
             }
             if (offset == sl) {

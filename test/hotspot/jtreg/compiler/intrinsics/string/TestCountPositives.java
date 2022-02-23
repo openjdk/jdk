@@ -88,16 +88,16 @@ public class TestCountPositives {
                     if (len + off > tBa.length)
                         continue;
                     initialize(off, len, ng);
-                    int r = Helper.StringCodingCountPositives(tBa, off, len);
-                    int t = countPositives(tBa, off, len);
-                    if (r != t) {
-                        if (t == 0 && r < len) {
-                            // allow intrinsics to bail out and return zero when there
-                            // are negative bytes
+                    int calculated = Helper.StringCodingCountPositives(tBa, off, len);
+                    int expected = countPositives(tBa, off, len);
+                    if (calculated != expected) {
+                        if (calculated == 0 && expected != len) {
+                            // allow intrinsics to bail out and return zero, but only if we're not expecting
+                            // the full length (no negative bytes)
                             continue;
                         }
                         throw new Exception("Failed test countPositives " + "offset: " + off + " "
-                                + "length: " + len + " " + "return: " + r + " expected: " + t + " negatives: "
+                                + "length: " + len + " " + "return: " + calculated + " expected: " + expected + " negatives: "
                                 + ng);
                     }
                 }
