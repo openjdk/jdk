@@ -1215,14 +1215,16 @@ bool os::is_first_C_frame(frame* fr) {
 
 // Looks like all platforms can use the same function to check if C
 // stack is walkable beyond current frame.
-// But sometimes checking that some pointers are really pointing into
-// the stack prevents segmentation faults
+// This version of the method adds more checks that need the thread
 bool os::is_first_C_frame(frame* fr, Thread *t) {
 #ifdef _WINDOWS
   return true; // native stack isn't walkable on windows this way.
 #endif
-  if (!fr->can_access_link(t)) return true;
-  return os::is_first_C_frame(fr);
+  return !fr->can_access_link(t) || os::is_first_C_frame(fr) ||
+         !t->is_in_full_stack((address)fr->sp()) ||
+         !t->is_in_full_stack((address)fr->fp()) ||
+         !t->is_in_full_stack((address)fr->sender_sp()) ||
+         !t->is_in_full_stack((address)fr->link());
 }
 
 
