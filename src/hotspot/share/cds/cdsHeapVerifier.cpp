@@ -91,7 +91,7 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
   // you might need to fix the core library code, or fix the ADD_EXCL entries below.
   //
   //       class                                         field                     type
-  ADD_EXCL("java/lang/ClassLoader",                      "scl");                   // A 
+  ADD_EXCL("java/lang/ClassLoader",                      "scl");                   // A
   ADD_EXCL("java/lang/invoke/InvokerBytecodeGenerator",  "DONTINLINE_SIG",         // B
                                                          "FORCEINLINE_SIG",        // B
                                                          "HIDDEN_SIG",             // B
