@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,31 @@
  * questions.
  */
 
-/*
- * This little utility can be used to expand the jib-profiles configuration
- * files into plain json.
- *
- * Usage:
- *
- *   jjs -scripting print-config.js -- [<jib-profiles.js>]
- *
- */
+package sun.net.httpserver.simpleserver;
 
-var file = $ARG[0];
-if (file == null) {
-    file = new java.io.File(__DIR__, "../conf/jib-profiles.js").getCanonicalPath();
+/**
+ * A class that represents a URI path segment.
+ */
+final class URIPathSegment {
+
+    private URIPathSegment() { throw new AssertionError(); }
+
+    /**
+     * Checks if the segment of a URI path is supported. For example,
+     * "C:" is supported as a drive on Windows only.
+     *
+     * @param segment the segment string
+     * @return true if the segment is supported
+     */
+    static boolean isSupported(String segment) {
+        // apply same logic as WindowsPathParser
+        if (segment.length() >= 2 && isLetter(segment.charAt(0)) && segment.charAt(1) == ':') {
+            return false;
+        }
+        return true;
+    }
+
+    private static boolean isLetter(char c) {
+        return ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z'));
+    }
 }
-load(file);
-var input = {};
-input.get = function(dependencyName, attribute) {
-    return "\${" + dependencyName + "." + attribute + "}";
-};
-print(JSON.stringify(getJibProfiles(input), null, 2));
