@@ -28,11 +28,9 @@ package java.util.random;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Objects;
-import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import jdk.internal.util.random.RandomSupport;
 import jdk.internal.util.random.RandomSupport.*;
-import jdk.internal.util.random.RandomWrapper;
 
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
@@ -124,7 +122,7 @@ public interface RandomGenerator {
 
         return RandomGeneratorFactory.of(name, RandomGenerator.class);
     }
-    
+
     /**
      * Returns a {@link RandomGenerator} meeting the minimal requirement
      * of having an <a href="package-summary.html#algorithms">algorithm</a>
@@ -138,13 +136,6 @@ public interface RandomGenerator {
      */
     static RandomGenerator getDefault() {
         return of("L32X64MixRandom");
-    }
-    /**
-     * Returns a wrapper to use the Random class
-     * @return java.util.Random
-     */
-    default Random asRandom() {
-	return (Random) new RandomWrapper(this);
     }
 
     /**
