@@ -912,10 +912,14 @@ void ConnectionGraph::add_call_node(CallNode* call) {
         es = PointsToNode::GlobalEscape;
       } else {
         int length = call->in(AllocateNode::ALength)->find_int_con(-1);
-        if (length < 0 || length > EliminateAllocationArraySizeLimit) {
-          // Not scalar replaceable if the length is not constant or too big.
+        if (length < 0) {
+          // Not scalar replaceable if the length is not constant.
           scalar_replaceable = false;
-          NOT_PRODUCT(nsr_reason = "has a non-constant or too big length");
+          NOT_PRODUCT(nsr_reason = "has a non-constant length");
+        } else if (length > EliminateAllocationArraySizeLimit) {
+          // Not scalar replaceable if the length is too big.
+          scalar_replaceable = false;
+          NOT_PRODUCT(nsr_reason = "has a length that is too big");
         }
       }
     } else {  // Allocate instance
@@ -1145,7 +1149,7 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
               es = PointsToNode::NoEscape;
             }
           }
-          set_escape_state(arg_ptn, es NOT_PRODUCT(COMMA "reason unknown (1)"));
+          set_escape_state(arg_ptn, es NOT_PRODUCT(COMMA trace_arg_escape_message(call)));
           if (arg_is_arraycopy_dest) {
             Node* src = call->in(TypeFunc::Parms);
             if (src->is_AddP()) {
@@ -1828,8 +1832,8 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj) {
       PointsToNode* ptn = j.get();
       if (ptn->is_JavaObject() && ptn != jobj) {
         // Mark all objects.
-        set_not_scalar_replaceable(jobj NOT_PRODUCT(COMMA "is merged with other object"));
-        set_not_scalar_replaceable(ptn NOT_PRODUCT(COMMA "is merged with other object"));
+        set_not_scalar_replaceable(jobj NOT_PRODUCT(COMMA trace_merged_message(ptn)));
+        set_not_scalar_replaceable(ptn NOT_PRODUCT(COMMA trace_merged_message(jobj)));
       }
     }
     if (!jobj->scalar_replaceable()) {
@@ -3166,7 +3170,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         // so it could be eliminated.
         alloc->as_Allocate()->_is_scalar_replaceable = true;
       }
-      set_escape_state(ptnode_adr(n->_idx), es NOT_PRODUCT(COMMA "reason unknown (2)")); // CheckCastPP escape state
+      set_escape_state(ptnode_adr(n->_idx), es NOT_PRODUCT(COMMA trace_propagate_message(ptn))); // CheckCastPP escape state
       // in order for an object to be scalar-replaceable, it must be:
       //   - a direct allocation (not a call returning an object)
       //   - non-escaping
@@ -3761,6 +3765,17 @@ const char* ConnectionGraph::trace_arg_escape_message(CallNode* call) const {
     stringStream ss;
     ss.print("escapes as arg to:");
     call->dump("", false, &ss);
+    return ss.as_string();
+  } else {
+    return nullptr;
+  }
+}
+
+const char* ConnectionGraph::trace_merged_message(PointsToNode* other) const {
+  if (_compile->directive()->TraceEscapeAnalysisOption) {
+    stringStream ss;
+    ss.print("is merged with other object: ");
+    other->dump_header(true, &ss);
     return ss.as_string();
   } else {
     return nullptr;

@@ -590,6 +590,7 @@ private:
   void trace_es_update_helper(PointsToNode* ptn, PointsToNode::EscapeState es, bool fields, const char* reason) const;
   const char* trace_propagate_message(PointsToNode* from) const;
   const char* trace_arg_escape_message(CallNode* call) const;
+  const char* trace_merged_message(PointsToNode* other) const;
 #endif
 
 public:
