@@ -77,7 +77,7 @@ public class TestExplicitPageAllocation {
 
     private static long requiredPageCount(int index) {
         long pageSizeInKB = 1L << (index - 10);
-        return HEAP_SIZE_IN_KB / pageSizeInKB;
+        return (long) Math.ceil((double) HEAP_SIZE_IN_KB / pageSizeInKB);
     }
 
     private static String sizeFromIndex(int index) {
@@ -161,8 +161,8 @@ public class TestExplicitPageAllocation {
                     errorMessage += "TestCase Failed for " + size + " page allocation, ";
                 } else {
                     System.out.println("TestCase Passed for pagesize: " + pageSize + ", allocated pagesize: " + size);
-                    break;
                 }
+                break;
             }
         }
 
