@@ -67,15 +67,6 @@ public class LocalVmManager {
                 return userDirFilePattern.matcher(name).matches();
             }
         };
-
-        // 1.4.1 (or earlier?): the files are stored directly under {tmpdir}/ with
-        // the following pattern.
-        Pattern oldtmpFilePattern = Pattern.compile(PerfDataFile.tmpFileNamePattern);
-        oldtmpFileFilter = new FilenameFilter() {
-            public boolean accept(File dir, String name) {
-                return oldtmpFilePattern.matcher(name).matches();
-            }
-        };
     }
 
     /**
