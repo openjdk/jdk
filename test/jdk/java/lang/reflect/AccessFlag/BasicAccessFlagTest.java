@@ -30,6 +30,7 @@
 import java.lang.reflect.AccessFlag;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.HashSet;
@@ -40,6 +41,7 @@ public class BasicAccessFlagTest {
         testSourceModifiers();
         testMaskOrdering();
         testDisjoint();
+        testMaskToAccessFlagsPositive();
     }
 
     private static void testSourceModifiers() throws Exception {
@@ -124,5 +126,21 @@ public class BasicAccessFlagTest {
                            " already present for 0x" +
                            Integer.toHexString(mask) + ": " + value);
         throw new RuntimeException();
+    }
+
+    // For each access flag, make sure it is recognized on every kind
+    // of location it can apply to
+    private static void testMaskToAccessFlagsPositive() {
+        for (var accessFlag : AccessFlag.values()) {
+            Set<AccessFlag> expectedSet = EnumSet.of(accessFlag);
+            for (var location : accessFlag.locations()) {
+                Set<AccessFlag> computedSet =
+                    AccessFlag.maskToAccessFlags(accessFlag.mask(), location);
+                if (!expectedSet.equals(computedSet)) {
+                    throw new RuntimeException("Bad set computation on " +
+                                               accessFlag + ", " + location);
+                }
+            }
+        }
     }
 }

@@ -25,9 +25,10 @@
 
 package java.lang.reflect;
 
-import java.lang.annotation.ElementType;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
-import static java.lang.annotation.ElementType.*;
+import static java.util.Map.entry;
 
 /**
  * Represents a JVM access or module-related flag on a runtime member,
@@ -271,6 +272,32 @@ public enum AccessFlag {
     }
 
     /**
+     * {@return a set of access flags for the given mask value
+     * appropriate for the location in question}
+     *
+     * @param mask bit mask of access flags
+     * @param location context to interpret mask value
+     * @throw IllegalArgumentException if the mask contains bit
+     * positions not support for the location in question
+     */
+    public static Set<AccessFlag> maskToAccessFlags(int mask, Location location) {
+        Set<AccessFlag> result = java.util.EnumSet.noneOf(AccessFlag.class);
+        for (var accessFlag : LocationToFlags.locationToFlags.get(location)) {
+            int accessMask = accessFlag.mask();
+            if ((mask &  accessMask) != 0) {
+                result.add(accessFlag);
+                mask = mask & ~accessMask;
+            }
+        }
+        if (mask != 0) {
+            throw new IllegalArgumentException("Unmatched bit position 0x" +
+                                               Integer.toHexString(mask) +
+                                               " for location " + location);
+        }
+        return Collections.unmodifiableSet(result);
+    }
+
+    /**
      * A location within a class file where flags can be applied.
      * <em>Just stub-out constant descriptions for now</em>.
      */
@@ -328,6 +355,39 @@ public enum AccessFlag {
          * @jvms 4.7.25. The Module Attribute
          */
         MODULE_OPENS;
+
+    }
+
+    private static class LocationToFlags {
+        private static Map<Location, Set<AccessFlag>> locationToFlags =
+            Map.ofEntries(entry(Location.CLASS,
+                                Set.of(PUBLIC, FINAL, SUPER,
+                                       INTERFACE, ABSTRACT,
+                                       SYNTHETIC, ANNOTATION,
+                                       ENUM, AccessFlag.MODULE)),
+                          entry(Location.FIELD,
+                                Set.of(PUBLIC, PRIVATE, PROTECTED,
+                                       STATIC, FINAL, VOLATILE,
+                                       TRANSIENT, SYNTHETIC, ENUM)),
+                          entry(Location.METHOD,
+                                Set.of(PUBLIC, PRIVATE, PROTECTED,
+                                       STATIC, FINAL, SYNCHRONIZED,
+                                       BRIDGE, VARARGS, NATIVE,
+                                       ABSTRACT, STRICT, SYNTHETIC)),
+                          entry(Location.INNER_CLASS,
+                                Set.of(PUBLIC, PRIVATE, PROTECTED,
+                                       STATIC, FINAL, INTERFACE, ABSTRACT,
+                                       SYNTHETIC, ANNOTATION, ENUM)),
+                          entry(Location.METHOD_PARAMETER,
+                                Set.of(FINAL, SYNTHETIC, MANDATED)),
+                          entry(Location.MODULE,
+                                Set.of(OPEN, SYNTHETIC, MANDATED)),
+                          entry(Location.MODULE_REQUIRES,
+                                Set.of(TRANSITIVE, STATIC_PHASE, SYNTHETIC, MANDATED)),
+                          entry(Location.MODULE_EXPORTS,
+                                Set.of(SYNTHETIC, MANDATED)),
+                          entry(Location.MODULE_OPENS,
+                                Set.of(SYNTHETIC, MANDATED)));
     }
 
     // -------------------------------------------------------------
