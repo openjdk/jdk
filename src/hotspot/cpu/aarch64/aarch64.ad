@@ -3201,8 +3201,18 @@ encode %{
                  rscratch1, stlrb);
   %}
 
+  enc_class aarch64_enc_stlrb0(memory mem) %{
+    MOV_VOLATILE(zr, $mem$$base, $mem$$index, $mem$$scale, $mem$$disp,
+                 rscratch1, stlrb);
+  %}
+
   enc_class aarch64_enc_stlrh(iRegI src, memory mem) %{
     MOV_VOLATILE(as_Register($src$$reg), $mem$$base, $mem$$index, $mem$$scale, $mem$$disp,
+                 rscratch1, stlrh);
+  %}
+
+  enc_class aarch64_enc_stlrh0(memory mem) %{
+    MOV_VOLATILE(zr, $mem$$base, $mem$$index, $mem$$scale, $mem$$disp,
                  rscratch1, stlrh);
   %}
 
@@ -3211,6 +3221,10 @@ encode %{
                  rscratch1, stlrw);
   %}
 
+  enc_class aarch64_enc_stlrw0(memory mem) %{
+    MOV_VOLATILE(zr, $mem$$base, $mem$$index, $mem$$scale, $mem$$disp,
+                 rscratch1, stlrw);
+  %}
 
   enc_class aarch64_enc_ldarsbw(iRegI dst, memory mem) %{
     Register dst_reg = as_Register($dst$$reg);
@@ -3298,6 +3312,11 @@ encode %{
       src_reg = rscratch2;
     }
     MOV_VOLATILE(src_reg, $mem$$base, $mem$$index, $mem$$scale, $mem$$disp,
+                 rscratch1, stlr);
+  %}
+
+  enc_class aarch64_enc_stlr0(memory mem) %{
+    MOV_VOLATILE(zr, $mem$$base, $mem$$index, $mem$$scale, $mem$$disp,
                  rscratch1, stlr);
   %}
 
@@ -8275,6 +8294,18 @@ instruct storeB_volatile(iRegIorL2I src, /* sync_memory*/indirect mem)
   ins_pipe(pipe_class_memory);
 %}
 
+instruct storeimmB0_volatile(immI0 zero, /* sync_memory*/indirect mem)
+%{
+  match(Set mem (StoreB mem zero));
+
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "stlrb  zr, $mem\t# byte" %}
+
+  ins_encode(aarch64_enc_stlrb0(mem));
+
+  ins_pipe(pipe_class_memory);
+%}
+
 // Store Char/Short
 instruct storeC_volatile(iRegIorL2I src, /* sync_memory*/indirect mem)
 %{
@@ -8284,6 +8315,18 @@ instruct storeC_volatile(iRegIorL2I src, /* sync_memory*/indirect mem)
   format %{ "stlrh  $src, $mem\t# short" %}
 
   ins_encode(aarch64_enc_stlrh(src, mem));
+
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct storeimmC0_volatile(immI0 zero, /* sync_memory*/indirect mem)
+%{
+  match(Set mem (StoreC mem zero));
+
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "stlrh  zr, $mem\t# short" %}
+
+  ins_encode(aarch64_enc_stlrh0(mem));
 
   ins_pipe(pipe_class_memory);
 %}
@@ -8302,6 +8345,18 @@ instruct storeI_volatile(iRegIorL2I src, /* sync_memory*/indirect mem)
   ins_pipe(pipe_class_memory);
 %}
 
+instruct storeimmI0_volatile(immI0 zero, /* sync_memory*/indirect mem)
+%{
+  match(Set mem(StoreI mem zero));
+
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "stlrw  zr, $mem\t# int" %}
+
+  ins_encode(aarch64_enc_stlrw0(mem));
+
+  ins_pipe(pipe_class_memory);
+%}
+
 // Store Long (64 bit signed)
 instruct storeL_volatile(iRegL src, /* sync_memory*/indirect mem)
 %{
@@ -8311,6 +8366,18 @@ instruct storeL_volatile(iRegL src, /* sync_memory*/indirect mem)
   format %{ "stlr  $src, $mem\t# int" %}
 
   ins_encode(aarch64_enc_stlr(src, mem));
+
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct storeimmL0_volatile(immL0 zero, /* sync_memory*/indirect mem)
+%{
+  match(Set mem (StoreL mem zero));
+
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "stlr  zr, $mem\t# int" %}
+
+  ins_encode(aarch64_enc_stlr0(mem));
 
   ins_pipe(pipe_class_memory);
 %}
@@ -8328,6 +8395,18 @@ instruct storeP_volatile(iRegP src, /* sync_memory*/indirect mem)
   ins_pipe(pipe_class_memory);
 %}
 
+instruct storeimmP0_volatile(immP0 zero, /* sync_memory*/indirect mem)
+%{
+  match(Set mem (StoreP mem zero));
+
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "stlr  zr, $mem\t# ptr" %}
+
+  ins_encode(aarch64_enc_stlr0(mem));
+
+  ins_pipe(pipe_class_memory);
+%}
+
 // Store Compressed Pointer
 instruct storeN_volatile(iRegN src, /* sync_memory*/indirect mem)
 %{
@@ -8337,6 +8416,18 @@ instruct storeN_volatile(iRegN src, /* sync_memory*/indirect mem)
   format %{ "stlrw  $src, $mem\t# compressed ptr" %}
 
   ins_encode(aarch64_enc_stlrw(src, mem));
+
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct storeimmN0_volatile(immN0 zero, /* sync_memory*/indirect mem)
+%{
+  match(Set mem (StoreN mem zero));
+
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "stlrw  zr, $mem\t# compressed ptr" %}
+
+  ins_encode(aarch64_enc_stlrw0(mem));
 
   ins_pipe(pipe_class_memory);
 %}

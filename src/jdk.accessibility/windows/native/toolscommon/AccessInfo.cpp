@@ -85,7 +85,7 @@ void displayAndLog(HWND hDlg, int nIDDlgItem, FILE *logfile, char *msg, ...) {
 /*
  * writes a text string to a logfile
  */
-void logString(FILE *logfile, char *msg, ...) {
+void logString(FILE *logfile, const char *msg, ...) {
 
     if (logfile == NULL || msg == NULL) {
         return;
@@ -105,7 +105,7 @@ void logString(FILE *logfile, char *msg, ...) {
 /*
  * safely appends a message to a buffer
  */
-BOOL appendToBuffer(char *buf, size_t buflen, char *msg, ...) {
+BOOL appendToBuffer(char *buf, size_t buflen, const char *msg, ...) {
 
     static char warning[] =
         "\nNot enough buffer space; remaining information truncated.\n";

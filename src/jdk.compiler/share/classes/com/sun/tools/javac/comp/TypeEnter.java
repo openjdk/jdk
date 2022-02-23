@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -371,10 +371,15 @@ public class TypeEnter implements Completer {
                 }
 
                 if (decl != null) {
-                    //check @Deprecated:
-                    markDeprecated(decl.sym, decl.mods.annotations, env);
+                    DiagnosticPosition prevCheckDeprecatedLintPos = deferredLintHandler.setPos(decl.pos());
+                    try {
+                        //check @Deprecated:
+                        markDeprecated(decl.sym, decl.mods.annotations, env);
+                    } finally {
+                        deferredLintHandler.setPos(prevCheckDeprecatedLintPos);
+                    }
                     // process module annotations
-                    annotate.annotateLater(decl.mods.annotations, env, env.toplevel.modle, null);
+                    annotate.annotateLater(decl.mods.annotations, env, env.toplevel.modle, decl.pos());
                 }
             } finally {
                 this.env = prevEnv;
@@ -402,7 +407,7 @@ public class TypeEnter implements Completer {
                 }
             }
             // process package annotations
-            annotate.annotateLater(tree.annotations, env, env.toplevel.packge, null);
+            annotate.annotateLater(tree.annotations, env, env.toplevel.packge, tree.pos());
         }
 
         private void doImport(JCImport tree) {
