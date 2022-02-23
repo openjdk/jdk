@@ -890,7 +890,7 @@ size_t CodeCache::max_capacity() {
   return max_cap;
 }
 
-bool CodeCache::is_codestub(address addr) {
+bool CodeCache::is_non_nmethod(address addr) {
   CodeHeap* blob = get_code_heap(CodeBlobType::NonNMethod);
   return blob->contains(addr);
 }

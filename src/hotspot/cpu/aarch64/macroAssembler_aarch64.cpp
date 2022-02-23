@@ -390,7 +390,7 @@ void MacroAssembler::far_call(Address entry, CodeBuffer *cbuf, Register tmp) {
   assert(ReservedCodeCacheSize < 4*G, "branch out of range");
   assert(CodeCache::find_blob(entry.target()) != NULL,
          "destination of far call not found in code cache");
-  assert(CodeCache::is_codestub(entry.target()), "must be a call to the code stub");
+  assert(CodeCache::is_non_nmethod(entry.target()), "must be a call to the code stub");
   if (codestub_branch_needs_far_jump()) {
     uint64_t offset;
     // We can use ADRP here because we know that the total size of
@@ -405,15 +405,24 @@ void MacroAssembler::far_call(Address entry, CodeBuffer *cbuf, Register tmp) {
   }
 }
 
+static inline bool target_needs_far_branch(address addr) {
+  // codecache size <= 128M
+  if (!MacroAssembler::codecache_branch_needs_far_jump()) {
+    return false;
+  }
+  // codecache size > 240M
+  if (MacroAssembler::codestub_branch_needs_far_jump()) {
+    return true;
+  }
+  // codecache size: 128M..240M
+  return !CodeCache::is_non_nmethod(addr);
+}
+
 void MacroAssembler::far_jump(Address entry, CodeBuffer *cbuf, Register tmp, bool fixed_size) {
   assert(ReservedCodeCacheSize < 4*G, "branch out of range");
   assert(CodeCache::find_blob(entry.target()) != NULL,
          "destination of far call not found in code cache");
-  bool big_branch = codestub_branch_needs_far_jump() ||
-    // for CodeHeap larger than 128MB we can still use a single pc-relative branch instruction when
-    // the target is a stub and max distance to the entrypoint in a nonmethod segment is less than 128MB
-    (codecache_branch_needs_far_jump() && !CodeCache::is_codestub(entry.target()));
-  if (big_branch) {
+  if (target_needs_far_branch(entry.target())) {
     uint64_t offset;
     // We can use ADRP here because we know that the total size of
     // the code cache cannot exceed 2Gb.
