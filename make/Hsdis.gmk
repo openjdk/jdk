@@ -63,6 +63,24 @@ ifeq ($(HSDIS_BACKEND), capstone)
       -DCAPSTONE_MODE=$(CAPSTONE_MODE)
 endif
 
+ifeq ($(HSDIS_BACKEND), llvm)
+  # Use C++ instead of C
+  HSDIS_TOOLCHAIN_CFLAGS := $(CXXFLAGS_JDKLIB)
+  HSDIS_TOOLCHAIN := TOOLCHAIN_LINK_CXX
+
+  ifeq ($(call isTargetOs, linux), true)
+    LLVM_OS := pc-linux-gnu
+  else ifeq ($(call isTargetOs, macosx), true)
+    LLVM_OS := apple-darwin
+  else ifeq ($(call isTargetOs, windows), true)
+    LLVM_OS := pc-windows-msvc
+  else
+    $(error No support for LLVM on this platform)
+  endif
+
+  HSDIS_CFLAGS += -DLLVM_DEFAULT_TRIPLET='"$(OPENJDK_TARGET_CPU)-$(LLVM_OS)"'
+endif
+
 ifeq ($(HSDIS_BACKEND), binutils)
   ifeq ($(call isTargetOs, windows), true)
     # On windows, we need to "fake" a completely different toolchain using gcc
