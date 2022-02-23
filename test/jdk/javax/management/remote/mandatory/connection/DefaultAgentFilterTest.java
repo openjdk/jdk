@@ -169,14 +169,16 @@ public class DefaultAgentFilterTest {
     private static final int FREE_PORT_ATTEMPTS = 10;
 
     private static void testDefaultAgent(String propertyFile) throws Exception {
-        for (int i = 0; i < FREE_PORT_ATTEMPTS; i++) {
+        for (int i = 1; i <= FREE_PORT_ATTEMPTS; i++) {
             int port = Utils.getFreePort();
             System.out.println("Attempting testDefaultAgent(" + propertyFile + ") with port: " + port);
             try {
                 testDefaultAgent(propertyFile, port);
-                break;
             } catch (BindException b) {
-                // retry with new port
+                // Retry with new port.  Throw if last iteration:
+	        if (i == FREE_PORT_ATTEMPTS) {
+	            throw(b);
+	        }
             }
         }
     }
@@ -272,9 +274,9 @@ public class DefaultAgentFilterTest {
             testDefaultAgent("mgmt2.properties");
             System.out.println("----\tTest PASSED !!");
         } catch (Exception ex) {
-                System.out.println(ex);
-                System.out.println("----\tTest FAILED !!");
-                throw ex;
+            System.out.println(ex);
+            System.out.println("----\tTest FAILED !!");
+            throw ex;
         }
         System.out.println("---" + DefaultAgentFilterTest.class.getName() + "-main: finished ...");
     }
