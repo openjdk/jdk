@@ -1180,8 +1180,7 @@ bool os::is_first_C_frame(frame* fr) {
 
 #ifdef _WINDOWS
   return true; // native stack isn't walkable on windows this way.
-#endif
-
+#else
   // Load up sp, fp, sender sp and sender fp, check for reasonable values.
   // Check usp first, because if that's bad the other accessors may fault
   // on some architectures.  Ditto ufp second, etc.
@@ -1211,6 +1210,7 @@ bool os::is_first_C_frame(frame* fr) {
   if (old_fp - ufp > 64 * K) return true;
 
   return false;
+#endif
 }
 
 // Looks like all platforms can use the same function to check if C
@@ -1219,12 +1219,14 @@ bool os::is_first_C_frame(frame* fr) {
 bool os::is_first_C_frame(frame* fr, Thread *t) {
 #ifdef _WINDOWS
   return true; // native stack isn't walkable on windows this way.
-#endif
+#else
   return !fr->can_access_link(t) || os::is_first_C_frame(fr) ||
          !t->is_in_full_stack((address)fr->sp()) ||
          !t->is_in_full_stack((address)fr->fp()) ||
          !t->is_in_full_stack((address)fr->sender_sp()) ||
          !t->is_in_full_stack((address)fr->link());
+
+#endif
 }
 
 
