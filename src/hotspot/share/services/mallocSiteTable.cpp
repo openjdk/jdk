@@ -159,6 +159,7 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t*
 // Access malloc site
 MallocSite* MallocSiteTable::malloc_site(uint32_t marker) {
   uint16_t bucket_idx = bucket_idx_from_marker(marker);
+  assert(bucket_idx < table_size, "Invalid bucket index");
   const uint16_t pos_idx = pos_idx_from_marker(marker);
   MallocSiteHashtableEntry* head = _table[bucket_idx];
   for (size_t index = 0;

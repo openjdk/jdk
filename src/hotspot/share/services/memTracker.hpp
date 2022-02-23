@@ -31,6 +31,7 @@
 #include "services/nmtCommon.hpp"
 #include "services/threadStackTracker.hpp"
 #include "services/virtualMemoryTracker.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/nativeCallStack.hpp"
 
 #define CURRENT_PC ((MemTracker::tracking_level() == NMT_detail) ? \
@@ -94,6 +95,7 @@ class MemTracker : AllStatic {
 
   static inline void* record_malloc(void* mem_base, size_t size, MEMFLAGS flag,
     const NativeCallStack& stack) {
+    assert(mem_base != NULL, "caller should handle NULL");
     if (enabled()) {
       return MallocTracker::record_malloc(mem_base, size, flag, stack);
     }
@@ -103,6 +105,7 @@ class MemTracker : AllStatic {
   // Record malloc free and return malloc base address
   static inline void* record_free(void* memblock) {
     // Never turned on
+    assert(memblock != NULL, "caller should handle NULL");
     if (!enabled()) {
       return memblock;
     }
