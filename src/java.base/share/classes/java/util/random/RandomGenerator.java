@@ -28,8 +28,11 @@ package java.util.random;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Objects;
+import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import jdk.internal.util.random.RandomSupport;
+import jdk.internal.util.random.RandomSupport.*;
+import jdk.internal.util.random.RandomWrapper;
 
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
@@ -104,7 +107,7 @@ import java.util.stream.Stream;
  *
  */
 public interface RandomGenerator {
-    /**
+     /**
      * Returns an instance of {@link RandomGenerator} that utilizes the
      * {@code name} <a href="package-summary.html#algorithms">algorithm</a>.
      *
@@ -121,7 +124,7 @@ public interface RandomGenerator {
 
         return RandomGeneratorFactory.of(name, RandomGenerator.class);
     }
-
+    
     /**
      * Returns a {@link RandomGenerator} meeting the minimal requirement
      * of having an <a href="package-summary.html#algorithms">algorithm</a>
@@ -135,6 +138,13 @@ public interface RandomGenerator {
      */
     static RandomGenerator getDefault() {
         return of("L32X64MixRandom");
+    }
+    /**
+     * Returns a wrapper to use the Random class
+     * @return java.util.Random
+     */
+    default Random asRandom() {
+	return (Random) new RandomWrapper(this);
     }
 
     /**
@@ -152,9 +162,9 @@ public interface RandomGenerator {
      *
      * @implSpec The default implementation checks for the @Deprecated annotation.
      */
-    default boolean isDeprecated() {
+     default boolean isDeprecated() {
         return this.getClass().isAnnotationPresent(Deprecated.class);
-    }
+     }
 
     /**
      * Returns an effectively unlimited stream of pseudorandomly chosen
@@ -243,7 +253,7 @@ public interface RandomGenerator {
      * calls {@link RandomGenerator#nextDouble(double, double)  nextDouble}(randomNumberOrigin, randomNumberBound).
      */
     default DoubleStream doubles(long streamSize, double randomNumberOrigin,
-            double randomNumberBound) {
+                double randomNumberBound) {
         RandomSupport.checkStreamSize(streamSize);
         RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
 
@@ -334,7 +344,7 @@ public interface RandomGenerator {
      * calls {@link RandomGenerator#nextInt(int, int) nextInt}(randomNumberOrigin, randomNumberBound).
      */
     default IntStream ints(long streamSize, int randomNumberOrigin,
-            int randomNumberBound) {
+              int randomNumberBound) {
         RandomSupport.checkStreamSize(streamSize);
         RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
 
@@ -425,7 +435,7 @@ public interface RandomGenerator {
      * calls {@link RandomGenerator#nextLong(long, long) nextLong}(randomNumberOrigin, randomNumberBound).
      */
     default LongStream longs(long streamSize, long randomNumberOrigin,
-            long randomNumberBound) {
+                long randomNumberBound) {
         RandomSupport.checkStreamSize(streamSize);
         RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
 
