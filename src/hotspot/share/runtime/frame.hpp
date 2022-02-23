@@ -209,6 +209,9 @@ class frame {
   // Link (i.e., the pointer to the previous frame)
   intptr_t* link() const;
 
+  // is the link accessible (if it is on the stack, is this location really in the thread's stack?)
+  bool can_access_link(Thread* thread) const;
+
   // Return address
   address  sender_pc() const;
 

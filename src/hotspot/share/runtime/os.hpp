@@ -709,7 +709,7 @@ class os: AllStatic {
   // wait for a key press if PauseAtExit is set
   static void wait_for_keypress_at_exit(void);
 
-  // The following two functions are used by fatal error handler to trace
+  // The following three functions are used by fatal error handler to trace
   // native (C) frames. They are not part of frame.hpp/frame.cpp because
   // frame.hpp/cpp assume thread is JavaThread, and also because different
   // OS/compiler may have different convention or provide different API to
@@ -721,6 +721,7 @@ class os: AllStatic {
   // only walk stack if %ebp is used as frame pointer; on ia64, it's not
   // possible to walk C stack without having the unwind table.
   static bool is_first_C_frame(frame *fr);
+  static bool is_first_C_frame(frame *fr, Thread *t);
   static frame get_sender_for_C_frame(frame *fr);
 
   // return current frame. pc() and sp() are set to NULL on failure.

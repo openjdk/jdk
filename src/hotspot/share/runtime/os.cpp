@@ -1213,6 +1213,18 @@ bool os::is_first_C_frame(frame* fr) {
   return false;
 }
 
+// Looks like all platforms can use the same function to check if C
+// stack is walkable beyond current frame.
+// But sometimes checking that some pointers are really pointing into
+// the stack prevents segmentation faults
+bool os::is_first_C_frame(frame* fr, Thread *t) {
+#ifdef _WINDOWS
+  return true; // native stack isn't walkable on windows this way.
+#endif
+  if (!fr->can_access_link(t)) return true;
+  return os::is_first_C_frame(fr);
+}
+
 
 // Set up the boot classpath.
 
