@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,6 +110,8 @@ public class DefaultAgentFilterTest {
                 try {
                     AtomicBoolean error = new AtomicBoolean(false);
                     AtomicBoolean bindError = new AtomicBoolean(false);
+                    // The predicate below tries to recognise failures.  On a port clash, the only line it sees is, e.g.:
+                    // Error: Exception thrown by the agent : java.rmi.server.ExportException: Port already in use: 46481; nested exception is:
                     p = ProcessTools.startProcess(
                             TEST_APP_NAME + "{" + name + "}",
                             pb,
@@ -118,7 +120,7 @@ public class DefaultAgentFilterTest {
                                 || line.toLowerCase().contains("error")) {
                                     error.set(true);
                                 }
-                                bindError.set(line.toLowerCase().contains("bindexception"));
+                                bindError.set(line.toLowerCase().contains("port already in use"));
                                 return true;
                             });
                     if (bindError.get()) {
@@ -164,9 +166,22 @@ public class DefaultAgentFilterTest {
     }
 
     private static final String TEST_APP_NAME = "TestApp";
+    private static final int FREE_PORT_ATTEMPTS = 10;
 
     private static void testDefaultAgent(String propertyFile) throws Exception {
-        int port = Utils.getFreePort();
+        for (int i = 0; i < FREE_PORT_ATTEMPTS; i++) {
+            int port = Utils.getFreePort();
+            System.out.println("Attempting testDefaultAgent(" + propertyFile + ") with port: " + port);
+            try {
+                testDefaultAgent(propertyFile, port);
+                break;
+            } catch (BindException b) {
+                // retry with new port
+            }
+        }
+    }
+
+    private static void testDefaultAgent(String propertyFile, int port) throws Exception {
         String propFile = System.getProperty("test.src") + File.separator + propertyFile;
         List<String> pbArgs = new ArrayList<>(Arrays.asList(
                 "-cp",
@@ -235,53 +250,32 @@ public class DefaultAgentFilterTest {
     public static void main(String[] args) throws Exception {
         System.out.println("---" + DefaultAgentFilterTest.class.getName() + "-main: starting ...");
 
-        boolean retry = false;
-        do {
-            try {
-                // filter DefaultAgentFilterTest$MyTestObject
-                testDefaultAgent("mgmt1.properties");
-                System.out.println("----\tTest FAILED !!");
-                throw new RuntimeException("---" + DefaultAgentFilterTest.class.getName() + " - No exception reported");
-            } catch (Exception ex) {
-                if (ex instanceof InvocationTargetException) {
-                    if (ex.getCause() instanceof BindException
-                            || ex.getCause() instanceof java.rmi.ConnectException) {
-                        System.out.println("Failed to allocate ports. Retrying ...");
-                        retry = true;
-                    }
-                } else if (ex instanceof InvalidClassException) {
-                    System.out.println("----\tTest PASSED !!");
-                } else if (ex instanceof UnmarshalException
-                        && ((UnmarshalException) ex).getCause() instanceof InvalidClassException) {
-                    System.out.println("----\tTest PASSED !!");
-                } else {
-                    System.out.println(ex);
-                    System.out.println("----\tTest FAILED !!");
-                    throw ex;
-                }
-            }
-        } while (retry);
-        retry = false;
-        do {
-            try {
-                // filter non-existent class
-                testDefaultAgent("mgmt2.properties");
+        try {
+            // filter DefaultAgentFilterTest$MyTestObject
+            testDefaultAgent("mgmt1.properties");
+            System.out.println("----\tTest FAILED !!");
+            throw new RuntimeException("---" + DefaultAgentFilterTest.class.getName() + " - No exception reported");
+        } catch (Exception ex) {
+            if (ex instanceof InvalidClassException) {
                 System.out.println("----\tTest PASSED !!");
-            } catch (Exception ex) {
-                if (ex instanceof InvocationTargetException) {
-                    if (ex.getCause() instanceof BindException
-                            || ex.getCause() instanceof java.rmi.ConnectException) {
-                        System.out.println("Failed to allocate ports. Retrying ...");
-                        retry = true;
-                    }
-                } else {
-                    System.out.println(ex);
-                    System.out.println("----\tTest FAILED !!");
-                    throw ex;
-                }
+            } else if (ex instanceof UnmarshalException
+                    && ((UnmarshalException) ex).getCause() instanceof InvalidClassException) {
+                System.out.println("----\tTest PASSED !!");
+            } else {
+                System.out.println(ex);
+                System.out.println("----\tTest FAILED !!");
+                throw ex;
             }
-        } while (retry);
-
+        }
+        try {
+            // filter non-existent class
+            testDefaultAgent("mgmt2.properties");
+            System.out.println("----\tTest PASSED !!");
+        } catch (Exception ex) {
+                System.out.println(ex);
+                System.out.println("----\tTest FAILED !!");
+                throw ex;
+        }
         System.out.println("---" + DefaultAgentFilterTest.class.getName() + "-main: finished ...");
     }
 
