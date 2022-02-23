@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1189,7 +1189,7 @@ public:
             assert(con >= CatchProjNode::catch_all_index, "what else?");
             _freqs.at_put_grow(c->_idx, 0, -1);
           }
-        } else if (c->unique_ctrl_out() == NULL && !c->is_If() && !c->is_Jump()) {
+        } else if (c->unique_ctrl_out_or_null() == NULL && !c->is_If() && !c->is_Jump()) {
           ShouldNotReachHere();
         } else {
           c = c->in(0);

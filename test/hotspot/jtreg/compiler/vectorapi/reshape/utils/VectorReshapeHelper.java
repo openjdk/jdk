@@ -75,6 +75,9 @@ public class VectorReshapeHelper {
     public static final String L2X_NODE  = IRNode.VECTOR_CAST_L2X;
     public static final String F2X_NODE  = IRNode.VECTOR_CAST_F2X;
     public static final String D2X_NODE  = IRNode.VECTOR_CAST_D2X;
+    public static final String UB2X_NODE = IRNode.VECTOR_UCAST_B2X;
+    public static final String US2X_NODE = IRNode.VECTOR_UCAST_S2X;
+    public static final String UI2X_NODE = IRNode.VECTOR_UCAST_I2X;
     public static final String REINTERPRET_NODE = IRNode.VECTOR_REINTERPRET;
 
     public static void runMainHelper(Class<?> testClass, Stream<VectorSpeciesPair> testMethods, String... flags) {
@@ -104,7 +107,7 @@ public class VectorReshapeHelper {
                                             VectorSpecies<T> isp, VectorSpecies<U> osp) throws Throwable {
         var random = RandomGenerator.getDefault();
         boolean isUnsignedCast = castOp.name().startsWith("ZERO");
-        String testMethodName = VectorSpeciesPair.makePair(isp, osp).format();
+        String testMethodName = VectorSpeciesPair.makePair(isp, osp, isUnsignedCast).format();
         var caller = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).getCallerClass();
         var testMethod = MethodHandles.lookup().findStatic(caller,
                     testMethodName,

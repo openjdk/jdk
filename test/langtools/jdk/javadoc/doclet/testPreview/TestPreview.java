@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8250768 8261976
+ * @bug      8250768 8261976 8277300
  * @summary  test generated docs for items declared using preview
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -33,8 +33,6 @@
  */
 
 import java.nio.file.Paths;
-import java.text.MessageFormat;
-import java.util.ResourceBundle;
 import javadoc.tester.JavadocTester;
 
 public class TestPreview extends JavadocTester {
@@ -100,5 +98,26 @@ public class TestPreview extends JavadocTester {
                     <div class="block">Returns the value of the <code>i</code> record component.</div>
                     </div>
                     """);
+    }
+
+    @Test
+    public void test8277300() {
+        javadoc("-d", "out-8277300",
+                "--add-exports", "java.base/jdk.internal.javac=api2",
+                "--source-path", Paths.get(testSrc, "api2").toAbsolutePath().toString(),
+                "--show-packages=all",
+                "api2/api");
+        checkExit(Exit.OK);
+
+        checkOutput("api2/api/API.html", true,
+                    "<p><a href=\"#test()\"><code>test()</code></a></p>",
+                    "<p><a href=\"#testNoPreviewInSig()\"><code>testNoPreviewInSig()</code></a></p>",
+                    "title=\"class or interface in java.util\" class=\"external-link\">List</a>&lt;<a href=\"API.html\" title=\"class in api\">API</a><sup><a href=\"#preview-api.API\">PREVIEW</a></sup>&gt;");
+        checkOutput("api2/api/API2.html", true,
+                    "<a href=\"API.html#test()\"><code>API.test()</code></a><sup><a href=\"API.html#preview-api.API\">PREVIEW</a></sup>",
+                    "<a href=\"API.html#testNoPreviewInSig()\"><code>API.testNoPreviewInSig()</code></a><sup><a href=\"API.html#preview-api.API\">PREVIEW</a></sup>",
+                    "<a href=\"API3.html#test()\"><code>API3.test()</code></a><sup><a href=\"API3.html#preview-test()\">PREVIEW</a></sup>");
+        checkOutput("api2/api/API3.html", true,
+                    "<div class=\"block\"><a href=\"#test()\"><code>test()</code></a><sup><a href=\"#preview-test()\">PREVIEW</a></sup></div>");
     }
 }

@@ -234,7 +234,7 @@ Java_sun_awt_Win32FontManager_getEUDCFontFile(JNIEnv *env, jclass cl) {
     unsigned long fontPathLen = MAX_PATH + 1;
     WCHAR  tmpPath[MAX_PATH + 1];
     LPWSTR fontPath = fontPathBuf;
-    LPWSTR eudcKey = NULL;
+    LPCWSTR eudcKey = NULL;
 
     LANGID langID = GetSystemDefaultLangID();
     //lookup for encoding ID, EUDC only supported in

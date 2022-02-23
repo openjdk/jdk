@@ -97,6 +97,12 @@ class ParCompactionManager : public CHeapObj<mtGC> {
 
   static void initialize(ParMarkBitMap* mbm);
 
+  void publish_and_drain_oop_tasks();
+  // Try to publish all contents from the objArray task queue overflow stack to
+  // the shared objArray stack.
+  // Returns true and a valid task if there has not been enough space in the shared
+  // objArray stack, otherwise returns false and the task is invalid.
+  bool publish_or_pop_objarray_tasks(ObjArrayTask& task);
  protected:
   // Array of task queues.  Needed by the task terminator.
   static RegionTaskQueueSet* region_task_queues()      { return _region_task_queues; }

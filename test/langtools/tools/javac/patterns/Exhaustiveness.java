@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8262891 8268871 8274363
+ * @bug 8262891 8268871 8274363 8281100
  * @summary Check exhaustiveness of switches over sealed types.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -791,6 +791,82 @@ public class Exhaustiveness extends TestRunner {
         }
     }
 
+    @Test
+    public void testDefiniteAssignment(Path base) throws Exception {
+        doTest(base,
+               new String[]{"""
+                            package lib;
+                            public sealed interface S permits A, B {}
+                            """,
+                            """
+                            package lib;
+                            public final class A implements S {}
+                            """,
+                            """
+                            package lib;
+                            public final class B implements S {}
+                            """},
+               """
+               package test;
+               import lib.*;
+               public class Test {
+                   private void testStatement(S obj) {
+                       int data;
+                       switch (obj) {
+                           case A a -> data = 0;
+                           case B b -> data = 0;
+                       };
+                       System.err.println(data);
+                   }
+                   private void testExpression(S obj) {
+                       int data;
+                       int v = switch (obj) {
+                           case A a -> data = 0;
+                           case B b -> data = 0;
+                       };
+                       System.err.println(data);
+                   }
+                   private void testStatementNotExhaustive(S obj) {
+                       int data;
+                       switch (obj) {
+                           case A a -> data = 0;
+                       };
+                       System.err.println(data);
+                   }
+                   private void testExpressionNotExhaustive(S obj) {
+                       int data;
+                       int v = switch (obj) {
+                           case A a -> data = 0;
+                       };
+                       System.err.println(data);
+                   }
+                   private void testStatementErrorEnum(E e) { //"E" is intentionally unresolvable
+                       int data;
+                       switch (e) {
+                           case A -> data = 0;
+                           case B -> data = 0;
+                       };
+                       System.err.println(data);
+                   }
+                   private void testExpressionErrorEnum(E e) { //"E" is intentionally unresolvable
+                       int data;
+                       int v = switch (e) {
+                           case A -> data = 0;
+                           case B -> data = 0;
+                       };
+                       System.err.println(data);
+                   }
+               }
+               """,
+               "Test.java:34:41: compiler.err.cant.resolve.location: kindname.class, E, , , (compiler.misc.location: kindname.class, test.Test, null)",
+               "Test.java:42:42: compiler.err.cant.resolve.location: kindname.class, E, , , (compiler.misc.location: kindname.class, test.Test, null)",
+               "Test.java:22:9: compiler.err.not.exhaustive.statement",
+               "Test.java:29:17: compiler.err.not.exhaustive",
+               "- compiler.note.preview.filename: Test.java, DEFAULT",
+               "- compiler.note.preview.recompile",
+               "4 errors");
+    }
+
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedErrors) throws IOException {
         Path current = base.resolve(".");
         Path libClasses = current.resolve("libClasses");
@@ -825,7 +901,8 @@ public class Exhaustiveness extends TestRunner {
                              "-source", JAVA_VERSION,
                              "-XDrawDiagnostics",
                              "-Xlint:-preview",
-                             "--class-path", libClasses.toString())
+                             "--class-path", libClasses.toString(),
+                             "-XDshould-stop.at=FLOW")
                     .outdir(classes)
                     .files(tb.findJavaFiles(src))
                     .run(expectedErrors.length > 0 ? Task.Expect.FAIL : Task.Expect.SUCCESS)

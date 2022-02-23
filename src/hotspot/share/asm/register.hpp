@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ typedef AbstractRegisterImpl* AbstractRegister;
 
 // The super class for platform specific registers. Instead of using value objects,
 // registers are implemented as pointers. Subclassing is used so all registers can
-// use the debugging suport below. No virtual functions are used for efficiency.
+// use the debugging support below. No virtual functions are used for efficiency.
 // They are canonicalized; i.e., registers are equal if their pointers are equal,
 // and vice versa. A concrete implementation may just map the register onto 'this'.
 
@@ -86,8 +86,6 @@ const type name = ((type)value)
 #define INTERNAL_VISIBILITY
 #endif
 
-
-#define REGISTER_DEFINITION(type, name)
 
 #include CPU_HEADER(register)
 

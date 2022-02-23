@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,11 +56,38 @@ void BufferNode::deallocate(BufferNode* node) {
   FREE_C_HEAP_ARRAY(char, node);
 }
 
+BufferNode::Allocator::PendingList::PendingList() :
+  _tail(nullptr), _head(nullptr), _count(0) {}
+
+BufferNode::Allocator::PendingList::~PendingList() {
+  delete_list(Atomic::load(&_head));
+}
+
+size_t BufferNode::Allocator::PendingList::add(BufferNode* node) {
+  assert(node->next() == nullptr, "precondition");
+  BufferNode* old_head = Atomic::xchg(&_head, node);
+  if (old_head != nullptr) {
+    node->set_next(old_head);
+  } else {
+    assert(_tail == nullptr, "invariant");
+    _tail = node;
+  }
+  return Atomic::add(&_count, size_t(1));
+}
+
+BufferNodeList BufferNode::Allocator::PendingList::take_all() {
+  BufferNodeList result{Atomic::load(&_head), _tail, Atomic::load(&_count)};
+  Atomic::store(&_head, (BufferNode*)nullptr);
+  _tail = nullptr;
+  Atomic::store(&_count, size_t(0));
+  return result;
+}
+
 BufferNode::Allocator::Allocator(const char* name, size_t buffer_size) :
   _buffer_size(buffer_size),
-  _pending_list(),
+  _pending_lists(),
+  _active_pending_list(0),
   _free_list(),
-  _pending_count(0),
   _free_count(0),
   _transfer_lock(false)
 {
@@ -70,7 +97,6 @@ BufferNode::Allocator::Allocator(const char* name, size_t buffer_size) :
 
 BufferNode::Allocator::~Allocator() {
   delete_list(_free_list.pop_all());
-  delete_list(_pending_list.pop_all());
 }
 
 void BufferNode::Allocator::delete_list(BufferNode* list) {
@@ -109,14 +135,11 @@ BufferNode* BufferNode::Allocator::allocate() {
 // pop inside a critical section, and release synchronizes on the
 // critical sections before adding to the _free_list.  But we don't
 // want to make every release have to do a synchronize.  Instead, we
-// initially place released nodes on the _pending_list, and transfer
+// initially place released nodes on the pending list, and transfer
 // them to the _free_list in batches.  Only one transfer at a time is
-// permitted, with a lock bit to control access to that phase.  A
-// transfer takes all the nodes from the _pending_list, synchronizes on
-// the _free_list pops, and then adds the former pending nodes to the
-// _free_list.  While that's happening, other threads might be adding
-// other nodes to the _pending_list, to be dealt with by some later
-// transfer.
+// permitted, with a lock bit to control access to that phase.  While
+// a transfer is in progress, other threads might be adding other nodes
+// to the pending list, to be dealt with by some later transfer.
 void BufferNode::Allocator::release(BufferNode* node) {
   assert(node != NULL, "precondition");
   assert(node->next() == NULL, "precondition");
@@ -130,15 +153,20 @@ void BufferNode::Allocator::release(BufferNode* node) {
   // similar, due to how the buffers are used.
   const size_t trigger_transfer = 10;
 
-  // Add to pending list. Update count first so no underflow in transfer.
-  size_t pending_count = Atomic::add(&_pending_count, 1u);
-  _pending_list.push(*node);
-  if (pending_count > trigger_transfer) {
-    try_transfer_pending();
+  // The pending list is double-buffered.  Add node to the currently active
+  // pending list, within a critical section so a transfer will wait until
+  // we're done with what might be the pending list to be transferred.
+  {
+    GlobalCounter::CriticalSection cs(Thread::current());
+    uint index = Atomic::load_acquire(&_active_pending_list);
+    size_t count = _pending_lists[index].add(node);
+    if (count <= trigger_transfer) return;
   }
+  // Attempt transfer when number pending exceeds the transfer threshold.
+  try_transfer_pending();
 }
 
-// Try to transfer nodes from _pending_list to _free_list, with a
+// Try to transfer nodes from the pending list to _free_list, with a
 // synchronization delay for any in-progress pops from the _free_list,
 // to solve ABA there.  Return true if performed a (possibly empty)
 // transfer, false if blocked from doing so by some other thread's
@@ -151,27 +179,26 @@ bool BufferNode::Allocator::try_transfer_pending() {
   }
   // Have the lock; perform the transfer.
 
-  // Claim all the pending nodes.
-  BufferNode* first = _pending_list.pop_all();
-  if (first != NULL) {
-    // Prepare to add the claimed nodes, and update _pending_count.
-    BufferNode* last = first;
-    size_t count = 1;
-    for (BufferNode* next = first->next(); next != NULL; next = next->next()) {
-      last = next;
-      ++count;
-    }
-    Atomic::sub(&_pending_count, count);
+  // Change which pending list is active.  Don't need an atomic RMW since
+  // we have the lock and we're the only writer.
+  uint index = Atomic::load(&_active_pending_list);
+  uint new_active = (index + 1) % ARRAY_SIZE(_pending_lists);
+  Atomic::release_store(&_active_pending_list, new_active);
 
-    // Wait for any in-progress pops, to avoid ABA for them.
-    GlobalCounter::write_synchronize();
+  // Wait for all critical sections in the buffer life-cycle to complete.
+  // This includes _free_list pops and adding to the now inactive pending
+  // list.
+  GlobalCounter::write_synchronize();
 
-    // Add synchronized nodes to _free_list.
+  // Transfer the inactive pending list to _free_list.
+  BufferNodeList transfer_list = _pending_lists[index].take_all();
+  size_t count = transfer_list._entry_count;
+  if (count > 0) {
     // Update count first so no underflow in allocate().
     Atomic::add(&_free_count, count);
-    _free_list.prepend(*first, *last);
+    _free_list.prepend(*transfer_list._head, *transfer_list._tail);
     log_trace(gc, ptrqueue, freelist)
-             ("Transferred %s pending to free: " SIZE_FORMAT, name(), count);
+             ("Transferred %s pending to free: %zu", name(), count);
   }
   Atomic::release_store(&_transfer_lock, false);
   return true;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,21 +129,21 @@ public class TestConstructorParameterAnnotations {
 
     @ExpectedGetParameterAnnotations(
         "[[], " +
-        "[@TestConstructorParameterAnnotations$MarkerAnnotation(1)]]")
+        "[@TestConstructorParameterAnnotations.MarkerAnnotation(1)]]")
     @ExpectedParameterAnnotations({
         "null",
-        "@TestConstructorParameterAnnotations$MarkerAnnotation(1)"})
+        "@TestConstructorParameterAnnotations.MarkerAnnotation(1)"})
     public class NestedClass1 {
         public NestedClass1(@MarkerAnnotation(1) int parameter) {}
     }
 
     @ExpectedGetParameterAnnotations(
         "[[], " +
-        "[@TestConstructorParameterAnnotations$MarkerAnnotation(2)], " +
+        "[@TestConstructorParameterAnnotations.MarkerAnnotation(2)], " +
         "[]]")
     @ExpectedParameterAnnotations({
         "null",
-        "@TestConstructorParameterAnnotations$MarkerAnnotation(2)",
+        "@TestConstructorParameterAnnotations.MarkerAnnotation(2)",
         "null"})
     public class NestedClass2 {
         public NestedClass2(@MarkerAnnotation(2) int parameter1,
@@ -152,11 +152,11 @@ public class TestConstructorParameterAnnotations {
 
     @ExpectedGetParameterAnnotations(
         "[[], " +
-        "[@TestConstructorParameterAnnotations$MarkerAnnotation(3)], " +
+        "[@TestConstructorParameterAnnotations.MarkerAnnotation(3)], " +
         "[]]")
     @ExpectedParameterAnnotations({
         "null",
-        "@TestConstructorParameterAnnotations$MarkerAnnotation(3)",
+        "@TestConstructorParameterAnnotations.MarkerAnnotation(3)",
             "null"})
     public class NestedClass3 {
         public <P> NestedClass3(@MarkerAnnotation(3) P parameter1,
@@ -165,11 +165,11 @@ public class TestConstructorParameterAnnotations {
 
     @ExpectedGetParameterAnnotations(
         "[[], " +
-        "[@TestConstructorParameterAnnotations$MarkerAnnotation(4)], " +
+        "[@TestConstructorParameterAnnotations.MarkerAnnotation(4)], " +
         "[]]")
     @ExpectedParameterAnnotations({
         "null",
-        "@TestConstructorParameterAnnotations$MarkerAnnotation(4)",
+        "@TestConstructorParameterAnnotations.MarkerAnnotation(4)",
         "null"})
     public class NestedClass4 {
         public <P, Q> NestedClass4(@MarkerAnnotation(4) P parameter1,
@@ -183,18 +183,18 @@ public class TestConstructorParameterAnnotations {
     }
 
     @ExpectedGetParameterAnnotations(
-        "[[@TestConstructorParameterAnnotations$MarkerAnnotation(1)]]")
+        "[[@TestConstructorParameterAnnotations.MarkerAnnotation(1)]]")
     @ExpectedParameterAnnotations({
-        "@TestConstructorParameterAnnotations$MarkerAnnotation(1)"})
+        "@TestConstructorParameterAnnotations.MarkerAnnotation(1)"})
     public static class StaticNestedClass1 {
         public StaticNestedClass1(@MarkerAnnotation(1) int parameter) {}
     }
 
     @ExpectedGetParameterAnnotations(
-        "[[@TestConstructorParameterAnnotations$MarkerAnnotation(2)], " +
+        "[[@TestConstructorParameterAnnotations.MarkerAnnotation(2)], " +
         "[]]")
     @ExpectedParameterAnnotations({
-        "@TestConstructorParameterAnnotations$MarkerAnnotation(2)",
+        "@TestConstructorParameterAnnotations.MarkerAnnotation(2)",
         "null"})
     public static class StaticNestedClass2 {
         public StaticNestedClass2(@MarkerAnnotation(2) int parameter1,
@@ -202,10 +202,10 @@ public class TestConstructorParameterAnnotations {
     }
 
     @ExpectedGetParameterAnnotations(
-        "[[@TestConstructorParameterAnnotations$MarkerAnnotation(3)], " +
+        "[[@TestConstructorParameterAnnotations.MarkerAnnotation(3)], " +
         "[]]")
     @ExpectedParameterAnnotations({
-        "@TestConstructorParameterAnnotations$MarkerAnnotation(3)",
+        "@TestConstructorParameterAnnotations.MarkerAnnotation(3)",
         "null"})
     public static class StaticNestedClass3 {
         public <P> StaticNestedClass3(@MarkerAnnotation(3) P parameter1,
@@ -213,10 +213,10 @@ public class TestConstructorParameterAnnotations {
     }
 
     @ExpectedGetParameterAnnotations(
-        "[[@TestConstructorParameterAnnotations$MarkerAnnotation(4)], " +
+        "[[@TestConstructorParameterAnnotations.MarkerAnnotation(4)], " +
         "[]]")
     @ExpectedParameterAnnotations({
-        "@TestConstructorParameterAnnotations$MarkerAnnotation(4)",
+        "@TestConstructorParameterAnnotations.MarkerAnnotation(4)",
         "null"})
     public static class StaticNestedClass4 {
         public <P, Q> StaticNestedClass4(@MarkerAnnotation(4) P parameter1,

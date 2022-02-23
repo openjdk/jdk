@@ -157,4 +157,5 @@
  *
  * @since 1.0
  */
+@SuppressWarnings("doclint:reference") // cross-module links
 package java.net;

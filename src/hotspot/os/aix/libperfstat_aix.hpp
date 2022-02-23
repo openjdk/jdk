@@ -1,5 +1,7 @@
 /*
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2022, IBM Corp.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +49,9 @@
 // work without recompilation on all newer AIX versions.
 //
 
-#define IDENTIFIER_LENGTH 64    /* length of strings included in the structures */
+#define IDENTIFIER_LENGTH  64    /* length of strings included in the structures */
+#define FIRST_CPU          ""    /* pseudo-name for fist CPU */
+#define FIRST_NETINTERFACE ""    /* pseudo-name for first NETINTERFACE */
 
 
 typedef struct { /* structure element identifier */
@@ -439,6 +443,102 @@ typedef struct { /* global cpu information AIX 7.2  / 6.1 TL6 (see oslevel -r) *
                                   * of perfstat_cpu_total_t data structure   */
 } perfstat_cpu_total_t_72;
 
+typedef struct { /* component perfstat_cpu_t from AIX 7.2 documentation */
+  char name [IDENTIFIER_LENGTH];            /* Logical processor name (processor0, processor1,.). */
+  ulong_t state;                            /* Specifies whether the CPU is offline or online.
+                                             * (NOTE: The type of 'state' is not specified in the documentation, but
+                                             * ulong_t is the correct length) */
+  u_longlong_t user;                        /* Raw number of clock ticks spent in user mode. */
+  u_longlong_t sys;                         /* Raw number of clock ticks spent in system mode. */
+  u_longlong_t idle;                        /* Raw number of clock ticks spent idle. */
+  u_longlong_t wait;                        /* Raw number of clock ticks spent waiting for I/O. */
+  u_longlong_t pswitch;                     /* Number of context switches (changes of currently running process). */
+  u_longlong_t syscall;                     /* Number of system calls executed. */
+  u_longlong_t sysread;                     /* Number of read system calls executed. */
+  u_longlong_t syswrite;                    /* Number of write system calls executed. */
+  u_longlong_t sysfork;                     /* Number of fork system call executed. */
+  u_longlong_t sysexec;                     /* Number of exec system call executed. */
+  u_longlong_t readch;                      /* Number of characters transferred with read system call. */
+  u_longlong_t writech;                     /* Number of characters transferred with write system call. */
+  u_longlong_t bread;                       /* Number of block reads. */
+  u_longlong_t bwrite;                      /* Number of block writes. */
+  u_longlong_t lread;                       /* Number of logical read requests. */
+  u_longlong_t lwrite;                      /* Number of logical write requests. */
+  u_longlong_t phread;                      /* Number of physical reads (reads on raw device). */
+  u_longlong_t phwrite;                     /* Number of physical writes (writes on raw device). */
+  u_longlong_t iget;                        /* Number of inode lookups. */
+  u_longlong_t namei;                       /* Number of vnode lookup from a path name. */
+  u_longlong_t dirblk;                      /* Number of 512-byte blocks reads by the directory search routine to locate an entry for a file. */
+  u_longlong_t msg;                         /* Number of interprocess communication (IPC) message operations. */
+  u_longlong_t sema;                        /* Number of IPC semaphore operations. */
+  u_longlong_t minfaults;                   /* Number of page faults with no I/O. */
+  u_longlong_t majfaults;                   /* Number of page faults with disk I/O. */
+  u_longlong_t puser;                       /* Raw number of physical processor ticks in user mode. */
+  u_longlong_t psys;                        /* Raw number of physical processor ticks in system mode. */
+  u_longlong_t pidle;                       /* Raw number of physical processor ticks idle. */
+  u_longlong_t pwait;                       /* Raw number of physical processor ticks waiting for I/O. */
+  u_longlong_t redisp_sd0;                  /* Number of thread redispatches within the scheduler affinity domain 0. */
+  u_longlong_t redisp_sd1;                  /* Number of thread redispatches within the scheduler affinity domain 1. */
+  u_longlong_t redisp_sd2;                  /* Number of thread redispatches within the scheduler affinity domain 2. */
+  u_longlong_t redisp_sd3;                  /* Number of thread redispatches within the scheduler affinity domain 3. */
+  u_longlong_t redisp_sd4;                  /* Number of thread redispatches within the scheduler affinity domain 4. */
+  u_longlong_t redisp_sd5;                  /* Number of thread redispatches within the scheduler affinity domain 5. */
+  u_longlong_t migration_push;              /* Number of thread migrations from the local runque to another queue due to starvation load balancing. */
+  u_longlong_t migration_S3grq;             /* Number of thread migrations from the global runque to the local runque resulting in a move across scheduling domain 3. */
+  u_longlong_t migration_S3pull;            /* Number of thread migrations from another processor's runque resulting in a move across scheduling domain 3. */
+  u_longlong_t invol_cswitch;               /* Number of involuntary thread context switches. */
+  u_longlong_t vol_cswitch;                 /* Number of voluntary thread context switches. */
+  u_longlong_t runque;                      /* Number of threads on the runque. */
+  u_longlong_t bound;                       /* Number of bound threads. */
+  u_longlong_t decrintrs;                   /* Number of decrementer interrupts. */
+  u_longlong_t mpcrintrs;                   /* Number of received interrupts for MPC. */
+  u_longlong_t mpcsintrs;                   /* Number of sent interrupts for MPC. */
+  u_longlong_t devintrs;                    /* Number of device interrupts. */
+  u_longlong_t softintrs;                   /* Number of offlevel handlers called. */
+  u_longlong_t phantintrs;                  /* Number of phantom interrupts. */
+  u_longlong_t idle_donated_purr;           /* Number of idle cycles donated by a dedicated partition enabled for donation. */
+  u_longlong_t idle_donated_spurr;          /* Number of idle spurr cycles donated by a dedicated partition enabled for donation. */
+  u_longlong_t busy_donated_purr;           /* Number of busy cycles donated by a dedicated partition enabled for donation. */
+  u_longlong_t busy_donated_spurr;          /* Number of busy spurr cycles donated by a dedicated partition enabled for donation. */
+  u_longlong_t idle_stolen_purr;            /* Number of idle cycles stolen by the hypervisor from a dedicated partition. */
+  u_longlong_t idle_stolen_spurr;           /* Number of idle spurr cycles stolen by the hypervisor from a dedicated partition. */
+  u_longlong_t busy_stolen_purr;            /* Number of busy cycles stolen by the hypervisor from a dedicated partition. */
+  u_longlong_t busy_stolen_spurr;           /* Number of busy spurr cycles stolen by the hypervisor from a dedicated partition.*/
+  u_longlong_t shcpus_in_sys;               /* Number of physical processors allocated for shared processor use, across all shared processors pools. */
+  u_longlong_t entitled_pool_capacity;      /* Entitled processor capacity of partition’s pool. */
+  u_longlong_t pool_max_time;               /* Summation of maximum time that can be consumed by the pool (nanoseconds). */
+  u_longlong_t pool_busy_time;              /* Summation of busy (nonidle) time accumulated across all partitions in the pool (nanoseconds). */
+  u_longlong_t pool_scaled_busy_time;       /* Scaled summation of busy (nonidle) time accumulated across all partitions in the pool (nanoseconds). */
+  u_longlong_t shcpu_tot_time;              /* Summation of total time across all physical processors allocated for shared processor use (nanoseconds). */
+  u_longlong_t shcpu_busy_time;             /* Summation of busy (nonidle) time accumulated across all shared processor partitions (nanoseconds). */
+  u_longlong_t shcpu_scaled_busy_time;      /* Scaled summation of busy time accumulated across all shared processor partitions (nanoseconds). */
+  int ams_pool_id;                          /* AMS pool ID of the pool the LPAR belongs to. */
+  int var_mem_weight;                       /* Variable memory capacity weight. */
+  u_longlong_t iome;                        /* I/O memory entitlement of the partition in bytes. */
+  u_longlong_t pmem;                        /* Physical memory currently backing the partition's logical memory in bytes. */
+  u_longlong_t hpi;                         /* Number of hypervisor page-ins. */
+  u_longlong_t hpit;                        /* Time spent in hypervisor page-ins (in nanoseconds). */
+  u_longlong_t hypv_pagesize;               /* Hypervisor page size in KB. */
+  uint online_lcpus;                        /* Number of online logical processors. */
+  uint smt_thrds;                           /* Number of SMT threads. */
+} perfstat_cpu_t;
+
+typedef struct {
+  char name[IDENTIFIER_LENGTH];             /* Name of the interface. */
+  char description[IDENTIFIER_LENGTH];      /* Interface description (from ODM, similar to lscfg output). */
+  uchar type;                               /* Ethernet, token ring, and so on. Interpretation can be done using the /usr/include/net/if_types.h file. */
+  u_longlong_t mtu;                         /* Network frame size. */
+  u_longlong_t ipacets;                     /* Number of packets received on interface. */
+  u_longlong_t ibytes;                      /* Number of bytes received on interface. */
+  u_longlong_t ierrors;                     /* Number of input errors on interface. */
+  u_longlong_t opackets;                    /* Number of packets sent on interface. */
+  u_longlong_t obytes;                      /* Number of bytes sent on interface. */
+  u_longlong_t oerrors;                     /* Number of output errors on interface. */
+  u_longlong_t collisions;                  /* Number of collisions on csma interface. */
+  u_longlong_t bitrate;                     /* Adapter rating in bit per second. */
+  u_longlong_t if_iqdrops;                  /* Dropped on input, this interface. */
+  u_longlong_t if_arpdrops;                 /* Dropped because no arp response. */
+} perfstat_netinterface_t;
 
 typedef union {
   uint    w;
@@ -797,6 +897,38 @@ typedef struct { /* partition total information AIX 7.1 >= TL1*/
                                                * of perfstat_partition_total_t data structure */
 } perfstat_partition_total_t_71_1;
 
+typedef struct {
+        u_longlong_t version;                 /* Version number of the data structure. */
+        u_longlong_t pid;                     /* Process ID. */
+        char proc_name[64];                   /* Name of the process. */
+        int proc_priority;                    /* Process priority. */
+        u_longlong_t num_threads;             /* Thread count. */
+        u_longlong_t proc_uid;                /* Owner information. */
+        u_longlong_t proc_classid;            /* WLM class name. */
+        u_longlong_t proc_size;               /* Virtual size of the process (exclusive usage, leaving all shared library text & shared file pages, shared memory, and memory mapped). */
+        u_longlong_t proc_real_mem_data;      /* Real memory used for data in KB. */
+        u_longlong_t proc_real_mem_text;      /* Real memory used for text in KB. */
+        u_longlong_t proc_virt_mem_data;      /* Virtual memory used for data in KB. */
+        u_longlong_t proc_virt_mem_text;      /* Virtual memory used for text in KB. */
+        u_longlong_t shared_lib_data_size;    /* Data size from shared library in KB. */
+        u_longlong_t heap_size;               /* Heap size in KB. */
+        u_longlong_t real_inuse;              /* The Real memory (in KB) in use by the process including all kind of segments (excluding system segments). This includes text, data, shared library text, shared library data, file pages, shared memory, and memory mapped. */
+        u_longlong_t virt_inuse;              /* The virtual memory (in KB) in use by the process including all kind of segments (excluding system segments). This includes text, data, shared library text, shared library data, file pages, shared memory, and memory mapped. */
+        u_longlong_t pinned;                  /* Pinned memory (in KB) for this process inclusive of all segments. */
+        u_longlong_t pgsp_inuse;              /* Paging space used (in KB) inclusive of all segments. */
+        u_longlong_t filepages;               /* File pages used (in KB) including shared pages. */
+        u_longlong_t real_inuse_map;          /* Real memory used (in KB) for shared memory and memory mapped regions */
+        u_longlong_t virt_inuse_map;          /* Virtual memory used (in KB) for shared memory and memory mapped regions. */
+        u_longlong_t pinned_inuse_map;        /* Pinned memory used (in KB) for shared memory and memory mapped regions. */
+        double ucpu_time;                     /* User mode CPU time is in percentage or milliseconds, which is based on, whether it is filled by perfstat_process_util or perfstat_process respectively. */
+        double scpu_time;                     /* System mode CPU time is in percentage or milliseconds, which is based on whether it is filled by perfstat_process_util or perfstat_process respectively. */
+        u_longlong_t last_timebase;           /* Timebase counter. */
+        u_longlong_t inBytes;                 /* Bytes written to disk. */
+        u_longlong_t outBytes;                /* Bytes read from disk. */
+        u_longlong_t inOps;                   /* In operations from disk. */
+        u_longlong_t outOps;                  /* Out operations from disk */
+} perfstat_process_t;
+
 typedef union { /* WPAR Type & Flags */
         uint    w;
         struct {
@@ -854,9 +986,14 @@ typedef struct { /* WPAR identifier */
 // end: libperfstat.h (AIX 5.2, 5.3, 6.1, 7.1)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define PERFSTAT_PARTITON_TOTAL_T_LATEST perfstat_partition_total_t_71_1/* latest perfstat_partition_total_t structure */
-#define PERFSTAT_CPU_TOTAL_T_LATEST perfstat_cpu_total_t_72             /* latest perfstat_cpu_total_t structure */
-#define PERFSTAT_WPAR_TOTAL_T_LATEST perfstat_wpar_total_t_71           /* latest perfstat_wpar_total_t structure */
+#define PERFSTAT_PARTITON_TOTAL_T_LATEST perfstat_partition_total_t_71_1 /* latest perfstat_partition_total_t structure */
+#define PERFSTAT_PROCESS_T_LATEST perfstat_process_t                     /* latest perfstat_process_t structure */
+#define PERFSTAT_CPU_TOTAL_T_LATEST perfstat_cpu_total_t_72              /* latest perfstat_cpu_total_t structure */
+#define PERFSTAT_CPU_T_LATEST perfstat_cpu_t                             /* latest perfstat_cpu_t structure */
+#define PERFSTAT_NETINTERFACE_T_LATEST perfstat_netinterface_t           /* latest perfstat_netinterface_t structure */
+#define PERFSTAT_WPAR_TOTAL_T_LATEST perfstat_wpar_total_t_71            /* latest perfstat_wpar_total_t structure */
+
+typedef PERFSTAT_CPU_TOTAL_T_LATEST perfstat_cpu_total_t;
 
 class libperfstat {
 
@@ -886,6 +1023,14 @@ public:
 
   static cid_t wpar_getcid();
 
+  static int perfstat_cpu(perfstat_id_t *name, PERFSTAT_CPU_T_LATEST* userbuff,
+                          int sizeof_userbuff, int desired_number);
+
+  static int perfstat_process(perfstat_id_t *name, PERFSTAT_PROCESS_T_LATEST* userbuff,
+                              int sizeof_userbuff, int desired_number);
+
+  static int perfstat_netinterface(perfstat_id_t *name, PERFSTAT_NETINTERFACE_T_LATEST* userbuff,
+                                   int sizeof_userbuff, int desired_number);
 
   ////////////////////////////////////////////////////////////////
   // The convenience functions get_partitioninfo(), get_cpuinfo(), get_wparinfo() return
