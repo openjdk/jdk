@@ -147,9 +147,9 @@ public class DefaultCaretRequestsFocusTest {
 
     private static void createUI() {
         frame = new JFrame();
-        jTextField1 = new JTextField();
-        jTextField2 = new JTextField();
-        jTextField3 = new JTextField();
+        jTextField1 = new JTextField(6);
+        jTextField2 = new JTextField(6);
+        jTextField3 = new JTextField(6);
         JPanel panel = new JPanel();
         panel.setLayout(new GridLayout(3, 1));
         panel.add(jTextField1);
