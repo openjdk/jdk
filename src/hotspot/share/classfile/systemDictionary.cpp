@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -456,7 +456,7 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
 //  2) custom classLoader has broken the class loader objectLock
 //     so another thread got here in parallel
 //
-// lockObject must be held.
+// classloader object lock may be held.
 // Complicated dance due to lock ordering:
 // Must first release the classloader object lock to
 // allow initial definer to complete the class definition
@@ -468,21 +468,23 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
 //
 // The notify allows applications that did an untimed wait() on
 // the classloader object lock to not hang.
-static void double_lock_wait(JavaThread* thread, Handle lockObject) {
+static void double_lock_wait(JavaThread* thread, Handle class_loader) {
   assert_lock_strong(SystemDictionary_lock);
 
-  assert(lockObject() != NULL, "lockObject must be non-NULL");
+  assert(class_loader() != NULL, "class_loader must be non-NULL");
   bool calledholdinglock
-      = ObjectSynchronizer::current_thread_holds_lock(thread, lockObject);
-  assert(calledholdinglock, "must hold lock for notify");
-  assert(!is_parallelCapable(lockObject), "lockObject must not be parallelCapable");
-  // These don't throw exceptions.
-  ObjectSynchronizer::notifyall(lockObject, thread);
-  intx recursions = ObjectSynchronizer::complete_exit(lockObject, thread);
-  SystemDictionary_lock->wait();
-  SystemDictionary_lock->unlock();
-  ObjectSynchronizer::reenter(lockObject, recursions, thread);
-  SystemDictionary_lock->lock();
+      = ObjectSynchronizer::current_thread_holds_lock(thread, class_loader);
+  if (calledholdinglock) {
+    // These don't throw exceptions.
+    assert(!is_parallelCapable(class_loader), "class_loader must not be parallelCapable");
+    ObjectSynchronizer::notifyall(class_loader, thread);
+    intx recursions = ObjectSynchronizer::complete_exit(class_loader, thread);
+    SystemDictionary_lock->unlock();
+    ObjectSynchronizer::reenter(class_loader, recursions, thread);
+    SystemDictionary_lock->lock();
+  } else {
+    SystemDictionary_lock->wait();
+  }
 }
 
 // If the class in is in the placeholder table, class loading is in progress.
@@ -517,7 +519,7 @@ InstanceKlass* SystemDictionary::handle_parallel_loading(JavaThread* current,
                                                          unsigned int name_hash,
                                                          Symbol* name,
                                                          ClassLoaderData* loader_data,
-                                                         Handle lockObject,
+                                                         Handle class_loader,
                                                          bool* throw_circularity_error) {
   PlaceholderEntry* oldprobe = placeholders()->get_entry(name_hash, name, loader_data);
   if (oldprobe != NULL) {
@@ -547,10 +549,10 @@ InstanceKlass* SystemDictionary::handle_parallel_loading(JavaThread* current,
         // which we will find below in the systemDictionary.
         oldprobe = NULL;  // Other thread could delete this placeholder entry
 
-        if (lockObject.is_null()) {
+        if (class_loader.is_null()) {
           SystemDictionary_lock->wait();
         } else {
-          double_lock_wait(current, lockObject);
+          double_lock_wait(current, class_loader);
         }
 
         // Check if classloading completed while we were waiting
@@ -607,18 +609,6 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   // before we return a result, we call out to java to check for valid protection domain.
   InstanceKlass* probe = dictionary->find(name_hash, name, protection_domain);
   if (probe != NULL) return probe;
-
-  // Non-bootstrap class loaders will call out to class loader and
-  // define via jvm/jni_DefineClass which will acquire the
-  // class loader object lock to protect against multiple threads
-  // defining the class in parallel by accident.
-  // This lock must be acquired here so the waiter will find
-  // any successful result in the SystemDictionary and not attempt
-  // the define.
-  // ParallelCapable class loaders and the bootstrap classloader
-  // do not acquire lock here.
-  Handle lockObject = get_loader_lock_or_null(class_loader);
-  ObjectLocker ol(lockObject, THREAD);
 
   bool super_load_in_progress  = false;
   InstanceKlass* loaded_class = NULL;
@@ -685,7 +675,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
                                                name_hash,
                                                name,
                                                loader_data,
-                                               lockObject,
+                                               class_loader,
                                                &throw_circularity_error);
       }
 
@@ -889,11 +879,6 @@ InstanceKlass* SystemDictionary::resolve_class_from_stream(
 
   ClassLoaderData* loader_data = register_loader(class_loader);
 
-  // Classloaders that support parallelism, e.g. bootstrap classloader,
-  // do not acquire lock here
-  Handle lockObject = get_loader_lock_or_null(class_loader);
-  ObjectLocker ol(lockObject, THREAD);
-
   // Parse the stream and create a klass.
   // Note that we do this even though this klass might
   // already be present in the SystemDictionary, otherwise we would not
@@ -918,6 +903,7 @@ InstanceKlass* SystemDictionary::resolve_class_from_stream(
   Symbol* h_name = k->name();
   assert(class_name == NULL || class_name == h_name, "name mismatch");
 
+#if 0
   // Add class just loaded
   // If a class loader supports parallel classloading, handle parallel define requests.
   // find_or_define_instance_class may return a different InstanceKlass,
@@ -934,6 +920,8 @@ InstanceKlass* SystemDictionary::resolve_class_from_stream(
       return NULL;
     }
   }
+#endif
+  k = find_or_define_instance_class(h_name, class_loader, k, CHECK_NULL);
 
   // Make sure we have an entry in the SystemDictionary on success
   DEBUG_ONLY(verify_dictionary_entry(h_name, k));
@@ -1175,9 +1163,6 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
 
   ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(class_loader());
   {
-    HandleMark hm(THREAD);
-    Handle lockObject = get_loader_lock_or_null(class_loader);
-    ObjectLocker ol(lockObject, THREAD);
     // prohibited package check assumes all classes loaded from archive call
     // restore_unshareable_info which calls ik->set_package()
     ik->restore_unshareable_info(loader_data, protection_domain, pkg_entry, CHECK_NULL);
@@ -1395,16 +1380,18 @@ void SystemDictionary::define_instance_class(InstanceKlass* k, Handle class_load
   ClassLoaderData* loader_data = k->class_loader_data();
   assert(loader_data->class_loader() == class_loader(), "they must be the same");
 
-  // Bootstrap and other parallel classloaders don't acquire a lock,
-  // they use placeholder token.
-  // If a parallelCapable class loader calls define_instance_class instead of
-  // find_or_define_instance_class to get here, we have a timing
-  // hole with systemDictionary updates and check_constraints
-  if (!is_parallelCapable(class_loader)) {
-    assert(ObjectSynchronizer::current_thread_holds_lock(THREAD,
-           get_loader_lock_or_null(class_loader)),
-           "define called without lock");
+  // All class loaders (bootstrap, parallel capable and user-defined class loaders)
+  // use placeholder token to enforce that only one thread may define the class.
+  Symbol*  name_h = k->name();
+  Dictionary* dictionary = loader_data->dictionary();
+  unsigned int name_hash = dictionary->compute_hash(name_h);
+#ifdef ASSERT
+  {
+    MutexLocker ml(SystemDictionary_lock);
+    assert(placeholders()->get_entry(name_hash, name_h, loader_data)->definer() == THREAD,
+           "Must own the placeholder definer token");
   }
+#endif
 
   // Check class-loading constraints. Throw exception if violation is detected.
   // Grabs and releases SystemDictionary_lock
@@ -1415,9 +1402,6 @@ void SystemDictionary::define_instance_class(InstanceKlass* k, Handle class_load
   // classloader lock held
   // Parallel classloaders will call find_or_define_instance_class
   // which will require a token to perform the define class
-  Symbol*  name_h = k->name();
-  Dictionary* dictionary = loader_data->dictionary();
-  unsigned int name_hash = dictionary->compute_hash(name_h);
   check_constraints(name_hash, k, class_loader, true, CHECK);
 
   // Register class just loaded with class loader (placed in ArrayList)
