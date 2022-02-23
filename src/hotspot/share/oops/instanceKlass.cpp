@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -497,6 +497,7 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, unsigned kind, Klass
   _nest_host_index(0),
   _init_state(allocated),
   _reference_type(parser.reference_type()),
+  _init_monitor(new Monitor(Compile_lock->rank()-1, "InstanceKlassInitMonitor_lock")),
   _init_thread(NULL)
 {
   set_vtable_length(parser.vtable_size());
@@ -757,15 +758,13 @@ void InstanceKlass::fence_and_clear_init_lock() {
 
 void InstanceKlass::eager_initialize_impl() {
   EXCEPTION_MARK;
-  HandleMark hm(THREAD);
-  Handle h_init_lock(THREAD, init_lock());
-  ObjectLocker ol(h_init_lock, THREAD);
-
   // abort if someone beat us to the initialization
   if (!is_not_initialized()) return;  // note: not equivalent to is_initialized()
 
   ClassState old_state = init_state();
   link_class_impl(THREAD);
+
+  MutexLocker ml(THREAD, _init_monitor);  // no idea what eager init is for
   if (HAS_PENDING_EXCEPTION) {
     CLEAR_PENDING_EXCEPTION;
     // Abort if linking the class throws an exception.
@@ -778,7 +777,6 @@ void InstanceKlass::eager_initialize_impl() {
   } else {
     // linking successfull, mark class as initialized
     set_init_state(fully_initialized);
-    fence_and_clear_init_lock();
     // trace
     if (log_is_enabled(Info, class, init)) {
       ResourceMark rm(THREAD);
@@ -813,6 +811,25 @@ void InstanceKlass::link_class(TRAPS) {
   if (!is_linked()) {
     link_class_impl(CHECK);
   }
+}
+
+void InstanceKlass::check_link_state_and_wait(JavaThread* current) {
+  MonitorLocker ml(current, _init_monitor);
+
+  while (is_being_linked() && !is_reentrant(current)) {
+    ml.wait();
+  }
+
+  if (is_being_linked() && is_reentrant(current)) {
+    return;
+  }
+
+  if (is_linked()) {
+    return;
+  }
+
+  set_init_state(being_linked);
+  set_init_thread(current);
 }
 
 // Called to verify that a class can link during initialization, without
@@ -893,9 +910,8 @@ bool InstanceKlass::link_class_impl(TRAPS) {
 
   // verification & rewriting
   {
-    HandleMark hm(THREAD);
-    Handle h_init_lock(THREAD, init_lock());
-    ObjectLocker ol(h_init_lock, jt);
+    check_link_state_and_wait(jt);
+
     // rewritten will have been set if loader constraint error found
     // on an earlier link attempt
     // don't verify or rewrite if already rewritten
@@ -955,14 +971,14 @@ bool InstanceKlass::link_class_impl(TRAPS) {
 #endif
       if (UseVtableBasedCHA) {
         MutexLocker ml(THREAD, Compile_lock);
-        set_init_state(linked);
+        set_initialization_state_and_notify(linked, THREAD);
 
         // Now flush all code that assume the class is not linked.
         if (Universe::is_fully_initialized()) {
           CodeCache::flush_dependents_on(this);
         }
       } else {
-        set_init_state(linked);
+        set_initialization_state_and_notify(linked, THREAD);
       }
       if (JvmtiExport::should_post_class_prepare()) {
         JvmtiExport::post_class_prepare(THREAD, this);
@@ -1076,28 +1092,25 @@ void InstanceKlass::initialize_impl(TRAPS) {
   DTRACE_CLASSINIT_PROBE(required, -1);
 
   bool wait = false;
+  bool throw_error = false;
 
   JavaThread* jt = THREAD;
 
   // refer to the JVM book page 47 for description of steps
   // Step 1
   {
-    Handle h_init_lock(THREAD, init_lock());
-    ObjectLocker ol(h_init_lock, jt);
+    MonitorLocker ml(THREAD, _init_monitor);
 
     // Step 2
-    // If we were to use wait() instead of waitInterruptibly() then
-    // we might end up throwing IE from link/symbol resolution sites
-    // that aren't expected to throw.  This would wreak havoc.  See 6320309.
-    while (is_being_initialized() && !is_reentrant_initialization(jt)) {
+    while (is_being_initialized() && !is_reentrant(jt)) {
       wait = true;
       jt->set_class_to_be_initialized(this);
-      ol.wait_uninterruptibly(jt);
+      ml.wait();
       jt->set_class_to_be_initialized(NULL);
     }
 
     // Step 3
-    if (is_being_initialized() && is_reentrant_initialization(jt)) {
+    if (is_being_initialized() && is_reentrant(jt)) {
       DTRACE_CLASSINIT_PROBE_WAIT(recursive, -1, wait);
       return;
     }
@@ -1110,23 +1123,29 @@ void InstanceKlass::initialize_impl(TRAPS) {
 
     // Step 5
     if (is_in_error_state()) {
-      DTRACE_CLASSINIT_PROBE_WAIT(erroneous, -1, wait);
-      ResourceMark rm(THREAD);
-      Handle cause(THREAD, get_initialization_error(THREAD));
+      throw_error = true;
+    } else {
 
-      stringStream ss;
-      ss.print("Could not initialize class %s", external_name());
-      if (cause.is_null()) {
-        THROW_MSG(vmSymbols::java_lang_NoClassDefFoundError(), ss.as_string());
-      } else {
-        THROW_MSG_CAUSE(vmSymbols::java_lang_NoClassDefFoundError(),
-                        ss.as_string(), cause);
-      }
+      // Step 6
+      set_init_state(being_initialized);
+      set_init_thread(jt);
     }
+  }
 
-    // Step 6
-    set_init_state(being_initialized);
-    set_init_thread(jt);
+  // Throw error outside lock
+  if (throw_error) {
+    DTRACE_CLASSINIT_PROBE_WAIT(erroneous, -1, wait);
+    ResourceMark rm(THREAD);
+    Handle cause(THREAD, get_initialization_error(THREAD));
+
+    stringStream ss;
+    ss.print("Could not initialize class %s", external_name());
+    if (cause.is_null()) {
+      THROW_MSG(vmSymbols::java_lang_NoClassDefFoundError(), ss.as_string());
+    } else {
+      THROW_MSG_CAUSE(vmSymbols::java_lang_NoClassDefFoundError(),
+                      ss.as_string(), cause);
+    }
   }
 
   // Step 7
@@ -1220,18 +1239,10 @@ void InstanceKlass::initialize_impl(TRAPS) {
 
 
 void InstanceKlass::set_initialization_state_and_notify(ClassState state, TRAPS) {
-  Handle h_init_lock(THREAD, init_lock());
-  if (h_init_lock() != NULL) {
-    ObjectLocker ol(h_init_lock, THREAD);
-    set_init_thread(NULL); // reset _init_thread before changing _init_state
-    set_init_state(state);
-    fence_and_clear_init_lock();
-    ol.notify_all(CHECK);
-  } else {
-    assert(h_init_lock() != NULL, "The initialization state should never be set twice");
-    set_init_thread(NULL); // reset _init_thread before changing _init_state
-    set_init_state(state);
-  }
+  MonitorLocker ml(THREAD, _init_monitor);
+  set_init_thread(NULL); // reset _init_thread before changing _init_state
+  set_init_state(state);
+  ml.notify_all();
 }
 
 InstanceKlass* InstanceKlass::implementor() const {
@@ -2503,6 +2514,9 @@ void InstanceKlass::remove_unshareable_info() {
   _nest_host = NULL;
   init_shared_package_entry();
   _dep_context_last_cleaned = 0;
+  // Remove init_lock
+  delete _init_monitor;
+  _init_monitor = NULL;
 }
 
 void InstanceKlass::remove_java_mirror() {
@@ -2582,6 +2596,9 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
   if (DiagnoseSyncOnValueBasedClasses && has_value_based_class_annotation()) {
     set_is_value_based();
   }
+
+  // restore the monitor
+  _init_monitor = new Monitor(Compile_lock->rank()-1, "InstanceKlassInitMonitor_lock");
 }
 
 // Check if a class or any of its supertypes has a version older than 50.
@@ -2688,6 +2705,9 @@ void InstanceKlass::release_C_heap_structures(bool release_constant_pool) {
 
   // Deallocate and call destructors for MDO mutexes
   methods_do(method_release_C_heap_structures);
+
+  // Destroy the init_monitor
+  delete _init_monitor;
 
   // Deallocate oop map cache
   if (_oop_map_cache != NULL) {
@@ -3912,6 +3932,9 @@ void JNIid::verify(Klass* holder) {
 }
 
 void InstanceKlass::set_init_state(ClassState state) {
+  if (state > loaded) {
+    assert_lock_strong(_init_monitor);
+  }
 #ifdef ASSERT
   bool good_state = is_shared() ? (_init_state <= state)
                                                : (_init_state < state);
