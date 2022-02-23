@@ -51,8 +51,7 @@ public class SignatureUtil {
      * name to upper case.
      *
      * @param algName input, could be in any form
-     * @return the matching stdName, or {@code algName} if it is not in the
-     *      form of an OID, or the OID value if no match is found.
+     * @return the matching algorithm name or the OID string in upper case.
      */
     private static String checkName(String algName) {
         algName = algName.toUpperCase(Locale.ENGLISH);
