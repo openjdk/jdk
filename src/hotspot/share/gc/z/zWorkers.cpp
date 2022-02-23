@@ -161,6 +161,8 @@ ZWorkerResizeStats ZWorkers::resize_stats(ZStatCycle* stat_cycle) {
 }
 
 void ZWorkers::request_resize_workers(uint nworkers) {
+  assert(nworkers != 0, "Never ask for zero workers");
+
   ZLocker<ZLock> locker(&_resize_lock);
 
   if (_requested_nworkers == nworkers) {
