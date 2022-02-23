@@ -25,6 +25,7 @@
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
+#include "runtime/objectMonitorStorage.hpp"
 #include "services/mallocTracker.hpp"
 #include "services/memReporter.hpp"
 #include "services/threadStackTracker.hpp"
@@ -98,6 +99,10 @@ void MemReporterBase::print_virtual_memory_region(const char* type, address base
 
 void MemSummaryReporter::report() {
   outputStream* out = output();
+
+  // Sneak in here for now
+  ObjectMonitorStorage::print(out);
+
   const size_t total_malloced_bytes = _malloc_snapshot->total();
   const size_t total_mmap_reserved_bytes = _vm_snapshot->total_reserved();
   const size_t total_mmap_committed_bytes = _vm_snapshot->total_committed();

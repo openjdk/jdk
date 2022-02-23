@@ -28,6 +28,7 @@
 #include "memory/metaspaceUtils.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/objectMonitorStorage.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
@@ -146,6 +147,7 @@ void MemTracker::report(bool summary_only, outputStream* output, size_t scale) {
       MetaspaceUtils::print_basic_report(output, scale);
     }
   }
+  output->cr();
 }
 
 void MemTracker::tuning_statistics(outputStream* out) {

@@ -48,6 +48,7 @@
 #include "runtime/unhandledOops.hpp"
 #include "utilities/align.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/freeList.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
@@ -83,6 +84,8 @@ class Metadata;
 class ResourceArea;
 
 class OopStorage;
+
+class ObjectMonitor;
 
 DEBUG_ONLY(class ResourceMark;)
 
@@ -640,6 +643,10 @@ protected:
     assert(_wx_state == expected, "wrong state");
   }
 #endif // __APPLE__ && AARCH64
+
+ public:
+  FreeList<ObjectMonitor> _om_freelist;
+
 };
 
 // Inline implementation of Thread::current()

@@ -42,6 +42,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/init.hpp"
+#include "runtime/objectMonitorStorage.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safefetch.inline.hpp"
@@ -1076,6 +1077,13 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
+  STEP("printing objmon storage information")
+
+     if (_verbose && Universe::is_fully_initialized()) {
+       st->print_cr("ObjectMonitorStorage:");
+       ObjectMonitorStorage::print(st);
+     }
+
   STEP("printing ring buffers")
 
      if (_verbose) {
@@ -1283,6 +1291,13 @@ void VMError::print_vm_info(outputStream* st) {
     // print code cache information before vm abort
     CodeCache::print_summary(st);
     st->cr();
+  }
+
+  // STEP("printing objmon storage information")
+
+  if (Universe::is_fully_initialized()) {
+    st->print_cr("ObjectMonitorStorage:");
+    ObjectMonitorStorage::print(st);
   }
 
   // STEP("printing ring buffers")

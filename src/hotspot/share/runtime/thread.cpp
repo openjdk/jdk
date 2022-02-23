@@ -92,6 +92,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/objectMonitor.hpp"
+#include "runtime/objectMonitorStorage.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepoint.hpp"
@@ -376,6 +377,8 @@ void Thread::call_run() {
 
 Thread::~Thread() {
 
+  ObjectMonitorStorage::cleanup_before_thread_death(this);
+
   // Attached threads will remain in PRE_CALL_RUN, as will threads that don't actually
   // get started due to errors etc. Any active thread should at least reach post_run
   // before it is deleted (usually in post_run()).
@@ -416,6 +419,7 @@ Thread::~Thread() {
   }
 
   CHECK_UNHANDLED_OOPS_ONLY(if (CheckUnhandledOops) delete unhandled_oops();)
+
 }
 
 #ifdef ASSERT
@@ -2802,6 +2806,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   main_thread->stack_overflow_state()->create_stack_guard_pages();
 
   // Initialize Java-Level synchronization subsystem
+  ObjectMonitorStorage::initialize();
   ObjectMonitor::Initialize();
   ObjectSynchronizer::initialize();
 

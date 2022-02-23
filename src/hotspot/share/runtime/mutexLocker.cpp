@@ -153,6 +153,7 @@ Mutex*   UnregisteredClassesTable_lock= NULL;
 Mutex*   LambdaFormInvokers_lock      = NULL;
 #endif // INCLUDE_CDS
 Mutex*   Bootclasspath_lock           = NULL;
+Mutex*   ObjectMonitorStorage_lock    = NULL;
 
 #if INCLUDE_JVMCI
 Monitor* JVMCI_lock                   = NULL;
@@ -246,6 +247,7 @@ void mutex_init() {
 
   def(Metaspace_lock               , PaddedMutex  , nosafepoint-3);
   def(MetaspaceCritical_lock       , PaddedMonitor, nosafepoint-1);
+  def(ObjectMonitorStorage_lock    , PaddedMutex,   nosafepoint);
 
   def(Patching_lock                , PaddedMutex  , nosafepoint);      // used for safepointing and code patching.
   def(MonitorDeflation_lock        , PaddedMonitor, nosafepoint);      // used for monitor deflation thread operations

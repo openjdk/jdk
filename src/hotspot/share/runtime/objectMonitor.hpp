@@ -127,7 +127,7 @@ class ObjectWaiter : public StackObj {
 #define OM_CACHE_LINE_SIZE DEFAULT_CACHE_LINE_SIZE
 #endif
 
-class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
+class ObjectMonitor : public StackObj {
   friend class ObjectSynchronizer;
   friend class ObjectWaiter;
   friend class VMStructs;
@@ -202,6 +202,8 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   static PerfLongVariable * _sync_MonExtant;
 
   static int Knob_SpinLimit;
+
+  void* operator new (size_t size, void* p) throw() { return p; }
 
   // TODO-FIXME: the "offset" routines should return a type of off_t instead of int ...
   // ByteSize would also be an appropriate type.

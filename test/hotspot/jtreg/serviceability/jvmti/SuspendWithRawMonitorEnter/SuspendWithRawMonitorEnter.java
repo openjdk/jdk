@@ -28,7 +28,7 @@
  * @requires vm.jvmti
  * @library /test/lib
  * @compile SuspendWithRawMonitorEnter.java
- * @run main/othervm/native -agentlib:SuspendWithRawMonitorEnter SuspendWithRawMonitorEnter
+ * @run main/othervm/native -XX:+ErrorFileToStdout -agentlib:SuspendWithRawMonitorEnter SuspendWithRawMonitorEnter
  */
 
 import java.io.PrintStream;
