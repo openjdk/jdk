@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1998, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,20 +20,28 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-#ifndef _COLORDATA_H_
-#define _COLORDATA_H_
 
-#include "img_globals.h"
+package pkg8;
 
-typedef struct _ColorData {
-    signed char* img_oda_red;
-    signed char* img_oda_green;
-    signed char* img_oda_blue;
-    unsigned char* img_clr_tbl;
-    int *pGrayInverseLutData;
-    int representsPrimaries;
-} ColorData;
+public class C extends P {
 
-#define CANFREE(pData) (pData)
+    /**
+     * Child m1().
+     *
+     * @param <T> Child m1's type
+     */
+    @Override
+    public <T> void m1() {}
 
-#endif
+    /**
+     * Child m2().
+     */
+    @Override
+    public void m2() {}
+
+    /**
+     * Child m3().
+     */
+    @Override
+    public void m3() {}
+}
