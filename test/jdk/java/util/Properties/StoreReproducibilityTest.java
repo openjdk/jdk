@@ -44,7 +44,7 @@ import java.util.TimeZone;
 /*
  * @test
  * @summary Tests that the Properties.store() APIs generate output that is reproducible
- * @bug 8231640
+ * @bug 8231640 8282023
  * @library /test/lib
  * @run driver StoreReproducibilityTest
  */
@@ -425,10 +425,7 @@ public class StoreReproducibilityTest {
         System.out.println("Found date comment " + dateComment + " in file " + destFile);
         final Date parsedDate;
         try {
-            // use a neutral locale for parsing, since when the date comment was written by Properties.store(...),
-            // it internally calls the Date.toString() which always writes in a locale insensitive manner
-            var df = DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN).withLocale(Locale.ROOT);
-            Instant instant = Instant.from(df.parse(dateComment));
+            Instant instant = Instant.from(reproducibleDateTimeFormatter.parse(dateComment));
             parsedDate = new Date(instant.toEpochMilli());
         } catch (DateTimeParseException pe) {
             throw new RuntimeException("Unexpected date " + dateComment + " in stored properties " + destFile, pe);

@@ -47,12 +47,18 @@ import java.util.TreeSet;
 /*
  * @test
  * @summary tests the order in which the Properties.store() method writes out the properties
- * @bug 8231640
+ * @bug 8231640 8282023
+ * @modules jdk.localedata
  * @run testng/othervm PropertiesStoreTest
  */
 public class PropertiesStoreTest {
 
     private static final String DATE_FORMAT_PATTERN = "EEE MMM dd HH:mm:ss zzz uuuu";
+    // use a neutral locale, since when the date comment was written by Properties.store(...),
+    // it internally calls the Date.toString() which always writes in a locale insensitive manner
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN)
+            .withLocale(Locale.ROOT);
+    private static final Locale prevLocale = Locale.getDefault();
 
     @DataProvider(name = "propsProvider")
     private Object[][] createProps() {
@@ -101,7 +107,7 @@ public class PropertiesStoreTest {
         Locale nonEnglishLocale = null;
         for (Locale locale : Locale.getAvailableLocales()) {
             // skip ROOT locale and ENGLISH language ones
-            if (!locale.getLanguage().isEmpty() && !locale.getLanguage().equals(Locale.ENGLISH.getLanguage())) {
+            if (!locale.getLanguage().isEmpty() && !locale.getLanguage().equals("en")) {
                 nonEnglishLocale = locale;
                 System.out.println("Selected non-english locale: " + nonEnglishLocale + " for tests");
                 break;
@@ -186,7 +192,6 @@ public class PropertiesStoreTest {
      */
     @Test(dataProvider = "localeProvider")
     public void testStoreWriterDateComment(final Locale testLocale) throws Exception {
-        var prevLocale = Locale.getDefault();
         // switch the default locale to the one being tested
         Locale.setDefault(testLocale);
         System.out.println("Using locale: " + testLocale + " for Properties#store(Writer) test");
@@ -209,7 +214,6 @@ public class PropertiesStoreTest {
      */
     @Test(dataProvider = "localeProvider")
     public void testStoreOutputStreamDateComment(final Locale testLocale) throws Exception {
-        var prevLocale = Locale.getDefault();
         // switch the default locale to the one being tested
         Locale.setDefault(testLocale);
         System.out.println("Using locale: " + testLocale + " for Properties#store(OutputStream) test");
@@ -248,9 +252,7 @@ public class PropertiesStoreTest {
             Assert.fail("No comment line found in the stored properties file " + file);
         }
         try {
-            // use a neutral locale for parsing, since when the date comment was written by Properties.store(...),
-            // it internally calls the Date.toString() which always writes in a locale insensitive manner
-            DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN).withLocale(Locale.ROOT).parse(comment);
+            formatter.parse(comment);
         } catch (DateTimeParseException pe) {
             Assert.fail("Unexpected date comment: " + comment, pe);
         }
