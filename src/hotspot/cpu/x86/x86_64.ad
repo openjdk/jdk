@@ -7445,6 +7445,7 @@ instruct decI_mem(memory dst, immI_M1 src, rFlagsReg cr)
 
 instruct leaI_rReg_immI2_immI(rRegI dst, rRegI index, immI2 scale, immI disp)
 %{
+  predicate(VM_Version::supports_fast_2op_lea());
   match(Set dst (AddI (LShiftI index scale) disp));
 
   format %{ "addr32 leal $dst, [$index << $scale + $disp]\t# int" %}
@@ -7457,6 +7458,7 @@ instruct leaI_rReg_immI2_immI(rRegI dst, rRegI index, immI2 scale, immI disp)
 
 instruct leaI_rReg_rReg_immI(rRegI dst, rRegI src1, rRegI src2, immI disp)
 %{
+  predicate(VM_Version::supports_fast_3op_lea());
   match(Set dst (AddI (AddI src1 src2) disp));
 
   format %{ "addr32 leal $dst, [$src1 + $src2 + $disp]\t# int" %}
@@ -7468,6 +7470,7 @@ instruct leaI_rReg_rReg_immI(rRegI dst, rRegI src1, rRegI src2, immI disp)
 
 instruct leaI_rReg_rReg_immI2(rRegI dst, rRegI base, rRegI index, immI2 scale)
 %{
+  predicate(VM_Version::supports_fast_2op_lea());
   match(Set dst (AddI base (LShiftI index scale)));
   match(Set dst (AddI (LShiftI index scale) base));
 
@@ -7481,6 +7484,7 @@ instruct leaI_rReg_rReg_immI2(rRegI dst, rRegI base, rRegI index, immI2 scale)
 
 instruct leaI_rReg_rReg_immI2_immI(rRegI dst, rRegI base, rRegI index, immI2 scale, immI disp)
 %{
+  predicate(VM_Version::supports_fast_3op_lea());
   match(Set dst (AddI (AddI base (LShiftI index scale)) disp));
   match(Set dst (AddI (AddI (LShiftI index scale) base) disp));
 
@@ -7613,6 +7617,7 @@ instruct decL_mem(memory dst, immL_M1 src, rFlagsReg cr)
 
 instruct leaL_rReg_immI2_immL32(rRegL dst, rRegL index, immI2 scale, immL32 disp)
 %{
+  predicate(VM_Version::supports_fast_2op_lea());
   match(Set dst (AddL (LShiftL index scale) disp));
 
   format %{ "leaq $dst, [$index << $scale + $disp]\t# long" %}
@@ -7625,6 +7630,7 @@ instruct leaL_rReg_immI2_immL32(rRegL dst, rRegL index, immI2 scale, immL32 disp
 
 instruct leaL_rReg_rReg_immL32(rRegL dst, rRegL src1, rRegL src2, immL32 disp)
 %{
+  predicate(VM_Version::supports_fast_3op_lea());
   match(Set dst (AddL (AddL src1 src2) disp));
 
   format %{ "leaq $dst, [$src1 + $src2 + $disp]\t# long" %}
@@ -7636,6 +7642,7 @@ instruct leaL_rReg_rReg_immL32(rRegL dst, rRegL src1, rRegL src2, immL32 disp)
 
 instruct leaL_rReg_rReg_immI2(rRegL dst, rRegL base, rRegL index, immI2 scale)
 %{
+  predicate(VM_Version::supports_fast_2op_lea());
   match(Set dst (AddL base (LShiftL index scale)));
   match(Set dst (AddL (LShiftL index scale) base));
 
@@ -7649,6 +7656,7 @@ instruct leaL_rReg_rReg_immI2(rRegL dst, rRegL base, rRegL index, immI2 scale)
 
 instruct leaL_rReg_rReg_immI2_immL32(rRegL dst, rRegL base, rRegL index, immI2 scale, immL32 disp)
 %{
+  predicate(VM_Version::supports_fast_3op_lea());
   match(Set dst (AddL (AddL base (LShiftL index scale)) disp));
   match(Set dst (AddL (AddL (LShiftL index scale) base) disp));
 
@@ -8799,17 +8807,17 @@ instruct modL_rReg(rdx_RegL rdx, rax_RegL rax, no_rax_rdx_RegL div,
 %}
 
 // Integer Shift Instructions
-// Shift Left by one, two, three
-instruct salI_rReg_immI2(rRegI dst, rRegI src, immI2 shift)
+// Shift Left by one
+instruct salI_rReg_1(rRegI dst, immI_1 shift, rFlagsReg cr)
 %{
-  match(Set dst (LShiftI src shift));
+  match(Set dst (LShiftI dst shift));
+  effect(KILL cr);
 
-  format %{ "leal    $dst, [$src << $shift]" %}
+  format %{ "sall    $dst, $shift" %}
   ins_encode %{
-    Address::ScaleFactor scale = static_cast<Address::ScaleFactor>($shift$$constant);
-    __ leal($dst$$Register, Address(noreg, $src$$Register, scale));
+    __ sall($dst$$Register, $shift$$constant);
   %}
-  ins_pipe(ialu_reg_reg);
+  ins_pipe(ialu_reg);
 %}
 
 // Shift Left by one
@@ -9033,17 +9041,17 @@ instruct shrI_mem_CL(memory dst, rcx_RegI shift, rFlagsReg cr)
 %}
 
 // Long Shift Instructions
-// Shift Left by one, two, three
-instruct salL_rReg_immI2(rRegL dst, rRegL src, immI2 shift)
+// Shift Left by one
+instruct salL_rReg_1(rRegL dst, immI_1 shift, rFlagsReg cr)
 %{
-  match(Set dst (LShiftL src shift));
+  match(Set dst (LShiftL dst shift));
+  effect(KILL cr);
 
-  format %{ "leaq    $dst, [$src << $shift]" %}
+  format %{ "salq    $dst, $shift" %}
   ins_encode %{
-    Address::ScaleFactor scale = static_cast<Address::ScaleFactor>($shift$$constant);
-    __ leaq($dst$$Register, Address(noreg, $src$$Register, scale));
+    __ salq($dst$$Register, $shift$$constant);
   %}
-  ins_pipe(ialu_reg_reg);
+  ins_pipe(ialu_reg);
 %}
 
 // Shift Left by one

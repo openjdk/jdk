@@ -1044,6 +1044,21 @@ public:
   static bool supports_clflushopt() { return ((_features & CPU_FLUSHOPT) != 0); }
   static bool supports_clwb() { return ((_features & CPU_CLWB) != 0); }
 
+  // Old CPUs perform lea on AGU which causes additional latency transfering the
+  // value from/to ALU for other operations
+  static bool supports_fast_2op_lea() {
+    return (is_intel() && supports_avx()) || // Sandy Bride and above
+           (is_amd()   && supports_avx());   // Jaguar and Bulldozer and above
+  }
+
+  // Pre Icelake Intels have inefficient 3-op lea with 3 latency, this can be
+  // replaced by add-add or lea-add
+  static bool supports_fast_3op_lea() {
+    return supports_fast_2op_lea() &&
+           ((is_intel() && supports_clwb()) || // Icelake and above
+            is_amd());
+  }
+
 #ifdef __APPLE__
   // Is the CPU running emulated (for example macOS Rosetta running x86_64 code on M1 ARM (aarch64)
   static bool is_cpu_emulated();
