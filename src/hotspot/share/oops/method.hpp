@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,8 @@ class Method : public Metadata {
 
 #ifndef PRODUCT
   int64_t _compiled_invocation_count;
+
+  Symbol* _name;
 #endif
   // Entry point for calling both from and to the interpreter.
   address _i2i_entry;           // All-args-on-stack calling convention
@@ -149,6 +151,8 @@ class Method : public Metadata {
   Symbol* name() const                           { return constants()->symbol_at(name_index()); }
   int name_index() const                         { return constMethod()->name_index();         }
   void set_name_index(int index)                 { constMethod()->set_name_index(index);       }
+
+  void set_name()                                { NOT_PRODUCT(_name = name()); }
 
   // signature
   Symbol* signature() const                      { return constants()->symbol_at(signature_index()); }

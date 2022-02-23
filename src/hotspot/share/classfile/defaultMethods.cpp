@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -931,10 +931,12 @@ static void switchover_constant_pool(BytecodeConstantPool* bpool,
 
       for (int i = 0; i < new_methods->length(); ++i) {
         new_methods->at(i)->set_constants(cp);
+        new_methods->at(i)->set_name();
       }
       for (int i = 0; i < klass->methods()->length(); ++i) {
         Method* mo = klass->methods()->at(i);
         mo->set_constants(cp);
+        mo->set_name();
       }
     }
   }
