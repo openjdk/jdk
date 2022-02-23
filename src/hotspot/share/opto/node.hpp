@@ -787,7 +787,7 @@ public:
     Flag_is_predicated_vector        = 1 << 15,
     Flag_for_post_loop_opts_igvn     = 1 << 16,
     Flag_is_removed_by_peephole      = 1 << 17,
-    _last_flag                       = Flag_for_post_loop_opts_igvn
+    _last_flag                       = Flag_is_removed_by_peephole
   };
 
   class PD;
