@@ -80,7 +80,9 @@ public class Basic {
     static final String libpath;
     static {
         String libpathString = System.getenv("LIBPATH");
-        if (AIX.is()) {
+        if (libpathString == null) {
+            libpathString = "";
+        } else if (AIX.is()) {
             String nativepath = System.getProperty("test.nativepath");
             if (nativepath != null) {
                 libpathString = Arrays.asList(
