@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2746,6 +2746,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
   // Fill in information from fixed part (access_flags already set)
   m->set_constants(_cp);
   m->set_name_index(name_index);
+  m->set_name();
   m->set_signature_index(signature_index);
   m->compute_from_signature(cp->symbol_at(signature_index));
   assert(args_size < 0 || args_size == m->size_of_parameters(), "");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,6 +119,8 @@ Method::Method(ConstMethod* xconst, AccessFlags access_flags) {
   }
 
   NOT_PRODUCT(set_compiled_invocation_count(0);)
+  // Name is very useful for debugging but needs to be set later.
+  NOT_PRODUCT(_name = NULL;)
 }
 
 // Release Method*.  The nmethod will be gone when we get here because
@@ -1442,6 +1444,7 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
   }
   m->set_constants(cp());
   m->set_name_index(_imcp_invoke_name);
+  m->set_name();
   m->set_signature_index(_imcp_invoke_signature);
   assert(MethodHandles::is_signature_polymorphic_name(m->name()), "");
   assert(m->signature() == signature, "");
