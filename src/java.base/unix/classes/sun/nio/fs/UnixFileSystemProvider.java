@@ -435,18 +435,12 @@ public abstract class UnixFileSystemProvider
                 new NotDirectoryException(dir.getPathForExceptionMessage()) :
                 x.asIOException(dir);
             if (dfd1 != -1) {
-                try {
-                    UnixNativeDispatcher.close(dfd1);
-                } catch (UnixException y) {
-                    ioe.addSuppressed(y);
-                }
+                ioe = UnixNativeDispatcher.close(dfd1, ioe,
+                    y -> y.asIOException(dir));
             }
             if (dfd2 != -1) {
-                try {
-                    UnixNativeDispatcher.close(dfd2);
-                } catch (UnixException z) {
-                    ioe.addSuppressed(z);
-                }
+                ioe = UnixNativeDispatcher.close(dfd2, ioe,
+                    z -> z.asIOException(dir));
             }
             throw ioe;
         }

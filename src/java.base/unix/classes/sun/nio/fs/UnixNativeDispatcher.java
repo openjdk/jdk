@@ -25,6 +25,8 @@
 
 package sun.nio.fs;
 
+import java.util.function.Function;
+
 /**
  * Unix system and library calls.
  */
@@ -96,6 +98,46 @@ class UnixNativeDispatcher {
         }
     }
     private static native void close0(int fd) throws UnixException;
+
+    /**
+     * close(fd). If close fails then the given exception supplier function is
+     * invoked to produce an exception to throw. If the function returns null
+     * then no exception is thrown. If close fails and the exception supplier
+     * function is null, then no exception is thrown.
+     */
+    static <X extends Throwable>
+    void close(int fd, Function<UnixException, X> mapper) throws X {
+        try {
+            close(fd);
+        } catch (UnixException e) {
+            if (mapper != null) {
+                X ex = mapper.apply(e);
+                if (ex != null) throw ex;
+            }
+        }
+    }
+
+    /**
+     * close(fd). If close is successful then {@code ex} is returned. If
+     * close fails then the given exception supplier function is invoked
+     * to produce an exception. If {@code ex} is null then the produced
+     * exception is returned, otherwise it is added to {@code ex} as a
+     * suppressed exception and {@code ex} is returned.
+     */
+    static <X extends Throwable>
+    X close(int fd, X ex, Function<UnixException, X>  mapper) {
+        try {
+            close(fd);
+        } catch (UnixException ue) {
+            X closeEx = mapper.apply(ue);
+            if (ex != null) {
+                ex.addSuppressed(closeEx);
+            } else {
+                ex = closeEx;
+            }
+        }
+        return ex;
+    }
 
     /**
      * void rewind(FILE* stream);

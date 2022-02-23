@@ -186,11 +186,7 @@ class UnixCopyFile {
                 }
                 if (sfd >= 0) {
                     source.getFileSystem().copyNonPosixAttributes(sfd, dfd);
-                    try {
-                        close(sfd);
-                    } catch (UnixException e) {
-                        e.rethrowAsIOException(source);
-                    }
+                    close(sfd, x -> x.asIOException(source));
                 }
             }
             // copy time stamps last
@@ -213,14 +209,8 @@ class UnixCopyFile {
             }
             done = true;
         } finally {
-            if (dfd >= 0) {
-                try {
-                    close(dfd);
-                } catch (UnixException e) {
-                    if (done)
-                        e.rethrowAsIOException(target);
-                }
-            }
+            if (dfd >= 0)
+                close(dfd, null);
             if (!done) {
                 // rollback
                 try { rmdir(target); } catch (UnixException ignore) { }
@@ -243,8 +233,6 @@ class UnixCopyFile {
             x.rethrowAsIOException(source);
         }
 
-        // set to true when file and attributes copied
-        boolean complete = false;
         try {
             // open new file
             int fo = -1;
@@ -258,6 +246,8 @@ class UnixCopyFile {
                 x.rethrowAsIOException(target);
             }
 
+            // set to true when file and attributes copied
+            boolean complete = false;
             try {
                 // transfer bytes to target file
                 try {
@@ -298,12 +288,7 @@ class UnixCopyFile {
                 }
                 complete = true;
             } finally {
-                try {
-                    close(fo);
-                } catch (UnixException e) {
-                    if (complete)
-                        e.rethrowAsIOException(target);
-                }
+                close(fo, null);
 
                 // copy of file or attributes failed so rollback
                 if (!complete) {
@@ -313,12 +298,7 @@ class UnixCopyFile {
                 }
             }
         } finally {
-            try {
-                close(fi);
-            } catch (UnixException e) {
-                if (complete)
-                    e.rethrowAsIOException(source);
-            }
+            close(fi, null);
         }
     }
 

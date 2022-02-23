@@ -133,10 +133,7 @@ abstract class UnixUserDefinedFileAttributeView
                 null, "Unable to get list of extended attributes: " +
                 x.getMessage());
         } finally {
-            try {
-                close(fd);
-            } catch (UnixException ignore) {
-            }
+            close(fd, null);
         }
     }
 
@@ -160,10 +157,7 @@ abstract class UnixUserDefinedFileAttributeView
                 null, "Unable to get size of extended attribute '" + name +
                 "': " + x.getMessage());
         } finally {
-            try {
-                close(fd);
-            } catch (UnixException ignore) {
-            }
+            close(fd, null);
         }
     }
 
@@ -227,10 +221,7 @@ abstract class UnixUserDefinedFileAttributeView
             throw new FileSystemException(file.getPathForExceptionMessage(),
                     null, "Error reading extended attribute '" + name + "': " + msg);
         } finally {
-            try {
-                close(fd);
-            } catch (UnixException ignore) {
-            }
+            close(fd, null);
         }
     }
 
@@ -292,10 +283,7 @@ abstract class UnixUserDefinedFileAttributeView
                     null, "Error writing extended attribute '" + name + "': " +
                     x.getMessage());
         } finally {
-            try {
-                close(fd);
-            } catch (UnixException ignore) {
-            }
+            close(fd, null);
         }
     }
 
@@ -317,10 +305,7 @@ abstract class UnixUserDefinedFileAttributeView
             throw new FileSystemException(file.getPathForExceptionMessage(),
                 null, "Unable to delete extended attribute '" + name + "': " + x.getMessage());
         } finally {
-            try {
-                close(fd);
-            } catch (UnixException ignore) {
-            }
+            close(fd, null);
         }
     }
 

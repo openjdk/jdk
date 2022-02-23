@@ -160,10 +160,7 @@ class UnixFileAttributeViews {
                     }
                 }
             } finally {
-                try {
-                    close(fd);
-                } catch (UnixException ignore) {
-                }
+                close(fd, null);
             }
         }
     }
