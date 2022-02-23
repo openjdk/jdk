@@ -290,6 +290,8 @@ public class DefaultTableColumnModel implements TableColumnModel,
      * @param   columnIndex     the index of the column desired
      * @return  the <code>TableColumn</code> object for the column
      *                          at <code>columnIndex</code>
+     * @exception  ArrayIndexOutOfBoundsException if <code>columnIndex</code>
+     *             is not in valid range (< 0 or >= getColumnCount())
      */
     public TableColumn getColumn(int columnIndex) {
         return tableColumns.elementAt(columnIndex);
