@@ -4556,4 +4556,13 @@ public class RegExTest {
                 Pattern.compile(pattern));
         assertTrue(e.getMessage().contains("Bad intersection syntax"));
     }
+
+    //This test is for 8281315
+    @Test
+    public static void iOOBForCIBackrefs(){
+        String line = "\ud83d\udc95\ud83d\udc95\ud83d\udc95";
+        var pattern2 = Pattern.compile("(?i)(.)\\1{2,}");
+        assertTrue(pattern2.matcher(line).find());
+
+    }
 }

@@ -229,8 +229,7 @@ public class WorkArounds {
                 if (sym.overrides(sym2, origin, javacTypes, true)) {
                     // Ignore those methods that may be a simple override
                     // and allow the real API method to be found.
-                    if (sym2.type.hasTag(TypeTag.METHOD) &&
-                            utils.isSimpleOverride((MethodSymbol)sym2)) {
+                    if (utils.isSimpleOverride((MethodSymbol)sym2)) {
                         continue;
                     }
                     assert t.hasTag(TypeTag.CLASS) && !t.isInterface();

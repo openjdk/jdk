@@ -3049,9 +3049,11 @@ public class Utils {
      */
     public boolean isPreviewAPI(Element el) {
         boolean parentPreviewAPI = false;
-        Element enclosing = el.getEnclosingElement();
-        if (enclosing != null && (enclosing.getKind().isClass() || enclosing.getKind().isInterface())) {
-            parentPreviewAPI = configuration.workArounds.isPreviewAPI(enclosing);
+        if (!isClassOrInterface(el)) {
+            Element enclosing = el.getEnclosingElement();
+            if (isClassOrInterface(enclosing)) {
+                parentPreviewAPI = configuration.workArounds.isPreviewAPI(enclosing);
+            }
         }
         boolean previewAPI = configuration.workArounds.isPreviewAPI(el);
         return !parentPreviewAPI && previewAPI;
@@ -3078,18 +3080,12 @@ public class Utils {
      */
     public Set<ElementFlag> elementFlags(Element el) {
         Set<ElementFlag> flags = EnumSet.noneOf(ElementFlag.class);
-        PreviewSummary previewAPIs = declaredUsingPreviewAPIs(el);
 
         if (isDeprecated(el)) {
             flags.add(ElementFlag.DEPRECATED);
         }
 
-        if ((!previewLanguageFeaturesUsed(el).isEmpty() ||
-             configuration.workArounds.isPreviewAPI(el) ||
-             !previewAPIs.previewAPI.isEmpty() ||
-             !previewAPIs.reflectivePreviewAPI.isEmpty() ||
-             !previewAPIs.declaredUsingPreviewFeature.isEmpty()) &&
-            !hasNoPreviewAnnotation(el)) {
+        if (previewFlagProvider.isPreview(el)) {
             flags.add(ElementFlag.PREVIEW);
         }
 
@@ -3105,9 +3101,42 @@ public class Utils {
         PREVIEW
     }
 
+    private boolean isClassOrInterface(Element el) {
+        return el != null && (el.getKind().isClass() || el.getKind().isInterface());
+    }
+
     private boolean hasNoPreviewAnnotation(Element el) {
         return el.getAnnotationMirrors()
                  .stream()
                  .anyMatch(am -> "jdk.internal.javac.NoPreview".equals(getQualifiedTypeName(am.getAnnotationType())));
     }
+
+    private PreviewFlagProvider previewFlagProvider = new PreviewFlagProvider() {
+        @Override
+        public boolean isPreview(Element el) {
+            PreviewSummary previewAPIs = declaredUsingPreviewAPIs(el);
+            Element enclosing = el.getEnclosingElement();
+
+            return    (   !previewLanguageFeaturesUsed(el).isEmpty()
+                       || configuration.workArounds.isPreviewAPI(el)
+                       || (   !isClassOrInterface(el) && isClassOrInterface(enclosing)
+                           && configuration.workArounds.isPreviewAPI(enclosing))
+                       || !previewAPIs.previewAPI.isEmpty()
+                       || !previewAPIs.reflectivePreviewAPI.isEmpty()
+                       || !previewAPIs.declaredUsingPreviewFeature.isEmpty())
+                   && !hasNoPreviewAnnotation(el);
+        }
+    };
+
+    public PreviewFlagProvider setPreviewFlagProvider(PreviewFlagProvider provider) {
+        Objects.requireNonNull(provider);
+        PreviewFlagProvider old = previewFlagProvider;
+        previewFlagProvider = provider;
+        return old;
+    }
+
+    public interface PreviewFlagProvider {
+        public boolean isPreview(Element el);
+    }
+
 }

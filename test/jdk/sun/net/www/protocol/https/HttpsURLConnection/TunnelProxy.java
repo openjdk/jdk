@@ -261,9 +261,9 @@ public class TunnelProxy {
             boolean res;
             try {
                 InputStream is = new BufferedInputStream (new NioInputStream (chan));
-                String requestline = readLine (is);
-                HttpHeaderParser mhead = new HttpHeaderParser (is);
-                String[] req = requestline.split (" ");
+                HttpHeaderParser mHead = new HttpHeaderParser (is);
+                String requestLine = mHead.getRequestDetails();
+                String[] req = requestLine.split (" ");
                 if (req.length < 2) {
                     /* invalid request line */
                     return false;

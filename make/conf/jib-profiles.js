@@ -1424,7 +1424,10 @@ var getVersion = function (feature, interim, update, patch, extra1, extra2, extr
  * other version inputs
  */
 var versionArgs = function(input, common) {
-    var args = ["--with-version-build=" + common.build_number];
+    var args = [];
+    if (common.build_number != 0) {
+        args = concat(args, "--with-version-build=" + common.build_number);
+    }
     if (input.build_type == "promoted") {
         args = concat(args,
                       "--with-version-pre=" + version_numbers.get("DEFAULT_PROMOTED_VERSION_PRE"),
