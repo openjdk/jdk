@@ -668,7 +668,7 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
   size_t young_selected_live = 0;
 
   uint tenuring_threshold;
-  for (tenuring_threshold = 0; tenuring_threshold <= MaxTenuringThreshold; ++tenuring_threshold) {
+  for (tenuring_threshold = 0; tenuring_threshold < MaxTenuringThreshold; ++tenuring_threshold) {
     ZPageAge age = static_cast<ZPageAge>(tenuring_threshold);
     size_t live = stats.small(age).live() + stats.medium(age).live() + stats.large(age).live();
     size_t promoted = young_live_total - young_selected_live;
