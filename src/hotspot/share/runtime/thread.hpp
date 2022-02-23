@@ -1321,8 +1321,6 @@ class JavaThread: public Thread {
   // Returns the current thread as indicated by the given JNIEnv.
   // We don't assert it is Thread::current here as that is done at the
   // external JNI entry points where the JNIEnv is passed into the VM.
-  // Does not return null, check is_thread_from_jni_environment_termminated()
-  // if you are not sure that it is not.
   static JavaThread* thread_from_jni_environment(JNIEnv* env) {
     JavaThread* current = (JavaThread*)((intptr_t)env - in_bytes(jni_environment_offset()));
     // We can't normally get here in a thread that has completed its
@@ -1336,20 +1334,6 @@ class JavaThread: public Thread {
       current->block_if_vm_exited();
     }
     return current;
-  }
-
-  // Returns whether current thread as indicated by the given JNIEnv
-  // is terminated.
-  // We don't assert it is Thread::current here as that is done at the
-  // external JNI entry points where the JNIEnv is passed into the VM.
-  static bool is_thread_from_jni_environment_terminated(JNIEnv* env) {
-    JavaThread* current = (JavaThread*)((intptr_t)env - in_bytes(jni_environment_offset()));
-    // We can't get here in a thread that has completed its execution and so
-    // "is_terminated", but a thread is also considered terminated if the VM
-    // has exited, so we have to check this and block in case this is a daemon
-    // thread returning to the VM (the JNI DirectBuffer entry points rely on
-    // this).
-    return current->is_terminated();
   }
 
   // JNI critical regions. These can nest.
