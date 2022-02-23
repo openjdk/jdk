@@ -176,9 +176,9 @@ public class DefaultAgentFilterTest {
                 testDefaultAgent(propertyFile, port);
             } catch (BindException b) {
                 // Retry with new port.  Throw if last iteration:
-	        if (i == FREE_PORT_ATTEMPTS) {
-	            throw(b);
-	        }
+                if (i == FREE_PORT_ATTEMPTS) {
+                    throw(b);
+                }
             }
         }
     }
