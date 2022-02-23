@@ -399,8 +399,11 @@ class MallocTracker : AllStatic {
  private:
   static inline MallocHeader* malloc_header(void *memblock) {
     assert(memblock != NULL, "NULL pointer");
-    MallocHeader* header = (MallocHeader*)((char*)memblock - sizeof(MallocHeader));
-    return header;
+    return (MallocHeader*)((char*)memblock - sizeof(MallocHeader));
+  }
+  static inline const MallocHeader* malloc_header(const void *memblock) {
+    assert(memblock != NULL, "NULL pointer");
+    return (const MallocHeader*)((const char*)memblock - sizeof(MallocHeader));
   }
 };
 

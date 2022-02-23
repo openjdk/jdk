@@ -295,7 +295,7 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
   assert(MemTracker::enabled(), "NMT must be enabled");
   if (CanUseSafeFetch32() && os::is_readable_pointer(p)) {
     const NMT_TrackingLevel tracking_level = MemTracker::tracking_level();
-    const MallocHeader* mhdr = (const MallocHeader*)MallocTracker::get_base(const_cast<void*>(p), tracking_level);
+    const MallocHeader* mhdr = malloc_header(p);
     char msg[256];
     address p_corrupted;
     if (os::is_readable_pointer(mhdr) &&
