@@ -299,8 +299,8 @@ class Copy : AllStatic {
   }
 
  protected:
-  inline static void _shared_disjoint_words_atomic(const HeapWord* from,
-                                                   HeapWord* to, size_t count) {
+  inline static void shared_disjoint_words_atomic(const HeapWord* from,
+                                                  HeapWord* to, size_t count) {
 
     switch (count) {
     case 8:  Atomic::store(&to[7], Atomic::load(&from[7]));

@@ -52,7 +52,7 @@ static void pd_disjoint_words(const HeapWord* from, HeapWord* to, size_t count) 
 static void pd_disjoint_words_atomic(const HeapWord* from,
                                      HeapWord* to,
                                      size_t count) {
-  _shared_disjoint_words_atomic(from, to, count);
+  shared_disjoint_words_atomic(from, to, count);
 }
 
 static void pd_aligned_conjoint_words(const HeapWord* from,

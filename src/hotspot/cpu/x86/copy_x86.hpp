@@ -148,7 +148,7 @@ static void pd_disjoint_words(const HeapWord* from, HeapWord* to, size_t count) 
 
 static void pd_disjoint_words_atomic(const HeapWord* from, HeapWord* to, size_t count) {
 #ifdef AMD64
-  _shared_disjoint_words_atomic(from, to, count);
+  shared_disjoint_words_atomic(from, to, count);
 #else
   // pd_disjoint_words is word-atomic in this implementation.
   pd_disjoint_words(from, to, count);
