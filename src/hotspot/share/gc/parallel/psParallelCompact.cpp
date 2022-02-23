@@ -853,7 +853,7 @@ public:
       ReferenceProcessor(is_subject_to_discovery,
       ParallelGCThreads,   // mt processing degree
       ParallelGCThreads,   // mt discovery degree
-      true,                // atomic_discovery
+      false,               // concurrent_discovery
       is_alive_non_header) {
   }
 
