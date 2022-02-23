@@ -1867,10 +1867,10 @@ enum SSLCipher {
                 this.random = random;
 
                 keyLimitCountdown = cipherLimits.getOrDefault(
-                        algorithm.toUpperCase(Locale.ENGLISH) + ":" + tag[0], 0L);
+                    algorithm.toUpperCase(Locale.ENGLISH) + ":" + tag[0], 0L);
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                     SSLLogger.fine("KeyLimit read side: algorithm = " +
-                            algorithm.toUpperCase(Locale.ENGLISH) + ":" + tag[0] +
+                            algorithm + ":" + tag[0] +
                             "\ncountdown value = " + keyLimitCountdown);
                 }
                 if (keyLimitCountdown > 0) {
@@ -2021,10 +2021,10 @@ enum SSLCipher {
                 this.random = random;
 
                 keyLimitCountdown = cipherLimits.getOrDefault(
-                        algorithm.toUpperCase(Locale.ENGLISH) + ":" + tag[0], 0L);
+                    algorithm.toUpperCase(Locale.ENGLISH) + ":" + tag[0], 0L);
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                     SSLLogger.fine("KeyLimit write side: algorithm = "
-                            + algorithm.toUpperCase(Locale.ENGLISH) + ":" + tag[0] +
+                            + algorithm + ":" + tag[0] +
                             "\ncountdown value = " + keyLimitCountdown);
                 }
                 if (keyLimitCountdown > 0) {
@@ -2281,9 +2281,9 @@ enum SSLCipher {
                 this.random = random;
 
                 keyLimitCountdown = cipherLimits.getOrDefault(
-                        algorithm.toUpperCase(Locale.ENGLISH) + ":" + tag[0], 0L);
+                    algorithm.toUpperCase(Locale.ENGLISH) + ":" + tag[0], 0L);
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                    SSLLogger.fine("algorithm = " + algorithm.toUpperCase(Locale.ENGLISH) +
+                    SSLLogger.fine("algorithm = " + algorithm +
                             ":" + tag[0] + "\ncountdown value = " +
                             keyLimitCountdown);
                 }
@@ -2563,9 +2563,9 @@ enum SSLCipher {
                 this.random = random;
 
                 keyLimitCountdown = cipherLimits.getOrDefault(
-                        algorithm.toUpperCase(Locale.ENGLISH) + ":" + tag[0], 0L);
+                    algorithm.toUpperCase(Locale.ENGLISH) + ":" + tag[0], 0L);
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                    SSLLogger.fine("algorithm = " + algorithm.toUpperCase(Locale.ENGLISH) +
+                    SSLLogger.fine("algorithm = " + algorithm +
                             ":" + tag[0] + "\ncountdown value = " +
                             keyLimitCountdown);
                 }
