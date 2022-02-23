@@ -60,7 +60,7 @@
 //
 // class Bar {
 //     // this field is initialized in both CDS dump time and runtime.
-//     static final Bar bar = new Bar;
+//     static final Bar bar = new Bar();
 // }
 //
 // The check itself is simple:
