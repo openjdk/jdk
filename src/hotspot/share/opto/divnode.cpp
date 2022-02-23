@@ -847,13 +847,6 @@ Node *DivDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 Node* UDivINode::Identity(PhaseGVN* phase) {
   return (phase->type( in(2) )->higher_equal(TypeInt::ONE)) ? in(1) : this;
 }
-
-//------------------------------Idealize---------------------------------------
-// Divides can be changed to multiplies and/or shifts
-Node* UDivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  return NULL;
-}
-
 //------------------------------Value------------------------------------------
 // A UDivINode divides its inputs.  The third input is a Control input, used to
 // prevent hoisting the divide above an unsafe test.
@@ -885,13 +878,6 @@ const Type* UDivINode::Value(PhaseGVN* phase) const {
 Node* UDivLNode::Identity(PhaseGVN* phase) {
   return (phase->type( in(2) )->higher_equal(TypeLong::ONE)) ? in(1) : this;
 }
-
-//------------------------------Idealize---------------------------------------
-// Divides can be changed to multiplies and/or shifts
-Node* UDivLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  return NULL;
-}
-
 //------------------------------Value------------------------------------------
 // A UDivLNode divides its inputs.  The third input is a Control input, used to
 // prevent hoisting the divide above an unsafe test.
@@ -1336,28 +1322,6 @@ const Type* ModDNode::Value(PhaseGVN* phase) const {
 
   return TypeD::make(jdouble_cast(xr));
 }
-
-//=============================================================================
-//------------------------------UModINode---------------------------------------
-// Unsigned integer modulus
-  const Type* UModINode::Value(PhaseGVN* phase) const {
-    return TypeInt::INT;
-  }
-
-  Node* UModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
-    return NULL;
-  }
-
-//=============================================================================
-//------------------------------UModLNode---------------------------------------
-// Unsigned long modulus
-  const Type* UModLNode::Value(PhaseGVN* phase) const {
-    return TypeLong::LONG;
-  }
-
-  Node* UModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-    return NULL;
-  }
 
 //=============================================================================
 

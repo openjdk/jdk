@@ -67,19 +67,17 @@ public class LongDivMod {
     }
 
     @Benchmark
-    public long[] testDivideUnsigned() {
+    public void testDivideUnsigned() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
             quotients[i] = Long.divideUnsigned(dividends[i], divisors[i]);
         }
-        return quotients;
     }
 
     @Benchmark
-    public long[] testRemainderUnsigned() {
+    public void testRemainderUnsigned() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
             remainders[i] = Long.remainderUnsigned(dividends[i], divisors[i]);
         }
-        return remainders;
     }
 
     @Benchmark

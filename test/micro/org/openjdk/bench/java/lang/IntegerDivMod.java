@@ -67,19 +67,17 @@ public class IntegerDivMod {
     }
 
     @Benchmark
-    public int[] testDivideUnsigned() {
+    public void testDivideUnsigned() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
             quotients[i] = Integer.divideUnsigned(dividends[i], divisors[i]);
         }
-        return quotients;
     }
 
     @Benchmark
-    public int[] testRemainderUnsigned() {
+    public void testRemainderUnsigned() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
             remainders[i] = Integer.remainderUnsigned(dividends[i], divisors[i]);
         }
-        return remainders;
     }
 
     @Benchmark
