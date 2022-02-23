@@ -236,9 +236,9 @@ public class Utils {
     /**
      * Test whether a class is a subclass of another class.
      *
-     * @param t1 the candidate superclass.
-     * @param t2 the target
-     * @return true if t1 is a superclass of t2.
+     * @param t1 the candidate subclass
+     * @param t2 the candidate superclass
+     * @return true if t1 is a superclass of t2
      */
     public boolean isSubclassOf(TypeElement t1, TypeElement t2) {
         return typeUtils.isSubtype(typeUtils.erasure(t1.asType()), typeUtils.erasure(t2.asType()));
