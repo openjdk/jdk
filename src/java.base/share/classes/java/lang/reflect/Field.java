@@ -220,7 +220,7 @@ class Field extends AccessibleObject implements Member {
      */
     @Override
     public Set<AccessFlag> accessFlags() {
-        return Set.of(); // stubbed out empty set
+        return AccessFlag.maskToAccessFlags(getModifiers(), AccessFlag.Location.FIELD);
     }
 
     /**

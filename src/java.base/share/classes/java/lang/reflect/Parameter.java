@@ -171,7 +171,8 @@ public final class Parameter implements AnnotatedElement {
      * @since 19
      */
     public Set<AccessFlag> accessFlags() {
-        return Set.of(); // stubbed out empty set
+        return AccessFlag.maskToAccessFlags(getModifiers(),
+                                            AccessFlag.Location.METHOD_PARAMETER);
     }
 
     /**

@@ -220,7 +220,7 @@ public abstract sealed class Executable extends AccessibleObject
      */
     @Override
     public Set<AccessFlag> accessFlags() {
-        return Set.of(); // stubbed out empty set
+        return AccessFlag.maskToAccessFlags(getModifiers(), AccessFlag.Location.METHOD);
     }
 
     /**

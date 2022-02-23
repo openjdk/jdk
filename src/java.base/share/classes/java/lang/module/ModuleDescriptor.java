@@ -153,28 +153,31 @@ public class ModuleDescriptor
              * module</i> to have an implicitly declared dependence on the module
              * named by the {@code Requires}.
              */
-            TRANSITIVE,
+            TRANSITIVE(AccessFlag.TRANSITIVE.mask()),
 
             /**
              * The dependence is mandatory in the static phase, during compilation,
              * but is optional in the dynamic phase, during execution.
              */
-            STATIC,
+            STATIC(AccessFlag.STATIC.mask()),
 
             /**
              * The dependence was not explicitly or implicitly declared in the
              * source of the module declaration.
              */
-            SYNTHETIC,
+            SYNTHETIC(AccessFlag.SYNTHETIC.mask()),
 
             /**
              * The dependence was implicitly declared in the source of the module
              * declaration.
              */
-            MANDATED;
-
+            MANDATED(AccessFlag.MANDATED.mask());
+            private int mask;
+            private Modifier(int mask) {
+                this.mask = mask;
+            }
+            private int mask() {return mask;}
         }
-
         private final Set<Modifier> mods;
         private final String name;
         private final Version compiledVersion;
@@ -212,7 +215,11 @@ public class ModuleDescriptor
          * @since 19
          */
         public Set<AccessFlag> accessFlags() {
-            return Set.of(); // stubbed out empty set
+            int mask = 0;
+            for (var modifier : mods) {
+                mask |= modifier.mask();
+            }
+            return AccessFlag.maskToAccessFlags(mask, AccessFlag.Location.MODULE);
         }
 
         /**
@@ -388,14 +395,19 @@ public class ModuleDescriptor
              * The export was not explicitly or implicitly declared in the
              * source of the module declaration.
              */
-            SYNTHETIC,
+            SYNTHETIC(AccessFlag.SYNTHETIC.mask()),
 
             /**
              * The export was implicitly declared in the source of the module
              * declaration.
              */
-            MANDATED;
+            MANDATED(AccessFlag.MANDATED.mask());
 
+            private int mask;
+            private Modifier(int mask) {
+                this.mask = mask;
+            }
+            private int mask() {return mask;}
         }
 
         private final Set<Modifier> mods;
@@ -437,7 +449,11 @@ public class ModuleDescriptor
          * @since 19
          */
         public Set<AccessFlag> accessFlags() {
-            return Set.of(); // stubbed out empty set
+            int mask = 0;
+            for (var modifier : mods) {
+                mask |= modifier.mask();
+            }
+            return AccessFlag.maskToAccessFlags(mask, AccessFlag.Location.MODULE_EXPORTS);
         }
 
         /**
@@ -602,14 +618,18 @@ public class ModuleDescriptor
              * The open package was not explicitly or implicitly declared in
              * the source of the module declaration.
              */
-            SYNTHETIC,
+            SYNTHETIC(AccessFlag.SYNTHETIC.mask()),
 
             /**
              * The open package was implicitly declared in the source of the
              * module declaration.
              */
-            MANDATED;
-
+            MANDATED(AccessFlag.MANDATED.mask());
+            private int mask;
+            private Modifier(int mask) {
+                this.mask = mask;
+            }
+            private int mask() {return mask;}
         }
 
         private final Set<Modifier> mods;
@@ -651,7 +671,11 @@ public class ModuleDescriptor
          * @since 19
          */
         public Set<AccessFlag> accessFlags() {
-            return Set.of(); // stubbed out empty set
+            int mask = 0;
+            for (var modifier : mods) {
+                mask |= modifier.mask();
+            }
+            return AccessFlag.maskToAccessFlags(mask, AccessFlag.Location.MODULE_OPENS);
         }
 
         /**
@@ -1332,7 +1356,7 @@ public class ModuleDescriptor
      * @since 19
      */
     public Set<AccessFlag> accessFlags() {
-        return Set.of(); // stubbed out empty set
+        return Set.of();
     }
 
     /**
