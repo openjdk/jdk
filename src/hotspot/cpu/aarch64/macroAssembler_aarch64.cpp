@@ -3785,24 +3785,6 @@ void MacroAssembler::cmp_klass(Register oop, Register trial_klass, Register tmp)
   cmp(trial_klass, tmp);
 }
 
-void MacroAssembler::store_klass(Register dst, Register src) {
-  // FIXME: Should this be a store release?  concurrent gcs assumes
-  // klass length is valid if klass field is not null.
-  if (UseCompressedClassPointers) {
-    encode_klass_not_null(src);
-    strw(src, Address(dst, oopDesc::klass_offset_in_bytes()));
-  } else {
-    str(src, Address(dst, oopDesc::klass_offset_in_bytes()));
-  }
-}
-
-void MacroAssembler::store_klass_gap(Register dst, Register src) {
-  if (UseCompressedClassPointers) {
-    // Store to klass gap in destination
-    strw(src, Address(dst, oopDesc::klass_gap_offset_in_bytes()));
-  }
-}
-
 // Algorithm must match CompressedOops::encode.
 void MacroAssembler::encode_heap_oop(Register d, Register s) {
 #ifdef ASSERT

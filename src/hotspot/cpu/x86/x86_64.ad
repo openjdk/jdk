@@ -5296,7 +5296,7 @@ instruct loadNKlass(rRegN dst, indOffset8 mem, rFlagsReg cr)
   ins_cost(125); // XXX
   format %{ "movl    $dst, $mem\t# compressed klass ptr" %}
   ins_encode %{
-    assert($mem$$disp == oopDesc::nklass_offset_in_bytes(), "expect correct offset 4, but got: %d", $mem$$disp);
+    assert($mem$$disp == oopDesc::klass_offset_in_bytes(), "expect correct offset 4, but got: %d", $mem$$disp);
     assert($mem$$index == 4, "expect no index register: %d", $mem$$index);
     __ load_nklass($dst$$Register, $mem$$base$$Register);
   %}

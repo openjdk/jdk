@@ -133,7 +133,7 @@ Node *SubTypeCheckNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (addr != NULL) {
     intptr_t con = 0;
     Node* obj = AddPNode::Ideal_base_and_offset(addr, phase, con);
-    if (con == oopDesc::nklass_offset_in_bytes() && obj != NULL) {
+    if (con == oopDesc::klass_offset_in_bytes() && obj != NULL) {
       assert(is_oop(phase, obj), "only for oop input");
       set_req(ObjOrSubKlass, obj);
       return this;
@@ -209,7 +209,7 @@ bool SubTypeCheckNode::verify(PhaseGVN* phase) {
   if (super_t->singleton() && subk != NULL) {
     Node* subklass = NULL;
     if (sub_t->isa_oopptr()) {
-      Node* adr = phase->transform(new AddPNode(obj_or_subklass, obj_or_subklass, phase->MakeConX(oopDesc::nklass_offset_in_bytes())));
+      Node* adr = phase->transform(new AddPNode(obj_or_subklass, obj_or_subklass, phase->MakeConX(oopDesc::klass_offset_in_bytes())));
       subklass  = phase->transform(LoadKlassNode::make(*phase, NULL, C->immutable_memory(), adr, TypeInstPtr::KLASS));
       record_for_cleanup(subklass, phase);
     } else {

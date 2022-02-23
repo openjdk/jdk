@@ -71,6 +71,10 @@ void oopDesc::release_set_mark(markWord m) {
   Atomic::release_store(&_mark, m);
 }
 
+void oopDesc::release_set_mark(HeapWord* mem, markWord m) {
+  Atomic::release_store((markWord*)(((char*)mem) + mark_offset_in_bytes()), m);
+}
+
 markWord oopDesc::cas_set_mark(markWord new_mark, markWord old_mark) {
   return Atomic::cmpxchg(&_mark, old_mark, new_mark);
 }
@@ -82,7 +86,6 @@ markWord oopDesc::cas_set_mark(markWord new_mark, markWord old_mark, atomic_memo
 void oopDesc::init_mark() {
 #ifdef _LP64
   markWord header = ObjectSynchronizer::stable_mark(cast_to_oop(this));
-  assert(_metadata._compressed_klass == header.narrow_klass(), "klass must match: " PTR_FORMAT, header.value());
   assert(UseCompressedClassPointers, "expect compressed klass pointers");
   header = markWord((header.value() & markWord::klass_mask_in_place) | markWord::prototype().value());
 #else
@@ -98,12 +101,9 @@ Klass* oopDesc::klass() const {
   if (!header.is_neutral()) {
     header = ObjectSynchronizer::stable_mark(cast_to_oop(this));
   }
-  assert(_metadata._compressed_klass == header.narrow_klass(), "narrow klass must be equal, header: " INTPTR_FORMAT ", nklass: " INTPTR_FORMAT, header.value(), intptr_t(_metadata._compressed_klass));
-  Klass* klass = header.klass();
-  assert(klass == CompressedKlassPointers::decode_not_null(_metadata._compressed_klass), "klass must match: header: " INTPTR_FORMAT ", nklass: " INTPTR_FORMAT, header.value(), intptr_t(_metadata._compressed_klass));
-  return klass;
+  return header.klass();
 #else
-  return _metadata._klass;
+  return _klass;
 #endif
 }
 
@@ -114,12 +114,9 @@ Klass* oopDesc::klass_or_null() const {
   if (!header.is_neutral()) {
     header = ObjectSynchronizer::stable_mark(cast_to_oop(this));
   }
-  assert(_metadata._compressed_klass == header.narrow_klass(), "narrow klass must be equal, header: " INTPTR_FORMAT ", nklass: " INTPTR_FORMAT, header.value(), intptr_t(_metadata._compressed_klass));
-  Klass* klass = header.klass_or_null();
-  assert(klass == CompressedKlassPointers::decode(_metadata._compressed_klass), "klass must match: header: " INTPTR_FORMAT ", nklass: " INTPTR_FORMAT, header.value(), intptr_t(_metadata._compressed_klass));
-  return klass;
+  return header.klass_or_null();
 #else
-  return _metadata._klass;
+  return _klass;
 #endif
 }
 
@@ -130,22 +127,16 @@ Klass* oopDesc::klass_or_null_acquire() const {
   if (!header.is_neutral()) {
     header = ObjectSynchronizer::stable_mark(cast_to_oop(this));
   }
-  assert(_metadata._compressed_klass == header.narrow_klass(), "narrow klass must be equal, header: " INTPTR_FORMAT ", nklass: " INTPTR_FORMAT, header.value(), intptr_t(_metadata._compressed_klass));
-  Klass* klass = header.klass_or_null();
-  assert(klass == CompressedKlassPointers::decode(_metadata._compressed_klass), "klass must match: header: " INTPTR_FORMAT ", nklass: " INTPTR_FORMAT, header.value(), intptr_t(_metadata._compressed_klass));
-  return klass;
+  return header.klass_or_null();
 #else
-  return Atomic::load_acquire(&_metadata._klass);
+  return Atomic::load_acquire(&_klass);
 #endif
 }
 
+#ifndef _LP64
 void oopDesc::set_klass(Klass* k) {
   assert(Universe::is_bootstrapping() || (k != NULL && k->is_klass()), "incorrect Klass");
-  if (UseCompressedClassPointers) {
-    _metadata._compressed_klass = CompressedKlassPointers::encode_not_null(k);
-  } else {
-    _metadata._klass = k;
-  }
+  _klass = k;
 }
 
 void oopDesc::release_set_klass(HeapWord* mem, Klass* k) {
@@ -158,12 +149,7 @@ void oopDesc::release_set_klass(HeapWord* mem, Klass* k) {
     Atomic::release_store((Klass**)raw_mem, k);
   }
 }
-
-void oopDesc::set_klass_gap(HeapWord* mem, int v) {
-  if (UseCompressedClassPointers) {
-    *(int*)(((char*)mem) + klass_gap_offset_in_bytes()) = v;
-  }
-}
+#endif
 
 bool oopDesc::is_a(Klass* k) const {
   return klass()->is_subtype_of(k);

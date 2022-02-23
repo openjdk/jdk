@@ -4630,17 +4630,11 @@ void MacroAssembler::load_klass(Register dst, Register src, Register tmp, bool n
 #endif
 }
 
-void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {
-  assert_different_registers(src, tmp);
-  assert_different_registers(dst, tmp);
-#ifdef _LP64
-  if (UseCompressedClassPointers) {
-    encode_klass_not_null(src, tmp);
-    movl(Address(dst, oopDesc::klass_offset_in_bytes()), src);
-  } else
-#endif
-    movptr(Address(dst, oopDesc::klass_offset_in_bytes()), src);
+#ifndef _LP64
+void MacroAssembler::store_klass(Register dst, Register src) {
+  movptr(Address(dst, oopDesc::klass_offset_in_bytes()), src);
 }
+#endif
 
 void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators, Register dst, Address src,
                                     Register tmp1, Register thread_tmp) {
@@ -4688,13 +4682,6 @@ void MacroAssembler::store_heap_oop_null(Address dst) {
 }
 
 #ifdef _LP64
-void MacroAssembler::store_klass_gap(Register dst, Register src) {
-  if (UseCompressedClassPointers) {
-    // Store to klass gap in destination
-    movl(Address(dst, oopDesc::klass_gap_offset_in_bytes()), src);
-  }
-}
-
 #ifdef ASSERT
 void MacroAssembler::verify_heapbase(const char* msg) {
   assert (UseCompressedOops, "should be compressed");

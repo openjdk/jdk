@@ -54,7 +54,7 @@ import jdk.test.lib.Asserts;
 public class TestObjectAllocationInNewTLABEvent {
     private final static String EVENT_NAME = EventNames.ObjectAllocationInNewTLAB;
 
-    private static final int BYTE_ARRAY_OVERHEAD = 16; // Extra bytes used by a byte array.
+    private static final int BYTE_ARRAY_OVERHEAD = 8; // Extra bytes used by a byte array.
     private static final int OBJECT_SIZE  = 100 * 1024;
     private static final int OBJECT_SIZE_ALT = OBJECT_SIZE + 8; // Object size in case of disabled CompressedOops.
     private static final int OBJECTS_TO_ALLOCATE = 100;

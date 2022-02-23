@@ -1944,10 +1944,12 @@ run:
               }
 
               // Initialize header, mirrors MemAllocator.
+#ifdef _LP64
+              oopDesc::release_set_mark(result, ik->prototype_header());
+#else
               oopDesc::set_mark(result, markWord::prototype());
-              oopDesc::set_klass_gap(result, 0);
               oopDesc::release_set_klass(result, ik);
-
+#endif
               oop obj = cast_to_oop(result);
 
               // Must prevent reordering of stores for object initialization

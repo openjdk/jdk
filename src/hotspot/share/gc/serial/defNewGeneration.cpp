@@ -685,7 +685,6 @@ void DefNewGeneration::remove_forwarding_pointers() {
         }
         assert(UseCompressedClassPointers, "assume +UseCompressedClassPointers");
         narrowKlass nklass = header.narrow_klass();
-        assert(nklass == obj->narrow_klass_legacy(), "narrow klass must match: header: " PTR_FORMAT ", nklass: " PTR_FORMAT, forwardee->mark().value(), uintptr_t(nklass));
         obj->set_mark(markWord::prototype().set_narrow_klass(nklass));
 #else
         obj->init_mark();

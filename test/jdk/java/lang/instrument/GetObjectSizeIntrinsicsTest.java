@@ -372,14 +372,14 @@ public class GetObjectSizeIntrinsicsTest extends ASimpleInstrumentationTestCase 
     }
 
     private void testSize_newObject() {
-        long expected = roundUp(Platform.is64bit() ? 16 : 8, OBJ_ALIGN);
+        long expected = roundUp(8, OBJ_ALIGN);
         for (int c = 0; c < ITERS; c++) {
             assertEquals(expected, fInst.getObjectSize(new Object()));
         }
     }
 
     private void testSize_localObject() {
-        long expected = roundUp(Platform.is64bit() ? 16 : 8, OBJ_ALIGN);
+        long expected = roundUp(8, OBJ_ALIGN);
         Object o = new Object();
         for (int c = 0; c < ITERS; c++) {
             assertEquals(expected, fInst.getObjectSize(o));
@@ -389,7 +389,7 @@ public class GetObjectSizeIntrinsicsTest extends ASimpleInstrumentationTestCase 
     static Object staticO = new Object();
 
     private void testSize_fieldObject() {
-        long expected = roundUp(Platform.is64bit() ? 16 : 8, OBJ_ALIGN);
+        long expected = roundUp(8, OBJ_ALIGN);
         for (int c = 0; c < ITERS; c++) {
             assertEquals(expected, fInst.getObjectSize(staticO));
         }

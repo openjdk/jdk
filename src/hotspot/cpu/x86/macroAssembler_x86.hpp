@@ -365,8 +365,9 @@ class MacroAssembler: public Assembler {
   void load_klass(Register dst, Register src, Register tmp, bool null_check_src = false);
 #ifdef _LP64
   void load_nklass(Register dst, Register src);
+#else
+  void store_klass(Register dst, Register src);
 #endif
-  void store_klass(Register dst, Register src, Register tmp);
 
   void access_load_at(BasicType type, DecoratorSet decorators, Register dst, Address src,
                       Register tmp1, Register thread_tmp);
@@ -385,8 +386,6 @@ class MacroAssembler: public Assembler {
   void store_heap_oop_null(Address dst);
 
 #ifdef _LP64
-  void store_klass_gap(Register dst, Register src);
-
   // This dummy is to prevent a call to store_heap_oop from
   // converting a zero (like NULL) into a Register by giving
   // the compiler two choices it can't resolve

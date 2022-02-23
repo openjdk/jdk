@@ -387,7 +387,7 @@ class VerifyObjectStartArrayClosure : public ObjectClosure {
     _start_array(start_array) { }
 
   virtual void do_object(oop obj) {
-    HeapWord* test_addr = cast_from_oop<HeapWord*>(obj) + 1;
+    HeapWord* test_addr = cast_from_oop<HeapWord*>(obj);
     guarantee(_start_array->object_start(test_addr) == cast_from_oop<HeapWord*>(obj), "ObjectStartArray cannot find start of object");
     guarantee(_start_array->is_block_allocated(cast_from_oop<HeapWord*>(obj)), "ObjectStartArray missing block allocation");
   }

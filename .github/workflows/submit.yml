@@ -403,8 +403,6 @@ jobs:
           - hs x64 optimized build only
           - hs aarch64 build only
           - hs arm build only
-          - hs s390x build only
-          - hs ppc64le build only
         include:
           - flavor: hs x64 build only
             flags: --enable-debug --disable-precompiled-headers
@@ -423,14 +421,6 @@ jobs:
             debian-arch: armhf
             gnu-arch: arm
             gnu-flavor: eabihf
-          - flavor: hs s390x build only
-            flags: --enable-debug --disable-precompiled-headers
-            debian-arch: s390x
-            gnu-arch: s390x
-          - flavor: hs ppc64le build only
-            flags: --enable-debug --disable-precompiled-headers
-            debian-arch: ppc64el
-            gnu-arch: powerpc64le
 
     env:
       JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).DEFAULT_VERSION_FEATURE }}"

@@ -164,17 +164,8 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
   ldr(t1, Address(klass, Klass::prototype_header_offset()));
   str(t1, Address(obj, oopDesc::mark_offset_in_bytes()));
 
-  if (UseCompressedClassPointers) { // Take care not to kill klass
-    encode_klass_not_null(t1, klass);
-    strw(t1, Address(obj, oopDesc::klass_offset_in_bytes()));
-  } else {
-    str(klass, Address(obj, oopDesc::klass_offset_in_bytes()));
-  }
-
   if (len->is_valid()) {
     strw(len, Address(obj, arrayOopDesc::length_offset_in_bytes()));
-  } else if (UseCompressedClassPointers) {
-    store_klass_gap(obj, zr);
   }
 }
 

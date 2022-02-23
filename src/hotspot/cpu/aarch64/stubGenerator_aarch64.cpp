@@ -593,8 +593,8 @@ class StubGenerator: public StubCodeGenerator {
     // worst that can happen (rarely) is that the object is locked and
     // we have lock pointer bits in the upper 32bits. We can't get a false
     // negative.
-    assert(oopDesc::nklass_offset_in_bytes() % 4 == 0, "must be 4 byte aligned");
-    __ ldrw(r0, Address(r0, oopDesc::nklass_offset_in_bytes()));  // get klass
+    assert(oopDesc::klass_offset_in_bytes() % 4 == 0, "must be 4 byte aligned");
+    __ ldrw(r0, Address(r0, oopDesc::klass_offset_in_bytes()));  // get klass
     __ cbzw(r0, error);      // if klass is NULL it is broken
 
     // return if everything seems ok

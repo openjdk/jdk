@@ -832,7 +832,6 @@ void ArchiveBuilder::relocate_klass_ptr(oop o) {
 #ifdef _LP64
   o->set_mark(o->mark().set_narrow_klass(nk));
 #endif
-  o->set_narrow_klass(nk);
 }
 
 // RelocateBufferToRequested --- Relocate all the pointers in rw/ro,

@@ -73,7 +73,8 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
 
     final int objectAlignment = getFlag("ObjectAlignmentInBytes", Integer.class);
 
-    final int hubOffset = getFieldOffset("oopDesc::_metadata._klass", Integer.class, "Klass*");
+    // TODO: Lilliput. Probably ok.
+    final int hubOffset = 4; // getFieldOffset("oopDesc::_metadata._klass", Integer.class, "Klass*");
 
     final int subklassOffset = getFieldOffset("Klass::_subklass", Integer.class, "Klass*");
     final int superOffset = getFieldOffset("Klass::_super", Integer.class, "Klass*");

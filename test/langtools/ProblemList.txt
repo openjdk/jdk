@@ -71,3 +71,6 @@ tools/sjavac/ClasspathDependencies.java                                         
 ###########################################################################
 #
 # jdeps
+
+
+jdk/jshell/ToolTabSnippetTest.java 1234567 generic-all

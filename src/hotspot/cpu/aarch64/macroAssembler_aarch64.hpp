@@ -824,7 +824,6 @@ public:
   // oop manipulations
   void load_nklass(Register dst, Register src);
   void load_klass(Register dst, Register src);
-  void store_klass(Register dst, Register src);
   void cmp_klass(Register oop, Register trial_klass, Register tmp);
 
   void resolve_weak_handle(Register result, Register tmp);
@@ -849,8 +848,6 @@ public:
   // Used for storing NULL. All other oop constants should be
   // stored using routines that take a jobject.
   void store_heap_oop_null(Address dst);
-
-  void store_klass_gap(Register dst, Register src);
 
   // This dummy is to prevent a call to store_heap_oop from
   // converting a zero (like NULL) into a Register by giving
