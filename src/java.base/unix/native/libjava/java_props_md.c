@@ -495,6 +495,8 @@ GetJavaProperties(JNIEnv *env)
             char* user_home = getenv("HOME");
             if ((user_home != NULL) && (user_home[0] != '\0')) {
                 sprops.user_home = user_home;
+            } else {
+                sprops.user_home = "?";
             }
         }
     }
