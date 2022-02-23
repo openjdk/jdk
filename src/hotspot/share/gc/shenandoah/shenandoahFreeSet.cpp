@@ -177,16 +177,17 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     ShenandoahMarkingContext* const ctx = _heap->complete_marking_context();
 
     r->set_affiliation(req.affiliation());
-    r->set_update_watermark(r->bottom());
 
-    // Any OLD region allocated during concurrent coalesce-and-fill does not need to be coalesced and filled because
-    // all objects allocated within this region are above TAMS (and thus are implicitly marked).  In case this is an
-    // OLD region and concurrent preparation for mixed evacuations visits this region before the start of the next
-    // old-gen concurrent mark (i.e. this region is allocated following the start of old-gen concurrent mark but before
-    // concurrent preparations for mixed evacuations are completed), we mark this region as not requiring any
-    // coalesce-and-fill processing.  This code is only necessary if req.affiliation() is OLD, but harmless if not.
-    r->end_preemptible_coalesce_and_fill();
-    ctx->capture_top_at_mark_start(r);
+    if (r->is_old()) {
+      // Any OLD region allocated during concurrent coalesce-and-fill does not need to be coalesced and filled because
+      // all objects allocated within this region are above TAMS (and thus are implicitly marked).  In case this is an
+      // OLD region and concurrent preparation for mixed evacuations visits this region before the start of the next
+      // old-gen concurrent mark (i.e. this region is allocated following the start of old-gen concurrent mark but before
+      // concurrent preparations for mixed evacuations are completed), we mark this region as not requiring any
+      // coalesce-and-fill processing.
+      r->end_preemptible_coalesce_and_fill();
+      _heap->clear_cards_for(r);
+    }
 
     assert(ctx->top_at_mark_start(r) == r->bottom(), "Newly established allocation region starts with TAMS equal to bottom");
     assert(ctx->is_bitmap_clear_range(ctx->top_bitmap(r), r->end()), "Bitmap above top_bitmap() must be clear");
@@ -508,7 +509,6 @@ void ShenandoahFreeSet::try_recycle_trashed(ShenandoahHeapRegion *r) {
 void ShenandoahFreeSet::recycle_trash() {
   // lock is not reentrable, check we don't have it
   shenandoah_assert_not_heaplocked();
-
   for (size_t i = 0; i < _heap->num_regions(); i++) {
     ShenandoahHeapRegion* r = _heap->get_region(i);
     if (r->is_trash()) {
