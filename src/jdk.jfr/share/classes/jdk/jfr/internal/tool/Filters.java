@@ -49,7 +49,7 @@ public class Filters {
                     if (match(category, filter)) {
                         return true;
                     }
-                    if (category.contains(" ") && acronomify(category).equals(filter)) {
+                    if (category.contains(" ") && acronymify(category).equals(filter)) {
                         return true;
                     }
                 }
@@ -127,7 +127,7 @@ public class Filters {
         return t -> cache.computeIfAbsent(cacheFunction.apply(t), x -> filter.test(t));
     }
 
-    private static String acronomify(String multipleWords) {
+    private static String acronymify(String multipleWords) {
         boolean newWord = true;
         String acronym = "";
         for (char c : multipleWords.toCharArray()) {
