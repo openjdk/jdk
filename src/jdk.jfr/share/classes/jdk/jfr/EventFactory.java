@@ -52,29 +52,7 @@ import jdk.jfr.internal.Utils;
  * <p>
  * The following example shows how to implement a dynamic {@code Event} class.
  *
- * <pre>
- * {@code
- * List<ValueDescriptor> fields = new ArrayList<>();
- * List<AnnotationElement> messageAnnotations = Collections.singletonList(new AnnotationElement(Label.class, "Message"));
- * fields.add(new ValueDescriptor(String.class, "message", messageAnnotations));
- * List<AnnotationElement> numberAnnotations = Collections.singletonList(new AnnotationElement(Label.class, "Number"));
- * fields.add(new ValueDescriptor(int.class, "number", numberAnnotations));
- *
- * String[] category = { "Example", "Getting Started" };
- * List<AnnotationElement> eventAnnotations = new ArrayList<>();
- * eventAnnotations.add(new AnnotationElement(Name.class, "com.example.HelloWorld"));
- * eventAnnotations.add(new AnnotationElement(Label.class, "Hello World"));
- * eventAnnotations.add(new AnnotationElement(Description.class, "Helps programmer getting started"));
- * eventAnnotations.add(new AnnotationElement(Category.class, category));
- *
- * EventFactory f = EventFactory.create(eventAnnotations, fields);
- *
- * Event event = f.newEvent();
- * event.set(0, "hello, world!");
- * event.set(1, 4711);
- * event.commit();
- * }
- * </pre>
+ * {@snippet class="Snippets" region="EventFactoryOverview"}
  *
  * @since 9
  */

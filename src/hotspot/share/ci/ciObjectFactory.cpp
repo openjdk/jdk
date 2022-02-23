@@ -555,7 +555,7 @@ ciInstance* ciObjectFactory::get_unloaded_instance(ciInstanceKlass* instance_kla
 // Get a ciInstance representing an unresolved klass mirror.
 //
 // Currently, this ignores the parameters and returns a unique unloaded instance.
-ciInstance* ciObjectFactory::get_unloaded_klass_mirror(ciKlass*  type) {
+ciInstance* ciObjectFactory::get_unloaded_klass_mirror(ciKlass* type) {
   assert(ciEnv::_Class_klass != NULL, "");
   return get_unloaded_instance(ciEnv::_Class_klass->as_instance_klass());
 }
@@ -570,7 +570,7 @@ ciInstance* ciObjectFactory::get_unloaded_method_handle_constant(ciKlass*  holde
                                                                  ciSymbol* name,
                                                                  ciSymbol* signature,
                                                                  int       ref_kind) {
-  if (ciEnv::_MethodHandle_klass == NULL)  return NULL;
+  assert(ciEnv::_MethodHandle_klass != NULL, "");
   return get_unloaded_instance(ciEnv::_MethodHandle_klass->as_instance_klass());
 }
 
@@ -581,12 +581,12 @@ ciInstance* ciObjectFactory::get_unloaded_method_handle_constant(ciKlass*  holde
 //
 // Currently, this ignores the parameters and returns a unique unloaded instance.
 ciInstance* ciObjectFactory::get_unloaded_method_type_constant(ciSymbol* signature) {
-  if (ciEnv::_MethodType_klass == NULL)  return NULL;
+  assert(ciEnv::_MethodType_klass != NULL, "");
   return get_unloaded_instance(ciEnv::_MethodType_klass->as_instance_klass());
 }
 
 ciInstance* ciObjectFactory::get_unloaded_object_constant() {
-  if (ciEnv::_Object_klass == NULL)  return NULL;
+  assert(ciEnv::_Object_klass != NULL, "");
   return get_unloaded_instance(ciEnv::_Object_klass->as_instance_klass());
 }
 
