@@ -1284,7 +1284,7 @@ class jdk_internal_foreign_abi_NativeEntryPoint: AllStatic {
 
  private:
   static int _method_type_offset;
-  static int _invoker_offset;
+  static int _downcall_stub_address_offset;
 
   static void compute_offsets();
 
@@ -1293,7 +1293,7 @@ class jdk_internal_foreign_abi_NativeEntryPoint: AllStatic {
 
   // Accessors
   static oop        method_type(oop entry);
-  static jlong      invoker(oop entry);
+  static jlong      downcall_stub_address(oop entry);
 
   // Testers
   static bool is_subclass(Klass* klass) {
@@ -1303,8 +1303,8 @@ class jdk_internal_foreign_abi_NativeEntryPoint: AllStatic {
   static bool is_instance(oop obj);
 
   // Accessors for code generation:
-  static int method_type_offset_in_bytes()     { return _method_type_offset;     }
-  static int invoker_offset_in_bytes()         { return _invoker_offset;         }
+  static int method_type_offset_in_bytes()           { return _method_type_offset; }
+  static int downcall_stub_address_offset_in_bytes() { return _downcall_stub_address_offset; }
 };
 
 class jdk_internal_foreign_abi_ABIDescriptor: AllStatic {
