@@ -155,8 +155,6 @@ inline intptr_t* frame::link() const {
   return (intptr_t*) callers_abi()->callers_sp;
 }
 
-inline bool frame::can_access_link(Thread *thread) const { return true; }
-
 inline intptr_t** frame::interpreter_frame_locals_addr() const {
   return (intptr_t**) &(ijava_state()->locals);
 }

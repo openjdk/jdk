@@ -82,11 +82,6 @@ inline intptr_t* frame::link() const {
   return NULL;
 }
 
-inline bool frame::can_access_link(Thread *t) const {
-  ShouldNotCallThis();
-  return false;
-}
-
 inline interpreterState frame::get_interpreterState() const {
   return zero_interpreterframe()->interpreter_state();
 }

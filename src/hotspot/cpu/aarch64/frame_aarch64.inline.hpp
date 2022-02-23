@@ -29,6 +29,7 @@
 #include "code/codeCache.hpp"
 #include "code/vmreg.inline.hpp"
 #include "pauth_aarch64.hpp"
+#include "runtime/safefetch.inline.hpp"
 
 // Inline functions for AArch64 frames:
 
@@ -150,9 +151,7 @@ inline bool frame::is_older(intptr_t* id) const   { assert(this->id() != NULL &&
 
 
 
-inline intptr_t* frame::link() const              { return (intptr_t*) *(intptr_t **)addr_at(link_offset); }
-
-inline bool frame::can_access_link(Thread *thread) const { return thread->is_in_full_stack((address)addr_at(link_offset)); }
+inline intptr_t* frame::link() const              { return (intptr_t*) SafeFetchN((intptr_t *)addr_at(link_offset), NULL); }
 
 inline intptr_t* frame::unextended_sp() const     { return _unextended_sp; }
 

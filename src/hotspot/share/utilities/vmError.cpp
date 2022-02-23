@@ -335,11 +335,11 @@ static frame next_frame(frame fr, Thread* t) {
     } else {
       // is_first_C_frame() does only simple checks for frame pointer,
       // it will pass if java compiled code has a pointer in EBP.
-      if (os::is_first_C_frame(&fr, t)) return invalid;
+      if (os::is_first_C_frame(&fr)) return invalid;
       return os::get_sender_for_C_frame(&fr);
     }
   } else {
-    if (os::is_first_C_frame(&fr, t)) return invalid;
+    if (os::is_first_C_frame(&fr)) return invalid;
     return os::get_sender_for_C_frame(&fr);
   }
 }
