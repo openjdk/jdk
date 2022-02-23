@@ -117,6 +117,8 @@ apt_help() {
       PKGHANDLER_COMMAND="sudo apt-get install ccache" ;;
     dtrace)
       PKGHANDLER_COMMAND="sudo apt-get install systemtap-sdt-dev" ;;
+    capstone)
+      PKGHANDLER_COMMAND="sudo apt-get install libcapstone-dev" ;;
   esac
 }
 
@@ -168,6 +170,8 @@ brew_help() {
       PKGHANDLER_COMMAND="brew install freetype" ;;
     ccache)
       PKGHANDLER_COMMAND="brew install ccache" ;;
+    capstone)
+      PKGHANDLER_COMMAND="brew install capstone" ;;
   esac
 }
 

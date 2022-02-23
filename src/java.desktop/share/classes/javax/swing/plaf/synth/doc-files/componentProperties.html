@@ -3,10 +3,13 @@
 <head>
   <meta charset="utf-8"/>
   <title>Component Specific Properties</title>
-  <style type="text/css">tbody th {font-weight:normal;text-align:left}</style>
+  <style type="text/css">
+  tbody th {font-weight:normal;text-align:left}
+  tbody th, tbody td {vertical-align:top}
+  </style>
 </head>
 <!--
-Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -188,159 +191,159 @@ with the keyboard. </td>
 </table>
 <br>
 <h2>JFileChooser</h2>
-<table class="striped" style="text-align: left; width: 100%;">
+<table class="striped" style="width: 100%;">
 <caption>JFileChooser Specific Properties</caption>
   <thead>
     <tr>
-      <th scope="col" style="vertical-align: top; text-align: center;">Property</th>
-      <th scope="col" style="vertical-align: top; text-align: center;">Expected Type<br>
+      <th scope="col">Property</th>
+      <th scope="col">Expected Type<br>
       </th>
-      <th scope="col" style="vertical-align: top; text-align: center;">Default Value<br>
+      <th scope="col">Default Value<br>
       </th>
-      <th scope="col" style="vertical-align: top; text-align: center;">Description</th>
+      <th scope="col">Description</th>
     </tr>
   </thead> <tbody>
     <tr>
-      <th scope="row" style="vertical-align: top;">FileChooser.cancelIcon<br>
+      <th scope="row">FileChooser.cancelIcon<br>
       </th>
-      <td style="vertical-align: top;">Icon<br>
+      <td>Icon<br>
       </td>
-      <td style="vertical-align: top;">null<br>
+      <td>null<br>
       </td>
-      <td style="vertical-align: top;">Icon displayed on cancel button
+      <td>Icon displayed on cancel button
 of the file chooser.<br>
       </td>
     </tr>
     <tr>
-      <th scope="row" style="vertical-align: top;">FileChooser.okIcon<br>
+      <th scope="row">FileChooser.okIcon<br>
       </th>
-      <td style="vertical-align: top;">Icon<br>
+      <td>Icon<br>
       </td>
-      <td style="vertical-align: top;">null<br>
+      <td>null<br>
       </td>
-      <td style="vertical-align: top;">Icon displayed on the ok button
+      <td>Icon displayed on the ok button
 of the file chooser.<br>
       </td>
     </tr>
     <tr>
-      <th scope="row" style="vertical-align: top;">FileView.directoryIcon<br>
+      <th scope="row">FileView.directoryIcon<br>
       </th>
-      <td style="vertical-align: top;">Icon<br>
+      <td>Icon<br>
       </td>
-      <td style="vertical-align: top;">null<br>
+      <td>null<br>
       </td>
-      <td style="vertical-align: top;">Icon used for directories.
+      <td>Icon used for directories.
       </td>
     </tr>
     <tr>
-      <th scope="row" style="vertical-align: top;">FileView.fileIcon<br>
+      <th scope="row">FileView.fileIcon<br>
       </th>
-      <td style="vertical-align: top;">Icon<br>
+      <td>Icon<br>
       </td>
-      <td style="vertical-align: top;">null<br>
+      <td>null<br>
       </td>
-      <td style="vertical-align: top;">Icon used for files.
+      <td>Icon used for files.
       </td>
     </tr>
     <tr>
-      <th scope="row" style="vertical-align: top;">FileView.computerIcon<br>
+      <th scope="row">FileView.computerIcon<br>
       </th>
-      <td style="vertical-align: top;">Icon<br>
+      <td>Icon<br>
       </td>
-      <td style="vertical-align: top;">null<br>
+      <td>null<br>
       </td>
-      <td style="vertical-align: top;">Icon used for directories that
+      <td>Icon used for directories that
             represent the computer.  Not all platforms will make use
             of this icon.
       </td>
     </tr>
     <tr>
-      <th scope="row" style="vertical-align: top;">FileView.hardDriveIcon<br>
+      <th scope="row">FileView.hardDriveIcon<br>
       </th>
-      <td style="vertical-align: top;">Icon<br>
+      <td>Icon<br>
       </td>
-      <td style="vertical-align: top;">null<br>
+      <td>null<br>
       </td>
-      <td style="vertical-align: top;">Icon used to represent the root
+      <td>Icon used to represent the root
             of a hard drive.  For example, on Windows this would be
             used when viewing the C drive.
       </td>
     </tr>
     <tr>
-      <th scope="row" style="vertical-align: top;">FileView.floppyDriveIcon<br>
+      <th scope="row">FileView.floppyDriveIcon<br>
       </th>
-      <td style="vertical-align: top;">Icon<br>
+      <td>Icon<br>
       </td>
-      <td style="vertical-align: top;">null<br>
+      <td>null<br>
       </td>
-      <td style="vertical-align: top;">Icon used to represent a floppy
+      <td>Icon used to represent a floppy
           disk.
       </td>
     </tr>
     <tr>
-      <th scope="row" style="vertical-align: top;">FileChooser.newFolderIcon<br>
+      <th scope="row">FileChooser.newFolderIcon<br>
       </th>
-      <td style="vertical-align: top;">Icon<br>
+      <td>Icon<br>
       </td>
-      <td style="vertical-align: top;">null<br>
+      <td>null<br>
       </td>
-      <td style="vertical-align: top;">Icon used by the button that creates a new
+      <td>Icon used by the button that creates a new
           folder.
       </td>
     </tr>
     <tr>
-      <th scope="row" style="vertical-align: top;">FileChooser.upFolderIcon<br>
+      <th scope="row">FileChooser.upFolderIcon<br>
       </th>
-      <td style="vertical-align: top;">Icon<br>
+      <td>Icon<br>
       </td>
-      <td style="vertical-align: top;">null<br>
+      <td>null<br>
       </td>
-      <td style="vertical-align: top;">Icon used by the button that navigates to the
+      <td>Icon used by the button that navigates to the
           parent folder.
       </td>
     </tr>
     <tr>
-      <th scope="row" style="vertical-align: top;">FileChooser.homeFolderIcon<br>
+      <th scope="row">FileChooser.homeFolderIcon<br>
       </th>
-      <td style="vertical-align: top;">Icon<br>
+      <td>Icon<br>
       </td>
-      <td style="vertical-align: top;">null<br>
+      <td>null<br>
       </td>
-      <td style="vertical-align: top;">Icon used by the button that navigates to the
+      <td>Icon used by the button that navigates to the
           current user's home directory.
       </td>
     </tr>
     <tr>
-      <th scope="row" style="vertical-align: top;">FileChooser.detailsViewIcon<br>
+      <th scope="row">FileChooser.detailsViewIcon<br>
       </th>
-      <td style="vertical-align: top;">Icon<br>
+      <td>Icon<br>
       </td>
-      <td style="vertical-align: top;">null<br>
+      <td>null<br>
       </td>
-      <td style="vertical-align: top;">Icon used by the button that toggles the
+      <td>Icon used by the button that toggles the
           detailed files list view.
       </td>
     </tr>
     <tr>
-      <th scope="row" style="vertical-align: top;">FileChooser.listViewIcon<br>
+      <th scope="row">FileChooser.listViewIcon<br>
       </th>
-      <td style="vertical-align: top;">Icon<br>
+      <td>Icon<br>
       </td>
-      <td style="vertical-align: top;">null<br>
+      <td>null<br>
       </td>
-      <td style="vertical-align: top;">Icon used by the button that toggles the
+      <td>Icon used by the button that toggles the
           regular files list view, showing only an icon and the name of each
           file and directory.
       </td>
     </tr>
     <tr>
-      <th scope="row" style="vertical-align: top;">FileChooser.viewMenuIcon<br>
+      <th scope="row">FileChooser.viewMenuIcon<br>
       </th>
-      <td style="vertical-align: top;">Icon<br>
+      <td>Icon<br>
       </td>
-      <td style="vertical-align: top;">null<br>
+      <td>null<br>
       </td>
-      <td style="vertical-align: top;">Icon used by the button that shows popup menu
+      <td>Icon used by the button that shows popup menu
           for selection of a view mode.
       </td>
     </tr>
@@ -348,26 +351,26 @@ of the file chooser.<br>
 </table>
 <br>
 <h2><a id="JInternalFrame"></a>JInternalFrame</h2>
-<table class="striped" style="text-align: left; width: 100%;">
+<table class="striped" style="width: 100%;">
 <caption>JInternalFrame Specific Properties</caption>
   <thead><tr>
-      <th scope="col" style="vertical-align: top; text-align: center;">Property<br>
+      <th scope="col">Property<br>
       </th>
-      <th scope="col" style="vertical-align: top; text-align: center;">Expected Type<br>
+      <th scope="col">Expected Type<br>
       </th>
-      <th scope="col" style="vertical-align: top; text-align: center;">DefaultValue<br>
+      <th scope="col">DefaultValue<br>
       </th>
-      <th scope="col" style="vertical-align: top; text-align: center;">Description<br>
+      <th scope="col">Description<br>
       </th>
     </tr>
   </thead> <tbody>
     <tr>
-      <th scope="row" style="vertical-align: top;">InternalFrame.icon<br>
+      <th scope="row">InternalFrame.icon<br>
       </th>
-      <td style="vertical-align: top;">Icon</td>
-      <td style="vertical-align: top;">null<br>
+      <td>Icon</td>
+      <td>null<br>
       </td>
-      <td style="vertical-align: top;">Icon drawn representing the
+      <td>Icon drawn representing the
 system<br>
 icon of the internal frame.&nbsp; If pressed<br>
 the system menu will be shown.<br>
@@ -380,93 +383,93 @@ the system menu will be shown.<br>
 <p>JInternalFrameTitlePane is the control bar located at the top of the
 internal frame similar to that found in a frame.<br>
 </p>
-<table class="striped" style="text-align: left; width: 100%;">
+<table class="striped" style="width: 100%;">
 <caption>JInternalFrameTitlePane Specific Properties</caption>
   <thead><tr>
-      <th scope="col" style="vertical-align: top; text-align: center;">Property<br>
+      <th scope="col">Property<br>
       </th>
-      <th scope="col" style="vertical-align: top; text-align: center;">Expected Type<br>
+      <th scope="col">Expected Type<br>
       </th>
-      <th scope="col" style="vertical-align: top; text-align: center;">Default Value<br>
+      <th scope="col">Default Value<br>
       </th>
-      <th scope="col" style="vertical-align: top; text-align: center;">Description<br>
+      <th scope="col">Description<br>
       </th>
     </tr>
   </thead> <tbody>
     <tr>
-      <th scope="row" style="vertical-align: top;">InternalFrameTitlePane.maximizeIcon<br>
+      <th scope="row">InternalFrameTitlePane.maximizeIcon<br>
       </th>
-      <td style="vertical-align: top;">Icon</td>
-      <td style="vertical-align: top;">null<br>
+      <td>Icon</td>
+      <td>null<br>
       </td>
-      <td style="vertical-align: top;">Icon drawn to indicate the
+      <td>Icon drawn to indicate the
 ability to maximize the internal frame.<br>
       </td>
     </tr>
     <tr>
-      <th scope="row" style="vertical-align: top;">InternalFrameTitlePane.minimizeIcon<br>
+      <th scope="row">InternalFrameTitlePane.minimizeIcon<br>
       </th>
-      <td style="vertical-align: top;">Icon</td>
-      <td style="vertical-align: top;">null<br>
+      <td>Icon</td>
+      <td>null<br>
       </td>
-      <td style="vertical-align: top;">Icon drawn to indicate the
+      <td>Icon drawn to indicate the
 ability to restore the internal frame back to its previous state.<br>
       </td>
     </tr>
     <tr>
-      <th scope="row" style="vertical-align: top;">InternalFrameTitlePane.iconifyIcon<br>
+      <th scope="row">InternalFrameTitlePane.iconifyIcon<br>
       </th>
-      <td style="vertical-align: top;">Icon</td>
-      <td style="vertical-align: top;">null<br>
+      <td>Icon</td>
+      <td>null<br>
       </td>
-      <td style="vertical-align: top;">Icon drawn to indicate the
+      <td>Icon drawn to indicate the
 ability to minimize the internal frame.<br>
       </td>
     </tr>
     <tr>
-      <th scope="row" style="vertical-align: top;">InternalFrameTitlePane.closeIcon<br>
+      <th scope="row">InternalFrameTitlePane.closeIcon<br>
       </th>
-      <td style="vertical-align: top;">Icon</td>
-      <td style="vertical-align: top;">null<br>
+      <td>Icon</td>
+      <td>null<br>
       </td>
-      <td style="vertical-align: top;">Icon drawn to indicate the
+      <td>Icon drawn to indicate the
 abililty to close the internal frame.
       </td>
     </tr>
     <tr>
-      <th scope="row" style="vertical-align: top;">InternalFrameTitlePane.titleSpacing<br>
+      <th scope="row">InternalFrameTitlePane.titleSpacing<br>
       </th>
-      <td style="vertical-align: top;">Integer</td>
-      <td style="vertical-align: top;">2</td>
-      <td style="vertical-align: top;">Space between the
+      <td>Integer</td>
+      <td>2</td>
+      <td>Space between the
 	    buttons on the title pane and the title.
       </td>
     </tr>
     <tr>
-      <th scope="row" style="vertical-align: top;">InternalFrameTitlePane.buttonSpacing<br>
+      <th scope="row">InternalFrameTitlePane.buttonSpacing<br>
       </th>
-      <td style="vertical-align: top;">Integer</td>
-      <td style="vertical-align: top;">2</td>
-      <td style="vertical-align: top;">Space between the buttons on
+      <td>Integer</td>
+      <td>2</td>
+      <td>Space between the buttons on
 	    the title pane.
       </td>
     </tr>
     <tr>
-      <th scope="row" style="vertical-align: top;">InternalFrameTitlePane.maxFrameIconSize<br>
+      <th scope="row">InternalFrameTitlePane.maxFrameIconSize<br>
       </th>
-      <td style="vertical-align: top;">Dimension</td>
-      <td style="vertical-align: top;">16x16</td>
-      <td style="vertical-align: top;">Maximum size of the frame
+      <td>Dimension</td>
+      <td>16x16</td>
+      <td>Maximum size of the frame
 	    icon that will be rendered on the title pane.  If the icon
 	    is bigger than this size, it will be scaled down.
       </td>
     </tr>
     <tr>
-      <th scope="row" style="vertical-align: top;">InternalFrameTitlePane.titleAlignment<br>
+      <th scope="row">InternalFrameTitlePane.titleAlignment<br>
       </th>
-      <td style="vertical-align: top;">leading|trailing|center</td>
-      <td style="vertical-align: top;">leading</td>
-      <td style="vertical-align: top;">Alignment for the title.
+      <td>leading|trailing|center</td>
+      <td>leading</td>
+      <td>Alignment for the title.
 	    With a left to right component orientation leading is left
 	    and trailing right.  With a right to left component
 	    orientation leading is right and trailing left.
@@ -719,36 +722,36 @@ it follows the other buttons. 	</td>
 <br>
 <h2><a id="JProgressBar"></a>JProgressBar<br>
 </h2>
-<table class="striped" style="text-align: left; width: 100%;">
+<table class="striped" style="width: 100%;">
 <caption>JProgressBar Specific Properties</caption>
   <thead><tr>
-      <th scope="col" style="vertical-align: top; text-align: center;">Property</th>
-      <th scope="col" style="vertical-align: top; text-align: center;">Expected Type<br>
+      <th scope="col">Property</th>
+      <th scope="col">Expected Type<br>
       </th>
-      <th scope="col" style="vertical-align: top; text-align: center;">Default Value<br>
+      <th scope="col">Default Value<br>
       </th>
-      <th scope="col" style="vertical-align: top; text-align: center;">Description</th>
+      <th scope="col">Description</th>
     </tr>
   </thead> <tbody>
     <tr>
-      <th scope="row" style="vertical-align: top;">ProgressBar.repaintInterval<br>
+      <th scope="row">ProgressBar.repaintInterval<br>
       </th>
-      <td style="vertical-align: top;">Integer<br>
+      <td>Integer<br>
       </td>
-      <td style="vertical-align: top;">50<br>
+      <td>50<br>
       </td>
-      <td style="vertical-align: top;">Number of milliseconds between
+      <td>Number of milliseconds between
 repaints for indeterminate progress bars.<br>
       </td>
     </tr>
     <tr>
-      <th scope="row" style="vertical-align: top;">ProgressBar.cycleTime<br>
+      <th scope="row">ProgressBar.cycleTime<br>
       </th>
-      <td style="vertical-align: top;">Integer<br>
+      <td>Integer<br>
       </td>
-      <td style="vertical-align: top;">3000<br>
+      <td>3000<br>
       </td>
-      <td style="vertical-align: top;">Number of milliseconds used to
+      <td>Number of milliseconds used to
 determine how far to move<br>
 the bouncing box per frame when the progress bar is indeterminate.<br>
       </td>
@@ -974,57 +977,57 @@ setOneTouchExpandable. 	</td>
 </table>
 <br>
 <h2><a id="JSlider"></a>JSlider</h2>
-<table class="striped" style="text-align: left; width: 100%;">
+<table class="striped" style="width: 100%;">
 <caption>JSlider Specific Properties</caption>
   <thead><tr>
-      <th scope="col" style="vertical-align: top; text-align: center;">Property<br>
+      <th scope="col">Property<br>
       </th>
-      <th scope="col" style="vertical-align: top; text-align: center;">Expected Type<br>
+      <th scope="col">Expected Type<br>
       </th>
-      <th scope="col" style="vertical-align: top; text-align: center;">Default Value<br>
+      <th scope="col">Default Value<br>
       </th>
-      <th scope="col" style="vertical-align: top; text-align: center;">Description<br>
+      <th scope="col">Description<br>
       </th>
     </tr>
   </thead> <tbody>
     <tr>
-      <th scope="row" style="vertical-align: top;">Slider.thumbWidth<br>
+      <th scope="row">Slider.thumbWidth<br>
       </th>
-      <td style="vertical-align: top;">Integer<br>
+      <td>Integer<br>
       </td>
-      <td style="vertical-align: top;">30<br>
+      <td>30<br>
       </td>
-      <td style="vertical-align: top;">Width of the slider thumb<br>
+      <td>Width of the slider thumb<br>
       </td>
     </tr>
     <tr>
-      <th scope="row" style="vertical-align: top;">Slider.thumbHeight<br>
+      <th scope="row">Slider.thumbHeight<br>
       </th>
-      <td style="vertical-align: top;">Integer<br>
+      <td>Integer<br>
       </td>
-      <td style="vertical-align: top;">14<br>
+      <td>14<br>
       </td>
-      <td style="vertical-align: top;">Height of the slider thumb<br>
+      <td>Height of the slider thumb<br>
       </td>
     </tr>
     <tr>
-      <th scope="row" style="vertical-align: top;">Slider.trackBorder<br>
+      <th scope="row">Slider.trackBorder<br>
       </th>
-      <td style="vertical-align: top;">Integer<br>
+      <td>Integer<br>
       </td>
-      <td style="vertical-align: top;">1<br>
+      <td>1<br>
       </td>
-      <td style="vertical-align: top;">Width of the track border<br>
+      <td>Width of the track border<br>
       </td>
     </tr>
     <tr>
-      <th scope="row" style="vertical-align: top;">Slider.paintValue<br>
+      <th scope="row">Slider.paintValue<br>
       </th>
-      <td style="vertical-align: top;">Boolean<br>
+      <td>Boolean<br>
       </td>
-      <td style="vertical-align: top;">true<br>
+      <td>true<br>
       </td>
-      <td style="vertical-align: top;">Whether or not to paint the
+      <td>Whether or not to paint the
 current value<br>
 of the slider.<br>
       </td>
@@ -1033,59 +1036,59 @@ of the slider.<br>
 </table>
 <br>
 <h2><a id="JTabbedPane"></a>JTabbedPane</h2>
-<table class="striped" style="text-align: left; width: 100%;">
+<table class="striped" style="width: 100%;">
 <caption>JTabbedPane Specific Properties</caption>
   <thead><tr>
-      <th scope="col" style="vertical-align: top; text-align: center;">Property</th>
-      <th scope="col" style="vertical-align: top; text-align: center;">Expected Type<br>
+      <th scope="col">Property</th>
+      <th scope="col">Expected Type<br>
       </th>
-      <th scope="col" style="vertical-align: top; text-align: center;">Default Value<br>
+      <th scope="col">Default Value<br>
       </th>
-      <th scope="col" style="vertical-align: top; text-align: center;">Description</th>
+      <th scope="col">Description</th>
     </tr>
   </thead> <tbody>
     <tr>
-      <th scope="row" style="vertical-align: top;">TabbedPane.tabRunOverlay<br>
+      <th scope="row">TabbedPane.tabRunOverlay<br>
       </th>
-      <td style="vertical-align: top;">Integer<br>
+      <td>Integer<br>
       </td>
-      <td style="vertical-align: top;">0<br>
+      <td>0<br>
       </td>
-      <td style="vertical-align: top;">Number of pixels to overlap
+      <td>Number of pixels to overlap
 	    tabs when there is more than one row.  <br>
       </td>
     </tr>
     <tr>
-      <th scope="row" style="vertical-align: top;">TabbedPane.textIconGap<br>
+      <th scope="row">TabbedPane.textIconGap<br>
       </th>
-      <td style="vertical-align: top;">Integer<br>
+      <td>Integer<br>
       </td>
-      <td style="vertical-align: top;">0<br>
+      <td>0<br>
       </td>
-      <td style="vertical-align: top;">Padding added between the icon
+      <td>Padding added between the icon
 	    and text on a tab.  If there is no text or icon this value
 	    is not used.
       </td>
     </tr>
     <tr>
-      <th scope="row" style="vertical-align: top;">TabbedPane.selectedTabPadInsets<br>
+      <th scope="row">TabbedPane.selectedTabPadInsets<br>
       </th>
-      <td style="vertical-align: top;">Insets<br>
+      <td>Insets<br>
       </td>
-      <td style="vertical-align: top;">Empty Insets (0, 0, 0, 0)<br>
+      <td>Empty Insets (0, 0, 0, 0)<br>
       </td>
-      <td style="vertical-align: top;">Extra insets added to the
+      <td>Extra insets added to the
 selected tab.<br>
       </td>
     </tr>
     <tr>
-      <th scope="row" style="vertical-align: top;">TabbedPane.selectionFollowsFocus<br>
+      <th scope="row">TabbedPane.selectionFollowsFocus<br>
       </th>
-      <td style="vertical-align: top;">Boolean<br>
+      <td>Boolean<br>
       </td>
-      <td style="vertical-align: top;">true<br>
+      <td>true<br>
       </td>
-      <td style="vertical-align: top;">If true the selection of the
+      <td>If true the selection of the
 	    tabbed pane changes as the user navigates the tabs with a
 	    mouse.<br>
       </td>
@@ -1299,45 +1302,45 @@ JToggleButton.<br>
 </p>
 <h2><a id="textProperties"></a>Text Properties<br>
 </h2>
-<table class="striped" style="text-align: left; width: 100%;">
+<table class="striped" style="width: 100%;">
 <caption>Text classes common properties</caption>
   <thead><tr>
-      <th scope="col" style="vertical-align: top; text-align: center;">Property</th>
-      <th scope="col" style="vertical-align: top; text-align: center;">Expected Type<br>
+      <th scope="col">Property</th>
+      <th scope="col">Expected Type<br>
       </th>
-      <th scope="col" style="vertical-align: top; text-align: center;">Default Value<br>
+      <th scope="col">Default Value<br>
       </th>
-      <th scope="col" style="vertical-align: top; text-align: center;">Description<br>
+      <th scope="col">Description<br>
       </th>
     </tr>
   </thead> <tbody>
     <tr>
-      <th scope="row" style="vertical-align: top;">prefix.caretForeground<br>
+      <th scope="row">prefix.caretForeground<br>
       </th>
-      <td style="vertical-align: top;">Color<br>
+      <td>Color<br>
       </td>
-      <td style="vertical-align: top;">#000000</td>
-      <td style="vertical-align: top;">Color of the caret.<br>
+      <td>#000000</td>
+      <td>Color of the caret.<br>
       </td>
     </tr>
     <tr>
-      <th scope="row" style="vertical-align: top;">prefix.margin<br>
+      <th scope="row">prefix.margin<br>
       </th>
-      <td style="vertical-align: top;">Insets</td>
-      <td style="vertical-align: top;">Empty Insets (0, 0, 0, 0),<br>
+      <td>Insets</td>
+      <td>Empty Insets (0, 0, 0, 0),<br>
 EditorPane and TextPane (3, 3, 3, 3)<br>
       </td>
-      <td style="vertical-align: top;">Margins of the text component.<br>
+      <td>Margins of the text component.<br>
       </td>
     </tr>
     <tr>
-      <th scope="row" style="vertical-align: top;">prefix.caretBlinkRate<br>
+      <th scope="row">prefix.caretBlinkRate<br>
       </th>
-      <td style="vertical-align: top;">Integer<br>
+      <td>Integer<br>
       </td>
-      <td style="vertical-align: top;">500<br>
+      <td>500<br>
       </td>
-      <td style="vertical-align: top;">Number of milliseconds defining
+      <td>Number of milliseconds defining
 the blink rate fo the caret.<br>
       </td>
     </tr>

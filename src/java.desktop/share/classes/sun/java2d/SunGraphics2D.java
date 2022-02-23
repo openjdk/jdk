@@ -2838,22 +2838,22 @@ public final class SunGraphics2D
                 WritableRaster wRaster = null;
                 if (raster instanceof WritableRaster) {
                     wRaster = (WritableRaster)raster;
+
+                    // Translate wRaster to start at (0, 0) and to contain
+                    // only the relevent portion of the tile
+                    wRaster = wRaster.createWritableChild(tileRect.x, tileRect.y,
+                                                          tileRect.width,
+                                                          tileRect.height,
+                                                          0, 0,
+                                                          null);
                 } else {
                     // Create a WritableRaster in the same coordinate system
-                    // as the original raster.
+                    // as the original raster, except origin which is (0,0).
                     wRaster =
                         Raster.createWritableRaster(raster.getSampleModel(),
                                                     raster.getDataBuffer(),
                                                     null);
                 }
-
-                // Translate wRaster to start at (0, 0) and to contain
-                // only the relevent portion of the tile
-                wRaster = wRaster.createWritableChild(tileRect.x, tileRect.y,
-                                                      tileRect.width,
-                                                      tileRect.height,
-                                                      0, 0,
-                                                      null);
 
                 // Wrap wRaster in a BufferedImage
                 BufferedImage bufImg =
