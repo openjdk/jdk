@@ -35,6 +35,7 @@ import jtreg.SkippedException;
  * @test id=xcomp-process
  * @bug 8193124
  * @summary Test the clhsdb 'findpc' command with Xcomp on live process
+ * @requires vm.compMode != "Xcomp"
  * @requires vm.hasSA
  * @requires vm.compiler1.enabled
  * @requires vm.opt.DeoptimizeALot != true
@@ -68,7 +69,6 @@ import jtreg.SkippedException;
  * @test id=no-xcomp-core
  * @bug 8193124
  * @summary Test the clhsdb 'findpc' command w/o Xcomp on core file
- * @requires vm.compMode != "Xcomp"
  * @requires vm.hasSA
  * @requires vm.compiler1.enabled
  * @library /test/lib
