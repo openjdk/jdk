@@ -102,7 +102,7 @@ public class TlsChannelBinding {
             final byte[] prefix =
                 TlsChannelBindingType.TLS_SERVER_END_POINT.getName().concat(":").getBytes();
             String hashAlg = serverCertificate.getSigAlgName().
-                    replace("SHA", "SHA-").toUpperCase(Locale.ENGLISH);
+                    toUpperCase(Locale.ENGLISH).replace("SHA", "SHA-");
             int ind = hashAlg.indexOf("WITH");
             if (ind > 0) {
                 hashAlg = hashAlg.substring(0, ind);
