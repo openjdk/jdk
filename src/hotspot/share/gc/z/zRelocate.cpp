@@ -105,12 +105,23 @@ void ZRelocateQueue::dec_needs_attention() {
 void ZRelocateQueue::join(uint nworkers) {
   assert(_nworkers == 0, "Invalid state");
   assert(_nsynchronized == 0, "Invalid state");
+
+  _nworkers = nworkers;
+}
+
+void ZRelocateQueue::resize_workers(uint nworkers) {
+  assert(nworkers != 0, "Must request at least one worker");
+  assert(_nworkers == 0, "Invalid state");
+  assert(_nsynchronized == 0, "Invalid state");
+
+  ZLocker<ZConditionLock> locker(&_lock);
   _nworkers = nworkers;
 }
 
 void ZRelocateQueue::leave() {
   ZLocker<ZConditionLock> locker(&_lock);
   _nworkers--;
+  assert(_nsynchronized <= _nworkers, "_nsynchronized: %u _nworkers: %u", _nsynchronized, _nworkers);
   if (_synchronize && _nworkers == _nsynchronized) {
     // All workers synchronized
     _lock.notify_all();
@@ -133,49 +144,79 @@ bool ZRelocateQueue::try_add(ZForwarding* forwarding, zaddress_unsafe from_addr,
   return true;
 }
 
-bool ZRelocateQueue::poll(ZForwarding** forwarding, bool* synchronized) {
+ZForwarding* ZRelocateQueue::remove_first() {
+  ZLocker<ZConditionLock> locker(&_lock);
+  if (_queue.is_empty()) {
+    return NULL;
+  }
+
+  ZForwarding* const forwarding = _queue.at(0);
+  _queue.remove_at(0);
+
+  if (_queue.is_empty()) {
+    dec_needs_attention();
+  }
+
+  return forwarding;
+}
+
+class ZRelocateQueueSynchronizeThread {
+private:
+  ZRelocateQueue* const _queue;
+
+public:
+  ZRelocateQueueSynchronizeThread(ZRelocateQueue* queue) :
+      _queue(queue) {
+    _queue->synchronize_thread();
+  }
+  ~ZRelocateQueueSynchronizeThread() {
+    _queue->desynchronize_thread();
+  }
+};
+
+void ZRelocateQueue::synchronize_thread() {
+  _nsynchronized++;
+  assert(_nsynchronized <= _nworkers, "_nsynchronized: %u _nworkers: %u", _nsynchronized, _nworkers);
+  if (_nsynchronized == _nworkers) {
+    // All workers synchronized
+    _lock.notify_all();
+  }
+}
+
+void ZRelocateQueue::desynchronize_thread() {
+  _nsynchronized--;
+  assert(_nsynchronized < _nworkers, "_nsynchronized: %u _nworkers: %u", _nsynchronized, _nworkers);
+}
+
+bool ZRelocateQueue::synchronize_poll() {
   // Fast path avoids locking
-  if (!needs_attention() && !*synchronized) {
+  if (!needs_attention()) {
     return false;
   }
 
   // Slow path to get the next forwarding and/or synchronize
   ZLocker<ZConditionLock> locker(&_lock);
 
-  if (_synchronize && !*synchronized) {
-    // Synchronize
-    *synchronized = true;
-    _nsynchronized++;
-    if (_nsynchronized == _nworkers) {
-      // All workers synchronized
-      _lock.notify_all();
-    }
+  if (!_queue.is_empty()) {
+    // Don't become synchronized while there are elements in the queue
+    return true;
   }
 
-  // Wait for queue to become non-empty or desynchronized
-  while (_queue.is_empty() && _synchronize) {
-    _lock.wait();
-  }
-
-  if (!_synchronize && *synchronized) {
-    // Desynchronize
-    *synchronized = false;
-    _nsynchronized--;
-  }
-
-  // Check if queue is empty
-  if (_queue.is_empty()) {
+  if (!_synchronize) {
     return false;
   }
 
-  // Get and remove first
-  *forwarding = _queue.at(0);
-  _queue.remove_at(0);
-  if (_queue.is_empty()) {
-    dec_needs_attention();
-  }
+  ZRelocateQueueSynchronizeThread rqst(this);
 
-  return true;
+  do {
+    _lock.wait();
+
+    if (!_queue.is_empty()) {
+      return true;
+    }
+  } while (_synchronize);
+
+  return false;
 }
 
 void ZRelocateQueue::clear() {
@@ -198,6 +239,7 @@ void ZRelocateQueue::synchronize() {
 void ZRelocateQueue::desynchronize() {
   ZLocker<ZConditionLock> locker(&_lock);
   _synchronize = false;
+  assert(_nsynchronized <= _nworkers, "_nsynchronized: %u _nworkers: %u", _nsynchronized, _nworkers);
   dec_needs_attention();
   _lock.notify_all();
 }
@@ -263,6 +305,7 @@ zaddress ZRelocate::relocate_object(ZForwarding* forwarding, zaddress_unsafe fro
 
   // Relocate object
   if (forwarding->retain_page()) {
+    assert(_generation->is_phase_relocate(), "Must be");
     to_addr = relocate_object_inner(forwarding, safe(from_addr), &cursor);
     forwarding->release_page();
 
@@ -1057,8 +1100,6 @@ public:
     ZRelocateWork<ZRelocateSmallAllocator> small(&_small_allocator, _generation);
     ZRelocateWork<ZRelocateMediumAllocator> medium(&_medium_allocator, _generation);
 
-    bool synchronized = false;
-
     const auto do_forwarding = [&](ZForwarding* forwarding) {
       if (forwarding->claim()) {
         ZPage* page = forwarding->page();
@@ -1071,16 +1112,38 @@ public:
       }
     };
 
-    for (ZForwarding* iter_forwarding; _iter.next(&iter_forwarding);) {
-      // Relocate page
-      do_forwarding(iter_forwarding);
+    const auto do_forwarding_one_from_iter = [&]() {
+      ZForwarding* forwarding;
 
-      // Prioritize relocation of pages other threads are waiting for
-      for (ZForwarding* queue_forwarding; _queue->poll(&queue_forwarding, &synchronized);) {
-        do_forwarding(queue_forwarding);
+      if (_iter.next(&forwarding)) {
+        do_forwarding(forwarding);
+        return true;
       }
 
-      // Check if we should resize threads
+      return false;
+    };
+
+    const auto do_forwarding_drain_queue = [&]() {
+      for (ZForwarding* forwarding;(forwarding = _queue->remove_first()) != NULL;) {
+        do_forwarding(forwarding);
+      }
+    };
+
+    for (;;) {
+      // As long as there are requests in the relocate queue, there are threads
+      // waiting in a VM state that does not allow them to be blocked. The
+      // worker thread needs to finish relocate these pages, and allow the
+      // other threads to continue and proceed to a blocking state. After that,
+      // the worker threads are allowed to safepoint synchronize.
+      while (_queue->synchronize_poll()) {
+        do_forwarding_drain_queue();
+      }
+
+      if (!do_forwarding_one_from_iter()) {
+        // No more work
+        break;
+      }
+
       if (_generation->should_worker_resize()) {
         break;
       }
@@ -1090,7 +1153,7 @@ public:
   }
 
   virtual void resize_workers(uint nworkers) {
-    _queue->join(nworkers);
+    _queue->resize_workers(nworkers);
   }
 };
 

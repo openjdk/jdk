@@ -50,10 +50,16 @@ public:
   ZRelocateQueue();
 
   void join(uint nworkers);
+  void resize_workers(uint nworkers);
   void leave();
 
   bool try_add(ZForwarding* forwarding, zaddress_unsafe from_addr, ZForwardingCursor* cursor);
-  bool poll(ZForwarding** forwarding, bool* synchronized);
+  ZForwarding* remove_first();
+
+  bool synchronize_poll();
+  void synchronize_thread();
+  void desynchronize_thread();
+
   void clear();
 
   void synchronize();
