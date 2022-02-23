@@ -29,6 +29,7 @@
 
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
+#include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacFailureRegions.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RemSet.hpp"
@@ -225,26 +226,19 @@ inline bool G1CollectedHeap::is_obj_dead(const oop obj) const {
   return is_obj_dead(obj, heap_region_containing(obj));
 }
 
-inline bool G1CollectedHeap::is_obj_ill(const oop obj, const HeapRegion* hr) const {
-  return
-    !hr->obj_allocated_since_next_marking(obj) &&
-    !is_marked_next(obj) &&
-    !hr->is_closed_archive();
-}
-
-inline bool G1CollectedHeap::is_obj_ill(const oop obj) const {
-  if (obj == NULL) {
-    return false;
-  }
-  return is_obj_ill(obj, heap_region_containing(obj));
-}
-
 inline bool G1CollectedHeap::is_obj_dead_full(const oop obj, const HeapRegion* hr) const {
    return !is_marked_next(obj) && !hr->is_closed_archive();
 }
 
 inline bool G1CollectedHeap::is_obj_dead_full(const oop obj) const {
     return is_obj_dead_full(obj, heap_region_containing(obj));
+}
+
+inline void G1CollectedHeap::mark_evac_failure_object(const oop obj, uint worker_id) const {
+    // All objects failing evacuation are live. What we'll do is
+    // that we'll update the prev marking info so that they are
+    // all under PTAMS and explicitly marked.
+    _cm->par_mark_in_prev_bitmap(obj);
 }
 
 inline void G1CollectedHeap::set_humongous_reclaim_candidate(uint region, bool value) {

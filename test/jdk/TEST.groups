@@ -385,16 +385,33 @@ jdk_editpad = \
      jdk/editpad
 
 jdk_desktop = \
-    :jdk_awt \
-    :jdk_2d \
-    :jdk_beans \
+    :jdk_desktop_part1 \
+    :jdk_desktop_part2 \
+    :jdk_desktop_part3
+
+jdk_desktop_part1 = \
+    :jdk_client_sanity \
     :jdk_swing \
+    :jdk_2d \
     :jdk_sound \
     :jdk_imageio \
-    :jdk_accessibility \
+    :jdk_editpad \
     :jfc_demo \
-    :jdk_client_sanity \
-    :jdk_editpad
+    :jdk_accessibility \
+    :jdk_beans
+
+jdk_desktop_part2 = \
+    :jdk_awt \
+    -java/awt/Component \
+    -java/awt/Modal \
+    -java/awt/datatransfer \
+    -java/awt/Window
+
+jdk_desktop_part3 = \
+    java/awt/Component \
+    java/awt/Modal \
+    java/awt/datatransfer \
+    java/awt/Window
 
 # SwingSet3 tests.
 jdk_client_sanity = \

@@ -30,20 +30,7 @@
 #include "gc/g1/heapRegion.hpp"
 #include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "runtime/atomic.hpp"
-
-inline HeapWord* G1BlockOffsetTablePart::threshold_for_addr(const void* addr) {
-  assert(addr >= _hr->bottom() && addr < _hr->top(), "invalid address");
-  size_t index = _bot->index_for(addr);
-  HeapWord* card_boundary = _bot->address_for_index(index);
-  // Address at card boundary, use as threshold.
-  if (card_boundary == addr) {
-    return card_boundary;
-  }
-
-  // Calculate next threshold.
-  HeapWord* threshold = card_boundary + BOTConstants::card_size_in_words();
-  return threshold;
-}
+#include "oops/oop.inline.hpp"
 
 inline HeapWord* G1BlockOffsetTablePart::block_start(const void* addr) {
   assert(addr >= _hr->bottom() && addr < _hr->top(), "invalid address");
@@ -149,10 +136,8 @@ inline HeapWord* G1BlockOffsetTablePart::forward_to_block_containing_addr(HeapWo
            "BOT not precise. Index for n: " SIZE_FORMAT " must be equal to the index for addr: " SIZE_FORMAT,
            _bot->index_for(n), _bot->index_for(addr));
     q = n;
-    oop obj = cast_to_oop(q);
-    if (obj->klass_or_null_acquire() == NULL) {
-      return q;
-    }
+    assert(cast_to_oop(q)->klass_or_null() != nullptr,
+        "start of block must be an initialized object");
     n += block_size(q);
   }
   assert(q <= n, "wrong order for q and addr");

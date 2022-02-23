@@ -179,10 +179,10 @@ On Windows, it is important that you pay attention to the instructions in the
 
 Windows is the only non-POSIX OS supported by the JDK, and as such, requires
 some extra care. A POSIX support layer is required to build on Windows.
-Currently, the only supported such layers are Cygwin and Windows Subsystem for
-Linux (WSL). (Msys is no longer supported due to a too old bash; msys2 would
-likely be possible to support in a future version but that would require effort
-to implement.)
+Currently, the only supported such layers are Cygwin, Windows Subsystem for
+Linux (WSL), and MSYS2. (MSYS is no longer supported due to an outdated bash;
+While OpenJDK can be built with MSYS2, support for it is still experimental, so
+build failures and unusual errors are not uncommon.)
 
 Internally in the build system, all paths are represented as Unix-style paths,
 e.g. `/cygdrive/c/git/jdk/Makefile` rather than `C:\git\jdk\Makefile`. This
@@ -374,9 +374,10 @@ available for this update.
 
 ### Microsoft Visual Studio
 
-The minimum accepted version of Visual Studio is 2017. Older versions will not
-be accepted by `configure` and will not work. The maximum accepted
-version of Visual Studio is 2019.
+For aarch64 machines running Windows the minimum accepted version is Visual Studio 2019 
+(16.8 or higher). For all other platforms the minimum accepted version of 
+Visual Studio is 2017. Older versions will not be accepted by `configure` and will 
+not work. For all platforms the maximum accepted version of Visual Studio is 2022.
 
 If you have multiple versions of Visual Studio installed, `configure` will by
 default pick the latest. You can request a specific version to be used by

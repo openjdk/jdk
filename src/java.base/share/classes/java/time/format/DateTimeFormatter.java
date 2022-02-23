@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,6 @@ import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.chrono.ChronoLocalDateTime;
-import java.time.chrono.ChronoZonedDateTime;
 import java.time.chrono.Chronology;
 import java.time.chrono.IsoChronology;
 import java.time.format.DateTimeFormatterBuilder.CompositePrinterParser;
@@ -715,6 +714,57 @@ public final class DateTimeFormatter {
         Objects.requireNonNull(dateStyle, "dateStyle");
         Objects.requireNonNull(timeStyle, "timeStyle");
         return new DateTimeFormatterBuilder().appendLocalized(dateStyle, timeStyle)
+                .toFormatter(ResolverStyle.SMART, IsoChronology.INSTANCE);
+    }
+
+    //-----------------------------------------------------------------------
+    /**
+     * Creates a locale specific formatter derived from the requested template for
+     * the ISO chronology. The requested template is a series of typical pattern
+     * symbols in canonical order from the largest date or time unit to the smallest,
+     * which can be expressed with the following regular expression:
+     * {@snippet :
+     *      "G{0,5}" +        // Era
+     *      "y*" +            // Year
+     *      "Q{0,5}" +        // Quarter
+     *      "M{0,5}" +        // Month
+     *      "w*" +            // Week of Week Based Year
+     *      "E{0,5}" +        // Day of Week
+     *      "d{0,2}" +        // Day of Month
+     *      "B{0,5}" +        // Period/AmPm of Day
+     *      "[hHjC]{0,2}" +   // Hour of Day/AmPm (refer to LDML for 'j' and 'C')
+     *      "m{0,2}" +        // Minute of Hour
+     *      "s{0,2}" +        // Second of Minute
+     *      "[vz]{0,4}"       // Zone
+     * }
+     * All pattern symbols are optional, and each pattern symbol represents a field,
+     * for example, 'M' represents the Month field. The number of the pattern symbol letters follows the
+     * same presentation, such as "number" or "text" as in the <a href="#patterns">Patterns for
+     * Formatting and Parsing</a> section. Other pattern symbols in the requested template are
+     * invalid.
+     * <p>
+     * The mapping of the requested template to the closest of the available localized formats
+     * is defined by the
+     * <a href="https://www.unicode.org/reports/tr35/tr35-dates.html#availableFormats_appendItems">
+     * Unicode LDML specification</a>. For example, the formatter created from the requested template
+     * {@code yMMM} will format the date '2020-06-16' to 'Jun 2020' in the {@link Locale#US US locale}.
+     * <p>
+     * The locale is determined from the formatter. The formatter returned directly by
+     * this method uses the {@link Locale#getDefault() default FORMAT locale}.
+     * The locale can be controlled using {@link DateTimeFormatter#withLocale(Locale) withLocale(Locale)}
+     * on the result of this method.
+     * <p>
+     * The returned formatter has no override zone.
+     * It uses {@link ResolverStyle#SMART SMART} resolver style.
+     *
+     * @param requestedTemplate the requested template, not null
+     * @return the formatter based on the {@code requestedTemplate} pattern, not null
+     * @throws IllegalArgumentException if {@code requestedTemplate} is invalid
+     * @see #ofPattern(String)
+     * @since 19
+     */
+    public static DateTimeFormatter ofLocalizedPattern(String requestedTemplate) {
+        return new DateTimeFormatterBuilder().appendLocalized(requestedTemplate)
                 .toFormatter(ResolverStyle.SMART, IsoChronology.INSTANCE);
     }
 
@@ -1523,7 +1573,7 @@ public final class DateTimeFormatter {
     /**
      * Gets the DecimalStyle to be used during formatting.
      *
-     * @return the locale of this formatter, not null
+     * @return the DecimalStyle of this formatter, not null
      */
     public DecimalStyle getDecimalStyle() {
         return decimalStyle;

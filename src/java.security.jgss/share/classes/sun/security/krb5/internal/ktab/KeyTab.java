@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -376,12 +376,33 @@ public class KeyTab implements KeyTabConstants {
         addEntry(service, service.getSalt(), psswd, kvno, append);
     }
 
-    // Called by KDC test
+    /**
+     * Adds a new entry in the key table.
+     * @param service the service which will have a new entry in the key table.
+     * @param salt specified non default salt, cannot be null
+     * @param psswd the password which generates the key.
+     * @param kvno the kvno to use, -1 means automatic increasing
+     * @param append false if entries with old kvno would be removed.
+     * Note: if kvno is not -1, entries with the same kvno are always removed
+     */
     public void addEntry(PrincipalName service, String salt, char[] psswd,
             int kvno, boolean append) throws KrbException {
 
         EncryptionKey[] encKeys = EncryptionKey.acquireSecretKeys(
-            psswd, salt);
+                psswd, salt);
+        addEntry(service, encKeys, kvno, append);
+    }
+
+    /**
+     * Adds a new entry in the key table.
+     * @param service the service which will have a new entry in the key table.
+     * @param encKeys the keys to be added
+     * @param kvno the kvno to use, -1 means automatic increasing
+     * @param append false if entries with old kvno would be removed.
+     * Note: if kvno is not -1, entries with the same kvno are always removed
+     */
+    public void addEntry(PrincipalName service, EncryptionKey[] encKeys,
+            int kvno, boolean append) throws KrbException {
 
         // There should be only one maximum KVNO value for all etypes, so that
         // all added keys can have the same KVNO.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,6 +119,8 @@ public class Resources extends java.util.ListResourceBundle {
                 "[-providerClass <class>     add security provider by fully-qualified class name"},
         {".providerArg.option.2",
                 "  [-providerArg <arg>]] ... configure argument for -providerClass"},
+        {".providerPath.option",
+                "[-providerPath <list>]      provider classpath"},
         {".strict.treat.warnings.as.errors",
                 "[-strict]                   treat warnings as errors"},
         {".conf.url.specify.a.pre.configured.options.file",

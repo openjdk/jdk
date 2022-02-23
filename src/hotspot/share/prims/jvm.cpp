@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "cds/heapShared.hpp"
 #include "cds/lambdaFormInvokers.hpp"
 #include "classfile/classFileStream.hpp"
-#include "classfile/classLoader.hpp"
+#include "classfile/classLoader.inline.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoadInfo.hpp"
@@ -2836,7 +2836,7 @@ void jio_print(const char* s, size_t len) {
     jio_fprintf(defaultStream::output_stream(), "%.*s", (int)len, s);
   } else {
     // Make an unused local variable to avoid warning from gcc compiler.
-    size_t count = ::write(defaultStream::output_fd(), s, (int)len);
+    ssize_t count = os::write(defaultStream::output_fd(), s, (int)len);
   }
 }
 
@@ -3373,6 +3373,11 @@ JVM_END
 
 // Library support ///////////////////////////////////////////////////////////////////////////
 
+JVM_LEAF(void*, JVM_LoadZipLibrary())
+  ClassLoader::load_zip_library_if_needed();
+  return ClassLoader::zip_library_handle();
+JVM_END
+
 JVM_ENTRY_NO_ENV(void*, JVM_LoadLibrary(const char* name, jboolean throwException))
   //%note jvm_ct
   char ebuf[1024];
@@ -3648,16 +3653,16 @@ JVM_END
 
 JVM_ENTRY_NO_ENV(jlong, JVM_GetRandomSeedForDumping())
   if (DumpSharedSpaces) {
-    const char* release = Abstract_VM_Version::vm_release();
-    const char* dbg_level = Abstract_VM_Version::jdk_debug_level();
+    const char* release = VM_Version::vm_release();
+    const char* dbg_level = VM_Version::jdk_debug_level();
     const char* version = VM_Version::internal_vm_info_string();
     jlong seed = (jlong)(java_lang_String::hash_code((const jbyte*)release, (int)strlen(release)) ^
                          java_lang_String::hash_code((const jbyte*)dbg_level, (int)strlen(dbg_level)) ^
                          java_lang_String::hash_code((const jbyte*)version, (int)strlen(version)));
-    seed += (jlong)Abstract_VM_Version::vm_major_version();
-    seed += (jlong)Abstract_VM_Version::vm_minor_version();
-    seed += (jlong)Abstract_VM_Version::vm_security_version();
-    seed += (jlong)Abstract_VM_Version::vm_patch_version();
+    seed += (jlong)VM_Version::vm_major_version();
+    seed += (jlong)VM_Version::vm_minor_version();
+    seed += (jlong)VM_Version::vm_security_version();
+    seed += (jlong)VM_Version::vm_patch_version();
     if (seed == 0) { // don't let this ever be zero.
       seed = 0x87654321;
     }
@@ -3684,9 +3689,9 @@ JVM_ENTRY(void, JVM_LogLambdaFormInvoker(JNIEnv *env, jstring line))
     Handle h_line (THREAD, JNIHandles::resolve_non_null(line));
     char* c_line = java_lang_String::as_utf8_string(h_line());
     if (DynamicDumpSharedSpaces) {
-      // Note: LambdaFormInvokers::append_filtered and LambdaFormInvokers::append take same format which is not
+      // Note: LambdaFormInvokers::append take same format which is not
       // same as below the print format. The line does not include LAMBDA_FORM_TAG.
-      LambdaFormInvokers::append_filtered(os::strdup((const char*)c_line, mtInternal));
+      LambdaFormInvokers::append(os::strdup((const char*)c_line, mtInternal));
     }
     if (ClassListWriter::is_enabled()) {
       ClassListWriter w;

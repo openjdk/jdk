@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -292,12 +292,6 @@ public class JavadocLog extends Log implements Reporter {
         report(dt, flags, ds, dp, message);
     }
 
-    private int getSourcePos(DocTreePath path, int offset) {
-        DCTree.DCDocComment docComment = (DCTree.DCDocComment) path.getDocComment();
-        DCTree tree = (DCTree) path.getLeaf();
-        return docComment.getSourcePosition(tree.getStartPosition() + offset);
-    }
-
     @Override  // Reporter
     public void print(Kind kind, Element element, String message) {
         DiagnosticType dt = getDiagnosticType(kind);
@@ -450,22 +444,27 @@ public class JavadocLog extends Log implements Reporter {
     }
 
     /**
-     * Prints a "notice" message to the standard writer.
-     *
-     * @param key  the resource key for the message
-     * @param args the arguments for the message
-     */
-    public void noticeUsingKey(String key, Object... args) {
-        printRawLines(getStandardWriter(), getText(key, args));
-    }
-
-    /**
-     * Prints a "notice" message to the standard writer.
+     * Prints a "notice" message.
      *
      * @param message the message
      */
-    public void notice(String message) {
-        printRawLines(getStandardWriter(), message);
+    public void printNote(String message) {
+        // Ideally, for consistency with errors and warnings, we would use the following:
+        //      report(Kind.NOTE, null, null, message);
+        // but the default formatting in Log for Kind.NOTE is to prefix the line with "Note:"
+        // which is undesirable and inconsistent with existing javadoc output.
+        // For now, to avoid the prefix, we write directly to the underlying stream.
+        printRawLines(WriterKind.NOTICE, message);
+    }
+
+    /**
+     * Prints a "notice" message.
+     *
+     * @param key the resource key for the message
+     * @param args the arguments for the message
+     */
+    public void printNoteUsingKey(String key, Object... args) {
+        printNote(getText(key, args));
     }
 
     /**

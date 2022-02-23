@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -234,7 +234,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
     if test -n "$XCODEBUILD"; then
       # On Mac OS X, default toolchain to clang after Xcode 5
-      XCODE_VERSION_OUTPUT=`"$XCODEBUILD" -version 2>&1 | $HEAD -n 1`
+      XCODE_VERSION_OUTPUT=`"$XCODEBUILD" -version | $HEAD -n 1`
       $ECHO "$XCODE_VERSION_OUTPUT" | $GREP "Xcode " > /dev/null
       if test $? -ne 0; then
         AC_MSG_NOTICE([xcodebuild output: $XCODE_VERSION_OUTPUT])
@@ -772,8 +772,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
     else
       UTIL_LOOKUP_TOOLCHAIN_PROGS(NM, nm)
     fi
-    GNM="$NM"
-    AC_SUBST(GNM)
   fi
 
   # objcopy is used for moving debug symbols to separate files when

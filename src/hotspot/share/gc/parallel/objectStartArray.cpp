@@ -68,13 +68,7 @@ void ObjectStartArray::initialize(MemRegion reserved_region) {
   _virtual_space.initialize(backing_store);
 
   _raw_base = (jbyte*)_virtual_space.low_boundary();
-
-  if (_raw_base == NULL) {
-    vm_exit_during_initialization("Could not get raw_base address");
-  }
-
-  MemTracker::record_virtual_memory_type((address)_raw_base, mtGC);
-
+  assert(_raw_base != nullptr, "set from the backing_store");
 
   _offset_base = _raw_base - (size_t(reserved_region.start()) >> _card_shift);
 
@@ -138,8 +132,15 @@ bool ObjectStartArray::object_starts_in_range(HeapWord* start_addr,
          "Range is wrong. start_addr (" PTR_FORMAT ") is after end_addr (" PTR_FORMAT ")",
          p2i(start_addr), p2i(end_addr));
 
+  assert(is_aligned(start_addr, _card_size), "precondition");
+
+  if (start_addr == end_addr) {
+    // No objects in empty range.
+    return false;
+  }
+
   jbyte* start_block = block_for_addr(start_addr);
-  jbyte* end_block = block_for_addr(end_addr);
+  jbyte* end_block = block_for_addr(end_addr - 1);
 
   for (jbyte* block = start_block; block <= end_block; block++) {
     if (*block != clean_block) {

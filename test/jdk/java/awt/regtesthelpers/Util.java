@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -405,8 +405,7 @@ public final class Util {
     }
 
     /*
-     * The values directly map to the ones of
-     * sun.awt.X11.XWM & sun.awt.motif.MToolkit classes.
+     * The values directly map to the ones of sun.awt.X11.XWM class.
      */
     public final static int
         UNDETERMINED_WM = 1,
@@ -433,8 +432,6 @@ public final class Util {
         try {
             if ("sun.awt.X11.XToolkit".equals(Toolkit.getDefaultToolkit().getClass().getName())) {
                 clazz = Class.forName("sun.awt.X11.XWM");
-            } else if ("sun.awt.motif.MToolkit".equals(Toolkit.getDefaultToolkit().getClass().getName())) {
-                clazz = Class.forName("sun.awt.motif.MToolkit");
             }
         } catch (ClassNotFoundException cnfe) {
             cnfe.printStackTrace();
@@ -446,7 +443,6 @@ public final class Util {
         try {
             final Class _clazz = clazz;
             Method m_addExports = Class.forName("java.awt.Helper").getDeclaredMethod("addExports", String.class, java.lang.Module.class);
-            // No MToolkit anymore: nothing to do about it.
             // We may be called from non-X11 system, and this permission cannot be delegated to a test.
             m_addExports.invoke(null, "sun.awt.X11", Util.class.getModule());
             Method m_getWMID = (Method)AccessController.doPrivileged(new PrivilegedAction() {

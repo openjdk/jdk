@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -462,7 +462,7 @@ juint os::cpu_microcode_revision() {
   juint result = 0;
   char data[2048] = {0}; // lines should fit in 2K buf
   size_t len = sizeof(data);
-  FILE *fp = fopen("/proc/cpuinfo", "r");
+  FILE *fp = os::fopen("/proc/cpuinfo", "r");
   if (fp) {
     while (!feof(fp)) {
       if (fgets(data, len, fp)) {

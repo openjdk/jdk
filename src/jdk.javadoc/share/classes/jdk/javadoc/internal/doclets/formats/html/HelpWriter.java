@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,9 +128,7 @@ public class HelpWriter extends HtmlDocletWriter {
      * </ul>
      */
     protected void addHelpFileContents(Content contentTree) {
-        HtmlTree mainTOC = new HtmlTree(TagName.UL).setStyle(HtmlStyle.helpTOC);
-
-
+        HtmlTree mainTOC = HtmlTree.UL(HtmlStyle.helpTOC);
 
         contentTree.add(HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, HtmlStyle.title,
                                         getContent("doclet.help.main_heading")))
@@ -185,7 +183,7 @@ public class HelpWriter extends HtmlDocletWriter {
         }
         content.add(navSection);
 
-        HtmlTree subTOC = new HtmlTree(TagName.UL).setStyle(HtmlStyle.helpSubTOC);
+        HtmlTree subTOC = HtmlTree.UL(HtmlStyle.helpSubTOC);
 
         HtmlTree section;
 
@@ -193,7 +191,7 @@ public class HelpWriter extends HtmlDocletWriter {
         if (options.createIndex()) {
             section = newHelpSection(getContent("doclet.help.search.head"), subTOC, HtmlIds.HELP_SEARCH);
             Content searchIntro = HtmlTree.P(getContent("doclet.help.search.intro"));
-            Content searchExamples = new HtmlTree(TagName.UL).setStyle(HtmlStyle.helpSectionList);
+            Content searchExamples = HtmlTree.UL(HtmlStyle.helpSectionList);
             for (String[] example : SEARCH_EXAMPLES) {
                 searchExamples.add(HtmlTree.LI(
                         getContent("doclet.help.search.example",
@@ -240,7 +238,7 @@ public class HelpWriter extends HtmlDocletWriter {
                 .add(HtmlTree.HEADING(Headings.CONTENT_HEADING, pageKindsHeading).setId(HtmlIds.HELP_PAGES))
                 .add(contents.getContent("doclet.help.page_kinds.intro"));
 
-        HtmlTree subTOC = new HtmlTree(TagName.UL).setStyle(HtmlStyle.helpSubTOC);
+        HtmlTree subTOC = HtmlTree.UL(HtmlStyle.helpSubTOC);
 
         HtmlTree section;
 

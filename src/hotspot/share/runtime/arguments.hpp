@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 #include "logging/logLevel.hpp"
 #include "logging/logTag.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
@@ -109,7 +109,8 @@ class SystemProperty : public PathString {
   void set_next(SystemProperty* next) { _next = next; }
 
   bool is_readable() const {
-    return !_internal || strcmp(_key, "jdk.boot.class.path.append") == 0;
+    return !_internal || (strcmp(_key, "jdk.boot.class.path.append") == 0 &&
+                          value() != NULL);
   }
 
   // A system property should only have its value set
@@ -469,12 +470,12 @@ class Arguments : AllStatic {
   static char*  SharedArchivePath;
   static char*  SharedDynamicArchivePath;
   static size_t _default_SharedBaseAddress; // The default value specified in globals.hpp
-  static int num_archives(const char* archive_path) NOT_CDS_RETURN_(0);
   static void extract_shared_archive_paths(const char* archive_path,
                                          char** base_archive_path,
                                          char** top_archive_path) NOT_CDS_RETURN;
 
  public:
+  static int num_archives(const char* archive_path) NOT_CDS_RETURN_(0);
   // Parses the arguments, first phase
   static jint parse(const JavaVMInitArgs* args);
   // Parse a string for a unsigned integer.  Returns true if value

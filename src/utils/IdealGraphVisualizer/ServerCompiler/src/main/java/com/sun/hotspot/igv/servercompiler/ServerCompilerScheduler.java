@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,9 @@ import com.sun.hotspot.igv.data.services.Scheduler;
 import java.util.*;
 import org.openide.ErrorManager;
 import org.openide.util.lookup.ServiceProvider;
+import com.ibm.wala.util.graph.Graph;
+import com.ibm.wala.util.graph.impl.SlowSparseNumberedGraph;
+import com.ibm.wala.util.graph.dominators.Dominators;
 
 /**
  *
@@ -362,19 +365,6 @@ public class ServerCompilerScheduler implements Scheduler {
         }
     }
 
-    private class BlockIntermediate {
-
-        InputBlock block;
-        int index;
-        int dominator;
-        int semi;
-        int parent;
-        int label;
-        int ancestor;
-        List<Integer> pred;
-        List<Integer> bucket;
-    }
-
     public void buildCommonDominators() {
         commonDominator = new InputBlock[this.blocks.size()][this.blocks.size()];
         for (int i = 0; i < blocks.size(); i++) {
@@ -412,155 +402,28 @@ public class ServerCompilerScheduler implements Scheduler {
         if (blocks.size() == 0) {
             return;
         }
-        Vector<BlockIntermediate> intermediate = new Vector<>(graph.getBlocks().size());
-        Map<InputBlock, BlockIntermediate> map = new HashMap<>(graph.getBlocks().size());
-        int z = 0;
+
+        Graph<InputBlock> CFG = SlowSparseNumberedGraph.make();
         for (InputBlock b : blocks) {
-            BlockIntermediate bi = new BlockIntermediate();
-            bi.block = b;
-            bi.index = z;
-            bi.dominator = -1;
-            bi.semi = -1;
-            bi.parent = -1;
-            bi.label = z;
-            bi.ancestor = -1;
-            bi.pred = new ArrayList<>();
-            bi.bucket = new ArrayList<>();
-            intermediate.add(bi);
-            map.put(b, bi);
-            z++;
+            CFG.addNode(b);
         }
-        Stack<Integer> stack = new Stack<>();
-        stack.add(0);
-
-        Vector<BlockIntermediate> array = new Vector<>();
-        intermediate.get(0).dominator = 0;
-
-        int n = 0;
-        while (!stack.isEmpty()) {
-            int index = stack.pop();
-            BlockIntermediate ib = intermediate.get(index);
-            ib.semi = n;
-            array.add(ib);
-            n = n + 1;
-            for (InputBlock b : ib.block.getSuccessors()) {
-                BlockIntermediate succ = map.get(b);
-                if (succ.semi == -1) {
-                    succ.parent = index;
-                    stack.push(succ.index); // TODO: check if same node could be pushed twice
-                }
-                succ.pred.add(index);
+        for (InputBlock p : blocks) {
+            for (InputBlock s : p.getSuccessors()) {
+                CFG.addEdge(p, s);
             }
         }
 
-        for (int i = n - 1; i > 0; i--) {
-            BlockIntermediate block = array.get(i);
-            int block_index = block.index;
-            for (int predIndex : block.pred) {
-                int curIndex = eval(predIndex, intermediate);
-                BlockIntermediate curBlock = intermediate.get(curIndex);
-                if (curBlock.semi < block.semi) {
-                    block.semi = curBlock.semi;
-                }
+        InputBlock root = findRoot().block;
+        Dominators<InputBlock> D = Dominators.make(CFG, root);
+
+        for (InputBlock b : blocks) {
+            InputBlock idom = D.getIdom(b);
+            if (idom == null && b != root) {
+                // getCommonDominator expects a single root node.
+                idom = root;
             }
-
-
-            int semiIndex = block.semi;
-            BlockIntermediate semiBlock = array.get(semiIndex);
-            semiBlock.bucket.add(block_index);
-
-            link(block.parent, block_index, intermediate);
-            BlockIntermediate parentBlock = intermediate.get(block.parent);
-
-            for (int j = 0; j < parentBlock.bucket.size(); j++) {
-                for (int curIndex : parentBlock.bucket) {
-                    int newIndex = eval(curIndex, intermediate);
-                    BlockIntermediate curBlock = intermediate.get(curIndex);
-                    BlockIntermediate newBlock = intermediate.get(newIndex);
-                    int dom = block.parent;
-                    if (newBlock.semi < curBlock.semi) {
-                        dom = newIndex;
-                    }
-
-                    curBlock.dominator = dom;
-                }
-            }
-
-
-            parentBlock.bucket.clear();
+            dominatorMap.put(b, idom);
         }
-
-        for (int i = 1; i < n; i++) {
-
-            BlockIntermediate block = array.get(i);
-            int block_index = block.index;
-
-            int semi_index = block.semi;
-            BlockIntermediate semi_block = array.get(semi_index);
-
-            if (block.dominator != semi_block.index) {
-                int new_dom = intermediate.get(block.dominator).dominator;
-                block.dominator = new_dom;
-            }
-        }
-
-        for (BlockIntermediate ib : intermediate) {
-            if (ib.dominator == -1) {
-                ib.dominator = 0;
-            }
-        }
-
-        for (BlockIntermediate bi : intermediate) {
-            InputBlock b = bi.block;
-            int dominator = bi.dominator;
-            InputBlock dominatorBlock = null;
-            if (dominator != -1) {
-                dominatorBlock = intermediate.get(dominator).block;
-            }
-
-            if (dominatorBlock == b) {
-                dominatorBlock = null;
-            }
-            this.dominatorMap.put(b, dominatorBlock);
-        }
-    }
-
-    private void compress(int index, Vector<BlockIntermediate> blocks) {
-        BlockIntermediate block = blocks.get(index);
-
-        int ancestor = block.ancestor;
-        assert ancestor != -1;
-
-        BlockIntermediate ancestor_block = blocks.get(ancestor);
-        if (ancestor_block.ancestor != -1) {
-            compress(ancestor, blocks);
-
-            int label = block.label;
-            BlockIntermediate label_block = blocks.get(label);
-
-            int ancestor_label = ancestor_block.label;
-            BlockIntermediate ancestor_label_block = blocks.get(label);
-            if (ancestor_label_block.semi < label_block.semi) {
-                block.label = ancestor_label;
-            }
-
-            block.ancestor = ancestor_block.ancestor;
-        }
-    }
-
-    private int eval(int index, Vector<BlockIntermediate> blocks) {
-        BlockIntermediate block = blocks.get(index);
-        if (block.ancestor == -1) {
-            return index;
-        } else {
-            compress(index, blocks);
-            return block.label;
-        }
-    }
-
-    private void link(int index1, int index2, Vector<BlockIntermediate> blocks) {
-        BlockIntermediate block2 = blocks.get(index2);
-        block2.ancestor = index1;
     }
 
     private boolean isRegion(Node n) {

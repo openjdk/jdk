@@ -117,8 +117,8 @@ class Klass : public Metadata {
   // Klass identifier used to implement devirtualized oop closure dispatching.
   const KlassID _id;
 
-  // vtable length
-  int _vtable_len;
+  // Processed access flags, for use by Class.getModifiers.
+  jint        _modifier_flags;
 
   // The fields _super_check_offset, _secondary_super_cache, _secondary_supers
   // and _primary_supers all help make fast subtype checks.  See big discussion
@@ -154,7 +154,10 @@ class Klass : public Metadata {
   // Provide access the corresponding instance java.lang.ClassLoader.
   ClassLoaderData* _class_loader_data;
 
-  jint        _modifier_flags;  // Processed access flags, for use by Class.getModifiers.
+  int _vtable_len;              // vtable length. This field may be read very often when we
+                                // have lots of itable dispatches (e.g., lambdas and streams).
+                                // Keep it away from the beginning of a Klass to avoid cacheline
+                                // contention that may happen when a nearby object is modified.
   AccessFlags _access_flags;    // Access flags. The class/interface distinction is stored here.
 
   JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
@@ -173,7 +176,8 @@ private:
     _archived_lambda_proxy_is_available    = 1 << 1,
     _has_value_based_class_annotation      = 1 << 2,
     _verified_at_dump_time                 = 1 << 3,
-    _has_archived_enum_objs                = 1 << 4
+    _has_archived_enum_objs                = 1 << 4,
+    _regenerated                           = 1 << 5
   };
 #endif
 
@@ -342,6 +346,14 @@ protected:
   }
   bool has_archived_enum_objs() const {
     CDS_ONLY(return (_shared_class_flags & _has_archived_enum_objs) != 0;)
+    NOT_CDS(return false;)
+  }
+
+  void set_regenerated() {
+    CDS_ONLY(_shared_class_flags |= _regenerated;)
+  }
+  bool is_regenerated() const {
+    CDS_ONLY(return (_shared_class_flags & _regenerated) != 0;)
     NOT_CDS(return false;)
   }
 
