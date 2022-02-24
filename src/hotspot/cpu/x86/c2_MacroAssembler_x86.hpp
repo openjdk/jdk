@@ -318,9 +318,13 @@ public:
                   bool merge, BasicType bt, int vlen_enc);
 
   void udivI(Register rax, Register divisor, Register rdx);
-  void udivL(Register rax, Register divisor, Register rdx);
   void umodI(Register rax, Register divisor, Register rdx);
-  void umodL(Register rax, Register divisor, Register rdx);
   void udivmodI(Register rax, Register divisor, Register rdx, Register tmp);
+
+  #ifdef _LP64
+  void udivL(Register rax, Register divisor, Register rdx);
+  void umodL(Register rax, Register divisor, Register rdx);
   void udivmodL(Register rax, Register divisor, Register rdx, Register tmp);
+  #endif
+
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP

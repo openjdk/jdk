@@ -4348,25 +4348,6 @@ void C2_MacroAssembler::udivI(Register rax, Register divisor, Register rdx) {
   bind(done);
 }
 
-void C2_MacroAssembler::udivL(Register rax, Register divisor, Register rdx) {
-  Label done;
-  Label neg_divisor_fastpath;
-  cmpq(divisor, 0);
-  jccb(Assembler::less, neg_divisor_fastpath);
-  xorl(rdx, rdx);
-  divq(divisor);
-  jmp(done);
-  bind(neg_divisor_fastpath);
-  // Fastpath for divisor < 0:
-  // quotient = (dividend & ~(dividend - divisor)) >>> (Long.SIZE - 1)
-  // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.divideUnsigned()
-  movq(rdx, rax);
-  subq(rdx, divisor);
-  andnq(rax, rdx, rax);
-  shrq(rax, 63);
-  bind(done);
-}
-
 void C2_MacroAssembler::umodI(Register rax, Register divisor, Register rdx) {
   Label done;
   Label neg_divisor_fastpath;
@@ -4385,27 +4366,6 @@ void C2_MacroAssembler::umodI(Register rax, Register divisor, Register rdx) {
   sarl(rax, 31);
   andl(rax, divisor);
   subl(rdx, rax);
-  bind(done);
-}
-
-void C2_MacroAssembler::umodL(Register rax, Register divisor, Register rdx) {
-  Label done;
-  Label neg_divisor_fastpath;
-  cmpq(divisor, 0);
-  jccb(Assembler::less, neg_divisor_fastpath);
-  xorq(rdx, rdx);
-  divq(divisor);
-  jmp(done);
-  bind(neg_divisor_fastpath);
-  // Fastpath when divisor < 0:
-  // remainder = dividend - (((dividend & ~(dividend - divisor)) >> (Long.SIZE - 1)) & divisor)
-  // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.remainderUnsigned()
-  movq(rdx, rax);
-  subq(rax, divisor);
-  andnq(rax, rax, rdx);
-  sarq(rax, 63);
-  andq(rax, divisor);
-  subq(rdx, rax);
   bind(done);
 }
 
@@ -4435,6 +4395,47 @@ void C2_MacroAssembler::udivmodI(Register rax, Register divisor, Register rdx, R
   bind(done);
 }
 
+#ifdef _LP64
+void C2_MacroAssembler::udivL(Register rax, Register divisor, Register rdx) {
+  Label done;
+  Label neg_divisor_fastpath;
+  cmpq(divisor, 0);
+  jccb(Assembler::less, neg_divisor_fastpath);
+  xorl(rdx, rdx);
+  divq(divisor);
+  jmp(done);
+  bind(neg_divisor_fastpath);
+  // Fastpath for divisor < 0:
+  // quotient = (dividend & ~(dividend - divisor)) >>> (Long.SIZE - 1)
+  // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.divideUnsigned()
+  movq(rdx, rax);
+  subq(rdx, divisor);
+  andnq(rax, rdx, rax);
+  shrq(rax, 63);
+  bind(done);
+}
+
+void C2_MacroAssembler::umodL(Register rax, Register divisor, Register rdx) {
+  Label done;
+  Label neg_divisor_fastpath;
+  cmpq(divisor, 0);
+  jccb(Assembler::less, neg_divisor_fastpath);
+  xorq(rdx, rdx);
+  divq(divisor);
+  jmp(done);
+  bind(neg_divisor_fastpath);
+  // Fastpath when divisor < 0:
+  // remainder = dividend - (((dividend & ~(dividend - divisor)) >> (Long.SIZE - 1)) & divisor)
+  // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.remainderUnsigned()
+  movq(rdx, rax);
+  subq(rax, divisor);
+  andnq(rax, rax, rdx);
+  sarq(rax, 63);
+  andq(rax, divisor);
+  subq(rdx, rax);
+  bind(done);
+}
+
 void C2_MacroAssembler::udivmodL(Register rax, Register divisor, Register rdx, Register tmp) {
   Label done;
   Label neg_divisor_fastpath;
@@ -4459,3 +4460,5 @@ void C2_MacroAssembler::udivmodL(Register rax, Register divisor, Register rdx, R
   subq(rdx, tmp); // remainder
   bind(done);
 }
+#endif
+
