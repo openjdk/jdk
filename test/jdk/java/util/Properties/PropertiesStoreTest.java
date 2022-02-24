@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 /*
  * @test
@@ -102,27 +103,18 @@ public class PropertiesStoreTest {
     @DataProvider(name = "localeProvider")
     private Object[][] provideLocales() {
         // pick a non-english locale for testing
-        Locale nonEnglishLocale = null;
-        for (Locale locale : Locale.getAvailableLocales()) {
-            // skip ROOT locale and ENGLISH language ones
-            if (!locale.getLanguage().isEmpty() && !locale.getLanguage().equals("en")) {
-                nonEnglishLocale = locale;
-                break;
-            }
-        }
-        if (nonEnglishLocale == null) {
-            return new Object[][] {
-                {Locale.getDefault()},
-                {Locale.US}, // guaranteed to be present
-                {Locale.ROOT}, // guaranteed to be present
-            };
-        }
-        return new Object[][]{
-                {Locale.getDefault()},
-                {Locale.US}, // guaranteed to be present
-                {Locale.ROOT}, // guaranteed to be present
-                {nonEnglishLocale}
-        };
+        Set<Locale> locales = Arrays.stream(Locale.getAvailableLocales())
+                .filter(l -> !l.getLanguage().isEmpty() && !l.getLanguage().equals("en"))
+                .limit(1)
+                .collect(Collectors.toSet());
+        locales.add(Locale.getDefault()); // always test the default locale
+        locales.add(Locale.US); // guaranteed to be present
+        locales.add(Locale.ROOT); // guaranteed to be present
+
+        // return the chosen locales
+        return locales.stream()
+                .map(m -> new Locale[] {m})
+                .toArray(n -> new Object[n][0]);
     }
 
     /**
