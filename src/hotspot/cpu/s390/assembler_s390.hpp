@@ -1520,6 +1520,7 @@ class Assembler : public AbstractAssembler {
   //-----------------------------------------------
 
   // Calculate length of instruction.
+  static unsigned int instr_len(unsigned char  len_bits);
   static unsigned int instr_len(unsigned char *instr);
   static unsigned int instr_len(unsigned long  instr);
 
@@ -1807,15 +1808,11 @@ class Assembler : public AbstractAssembler {
   static unsigned int align(unsigned int x, unsigned int a) { return ((x + (a - 1)) & ~(a - 1)); }
   static bool    is_aligned(unsigned int x, unsigned int a) { return (0 == x % a); }
 
-  inline void emit_data(int x);
-
-// private:
   inline unsigned int emit_instruction(unsigned long x, unsigned int len);
   inline void emit_16(int x);
   inline void emit_32(int x);
   inline void emit_48(long x);
-
- public:
+  inline void emit_data(int x);
 
   // Compare and control flow instructions
   // =====================================

@@ -44,14 +44,11 @@ inline unsigned int Assembler::emit_instruction(unsigned long x, unsigned int le
       *(unsigned short*)(pos)     = (unsigned short)x;
       break;
     case 4:
-      if (((intptr_t)pos & 0x03) == 0) {
-        *(unsigned int*)(pos)     = (unsigned int)x;
-      } else {
-        *(unsigned short*)(pos)   = (unsigned short)(x>>16);
-        *(unsigned short*)(pos+2) = (unsigned short)x;
-      }
+      // May be unaligned store. Only slightly less efficient.
+      *(unsigned int*)(pos)       = (unsigned int)x;
       break;
     case 6:
+      // Have to split anyway, so we can arrange for aligned stores.
       if (((intptr_t)pos & 0x03) == 0) {
         *(unsigned int*)pos       = (unsigned int)(x>>16);
         *(unsigned short*)(pos+4) = (unsigned short)x;
@@ -60,7 +57,7 @@ inline unsigned int Assembler::emit_instruction(unsigned long x, unsigned int le
         *(unsigned int*)(pos+2)   = (unsigned int)x;
       }
       break;
-    default: // This is to make the compiler happy. Can never occur.
+    default:
       ShouldNotReachHere();
       break;
   }
@@ -1388,42 +1385,38 @@ inline void Assembler::z_brc( branch_condition m, Label& L) { z_brc(m, target(L)
 inline void Assembler::z_brcl(branch_condition m, Label& L) { z_brcl(m, target(L)); }
 
 
-// Instruction must start at passed address.
-inline unsigned int Assembler::instr_len(unsigned char *instr) {
-  switch ((*instr) >> 6) {
-    case 0: return 2;
-    case 1: // fallthru
-    case 2: return 4;
-    case 3: return 6;
-    default:
-      // Control can't reach here.
-      // The switch expression examines just the leftmost two bytes
-      // of the main opcode. So the range of values is just [0..3].
-      // Having a default clause makes the compiler happy.
-      ShouldNotReachHere();
-      return 0;
-  }
-}
-
-// Instruction must be stored right-justified in argument.
-inline unsigned int Assembler::instr_len(unsigned long instr) {
-  int len_bits = instr >> (48-2);
-  if (len_bits == 0) len_bits = instr >> (32-2);
-  if (len_bits == 0) len_bits = instr >> (16-2);
-  assert(len_bits < 4, "bad instruction %ld", instr);
+// Instruction len bits must be stored right-justified in argument.
+inline unsigned int Assembler::instr_len(unsigned char len_bits) {
+  assert(len_bits < 4, "bad instruction len %d", len_bits);
   switch (len_bits) {
     case 0: return 2;
     case 1: // fallthru
     case 2: return 4;
     case 3: return 6;
     default:
-      // Control can't reach here.
-      // The switch expression examines just the leftmost two bytes
+      // len_bits contains, right-justified, only the leftmost two bits
       // of the main opcode. So the range of values is just [0..3].
-      // Having a default clause makes the compiler happy.
       ShouldNotReachHere();
       return 0;
   }
+}
+
+// Instruction must start at passed address.
+inline unsigned int Assembler::instr_len(unsigned char *instr) {
+  return instr_len((unsigned char)((*instr) >> 6));
+}
+
+// Instruction must be stored right-justified in argument.
+inline unsigned int Assembler::instr_len(unsigned long instr) {
+  // An instruction is 2, 4, or 6 bytes in length.
+  // The instruction length in encoded in the leftmost two bits of the instruction.
+  //  len = 6: len_bits = [46..47]
+  //  len = 4: len_bits = [30..31]
+  //  len = 2: len_bits = [14..15]
+  unsigned char len_bits = instr >> (48-2);
+  if (len_bits == 0) len_bits = instr >> (32-2);
+  if (len_bits == 0) len_bits = instr >> (16-2);
+  return instr_len(len_bits);
 }
 
 // Move instr at pc right-justified into passed long int.
