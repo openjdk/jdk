@@ -35,11 +35,7 @@ G1CardSetAllocator<Slot>::G1CardSetAllocator(const char* name,
                                              const G1CardSetAllocOptions* alloc_options,
                                              G1CardSetFreeList* free_segment_list) :
   _segmented_array(alloc_options, free_segment_list),
-  _transfer_lock(false),
-  _free_slots_list(),
-  _pending_slots_list(),
-  _num_pending_slots(0),
-  _num_free_slots(0)
+  _free_slots_list(name, &_segmented_array)
 {
   uint slot_size = _segmented_array.slot_size();
   assert(slot_size >= sizeof(G1CardSetContainer), "Slot instance size %u for allocator %s too small", slot_size, name);
@@ -51,73 +47,15 @@ G1CardSetAllocator<Slot>::~G1CardSetAllocator() {
 }
 
 template <class Slot>
-bool G1CardSetAllocator<Slot>::try_transfer_pending() {
-  // Attempt to claim the lock.
-  if (Atomic::load_acquire(&_transfer_lock) || // Skip CAS if likely to fail.
-      Atomic::cmpxchg(&_transfer_lock, false, true)) {
-    return false;
-  }
-  // Have the lock; perform the transfer.
-
-  // Claim all the pending slots.
-  G1CardSetContainer* first = _pending_slots_list.pop_all();
-
-  if (first != nullptr) {
-    // Prepare to add the claimed slots, and update _num_pending_slots.
-    G1CardSetContainer* last = first;
-    Atomic::load_acquire(&_num_pending_slots);
-
-    uint count = 1;
-    for (G1CardSetContainer* next = first->next(); next != nullptr; next = next->next()) {
-      last = next;
-      ++count;
-    }
-
-    Atomic::sub(&_num_pending_slots, count);
-
-    // Wait for any in-progress pops to avoid ABA for them.
-    GlobalCounter::write_synchronize();
-    // Add synchronized slots to _free_slots_list.
-    // Update count first so there can be no underflow in allocate().
-    Atomic::add(&_num_free_slots, count);
-    _free_slots_list.prepend(*first, *last);
-  }
-  Atomic::release_store(&_transfer_lock, false);
-  return true;
-}
-
-template <class Slot>
 void G1CardSetAllocator<Slot>::free(Slot* slot) {
   assert(slot != nullptr, "precondition");
-  // Desired minimum transfer batch size.  There is relatively little
-  // importance to the specific number.  It shouldn't be too big, else
-  // we're wasting space when the release rate is low.  If the release
-  // rate is high, we might accumulate more than this before being
-  // able to start a new transfer, but that's okay.  Also note that
-  // the allocation rate and the release rate are going to be fairly
-  // similar, due to how the slots are used. - kbarret
-  uint const trigger_transfer = 10;
-
-  uint pending_count = Atomic::add(&_num_pending_slots, 1u, memory_order_relaxed);
-
-  G1CardSetContainer* container =  reinterpret_cast<G1CardSetContainer*>(reinterpret_cast<char*>(slot));
-
-  container->set_next(nullptr);
-  assert(container->next() == nullptr, "precondition");
-
-  _pending_slots_list.push(*container);
-
-  if (pending_count > trigger_transfer) {
-    try_transfer_pending();
-  }
+  slot->~Slot();
+  _free_slots_list.release(slot);
 }
 
 template <class Slot>
 void G1CardSetAllocator<Slot>::drop_all() {
-  _free_slots_list.pop_all();
-  _pending_slots_list.pop_all();
-  _num_pending_slots = 0;
-  _num_free_slots = 0;
+  _free_slots_list.reset();
   _segmented_array.drop_all();
 }
 
@@ -129,12 +67,13 @@ void G1CardSetAllocator<Slot>::print(outputStream* os) {
                ? _segmented_array.first_array_segment()->num_slots()
                : 0;
   uint num_segments = _segmented_array.num_segments();
+  uint num_pending_slots = (uint)_free_slots_list.pending_count();
   os->print("MA " PTR_FORMAT ": %u slots pending (allocated %u available %u) used %.3f highest %u segments %u size %zu ",
             p2i(this),
-            _num_pending_slots,
+            num_pending_slots,
             num_allocated_slots,
             num_available_slots,
-            percent_of(num_allocated_slots - _num_pending_slots, num_available_slots),
+            percent_of(num_allocated_slots - num_pending_slots, num_available_slots),
             highest,
             num_segments,
             mem_size());
