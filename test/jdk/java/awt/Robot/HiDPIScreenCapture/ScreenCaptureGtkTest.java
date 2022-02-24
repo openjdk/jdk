@@ -40,11 +40,7 @@ import java.awt.Robot;
  *           Gtk backends and presence of UI scaling
  * @requires os.family == "linux"
  * @run main/othervm -Djdk.gtk.version=2 -Dsun.java2d.uiScale=1 ScreenCaptureGtkTest
- * @run main/othervm -Djdk.gtk.version=2 -Dsun.java2d.uiScale=2 ScreenCaptureGtkTest
- * @run main/othervm -Djdk.gtk.version=2 -Dsun.java2d.uiScale=3 ScreenCaptureGtkTest
  * @run main/othervm -Djdk.gtk.version=3 -Dsun.java2d.uiScale=1 ScreenCaptureGtkTest
- * @run main/othervm -Djdk.gtk.version=3 -Dsun.java2d.uiScale=2 ScreenCaptureGtkTest
- * @run main/othervm -Djdk.gtk.version=3 -Dsun.java2d.uiScale=3 ScreenCaptureGtkTest
  */
 
 public class ScreenCaptureGtkTest {
@@ -52,15 +48,18 @@ public class ScreenCaptureGtkTest {
             Color.GREEN, Color.BLUE, Color.ORANGE, Color.RED};
 
     public static void main(String[] args) throws Exception {
+        final int topOffset = 100;
+        final int leftOffset = 100;
+
         Frame frame = new Frame();
-        // Position the frame on prime number coordinates to avoid
-        // them being multiple of the desktop scale; this tests Linux
-        // color picker better.
+        // Position the frame such that color picker will work with
+        // prime number coordinates to avoid them being multiple
+        // of the desktop scale; this tests Linux color picker better.
         // Also, the position should be far enough from the top left
         // corner of the screen to reduce the chance of being repositioned
         // by the system because that area's occupied by the global
         // menu bar and such.
-        frame.setBounds(83, 97, 400, 300);
+        frame.setBounds(91, 97, 400, 300);
         frame.setUndecorated(true);
 
         Panel panel = new Panel(new BorderLayout());
@@ -76,7 +75,7 @@ public class ScreenCaptureGtkTest {
                 // in order to test color picker's precision.
                 for (int i = 1; i < 4; i++) {
                     g.setColor(COLORS[i]);
-                    g.fillRect(i, 0, 1, 1);
+                    g.fillRect(leftOffset + i, topOffset, 1, 1);
                 }
             }
         };
@@ -89,7 +88,8 @@ public class ScreenCaptureGtkTest {
         robot.delay(500);
 
         final Point screenLocation = frame.getLocationOnScreen();
-        checkPixelColors(robot, screenLocation.x, screenLocation.y);
+        checkPixelColors(robot, screenLocation.x + leftOffset,
+                screenLocation.y + topOffset);
 
         robot.delay(100);
         frame.dispose();
