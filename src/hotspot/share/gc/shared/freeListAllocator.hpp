@@ -74,8 +74,8 @@ class FreeListAllocator {
   };
 
   struct NodeList {
-    FreeNode* _head;     // First node in list or NULL if empty.
-    FreeNode* _tail;     // Last node in list or NULL if empty.
+    FreeNode* _head;     // First node in list or nullptr if empty.
+    FreeNode* _tail;     // Last node in list or nullptr if empty.
     size_t _entry_count; // Sum of entries in nodes in list.
 
     NodeList();
@@ -138,6 +138,12 @@ public:
   void* allocate();
   void release(void* node);
 
+  // Free nodes in the allocator could have been allocated out of an arena.
+  // Therefore, the nodes can be freed at once when entire arena is discarded
+  // without running destructors for the individual nodes. In such cases, reset
+  // method should be called before the ~FreeListAllocator(). Calling the reset
+  // method on nodes not managed by an arena will leak the memory by just dropping
+  // the nodes to the floor.
   void reset();
   bool try_transfer_pending();
 

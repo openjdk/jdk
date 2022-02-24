@@ -28,13 +28,13 @@
 #include "utilities/globalCounter.inline.hpp"
 
 FreeListAllocator::NodeList::NodeList() :
-  _head(NULL), _tail(NULL), _entry_count(0) {}
+  _head(nullptr), _tail(nullptr), _entry_count(0) {}
 
 FreeListAllocator::NodeList::NodeList(FreeNode* head, FreeNode* tail, size_t entry_count) :
   _head(head), _tail(tail), _entry_count(entry_count)
 {
-  assert((_head == NULL) == (_tail == NULL), "invariant");
-  assert((_head == NULL) == (_entry_count == 0), "invariant");
+  assert((_head == nullptr) == (_tail == nullptr), "invariant");
+  assert((_head == nullptr) == (_entry_count == 0), "invariant");
 }
 
 FreeListAllocator::PendingList::PendingList() :
@@ -77,9 +77,8 @@ FreeListAllocator::FreeListAllocator(const char* name, FreeListConfig* config) :
 }
 
 void FreeListAllocator::delete_list(FreeNode* list) {
-  while (list != NULL) {
+  while (list != nullptr) {
     FreeNode* next = list->next();
-    DEBUG_ONLY(list->set_next(NULL);)
     list->~FreeNode();
     _config->deallocate(list);
     list = next;
@@ -93,12 +92,7 @@ FreeListAllocator::~FreeListAllocator() {
   delete_list(_free_list.pop_all());
 }
 
-// Free nodes in the allocator could have been allocated out of an arena.
-// Therefore, the nodes can be freed at once when entire arena is discarded
-// without running destructors for the individual nodes. In such cases, reset
-// method should be called before the ~FreeListAllocator(). Calling the reset
-// method on nodes not managed by an arena will leak the memory by just dropping
-// the nodes to the floor.
+// Drop existing nodes and reset all counters
 void FreeListAllocator::reset() {
   uint index = Atomic::load(&_active_pending_list);
   _pending_lists[index].take_all();
@@ -207,7 +201,7 @@ size_t FreeListAllocator::reduce_free_list(size_t remove_goal) {
   size_t removed = 0;
   for ( ; removed < remove_goal; ++removed) {
     FreeNode* node = _free_list.pop();
-    if (node == NULL) break;
+    if (node == nullptr) break;
     node->~FreeNode();
     _config->deallocate(node);
   }
