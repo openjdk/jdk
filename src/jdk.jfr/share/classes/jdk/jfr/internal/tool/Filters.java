@@ -98,12 +98,12 @@ public class Filters {
         return e -> filter.test(e.getEventType());
     }
 
-    static Predicate<RecordedEvent> fromRecordedThread(Predicate<RecordedThread> filter, boolean resultIfMissing) {
+    static Predicate<RecordedEvent> fromRecordedThread(Predicate<RecordedThread> filter) {
         Predicate<RecordedThread> cachePredicate = createCache(filter, RecordedThread::getId);
         return event -> {
             RecordedThread t = event.getThread();
             if (t == null || t.getJavaName() == null) {
-                return resultIfMissing;
+                return false;
             }
             return cachePredicate.test(t);
         };

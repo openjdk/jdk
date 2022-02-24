@@ -165,13 +165,13 @@ final class Scrub extends Command {
                 String filter = options.remove();
                 warnForWildcardExpansion("--include-threads", filter);
                 var f = Filters.createThreadFilter(filter);
-                filters.add(Filters.fromRecordedThread(f, false));
+                filters.add(Filters.fromRecordedThread(f));
             }
             if (acceptFilterOption(options, "--exclude-threads")) {
                 String filter = options.remove();
                 warnForWildcardExpansion("--exclude-threads", filter);
-                var f = Filters.createThreadFilter(filter).negate();
-                filters.add(Filters.fromRecordedThread(f, true));
+                var f = Filters.createThreadFilter(filter);
+                filters.add(Filters.fromRecordedThread(f).negate());
             }
             if (optionCount == options.size()) {
                 // No progress made
