@@ -40,7 +40,7 @@ import static java.util.Map.entry;
  * and access flags have a one-to-one correspondence, such as {@code
  * public}. In other cases, some language-level modifiers do
  * <em>not</em> have an access flag, such as {@code sealed} (JVMS
- * {@jvms 4.7.31}) and some access flags have no corresponding 
+ * {@jvms 4.7.31}) and some access flags have no corresponding
 * modifier, such as {@linkplain SYNTHETIC synthetic}.
  *
  * <p>The values for the constants representing the access and module
