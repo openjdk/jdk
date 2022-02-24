@@ -1328,7 +1328,7 @@ public final class Class<T> implements java.io.Serializable,
     public Set<AccessFlag> accessFlags() {
         // This likely needs some refinement. Exploration of hidden
         // classes, array classes.  Location.CLASS allows SUPER and
-        // AccessFlag.MODULE with INNER_CLASS forbids. INNER_CLASS
+        // AccessFlag.MODULE which INNER_CLASS forbids. INNER_CLASS
         // allows PRIVATE, PROTECTED, and STATIC, which are not
         // allowed on Location.CLASS.
         return AccessFlag.maskToAccessFlags(getModifiers(),

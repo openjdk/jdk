@@ -212,8 +212,12 @@ public abstract sealed class Executable extends AccessibleObject
     /**
      * {@return an immutable set of the {@linkplain AccessFlag access
      * flags} for the executable represented by this object}
+     *
      * @implSpec
-     * TBD
+     * Map this executable's {@linkplain #getModifiers() modifiers} to
+     * access flags using {@link AccessFlag#maskToAccessFlags} for a
+     * {@linkplain AccessFlag.Location#METHOD method location}
+     *
      * @see #getModifiers()
      * @jvms 4.6 Methods
      * @since 19
