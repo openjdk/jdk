@@ -194,7 +194,7 @@ void ConstraintCastNode::dump_spec(outputStream *st) const {
 
 const Type* CastIINode::Value(PhaseGVN* phase) const {
   const Type *res = ConstraintCastNode::Value(phase);
-  if(res == Type::TOP) { return res; }
+  if(res == Type::TOP) return Type::TOP;
   assert(res->isa_int(), "res must be int");
 
   // Similar to ConvI2LNode::Value() for the same reasons
@@ -203,31 +203,27 @@ const Type* CastIINode::Value(PhaseGVN* phase) const {
   // Do not narrow the type of range check dependent CastIINodes to
   // avoid corruption of the graph if a CastII is replaced by TOP but
   // the corresponding range check is not removed.
-  if (!_range_check_dependency) {
-    if (phase->C->post_loop_opts_phase()) {
-      const TypeInt* this_type = res->is_int();
-      const TypeInt* in_type = phase->type(in(1))->isa_int();
-      if (in_type != NULL && this_type != NULL &&
-          (in_type->_lo != this_type->_lo ||
-           in_type->_hi != this_type->_hi)) {
-        jint lo1 = this_type->_lo;
-        jint hi1 = this_type->_hi;
-        int w1  = this_type->_widen;
-
-        if (lo1 >= 0) {
-          // Keep a range assertion of >=0.
-          lo1 = 0;        hi1 = max_jint;
-        } else if (hi1 < 0) {
-          // Keep a range assertion of <0.
-          lo1 = min_jint; hi1 = -1;
-        } else {
-          lo1 = min_jint; hi1 = max_jint;
-        }
-        const TypeInt* wtype = TypeInt::make(MAX2(in_type->_lo, lo1),
-                                             MIN2(in_type->_hi, hi1),
-                                             MAX2((int)in_type->_widen, w1));
-        res = wtype;
+  if (!_range_check_dependency && phase->C->post_loop_opts_phase()) {
+    const TypeInt* this_type = res->is_int();
+    const TypeInt* in_type = phase->type(in(1))->isa_int();
+    if (in_type != NULL &&
+        (in_type->_lo != this_type->_lo ||
+         in_type->_hi != this_type->_hi)) {
+      jint lo1 = this_type->_lo;
+      jint hi1 = this_type->_hi;
+      int w1  = this_type->_widen;
+      if (lo1 >= 0) {
+        // Keep a range assertion of >=0.
+        lo1 = 0;        hi1 = max_jint;
+      } else if (hi1 < 0) {
+        // Keep a range assertion of <0.
+        lo1 = min_jint; hi1 = -1;
+      } else {
+        lo1 = min_jint; hi1 = max_jint;
       }
+      res = TypeInt::make(MAX2(in_type->_lo, lo1),
+                          MIN2(in_type->_hi, hi1),
+                          MAX2((int)in_type->_widen, w1));
     }
   }
 
@@ -309,8 +305,11 @@ Node *CastIINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (progress != NULL) {
     return progress;
   }
-
-  PhaseIterGVN *igvn = phase->is_IterGVN();
+  if (can_reshape && !_range_check_dependency && !phase->C->post_loop_opts_phase()) {
+    // makes sure we run ::Value to potentially remove type assertion after loop opts
+    phase->C->record_for_post_loop_opts_igvn(this);
+  }
+  PhaseIterGVN* igvn = phase->is_IterGVN();
   const TypeInt* this_type = this->type()->is_int();
   Node* z = in(1);
   const TypeInteger* rx = NULL;
@@ -333,12 +332,6 @@ Node *CastIINode::Ideal(PhaseGVN *phase, bool can_reshape) {
       case Op_AddI:  return new AddINode(cx, cy);
       case Op_SubI:  return new SubINode(cx, cy);
       default:       ShouldNotReachHere();
-    }
-  }
-  if (can_reshape && !_range_check_dependency) {
-    if (!phase->C->post_loop_opts_phase()) {
-      // makes sure we run ::Value to potentially remove type assertion after loop opts
-      phase->C->record_for_post_loop_opts_igvn(this);
     }
   }
   return NULL;
