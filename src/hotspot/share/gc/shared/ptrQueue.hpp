@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_SHARED_PTRQUEUE_HPP
 #define SHARE_GC_SHARED_PTRQUEUE_HPP
 
-#include "gc/shared/bufferNodeList.hpp"
 #include "gc/shared/freeListAllocator.hpp"
 #include "memory/padded.hpp"
 #include "utilities/align.hpp"

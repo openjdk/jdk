@@ -24,14 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/ptrQueue.hpp"
-#include "logging/log.hpp"
-#include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
-#include "runtime/atomic.hpp"
-#include "runtime/mutex.hpp"
-#include "runtime/mutexLocker.hpp"
-#include "runtime/thread.inline.hpp"
-#include "utilities/globalCounter.inline.hpp"
 
 #include <new>
 
