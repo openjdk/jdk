@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,11 @@ public abstract class TypeVectorOperations {
 
     private byte[] bytesA;
     private byte[] bytesB;
+    private byte[] bytesC;
     private byte[] resB;
-    private short[] shorts;
+    private short[] shortA;
+    private short[] shortB;
+    private short[] shortC;
     private short[] resS;
     private int[] ints;
     private int[] resI;
@@ -58,7 +61,9 @@ public abstract class TypeVectorOperations {
         bytesA = new byte[COUNT];
         bytesB = new byte[COUNT];
         resB = new byte[COUNT];
-        shorts = new short[COUNT];
+        shortA = new short[COUNT];
+        shortB = new short[COUNT];
+        shortC = new short[COUNT];
         resS = new short[COUNT];
         ints = new int[COUNT];
         resI = new int[COUNT];
@@ -70,7 +75,8 @@ public abstract class TypeVectorOperations {
         resF = new float[COUNT];
 
         for (int i = 0; i < COUNT; i++) {
-            shorts[i] = (short) r.nextInt(Short.MAX_VALUE + 1);
+            shortA[i] = (short) r.nextInt(Short.MAX_VALUE + 1);
+            shortB[i] = (short) r.nextInt(Short.MAX_VALUE + 1);
             ints[i] = r.nextInt();
             longs[i] = r.nextLong();
             floats[i] = r.nextFloat();
@@ -121,10 +127,26 @@ public abstract class TypeVectorOperations {
     }
 
     @Benchmark
+    public void addB() {
+        for (int i = 0; i < COUNT; i++) {
+            bytesC[i] = (byte) (bytesA[i] + 3);
+            resB[i] = (byte) (bytesC[i] + bytesB[i]);
+        }
+    }
+
+    @Benchmark
     public void absS() {
         for (int i = 0; i < COUNT; i++) {
-            short a = shorts[i];
+            short a = shortA[i];
             resS[i] = (short) (Math.abs((short) a));
+        }
+    }
+
+    @Benchmark
+    public void addS() {
+        for (int i = 0; i < COUNT; i++) {
+            shortC[i] = (short) (shortA[i] + 3);
+            resS[i] = (short) (shortC[i] + shortB[i]);
         }
     }
 
