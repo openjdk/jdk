@@ -119,7 +119,8 @@ Method::Method(ConstMethod* xconst, AccessFlags access_flags) {
   }
 
   NOT_PRODUCT(set_compiled_invocation_count(0);)
-  // Name is very useful for debugging but needs to be set later.
+  // Name is very useful for debugging but needs to be set later, after
+  // the _constants field is set to point to the ConstantPool.
   NOT_PRODUCT(_name = NULL;)
 }
 
