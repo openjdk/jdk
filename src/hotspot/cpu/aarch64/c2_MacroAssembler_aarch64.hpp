@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,14 +90,6 @@
   // Set elements of the dst predicate to true if the element number is
   // in the range of [0, lane_cnt), or to false otherwise.
   void sve_ptrue_lanecnt(PRegister dst, SIMD_RegVariant size, int lane_cnt);
-
-  // Generate predicate through whilelo, by comparing ZR with an unsigned
-  // immediate. rscratch1 will be clobbered.
-  inline void sve_whilelo_zr_imm(PRegister pd, SIMD_RegVariant size, uint imm) {
-    assert(UseSVE > 0, "not supported");
-    mov(rscratch1, imm);
-    sve_whilelo(pd, size, zr, rscratch1);
-  }
 
   // Extract a scalar element from an sve vector at position 'idx'.
   // rscratch1 will be clobbered.
