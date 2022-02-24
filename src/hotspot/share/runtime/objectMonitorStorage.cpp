@@ -96,7 +96,9 @@ void ObjectMonitorStorage::bulk_deallocate(const GrowableArray<ObjectMonitor*>& 
     omlist.prepend(m);
   }
   if (omlist.empty() == false) {
+
     MutexLocker ml(ObjectMonitorStorage_lock, Mutex::_no_safepoint_check_flag);
+
     _array->bulk_deallocate(omlist);
     // log log log
     LogTarget(Debug, monitorinflation) lt;
@@ -107,8 +109,9 @@ void ObjectMonitorStorage::bulk_deallocate(const GrowableArray<ObjectMonitor*>& 
       ls.cr();
     }
 
+    DEBUG_ONLY(verify();)
   }
-  DEBUG_ONLY(verify();)
+
 }
 
 void ObjectMonitorStorage::initialize() {
@@ -128,6 +131,7 @@ void ObjectMonitorStorage::print(outputStream* st) {
 
 #ifdef ASSERT
 void ObjectMonitorStorage::verify() {
+  assert_lock_strong(ObjectMonitorStorage_lock);
   if (_array != NULL) {
     _array->verify(be_paranoid);
   }
