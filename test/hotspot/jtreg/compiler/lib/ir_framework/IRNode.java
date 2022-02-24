@@ -144,6 +144,8 @@ public class IRNode {
     public static final String ABS_F = START + "AbsF" + MID + END;
     public static final String ABS_D = START + "AbsD" + MID + END;
     public static final String AND = START + "And(I|L)" + MID + END;
+    public static final String OR_I = START + "OrI" + MID + END;
+    public static final String OR_L = START + "OrL" + MID + END;
     public static final String AND_I = START + "AndI" + MID + END;
     public static final String AND_L = START + "AndL" + MID + END;
     public static final String XOR_I = START + "XorI" + MID + END;

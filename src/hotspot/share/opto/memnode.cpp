@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2826,44 +2826,130 @@ bool StoreNode::cmp( const Node &n ) const {
   return (&n == this);          // Always fail except on self
 }
 
-//------------------------------Ideal_masked_input-----------------------------
-// Check for a useless mask before a partial-word store
-// (StoreB ... (AndI valIn conIa) )
-// If (conIa & mask == mask) this simplifies to
-// (StoreB ... (valIn) )
-Node *StoreNode::Ideal_masked_input(PhaseGVN *phase, uint mask) {
-  Node *val = in(MemNode::ValueIn);
-  if( val->Opcode() == Op_AndI ) {
-    const TypeInt *t = phase->type( val->in(2) )->isa_int();
-    if( t && t->is_con() && (t->get_con() & mask) == mask ) {
-      set_req_X(MemNode::ValueIn, val->in(1), phase);
-      return this;
+//------------------------------used_only_for_this_opcode--------------
+// Check if all use nodes of the given node have the same opcode as
+// current node, *this.
+bool StoreNode::used_only_for_this_opcode(Node* node) {
+  for (DUIterator_Fast imax, i = node->fast_outs(imax); i < imax; i++) {
+    Node* use = node->fast_out(i);
+    if (use->Opcode() != Opcode()) {
+      return false;
     }
   }
-  return NULL;
+  return true;
 }
 
+//------------------------------no_need_sign_extension-----------------------
+// Check whether the given operation on byte/short types holds that the upper
+// bits of the operands have no influence on real lower bits of the
+// operation result. If so, there is no need to do any sign extension before
+// the given subword interger operation. So that we can optimize it out by
+// StoreNode::Ideal_masked_or_sign_extended_input.
+bool StoreNode::no_need_sign_extension(int opc) {
+  switch (opc) {
+    case Op_AddI:
+    case Op_SubI:
+    case Op_NegI:
+    case Op_MulI:
+    case Op_XorI:
+    case Op_AndI:
+    case Op_OrI:
+    case Op_LShiftI:
+      return true;
+  }
+  return false;
+}
 
-//------------------------------Ideal_sign_extended_input----------------------
-// Check for useless sign-extension before a partial-word store
-// (StoreB ... (RShiftI _ (LShiftI _ valIn conIL ) conIR) )
-// If (conIL == conIR && conIR <= num_bits)  this simplifies to
-// (StoreB ... (valIn) )
-Node *StoreNode::Ideal_sign_extended_input(PhaseGVN *phase, int num_bits) {
-  Node *val = in(MemNode::ValueIn);
-  if( val->Opcode() == Op_RShiftI ) {
-    const TypeInt *t = phase->type( val->in(2) )->isa_int();
-    if( t && t->is_con() && (t->get_con() <= num_bits) ) {
-      Node *shl = val->in(1);
-      if( shl->Opcode() == Op_LShiftI ) {
-        const TypeInt *t2 = phase->type( shl->in(2) )->isa_int();
-        if( t2 && t2->is_con() && (t2->get_con() == t->get_con()) ) {
-          set_req_X(MemNode::ValueIn, shl->in(1), phase);
-          return this;
+//------------------------------is_masked_input-------------------------
+// Check if the node can be recognized as the pattern:
+// (AndI valIn conIa) and (conIa & mask == mask)
+bool StoreNode::is_masked_input(Node* input, PhaseGVN* phase, uint mask) {
+  if (input->Opcode() == Op_AndI) {
+    const TypeInt* t = phase->type(input->in(2))->isa_int();
+    if (t && t->is_con() && (t->get_con() & mask) == mask) {
+      return true;
+    }
+  }
+  return false;
+}
+
+//----------------------------is_sign_extended_input-----------------------
+// Check if the node can be recognized as the pattern
+// (RShiftI _ (LShiftI _ valIn conIL ) conIR) and (conIL == conIR && conIR <= num_bits)
+bool StoreNode::is_sign_extended_input(Node* input, PhaseGVN* phase, int num_bits) {
+  if (input->Opcode() == Op_RShiftI) {
+    const TypeInt* t = phase->type(input->in(2))->isa_int();
+    if (t && t->is_con() && (t->get_con() <= num_bits)) {
+      Node* shl = input->in(1);
+      if (shl->Opcode() == Op_LShiftI) {
+        const TypeInt* t2 = phase->type(shl->in(2))->isa_int();
+        if (t2 && t2->is_con() && (t2->get_con() == t->get_con())) {
+          return true;
         }
       }
     }
   }
+  return false;
+}
+
+//------------------------------Ideal_masked_or_sign_extended_input-----------------------------
+// Check for a useless mask or useless sign-extension before a subword store
+Node* StoreNode::Ideal_masked_or_sign_extended_input(PhaseGVN* phase, uint mask, int num_bits) {
+  Node* val = in(MemNode::ValueIn);
+  // (StoreB ... (AndI valIn conIa) )
+  // If (conIa & mask == mask) this simplifies to
+  // (StoreB ... (valIn) )
+  if (is_masked_input(val, phase, mask)) {
+    set_req_X(MemNode::ValueIn, val->in(1), phase);
+    return this;
+  }
+
+  // (StoreB ... (RShiftI _ (LShiftI _ valIn conIL ) conIR) )
+  // If (conIL == conIR && conIR <= num_bits)  this simplifies to
+  // (StoreB ... (valIn) )
+  if (is_sign_extended_input(val, phase, num_bits)) {
+    Node* shl = val->in(1);
+    set_req_X(MemNode::ValueIn, shl->in(1), phase);
+    return this;
+  }
+
+  if (no_need_sign_extension(val->Opcode())) {
+    Node* orig_value = NULL;
+    int idx = 0;
+    for (uint i = 1; i < val->req(); ++i) {
+      // Further constraint for no_need_sign_extension():
+      // Only the first operand of LSfhitI is optimizable,
+      // i.e. its upper bits have no influence to the result.
+      if (val->Opcode() == Op_LShiftI && i != 1) {
+        break;
+      }
+      // (StoreB ... (AddI (AndI valIn1 conIa) valIn2 )
+      // If (conIa & mask == mask) this simplifies to
+      // (StoreB ... (AddI valIn1, valIn2) )
+      if (is_masked_input(val->in(i), phase, mask)) {
+        idx = i;
+        orig_value = val->in(i)->in(1);
+        break;
+      }
+      // (StoreB ... (AddI (RShiftI _ (LShiftI _ valIn1 conIL ) conIR) valIn2) )
+      // If (conIL == conIR && conIR <= num_bits)  this simplifies to
+      // (StoreB ... (AddI valIn1, valIn2) )
+      if (is_sign_extended_input(val->in(i), phase, num_bits)) {
+        idx = i;
+        orig_value = val->in(i)->in(1)->in(1);
+        break;
+      }
+    }
+    PhaseIterGVN* igvn = phase->is_IterGVN();
+    if (igvn != NULL && orig_value != NULL && used_only_for_this_opcode(val)) {
+      igvn->replace_input_of(val, idx, orig_value);
+      return this;
+    } else if (igvn == NULL && orig_value != NULL) {
+      // We can try it again during the next IGVN once the graph is cleaner.
+      phase->record_for_igvn(this);
+    }
+  }
+
   return NULL;
 }
 
@@ -2920,11 +3006,8 @@ MemBarNode* StoreNode::trailing_membar() const {
 // If the store is from an AND mask that leaves the low bits untouched, then
 // we can skip the AND operation.  If the store is from a sign-extension
 // (a left shift, then right shift) we can skip both.
-Node *StoreBNode::Ideal(PhaseGVN *phase, bool can_reshape){
-  Node *progress = StoreNode::Ideal_masked_input(phase, 0xFF);
-  if( progress != NULL ) return progress;
-
-  progress = StoreNode::Ideal_sign_extended_input(phase, 24);
+Node* StoreBNode::Ideal(PhaseGVN* phase, bool can_reshape){
+  Node* progress = StoreNode::Ideal_masked_or_sign_extended_input(phase, 0xFF, 24);
   if( progress != NULL ) return progress;
 
   // Finally check the default case
@@ -2934,12 +3017,10 @@ Node *StoreBNode::Ideal(PhaseGVN *phase, bool can_reshape){
 //=============================================================================
 //------------------------------Ideal------------------------------------------
 // If the store is from an AND mask that leaves the low bits untouched, then
-// we can skip the AND operation
-Node *StoreCNode::Ideal(PhaseGVN *phase, bool can_reshape){
-  Node *progress = StoreNode::Ideal_masked_input(phase, 0xFFFF);
-  if( progress != NULL ) return progress;
-
-  progress = StoreNode::Ideal_sign_extended_input(phase, 16);
+// we can skip the AND operation. If the store is from a sign-extension
+// (a left shift, then right shift) we can skip both.
+Node* StoreCNode::Ideal(PhaseGVN* phase, bool can_reshape){
+  Node* progress = StoreNode::Ideal_masked_or_sign_extended_input(phase, 0xFFFF, 16);
   if( progress != NULL ) return progress;
 
   // Finally check the default case

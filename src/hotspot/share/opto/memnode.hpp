@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -563,8 +563,12 @@ protected:
   virtual bool cmp( const Node &n ) const;
   virtual bool depends_only_on_test() const { return false; }
 
-  Node *Ideal_masked_input       (PhaseGVN *phase, uint mask);
-  Node *Ideal_sign_extended_input(PhaseGVN *phase, int  num_bits);
+  bool used_only_for_this_opcode(Node* in);
+  bool no_need_sign_extension(int opc);
+  bool is_masked_input(Node* input, PhaseGVN* phase, uint mask);
+  bool is_sign_extended_input(Node* input, PhaseGVN* phase, int num_bits);
+
+  Node* Ideal_masked_or_sign_extended_input(PhaseGVN* phase, uint mask, int num_bits);
 
 public:
   // We must ensure that stores of object references will be visible
