@@ -7729,7 +7729,7 @@ address generate_avx_ghash_processBlocks() {
     StubRoutines::x86::_vector_iota_indices = generate_iota_indices("iota_indices");
 
     if (UsePopCountInstruction && VM_Version::supports_avx2() && !VM_Version::supports_avx512_vpopcntdq()) {
-      // popcount lut implementation from HD.
+      // lut implementation influenced by counting 1s algorithm from section 5-1 of Hackers' Delight.
       StubRoutines::x86::_vector_popcount_lut = generate_popcount_avx_lut("popcount_lut");
     }
 

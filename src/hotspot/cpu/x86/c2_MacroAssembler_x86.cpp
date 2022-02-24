@@ -4275,6 +4275,35 @@ void C2_MacroAssembler::vector_maskall_operation(KRegister dst, Register src, in
 }
 
 
+//
+// Following is lookup table based popcount computation algorithm:-
+//       Index   Bit set count
+//     [ 0000 ->   0,
+//       0001 ->   1,
+//       0010 ->   1,
+//       0011 ->   2,
+//       0100 ->   1,
+//       0101 ->   2,
+//       0110 ->   2,
+//       0111 ->   3,
+//       1000 ->   1,
+//       1001 ->   2,
+//       1010 ->   3,
+//       1011 ->   3,
+//       1100 ->   2,
+//       1101 ->   3,
+//       1111 ->   4 ]
+//  a. Count the number of 1s in 4 LSB bits of each byte. These bits are used as
+//     shuffle indices for lookup table access.
+//  b. Right shift each byte of vector lane by 4 positions.
+//  a. Count the number of 1s in 4 MSB bits each byte. These bits are used as
+//     shuffle indices for lookup table access.
+//  d. Add the bitset count of upper and lower 4 bits of each byte.
+//  e. Unpack double words to quad words and compute sum of absolute difference of bitset
+//     count of all the bytes of a quadword.
+//  f. Perform step e. for upper 128bit vector lane.
+//  g. Pack the bitset count of quadwords back to double word.
+//  h. Unpacking and packing operations as not needed for 64bit vector lane.
 void C2_MacroAssembler::vector_popcount_int(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
                                             XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp,
                                             int vec_enc) {
