@@ -82,7 +82,6 @@ public class B5052093 implements HttpHandler {
         server.setExecutor(Executors.newSingleThreadExecutor());
         server.start();
         try {
-//            URL url = new URL("http://" + server.getAuthority() + "/foo");
             URL url = URIBuilder.newBuilder()
                     .scheme("http")
                     .loopback()

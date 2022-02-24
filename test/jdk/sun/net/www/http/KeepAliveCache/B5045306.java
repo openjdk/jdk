@@ -74,7 +74,6 @@ public class B5045306
     public static void startHttpServer() {
         try {
             httpTrans = new SimpleHttpTransaction();
-//            server = new TestHttpServer(httpTrans, 1, 10, InetAddress.getLocalHost(), 0);
             server = HttpServer.create(new InetSocketAddress(InetAddress.getLocalHost(), 0), 10);
             server.createContext("/", httpTrans);
             server.setExecutor(Executors.newSingleThreadExecutor());
@@ -184,17 +183,13 @@ class SimpleHttpTransaction implements HttpHandler
                 try(PrintWriter pw = new PrintWriter(trans.getResponseBody())) {
                     pw.print(responseBody);
                 }
-//                trans.setResponseEntityBody (responseBody, responseBody.length);
-//                trans.sendResponse(200, "OK");
             } else if (path.equals("/secondCall")) {
-//                int port2 = trans.channel().socket().getPort();
                 int port2 = trans.getLocalAddress().getPort();
                 System.out.println("Second connection on client port = " + port2);
 
                 if (port1 != port2)
                     failed = true;
 
-//                trans.setResponseHeader ("Content-length", Integer.toString(0));
                 trans.getResponseHeaders().set("Content-length", Integer.toString(0));
 
                  /* Force the server to not respond for more that the timeout
@@ -204,25 +199,20 @@ class SimpleHttpTransaction implements HttpHandler
                 System.out.println("server sleeping...");
                 try {Thread.sleep(6000); } catch (InterruptedException e) {}
 
-//                trans.sendResponse(200, "OK");
                 trans.sendResponseHeaders(200, -1);
             } else if(path.equals("/part2")) {
                 System.out.println("Call to /part2");
                 byte[] responseBody = new byte[RESPONSE_DATA_LENGTH];
                 for (int i=0; i<responseBody.length; i++)
                     responseBody[i] = 0x41;
-//                trans.setResponseEntityBody (responseBody, responseBody.length);
 
                 // override the Content-length header to be greater than the actual response body
-//                trans.setResponseHeader("Content-length", Integer.toString(responseBody.length+1));
                 trans.getResponseHeaders().set("Content-length", Integer.toString(responseBody.length+1));
-//                trans.sendResponse(200, "OK");
                 trans.sendResponseHeaders(200, 0);
                 try(PrintWriter pw = new PrintWriter(trans.getResponseBody())) {
                     pw.print(responseBody);
                 }
                 // now close the socket
-//                trans.channel().socket().close();
                 trans.close();
             }
         } catch (Exception e) {

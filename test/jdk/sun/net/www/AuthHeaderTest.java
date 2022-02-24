@@ -113,7 +113,6 @@ public class AuthHeaderTest implements HttpHandler {
         Authenticator.setDefault (auth);
         InetAddress loopback = InetAddress.getLoopbackAddress();
         try {
-//            server = new TestHttpServer (new AuthHeaderTest(), 1, 10, loopback, 0);
             server = HttpServer.create(new InetSocketAddress(loopback, 0), 10);
             server.createContext("/", new AuthHeaderTest());
             server.setExecutor(Executors.newSingleThreadExecutor());

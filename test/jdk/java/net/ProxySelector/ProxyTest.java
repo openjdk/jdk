@@ -89,7 +89,6 @@ public class ProxyTest implements HttpHandler {
         ProxySelector.setDefault(new MyProxySelector());
         try {
             InetAddress loopback = InetAddress.getLoopbackAddress();
-//            server = new TestHttpServer(new ProxyTest(), 1, 10, loopback, 0);
             server = HttpServer.create(new InetSocketAddress(loopback, 0), 10);
             server.createContext("/", new ProxyTest());
             server.setExecutor(Executors.newSingleThreadExecutor());
