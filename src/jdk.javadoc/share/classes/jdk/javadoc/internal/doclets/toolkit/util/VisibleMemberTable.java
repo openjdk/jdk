@@ -996,7 +996,9 @@ public class VisibleMemberTable {
         private final List<ExecutableElement> methlist = new ArrayList<>();
 
         public ImplementedMethods(ExecutableElement method) {
-            TypeElement typeElement = utils.getEnclosingTypeElement(method);
+            // ExecutableElement.getEnclosingElement() returns "the class or
+            // interface defining the executable", which has to be TypeElement
+            TypeElement typeElement = (TypeElement) method.getEnclosingElement();
             Set<TypeMirror> intfacs = utils.getAllInterfaces(typeElement);
             /*
              * Search for the method in the list of interfaces. If found check if it is
@@ -1006,6 +1008,8 @@ public class VisibleMemberTable {
              * from the list.
              */
             for (TypeMirror interfaceType : intfacs) {
+                // TODO: this method also finds static methods which are pseudo-inherited;
+                //  this needs to be fixed
                 ExecutableElement found = utils.findMethod(utils.asTypeElement(interfaceType), method);
                 if (found != null) {
                     removeOverriddenMethod(found);
