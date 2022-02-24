@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,32 +47,39 @@ import sun.security.x509.AlgorithmId;
 public class SignatureUtil {
 
     /**
-     * Convert OID.1.2.3.4 or 1.2.3.4 to its matching stdName.
+     * Convert OID.1.2.3.4 or 1.2.3.4 to its matching stdName, and return
+     * upper case algorithm name.
      *
      * @param algName input, could be in any form
-     * @return the matching stdName, or {@code algName} if it is not in the
-     *      form of an OID, or the OID value if no match is found.
+     * @return the matching algorithm name or the OID string in upper case.
      */
     private static String checkName(String algName) {
-        if (!algName.contains(".")) {
-            return algName;
-        } else {
+        algName = algName.toUpperCase(Locale.ENGLISH);
+        if (algName.contains(".")) {
             // convert oid to String
             if (algName.startsWith("OID.")) {
                 algName = algName.substring(4);
             }
+
             KnownOIDs ko = KnownOIDs.findMatch(algName);
-            return ko != null ? ko.stdName() : algName;
+            if (ko != null) {
+                return ko.stdName().toUpperCase(Locale.ENGLISH);
+            }
         }
+
+        return algName;
     }
 
     // Utility method of creating an AlgorithmParameters object with
     // the specified algorithm name and encoding
+    //
+    // Note this method can be called only after converting OID.1.2.3.4 or
+    // 1.2.3.4 to its matching stdName, which is implemented in the
+    // checkName(String) method.
     private static AlgorithmParameters createAlgorithmParameters(String algName,
             byte[] paramBytes) throws ProviderException {
 
         try {
-            algName = checkName(algName);
             AlgorithmParameters result =
                 AlgorithmParameters.getInstance(algName);
             result.init(paramBytes);
@@ -96,7 +103,7 @@ public class SignatureUtil {
 
         AlgorithmParameterSpec paramSpec = null;
         if (params != null) {
-            sigName = checkName(sigName).toUpperCase(Locale.ENGLISH);
+            sigName = checkName(sigName);
             // AlgorithmParameters.getAlgorithm() may returns oid if it's
             // created during DER decoding. Convert to use the standard name
             // before passing it to RSAUtil
@@ -140,7 +147,7 @@ public class SignatureUtil {
         AlgorithmParameterSpec paramSpec = null;
 
         if (paramBytes != null) {
-            sigName = checkName(sigName).toUpperCase(Locale.ENGLISH);
+            sigName = checkName(sigName);
             if (sigName.contains("RSA")) {
                 AlgorithmParameters params =
                     createAlgorithmParameters(sigName, paramBytes);
@@ -313,7 +320,7 @@ public class SignatureUtil {
     public static AlgorithmParameterSpec getDefaultParamSpec(
             String sigAlg, Key k) {
         sigAlg = checkName(sigAlg);
-        if (sigAlg.equalsIgnoreCase("RSASSA-PSS")) {
+        if (sigAlg.equals("RSASSA-PSS")) {
             if (k instanceof RSAKey) {
                 AlgorithmParameterSpec spec = ((RSAKey) k).getParams();
                 if (spec instanceof PSSParameterSpec) {
@@ -428,7 +435,7 @@ public class SignatureUtil {
      */
     public static void checkKeyAndSigAlgMatch(PrivateKey key, String sAlg) {
         String kAlg = key.getAlgorithm().toUpperCase(Locale.ENGLISH);
-        sAlg = checkName(sAlg).toUpperCase(Locale.ENGLISH);
+        sAlg = checkName(sAlg);
         switch (sAlg) {
             case "RSASSA-PSS" -> {
                 if (!kAlg.equals("RSASSA-PSS")
