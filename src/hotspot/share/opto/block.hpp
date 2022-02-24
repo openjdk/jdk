@@ -395,8 +395,10 @@ class PhaseCFG : public Phase {
   // Map nodes to owning basic block
   Block_Array _node_to_block_mapping;
 
+public:
   // Loop from the root
   CFGLoop* _root_loop;
+private:
 
   // Outmost loop frequency
   double _outer_loop_frequency;
@@ -694,9 +696,11 @@ class CFGLoop : public CFGElement {
   friend class VMStructs;
   int _id;
   int _depth;
+public:
   CFGLoop *_parent;      // root of loop tree is the method level "pseudo" loop, it's parent is null
   CFGLoop *_sibling;     // null terminated list
   CFGLoop *_child;       // first child, use child's sibling to visit all immediately nested loops
+public:
   GrowableArray<CFGElement*> _members; // list of members of loop
   GrowableArray<BlockProbPair> _exits; // list of successor blocks and their probabilities
   double _exit_prob;       // probability any loop exit is taken on a single loop iteration

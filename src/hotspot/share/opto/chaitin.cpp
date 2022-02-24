@@ -334,6 +334,47 @@ void PhaseChaitin::compact() {
 }
 
 void PhaseChaitin::Register_Allocate() {
+  if (C->method() != NULL) {
+    ResourceMark rm;
+    stringStream ss;
+    C->method()->print_short_name(&ss);
+    if (!strcmp(ss.as_string(), " spec.benchmarks.compress.Compressor::compress")) {
+      _cfg._root_loop->dump_tree();
+      CFGLoop* loop = _cfg._root_loop;
+      CFGLoop* most_frequent = NULL;
+      do {
+        for (;;) {
+          CFGLoop* next = loop->_child;
+          if (next == NULL) {
+            break;
+          }
+          loop = next;
+        }
+        tty->print_cr("XXX %d", loop->id());
+        if (loop->_child == NULL) {
+          if (most_frequent == NULL) {
+            most_frequent = loop;
+          } else if (loop->trip_count() > most_frequent->trip_count()) {
+            most_frequent = loop;
+          }
+        }
+        for (;;) {
+          CFGLoop* next = loop->_sibling;
+          if (next != NULL) {
+            loop = next;
+            break;
+          }
+          loop = loop->_parent;
+          if (loop == NULL) {
+            break;
+          }
+          tty->print_cr("XXX %d", loop->id());
+        }
+      } while (loop != NULL);
+      tty->print_cr("XXX most frequent: %d", most_frequent->id());
+
+    }
+  }
 
   // Above the OLD FP (and in registers) are the incoming arguments.  Stack
   // slots in this area are called "arg_slots".  Above the NEW FP (and in
