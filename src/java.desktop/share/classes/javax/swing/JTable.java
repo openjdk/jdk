@@ -5490,8 +5490,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             return accessibleContext;
         }
 
-        protected class AccessibleBooleanRenderer
-                extends JCheckBox.AccessibleJCheckBox {
+        class AccessibleBooleanRenderer extends JCheckBox.AccessibleJCheckBox {
             private JTable table;
             private int row;
             private int column;
@@ -5511,7 +5510,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 return res;
             }
 
-            public void setCellToDoActionOn(JTable table, int row, int column) {
+            void setCellToDoActionOn(JTable table, int row, int column) {
                 this.table = table;
                 this.row = row;
                 this.column = column;

@@ -42,16 +42,14 @@ import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
-import javax.swing.plaf.metal.MetalLookAndFeel;
 import javax.swing.table.DefaultTableModel;
 
 public class JCheckBoxInJTableCannotBeClickedTest {
     private volatile JFrame frame;
     private volatile JTable table;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException,
+            InvocationTargetException, AWTException {
         final JCheckBoxInJTableCannotBeClickedTest test =
             new JCheckBoxInJTableCannotBeClickedTest();
 
@@ -71,32 +69,17 @@ public class JCheckBoxInJTableCannotBeClickedTest {
                     test.runTest();
                 }
             });
-        } catch (InterruptedException | InvocationTargetException |
-            AWTException e) {
-            throw new RuntimeException(e);
         } finally {
-            try {
-                SwingUtilities.invokeAndWait(new Runnable() {
-                    @Override
-                    public void run() {
-                        test.dispose();
-                    }
-                });
-            } catch (InterruptedException | InvocationTargetException e) {
-                throw new RuntimeException(e);
-            }
+            SwingUtilities.invokeAndWait(new Runnable() {
+                @Override
+                public void run() {
+                    test.dispose();
+                }
+            });
         }
     }
 
     private void createGUI() {
-        if (!(UIManager.getLookAndFeel() instanceof MetalLookAndFeel)) {
-            try {
-                UIManager.setLookAndFeel(new MetalLookAndFeel());
-            } catch (UnsupportedLookAndFeelException ulafe) {
-                throw new RuntimeException(ulafe);
-            }
-        }
-
         frame = new JFrame("JCheckBoxInJTableCannotBeClickedTest");
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         Container content = frame.getContentPane();
