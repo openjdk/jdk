@@ -156,8 +156,6 @@ class hs201t002Thread extends Thread {
         setName("hs201t002Thread");
     }
 
-    
-
     public void run() {
         // run method
         ready.countDown();
