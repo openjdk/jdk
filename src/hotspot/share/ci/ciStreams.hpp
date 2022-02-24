@@ -249,6 +249,16 @@ public:
            tag.is_dynamic_constant_in_error();
   }
 
+  bool is_string_constant() const {
+    assert(cur_bc() == Bytecodes::_ldc    ||
+           cur_bc() == Bytecodes::_ldc_w  ||
+           cur_bc() == Bytecodes::_ldc2_w, "not supported: %s", Bytecodes::name(cur_bc()));
+
+    int index = get_constant_pool_index();
+    constantTag tag = get_raw_pool_tag(index);
+    return tag.is_string();
+  }
+
   bool is_in_error() const {
     assert(cur_bc() == Bytecodes::_ldc    ||
            cur_bc() == Bytecodes::_ldc_w  ||
