@@ -8952,21 +8952,27 @@ void MacroAssembler::convert_f2l(Register dst, XMMRegister src) {
 }
 
 void MacroAssembler::round_float(Register dst, XMMRegister src, Register rtmp, Register rcx) {
-  // Following code is exactly mimicking the functionality of java.lang.Math.round(float) method.
+  // Following code is line by line assembly translation rounding algorithm.
+  // Please refer to java.lang.Math.round(float) algorithm for details.
+  const int FloatConsts_EXP_BIT_MASK = 0x7F800000;
+  const int FloatConsts_SIGNIFICAND_WIDTH = 24;
+  const int FloatConsts_EXP_BIAS = 127;
+  const int FloatConsts_SIGNIF_BIT_MASK = 0x007FFFFF;
+  const int MINUS_32 = 0xFFFFFFE0;
   Label L_special_case, L_block1, L_exit;
-  movl(rtmp, 0x7f800000);
+  movl(rtmp, FloatConsts_EXP_BIT_MASK);
   movdl(dst, src);
   andl(dst, rtmp);
-  sarl(dst, 0x17);
-  movl(rtmp, 0x95);
+  sarl(dst, FloatConsts_SIGNIFICAND_WIDTH - 1);
+  movl(rtmp, FloatConsts_SIGNIFICAND_WIDTH - 2 + FloatConsts_EXP_BIAS);
   subl(rtmp, dst);
   movl(rcx, rtmp);
-  movl(dst, 0xffffffe0);
+  movl(dst, MINUS_32);
   testl(rtmp, dst);
   jccb(Assembler::notEqual, L_special_case);
   movdl(dst, src);
-  andl(dst, 0x7fffff);
-  orl(dst, 0x800000);
+  andl(dst, FloatConsts_SIGNIF_BIT_MASK);
+  orl(dst, FloatConsts_SIGNIF_BIT_MASK + 1);
   movdl(rtmp, src);
   testl(rtmp, rtmp);
   jccb(Assembler::greaterEqual, L_block1);
@@ -8982,22 +8988,28 @@ void MacroAssembler::round_float(Register dst, XMMRegister src, Register rtmp, R
 }
 
 void MacroAssembler::round_double(Register dst, XMMRegister src, Register rtmp, Register rcx) {
-  // Following code is exactly mimicking the functionality of java.lang.Math.round(double) method.
+  // Following code is line by line assembly translation rounding algorithm.
+  // Please refer to java.lang.Math.round(double) algorithm for details.
+  const long DoubleConsts_EXP_BIT_MASK = 0x7FF0000000000000L;
+  const long DoubleConsts_SIGNIFICAND_WIDTH = 53;
+  const long DoubleConsts_EXP_BIAS = 1023;
+  const long DoubleConsts_SIGNIF_BIT_MASK = 0x000FFFFFFFFFFFFFL;
+  const long MINUS_64 = 0xFFFFFFFFFFFFFFC0L;
   Label L_special_case, L_block1, L_exit;
-  mov64(rtmp, 0x7ff0000000000000L);
+  mov64(rtmp, DoubleConsts_EXP_BIT_MASK);
   movq(dst, src);
   andq(dst, rtmp);
-  sarq(dst, 0x34);
-  mov64(rtmp, 0x432);
+  sarq(dst, DoubleConsts_SIGNIFICAND_WIDTH - 1);
+  mov64(rtmp, DoubleConsts_SIGNIFICAND_WIDTH - 2 + DoubleConsts_EXP_BIAS);
   subq(rtmp, dst);
   movq(rcx, rtmp);
-  mov64(dst, 0xffffffffffffffc0L);
+  mov64(dst, MINUS_64);
   testq(rtmp, dst);
   jccb(Assembler::notEqual, L_special_case);
   movq(dst, src);
-  mov64(rtmp, 0xfffffffffffffL);
+  mov64(rtmp, DoubleConsts_SIGNIF_BIT_MASK);
   andq(dst, rtmp);
-  mov64(rtmp, 0x10000000000000L);
+  mov64(rtmp, DoubleConsts_SIGNIF_BIT_MASK + 1);
   orq(dst, rtmp);
   movq(rtmp, src);
   testq(rtmp, rtmp);
