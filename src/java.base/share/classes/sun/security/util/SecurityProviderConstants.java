@@ -140,7 +140,8 @@ public final class SecurityProviderConstants {
                         }
                         continue;
                     }
-                    String algoName = algoAndValue[0].trim().toUpperCase();
+                    String algoName =
+                            algoAndValue[0].trim().toUpperCase(Locale.ENGLISH);
                     int value = -1;
                     try {
                         value = Integer.parseInt(algoAndValue[1].trim());

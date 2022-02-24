@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -78,15 +78,25 @@ help_usage ()
   echo "                    Optional, for jtreg tests debug purposes only."
   echo '  -l <logfile>    - value for `jpackage.test.logfile` property.'
   echo "                    Optional, for jtreg tests debug purposes only."
-  echo "  -m <mode>       - mode to run jtreg tests."
-  echo '                    Should be one of `create`, `update` or `print-default-tests`.'
-  echo '                    Optional, default mode is `update`.'
+  echo "  -m <mode>       - mode to run jtreg tests. Supported values:"
   echo '                    - `create`'
   echo '                      Remove all package bundles from the output directory before running jtreg tests.'
   echo '                    - `update`'
   echo '                      Run jtreg tests and overrite existing package bundles in the output directory.'
   echo '                    - `print-default-tests`'
   echo '                      Print default list of packaging tests and exit.'
+  echo '                    - `create-small-runtime`'
+  echo '                      Create small Java runtime using <jdk>/bin/jlink command in the output directory.'
+  echo '                    - `create-packages`'
+  echo '                      Create packages.'
+  echo '                      The script will set `jpackage.test.action` property.'
+  echo '                    - `test-packages`'
+  echo '                      Create and fully test packages. Will create, unpack, install, and uninstall packages.'
+  echo '                      The script will set `jpackage.test.action` property.'
+  echo '                    - `do-packages`'
+  echo "                      Create, unpack and verify packages."
+  echo '                      The script will not set `jpackage.test.action` property.'
+  echo '                    Optional, defaults are `update` and `create-packages`.'
 }
 
 error ()
@@ -133,8 +143,6 @@ exec_command ()
 test_jdk=
 
 # Path to local copy of open jdk repo with jpackage jtreg tests
-# hg clone http://hg.openjdk.java.net/jdk/sandbox
-# cd sandbox; hg update -r JDK-8200758-branch
 open_jdk_with_jpackage_jtreg_tests=$(dirname $0)/../../../../
 
 # Directory where to save artifacts for testing.
@@ -152,11 +160,26 @@ mode=update
 # jtreg extra arguments
 declare -a jtreg_args
 
-# Create packages only
-jtreg_args+=("-Djpackage.test.action=create")
-
 # run all tests
 run_all_tests=
+
+test_actions=
+
+set_mode ()
+{
+  case "$1" in
+    create-packages) test_actions='-Djpackage.test.action=create';;
+    test-packages) test_actions='-Djpackage.test.action=uninstall,create,unpack,verify-install,install,verify-install,uninstall,verify-uninstall,purge';;
+    do-packages) test_actions=;;
+    create-small-runtime) mode=$1;;
+    print-default-tests) mode=$1;;
+    create) mode=$1;;
+    update) mode=$1;;
+    *) fatal_with_help_usage 'Invalid value of -m option:' [$1];;
+  esac
+}
+
+set_mode 'create-packages'
 
 mapfile -t tests < <(find_all_packaging_tests)
 
@@ -171,7 +194,7 @@ while getopts "vahdct:j:o:r:m:l:" argname; do
     o) output_dir="$OPTARG";;
     r) runtime_dir="$OPTARG";;
     l) logfile="$OPTARG";;
-    m) mode="$OPTARG";;
+    m) set_mode "$OPTARG";;
     h) help_usage; exit 0;;
     ?) help_usage; exit 1;;
   esac
@@ -201,6 +224,11 @@ if [ ! -e "$JAVA_HOME/bin/java" ]; then
   fatal JAVA_HOME variable is set to [$JAVA_HOME] value, but $JAVA_HOME/bin/java not found.
 fi
 
+if [ "$mode" = "create-small-runtime" ]; then
+  exec_command "$test_jdk/bin/jlink" --add-modules java.base,java.datatransfer,java.xml,java.prefs,java.desktop --compress=2 --no-header-files --no-man-pages --strip-debug --output "$output_dir"
+  exit
+fi
+
 if [ -z "$JT_HOME" ]; then
   if [ -z "$JT_BUNDLE_URL" ]; then
     fatal 'JT_HOME or JT_BUNDLE_URL environment variable is not set. Link to JTREG bundle can be found at https://openjdk.java.net/jtreg/'.
@@ -222,17 +250,11 @@ if [ -n "$logfile" ]; then
   jtreg_args+=("-Djpackage.test.logfile=$(to_native_path "$logfile")")
 fi
 
-if [ "$mode" = create ]; then
-  true
-elif [ "$mode" = update ]; then
-  true
-else
-  fatal_with_help_usage 'Invalid value of -m option:' [$mode]
-fi
-
 if [ -z "$run_all_tests" ]; then
   jtreg_args+=(-Djpackage.test.SQETest=yes)
 fi
+
+jtreg_args+=("$test_actions")
 
 # Drop arguments separator
 [ "$1" != "--" ] || shift
@@ -249,10 +271,10 @@ installJtreg ()
     if [ ! -f "$jtreg_jar" ]; then
       exec_command mkdir -p "$workdir"
       if [[ ${jtreg_bundle: -7} == ".tar.gz" ]]; then
-        exec_command "(" cd "$workdir" "&&" wget "$jtreg_bundle" "&&" tar -xzf "$(basename $jtreg_bundle)" ";" rm -f "$(basename $jtreg_bundle)" ")"
+        exec_command "(" cd "$workdir" "&&" wget --no-check-certificate "$jtreg_bundle" "&&" tar -xzf "$(basename $jtreg_bundle)" ";" rm -f "$(basename $jtreg_bundle)" ")"
       else
         if [[ ${jtreg_bundle: -4} == ".zip" ]]; then
-          exec_command "(" cd "$workdir" "&&" wget "$jtreg_bundle" "&&" unzip "$(basename $jtreg_bundle)" ";" rm -f "$(basename $jtreg_bundle)" ")"
+          exec_command "(" cd "$workdir" "&&" wget --no-check-certificate "$jtreg_bundle" "&&" unzip "$(basename $jtreg_bundle)" ";" rm -f "$(basename $jtreg_bundle)" ")"
         else
           fatal 'Unsupported extension of JREG bundle ['$JT_BUNDLE_URL']. Only *.zip or *.tar.gz is supported.'
         fi

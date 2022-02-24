@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,12 @@
 
 package jdk.internal.loader;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class NativeLibrariesTest implements Runnable {
@@ -49,9 +51,10 @@ public class NativeLibrariesTest implements Runnable {
         unloadedCount++;
     }
 
-    private final NativeLibraries nativeLibraries;
+    private final RawNativeLibraries nativeLibraries;
+
     public NativeLibrariesTest() {
-        this.nativeLibraries = NativeLibraries.rawNativeLibraries(NativeLibraries.class, true);
+        this.nativeLibraries = RawNativeLibraries.newInstance(MethodHandles.lookup());
     }
 
     /*
@@ -61,9 +64,15 @@ public class NativeLibrariesTest implements Runnable {
         load(true); // expect loading of native library succeed
     }
 
+    static Path libraryPath() {
+        Path lib = Path.of(System.getProperty("test.nativepath"));
+        return lib.resolve(System.mapLibraryName(LIB_NAME));
+    }
+
     public void runTest() throws Exception {
-        NativeLibrary nl1 = nativeLibraries.loadLibrary(LIB_NAME);
-        NativeLibrary nl2 = nativeLibraries.loadLibrary(LIB_NAME);
+        Path lib = libraryPath();
+        NativeLibrary nl1 = nativeLibraries.load(lib);
+        NativeLibrary nl2 = nativeLibraries.load(lib);
         assertTrue(nl1 != null && nl2 != null, "fail to load library");
         assertTrue(nl1 == nl2, nl1 + " != " + nl2);
         assertTrue(loadedCount == 0, "Native library loaded.  Expected: JNI_OnUnload not invoked");
@@ -77,7 +86,7 @@ public class NativeLibrariesTest implements Runnable {
         assertTrue(unloadedCount == 0, "Native library unloaded.  Expected: JNI_OnUnload not invoked");
 
         // reload the native library and expect new NativeLibrary instance
-        NativeLibrary nl3 = nativeLibraries.loadLibrary(LIB_NAME);
+        NativeLibrary nl3 = nativeLibraries.load(lib);
         assertTrue(nl1 != nl3, nl1 + " == " + nl3);
         assertTrue(loadedCount == 0, "Native library loaded.  Expected: JNI_OnUnload not invoked");
 
@@ -86,19 +95,24 @@ public class NativeLibrariesTest implements Runnable {
     }
 
     public void unload() {
-        NativeLibrary nl = nativeLibraries.loadLibrary(LIB_NAME);
+        NativeLibrary nl = nativeLibraries.load(libraryPath());
         // unload the native library
         nativeLibraries.unload(nl);
         assertTrue(unloadedCount == 0, "Native library unloaded.  Expected: JNI_OnUnload not invoked");
     }
 
     public void load(boolean succeed) {
-        NativeLibrary nl = nativeLibraries.loadLibrary(LIB_NAME);
+        NativeLibrary nl = nativeLibraries.load(libraryPath());
         if (succeed) {
             assertTrue(nl != null, "fail to load library");
         } else {
             assertTrue(nl == null, "load library should fail");
         }
+    }
+
+    public void load(String pathname) {
+        NativeLibrary nl = nativeLibraries.load(pathname);
+        assertTrue(nl != null, "fail to load zip library");
     }
 
     /*
