@@ -47,8 +47,8 @@ import sun.security.x509.AlgorithmId;
 public class SignatureUtil {
 
     /**
-     * Convert OID.1.2.3.4 or 1.2.3.4 to its matching stdName, and literal
-     * name to upper case.
+     * Convert OID.1.2.3.4 or 1.2.3.4 to its matching stdName, and return
+     * upper case algorithm name.
      *
      * @param algName input, could be in any form
      * @return the matching algorithm name or the OID string in upper case.
