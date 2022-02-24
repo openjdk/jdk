@@ -107,7 +107,6 @@ public class PropertiesStoreTest {
             // skip ROOT locale and ENGLISH language ones
             if (!locale.getLanguage().isEmpty() && !locale.getLanguage().equals("en")) {
                 nonEnglishLocale = locale;
-                System.out.println("Selected non-english locale: " + nonEnglishLocale + " for tests");
                 break;
             }
         }
