@@ -125,8 +125,9 @@ inline intptr_t* frame::id(void) const { return unextended_sp(); }
 inline bool frame::is_older(intptr_t* id) const   { assert(this->id() != NULL && id != NULL, "NULL frame id");
                                                     return this->id() > id ; }
 
+inline intptr_t* frame::link() const              { return (intptr_t*) *(intptr_t **)addr_at(link_offset); }
 
-inline intptr_t* frame::link() const              { return (intptr_t*) SafeFetchN((intptr_t *)addr_at(link_offset), NULL); }
+inline intptr_t* frame::link_or_null() const      { return (intptr_t*) SafeFetchN((intptr_t *)addr_at(link_offset), NULL); }
 
 inline intptr_t* frame::unextended_sp() const     { return _unextended_sp; }
 

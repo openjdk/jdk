@@ -82,6 +82,11 @@ inline intptr_t* frame::link() const {
   return NULL;
 }
 
+inline intptr_t* frame::link_or_null() const {
+  ShouldNotCallThis();
+  return NULL;
+}
+
 inline interpreterState frame::get_interpreterState() const {
   return zero_interpreterframe()->interpreter_state();
 }

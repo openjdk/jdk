@@ -117,6 +117,10 @@ inline intptr_t* frame::link() const {
   return (intptr_t*)callers_abi()->callers_sp;
 }
 
+inline intptr_t* frame::link_or_null() const {
+  return link();
+}
+
 inline intptr_t* frame::real_fp() const {
   return fp();
 }

@@ -1176,6 +1176,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
 
 // Looks like all platforms can use the same function to check if C
 // stack is walkable beyond current frame.
+// Returns false if this is the case
 bool os::is_first_C_frame(frame* fr) {
 
 #ifdef _WINDOWS
@@ -1196,11 +1197,13 @@ bool os::is_first_C_frame(frame* fr) {
 
   uintptr_t old_sp = (uintptr_t)fr->sender_sp();
   if ((old_sp & sp_align_mask) != 0) return true;
-  if (old_sp == 0 || old_sp == (uintptr_t)-1 || SafeFetchN(fr->sender_sp(), 0) == 0) return true;
+  if (old_sp == 0 || old_sp == (uintptr_t)-1 ||
+    SafeFetchN(fr->sender_sp(), 0) == 0) return true;
 
-  uintptr_t old_fp = (uintptr_t)fr->link();
-  if ((old_fp & fp_align_mask) == 0) return true;
-  if (old_fp == 0 || old_fp == (uintptr_t)-1 || old_fp == ufp || SafeFetchN(fr->link(), 0) == 0) return true;
+  uintptr_t old_fp = (uintptr_t)fr->link_or_null();
+  if ((old_fp & fp_align_mask) != 0) return true;
+  if (old_fp == 0 || old_fp == (uintptr_t)-1 || old_fp == ufp ||
+    SafeFetchN((intptr_t*)old_fp, 0) == 0) return true;
 
   // stack grows downwards; if old_fp is below current fp or if the stack
   // frame is too large, either the stack is corrupted or fp is not saved
@@ -1211,6 +1214,7 @@ bool os::is_first_C_frame(frame* fr) {
 
   return false;
 #endif
+
 }
 
 // Set up the boot classpath.
