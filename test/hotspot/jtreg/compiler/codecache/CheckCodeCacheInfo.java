@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Amazon.com Inc. or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test CheckCodeCacheInfo
+ * @bug 8005885
  * @summary Checks VM verbose information related to the code cache
  * @library /test/lib
  * @requires vm.debug
