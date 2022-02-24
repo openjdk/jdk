@@ -43,6 +43,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -110,19 +111,21 @@ public class DefaultAgentFilterTest {
                 try {
                     AtomicBoolean error = new AtomicBoolean(false);
                     AtomicBoolean bindError = new AtomicBoolean(false);
-                    // The predicate below tries to recognise failures.  On a port clash, the only line it sees is, e.g.:
+                    // The predicate below tries to recognise failures.  On a port clash, it sees e.g.
                     // Error: Exception thrown by the agent : java.rmi.server.ExportException: Port already in use: 46481; nested exception is:
+                    // ...and will never see "main enter" from TestApp.
                     p = ProcessTools.startProcess(
                             TEST_APP_NAME + "{" + name + "}",
                             pb,
                             (line) -> {
-                                if (line.toLowerCase().contains("exception")
-                                || line.toLowerCase().contains("error")) {
+                                if (line.contains("Exception")) {
                                     error.set(true);
+                                    bindError.set(line.toLowerCase().contains("port already in use"));
+                                    return true; // On Exception, app will never start
                                 }
-                                bindError.set(line.toLowerCase().contains("port already in use"));
-                                return true;
-                            });
+                                return line.contains("main enter");
+                            },
+                            60, TimeUnit.SECONDS);
                     if (bindError.get()) {
                         throw new BindException("Process could not be started");
                     } else if (error.get()) {
