@@ -48,7 +48,6 @@ import java.util.TreeSet;
  * @test
  * @summary tests the order in which the Properties.store() method writes out the properties
  * @bug 8231640 8282023
- * @modules jdk.localedata
  * @run testng/othervm PropertiesStoreTest
  */
 public class PropertiesStoreTest {
