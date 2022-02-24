@@ -1012,7 +1012,6 @@ public class VisibleMemberTable {
                 //  this needs to be fixed
                 ExecutableElement found = utils.findMethod(utils.asTypeElement(interfaceType), method);
                 if (found != null) {
-                    removeOverriddenMethod(found);
                     if (!overridingMethodFound(found)) {
                         methlist.add(found);
                         interfaces.put(found, interfaceType);
@@ -1039,26 +1038,6 @@ public class VisibleMemberTable {
 
         TypeMirror getMethodHolder(ExecutableElement ee) {
             return interfaces.get(ee);
-        }
-
-        /**
-         * Search in the method list and check if it contains a method which
-         * is overridden by the method as parameter.  If found, remove the
-         * overridden method from the method list.
-         *
-         * @param method Is this method overriding a method in the method list.
-         */
-        private void removeOverriddenMethod(ExecutableElement method) {
-            TypeElement overriddenClass = utils.overriddenClass(method);
-            if (overriddenClass != null) {
-                for (int i = 0; i < methlist.size(); i++) {
-                    TypeElement te = utils.getEnclosingTypeElement(methlist.get(i));
-                    if (te == overriddenClass || utils.isSubclassOf(overriddenClass, te)) {
-                        methlist.remove(i);  // remove overridden method
-                        return;
-                    }
-                }
-            }
         }
 
         /**
