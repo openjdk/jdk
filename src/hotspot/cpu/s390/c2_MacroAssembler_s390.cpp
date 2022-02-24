@@ -852,14 +852,15 @@ unsigned int C2_MacroAssembler::count_positives(Register result, Register src, R
     z_ogr(Z_R0, Z_R1);
     z_ngr(Z_R0, mask);
     z_brne(unrolledDone);               // There is a negative byte somewhere.
-
+                                        // ctr and pos are not updated yet ->
+                                        // delegate finding correct pos to byteLoop.
     add2reg(pos, unroll_factor);
     z_brct(ctr, unrolledLoop);
 
-  // Once we arrive here, we will at most examine (unroll_factor - 1) bytes more.
-  // We then either reach the end of the array or we hit a negative byte.
+  // Once we arrive here, we have to examine at most (unroll_factor - 1) bytes more.
+  // We then either have reached the end of the array or we hit a negative byte.
   bind(unrolledDone);
-  z_sll(ctr, log_unroll_factor);        // calculate remaining bytes from unrolled loop
+  z_sll(ctr, log_unroll_factor);        // calculate # bytes not processed by unrolled loop
                                         // > 0 only if a negative byte was found
   z_lr(Z_R0, cnt);                      // calculate remainder bytes
   z_nill(Z_R0, unroll_factor - 1);
@@ -867,7 +868,7 @@ unsigned int C2_MacroAssembler::count_positives(Register result, Register src, R
   z_brnh(allDone);                      // shortcut if nothing left to do
 
   bind(byteLoop);
-    z_cli(0, pos, byte_mask);
+    z_cli(0, pos, byte_mask);           // unsigned comparison! byte@pos must be smaller that byte_mask
     z_brnl(allDone);                    // negative byte found.
 
     add2reg(pos, 1);

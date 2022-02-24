@@ -10277,7 +10277,7 @@ instruct count_positives(rarg5RegP ary1, iRegI len, iRegI result, iRegI tmp, fla
   match(Set result (CountPositives ary1 len));
   effect(TEMP_DEF result, USE_KILL ary1, TEMP tmp, KILL cr); // R0, R1 are killed, too.
   ins_cost(300);
-  format %{ "countPositives byte[] $ary1($len) -> $result" %}
+  format %{ "count positives byte[] $ary1($len) -> $result" %}
   ins_encode %{
     __ count_positives($result$$Register, $ary1$$Register, $len$$Register, $tmp$$Register);
   %}
