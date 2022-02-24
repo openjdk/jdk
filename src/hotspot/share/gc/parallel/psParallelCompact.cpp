@@ -851,11 +851,10 @@ public:
     BoolObjectClosure* is_subject_to_discovery,
     BoolObjectClosure* is_alive_non_header) :
       ReferenceProcessor(is_subject_to_discovery,
-      ParallelGCThreads,   // mt processing degree
-      ParallelGCThreads,   // mt discovery degree
-      true,                // atomic_discovery
-      is_alive_non_header) {
-  }
+                         ParallelGCThreads,   // mt processing degree
+                         ParallelGCThreads,   // mt discovery degree
+                         false,               // concurrent_discovery
+                         is_alive_non_header) {}
 
   template<typename T> bool discover(oop obj, ReferenceType type) {
     T* referent_addr = (T*) java_lang_ref_Reference::referent_addr_raw(obj);
