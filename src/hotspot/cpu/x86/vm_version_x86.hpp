@@ -1047,7 +1047,7 @@ public:
   // Old CPUs perform lea on AGU which causes additional latency transfering the
   // value from/to ALU for other operations
   static bool supports_fast_2op_lea() {
-    return (is_intel() && supports_avx()) || // Sandy Bride and above
+    return (is_intel() && supports_avx()) || // Sandy Bridge and above
            (is_amd()   && supports_avx());   // Jaguar and Bulldozer and above
   }
 
