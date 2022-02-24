@@ -177,6 +177,7 @@ public class DefaultAgentFilterTest {
             System.out.println("Attempting testDefaultAgent(" + propertyFile + ") with port: " + port);
             try {
                 testDefaultAgent(propertyFile, port);
+                break;  // return succesfully
             } catch (BindException b) {
                 // Retry with new port.  Throw if last iteration:
                 if (i == FREE_PORT_ATTEMPTS) {
