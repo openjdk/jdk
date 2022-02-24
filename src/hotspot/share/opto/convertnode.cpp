@@ -252,12 +252,16 @@ Node* ConvI2FNode::Identity(PhaseGVN* phase) {
 //------------------------------Value------------------------------------------
 const Type* ConvI2LNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
-  if( t == Type::TOP ) return Type::TOP;
+  if (t == Type::TOP) {
+    return Type::TOP;
+  }
   const TypeInt *ti = t->is_int();
   const Type* tl = TypeLong::make(ti->_lo, ti->_hi, ti->_widen);
   // Join my declared type against my incoming type.
   tl = tl->filter(_type);
-  if(!tl->isa_long()) return tl;
+  if (!tl->isa_long()) {
+    return tl;
+  }
   const TypeLong* this_type = tl->is_long();
   // Do NOT remove this node's type assertion until no more loop ops can happen.
   if (phase->C->post_loop_opts_phase()) {

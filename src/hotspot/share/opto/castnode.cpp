@@ -194,7 +194,9 @@ void ConstraintCastNode::dump_spec(outputStream *st) const {
 
 const Type* CastIINode::Value(PhaseGVN* phase) const {
   const Type *res = ConstraintCastNode::Value(phase);
-  if(res == Type::TOP) return Type::TOP;
+  if (res == Type::TOP) {
+    return Type::TOP;
+  }
   assert(res->isa_int(), "res must be int");
 
   // Similar to ConvI2LNode::Value() for the same reasons
@@ -211,7 +213,7 @@ const Type* CastIINode::Value(PhaseGVN* phase) const {
          in_type->_hi != this_type->_hi)) {
       jint lo1 = this_type->_lo;
       jint hi1 = this_type->_hi;
-      int w1  = this_type->_widen;
+      int w1 = this_type->_widen;
       if (lo1 >= 0) {
         // Keep a range assertion of >=0.
         lo1 = 0;        hi1 = max_jint;
