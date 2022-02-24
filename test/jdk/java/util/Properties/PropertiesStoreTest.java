@@ -55,9 +55,8 @@ public class PropertiesStoreTest {
     private static final String DATE_FORMAT_PATTERN = "EEE MMM dd HH:mm:ss zzz uuuu";
     // use a neutral locale, since when the date comment was written by Properties.store(...),
     // it internally calls the Date.toString() which always writes in a locale insensitive manner
-    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN)
-            .withLocale(Locale.ROOT);
-    private static final Locale prevLocale = Locale.getDefault();
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN, Locale.ROOT);
+    private static final Locale PREV_LOCALE = Locale.getDefault();
 
     @DataProvider(name = "propsProvider")
     private Object[][] createProps() {
@@ -204,7 +203,7 @@ public class PropertiesStoreTest {
             testDateComment(tmpFile);
         } finally {
             // reset to the previous one
-            Locale.setDefault(prevLocale);
+            Locale.setDefault(PREV_LOCALE);
         }
     }
 
@@ -226,7 +225,7 @@ public class PropertiesStoreTest {
             testDateComment(tmpFile);
         } finally {
             // reset to the previous one
-            Locale.setDefault(prevLocale);
+            Locale.setDefault(PREV_LOCALE);
         }
     }
 
@@ -251,7 +250,7 @@ public class PropertiesStoreTest {
             Assert.fail("No comment line found in the stored properties file " + file);
         }
         try {
-            formatter.parse(comment);
+            FORMATTER.parse(comment);
         } catch (DateTimeParseException pe) {
             Assert.fail("Unexpected date comment: " + comment, pe);
         }
