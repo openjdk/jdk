@@ -182,7 +182,7 @@ class LinuxDosFileAttributeView
             x.rethrowAsIOException(file);
             return null;    // keep compiler happy
         } finally {
-            close(fd, null);
+            close(fd, e -> null);
         }
     }
 
@@ -277,7 +277,7 @@ class LinuxDosFileAttributeView
         } catch (UnixException x) {
             x.rethrowAsIOException(file);
         } finally {
-            close(fd, null);
+            close(fd, e -> null);
         }
     }
 }

@@ -427,7 +427,7 @@ class UnixSecureDirectoryStream
                     }
                 } finally {
                     if (file != null)
-                        UnixNativeDispatcher.close(fd, null);
+                        UnixNativeDispatcher.close(fd, e-> null);
                 }
             } finally {
                 ds.readLock().unlock();
@@ -509,7 +509,7 @@ class UnixSecureDirectoryStream
                     x.rethrowAsIOException(file);
                 } finally {
                     if (file != null && fd >= 0)
-                        UnixNativeDispatcher.close(fd, null);
+                        UnixNativeDispatcher.close(fd, e-> null);
                 }
             } finally {
                 ds.readLock().unlock();
@@ -532,7 +532,7 @@ class UnixSecureDirectoryStream
                     x.rethrowAsIOException(file);
                 } finally {
                     if (file != null && fd >= 0)
-                        UnixNativeDispatcher.close(fd, null);
+                        UnixNativeDispatcher.close(fd, e-> null);
                 }
             } finally {
                 ds.readLock().unlock();

@@ -160,7 +160,7 @@ class UnixFileAttributeViews {
                     }
                 }
             } finally {
-                close(fd, null);
+                close(fd, e -> null);
             }
         }
     }

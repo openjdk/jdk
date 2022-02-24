@@ -210,7 +210,7 @@ class UnixCopyFile {
             done = true;
         } finally {
             if (dfd >= 0)
-                close(dfd, null);
+                close(dfd, e -> null);
             if (!done) {
                 // rollback
                 try { rmdir(target); } catch (UnixException ignore) { }
@@ -288,7 +288,7 @@ class UnixCopyFile {
                 }
                 complete = true;
             } finally {
-                close(fo, null);
+                close(fo, e -> null);
 
                 // copy of file or attributes failed so rollback
                 if (!complete) {
@@ -298,7 +298,7 @@ class UnixCopyFile {
                 }
             }
         } finally {
-            close(fi, null);
+            close(fi, e -> null);
         }
     }
 

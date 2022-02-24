@@ -296,9 +296,9 @@ class LinuxWatchService
 
             // free resources
             unsafe.freeMemory(address);
-            UnixNativeDispatcher.close(socketpair[0], null);
-            UnixNativeDispatcher.close(socketpair[1], null);
-            UnixNativeDispatcher.close(ifd, null);
+            UnixNativeDispatcher.close(socketpair[0], e -> null);
+            UnixNativeDispatcher.close(socketpair[1], e -> null);
+            UnixNativeDispatcher.close(ifd, e -> null);
         }
 
         /**

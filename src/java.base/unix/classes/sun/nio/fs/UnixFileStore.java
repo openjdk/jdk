@@ -197,7 +197,7 @@ abstract class UnixFileStore
             if (e.errno() == UnixConstants.XATTR_NOT_FOUND)
                 return true;
         } finally {
-            UnixNativeDispatcher.close(fd, null);
+            UnixNativeDispatcher.close(fd, e -> null);
         }
         return false;
     }
