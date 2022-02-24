@@ -4343,7 +4343,7 @@ void C2_MacroAssembler::vector_maskall_operation(KRegister dst, Register src, in
 //  a. Count the number of 1s in 4 LSB bits of each byte. These bits are used as
 //     shuffle indices for lookup table access.
 //  b. Right shift each byte of vector lane by 4 positions.
-//  a. Count the number of 1s in 4 MSB bits each byte. These bits are used as
+//  c. Count the number of 1s in 4 MSB bits each byte. These bits are used as
 //     shuffle indices for lookup table access.
 //  d. Add the bitset count of upper and lower 4 bits of each byte.
 //  e. Unpack double words to quad words and compute sum of absolute difference of bitset
