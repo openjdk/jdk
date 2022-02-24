@@ -433,6 +433,8 @@ public class TestDoubleVect {
       a1[9] = -0x1.fffffffffffffp-2;
       a1[10] = -0x1.0p-1;
       a1[11] = -0x1.0000000000001p-1;
+      a1[12] = 1.7976931348623157E19;
+      a1[13] = -1.7976931348623157E19;
 
       test_round(l0, a1);
       errn += verify("test_round: ", 0, l0[0], 0L);
@@ -448,7 +450,9 @@ public class TestDoubleVect {
       errn += verify("test_round: ", 9, l0[9], 0L);
       errn += verify("test_round: ", 10, l0[10], 0L);
       errn += verify("test_round: ", 11, l0[11], -1L);
-      for (int i=12; i<ARRLEN; i++) {
+      errn += verify("test_round: ", 12, l0[12], Long.MAX_VALUE);
+      errn += verify("test_round: ", 13, l0[13], Long.MIN_VALUE);
+      for (int i=14; i<ARRLEN; i++) {
         errn += verify("test_round: ", i, l0[i], Math.round((double)(ADD_INIT+i)));
       }
     }

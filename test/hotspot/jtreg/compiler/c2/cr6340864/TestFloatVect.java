@@ -379,6 +379,8 @@ public class TestFloatVect {
       a1[9] = -0x1.fffffep-2f;
       a1[10] = -0x1.0p-1f;
       a1[11] = -0x1.000002p-1f;
+      a1[12] = 3.4028235E10f;
+      a1[13] = -3.4028235E10f;
 
       test_round(i0, a1);
       errn += verify("test_round: ", 0, i0[0], 0);
@@ -393,8 +395,10 @@ public class TestFloatVect {
       errn += verify("test_round: ", 9, i0[9], 0);
       errn += verify("test_round: ", 10, i0[10], 0);
       errn += verify("test_round: ", 11, i0[11], -1);
+      errn += verify("test_round: ", 12, i0[12], Integer.MAX_VALUE);
+      errn += verify("test_round: ", 13, i0[13], Integer.MIN_VALUE);
 
-      for (int i=12; i<ARRLEN; i++) {
+      for (int i=14; i<ARRLEN; i++) {
         errn += verify("test_round: ", i, i0[i], Math.round(((float)(ADD_INIT+i))));
       }
 

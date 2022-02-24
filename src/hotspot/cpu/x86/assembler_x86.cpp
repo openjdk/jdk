@@ -6472,22 +6472,6 @@ void Assembler::vrndscalepd(XMMRegister dst, Address src, int32_t rmode, int vec
   emit_int8((rmode));
 }
 
-
-void Assembler::vroundps(XMMRegister dst, XMMRegister src, int32_t rmode, int vector_len) {
-  assert(VM_Version::supports_avx(), "");
-  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
-  int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
-  emit_int24(0x08, (0xC0 | encode), (rmode));
-}
-
-void Assembler::vrndscaleps(XMMRegister dst,  XMMRegister src,  int32_t rmode, int vector_len) {
-  assert(VM_Version::supports_evex(), "requires EVEX support");
-  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
-  attributes.set_is_evex_instruction();
-  int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
-  emit_int24(0x08, (0xC0 | encode), (rmode));
-}
-
 void Assembler::vsqrtpd(XMMRegister dst, XMMRegister src, int vector_len) {
   assert(VM_Version::supports_avx(), "");
   InstructionAttr attributes(vector_len, /* vex_w */ VM_Version::supports_evex(), /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);

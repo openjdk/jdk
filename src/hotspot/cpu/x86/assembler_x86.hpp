@@ -2248,10 +2248,6 @@ private:
   void vrndscalepd(XMMRegister dst,  XMMRegister src,  int32_t rmode, int vector_len);
   void vrndscalepd(XMMRegister dst, Address src, int32_t rmode, int vector_len);
 
-  // Round Packed Single precision value.
-  void vroundps(XMMRegister dst, XMMRegister src, int32_t rmode, int vector_len);
-  void vrndscaleps(XMMRegister dst,  XMMRegister src,  int32_t rmode, int vector_len);
-
   // Bitwise Logical AND of Packed Floating-Point Values
   void andpd(XMMRegister dst, XMMRegister src);
   void andps(XMMRegister dst, XMMRegister src);
