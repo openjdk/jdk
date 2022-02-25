@@ -43,12 +43,22 @@ public class StringEncode {
 
     private Charset charset;
     private String asciiString;
+    private String asciiString3;
+    private String asciiString7;
+    private String asciiString15;
     private String longAsciiString;
+    private String longAsciiString1055;
     private String utf16String;
+    private String utf16String3;
+    private String utf16String7;
+    private String utf16String15;
     private String longUtf16EndString;
     private String longUtf16StartString;
     private String longUtf16OnlyString;
     private String latin1String;
+    private String latin1String3;
+    private String latin1String7;
+    private String latin1String15;
     private String longLatin1EndString;
     private String longLatin1StartString;
     private String longLatin1OnlyString;
@@ -70,12 +80,22 @@ public class StringEncode {
     public void setup() {
         charset = Charset.forName(charsetName);
         asciiString = LOREM.substring(0, 32);
+        asciiString3 = LOREM.substring(0, 3);
+        asciiString7 = LOREM.substring(0, 7);
+        asciiString15 = LOREM.substring(0, 15);
         longAsciiString = LOREM.repeat(200);
-        utf16String = "UTF-\uFF11\uFF16 string";
+        longAsciiString1055 = longAsciiString.substring(0, 1055);
+        utf16String = UTF16_STRING;
+        utf16String3 = UTF16_STRING.substring(0, 3);
+        utf16String7 = UTF16_STRING.substring(0, 7);
+        utf16String15 = UTF16_STRING.substring(0, 15);
         longUtf16EndString = LOREM.repeat(4).concat(UTF16_STRING);
         longUtf16StartString = UTF16_STRING.concat(LOREM.repeat(4));
         longUtf16OnlyString = UTF16_STRING.repeat(10);
         latin1String = LATIN1_STRING;
+        latin1String3 = LATIN1_STRING.substring(0, 3);
+        latin1String7 = LATIN1_STRING.substring(0, 7);
+        latin1String15 = LATIN1_STRING.substring(0, 15);
         longLatin1EndString = LOREM.repeat(4).concat(LATIN1_STRING);
         longLatin1StartString = LATIN1_STRING.concat(LOREM.repeat(4));
         longLatin1OnlyString = LATIN1_STRING.repeat(10);
@@ -83,20 +103,27 @@ public class StringEncode {
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public byte[] encodeAsciiShort() throws Exception {
-        return asciiString.getBytes(charset);
+    public void encodeAsciiShort(Blackhole bh) throws Exception {
+        bh.consume(asciiString.getBytes(charset));
+        bh.consume(asciiString3.getBytes(charset));
+        bh.consume(asciiString15.getBytes(charset));
+        bh.consume(asciiString7.getBytes(charset));
     }
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public byte[] encodeAsciiLong() throws Exception {
-        return longAsciiString.getBytes(charset);
+    public voidencodeAsciiLong(Blackhole bh) throws Exception {
+        bh.consume(longAsciiString.getBytes(charset));
+        bh.consume(longAsciiString1055.getBytes(charset));
     }
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public byte[] encodeUTF16() throws Exception {
-        return utf16String.getBytes(charset);
+    public void encodeUTF16Short(Blackhole bh) throws Exception {
+        bh.consume(utf16String.getBytes(charset));
+        bh.consume(utf16String3.getBytes(charset));
+        bh.consume(utf16String15.getBytes(charset));
+        bh.consume(utf16String7.getBytes(charset));
     }
 
     @Benchmark
@@ -128,9 +155,11 @@ public class StringEncode {
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public byte[] encodeLatin1Short() throws Exception {
-        return latin1String.getBytes(charset);
-    }
+    public byte[] encodeLatin1Short(Blackhole bh) throws Exception {
+        bh.consume(latin1String.getBytes(charset));
+        bh.consume(latin1String3.getBytes(charset));
+        bh.consume(latin1String15.getBytes(charset));
+        bh.consume(latin1String7.getBytes(charset));
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
@@ -164,10 +193,13 @@ public class StringEncode {
     public void encodeAllMixed(Blackhole bh) throws Exception {
         bh.consume(utf16String.getBytes(charset));
         bh.consume(longUtf16StartString.getBytes(charset));
+        bh.consume(asciiString7.getBytes(charset));
         bh.consume(longUtf16EndString.getBytes(charset));
+        bh.consume(latin1String3.getBytes(charset));
         bh.consume(longUtf16OnlyString.getBytes(charset));
         bh.consume(longLatin1EndString.getBytes(charset));
         bh.consume(longLatin1StartString.getBytes(charset));
+        bh.consume(utf16String15.getBytes(charset));
         bh.consume(longLatin1OnlyString.getBytes(charset));
         bh.consume(latin1String.getBytes(charset));
         bh.consume(asciiString.getBytes(charset));
@@ -177,8 +209,17 @@ public class StringEncode {
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public void encodeShortMixed(Blackhole bh) throws Exception {
+        bh.consume(utf16String3.getBytes(charset));
+        bh.consume(latin1String7.getBytes(charset));
+        bh.consume(asciiString15.getBytes(charset));
         bh.consume(utf16String.getBytes(charset));
+        bh.consume(latin1String3.getBytes(charset));
+        bh.consume(asciiString7.getBytes(charset));
+        bh.consume(utf16String15.getBytes(charset));
         bh.consume(latin1String.getBytes(charset));
+        bh.consume(asciiString3.getBytes(charset));
+        bh.consume(utf16String7.getBytes(charset));
+        bh.consume(latin1String15.getBytes(charset));
         bh.consume(asciiString.getBytes(charset));
     }
 }

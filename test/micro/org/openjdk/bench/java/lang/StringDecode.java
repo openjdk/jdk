@@ -85,7 +85,9 @@ public class StringDecode {
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public void decodeAsciiShort(Blackhole bh) throws Exception {
         bh.consume(new String(asciiString, charset));
-        bh.consume(new String(asciiString, 0, 15, charset));
+        bh.consume(new String(longAsciiString, 0, 15, charset));
+        bh.consume(new String(asciiString, 0, 3, charset));
+        bh.consume(new String(longAsciiString, 512, 512 + 5, charset));
     }
 
     @Benchmark
@@ -166,11 +168,14 @@ public class StringDecode {
     public void decodeAllMixed(Blackhole bh) throws Exception {
         bh.consume(new String(utf16String, charset));
         bh.consume(new String(longUtf16EndString, charset));
+        bh.consume(new String(utf16String, 0, 15, charset));
         bh.consume(new String(longUtf16StartString, charset));
+        bh.consume(new String(asciiString, 0, 3, charset));
         bh.consume(new String(longUtf16OnlyString, charset));
         bh.consume(new String(latin1String, charset));
         bh.consume(new String(longLatin1EndString, charset));
         bh.consume(new String(longLatin1StartString, charset));
+        bh.consume(new String(latin1String, 0, 7, charset));
         bh.consume(new String(longLatin1OnlyString, charset));
         bh.consume(new String(asciiString, charset));
         bh.consume(new String(longAsciiString, charset));
@@ -179,8 +184,17 @@ public class StringDecode {
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public void decodeShortMixed(Blackhole bh) throws Exception {
-        bh.consume(new String(utf16String, charset));
-        bh.consume(new String(latin1String, charset));
+        bh.consume(new String(utf16String, 0, 15, charset));
+        bh.consume(new String(latin1String, 0, 15, charset));
         bh.consume(new String(asciiString, charset));
+        bh.consume(new String(utf16String, charset));
+        bh.consume(new String(latin1String, 0, 3, charset));
+        bh.consume(new String(asciiString, 0, 3, charset));
+        bh.consume(new String(utf16String, 0, 7, charset));
+        bh.consume(new String(latin1String, charset));
+        bh.consume(new String(asciiString, 0, 7, charset));
+        bh.consume(new String(utf16String, 0, 3, charset));
+        bh.consume(new String(latin1String, 0, 7, charset));
+        bh.consume(new String(asciiString, 0, 15, charset));
     }
 }
