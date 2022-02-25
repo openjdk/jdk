@@ -207,7 +207,7 @@ public class EndingDotHostname {
         // get started in 90 seconds.  The client side would just ignore
         // the test case if the serer is not ready.
         boolean serverIsReady =
-                serverCondition.await(10L, TimeUnit.SECONDS);
+                serverCondition.await(90L, TimeUnit.SECONDS);
         if (!serverIsReady) {
             System.out.println(
                     "The server is not ready yet in 90 seconds. " +
