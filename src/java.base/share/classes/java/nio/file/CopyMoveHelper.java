@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,11 +105,20 @@ class CopyMoveHelper {
         LinkOption[] linkOptions = (opts.followLinks) ? new LinkOption[0] :
             new LinkOption[] { LinkOption.NOFOLLOW_LINKS };
 
+        // retrieve source posix view, null if unsupported
+        final PosixFileAttributeView srcPosixView =
+            Files.getFileAttributeView(source, PosixFileAttributeView.class);
+
         // attributes of source file
-        BasicFileAttributes attrs = Files.readAttributes(source,
-                                                         BasicFileAttributes.class,
-                                                         linkOptions);
-        if (attrs.isSymbolicLink())
+        BasicFileAttributes srcAttrs = srcPosixView != null ?
+            Files.readAttributes(source,
+                                 PosixFileAttributes.class,
+                                 linkOptions) :
+            Files.readAttributes(source,
+                                 BasicFileAttributes.class,
+                                 linkOptions);
+
+        if (srcAttrs.isSymbolicLink())
             throw new IOException("Copying of symbolic links not supported");
 
         // delete target if it exists and REPLACE_EXISTING is specified
@@ -119,7 +128,7 @@ class CopyMoveHelper {
             throw new FileAlreadyExistsException(target.toString());
 
         // create directory or copy file
-        if (attrs.isDirectory()) {
+        if (srcAttrs.isDirectory()) {
             Files.createDirectory(target);
         } else {
             try (InputStream in = Files.newInputStream(source)) {
@@ -127,14 +136,34 @@ class CopyMoveHelper {
             }
         }
 
-        // copy basic attributes to target
+        // copy basic and, if supported, POSIX attributes to target
         if (opts.copyAttributes) {
-            BasicFileAttributeView view =
-                Files.getFileAttributeView(target, BasicFileAttributeView.class);
+            BasicFileAttributeView dstView = null;
+            if (srcPosixView != null) {
+                dstView = Files.getFileAttributeView(target,
+                                                     PosixFileAttributeView.class);
+            }
+
+            // target might not support posix even if source does
+            if (dstView == null) {
+                dstView = Files.getFileAttributeView(target,
+                                                     BasicFileAttributeView.class);
+            }
+
             try {
-                view.setTimes(attrs.lastModifiedTime(),
-                              attrs.lastAccessTime(),
-                              attrs.creationTime());
+                dstView.setTimes(srcAttrs.lastModifiedTime(),
+                                 srcAttrs.lastAccessTime(),
+                                 srcAttrs.creationTime());
+
+                if (srcAttrs instanceof PosixFileAttributes srcPosixAttrs &&
+                    dstView instanceof PosixFileAttributeView dstPosixView) {
+                    dstPosixView.setPermissions(srcPosixAttrs.permissions());
+                    try {
+                        dstPosixView.setOwner(srcPosixAttrs.owner());
+                        dstPosixView.setGroup(srcPosixAttrs.group());
+                    } catch (ProviderMismatchException ignore) {
+                    }
+                }
             } catch (Throwable x) {
                 // rollback
                 try {
