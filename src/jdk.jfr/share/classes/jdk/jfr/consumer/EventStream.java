@@ -149,7 +149,7 @@ public interface EventStream extends AutoCloseable {
      *         files in the directory.
      */
     public static EventStream openRepository(Path directory) throws IOException {
-        Objects.requireNonNull(directory);
+        Objects.requireNonNull(directory, "directory");
         @SuppressWarnings("removal")
         AccessControlContext acc = AccessController.getContext();
         return new EventDirectoryStream(
@@ -179,6 +179,7 @@ public interface EventStream extends AutoCloseable {
      */
     @SuppressWarnings("removal")
     static EventStream openFile(Path file) throws IOException {
+        Objects.requireNonNull(file, "file");
         return new EventFileStream(AccessController.getContext(), file);
     }
 
