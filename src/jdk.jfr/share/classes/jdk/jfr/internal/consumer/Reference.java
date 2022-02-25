@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,38 +27,23 @@ package jdk.jfr.internal.consumer;
 
 import jdk.jfr.internal.Type;
 
-final class ConstantLookup {
-    final Type type;
-    private ConstantMap current;
-    private ConstantMap previous = ConstantMap.EMPTY;
+/**
+ * A temporary placeholder, so objects can reference themselves (directly, or
+ * indirectly), when making a transition from numeric id references to Java
+ * object references.
+ */
+public record Reference(ConstantMap pool, long key) {
 
-    ConstantLookup(ConstantMap current, Type type) {
-        this.current = current;
-        this.type = type;
+    Object resolve() {
+        return pool.get(key);
     }
 
-    public Type getType() {
-        return type;
+    public Type type() {
+        return pool.getType();
     }
 
-    public ConstantMap getLatestPool() {
-        return current;
-    }
-
-    public void newPool() {
-        previous = current;
-        current = new ConstantMap(current.factory, current.type);
-    }
-
-    public Object getPreviousResolved(long key) {
-        return previous.getResolved(key);
-    }
-
-    public Object getCurrentResolved(long key) {
-        return current.getResolved(key);
-    }
-
-    public Object getCurrent(long key) {
-        return current.get(key);
+    @Override
+    public String toString() {
+        return "ref: " + pool.getName() + "[" + key + "]";
     }
 }

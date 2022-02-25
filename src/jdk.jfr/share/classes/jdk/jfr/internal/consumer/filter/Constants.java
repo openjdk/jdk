@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,43 +22,31 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jfr.internal.consumer.filter;
 
-package jdk.jfr.internal.consumer;
-
+import jdk.jfr.internal.LongMap;
 import jdk.jfr.internal.Type;
 
-final class ConstantLookup {
-    final Type type;
-    private ConstantMap current;
-    private ConstantMap previous = ConstantMap.EMPTY;
+/**
+ * Holds the chunk global state of constants
+ */
+final class Constants {
+    private final LongMap<PoolEntry> table = new LongMap<>();
+    private final Type type;
 
-    ConstantLookup(ConstantMap current, Type type) {
-        this.current = current;
+    public Constants(Type type) {
         this.type = type;
     }
 
-    public Type getType() {
-        return type;
+    public void add(long key, PoolEntry entry) {
+        table.put(key, entry);
     }
 
-    public ConstantMap getLatestPool() {
-        return current;
+    public PoolEntry get(long key) {
+        return table.get(key);
     }
 
-    public void newPool() {
-        previous = current;
-        current = new ConstantMap(current.factory, current.type);
-    }
-
-    public Object getPreviousResolved(long key) {
-        return previous.getResolved(key);
-    }
-
-    public Object getCurrentResolved(long key) {
-        return current.getResolved(key);
-    }
-
-    public Object getCurrent(long key) {
-        return current.get(key);
+    public String toString() {
+        return "Pool: " + type.getName() + " size = " + table.size();
     }
 }

@@ -22,47 +22,53 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package jdk.jfr.internal.consumer;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
-/**
- * Base class for parsing data from a {@link RecordingInput}.
- */
-abstract class Parser {
-    /**
-     * Parses data from a {@link RecordingInput} and return an object.
-     *
-     * @param input input to read from
-     * @return an {@code Object}, an {@code Object[]}, or {@code null}
-     * @throws IOException if operation couldn't be completed due to I/O
-     *         problems
-     */
-    public abstract Object parse(RecordingInput input) throws IOException;
+public final class CompositeParser extends Parser {
+    final Parser[] parsers;
 
-    /**
-     * Parses data from a {@link RecordingInput} to find references to constants. If
-     * data is not a reference, {@code null} is returned.
-     * <p>
-     * @implSpec The default implementation of this method skips data and returns
-     * {@code Object}.
-     *
-     * @param input input to read from, not {@code null}
-     * @return a {@code Reference}, a {@code Reference[]}, or {@code null}
-     * @throws IOException if operation couldn't be completed due to I/O problems
-     */
-    public Object parseReferences(RecordingInput input) throws IOException {
-        skip(input);
-        return null;
+    public CompositeParser(Parser[] valueParsers) {
+        this.parsers = valueParsers;
     }
 
-    /**
-     * Skips data that would usually be by parsed the {@link #parse(RecordingInput)} method.
-     *
-     * @param input input to read from
-     * @throws IOException if operation couldn't be completed due to I/O
-     *         problems
-     */
-    public abstract void skip(RecordingInput input) throws IOException;
+    @Override
+    public Object parse(RecordingInput input) throws IOException {
+        final Object[] values = new Object[parsers.length];
+        for (int i = 0; i < values.length; i++) {
+            values[i] = parsers[i].parse(input);
+        }
+        return values;
+    }
+
+    @Override
+    public void skip(RecordingInput input) throws IOException {
+        for (int i = 0; i < parsers.length; i++) {
+            parsers[i].skip(input);
+        }
+    }
+
+    @Override
+    public Object parseReferences(RecordingInput input) throws IOException {
+        return parseReferences(input, parsers);
+    }
+
+    static Object parseReferences(RecordingInput input, Parser[] parsers) throws IOException {
+        ArrayList<Object> refs = new ArrayList<>(parsers.length);
+        for (int i = 0; i < parsers.length; i++) {
+            Object ref = parsers[i].parseReferences(input);
+            if (ref != null) {
+                refs.add(ref);
+            }
+        }
+        if (refs.isEmpty()) {
+            return null;
+        }
+        if (refs.size() == 1) {
+            return refs.get(0);
+        }
+        return refs.toArray();
+    }
 }
