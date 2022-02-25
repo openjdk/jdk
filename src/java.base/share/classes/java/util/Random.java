@@ -287,9 +287,9 @@ public class Random implements RandomGenerator, java.io.Serializable {
     }
     /**
      * Returns an instance of {@link Random} based on this
-     * {@code java.util.random.RandomGenerator}. If this generator is already an instance of
-     * {@code Random}, it is returned. Otherwise, this method returns an instance of
-     * {@code Random} that delegates all methods except setSeed to this generator.
+     * {@link java.util.random.RandomGenerator}. If this generator is already an instance of
+     * {@link Random}, it is returned. Otherwise, this method returns an instance of
+     * {@link Random} that delegates all methods except setSeed to this generator.
      * Its setSeed method always throws {@link UnsupportedOperationException}.
      * @param random the {@link java.util.random.RandomGenerator} to use
      * @return {@link Random}
