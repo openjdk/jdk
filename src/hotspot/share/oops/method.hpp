@@ -69,6 +69,7 @@ class InterpreterOopMap;
 class Method : public Metadata {
  friend class VMStructs;
  friend class JVMCIVMStructs;
+ friend class MethodTest;
  private:
   // If you add a new field that points to any metaspace object, you
   // must add this field to Method::metaspace_pointers_do().
@@ -115,7 +116,7 @@ class Method : public Metadata {
   volatile address           _from_interpreted_entry; // Cache of _code ? _adapter->i2c_entry() : _i2i_entry
 
   // Constructor
-  Method(ConstMethod* xconst, AccessFlags access_flags);
+  Method(ConstMethod* xconst, AccessFlags access_flags, Symbol* name);
  public:
 
   static Method* allocate(ClassLoaderData* loader_data,
@@ -123,6 +124,7 @@ class Method : public Metadata {
                           AccessFlags access_flags,
                           InlineTableSizes* sizes,
                           ConstMethod::MethodType method_type,
+                          Symbol* name,
                           TRAPS);
 
   // CDS and vtbl checking can create an empty Method to get vtbl pointer.
@@ -151,8 +153,6 @@ class Method : public Metadata {
   Symbol* name() const                           { return constants()->symbol_at(name_index()); }
   int name_index() const                         { return constMethod()->name_index();         }
   void set_name_index(int index)                 { constMethod()->set_name_index(index);       }
-
-  void set_name()                                { NOT_PRODUCT(_name = name()); }
 
   // signature
   Symbol* signature() const                      { return constants()->symbol_at(signature_index()); }

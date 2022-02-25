@@ -2741,6 +2741,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
                                      access_flags,
                                      &sizes,
                                      ConstMethod::NORMAL,
+                                     _cp->symbol_at(name_index),
                                      CHECK_NULL);
 
   ClassLoadingService::add_class_method_size(m->size()*wordSize);
@@ -2748,7 +2749,6 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
   // Fill in information from fixed part (access_flags already set)
   m->set_constants(_cp);
   m->set_name_index(name_index);
-  m->set_name();
   m->set_signature_index(signature_index);
   m->compute_from_signature(cp->symbol_at(signature_index));
   assert(args_size < 0 || args_size == m->size_of_parameters(), "");
