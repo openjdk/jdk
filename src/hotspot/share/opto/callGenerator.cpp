@@ -527,7 +527,7 @@ bool LateInlineVirtualCallGenerator::do_late_inline_check(Compile* C, JVMState* 
   Node* receiver = jvms->map()->argument(jvms, 0);
   const Type* recv_type = C->initial_gvn()->type(receiver);
   if (recv_type->maybe_null()) {
-    C->print_inlining(method(), call_node()->jvms()->depth()-1, call_node()->jvms()->bci(),
+    C->print_inlining(method(), jvms->depth()-1, call_node()->jvms()->bci(),
                       "late call devirtualization failed");
     return false;
   }
@@ -535,7 +535,7 @@ bool LateInlineVirtualCallGenerator::do_late_inline_check(Compile* C, JVMState* 
   bool allow_inline = C->inlining_incrementally();
   if (!allow_inline && _callee->holder()->is_interface()) {
     // Don't convert the interface call to a direct call guarded by an interface subtype check.
-    C->print_inlining(method(), call_node()->jvms()->depth()-1, call_node()->jvms()->bci(),
+    C->print_inlining(method(), jvms->depth()-1, call_node()->jvms()->bci(),
                       "late call devirtualization failed");
     return false;
   }
@@ -739,7 +739,7 @@ void CallGenerator::do_late_inline_helper() {
     C->print_inlining_assert_ready();
     C->print_inlining_move_to(this);
     C->log_late_inline(this);
-    
+
     // JVMState is ready, so time to perform some checks and prepare for inlining attempt.
     if (!do_late_inline_check(C, jvms)) {
       C->print_inlining_update_delayed(this);
