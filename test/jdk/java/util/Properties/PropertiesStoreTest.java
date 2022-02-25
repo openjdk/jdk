@@ -37,6 +37,7 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -106,7 +107,7 @@ public class PropertiesStoreTest {
         Set<Locale> locales = Arrays.stream(Locale.getAvailableLocales())
                 .filter(l -> !l.getLanguage().isEmpty() && !l.getLanguage().equals("en"))
                 .limit(1)
-                .collect(Collectors.toSet());
+                .collect(Collectors.toCollection(() -> new HashSet<>()));
         locales.add(Locale.getDefault()); // always test the default locale
         locales.add(Locale.US); // guaranteed to be present
         locales.add(Locale.ROOT); // guaranteed to be present
