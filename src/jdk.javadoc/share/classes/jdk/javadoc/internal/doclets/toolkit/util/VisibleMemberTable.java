@@ -1000,19 +1000,13 @@ public class VisibleMemberTable {
             // interface defining the executable", which has to be TypeElement
             TypeElement typeElement = (TypeElement) method.getEnclosingElement();
             Set<TypeMirror> intfacs = utils.getAllInterfaces(typeElement);
-            /*
-             * Search for the method in the list of interfaces. If found check if it is
-             * overridden by any other subinterface method which this class
-             * implements. If it is not overridden, add it in the method list.
-             * Do this recursively for all the extended interfaces for each interface
-             * from the list.
-             */
             for (TypeMirror interfaceType : intfacs) {
                 // TODO: this method also finds static methods which are pseudo-inherited;
                 //  this needs to be fixed
                 ExecutableElement found = utils.findMethod(utils.asTypeElement(interfaceType), method);
                 if (found != null) {
-                    if (!overridingMethodFound(found)) {
+                    assert methlist.contains(found) == contains(found);
+                    if (!methlist.contains(found)) {
                         methlist.add(found);
                         interfaces.put(found, interfaceType);
                     }
@@ -1040,13 +1034,8 @@ public class VisibleMemberTable {
             return interfaces.get(ee);
         }
 
-        /**
-         * Search in the already found methods' list and check if it contains
-         * the specified method.
-         *
-         * @param method method to be searched
-         */
-        private boolean overridingMethodFound(ExecutableElement method) {
+        // TODO: delete
+        private boolean contains(ExecutableElement method) {
             TypeElement containingClass = utils.getEnclosingTypeElement(method);
             for (ExecutableElement listmethod : methlist) {
                 if (containingClass == utils.getEnclosingTypeElement(listmethod)) {
