@@ -578,9 +578,9 @@ private:
   void set_not_scalar_replaceable(PointsToNode* ptn NOT_PRODUCT(COMMA const char* reason)) const {
 #ifndef PRODUCT
     if (_compile->directive()->TraceEscapeAnalysisOption) {
-        assert(ptn != nullptr, "should not be null");
-        ptn->dump_header(true);
-        tty->print_cr("is NSR. %s", reason);
+      assert(ptn != nullptr, "should not be null");
+      ptn->dump_header(true);
+      tty->print_cr("is NSR. %s", reason);
     }
 #endif
     ptn->set_scalar_replaceable(false);
