@@ -70,8 +70,8 @@ class LinuxWatchService
             socketpair(sp);
             configureBlocking(sp[0], false);
         } catch (UnixException x) {
-            throw UnixNativeDispatcher.close(ifd,
-                new IOException(x.errorString()), e -> null);
+            UnixNativeDispatcher.close(ifd, e -> null);
+            throw new IOException(x.errorString());
         }
 
         this.poller = new Poller(fs, this, ifd, sp);

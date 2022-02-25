@@ -121,9 +121,9 @@ class UnixSecureDirectoryStream
                     new NotDirectoryException(file.toString()) :
                     x.asIOException(file);
                 if (newdfd1 != -1)
-                    ioe = UnixNativeDispatcher.close(newdfd1, ioe, e -> null);
+                    UnixNativeDispatcher.close(newdfd1, e -> null);
                 if (newdfd2 != -1)
-                    ioe = UnixNativeDispatcher.close(newdfd1, ioe, e -> null);
+                    UnixNativeDispatcher.close(newdfd1, e -> null);
                 throw ioe;
             }
             return new UnixSecureDirectoryStream(child, ptr, newdfd2, null);

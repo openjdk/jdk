@@ -435,9 +435,9 @@ public abstract class UnixFileSystemProvider
                 new NotDirectoryException(dir.getPathForExceptionMessage()) :
                 x.asIOException(dir);
             if (dfd1 != -1)
-                ioe = UnixNativeDispatcher.close(dfd1, ioe, e -> null);
+                UnixNativeDispatcher.close(dfd1, e -> null);
             if (dfd2 != -1)
-                ioe = UnixNativeDispatcher.close(dfd2, ioe, e -> null);
+                UnixNativeDispatcher.close(dfd2, e -> null);
             throw ioe;
         }
         return new UnixSecureDirectoryStream(dir, dp, dfd2, filter);

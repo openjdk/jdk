@@ -118,28 +118,6 @@ class UnixNativeDispatcher {
     }
 
     /**
-     * close(fd). If close is successful then {@code ex} is returned. If
-     * close fails then the given exception supplier function is invoked
-     * to produce an exception. If {@code ex} is null then the produced
-     * exception is returned, otherwise it is added to {@code ex} as a
-     * suppressed exception and {@code ex} is returned.
-     */
-    static <X extends Throwable>
-    X close(int fd, X ex, Function<UnixException, X>  mapper) {
-        try {
-            close(fd);
-        } catch (UnixException ue) {
-            X closeEx = mapper.apply(ue);
-            if (ex != null) {
-                ex.addSuppressed(closeEx);
-            } else {
-                ex = closeEx;
-            }
-        }
-        return ex;
-    }
-
-    /**
      * void rewind(FILE* stream);
      */
     static native void rewind(long stream) throws UnixException;
