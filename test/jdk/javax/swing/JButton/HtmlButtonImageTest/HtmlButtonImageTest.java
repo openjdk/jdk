@@ -60,44 +60,41 @@ public final class HtmlButtonImageTest {
 
     public static void main(String[] args) throws Exception {
         try {
-            UIManager.setLookAndFeel("com.apple.laf.AquaLookAndFeel");
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-            throw new RuntimeException("Unsupported LookAndFeel: " + e);
+            try {
+                UIManager.setLookAndFeel("com.apple.laf.AquaLookAndFeel");
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                throw new RuntimeException("Unsupported LookAndFeel: " + e);
+            }
+
+            Robot robot = new Robot();
+            robot.setAutoDelay(100);
+            robot.setAutoWaitForIdle(true);
+
+            // store path to source directory to locate image
+            testDir = Path.of(System.getProperty("test.classes", "."));
+
+            // generate red_square.png image to use as JButton text
+            generateImage();
+
+            SwingUtilities.invokeAndWait(() -> createAndShowGUI());
+
+            robot.waitForIdle();
+
+            // retrieve color of pixels at each edge of square image by starting at the center of the button
+            setupCenterCoord();
+            robot.mouseMove(point.x, point.y);
+
+            // store each pixel color on the edge of each side of the red square
+            Color leftClr = robot.getPixelColor(point.x - (SQUARE_WIDTH/2) + PIXEL_BUFFER, point.y);
+            Color rightClr = robot.getPixelColor(point.x + (SQUARE_WIDTH/2) - PIXEL_BUFFER, point.y);
+            Color topClr = robot.getPixelColor(point.x, point.y - (SQUARE_HEIGHT/2) + PIXEL_BUFFER);
+            Color botClr = robot.getPixelColor(point.x, point.y + (SQUARE_HEIGHT/2) - PIXEL_BUFFER);
+
+            testImageCentering(leftClr, rightClr, topClr, botClr);
+        } finally {
+            // dispose frame when done testing for a LAF before continuing
+            SwingUtilities.invokeAndWait(() -> frame.dispose());
         }
-
-        Robot robot = new Robot();
-        robot.setAutoDelay(2000);
-        robot.setAutoWaitForIdle(true);
-
-        // store path to source directory to locate image
-        testDir = Path.of(System.getProperty("test.classes", "."));
-
-        // generate red_square.png image to use as JButton text
-        generateImage();
-
-        SwingUtilities.invokeAndWait(() -> {
-            createAndShowGUI();
-        });
-
-        // retrieve color of pixels at each edge of square image by starting at the center of the button
-        robot.mouseMove(frame.getLocationOnScreen().x, frame.getLocationOnScreen().y);
-        robot.mouseMove(button.getLocationOnScreen().x, button.getLocationOnScreen().y);
-
-        setupCenterCoord();
-        robot.mouseMove(point.x, point.y);
-
-        // store each pixel color on the edge of each side of the red square
-        Color leftClr = robot.getPixelColor(point.x - (SQUARE_WIDTH/2) + PIXEL_BUFFER, point.y);
-        Color rightClr = robot.getPixelColor(point.x + (SQUARE_WIDTH/2) - PIXEL_BUFFER, point.y);
-        Color topClr = robot.getPixelColor(point.x, point.y - (SQUARE_HEIGHT/2) + PIXEL_BUFFER);
-        Color botClr = robot.getPixelColor(point.x, point.y + (SQUARE_HEIGHT/2) - PIXEL_BUFFER);
-
-        // dispose frame when done testing for a LAF before continuing
-        SwingUtilities.invokeAndWait(() -> {
-            frame.dispose();
-        });
-
-        testImageCentering(leftClr, rightClr, topClr, botClr);
     }
 
     private static void createAndShowGUI()
