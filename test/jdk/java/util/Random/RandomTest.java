@@ -417,7 +417,7 @@ public class RandomTest {
      * Test shuffling a list with Random.from()
      */
     public void testShufflingList() {
-        final ArrayList listTest = new ArrayList<Integer>();
+        final var listTest = new ArrayList<Integer>();
         final RandomGenerator randomGenerator = RandomGenerator.getDefault();
         final Random random = Random.from(randomGenerator);
 
