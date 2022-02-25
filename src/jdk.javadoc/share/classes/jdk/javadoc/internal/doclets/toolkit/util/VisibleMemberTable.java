@@ -1042,8 +1042,7 @@ public class VisibleMemberTable {
 
         /**
          * Search in the already found methods' list and check if it contains
-         * a method which is overriding the method parameter or is the method
-         * parameter itself.
+         * the specified method.
          *
          * @param method method to be searched
          */
@@ -1052,13 +1051,6 @@ public class VisibleMemberTable {
             for (ExecutableElement listmethod : methlist) {
                 if (containingClass == utils.getEnclosingTypeElement(listmethod)) {
                     // it's the same method.
-                    return true;
-                }
-                TypeElement te = utils.overriddenClass(listmethod);
-                if (te == null) {
-                    continue;
-                }
-                if (te == containingClass || utils.isSubclassOf(te, containingClass)) {
                     return true;
                 }
             }
