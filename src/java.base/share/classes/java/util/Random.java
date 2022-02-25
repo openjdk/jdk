@@ -380,8 +380,8 @@ public class Random implements RandomGenerator, java.io.Serializable {
     public void nextBytes(byte[] bytes) {
         for (int i = 0, len = bytes.length; i < len; )
             for (int rnd = nextInt(),
-            n = Math.min(len - i, Integer.SIZE/Byte.SIZE);
-                    n-- > 0; rnd >>= Byte.SIZE)
+                 n = Math.min(len - i, Integer.SIZE/Byte.SIZE);
+                 n-- > 0; rnd >>= Byte.SIZE)
                 bytes[i++] = (byte)rnd;
     }
 
@@ -473,8 +473,8 @@ public class Random implements RandomGenerator, java.io.Serializable {
             r = (int)((bound * (long)r) >> 31);
         else { // reject over-represented candidates
             for (int u = r;
-                    u - (r = u % bound) + m < 0;
-                    u = next(31))
+                 u - (r = u % bound) + m < 0;
+                 u = next(31))
                 ;
         }
         return r;
@@ -1028,7 +1028,7 @@ public class Random implements RandomGenerator, java.io.Serializable {
         return AbstractSpliteratorGenerator.doubles(this);
     }
 
-    /**
+   /**
      * Returns a stream producing the given {@code streamSize} number of
      * pseudorandom {@code double} values, each conforming to the given origin
      * (inclusive) and bound (exclusive).
