@@ -43,6 +43,7 @@ import javax.lang.model.util.SimpleElementVisitor14;
 import javax.lang.model.util.SimpleTypeVisitor14;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -993,7 +994,7 @@ public class VisibleMemberTable {
     private class ImplementedMethods {
 
         private final Map<ExecutableElement, TypeMirror> interfaces = new HashMap<>();
-        private final List<ExecutableElement> methlist = new ArrayList<>();
+        private final LinkedHashSet<ExecutableElement> methods = new LinkedHashSet<>();
 
         public ImplementedMethods(ExecutableElement method) {
             // ExecutableElement.getEnclosingElement() returns "the class or
@@ -1004,18 +1005,15 @@ public class VisibleMemberTable {
                 // TODO: this method also finds static methods which are pseudo-inherited;
                 //  this needs to be fixed
                 ExecutableElement found = utils.findMethod(utils.asTypeElement(interfaceType), method);
-                if (found != null) {
-                    assert methlist.contains(found) == contains(found);
-                    if (!methlist.contains(found)) {
-                        methlist.add(found);
-                        interfaces.put(found, interfaceType);
-                    }
+                if (found != null && !methods.contains(found)) {
+                    methods.add(found);
+                    interfaces.put(found, interfaceType);
                 }
             }
         }
 
         /**
-         * Return the list of interface methods which the method passed in the
+         * Returns a collection of interface methods which the method passed in the
          * constructor is implementing. The search/build order is as follows:
          * <pre>
          * 1. Search in all the immediate interfaces which this method's class is
@@ -1024,26 +1022,14 @@ public class VisibleMemberTable {
          *    interfaces which those superclasses implement.
          * </pre>
          *
-         * @return a list of implemented methods
+         * @return a collection of implemented methods
          */
-        List<ExecutableElement> getImplementedMethods() {
-            return methlist;
+        Collection<ExecutableElement> getImplementedMethods() {
+            return methods;
         }
 
         TypeMirror getMethodHolder(ExecutableElement ee) {
             return interfaces.get(ee);
-        }
-
-        // TODO: delete
-        private boolean contains(ExecutableElement method) {
-            TypeElement containingClass = utils.getEnclosingTypeElement(method);
-            for (ExecutableElement listmethod : methlist) {
-                if (containingClass == utils.getEnclosingTypeElement(listmethod)) {
-                    // it's the same method.
-                    return true;
-                }
-            }
-            return false;
         }
     }
 
