@@ -406,7 +406,10 @@ class Thread: public ThreadShadow {
 
   // Resource area
   ResourceArea* resource_area() const            { return _resource_area; }
-  void set_resource_area(ResourceArea* area)     { _resource_area = area; }
+
+  // Switch between primary and secondary resource areas
+  void switch_to_primary_resource_area();
+  void switch_to_secondary_resource_area();
 
   OSThread* osthread() const                     { return _osthread;   }
   void set_osthread(OSThread* thread)            { _osthread = thread; }
@@ -528,8 +531,19 @@ protected:
   // OS data associated with the thread
   OSThread* _osthread;  // Platform-specific thread information
 
-  // Thread local resource area for temporary allocation within the VM
+private:
+
+  // Thread local resource area for temporary allocation within the VM.
+  // Resource area is double buffered; we switch to an alternate resource
+  // area when entering signal handling for the first time.
   ResourceArea* _resource_area;
+
+  // Primary [0] and secondary [1] resource areas.
+  ResourceArea* _resource_areas[2];
+
+  void initialize_resource_areas();
+
+protected:
 
   DEBUG_ONLY(ResourceMark* _current_resource_mark;)
 

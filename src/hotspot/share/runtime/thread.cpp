@@ -216,7 +216,7 @@ Thread::Thread() {
 
   // allocated data structures
   set_osthread(NULL);
-  set_resource_area(new (mtThread)ResourceArea());
+  initialize_resource_areas();
   DEBUG_ONLY(_current_resource_mark = NULL;)
   set_handle_area(new (mtThread) HandleArea(NULL));
   set_metadata_handles(new (ResourceObj::C_HEAP, mtClass) GrowableArray<Metadata*>(30, mtClass));
@@ -277,6 +277,24 @@ Thread::Thread() {
   }
 
   MACOS_AARCH64_ONLY(DEBUG_ONLY(_wx_init = false));
+}
+
+void Thread::switch_to_primary_resource_area() {
+  if (_resource_area != _resource_areas[0]) {
+    _resource_area = _resource_areas[0];
+  }
+}
+
+void Thread::switch_to_secondary_resource_area() {
+  if (_resource_area != _resource_areas[1]) {
+    _resource_area = _resource_areas[1];
+  }
+}
+
+void Thread::initialize_resource_areas() {
+  _resource_areas[0] = new (mtThread)ResourceArea();
+  _resource_areas[1] = new (mtThread)ResourceArea();
+  _resource_area = _resource_areas[0];
 }
 
 void Thread::initialize_tlab() {
@@ -391,7 +409,9 @@ Thread::~Thread() {
   }
 
   // deallocate data structures
-  delete resource_area();
+  delete _resource_areas[0];
+  delete _resource_areas[1];
+
   // since the handle marks are using the handle area, we have to deallocated the root
   // handle mark before deallocating the thread's handle area,
   assert(last_handle_mark() != NULL, "check we have an element");

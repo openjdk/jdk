@@ -513,6 +513,34 @@ public:
   ~ErrnoPreserver() { errno = _saved; }
 };
 
+// When entering signal handling with a valid current Thread, we switch to the
+//  Thread's secondary resource area. That lets us safely use resource area
+//  memory during signal handling even if the signal left the primary area in
+//  an inconsistent state. We then swap back to the primary area upon leaving
+//  the signal handler.
+// Note that signal handlers can nest, and in theory we should do this on each
+//  signal handler invocation, building up a stack of fresh resource areas.
+//  But that is either expensive (would have to preallocate them all upfront,
+//  and then, how many?) or dangerous (would have to allocate them on demand
+//  in the signal handler for each recursion) and its really not
+//  worth the trouble. We keep matters simple with just two resource areas.
+class ResourceAreaSwitcher : public StackObj {
+  Thread* const _t;
+public:
+  ResourceAreaSwitcher(Thread* t) : _t(t) {
+    if (_t != NULL) {
+      // Note: does nothing if we already use the secondary RA
+      _t->switch_to_secondary_resource_area();
+    }
+  }
+  ~ResourceAreaSwitcher() {
+    if (_t != NULL) {
+      // Note: does nothing if we already use the primary RA
+      _t->switch_to_primary_resource_area();
+    }
+  }
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 // JVM_handle_(linux|aix|bsd)_signal()
 
@@ -588,6 +616,9 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
   //  Note: this may cause us to longjmp away. Do not use any code before this
   //  point which really needs any form of epilogue code running, eg RAII objects.
   os::ThreadCrashProtection::check_crash_protection(sig, t);
+
+  // This makes it safe to use ResourceArea memory inside signal handling.
+  ResourceAreaSwitcher resourceAreaSwitcher(t);
 
   bool signal_was_handled = false;
 

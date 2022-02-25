@@ -1503,6 +1503,15 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     _size = size;
     jio_vsnprintf(_detail_msg, sizeof(_detail_msg), detail_fmt, detail_args);
 
+    // Switch to the secondary resource area for the current thread to make it safe to use
+    // RA memory during error reporting. This is just needed for the rare case that the primary
+    // RA is broken, but we did enter via assert, not via signal (in fact, the broken primary RA
+    // may have caused the assert).
+    if (_thread) {
+      _thread->switch_to_secondary_resource_area();
+    }
+
+
     reporting_started();
     if (!TestUnresponsiveErrorHandler) {
       // Record reporting_start_time unless we're running the
