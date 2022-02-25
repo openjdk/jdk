@@ -427,7 +427,6 @@ bool LateInlineMHCallGenerator::do_late_inline_check(Compile* C, JVMState* jvms)
   bool allow_inline = C->inlining_incrementally();
   bool input_not_const = true;
   CallGenerator* cg = for_method_handle_inline(jvms, _caller, method(), allow_inline, input_not_const);
-
   assert(!input_not_const, "sanity"); // shouldn't have been scheduled for inlining in the first place
 
   if (cg != NULL) {
@@ -742,8 +741,8 @@ void CallGenerator::do_late_inline_helper() {
 
     // JVMState is ready, so time to perform some checks and prepare for inlining attempt.
     if (!do_late_inline_check(C, jvms)) {
-      C->print_inlining_update_delayed(this);
       map->disconnect_inputs(C);
+      C->print_inlining_update_delayed(this);
       return;
     }
 
