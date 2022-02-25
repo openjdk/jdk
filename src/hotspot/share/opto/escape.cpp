@@ -91,7 +91,7 @@ bool ConnectionGraph::has_candidates(Compile *C) {
   return false;
 }
 
-void ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
+bool ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
   Compile::TracePhase tp("escapeAnalysis", &Phase::timers[Phase::_t_escapeAnalysis]);
   ResourceMark rm;
 
@@ -99,16 +99,16 @@ void ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
   // to create space for them in ConnectionGraph::_nodes[].
   Node* oop_null = igvn->zerocon(T_OBJECT);
   Node* noop_null = igvn->zerocon(T_NARROWOOP);
+  bool has_non_escaping_obj = false;
   int invocation = 0;
   if (C->congraph() != NULL) {
     invocation = C->congraph()->_invocation + 1;
   }
   ConnectionGraph* congraph = new(C->comp_arena()) ConnectionGraph(C, igvn, invocation);
   // Perform escape analysis
-  if (congraph->compute_escape()) {
-    // There are non escaping objects.
-    C->set_congraph(congraph);
-  }
+  has_non_escaping_obj = congraph->compute_escape();
+  // There are non escaping objects.
+  C->set_congraph(congraph);
   // Cleanup.
   if (oop_null->outcnt() == 0) {
     igvn->hash_delete(oop_null);
@@ -116,6 +116,7 @@ void ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
   if (noop_null->outcnt() == 0) {
     igvn->hash_delete(noop_null);
   }
+  return has_non_escaping_obj;
 }
 
 bool ConnectionGraph::compute_escape() {

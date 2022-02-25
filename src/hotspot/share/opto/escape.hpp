@@ -576,7 +576,7 @@ public:
   static bool has_candidates(Compile *C);
 
   // Perform escape analysis
-  static void do_analysis(Compile *C, PhaseIterGVN *igvn);
+  static bool do_analysis(Compile *C, PhaseIterGVN *igvn);
 
   bool not_global_escape(Node *n);
 

@@ -2177,7 +2177,7 @@ void Compile::Optimize() {
     }
     bool progress;
     do {
-      ConnectionGraph::do_analysis(this, &igvn);
+      bool has_nonescaping_objs = ConnectionGraph::do_analysis(this, &igvn);
 
       if (failing())  return;
 
@@ -2189,7 +2189,7 @@ void Compile::Optimize() {
 
       if (failing())  return;
 
-      if (congraph() != NULL && macro_count() > 0) {
+      if (has_nonescaping_objs && macro_count() > 0) {
         TracePhase tp("macroEliminate", &timers[_t_macroEliminate]);
         PhaseMacroExpand mexp(igvn);
         mexp.eliminate_macro_nodes();
@@ -2206,6 +2206,7 @@ void Compile::Optimize() {
       // Try again if candidates exist and made progress
       // by removing some allocations and/or locks.
     } while (progress);
+
     // look over IR for number of Java Objects in each state (NoEscape/ArgEscape/GloablEscape)
     Unique_Node_List ideal_nodes; // Used by CG construction and types splitting.
     ideal_nodes.map(live_nodes(), NULL);  // preallocate space
@@ -2213,26 +2214,25 @@ void Compile::Optimize() {
 
     for(uint next = 0; next < ideal_nodes.size(); ++next) {
       Node* n = ideal_nodes.at(next);
-      // check if Java Object
-      if (n->is_Allocate() || n->is_CallStaticJava()) {
-        if(congraph() != NULL) {
-          PointsToNode* ptn = congraph()->ptnode_adr(n->_idx);
-          if(ptn->escape_state() == PointsToNode::NoEscape) {
-            ConnectionGraph::_no_escape_counter++;
-          }
-          else if(ptn->escape_state() == PointsToNode::ArgEscape) {
-            ConnectionGraph::_arg_escape_counter++;
-          }
-          else if(ptn->escape_state() == PointsToNode::GlobalEscape) {
-            ConnectionGraph::_global_escape_counter++;
-          }
+      PointsToNode* ptn = congraph()->ptnode_adr(n->_idx);
+
+      if (ptn != NULL && ptn->is_JavaObject()) {
+        if(ptn->escape_state() == PointsToNode::NoEscape) {
+          ConnectionGraph::_no_escape_counter++;
+        }
+        else if(ptn->escape_state() == PointsToNode::ArgEscape) {
+          ConnectionGraph::_arg_escape_counter++;
+        }
+        else if(ptn->escape_state() == PointsToNode::GlobalEscape) {
+          ConnectionGraph::_global_escape_counter++;
+        }
         else {
           assert(false, "Unexpected Escape State");
-          }
         }
       }
+
       for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-        Node* m = n->fast_out(i);   // Get user
+        Node* m = n->fast_out(i);
         ideal_nodes.push(m);
       }
     }
