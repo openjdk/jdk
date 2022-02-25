@@ -346,14 +346,14 @@ private:
 
 public:
   JavaObjectNode* phantom_obj; // Unknown object
-
-private:
   // Address of an element in _nodes.  Used when the element is to be modified
   PointsToNode* ptnode_adr(int idx) const {
     // There should be no new ideal nodes during ConnectionGraph build,
     // growableArray::at() will throw assert otherwise.
     return _nodes.at(idx);
   }
+
+private:
   uint nodes_size() const { return _nodes.length(); }
 
   uint next_pidx() { return _next_pidx++; }
@@ -612,7 +612,11 @@ public:
   bool add_final_edges_unsafe_access(Node* n, uint opcode);
 
 #ifndef PRODUCT
+  static int _no_escape_counter;
+  static int _arg_escape_counter;
+  static int _global_escape_counter;
   void dump(GrowableArray<PointsToNode*>& ptnodes_worklist);
+  static void print_statistics();
 #endif
 };
 

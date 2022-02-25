@@ -254,6 +254,7 @@ void Compile::print_statistics() {
     PhaseOutput::print_statistics();
     PhasePeephole::print_statistics();
     PhaseIdealLoop::print_statistics();
+    ConnectionGraph::print_statistics();
     if (xtty != NULL)  xtty->tail("statistics");
   }
   if (_intrinsic_hist_flags[as_int(vmIntrinsics::_none)] != 0) {
@@ -2166,6 +2167,7 @@ void Compile::Optimize() {
 
   // Perform escape analysis
   if (do_escape_analysis() && ConnectionGraph::has_candidates(this)) {
+    // add counter for number of candidates
     if (has_loops()) {
       // Cleanup graph (remove dead nodes).
       TracePhase tp("idealLoop", &timers[_t_idealLoop]);
@@ -2204,6 +2206,39 @@ void Compile::Optimize() {
       // Try again if candidates exist and made progress
       // by removing some allocations and/or locks.
     } while (progress);
+    // look over IR for number of Java Objects in each state (NoEscape/ArgEscape/GloablEscape)
+    Unique_Node_List ideal_nodes; // Used by CG construction and types splitting.
+    ideal_nodes.map(live_nodes(), NULL);  // preallocate space
+    ideal_nodes.push(root());
+
+    for(uint next = 0; next < ideal_nodes.size(); ++next) {
+      Node* n = ideal_nodes.at(next);
+      // check if Java Object
+      if (n->is_Allocate() || n->is_CallStaticJava()) {
+        if(congraph() != NULL) {
+          PointsToNode* ptn = congraph()->ptnode_adr(n->_idx);
+          if(ptn->escape_state() == PointsToNode::NoEscape) {
+            ConnectionGraph::_no_escape_counter++;
+          }
+          else if(ptn->escape_state() == PointsToNode::ArgEscape) {
+            ConnectionGraph::_arg_escape_counter++;
+          }
+          else if(ptn->escape_state() == PointsToNode::GlobalEscape) {
+            ConnectionGraph::_global_escape_counter++;
+          }
+        else {
+          assert(false, "Unexpected Escape State");
+          }
+        }
+      }
+      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+        Node* m = n->fast_out(i);   // Get user
+        ideal_nodes.push(m);
+      }
+    }
+  }
+  else{
+    //counter for number of non-candidates
   }
 
   // Loop transforms on the ideal graph.  Range Check Elimination,

@@ -3609,6 +3609,10 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
 }
 
 #ifndef PRODUCT
+int ConnectionGraph::_no_escape_counter = 0;
+int ConnectionGraph::_arg_escape_counter = 0;
+int ConnectionGraph::_global_escape_counter = 0;
+
 static const char *node_type_names[] = {
   "UnknownType",
   "JavaObject",
@@ -3711,6 +3715,12 @@ void ConnectionGraph::dump(GrowableArray<PointsToNode*>& ptnodes_worklist) {
       tty->cr();
     }
   }
+}
+
+void ConnectionGraph::print_statistics() {
+  tty->print_cr("No Escape: %d", _no_escape_counter);
+  tty->print_cr("Arg Escape: %d", _arg_escape_counter);
+  tty->print_cr("Global Escape: %d", _global_escape_counter);
 }
 #endif
 
