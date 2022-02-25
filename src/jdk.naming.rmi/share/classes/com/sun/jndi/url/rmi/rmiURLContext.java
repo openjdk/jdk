@@ -147,6 +147,12 @@ public class rmiURLContext extends GenericURLContext {
                     throw newNamingException(iae);
                 }
             }
+            int fmark = url.indexOf('#', i);
+            if (fmark > -1) {
+                if (!acceptsFragment()) {
+                    throw newNamingException(new IllegalArgumentException("URI fragments not supported: " + url));
+                }
+            }
 
             if ("".equals(host)) {
                 host = null;
@@ -280,12 +286,12 @@ public class rmiURLContext extends GenericURLContext {
         }
 
         NamingException newNamingException(Throwable cause) {
-            NamingException ne = new NamingException(cause.getMessage());
+            NamingException ne = new InvalidNameException(cause.getMessage());
             ne.initCause(cause);
             return ne;
         }
 
-        boolean acceptsFragment() {
+        protected boolean acceptsFragment() {
             return true;
         }
     }
