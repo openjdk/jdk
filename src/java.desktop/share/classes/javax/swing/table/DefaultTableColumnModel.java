@@ -291,7 +291,8 @@ public class DefaultTableColumnModel implements TableColumnModel,
      * @return  the <code>TableColumn</code> object for the column
      *                          at <code>columnIndex</code>
      * @exception  ArrayIndexOutOfBoundsException if <code>columnIndex</code>
-     *             is not in valid range (< 0 or >= getColumnCount())
+     *             is out of range:
+     *             (<code>columnIndex &lt; 0 || columnIndex &gt;= getColumnCount()</code>)
      */
     public TableColumn getColumn(int columnIndex) {
         return tableColumns.elementAt(columnIndex);
