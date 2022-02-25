@@ -57,7 +57,7 @@ import java.util.Locale;
  * @author Arnaud  Le Hors, IBM
  * @author K.Venugopal Sun Microsystems
  *
- * @LastModified: Sep 2021
+ * @LastModified: Feb 2022
  */
 public class XMLEntityScanner implements XMLLocator  {
 
