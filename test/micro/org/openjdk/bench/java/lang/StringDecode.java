@@ -30,12 +30,14 @@ import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3)
-@Warmup(iterations = 5, time = 2)
+@Fork(value = 2)
+@Warmup(iterations = 5, time = 3)
 @Measurement(iterations = 5, time = 3)
 @State(Scope.Thread)
 public class StringDecode {
 
+    // Reduced by default to only UTF-8, previous coverage:
+    // @Param({"US-ASCII", "ISO-8859-1", "UTF-8", "MS932", "ISO-8859-6", "ISO-2022-KR"})
     @Param({"UTF-8"})
     private String charsetName;
 

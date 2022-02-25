@@ -36,8 +36,11 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 public class StringEncode {
 
+    // Reduced by default to only UTF-8, previous coverage:
+    // @Param({"US-ASCII", "ISO-8859-1", "UTF-8", "MS932", "ISO-8859-6", "ISO-2022-KR"})
     @Param({"UTF-8"})
     private String charsetName;
+
     private Charset charset;
     private String asciiString;
     private String longAsciiString;
