@@ -46,6 +46,11 @@ private:
   void inc_needs_attention();
   void dec_needs_attention();
 
+  void add_and_wait_inner(ZForwarding* forwarding);
+
+  bool prune();
+  ZForwarding* prune_and_claim();
+
 public:
   ZRelocateQueue();
 
@@ -53,10 +58,10 @@ public:
   void resize_workers(uint nworkers);
   void leave();
 
-  bool try_add(ZForwarding* forwarding, zaddress_unsafe from_addr, ZForwardingCursor* cursor);
-  ZForwarding* remove_first();
+  void add_and_wait_for_in_place_relocation(ZForwarding* forwarding);
+  bool add_and_wait(ZForwarding* forwarding);
 
-  bool synchronize_poll();
+  ZForwarding* synchronize_poll();
   void synchronize_thread();
   void desynchronize_thread();
 
@@ -95,6 +100,8 @@ public:
 
   void synchronize();
   void desynchronize();
+
+  ZRelocateQueue* queue();
 };
 
 #endif // SHARE_GC_Z_ZRELOCATE_HPP

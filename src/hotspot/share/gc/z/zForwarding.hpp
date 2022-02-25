@@ -36,6 +36,7 @@
 class ObjectClosure;
 class ZForwardingAllocator;
 class ZPage;
+class ZRelocateQueue;
 
 typedef size_t ZForwardingCursor;
 
@@ -56,7 +57,7 @@ private:
   volatile bool          _claimed;
   mutable ZConditionLock _ref_lock;
   volatile int32_t       _ref_count;
-  bool                   _ref_abort;
+  volatile bool          _done;
 
   // Relocated remembered set fields support
   int                    _relocated_remembered_fields_state;
@@ -123,13 +124,14 @@ public:
   void in_place_relocation_set_remset_relocated_watermark(uintptr_t local_offset);
   uintptr_t in_place_relocation_remset_relocated_watermark() const;
 
-  bool retain_page();
+  bool retain_page(ZRelocateQueue* queue);
   void release_page();
-  bool wait_page_released() const;
 
   ZPage* detach_page();
   ZPage* page();
-  void abort_page();
+
+  void mark_done();
+  bool is_done() const;
 
   zaddress find(zaddress_unsafe addr);
 

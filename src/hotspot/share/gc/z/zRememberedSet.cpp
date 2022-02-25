@@ -72,16 +72,18 @@ bool ZRememberedSet::is_cleared_previous() const {
   return previous()->is_empty();
 }
 
-void ZRememberedSet::clear_all() {
+void ZRememberedSet::clear_all(const char* where) {
   clear_current();
-  clear_previous();
+  clear_previous(where);
 }
 
 void ZRememberedSet::clear_current() {
+  log_debug(gc, remset)("Clear remset current: " PTR_FORMAT, p2i(current()));
   current()->clear_large();
 }
 
-void ZRememberedSet::clear_previous() {
+void ZRememberedSet::clear_previous(const char* where) {
+  log_debug(gc, remset)("Clear remset previous: " PTR_FORMAT " %s", p2i(previous()), where);
   previous()->clear_large();
 }
 
@@ -98,7 +100,7 @@ bool ZRememberedSet::is_dirty() const {
 void ZRememberedSet::clean() {
   assert(_dirty, "Unexpected");
 
-  clear_all();
+  clear_all("clean");
 
   _dirty = false;
 }

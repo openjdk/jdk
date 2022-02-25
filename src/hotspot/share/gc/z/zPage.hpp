@@ -195,7 +195,9 @@ public:
   void verify_remset_cleared_previous() const NOT_DEBUG_RETURN;
 
   void clear_remset_current();
-  void clear_remset_previous();
+  void clear_remset_previous(const char* where);
+
+  void* remset_current();
 
   zaddress alloc_object(size_t size);
   zaddress alloc_object_atomic(size_t size);

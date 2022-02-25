@@ -135,9 +135,12 @@ void ZRemembered::scan_page(ZPage* page) const {
   if (!can_trust_live_bits) {
     // We don't have full liveness info - scan all remset entries
     page->log_msg(" (scan_page_remembered)");
+    int count = 0;
     page->oops_do_remembered([&](volatile zpointer* p) {
       scan_field(p);
+      count++;
     });
+    page->log_msg(" (scan_page_remembered done: %d ignoring: " PTR_FORMAT " )", count, p2i(page->remset_current()));
   } else if (page->is_marked()) {
     // We have full liveness info - Only scan remset entries in live objects
     page->log_msg(" (scan_page_remembered_in_live)");
@@ -145,6 +148,7 @@ void ZRemembered::scan_page(ZPage* page) const {
       scan_field(p);
     });
   } else {
+    page->log_msg(" (scan_page_remembered_dead)");
     // All objects are dead - do nothing
   }
 }
@@ -257,8 +261,9 @@ struct ZRememberedScanForwardingMeasureReleased {
 void ZRemembered::scan_forwarding(ZForwarding* forwarding, void* context_void) const {
   ZRememberedScanForwardingContext* context = (ZRememberedScanForwardingContext*)context_void;
 
-  if (forwarding->retain_page()) {
+  if (forwarding->retain_page(ZGeneration::old()->relocate_queue())) {
     ZRememberedScanForwardingMeasureRetained measure(context);
+    forwarding->page()->log_msg(" (scan_forwarding)");
 
     // We don't want to wait for the old relocation to finish and publish all
     // relocated remembered fields. Reject its fields and collect enough data
@@ -327,7 +332,7 @@ public:
         // Visit all entries pointing into young gen
         _remembered.scan_page(page);
         // ... and as a side-effect clear the previous entries
-        page->clear_remset_previous();
+        page->clear_remset_previous("after scan page");
       }
       return !ZGeneration::young()->should_worker_stop();
     });

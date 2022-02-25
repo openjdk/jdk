@@ -49,8 +49,6 @@
 // count has become zero (released) or negative one (claimed).
 //
 
-static const ZStatCriticalPhase ZCriticalPhaseRelocationStall("Relocation Stall");
-
 bool ZForwarding::claim() {
   return Atomic::cmpxchg(&_claimed, false, true) == false;
 }
@@ -86,7 +84,7 @@ bool ZForwarding::in_place_relocation_is_below_top_at_start(zoffset offset) cons
   return Atomic::load(&_in_place_thread) == Thread::current() && offset < _in_place_top_at_start;
 }
 
-bool ZForwarding::retain_page() {
+bool ZForwarding::retain_page(ZRelocateQueue* queue) {
   for (;;) {
     const int32_t ref_count = Atomic::load_acquire(&_ref_count);
 
@@ -97,8 +95,9 @@ bool ZForwarding::retain_page() {
 
     if (ref_count < 0) {
       // Claimed
-      const bool success = wait_page_released();
-      assert(success, "Should always succeed");
+      queue->add_and_wait_for_in_place_relocation(this);
+
+      // Released
       return false;
     }
 
@@ -170,22 +169,6 @@ void ZForwarding::release_page() {
   }
 }
 
-bool ZForwarding::wait_page_released() const {
-  if (Atomic::load_acquire(&_ref_count) != 0) {
-    ZStatTimer timer(ZCriticalPhaseRelocationStall);
-    ZLocker<ZConditionLock> locker(&_ref_lock);
-    while (Atomic::load_acquire(&_ref_count) != 0) {
-      if (_ref_abort) {
-        return false;
-      }
-
-      _ref_lock.wait();
-    }
-  }
-
-  return true;
-}
-
 ZPage* ZForwarding::detach_page() {
   // Wait until released
   if (Atomic::load_acquire(&_ref_count) != 0) {
@@ -203,12 +186,12 @@ ZPage* ZForwarding::page() {
   return _page;
 }
 
-void ZForwarding::abort_page() {
-  ZLocker<ZConditionLock> locker(&_ref_lock);
-  assert(Atomic::load(&_ref_count) > 0, "Invalid state");
-  assert(!_ref_abort, "Invalid state");
-  _ref_abort = true;
-  _ref_lock.notify_all();
+void ZForwarding::mark_done() {
+  Atomic::store(&_done, true);
+}
+
+bool ZForwarding::is_done() const {
+  return Atomic::load(&_done);
 }
 
 //

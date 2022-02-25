@@ -66,7 +66,7 @@ inline ZForwarding::ZForwarding(ZPage* page, ZPageAge to_age, size_t nentries) :
     _claimed(false),
     _ref_lock(),
     _ref_count(1),
-    _ref_abort(false),
+    _done(false),
     _relocated_remembered_fields_state(0),
     _relocated_remembered_fields_array(),
     _relocated_remembered_fields_publish_young_seqnum(0),
@@ -316,12 +316,14 @@ inline void ZForwarding::relocated_remembered_fields_apply_to_published(Function
 
   assert(_relocated_remembered_fields_publish_young_seqnum != 0, "Must have been set");
   if (_relocated_remembered_fields_publish_young_seqnum == ZGeneration::young()->seqnum()) {
+    log_debug(gc, remset)("scan_forwarding failed retain unsafe " PTR_FORMAT, untype(start()));
     // The page was relocated concurrently with the current young generation
     // collection. Mark that it is unsafe (and unnecessary) to call scan_page
     // on the page in the page table.
     assert(res != 3, "Unexpected");
     Atomic::store(&_relocated_remembered_fields_state, 2);
   } else {
+    log_debug(gc, remset)("scan_forwarding failed retain safe " PTR_FORMAT, untype(start()));
     // Guaranteed that the page was fully relocated and removed from page table.
     // Because of this we can signal to scan_page that any page found in page table
     // of the same slot as the current forwarding is a page that is safe to scan,

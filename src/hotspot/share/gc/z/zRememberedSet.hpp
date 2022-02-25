@@ -109,7 +109,7 @@ class ZRememberedSet {
   friend class ZRememberedSetIterator;
   friend class ZRememberedSetContainingIterator;
 
-private:
+public:
   static int _current;
 
   CHeapBitMap _bitmap[2];
@@ -153,9 +153,9 @@ public:
   bool is_cleared_current() const;
   bool is_cleared_previous() const;
 
-  void clear_all();
+  void clear_all(const char* where);
   void clear_current();
-  void clear_previous();
+  void clear_previous(const char* where);
 
   // Support for free without clearing
   void dirty();

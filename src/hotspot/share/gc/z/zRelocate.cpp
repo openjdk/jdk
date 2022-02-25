@@ -48,6 +48,7 @@
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 
+static const ZStatCriticalPhase ZCriticalPhaseRelocationStall("Relocation Stall");
 static const ZStatSubPhase ZSubPhaseConcurrentRelocateRememberedSetFlipPromotedYoung("Young: Concurrent Relocate Remset FP");
 static const ZStatSubPhase ZSubPhaseConcurrentRelocateRememberedSetNormalPromotedYoung("Young: Concurrent Relocate Remset NP");
 
@@ -103,8 +104,11 @@ void ZRelocateQueue::dec_needs_attention() {
 }
 
 void ZRelocateQueue::join(uint nworkers) {
+  assert(nworkers != 0, "Must request at least one worker");
   assert(_nworkers == 0, "Invalid state");
   assert(_nsynchronized == 0, "Invalid state");
+
+  log_debug(gc, reloc)("Joining workers: %u", nworkers);
 
   _nworkers = nworkers;
 }
@@ -114,6 +118,8 @@ void ZRelocateQueue::resize_workers(uint nworkers) {
   assert(_nworkers == 0, "Invalid state");
   assert(_nsynchronized == 0, "Invalid state");
 
+  log_debug(gc, reloc)("Resize workers: %u", nworkers);
+
   ZLocker<ZConditionLock> locker(&_lock);
   _nworkers = nworkers;
 }
@@ -122,42 +128,95 @@ void ZRelocateQueue::leave() {
   ZLocker<ZConditionLock> locker(&_lock);
   _nworkers--;
   assert(_nsynchronized <= _nworkers, "_nsynchronized: %u _nworkers: %u", _nsynchronized, _nworkers);
-  if (_synchronize && _nworkers == _nsynchronized) {
-    // All workers synchronized
+
+  log_debug(gc, reloc)("Leaving workers: left: %u _synchronize: %d _nsynchronized: %u", _nworkers, _synchronize, _nsynchronized);
+
+  // Prune done forwardings
+  const bool forwardings_done = prune();
+
+  // Check if all workers synchronized
+  const bool last_synchronized = _synchronize && _nworkers == _nsynchronized;
+
+  if (forwardings_done || last_synchronized) {
     _lock.notify_all();
   }
 }
 
-bool ZRelocateQueue::try_add(ZForwarding* forwarding, zaddress_unsafe from_addr, ZForwardingCursor* cursor) {
+void ZRelocateQueue::add_and_wait_inner(ZForwarding* forwarding) {
+  ZStatTimer timer(ZCriticalPhaseRelocationStall);
   ZLocker<ZConditionLock> locker(&_lock);
-  zaddress to_addr = forwarding_find(forwarding, ZAddress::offset(from_addr), cursor);
-  if (!is_null(to_addr)) {
-    // The object has already relocated; no need to add to the queue
-    return false;
+
+  if (forwarding->is_done()) {
+    return;
   }
+
   _queue.append(forwarding);
   if (_queue.length() == 1) {
     // Queue became non-empty
     inc_needs_attention();
     _lock.notify_all();
   }
-  return true;
+
+  while (!forwarding->is_done() && !ZAbort::should_abort()) {
+    _lock.wait();
+  }
 }
 
-ZForwarding* ZRelocateQueue::remove_first() {
-  ZLocker<ZConditionLock> locker(&_lock);
-  if (_queue.is_empty()) {
-    return NULL;
+void ZRelocateQueue::add_and_wait_for_in_place_relocation(ZForwarding* forwarding) {
+  // Page is being in-place relocated and it is therefore guaranteed
+  // to be fully relocated when this call returns. No need to check
+  // and handle the case when the GC is being aborted.
+  add_and_wait_inner(forwarding);
+}
+
+bool ZRelocateQueue::add_and_wait(ZForwarding* forwarding) {
+  if (ZAbort::should_abort()) {
+    return false;
   }
 
-  ZForwarding* const forwarding = _queue.at(0);
-  _queue.remove_at(0);
+  add_and_wait_inner(forwarding);
+
+  return !ZAbort::should_abort();
+}
+
+bool ZRelocateQueue::prune() {
+  if (_queue.is_empty()) {
+    return false;
+  }
+
+  bool done = false;
+
+  for (int i = 0; i < _queue.length();) {
+    ZForwarding* const forwarding = _queue.at(i);
+    if (forwarding->is_done()) {
+      done = true;
+
+      _queue.delete_at(i);
+    } else {
+      i++;
+    }
+  }
 
   if (_queue.is_empty()) {
     dec_needs_attention();
   }
 
-  return forwarding;
+  return done;
+}
+
+ZForwarding* ZRelocateQueue::prune_and_claim() {
+  if (prune()) {
+    _lock.notify_all();
+  }
+
+  for (int i = 0; i < _queue.length(); i++) {
+    ZForwarding* const forwarding = _queue.at(i);
+    if (forwarding->claim()) {
+      return forwarding;
+    }
+  }
+
+  return NULL;
 }
 
 class ZRelocateQueueSynchronizeThread {
@@ -176,6 +235,8 @@ public:
 
 void ZRelocateQueue::synchronize_thread() {
   _nsynchronized++;
+  log_debug(gc, reloc)("Synchronize worker _nsynchronized %u", _nsynchronized);
+
   assert(_nsynchronized <= _nworkers, "_nsynchronized: %u _nworkers: %u", _nsynchronized, _nworkers);
   if (_nsynchronized == _nworkers) {
     // All workers synchronized
@@ -185,25 +246,29 @@ void ZRelocateQueue::synchronize_thread() {
 
 void ZRelocateQueue::desynchronize_thread() {
   _nsynchronized--;
+  log_debug(gc, reloc)("Desynchronize worker _nsynchronized %u", _nsynchronized);
   assert(_nsynchronized < _nworkers, "_nsynchronized: %u _nworkers: %u", _nsynchronized, _nworkers);
 }
 
-bool ZRelocateQueue::synchronize_poll() {
+ZForwarding* ZRelocateQueue::synchronize_poll() {
   // Fast path avoids locking
   if (!needs_attention()) {
-    return false;
+    return NULL;
   }
 
   // Slow path to get the next forwarding and/or synchronize
   ZLocker<ZConditionLock> locker(&_lock);
 
-  if (!_queue.is_empty()) {
-    // Don't become synchronized while there are elements in the queue
-    return true;
+  {
+    ZForwarding* const forwarding = prune_and_claim();
+    if (forwarding != NULL) {
+      // Don't become synchronized while there are elements in the queue
+      return forwarding;
+    }
   }
 
   if (!_synchronize) {
-    return false;
+    return NULL;
   }
 
   ZRelocateQueueSynchronizeThread rqst(this);
@@ -211,17 +276,23 @@ bool ZRelocateQueue::synchronize_poll() {
   do {
     _lock.wait();
 
-    if (!_queue.is_empty()) {
-      return true;
+    ZForwarding* const forwarding = prune_and_claim();
+    if (forwarding != NULL) {
+      return forwarding;
     }
   } while (_synchronize);
 
-  return false;
+  return NULL;
 }
 
 void ZRelocateQueue::clear() {
   assert(_nworkers == 0, "Invalid state");
   if (!_queue.is_empty()) {
+    ZArrayIterator<ZForwarding*> iter(&_queue);
+    for (ZForwarding* forwarding; iter.next(&forwarding);) {
+      assert(forwarding->is_done(), "All should be done");
+    }
+    assert(false, "Clear was not empty");
     _queue.clear();
     dec_needs_attention();
   }
@@ -231,14 +302,18 @@ void ZRelocateQueue::synchronize() {
   ZLocker<ZConditionLock> locker(&_lock);
   _synchronize = true;
   inc_needs_attention();
+  log_debug(gc, reloc)("Synchronize all workers 1 _nworkers: %u _nsynchronized: %u", _nworkers, _nsynchronized);
+
   while (_nworkers != _nsynchronized) {
     _lock.wait();
+    log_debug(gc, reloc)("Synchronize all workers 2 _nworkers: %u _nsynchronized: %u", _nworkers, _nsynchronized);
   }
 }
 
 void ZRelocateQueue::desynchronize() {
   ZLocker<ZConditionLock> locker(&_lock);
   _synchronize = false;
+  log_debug(gc, reloc)("Desynchronize all workers _nworkers: %u _nsynchronized: %u", _nworkers, _nsynchronized);
   assert(_nsynchronized <= _nworkers, "_nsynchronized: %u _nworkers: %u", _nsynchronized, _nworkers);
   dec_needs_attention();
   _lock.notify_all();
@@ -304,7 +379,7 @@ zaddress ZRelocate::relocate_object(ZForwarding* forwarding, zaddress_unsafe fro
   }
 
   // Relocate object
-  if (forwarding->retain_page()) {
+  if (forwarding->retain_page(&_queue)) {
     assert(_generation->is_phase_relocate(), "Must be");
     to_addr = relocate_object_inner(forwarding, safe(from_addr), &cursor);
     forwarding->release_page();
@@ -319,18 +394,9 @@ zaddress ZRelocate::relocate_object(ZForwarding* forwarding, zaddress_unsafe fro
     // the GC aborts the relocation phase before the page has been relocated,
     // then wait return false and we just forward the object in-place.
 
-    if (ZAbort::should_abort()) {
-      // Prevent repeated queueing and logging if we have aborted
+    if (!_queue.add_and_wait(forwarding)) {
+      // Aborted while waiting - forward object in-place
       return forwarding_insert(forwarding, safe(from_addr), safe(from_addr), &cursor);
-    }
-
-    if (_queue.try_add(forwarding, from_addr, &cursor)) {
-      // Insert into relocation queue succeeded; now wait for the GC to
-      // relocate the page.
-      if (!forwarding->wait_page_released()) {
-        // Aborted while waiting - forward object in-place
-        return forwarding_insert(forwarding, safe(from_addr), safe(from_addr), &cursor);
-      }
     }
   }
 
@@ -677,7 +743,8 @@ private:
       // Add remset entry in the to-page
       const uintptr_t offset = field_local_offset - from_local_offset;
       const zaddress to_field = to_addr + offset;
-      log_trace(gc, reloc)("Remember: " PTR_FORMAT, untype(to_field));
+      log_trace(gc, reloc)("Remember: from: " PTR_FORMAT " to: " PTR_FORMAT " current: %d marking: %d page: " PTR_FORMAT " remset: " PTR_FORMAT,
+          untype(from_page->start() + field_local_offset), untype(to_field), active_remset_is_current, ZGeneration::young()->is_phase_mark(), p2i(to_page), p2i(to_page->remset_current()));
 
       volatile zpointer* const p = (volatile zpointer*)to_field;
 
@@ -687,6 +754,9 @@ private:
         _forwarding->relocated_remembered_fields_register(p);
       } else {
         to_page->remember(p);
+        if (in_place) {
+          assert(to_page->is_remembered(p), "p: " PTR_FORMAT, p2i(p));
+        }
       }
     }
 
@@ -950,7 +1020,7 @@ public:
         page->verify_remset_cleared_previous();
       } else {
         // In-place relocation responsible for clearing the previous remset bits
-        page->clear_remset_previous();
+        page->clear_remset_previous("in-place before reuse");
       }
 
       return;
@@ -962,7 +1032,7 @@ public:
     if (active_remset_is_current()) {
       page->clear_remset_current();
     } else {
-      page->clear_remset_previous();
+      page->clear_remset_previous("normal before reuse");
     }
 
     // Verify that inactive remset bits are all cleared
@@ -989,9 +1059,10 @@ public:
   void do_forwarding(ZForwarding* forwarding) {
     _forwarding = forwarding;
 
+    _forwarding->page()->log_msg(" (relocate page)");
+
     // Check if we should abort
     if (ZAbort::should_abort()) {
-      _forwarding->abort_page();
       return;
     }
 
@@ -1022,24 +1093,28 @@ public:
     _forwarding->release_page();
 
     if (in_place) {
-      ZPage* const page = target(_forwarding->to_age());
+      // Wait for all other threads to call release_page
+      ZPage* const page = _forwarding->detach_page();
 
       // Ensure that previous remset bits are cleared
       clear_remset_before_reuse(page, true /* in_place */);
 
-      // The relocated page has been relocated in-place and should not
-      // be freed. Keep it as target page until it is full, and offer to
-      // share it with other worker threads.
-      _allocator->share_target_page(page);
+      page->log_msg(" (relocate page done in-place)");
+
+      // Different pages when promoting
+      ZPage* const target_page = target(_forwarding->to_age());
+      _allocator->share_target_page(target_page);
 
     } else {
-      // Detach relocated page
+      // Wait for all other threads to call release_page
       ZPage* const page = _forwarding->detach_page();
 
       // Ensure that all remset bits are cleared
       // Note: cleared after detach_page, when we know that
       // the young generation isn't scanning the remset.
       clear_remset_before_reuse(page, false /* in_place */);
+
+      page->log_msg(" (relocate page done normal)");
 
       // Free page
       ZHeap::heap()->free_page(page);
@@ -1101,14 +1176,27 @@ public:
     ZRelocateWork<ZRelocateMediumAllocator> medium(&_medium_allocator, _generation);
 
     const auto do_forwarding = [&](ZForwarding* forwarding) {
+      ZPage* page = forwarding->page();
+      ZPageAge to_age = forwarding->to_age();
+      if (page->is_small()) {
+        small.do_forwarding(forwarding);
+      } else {
+        medium.do_forwarding(forwarding);
+      }
+
+      // Absolute last thing done while relocating a page.
+      //
+      // We don't use the SuspendibleThreadSet when relocating pages.
+      // Instead the ZRelocateQueue is used as a pseudo STS joiner/leaver.
+      //
+      // After the mark_done call a safepointing could be completed and a
+      // new GC phase could be entered.
+      forwarding->mark_done();
+    };
+
+    const auto claim_and_do_forwarding = [&](ZForwarding* forwarding) {
       if (forwarding->claim()) {
-        ZPage* page = forwarding->page();
-        ZPageAge to_age = forwarding->to_age();
-        if (page->is_small()) {
-          small.do_forwarding(forwarding);
-        } else {
-          medium.do_forwarding(forwarding);
-        }
+        do_forwarding(forwarding);
       }
     };
 
@@ -1116,17 +1204,11 @@ public:
       ZForwarding* forwarding;
 
       if (_iter.next(&forwarding)) {
-        do_forwarding(forwarding);
+        claim_and_do_forwarding(forwarding);
         return true;
       }
 
       return false;
-    };
-
-    const auto do_forwarding_drain_queue = [&]() {
-      for (ZForwarding* forwarding;(forwarding = _queue->remove_first()) != NULL;) {
-        do_forwarding(forwarding);
-      }
     };
 
     for (;;) {
@@ -1135,8 +1217,8 @@ public:
       // worker thread needs to finish relocate these pages, and allow the
       // other threads to continue and proceed to a blocking state. After that,
       // the worker threads are allowed to safepoint synchronize.
-      while (_queue->synchronize_poll()) {
-        do_forwarding_drain_queue();
+      for (ZForwarding* forwarding; (forwarding = _queue->synchronize_poll()) != NULL;) {
+        do_forwarding(forwarding);
       }
 
       if (!do_forwarding_one_from_iter()) {
@@ -1338,4 +1420,8 @@ void ZRelocate::synchronize() {
 
 void ZRelocate::desynchronize() {
   _queue.desynchronize();
+}
+
+ZRelocateQueue* ZRelocate::queue() {
+  return &_queue;
 }

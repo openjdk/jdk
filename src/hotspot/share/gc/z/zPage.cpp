@@ -109,7 +109,7 @@ void ZPage::reset_remembered_set(ZPageAge prev_age, ZPageResetType type) {
     // We don't clear the remset when pages are recycled and transition from
     // old to young. Therefore we can end up in a situation where a young page
     // already has an initialized remset.
-    _remembered_set.clear_all();
+    _remembered_set.clear_all("reset young-to-old");
     return;
   }
 
@@ -133,7 +133,7 @@ void ZPage::reset_remembered_set(ZPageAge prev_age, ZPageResetType type) {
   case ZPageResetType::FlipAging:
     fatal("Should not have called this for old-to-old flipping");
     // Page stayed in the old gen. Needs new, fresh bits.
-    _remembered_set.clear_all();
+    _remembered_set.clear_all("clear all flip aging");
     break;
 
   case ZPageResetType::Allocation:
@@ -291,8 +291,12 @@ void ZPage::clear_remset_current() {
  _remembered_set.clear_current();
 }
 
-void ZPage::clear_remset_previous() {
- _remembered_set.clear_previous();
+void ZPage::clear_remset_previous(const char* where) {
+ _remembered_set.clear_previous(where);
+}
+
+void* ZPage::remset_current() {
+  return _remembered_set.current();
 }
 
 void ZPage::log_msg(const char* msg_format, ...) const {

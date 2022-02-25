@@ -175,11 +175,17 @@ inline ReferenceDiscoverer* ZGenerationOld::reference_discoverer() {
 }
 
 inline bool ZGenerationOld::active_remset_is_current() const {
+  assert(_young_seqnum_at_reloc_start != 0, "Must be set before used");
+
   // The remembered set bits flip every time a new young collection starts
   const uint32_t seqnum = ZGeneration::young()->seqnum();
   const uint32_t seqnum_diff = seqnum - _young_seqnum_at_reloc_start;
   const bool in_current = (seqnum_diff & 1u) == 0u;
   return in_current;
+}
+
+inline ZRelocateQueue* ZGenerationOld::relocate_queue() {
+  return _relocate.queue();
 }
 
 #endif // SHARE_GC_Z_ZGENERATION_INLINE_HPP

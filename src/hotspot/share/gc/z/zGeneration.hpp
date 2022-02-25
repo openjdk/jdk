@@ -290,6 +290,8 @@ public:
   int total_collections_at_end() const;
 
   bool active_remset_is_current() const;
+
+  ZRelocateQueue* relocate_queue();
 };
 
 #endif // SHARE_GC_Z_ZGENERATION_HPP
