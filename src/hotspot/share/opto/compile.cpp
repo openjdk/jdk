@@ -254,6 +254,8 @@ void Compile::print_statistics() {
     PhaseOutput::print_statistics();
     PhasePeephole::print_statistics();
     PhaseIdealLoop::print_statistics();
+    ConnectionGraph::print_statistics();
+    PhaseMacroExpand::print_statistics();
     if (xtty != NULL)  xtty->tail("statistics");
   }
   if (_intrinsic_hist_flags[as_int(vmIntrinsics::_none)] != 0) {
@@ -2174,6 +2176,8 @@ void Compile::Optimize() {
       if (failing())  return;
     }
     bool progress;
+
+    NOT_PRODUCT(int total_scalar_replaced = 0;)
     do {
       ConnectionGraph::do_analysis(this, &igvn);
 
@@ -2193,6 +2197,7 @@ void Compile::Optimize() {
         mexp.eliminate_macro_nodes();
         igvn.set_delay_transform(false);
 
+        NOT_PRODUCT(total_scalar_replaced += mexp._local_scalar_replaced;)
         igvn.optimize();
         print_method(PHASE_ITER_GVN_AFTER_ELIMINATION, 2);
 
@@ -2204,6 +2209,12 @@ void Compile::Optimize() {
       // Try again if candidates exist and made progress
       // by removing some allocations and/or locks.
     } while (progress);
+
+#ifndef PRODUCT
+    Atomic::add(&ConnectionGraph::_no_escape_counter, _local_no_escape_ctr + total_scalar_replaced);
+    Atomic::add(&ConnectionGraph::_arg_escape_counter, _local_arg_escape_ctr);
+    Atomic::add(&ConnectionGraph::_global_escape_counter, _local_global_escape_ctr);
+#endif
   }
 
   // Loop transforms on the ideal graph.  Range Check Elimination,

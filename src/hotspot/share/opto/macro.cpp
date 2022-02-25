@@ -159,6 +159,9 @@ CallNode* PhaseMacroExpand::make_slow_call(CallNode *oldcall, const TypeFunc* sl
 void PhaseMacroExpand::eliminate_gc_barrier(Node* p2x) {
   BarrierSetC2 *bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->eliminate_gc_barrier(this, p2x);
+#ifndef PRODUCT
+  Atomic::add(&PhaseMacroExpand::_GC_barriers_removed_counter, 1);
+#endif
 }
 
 // Search for a memory operation for the specified memory slice.
@@ -2310,6 +2313,10 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
   if (C->macro_count() == 0)
     return;
 
+  #ifndef PRODUCT
+    int membar_before = count_MemBar();
+  #endif
+
   // Before elimination may re-mark (change to Nested or NonEscObj)
   // all associated (same box and obj) lock and unlock nodes.
   int cnt = C->macro_count();
@@ -2334,6 +2341,11 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       DEBUG_ONLY(int old_macro_count = C->macro_count();)
       if (n->is_AbstractLock()) {
         success = eliminate_locking_node(n->as_AbstractLock());
+#ifndef PRODUCT
+        if(success) {
+          Atomic::add(&PhaseMacroExpand::_monitor_objects_removed_counter, 1);
+        }
+#endif
       }
       assert(success == (C->macro_count() < old_macro_count), "elimination reduces macro count");
       progress = progress || success;
@@ -2352,6 +2364,12 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       case Node::Class_Allocate:
       case Node::Class_AllocateArray:
         success = eliminate_allocate_node(n->as_Allocate());
+#ifndef PRODUCT
+        if(success){
+          Atomic::add(&PhaseMacroExpand::_objs_scalar_replaced_counter, 1);
+          _local_scalar_replaced++;
+        }
+#endif
         break;
       case Node::Class_CallStaticJava:
         success = eliminate_boxing_node(n->as_CallStaticJava());
@@ -2381,6 +2399,10 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       progress = progress || success;
     }
   }
+#ifndef PRODUCT
+  int membar_after = count_MemBar();
+  Atomic::add(&PhaseMacroExpand::_memory_barriers_removed_counter, membar_before - membar_after);
+#endif
 }
 
 //------------------------------expand_macro_nodes----------------------
@@ -2569,3 +2591,35 @@ bool PhaseMacroExpand::expand_macro_nodes() {
   _igvn.set_delay_transform(false);
   return false;
 }
+
+#ifndef PRODUCT
+int PhaseMacroExpand::_objs_scalar_replaced_counter = 0;
+int PhaseMacroExpand::_monitor_objects_removed_counter = 0;
+int PhaseMacroExpand::_GC_barriers_removed_counter = 0;
+int PhaseMacroExpand::_memory_barriers_removed_counter = 0;
+
+void PhaseMacroExpand::print_statistics() {
+  tty->print("Objects scalar replaced = %d, ", Atomic::load(&_objs_scalar_replaced_counter));
+  tty->print("Monitor objects removed = %d, ", Atomic::load(&_monitor_objects_removed_counter));
+  tty->print("GC barriers removed = %d, ", Atomic::load(&_GC_barriers_removed_counter));
+  tty->print_cr("Memory barriers removed = %d", Atomic::load(&_memory_barriers_removed_counter));
+}
+
+int PhaseMacroExpand::count_MemBar() {
+  Unique_Node_List ideal_nodes;
+  int total = 0;
+  ideal_nodes.map(C->live_nodes(), NULL);
+  ideal_nodes.push(C->root());
+  for( uint next = 0; next < ideal_nodes.size(); ++next ) {
+    Node* n = ideal_nodes.at(next);
+    if (n->is_MemBar()) {
+      total++;
+    }
+    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+      Node* m = n->fast_out(i);
+      ideal_nodes.push(m);
+    }
+  }
+  return total;
+}
+#endif

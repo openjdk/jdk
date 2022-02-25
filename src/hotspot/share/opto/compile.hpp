@@ -676,6 +676,11 @@ class Compile : public Phase {
   Node*         expensive_node(int idx)   const { return _expensive_nodes.at(idx); }
 
   ConnectionGraph* congraph()                   { return _congraph;}
+#ifndef PRODUCT
+  int _local_no_escape_ctr;
+  int _local_arg_escape_ctr;
+  int _local_global_escape_ctr;
+#endif
   void set_congraph(ConnectionGraph* congraph)  { _congraph = congraph;}
   void add_macro_node(Node * n) {
     //assert(n->is_macro(), "must be a macro node");

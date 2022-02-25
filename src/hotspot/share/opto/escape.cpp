@@ -95,6 +95,10 @@ void ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
   Compile::TracePhase tp("escapeAnalysis", &Phase::timers[Phase::_t_escapeAnalysis]);
   ResourceMark rm;
 
+#ifndef PRODUCT
+  elapsedTimer et;
+  et.start();
+#endif
   // Add ConP#NULL and ConN#NULL nodes before ConnectionGraph construction
   // to create space for them in ConnectionGraph::_nodes[].
   Node* oop_null = igvn->zerocon(T_OBJECT);
@@ -116,6 +120,12 @@ void ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
   if (noop_null->outcnt() == 0) {
     igvn->hash_delete(noop_null);
   }
+
+#ifndef PRODUCT
+  et.stop();
+  // casting jlong to long since Atomic needs Integral type
+  Atomic::add(&ConnectionGraph::_time_elapsed, (long)et.milliseconds());
+#endif
 }
 
 bool ConnectionGraph::compute_escape() {
@@ -233,6 +243,9 @@ bool ConnectionGraph::compute_escape() {
 
   if (non_escaped_allocs_worklist.length() == 0) {
     _collecting = false;
+#ifndef PRODUCT
+    escape_state_statistics(java_objects_worklist);
+#endif
     return false; // Nothing to do.
   }
   // Add final simple edges to graph.
@@ -262,7 +275,12 @@ bool ConnectionGraph::compute_escape() {
   // processing, calls to CI to resolve symbols (types, fields, methods)
   // referenced in bytecode. During symbol resolution VM may throw
   // an exception which CI cleans and converts to compilation failure.
-  if (C->failing())  return false;
+  if (C->failing()) {
+#ifndef PRODUCT
+    escape_state_statistics(java_objects_worklist);
+#endif
+    return false;
+  }
 
   // 2. Finish Graph construction by propagating references to all
   //    java objects through graph.
@@ -270,6 +288,9 @@ bool ConnectionGraph::compute_escape() {
                                  java_objects_worklist, oop_fields_worklist)) {
     // All objects escaped or hit time or iterations limits.
     _collecting = false;
+#ifndef PRODUCT
+    escape_state_statistics(java_objects_worklist);
+#endif
     return false;
   }
 
@@ -339,7 +360,12 @@ bool ConnectionGraph::compute_escape() {
     // Now use the escape information to create unique types for
     // scalar replaceable objects.
     split_unique_types(alloc_worklist, arraycopy_worklist, mergemem_worklist);
-    if (C->failing())  return false;
+    if (C->failing()) {
+#ifndef PRODUCT
+      escape_state_statistics(java_objects_worklist);
+#endif
+      return false;
+    }
     C->print_method(PHASE_AFTER_EA, 2);
 
 #ifdef ASSERT
@@ -375,6 +401,9 @@ bool ConnectionGraph::compute_escape() {
     }
   }
 
+#ifndef PRODUCT
+  escape_state_statistics(java_objects_worklist);
+#endif
   return has_non_escaping_obj;
 }
 
@@ -3631,6 +3660,11 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
 }
 
 #ifndef PRODUCT
+int ConnectionGraph::_no_escape_counter = 0;
+int ConnectionGraph::_arg_escape_counter = 0;
+int ConnectionGraph::_global_escape_counter = 0;
+long ConnectionGraph::_time_elapsed = 0;
+
 static const char *node_type_names[] = {
   "UnknownType",
   "JavaObject",
@@ -3735,6 +3769,34 @@ void ConnectionGraph::dump(GrowableArray<PointsToNode*>& ptnodes_worklist) {
         }
       }
       tty->cr();
+    }
+  }
+}
+
+void ConnectionGraph::print_statistics() {
+  tty->print("No escape = %d, Arg escape = %d, Global escape = %d", Atomic::load(&_no_escape_counter), Atomic::load(&_arg_escape_counter), Atomic::load(&_global_escape_counter));
+  tty->print_cr(" (EA executed in %7.2f seconds)", Atomic::load(&_time_elapsed) * 0.001);
+}
+
+void ConnectionGraph::escape_state_statistics(GrowableArray<JavaObjectNode*>& java_objects_worklist) {
+  _compile->_local_no_escape_ctr = 0;
+  _compile->_local_arg_escape_ctr = 0;
+  _compile->_local_global_escape_ctr = 0;
+  for (int next = 0; next < java_objects_worklist.length(); ++next) {
+    JavaObjectNode* ptn = java_objects_worklist.at(next);
+    if (ptn->ideal_node()->is_Allocate()) {
+      if(ptn->escape_state() == PointsToNode::NoEscape) {
+        _compile->_local_no_escape_ctr++;
+      }
+      else if (ptn->escape_state() == PointsToNode::ArgEscape) {
+        _compile->_local_arg_escape_ctr++;
+      }
+      else if (ptn->escape_state() == PointsToNode::GlobalEscape) {
+        _compile->_local_global_escape_ctr++;
+      }
+      else {
+        assert(false, "Unexpected Escape State");
+      }
     }
   }
 }

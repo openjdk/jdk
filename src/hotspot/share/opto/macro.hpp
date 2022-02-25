@@ -200,13 +200,23 @@ private:
   Node* make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, Node* ctl, Node* mem, BasicType ft, const Type *ftype, AllocateNode *alloc);
 
 public:
-  PhaseMacroExpand(PhaseIterGVN &igvn) : Phase(Macro_Expand), _igvn(igvn), _has_locks(false) {
+  PhaseMacroExpand(PhaseIterGVN &igvn) : Phase(Macro_Expand), _igvn(igvn), _has_locks(false) NOT_PRODUCT(COMMA _local_scalar_replaced(0)) {
     _igvn.set_delay_transform(true);
   }
   void eliminate_macro_nodes();
   bool expand_macro_nodes();
 
   PhaseIterGVN &igvn() const { return _igvn; }
+
+#ifndef PRODUCT
+    static int _objs_scalar_replaced_counter;
+    static int _monitor_objects_removed_counter;
+    static int _GC_barriers_removed_counter;
+    static int _memory_barriers_removed_counter;
+    int _local_scalar_replaced;
+    static void print_statistics();
+    int count_MemBar();
+#endif
 
   // Members accessed from BarrierSetC2
   void replace_node(Node* source, Node* target) { _igvn.replace_node(source, target); }
