@@ -256,7 +256,7 @@ public class Random implements RandomGenerator, java.io.Serializable {
     }
 
     private static final AtomicLong seedUniquifier
-    = new AtomicLong(8682522807148012L);
+            = new AtomicLong(8682522807148012L);
 
     /**
      * Creates a new random number generator using a single {@code long} seed.
