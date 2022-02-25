@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,18 +19,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-// Make sure the defines don't screw up the declarations later on in this file.
-#define DONT_USE_REGISTER_DEFINES
+package pkg8;
 
-#include "asm/register.hpp"
+public class GP {
 
-REGISTER_DEFINITION(Register, noreg);
+    /**
+     * Grandparent m1().
+     *
+     * @param <T> Grandparent m1's type
+     */
+    public <T> void m1() {}
 
-REGISTER_DEFINITION(FloatRegister, fnoreg);
+    /**
+     * Grandparent m2().
+     *
+     * @param <T> Grandparent m2's type
+     */
+    public <T> void m2() {}
 
-REGISTER_DEFINITION(VectorRegister, vnoreg);
-
-REGISTER_DEFINITION(VectorSRegister, vsnoreg);
+    /**
+     * Grandparent m3().
+     *
+     * @param <T> Grandparent m3's type
+     */
+    public <T> void m3() {}
+}

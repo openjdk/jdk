@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,18 +19,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_SERVICES_MALLOCTRACKER_INLINE_HPP
-#define SHARE_SERVICES_MALLOCTRACKER_INLINE_HPP
+package pkg8;
 
-#include "services/mallocTracker.hpp"
+public class C extends P {
 
-#include "services/memTracker.hpp"
+    /**
+     * Child m1().
+     *
+     * @param <T> Child m1's type
+     */
+    @Override
+    public <T> void m1() {}
 
-inline void* MallocTracker::get_base(void* memblock){
-  return get_base(memblock, MemTracker::tracking_level());
+    /**
+     * Child m2().
+     */
+    @Override
+    public void m2() {}
+
+    /**
+     * Child m3().
+     */
+    @Override
+    public void m3() {}
 }
-
-#endif // SHARE_SERVICES_MALLOCTRACKER_INLINE_HPP

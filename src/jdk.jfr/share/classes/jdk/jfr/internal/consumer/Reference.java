@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -20,20 +21,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-// Make sure the defines don't screw up the declarations later on in this file.
-#define DONT_USE_REGISTER_DEFINES
+package jdk.jfr.internal.consumer;
 
-#include "precompiled.hpp"
-#include "asm/assembler.hpp"
-#include "asm/register.hpp"
-#include "register_s390.hpp"
-#include "interp_masm_s390.hpp"
+import jdk.jfr.internal.Type;
 
-REGISTER_DEFINITION(Register, noreg);
+/**
+ * A temporary placeholder, so objects can reference themselves (directly, or
+ * indirectly), when making a transition from numeric id references to Java
+ * object references.
+ */
+public record Reference(ConstantMap pool, long key) {
 
-REGISTER_DEFINITION(FloatRegister, fnoreg);
+    Object resolve() {
+        return pool.get(key);
+    }
 
-REGISTER_DEFINITION(VectorRegister, vnoreg);
+    public Type type() {
+        return pool.getType();
+    }
+
+    @Override
+    public String toString() {
+        return "ref: " + pool.getName() + "[" + key + "]";
+    }
+}
