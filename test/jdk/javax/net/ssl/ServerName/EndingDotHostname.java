@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8806542
+ * @bug 8065422
  * @summary Trailing dot in hostname causes TLS handshake to fail
  * @library /javax/net/ssl/templates
  * @run main/othervm -Djdk.net.hosts.file=hostsForExample EndingDotHostname
@@ -207,7 +207,7 @@ public class EndingDotHostname {
         // get started in 90 seconds.  The client side would just ignore
         // the test case if the serer is not ready.
         boolean serverIsReady =
-                serverCondition.await(90L, TimeUnit.SECONDS);
+                serverCondition.await(10L, TimeUnit.SECONDS);
         if (!serverIsReady) {
             System.out.println(
                     "The server is not ready yet in 90 seconds. " +
