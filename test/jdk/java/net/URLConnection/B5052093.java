@@ -45,9 +45,9 @@ import static java.net.Proxy.NO_PROXY;
 import jdk.test.lib.net.URIBuilder;
 import sun.net.www.protocol.file.FileURLConnection;
 
-public class B5052093 implements HttpHandler {
+public class B5052093 {
     private static HttpServer server;
-    private static long testSize = ((long) (Integer.MAX_VALUE)) + 2;
+    static long testSize = ((long) (Integer.MAX_VALUE)) + 2;
 
     public static class LargeFile extends File {
         public LargeFile() {
@@ -65,20 +65,9 @@ public class B5052093 implements HttpHandler {
         }
     }
 
-    public void handle(HttpExchange req) {
-        try {
-            req.getResponseHeaders().set("content-length", Long.toString(testSize));
-            req.sendResponseHeaders(200, 0);
-            req.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     public static void main(String[] args) throws Exception {
         InetAddress loopback = InetAddress.getLoopbackAddress();
-        server = HttpServer.create(new InetSocketAddress(loopback, 0), 10);
-        server.createContext("/", new B5052093());
+        server = HttpServer.create(new InetSocketAddress(loopback, 0), 10, "/", new B5052093Handler());
         server.setExecutor(Executors.newSingleThreadExecutor());
         server.start();
         try {
@@ -109,6 +98,19 @@ public class B5052093 implements HttpHandler {
             }
         } finally {
             server.stop(1);
+        }
+    }
+}
+
+class B5052093Handler implements HttpHandler {
+    @Override
+    public void handle(HttpExchange exchange) throws IOException {
+        try {
+            exchange.getResponseHeaders().set("content-length", Long.toString(B5052093.testSize));
+            exchange.sendResponseHeaders(200, 0);
+            exchange.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

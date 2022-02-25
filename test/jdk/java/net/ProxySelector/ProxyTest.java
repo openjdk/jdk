@@ -49,21 +49,10 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import jdk.test.lib.net.URIBuilder;
 
-public class ProxyTest implements HttpHandler {
+public class ProxyTest {
     static HttpServer server;
 
     public ProxyTest() {
-    }
-
-    public void handle(HttpExchange req) {
-        try {
-            req.sendResponseHeaders(200, 0);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        try(PrintWriter pw = new PrintWriter(req.getResponseBody())) {
-            pw.print("Hello .");
-        }
     }
 
     static public class MyProxySelector extends ProxySelector {
@@ -89,8 +78,7 @@ public class ProxyTest implements HttpHandler {
         ProxySelector.setDefault(new MyProxySelector());
         try {
             InetAddress loopback = InetAddress.getLoopbackAddress();
-            server = HttpServer.create(new InetSocketAddress(loopback, 0), 10);
-            server.createContext("/", new ProxyTest());
+            server = HttpServer.create(new InetSocketAddress(loopback, 0), 10, "/", new ProxyTestHandler());
             server.setExecutor(Executors.newSingleThreadExecutor());
             server.start();
             URL url = URIBuilder.newBuilder()
@@ -112,6 +100,21 @@ public class ProxyTest implements HttpHandler {
             if (server != null) {
                 server.stop(1);
             }
+        }
+    }
+}
+
+class ProxyTestHandler implements HttpHandler {
+
+    @Override
+    public void handle(HttpExchange exchange) throws IOException {
+        try {
+            exchange.sendResponseHeaders(200, 0);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try(PrintWriter pw = new PrintWriter(exchange.getResponseBody())) {
+            pw.print("Hello .");
         }
     }
 }

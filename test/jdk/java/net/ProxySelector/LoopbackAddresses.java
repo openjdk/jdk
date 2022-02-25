@@ -52,19 +52,8 @@ import jdk.test.lib.net.URIBuilder;
  * addresses when selecting proxies. This is the existing behaviour.
  */
 
-public class LoopbackAddresses implements HttpHandler {
+public class LoopbackAddresses {
     static HttpServer server;
-
-    public void handle (HttpExchange req) {
-        try {
-            req.sendResponseHeaders(200, 0);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        try(PrintWriter pw = new PrintWriter(req.getResponseBody())) {
-            pw.print("Hello .");
-        }
-    }
 
     public static void main(String[] args) {
         try {
@@ -74,8 +63,7 @@ public class LoopbackAddresses implements HttpHandler {
             // to answer both for the loopback and "localhost".
             // Though "localhost" usually point to the loopback there is no
             // hard guarantee.
-            server = HttpServer.create(new InetSocketAddress(loopback, 0), 10);
-            server.createContext("/", new LoopbackAddresses());
+            server = HttpServer.create(new InetSocketAddress(loopback, 0), 10, "/", new LoopbackAddressesHandler());
             server.setExecutor(Executors.newSingleThreadExecutor());
             server.start();
             ProxyServer pserver = new ProxyServer(InetAddress.getByName("localhost"), server.getAddress().getPort());
@@ -162,6 +150,21 @@ public class LoopbackAddresses implements HttpHandler {
 */
         public int getPort() {
             return ss.getLocalPort();
+        }
+    }
+}
+
+class LoopbackAddressesHandler implements HttpHandler {
+
+    @Override
+    public void handle(HttpExchange exchange) throws IOException {
+        try {
+            exchange.sendResponseHeaders(200, 0);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try(PrintWriter pw = new PrintWriter(exchange.getResponseBody())) {
+            pw.print("Hello .");
         }
     }
 }

@@ -46,46 +46,8 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import jdk.test.lib.net.URIBuilder;
 
-public class AuthHeaderTest implements HttpHandler {
-
-    static int count = 0;
-    static String authstring;
-
-    void errorReply (HttpExchange req, String reply) throws IOException {
-        req.getResponseHeaders().set("Connection", "close");
-        req.getResponseHeaders().set("Www-authenticate", reply);
-        req.sendResponseHeaders(401, -1);
-    }
-
-    void okReply (HttpExchange req) throws IOException {
-        req.sendResponseHeaders (200, 0);
-        try(PrintWriter pw = new PrintWriter(req.getResponseBody())) {
-            pw.print("Hello .");
-        }
-    }
-
-    public void handle (HttpExchange req) {
-        try {
-            if(req.getRequestHeaders().get("Authorization") != null) {
-                authstring = req.getRequestHeaders().get("Authorization").get(0);
-                System.out.println (authstring);
-            }
-
-            switch (count) {
-            case 0:
-                errorReply (req, "Basic realm=\"wallyworld\"");
-                break;
-            case 1:
-                /* client stores a username/pw for wallyworld
-                 */
-                okReply (req);
-                break;
-            }
-            count ++;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+public class AuthHeaderTest {
+    static HttpServer server;
 
     static void read (InputStream is) throws IOException {
         int c;
@@ -106,15 +68,12 @@ public class AuthHeaderTest implements HttpHandler {
         is.close();
     }
 
-    static HttpServer server;
-
     public static void main (String[] args) throws Exception {
         MyAuthenticator auth = new MyAuthenticator ();
         Authenticator.setDefault (auth);
         InetAddress loopback = InetAddress.getLoopbackAddress();
         try {
-            server = HttpServer.create(new InetSocketAddress(loopback, 0), 10);
-            server.createContext("/", new AuthHeaderTest());
+            server = HttpServer.create(new InetSocketAddress(loopback, 0), 10, "/", new AuthHeaderTestHandler());
             server.setExecutor(Executors.newSingleThreadExecutor());
             server.start();
             System.out.println ("Server: listening on port: " + server.getAddress().getPort());
@@ -161,6 +120,48 @@ public class AuthHeaderTest implements HttpHandler {
 
         public int getCount () {
             return (count);
+        }
+    }
+}
+
+class AuthHeaderTestHandler implements HttpHandler {
+    static int count = 0;
+    static String authstring;
+
+    void errorReply (HttpExchange req, String reply) throws IOException {
+        req.getResponseHeaders().set("Connection", "close");
+        req.getResponseHeaders().set("Www-authenticate", reply);
+        req.sendResponseHeaders(401, -1);
+    }
+
+    void okReply (HttpExchange req) throws IOException {
+        req.sendResponseHeaders (200, 0);
+        try(PrintWriter pw = new PrintWriter(req.getResponseBody())) {
+            pw.print("Hello .");
+        }
+    }
+
+    @Override
+    public void handle(HttpExchange exchange) throws IOException {
+        try {
+            if(exchange.getRequestHeaders().get("Authorization") != null) {
+                authstring = exchange.getRequestHeaders().get("Authorization").get(0);
+                System.out.println (authstring);
+            }
+
+            switch (count) {
+                case 0:
+                    errorReply (exchange, "Basic realm=\"wallyworld\"");
+                    break;
+                case 1:
+                    /* client stores a username/pw for wallyworld
+                     */
+                    okReply (exchange);
+                    break;
+            }
+            count ++;
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

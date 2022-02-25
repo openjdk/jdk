@@ -47,24 +47,13 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import jdk.test.lib.net.URIBuilder;
 
-public class PerConnectionProxy implements HttpHandler {
+public class PerConnectionProxy {
     static HttpServer server;
-
-    public void handle (HttpExchange req) {
-        try {
-            req.sendResponseHeaders(200, 0);
-        } catch (IOException e) {
-        }
-        try(PrintWriter pw = new PrintWriter(req.getResponseBody())) {
-            pw.print("Hello .");
-        }
-    }
-
+    
     public static void main(String[] args) {
         try {
             InetAddress loopbackAddress = InetAddress.getLoopbackAddress();
-            server = HttpServer.create(new InetSocketAddress(loopbackAddress, 0), 10);
-            server.createContext("/", new PerConnectionProxy());
+            server = HttpServer.create(new InetSocketAddress(loopbackAddress, 0), 10, "/", new PerConnectionProxyHandler());
             server.setExecutor(Executors.newSingleThreadExecutor());
             server.start();
             ProxyServer pserver = new ProxyServer(loopbackAddress, server.getAddress().getPort());
@@ -239,3 +228,18 @@ public class PerConnectionProxy implements HttpHandler {
 
     }
 }
+
+class PerConnectionProxyHandler implements HttpHandler {
+
+    @Override
+    public void handle(HttpExchange exchange) throws IOException {
+        try {
+            exchange.sendResponseHeaders(200, 0);
+        } catch (IOException e) {
+        }
+        try(PrintWriter pw = new PrintWriter(exchange.getResponseBody())) {
+            pw.print("Hello .");
+        }
+    }
+}
+

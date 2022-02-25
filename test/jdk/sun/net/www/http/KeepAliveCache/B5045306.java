@@ -61,21 +61,17 @@ import com.sun.net.httpserver.HttpServer;
  * Content-length header.
  */
 
-public class B5045306
-{
-    static SimpleHttpTransaction httpTrans;
+public class B5045306 {
     static HttpServer server;
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         startHttpServer();
         clientHttpCalls();
     }
 
     public static void startHttpServer() {
         try {
-            httpTrans = new SimpleHttpTransaction();
-            server = HttpServer.create(new InetSocketAddress(InetAddress.getLocalHost(), 0), 10);
-            server.createContext("/", httpTrans);
+            server = HttpServer.create(new InetSocketAddress(InetAddress.getLocalHost(), 0), 10, "/", new SimpleHttpTransactionHandler());
             server.setExecutor(Executors.newSingleThreadExecutor());
             server.start();
         } catch (IOException e) {
@@ -111,7 +107,7 @@ public class B5045306
             uc = (HttpURLConnection)smallDataURL.openConnection(Proxy.NO_PROXY);
             uc.getResponseCode();
 
-            if (SimpleHttpTransaction.failed)
+            if (SimpleHttpTransactionHandler.failed)
                 throw new RuntimeException("Failed: Initial Keep Alive Connection is not being reused");
 
             // Part 2
@@ -158,7 +154,7 @@ public class B5045306
     }
 }
 
-class SimpleHttpTransaction implements HttpHandler
+class SimpleHttpTransactionHandler implements HttpHandler
 {
     static boolean failed = false;
 
@@ -172,7 +168,6 @@ class SimpleHttpTransaction implements HttpHandler
         try {
             String path = trans.getRequestURI().getPath();
             if (path.equals("/firstCall")) {
-//                port1 = trans.channel().socket().getPort();
                 port1 = trans.getLocalAddress().getPort();
                 System.out.println("First connection on client port = " + port1);
 
