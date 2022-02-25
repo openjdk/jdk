@@ -164,7 +164,6 @@ public class WindowsHelper {
     }
 
     public static String getExecutableDesciption(Path pathToExeFile) {
-        String description = null;
         Executor exec = Executor.of("powershell",
                 "-NoLogo",
                 "-NoProfile",
@@ -172,20 +171,19 @@ public class WindowsHelper {
                 "(Get-Item \\\""
                 + pathToExeFile.toAbsolutePath()
                 + "\\\").VersionInfo | select FileDescription");
-        List<String> lines = exec.executeAndGetOutput();
-        for (int i = 0; i < lines.size(); i++) {
-            if (lines.get(i).trim().equals("FileDescription")) {
-                i += 2; // Skip "---------------" and move to description
-                description = lines.get(i).trim();
+
+        var lineIt = exec.dumpOutput().executeAndGetOutput().iterator();
+        while (lineIt.hasNext()) {
+            var line = lineIt.next();
+            if (line.trim().equals("FileDescription")) {
+                // Skip "---------------" and move to the description value
+                lineIt.next();
+                return lineIt.next().trim();
             }
         }
 
-        if (description == null) {
-            throw new RuntimeException(String.format(
-                    "Failed to get file description of [%s]", pathToExeFile));
-        }
-
-        return description;
+        throw new RuntimeException(String.format(
+                "Failed to get file description of [%s]", pathToExeFile));
     }
 
     private static boolean isUserLocalInstall(JPackageCommand cmd) {
