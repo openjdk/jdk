@@ -329,16 +329,9 @@ static double calculate_extra_young_gc_time() {
   // relocation headroom into account to avoid in-place relocation.
   ZGenerationYoung* const young = ZGeneration::young();
   ZGenerationOld* const old = ZGeneration::old();
-  const size_t soft_max_capacity = ZHeap::heap()->soft_max_capacity();
-  const size_t used = ZHeap::heap()->used();
-  const size_t free_including_headroom = soft_max_capacity - MIN2(soft_max_capacity, used);
-  const size_t free = free_including_headroom - MIN2(free_including_headroom, ZHeuristics::relocation_headroom());
   const size_t old_used = ZHeap::heap()->used_old();
   const size_t old_live = old->stat_heap()->live_at_mark_end();
   const size_t old_garbage = old_used - old_live;
-  const size_t young_used = ZHeap::heap()->used_young();
-  const size_t young_live = young->stat_heap()->live_at_mark_end();
-  const size_t young_available = young_used + free;
 
   // Calculate max serial/parallel times of a young GC cycle. The times are
   // moving averages, we add ~3.3 sigma to account for the variance.
@@ -349,27 +342,16 @@ static double calculate_extra_young_gc_time() {
   const double young_gc_time = young_serial_gc_time + young_parallelizable_gc_time;
 
   // Calculate how much memory young collections are predicted to free.
-  size_t freeable_per_young_gc = young_available - young_live;
-
-  // Since young collections are not instant, we have to start them
-  // before running out of memory, so that the application can allocate
-  // while the GC works. In a back-to-back scenario, the ratio of
-  // allocated bytes vs reclaimed bytes is typically 50-50. Therefore
-  // the freeable bytes per young GC is typically half of the theoretically
-  // ultimate case of young collections being instant. This is an
-  // approximation of the truth. More exact estimations of allocation
-  // rate might yield more precise heuristics when we don't back-to-back
-  // collect the young generation.
-  freeable_per_young_gc /= 2;
+  size_t reclaimed_per_young_gc = young->stat_heap()->reclaimed_avg();
 
   // Calculate current YC time and predicted YC time after an old collection.
-  const double current_young_gc_time_per_bytes_freed = double(young_gc_time) / double(freeable_per_young_gc);
-  const double potential_young_gc_time_per_bytes_freed = double(young_gc_time) / double(freeable_per_young_gc + old_garbage);
+  const double current_young_gc_time_per_bytes_freed = double(young_gc_time) / double(reclaimed_per_young_gc);
+  const double potential_young_gc_time_per_bytes_freed = double(young_gc_time) / double(reclaimed_per_young_gc + old_garbage);
 
   // Calculate extra time per young collection inflicted by *not* doing an
   // old collection that frees up memory in the old generation.
   const double extra_young_gc_time_per_bytes_freed = current_young_gc_time_per_bytes_freed - potential_young_gc_time_per_bytes_freed;
-  const double extra_young_gc_time = extra_young_gc_time_per_bytes_freed * (freeable_per_young_gc + old_garbage);
+  const double extra_young_gc_time = extra_young_gc_time_per_bytes_freed * (reclaimed_per_young_gc + old_garbage);
 
   return extra_young_gc_time;
 }
@@ -429,15 +411,11 @@ static uint calculate_old_workers() {
   const double old_last_gc_workers = old->stat_cycle()->last_active_workers();
   const double old_parallelizable_gc_duration = old_parallelizable_gc_time / old_last_gc_workers;
 
-  // Calculate max serial/parallel times of a young collection. The times
-  // are moving averages, we add ~3.3 sigma to account for the variance.
-  const double young_serial_gc_time = young->stat_cycle()->serial_time().davg() + (young->stat_cycle()->serial_time().dsd() * one_in_1000);
-  const double young_parallelizable_gc_time = young->stat_cycle()->parallelizable_time().davg() + (young->stat_cycle()->parallelizable_time().dsd() * one_in_1000);
+  // Get the average time interval between young collections
+  const double young_gc_interval = young->stat_cycle()->avg_cycle_interval();
 
-  // Calculate GC duration given number of GC workers needed.
-  const double young_last_gc_workers = young->stat_cycle()->last_active_workers();
-  const double young_gc_duration = young_serial_gc_time + (young_parallelizable_gc_time / young_last_gc_workers);
-
+  // Get the inflated GC time per young collection, due to old generation
+  // not being collected yet.
   const double extra_young_gc_time = calculate_extra_young_gc_time();
 
   // Calculate how much amortized extra young GC time can be reduced by
@@ -448,7 +426,7 @@ static uint calculate_old_workers() {
     const double baseline_old_duration = old_serial_gc_time + (old_parallelizable_gc_time / gc_workers);
     const double potential_old_duration = old_serial_gc_time + (old_parallelizable_gc_time / i);
     const double potential_reduced_old_duration = baseline_old_duration - potential_old_duration;
-    const uint potential_reduced_young_count = uint(potential_reduced_old_duration / young_gc_duration);
+    const uint potential_reduced_young_count = uint(potential_reduced_old_duration / young_gc_interval);
     const double reduced_extra_young_gc_time = extra_young_gc_time * potential_reduced_young_count;
     const uint extra_gc_workers = i - gc_workers;
     const double extra_old_gc_time = extra_gc_workers * old_parallelizable_gc_duration;

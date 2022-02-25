@@ -427,6 +427,7 @@ private:
   uint64_t     _nwarmup_cycles;
   Ticks        _start_of_last;
   Ticks        _end_of_last;
+  NumberSeq    _cycle_intervals;
   NumberSeq    _serial_time;
   NumberSeq    _parallelizable_time;
   NumberSeq    _parallelizable_duration;
@@ -450,6 +451,8 @@ public:
 
   double duration_since_start();
   double time_since_last();
+
+  double avg_cycle_interval();
 };
 
 //
@@ -646,6 +649,8 @@ private:
     size_t compacted;
   } _at_relocate_end;
 
+  NumberSeq _reclaimed_bytes;
+
   size_t capacity_high() const;
   size_t capacity_low() const;
   size_t free(size_t used) const;
@@ -654,13 +659,15 @@ private:
   size_t reclaimed(size_t freed, size_t relocated, size_t promoted) const;
 
 public:
+  ZStatHeap();
+
   void at_initialize(size_t min_capacity, size_t max_capacity);
   void at_collection_start(const ZPageAllocatorStats& stats);
   void at_mark_start(const ZPageAllocatorStats& stats);
   void at_mark_end(const ZPageAllocatorStats& stats);
   void at_select_relocation_set(const ZRelocationSetSelectorStats& stats);
   void at_relocate_start(const ZPageAllocatorStats& stats);
-  void at_relocate_end(const ZPageAllocatorStats& stats);
+  void at_relocate_end(const ZPageAllocatorStats& stats, bool record_stats);
 
   static size_t max_capacity();
   size_t used_at_collection_start() const;
@@ -668,6 +675,8 @@ public:
   size_t live_at_mark_end() const;
   size_t used_at_relocate_end() const;
   size_t used_at_collection_end() const;
+
+  size_t reclaimed_avg();
 
   void print(const ZGeneration* generation) const;
 };

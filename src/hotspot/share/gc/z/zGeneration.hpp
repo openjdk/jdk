@@ -120,6 +120,7 @@ public:
 
   // Statistics
   void reset_statistics();
+  virtual bool should_record_stats() = 0;
   ssize_t freed() const;
   void increase_freed(size_t size);
   size_t promoted() const;
@@ -138,7 +139,7 @@ public:
   ZStatRelocation* stat_relocation();
 
   void at_collection_start(ConcurrentGCTimer* gc_timer);
-  void at_collection_end(bool record_stats);
+  void at_collection_end();
 
   // Workers
   ZWorkers* workers();
@@ -219,6 +220,9 @@ public:
 
   void collect(ZYoungType type, ConcurrentGCTimer* timer);
 
+  // Statistics
+  bool should_record_stats();
+
   // Support for promoting object to the old generation
   void flip_promote(ZPage* from_page, ZPage* to_page);
   void in_place_relocate_promote(ZPage* from_page, ZPage* to_page);
@@ -282,6 +286,9 @@ public:
   ZGenerationOld(ZPageTable* page_table, ZPageAllocator* page_allocator);
 
   void collect(ConcurrentGCTimer* timer);
+
+  // Statistics
+  bool should_record_stats();
 
   // Reference processing
   ReferenceDiscoverer* reference_discoverer();

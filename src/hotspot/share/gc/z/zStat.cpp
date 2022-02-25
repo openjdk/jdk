@@ -1201,6 +1201,7 @@ ZStatCycle::ZStatCycle() :
     _nwarmup_cycles(0),
     _start_of_last(),
     _end_of_last(),
+    _cycle_intervals(0.7 /* alpha */),
     _serial_time(0.7 /* alpha */),
     _parallelizable_time(0.7 /* alpha */),
     _parallelizable_duration(0.7 /* alpha */),
@@ -1212,6 +1213,7 @@ void ZStatCycle::at_start() {
 }
 
 void ZStatCycle::at_end(ZStatWorkers* stat_workers, bool record_stats) {
+  Ticks end_of_last = _end_of_last;
   _end_of_last = Ticks::now();
 
   if (ZDriver::major()->gc_cause() == GCCause::_z_warmup && _nwarmup_cycles < 3) {
@@ -1230,6 +1232,10 @@ void ZStatCycle::at_end(ZStatWorkers* stat_workers, bool record_stats) {
     _serial_time.add(serial_time);
     _parallelizable_time.add(workers_time);
     _parallelizable_duration.add(workers_duration);
+    if (end_of_last.value() != 0) {
+      const double cycle_interval = (_end_of_last - end_of_last).seconds();
+      _cycle_intervals.add(cycle_interval);
+    }
   }
 }
 
@@ -1245,6 +1251,10 @@ bool ZStatCycle::is_time_trustable() {
   // The times are considered trustable if we
   // have completed at least one warmup cycle.
   return _nwarmup_cycles > 0;
+}
+
+double ZStatCycle::avg_cycle_interval() {
+  return _cycle_intervals.davg();
 }
 
 const AbsSeq& ZStatCycle::serial_time() {
@@ -1543,6 +1553,16 @@ void ZStatReferences::print() {
 //
 // Stat heap
 //
+
+ZStatHeap::ZStatHeap() :
+    _at_collection_start(),
+    _at_mark_start(),
+    _at_mark_end(),
+    _at_relocate_start(),
+    _at_relocate_end(),
+    _reclaimed_bytes(0.7 /* alpha */) {
+}
+
 ZStatHeap::ZAtInitialize ZStatHeap::_at_initialize;
 
 size_t ZStatHeap::capacity_high() const {
@@ -1635,7 +1655,7 @@ void ZStatHeap::at_relocate_start(const ZPageAllocatorStats& stats) {
   _at_relocate_start.compacted = stats.compacted();
 }
 
-void ZStatHeap::at_relocate_end(const ZPageAllocatorStats& stats) {
+void ZStatHeap::at_relocate_end(const ZPageAllocatorStats& stats, bool record_stats) {
   _at_relocate_end.capacity = stats.capacity();
   _at_relocate_end.capacity_high = capacity_high();
   _at_relocate_end.capacity_low = capacity_low();
@@ -1652,6 +1672,14 @@ void ZStatHeap::at_relocate_end(const ZPageAllocatorStats& stats) {
   _at_relocate_end.reclaimed = reclaimed(stats.freed(), stats.compacted(), stats.promoted());
   _at_relocate_end.promoted = stats.promoted();
   _at_relocate_end.compacted = stats.compacted();
+
+  if (record_stats) {
+    _reclaimed_bytes.add(_at_relocate_end.reclaimed);
+  }
+}
+
+size_t ZStatHeap::reclaimed_avg() {
+  return _reclaimed_bytes.davg();
 }
 
 size_t ZStatHeap::max_capacity() {

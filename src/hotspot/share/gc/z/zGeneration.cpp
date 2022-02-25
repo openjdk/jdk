@@ -365,9 +365,9 @@ void ZGeneration::at_collection_start(ConcurrentGCTimer* gc_timer) {
   workers()->set_active();
 }
 
-void ZGeneration::at_collection_end(bool record_stats) {
+void ZGeneration::at_collection_end() {
   workers()->set_inactive();
-  stat_cycle()->at_end(stat_workers(), record_stats);
+  stat_cycle()->at_end(stat_workers(), should_record_stats());
   // The heap at collection end data is gathered at relocate end
   clear_gc_timer();
 }
@@ -491,11 +491,14 @@ public:
 
   ~ZGenerationCollectionScopeYoung() {
     // Update statistics and clear the GC timer
-    const bool record_stats = ZGeneration::young()->type() == ZYoungType::minor ||
-                              ZDriver::major()->gc_cause() == GCCause::_z_warmup;
-    ZGeneration::young()->at_collection_end(record_stats);
+    ZGeneration::young()->at_collection_end();
   }
 };
+
+bool ZGenerationYoung::should_record_stats() {
+  return type() == ZYoungType::minor ||
+         ZDriver::major()->gc_cause() == GCCause::_z_warmup;
+}
 
 void ZGenerationYoung::collect(ZYoungType type, ConcurrentGCTimer* timer) {
   ZGenerationCollectionScopeYoung scope(type, timer);
@@ -802,7 +805,7 @@ void ZGenerationYoung::relocate() {
   _relocate.relocate(&_relocation_set);
 
   // Update statistics
-  stat_heap()->at_relocate_end(_page_allocator->stats(this));
+  stat_heap()->at_relocate_end(_page_allocator->stats(this), should_record_stats());
 }
 
 void ZGenerationYoung::flip_promote(ZPage* from_page, ZPage* to_page) {
@@ -859,9 +862,13 @@ public:
 
   ~ZGenerationCollectionScopeOld() {
     // Update statistics and clear the GC timer
-    ZGeneration::old()->at_collection_end(true /* record_stats */);
+    ZGeneration::old()->at_collection_end();
   }
 };
+
+bool ZGenerationOld::should_record_stats() {
+  return true;
+}
 
 void ZGenerationOld::collect(ConcurrentGCTimer* timer) {
   ZGenerationCollectionScopeOld scope(timer);
@@ -1222,7 +1229,7 @@ void ZGenerationOld::relocate() {
   _relocate.relocate(&_relocation_set);
 
   // Update statistics
-  stat_heap()->at_relocate_end(_page_allocator->stats(this));
+  stat_heap()->at_relocate_end(_page_allocator->stats(this), should_record_stats());
   _total_collections_at_end = ZCollectedHeap::heap()->total_collections();
 }
 
