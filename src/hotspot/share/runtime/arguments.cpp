@@ -867,27 +867,24 @@ static bool set_numeric_flag(JVMFlag* flag, char* value, JVMFlagOrigin origin) {
     }
     return JVMFlagAccess::set_int(flag, &int_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_uint()) {
-    // -XX:ParallelGCThreads expects that a value of max_juint+1 (4294967296)
-    // will set ParallelGCThreads to 0.  So, allow values of max_juint+1.
-    if (v > (julong)max_juint + 1) {
+    if (v > max_juint) {
       return false;
     }
     uint uint_v = (uint) v;
     return JVMFlagAccess::set_uint(flag, &uint_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_intx()) {
     intx_v = (intx) v;
-    if (!is_neg && v > (uintx)(max_intx)) {
-      return false;  // Value exceeds max_intx.
-    }
-    if (is_neg && v > (uintx)(min_intx)) {
-      return false;  // Value is less than min_intx.
-    }
-
-    // intx_v will already be negative for extreme specified values such as
-    // -9223372036854775808.  Negating intx_v for such values will erroneously
-    // make them positive.
-    if (is_neg && intx_v > 0) {
-      intx_v = -intx_v;
+    if (is_neg) {
+      if (intx_v != min_intx) {
+        intx_v = - intx_v;
+        if (intx_v > 0) {
+          return false; // underflow
+        }
+      }
+    } else {
+      if (intx_v < 0) {
+        return false; // overflow
+      }
     }
     return JVMFlagAccess::set_intx(flag, &intx_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_uintx()) {
