@@ -49,7 +49,7 @@ import jdk.test.lib.net.URIBuilder;
 
 public class PerConnectionProxy {
     static HttpServer server;
-    
+
     public static void main(String[] args) {
         try {
             InetAddress loopbackAddress = InetAddress.getLoopbackAddress();
@@ -77,7 +77,6 @@ public class PerConnectionProxy {
             } catch (IOException ioex) {
                 // expected
             }
-
             // for NO_PROXY, expect direct connection
             try {
                 HttpURLConnection urlc = (HttpURLConnection)url.openConnection (Proxy.NO_PROXY);
@@ -86,7 +85,6 @@ public class PerConnectionProxy {
             } catch (IOException ioex) {
                 throw new RuntimeException("direct connection should succeed :"+ioex.getMessage());
             }
-
             // for a normal proxy setting expect to see connection
             // goes through that proxy
             try {
@@ -108,7 +106,6 @@ public class PerConnectionProxy {
                 server.stop(1);
             }
         }
-
     }
 
     static class ProxyServer extends Thread {
@@ -149,7 +146,6 @@ public class PerConnectionProxy {
 
         private void processRequests() throws Exception {
             // connection set to the tunneling mode
-
             Socket serverSocket = new Socket(serverInetAddr, serverPort);
             ProxyTunnel clientToServer = new ProxyTunnel(
                                                          clientSocket, serverSocket);
@@ -165,7 +161,6 @@ public class PerConnectionProxy {
 
             clientToServer.close();
             serverToClient.close();
-
         }
 
         /**
@@ -225,7 +220,6 @@ public class PerConnectionProxy {
                 } catch (IOException ignored) { }
             }
         }
-
     }
 }
 
