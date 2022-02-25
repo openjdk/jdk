@@ -19,7 +19,7 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
+ 
  * questions.
  */
 
@@ -42,6 +42,7 @@ import java.util.Set;
 import sun.net.NetProperties;
 import sun.net.www.HeaderParser;
 import sun.nio.cs.ISO_8859_1;
+import sun.util.logging.PlatformLogger;
 
 import static sun.net.www.protocol.http.HttpURLConnection.HTTP_CONNECT;
 
@@ -62,13 +63,14 @@ class DigestAuthentication extends AuthenticationInfo {
     private static final String compatPropName = "http.auth.digest." +
         "quoteParameters";
 
-    // default set of disabled message digest algorithms that are
-    // used for proxy connections, and plain text http server connections
+    // default set of disabled message digest algorithms that may not be
+    // used for proxy connections, or plain text http server connections
 
+    // This will probably be expanded to include SHA-1 eventually
     private static final Set<String> defDisabledAlgs =
-	Set.of("MD-5");
+        Set.of("MD5");
 
-    // A net property which overrides the disabled set above. 
+    // A net property which overrides the disabled set above.
     private static final String enabledAlgPropName = "http.auth.digest." +
         "enabledDigestAlgs";
 
@@ -77,23 +79,34 @@ class DigestAuthentication extends AuthenticationInfo {
     // true if http.auth.digest.quoteParameters Net property is true
     private static final boolean delimCompatFlag;
 
+    private static final PlatformLogger logger =
+        HttpURLConnection.getHttpLogger();
+
     static {
-	@SuppressWarnings("removal")
-        (Void)AccessController.doPrivileged(
+        @SuppressWarnings("removal")
+        boolean flag = AccessController.doPrivileged(
             new PrivilegedAction<>() {
-                public Void run() {
-                    boolean b = NetProperties.getBoolean(compatPropName);
-        	    delimCompatFlag = (b == null) ? false : b.booleanValue();
-                    
-                    disabledAlgs.addAll(defDisabledAlgs);
-                    String s = NetProperties.get(enabledAlgPropName);
-		    for (String alg : s.split(",")) {
-			disabledAlgs.remove(alg.toUpperCase());
-		    }
-		    return null;
+                public Boolean run() {
+                    Boolean b = NetProperties.getBoolean(compatPropName);
+                    return (b == null) ? false : b.booleanValue();
                 }
             }
         );
+        delimCompatFlag = flag;
+
+        disabledAlgs.addAll(defDisabledAlgs);
+        @SuppressWarnings("removal")
+        String algs = AccessController.doPrivileged(
+            new PrivilegedAction<>() {
+                public String run() {
+                    String s = NetProperties.get(enabledAlgPropName);
+                    return s == null ? "" : s;
+                }
+            }
+        );
+        for (String alg : algs.split(",")) {
+            disabledAlgs.remove(alg.toUpperCase());
+        }
     }
 
     // Authentication parameters defined in RFC2617.
@@ -212,7 +225,11 @@ class DigestAuthentication extends AuthenticationInfo {
         }
 
         synchronized String getAlgorithm () { return algorithm;}
-        synchronized void setAlgorithm (String s) { algorithm=s;}
+
+        synchronized void setAlgorithm (String s) {
+            algorithm = s;
+        }
+
     }
 
     Parameters params;
@@ -399,9 +416,23 @@ class DigestAuthentication extends AuthenticationInfo {
                 ncstring = zeroPad [len] + ncstring;
         }
 
+        boolean session = algorithm.endsWith ("-sess");
+        if (session) {
+            algorithm = algorithm.substring(0, algorithm.length() - 5);
+        }
+
+        try {
+            validateAlgorithm(algorithm);
+        } catch (IOException e) {
+            // should not happen since the algorithm has already been
+            // validated
+            return null;
+        }
+
         try {
             response = computeDigest(true, pw.getUserName(),passwd,realm,
-                                        method, uri, nonce, cnonce, ncstring);
+                                        method, uri, nonce, cnonce, ncstring,
+                                        algorithm, session);
         } catch (NoSuchAlgorithmException ex) {
             return null;
         }
@@ -448,18 +479,22 @@ class DigestAuthentication extends AuthenticationInfo {
         checkResponse (header, method, url.getFile());
     }
 
-    private static void validateAlgorithm(String algorithm) throws IOException {
-	if (getAuthType() == AuthCacheValue.Type.Server && 
-		getProtocolScheme().equals("https")) {
-	    // HTTPS server authentication can use any algorithm
-	    return;
-	}
+    private void validateAlgorithm(String algorithm) throws IOException {
+        if (getAuthType() == AuthCacheValue.Type.Server &&
+                getProtocolScheme().equals("https")) {
+            // HTTPS server authentication can use any algorithm
+            return;
+        }
         algorithm = algorithm.toUpperCase();
         if (disabledAlgs.contains(algorithm)) {
-	    String msg = "Rejecting digest authentication with insecure algorithm: " 
-		+ algorithm;
-	    throw new IOException(msg);
-	}
+            String msg = "Rejecting digest authentication with insecure algorithm: "
+                + algorithm;
+            if (logger.isLoggable(PlatformLogger.Level.INFO)) {
+                logger.info(msg + " This constraint may be relaxed by setting " +
+                     "the \"http.auth.digest.enabledDigestAlgs\" system property.");
+            }
+            throw new IOException(msg);
+        }
     }
 
     public void checkResponse (String header, String method, String uri)
@@ -478,6 +513,10 @@ class DigestAuthentication extends AuthenticationInfo {
             throw new ProtocolException ("No authentication information in response");
         }
 
+        boolean session = algorithm.endsWith ("-sess");
+        if (session) {
+            algorithm = algorithm.substring(0, algorithm.length() - 5);
+        }
         validateAlgorithm(algorithm);
 
         if (nccount != -1) {
@@ -487,8 +526,8 @@ class DigestAuthentication extends AuthenticationInfo {
                 ncstring = zeroPad [len] + ncstring;
         }
         try {
-            String expected = computeDigest(false, username,passwd,realm,
-                                        method, uri, nonce, cnonce, ncstring);
+            String expected = computeDigest(false, username,passwd,realm, method, uri,
+                                           nonce, cnonce, ncstring, algorithm, session);
             HeaderParser p = new HeaderParser (header);
             String rspauth = p.findValue ("rspauth");
             if (rspauth == null) {
@@ -512,27 +551,31 @@ class DigestAuthentication extends AuthenticationInfo {
                         boolean isRequest, String userName, char[] password,
                         String realm, String connMethod,
                         String requestURI, String nonceString,
-                        String cnonce, String ncValue
+                        String cnonce, String ncValue,
+                        String algorithm, boolean session
                     ) throws NoSuchAlgorithmException
     {
 
         String A1, HashA1;
-        String algorithm = params.getAlgorithm ();
-        boolean md5sess = algorithm.equalsIgnoreCase ("MD5-sess");
+        boolean truncate256 = false;
 
-        MessageDigest md = MessageDigest.getInstance(md5sess?"MD5":algorithm);
+        if (algorithm.equals("SHA-512-256")) {
+            algorithm = "SHA-512";
+            truncate256 = true;
+        }
+        MessageDigest md = MessageDigest.getInstance(algorithm);
 
-        if (md5sess) {
+        if (session) {
             if ((HashA1 = params.getCachedHA1 ()) == null) {
                 String s = userName + ":" + realm + ":";
-                String s1 = encode (s, password, md);
+                String s1 = encode (s, password, md, truncate256);
                 A1 = s1 + ":" + nonceString + ":" + cnonce;
-                HashA1 = encode(A1, null, md);
+                HashA1 = encode(A1, null, md, truncate256);
                 params.setCachedHA1 (HashA1);
             }
         } else {
             A1 = userName + ":" + realm + ":";
-            HashA1 = encode(A1, password, md);
+            HashA1 = encode(A1, password, md, truncate256);
         }
 
         String A2;
@@ -541,7 +584,7 @@ class DigestAuthentication extends AuthenticationInfo {
         } else {
             A2 = ":" + requestURI;
         }
-        String HashA2 = encode(A2, null, md);
+        String HashA2 = encode(A2, null, md, truncate256);
         String combo, finalHash;
 
         if (params.authQop()) { /* RRC2617 when qop=auth */
@@ -553,7 +596,7 @@ class DigestAuthentication extends AuthenticationInfo {
                        nonceString + ":" +
                        HashA2;
         }
-        finalHash = encode(combo, null, md);
+        finalHash = encode(combo, null, md, truncate256);
         return finalHash;
     }
 
@@ -567,7 +610,8 @@ class DigestAuthentication extends AuthenticationInfo {
         "00000000", "0000000", "000000", "00000", "0000", "000", "00", "0"
     };
 
-    private String encode(String src, char[] passwd, MessageDigest md) {
+    // truncate256 means only use the last 256 bits of the digest (32 bytes)
+    private String encode(String src, char[] passwd, MessageDigest md, boolean truncate256) {
         md.update(src.getBytes(ISO_8859_1.INSTANCE));
         if (passwd != null) {
             byte[] passwdBytes = new byte[passwd.length];
@@ -577,9 +621,14 @@ class DigestAuthentication extends AuthenticationInfo {
             Arrays.fill(passwdBytes, (byte)0x00);
         }
         byte[] digest = md.digest();
+        int start = 0;
+        if (truncate256) {
+            assert digest.length >= 32;
+            start = digest.length - 32;
+        }
 
         StringBuilder res = new StringBuilder(digest.length * 2);
-        for (int i = 0; i < digest.length; i++) {
+        for (int i = start; i < digest.length; i++) {
             int hashchar = ((digest[i] >>> 4) & 0xf);
             res.append(charArray[hashchar]);
             hashchar = (digest[i] & 0xf);
