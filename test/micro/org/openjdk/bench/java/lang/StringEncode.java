@@ -112,7 +112,7 @@ public class StringEncode {
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public voidencodeAsciiLong(Blackhole bh) throws Exception {
+    public void encodeAsciiLong(Blackhole bh) throws Exception {
         bh.consume(longAsciiString.getBytes(charset));
         bh.consume(longAsciiString1055.getBytes(charset));
     }
@@ -155,11 +155,12 @@ public class StringEncode {
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public byte[] encodeLatin1Short(Blackhole bh) throws Exception {
+    public void encodeLatin1Short(Blackhole bh) throws Exception {
         bh.consume(latin1String.getBytes(charset));
         bh.consume(latin1String3.getBytes(charset));
         bh.consume(latin1String15.getBytes(charset));
         bh.consume(latin1String7.getBytes(charset));
+    }
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)

@@ -87,7 +87,7 @@ public class StringDecode {
         bh.consume(new String(asciiString, charset));
         bh.consume(new String(longAsciiString, 0, 15, charset));
         bh.consume(new String(asciiString, 0, 3, charset));
-        bh.consume(new String(longAsciiString, 512, 512 + 5, charset));
+        bh.consume(new String(longAsciiString, 512, 512 + 7, charset));
     }
 
     @Benchmark
@@ -99,8 +99,11 @@ public class StringDecode {
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public String decodeLatin1Short() throws Exception {
-        return new String(latin1String, charset);
+    public void decodeLatin1Short(Blackhole bh) throws Exception {
+        bh.consume(new String(latin1String, charset));
+        bh.consume(new String(latin1String, 0, 15, charset));
+        bh.consume(new String(latin1String, 0, 3, charset));
+        bh.consume(new String(longLatin1OnlyString, 512, 512 + 7, charset));
     }
 
     @Benchmark
@@ -132,8 +135,11 @@ public class StringDecode {
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public String decodeUTF16Short() throws Exception {
-        return new String(utf16String, charset);
+    public void decodeUTF16Short(Blackhole bh) throws Exception {
+        bh.consume(new String(utf16String, charset));
+        bh.consume(new String(utf16String, 0, 15, charset));
+        bh.consume(new String(utf16String, 0, 3, charset));
+        bh.consume(new String(utf16String, 0, 7, charset));
     }
 
     @Benchmark
