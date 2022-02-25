@@ -60,7 +60,6 @@ import java.util.concurrent.TimeUnit;
 import java.security.*;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
-import java.util.stream.Collectors;
 import static java.lang.System.getenv;
 import static java.lang.System.out;
 import static java.lang.Boolean.TRUE;
@@ -76,24 +75,8 @@ public class Basic {
     /* used for Mac OS X only */
     static final String cfUserTextEncoding = System.getenv("__CF_USER_TEXT_ENCODING");
 
-    /* used for AIX only (without test.nativepath setting) */
-    static final String libpath;
-    static {
-        String libpathString = System.getenv("LIBPATH");
-        if (libpathString == null) {
-            libpathString = "";
-        } else if (AIX.is()) {
-            String nativepath = System.getProperty("test.nativepath");
-            if (nativepath != null) {
-                libpathString = Arrays.asList(
-                    libpathString.split(File.pathSeparator))
-                    .stream()
-                    .filter(s -> !s.equals(nativepath))
-                    .collect(Collectors.joining(File.pathSeparator));
-            }
-        }
-        libpath = libpathString;
-    }
+    /* used for AIX only */
+    static final String libpath = System.getenv("LIBPATH");
 
     /* Used for regex String matching for long error messages */
     static final String PERMISSION_DENIED_ERROR_MSG = "(Permission denied|error=13)";
@@ -1380,6 +1363,9 @@ public class Basic {
             if (Windows.is()) {
                 pb.environment().put("SystemRoot", systemRoot);
             }
+            if (AIX.is()) {
+                pb.environment().put("LIBPATH", libpath);
+            }
             String result = getenvInChild(pb);
             if (MacOSX.is()) {
                 result = removeMacExpectedVars(result);
@@ -1884,6 +1870,8 @@ public class Basic {
             String[] envpOth = {"=ExitValue=3", "=C:=\\"};
             if (Windows.is()) {
                 envp = envpWin;
+            } else if (AIX.is()) {
+                envp = new String[] {"=ExitValue=3", "=C:=\\", "LIBPATH=" + libpath};
             } else {
                 envp = envpOth;
             }
@@ -1932,6 +1920,9 @@ public class Basic {
             String[] envp;
             if (Windows.is()) {
                 envp = envpWin;
+            } else if (AIX.is()) {
+                envp = new String[] {"LC_ALL=C\u0000\u0000", // Yuck!
+                        "FO\u0000=B\u0000R", "LIBPATH=" + libpath};
             } else {
                 envp = envpOth;
             }
