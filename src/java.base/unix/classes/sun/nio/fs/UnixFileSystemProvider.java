@@ -434,14 +434,10 @@ public abstract class UnixFileSystemProvider
             IOException ioe = x.errno() == UnixConstants.ENOTDIR ?
                 new NotDirectoryException(dir.getPathForExceptionMessage()) :
                 x.asIOException(dir);
-            if (dfd1 != -1) {
-                ioe = UnixNativeDispatcher.close(dfd1, ioe,
-                    y -> y.asIOException(dir));
-            }
-            if (dfd2 != -1) {
-                ioe = UnixNativeDispatcher.close(dfd2, ioe,
-                    z -> z.asIOException(dir));
-            }
+            if (dfd1 != -1)
+                ioe = UnixNativeDispatcher.close(dfd1, ioe, e -> null);
+            if (dfd2 != -1)
+                ioe = UnixNativeDispatcher.close(dfd2, ioe, e -> null);
             throw ioe;
         }
         return new UnixSecureDirectoryStream(dir, dp, dfd2, filter);

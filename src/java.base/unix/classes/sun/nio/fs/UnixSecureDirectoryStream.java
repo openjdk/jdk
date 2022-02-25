@@ -120,14 +120,10 @@ class UnixSecureDirectoryStream
                 IOException ioe = x.errno() == UnixConstants.ENOTDIR ?
                     new NotDirectoryException(file.toString()) :
                     x.asIOException(file);
-                if (newdfd1 != -1) {
-                    ioe = UnixNativeDispatcher.close(newdfd1, ioe,
-                        y -> y.asIOException(file));
-                }
-                if (newdfd2 != -1) {
-                    ioe = UnixNativeDispatcher.close(newdfd1, ioe,
-                        z -> z.asIOException(file));
-                }
+                if (newdfd1 != -1)
+                    ioe = UnixNativeDispatcher.close(newdfd1, ioe, e -> null);
+                if (newdfd2 != -1)
+                    ioe = UnixNativeDispatcher.close(newdfd1, ioe, e -> null);
                 throw ioe;
             }
             return new UnixSecureDirectoryStream(child, ptr, newdfd2, null);

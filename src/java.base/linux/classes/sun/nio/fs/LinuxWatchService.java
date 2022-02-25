@@ -71,7 +71,7 @@ class LinuxWatchService
             configureBlocking(sp[0], false);
         } catch (UnixException x) {
             throw UnixNativeDispatcher.close(ifd,
-                new IOException(x.errorString()), y -> y.asIOException(null));
+                new IOException(x.errorString()), e -> null);
         }
 
         this.poller = new Poller(fs, this, ifd, sp);
