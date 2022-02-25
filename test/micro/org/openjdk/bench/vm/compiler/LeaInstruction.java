@@ -42,6 +42,7 @@ public class LeaInstruction {
         for (int i = 0; i < ITERATION; i++) {
             x = x * 4 + 10;
         }
+        bh.consume(x);
     }
 
     @Benchmark
@@ -50,9 +51,9 @@ public class LeaInstruction {
         for (int i = 0; i < ITERATION; i++) {
             x = x + y + 10;
             y = x + y + 20;
-            bh.consume(x);
-            bh.consume(y);
         }
+        bh.consume(x);
+        bh.consume(y);
     }
 
     @Benchmark
@@ -61,9 +62,9 @@ public class LeaInstruction {
         for (int i = 0; i < ITERATION; i++) {
             x = x + y * 4;
             y = x + y * 8;
-            bh.consume(x);
-            bh.consume(y);
         }
+        bh.consume(x);
+        bh.consume(y);
     }
 
     @Benchmark
@@ -72,9 +73,9 @@ public class LeaInstruction {
         for (int i = 0; i < ITERATION; i++) {
             x = x + y * 4 + 10;
             y = x + y * 8 + 20;
-            bh.consume(x);
-            bh.consume(y);
         }
+        bh.consume(x);
+        bh.consume(y);
     }
 
     @Benchmark
@@ -82,8 +83,8 @@ public class LeaInstruction {
         long x = this.x;
         for (int i = 0; i < ITERATION; i++) {
             x = x * 4 + 10;
-            bh.consume(x);
         }
+        bh.consume(x);
     }
 
     @Benchmark
@@ -92,9 +93,9 @@ public class LeaInstruction {
         for (int i = 0; i < ITERATION; i++) {
             x = x + y + 10;
             y = x + y + 20;
-            bh.consume(x);
-            bh.consume(y);
         }
+        bh.consume(x);
+        bh.consume(y);
     }
 
     @Benchmark
@@ -103,9 +104,9 @@ public class LeaInstruction {
         for (int i = 0; i < ITERATION; i++) {
             x = x + y * 4;
             y = x + y * 8;
-            bh.consume(x);
-            bh.consume(y);
         }
+        bh.consume(x);
+        bh.consume(y);
     }
 
     @Benchmark
@@ -114,8 +115,8 @@ public class LeaInstruction {
         for (int i = 0; i < ITERATION; i++) {
             x = x + y * 4 + 10;
             y = x + y * 8 + 20;
-            bh.consume(x);
-            bh.consume(y);
         }
+        bh.consume(x);
+        bh.consume(y);
     }
 }
