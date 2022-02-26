@@ -70,6 +70,9 @@ public class TestWaste {
             // Unused threads should not create unreasonable amount of waste
             r.disable("jdk.ThreadStart");
             r.disable("jdk.ThreadStop");
+            // jdk.GCPhaseParallel can often, but not always, take up a very
+            // large part of the recording. Disable to make test more stable
+            r.disable("jdk.GCPhaseParallel");
             r.start();
             // Generate data
             for (int i = 0; i < 5_000_000; i++) {
@@ -101,8 +104,8 @@ public class TestWaste {
             System.out.printf("Scrubbed size: %.2f MB\n", scrubbedSize / (1024 * 1024));
             float waste = 1 - scrubbedSize / fileSize;
             System.out.printf("Waste: %.2f%%\n", 100 * waste);
-            if (waste > 0.02) {
-                throw new AssertionError("Found more than 2% waste");
+            if (waste > 0.10) {
+                throw new AssertionError("Found more than 10% waste");
             }
         }
     }
