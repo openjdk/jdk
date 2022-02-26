@@ -496,9 +496,11 @@ NMethodSweeper::MethodStateChange NMethodSweeper::process_compiled_method(Compil
     // All inline caches that referred to this nmethod were cleaned in the
     // previous sweeper cycle. Now flush the nmethod from the code cache.
     assert(!cm->is_locked_by_vm(), "must not flush locked Compiled Methods");
-    cm->flush();
-    assert(result == None, "sanity");
-    result = Flushed;
+    if (UseCodeCacheFlushing) {
+      cm->flush();
+      assert(result == None, "sanity");
+      result = Flushed;
+   }
   } else if (cm->is_not_entrant()) {
     // If there are no current activations of this method on the
     // stack we can safely convert it to a zombie method
