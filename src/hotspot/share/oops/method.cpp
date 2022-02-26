@@ -396,6 +396,7 @@ void Method::metaspace_pointers_do(MetaspaceClosure* it) {
   }
   it->push(&_method_data);
   it->push(&_method_counters);
+  NOT_PRODUCT(it->push(&_name);)
 }
 
 // Attempt to return method to original state.  Clear any pointers
