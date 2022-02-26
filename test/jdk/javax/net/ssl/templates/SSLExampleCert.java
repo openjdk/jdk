@@ -60,16 +60,16 @@ import java.util.Base64;
  */
 public enum SSLExampleCert {
     // Version: 3 (0x2)
-    //        Serial Number: 4097 (0x1001)
-    //        Signature Algorithm: sha256WithRSAEncryption
-    //        Issuer: C = US, ST = California, O = Example, OU = Test
-    //        Validity
-    //            Not Before: Feb 25 20:12:04 2022 GMT
-    //            Not After : Feb 20 20:12:04 2042 GMT
-    //        Subject: C = US, ST = California, O = Example, OU = Test
-    //        Subject Public Key Info:
-    //            Public Key Algorithm: rsaEncryption
-    //                RSA Public-Key: (2048 bit)
+    // Serial Number: 4097 (0x1001)
+    // Signature Algorithm: sha256WithRSAEncryption
+    // Issuer: C = US, ST = California, O = Example, OU = Test
+    // Validity
+    //     Not Before: Feb 25 20:12:04 2022 GMT
+    //     Not After : Feb 20 20:12:04 2042 GMT
+    // Subject: C = US, ST = California, O = Example, OU = Test
+    // Subject Public Key Info:
+    //     Public Key Algorithm: rsaEncryption
+    //         RSA Public-Key: (2048 bit)
     CA_RSA("RSA",
             """
                     -----BEGIN CERTIFICATE-----
@@ -127,16 +127,16 @@ public enum SSLExampleCert {
                     """),
 
     // Version: 3 (0x2)
-    //        Serial Number: 4098 (0x1002)
-    //        Signature Algorithm: sha256WithRSAEncryption
-    //        Issuer: C = US, ST = California, O = Example, OU = Test
-    //        Validity
-    //            Not Before: Feb 25 20:31:29 2022 GMT
-    //            Not After : Feb 19 20:31:29 2042 GMT
-    //        Subject: C = US, ST = California, O = Example, OU = Test, CN = www.example.com
-    //        Subject Public Key Info:
-    //            Public Key Algorithm: rsaEncryption
-    //                RSA Public-Key: (2048 bit)
+    // Serial Number: 4098 (0x1002)
+    // Signature Algorithm: sha256WithRSAEncryption
+    // Issuer: C = US, ST = California, O = Example, OU = Test
+    // Validity
+    //     Not Before: Feb 25 20:31:29 2022 GMT
+    //     Not After : Feb 19 20:31:29 2042 GMT
+    // Subject: C = US, ST = California, O = Example, OU = Test, CN = www.example.com
+    // Subject Public Key Info:
+    //     Public Key Algorithm: rsaEncryption
+    //         RSA Public-Key: (2048 bit)
     SERVER_EXAMPLE_RSA("RSA",
             """
                     -----BEGIN CERTIFICATE-----
@@ -192,16 +192,16 @@ public enum SSLExampleCert {
 
 
     // Version: 3 (0x2)
-    //        Serial Number: 4099 (0x1003)
-    //        Signature Algorithm: sha256WithRSAEncryption
-    //        Issuer: C = US, ST = California, O = Example, OU = Test
-    //        Validity
-    //            Not Before: Feb 25 20:33:59 2022 GMT
-    //            Not After : Feb 19 20:33:59 2042 GMT
-    //        Subject: C = US, ST = California, O = Example, OU = Test, CN = Do-Not-Reply
-    //        Subject Public Key Info:
-    //            Public Key Algorithm: rsaEncryption
-    //                RSA Public-Key: (2048 bit)
+    // Serial Number: 4099 (0x1003)
+    // Signature Algorithm: sha256WithRSAEncryption
+    // Issuer: C = US, ST = California, O = Example, OU = Test
+    // Validity
+    //     Not Before: Feb 25 20:33:59 2022 GMT
+    //     Not After : Feb 19 20:33:59 2042 GMT
+    // Subject: C = US, ST = California, O = Example, OU = Test, CN = Do-Not-Reply
+    // Subject Public Key Info:
+    //     Public Key Algorithm: rsaEncryption
+    //         RSA Public-Key: (2048 bit)
     CLIENT_EXAMPLE_RSA("RSA",
             """
                     -----BEGIN CERTIFICATE-----
