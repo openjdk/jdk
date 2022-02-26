@@ -928,7 +928,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     }
     break;
 
-  case 0x81: // addl a, #32, addl r, #32
+  case 0x81: // addl a, #32; addl r, #32
     // also: orl, adcl, sbbl, andl, subl, xorl, cmpl
     // on 32bit in the case of cmpl, the imm might be an oop
     tail_size = 4;
