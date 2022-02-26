@@ -928,7 +928,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     }
     break;
 
-  case 0x81: // addl r, #32
+  case 0x81: // addl a, #32, addl r, #32
     // also: orl, adcl, sbbl, andl, subl, xorl, cmpl
     // on 32bit in the case of cmpl, the imm might be an oop
     tail_size = 4;
@@ -941,14 +941,14 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     tail_size = 1;
     break;
 
-  case 0x15: // adc a, #32
-  case 0x05: // add a, #32
-  case 0x25: // and a, #32
-  case 0x3D: // cmp a, #32
-  case 0x0D: // or  a, #32
-  case 0x1D: // sbb a, #32
-  case 0x2D: // sub a, #32
-  case 0x35: // xor a, #32
+  case 0x15: // adc rax, #32
+  case 0x05: // add rax, #32
+  case 0x25: // and rax, #32
+  case 0x3D: // cmp rax, #32
+  case 0x0D: // or  rax, #32
+  case 0x1D: // sbb rax, #32
+  case 0x2D: // sub rax, #32
+  case 0x35: // xor rax, #32
     return which == end_pc_operand ? ip + 4 : ip;
 
   case 0x9B:
@@ -976,9 +976,9 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     debug_only(has_disp32 = true); // has both kinds of operands!
     break;
 
-  case 0xA8: // testb a, #8
+  case 0xA8: // testb rax, #8
     return which == end_pc_operand ? ip + 1 : ip;
-  case 0xA9: // testl/testq a, #32
+  case 0xA9: // testl/testq rax, #32
     return which == end_pc_operand ? ip + 4 : ip;
 
   case 0xC1: // sal a, #8; sar a, #8; shl a, #8; shr a, #8
@@ -1707,12 +1707,6 @@ void Assembler::cmpl(Address dst, int32_t imm32) {
   prefix(dst);
   emit_int8((unsigned char)0x81);
   emit_operand(rdi, dst, 4);
-  emit_int32(imm32);
-}
-
-void Assembler::cmp(Register dst, int32_t imm32) {
-  prefix(dst);
-  emit_int8((unsigned char)0x3D);
   emit_int32(imm32);
 }
 
