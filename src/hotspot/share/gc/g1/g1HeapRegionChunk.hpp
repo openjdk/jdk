@@ -35,6 +35,7 @@ class HeapRegion;
 class G1HeapRegionChunk {
   const uint _chunk_size;
   HeapRegion* _region;
+  // chunk index in a region, zero based.
   uint _chunk_idx;
   const G1CMBitMap* const _bitmap;
 
@@ -74,34 +75,22 @@ public:
   virtual void do_heap_region_chunk(G1HeapRegionChunk* c) = 0;
 };
 
-class G1HeapRegionChunksClaimer {
-  const uint _chunk_num;
-  const uint _chunk_size;
-  const uint _region_idx;
-  CHeapBitMap _chunks;
-
-public:
-  G1HeapRegionChunksClaimer(uint region_idx, bool region_ready = false);
-
-  bool claim_chunk(uint chunk_idx);
-
-  uint chunk_size() { return _chunk_size; }
-  uint chunk_num() { return _chunk_num; }
-};
-
-// Iterate through chunks of regions, for each region do single preparation.
-class G1ScanChunksInHeapRegionClosure : public HeapRegionClosure {
-  G1HeapRegionChunksClaimer** _chunk_claimers;
-  G1HeapRegionChunkClosure* _closure;
-  uint _worker_id;
+class G1ScanChunksInHeapRegions {
   const G1CMBitMap* const _bitmap;
+  CHeapBitMap _chunks;
+  const uint* _evac_failure_regions;
+  uint _evac_failure_regions_length;
+  uint _chunks_per_region;
+  uint _chunk_size;
+  uint _total_chunks;
+
+  bool claim_chunk(uint id);
 
 public:
-  G1ScanChunksInHeapRegionClosure(G1HeapRegionChunksClaimer** chunk_claimers,
-                                  G1HeapRegionChunkClosure* closure,
-                                  uint worker_id);
+  G1ScanChunksInHeapRegions();
+  void initialize(const uint* evac_failure_regions, uint evac_failure_regions_length, uint num_workers);
 
-  bool do_heap_region(HeapRegion* r) override;
+  void par_iterate_chunks_in_regions(G1HeapRegionChunkClosure* chunk_closure, uint worker_id);
 };
 
 #endif //SHARE_GC_G1_G1HEAPREGIONCHUNK_HPP

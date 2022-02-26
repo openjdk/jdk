@@ -28,8 +28,8 @@
 #include "runtime/atomic.hpp"
 #include "utilities/bitMap.hpp"
 
-class G1HeapRegionChunksClaimer;
 class G1HeapRegionChunkClosure;
+class G1ScanChunksInHeapRegions;
 class HeapRegionClosure;
 class HeapRegionClaimer;
 
@@ -41,8 +41,8 @@ class G1EvacFailureRegions {
   CHeapBitMap _regions_failed_evacuation;
   // Regions (index) of evacuation failed in the current collection.
   uint* _evac_failure_regions;
-  // Claims chunks in regions automatically.
-  G1HeapRegionChunksClaimer** _chunk_claimers;
+  // Scans chunks in evacuation failure regions
+  G1ScanChunksInHeapRegions* _chunks_in_regions;
   // Number of regions evacuation failed in the current collection.
   volatile uint _evac_failure_regions_cur_length;
   // Maximum of regions number.
@@ -63,15 +63,15 @@ public:
   void par_iterate(HeapRegionClosure* closure,
                    HeapRegionClaimer* hrclaimer,
                    uint worker_id) const;
+  void initialize_chunks(uint active_workers);
   // Iterate through all chunks in regions that failed evacuation during the entire collection.
   void par_iterate_chunks_in_regions(G1HeapRegionChunkClosure* chunk_closure,
                                      uint worker_id) const;
 
   // Do necessary preparation for evacuation failure regions
   void prepare_regions();
-  void prepare_region(uint region_idx, uint worker_id);
 
-  uint max_regions() {
+  uint max_regions() const {
     return _max_regions;
   }
 

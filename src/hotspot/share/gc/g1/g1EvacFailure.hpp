@@ -38,7 +38,6 @@ class G1EvacFailureRegions;
 class G1ParRemoveSelfForwardPtrsTask: public WorkerTask {
 protected:
   G1CollectedHeap* _g1h;
-  HeapRegionClaimer _hrclaimer;
 
   G1EvacFailureRegions* _evac_failure_regions;
   uint volatile _num_failed_regions;
@@ -49,6 +48,8 @@ public:
   void work(uint worker_id);
 
   uint num_failed_regions() const;
+
+  void initialize_chunks(uint active_workers);
 };
 
 #endif // SHARE_GC_G1_G1EVACFAILURE_HPP

@@ -384,9 +384,9 @@
           "for evecuation failure regions.")                                \
           range(1, 16)                                                      \
                                                                             \
-  product(uint, G1EvacuationFailureHeapRegionChunkNum, 256,                 \
-          "Number of chunks per G1 region when processing evacuation "      \
-          "failed regions in parallel. ")                                   \
+  product(uint, G1RemoveSelfForwardPtrsThreadLoadFactor, 16,                \
+          "The factor for per worker thread load to remove self forwardee " \
+          "for evecuation failure regions.")                                \
           range(1, 1024)                                                    \
                                                                             \
   GC_G1_EVACUATION_FAILURE_FLAGS(develop,                                   \

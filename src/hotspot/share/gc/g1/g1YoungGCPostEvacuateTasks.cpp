@@ -117,6 +117,10 @@ public:
   void do_work(uint worker_id) override {
     _task.work(worker_id);
   }
+
+  void initialize_chunks(uint num_workers) {
+    _evac_failure_regions->initialize_chunks(num_workers);
+  }
 };
 
 G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1(G1ParScanThreadStateSet* per_thread_states,
@@ -130,10 +134,13 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
   if (SampleCollectionSetCandidatesTask::should_execute()) {
     add_serial_task(new SampleCollectionSetCandidatesTask());
   }
-  if (evacuation_failed) {
-    add_parallel_task(new RemoveSelfForwardPtrsTask(evac_failure_regions));
-  }
   add_parallel_task(G1CollectedHeap::heap()->rem_set()->create_cleanup_after_scan_heap_roots_task());
+  if (evacuation_failed) {
+    RemoveSelfForwardPtrsTask* remove_self_forward_task = new RemoveSelfForwardPtrsTask(evac_failure_regions);
+    add_parallel_task(remove_self_forward_task);
+    uint num_workers = MAX2(1u, MIN2(num_workers_estimate(), G1CollectedHeap::heap()->workers()->active_workers()));
+    remove_self_forward_task->initialize_chunks(num_workers);
+  }
 }
 
 class G1FreeHumongousRegionClosure : public HeapRegionClosure {

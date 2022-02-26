@@ -39,8 +39,8 @@ class G1ParScanThreadStateSet;
 // - Merge PSS (s)
 // - Recalculate Used (s)
 // - Sample Collection Set Candidates (s)
-// - Remove Self Forwards (on evacuation failure)
 // - Clear Card Table
+// - Remove Self Forwards (on evacuation failure)
 class G1PostEvacuateCollectionSetCleanupTask1 : public G1BatchedTask {
   class MergePssTask;
   class RecalculateUsedTask;
@@ -57,7 +57,7 @@ public:
 // - Purge Code Roots (s)
 // - Reset Hot Card Cache (s)
 // - Update Derived Pointers (s)
-// - Verify Retained Regions
+// - Verify Retained Regions (on evacuation failure)
 // - Redirty Logged Cards
 // - Restore Preserved Marks (on evacuation failure)
 // - Free Collection Set
