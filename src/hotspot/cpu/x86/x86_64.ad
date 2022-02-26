@@ -1925,8 +1925,8 @@ encode %{
     Label normal;
     Label done;
 
-    // cmp    $0x80000000,%eax
-    __ cmp(as_Register(RAX_enc), 0x80000000);
+    // cmpl    $0x80000000,%eax
+    __ cmpl(as_Register(RAX_enc), 0x80000000);
 
     // jne    e <normal>
     __ jccb(Assembler::notEqual, normal);
@@ -1934,7 +1934,7 @@ encode %{
     // xor    %edx,%edx
     __ xorl(as_Register(RDX_enc), as_Register(RDX_enc));
 
-    // cmp    $0xffffffffffffffff,%ecx
+    // cmpl    $0xffffffffffffffff,%ecx
     __ cmpl($div$$Register, -1);
 
     // je     11 <done>
