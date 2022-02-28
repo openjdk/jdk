@@ -682,7 +682,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
   int array_base = 0;
   int element_size = 0;
   BasicType basic_elem_type = T_ILLEGAL;
-  const Type *field_type = NULL;
+  const Type* field_type = NULL;
 
   Node* res = alloc->result_cast();
   assert(res == NULL || res->is_CheckCastPP(), "unexpected AllocateNode result");
@@ -741,7 +741,6 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
           if (!elem_type->is_loaded()) {
             field_type = TypeInstPtr::BOTTOM;
           } else if (field != NULL && field->is_static_constant()) {
-            // This can happen if the constant oop is non-perm.
             ciObject* con = field->constant_value().as_object();
             // Do not "join" in the previous type; it doesn't add value,
             // and may yield a vacuous result if the field is of interface type.
@@ -1686,7 +1685,7 @@ PhaseMacroExpand::initialize_object(AllocateNode* alloc,
     header_size = arrayOopDesc::base_offset_in_bytes(T_BYTE);
     if (_igvn.type(klass_node)->isa_aryklassptr()) {   // we know the exact header size in most cases:
       BasicType elem = _igvn.type(klass_node)->is_klassptr()->as_instance_type()->isa_aryptr()->elem()->array_element_basic_type();
-      if (elem == T_ARRAY || elem == T_NARROWOOP) {
+      if (is_reference_type(elem, true)) {
         elem = T_OBJECT;
       }
       header_size = Klass::layout_helper_header_size(Klass::array_layout_helper(elem));

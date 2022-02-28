@@ -3629,7 +3629,7 @@ Node* GraphKit::get_layout_helper(Node* klass_node, jint& constant_value) {
       jint lhelper;
       if (inst_klass->isa_aryklassptr()) {
         BasicType elem = inst_klass->as_instance_type()->isa_aryptr()->elem()->array_element_basic_type();
-        if (elem == T_ARRAY || elem == T_NARROWOOP) {
+        if (is_reference_type(elem, true)) {
           elem = T_OBJECT;
         }
         lhelper = Klass::array_layout_helper(elem);

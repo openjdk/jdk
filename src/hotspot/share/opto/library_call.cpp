@@ -2355,7 +2355,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
       // Use address type to get the element type.
       bt = adr_type->is_aryptr()->elem()->array_element_basic_type();
     }
-    if (bt == T_ARRAY || bt == T_NARROWOOP) {
+    if (is_reference_type(bt, true)) {
       // accessing an array field with getReference is not a mismatch
       bt = T_OBJECT;
     }
@@ -4697,8 +4697,8 @@ bool LibraryCallKit::inline_arraycopy() {
   if (has_src && has_dest && can_emit_guards) {
     BasicType src_elem = top_src->isa_aryptr()->elem()->array_element_basic_type();
     BasicType dest_elem = top_dest->isa_aryptr()->elem()->array_element_basic_type();
-    if (is_reference_type(src_elem) || src_elem == T_NARROWOOP) src_elem = T_OBJECT;
-    if (is_reference_type(dest_elem) || dest_elem == T_NARROWOOP) dest_elem = T_OBJECT;
+    if (is_reference_type(src_elem, true)) src_elem = T_OBJECT;
+    if (is_reference_type(dest_elem, true)) dest_elem = T_OBJECT;
 
     if (src_elem == dest_elem && src_elem == T_OBJECT) {
       // If both arrays are object arrays then having the exact types

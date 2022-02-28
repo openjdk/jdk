@@ -273,8 +273,8 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
 
     BasicType src_elem = ary_src->elem()->array_element_basic_type();
     BasicType dest_elem = ary_dest->elem()->array_element_basic_type();
-    if (is_reference_type(src_elem) || src_elem == T_NARROWOOP) src_elem = T_OBJECT;
-    if (is_reference_type(dest_elem) || dest_elem == T_NARROWOOP) dest_elem = T_OBJECT;
+    if (is_reference_type(src_elem, true)) src_elem = T_OBJECT;
+    if (is_reference_type(dest_elem, true)) dest_elem = T_OBJECT;
 
     if (src_elem != dest_elem || dest_elem == T_VOID) {
       // We don't know if arguments are arrays of the same type
@@ -320,7 +320,7 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
     adr_dest = phase->transform(new AddPNode(base_dest, base_dest, dest_offset));
 
     BasicType elem = ary_src->isa_aryptr()->elem()->array_element_basic_type();
-    if (is_reference_type(elem) || elem == T_NARROWOOP) {
+    if (is_reference_type(elem, true)) {
       elem = T_OBJECT;
     }
 
@@ -722,7 +722,7 @@ bool ArrayCopyNode::modifies(intptr_t offset_lo, intptr_t offset_hi, PhaseTransf
   }
 
   BasicType ary_elem = ary_t->isa_aryptr()->elem()->array_element_basic_type();
-  if (ary_elem == T_ARRAY || ary_elem == T_NARROWOOP) ary_elem = T_OBJECT;
+  if (is_reference_type(ary_elem, true)) ary_elem = T_OBJECT;
 
   uint header = arrayOopDesc::base_offset_in_bytes(ary_elem);
   uint elemsize = type2aelembytes(ary_elem);

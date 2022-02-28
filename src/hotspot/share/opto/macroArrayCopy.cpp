@@ -1298,8 +1298,8 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
   if (top_dest != NULL && top_dest->elem() != Type::BOTTOM) {
     dest_elem = top_dest->elem()->array_element_basic_type();
   }
-  if (is_reference_type(src_elem) || src_elem == T_NARROWOOP) src_elem = T_OBJECT;
-  if (is_reference_type(dest_elem) || dest_elem == T_NARROWOOP) dest_elem = T_OBJECT;
+  if (is_reference_type(src_elem, true)) src_elem = T_OBJECT;
+  if (is_reference_type(dest_elem, true)) dest_elem = T_OBJECT;
 
   if (ac->is_arraycopy_validated() &&
       dest_elem != T_CONFLICT &&

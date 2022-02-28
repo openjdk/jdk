@@ -1016,7 +1016,7 @@ Node* LoadNode::can_see_arraycopy_value(Node* st, PhaseGVN* phase) const {
 
       const TypeAryPtr* ary_t = phase->type(in(MemNode::Address))->isa_aryptr();
       BasicType ary_elem = ary_t->isa_aryptr()->elem()->array_element_basic_type();
-      if (ary_elem == T_ARRAY || ary_elem == T_NARROWOOP) ary_elem = T_OBJECT;
+      if (is_reference_type(ary_elem, true)) ary_elem = T_OBJECT;
 
       uint header = arrayOopDesc::base_offset_in_bytes(ary_elem);
       uint shift  = exact_log2(type2aelembytes(ary_elem));
