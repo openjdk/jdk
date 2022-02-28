@@ -23,8 +23,7 @@
 
 /*
  * @test
- * @bug 8022585
- * @bug 8277055
+ * @bug 8022585 8277055
  * @summary VM crashes when ran with -XX:+PrintInlining
  * @run main/othervm -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:+PrintInlining
  *                   compiler.print.PrintInlining
@@ -32,7 +31,6 @@
  *                   compiler.print.PrintInlining
  * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+PrintIntrinsics
  *                   compiler.print.PrintInlining
- *
  */
 
 package compiler.print;
