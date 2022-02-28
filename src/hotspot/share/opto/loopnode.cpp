@@ -690,8 +690,7 @@ SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, Node* x, Ideal
 
     Node* mem = safepoint->in(TypeFunc::Memory);
 
-    // We can only use that safepoint if there's not side effect
-    // between the backedge and the safepoint.
+    // We can only use that safepoint if there's no side effect between the backedge and the safepoint.
 
     // mm is used for book keeping
     MergeMemNode* mm = NULL;
@@ -1849,32 +1848,31 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
     }
   }
 
-  Node *sfpt2 = NULL;
+  Node* sfpt = NULL;
   if (loop->_child == NULL) {
-    sfpt2 = find_safepoint(back_control, x, loop);
+    sfpt = find_safepoint(back_control, x, loop);
   } else {
-    sfpt2 = iff->in(0);
-    if (sfpt2->Opcode() != Op_SafePoint) {
-      sfpt2 = NULL;
+    sfpt = iff->in(0);
+    if (sfpt->Opcode() != Op_SafePoint) {
+      sfpt = NULL;
     }
   }
 
   if (x->in(LoopNode::LoopBackControl)->Opcode() == Op_SafePoint) {
-    Node *sfpt = x->in(LoopNode::LoopBackControl);
-    bool deleteable = is_deleteable_safept(sfpt);
+    Node* backedge_sfpt = x->in(LoopNode::LoopBackControl);
     if (((iv_bt == T_INT && LoopStripMiningIter != 0) ||
          iv_bt == T_LONG) &&
-        sfpt2 == NULL) {
+        sfpt == NULL) {
       // Leaving the safepoint on the backedge and creating a
       // CountedLoop will confuse optimizations. We can't move the
       // safepoint around because its jvm state wouldn't match a new
       // location. Give up on that loop.
       return false;
     }
-    if (deleteable) {
-      lazy_replace(sfpt, iftrue);
+    if (is_deleteable_safept(backedge_sfpt)) {
+      lazy_replace(backedge_sfpt, iftrue);
       if (loop->_safepts != NULL) {
-        loop->_safepts->yank(sfpt);
+        loop->_safepts->yank(backedge_sfpt);
       }
       loop->_tail = iftrue;
     }
@@ -1994,7 +1992,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   bool strip_mine_loop = iv_bt == T_INT &&
                          LoopStripMiningIter > 1 &&
                          loop->_child == NULL &&
-                         sfpt2 != NULL &&
+                         sfpt != NULL &&
                          !loop->_has_call;
   IdealLoopTree* outer_ilt = NULL;
   if (strip_mine_loop) {
@@ -2020,30 +2018,30 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
 
   if (iv_bt == T_INT && (LoopStripMiningIter == 0 || strip_mine_loop)) {
     // Check for immediately preceding SafePoint and remove
-    if (sfpt2 != NULL && (LoopStripMiningIter != 0 || is_deleteable_safept(sfpt2))) {
+    if (sfpt != NULL && (LoopStripMiningIter != 0 || is_deleteable_safept(sfpt))) {
       if (strip_mine_loop) {
         Node* outer_le = outer_ilt->_tail->in(0);
-        Node* sfpt = sfpt2->clone();
-        sfpt->set_req(0, iffalse);
-        outer_le->set_req(0, sfpt);
+        Node* sfpt_clone = sfpt->clone();
+        sfpt_clone->set_req(0, iffalse);
+        outer_le->set_req(0, sfpt_clone);
 
-        Node* polladdr = sfpt->in(TypeFunc::Parms);
+        Node* polladdr = sfpt_clone->in(TypeFunc::Parms);
         if (polladdr != nullptr && polladdr->is_Load()) {
           // Polling load should be pinned outside inner loop.
           Node* new_polladdr = polladdr->clone();
           new_polladdr->set_req(0, iffalse);
           _igvn.register_new_node_with_optimizer(new_polladdr, polladdr);
           set_ctrl(new_polladdr, iffalse);
-          sfpt->set_req(TypeFunc::Parms, new_polladdr);
+          sfpt_clone->set_req(TypeFunc::Parms, new_polladdr);
         }
         // When this code runs, loop bodies have not yet been populated.
         const bool body_populated = false;
-        register_control(sfpt, outer_ilt, iffalse, body_populated);
-        set_idom(outer_le, sfpt, dom_depth(sfpt));
+        register_control(sfpt_clone, outer_ilt, iffalse, body_populated);
+        set_idom(outer_le, sfpt_clone, dom_depth(sfpt_clone));
       }
-      lazy_replace( sfpt2, sfpt2->in(TypeFunc::Control));
+      lazy_replace(sfpt, sfpt->in(TypeFunc::Control));
       if (loop->_safepts != NULL) {
-        loop->_safepts->yank(sfpt2);
+        loop->_safepts->yank(sfpt);
       }
     }
   }
