@@ -37,9 +37,6 @@ import javax.lang.model.element.Element;
  * Thrown when an application attempts to access a sequence of {@link
  * Class} objects each corresponding to a {@link TypeMirror}.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see MirroredTypeException
  * @see Element#getAnnotation(Class)
  * @since 1.6

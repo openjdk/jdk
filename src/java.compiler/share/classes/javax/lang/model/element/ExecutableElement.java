@@ -33,9 +33,6 @@ import javax.lang.model.type.*;
  * instance) of a class or interface, including annotation type
  * elements.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see ExecutableType
  * @since 1.6
  */

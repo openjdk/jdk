@@ -39,9 +39,6 @@ import javax.lang.model.SourceVersion;
  * <p>Tools can be located using {@link
  * java.util.ServiceLoader#load(Class)}.
  *
- * @author Neal M Gafter
- * @author Peter von der Ah&eacute;
- * @author Jonathan Gibbons
  * @since 1.6
  */
 public interface Tool {

@@ -39,9 +39,6 @@ import java.util.HashSet;
  * <p>Note that additional source version constants will be added to
  * model future releases of the language.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @since 1.6
  */
 public enum SourceVersion {

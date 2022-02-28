@@ -41,9 +41,6 @@ import javax.lang.model.element.ExecutableElement;
  * type arguments are substituted into any types returned by the methods of
  * this interface.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see ExecutableElement
  * @since 1.6
  */

@@ -28,9 +28,6 @@ package javax.annotation.processing;
 /**
  * Utility class for assembling {@link Completion} objects.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @since 1.6
  */
 public class Completions {

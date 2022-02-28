@@ -50,9 +50,6 @@ import javax.lang.model.util.Types;
  * hierarchy since an implementation may choose to have a single
  * object implement multiple {@code TypeMirror} subinterfaces.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see Element
  * @see Types
  * @jls 4.1 The Kinds of Types and Values

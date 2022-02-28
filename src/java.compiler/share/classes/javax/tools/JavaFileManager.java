@@ -103,8 +103,6 @@ import static javax.tools.JavaFileObject.Kind;
  * <p>Unless explicitly allowed, all methods in this interface might
  * throw a NullPointerException if given a {@code null} argument.
  *
- * @author Peter von der Ah&eacute;
- * @author Jonathan Gibbons
  * @see JavaFileObject
  * @see FileObject
  * @since 1.6

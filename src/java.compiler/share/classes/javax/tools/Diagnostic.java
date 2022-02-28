@@ -41,8 +41,6 @@ import java.util.Locale;
  *
  * @param <S> the type of source object used by this diagnostic
  *
- * @author Peter von der Ah&eacute;
- * @author Jonathan Gibbons
  * @since 1.6
  */
 public interface Diagnostic<S> {

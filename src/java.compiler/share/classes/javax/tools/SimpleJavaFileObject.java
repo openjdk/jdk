@@ -39,7 +39,6 @@ import javax.lang.model.element.NestingKind;
  * implementation and specification of any method of this class as
  * long as the general contract of JavaFileObject is obeyed.
  *
- * @author Peter von der Ah&eacute;
  * @since 1.6
  */
 public class SimpleJavaFileObject implements JavaFileObject {

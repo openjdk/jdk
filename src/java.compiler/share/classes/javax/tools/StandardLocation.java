@@ -32,7 +32,6 @@ import java.util.concurrent.*;
 /**
  * Standard locations of file objects.
  *
- * @author Peter von der Ah&eacute;
  * @since 1.6
  */
 public enum StandardLocation implements Location {

@@ -28,7 +28,6 @@ package javax.tools;
 /**
  * Interface for recognizing options.
  *
- * @author Peter von der Ah&eacute;
  * @since 1.6
  */
 public interface OptionChecker {

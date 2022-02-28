@@ -34,9 +34,6 @@ import javax.lang.model.UnknownEntityException;
  * {@linkplain ElementVisitor element visitor} to indicate that the
  * visitor was created for a prior version of the language.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see ElementVisitor#visitUnknown
  * @since 1.6
  */

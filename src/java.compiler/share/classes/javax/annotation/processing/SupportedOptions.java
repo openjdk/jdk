@@ -37,9 +37,6 @@ import static java.lang.annotation.ElementType.*;
  * Processor#getSupportedOptions strings conforming to the
  * grammar} should be used as values.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @since 1.6
  */
 @Documented

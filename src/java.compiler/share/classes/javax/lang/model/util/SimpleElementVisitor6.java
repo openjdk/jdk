@@ -72,10 +72,6 @@ import static javax.lang.model.SourceVersion.*;
  * @param <P> the type of the additional parameter to this visitor's methods.  Use {@code Void}
  *              for visitors that do not need an additional parameter.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
- *
  * @see SimpleElementVisitor7
  * @see SimpleElementVisitor8
  * @see SimpleElementVisitor9

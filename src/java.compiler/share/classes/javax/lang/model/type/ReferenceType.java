@@ -31,9 +31,6 @@ package javax.lang.model.type;
  * These include class and interface types, array types, type variables,
  * and the null type.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @jls 4.3 Reference Types and Values
  * @since 1.6
  */

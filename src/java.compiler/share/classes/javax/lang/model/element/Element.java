@@ -52,9 +52,6 @@ import javax.lang.model.util.*;
  * hierarchy since an implementation may choose to have a single object
  * implement multiple {@code Element} subinterfaces.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see Elements
  * @see TypeMirror
  * @since 1.6

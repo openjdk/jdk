@@ -49,9 +49,6 @@ import javax.lang.model.util.Types;
  * Types#directSupertypes(TypeMirror)} method.  This returns the
  * supertypes with any type arguments substituted in.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see TypeElement
  * @since 1.6
  */

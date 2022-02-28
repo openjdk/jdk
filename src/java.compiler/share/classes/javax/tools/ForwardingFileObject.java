@@ -42,7 +42,6 @@ import java.util.Objects;
  * should be interpreted as referring indirectly to the {@link #fileObject delegate file object}.
  *
  * @param <F> the kind of file object forwarded to by this object
- * @author Peter von der Ah&eacute;
  * @since 1.6
  */
 public class ForwardingFileObject<F extends FileObject> implements FileObject {

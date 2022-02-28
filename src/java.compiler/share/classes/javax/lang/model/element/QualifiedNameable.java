@@ -28,7 +28,6 @@ package javax.lang.model.element;
 /**
  * A mixin interface for an element that has a qualified name.
  *
- * @author Joseph D. Darcy
  * @since 1.7
  */
 public interface QualifiedNameable extends Element {

@@ -83,10 +83,6 @@ import static javax.lang.model.SourceVersion.*;
  *            methods.  Use {@code Void} for visitors that do not need an
  *            additional parameter.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
- *
  * @see ElementScanner7
  * @see ElementScanner8
  * @see ElementScanner9

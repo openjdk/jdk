@@ -34,9 +34,6 @@ import javax.lang.model.UnknownEntityException;
  * {@linkplain ModuleElement.DirectiveVisitor directive visitor} to
  * indicate that the visitor was created for a prior version of the language.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see ModuleElement.DirectiveVisitor#visitUnknown
  * @since 9
  */

@@ -37,9 +37,6 @@ import java.lang.annotation.Annotation;
  * implementing this interface} so that the processor can query for
  * information about a round of annotation processing.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @since 1.6
  */
 public interface RoundEnvironment {

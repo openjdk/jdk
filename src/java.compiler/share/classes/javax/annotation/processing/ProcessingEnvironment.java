@@ -53,9 +53,6 @@ import javax.lang.model.util.Types;
  * of a wrapper class must know whether or not the same base facility
  * object has been wrapped before.)
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @since 1.6
  */
 public interface ProcessingEnvironment {

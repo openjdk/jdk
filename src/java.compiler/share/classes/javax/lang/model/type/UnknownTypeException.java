@@ -34,9 +34,6 @@ import javax.lang.model.UnknownEntityException;
  * TypeVisitor type visitor} to indicate that the visitor was created
  * for a prior version of the language.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see TypeVisitor#visitUnknown
  * @since 1.6
  */

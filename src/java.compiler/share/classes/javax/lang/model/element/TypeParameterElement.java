@@ -34,9 +34,6 @@ import javax.lang.model.type.TypeVariable;
  * or constructor element.
  * A type parameter declares a {@link TypeVariable}.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see TypeVariable
  * @since 1.6
  */

@@ -132,9 +132,6 @@ import java.io.IOException;
  * factories instead of public constructors so that only subclass
  * instances would be presented to clients of the parent class.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @since 1.6
  */
 public interface Filer {

@@ -44,9 +44,6 @@ package javax.lang.model.element;
  * @jls 8.8.3 Constructor Modifiers
  * @jls 9.1.1 Interface Modifiers
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @since 1.6
  */
 

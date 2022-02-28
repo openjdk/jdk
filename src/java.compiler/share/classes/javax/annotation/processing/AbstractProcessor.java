@@ -53,9 +53,6 @@ import javax.tools.Diagnostic;
  * general {@link javax.annotation.processing.Processor Processor}
  * contract for that method is obeyed.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @since 1.6
  */
 public abstract class AbstractProcessor implements Processor {

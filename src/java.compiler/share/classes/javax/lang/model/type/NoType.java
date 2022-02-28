@@ -40,9 +40,6 @@ import javax.lang.model.element.ExecutableElement;
  *   of {@code java.lang.Object}.
  * </ul>
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see ExecutableElement#getReturnType()
  * @see javax.lang.model.util.Types#getNoType(TypeKind)
  * @since 1.6

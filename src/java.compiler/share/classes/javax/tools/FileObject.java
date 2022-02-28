@@ -44,8 +44,6 @@ import java.net.URI;
  * <p>Unless explicitly allowed, all methods in this interface might
  * throw a NullPointerException if given a {@code null} argument.
  *
- * @author Peter von der Ah&eacute;
- * @author Jonathan Gibbons
  * @since 1.6
  */
 public interface FileObject {

@@ -36,9 +36,6 @@ import javax.lang.model.type.DeclaredType;
  * method.  There is no guarantee that any particular annotation will
  * always be represented by the same object.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @since 1.6
  */
 public interface AnnotationMirror {

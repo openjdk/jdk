@@ -76,9 +76,6 @@ package javax.lang.model.element;
  * }
  * </pre></blockquote>
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @since 1.6
  */
 public enum NestingKind {

@@ -198,9 +198,6 @@ import javax.lang.model.SourceVersion;
  * to extend {@link AbstractProcessor} rather than implementing this
  * interface directly.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @since 1.6
  */
 public interface Processor {

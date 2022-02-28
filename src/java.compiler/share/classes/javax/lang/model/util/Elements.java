@@ -42,9 +42,6 @@ import javax.lang.model.element.*;
  * <p><b>Compatibility Note:</b> Methods may be added to this interface
  * in future releases of the platform.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see javax.annotation.processing.ProcessingEnvironment#getElementUtils
  * @since 1.6
  */

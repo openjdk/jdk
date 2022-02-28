@@ -190,8 +190,6 @@ import javax.annotation.processing.Processor;
  *   </dd>
  * </dl>
  *
- * @author Peter von der Ah&eacute;
- * @author Jonathan Gibbons
  * @see DiagnosticListener
  * @see Diagnostic
  * @see JavaFileManager

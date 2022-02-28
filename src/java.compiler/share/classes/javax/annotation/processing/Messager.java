@@ -46,9 +46,6 @@ import javax.lang.model.element.*;
  * choose to present this information in a different fashion, such as
  * messages in a window.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see ProcessingEnvironment#getLocale
  * @since 1.6
  */

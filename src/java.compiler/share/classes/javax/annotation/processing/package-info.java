@@ -35,9 +35,6 @@
  * <p> Unless otherwise specified, methods in this package will throw
  * a {@code NullPointerException} if given a {@code null} argument.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @since 1.6
  */
 package javax.annotation.processing;

@@ -107,9 +107,6 @@
  * <p> Unless otherwise specified, methods in this package will throw
  * a {@code NullPointerException} if given a {@code null} argument.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see javax.lang.model.util.Elements
  * @jls 6.1 Declarations
  * @jls 7.4 Package Declarations

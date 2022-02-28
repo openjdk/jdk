@@ -53,9 +53,6 @@ import javax.lang.model.util.*;
  * source of information is Java source code, then the elements will be
  * returned in source code order.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see DeclaredType
  * @since 1.6
  */

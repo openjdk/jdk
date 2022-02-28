@@ -38,9 +38,6 @@ package javax.lang.model.type;
  * {@code extends} clause, its lower bound explicitly set by a
  * {@code super} clause, or neither (but not both).
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @jls 4.5.1 Type Arguments of Parameterized Types
  * @since 1.6
  */

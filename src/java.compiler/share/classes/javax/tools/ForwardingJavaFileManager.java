@@ -42,7 +42,6 @@ import javax.tools.JavaFileObject.Kind;
  * should be interpreted as referring indirectly to the {@link #fileManager delegate file manager}.
  *
  * @param <M> the kind of file manager forwarded to by this object
- * @author Peter von der Ah&eacute;
  * @since 1.6
  */
 public class ForwardingJavaFileManager<M extends JavaFileManager> implements JavaFileManager {

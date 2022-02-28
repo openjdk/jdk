@@ -46,9 +46,6 @@ package javax.lang.model.element;
  * to each other, including successive annotation processing
  * {@linkplain javax.annotation.processing.RoundEnvironment rounds}.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see javax.lang.model.util.Elements#getName
  * @since 1.6
  */

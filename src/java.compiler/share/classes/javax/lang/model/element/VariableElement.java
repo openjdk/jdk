@@ -34,9 +34,6 @@ import javax.lang.model.type.TypeKind;
  * parameter, local variable, resource variable, or exception
  * parameter.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @since 1.6
  */
 public interface VariableElement extends Element {

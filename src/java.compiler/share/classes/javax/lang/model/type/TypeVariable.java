@@ -41,9 +41,6 @@ import javax.lang.model.util.Types;
  * (see chapter {@jls 5} of
  * <cite>The Java Language Specification</cite>).
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see TypeParameterElement
  * @jls 4.4 Type Variables
  * @since 1.6

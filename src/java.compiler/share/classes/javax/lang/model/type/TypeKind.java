@@ -33,9 +33,6 @@ package javax.lang.model.type;
  * accommodate new, currently unknown, language structures added to
  * future versions of the Java programming language.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see TypeMirror
  * @since 1.6
  */

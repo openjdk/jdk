@@ -31,9 +31,6 @@ package javax.lang.model.type;
  * {@code boolean}, {@code byte}, {@code short}, {@code int},
  * {@code long}, {@code char}, {@code float}, and {@code double}.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @jls 4.2 Primitive Types and Values
  * @see javax.lang.model.util.Types#getPrimitiveType(TypeKind)
  * @since 1.6

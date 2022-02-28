@@ -30,9 +30,6 @@ package javax.annotation.processing;
  * annotation.  A completion is text meant to be inserted into a
  * program as part of an annotation.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @since 1.6
  */
 public interface Completion {

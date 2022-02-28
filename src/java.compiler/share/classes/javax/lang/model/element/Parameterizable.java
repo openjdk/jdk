@@ -30,7 +30,6 @@ import java.util.List;
 /**
  * A mixin interface for an element that has type parameters.
  *
- * @author Joseph D. Darcy
  * @since 1.7
  */
 public interface Parameterizable extends Element {

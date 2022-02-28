@@ -77,8 +77,6 @@
  *     JavaCompiler compiler = ServiceLoader.load(JavaCompiler.class).iterator().next();
  *     }
  *
- * @author Peter von der Ah&eacute;
- * @author Jonathan Gibbons
  * @since 1.6
  */
 package javax.tools;

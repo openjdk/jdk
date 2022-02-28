@@ -37,9 +37,6 @@ package javax.lang.model.element;
  *              (representing the elements, in declared order, if the value is an array)
  * </ul>
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @since 1.6
  */
 public interface AnnotationValue {

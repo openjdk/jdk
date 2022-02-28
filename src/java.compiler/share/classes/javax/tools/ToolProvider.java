@@ -36,7 +36,6 @@ import java.util.ServiceLoader;
  * providers of compilers.  This class complements the
  * functionality of {@link java.util.ServiceLoader}.
  *
- * @author Peter von der Ah&eacute;
  * @since 1.6
  */
 public class ToolProvider {

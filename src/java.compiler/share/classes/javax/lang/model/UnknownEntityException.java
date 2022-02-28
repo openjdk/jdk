@@ -32,7 +32,6 @@ package javax.lang.model;
  * this exception may be thrown by visitors to indicate that the
  * visitor was created for a prior version of the language.
  *
- * @author Joseph D. Darcy
  * @see javax.lang.model.element.UnknownElementException
  * @see javax.lang.model.element.UnknownAnnotationValueException
  * @see javax.lang.model.type.UnknownTypeException
