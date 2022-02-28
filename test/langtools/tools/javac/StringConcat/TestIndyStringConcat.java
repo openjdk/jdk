@@ -34,23 +34,23 @@ import java.io.File;
  * @summary Test that StringConcat is working for JDK >= 9
  * @modules jdk.jdeps/com.sun.tools.classfile
  *
- * @clean TestIndyStringConcat*
+ * @clean *
  * @compile -source 7 -target 7 TestIndyStringConcat.java
  * @run main TestIndyStringConcat false
  *
- * @clean TestIndyStringConcat*
+ * @clean *
  * @compile -source 8 -target 8 TestIndyStringConcat.java
  * @run main TestIndyStringConcat false
  *
- * @clean TestIndyStringConcat*
+ * @clean *
  * @compile -XDstringConcat=inline -source 9 -target 9 TestIndyStringConcat.java
  * @run main TestIndyStringConcat false
  *
- * @clean TestIndyStringConcat*
+ * @clean *
  * @compile -XDstringConcat=indy -source 9 -target 9 TestIndyStringConcat.java
  * @run main TestIndyStringConcat true
  *
- * @clean TestIndyStringConcat*
+ * @clean *
  * @compile -XDstringConcat=indyWithConstants -source 9 -target 9 TestIndyStringConcat.java
  * @run main TestIndyStringConcat true
  */
