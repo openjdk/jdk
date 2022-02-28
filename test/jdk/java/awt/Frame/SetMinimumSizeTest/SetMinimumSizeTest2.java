@@ -59,8 +59,6 @@ public class SetMinimumSizeTest2 {
                 dimension = frame.getSize();
             });
 
-            robot.waitForIdle();
-
             EventQueue.invokeAndWait(() -> {
                 frame.setSize(new Dimension(dimension.width + 20, dimension.height + 20));
                 frame.invalidate();
