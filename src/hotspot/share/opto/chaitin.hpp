@@ -654,12 +654,12 @@ private:
   // Build the interference graph using physical registers when available.
   // That is, if 2 live ranges are simultaneously alive but in their
   // acceptable register sets do not overlap, then they do not interfere.
-  uint build_ifg_physical( ResourceArea *a );
+  uint build_ifg_physical(ResourceArea* a, const Block_List &blocks);
 
 public:
   // Gather LiveRanGe information, including register masks and base pointer/
   // derived pointer relationships.
-  void gather_lrg_masks( bool mod_cisc_masks );
+  void gather_lrg_masks(const Block_List &blocks, bool after_aggressive, uint region);
 
   // user visible pressure variables for scheduling
   Pressure _sched_int_pressure;

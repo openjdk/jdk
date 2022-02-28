@@ -273,6 +273,8 @@ public:
   uint loop_alignment() const { return _loop_alignment; }
   bool has_loop_alignment() const { return loop_alignment() > 0; }
 
+  uint _region;
+
   // Create a new Block with given head Node.
   // Creates the (empty) predecessor arrays.
   Block( Arena *a, Node *headnode )
@@ -291,7 +293,8 @@ public:
       _raise_LCA_visited(0),
       _first_inst_size(999999),
       _connector(false),
-      _loop_alignment(0) {
+      _loop_alignment(0),
+      _region(0) {
     _nodes.push(headnode);
   }
 
@@ -367,6 +370,7 @@ public:
 // Build an array of Basic Block pointers, one per Node.
 class PhaseCFG : public Phase {
   friend class VMStructs;
+  friend class PhaseChaitin;
  private:
   // Root of whole program
   RootNode* _root;

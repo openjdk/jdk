@@ -334,49 +334,7 @@ void PhaseChaitin::compact() {
 }
 
 void PhaseChaitin::Register_Allocate() {
-  if (C->method() != NULL) {
-    ResourceMark rm;
-    stringStream ss;
-    C->method()->print_short_name(&ss);
-    if (!strcmp(ss.as_string(), " spec.benchmarks.compress.Compressor::compress")) {
-      _cfg._root_loop->dump_tree();
-      CFGLoop* loop = _cfg._root_loop;
-      CFGLoop* most_frequent = NULL;
-      do {
-        for (;;) {
-          CFGLoop* next = loop->_child;
-          if (next == NULL) {
-            break;
-          }
-          loop = next;
-        }
-        tty->print_cr("XXX %d", loop->id());
-        if (loop->_child == NULL) {
-          if (most_frequent == NULL) {
-            most_frequent = loop;
-          } else if (loop->trip_count() > most_frequent->trip_count()) {
-            most_frequent = loop;
-          }
-        }
-        for (;;) {
-          CFGLoop* next = loop->_sibling;
-          if (next != NULL) {
-            loop = next;
-            break;
-          }
-          loop = loop->_parent;
-          if (loop == NULL) {
-            break;
-          }
-          tty->print_cr("XXX %d", loop->id());
-        }
-      } while (loop != NULL);
-      tty->print_cr("XXX most frequent: %d", most_frequent->id());
-
-    }
-  }
-
-  // Above the OLD FP (and in registers) are the incoming arguments.  Stack
+// Above the OLD FP (and in registers) are the incoming arguments.  Stack
   // slots in this area are called "arg_slots".  Above the NEW FP (and in
   // registers) is the outgoing argument area; above that is the spill/temp
   // area.  These are all "frame_slots".  Arg_slots start at the zero
@@ -424,7 +382,7 @@ void PhaseChaitin::Register_Allocate() {
     rm.reset_to_mark();           // Reclaim working storage
     IndexSet::reset_memory(C, &live_arena);
     ifg.init(_lrg_map.max_lrg_id()); // Empty IFG
-    gather_lrg_masks( false );    // Collect LRG masks
+    gather_lrg_masks(_cfg._blocks, false, 0);    // Collect LRG masks
     live.compute(_lrg_map.max_lrg_id()); // Compute liveness
     _live = &live;                // Mark LIVE as being available
   }
@@ -442,7 +400,7 @@ void PhaseChaitin::Register_Allocate() {
     rm.reset_to_mark();         // Reclaim working storage
     IndexSet::reset_memory(C, &live_arena);
     ifg.init(_lrg_map.max_lrg_id());
-    gather_lrg_masks(false);
+    gather_lrg_masks(_cfg._blocks, false, 0);
     live.compute(_lrg_map.max_lrg_id());
     _live = &live;
   }
@@ -473,145 +431,131 @@ void PhaseChaitin::Register_Allocate() {
     }
   }
 
-  // After aggressive coalesce, attempt a first cut at coloring.
-  // To color, we need the IFG and for that we need LIVE.
-  {
-    Compile::TracePhase tp("computeLive", &timers[_t_computeLive]);
-    _live = NULL;
-    rm.reset_to_mark();           // Reclaim working storage
-    IndexSet::reset_memory(C, &live_arena);
-    ifg.init(_lrg_map.max_lrg_id());
-    gather_lrg_masks( true );
-    live.compute(_lrg_map.max_lrg_id());
-    _live = &live;
-  }
-
-  // Build physical interference graph
-  uint must_spill = 0;
-  must_spill = build_ifg_physical(&live_arena);
-  // If we have a guaranteed spill, might as well spill now
-  if (must_spill) {
-    if(!_lrg_map.max_lrg_id()) {
-      return;
-    }
-    // Bail out if unique gets too large (ie - unique > MaxNodeLimit)
-    C->check_node_count(10*must_spill, "out of nodes before split");
-    if (C->failing()) {
-      return;
-    }
-
-    uint new_max_lrg_id = Split(_lrg_map.max_lrg_id(), &split_arena);  // Split spilling LRG everywhere
-    _lrg_map.set_max_lrg_id(new_max_lrg_id);
-    // Bail out if unique gets too large (ie - unique > MaxNodeLimit - 2*NodeLimitFudgeFactor)
-    // or we failed to split
-    C->check_node_count(2*NodeLimitFudgeFactor, "out of nodes after physical split");
-    if (C->failing()) {
-      return;
-    }
-
-    NOT_PRODUCT(C->verify_graph_edges();)
-
-    compact();                  // Compact LRGs; return new lower max lrg
-
-    {
-      Compile::TracePhase tp("computeLive", &timers[_t_computeLive]);
-      _live = NULL;
-      rm.reset_to_mark();         // Reclaim working storage
-      IndexSet::reset_memory(C, &live_arena);
-      ifg.init(_lrg_map.max_lrg_id()); // Build a new interference graph
-      gather_lrg_masks( true );   // Collect intersect mask
-      live.compute(_lrg_map.max_lrg_id()); // Compute LIVE
-      _live = &live;
-    }
-    build_ifg_physical(&live_arena);
-    _ifg->SquareUp();
-    _ifg->Compute_Effective_Degree();
-    // Only do conservative coalescing if requested
-    if (OptoCoalesce) {
-      Compile::TracePhase tp("chaitinCoalesce2", &timers[_t_chaitinCoalesce2]);
-      // Conservative (and pessimistic) copy coalescing of those spills
-      PhaseConservativeCoalesce coalesce(*this);
-      // If max live ranges greater than cutoff, don't color the stack.
-      // This cutoff can be larger than below since it is only done once.
-      coalesce.coalesce_driver();
-    }
-    _lrg_map.compress_uf_map_for_nodes();
-
-#ifdef ASSERT
-    verify(&live_arena, true);
-#endif
-  } else {
-    ifg.SquareUp();
-    ifg.Compute_Effective_Degree();
-#ifdef ASSERT
-    set_was_low();
-#endif
-  }
-
-  // Prepare for Simplify & Select
-  cache_lrg_info();           // Count degree of LRGs
-
-  // Simplify the InterFerence Graph by removing LRGs of low degree.
-  // LRGs of low degree are trivially colorable.
-  Simplify();
-
-  // Select colors by re-inserting LRGs back into the IFG in reverse order.
-  // Return whether or not something spills.
-  uint spills = Select( );
-
-  // If we spill, split and recycle the entire thing
-  while( spills ) {
-    if( _trip_cnt++ > 24 ) {
-      DEBUG_ONLY( dump_for_spill_split_recycle(); )
-      if( _trip_cnt > 27 ) {
-        C->record_method_not_compilable("failed spill-split-recycle sanity check");
-        return;
+  GrowableArray<Block_List> regions;
+  if (C->method() != NULL && !C->is_osr_compilation()) {
+    ResourceMark rm;
+    stringStream ss;
+    C->method()->print_short_name(&ss);
+    if (!strcmp(ss.as_string(), " spec.benchmarks.compress.Compressor::compress")) {
+      _cfg._root_loop->dump_tree();
+      CFGLoop* loop = _cfg._root_loop;
+      CFGLoop* most_frequent = NULL;
+      do {
+        for (;;) {
+          CFGLoop* next = loop->_child;
+          if (next == NULL) {
+            break;
+          }
+          loop = next;
+        }
+        tty->print_cr("XXX %d %d", loop->id(), loop->depth());
+        if (loop->_child == NULL && loop->depth() == 3) {
+          if (most_frequent == NULL) {
+            most_frequent = loop;
+          } else if (loop->trip_count() > most_frequent->trip_count()) {
+            most_frequent = loop;
+          }
+        }
+        for (;;) {
+          CFGLoop* next = loop->_sibling;
+          if (next != NULL) {
+            loop = next;
+            break;
+          }
+          loop = loop->_parent;
+          if (loop == NULL) {
+            break;
+          }
+          tty->print_cr("XXX %d", loop->id());
+        }
+      } while (loop != NULL);
+      if (most_frequent != NULL) {
+        tty->print_cr("XXX most frequent: %d", most_frequent->id());
       }
     }
+  }
+  if (regions.length() == 0) {
+    regions.push(_cfg._blocks);
+  }
 
-    if (!_lrg_map.max_lrg_id()) {
-      return;
-    }
-    uint new_max_lrg_id = Split(_lrg_map.max_lrg_id(), &split_arena);  // Split spilling LRG everywhere
-    _lrg_map.set_max_lrg_id(new_max_lrg_id);
-    // Bail out if unique gets too large (ie - unique > MaxNodeLimit - 2*NodeLimitFudgeFactor)
-    C->check_node_count(2 * NodeLimitFudgeFactor, "out of nodes after split");
-    if (C->failing()) {
-      return;
-    }
-
-    compact(); // Compact LRGs; return new lower max lrg
-
-    // Nuke the live-ness and interference graph and LiveRanGe info
+  for (int region = 0; region < regions.length(); region++) {
+    Block_List blocks = regions.at(region);
+    // After aggressive coalesce, attempt a first cut at coloring.
+    // To color, we need the IFG and for that we need LIVE.
     {
       Compile::TracePhase tp("computeLive", &timers[_t_computeLive]);
       _live = NULL;
-      rm.reset_to_mark();         // Reclaim working storage
+      rm.reset_to_mark();           // Reclaim working storage
       IndexSet::reset_memory(C, &live_arena);
       ifg.init(_lrg_map.max_lrg_id());
-
-      // Create LiveRanGe array.
-      // Intersect register masks for all USEs and DEFs
-      gather_lrg_masks(true);
+      gather_lrg_masks(blocks, true, region);
       live.compute(_lrg_map.max_lrg_id());
       _live = &live;
     }
-    must_spill = build_ifg_physical(&live_arena);
-    _ifg->SquareUp();
-    _ifg->Compute_Effective_Degree();
 
-    // Only do conservative coalescing if requested
-    if (OptoCoalesce) {
-      Compile::TracePhase tp("chaitinCoalesce3", &timers[_t_chaitinCoalesce3]);
-      // Conservative (and pessimistic) copy coalescing
-      PhaseConservativeCoalesce coalesce(*this);
-      // Check for few live ranges determines how aggressive coalesce is.
-      coalesce.coalesce_driver();
-    }
-    _lrg_map.compress_uf_map_for_nodes();
+    // Build physical interference graph
+    uint must_spill = 0;
+    must_spill = build_ifg_physical(&live_arena, blocks);
+    // If we have a guaranteed spill, might as well spill now
+    if (must_spill) {
+      if (!_lrg_map.max_lrg_id()) {
+        return;
+      }
+      // Bail out if unique gets too large (ie - unique > MaxNodeLimit)
+      C->check_node_count(10 * must_spill, "out of nodes before split");
+      if (C->failing()) {
+        return;
+      }
+
+      uint new_max_lrg_id = Split(_lrg_map.max_lrg_id(), &split_arena);  // Split spilling LRG everywhere
+      _lrg_map.set_max_lrg_id(new_max_lrg_id);
+      // Bail out if unique gets too large (ie - unique > MaxNodeLimit - 2*NodeLimitFudgeFactor)
+      // or we failed to split
+      C->check_node_count(2 * NodeLimitFudgeFactor, "out of nodes after physical split");
+      if (C->failing()) {
+        return;
+      }
+
+      NOT_PRODUCT(C->verify_graph_edges();)
+
+      compact();                  // Compact LRGs; return new lower max lrg
+
+      {
+        Compile::TracePhase tp("computeLive", &timers[_t_computeLive]);
+        _live = NULL;
+        rm.reset_to_mark();         // Reclaim working storage
+        IndexSet::reset_memory(C, &live_arena);
+        ifg.init(_lrg_map.max_lrg_id()); // Build a new interference graph
+        gather_lrg_masks(blocks, true, region);   // Collect intersect mask
+        live.compute(_lrg_map.max_lrg_id()); // Compute LIVE
+        _live = &live;
+      }
+      build_ifg_physical(&live_arena, blocks);
+      _ifg->SquareUp();
+      _ifg->Compute_Effective_Degree();
+      // Only do conservative coalescing if requested
+      if (OptoCoalesce) {
+        Compile::TracePhase tp("chaitinCoalesce2", &timers[_t_chaitinCoalesce2]);
+        // Conservative (and pessimistic) copy coalescing of those spills
+        PhaseConservativeCoalesce coalesce(*this);
+        // If max live ranges greater than cutoff, don't color the stack.
+        // This cutoff can be larger than below since it is only done once.
+        coalesce.coalesce_driver();
+      }
+      _lrg_map.compress_uf_map_for_nodes();
+
 #ifdef ASSERT
-    verify(&live_arena, true);
+      verify(&live_arena, true);
 #endif
+    } else {
+      ifg.SquareUp();
+      ifg.Compute_Effective_Degree();
+#ifdef ASSERT
+      set_was_low();
+#endif
+    }
+
+    // Prepare for Simplify & Select
     cache_lrg_info();           // Count degree of LRGs
 
     // Simplify the InterFerence Graph by removing LRGs of low degree.
@@ -620,7 +564,71 @@ void PhaseChaitin::Register_Allocate() {
 
     // Select colors by re-inserting LRGs back into the IFG in reverse order.
     // Return whether or not something spills.
-    spills = Select();
+    uint spills = Select();
+
+    // If we spill, split and recycle the entire thing
+    while (spills) {
+      if (_trip_cnt++ > 24) {
+        DEBUG_ONLY(dump_for_spill_split_recycle();)
+        if (_trip_cnt > 27) {
+          C->record_method_not_compilable("failed spill-split-recycle sanity check");
+          return;
+        }
+      }
+
+      if (!_lrg_map.max_lrg_id()) {
+        return;
+      }
+      uint new_max_lrg_id = Split(_lrg_map.max_lrg_id(), &split_arena);  // Split spilling LRG everywhere
+      _lrg_map.set_max_lrg_id(new_max_lrg_id);
+      // Bail out if unique gets too large (ie - unique > MaxNodeLimit - 2*NodeLimitFudgeFactor)
+      C->check_node_count(2 * NodeLimitFudgeFactor, "out of nodes after split");
+      if (C->failing()) {
+        return;
+      }
+
+      compact(); // Compact LRGs; return new lower max lrg
+
+      // Nuke the live-ness and interference graph and LiveRanGe info
+      {
+        Compile::TracePhase tp("computeLive", &timers[_t_computeLive]);
+        _live = NULL;
+        rm.reset_to_mark();         // Reclaim working storage
+        IndexSet::reset_memory(C, &live_arena);
+        ifg.init(_lrg_map.max_lrg_id());
+
+        // Create LiveRanGe array.
+        // Intersect register masks for all USEs and DEFs
+        gather_lrg_masks(blocks, true, region);
+        live.compute(_lrg_map.max_lrg_id());
+        _live = &live;
+      }
+      must_spill = build_ifg_physical(&live_arena, blocks);
+      _ifg->SquareUp();
+      _ifg->Compute_Effective_Degree();
+
+      // Only do conservative coalescing if requested
+      if (OptoCoalesce) {
+        Compile::TracePhase tp("chaitinCoalesce3", &timers[_t_chaitinCoalesce3]);
+        // Conservative (and pessimistic) copy coalescing
+        PhaseConservativeCoalesce coalesce(*this);
+        // Check for few live ranges determines how aggressive coalesce is.
+        coalesce.coalesce_driver();
+      }
+      _lrg_map.compress_uf_map_for_nodes();
+#ifdef ASSERT
+      verify(&live_arena, true);
+#endif
+      cache_lrg_info();           // Count degree of LRGs
+
+      // Simplify the InterFerence Graph by removing LRGs of low degree.
+      // LRGs of low degree are trivially colorable.
+      Simplify();
+
+      // Select colors by re-inserting LRGs back into the IFG in reverse order.
+      // Return whether or not something spills.
+      spills = Select();
+    }
   }
 
   // Count number of Simplify-Select trips per coloring success.
@@ -777,15 +785,15 @@ void PhaseChaitin::mark_ssa() {
 
 // Gather LiveRanGe information, including register masks.  Modification of
 // cisc spillable in_RegMasks should not be done before AggressiveCoalesce.
-void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
+void PhaseChaitin::gather_lrg_masks(const Block_List &blocks, bool after_aggressive, uint region) {
 
   // Nail down the frame pointer live range
   uint fp_lrg = _lrg_map.live_range_id(_cfg.get_root_node()->in(1)->in(TypeFunc::FramePtr));
   lrgs(fp_lrg)._cost += 1e12;   // Cost is infinite
 
   // For all blocks
-  for (uint i = 0; i < _cfg.number_of_blocks(); i++) {
-    Block* block = _cfg.get_block(i);
+  for (uint i = 0; i < blocks.size(); i++) {
+    Block* block = blocks[i];
 
     // For all instructions
     for (uint j = 1; j < block->number_of_nodes(); j++) {
@@ -1097,7 +1105,11 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
           // Later, AFTER aggressive, this live range will have to spill
           // but the spiller handles slow-path calls very nicely.
         } else {
-          lrg.AND( rm );
+          if (_cfg.get_block_for_node(n->in(k))->_region > region) {
+            ShouldNotReachHere();
+          } else {
+            lrg.AND( rm );
+          }
         }
 
         // Check for bound register masks

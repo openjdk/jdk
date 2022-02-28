@@ -842,12 +842,12 @@ void PhaseChaitin::print_pressure_info(Pressure& pressure, const char *str) {
  *   We store the biggest register pressure for each block and also the first
  *   low to high register pressure transition within the block (if any).
  */
-uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
+uint PhaseChaitin::build_ifg_physical(ResourceArea* a, const Block_List& blocks) {
   Compile::TracePhase tp("buildIFG", &timers[_t_buildIFGphysical]);
 
   uint must_spill = 0;
-  for (uint i = 0; i < _cfg.number_of_blocks(); i++) {
-    Block* block = _cfg.get_block(i);
+  for (uint i = 0; i < blocks.size(); i++) {
+    Block* block = blocks[i];
 
     // Clone (rather than smash in place) the liveout info, so it is alive
     // for the "collect_gc_info" phase later.

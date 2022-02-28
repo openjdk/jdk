@@ -1576,7 +1576,7 @@ void PhaseCFG::global_code_motion() {
     ifg.init(node_size); // Empty IFG
     regalloc.set_ifg(ifg);
     regalloc.set_live(live);
-    regalloc.gather_lrg_masks(false);    // Collect LRG masks
+    regalloc.gather_lrg_masks(_blocks, false, 0);    // Collect LRG masks
     live.compute(node_size); // Compute liveness
 
     recalc_pressure_nodes = NEW_RESOURCE_ARRAY(intptr_t, node_size);
