@@ -39,6 +39,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -430,7 +431,8 @@ enum SSLCipher {
             for (String entry : propvalue) {
                 int index;
                 // If this is not a UsageLimit, goto to next entry.
-                String[] values = entry.trim().toUpperCase().split(" ");
+                String[] values =
+                        entry.trim().toUpperCase(Locale.ENGLISH).split(" ");
 
                 if (values[1].contains(tag[0])) {
                     index = 0;
@@ -1865,10 +1867,10 @@ enum SSLCipher {
                 this.random = random;
 
                 keyLimitCountdown = cipherLimits.getOrDefault(
-                        algorithm.toUpperCase() + ":" + tag[0], 0L);
+                        algorithm.toUpperCase(Locale.ENGLISH) + ":" + tag[0], 0L);
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                     SSLLogger.fine("KeyLimit read side: algorithm = " +
-                            algorithm.toUpperCase() + ":" + tag[0] +
+                            algorithm.toUpperCase(Locale.ENGLISH) + ":" + tag[0] +
                             "\ncountdown value = " + keyLimitCountdown);
                 }
                 if (keyLimitCountdown > 0) {
@@ -2019,10 +2021,10 @@ enum SSLCipher {
                 this.random = random;
 
                 keyLimitCountdown = cipherLimits.getOrDefault(
-                        algorithm.toUpperCase() + ":" + tag[0], 0L);
+                        algorithm.toUpperCase(Locale.ENGLISH) + ":" + tag[0], 0L);
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                     SSLLogger.fine("KeyLimit write side: algorithm = "
-                            + algorithm.toUpperCase() + ":" + tag[0] +
+                            + algorithm.toUpperCase(Locale.ENGLISH) + ":" + tag[0] +
                             "\ncountdown value = " + keyLimitCountdown);
                 }
                 if (keyLimitCountdown > 0) {
@@ -2279,9 +2281,9 @@ enum SSLCipher {
                 this.random = random;
 
                 keyLimitCountdown = cipherLimits.getOrDefault(
-                        algorithm.toUpperCase() + ":" + tag[0], 0L);
+                        algorithm.toUpperCase(Locale.ENGLISH) + ":" + tag[0], 0L);
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                    SSLLogger.fine("algorithm = " + algorithm.toUpperCase() +
+                    SSLLogger.fine("algorithm = " + algorithm.toUpperCase(Locale.ENGLISH) +
                             ":" + tag[0] + "\ncountdown value = " +
                             keyLimitCountdown);
                 }
@@ -2561,9 +2563,9 @@ enum SSLCipher {
                 this.random = random;
 
                 keyLimitCountdown = cipherLimits.getOrDefault(
-                        algorithm.toUpperCase() + ":" + tag[0], 0L);
+                        algorithm.toUpperCase(Locale.ENGLISH) + ":" + tag[0], 0L);
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                    SSLLogger.fine("algorithm = " + algorithm.toUpperCase() +
+                    SSLLogger.fine("algorithm = " + algorithm.toUpperCase(Locale.ENGLISH) +
                             ":" + tag[0] + "\ncountdown value = " +
                             keyLimitCountdown);
                 }

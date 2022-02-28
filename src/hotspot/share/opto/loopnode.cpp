@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2846,7 +2846,7 @@ bool OuterStripMinedLoopEndNode::is_expanded(PhaseGVN *phase) const {
   if (phase->is_IterGVN()) {
     Node* backedge = proj_out_or_null(true);
     if (backedge != NULL) {
-      Node* head = backedge->unique_ctrl_out();
+      Node* head = backedge->unique_ctrl_out_or_null();
       if (head != NULL && head->is_OuterStripMinedLoop()) {
         if (head->find_out_with(Op_Phi) != NULL) {
           return true;

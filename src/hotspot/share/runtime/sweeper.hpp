@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,11 +113,11 @@ class NMethodSweeper : public AllStatic {
 
   static CodeBlobClosure* prepare_mark_active_nmethods();
   static void sweeper_loop();
-  static bool should_start_aggressive_sweep(int code_blob_type);
+  static bool should_start_aggressive_sweep();
   static void force_sweep();
   static int hotness_counter_reset_val();
   static void report_state_change(nmethod* nm);
-  static void report_allocation(int code_blob_type);  // Possibly start the sweeper thread.
+  static void report_allocation();  // Possibly start the sweeper thread.
   static void possibly_flush(nmethod* nm);
   static void print(outputStream* out);   // Printing/debugging
   static void print() { print(tty); }

@@ -1679,6 +1679,10 @@ void HeapShared::sort_loaded_regions(LoadedArchiveHeapRegion* loaded_regions, in
 bool HeapShared::load_regions(FileMapInfo* mapinfo, LoadedArchiveHeapRegion* loaded_regions,
                               int num_loaded_regions, uintptr_t buffer) {
   uintptr_t bitmap_base = (uintptr_t)mapinfo->map_bitmap_region();
+  if (bitmap_base == 0) {
+    _loading_failed = true;
+    return false; // OOM or CRC error
+  }
   uintptr_t load_address = buffer;
   for (int i = 0; i < num_loaded_regions; i++) {
     LoadedArchiveHeapRegion* ri = &loaded_regions[i];
