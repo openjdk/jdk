@@ -36,10 +36,11 @@ import java.awt.Robot;
 
 public class SetMinimumSizeTest2 {
 
-    private static Frame frame;
+    private static volatile Frame frame;
     private static volatile Dimension dimension, actualDimension;
 
     public static void createGUI(Frame _frame) {
+        frame = new Frame();
         frame.add(new Button("Button"));
         frame.setMinimumSize(new Dimension(140, 140));
         frame.setLocationRelativeTo(null);
@@ -48,7 +49,6 @@ public class SetMinimumSizeTest2 {
 
     public static void doTest() throws Exception {
         try {
-            frame = new Frame();
             EventQueue.invokeAndWait(() -> createGUI(frame));
 
             Robot robot = new Robot();
