@@ -310,13 +310,14 @@ bool ElfFile::get_source_info(const uint32_t offset_in_library, char* filename, 
   if (!load_dwarf_file()) {
     // Some ELF libraries do not provide separate .debuginfo files. Check if the current ELF file has the required
     // DWARF sections. If so, treat the current ELF file as DWARF file.
-    Elf_Shdr shdr;
     if (!is_valid_dwarf_file()) {
       log_develop_info(dwarf)("Failed to load DWARF file for library %s or find DWARF sections directly inside it.", _filepath);
       return false;
     }
     log_develop_info(dwarf)("No separate .debuginfo file for library %s. It already contains the required DWARF sections.", _filepath);
-    _dwarf_file = new (std::nothrow) DwarfFile(_filepath);
+    if (!create_new_dwarf_file(_filepath)) {
+      return false;
+    }
   }
 
   // Store result in filename and line pointer.
@@ -345,28 +346,29 @@ bool ElfFile::load_dwarf_file() {
     return false;
   }
 
-  size_t offset = (strlen(debug_filename) + 4) >> 2;
-  const uint32_t crc = ((uint32_t*) debug_filename)[offset];
   const char* debug_file_directory = "/usr/lib/debug";
   char* debug_pathname = NEW_RESOURCE_ARRAY(char, strlen(debug_filename) + strlen(_filepath) + strlen(".debug/")
                                                   + strlen(debug_file_directory) + 2);
   if (debug_pathname == nullptr) {
+    log_develop_info(dwarf)("Failed to allocate string for path name");
     return false;
   }
 
   strcpy(debug_pathname, _filepath);
-  char* last_slash = strrchr(debug_pathname, '/');
+  char* last_slash = strrchr(debug_pathname, *os::file_separator());
   if (last_slash == nullptr) {
     return false;
   }
 
   // Look in the same directory as the object.
+  size_t offset = (strlen(debug_filename) + 4) >> 2u;
+  const uint32_t crc = ((uint32_t*) debug_filename)[offset];
   strcpy(last_slash + 1, debug_filename);
   if (open_valid_debuginfo_file(debug_pathname, crc)) {
     return true;
   }
 
-  // Additionally look in environmental variable _JVM_DWARF_PATH specified by user.
+  // Additionally, look in environmental variable _JVM_DWARF_PATH specified by user.
   if (load_dwarf_file_from_env_path(debug_filename, crc)) {
     return true;
   }
@@ -404,6 +406,10 @@ bool ElfFile::load_dwarf_file_from_env_path(const char* debug_filename, const ui
 
 bool ElfFile::load_dwarf_file_from_env_path_folder(const char* env_path, const char* folder, const char* debug_filename, const uint32_t crc) {
   char* debug_pathname = NEW_RESOURCE_ARRAY(char, strlen(env_path) + strlen(folder) + strlen(debug_filename) + 2);
+  if (debug_pathname == nullptr) {
+    log_develop_info(dwarf)("Failed to allocate string for path name");
+    return false;
+  }
   strcpy(debug_pathname, env_path);
   strcat(debug_pathname, folder);
   strcat(debug_pathname, debug_filename);
@@ -563,16 +569,20 @@ uint32_t ElfFile::get_file_crc(FILE* const file) {
 // The CRC used in gnu_debuglink, retrieved from
 // http://sourceware.org/gdb/current/onlinedocs/gdb/Separate-Debug-Files.html#Separate-Debug-Files.
 uint32_t ElfFile::gnu_debuglink_crc32(uint32_t crc, uint8_t* buf, const size_t len) {
-  crc = ~crc & 0xffffffff;
+  crc = ~crc;
   for (uint8_t* end = buf + len; buf < end; buf++) {
     crc = crc32_table[(crc ^ *buf) & 0xffu] ^ (crc >> 8u);
   }
-  return ~crc & 0xffffffff;
+  return ~crc;
 }
 
 bool ElfFile::create_new_dwarf_file(const char* filepath) {
   log_develop_info(dwarf)("Open DWARF file: %s", filepath);
   _dwarf_file = new (std::nothrow) DwarfFile(filepath);
+  if (_dwarf_file == nullptr) {
+    log_develop_info(dwarf)("Failed to create new DwarfFile object for %s.", _filepath);
+    return false;
+  }
   if (!_dwarf_file->is_valid_dwarf_file()) {
     log_develop_info(dwarf)("Did not find required DWARF sections in %s", filepath);
     return false;
@@ -673,7 +683,7 @@ bool DwarfFile::DebugAranges::read_set_header(DebugArangesSetHeader& header) {
     return false;
   }
 
-  if (!_reader.read_byte(&header._address_size) || NOT_LP64(header._address_size != 4) LP64_ONLY( header._address_size != 8)) {
+  if (!_reader.read_byte(&header._address_size) || header._address_size != DwarfFile::ADDRESS_SIZE) {
     // Addresses must be either 4 bytes for 32-bit architectures or 8 bytes for 64-bit architectures.
     return false;
   }
@@ -684,13 +694,7 @@ bool DwarfFile::DebugAranges::read_set_header(DebugArangesSetHeader& header) {
   }
 
   // We must align to twice the address size.
-#ifndef _LP64
-  // 8 byte alignment for 32-bit.
-  uint8_t alignment = 8;
-#else
-  // 16 byte alignment for 64-bit.
-  uint8_t alignment = 16;
-#endif
+  uint8_t alignment = DwarfFile::ADDRESS_SIZE * 2;
   uint8_t padding = alignment - (_reader.get_position() - _section_start_address) % alignment;
   return _reader.move_position(padding);
 }
@@ -781,7 +785,7 @@ bool DwarfFile::CompilationUnit::read_header() {
     return false;
   }
 
-  if (!_reader.read_byte(&_header._address_size) || NOT_LP64(_header._address_size != 4)  LP64_ONLY( _header._address_size != 8)) {
+  if (!_reader.read_byte(&_header._address_size) || _header._address_size != DwarfFile::ADDRESS_SIZE) {
     // Addresses must be either 4 bytes for 32-bit architectures or 8 bytes for 64-bit architectures.
     return false;
   }
@@ -811,7 +815,6 @@ bool DwarfFile::DebugAbbrev::read_section_header(uint32_t debug_abbrev_offset) {
 bool DwarfFile::DebugAbbrev::find_debug_line_offset(const uint64_t abbrev_code) {
   log_develop_trace(dwarf)("Series of declarations [code, tag]:");
   AbbreviationDeclaration declaration;
-  bool found_matching_declaration = false;
   while (_reader.has_bytes_left()) {
     if (!read_declaration(declaration)) {
       return false;
@@ -937,11 +940,7 @@ bool DwarfFile::CompilationUnit::read_attribute_value(const uint64_t attribute_f
   switch (attribute_form) {
     case DW_FORM_addr:
       // Move position by the size of an address.
-#ifndef _LP64
-      _reader.move_position(4);
-#else
-      _reader.move_position(8);
-#endif
+      _reader.move_position(DwarfFile::ADDRESS_SIZE);
       break;
     case DW_FORM_block2:
       // New position: length + data length (next_word)
@@ -1023,7 +1022,7 @@ bool DwarfFile::CompilationUnit::read_attribute_value(const uint64_t attribute_f
         }
         break;
       } else {
-        if (!_reader.move_position(4)) {
+        if (!_reader.move_position(DwarfFile::DWARF_SECTION_OFFSET_SIZE)) {
           return false;
         }
         break;
@@ -1116,9 +1115,10 @@ bool DwarfFile::LineNumberProgram::read_header() {
 
   // Delay reading file_names until we found the correct file index in the line number program. Store the position where
   // the file names start to parse them later. We directly jump to the line number program which starts at offset
-  // _debug_line_offset + 10 (=sizeof(_unit_length) + sizeof(_version) + sizeof(_header_length)) + _header_length.
+  // header_size (=HEADER_DESCRIPTION_BYTES + _header_length) + _debug_line_offset
   _header._file_names_offset = _reader.get_position();
-  if (!_reader.set_position(shdr.sh_offset + _debug_line_offset + 10 + _header._header_length)) {
+  uint32_t header_size = LineNumberProgramHeader::HEADER_DESCRIPTION_BYTES + _header._header_length;
+  if (!_reader.set_position(shdr.sh_offset + header_size + _debug_line_offset)) {
     return false;
   }
 
@@ -1190,6 +1190,10 @@ bool DwarfFile::LineNumberProgram::run_line_number_program(char& filename, const
   log_develop_debug(dwarf)("Address:              Line:    Column:   File:");
 #endif
   _state = new (std::nothrow) LineNumberProgramState(_header);
+  if (_state == nullptr) {
+    log_develop_info(dwarf)("Failed to create new LineNumberProgramState");
+    return false;
+  }
   uintptr_t previous_address = 0;
   uint32_t previous_file = 0;
   uint32_t previous_line = 0;
@@ -1609,13 +1613,8 @@ bool DwarfFile::MarkedDwarfFileReader::read_qword(uint64_t* result) {
 }
 
 bool DwarfFile::MarkedDwarfFileReader::read_address_sized(uintptr_t* result) {
-#ifndef _LP64
-  uint8_t len = 4;
-#else
-  uint8_t len = 8;
-#endif
-  _current_pos += len;
-  return read(result, len);
+  _current_pos += DwarfFile::ADDRESS_SIZE;
+  return read(result, DwarfFile::ADDRESS_SIZE);
 }
 
 // See Figure 46/47 in Appendix C of the DWARF 4 spec.

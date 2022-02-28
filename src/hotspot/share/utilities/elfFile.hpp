@@ -293,12 +293,17 @@ class ElfFile: public CHeapObj<mtInternal> {
  *  algorithm inside the different sections can be found in the class comments for DebugAranges, DebugAbbrev and
  *  LineNumberProgram further down in this file.
  *
- *  Available log levels (-Xlog:dwarf=X):
+ *  Available (develop) log levels (-Xlog:dwarf=X) which are only present in debug builds:
  *  - info:  Prints the path of parsed DWARF file together with the query and the resulting source information.
  *  - debug: Prints the results of the steps (1) - (4) together with the generated line information matrix.
  *  - trace: Full logging information for intermediate states/results when parsing the DWARF file.
  */
 class DwarfFile : public ElfFile {
+
+  static constexpr uint8_t ADDRESS_SIZE = NOT_LP64(4) LP64_ONLY(8);
+  // We only support 32-bit DWARF which uses 32-bit values for DWARF section lengths and offsets relative to the beginning
+  // of a section.
+  static constexpr uint8_t DWARF_SECTION_OFFSET_SIZE = 4;
 
   class MarkedDwarfFileReader : public MarkedFileReader {
    private:
@@ -645,8 +650,18 @@ class DwarfFile : public ElfFile {
       // opcode_base-1. DWARF 3 and 4 use 12 standard opcodes.
       uint8_t _standard_opcode_lengths[12];
 
-      // Not part of the real header, implementation only. Offset where the filename strings are starting in header.
+      /*
+       * The following fields are not part of the real header and are only used for the implementation.
+       */
+      // Offset where the filename strings are starting in header.
       long _file_names_offset;
+
+      // _header_length only specifies the number of bytes following the _header_length field. It does not include
+      // the size of _unit_length, _version and _header_length itself. This constant represents the number of missing
+      // bytes to get the real size of the header:
+      // sizeof(_unit_length) + sizeof(_version) + sizeof(_header_length) = 4 + 2 + 4 = 10
+      static constexpr uint8_t HEADER_DESCRIPTION_BYTES = 10;
+
     };
 
     // The line number program state consists of several registers that hold the current state of the line number program
