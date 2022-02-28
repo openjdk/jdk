@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,18 +19,21 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-// Make sure the defines don't screw up the declarations later on in this file.
-#define DONT_USE_REGISTER_DEFINES
+package api;
 
-#include "asm/register.hpp"
+import jdk.internal.javac.PreviewFeature;
+import jdk.internal.javac.PreviewFeature.Feature;
 
-REGISTER_DEFINITION(Register, noreg);
+/**
+ * {@link API3#test()}
+ */
+public class API3 {
 
-REGISTER_DEFINITION(FloatRegister, fnoreg);
+    @PreviewFeature(feature=Feature.TEST, reflective=false)
+    public void test() {
+        return null;
+    }
 
-REGISTER_DEFINITION(VectorRegister, vnoreg);
-
-REGISTER_DEFINITION(VectorSRegister, vsnoreg);
+}

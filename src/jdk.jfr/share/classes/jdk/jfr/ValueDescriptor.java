@@ -139,7 +139,9 @@ public final class ValueDescriptor {
 
 
     ValueDescriptor(Class<?> type, String name, List<AnnotationElement> annotations, boolean allowArray) {
-        Objects.requireNonNull(annotations);
+        Objects.requireNonNull(type, "type");
+        Objects.requireNonNull(name, "name");
+        Objects.requireNonNull(annotations, "annotations");
         Utils.checkRegisterPermission();
         if (!allowArray) {
             if (type.isArray()) {
@@ -271,7 +273,7 @@ public final class ValueDescriptor {
      *         directly present, else {@code null}
      */
     public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
-        Objects.requireNonNull(annotationType);
+        Objects.requireNonNull(annotationType, "annotationType");
         return annotationConstruct.getAnnotation(annotationType);
     }
 

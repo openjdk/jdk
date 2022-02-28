@@ -80,6 +80,14 @@ public class SharedArchiveConsistency {
         OutputAnalyzer output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs);
         String stdtxt = output.getOutput();
         System.out.println("Note: this test may fail in very rare occasions due to CRC32 checksum collision");
+        for (String opt : execArgs) {
+          if (opt.equals("-XX:+VerifySharedSpaces")) {
+            // If VerifySharedSpaces is enabled, the VM should never crash even if the archive
+            // is corrupted (unless if we are so lucky that the corrupted archive ends up
+            // have the same checksum as recoreded in the header)
+            output.shouldNotContain("A fatal error has been detected by the Java Runtime Environment");
+          }
+        }
         for (String message : matchMessages) {
             if (stdtxt.contains(message)) {
                 // match any to return

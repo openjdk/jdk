@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,14 +81,22 @@ cbTrackingObjectFree(jvmtiEnv* jvmti_env, jlong tag)
 struct bag *
 classTrack_processUnloads(JNIEnv *env)
 {
-    debugMonitorEnter(classTrackLock);
     if (deletedSignatures == NULL) {
-        // Class tracking not initialized, nobody's interested.
-        debugMonitorExit(classTrackLock);
-        return NULL;
+      return NULL;
     }
+
+    /* Allocate new bag outside classTrackLock lock to avoid deadlock.
+     *
+     * Note: jvmtiAllocate/jvmtiDeallocate() may be blocked by ongoing safepoints.
+     * It is dangerous to call them (via bagCreateBag/bagDestroyBag()) while holding monitor(s),
+     * because jvmti may post events, e.g. JVMTI_EVENT_OBJECT_FREE at safepoints and event processing
+     * code may acquire the same monitor(s), e.g. classTrackLock in cbTrackingObjectFree(),
+     * which can lead to deadlock.
+     */
+    struct bag* new_bag = bagCreateBag(sizeof(char*), 10);
+    debugMonitorEnter(classTrackLock);
     struct bag* deleted = deletedSignatures;
-    deletedSignatures = bagCreateBag(sizeof(char*), 10);
+    deletedSignatures = new_bag;
     debugMonitorExit(classTrackLock);
     return deleted;
 }
@@ -194,8 +202,11 @@ classTrack_initialize(JNIEnv *env)
 void
 classTrack_activate(JNIEnv *env)
 {
+    // Allocate bag outside classTrackLock lock to avoid deadlock.
+    // See comments in classTrack_processUnloads() for details.
+    struct bag* new_bag = bagCreateBag(sizeof(char*), 1000);
     debugMonitorEnter(classTrackLock);
-    deletedSignatures = bagCreateBag(sizeof(char*), 1000);
+    deletedSignatures = new_bag;
     debugMonitorExit(classTrackLock);
 }
 
@@ -214,12 +225,14 @@ void
 classTrack_reset(void)
 {
     debugMonitorEnter(classTrackLock);
-
-    if (deletedSignatures != NULL) {
-        bagEnumerateOver(deletedSignatures, cleanDeleted, NULL);
-        bagDestroyBag(deletedSignatures);
-        deletedSignatures = NULL;
-    }
-
+    struct bag* to_delete = deletedSignatures;
+    deletedSignatures = NULL;
     debugMonitorExit(classTrackLock);
+
+    // Deallocate bag outside classTrackLock to avoid deadlock.
+    // See comments in classTrack_processUnloads() for details.
+    if (to_delete != NULL) {
+      bagEnumerateOver(to_delete, cleanDeleted, NULL);
+      bagDestroyBag(to_delete);
+    }
 }
