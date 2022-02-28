@@ -258,7 +258,7 @@ public class DefaultTableColumnModel implements TableColumnModel,
      * @return          the index of the first column in the
      *                  <code>tableColumns</code> array whose identifier
      *                  is equal to <code>identifier</code>
-     * @throws          IllegalArgumentException  if <code>identifier</code>
+     * @exception       IllegalArgumentException  if <code>identifier</code>
      *                          is <code>null</code>, or if no
      *                          <code>TableColumn</code> has this
      *                          <code>identifier</code>
@@ -290,7 +290,7 @@ public class DefaultTableColumnModel implements TableColumnModel,
      * @param   columnIndex     the index of the column desired
      * @return  the <code>TableColumn</code> object for the column
      *                          at <code>columnIndex</code>
-     * @exception  ArrayIndexOutOfBoundsException if <code>columnIndex</code>
+     * @throws  ArrayIndexOutOfBoundsException if <code>columnIndex</code>
      *             is out of range:
      *             (<code>columnIndex &lt; 0 || columnIndex &gt;= getColumnCount()</code>)
      */
