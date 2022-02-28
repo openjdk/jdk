@@ -68,7 +68,7 @@ public class SetMinimumSizeTest1 {
 
             EventQueue.invokeAndWait(() -> {
                 actualDimension = frame.getSize();
-	    });
+            });
 
             robot.waitForIdle();
 
