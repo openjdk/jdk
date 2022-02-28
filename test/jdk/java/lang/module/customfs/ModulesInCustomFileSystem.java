@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @bug 8178380 8282444
  * @modules jdk.zipfs
  * @library /test/lib
  * @build ModulesInCustomFileSystem m1/* m2/*
