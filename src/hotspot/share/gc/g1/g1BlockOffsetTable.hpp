@@ -111,9 +111,6 @@ class G1BlockOffsetTablePart {
   friend class HeapRegion;
   friend class VMStructs;
 private:
-  // allocation boundary at which offset array must be updated
-  HeapWord* _next_offset_threshold;
-
   // This is the global BlockOffsetTable.
   G1BlockOffsetTable* _bot;
 
@@ -140,19 +137,23 @@ private:
   inline HeapWord* forward_to_block_containing_addr(HeapWord* q, HeapWord* n,
                                                     const void* addr) const;
 
-  // Requires that "*threshold_" be the first array entry boundary at or
-  // above "blk_start".  If the block starts at or crosses "*threshold_", records
-  // "blk_start" as the appropriate block start for the array index
-  // starting at "*threshold_", and for any other indices crossed by the
-  // block.  Updates "*threshold_" to correspond to the first index after
-  // the block end.
-  void alloc_block_work(HeapWord** threshold_,
-                        HeapWord* blk_start,
-                        HeapWord* blk_end);
+  // Update BOT entries corresponding to the mem range [blk_start, blk_end).
+  void update_for_block_work(HeapWord* blk_start, HeapWord* blk_end);
 
   void check_all_cards(size_t left_card, size_t right_card) const;
 
 public:
+  static HeapWord* align_up_by_card_size(HeapWord* const addr) {
+    return align_up(addr, BOTConstants::card_size());
+  }
+
+  static bool is_crossing_card_boundary(HeapWord* const obj_start,
+                                        HeapWord* const obj_end) {
+    HeapWord* cur_card_boundary = align_up_by_card_size(obj_start);
+    // strictly greater-than
+    return obj_end > cur_card_boundary;
+  }
+
   //  The elements of the array are initialized to zero.
   G1BlockOffsetTablePart(G1BlockOffsetTable* array, HeapRegion* hr);
 
@@ -160,44 +161,21 @@ public:
 
   void verify() const;
 
-  // Given an address calculate where the next threshold needing an update is.
-  inline HeapWord* threshold_for_addr(const void* addr);
-
   // Returns the address of the start of the block containing "addr", or
   // else "null" if it is covered by no block.  (May have side effects,
   // namely updating of shared array entries that "point" too far
   // backwards.  This can occur, for example, when lab allocation is used
   // in a space covered by the table.)
   inline HeapWord* block_start(const void* addr);
-  // Same as above, but does not have any of the possible side effects
-  // discussed above.
-  inline HeapWord* block_start_const(const void* addr) const;
 
-  // Reset bot to be empty.
-  void reset_bot();
-
-  bool is_empty() const;
-
-  // Return the next threshold, the point at which the table should be
-  // updated.
-  HeapWord* threshold() const { return _next_offset_threshold; }
-
-  // Sets the threshold explicitly to keep it consistent with what has been
-  // updated. This needs to be done when the threshold is not used for updating
-  // the bot, for example when promoting to old in young collections.
-  void set_threshold(HeapWord* threshold) { _next_offset_threshold = threshold; }
-
-  // These must be guaranteed to work properly (i.e., do nothing)
-  // when "blk_start" ("blk" for second version) is "NULL".  In this
-  // implementation, that's true because NULL is represented as 0, and thus
-  // never exceeds the "_next_offset_threshold".
-  void alloc_block(HeapWord* blk_start, HeapWord* blk_end) {
-    if (blk_end > _next_offset_threshold) {
-      alloc_block_work(&_next_offset_threshold, blk_start, blk_end);
+  void update_for_block(HeapWord* blk_start, HeapWord* blk_end) {
+    if (is_crossing_card_boundary(blk_start, blk_end)) {
+      update_for_block_work(blk_start, blk_end);
     }
   }
-  void alloc_block(HeapWord* blk, size_t size) {
-    alloc_block(blk, blk+size);
+
+  void update_for_block(HeapWord* blk_start, size_t size) {
+    update_for_block(blk_start, blk_start + size);
   }
 
   void set_for_starts_humongous(HeapWord* obj_top, size_t fill_size);

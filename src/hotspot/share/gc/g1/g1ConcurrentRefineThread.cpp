@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/init.hpp"
+#include "runtime/safepoint.hpp"
 #include "runtime/thread.hpp"
 
 G1ConcurrentRefineThread::G1ConcurrentRefineThread(G1ConcurrentRefine* cr, uint worker_id) :
@@ -39,71 +41,20 @@ G1ConcurrentRefineThread::G1ConcurrentRefineThread(G1ConcurrentRefine* cr, uint 
   _vtime_accum(0.0),
   _refinement_stats(new G1ConcurrentRefineStats()),
   _worker_id(worker_id),
-  _notifier(new Semaphore(0)),
-  _should_notify(true),
   _cr(cr)
 {
   // set name
   set_name("G1 Refine#%d", worker_id);
-  create_and_start();
 }
 
 G1ConcurrentRefineThread::~G1ConcurrentRefineThread() {
   delete _refinement_stats;
-  delete _notifier;
-}
-
-void G1ConcurrentRefineThread::wait_for_completed_buffers() {
-  assert(this == Thread::current(), "precondition");
-  while (Atomic::load_acquire(&_should_notify)) {
-    _notifier->wait();
-  }
-}
-
-void G1ConcurrentRefineThread::activate() {
-  assert(this != Thread::current(), "precondition");
-  // Notify iff transitioning from needing activation to not.  This helps
-  // keep the semaphore count bounded and minimizes the work done by
-  // activators when the thread is already active.
-  if (Atomic::load_acquire(&_should_notify) &&
-      Atomic::cmpxchg(&_should_notify, true, false)) {
-    _notifier->signal();
-  }
-}
-
-bool G1ConcurrentRefineThread::maybe_deactivate(bool more_work) {
-  assert(this == Thread::current(), "precondition");
-
-  if (more_work) {
-    // Suppress unnecessary notifications.
-    Atomic::release_store(&_should_notify, false);
-    return false;
-  } else if (Atomic::load_acquire(&_should_notify)) {
-    // Deactivate if no notifications since enabled (see below).
-    return true;
-  } else {
-    // Try for more refinement work with notifications enabled, to close
-    // race; there could be a plethora of suppressed activation attempts
-    // after we found no work but before we enable notifications here
-    // (so there could be lots of work for this thread to do), followed
-    // by a long time without activation after enabling notifications.
-    // But first, clear any pending signals to prevent accumulation.
-    while (_notifier->trywait()) {}
-    Atomic::release_store(&_should_notify, true);
-    return false;
-  }
 }
 
 void G1ConcurrentRefineThread::run_service() {
   _vtime_start = os::elapsedVTime();
 
-  while (!should_terminate()) {
-    // Wait for work
-    wait_for_completed_buffers();
-    if (should_terminate()) {
-      break;
-    }
-
+  while (wait_for_completed_buffers()) {
     // For logging.
     G1ConcurrentRefineStats start_stats = *_refinement_stats;
     G1ConcurrentRefineStats total_stats; // Accumulate over activation.
@@ -125,8 +76,11 @@ void G1ConcurrentRefineThread::run_service() {
           continue;             // Re-check for termination after yield delay.
         }
 
-        bool more_work = _cr->do_refinement_step(_worker_id, _refinement_stats);
-        if (maybe_deactivate(more_work)) break;
+        if (!_cr->do_refinement_step(_worker_id, _refinement_stats)) {
+          if (maybe_deactivate()) {
+            break;
+          }
+        }
       }
     }
 
@@ -150,4 +104,165 @@ void G1ConcurrentRefineThread::run_service() {
 
 void G1ConcurrentRefineThread::stop_service() {
   activate();
+}
+
+G1PrimaryConcurrentRefineThread*
+G1PrimaryConcurrentRefineThread::create(G1ConcurrentRefine* cr) {
+  G1PrimaryConcurrentRefineThread* crt =
+    new (std::nothrow) G1PrimaryConcurrentRefineThread(cr);
+  if (crt != nullptr) {
+    crt->create_and_start();
+  }
+  return crt;
+}
+
+G1PrimaryConcurrentRefineThread::G1PrimaryConcurrentRefineThread(G1ConcurrentRefine* cr) :
+  G1ConcurrentRefineThread(cr, 0),
+  _notifier(0),
+  _threshold(0)
+{}
+
+void G1PrimaryConcurrentRefineThread::stop_service() {
+  G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
+  dcqs.set_refinement_notification_thread(nullptr);
+  G1ConcurrentRefineThread::stop_service();
+}
+
+// The primary refinement thread is notified when buffers/cards are added to
+// the dirty card queue.  That can happen in fairly arbitrary contexts.
+// This means there may be arbitrary other locks held when notifying.  We
+// also don't want to have to take a lock on the fairly common notification
+// path, as contention for that lock can significantly impact performance.
+//
+// We use a semaphore to implement waiting and unblocking, to avoid
+// lock rank checking issues.  (We could alternatively use an
+// arbitrarily low ranked mutex.)  The atomic variable _threshold is
+// used to decide when to signal the semaphore.  When its value is
+// SIZE_MAX then the thread is running.  Otherwise, the thread should
+// be requested to run when notified that the number of cards has
+// exceeded the threshold value.
+
+bool G1PrimaryConcurrentRefineThread::wait_for_completed_buffers() {
+  assert(this == Thread::current(), "precondition");
+  _notifier.wait();
+  assert(Atomic::load(&_threshold) == SIZE_MAX || should_terminate(), "incorrect state");
+  return !should_terminate();
+}
+
+bool G1PrimaryConcurrentRefineThread::maybe_deactivate() {
+  assert(this == Thread::current(), "precondition");
+  assert(Atomic::load(&_threshold) == SIZE_MAX, "incorrect state");
+  Atomic::store(&_threshold, cr()->primary_activation_threshold());
+  // Always deactivate when no refinement work found.  New refinement
+  // work may have arrived after we tried, but checking for that would
+  // still be racy.  Instead, the next time additional work is made
+  // available we'll get reactivated.
+  return true;
+}
+
+void G1PrimaryConcurrentRefineThread::activate() {
+  assert(this != Thread::current(), "precondition");
+  // The thread is running when notifications are disabled, so shouldn't
+  // signal is this case.  But there's a race between stop requests and
+  // maybe_deactivate, so also signal if stop requested.
+  size_t threshold = Atomic::load(&_threshold);
+  if (((threshold != SIZE_MAX) &&
+       (threshold == Atomic::cmpxchg(&_threshold, threshold, SIZE_MAX))) ||
+      should_terminate()) {
+    _notifier.signal();
+  }
+}
+
+void G1PrimaryConcurrentRefineThread::notify(size_t num_cards) {
+  // Only activate if the number of pending cards exceeds the activation
+  // threshold.  Notification is disabled when the thread is running, by
+  // setting _threshold to SIZE_MAX.  A relaxed load is sufficient; we don't
+  // need to be precise about this.
+  if (num_cards > Atomic::load(&_threshold)) {
+    // Discard notifications occurring during a safepoint.  A GC safepoint
+    // may dirty some cards (such as during reference processing), possibly
+    // leading to notification.  End-of-GC update_notify_threshold activates
+    // the primary thread if needed.  Non-GC safepoints are expected to
+    // rarely (if ever) dirty cards, so defer activation to a post-safepoint
+    // notification.
+    if (!SafepointSynchronize::is_at_safepoint()) {
+      activate();
+    }
+  }
+}
+
+void G1PrimaryConcurrentRefineThread::update_notify_threshold(size_t threshold) {
+#ifdef ASSERT
+  if (is_init_completed()) {
+    assert_at_safepoint();
+    assert(Thread::current()->is_VM_thread(), "precondition");
+  }
+#endif // ASSERT
+  // If _threshold is SIZE_MAX then the thread is active and the value
+  // of _threshold shouldn't be changed.
+  if (Atomic::load(&_threshold) != SIZE_MAX) {
+    Atomic::store(&_threshold, threshold);
+    if (G1BarrierSet::dirty_card_queue_set().num_cards() > threshold) {
+      activate();
+    }
+  }
+}
+
+class G1SecondaryConcurrentRefineThread final : public G1ConcurrentRefineThread {
+  Monitor _notifier;
+  bool _requested_active;
+
+  bool wait_for_completed_buffers() override;
+  bool maybe_deactivate() override;
+
+public:
+  G1SecondaryConcurrentRefineThread(G1ConcurrentRefine* cr, uint worker_id);
+
+  void activate() override;
+};
+
+G1SecondaryConcurrentRefineThread::G1SecondaryConcurrentRefineThread(G1ConcurrentRefine* cr,
+                                                                     uint worker_id) :
+  G1ConcurrentRefineThread(cr, worker_id),
+  _notifier(Mutex::nosafepoint, this->name(), true),
+  _requested_active(false)
+{
+  assert(worker_id > 0, "precondition");
+}
+
+bool G1SecondaryConcurrentRefineThread::wait_for_completed_buffers() {
+  assert(this == Thread::current(), "precondition");
+  MonitorLocker ml(&_notifier, Mutex::_no_safepoint_check_flag);
+  while (!_requested_active && !should_terminate()) {
+    ml.wait();
+  }
+  return !should_terminate();
+}
+
+void G1SecondaryConcurrentRefineThread::activate() {
+  assert(this != Thread::current(), "precondition");
+  MonitorLocker ml(&_notifier, Mutex::_no_safepoint_check_flag);
+  if (!_requested_active || should_terminate()) {
+    _requested_active = true;
+    ml.notify();
+  }
+}
+
+bool G1SecondaryConcurrentRefineThread::maybe_deactivate() {
+  assert(this == Thread::current(), "precondition");
+  MutexLocker ml(&_notifier, Mutex::_no_safepoint_check_flag);
+  bool requested = _requested_active;
+  _requested_active = false;
+  return !requested;            // Deactivate if not recently requested active.
+}
+
+G1ConcurrentRefineThread*
+G1ConcurrentRefineThread::create(G1ConcurrentRefine* cr, uint worker_id) {
+  assert(worker_id > 0, "precondition");
+  G1ConcurrentRefineThread* crt =
+    new (std::nothrow) G1SecondaryConcurrentRefineThread(cr, worker_id);
+  if (crt != nullptr) {
+    crt->create_and_start();
+  }
+  return crt;
 }

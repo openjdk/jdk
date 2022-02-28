@@ -164,7 +164,12 @@ class ValueNumberingVisitor: public InstructionVisitor {
 
   void do_Phi            (Phi*             x) { /* nothing to do */ }
   void do_Local          (Local*           x) { /* nothing to do */ }
-  void do_Constant       (Constant*        x) { /* nothing to do */ }
+  void do_Constant       (Constant*        x) {
+    if (x->kills_memory()) {
+      assert(x->can_trap(), "already linked");
+      kill_memory();
+    }
+  }
   void do_LoadField      (LoadField*       x) {
     if (x->is_init_point() ||         // getstatic is an initialization point so treat it as a wide kill
         x->field()->is_volatile()) {  // the JMM requires this

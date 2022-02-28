@@ -452,7 +452,7 @@ private:
 
   void opmask_register_save(KRegister reg) {
     _spill_offset -= 8;
-    __ kmovql(Address(rsp, _spill_offset), reg);
+    __ kmov(Address(rsp, _spill_offset), reg);
   }
 
   void gp_register_restore(Register reg) {
@@ -461,7 +461,7 @@ private:
   }
 
   void opmask_register_restore(KRegister reg) {
-    __ kmovql(reg, Address(rsp, _spill_offset));
+    __ kmov(reg, Address(rsp, _spill_offset));
     _spill_offset += 8;
   }
 

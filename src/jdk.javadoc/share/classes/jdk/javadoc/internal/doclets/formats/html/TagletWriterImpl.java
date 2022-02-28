@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewFlagProvider;
 
 /**
  * The taglet writer that writes HTML.
@@ -352,8 +353,7 @@ public class TagletWriterImpl extends TagletWriter {
         // Use a different style if any link label is longer than 30 chars or contains commas.
         boolean hasLongLabels = links.stream()
                 .anyMatch(c -> c.charCount() > SEE_TAG_MAX_INLINE_LENGTH || c.toString().contains(","));
-        HtmlTree seeList = new HtmlTree(TagName.UL)
-                .setStyle(hasLongLabels ? HtmlStyle.seeListLong : HtmlStyle.seeList);
+        HtmlTree seeList = HtmlTree.UL(hasLongLabels ? HtmlStyle.seeListLong : HtmlStyle.seeList);
         links.stream().filter(Content::isValid).forEach(item -> {
             seeList.add(HtmlTree.LI(item));
         });
@@ -436,12 +436,18 @@ public class TagletWriterImpl extends TagletWriter {
                     int idx = line.indexOf(strippedLine);
                     assert idx >= 0; // because the stripped line is a substring of the line being stripped
                     Text whitespace = Text.of(utils.normalizeNewlines(line.substring(0, idx)));
-                    // If the leading whitespace is not excluded from the link,
-                    // browsers might exhibit unwanted behavior. For example, a
-                    // browser might display hand-click cursor while user hovers
-                    // over that whitespace portion of the line; or use
-                    // underline decoration.
-                    c = new ContentBuilder(whitespace, htmlWriter.linkToContent(element, e, t, strippedLine));
+                    //disable preview tagging inside the snippets:
+                    PreviewFlagProvider prevPreviewProvider = utils.setPreviewFlagProvider(el -> false);
+                    try {
+                        // If the leading whitespace is not excluded from the link,
+                        // browsers might exhibit unwanted behavior. For example, a
+                        // browser might display hand-click cursor while user hovers
+                        // over that whitespace portion of the line; or use
+                        // underline decoration.
+                        c = new ContentBuilder(whitespace, htmlWriter.linkToContent(element, e, t, strippedLine));
+                    } finally {
+                        utils.setPreviewFlagProvider(prevPreviewProvider);
+                    }
                     // We don't care about trailing whitespace.
                 } else {
                     c = HtmlTree.SPAN(Text.of(text));

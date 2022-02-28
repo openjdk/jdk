@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -645,7 +645,7 @@ public class RandomSupport {
         if (origin < bound) {
             r = r * (bound - origin) + origin;
             if (r >= bound)  // may need to correct a rounding problem
-                r = Double.longBitsToDouble(Double.doubleToLongBits(bound) - 1);
+                r = Math.nextAfter(bound, origin);
         }
         return r;
     }
@@ -677,7 +677,7 @@ public class RandomSupport {
         double r = rng.nextDouble();
         r = r * bound;
         if (r >= bound)  // may need to correct a rounding problem
-            r = Double.longBitsToDouble(Double.doubleToLongBits(bound) - 1);
+            r = Math.nextDown(bound);
         return r;
     }
 

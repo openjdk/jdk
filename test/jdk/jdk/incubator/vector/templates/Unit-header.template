@@ -1451,6 +1451,10 @@ public class $vectorteststype$ extends AbstractVectorTest {
     }
 #end[!FP]
 
+    static $type$ firstNonZero($type$ a, $type$ b) {
+        return $Boxtype$.compare(a, ($type$) 0) != 0 ? a : b;
+    }
+
     @Test
     static void smokeTest1() {
         $abstractvectortype$ three = $abstractvectortype$.broadcast(SPECIES, (byte)-3);

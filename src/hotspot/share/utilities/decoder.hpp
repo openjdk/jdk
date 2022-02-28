@@ -26,7 +26,7 @@
 #ifndef SHARE_UTILITIES_DECODER_HPP
 #define SHARE_UTILITIES_DECODER_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/ostream.hpp"

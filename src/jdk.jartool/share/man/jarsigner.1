@@ -1,4 +1,4 @@
-.\" Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ jarsigner \- sign and verify Java Archive (JAR) files
 .PP
 \f[CB]jarsigner\f[R] \f[CB]\-verify\f[R] [\f[I]options\f[R]]
 \f[I]jar\-file\f[R] [\f[I]alias\f[R] ...]
+.PP
+\f[CB]jarsigner\f[R] \f[CB]\-version\f[R]
 .TP
 .B \f[I]options\f[R]
 The command\-line options.
@@ -67,6 +69,12 @@ signed, with signer errors" is displayed.
 .B \f[I]alias\f[R]
 The aliases are defined in the keystore specified by \f[CB]\-keystore\f[R]
 or the default keystore.
+.RS
+.RE
+.TP
+.B \f[CB]\-version\f[R]
+The \f[CB]\-version\f[R] option prints the program version of
+\f[CB]jarsigner\f[R].
 .RS
 .RE
 .SH DESCRIPTION
@@ -1077,6 +1085,11 @@ The property keys supported are "jarsigner.all" for all actions,
 "jarsigner.sign" for signing, and "jarsigner.verify" for verification.
 \f[CB]jarsigner\f[R] arguments including the JAR file name and alias
 name(s) cannot be set in this file.
+.RS
+.RE
+.TP
+.B \f[CB]\-version\f[R]
+Prints the program version.
 .RS
 .RE
 .SH DEPRECATED OPTIONS

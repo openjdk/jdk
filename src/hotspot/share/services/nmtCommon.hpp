@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_SERVICES_NMTCOMMON_HPP
 #define SHARE_SERVICES_NMTCOMMON_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allocation.hpp" // for MEMFLAGS only
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -87,7 +87,7 @@ class NMTUtil : AllStatic {
 
   // Map memory type to index
   static inline int flag_to_index(MEMFLAGS flag) {
-    assert(flag_is_valid(flag), "Invalid flag");
+    assert(flag_is_valid(flag), "Invalid flag (%u)", (unsigned)flag);
     return static_cast<int>(flag);
   }
 
@@ -98,7 +98,7 @@ class NMTUtil : AllStatic {
 
   // Map an index to memory type
   static MEMFLAGS index_to_flag(int index) {
-    assert(flag_index_is_valid(index), "Invalid flag");
+    assert(flag_index_is_valid(index), "Invalid flag index (%d)", index);
     return static_cast<MEMFLAGS>(index);
   }
 

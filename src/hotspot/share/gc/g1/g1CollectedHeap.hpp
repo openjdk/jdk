@@ -486,13 +486,13 @@ private:
   //   otherwise it's for a failed allocation.
   // - if clear_all_soft_refs is true, all soft references should be
   //   cleared during the GC.
-  // - if do_maximum_compaction is true, full gc will do a maximally
+  // - if do_maximal_compaction is true, full gc will do a maximally
   //   compacting collection, leaving no dead wood.
   // - it returns false if it is unable to do the collection due to the
   //   GC locker being active, true otherwise.
   bool do_full_collection(bool explicit_gc,
                           bool clear_all_soft_refs,
-                          bool do_maximum_compaction);
+                          bool do_maximal_compaction);
 
   // Callback from VM_G1CollectFull operation, or collect_as_vm_thread.
   void do_full_collection(bool clear_all_soft_refs) override;
@@ -518,7 +518,7 @@ private:
   // Helper method for satisfy_failed_allocation()
   HeapWord* satisfy_failed_allocation_helper(size_t word_size,
                                              bool do_gc,
-                                             bool maximum_compaction,
+                                             bool maximal_compaction,
                                              bool expect_null_mutator_alloc_region,
                                              bool* gc_succeeded);
 
@@ -1236,11 +1236,6 @@ public:
   // the region to which the object belongs.
   inline bool is_obj_dead(const oop obj, const HeapRegion* hr) const;
 
-  // This function returns true when an object has been
-  // around since the previous marking and hasn't yet
-  // been marked during this marking, and is not in a closed archive region.
-  inline bool is_obj_ill(const oop obj, const HeapRegion* hr) const;
-
   // Determine if an object is dead, given only the object itself.
   // This will find the region to which the object belongs and
   // then call the region version of the same function.
@@ -1248,8 +1243,6 @@ public:
   // Added if it is NULL it isn't dead.
 
   inline bool is_obj_dead(const oop obj) const;
-
-  inline bool is_obj_ill(const oop obj) const;
 
   inline bool is_obj_dead_full(const oop obj, const HeapRegion* hr) const;
   inline bool is_obj_dead_full(const oop obj) const;
@@ -1287,9 +1280,9 @@ public:
   // Free up superfluous code root memory.
   void purge_code_root_memory();
 
-  // Rebuild the strong code root lists for each region
+  // Rebuild the code root lists for each region
   // after a full GC.
-  void rebuild_strong_code_roots();
+  void rebuild_code_roots();
 
   // Performs cleaning of data structures after class unloading.
   void complete_cleaning(BoolObjectClosure* is_alive, bool class_unloading_occurred);
@@ -1302,15 +1295,11 @@ public:
   // Perform verification.
 
   // vo == UsePrevMarking -> use "prev" marking information,
-  // vo == UseNextMarking -> use "next" marking information
   // vo == UseFullMarking -> use "next" marking bitmap but no TAMS
   //
   // NOTE: Only the "prev" marking information is guaranteed to be
   // consistent most of the time, so most calls to this should use
   // vo == UsePrevMarking.
-  // Currently, there is only one case where this is called with
-  // vo == UseNextMarking, which is to verify the "next" marking
-  // information at the end of remark.
   // Currently there is only one place where this is called with
   // vo == UseFullMarking, which is to verify the marking during a
   // full GC.

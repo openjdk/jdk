@@ -132,8 +132,7 @@ sealed public interface VaList extends Addressable permits WinVaList, SysVVaList
     void skip(MemoryLayout... layouts);
 
     /**
-     * Returns the resource scope associated with this variable argument list.
-     * @return the resource scope associated with this variable argument list.
+     * {@return the resource scope associated with this variable argument list}
      */
     ResourceScope scope();
 
@@ -153,10 +152,9 @@ sealed public interface VaList extends Addressable permits WinVaList, SysVVaList
     VaList copy();
 
     /**
-     * Returns the memory address associated with this variable argument list.
+     * {@return the {@linkplain MemoryAddress memory address} associated with this variable argument list}
      * @throws IllegalStateException if the scope associated with this variable argument list has been closed, or if access occurs from
      * a thread other than the thread owning that scope.
-     * @return The memory address associated with this variable argument list.
      */
     @Override
     MemoryAddress address();

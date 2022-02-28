@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,5 +202,32 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
         runTwo(nonExistBase, nonExistTop,
                appJar, mainClass, isAuto ? 0 : 1,
                "Specified shared archive not found (" + nonExistBase + ")");
+
+        // following two tests:
+        //   -Xshare:auto -XX:SharedArchiveFile=top.jsa, but base does not exist.
+
+      if (!isUseSharedSpacesDisabled()) {
+        new File(baseArchiveName).delete();
+
+        startTest("10. -XX:+AutoCreateSharedArchive -XX:SharedArchiveFile=" + topArchiveName);
+        run(topArchiveName,
+            "-Xshare:auto",
+            "-XX:+AutoCreateSharedArchive",
+            "-cp",
+            appJar, mainClass)
+            .assertNormalExit(output -> {
+                output.shouldContain("warning: -XX:+AutoCreateSharedArchive is unsupported when base CDS archive is not loaded");
+            });
+
+        startTest("11. -XX:SharedArchiveFile=" + topArchiveName + " -XX:ArchiveClassesAtExit=" + getNewArchiveName("top3"));
+        run(topArchiveName,
+            "-Xshare:auto",
+            "-XX:ArchiveClassesAtExit=" + getNewArchiveName("top3"),
+            "-cp",
+            appJar, mainClass)
+            .assertNormalExit(output -> {
+                output.shouldContain("VM warning: -XX:ArchiveClassesAtExit is unsupported when base CDS archive is not loaded");
+            });
+      }
     }
 }

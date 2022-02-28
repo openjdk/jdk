@@ -363,6 +363,7 @@ class Instruction: public CompilationResourceObj {
     NeedsRangeCheckFlag,
     InWorkListFlag,
     DeoptimizeOnException,
+    KillsMemoryFlag,
     InstructionLastFlag
   };
 
@@ -718,13 +719,13 @@ LEAF(Constant, Instruction)
     assert(type->is_constant(), "must be a constant");
   }
 
-  Constant(ValueType* type, ValueStack* state_before):
+  Constant(ValueType* type, ValueStack* state_before, bool kills_memory = false):
     Instruction(type, state_before, /*type_is_constant*/ true)
   {
     assert(state_before != NULL, "only used for constants which need patching");
     assert(type->is_constant(), "must be a constant");
-    // since it's patching it needs to be pinned
-    pin();
+    set_flag(KillsMemoryFlag, kills_memory);
+    pin(); // since it's patching it needs to be pinned
   }
 
   // generic
@@ -735,6 +736,8 @@ LEAF(Constant, Instruction)
   virtual bool is_equal(Value v) const;
 
   virtual ciType* exact_type() const;
+
+  bool kills_memory() const { return check_flag(KillsMemoryFlag); }
 
   enum CompareResult { not_comparable = -1, cond_false, cond_true };
 
