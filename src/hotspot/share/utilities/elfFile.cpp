@@ -341,82 +341,28 @@ bool ElfFile::load_dwarf_file() {
     return true; // Already opened.
   }
 
-  const char* debug_filename = get_debug_filename();
-  if (debug_filename == nullptr) {
+  const char* dwarf_filename = get_dwarf_filename();
+  if (dwarf_filename == nullptr) {
     return false;
   }
 
-  const char* debug_file_directory = "/usr/lib/debug";
-  char* debug_pathname = NEW_RESOURCE_ARRAY(char, strlen(debug_filename) + strlen(_filepath) + strlen(".debug/")
-                                                  + strlen(debug_file_directory) + 2);
-  if (debug_pathname == nullptr) {
-    log_develop_info(dwarf)("Failed to allocate string for path name");
+  const size_t dwarf_filepath_len = strlen(dwarf_filename) + strlen(_filepath) + strlen(".debug/")
+                                    + strlen(usr_lib_debug_directory()) + 2;
+  char* dwarf_filepath_buf = NEW_RESOURCE_ARRAY(char, dwarf_filepath_len);
+  if (dwarf_filepath_buf == nullptr) {
+    log_develop_info(dwarf)("Failed to allocate path buffer");
     return false;
   }
 
-  strcpy(debug_pathname, _filepath);
-  char* last_slash = strrchr(debug_pathname, *os::file_separator());
-  if (last_slash == nullptr) {
-    return false;
-  }
-
-  // Look in the same directory as the object.
-  size_t offset = (strlen(debug_filename) + 4) >> 2u;
-  const uint32_t crc = ((uint32_t*) debug_filename)[offset];
-  strcpy(last_slash + 1, debug_filename);
-  if (open_valid_debuginfo_file(debug_pathname, crc)) {
-    return true;
-  }
-
-  // Additionally, look in environmental variable _JVM_DWARF_PATH specified by user.
-  if (load_dwarf_file_from_env_path(debug_filename, crc)) {
-    return true;
-  }
-
-  // Look in a subdirectory named ".debug".
-  strcpy(last_slash + 1, ".debug/");
-  strcat(last_slash, debug_filename);
-  if (open_valid_debuginfo_file(debug_pathname, crc)) {
-    return true;
-  }
-
-  // Look in /usr/lib/debug + the full pathname.
-  strcpy(debug_pathname, debug_file_directory);
-  strcat(debug_pathname, _filepath);
-  last_slash = strrchr(debug_pathname, '/');
-  strcpy(last_slash + 1, debug_filename);
-  if (open_valid_debuginfo_file(debug_pathname, crc)) {
-    return true;
-  }
-
-  return false;
+  DwarfFilePath dwarf_file_path(dwarf_filename, dwarf_filepath_buf, dwarf_filepath_len);
+  dwarf_file_path.set(_filepath);
+  return load_dwarf_file_from_same_directory(dwarf_file_path)
+         || load_dwarf_file_from_env_var_path(dwarf_file_path)
+         || load_dwarf_file_from_debug_sub_directory(dwarf_file_path)
+         || load_dwarf_file_from_usr_lib_debug(dwarf_file_path);
 }
 
-bool ElfFile::load_dwarf_file_from_env_path(const char* debug_filename, const uint32_t crc) {
-  const char* dwarf_path = ::getenv("_JVM_DWARF_PATH");
-  if (dwarf_path != nullptr) {
-    log_develop_debug(dwarf)("_JVM_DWARF_PATH: %s", dwarf_path);
-    return (load_dwarf_file_from_env_path_folder(dwarf_path, "/lib/server/", debug_filename, crc)
-            || load_dwarf_file_from_env_path_folder(dwarf_path, "/lib/", debug_filename, crc)
-            || load_dwarf_file_from_env_path_folder(dwarf_path, "/bin/", debug_filename, crc)
-            || load_dwarf_file_from_env_path_folder(dwarf_path, "/", debug_filename, crc));
-  }
-  return false;
-}
-
-bool ElfFile::load_dwarf_file_from_env_path_folder(const char* env_path, const char* folder, const char* debug_filename, const uint32_t crc) {
-  char* debug_pathname = NEW_RESOURCE_ARRAY(char, strlen(env_path) + strlen(folder) + strlen(debug_filename) + 2);
-  if (debug_pathname == nullptr) {
-    log_develop_info(dwarf)("Failed to allocate string for path name");
-    return false;
-  }
-  strcpy(debug_pathname, env_path);
-  strcat(debug_pathname, folder);
-  strcat(debug_pathname, debug_filename);
-  return open_valid_debuginfo_file(debug_pathname, crc);
-}
-
-const char* ElfFile::get_debug_filename() const {
+const char* ElfFile::get_dwarf_filename() const {
   Elf_Shdr shdr;
   if (!read_section_header(".gnu_debuglink", shdr)) {
     // Section not found.
@@ -439,6 +385,56 @@ const char* ElfFile::get_debug_filename() const {
     return nullptr;
   }
   return debug_filename;
+}
+
+// Try to load the dwarf file from the same directory as the library file.
+bool ElfFile::load_dwarf_file_from_same_directory(DwarfFilePath& dwarf_file_path) {
+  dwarf_file_path.set_filename_after_last_slash();
+  return open_valid_debuginfo_file(dwarf_file_path);
+}
+
+// Try to load the dwarf file from a user specified path in environmental variable _JVM_DWARF_PATH.
+bool ElfFile::load_dwarf_file_from_env_var_path(const DwarfFilePath& dwarf_file_path) {
+  const char* dwarf_path = ::getenv("_JVM_DWARF_PATH");
+  if (dwarf_path != nullptr) {
+    log_develop_debug(dwarf)("_JVM_DWARF_PATH: %s", dwarf_path);
+    const char* filename = dwarf_file_path.filename();
+    return (load_dwarf_file_from_env_path_folder(dwarf_path, "/lib/server/", filename)
+            || load_dwarf_file_from_env_path_folder(dwarf_path, "/lib/", filename)
+            || load_dwarf_file_from_env_path_folder(dwarf_path, "/bin/", filename)
+            || load_dwarf_file_from_env_path_folder(dwarf_path, "/", filename));
+  }
+  return false;
+}
+
+bool ElfFile::load_dwarf_file_from_env_path_folder(const char* env_path, const char* folder, const char* filename) {
+  const size_t dwarf_filepath_buf_len = strlen(env_path) + strlen(folder) + strlen(filename) + 2;
+  char* dwarf_filepath_buf = NEW_RESOURCE_ARRAY(char, dwarf_filepath_buf_len);
+  if (dwarf_filepath_buf == nullptr) {
+    log_develop_info(dwarf)("Failed to allocate path buffer");
+    return false;
+  }
+
+  DwarfFilePath dwarf_file_path(filename, dwarf_filepath_buf, dwarf_filepath_buf_len);
+  dwarf_file_path.set(env_path);
+  dwarf_file_path.append(folder);
+  dwarf_file_path.append(filename);
+  return open_valid_debuginfo_file(dwarf_file_path);
+}
+
+// Try to load the dwarf file from a subdirectory named .debug within the directory of the library file.
+bool ElfFile::load_dwarf_file_from_debug_sub_directory(DwarfFilePath& dwarf_file_path) {
+  dwarf_file_path.set_after_last_slash(".debug/");
+  dwarf_file_path.append(dwarf_file_path.filename());
+  return open_valid_debuginfo_file(dwarf_file_path);
+}
+
+// Try to load the dwarf file from /usr/lib/debug + the full pathname.
+bool ElfFile::load_dwarf_file_from_usr_lib_debug(DwarfFilePath& dwarf_file_path) {
+  dwarf_file_path.set(usr_lib_debug_directory());
+  dwarf_file_path.append(_filepath);
+  dwarf_file_path.set_filename_after_last_slash();
+  return open_valid_debuginfo_file(dwarf_file_path);
 }
 
 bool ElfFile::read_section_header(const char* name, Elf_Shdr& hdr) const {
@@ -528,12 +524,13 @@ static const uint32_t crc32_table[256] = {
    0x2d02ef8d
  };
 
-bool ElfFile::open_valid_debuginfo_file(const char* filepath, const uint32_t crc) {
+bool ElfFile::open_valid_debuginfo_file(const DwarfFilePath& dwarf_file_path) {
   if (_dwarf_file != nullptr) {
     // Already opened.
     return true;
   }
 
+  const char* filepath = dwarf_file_path.path();
   FILE* file = fopen(filepath, "r");
   if (file == nullptr) {
     log_develop_debug(dwarf)("Could not open dwarf file %s (%s)", filepath, os::strerror(errno));
@@ -543,12 +540,12 @@ bool ElfFile::open_valid_debuginfo_file(const char* filepath, const uint32_t crc
   uint32_t file_crc = get_file_crc(file);
   fclose(file); // Close it here to reopen it again when the DwarfFile object is created below.
 
-  if (crc == file_crc) {
+  if (dwarf_file_path.crc() == file_crc) {
     // Must be equal, otherwise the file is corrupted.
     return create_new_dwarf_file(filepath);
   }
 
-  log_develop_info(dwarf)("CRC did not match. Expected: " PTR32_FORMAT ", found: " PTR32_FORMAT, crc, file_crc);
+  log_develop_info(dwarf)("CRC did not match. Expected: " PTR32_FORMAT ", found: " PTR32_FORMAT, dwarf_file_path.crc(), file_crc);
   return false;
 }
 
@@ -1191,7 +1188,7 @@ bool DwarfFile::LineNumberProgram::run_line_number_program(char& filename, const
 #endif
   _state = new (std::nothrow) LineNumberProgramState(_header);
   if (_state == nullptr) {
-    log_develop_info(dwarf)("Failed to create new LineNumberProgramState");
+    log_develop_info(dwarf)("Failed to create new LineNumberProgramState object");
     return false;
   }
   uintptr_t previous_address = 0;

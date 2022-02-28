@@ -159,10 +159,6 @@ class ElfFile: public CHeapObj<mtInternal> {
 
   bool decode(address addr, char* buf, int buflen, int* offset);
 
-  const char* filepath() const {
-    return _filepath;
-  }
-
   bool same_elf_file(const char* filepath) const {
     assert(filepath != NULL, "null file path");
     return (_filepath != NULL && !strcmp(filepath, _filepath));
@@ -179,7 +175,6 @@ class ElfFile: public CHeapObj<mtInternal> {
   // On systems other than linux it always returns false.
   static bool specifies_noexecstack(const char* filepath) NOT_LINUX({ return false; });
 
-  bool open_valid_debuginfo_file(const char* path_name, uint32_t crc);
   bool get_source_info(uint32_t offset_in_library, char* filename, size_t filename_len, int* line, bool is_pc_after_call);
 
  private:
@@ -207,15 +202,73 @@ class ElfFile: public CHeapObj<mtInternal> {
   // Cleanup string, symbol and function descriptor tables
   void cleanup_tables();
 
-  // Load the DWARF file (.debuginfo) that belongs to this file.
-  bool load_dwarf_file();
-  bool load_dwarf_file_from_env_path(const char* debug_filename, uint32_t crc);
-  bool load_dwarf_file_from_env_path_folder(const char* env_path, const char* folder, const char* debug_filename, uint32_t crc);
-  const char* get_debug_filename() const;
-  static uint32_t get_file_crc(FILE* const file);
-  static uint gnu_debuglink_crc32(uint32_t crc, uint8_t* buf, size_t len);
   bool create_new_dwarf_file(const char* filepath);
 
+  // Helper class to create DWARF paths when loading a DWARF file.
+  class DwarfFilePath {
+   private:
+    const char* _filename;
+    char* _path;
+    const size_t _path_len;
+    uint32_t _crc;
+
+   public:
+    DwarfFilePath(const char* filename, char* buf, size_t buf_len) : _filename(filename), _path(buf), _path_len(buf_len) {
+      size_t offset = (strlen(filename) + 4) >> 2u;
+      _crc = ((uint32_t*) filename)[offset];
+    }
+
+    const char* path() const {
+      return _path;
+    }
+
+    const char* filename() const {
+      return _filename;
+    }
+
+    uint32_t crc() const {
+      return _crc;
+    }
+
+    void set(const char* src) {
+      strncpy(_path, src, _path_len);
+    }
+
+    void set_filename_after_last_slash() {
+      set_after_last_slash(_filename);
+    }
+
+    void set_after_last_slash(const char* src) {
+      char* last_slash = strrchr(_path, '/');
+      strncpy(last_slash + 1, src, _path_len);
+    }
+
+    void append(const char* src) {
+      strncat(_path, src, _path_len);
+    }
+  };
+
+  // Load the DWARF file (.debuginfo) that belongs to this file either from (checked in listed order):
+  // - Same directory as the library file.
+  // - User defined path in environmental variable _JVM_DWARF_PATH.
+  // - Subdirectory .debug in same directory as the library file.
+  // - /usr/lib/debug directory
+  bool load_dwarf_file();
+
+  static const char* usr_lib_debug_directory() {
+    return "/usr/lib/debug";
+  }
+
+  const char* get_dwarf_filename() const;
+
+  bool load_dwarf_file_from_same_directory(DwarfFilePath& dwarf_file_path);
+  bool load_dwarf_file_from_env_var_path(const DwarfFilePath& dwarf_file_path);
+  bool load_dwarf_file_from_env_path_folder(const char* env_path, const char* folder, const char* filename);
+  bool load_dwarf_file_from_debug_sub_directory(DwarfFilePath& dwarf_file_path);
+  bool load_dwarf_file_from_usr_lib_debug(DwarfFilePath& dwarf_file_path);
+  bool open_valid_debuginfo_file(const DwarfFilePath& dwarf_file_path);
+  static uint32_t get_file_crc(FILE* const file);
+  static uint gnu_debuglink_crc32(uint32_t crc, uint8_t* buf, size_t len);
 
  protected:
   FILE* const fd() const { return _file; }
@@ -661,7 +714,6 @@ class DwarfFile : public ElfFile {
       // bytes to get the real size of the header:
       // sizeof(_unit_length) + sizeof(_version) + sizeof(_header_length) = 4 + 2 + 4 = 10
       static constexpr uint8_t HEADER_DESCRIPTION_BYTES = 10;
-
     };
 
     // The line number program state consists of several registers that hold the current state of the line number program
