@@ -46,7 +46,8 @@ public class TestMouseWheelScroll {
     static Point p;
     static int width;
     static int height;
-    static Point viewPosition;
+    static volatile Point viewPosition;
+    static volatile Point newPosition;
 
     private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
         try {
@@ -77,7 +78,7 @@ public class TestMouseWheelScroll {
 
                     scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
                     frame.add(scrollPane);
-                    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                    frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
                     frame.setSize(200,200);
                     frame.setLocationRelativeTo(null);
                     frame.setVisible(true);
@@ -97,8 +98,12 @@ public class TestMouseWheelScroll {
                 });
                 robot.delay(1000);
                 robot.mouseWheel(1);
+                robot.delay(500);
+                SwingUtilities.invokeAndWait(() -> {
+                    newPosition = scrollPane.getViewport().getViewPosition();
+                });
                 robot.delay(1000);
-                if (scrollPane.getViewport().getViewPosition().equals(viewPosition)) {
+                if (newPosition.equals(viewPosition)) {
                     throw new RuntimeException("Mouse wheel not handled");
                 }
             } finally {
