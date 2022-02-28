@@ -2192,6 +2192,7 @@ void Compile::Optimize() {
       if (has_nonescaping_objs && macro_count() > 0) {
         TracePhase tp("macroEliminate", &timers[_t_macroEliminate]);
         PhaseMacroExpand mexp(igvn);
+        // here is where we have scalar replacement statistics 
         mexp.eliminate_macro_nodes();
         igvn.set_delay_transform(false);
 
@@ -2207,8 +2208,9 @@ void Compile::Optimize() {
       // by removing some allocations and/or locks.
     } while (progress);
 
+    #ifndef PRODUCT
     // look over IR for number of Java Objects in each state (NoEscape/ArgEscape/GloablEscape)
-    Unique_Node_List ideal_nodes; // Used by CG construction and types splitting.
+    Unique_Node_List ideal_nodes; 
     ideal_nodes.map(live_nodes(), NULL);  // preallocate space
     ideal_nodes.push(root());
 
@@ -2236,6 +2238,7 @@ void Compile::Optimize() {
         ideal_nodes.push(m);
       }
     }
+    #endif
   }
   else{
     //counter for number of non-candidates
