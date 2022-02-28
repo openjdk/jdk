@@ -539,10 +539,8 @@
 
 #ifdef TARGET_ARCH_aarch64
 #define AARCH64_PORT_ONLY(code) code
-#define NOT_AARCH64_PORT_ONLY(code)
 #else
 #define AARCH64_PORT_ONLY(code)
-#define NOT_AARCH64_PORT_ONLY(code) code
 #endif
 
 #define MACOS_AARCH64_ONLY(x) MACOS_ONLY(AARCH64_ONLY(x))
