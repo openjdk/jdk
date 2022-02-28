@@ -872,7 +872,7 @@ TEST_VM(os, is_first_C_frame) {
   frame invalid_frame;
   EXPECT_TRUE(os::is_first_C_frame(&invalid_frame)); // the frame has zeroes for all values
 
-  auto cur_frame = os::current_frame(); // this frame has to have a sender
+  frame cur_frame = os::current_frame(); // this frame has to have a sender
   EXPECT_FALSE(os::is_first_C_frame(&cur_frame));
   #endif // _WIN32
 }

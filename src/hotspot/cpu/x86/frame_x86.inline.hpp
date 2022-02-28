@@ -141,11 +141,8 @@ inline bool frame::is_older(intptr_t* id) const   { assert(this->id() != NULL &&
 inline intptr_t* frame::link() const              { return (intptr_t*) *(intptr_t **)addr_at(link_offset); }
 
 inline intptr_t* frame::link_or_null() const {
-  auto ptr = (intptr_t **)addr_at(link_offset);
-  if (os::is_readable_pointer((const void*)ptr)) {
-    return *ptr;
-  }
-  return NULL;
+  intptr_t** ptr = (intptr_t **)addr_at(link_offset);
+  return os::is_readable_pointer(ptr) ? *ptr : NULL;
 }
 
 inline intptr_t* frame::unextended_sp() const     { return _unextended_sp; }
