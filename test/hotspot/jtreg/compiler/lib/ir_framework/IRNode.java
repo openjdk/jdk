@@ -130,6 +130,7 @@ public class IRNode {
     public static final String RANGE_CHECK_TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*range_check" + END;
     public static final String UNHANDLED_TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*unhandled" + END;
     public static final String INTRINSIC_TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*intrinsic" + END;
+    public static final String DIV_BY_ZERO_TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*div0_check" + END;
     // Does not work for VM builds without JVMCI like x86_32 (a rule containing this regex will be skipped without having JVMCI built).
     public static final String INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*intrinsic_or_type_checked_inlining" + END;
 
@@ -140,22 +141,36 @@ public class IRNode {
     public static final String ABS_L = START + "AbsL" + MID + END;
     public static final String ABS_F = START + "AbsF" + MID + END;
     public static final String ABS_D = START + "AbsD" + MID + END;
+    public static final String AND = START + "And(I|L)" + MID + END;
     public static final String AND_I = START + "AndI" + MID + END;
     public static final String AND_L = START + "AndL" + MID + END;
     public static final String XOR_I = START + "XorI" + MID + END;
     public static final String XOR_L = START + "XorL" + MID + END;
+    public static final String LSHIFT = START + "LShift(I|L)" + MID + END;
     public static final String LSHIFT_I = START + "LShiftI" + MID + END;
     public static final String LSHIFT_L = START + "LShiftL" + MID + END;
+    public static final String RSHIFT = START + "RShift(I|L)" + MID + END;
+    public static final String RSHIFT_I = START + "RShiftI" + MID + END;
+    public static final String RSHIFT_L = START + "RShiftL" + MID + END;
+    public static final String URSHIFT = START + "URShift(B|S|I|L)" + MID + END;
+    public static final String URSHIFT_I = START + "URShiftI" + MID + END;
+    public static final String URSHIFT_L = START + "URShiftL" + MID + END;
+    public static final String ADD = START + "Add(I|L|F|D|P)" + MID + END;
     public static final String ADD_I = START + "AddI" + MID + END;
     public static final String ADD_L = START + "AddL" + MID + END;
     public static final String ADD_VD = START + "AddVD" + MID + END;
+    public static final String SUB = START + "Sub(I|L|F|D)" + MID + END;
     public static final String SUB_I = START + "SubI" + MID + END;
     public static final String SUB_L = START + "SubL" + MID + END;
     public static final String SUB_F = START + "SubF" + MID + END;
     public static final String SUB_D = START + "SubD" + MID + END;
+    public static final String MUL = START + "Mul(I|L|F|D)" + MID + END;
     public static final String MUL_I = START + "MulI" + MID + END;
     public static final String MUL_L = START + "MulL" + MID + END;
+    public static final String DIV = START + "Div(I|L|F|D)" + MID + END;
+    public static final String DIV_L = START + "DivL" + MID + END;
     public static final String CONV_I2L = START + "ConvI2L" + MID + END;
+    public static final String CONV_L2I = START + "ConvL2I" + MID + END;
 
     public static final String VECTOR_CAST_B2X = START + "VectorCastB2X" + MID + END;
     public static final String VECTOR_CAST_S2X = START + "VectorCastS2X" + MID + END;
