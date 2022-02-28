@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,9 @@ import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.image.BufferedImage;
 import javax.swing.UIManager;
+import javax.imageio.ImageIO;
+import java.io.File;
+import java.io.IOException;
 
 /**
  * @test
@@ -60,7 +63,7 @@ public class HiDPIRobotScreenCaptureTest {
         }
 
         Frame frame = new Frame();
-        frame.setBounds(40, 30, 400, 300);
+        frame.setBounds(83, 97, 400, 300);
         frame.setUndecorated(true);
 
         Panel panel = new Panel(new BorderLayout());
@@ -86,11 +89,12 @@ public class HiDPIRobotScreenCaptureTest {
         frame.setVisible(true);
         Robot robot = new Robot();
         robot.waitForIdle();
-        Thread.sleep(200);
+        robot.delay(500);
 
         Rectangle rect = canvas.getBounds();
         rect.setLocation(canvas.getLocationOnScreen());
 
+        System.out.println("Creating screen capture of " + rect);
         BufferedImage image = robot.createScreenCapture(rect);
         frame.dispose();
 
@@ -101,20 +105,26 @@ public class HiDPIRobotScreenCaptureTest {
             throw new RuntimeException("Wrong image size!");
         }
 
-        if (image.getRGB(w / 4, h / 4) != COLORS[0].getRGB()) {
-            throw new RuntimeException("Wrong image color!");
-        }
+        checkRectColor(image, w / 4, h / 4, COLORS[0]);
+        checkRectColor(image, 3 * w / 4, h / 4, COLORS[1]);
+        checkRectColor(image, w / 4, 3 * h / 4, COLORS[2]);
+        checkRectColor(image, 3 * w / 4, 3 * h / 4, COLORS[3]);
+    }
 
-        if (image.getRGB(3 * w / 4, h / 4) != COLORS[1].getRGB()) {
+    static void checkRectColor(BufferedImage image, int x, int y, Color expectedColor) {
+        System.out.println("Checking (" + x + ", " + y + ") to have color " + expectedColor);
+        final int actualColor = image.getRGB(x, y);
+        if (actualColor != expectedColor.getRGB()) {
+            System.out.println("... Mismatch: found " + new Color(actualColor) + " instead. Check image.png.");
+            try {
+                ImageIO.write(image, "png", new File("image.png"));
+            } catch(IOException e) {
+                System.out.println("failed to save image.png.");
+                e.printStackTrace();
+            }
             throw new RuntimeException("Wrong image color!");
-        }
-
-        if (image.getRGB(w / 4, 3 * h / 4) != COLORS[2].getRGB()) {
-            throw new RuntimeException("Wrong image color!");
-        }
-
-        if (image.getRGB(3 * w / 4, 3 * h / 4) != COLORS[3].getRGB()) {
-            throw new RuntimeException("Wrong image color!");
+        } else {
+            System.out.println("... OK");
         }
     }
 }
