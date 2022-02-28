@@ -662,11 +662,12 @@ public class ModulePath implements ModuleFinder {
     // -- exploded directories --
 
     private Set<String> explodedPackages(Path dir) {
+        String separator = dir.getFileSystem().getSeparator();
         try {
             return Files.find(dir, Integer.MAX_VALUE,
                     ((path, attrs) -> attrs.isRegularFile() && !isHidden(path)))
                     .map(path -> dir.relativize(path))
-                    .map(this::toPackageName)
+                    .map(path -> toPackageName(path, separator))
                     .flatMap(Optional::stream)
                     .collect(Collectors.toSet());
         } catch (IOException x) {
@@ -737,7 +738,7 @@ public class ModulePath implements ModuleFinder {
      * @throws InvalidModuleDescriptorException if the name is a class file in
      *         the top-level directory (and it's not module-info.class)
      */
-    private Optional<String> toPackageName(Path file) {
+    private Optional<String> toPackageName(Path file, String separator) {
         assert file.getRoot() == null;
 
         Path parent = file.getParent();
@@ -751,7 +752,7 @@ public class ModulePath implements ModuleFinder {
             return Optional.empty();
         }
 
-        String pn = parent.toString().replace(File.separatorChar, '.');
+        String pn = parent.toString().replace(separator, ".");
         if (Checks.isPackageName(pn)) {
             return Optional.of(pn);
         } else {
