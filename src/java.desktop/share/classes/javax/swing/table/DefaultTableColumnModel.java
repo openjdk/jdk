@@ -258,7 +258,7 @@ public class DefaultTableColumnModel implements TableColumnModel,
      * @return          the index of the first column in the
      *                  <code>tableColumns</code> array whose identifier
      *                  is equal to <code>identifier</code>
-     * @exception       IllegalArgumentException  if <code>identifier</code>
+     * @throws          IllegalArgumentException  if <code>identifier</code>
      *                          is <code>null</code>, or if no
      *                          <code>TableColumn</code> has this
      *                          <code>identifier</code>
