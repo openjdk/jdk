@@ -47,8 +47,8 @@ import jdk.test.whitebox.WhiteBox;
 public class TestExplicitPageAllocation {
 
     private static final String DIR_HUGE_PAGES = "/sys/kernel/mm/hugepages/";
-    private static final long HEAP_SIZE_IN_KB = 1 * 1024 * 1024;
-
+    private static final long HEAP_SIZE_IN_KB = 2 * 1024 * 1024;
+    private static final long CODE_CACHE_SIZE_IN_KB = 256 * 1024;
     private static final Pattern HEAP_PATTERN = Pattern.compile("Heap:");
     private static final Pattern PAGE_SIZE_PATTERN = Pattern.compile(".*page_size=([^ ]+).*");
     private static final Pattern HUGEPAGE_PATTERN = Pattern.compile(".*hugepages-([^ ]+).*kB");
@@ -58,17 +58,15 @@ public class TestExplicitPageAllocation {
     private static final int MAX_NUMBER_OF_PAGESIZE = 64;
     private static boolean[] pageSizes = new boolean[MAX_NUMBER_OF_PAGESIZE];
     private static int[] pageCount = new int[MAX_NUMBER_OF_PAGESIZE];
+    private static int largestPageSizeIndex;
     private static int vmPageSizeIndex;
     private static final WhiteBox wb = WhiteBox.getWhiteBox();
 
     public static void main(String args[]) {
         try {
             doSetup();
-            for (int i = MAX_NUMBER_OF_PAGESIZE - 1; i > vmPageSizeIndex; i--) {
-                if (pageSizes[i]) {
-                    testCase(i);
-                    break;
-                }
+            if (largestPageSizeIndex > vmPageSizeIndex) {
+                testCase(largestPageSizeIndex);
             }
         } catch (Exception e) {
            System.out.println("Exception " + e);
@@ -77,7 +75,8 @@ public class TestExplicitPageAllocation {
 
     private static long requiredPageCount(int index) {
         long pageSizeInKB = 1L << (index - 10);
-        return (long) Math.ceil((double) HEAP_SIZE_IN_KB / pageSizeInKB);
+        long codeCacheAddened = CODE_CACHE_SIZE_IN_KB >= pageSizeInKB ? CODE_CACHE_SIZE_IN_KB : 0;
+        return (long) Math.ceil((double) (HEAP_SIZE_IN_KB + codeCacheAddened) / pageSizeInKB);
     }
 
     private static String sizeFromIndex(int index) {
@@ -85,12 +84,13 @@ public class TestExplicitPageAllocation {
         int m = 1024 * 1024;
         int g = 1024 * 1024 * 1024;
         long sizeInBytes = 1L << index;
-        if (sizeInBytes < m)
+        if (sizeInBytes < m) {
            return Long.toString(sizeInBytes / k) + "K";
-        if (sizeInBytes < g)
+        } else if (sizeInBytes < g) {
            return Long.toString(sizeInBytes / m) + "M";
-        else
+        } else {
            return Long.toString(sizeInBytes / g) + "G";
+        }
     }
 
     private static boolean checkOutput(OutputAnalyzer out, String pageSize) throws Exception {
@@ -130,6 +130,7 @@ public class TestExplicitPageAllocation {
             assert pageSize != null;
             int availablePages = readPageCount(DIR_HUGE_PAGES + pageSizeFileName + "/free_hugepages", pageSize);
             int index = Long.numberOfTrailingZeros(Long.parseLong(pageSize) * 1024);
+            largestPageSizeIndex = Math.max(index, largestPageSizeIndex);
             pageSizes[index] = true;
             pageCount[index] = availablePages;
         }
@@ -141,12 +142,16 @@ public class TestExplicitPageAllocation {
 
     public static void testCase(int index) throws Exception {
         String pageSize = sizeFromIndex(index);
+        long heap_size_in_gb = HEAP_SIZE_IN_KB >> 20;
+        long code_cache_size = CODE_CACHE_SIZE_IN_KB >> 10;
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:pagesize",
+                                                                  "-XX:ReservedCodeCacheSize=" + code_cache_size + "m",
+                                                                  "-XX:InitialCodeCacheSize=160k",
                                                                   "-XX:LargePageSizeInBytes=" + pageSize,
                                                                   "-XX:+UseParallelGC",
                                                                   "-XX:+UseLargePages",
-                                                                  "-Xmx2g",
-                                                                  "-Xms1g",
+                                                                  "-Xmx" + heap_size_in_gb + "g",
+                                                                  "-Xms" + heap_size_in_gb + "g",
                                                                   "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
@@ -154,15 +159,19 @@ public class TestExplicitPageAllocation {
             if (pageSizes[i]) {
                 String size = sizeFromIndex(i);
                 System.out.println("Checking allocation for " + size);
-                if (!checkOutput(output, size)) {
-                    if (requiredPageCount(i) > pageCount[i]) {
-                       continue;
-                    }
-                    errorMessage += "TestCase Failed for " + size + " page allocation, ";
-                } else {
+                if (checkOutput(output, size)) {
                     System.out.println("TestCase Passed for pagesize: " + pageSize + ", allocated pagesize: " + size);
+                    // Page allocation succeeded no need to check any more page sizes.
+                    return;
+                } else {
+                    // Only consider this a test failure if there are enough configured
+                    // pages to allow this reservation to succeeded.
+                    if (requiredPageCount(i) <= pageCount[i]) {
+                        throw new AssertionError("TestCase Failed for " + size + " page allocation. " +
+                                                 "Required pages: " + requiredPageCount(i) + ", " +
+                                                 "Configured pages: " + pageCount[i]);
+                    }
                 }
-                break;
             }
         }
 
