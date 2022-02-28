@@ -36,7 +36,7 @@ import java.awt.Robot;
 
 public class SetMinimumSizeTest2 {
 
-    private static volatile Frame frame;
+    private static Frame frame;
     private static volatile Dimension dimension, actualDimension;
 
     public static void createGUI(Frame _frame) {

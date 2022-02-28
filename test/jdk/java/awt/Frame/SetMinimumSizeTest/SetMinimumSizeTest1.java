@@ -36,7 +36,7 @@ import java.awt.Robot;
 
 public class SetMinimumSizeTest1 {
 
-    private static volatile Frame frame;
+    private static Frame frame;
     private static volatile Dimension dimension, actualDimension;
 
     public static void createGUI(Frame _frame) {
@@ -70,7 +70,7 @@ public class SetMinimumSizeTest1 {
                 actualDimension = frame.getSize();
 	    });
 
-	    robot.waitForIdle();
+            robot.waitForIdle();
 
             if (!actualDimension.equals(dimension)) {
                 throw new RuntimeException("Test Failed\n"
