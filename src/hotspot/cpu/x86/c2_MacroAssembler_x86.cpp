@@ -4350,7 +4350,7 @@ void C2_MacroAssembler::vector_maskall_operation(KRegister dst, Register src, in
 //     count of all the bytes of a quadword.
 //  f. Perform step e. for upper 128bit vector lane.
 //  g. Pack the bitset count of quadwords back to double word.
-//  h. Unpacking and packing operations as not needed for 64bit vector lane.
+//  h. Unpacking and packing operations are not needed for 64bit vector lane.
 void C2_MacroAssembler::vector_popcount_int(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
                                             XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp,
                                             int vec_enc) {
@@ -4360,7 +4360,7 @@ void C2_MacroAssembler::vector_popcount_int(XMMRegister dst, XMMRegister src, XM
     assert(VM_Version::supports_avx512vlbw(), "");
     movl(rtmp, 0x0F0F0F0F);
     evpbroadcastd(xtmp1, rtmp, vec_enc);
-    evmovdqul(xtmp2, k0, ExternalAddress(StubRoutines::x86::vector_popcount_lut()), true, vec_enc, rtmp);
+    evmovdqul(xtmp2, k0, ExternalAddress(StubRoutines::x86::vector_popcount_lut()), false, vec_enc, rtmp);
     evpandd(xtmp3, k0, src, xtmp1, true, vec_enc);
     vpshufb(xtmp3, xtmp2, xtmp3, vec_enc);
     Assembler::evpsrlw(dst, k0, src, 4, true , vec_enc);

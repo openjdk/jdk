@@ -1866,12 +1866,14 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       }
       break;
     case Op_PopCountVI:
-      if ((vlen == 16) && !VM_Version::supports_avx512vlbw()) {
+      if (!VM_Version::supports_avx512_vpopcntdq() &&
+          (vlen == 16) && !VM_Version::supports_avx512vlbw()) {
         return false;
       }
       break;
     case Op_PopCountVL:
-      if ((vlen <= 4) || ((vlen == 8) && !VM_Version::supports_avx512vlbw())) {
+      if (!VM_Version::supports_avx512_vpopcntdq() &&
+          ((vlen <= 4) || ((vlen == 8) && !VM_Version::supports_avx512vlbw()))) {
         return false;
       }
       break;
