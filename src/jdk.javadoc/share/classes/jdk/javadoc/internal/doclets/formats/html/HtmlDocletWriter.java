@@ -1010,6 +1010,10 @@ public class HtmlDocletWriter {
                         // @see reference label...
                         label = ref.subList(1, ref.size());
                     }
+                    case ERRONEOUS -> {
+                        return invalidTagOutput(resources.getText("doclet.tag.invalid_input", seeText),
+                                Optional.empty());
+                    }
                     default ->
                         throw new IllegalStateException(ref.get(0).getKind().toString());
                 }

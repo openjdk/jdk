@@ -1981,6 +1981,32 @@ Allows user to specify VM options in a file, for example,
 \f[CB]java\ \-XX:VMOptionsFile=/var/my_vm_options\ HelloWorld\f[R].
 .RS
 .RE
+.TP
+.B \f[CB]\-XX:UseBranchProtection=\f[R]\f[I]mode\f[R]
+Specifies the branch protection mode. All options other than none require
+the VM to have been built with branch protection enabled. In addition, for
+full protection, any native libraries provided by applications should be
+compiled with the same level of protection. (AArch64 Linux only).
+.RS
+.PP
+Possible \f[I]mode\f[R] arguments for this option include the
+following:
+.RS
+.TP
+.B \f[CB]none\f[R]
+Do not use branch protection. This is the default value.
+.RS
+.RE
+.TP
+.B \f[CB]standard\f[R]
+Enables all branch protection modes available on the current platform.
+.RS
+.RE
+.TP
+.B \f[CB]pac-ret\f[R]
+Enables protection against ROP based attacks. (AArch64 8.3+ only)
+.RS
+.RE
 .SH ADVANCED JIT COMPILER OPTIONS FOR JAVA
 .PP
 These \f[CB]java\f[R] options control the dynamic just\-in\-time (JIT)

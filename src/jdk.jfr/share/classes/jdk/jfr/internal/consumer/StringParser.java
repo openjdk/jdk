@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,6 +217,33 @@ public final class StringParser extends Parser {
         if (Encoding.LATIN1_BYTE_ARRAY.is(encoding)) {
             latin1parser.skip(input);
             return;
+        }
+        throw new IOException("Unknown string encoding " + encoding);
+    }
+
+    @Override
+    public Object parseReferences(RecordingInput input) throws IOException {
+        byte encoding = input.readByte();
+        if (Encoding.CONSTANT_POOL.is(encoding)) {
+            return new Reference(stringLookup.getLatestPool(), input.readLong());
+        }
+        if (Encoding.EMPTY_STRING.is(encoding)) {
+            return null;
+        }
+        if (Encoding.NULL.is(encoding)) {
+            return null;
+        }
+        if (Encoding.CHAR_ARRAY.is(encoding)) {
+            charArrayParser.skip(input);
+            return null;
+        }
+        if (Encoding.UT8_BYTE_ARRAY.is(encoding)) {
+            utf8parser.skip(input);
+            return null;
+        }
+        if (Encoding.LATIN1_BYTE_ARRAY.is(encoding)) {
+            latin1parser.skip(input);
+            return null;
         }
         throw new IOException("Unknown string encoding " + encoding);
     }
