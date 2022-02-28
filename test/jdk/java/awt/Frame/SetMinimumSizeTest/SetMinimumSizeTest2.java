@@ -95,9 +95,7 @@ public class SetMinimumSizeTest2 {
     }
 
     public static void main(String[] args) throws Exception {
-
-        SetMinimumSizeTest2.doTest();
-
+        doTest();
     }
 }
 

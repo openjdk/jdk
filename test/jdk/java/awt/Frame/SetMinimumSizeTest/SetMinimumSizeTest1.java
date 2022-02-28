@@ -80,7 +80,7 @@ public class SetMinimumSizeTest1 {
         }
         finally {
             EventQueue.invokeAndWait(() -> frame.dispose());
-            }
+        }
     }
 
     public static void main(String[] args) throws Exception {
