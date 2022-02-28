@@ -337,7 +337,7 @@ void Thread::call_run() {
   // Perform common initialization actions
 
   MACOS_AARCH64_ONLY(this->init_wx());
-  
+
   register_thread_stack_with_NMT();
 
   JFR_ONLY(Jfr::on_thread_start(this);)
