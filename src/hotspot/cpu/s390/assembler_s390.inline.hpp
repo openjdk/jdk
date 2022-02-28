@@ -1228,7 +1228,7 @@ inline void Assembler::z_sdb(  FloatRegister r1, const Address& a)              
 
 inline void Assembler::z_lcebr(FloatRegister r1, FloatRegister r2)                   { emit_32( LCEBR_ZOPC | fregt(r1, 24, 32) | freg(r2, 28, 32)); }
 inline void Assembler::z_lcdbr(FloatRegister r1, FloatRegister r2)                   { emit_32( LCDBR_ZOPC | fregt(r1, 24, 32) | freg(r2, 28, 32)); }
-inline void Assembler::z_lpdbr(FloatRegister r1, FloatRegister r2)                   { emit_32( LPDBR_ZOPC | fregt( r1,24, 32) | freg((r2 == fnoreg) ? r1:r2, 28, 32)); }
+inline void Assembler::z_lpdbr(FloatRegister r1, FloatRegister r2)                   { emit_32( LPDBR_ZOPC | fregt(r1, 24, 32) | freg((r2 == fnoreg) ? r1:r2, 28, 32)); }
 
 
 //---------------
@@ -1438,9 +1438,7 @@ inline unsigned int Assembler::get_instruction(unsigned char *pc, unsigned long 
       *instr = ((unsigned long)(*(unsigned int*)   pc)) << 16 |
                ((unsigned long)*(unsigned short*) (pc + 4)); break;
     default:
-      // Control can't reach here.
       // The length as returned from instr_len() can only be 2, 4, or 6 bytes.
-      // Having a default clause makes the compiler happy.
       ShouldNotReachHere();
       *instr = 0L; // This assignment is there to make gcc8 happy.
       break;
