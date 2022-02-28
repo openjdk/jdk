@@ -1051,7 +1051,11 @@ public:
            (is_amd()   && supports_avx());   // Jaguar and Bulldozer and above
   }
 
-  // Pre Icelake Intels have inefficient 3-op lea with 3 latency, this can be
+  // Pre Icelake Intels suffer inefficiency regarding 3-operand lea, which contains
+  // all of base register, index register and displacement immediate, with 3 latency.
+  // Note that when the address contains no displacement but the base register is
+  // rbp or r13, the machine code must contain a zero displacement immediate,
+  // effectively transform a 2-operand lea into a 3-operand lea. This can be
   // replaced by add-add or lea-add
   static bool supports_fast_3op_lea() {
     return supports_fast_2op_lea() &&

@@ -447,7 +447,7 @@ void reg_mask_init() {
   _INT_NO_RCX_REG_mask = _INT_REG_mask;
   _INT_NO_RCX_REG_mask.Remove(OptoReg::as_OptoReg(rcx->as_VMReg()));
 
-  _INT_NO_RBP_R13_REG_mask = _LONG_REG_mask;
+  _INT_NO_RBP_R13_REG_mask = _INT_REG_mask;
   _INT_NO_RBP_R13_REG_mask.Remove(OptoReg::as_OptoReg(rbp->as_VMReg()));
   _INT_NO_RBP_R13_REG_mask.Remove(OptoReg::as_OptoReg(r13->as_VMReg()));
 
