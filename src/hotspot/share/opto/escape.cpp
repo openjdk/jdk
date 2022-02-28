@@ -66,6 +66,12 @@ ConnectionGraph::ConnectionGraph(Compile * C, PhaseIterGVN *igvn, int invocation
     assert(noop_null->_idx < nodes_size(), "should be created already");
     map_ideal_node(noop_null, null_obj);
   }
+
+#ifndef PRODUCT
+  _collectingTrace = (SaveEATraceToFile != NULL &&
+                      (!strcmp(SaveEATraceToFile, "all") ||
+                        (strstr(SaveEATraceToFile, _compile->method()->holder()->name()->as_utf8()) != NULL && strstr(SaveEATraceToFile, _compile->method()->name()->as_utf8()) != NULL)));
+#endif
 }
 
 bool ConnectionGraph::has_candidates(Compile *C) {
@@ -104,6 +110,8 @@ void ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
     invocation = C->congraph()->_invocation + 1;
   }
   ConnectionGraph* congraph = new(C->comp_arena()) ConnectionGraph(C, igvn, invocation);
+  congraph->dump_ir("IR before EA Starts.");
+  congraph->save_trace();
   // Perform escape analysis
   if (congraph->compute_escape()) {
     // There are non escaping objects.
@@ -116,6 +124,8 @@ void ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
   if (noop_null->outcnt() == 0) {
     igvn->hash_delete(noop_null);
   }
+  //congraph->dump_ir("IR after EA execution.");
+  //congraph->save_trace();
 }
 
 bool ConnectionGraph::compute_escape() {
@@ -259,6 +269,8 @@ bool ConnectionGraph::compute_escape() {
     return false;
   }
 
+  dump(ptnodes_worklist, "Before adjust_scalar_replaceable_state");
+
   // 3. Adjust scalar_replaceable state of nonescaping objects and push
   //    scalar replaceable allocations on alloc_worklist for processing
   //    in split_unique_types().
@@ -277,6 +289,8 @@ bool ConnectionGraph::compute_escape() {
       }
     }
   }
+
+  dump(ptnodes_worklist, "After adjust_scalar_replaceable_state");
 
 #ifdef ASSERT
   if (VerifyConnectionGraph) {
@@ -303,7 +317,7 @@ bool ConnectionGraph::compute_escape() {
 
 #ifndef PRODUCT
   if (PrintEscapeAnalysis) {
-    dump(ptnodes_worklist); // Dump ConnectionGraph
+    dump(ptnodes_worklist, ""); // Dump ConnectionGraph
   }
 #endif
 
@@ -3609,6 +3623,9 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
 }
 
 #ifndef PRODUCT
+
+bool ConnectionGraph::_collectingTrace = false;
+
 static const char *node_type_names[] = {
   "UnknownType",
   "JavaObject",
@@ -3624,38 +3641,45 @@ static const char *esc_names[] = {
   "GlobalEscape"
 };
 
-void PointsToNode::dump(bool print_state) const {
+void PointsToNode::dump(outputStream* st, bool print_state) const {
+  if (st == NULL)
+    st = tty;
+
   NodeType nt = node_type();
-  tty->print("%s ", node_type_names[(int) nt]);
+  st->print("%11s ", node_type_names[(int) nt]);
+
   if (print_state) {
     EscapeState es = escape_state();
     EscapeState fields_es = fields_escape_state();
-    tty->print("%s(%s) ", esc_names[(int)es], esc_names[(int)fields_es]);
-    if (nt == PointsToNode::JavaObject && !this->scalar_replaceable()) {
-      tty->print("NSR ");
-    }
+    st->print("%13s(%13s) ", esc_names[(int)es], esc_names[(int)fields_es]);
+    st->print("%s ", (nt == PointsToNode::JavaObject && this->scalar_replaceable()) ? "  SR" : " NSR");
   }
+
   if (is_Field()) {
+    if (this->_idx == 140) {
+      st->cr();
+    }
+
     FieldNode* f = (FieldNode*)this;
-    if (f->is_oop()) {
-      tty->print("oop ");
-    }
-    if (f->offset() > 0) {
-      tty->print("+%d ", f->offset());
-    }
-    tty->print("(");
+    st->print("OOP? %d ", f->is_oop());
+    st->print("Off? %04d ", f->offset() > 0 ? f->offset() : 0);
+
+    st->print("Base pointers: [");
     for (BaseIterator i(f); i.has_next(); i.next()) {
       PointsToNode* b = i.get();
-      tty->print(" %d%s", b->idx(),(b->is_JavaObject() ? "P" : ""));
+      st->print(" %04d%s", b->idx(),(b->is_JavaObject() ? "P" : ""));
     }
-    tty->print(" )");
+    st->print(" ]");
   }
-  tty->print("[");
+  else {
+    st->print("%40c", ' ');
+  }
+  st->print(" Points to: [");
   for (EdgeIterator i(this); i.has_next(); i.next()) {
     PointsToNode* e = i.get();
-    tty->print(" %d%s%s", e->idx(),(e->is_JavaObject() ? "P" : (e->is_Field() ? "F" : "")), e->is_Arraycopy() ? "cp" : "");
+    st->print(" %04d%s%s", e->idx(),(e->is_JavaObject() ? "P" : (e->is_Field() ? "F" : "")), e->is_Arraycopy() ? "cp" : "");
   }
-  tty->print(" [");
+  st->print("] Pointed by: [");
   for (UseIterator i(this); i.has_next(); i.next()) {
     PointsToNode* u = i.get();
     bool is_base = false;
@@ -3663,53 +3687,87 @@ void PointsToNode::dump(bool print_state) const {
       is_base = true;
       u = PointsToNode::get_use_node(u)->as_Field();
     }
-    tty->print(" %d%s%s", u->idx(), is_base ? "b" : "", u->is_Arraycopy() ? "cp" : "");
+    st->print(" %04d%s%s", u->idx(), is_base ? "b" : "", u->is_Arraycopy() ? "cp" : "");
   }
-  tty->print(" ]]  ");
+  st->print(" ]  ---> IR Node: ");
   if (_node == NULL) {
-    tty->print_cr("<null>");
-  } else {
-    _node->dump();
+    st->print_cr("<null>");
+  }
+  else {
+    _node->dump("", false, st);
   }
 }
 
-void ConnectionGraph::dump(GrowableArray<PointsToNode*>& ptnodes_worklist) {
+void ConnectionGraph::dump(GrowableArray<PointsToNode*>& ptnodes_worklist, const char* label) {
   bool first = true;
   int ptnodes_length = ptnodes_worklist.length();
+  stringStream st;
   for (int i = 0; i < ptnodes_length; i++) {
     PointsToNode *ptn = ptnodes_worklist.at(i);
-    if (ptn == NULL || !ptn->is_JavaObject()) {
+    if (ptn == NULL) {
       continue;
     }
-    PointsToNode::EscapeState es = ptn->escape_state();
-    if ((es != PointsToNode::NoEscape) && !Verbose) {
-      continue;
-    }
-    Node* n = ptn->ideal_node();
-    if (n->is_Allocate() || (n->is_CallStaticJava() &&
-                             n->as_CallStaticJava()->is_boxing_method())) {
       if (first) {
-        tty->cr();
-        tty->print("======== Connection graph for ");
-        _compile->method()->print_short_name();
-        tty->cr();
-        tty->print_cr("invocation #%d: %d iterations and %f sec to build connection graph with %d nodes and worklist size %d",
-                      _invocation, _build_iterations, _build_time, nodes_size(), ptnodes_worklist.length());
-        tty->cr();
+        st.cr();
+        st.print("======== Connection graph - %s", label);
+        st.cr();
         first = false;
       }
-      ptn->dump();
-      // Print all locals and fields which reference this allocation
-      for (UseIterator j(ptn); j.has_next(); j.next()) {
-        PointsToNode* use = j.get();
-        if (use->is_LocalVar()) {
-          use->dump(Verbose);
-        } else if (Verbose) {
-          use->dump();
+      ptn->dump(&st);
+      st.cr();
+  }
+  _traceStream.print("%s", st.as_string());
+}
+
+void ConnectionGraph::dump_ir(const char* title) {
+  if (_collectingTrace) {
+    ttyLocker ttyl;  // keep the following output all in one block
+
+    _compile->method()->print_short_name(&_traceStream);
+    _traceStream.cr();
+    _traceStream.cr();
+
+    _traceStream.print_cr("%s", title);
+
+    Unique_Node_List ideal_nodes; // Used by CG construction and types splitting.
+    ideal_nodes.map(_compile->live_nodes(), NULL);  // preallocate space
+    ideal_nodes.push(_compile->root());
+
+    for( uint next = 0; next < ideal_nodes.size(); ++next ) {
+      Node* n = ideal_nodes.at(next);
+
+      n->dump("", false, &_traceStream);
+      _traceStream.cr();
+      const Type* tt = _igvn->type_or_null(n);
+      if (tt != NULL) {
+        const TypeOopPtr *node_t = tt->isa_oopptr();
+        if (node_t != NULL) {
+          int alias_idx = _compile->get_alias_index(node_t);
+          bool instance = _igvn->type(n)->isa_instptr() != NULL;
+          bool array = _igvn->type(n)->isa_aryptr() != NULL;
+          _traceStream.print_cr("#\t\t -> OOP-PTR(instance=%c, array=%c) instance_id: %d, alias_idx: %d", instance ? 'Y' : 'N', array ? 'Y' : 'N', node_t->instance_id(), alias_idx);
         }
       }
-      tty->cr();
+
+      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+        Node* m = n->fast_out(i);   // Get user
+        ideal_nodes.push(m);
+      }
     }
+
+    _traceStream.cr(); _traceStream.cr(); _traceStream.cr(); _traceStream.cr();
+  }
+}
+
+void ConnectionGraph::save_trace() {
+  if (_collectingTrace) {
+    stringStream fullName;
+    fullName.print("/tmp/EATrace_%s_%s_%d.log", _compile->method()->holder()->name()->as_utf8(), _compile->method()->name()->as_utf8(), _invocation);
+
+    fileStream oStream(fullName.as_string(), "w");
+               oStream.write(_traceStream.as_string(), _traceStream.size());
+               oStream.cr();
+               oStream.flush();
   }
 }
 #endif

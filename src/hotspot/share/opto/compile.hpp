@@ -53,6 +53,7 @@ class Bundle;
 class CallGenerator;
 class CloneMap;
 class ConnectionGraph;
+class PointsToNode;
 class IdealGraphPrinter;
 class InlineTree;
 class Int_Array;
@@ -68,6 +69,7 @@ class Node_List;
 class Node_Notes;
 class NodeCloneInfo;
 class OptoReg;
+class PhiNode;
 class PhaseCFG;
 class PhaseGVN;
 class PhaseIterGVN;
@@ -352,6 +354,7 @@ class Compile : public Phase {
   GrowableArray<Node*>  _for_post_loop_igvn;    // List of nodes for IGVN after loop opts are over
   GrowableArray<Node_List*> _coarsened_locks;   // List of coarsened Lock and Unlock nodes
   ConnectionGraph*      _congraph;
+  uint                  _unique_base_id_seq;    // Used to create a sequence of IDs for bases when splitting Phi
 #ifndef PRODUCT
   IdealGraphPrinter*    _igv_printer;
   static IdealGraphPrinter* _debug_file_printer;
@@ -1096,6 +1099,10 @@ class Compile : public Phase {
   void Finish_Warm();                            // Give up on further inlines.
   void Optimize();                               // Given a graph, optimize it
   void Code_Gen();                               // Generate code from a graph
+
+  void Split_Bases(PhaseIterGVN& igvn);
+  void Split_Bases_Of(PhaseIterGVN& igvn, PointsToNode* ptn, PhiNode* n);
+  void Create_Selector_Switch(Node* use, PhiNode* orig_phi, Node_List* bases, uint orig_unique_base_id_seq);
 
   // Management of the AliasType table.
   void grow_alias_types();

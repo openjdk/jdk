@@ -28,6 +28,7 @@
 #include "opto/addnode.hpp"
 #include "opto/node.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/ostream.hpp"
 
 //
 // Adaptation for C2 of the escape analysis algorithm described in:
@@ -232,7 +233,7 @@ public:
 
 #ifndef PRODUCT
   NodeType node_type() const { return (NodeType)_type;}
-  void dump(bool print_state=true) const;
+  void dump(outputStream* st=NULL, bool print_state=true) const;
 #endif
 
 };
@@ -347,13 +348,15 @@ private:
 public:
   JavaObjectNode* phantom_obj; // Unknown object
 
-private:
   // Address of an element in _nodes.  Used when the element is to be modified
   PointsToNode* ptnode_adr(int idx) const {
     // There should be no new ideal nodes during ConnectionGraph build,
     // growableArray::at() will throw assert otherwise.
     return _nodes.at(idx);
   }
+
+private:
+
   uint nodes_size() const { return _nodes.length(); }
 
   uint next_pidx() { return _next_pidx++; }
@@ -612,7 +615,12 @@ public:
   bool add_final_edges_unsafe_access(Node* n, uint opcode);
 
 #ifndef PRODUCT
-  void dump(GrowableArray<PointsToNode*>& ptnodes_worklist);
+  static bool _collectingTrace;
+  stringStream _traceStream;
+
+  void dump_ir(const char* title);
+  void save_trace();
+  void dump(GrowableArray<PointsToNode*>& ptnodes_worklist, const char* label = NULL);
 #endif
 };
 

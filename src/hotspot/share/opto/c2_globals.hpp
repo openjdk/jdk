@@ -484,6 +484,10 @@
   notproduct(bool, PrintEscapeAnalysis, false,                              \
           "Print the results of escape analysis")                           \
                                                                             \
+                                                                            \
+  product(ccstr, SaveEATraceToFile, NULL,                                   \
+          "Save EA & SR trace to file. Filter using Class::method or all.") \
+                                                                            \
   product(bool, EliminateAllocations, true,                                 \
           "Use escape analysis to eliminate allocations")                   \
                                                                             \
