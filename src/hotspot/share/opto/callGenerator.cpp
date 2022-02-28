@@ -740,7 +740,9 @@ void CallGenerator::do_late_inline_helper() {
     }
 
     C->print_inlining_assert_ready();
+
     C->print_inlining_move_to(this);
+    
     C->log_late_inline(this);
 
     // JVMState is ready, so time to perform some checks and prepare for inlining attempt.
