@@ -136,7 +136,6 @@ public enum ElementKind {
      *
      * @return {@code true} if this is a kind of class
      */
-    @SuppressWarnings("preview")
     public boolean isClass() {
         return this == CLASS || this == ENUM || this == RECORD;
     }

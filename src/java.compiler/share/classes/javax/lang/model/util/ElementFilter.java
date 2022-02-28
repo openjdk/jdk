@@ -79,7 +79,6 @@ public class ElementFilter {
     private static final Set<ElementKind> MODULE_KIND =
         Collections.unmodifiableSet(EnumSet.of(ElementKind.MODULE));
 
-    @SuppressWarnings("preview")
     private static final Set<ElementKind> TYPE_KINDS =
         Collections.unmodifiableSet(EnumSet.of(ElementKind.CLASS,
                                                ElementKind.ENUM,
@@ -87,7 +86,6 @@ public class ElementFilter {
                                                ElementKind.RECORD,
                                                ElementKind.ANNOTATION_TYPE));
 
-    @SuppressWarnings("preview")
     private static final Set<ElementKind> RECORD_COMPONENT_KIND =
         Set.of(ElementKind.RECORD_COMPONENT);
 

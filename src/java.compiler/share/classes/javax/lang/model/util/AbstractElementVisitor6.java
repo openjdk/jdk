@@ -159,7 +159,6 @@ public abstract class AbstractElementVisitor6<R, P> implements ElementVisitor<R,
      *
      * @since 14
      */
-    @SuppressWarnings("preview")
     @Override
     public R visitRecordComponent(RecordComponentElement e, P p) {
         // Use implementation from interface default method

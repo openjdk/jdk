@@ -139,7 +139,6 @@ public class ElementKindVisitor6<R, P>
      * @param p {@inheritDoc}
      * @return  the result of the kind-specific visit method
      */
-    @SuppressWarnings("preview")
     @Override
     public R visitType(TypeElement e, P p) {
         ElementKind k = e.getKind();
