@@ -354,8 +354,8 @@ class ElfFile: public CHeapObj<mtInternal> {
 class DwarfFile : public ElfFile {
 
   static constexpr uint8_t ADDRESS_SIZE = NOT_LP64(4) LP64_ONLY(8);
-  // We only support 32-bit DWARF which uses 32-bit values for DWARF section lengths and offsets relative to the beginning
-  // of a section.
+  // We only support 32-bit DWARF (emitted by GCC) which uses 32-bit values for DWARF section lengths and offsets
+  // relative to the beginning of a section.
   static constexpr uint8_t DWARF_SECTION_OFFSET_SIZE = 4;
 
   class MarkedDwarfFileReader : public MarkedFileReader {

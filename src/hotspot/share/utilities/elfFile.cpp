@@ -615,7 +615,7 @@ bool DwarfFile::get_filename_and_line_number(const uint32_t offset_in_library, c
 }
 
 // (2) The .debug_aranges section contains a number of entries/sets. Each set contains one or multiple address range descriptors of the
-// form [beginning_address, beginning_address+length). Start reading these sets and its descriptors until we find one that contains
+// form [beginning_address, beginning_address+length). Start reading these sets and their descriptors until we find one that contains
 // 'offset_in_library'. Read the debug_info_offset field from the header of this set which defines the offset for the compilation unit.
 // This process is described in section 6.1.2 of the DWARF 4 spec.
 bool DwarfFile::DebugAranges::find_compilation_unit_offset(const uint32_t offset_in_library, uint32_t* compilation_unit_offset) {
@@ -827,7 +827,7 @@ bool DwarfFile::DebugAbbrev::find_debug_line_offset(const uint64_t abbrev_code) 
       log_develop_trace(dwarf)("  Read the following attribute values from compilation unit:");
       return read_attribute_specifications(true);
     } else {
-      // Not the correct declaration. Read its attributes and continue with next declaration.
+      // Not the correct declaration. Read its attributes and continue with the next declaration.
       if (!read_attribute_specifications(false)) {
         return false;
       }
@@ -1007,6 +1007,7 @@ bool DwarfFile::CompilationUnit::read_attribute_value(const uint64_t attribute_f
       break;
     case DW_FORM_indirect:
       // Should not be used and therefore is not supported by this parser.
+      log_develop_info(dwarf)("DW_FORM_indirect is not supported.");
       return false;
     case DW_FORM_sec_offset:
       if (is_DW_AT_stmt_list_attribute) {
@@ -1106,7 +1107,7 @@ bool DwarfFile::LineNumberProgram::read_header() {
     }
   }
 
-  // Read include_directories which are a sequence of path names. These are terminated by a single null byte.
+  // Read field include_directories which is a sequence of path names. These are terminated by a single null byte.
   // We do not care about them, just read the strings and move on.
   while (_reader.read_string()) { }
 
@@ -1450,7 +1451,7 @@ bool DwarfFile::LineNumberProgram::does_offset_match_entry(const uintptr_t previ
          || (_offset_in_library > previous_address && _offset_in_library < _state->_address)) { // in between two entries
       _state->_found_match = true;
       if (!matches_entry_directly || _is_pc_after_call) {
-        // We take the previous row either in the matrix when:
+        // We take the previous row in the matrix either when:
         // - We try to match an offset that is between two entries.
         // - We have an offset from a PC that is at a call-site in which case we need to get the line information for
         //   the call instruction in the previous entry.
@@ -1464,8 +1465,8 @@ bool DwarfFile::LineNumberProgram::does_offset_match_entry(const uintptr_t previ
       // Else: Exact match. We cannot take this entry because we do not know if there are more entries following this
       //       one with the same offset (we could have multiple entries for the same address in the matrix). Continue
       //       to parse entries. When we have the first non-exact match, then we know that the previous entry is the
-      //       correct one and will be taken by the if-case. If this is the very last entry in a matrix, we will take
-      //       the current entry (handled in if-case as third condition).
+      //       correct one to take (handled in the else-if-case below). If this is the very last entry in a matrix,
+      //       we will take the current entry (handled in else-if-case above).
     } else if (_state->_found_match) {
       // We found an entry before with an exact match. This is now the first entry with a new offset. Pick the previous
       // entry which matches our offset and is guaranteed to be the last entry which matches our offset (if there are
