@@ -47,7 +47,6 @@ import java.util.regex.Pattern;
 import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.ref.CleanerFactory;
-import sun.security.action.GetBooleanAction;
 import sun.security.action.GetPropertyAction;
 
 /* This class is for the exclusive use of ProcessBuilder.start() to
@@ -269,11 +268,22 @@ final class ProcessImpl extends Process {
                 // command line parser. The case of the [""] tail escape
                 // sequence could not be realized due to the argument validation
                 // procedure.
-                int count = countLeadingBackslash(verificationType, s, s.length());
-                while (count-- > 0) {
-                    cmdbuf.append(BACKSLASH);   // double the number of backslashes
+                if (verificationType == VERIFICATION_WIN32_SAFE ||
+                    verificationType == VERIFICATION_LEGACY) {
+                    int count = countLeadingBackslash(verificationType, s, s.length());
+                    while (count-- > 0) {
+                        cmdbuf.append(BACKSLASH);   // double the number of backslashes
+                    }
                 }
                 cmdbuf.append('"');
+            } else if (verificationType == VERIFICATION_WIN32_SAFE &&
+                 (s.startsWith("\"") && s.endsWith("\"") && s.length() > 2)) {
+                // Check that quoted argument does not escape the final quote
+                cmdbuf.append(s);
+                int count = countLeadingBackslash(verificationType, s, s.length() - 1);
+                while (count-- > 0) {
+                    cmdbuf.insert(cmdbuf.length() - 1, BACKSLASH);    // double the number of backslashes
+                }
             } else {
                 cmdbuf.append(s);
             }
@@ -292,9 +302,6 @@ final class ProcessImpl extends Process {
         if (!str.startsWith("\"") || !str.endsWith("\"") || str.length() < 2)
             return str;    // no beginning or ending quote, or too short not quoted
 
-        if (str.endsWith("\\\"")) {
-            return str;    // not properly quoted, treat as unquoted
-        }
         // Strip leading and trailing quotes
         return str.substring(1, str.length() - 1);
     }
