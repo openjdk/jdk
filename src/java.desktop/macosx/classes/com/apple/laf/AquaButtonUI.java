@@ -309,8 +309,8 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         final View v = (View)c.getClientProperty(BasicHTML.propertyKey);
         if (v != null) {
             // use zero insets for view since layout only handles text calculations
-            text = layoutAndGetText(g, b, aquaBorder, new
-                    Insets(0,0,0,0), viewRect, iconRect, textRect);
+            text = layoutAndGetText(g, b, aquaBorder, new Insets(0,0,0,0),
+                    viewRect, iconRect, textRect);
         } else {
             text = layoutAndGetText(g, b, aquaBorder, i, viewRect, iconRect, textRect);
         }

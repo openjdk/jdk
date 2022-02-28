@@ -30,20 +30,16 @@
  * @run main HtmlButtonImageTest
  */
 
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Point;
-import java.awt.Robot;
+import java.awt.*;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import java.awt.Color;
 import java.io.IOException;
 import javax.imageio.ImageIO;
 import java.io.File;
-import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
 public final class HtmlButtonImageTest {
@@ -59,16 +55,12 @@ public final class HtmlButtonImageTest {
     public static final int PIXEL_BUFFER = 1;
 
     public static void main(String[] args) throws Exception {
-        try {
-            try {
-                UIManager.setLookAndFeel("com.apple.laf.AquaLookAndFeel");
-            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                throw new RuntimeException("Unsupported LookAndFeel: " + e);
-            }
+        Robot robot = new Robot();
+        robot.setAutoDelay(100);
+        robot.setAutoWaitForIdle(true);
 
-            Robot robot = new Robot();
-            robot.setAutoDelay(100);
-            robot.setAutoWaitForIdle(true);
+        try {
+            UIManager.setLookAndFeel("com.apple.laf.AquaLookAndFeel");
 
             // store path to source directory to locate image
             testDir = Path.of(System.getProperty("test.classes", "."));
@@ -91,14 +83,20 @@ public final class HtmlButtonImageTest {
             Color botClr = robot.getPixelColor(point.x, point.y + (SQUARE_HEIGHT/2) - PIXEL_BUFFER);
 
             testImageCentering(leftClr, rightClr, topClr, botClr);
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException("Unsupported LookAndFeel: " + e);
+        } catch (IOException e) {
+            //save image for troubleshooting
+            BufferedImage failImg = robot.createScreenCapture(new Rectangle(point.x - BUTTON_WIDTH / 2, point.y - BUTTON_HEIGHT / 2, BUTTON_WIDTH, BUTTON_HEIGHT));
+            ImageIO.write(failImg, "png", new File(testDir + "/fail_square.png"));
+            throw new RuntimeException("Failed image generation: " + e);
         } finally {
             // dispose frame when done testing for a LAF before continuing
             SwingUtilities.invokeAndWait(() -> frame.dispose());
         }
     }
 
-    private static void createAndShowGUI()
-    {
+    private static void createAndShowGUI() {
         frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new FlowLayout());
@@ -115,41 +113,41 @@ public final class HtmlButtonImageTest {
         frame.setVisible(true);
     }
 
-    private static void setupCenterCoord() {
+    private static void setupCenterCoord() throws InterruptedException, InvocationTargetException {
         // adjust coordinates to be the center of the button
-        point = button.getLocationOnScreen();
+        SwingUtilities.invokeAndWait(() -> {
+            point = button.getLocationOnScreen();
+        });
         point.x += BUTTON_WIDTH / 2;
         point.y += BUTTON_HEIGHT / 2;
     }
 
     private static boolean checkRedness(Color c) {
         // checks for redness since anti-aliasing causes edges to be not exactly 255,0,0 rgb values
-        if(c.getRed() > 250 && c.getBlue() < 10 && c.getGreen() < 10) {
+        if (c.getRed() > 250 && c.getBlue() < 10 && c.getGreen() < 10) {
             return true;
         }
         return false;
     }
 
-    private static void testImageCentering(Color left, Color right, Color top, Color bottom) {
+    private static void testImageCentering(Color... colors) {
         // check if all colors at each edge of square are red
-        if(!checkRedness(left) || !checkRedness(right) || !checkRedness(top) || !checkRedness(bottom)) {
-            throw new RuntimeException("HTML image not centered in button");
-        }
-        else {
-            System.out.println("-- Passed");
+        for (Color c : colors) {
+            if (!checkRedness(c)) {
+                throw new RuntimeException("HTML image not centered in button");
+            }
+            else {
+                System.out.println("-- Passed");
+            }
         }
     }
 
-    private static void generateImage() {
+    private static void generateImage() throws IOException {
         BufferedImage bImg = new BufferedImage(SQUARE_WIDTH, SQUARE_HEIGHT, BufferedImage.TYPE_INT_RGB);
         Graphics2D cg = bImg.createGraphics();
         // paint a red square onto cg
         cg.setColor(Color.RED);
         cg.fillRect(0, 0, SQUARE_WIDTH, SQUARE_HEIGHT);
-        try {
-            ImageIO.write(bImg, "png", new File(testDir + "/red_square.png"));
-        } catch (IOException e) {
-            throw new RuntimeException("Failed image generation: " + e);
-        }
+        ImageIO.write(bImg, "png", new File(testDir + "/red_square.png"));
     }
 }
