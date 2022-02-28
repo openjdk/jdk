@@ -55,10 +55,6 @@ import javax.lang.model.element.ModuleElement.UsesDirective;
  * arguments to methods in this class, a {@code NullPointerException}
  * will be thrown.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
- * @author Martin Buchholz
  * @since 1.6
  */
 public class ElementFilter {
