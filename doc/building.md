@@ -135,6 +135,14 @@ space is required.
 If you do not have access to sufficiently powerful hardware, it is also
 possible to use [cross-compiling](#cross-compiling).
 
+#### Branch Protection
+
+In order to use Branch Protection features in the VM, `--enable-branch-protection`
+must be used. This option requires C++ compiler support (GCC 9.1.0+ or Clang
+10+). The resulting build can be run on both machines with and without support
+for branch protection in hardware. Branch Protection is only supported for
+Linux targets.
+
 ### Building on 32-bit arm
 
 This is not recommended. Instead, see the section on [Cross-compiling](
