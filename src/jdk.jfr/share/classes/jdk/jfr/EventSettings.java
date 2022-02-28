@@ -27,6 +27,7 @@ package jdk.jfr;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.Objects;
 
 import jdk.jfr.internal.management.EventSettingsModifier;
 
@@ -55,8 +56,10 @@ public abstract class EventSettings {
 
         @Override
         public EventSettings with(String name, String value) {
-             delegate.with(name, value);
-             return this;
+            Objects.requireNonNull(name, "name");
+            Objects.requireNonNull(value, "value");
+            delegate.with(name, value);
+            return this;
         }
 
         @Override
@@ -111,6 +114,7 @@ public abstract class EventSettings {
      * @return event settings object for further configuration, not {@code null}
      */
     public final EventSettings withPeriod(Duration duration) {
+        Objects.requireNonNull(duration, "duration");
         return with(Period.NAME, duration.toNanos() + " ns");
     }
 

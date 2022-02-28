@@ -97,8 +97,8 @@ public final class EventFactory {
      * @see Event#set(int, Object)
      */
     public static EventFactory create(List<AnnotationElement> annotationElements, List<ValueDescriptor> fields) {
-        Objects.requireNonNull(fields);
-        Objects.requireNonNull(annotationElements);
+        Objects.requireNonNull(annotationElements, "annotationElements");
+        Objects.requireNonNull(fields, "fields");
         JVMSupport.ensureWithInternalError();
 
         Utils.checkRegisterPermission();

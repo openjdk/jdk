@@ -213,48 +213,22 @@ public class SourceLauncherTest extends TestRunner {
     }
 
     @Test
-    public void testPermissions(Path base) throws IOException {
-        // does not work on exploded image, because the default policy file assumes jrt:; skip the test
-        if (Files.exists(Path.of(System.getProperty("java.home")).resolve("modules"))) {
-            out.println("JDK using exploded modules; test skipped");
-            return;
-        }
-
-        Path policyFile = base.resolve("test.policy");
-        Path sourceFile = base.resolve("TestPermissions.java");
-
-        tb.writeFile(policyFile,
-            "grant codeBase \"jrt:/jdk.compiler\" {\n" +
-            "    permission java.security.AllPermission;\n" +
-            "};\n" +
-            "grant codeBase \"" + sourceFile.toUri().toURL() + "\" {\n" +
-            "    permission java.util.PropertyPermission \"user.dir\", \"read\";\n" +
-            "};\n");
-
+    public void testSecurityManager(Path base) throws IOException {
+        Path sourceFile = base.resolve("HelloWorld.java");
         tb.writeJavaFiles(base,
-            "import java.net.URL;\n" +
-            "class TestPermissions {\n" +
-            "    public static void main(String... args) {\n" +
-            "        System.out.println(\"user.dir=\" + System.getProperty(\"user.dir\"));\n" +
-            "        try {\n" +
-            "            System.setProperty(\"user.dir\", \"\");\n" +
-            "            System.out.println(\"no exception\");\n" +
-            "            System.exit(1);\n" +
-            "        } catch (SecurityException e) {\n" +
-            "            System.out.println(\"exception: \" + e);\n" +
-            "        }\n" +
-            "    }\n" +
-            "}");
+                "class HelloWorld {\n" +
+                        "    public static void main(String... args) {\n" +
+                        "        System.out.println(\"Hello World!\");\n" +
+                        "    }\n" +
+                        "}");
 
         String log = new JavaTask(tb)
-                .vmOptions("-Djava.security.manager", "-Djava.security.policy=" + policyFile)
+                .vmOptions("-Djava.security.manager=default")
                 .className(sourceFile.toString())
-                .run(Task.Expect.SUCCESS)
-                .getOutput(Task.OutputKind.STDOUT);
-        checkEqual("stdout", log.trim(),
-                "user.dir=" + System.getProperty("user.dir") + "\n" +
-                "exception: java.security.AccessControlException: " +
-                    "access denied (\"java.util.PropertyPermission\" \"user.dir\" \"write\")");
+                .run(Task.Expect.FAIL)
+                .getOutput(Task.OutputKind.STDERR);
+        checkContains("stderr", log,
+                "error: cannot use source-code launcher with a security manager enabled");
     }
 
     public void testSystemProperty(Path base) throws IOException {
@@ -707,6 +681,14 @@ public class SourceLauncherTest extends TestRunner {
         out.println(name + ": " + found);
         if (!expect.equals(found)) {
             error("Unexpected output; expected: " + expect);
+        }
+    }
+
+    void checkContains(String name, String found, String expect) {
+        expect = expect.replace("\n", tb.lineSeparator);
+        out.println(name + ": " + found);
+        if (!found.contains(expect)) {
+            error("Expected output not found: " + expect);
         }
     }
 
