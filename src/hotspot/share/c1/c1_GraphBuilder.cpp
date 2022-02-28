@@ -383,7 +383,19 @@ void BlockListBuilder::mark_loops() {
   _next_loop_index = 0;
   _next_block_number = _blocks.length();
 
-  // recursively iterate the control flow graph
+  // The loop detection algorithm works as follows:
+  // - We maintain the _loop_map, where for each block we have a bitmap indicating which loops contain this block.
+  // - The CFG is recursively traversed (depth-first) and if we detect a loop, we assign the loop a unique number that is stored
+  // in the bitmap associated with the loop header block. Until we return back through that loop header the bitmap contains
+  // only a single bit corresponding to the loop number.
+  // -  The bit is then propagated for all the blocks in the loop after we exit them (post-order). There could be multiple bits
+  // of course in case of nested loops.
+  // -  When we exit the loop header we remove that single bit and assign the real loop state for it.
+  // -  Now, the tricky part here is how we detect irriducible loops. In the algorithm above the loop state bits
+  // are propagated to the predecessors. If we encounter an irreducible loop (a loop with multiple heads) we would see
+  // a node with some loop bit set that would then propagate back and be never cleared because we would
+  // never go back through the original loop header. Therefore if there are any irreducible loops the bits in the states
+  // for these loops are going to propagate back to the root.
   BitMap& loop_state = mark_loops(_bci2block->at(0), false);
   if (!loop_state.is_empty()) {
     compilation()->set_has_irreducible_loops(true);
