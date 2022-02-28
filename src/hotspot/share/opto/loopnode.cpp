@@ -5756,8 +5756,8 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
   // Try not to place code on a loop entry projection
   // which can inhibit range check elimination.
   if (least != early && !BarrierSet::barrier_set()->barrier_set_c2()->is_gc_specific_loop_opts_pass(_mode)) {
-    Node* ctrl_out = least->unique_ctrl_out();
-    if (ctrl_out && ctrl_out->is_Loop() &&
+    Node* ctrl_out = least->unique_ctrl_out_or_null();
+    if (ctrl_out != NULL && ctrl_out->is_Loop() &&
         least == ctrl_out->in(LoopNode::EntryControl) &&
         (ctrl_out->is_CountedLoop() || ctrl_out->is_OuterStripMinedLoop())) {
       Node* least_dom = idom(least);
