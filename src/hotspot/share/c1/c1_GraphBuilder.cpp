@@ -953,7 +953,8 @@ void GraphBuilder::load_constant() {
     }
     Value x;
     if (patch_state != NULL) {
-      x = new Constant(t, patch_state);
+      bool kills_memory = stream()->is_dynamic_constant(); // arbitrary memory effects from running BSM during linkage
+      x = new Constant(t, patch_state, kills_memory);
     } else {
       x = new Constant(t);
     }
