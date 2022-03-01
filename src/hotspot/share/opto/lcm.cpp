@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -528,11 +528,15 @@ Node* PhaseCFG::select(
     Node *n = worklist[i];      // Get Node on worklist
 
     int iop = n->is_Mach() ? n->as_Mach()->ideal_Opcode() : 0;
-    if( n->is_Proj() ||         // Projections always win
-        n->Opcode()== Op_Con || // So does constant 'Top'
-        iop == Op_CreateEx ||   // Create-exception must start block
-        iop == Op_CheckCastPP
-        ) {
+    if (n->is_Proj()) {         // Projections always win
+      worklist.map(i,worklist.pop());
+      return n;
+    }
+
+    // These nodes must be scheduled at the beginning of the block.
+    if (n->Opcode()== Op_Con ||
+        iop == Op_CreateEx ||
+        iop == Op_CheckCastPP) {
       worklist.map(i,worklist.pop());
       return n;
     }
