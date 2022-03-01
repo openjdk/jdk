@@ -30,6 +30,7 @@
 #include "gc/shenandoah/shenandoahOldGC.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "prims/jvmtiTagMap.hpp"
@@ -104,6 +105,10 @@ void ShenandoahOldGC::op_final_mark() {
     assert(_mark.generation()->generation_mode() == OLD, "Generation of Old-Gen GC should be OLD");
     _mark.finish_mark();
     assert(!heap->cancelled_gc(), "STW mark cannot OOM");
+
+    // Old collection is complete, the young generation no longer needs this
+    // reference to the old concurrent mark so clean it up.
+    heap->young_generation()->set_old_gen_task_queues(NULL);
 
     // We need to do this because weak root cleaning reports the number of dead handles
     JvmtiTagMap::set_needs_cleaning();

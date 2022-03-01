@@ -525,9 +525,6 @@ void ShenandoahControlThread::resume_concurrent_old_cycle(ShenandoahGeneration* 
   // is allowed to cancel a GC.
   ShenandoahOldGC gc(generation, _allow_old_preemption);
   if (gc.collect(cause)) {
-    // Old collection is complete, the young generation no longer needs this
-    // reference to the old concurrent mark so clean it up.
-    heap->young_generation()->set_old_gen_task_queues(NULL);
     generation->heuristics()->record_success_concurrent();
     heap->shenandoah_policy()->record_success_concurrent();
   }
