@@ -2210,12 +2210,12 @@ void Compile::Optimize() {
 
     #ifndef PRODUCT
     // look over IR for number of Java Objects in each state (NoEscape/ArgEscape/GloablEscape)
+    // ideal_nodes.map(live_nodes(), NULL)
     Unique_Node_List ideal_nodes; 
-    ideal_nodes.map(live_nodes(), NULL);
     ideal_nodes.push(root());
 
-    for(uint next = 0; next < ideal_nodes.size(); next++) {
-      Node* n = ideal_nodes.at(0);
+    for(uint next = 0; next < ideal_nodes.size(); ++next) {
+      Node* n = ideal_nodes.at(next);
       PointsToNode* ptn = congraph()->ptnode_adr(n->_idx);
 
       if (ptn != NULL && ptn->is_JavaObject()) {
