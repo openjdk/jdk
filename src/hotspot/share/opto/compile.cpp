@@ -2215,7 +2215,7 @@ void Compile::Optimize() {
     ideal_nodes.push(root());
 
     for(uint next = 0; next < ideal_nodes.size(); next++) {
-      Node* n = ideal_nodes.at(next);
+      Node* n = ideal_nodes.at(0);
       PointsToNode* ptn = congraph()->ptnode_adr(n->_idx);
 
       if (ptn != NULL && ptn->is_JavaObject()) {
