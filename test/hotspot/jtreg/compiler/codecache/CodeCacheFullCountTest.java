@@ -55,7 +55,7 @@ public class CodeCacheFullCountTest {
 
     public static void runTest() throws Throwable {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-          "-XX:ReservedCodeCacheSize=2496k", "-XX:-MethodFlushing", "CodeCacheFullCountTest", "WasteCodeCache");
+          "-XX:ReservedCodeCacheSize=2496k", "-XX:-UseCodeCacheFlushing", "-XX:-MethodFlushing", "CodeCacheFullCountTest", "WasteCodeCache");
         OutputAnalyzer oa = ProcessTools.executeProcess(pb);
         oa.shouldHaveExitValue(0);
         String stdout = oa.getStdout();
