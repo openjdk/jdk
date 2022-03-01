@@ -177,7 +177,7 @@ public enum ElementKind {
      * @since 19
      */
     public boolean isExecutable() {
-        return switch(this){
+        return switch(this) {
         case METHOD, CONSTRUCTOR, STATIC_INIT, INSTANCE_INIT -> true;
         default -> false;
         };
@@ -191,7 +191,7 @@ public enum ElementKind {
      * @since 19
      */
     public boolean isInitializer() {
-        return switch(this){
+        return switch(this) {
         case STATIC_INIT, INSTANCE_INIT -> true;
         default -> false;
         };
@@ -206,7 +206,7 @@ public enum ElementKind {
      * @since 19
      */
     public boolean isVariable() {
-        return switch(this){
+        return switch(this) {
         case ENUM_CONSTANT, FIELD, PARAMETER,
              LOCAL_VARIABLE, EXCEPTION_PARAMETER, RESOURCE_VARIABLE,
              BINDING_VARIABLE -> true;
