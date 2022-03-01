@@ -108,6 +108,20 @@ public class Env {
     Set<Pattern> includePackages;
     Set<Pattern> excludePackages;
 
+    /**
+     * How to handle bad references.
+     *
+     * If {@code false}, a reference into a module that is not
+     * in the module graph will just be reported as a warning.
+     * All other bad references will be reported as errors.
+     * This is the desired behavior for javac.
+     *
+     * If {@code true}, all bad references will be reported as
+     * errors. This is the desired behavior for javadoc.
+     *
+     */
+    boolean strictReferenceChecks = false;
+
     // Utility classes
     DocTrees trees;
     Elements elements;

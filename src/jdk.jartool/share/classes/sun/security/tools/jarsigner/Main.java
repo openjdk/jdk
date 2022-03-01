@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.security.tools.jarsigner;
 
 import java.io.*;
 import java.net.UnknownHostException;
+import java.net.URLClassLoader;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.PKIXBuilderParameters;
 import java.util.*;
@@ -59,6 +60,7 @@ import sun.security.pkcs.SignerInfo;
 import sun.security.provider.certpath.CertPathConstraintsParameters;
 import sun.security.timestamp.TimestampToken;
 import sun.security.tools.KeyStoreUtil;
+import sun.security.tools.PathList;
 import sun.security.validator.Validator;
 import sun.security.validator.ValidatorException;
 import sun.security.x509.*;
@@ -152,6 +154,7 @@ public class Main {
     List<String> providerClasses = null; // list of provider classes
     // arguments for provider constructors
     HashMap<String,String> providerArgs = new HashMap<>();
+    String pathlist = null;
     char[] keypass; // private key password
     String sigfile; // name of .SF file
     String sigalg; // name of signature algorithm
@@ -246,7 +249,18 @@ public class Main {
             }
 
             if (providerClasses != null) {
-                ClassLoader cl = ClassLoader.getSystemClassLoader();
+                ClassLoader cl;
+                if (pathlist != null) {
+                    String path = System.getProperty("java.class.path");
+                    path = PathList.appendPath(
+                            path, System.getProperty("env.class.path"));
+                    path = PathList.appendPath(path, pathlist);
+
+                    URL[] urls = PathList.pathToURLs(path);
+                    cl = new URLClassLoader(urls);
+                } else {
+                    cl = ClassLoader.getSystemClassLoader();
+                }
                 for (String provClass: providerClasses) {
                     try {
                         KeyStoreUtil.loadProviderByClass(provClass,
@@ -434,6 +448,9 @@ public class Main {
                         n += 2;
                     }
                 }
+            } else if (collator.compare(flags, "-providerpath") == 0) {
+                if (++n == args.length) usageNoArg();
+                pathlist = args[n];
             } else if (collator.compare(flags, "-protected") ==0) {
                 protectedPath = true;
             } else if (collator.compare(flags, "-certchain") ==0) {
@@ -704,6 +721,9 @@ public class Main {
                 (".providerClass.option"));
         System.out.println(rb.getString
                 (".providerArg.option.2"));
+        System.out.println();
+        System.out.println(rb.getString
+                (".providerPath.option"));
         System.out.println();
         System.out.println(rb.getString
                 (".strict.treat.warnings.as.errors"));

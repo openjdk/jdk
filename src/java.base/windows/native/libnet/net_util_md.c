@@ -215,7 +215,12 @@ NET_GetFileDescriptorID(JNIEnv *env)
 
 jint  IPv4_supported()
 {
-    /* TODO: properly check for IPv4 support on Windows */
+    SOCKET s = socket(AF_INET, SOCK_STREAM, 0);
+    if (s == INVALID_SOCKET) {
+        return JNI_FALSE;
+    }
+    closesocket(s);
+
     return JNI_TRUE;
 }
 

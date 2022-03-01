@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -496,19 +496,20 @@ static void *getILData(JNIEnv *env, jobject data, jint type) {
     }
 }
 
-static void releaseILData(JNIEnv *env, void *pData, jint type, jobject data) {
+static void releaseILData(JNIEnv *env, void *pData, jint type, jobject data,
+                          jint mode) {
     switch (type) {
         case DT_BYTE:
-            (*env)->ReleaseByteArrayElements(env, data, (jbyte *) pData, 0);
+            (*env)->ReleaseByteArrayElements(env, data, (jbyte *) pData, mode);
             break;
         case DT_SHORT:
-            (*env)->ReleaseShortArrayElements(env, data, (jshort *) pData, 0);
+            (*env)->ReleaseShortArrayElements(env, data, (jshort *) pData, mode);
             break;
         case DT_INT:
-            (*env)->ReleaseIntArrayElements(env, data, (jint *) pData, 0);
+            (*env)->ReleaseIntArrayElements(env, data, (jint *) pData, mode);
             break;
         case DT_DOUBLE:
-            (*env)->ReleaseDoubleArrayElements(env, data, (jdouble *) pData, 0);
+            (*env)->ReleaseDoubleArrayElements(env, data, (jdouble *) pData, mode);
             break;
     }
 }
@@ -542,7 +543,7 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_colorConvert
 
     void *outputBuffer = getILData(env, dstData, dstDType);
     if (outputBuffer == NULL) {
-        releaseILData(env, inputBuffer, srcDType, srcData);
+        releaseILData(env, inputBuffer, srcDType, srcData, JNI_ABORT);
         // An exception should have already been thrown.
         return;
     }
@@ -560,8 +561,8 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_colorConvert
         }
     }
 
-    releaseILData(env, inputBuffer, srcDType, srcData);
-    releaseILData(env, outputBuffer, dstDType, dstData);
+    releaseILData(env, inputBuffer, srcDType, srcData, JNI_ABORT);
+    releaseILData(env, outputBuffer, dstDType, dstData, 0);
 }
 
 /*
