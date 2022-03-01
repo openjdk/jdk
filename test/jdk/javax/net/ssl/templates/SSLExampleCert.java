@@ -32,6 +32,8 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.PKIXBuilderParameters;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Base64;
 import java.util.Date;
 
@@ -369,8 +371,8 @@ public enum SSLExampleCert {
         }
 
         // Set the date for the verifying of certificates.
-        @SuppressWarnings("deprecation")
-        Date verifyingDate = new Date(123, 3, 3);
+        DateFormat df = new SimpleDateFormat("MM/dd/yyyy");
+        Date verifyingDate = df.parse("02/02/2023");
 
         // Create an SSLContext object.
         TrustManagerFactory tmf =
