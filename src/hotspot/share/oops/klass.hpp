@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,10 +173,11 @@ private:
   // Flags of the current shared class.
   u2     _shared_class_flags;
   enum {
-    _archived_lambda_proxy_is_available = 2,
-    _has_value_based_class_annotation = 4,
-    _verified_at_dump_time = 8,
-    _regenerated = 16
+    _archived_lambda_proxy_is_available    = 1 << 1,
+    _has_value_based_class_annotation      = 1 << 2,
+    _verified_at_dump_time                 = 1 << 3,
+    _has_archived_enum_objs                = 1 << 4,
+    _regenerated                           = 1 << 5
   };
 #endif
 
@@ -337,6 +338,14 @@ protected:
   }
   bool verified_at_dump_time() const {
     CDS_ONLY(return (_shared_class_flags & _verified_at_dump_time) != 0;)
+    NOT_CDS(return false;)
+  }
+
+  void set_has_archived_enum_objs() {
+    CDS_ONLY(_shared_class_flags |= _has_archived_enum_objs;)
+  }
+  bool has_archived_enum_objs() const {
+    CDS_ONLY(return (_shared_class_flags & _has_archived_enum_objs) != 0;)
     NOT_CDS(return false;)
   }
 
