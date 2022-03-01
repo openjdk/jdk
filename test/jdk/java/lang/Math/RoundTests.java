@@ -25,7 +25,7 @@
  * @test
  * @bug 6430675 8010430
  * @summary Check for correct implementation of {Math, StrictMath}.round
- * @run main/othervm -XX:+LogCompilation -XX:Tier3CompileThreshold=100 -XX:CompileThresholdScaling=0.01 -XX:+TieredCompilation RoundTests
+ * @run main/othervm -XX:Tier3CompileThreshold=100 -XX:CompileThresholdScaling=0.01 -XX:+TieredCompilation RoundTests
  */
 public class RoundTests {
     public static void main(String... args) {
