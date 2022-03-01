@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,7 +139,6 @@ public class ElementKindVisitor6<R, P>
      * @param p {@inheritDoc}
      * @return  the result of the kind-specific visit method
      */
-    @SuppressWarnings("preview")
     @Override
     public R visitType(TypeElement e, P p) {
         ElementKind k = e.getKind();
