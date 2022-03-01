@@ -4114,6 +4114,13 @@ jint Arguments::apply_ergo() {
     return code;
   }
 
+  if (_mode == _int) {
+    if (SegmentedCodeCache) {
+      warning("SegmentedCodeCache has no meaningful effect with -Xint");
+      FLAG_SET_DEFAULT(SegmentedCodeCache, false);
+    }
+  }
+
 #ifdef ZERO
   // Clear flags not supported on zero.
   FLAG_SET_DEFAULT(ProfileInterpreter, false);
