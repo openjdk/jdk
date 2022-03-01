@@ -1030,13 +1030,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      *         null if no parameters are present.
      */
     public byte[] getSigAlgParams() {
-        if (algId == null)
-            return null;
-        try {
-            return algId.getEncodedParams();
-        } catch (IOException e) {
-            return null;
-        }
+        return algId == null ? null : algId.getEncodedParams();
     }
 
     /**

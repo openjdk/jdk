@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,22 +226,26 @@ public final class OCSP {
             List<Extension> extensions) throws IOException {
         OCSPRequest request = new OCSPRequest(certIds, extensions);
         byte[] bytes = request.encodeBytes();
+        String responder = responderURI.toString();
 
         if (debug != null) {
-            debug.println("connecting to OCSP service at: " + responderURI);
+            debug.println("connecting to OCSP service at: " + responder);
         }
         Event.report(Event.ReporterCategory.CRLCHECK, "event.ocsp.check",
-                responderURI.toString());
+                responder);
 
         URL url;
         HttpURLConnection con = null;
         try {
-            String encodedGetReq = responderURI.toString() + "/" +
-                    URLEncoder.encode(Base64.getEncoder().encodeToString(bytes),
-                            "UTF-8");
+            StringBuilder encodedGetReq = new StringBuilder(responder);
+            if (!responder.endsWith("/")) {
+                encodedGetReq.append("/");
+            }
+            encodedGetReq.append(URLEncoder.encode(
+                    Base64.getEncoder().encodeToString(bytes), "UTF-8"));
 
             if (encodedGetReq.length() <= 255) {
-                url = new URL(encodedGetReq);
+                url = new URL(encodedGetReq.toString());
                 con = (HttpURLConnection)url.openConnection();
                 con.setDoOutput(true);
                 con.setDoInput(true);

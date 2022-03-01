@@ -312,7 +312,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
      *
      * @return DER encoded parameters, or null not present.
      */
-    public byte[] getEncodedParams() throws IOException {
+    public byte[] getEncodedParams() {
         return (encodedParams == null ||
             algid.toString().equals(KnownOIDs.SpecifiedSHA2withECDSA.value()))
                 ? null
