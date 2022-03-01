@@ -213,7 +213,7 @@ public class ModuleDescriptor
         }
 
         /**
-         * {@return an immutable set of the module {@linkplain AccessFlag
+         * {@return an unmodifiable set of the module {@linkplain AccessFlag
          * requires flags}}
          * @see #modifiers()
          * @jvms 4.7.25 The Module Attribute
@@ -447,7 +447,7 @@ public class ModuleDescriptor
         }
 
         /**
-         * {@return an immutable set of the module {@linkplain AccessFlag
+         * {@return an unmodifiable set of the module {@linkplain AccessFlag
          * export flags} for this module descriptor}
          * @see #modifiers()
          * @jvms 4.7.25 The Module Attribute
@@ -669,7 +669,7 @@ public class ModuleDescriptor
         }
 
         /**
-         * {@return an immutable set of the module {@linkplain AccessFlag
+         * {@return an unmodifiable set of the module {@linkplain AccessFlag
          * opens flags}}
          * @see #modifiers()
          * @jvms 4.7.25 The Module Attribute
@@ -1354,7 +1354,7 @@ public class ModuleDescriptor
     }
 
     /**
-     * {@return an immutable set of the {@linkplain AccessFlag
+     * {@return an unmodifiable set of the {@linkplain AccessFlag
      * module flags}}
      * @see #modifiers()
      * @jvms 4.7.25 The Module Attribute

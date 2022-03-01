@@ -1318,7 +1318,7 @@ public final class Class<T> implements java.io.Serializable,
     public native int getModifiers();
 
     /**
-     * {@return an immutable set of the {@linkplain AccessFlag access
+     * {@return an unmodifiable set of the {@linkplain AccessFlag access
      * flags} for this class}
      * @see #getModifiers()
      * @jvms 4.1 The ClassFile Structure

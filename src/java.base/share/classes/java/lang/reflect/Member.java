@@ -84,8 +84,8 @@ public interface Member {
 
 
     /**
-     * {@return an immutable set of the {@linkplain AccessFlag access
-     * flags} for this member}
+     * {@return an unmodifiable set of the {@linkplain AccessFlag
+     * access flags} for this member}
      *
      * @implSpec
      * The default implementation returns an empty set.
